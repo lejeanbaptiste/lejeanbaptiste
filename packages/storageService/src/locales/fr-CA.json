@@ -1,0 +1,103 @@
+{
+  "cloud": {
+    "breadcrumbs": {
+      "branch": "Branche",
+      "filename": "nom de fichier",
+      "folder": "Dossier",
+      "groups": "groupes",
+      "organizations": "organisations",
+      "owner": "Propriétaire",
+      "project": "Projet",
+      "projects": "Projets",
+      "repositories": "Dépôt",
+      "repository": "Dépôts"
+    },
+    "createRepo": {
+      "create_repository": "Créer un référentiel",
+      "description": "Description",
+      "description_help": "La description apparaîtra sur la page GitHub de votre nouveau dépôt.",
+      "repository_name": "Nom du dépôt"
+    },
+    "create_folder": "Créer un dossier",
+    "folder_name": "Nom du dossier",
+    "mainMenu": {
+      "groups": "Groupes",
+      "my_projects": "Mes projets",
+      "my_repositories": "Mes dépôts",
+      "organizations": "Organisations",
+      "shared_with_me": "Partagé avec moi"
+    },
+    "messages": {
+      "create_merge_request": "Création d'une demande de fusion",
+      "forking_can_take_minutes": "Forking d'un référentiel peut prendre plusieurs minutes. Soyez patient."
+    },
+    "publicRepositories": {
+      "public_repositories": "Dépôts publics",
+      "user_or_organization": "utilisateur ou organisation"
+    },
+    "search": {
+      "content_across_username": "Contenu dans {{username}} dépôt",
+      "content_on_repository": "Contenu sur {{repository}}",
+      "filename_or_content": "nom de fichier ou contenu",
+      "files_on_repositoty": "Fichiers sur {{repository}}"
+    },
+    "settings": {
+      "comit_message": "Commit message",
+      "done": "Fait",
+      "save_settings": "Enregistrer les paramètres",
+      "update": "mettre à jour"
+    }
+  },
+  "commons": {
+    "cancel": "Annuler",
+    "create": "Créer",
+    "empty": "vide",
+    "from_your_computer": "depuis votre ordinateur",
+    "load": "Charger",
+    "messages": {
+      "saving_document": "Enregistrement du document"
+    },
+    "name": "nom",
+    "no": "non",
+    "private": "Privé",
+    "processing": "Traitement",
+    "save": "Enregistrer",
+    "show_less": "Afficher moins",
+    "show_more": "Afficher plus",
+    "yes": "oui"
+  },
+  "error": {
+    "message": {
+      "conflictFIle": "Conflit trouvé. Impossible d'écraser le fichier.",
+      "document_not_valid": "Document non valide",
+      "file_not_found": "Impossible de trouver la ressource demandée. Fichier '{{file}}' introuvable.",
+      "folder_creation_error": "Erreur de création de dossier",
+      "overwriteFileConfirmation": "Le fichier existe déjà. Voulez-vous l'écraser ?",
+      "path_not_found": "Impossible de trouver la ressource demandée. Le chemin de {{repository}} '{{path}}' n'a pas été trouvé",
+      "repo_creation_error": "Erreur de création du dépôt",
+      "repository_not_found": "Impossible de trouver la ressource demandée. Le référentiel de {{username}}' '{{repository}}' introuvable.",
+      "unableToSave": "Une erreur s'est produite. Enregistrement impossible.",
+      "unable_create_branch": "Impossible de créer une nouvelle branche",
+      "unable_fork_repo": "Impossible de forker le dépôt",
+      "unable_pull_reqest": "Impossible de créer une pull request",
+      "unable_save_document_on_fork": "Impossible d'enregistrer le document sur le fork {{fork}}",
+      "unable_save_on_branch": "Impossible d'enregistrer le document sur la branche {{branch}}",
+      "unable_to_upload_file": "{{filename}}.",
+      "user_not_found": "Impossible de télécharger le fichier '{{username}}' "
+    },
+    "title": {
+      "error": "Erreur",
+      "warning": "Avertissement"
+    }
+  },
+  "footer": {
+    "download": "télécharger",
+    "fork_and_pull_request": "Fork et Pull Request",
+    "pasteXml": "coller XML",
+    "save_as_pull_request": "Enregistrer et Pull Request"
+  },
+  "local": {
+    "drag_drop": "Cliquez ou faites glisser 'n' drop pour télécharger un fichier",
+    "paste_document_here": "Coller le document ici"
+  }
+}

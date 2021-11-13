@@ -1,0 +1,8 @@
+{
+    "realm": "lincs",
+    "auth-server-url": "https://keycloak.sandbox.lincsproject.ca/auth/",
+    "ssl-required": "external",
+    "resource": "cwrc-writer",
+    "public-client": true,
+    "confidential-port": 0
+}

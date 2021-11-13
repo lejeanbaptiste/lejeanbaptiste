@@ -1,0 +1,103 @@
+{
+  "cloud": {
+    "breadcrumbs": {
+      "branch": "Branch",
+      "filename": "filename",
+      "folder": "Folder",
+      "groups": "groups",
+      "organizations": "organizations",
+      "owner": "Owner",
+      "project": "Project",
+      "projects": "Projects",
+      "repositories": "Repositories",
+      "repository": "Repository"
+    },
+    "createRepo": {
+      "create_repository": "Create Repository",
+      "description": "Description",
+      "description_help": "The description will appear on the GitHub page for your new repository.",
+      "repository_name": "Repository Name"
+    },
+    "create_folder": "Create Folder",
+    "folder_name": "Folder name",
+    "mainMenu": {
+      "groups": "Groups",
+      "my_projects": "My Projects",
+      "my_repositories": "My Respositories",
+      "organizations": "Organizations",
+      "shared_with_me": "Shared with me"
+    },
+    "messages": {
+      "create_merge_request": "Creating Merge Resquest",
+      "forking_can_take_minutes": "Forking a repository can take several minutes. Be patient."
+    },
+    "publicRepositories": {
+      "public_repositories": "Public Repositories",
+      "user_or_organization": "user or organization"
+    },
+    "search": {
+      "content_across_username": "Content across {{username}} repositories",
+      "content_on_repository": "Content on {{repository}}",
+      "filename_or_content": "filename or content",
+      "files_on_repositoty": "Files on {{repository}}"
+    },
+    "settings": {
+      "comit_message": "Comit message",
+      "done": "Done",
+      "save_settings": "Save Settings",
+      "update": "update"
+    }
+  },
+  "commons": {
+    "cancel": "Cancel",
+    "create": "Create",
+    "empty": "Empty",
+    "from_your_computer": "from your computer",
+    "load": "Load",
+    "messages": {
+      "saving_document": "Saving document"
+    },
+    "name": "Name",
+    "no": "no",
+    "private": "Private",
+    "processing": "Processing",
+    "save": "Save",
+    "show_less": "Show less",
+    "show_more": "Show more",
+    "yes": "yes"
+  },
+  "error": {
+    "message": {
+      "conflictFIle": "Conflict found. Unable to overwrite file.",
+      "document_not_valid": "Document not valid",
+      "file_not_found": "Could not found the requested resource. File '{{file}}' not found.",
+      "folder_creation_error": "Folder creation error",
+      "overwriteFileConfirmation": "The file already exists. Do you want to overwrite it?",
+      "path_not_found": "Could not found the requested resource. {{repository}}'s path '{{path}}' not found.",
+      "repo_creation_error": "Repositoy creation error",
+      "repository_not_found": "Could not found the requested resource. {{username}}'s repository '{{repository}}' not found.",
+      "unableToSave": "Something went wrong. Unabled to save.",
+      "unable_create_branch": "Unable to create a new branch",
+      "unable_fork_repo": "Unable to fork the repository",
+      "unable_pull_reqest": "Unable to create a pull request",
+      "unable_save_document_on_fork": "Unable to save document on the fork {{fork}}",
+      "unable_save_on_branch": "Unable to save document on the branch {{branch}}",
+      "unable_to_upload_file": "Unable to upload the file {{filename}}.",
+      "user_not_found": "Could not found the requested resource. User '{{username}}' not found."
+    },
+    "title": {
+      "error": "Error",
+      "warning": "Warning"
+    }
+  },
+  "footer": {
+    "download": "download",
+    "fork_and_pull_request": "Fork and Pull Request",
+    "pasteXml": "paste XML",
+    "save_as_pull_request": "save as pull request"
+  },
+  "local": {
+    "drag_drop": "Click or Drag 'n' drop to upload a file",
+    "paste_document_here": "Paste document here"
+  }
+}

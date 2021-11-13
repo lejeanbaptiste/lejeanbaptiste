@@ -1,0 +1,149 @@
+import {
+  Box,
+  Dialog,
+  DialogContent,
+  LinearProgress,
+  Slide,
+  SlideProps,
+  Stack,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import React, { FC, forwardRef, useEffect, useState } from 'react';
+import type { Resource, StorageDialogProps } from '../@types/types';
+import CloudDialog from '../cloud';
+import FooterLoad from '../footer/FooterLoad';
+import FooterSave from '../footer/FooterSave';
+import Header from '../header';
+import PastePanel from '../local/PastePanel';
+import UploadPanel from '../local/UploadPanel';
+import { useActions, useAppState } from '../overmind';
+import SourcePanel from '../sourcePanel';
+
+const HEIGHT = 600;
+
+// eslint-disable-next-line react/display-name
+const Transition = forwardRef((props: SlideProps, ref) => (
+  <Slide direction="down" ref={ref} {...props} />
+));
+
+const Load: FC<StorageDialogProps> = ({
+  config,
+  onBackdropClick,
+  onCancel,
+  onChange,
+  onLoad,
+  onSave,
+  open = false,
+  resource: originResource,
+  source: originSource,
+  type = 'load',
+}) => {
+  const { cloud } = useAppState();
+  const { resource, submit, source } = useAppState().common;
+  const { intialize } = useActions().cloud;
+  const { clearSubmit, configure, resetAll, setDialogType } = useActions().common;
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  const theme = useTheme();
+  const isMD = useMediaQuery(theme.breakpoints.down('md'));
+
+  useEffect(() => {
+    setDialogType(type);
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (type === 'save') return;
+    if (!onChange) return;
+
+    if (source !== 'cloud') {
+      onChange();
+      return;
+    }
+
+    if (!cloud.owner) return;
+    const owner = cloud.name === 'gitlab' ? cloud.owner.id : cloud.owner.username;
+    const repo = cloud.name === 'gitlab' ? cloud.repository?.id : cloud.repository?.name;
+
+    const changeObject: Resource = {
+      provider: cloud.name,
+      ownertype: cloud.owner.type,
+      owner,
+      repo,
+      path: cloud.repositoryContent.path?.join('/'),
+      filename: resource?.filename,
+    };
+
+    onChange(changeObject);
+  }, [cloud.name, cloud.owner, cloud.repository, cloud.repositoryContent.path, resource, source]);
+
+  useEffect(() => {
+    if (submit?.action === 'load' && onLoad) onLoad(submit.resource);
+    if (submit?.action === 'save' && onSave) onSave(submit.resource);
+    clearSubmit();
+  }, [submit]);
+
+  const init = async () => {
+    await configure(config);
+    await intialize({ source: originSource, resource: originResource });
+    setIsLoading(false);
+  };
+
+  const close = () => {
+    resetAll();
+    onCancel && onCancel();
+  };
+
+  const clickAway = () => {
+    onBackdropClick && resetAll() && onBackdropClick();
+  };
+
+  const LoadingProgress = () => (
+    <Box display="flex" flexDirection="column">
+      <LinearProgress />
+    </Box>
+  );
+
+  return (
+    <Dialog
+      fullScreen={isMD}
+      fullWidth
+      maxWidth="md"
+      onBackdropClick={type === 'load' ? clickAway : undefined}
+      open={open}
+      TransitionComponent={Transition}
+    >
+      {isLoading ? (
+        <LoadingProgress />
+      ) : (
+        <Box role="panel" height={isMD ? '100vh' : HEIGHT}>
+          <Stack direction="row" height="100%">
+            <SourcePanel />
+            <Stack height="100%" width="100%">
+              <Header />
+              <DialogContent
+                dividers
+                sx={{ p: 0, overflowY: source === 'paste' ? 'auto' : 'hidden' }}
+              >
+                {type === 'save' ? (
+                  cloud.providers.length > 0 && <CloudDialog />
+                ) : type === 'load' && source === 'paste' ? (
+                  <PastePanel />
+                ) : type === 'load' && source === 'local' ? (
+                  <UploadPanel />
+                ) : (
+                  type === 'load' && source === 'cloud' && <CloudDialog />
+                )}
+              </DialogContent>
+              {type === 'save' ? <FooterSave onCancel={close} /> : <FooterLoad onCancel={close} />}
+            </Stack>
+          </Stack>
+        </Box>
+      )}
+    </Dialog>
+  );
+};
+
+export default Load;

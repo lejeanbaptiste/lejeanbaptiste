@@ -1,0 +1,35 @@
+{
+  "error": {
+    "fileError": "File error",
+    "message404": "You either tried some shady route or you came here by mistake. Go back to the <1>main page.</1>",
+    "pageNotFound": "Page Not Found",
+    "somethingWentWrong": "something went wrong",
+    "xmlNotWellFormed": "The document you are trying to upload is not well-formed. Check that it has the xml extension and that it follows propper xml grammar."
+  },
+  "home": {
+    "darkMode": "Dark Mode",
+    "english": "English",
+    "french": "French",
+    "from_Your_computer": "from your computer",
+    "from_cloud": "from the cloud",
+    "homepage": "homepage",
+    "identity": "identitiy",
+    "language": "Language",
+    "open": "open",
+    "orTrySample": "Or try out with sample files:",
+    "or_paste_your_XML_here": "or paste your XML here",
+    "paste_your_XML_here": "paste xml here",
+    "recent": "recent",
+    "signOut": "Sign Out",
+    "signin": "Sign In",
+    "storage": "storage",
+    "subtitle": "The XML & RDF online editor developed by the Canadian Writing Research Collaboratory",
+    "team": "Team",
+    "templates": "templates"
+  },
+  "storageDialog": {
+    "load": "load",
+    "pasteXml": "paste XML",
+    "save": "save"
+  }
+}
