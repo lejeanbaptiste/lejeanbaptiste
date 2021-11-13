@@ -3,6 +3,11 @@
 **/webpack.config.ts
 
 changelog.config.js
+jest.config.jsonbabel.config.js
+todo.md
+.prettierrc
+.eslintrc
 
+coverage
 node_modules
 src
