@@ -147,7 +147,11 @@ const SearchBar: FC<SearchBarProps> = ({
               </InputAdornment>
             }
             fullWidth
-            inputProps={!submitted ? { ...getInputProps() } : { id: 'search', value: inputValue }}
+            inputProps={
+              !submitted
+                ? { ...getInputProps(), 'data-testid': 'search-file-input' }
+                : { 'data-testid': 'search-file-input', id: 'search', value: inputValue }
+            }
             onClick={() => setSearchFocused(true)}
             placeholder={t('cloud:search:filename_or_content')}
             startAdornment={

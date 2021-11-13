@@ -40,7 +40,7 @@
   "scripts": {
     "build": "tsc && webpack",
     "test": "jest",
-    "test-watch": "jest --watch --verbose"
+    "test-watch": "jest --watchAll --verbose"
   },
   "dependencies": {
     "@emotion/react": "^11.5.0",

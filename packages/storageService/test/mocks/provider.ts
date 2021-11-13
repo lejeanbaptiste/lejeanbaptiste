@@ -30,6 +30,9 @@ const spyGithub = () => {
   jest
     .spyOn(Github.prototype, 'getOrganizationsForAuthenticatedUser')
     .mockImplementation(async () => ({ collection: mock.organizations, nextPage: null }));
+
+  jest.spyOn(Github.prototype, 'searchBlobs').mockImplementation(async () => mock.resultSearchBlob);
+  jest.spyOn(Github.prototype, 'searchUsers').mockImplementation(async () => mock.searchUsersResult);
 };
 
 const spyGitlab = () => {

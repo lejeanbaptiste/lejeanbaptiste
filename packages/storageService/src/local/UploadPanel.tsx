@@ -61,7 +61,7 @@ const UploadPanel: FC = () => {
       >
         {({ getRootProps, getInputProps, isDragAccept, isDragReject }) => (
           <Box {...getRootProps()}>
-            <input {...getInputProps()} />
+            <input {...getInputProps()} data-testid="upload_panel-input" />
             <Stack
               alignItems="center"
               justifyContent="center"

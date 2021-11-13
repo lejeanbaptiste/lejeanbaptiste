@@ -38,7 +38,6 @@ const SearchBar: FC<SearchBarProps> = ({ collapsible = true, onClear, onChange, 
 
   const theme = useTheme();
   const isMD = useMediaQuery(theme.breakpoints.down('md'));
-  const isSM = useMediaQuery(theme.breakpoints.down('sm'));
 
   const variants = {
     initial: { height: 0 },
@@ -113,7 +112,7 @@ const SearchBar: FC<SearchBarProps> = ({ collapsible = true, onClear, onChange, 
               </InputAdornment>
             }
             fullWidth
-            inputProps={{ ...getInputProps() }}
+            inputProps={{ ...getInputProps(), 'data-testid': 'search-user-input' }}
             onFocus={() => setSearchFocused(true)}
             placeholder={t('cloud:publicRepositories:user_or_organization')}
             startAdornment={
@@ -124,7 +123,7 @@ const SearchBar: FC<SearchBarProps> = ({ collapsible = true, onClear, onChange, 
             sx={{ px: 1, flex: 1, fontSize: isMD ? '0.925rem' : '0.950rem' }}
           />
           <AnimatePresence>
-            {searchFocused && (
+            {searchFocused && options.length > 0 && (
               <Results
                 listBoxProps={getListboxProps}
                 options={options}

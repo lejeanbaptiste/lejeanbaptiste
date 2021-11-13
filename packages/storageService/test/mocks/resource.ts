@@ -157,3 +157,80 @@ export const savedDocument = {
   message: 'update',
   path: '',
 };
+
+export const resultSearchBlob = [
+  {
+    name: 'languages.xml',
+    type: 'file',
+    owner: { id: 1254739, username: 'lucaju' },
+    path: 'bin-debug/model/library',
+    repository: { id: 8793505, name: 'CiteLens' },
+    score: 1,
+    text_matches: [
+      {
+        object_url:
+          'https://api.github.com/repositories/8793505/contents/bin-debug/model/library/languages.xml?ref=35b68af1659f030c4770ad727d57a4a9b104a2e6',
+        object_type: 'FileContent',
+        property: 'content',
+        fragment:
+          '"/>\n  <language name="Galibi Carib" iso639-1=" " iso639-2="car"/>\n  <language name="Catalan; Valencian',
+        matches: [{ text: 'car', indices: [59, 62] }],
+      },
+    ],
+  },
+  {
+    name: 'lang.xml',
+    type: 'folder',
+    owner: { id: 1254739, username: 'lucaju' },
+    path: 'Apps/CiteLens.app/Contents/Resources/model/library',
+    repository: { id: 8793505, name: 'CiteLens' },
+    score: 1,
+    text_matches: [
+      {
+        object_url:
+          'https://api.github.com/repositories/8793505/contents/Apps/CiteLens.app/Contents/Resources/model/library/languages.xml?ref=35b68af1659f030c4770ad727d57a4a9b104a2e6',
+        object_type: 'FileContent',
+        property: 'content',
+        fragment:
+          '"/>\n  <language name="Galibi Carib" iso639-1=" " iso639-2="car"/>\n  <language name="Catalan; Valencian',
+        matches: [{ text: 'car', indices: [59, 62] }],
+      },
+    ],
+  },
+  {
+    name: 'language.xml',
+    type: 'file',
+    owner: { id: 1254739, username: 'lucaju' },
+    path: 'src/model/library',
+    repository: { id: 8793505, name: 'CiteLens' },
+    score: 1,
+    text_matches: [
+      {
+        object_url:
+          'https://api.github.com/repositories/8793505/contents/src/model/library/languages.xml?ref=35b68af1659f030c4770ad727d57a4a9b104a2e6',
+        object_type: 'FileContent',
+        property: 'content',
+        fragment:
+          '"/>\n  <language name="Galibi Carib" iso639-1=" " iso639-2="car"/>\n  <language name="Catalan; Valencian',
+        matches: [{ text: 'car', indices: [59, 62] }],
+      },
+    ],
+  },
+];
+
+export const searchUsersResult = [
+  {
+    avatar_url: 'https://avatars.githubusercontent.com/u/1643728?v=4',
+    id: 1643728,
+    name: '',
+    type: 'user',
+    username: 'anto',
+  },
+  {
+    avatar_url: 'https://avatars.githubusercontent.com/u/4977112?v=4',
+    id: 4977112,
+    name: 'Anto',
+    type: 'org',
+    username: 'antograssiot',
+  },
+];

@@ -69,6 +69,7 @@ const Item: FC<ItemProps> = ({ item, onPrimaryAction, onSecondaryAction }) => {
 
   return (
     <ListItem
+      data-testid={`search-global-item-${item.name}`}
       dense
       disablePadding
       // {...getOptionProps({ option, index })}
@@ -79,6 +80,7 @@ const Item: FC<ItemProps> = ({ item, onPrimaryAction, onSecondaryAction }) => {
           <Stack direction="row" spacing={1}>
             {text_matches && (
               <IconButton
+                data-testid="show-match-text-button"
                 edge="end"
                 onClick={() => setShowContentMatch(!showContentMatch)}
                 size="small"
