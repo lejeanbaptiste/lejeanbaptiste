@@ -16,7 +16,9 @@
     "type": "git",
     "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
   },
-  "access": "public",
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "GPL-2.0",
   "author": "Luciano Frizzera <lucaju@gmail.com>",
   "exports": {
