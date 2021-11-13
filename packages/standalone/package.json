@@ -36,7 +36,7 @@
 		"webpack": "webpack"
 	},
 	"dependencies": {
-		"@cwrc/leafwriter-storage-service": "file:../storageService",
+		"@cwrc/leafwriter-storage-service": "^0.1.2",
 		"@emotion/react": "^11.5.0",
 		"@emotion/styled": "^11.3.0",
 		"@fontsource/lato": "^4.5.0",
