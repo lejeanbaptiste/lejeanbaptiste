@@ -132,7 +132,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   }
 
   if (!resource.provider) {
-    console.warn('no provider');
+    // console.warn('no provider');
     return null;
   }
 
@@ -660,7 +660,8 @@ export const searchGlobal = async (
   if (state.cloud.repository) searches.push(Promise.resolve(actions.cloud.searchByFilename(query)));
   searches.push(Promise.resolve(actions.cloud.searchBlobs(query)));
 
-  return Promise.all(searches).then((values) => values);
+  const results = await Promise.all(searches).then((values) => values);
+  return results;
 };
 
 export const searchBlobs = async (

@@ -66,7 +66,7 @@ const Collection: FC<iCollection> = ({ height = '100%' }) => {
 
   return (
     <Box ref={refContainer} height={height} sx={{ overflow: 'auto' }}>
-      <List dense>
+      <List data-testid={`repository-list-${collectionType}`} dense>
         {!collectionType || isFetching ? (
           <Loading />
         ) : collectionType === 'organizations' && organizations ? (

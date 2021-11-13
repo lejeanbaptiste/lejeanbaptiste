@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 const Empty: FC = () => {
   const { t } = useTranslation();
   return (
-    <Stack justifyContent="center" height={200}>
+    <Stack data-testid="list-empty" justifyContent="center" height={200}>
       <Stack
         direction="row"
         justifyContent="center"

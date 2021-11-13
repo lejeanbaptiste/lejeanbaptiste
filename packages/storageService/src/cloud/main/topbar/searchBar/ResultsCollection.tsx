@@ -25,6 +25,7 @@ const ResultsCollection: FC<ResultsCollectionProps> = ({
 
   return (
     <Box
+      data-testid="search-global-result-collection"
       component={motion.div}
       variants={variants}
       initial="initial"

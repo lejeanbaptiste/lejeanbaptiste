@@ -27,7 +27,7 @@ const Results: FC<ResultsProps> = ({ list, onPrimaryAction, onSecondaryAction, t
         username: owner?.name ?? owner?.username,
       });
     }
-    if (value === 'blobs' && name === 'gitlab') {
+    if (value === 'blobs' && name === 'gitlab') { 
       label = t('cloud:search:content_on_repository', { repository: repository?.name });
     }
     if (value === 'filename') {

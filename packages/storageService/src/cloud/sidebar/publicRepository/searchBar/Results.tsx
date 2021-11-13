@@ -18,9 +18,10 @@ const Results: FC<ResultsProps> = ({ listBoxProps, options, onSelect }) => {
   };
 
   const handleSelectOption = (onwer: Owner) => onSelect && onSelect(onwer);
-
+  
   return (
     <Box
+      data-testid="search-user-result"
       component={motion.div}
       variants={variants}
       initial="initial"
