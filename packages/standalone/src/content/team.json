@@ -1,0 +1,52 @@
+[{
+    "name": "Susan Brown",
+    "picture": "",
+    "positions": [
+      "Project Director (2011 - present)"
+    ]
+  },
+  {
+    "name": "James Chartrand",
+    "picture": "",
+    "positions": [
+      "Lead Developer (2011 - 2018)"
+    ]
+  },
+  {
+    "name": "Luciano Frizzera",
+    "picture": "luciano.jpg",
+    "positions": [
+      "Lead Developer (2020 - present)",
+      "Developer (2019 - 2020)"
+    ]
+  },
+  {
+    "name": "Mihaela Ilovan",
+    "picture": "",
+    "positions": [
+      "Project Manager (2014 - present)"
+    ]
+  },
+  {
+    "name": "Andrew MacDonald",
+    "picture": "",
+    "positions": [
+      "Lead Developer (2018 - 2020)",
+      "Developer (2013 - 2018)"
+    ]
+  },
+  {
+    "name": "Geoffrey Rockwell",
+    "picture": "",
+    "positions": [
+      "Scoping and Direction (2011 - 2014)"
+    ]
+  },
+  {
+    "name": "Megan Sellmer",
+    "picture": "",
+    "positions": [
+      "Testing and Documentation (2011 - 2016)"
+    ]
+  }
+]

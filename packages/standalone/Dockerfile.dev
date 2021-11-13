@@ -1,0 +1,12 @@
+# Leaf-Writer
+
+FROM node:16.8.0
+
+# WORKDIR /app
+WORKDIR /app/packages/standlone
+
+COPY . .
+
+# CMD ["npm", "run", "dev:server"]
+
+EXPOSE 3000

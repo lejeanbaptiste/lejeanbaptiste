@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  traefik:
+    container_name: traefik
+    image: traefik:v2.5
+    command: --configFile=/etc/traefik/traefik.yml
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    networks:
+      - leaf-writer-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./Docker/volumes/traefik/:/etc/traefik/
+      - ./Docker/volumes/certs:/certs # optional: using self-signed certificates
+      - ./Docker/volumes/traefik/log/:/var/log/traefik
+    restart: unless-stopped
+
+  # leafwriter:
+  #   container_name: leaf-writer
+  #   build:
+  #     context: ../packages/standalone/
+  #     dockerfile: Dockerfile.dev
+  #   volumes:
+  #     - ../packages/standalone/:/app/
+  #   networks:
+  #     - leaf-writer-network
+  #   restart: unless-stopped
+
+  leafwriter:
+    container_name: leaf-writer
+    build:
+      context: ./
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./:/app/
+    command: [ "npm", "--prefix", "./packages/standalone", "run", "dev:server" ]
+    networks:
+      - leaf-writer-network
+    restart: unless-stopped
+
+networks:
+  leaf-writer-network:
+    name: leaf-writer-network

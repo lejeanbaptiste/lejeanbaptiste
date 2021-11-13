@@ -1,0 +1,63 @@
+import { Box, Button } from '@mui/material';
+import { usePermalink } from '@src/hooks/permalink';
+import { useActions, useAppState } from '@src/overmind';
+import { AnimatePresence, motion } from 'framer-motion';
+import Cookies from 'js-cookie';
+import React, { FC, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
+const SignInSection: FC = () => {
+  const { t } = useTranslation();
+  const { parsePermalink, setPermalink } = usePermalink();
+  const { userAuthenticated } = useAppState();
+  const { signIn } = useActions();
+
+  useEffect(() => {
+    if (userAuthenticated === false) {
+      const permalink = parsePermalink();
+      if (permalink?.valid) {
+        Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
+        signIn();
+      }
+    }
+
+    if (userAuthenticated === true) {
+      const resource = Cookies.get('resource');
+      if (resource) {
+        Cookies.remove('resource');
+        setPermalink(resource);
+      }
+    }
+  }, [userAuthenticated]);
+
+  const handleClick = () => signIn();
+
+  const conainerVariants = {
+    initial: { height: 0 },
+    visible: { height: 'auto' },
+    exit: { height: 0 },
+  };
+
+  return (
+    <AnimatePresence>
+      {userAuthenticated === false && (
+        <Box
+          component={motion.div}
+          variants={conainerVariants}
+          initial="initial"
+          animate="visible"
+          exit="exit"
+          display="flex"
+          justifyContent="center"
+          py={6}
+        >
+          <Button onClick={handleClick} size="large" variant="contained">
+            {t('home:signin')}
+          </Button>
+        </Box>
+      )}
+    </AnimatePresence>
+  );
+};
+
+export default SignInSection;

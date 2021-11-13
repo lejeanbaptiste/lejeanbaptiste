@@ -1,0 +1,11 @@
+# Leaf-Writer
+
+FROM node:16.13.0
+
+WORKDIR /app
+
+COPY . .
+
+CMD [ "npm", "--prefix", "packages/standalone", "run", "dev:server" ]
+
+EXPOSE 3000
