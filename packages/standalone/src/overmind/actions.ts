@@ -1,11 +1,13 @@
 import type {
   MessageDialog,
   IProviderAuth,
+  PaletteMode,
   Resource,
   StorageDialogState,
   User,
+  StorageProvider,
 } from '@src/@types/types';
-import { setIndentityProvider, setStorageProvider, suportedStorageProviders } from '@src/services';
+import { setIndentityProvider, suportedStorageProviders } from '@src/services';
 import AuthenticationService from '@src/services/AuthenticationService';
 import { supportedLanguages } from '@src/utilities/util';
 import { Context } from './';
@@ -110,12 +112,10 @@ export const setUserProfile = async ({ state, actions }: Context) => {
 
   //prefferedID
   const prefferedID = localStorage.getItem('prefIdProvider');
-  if (prefferedID) {
-    state.user.prefferedID = prefferedID;
-  } else {
-    //if not prefferedID, use the first identityProviders linked Account
-    await actions.changePrefferedID(Object.keys(state.identityProviders)[0]);
-  }
+  //if not prefferedID, use the first identityProviders linked Account
+  prefferedID
+    ? (state.user.prefferedID = prefferedID)
+    : actions.changePrefferedID(Object.keys(state.identityProviders)[0]);
 
   //use avatar from preffed ID
   state.user.avatar_url = user.identities[user.prefferedID]?.avatar_url ?? undefined;
@@ -131,17 +131,18 @@ export const setupStorageProvider = async ({ state, actions }: Context) => {
   if (!state.identityProviders) return;
 
   Object.values(state.identityProviders).forEach((iDProvider) => {
-    actions._linkStorageProvider({ identityProvider: iDProvider.name });
+    actions._linkStorageProvider(iDProvider.name);
   });
 
   //prefferedStorage
+
+  if (!state.user) return;
+  //if not prefferrdStorage, use the first StorageProvider linked Account
   const prefferedStorage = localStorage.getItem('prefStorageProvider');
-  if (prefferedStorage) {
-    state.prefStorageProvider = prefferedStorage;
-  } else {
-    //if not prefferrdStorage, use the first StorageProvider linked Account
-    actions.changePrefStorageProvider(Object.keys(state.storageProviders)[0]);
-  }
+
+  prefferedStorage
+    ? (state.user.prefStorageProvider = prefferedStorage)
+    : actions.changePrefStorageProvider(state.storageProviders[0]);
 };
 
 export const linkAccount = async ({ actions, effects }: Context, identity_provider: string) => {
@@ -174,7 +175,7 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
     const identityProvider = await actions._linkIdentityProvider(account);
 
     //STORAGE
-    if (identityProvider) actions._linkStorageProvider(account);
+    if (identityProvider) actions._linkStorageProvider(providerName);
   }
 
   return linkedAccounts;
@@ -203,31 +204,26 @@ export const _linkIdentityProvider = async (
   return provider;
 };
 
-export const _linkStorageProvider = (
-  { state }: Context,
-  { identityProvider: providerName, userId, userName }: LinkedAccount
-) => {
-  if (!suportedStorageProviders.includes(providerName)) return;
-  if (state.storageProviders[providerName]) return state.storageProviders[providerName];
+export const _linkStorageProvider = ({ state }: Context, providerName: string) => {
+  if (!suportedStorageProviders.includes(providerName as StorageProvider)) return;
 
-  const identityProvider = state.identityProviders[providerName];
-
-  const { getAccessToken } = identityProvider;
-  const provider = setStorageProvider({
-    access_token: getAccessToken(),
-    providerName,
-    userId,
-    userName,
-  });
-
-  state.storageProviders[providerName] = provider;
-  return provider;
+  const storage = providerName as StorageProvider;
+  if (state.storageProviders.includes(storage)) return;
+  state.storageProviders = [...state.storageProviders, storage];
 };
 
 //* UI
 
 export const switchLanguage = ({ state }: Context, value: string) => {
-  const language = supportedLanguages[value];
+  // const language = supportedLanguages[value];
+  // state.language = language;
+  // return value;
+
+  const language = supportedLanguages.get(value) ?? {
+    code: 'en-CA',
+    name: 'english',
+    shortName: 'en',
+  };
   state.language = language;
   return value;
 };
@@ -265,38 +261,29 @@ export const clearResource = async ({ state }: Context) => {
   state.resource = undefined;
 };
 
-// Storage
+// Provider
 export const getIdentityProvider = ({ state }: Context, name: string) => {
   return state.identityProviders[name];
 };
 
-export const getStorageProvider = ({ state }: Context, name: string) => {
-  return state.storageProviders[name];
-};
-
-export const getStorageProviderAuth = ({ state }: Context, name: string) => {
-  const provider = state.identityProviders[name];
+export const getStorageProviderAuth = ({ state, actions }: Context, name: string) => {
+  const provider = actions.getIdentityProvider(name);
   if (!provider) return;
-  
-  const providerAuth: IProviderAuth = {
-    name: provider.name,
-    access_token: provider.getAccessToken(),
-  };
-  return providerAuth;
+  return { name: provider.name, access_token: provider.getAccessToken() };
 };
 
-export const getStorageProvidersAuth = ({ state }: Context) => {
-  const providers: IProviderAuth[] = Object.entries(state.storageProviders).map(
-    ([name, provider]) => {
-      return { name, access_token: provider.getAccessToken() };
-    }
-  );
+export const getStorageProvidersAuth = ({ state, actions }: Context) => {
+  const providers: IProviderAuth[] = state.storageProviders.map((provider) => {
+    const identityProvider = actions.getIdentityProvider(provider);
+    return { name: identityProvider.name, access_token: identityProvider.getAccessToken() };
+  });
 
   return providers;
 };
 
 export const changePrefStorageProvider = ({ state }: Context, StorageproviderName: string) => {
-  state.prefStorageProvider = StorageproviderName;
+  if (!state.user) return;
+  state.user.prefStorageProvider = StorageproviderName;
   localStorage.setItem('prefStorageProvider', StorageproviderName);
   return StorageproviderName;
 };
@@ -314,7 +301,7 @@ export const closeStorageDialog = async ({ state }: Context) => {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const isStorageProviderSupported = ({ state }: Context, providerName: string) => {
-  return suportedStorageProviders.includes(providerName);
+  return suportedStorageProviders.includes(providerName as StorageProvider);
 };
 
 // Message

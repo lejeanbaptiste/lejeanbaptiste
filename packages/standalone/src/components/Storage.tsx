@@ -2,18 +2,20 @@ import { Backdrop, LinearProgress } from '@mui/material';
 import { usePermalink } from '@src/hooks/permalink';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC, Suspense, useEffect } from 'react';
-
+import { useNavigate, useLocation } from 'react-router';
 // import { loadDocument, Resource } from '@cwrc/leafwriter-storage-service';
 // const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
 
-import { loadDocument, Resource } from '@cwrc/leafwriter-storage-service/headless';
+import { Resource } from '@cwrc/leafwriter-storage-service/headless';
 const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service/Dialog'));
 
 const Storage: FC = () => {
-  const { prefStorageProvider, resource, storageDialogState, userAuthenticated } = useAppState();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { resource, storageDialogState, user, userAuthenticated } = useAppState();
   const {
     closeStorageDialog,
-    getStorageProviderAuth,
+    // getStorageProviderAuth,
     getStorageProvidersAuth,
     openStorageDialog,
     setResource,
@@ -37,46 +39,44 @@ const Storage: FC = () => {
       return;
     }
 
-    if (permalink.resource.filename) return loadDocumentFromPermalink(permalink.resource);
-    openStorageDialog({ source: 'cloud', type: 'load', resource: permalink.resource });
-  };
-
-  const loadDocumentFromPermalink = async (resource: Resource) => {
-    if (!resource.provider) return;
-
-    const providerAuth = getStorageProviderAuth(resource.provider);
-    if (!providerAuth) return;
-
-    const document = await loadDocument(providerAuth, resource);
-    if (!document || 'error' in document) return console.log(document);
-
-    console.log(document);
-    setResource(document);
+    // if (permalink.resource.filename) return loadDocumentFromPermalink(permalink.resource);
+    if (!permalink.resource.filename) {
+      openStorageDialog({ source: 'cloud', type: 'load', resource: permalink.resource });
+    }
   };
 
   const clickAway = () => {
-    setPermalink('/');
     closeStorageDialog();
+    if (location.pathname !== '/') return;
+    setPermalink('/');
   };
 
   const close = () => {
-    if (type === 'load') setPermalink('/');
     closeStorageDialog();
+    if (location.pathname !== '/') return;
+    if (type === 'load') setPermalink('/');
   };
 
   const handleOnChange = (resource?: Resource) => {
+    if (location.pathname !== '/') return;
     setPermalink(resource);
   };
 
   const handleLoad = (res: Resource) => {
-    console.log(res);
     setResource(res);
     setPermalink(res);
     closeStorageDialog();
+    navigate('/edit', { replace: true });
+
+    //? open on a new tab
+    //! works fine with cloud document on the cloud.
+    //! The problem is how to pass local document to the new tab
+    // const permalink = parsePermalink();
+    // const newTabLocation = `${window.location.origin}/edit${window.location.search}`
+    // window.open(newTabLocation, 'test');
   };
 
   const handleSave = (res: Resource) => {
-    console.log(res);
     setResource(res);
     setPermalink(res);
     closeStorageDialog();
@@ -95,32 +95,36 @@ const Storage: FC = () => {
 
   return (
     <>
-      {type === 'load' && open && (
-        <Suspense fallback={<Progress />}>
-          <StorageDialog
-            config={{
-              allowedMimeTypes: ['text/xml'],
-              providers: getStorageProvidersAuth(),
-              preferProvider: prefStorageProvider,
-              validate: validXML,
-            }}
-            onBackdropClick={clickAway}
-            onCancel={close}
-            onChange={handleOnChange}
-            onLoad={handleLoad}
-            open={open}
-            source={source}
-          />
-        </Suspense>
-      )}
-      {type === 'save' && open && (
+      {open && (
         <Suspense fallback={<Progress />}>
           <StorageDialog
             config={{
               allowedMimeTypes: ['text/xml'],
               defaultCommitMessage: 'Updated via leaf-writer',
               providers: getStorageProvidersAuth(),
-              preferProvider: prefStorageProvider,
+              preferProvider: user?.prefStorageProvider,
+              validate: validXML,
+            }}
+            onBackdropClick={type === 'load' ? clickAway : undefined}
+            onCancel={close}
+            onChange={handleOnChange}
+            onLoad={handleLoad}
+            onSave={handleSave}
+            open={open}
+            resource={resource}
+            source={source}
+            type={type}
+          />
+        </Suspense>
+      )}
+      {/* {type === 'save' && open && (
+        <Suspense fallback={<Progress />}>
+          <StorageDialog
+            config={{
+              allowedMimeTypes: ['text/xml'],
+              defaultCommitMessage: 'Updated via leaf-writer',
+              providers: getStorageProvidersAuth(),
+              preferProvider: user?.prefStorageProvider,
             }}
             onCancel={close}
             onSave={handleSave}
@@ -129,7 +133,7 @@ const Storage: FC = () => {
             type="save"
           />
         </Suspense>
-      )}
+      )} */}
     </>
   );
 };
