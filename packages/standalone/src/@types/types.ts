@@ -7,6 +7,10 @@ export interface Language {
 export type PaletteMode = 'light' | 'auto' | 'dark';
 
 export const Languages: Map<string, Language> = new Map();
+
+export type IdentityProvider = 'github' | 'gitlab' | 'orcid';
+export type StorageProvider = 'github' | 'gitlab';
+
 export interface User {
   avatar_url?: string;
   email?: string;
@@ -18,6 +22,7 @@ export interface User {
     [x: string]: any; //Allow more properties
   };
   prefferedID: string;
+  prefStorageProvider: string;
 }
 
 export type AffiliationType = 'owner' | 'collaborator' | 'organization';
@@ -57,6 +62,7 @@ export interface Resource {
   filename?: string;
   content?: string;
   hash?: string;
+  url?: string;
 }
 
 export type ErrorType = 'info' | 'warning' | 'error';
