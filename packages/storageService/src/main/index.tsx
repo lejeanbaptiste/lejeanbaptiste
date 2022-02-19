@@ -41,7 +41,7 @@ const Main: FC<StorageDialogProps> = ({
   const { cloud } = useAppState();
   const { resource, submit, source } = useAppState().common;
   const { intialize } = useActions().cloud;
-  const { clearSubmit, configure, resetAll, setDialogType } = useActions().common;
+  const { clearSubmit, configure, resetAll, setDialogType, setResource } = useActions().common;
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -52,6 +52,10 @@ const Main: FC<StorageDialogProps> = ({
     setDialogType(type);
     init();
   }, []);
+
+  useEffect(() => {
+    if (originResource && typeof originResource !== 'string') setResource(originResource);
+  }, [originResource]);
 
   useEffect(() => {
     if (type === 'save') return;
