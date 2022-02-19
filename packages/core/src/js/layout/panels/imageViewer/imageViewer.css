@@ -1,0 +1,63 @@
+.imageViewer {
+    display: table;
+    height: 100%;
+    width: 100%;
+}
+
+.imageViewer .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 32px;
+    padding: 8px;
+    margin-top: 4px;
+}
+
+.imageViewer .image {
+    display: table-row;
+    height: 100%;
+}
+
+.imageViewer .toolbar .navigation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.imageViewer .toolbar .zoom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.imageViewer .button {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+}
+
+.imageViewer .button:hover {
+    cursor: pointer;
+    background-color: rgba(0, 0, 0, .1);
+    /* border: 1px solid #aaa; */
+}
+
+.imageViewer .pageInfo {
+    /* display: block;
+    position: relative;
+    float: right;
+    margin: 5px 3px; */
+}
+
+.imageViewer input.currPage {
+    height: 20px;
+    width: 20px;
+    text-align: right;
+}
+
+.imageViewer .openseadragon-message {
+    white-space: pre;
+}
