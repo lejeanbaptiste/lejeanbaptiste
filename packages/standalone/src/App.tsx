@@ -8,6 +8,7 @@ import { useTracking } from './hooks/tracking';
 import { useAppState } from './overmind';
 import routes from './routes';
 import theme from './theme';
+import { SnackbarProvider } from 'notistack';
 
 const App: FC = () => {
   useTracking(process.env.GA_MEASUREMENT_ID);
@@ -21,10 +22,12 @@ const App: FC = () => {
 
   return (
     <ThemeProvider theme={theme(darkMode)}>
-      <CssBaseline enableColorScheme />
-      <Storage />
-      <MessageDialog />
-      {routing}
+      <SnackbarProvider>
+        <CssBaseline enableColorScheme />
+        <Storage />
+        <MessageDialog />
+        {routing}
+      </SnackbarProvider>
     </ThemeProvider>
   );
 };
