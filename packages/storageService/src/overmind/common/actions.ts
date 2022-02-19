@@ -157,7 +157,7 @@ export const clearSubmit = ({ state }: Context) => {
   state.common.submit = undefined;
 };
 
-export const setResource = ({ state }: Context, { filename, content, hash }: Partial<Resource>) => {
+export const setResource = ({ state }: Context, { filename, content, hash, url }: Partial<Resource>) => {
   const { cloud, common } = state;
 
   const provider = common.source === 'cloud' ? cloud.name : undefined;
@@ -180,6 +180,7 @@ export const setResource = ({ state }: Context, { filename, content, hash }: Par
     filename,
     content,
     hash,
+    url,
   };
 
   state.common.resource = updateResource;

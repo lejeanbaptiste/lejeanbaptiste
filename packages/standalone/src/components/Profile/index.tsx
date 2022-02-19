@@ -1,15 +1,29 @@
-import { Avatar, Box, Button, Divider, List, Popover, Stack, Typography } from '@mui/material';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import {
+  Avatar,
+  Box,
+  Button,
+  Divider,
+  IconButton,
+  List,
+  Popover,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import DarkMode from './DarkMode';
 import Language from './Language';
-import Services from './Services';
-
+import Identity from './Identity';
+import Storage from './Storage';
+import ThemeAppearance from './ThemeAppearance';
 interface ProfileProps {
   anchor: HTMLDivElement;
   handleClose: () => void;
 }
+
+const ACCOUNT_MANAGMENT_URL = 'https://keycloak.dev.lincsproject.ca/auth/realms/lincs/account/#/';
 
 const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
   const { t } = useTranslation();
@@ -38,24 +52,37 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
         horizontal: 'right',
       }}
     >
-      <Stack direction="row" spacing={2} p={2}>
+      <Stack direction="row" alignItems="flex-start" spacing={2} p={2}>
         <Avatar src={user?.avatar_url} />
-        <Stack>
+        <Stack flexGrow={1}>
           <Typography variant="button">
             {user?.firstName} {user?.lastName}
           </Typography>
           <Typography variant="body2">{user?.email}</Typography>
         </Stack>
+        <IconButton size="small" target="_blank" href={ACCOUNT_MANAGMENT_URL}>
+          <Tooltip title="Manage your Lincs account">
+            <ManageAccountsIcon fontSize="inherit" />
+          </Tooltip>
+        </IconButton>
       </Stack>
 
       <Divider />
 
-      <Services />
+      <List sx={{
+        width: 280,
+        background: ({ palette }) => (palette.mode === 'dark' ? 'inherent' : '#f9f9f9')
+      }}>
+        <Identity />
+        <Storage />
+      </List>
+
+      {/* <Services /> */}
 
       <Divider />
 
       <List sx={{ width: 280 }}>
-        <DarkMode />
+        <ThemeAppearance />
         <Language />
       </List>
 

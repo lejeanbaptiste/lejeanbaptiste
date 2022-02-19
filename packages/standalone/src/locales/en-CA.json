@@ -7,13 +7,14 @@
     "xmlNotWellFormed": "The document you are trying to upload is not well-formed. Check that it has the xml extension and that it follows propper xml grammar."
   },
   "home": {
+    "appearance": "Appearance",
     "darkMode": "Dark Mode",
     "english": "English",
     "french": "French",
     "from_Your_computer": "from your computer",
     "from_cloud": "from the cloud",
     "homepage": "homepage",
-    "identity": "identitiy",
+    "identity": "identity",
     "language": "Language",
     "open": "open",
     "orTrySample": "Or try out with sample files:",

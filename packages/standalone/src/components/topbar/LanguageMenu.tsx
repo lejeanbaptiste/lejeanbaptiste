@@ -51,7 +51,7 @@ const LanguageMenu: FC = () => {
         {language.shortName}
       </Button>
       <Menu anchorEl={anchorEl} id="language-menu" onClose={handleClose} open={open}>
-        {Object.values(supportedLanguages).map(({ code, name }) => (
+        {Array.from(supportedLanguages).map(([, { code, name }]) => (
           <MenuItem key={code} onClick={() => handleClick(code)} value={code}>
             {t(`home:${name}`)}
           </MenuItem>

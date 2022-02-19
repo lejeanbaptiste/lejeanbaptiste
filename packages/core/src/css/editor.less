@@ -1,0 +1,230 @@
+/* This CSS gets applied to the tinymce editor */
+
+@import (less) 'variables.less';
+
+.showEntities .entity,
+.ui-dialog-content .entity {
+  border-width: 1px;
+  border-bottom-style: dotted;
+}
+
+.showEntities .entityHighlight > .entity {
+  border-width: 2px;
+}
+
+.entityHighlight.person {
+  background-color: fade(@entity-person, 20%);
+}
+
+.entityHighlight.date {
+  background-color: fade(@entity-date, 20%);
+}
+
+.entityHighlight.place {
+  background-color: fade(@entity-place, 20%);
+}
+
+.entityHighlight.rs {
+  background-color: fade(@entity-rs, 20%);
+}
+
+// .entityHighlight.org {
+//   background-color: fade(@entity-org, 20%);
+// }
+
+.entityHighlight.organization {
+  background-color: fade(@entity-organization, 20%);
+}
+
+.entityHighlight.title {
+  background-color: fade(@entity-title, 20%);
+}
+
+.entityHighlight.correction {
+  background-color: fade(@entity-correction, 20%);
+}
+
+.entityHighlight.link {
+  background-color: fade(@entity-link, 20%);
+}
+
+.showEntities .person,
+.ui-dialog-content .person {
+  border-color: mix(desaturate(@entity-person, 30%), #fff, 50%);
+}
+
+.showEntities .date,
+.ui-dialog-content .date {
+  border-color: @entity-date;
+}
+
+.showEntities .place,
+.ui-dialog-content .place {
+  border-color: @entity-place;
+}
+
+.showEntities .rs,
+.ui-dialog-content .rs {
+  border-color: @entity-rs;
+}
+
+// .showEntities .org,
+// .ui-dialog-content .org {
+//   border-color: @entity-org;
+// }
+
+.showEntities .organization,
+.ui-dialog-content .organization {
+  border-color: @entity-organization;
+}
+
+.showEntities .title,
+.ui-dialog-content .title {
+  border-color: @entity-title;
+}
+
+.showEntities .correction,
+.ui-dialog-content .correction {
+  border-color: @entity-correction;
+}
+
+.showEntities .link,
+.ui-dialog-content .link {
+  border-color: @entity-link;
+}
+
+.entity[_candidate] {
+  border-width: 0px !important;
+}
+.entity.person[_candidate] {
+  color: @entity-person !important;
+}
+.entity.place[_candidate] {
+  color: @entity-place !important;
+}
+// .entity.org[_candidate] {
+//   color: @entity-org !important;
+// }
+.entity.organization[_candidate] {
+  color: @entity-organization !important;
+}
+.entity.title[_candidate] {
+  color: @entity-title !important;
+}
+.entity.date[_candidate] {
+  color: @entity-date !important;
+}
+.entity.correction[_candidate] {
+  color: @entity-correction !important;
+}
+.entity.link[_candidate] {
+  color: @entity-link !important;
+}
+.entity.keyword[_candidate] {
+  color: @entity-keyword !important;
+}
+.entity.rs[_candidate] {
+  color: @entity-rs !important;
+}
+
+.noteWrapper::before {
+  cursor: pointer;
+}
+
+.noteWrapper.note::before {
+  content: url(../images/note_inline_large.png);
+}
+
+// .noteWrapper.note::before {
+//   // content: url(../images/note_inline_large.png);
+//   content: "N";
+//   background-color: rgb(224, 190, 0);
+//   border-radius: 4px;
+//   font-family: 'Lato';
+//   font-weight: 700;
+//   padding: 2px 4px 2px 4px;
+//   color: white;
+//   margin-left: 2px;
+//   margin-right: 2px;
+// }
+
+.noteWrapper.citation::before {
+  content: url(../images/citation_inline_large.png);
+}
+
+.noteWrapper.keyword::before {
+  content: url(../images/keyword_inline_large.png);
+}
+
+.noteWrapper.note.entityHighlight::before {
+  content: url(../images/note_inline_large_highlight.png);
+}
+
+.noteWrapper.citation.entityHighlight::before {
+  content: url(../images/citation_inline_large_highlight.png);
+}
+
+.noteWrapper.keyword.entityHighlight::before {
+  content: url(../images/keyword_inline_large_highlight.png);
+}
+
+.noteWrapper > * {
+  display: inherit;
+}
+
+.noteWrapper.hide > * {
+  display: none !important;
+}
+
+.showEntities .citation.start,
+.showEntities .note.start,
+.showEntities .keyword.start {
+  border: none !important;
+}
+
+span[data-mce-bogus] {
+  height: 0px;
+  width: 0px;
+  line-height: 0px;
+  font-size: 0px;
+  display: none;
+}
+
+*[_tag="pb"] {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  /* border-radius: 10px !important; */
+  position: relative !important;
+  height: 2px !important;
+  margin-top: 4em !important;
+  margin-bottom: 4em !important;
+  background: #f5f5f5 !important;
+  font-size: 0.8em !important;
+  text-indent: 0px !important;
+  text-align: center !important;
+  font-family: 'Lato' !important;
+}
+
+*[_tag="pb"]:before, *[_tag="pb"]:after {
+  display: inline-flex !important;
+  position: relative !important;
+  left: 50% !important;
+  width: unset !important;
+  height: unset !important;
+  border-radius: 20px !important;
+}
+
+*[_tag="pb"]:before {
+  content: '\00a0' !important;
+  box-shadow: unset !important;
+}
+
+*[_tag="pb"]:after {
+  content: attr(n) !important;
+  background-color: #eaeaea !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-shadow: unset !important;
+  text-indent: unset !important;
+}

@@ -13,7 +13,7 @@ import './i18n';
 import { config } from './overmind';
 
 const overmind = createOvermind(config, {
-  name: 'Homepage',
+  name: 'homepage',
   devtools: true, // defaults to 'localhost:3031'
   logProxies: true,
 });

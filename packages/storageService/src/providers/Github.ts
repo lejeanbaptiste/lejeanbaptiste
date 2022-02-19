@@ -435,11 +435,16 @@ export default class Github implements Provider {
     if (result.data.type === 'dir') return null;
 
     //@ts-ignore
-    const { content, sha } = result.data;
+    const { content, download_url, sha } = result.data;
 
     return {
       content: this.decodeContent(content),
       hash: sha,
+      url:
+        download_url ??
+        `https://raw.githubusercontent.com/${ownerUsername}/${repo}/${ref}/${encodeURIComponent(
+          path
+        )}`,
     };
   }
 

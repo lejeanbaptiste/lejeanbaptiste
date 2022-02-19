@@ -7,7 +7,6 @@ import AboutSection from './about/AboutSection';
 import StoragePanel from './storagePanel';
 import Header from './Header';
 import SignInSection from './SignInSection';
-import UserPanel from './userPanel';
 
 const HomeView: FC = () => {
   const { t } = useTranslation();
@@ -16,7 +15,6 @@ const HomeView: FC = () => {
     <Page title={t('home:homepage')}>
       <TopBar />
       <Stack>
-        {/* <UserPanel /> */}
         <Header />
         <SignInSection />
         <StoragePanel />

@@ -1,0 +1,422 @@
+@import (less) '../../../../css/variables.less';
+
+.entitiesList {
+  display: flex;
+  flex-direction: column;
+  padding: 0 6px;
+  gap: 8px;
+}
+
+.entitiesList > li {
+  display: flex;
+  list-style: none;
+  // margin: 4px 8px;
+}
+
+.entitiesList > li > div {
+  display: flex;
+  flex: 1;
+  border-radius: 4px;
+  // padding: 5px;
+}
+
+.entitiesList > li > div:hover {
+  cursor: pointer;
+}
+
+.entitiesList > li.selected > div:hover {
+  cursor: default;
+}
+
+.entitiesList li .icon {
+  padding: 4px;
+  color: #333;
+}
+
+.entitiesList .header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 24px;
+  width: 100%;
+  font-weight: 700;
+}
+
+.entitiesList .header .entityTitle {
+  flex: 1;
+  line-height: 1.5em;
+  font-size: 1em;
+  vertical-align: 6px;
+  display: inline-block;
+}
+
+.entitiesList .selected .entityTitle {
+  color: #fff;
+}
+
+.entitiesList .actions {
+  margin: 2px 0 2px 2px;
+  display: none;
+}
+
+.entitiesList > li:hover .actions,
+.entitiesList .expanded .actions,
+.entitiesList > li.candidate .actions {
+  // display: block;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.entitiesList .actions > span {
+  // background: none !important;
+  // border: none !important;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: unset !important;
+  border: unset !important;
+  border-radius: 4px;
+}
+
+.entitiesList .actions > span:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+.entitiesList .actions > span > i {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.entitiesList .actions > span > i:hover {
+  color: black;
+}
+
+.entitiesList .info {
+  display: none;
+}
+
+.entitiesList .expanded > div {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 0px;
+  background-color: #fff;
+  border: 0px;
+  border-radius: 4px;
+  box-shadow: 0 0px 8px rgba(0, 0, 0, 0.2);
+
+  // border-width: 1px;
+  // border-style: solid;
+  // border-color: #fff;;
+}
+
+.entitiesList #container #side {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  width: 32px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.entitiesList .expanded #container #side {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  width: 32px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.entitiesList .person.expanded #container #side {
+  background-color: @entity-person;
+}
+
+.entitiesList .place.expanded #container #side {
+  background-color: @entity-place;
+}
+
+// .entitiesList .org.expanded #container #side {
+//   background-color: @entity-org;
+// }
+
+.entitiesList .organization.expanded #container #side {
+  background-color: @entity-organization;
+}
+
+.entitiesList .title.expanded #container #side {
+  background-color: @entity-title;
+}
+
+.entitiesList .rs.expanded #container #side {
+  background-color: @entity-rs;
+}
+
+.entitiesList .citation.expanded #container #side {
+  background-color: @entity-citation;
+}
+
+.entitiesList .note.expanded #container #side {
+  background-color: @entity-note;
+}
+
+.entitiesList .date.expanded #container #side {
+  background-color: @entity-date;
+}
+
+.entitiesList .correction.expanded #container #side {
+  background-color: @entity-correction;
+}
+
+.entitiesList .keyword.expanded #container #side {
+  background-color: @entity-keyword;
+}
+
+.entitiesList .link.expanded #container #side {
+  background-color: @entity-link;
+}
+
+.entitiesList #container #main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.entitiesList .expanded #container #main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.entitiesList .expanded .info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.entitiesList .info ul {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  overflow: auto;
+  max-height: 160px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  padding: 0px;
+  gap: 2px;
+  color: #000;
+}
+
+.entitiesList .info ul li {
+  list-style: none;
+  height: auto;
+  font-size: 1em;
+  word-break: break-all;
+}
+
+.entitiesList .info ul li hr {
+  border: 0px;
+  border-top: 1px solid #bbb !important;
+}
+
+.entitiesList.candidates .candidate > div {
+  background-color: #eee;
+}
+
+.entitiesList .expanded:hover > div,
+.entitiesList.candidates .expanded:hover > div {
+  background-color: white !important;
+}
+
+.entitiesList .expanded .icon,
+.entitiesList.candidates .expanded.candidate .icon {
+  color: white !important;
+  fill: white !important;
+}
+
+.entitiesList .person:hover .icon,
+.entitiesList.candidates .person.candidate:hover .icon {
+  color: @entity-person;
+  fill: @entity-person;
+}
+
+.entitiesList .person:hover > div,
+.entitiesList.candidates .person.candidate:hover > div {
+  background-color: fade(@entity-person, 10%);
+}
+
+.entitiesList .person.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-person, 20%);
+  border-color: fade(@entity-person, 50%);
+}
+
+.entitiesList .place:hover .icon,
+.entitiesList.candidates .place.candidate:hover .icon {
+  color: @entity-place;
+  fill: @entity-place;
+}
+.entitiesList .place:hover > div,
+.entitiesList.candidates .place.candidate:hover > div {
+  background-color: fade(@entity-place, 10%);
+}
+.entitiesList .place.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-place, 20%);
+  border-color: fade(@entity-place, 50%);
+}
+
+// .entitiesList .org:hover .icon,
+// .entitiesList.candidates .org.candidate:hover .icon {
+//   color: @entity-org;
+//   fill: @entity-org;
+// }
+// .entitiesList .org:hover > div,
+// .entitiesList.candidates .org.candidate:hover > div {
+//   background-color: fade(@entity-org, 20%);
+// }
+// .entitiesList .org.expanded > div:hover {
+//   box-shadow: 0 0px 8px fade(@entity-org, 20%);
+//   border-color: fade(@entity-org, 50%);
+// }
+
+.entitiesList .organization:hover .icon,
+.entitiesList.candidates .organization.candidate:hover .icon {
+  color: @entity-organization;
+  fill: @entity-organization;
+}
+.entitiesList .organization:hover > div,
+.entitiesList.candidates .organization.candidate:hover > div {
+  background-color: fade(@entity-organization, 20%);
+}
+.entitiesList .organization.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-organization, 20%);
+  border-color: fade(@entity-organization, 50%);
+}
+
+.entitiesList .title:hover .icon,
+.entitiesList.candidates .title.candidate:hover .icon {
+  color: @entity-title;
+  fill: @entity-title;
+}
+.entitiesList .title:hover > div,
+.entitiesList.candidates .title.candidate:hover > div {
+  background-color: fade(@entity-title, 20%);
+}
+.entitiesList .title.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-title, 20%);
+  border-color: fade(@entity-title, 50%);
+}
+
+.entitiesList .rs:hover .icon,
+.entitiesList.candidates .rs.candidate:hover .icon {
+  color: @entity-rs;
+  fill: @entity-rs;
+}
+.entitiesList .rs:hover > div,
+.entitiesList.candidates .rs.candidate:hover > div {
+  background-color: fade(@entity-rs, 20%);
+}
+.entitiesList .rs.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-rs, 20%);
+  border-color: fade(@entity-rs, 50%);
+}
+
+.entitiesList .citation:hover .icon,
+.entitiesList.candidates .citation.candidate:hover .icon {
+  color: @entity-citation;
+  fill: @entity-citation;
+}
+.entitiesList .citation:hover > div,
+.entitiesList.candidates .citation.candidate:hover > div {
+  background-color: fade(@entity-citation, 20%);
+}
+.entitiesList .citation.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-citation, 20%);
+  border-color: fade(@entity-citation, 50%);
+}
+
+.entitiesList .note:hover .icon,
+.entitiesList.candidates .note.candidate:hover .icon {
+  color: @entity-note;
+  fill: @entity-note;
+}
+.entitiesList .note:hover > div,
+.entitiesList.candidates .note.candidate:hover > div {
+  background-color: fade(@entity-note, 20%);
+}
+.entitiesList .note.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-note, 20%);
+  border-color: fade(@entity-note, 50%);
+}
+
+.entitiesList .date:hover .icon,
+.entitiesList.candidates .date.candidate:hover .icon {
+  color: @entity-date;
+  fill: @entity-date;
+}
+.entitiesList .date:hover > div,
+.entitiesList.candidates .date.candidate:hover > div {
+  background-color: fade(@entity-date, 20%);
+}
+.entitiesList .date.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-date, 20%);
+  border-color: fade(@entity-date, 50%);
+}
+
+.entitiesList .correction:hover .icon,
+.entitiesList.candidates .correction.candidate:hover .icon {
+  color: @entity-correction;
+  fill: @entity-correction;
+}
+.entitiesList .correction:hover > div,
+.entitiesList.candidates .correction.candidate:hover > div {
+  background-color: fade(@entity-correction, 20%);
+}
+.entitiesList .correction.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-correction, 20%);
+  border-color: fade(@entity-correction, 50%);
+}
+
+.entitiesList .keyword:hover .icon,
+.entitiesList.candidates .keyword.candidate:hover .icon {
+  color: @entity-keyword;
+  fill: @entity-keyword;
+}
+.entitiesList .keyword:hover > div,
+.entitiesList.candidates .keyword.candidate:hover > div {
+  background-color: fade(@entity-keyword, 20%);
+}
+.entitiesList .keyword.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-keyword, 20%);
+  border-color: fade(@entity-keyword, 50%);
+}
+
+.entitiesList .link:hover .icon,
+.entitiesList.candidates .link.candidate:hover .icon {
+  color: @entity-link;
+  fill: @entity-link;
+}
+.entitiesList .link:hover > div,
+.entitiesList.candidates .link.candidate:hover > div {
+  background-color: fade(@entity-link, 20%);
+}
+.entitiesList .link.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-link, 20%);
+  border-color: fade(@entity-link, 50%);
+}

@@ -1,9 +1,7 @@
 **/node_modules
 .DS_store
 
-**/lib
 **/dist
-**/discard
 
 # Logs
 logs

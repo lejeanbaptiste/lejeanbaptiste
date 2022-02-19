@@ -1,18 +1,22 @@
 import { Button, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-
-const templates = [
-  { title: 'Blank', URI: '' },
-  { title: 'Letter', URI: '' },
-  { title: 'Poem', URI: '' },
-  { title: 'Prose', URI: '' },
-];
+import { useAppState, useActions } from '@src/overmind';
+import { useNavigate } from 'react-router';
 
 const Templates: FC = () => {
+  const navigate = useNavigate();
+  const { templates } = useAppState();
+  const { loadTemplate, setResource } = useActions();
   const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const handleClick = async (url: string) => {
+    const documentString = await loadTemplate(url);
+    setResource({ content: documentString });
+    navigate('/edit', { replace: true });
+  };
 
   return (
     <Stack spacing={1} sx={{ maxWidth: isMobile ? 'auto' : 170 }}>
@@ -29,8 +33,15 @@ const Templates: FC = () => {
         TEI
       </Typography>
       <Stack direction="row" flexWrap="wrap" justifyContent="center">
-        {templates.map(({ title, URI }) => (
-          <Button key={title} color="secondary" size="small" sx={{ m: 0.5 }} variant="outlined">
+        {templates.map(({ title, url }) => (
+          <Button
+            key={title}
+            color="secondary"
+            onClick={() => handleClick(url)}
+            size="small"
+            sx={{ m: 0.5 }}
+            variant="outlined"
+          >
             {title}
           </Button>
         ))}

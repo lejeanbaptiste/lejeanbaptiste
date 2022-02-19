@@ -22,12 +22,11 @@ import SourcePanel from '../sourcePanel';
 
 const HEIGHT = 600;
 
-// eslint-disable-next-line react/display-name
 const Transition = forwardRef((props: SlideProps, ref) => (
   <Slide direction="down" ref={ref} {...props} />
 ));
 
-const Load: FC<StorageDialogProps> = ({
+const Main: FC<StorageDialogProps> = ({
   config,
   onBackdropClick,
   onCancel,
@@ -42,7 +41,7 @@ const Load: FC<StorageDialogProps> = ({
   const { cloud } = useAppState();
   const { resource, submit, source } = useAppState().common;
   const { intialize } = useActions().cloud;
-  const { clearSubmit, configure, resetAll, setDialogType } = useActions().common;
+  const { clearSubmit, configure, resetAll, setDialogType, setResource } = useActions().common;
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -53,6 +52,10 @@ const Load: FC<StorageDialogProps> = ({
     setDialogType(type);
     init();
   }, []);
+
+  useEffect(() => {
+    if (originResource && typeof originResource !== 'string') setResource(originResource);
+  }, [originResource]);
 
   useEffect(() => {
     if (type === 'save') return;
@@ -146,4 +149,4 @@ const Load: FC<StorageDialogProps> = ({
   );
 };
 
-export default Load;
+export default Main;
