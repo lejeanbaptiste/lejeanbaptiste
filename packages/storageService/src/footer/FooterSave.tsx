@@ -79,7 +79,6 @@ const FooterSave: FC<Props> = ({ onCancel }) => {
           disabled={!saveEnabled || resource?.filename === ''}
           loading={isSaving}
           onClick={() => handleClickSave('forkPullRequest')}
-          variant="contained"
         >
           {t('footer:fork_and_pull_request')}
         </LoadingButton>
