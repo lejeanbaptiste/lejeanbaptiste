@@ -22,7 +22,7 @@ export const state: State = {
   authenticationServiceName: 'lincs-keycloak',
   darkMode: false,
   identityProviders: {},
-  language: supportedLanguages['en-CA'],
+  language: { code: 'en-CA', name: 'english', shortName: 'en' },
   messageDialog: { open: false },
   prefStorageProvider: '',
   storageDialogState: { open: false },
