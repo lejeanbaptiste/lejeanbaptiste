@@ -1,15 +1,7 @@
-# Leaf Writer Storage Service
-
-## ToDo
+# ToDo
 
 - Complete test
   - Test using electron or puppeter?
-- Documentation
-  - Revise before push
-- Push to Gitlab
-  - Create repository
-- Deploy
-  - Use lerna?
 - CI/CD
   - Build environment on Gitlab
   - Husky
