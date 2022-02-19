@@ -1,7 +1,13 @@
-import { Language, MessageDialog, Resource, StorageDialogState, User } from '@src/@types/types';
+import {
+  Language,
+  MessageDialog,
+  Resource,
+  PaletteMode,
+  StorageProvider,
+  StorageDialogState,
+  User,
+} from '@src/@types/types';
 import type { IdentityProvider } from '@src/services/IdentityProvider';
-import type { StorageProvider } from '@src/services/StorageProvider';
-import { supportedLanguages } from '@src/utilities/util';
 
 type State = {
   authenticationServiceName: string;
@@ -9,11 +15,10 @@ type State = {
   identityProviders: { [key: string]: IdentityProvider };
   language: Language;
   messageDialog: MessageDialog;
-  prefStorageProvider: string;
   recentDocuments: Resource[];
   resource?: Resource;
   storageDialogState: StorageDialogState;
-  storageProviders: { [key: string]: StorageProvider };
+  storageProviders: StorageProvider[];
   templates: { title: string; url: string }[];
   themeAppearance: PaletteMode;
   user?: User;
@@ -26,10 +31,9 @@ export const state: State = {
   identityProviders: {},
   language: { code: 'en-CA', name: 'english', shortName: 'en' },
   messageDialog: { open: false },
-  prefStorageProvider: '',
   recentDocuments: [],
   storageDialogState: { open: false },
-  storageProviders: {},
+  storageProviders: [],
   templates: [
     {
       title: 'Blank',
