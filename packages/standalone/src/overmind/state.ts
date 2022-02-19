@@ -13,6 +13,7 @@ type State = {
   resource?: Resource;
   storageDialogState: StorageDialogState;
   storageProviders: { [key: string]: StorageProvider };
+  themeAppearance: PaletteMode;
   user?: User;
   userAuthenticated: boolean | 'authenticating';
 };
@@ -26,5 +27,6 @@ export const state: State = {
   prefStorageProvider: '',
   storageDialogState: { open: false },
   storageProviders: {},
+  themeAppearance: 'auto',
   userAuthenticated: 'authenticating',
 };

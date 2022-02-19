@@ -1,6 +1,6 @@
 import { IconButton } from '@mui/material';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useActions, useAppState } from '@src/overmind';
 import { motion } from 'framer-motion';
 import React, { FC } from 'react';
@@ -31,7 +31,7 @@ const DarkMode: FC = () => {
       onClick={switchAppearenceMode}
       size="small"
     >
-      {darkMode ? <Brightness4Icon fontSize="inherit" /> : <Brightness7Icon fontSize="inherit" />}
+      {darkMode ? <DarkModeIcon fontSize="inherit" /> : <Brightness7Icon fontSize="inherit" />}
     </IconButton>
   );
 };

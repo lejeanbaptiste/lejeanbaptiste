@@ -7,6 +7,7 @@ export interface Language {
 export type Languages = {
   [key: string]: Language;
 };
+export type PaletteMode = 'light' | 'auto' | 'dark';
 
 export interface User {
   avatar_url?: string;
