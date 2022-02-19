@@ -9,7 +9,7 @@ const LinkAccounts: FC = () => {
   const error = query.get('error');
 
   useEffect(() => {
-    const channel = new BroadcastChannel('CWRC-Writer-Link-Accounts');
+    const channel = new BroadcastChannel('Leaf-Writer-Link-Accounts');
     channel.postMessage({ success: !error, error });
     window.close();
   }, []);
