@@ -10,7 +10,7 @@ import SampleSection from './SampleSection';
 const StoragePanel: FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { userAuthenticated } = useAppState();
+  const { recentDocuments, userAuthenticated } = useAppState();
 
   const conainerVariants = {
     initial: { height: 0 },
@@ -47,7 +47,7 @@ const StoragePanel: FC = () => {
               {userAuthenticated === true && (
                 <>
                   <Templates />
-                  <Recent />
+                  {recentDocuments.length > 0 && <Recent />}
                   <OpenOptions />
                 </>
               )}
