@@ -36,7 +36,17 @@ const getAuthenticatedUser = async (userId?: string) => {
 
   const headers = { Accept: 'application/json' };
   const response = await axios.get(`${BASE_URL}/${userId}/person`, { headers });
-  return response.data;
+
+  const { data } = response;
+
+  const user = {
+    ...data,
+    name: `${data.name['given-names'].value} ${data.name['family-name'].value}`,
+    username: data.name.path,
+    uri: `https://orcid.org/${data.path}`,
+  };
+
+  return user;
 };
 
 export const OrcidIdentityProvider: IdentityProvider = {
