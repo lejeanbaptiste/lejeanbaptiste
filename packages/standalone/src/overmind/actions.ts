@@ -21,8 +21,10 @@ export const onInitializeOvermind = async ({ state, actions }: Context, overmind
   //LANGUAGE
   const prefLanguageCode = localStorage.getItem('i18nextLng');
   if (prefLanguageCode) {
-    const prefLanguage = supportedLanguages[prefLanguageCode];
-    state.language = prefLanguage ? prefLanguage : supportedLanguages['en-CA'];
+    const prefLanguage = supportedLanguages.get(prefLanguageCode);
+    state.language = prefLanguage
+      ? prefLanguage
+      : { code: 'en-CA', name: 'english', shortName: 'en' };
   }
 
   //Authenticate
