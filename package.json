@@ -22,7 +22,9 @@
   "main": "index.js",
   "workspaces": [
     "./packages/standalone",
-    "./packages/storageService"
+    "./packages/core",
+    "./packages/storageService",
+    "./packages/worker-validator"
   ],
   "scripts": {
     "bootstrap-hoist": "lerna bootstrap --hoist",
