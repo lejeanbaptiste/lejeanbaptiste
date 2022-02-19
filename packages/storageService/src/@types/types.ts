@@ -50,6 +50,7 @@ export interface Resource {
   filename?: string;
   content?: string;
   hash?: string;
+  url?: string;
 }
 
 export interface ISourcePanelOption {
@@ -162,6 +163,7 @@ export interface SearchResultsBlobs extends Content {
 export interface DocumentDetails {
   content: string;
   hash: string;
+  url: string;
 }
 
 export interface MessageDialog {
