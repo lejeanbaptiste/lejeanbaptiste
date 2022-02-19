@@ -25,10 +25,6 @@ const init = async () => {
       console.warn('failed to contact keycloak');
     });
 
-  // console.log(sessionAuthenticated);
-  // console.log(keycloak);
-  // console.log(keycloak.tokenParsed);
-
   return sessionAuthenticated;
 };
 
