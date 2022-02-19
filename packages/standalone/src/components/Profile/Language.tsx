@@ -1,3 +1,4 @@
+import TranslateIcon from '@mui/icons-material/Translate';
 import {
   ListItem,
   ListItemIcon,
@@ -6,14 +7,30 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import LanguageIcon from '@mui/icons-material/Language';
+import { styled } from '@mui/material/styles';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities/util';
 import React, { FC, MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
+const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
+  '& .MuiToggleButtonGroup-grouped': {
+    margin: theme.spacing(0.5),
+    border: 0,
+    '&.Mui-disabled': {
+      border: 0,
+    },
+    '&:not(:first-of-type)': {
+      borderRadius: theme.shape.borderRadius,
+    },
+    '&:first-of-type': {
+      borderRadius: theme.shape.borderRadius,
+    },
+  },
+}));
+
 const Language: FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const { language } = useAppState();
   const { switchLanguage } = useActions();
@@ -21,27 +38,34 @@ const Language: FC = () => {
   const changeLanguage = (event: MouseEvent<HTMLElement>, code: string) => {
     if (!code) code = language.code;
     switchLanguage(code);
+    i18n.changeLanguage(code);
   };
 
   return (
     <ListItem>
       <ListItemIcon sx={{ minWidth: 40 }}>
-        <LanguageIcon />
+        <TranslateIcon fontSize="small" />
       </ListItemIcon>
       <ListItemText id="language" primary={t('home:language')} />
       <ListItemSecondaryAction>
-        <ToggleButtonGroup
+        <StyledToggleButtonGroup
           aria-label="language"
           exclusive
           onChange={changeLanguage}
           value={language.code}
         >
-          {Object.values(supportedLanguages).map(({ code, shortName }) => (
-            <ToggleButton key={code} sx={{ height: 28 }} value={code}>
+          {Array.from(supportedLanguages).map(([, { code, shortName }]) => (
+            <ToggleButton
+              key={code}
+              aria-label={shortName}
+              size="small"
+              sx={{ height: 28 }}
+              value={code}
+            >
               {shortName}
             </ToggleButton>
           ))}
-        </ToggleButtonGroup>
+        </StyledToggleButtonGroup>
       </ListItemSecondaryAction>
     </ListItem>
   );

@@ -4,11 +4,9 @@ export interface Language {
   shortName: string;
 }
 
-export type Languages = {
-  [key: string]: Language;
-};
 export type PaletteMode = 'light' | 'auto' | 'dark';
 
+export const Languages: Map<string, Language> = new Map();
 export interface User {
   avatar_url?: string;
   email?: string;
