@@ -28,7 +28,9 @@ const init = async () => {
   return sessionAuthenticated;
 };
 
-const doLogin = keycloak.login;
+const doLogin = async () => {
+  return await keycloak.login({ redirectUri: 'https://localhost' });
+};
 
 const doLogout = keycloak.logout;
 
