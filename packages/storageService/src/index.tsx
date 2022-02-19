@@ -14,7 +14,7 @@ export type { ProviderAuth } from './@types/Provider';
 export { loadDocument, saveDocument } from './headless';
 
 const overmind = createOvermind(config, {
-  name: 'StorageDialog',
+  name: 'storageDialog',
   logProxies: true,
 });
 
