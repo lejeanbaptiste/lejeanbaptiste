@@ -41,8 +41,6 @@ const resolve = {
 const optimization = {
   emitOnErrors: env === 'development' ? true : false,
   minimize: env === 'development' ? false : true,
-  // minimizer:
-  //   env === 'development' ? [] : [new ESBuildMinifyPlugin({ target: 'es2020', css: true })],
   minimizer:
     env === 'development'
     ? []
