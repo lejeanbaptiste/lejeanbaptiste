@@ -2,10 +2,10 @@ import { Avatar, Box, Button, Divider, List, Popover, Stack, Typography } from '
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import DarkMode from './DarkMode';
 import Language from './Language';
 import Services from './Services';
 
+import ThemeAppearance from './ThemeAppearance';
 interface ProfileProps {
   anchor: HTMLDivElement;
   handleClose: () => void;
@@ -55,7 +55,7 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
       <Divider />
 
       <List sx={{ width: 280 }}>
-        <DarkMode />
+        <ThemeAppearance />
         <Language />
       </List>
 

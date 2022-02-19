@@ -14,9 +14,9 @@ import { Context } from './';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const onInitializeOvermind = async ({ state, actions }: Context, overmind: any) => {
   //DARK MODE
-  const prefDarkMode = localStorage.getItem('darkMode');
-  const darkMode = prefDarkMode === 'true' ? true : false;
-  state.darkMode = darkMode;
+  const prefPaletteMode: PaletteMode =
+    (localStorage.getItem('themeAppearance') as PaletteMode) ?? 'auto';
+  actions.setThemeAppearance(prefPaletteMode);
 
   //LANGUAGE
   const prefLanguageCode = localStorage.getItem('i18nextLng');
@@ -27,6 +27,26 @@ export const onInitializeOvermind = async ({ state, actions }: Context, overmind
 
   //Authenticate
   await actions.initiateUserProvider();
+};
+
+export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
+  state.themeAppearance = value;
+
+  const darkMode =
+    value === 'auto'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : value === 'light'
+      ? false
+      : true;
+
+  actions.setDarkMode(darkMode);
+
+  localStorage.setItem('themeAppearance', value);
+};
+
+export const setDarkMode = ({ state }: Context, value: boolean) => {
+  state.darkMode = value;
+  return state.darkMode;
 };
 
 //* AUTHENTICATION
@@ -198,12 +218,6 @@ export const _linkStorageProvider = (
 };
 
 //* UI
-
-export const setDarkMode = ({ state }: Context, value: boolean) => {
-  state.darkMode = value;
-  localStorage.setItem('darkMode', JSON.stringify(value));
-  return value;
-};
 
 export const switchLanguage = ({ state }: Context, value: string) => {
   const language = supportedLanguages[value];
