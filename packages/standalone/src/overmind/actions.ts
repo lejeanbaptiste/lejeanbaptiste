@@ -325,8 +325,7 @@ export const closeCloseMessageDialog = ({ state }: Context) => {
   state.messageDialog = { open: false };
 };
 
-
-////
+//
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const isValidXml = ({ state }: Context, string: string) => {
@@ -334,3 +333,38 @@ export const isValidXml = ({ state }: Context, string: string) => {
   const parsererror = doc.querySelector('parsererror');
   return !parsererror;
 };
+
+export const addToRecentDocument = ({ state }: Context, document: Resource) => {
+  const { content, hash, url, ...recent } = document;
+
+  if (
+    recent.provider === undefined ||
+    recent.owner === undefined ||
+    recent.ownertype === undefined ||
+    recent.repo === undefined ||
+    recent.path === undefined ||
+    recent.filename === undefined
+  ) {
+    return;
+  }
+
+  // if recent already in the list, remove (and subsequently add in the first position)
+  state.recentDocuments = state.recentDocuments.filter(
+    ({ provider, owner, ownertype, repo, path, filename }) =>
+      `${provider}/${owner}/${ownertype}/${repo}/${path}/${filename}` !==
+      `${recent.provider}/${recent.owner}/${recent.ownertype}/${recent.repo}/${recent.path}/${recent.filename}`
+  );
+
+  //add
+  state.recentDocuments = [recent, ...state.recentDocuments];
+
+  //limit
+  state.recentDocuments = state.recentDocuments.filter((item, index) => index <= 3);
+
+  localStorage.setItem('recentFiles', JSON.stringify(state.recentDocuments));
+};
+
+export const loadTemplate = async ({ effects }: Context, url: string ) => {
+  const documentString = await effects.localAPI.loadTemplate(url);
+  return documentString;
+}
