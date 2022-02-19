@@ -19,7 +19,6 @@
 	},
 	"license": "GPL-2.0",
 	"author": "Luciano Frizzera <lucaju@gmail.com>",
-	"main": "dist/index.js",
 	"module": "dist/index.js",
 	"type": "commonjs",
 	"exports": {
@@ -30,10 +29,12 @@
 	],
 	"scripts": {
 		"start": "ts-node ./server/index.ts",
-		"dev:server": "env-cmd -e developmentDocker nodemon",
-		"dev:webpack": "env-cmd -e developmentDocker webpack",
-		"dev:server-webpack": "env-cmd -e development3000 nodemon",
-		"webpack": "webpack"
+		"dev:docker-server": "env-cmd -e development nodemon",
+		"dev:webpack": "env-cmd -e development webpack",
+		"dev:webpack-worker-dev": "env-cmd -e development-worker-dev webpack",
+		"dev:server": "env-cmd -e development nodemon",
+		"dev:server-worker-dev": "env-cmd -e development-worker-dev nodemon",
+		"build": "env-cmd -e production webpack"
 	},
 	"dependencies": {
 		"@cwrc/leafwriter": "file:../core",
