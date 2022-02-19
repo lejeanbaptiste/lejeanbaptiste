@@ -27,6 +27,11 @@ export const onInitializeOvermind = async ({ state, actions }: Context, overmind
       : { code: 'en-CA', name: 'english', shortName: 'en' };
   }
 
+  //Recent Files
+  const recentFilesSTRING = localStorage.getItem('recentFiles') ?? '[]';
+  const recentFiles: Resource[] = JSON.parse(recentFilesSTRING);
+  state.recentDocuments = recentFiles;
+
   //Authenticate
   await actions.initiateUserProvider();
 };
