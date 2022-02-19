@@ -1,0 +1,148 @@
+.annotationDialog {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+  height: inherit;
+  overflow: hidden !important;
+  width: auto !important;
+}
+
+.annotationDialog .content {
+  display: flex;
+  gap: 40px;
+  overflow: hidden;
+}
+
+.annotationDialog .writerParent {
+  flex: 1;
+}
+
+.annotationDialog p {
+  margin: 5px 0px;
+}
+
+.annotationDialog .fieldLabel {
+  display: inline-block;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  padding: 2px 4px 2px 4px;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.annotationDialog .main {
+  display: flex;
+  flex-direction: column;
+  flex: 2;
+  overflow: auto;
+  gap: 16px;
+  padding: 4px;
+}
+
+.annotationDialog .entityAttributes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.annotationDialog > div {
+  /* margin-bottom: 15px !important; */
+}
+
+.annotationDialog .ui-accordion-content {
+  padding: 5px 10px !important;
+}
+
+.annotationDialog .selectedText {
+  font-size: 1.2em;
+  display: inline-block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.annotationDialog .tagAs {
+  font-size: 1.2em;
+  display: inline-block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.annotationDialog .attributes {
+  /* position: relative; */
+  /* height: 200px; */
+
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 20px;
+}
+
+.annotationDialog .attribute {
+  padding-left: 6px;
+  padding-right: 20px;
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-left-color: transparent;
+}
+
+.annotationDialog .attribute:hover {
+  border-left-color: #4688f0a6;
+
+  & .fieldLabel {
+    background-color: #4688f040;
+  }
+}
+
+.annotationDialog .schemaHelp {
+  margin: 6px 12px;
+}
+
+.annotationDialog .entityWarning {
+  border-radius: 4px;
+  background-color: rgb(255, 244, 229);
+  display: flex;
+  padding: 6px 16px;
+  color: rgb(95, 33, 32);
+  gap: 12px;
+}
+
+.annotationDialog .entityWarning i {
+  color: rgb(255, 152, 0);
+}
+
+/* styling to make textboxes match jquery-ui style */
+.annotationDialog input[type='text'],
+.annotationDialog select {
+  border-radius: 3px;
+  border: 1px solid #c5c5c5;
+  padding: 3px 3px;
+  color: #454545;
+  width: 14em;
+}
+
+/* jquery ui overrides */
+.splitButtons .ui-dialog-buttonpane {
+  padding: 0.3em 1em 0.5em 1em !important;
+}
+
+.splitButtons .ui-dialog-buttonset {
+  float: none !important;
+}
+
+.splitButtons .ui-dialog-buttonset button {
+  float: right;
+}
+
+.splitButtons .ui-dialog-buttonset button.left {
+  float: left;
+}
+
+.ui-icon-help {
+  cursor: pointer;
+}

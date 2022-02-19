@@ -1,0 +1,12 @@
+{
+  "ui": {
+    "appearance": "Appearance",
+    "english": "English",
+    "french": "French",
+    "language": "Language",
+    "signOut": "Sign Out",
+    "light": "light",
+    "dark": "dark",
+    "auto": "auto"
+  }
+}

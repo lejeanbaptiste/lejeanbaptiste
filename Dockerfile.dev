@@ -6,6 +6,6 @@ WORKDIR /app
 
 COPY . .
 
-CMD [ "npm", "--prefix", "packages/standalone", "run", "dev:server" ]
+CMD [ "npm", "--prefix", "packages/standalone", "run", "dev:docker-server" ]
 
 EXPOSE 3000

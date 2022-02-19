@@ -17,7 +17,7 @@ export const config = {
     lookups: {
       service: {
         name: 'nssi',
-        apiURL: 'https://keycloak.sandbox.lincsproject.ca',
+        apiURL: 'https://keycloak.dev.lincsproject.ca',
       },
     },
     authentication: [{ name: 'nssi', service: {} }],

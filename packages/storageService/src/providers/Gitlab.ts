@@ -426,7 +426,13 @@ export default class Gitlab implements Provider {
 
     const { content, last_commit_id } = response.data;
 
-    return { content: this.decodeContent(content), hash: last_commit_id };
+    const document = {
+      content: this.decodeContent(content),
+      hash: last_commit_id,
+      url: `https://gitlab.com/api/v4/projects/${repoId}/repository/files/${encodedPath}/raw`,
+    };
+
+    return document;
   }
 
   /**

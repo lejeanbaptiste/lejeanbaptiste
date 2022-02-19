@@ -1,6 +1,6 @@
 # CWRC-Writer
 
-FROM node:16.8
+FROM node:16.13
 
 WORKDIR /app
 

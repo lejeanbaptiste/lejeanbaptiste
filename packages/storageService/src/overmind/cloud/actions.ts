@@ -104,7 +104,7 @@ export const changeProvider = async (
 type Iinitialize = {
   resource?: Resource | string;
   source?: string;
-}
+};
 
 export const intialize = async ({ state, actions }: Context, initialValues: Iinitialize) => {
   const { resource, source } = initialValues;
@@ -776,6 +776,7 @@ export const fetchDocument = async (
     filename: extractedFilename,
     content: document.content,
     hash: document.hash,
+    url: document.url,
   });
 
   actions.cloud.setIsLoading(false);

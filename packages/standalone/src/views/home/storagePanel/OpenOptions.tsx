@@ -17,8 +17,6 @@ const OpenOptions: FC = () => {
     openStorageDialog({ resource: pastedText, source: 'paste', type: 'load' });
   };
 
-  const onSaveCloud = () => openStorageDialog({ source: 'cloud', type: 'save' });
-
   return (
     <Stack spacing={2} sx={{ maxWidth: 250 }}>
       <Typography
@@ -41,9 +39,6 @@ const OpenOptions: FC = () => {
         size="small"
         onChange={onChageTextfield}
       />
-      <Button color="secondary" onClick={onSaveCloud} startIcon={<CloudIcon />} variant="contained">
-        Save
-      </Button>
     </Stack>
   );
 };
