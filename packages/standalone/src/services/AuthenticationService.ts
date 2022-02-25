@@ -29,7 +29,8 @@ const init = async () => {
 };
 
 const doLogin = async () => {
-  return await keycloak.login({ redirectUri: 'https://localhost' });
+  const redirectUri = process.env.AUTHORIZATION_CALLBACK_URL ?? 'https://localhost';
+  return await keycloak.login({ redirectUri });
 };
 
 const doLogout = keycloak.logout;
