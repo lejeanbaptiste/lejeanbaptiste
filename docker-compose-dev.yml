@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  traefik:
+    container_name: traefik
+    image: traefik:v2.6
+    command: --configFile=/etc/traefik/traefik.yml
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../docker/volumes/traefik/:/etc/traefik/
+      - ../docker/volumes/certs:/certs # optional: using self-signed certificates
+      - ../docker/volumes/traefik/log/:/var/log/traefik
+    restart: unless-stopped
+
+  leafwriter:
+    container_name: leaf-writer
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./:/app/
+    environment:
+      - AUTHORIZATION_CALLBACK_URL=https://localhost
+    restart: unless-stopped
