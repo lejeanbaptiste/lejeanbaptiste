@@ -49,37 +49,36 @@ const plugins = [
       //
       {
         //copy images from Writer-Base
-        from: path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'src', 'images'),
+        from:
+          env === 'development'
+            ? path.resolve(__dirname, '..', 'core', 'src', 'images')
+            : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'src', 'images'),
         to: 'images',
       },
       {
-        //Copy pre-compiled CSS required by tinyMCE
-        from: path.resolve(
-          __dirname,
-          'node_modules',
-          '@cwrc/leafwriter',
-          'src',
-          'css',
-          'tinymce',
-          'skins'
-        ),
+        context:
+          env === 'development'
+            ? path.resolve(__dirname, '..', 'core', 'src', 'css', 'tinymce')
+            : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'src', 'css', 'tinymce'),
+        from: 'skins',
         to: 'css/tinymce/skins',
       },
       {
         //Copy pre-compiled CSS to stylize the editor (must be recompiled after each change)
-        context: path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'src', 'css', 'build'),
+        context:
+          env === 'development'
+            ? path.resolve(__dirname, '..', 'core', 'src', 'css', 'build')
+            : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'src', 'css', 'build'),
         from: 'editor.css',
         to: 'css/editor.css',
         toType: 'file',
       },
       {
         //Copy pre-compiled worker
-        context: path.resolve(
-          __dirname,
-          'node_modules',
-          '@cwrc/leafwriter-worker-validator',
-          'dist'
-        ),
+        context:
+          env === 'development'
+            ? path.resolve(__dirname, '..', 'worker-validator', 'dist')
+            : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter-worker-validator', 'dist'),
         from: 'cwrc.worker.js',
         to: 'cwrc.worker.js',
         toType: 'file',
