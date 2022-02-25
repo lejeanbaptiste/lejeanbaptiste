@@ -1,6 +1,6 @@
 {
 	"name": "@cwrc/leafwriter-standalone",
-	"version": "0.1.1",
+	"version": "1.0.0",
 	"private": true,
 	"description": "xml editing and rdf annotation using github as document store",
 	"keywords": [
@@ -37,8 +37,8 @@
 		"build": "env-cmd -e production webpack"
 	},
 	"dependencies": {
-		"@cwrc/leafwriter": "file:../core",
-		"@cwrc/leafwriter-storage-service": "^0.1.2",
+		"@cwrc/leafwriter": "^1.0.1",
+		"@cwrc/leafwriter-storage-service": "^0.2.2",
 		"@emotion/react": "^11.7.1",
 		"@emotion/styled": "^11.6.0",
 		"@fontsource/lato": "^4.5.1",
@@ -72,12 +72,48 @@
 		"react-i18next": "^11.15.4",
 		"react-markdown": "^6.0.3",
 		"react-router-dom": "^6.2.1",
-		"react-use": "^17.3.2",
-		"webpack": "^5.69.1"
+		"react-use": "^17.3.2"
 	},
 	"devDependencies": {
-		"@testing-library/jest-dom": "^5.15.0",
+		"@types/express": "^4.17.13",
+		"@types/node": "^17.0.21",
 		"@types/react-helmet": "^6.1.4",
-		"@types/react-router-dom": "^5.3.2"
+		"@types/react-router-dom": "^5.3.2",
+		"@types/webpack": "^5.28.0",
+		"@types/webpack-env": "^1.16.3",
+		"@types/webpack-hot-middleware": "^2.25.6",
+		"@typescript-eslint/eslint-plugin": "^5.12.1",
+		"@typescript-eslint/parser": "^5.12.1",
+		"clean-webpack-plugin": "^4.0.0",
+		"copy-webpack-plugin": "^10.2.4",
+		"css-loader": "^6.6.0",
+		"css-minimizer-webpack-plugin": "^3.4.1",
+		"esbuild-loader": "^2.18.0",
+		"eslint": "^8.9.0",
+		"eslint-config-prettier": "^8.4.0",
+		"eslint-plugin-prettier": "^4.0.0",
+		"eslint-plugin-react": "^7.28.0",
+		"eslint-plugin-react-hooks": "^4.3.0",
+		"history": "^5.3.0",
+		"html-webpack-plugin": "^5.5.0",
+		"less": "^4.1.2",
+		"less-loader": "^10.2.0",
+		"link-parent-bin": "^2.0.0",
+		"mini-css-extract-plugin": "^2.5.3",
+		"monaco-editor-webpack-plugin": "^7.0.1",
+		"nodemon": "^2.0.15",
+		"prettier": "^2.5.1",
+		"process": "^0.11.10",
+		"svg-inline-loader": "^0.8.2",
+		"ts-loader": "^9.2.6",
+		"ts-node": "^10.5.0",
+		"tslib": "^2.3.1",
+		"typescript": "^4.5.5",
+		"webpack": "^5.69.1",
+		"webpack-bundle-analyzer": "^4.5.0",
+		"webpack-cli": "^4.9.2",
+		"webpack-dev-middleware": "^5.3.1",
+		"webpack-hot-middleware": "^2.25.1",
+		"webpackbar": "^5.0.2"
 	}
 }
