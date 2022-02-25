@@ -16,7 +16,7 @@ import type {
   ValidationNodeElement,
   ValidationNodeTarget,
   ValidationResponse,
-} from '@cwrc/worker-validator';
+} from '@cwrc/leafwriter-worker-validator';
 import { Context } from '../';
 
 declare global {
@@ -42,7 +42,7 @@ const loadWorkerValidator = async (): Promise<Comlink.Remote<CwrcWorkerValidator
     //@ts-ignore
     if (WORKER_ENV === 'development') {
       //? WORKER DEV:
-      const worker = new Worker(new URL('@cwrc/worker-validator', import.meta.url));
+      const worker = new Worker(new URL('@cwrc/leafwriter-worker-validator', import.meta.url));
       const validator: Comlink.Remote<CwrcWorkerValidator> = Comlink.wrap(worker);
       resolve(validator);
     } else {
