@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "description": "intuitive document editing with xml and rdf",
   "keywords": [
     "xml",
@@ -27,20 +27,18 @@
   ],
   "exports": {
     ".": {
-      "import": "./lib/index.js"
-    },
-    "./writer": [
-      "./src/index.tsx",
-      "./lib/index.js"
-    ]
+      "import": "./src/index.tsx",
+      "require": "./dist/index.js"
+    }
   },
-  "types": "lib/index.d.ts",
-  "module": "lib/index.js",
+  "types": "lib/src/index.d.ts",
+  "module": "src/index.js",
   "main": "src/index.tsx",
   "files": [
     "bin",
     "lib",
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "webpack"

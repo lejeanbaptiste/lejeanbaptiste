@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-storage-service",
-  "version": "0.1.2",
+  "version": "0.2.2",
   "description": "storage service for leaf-writer",
   "keywords": [
     "storage",
@@ -23,25 +23,28 @@
   "author": "Luciano Frizzera <lucaju@gmail.com>",
   "exports": {
     ".": {
-      "import": "./lib/index.js"
+      "import": "./lib/index.js",
+      "require": "./dist/index.js"
     },
-    "./Dialog": [
-      "./src/StorageDialog.tsx",
-      "./lib/StorageDialog.js"
-    ],
-    "./headless": [
-      "./src/headless.ts",
-      "./lib/headless.js"
-    ]
+    "./Dialog": {
+      "import": "./lib/StorageDialog.js",
+      "require": "./dist/StorageDialog.js"
+    },
+    "./headless": {
+      "import": "./lib/headless.js",
+      "require": "./dist/headless.js"
+    }
   },
   "types": "lib/index.d.ts",
   "module": "lib/index.js",
   "files": [
-    "lib",
-    "dist"
+    "dist",
+    "lib"
   ],
   "scripts": {
     "build": "tsc && webpack",
+    "clean": "shx rm -rf _bundles lib lib-esm",
+    "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
     "test": "jest",
     "test-watch": "jest --watchAll --verbose"
   },
@@ -82,6 +85,7 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-react": "^7.28.0",
     "mini-css-extract-plugin": "^2.5.3",
+    "shx": "^0.3.4",
     "webpack": "^5.69.1",
     "webpackbar": "^5.0.2"
   }
