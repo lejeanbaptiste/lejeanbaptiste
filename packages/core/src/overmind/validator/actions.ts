@@ -1,13 +1,3 @@
-import * as Comlink from 'comlink';
-// import type { CwrcWorkerValidator } from 'cwrc-worker-validator';
-// import type {
-//   PossibleRequest,
-//   Tag,
-//   TagRequest,
-//   ValidationNodeElement,
-//   ValidationNodeTarget,
-//   ValidationResponse,
-// } from 'cwrc-worker-validator';
 import type {
   CwrcWorkerValidator,
   PossibleRequest,
@@ -15,8 +5,9 @@ import type {
   TagRequest,
   ValidationNodeElement,
   ValidationNodeTarget,
-  ValidationResponse,
-} from '@cwrc/leafwriter-worker-validator';
+  ValidationResponse
+} from '@cwrc/leafwriter-validator-worker';
+import * as Comlink from 'comlink';
 import { Context } from '../';
 
 declare global {
@@ -42,12 +33,12 @@ const loadWorkerValidator = async (): Promise<Comlink.Remote<CwrcWorkerValidator
     //@ts-ignore
     if (WORKER_ENV === 'development') {
       //? WORKER DEV:
-      const worker = new Worker(new URL('@cwrc/leafwriter-worker-validator', import.meta.url));
+      const worker = new Worker(new URL('@cwrc/leafwriter-validator-worker', import.meta.url));
       const validator: Comlink.Remote<CwrcWorkerValidator> = Comlink.wrap(worker);
       resolve(validator);
     } else {
       //? WORKER PRODUCTION:
-      const worker = new Worker('cwrc.worker.js');
+      const worker = new Worker('leaf-writer-validator.worker.js');
       const validator: Comlink.Remote<CwrcWorkerValidator> = Comlink.wrap(worker);
       resolve(validator);
     }
