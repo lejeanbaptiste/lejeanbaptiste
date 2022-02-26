@@ -1,0 +1,78 @@
+{
+  "name": "@cwrc/leafwriter-validator-worker",
+  "version": "0.3.0",
+  "description": "webworker to handle validation on Leaf-Writer",
+  "keywords": [
+    "xml",
+    "rdf",
+    "editor",
+    "annotation",
+    "rng validation"
+  ],
+  "homepage": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer",
+  "bugs": {
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "GPL-2.0",
+  "author": "Luciano Frizzera <lucaju@gmail.com>",
+  "exports": {
+    ".": {
+      "import": [
+        "./src/index.ts",
+        "./lib/index.js"
+      ],
+      "require": "./dist/leaf-writer-validator.worker.js"
+    }
+  },
+  "types": "lib/index.worler.d.ts",
+  "module": "src/index.worker.ts",
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "scripts": {
+    "browserify-jsdom": "browserify -r jsdom -s jsdom -o src/lib/jsdom/jsdom-browserified.js",
+    "build": "npm run clean && tsc && webpack",
+    "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
+    "clean": "shx rm -rf dist lib lib-esm",
+    "cm": "git-cz"
+  },
+  "dependencies": {
+    "comlink": "^4.3.1",
+    "lodash": "^4.17.21",
+    "salve-annos": "github:cwrc/salve#develop",
+    "salve-dom": "github:cwrc/salve-dom",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^16.2.14",
+    "@types/lodash": "^4.14.178",
+    "@types/uuid": "^8.3.4",
+    "@typescript-eslint/parser": "^5.12.0",
+    "browserify": "^17.0.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "commitizen": "^4.2.4",
+    "esbuild-loader": "^2.18.0",
+    "eslint": "^8.9.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "git-cz": "^4.8.0",
+    "husky": "^7.0.4",
+    "jsdom": "19.0.0",
+    "prettier": "^2.5.1",
+    "semantic-release": "^19.0.2",
+    "shx": "^0.3.4",
+    "ts-loader": "^9.2.6",
+    "typescript": "^4.5.5",
+    "webpack": "^5.69.1",
+    "webpack-cli": "^4.9.2",
+    "webpackbar": "^5.0.2"
+  }
+}
