@@ -78,9 +78,9 @@ const plugins = [
         context:
           env === 'development'
             ? path.resolve(__dirname, '..', 'worker-validator', 'dist')
-            : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter-worker-validator', 'dist'),
-        from: 'cwrc.worker.js',
-        to: 'cwrc.worker.js',
+            : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter-validator-worker', 'dist'),
+        from: 'leaf-writer-validator.worker.js',
+        to: 'leaf-writer-validator.worker.js',
         toType: 'file',
       },
     ],
