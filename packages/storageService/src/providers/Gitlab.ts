@@ -49,7 +49,6 @@ export default class Gitlab implements Provider {
   readonly name = 'gitlab';
 
   private readonly axios: AxiosInstance;
-  private readonly access_token: string;
 
   userId = '';
   username = '';
@@ -61,17 +60,12 @@ export default class Gitlab implements Provider {
   constructor({ access_token }: Types.ProviderAuth) {
     if (!access_token) throw new Error('No access token provided');
 
-    this.access_token = access_token;
-
     this.axios = axios.create({
       baseURL: BASE_URL,
       headers: { Authorization: `Bearer ${access_token}` },
     });
   }
 
-  private encodeContent(content: string) {
-    return Buffer.from(content).toString('base64');
-  }
   private decodeContent(content: string) {
     return Buffer.from(content, 'base64').toString('utf8');
   }
@@ -242,7 +236,7 @@ export default class Gitlab implements Provider {
         fn: this.getImportStatus,
         params: response.data.id,
         validate: validateForkCreation,
-      }).catch((error) => {
+      }).catch(() => {
         throw new Error('Fork is taking too long. Try again later.');
       }));
     }
@@ -665,7 +659,7 @@ export default class Gitlab implements Provider {
       fn: this.getImportStatus,
       params: response.data.id,
       validate: validateForkCreation,
-    }).catch((error) => {
+    }).catch(() => {
       throw new Error('Fork is taking too long. Try again later.');
     });
 

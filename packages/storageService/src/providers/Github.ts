@@ -33,7 +33,6 @@ export default class Github implements Provider {
 
   private readonly octokit: Octokit;
   private readonly axios: AxiosInstance;
-  private readonly access_token: string;
 
   userId = '';
   username = '';
@@ -45,8 +44,6 @@ export default class Github implements Provider {
    */
   constructor({ access_token }: Types.ProviderAuth) {
     if (!access_token) throw new Error('No access token provided');
-
-    this.access_token = access_token;
 
     this.axios = axios.create({
       headers: { Authorization: `Bearer ${access_token}` },
@@ -195,7 +192,7 @@ export default class Github implements Provider {
    * @param {string} repoName The repo name
    * @returns {Promise}
    */
-  async getRepo({ username, repoName, checkForkStatus }: Types.RepoParams) {
+  async getRepo({ username, repoName }: Types.RepoParams) {
     const response = await this.octokit.rest.repos
       .get({ owner: username, repo: repoName })
       .catch((error) => {
@@ -659,7 +656,7 @@ export default class Github implements Provider {
    * @param {String} orgName The organization name
    * @returns {Promise}
    */
-  async createFork({ ownerUsername, repoId, repoName, orgName }: Types.ICreateFork) {
+  async createFork({ ownerUsername, repoName, orgName }: Types.ICreateFork) {
     if (!ownerUsername || !repoName) throw new Error('owner and repository are missing'); //return null;
 
     const response = await this.octokit.repos
@@ -747,16 +744,13 @@ export default class Github implements Provider {
    * @returns {Promise}
    */
   private async checkForPullRequest({
-    branch,
     ownerUsername,
     repoName,
     title,
   }: ICheckForPullRequest) {
-    // const query = `state:open type:pr repo:${ownerUsername}/${repoName} head:${branch}`;
     const query = `state:open type:pr repo:${ownerUsername}/${repoName} ${title} in:title`;
 
     const result = await this.octokit.rest.search.issuesAndPullRequests({ q: query });
-
     return result.data.total_count > 0;
   }
 

@@ -84,7 +84,7 @@ const MobileMenu: FC<MobileMenuProps> = ({ onSelect, selectedMenu }) => {
             <ListSubheader>{t('cloud:publicRepositories:public_repositories')}</ListSubheader>
           )}
 
-          {publicOptions.map(({ name, username, type }) => (
+          {publicOptions.map(({ name, username }) => (
             <MenuItem key={username} value={username}>
               {name ?? username}
             </MenuItem>

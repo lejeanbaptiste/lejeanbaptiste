@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-storage-service",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "storage service for leaf-writer",
   "keywords": [
     "storage",
@@ -23,28 +23,37 @@
   "author": "Luciano Frizzera <lucaju@gmail.com>",
   "exports": {
     ".": {
-      "import": "./lib/index.js",
+      "import": [
+        "./src/index.ts",
+        "./lib/index.js"
+      ],
       "require": "./dist/index.js"
     },
     "./Dialog": {
-      "import": "./lib/StorageDialog.js",
+      "import": [
+        "./src/StorageDialog.ts",
+        "./lib/StorageDialog.js"
+      ],
       "require": "./dist/StorageDialog.js"
     },
     "./headless": {
-      "import": "./lib/headless.js",
+      "import": [
+        "./src/headless.ts",
+        "./lib/headless.js"
+      ],
       "require": "./dist/headless.js"
     }
   },
   "types": "lib/index.d.ts",
-  "module": "lib/index.js",
+  "module": "src/index.ts",
   "files": [
     "dist",
     "lib"
   ],
   "scripts": {
-    "build": "tsc && webpack",
-    "clean": "shx rm -rf _bundles lib lib-esm",
+    "build": "npm run clean && tsc && webpack",
     "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
+    "clean": "shx rm -rf dist lib lib-esm",
     "test": "jest",
     "test-watch": "jest --watchAll --verbose"
   },

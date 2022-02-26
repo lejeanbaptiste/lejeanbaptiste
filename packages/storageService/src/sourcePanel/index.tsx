@@ -22,7 +22,7 @@ const SidePanel: FC = () => {
     source === 'cloud' && providerName ? setActive(providerName) : setActive(source);
   }, [source]);
 
-  const handleChange = (event: MouseEvent<HTMLElement>, value: string) => {
+  const handleChange = (_event: MouseEvent<HTMLElement>, value: string) => {
     if (!value) return;
     setActive(value as Source);
 

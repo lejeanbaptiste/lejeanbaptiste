@@ -1,7 +1,7 @@
 import { Context } from '../';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const uploadFile = async ({ state }: Context, file: File): Promise<string | null> => {
+export const uploadFile = async (_context: Context, file: File): Promise<string | null> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -27,6 +27,6 @@ type Resource = {
 };
 
 export const setResource = async ({ state }: Context, { content, filename }: Resource) => {
-  if (!content) return null;
+  if (!content) return;
   state.common.resource = state.common.source === 'local' ? { content, filename } : { content };
 };

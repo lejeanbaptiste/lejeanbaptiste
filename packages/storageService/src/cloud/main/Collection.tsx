@@ -37,7 +37,7 @@ const Collection: FC<iCollection> = ({ height = '100%' }) => {
     const skels = new Array(qty).fill(0);
     return (
       <Box>
-        {skels.map((sk, i) => (
+        {skels.map((_sk, i) => (
           <Typography key={i} variant="h5" height={46} alignItems="center" m={1} px={2} pb={1}>
             <Skeleton variant="text" />
           </Typography>

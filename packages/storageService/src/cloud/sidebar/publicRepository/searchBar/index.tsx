@@ -49,7 +49,7 @@ const SearchBar: FC<SearchBarProps> = ({ collapsible = true, onClear, onChange, 
     id: 'search-public-repository',
     options,
     getOptionLabel: (option) => option.username,
-    onInputChange: async (event, newInputValue) => fetch(newInputValue),
+    onInputChange: async (_event, newInputValue) => fetch(newInputValue),
   });
 
   const fetch = useMemo(() => debounce((query: string) => updateList(query), 500), []);
