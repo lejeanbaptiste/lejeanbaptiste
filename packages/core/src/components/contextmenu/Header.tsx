@@ -1,5 +1,5 @@
 import { Box, Tooltip, Typography } from '@mui/material';
-import type { Tag } from '@cwrc/leafwriter-worker-validator';
+import type { Tag } from '@cwrc/leafwriter-validator-worker';
 import React, { FC, useEffect, useState } from 'react';
 
 interface HeaderProps {
