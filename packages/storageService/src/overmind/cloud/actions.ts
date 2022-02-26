@@ -31,7 +31,7 @@ import { isErrorMessage } from '../../utilities/util';
 
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const onInitializeOvermind = async ({ state }: Context, overmind: any) => {
+export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
   //PREFERRED STORAGE PROVIDER
   const prefprovider = localStorage.getItem('prefStorageProvider');
   state.cloud.name = prefprovider as SuportedProviders;
@@ -91,7 +91,7 @@ export const changeProvider = async (
   state.cloud.name = providerName;
 
   const provider = actions.cloud.getProvider();
-  if (!provider) return null;
+  if (!provider) return;
 
   state.cloud.user = await provider.getAuthenticatedUser();
 
@@ -220,7 +220,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
 
 export const resetOwner = async ({ actions }: Context) => {
   const provider = actions.cloud.getProvider();
-  if (!provider) return null;
+  if (!provider) return;
 
   actions.cloud.setOwner({ id: provider.userId, username: provider.username, type: 'user' });
 };
@@ -239,7 +239,7 @@ export const setCollectionSource = (
   collectionSource: CollectionSource
 ) => {
   const provider = actions.cloud.getProvider();
-  if (!provider) return null;
+  if (!provider) return;
 
   actions.cloud.resetRepos();
 
@@ -1249,7 +1249,7 @@ export const createBranch = async ({ state, actions }: Context) => {
 
 export const addPublicRepository = ({ state, actions }: Context, owner: Owner) => {
   const provider = actions.cloud.getProvider();
-  if (!provider) return null;
+  if (!provider) return;
 
   const storageName = provider.name;
   if (!storageName) return;
@@ -1292,7 +1292,7 @@ export const getPublicRepository = (
 
 export const removePublicRepository = async ({ state, actions }: Context, username: string) => {
   const provider = actions.cloud.getProvider();
-  if (!provider) return null;
+  if (!provider) return;
 
   const storageName = provider.name;
   if (

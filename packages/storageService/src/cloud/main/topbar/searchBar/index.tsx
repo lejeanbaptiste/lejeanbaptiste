@@ -66,7 +66,7 @@ const SearchBar: FC<SearchBarProps> = ({
     id: 'search',
     options,
     getOptionLabel: (option) => option.searchType,
-    onInputChange: async (event, newInputValue) => fetch(newInputValue),
+    onInputChange: async (_event, newInputValue) => fetch(newInputValue),
   });
 
   const fetch = useMemo(() => debounce((query: string) => updateList(query), 500), []);

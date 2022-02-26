@@ -19,7 +19,7 @@ const i18n = i18next.createInstance(
   },
   // We must provide a function as second parameter, otherwise i18next errors
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  (error, t) => {
+  (error, _t) => {
     if (error) return console.log(error);
   }
 );

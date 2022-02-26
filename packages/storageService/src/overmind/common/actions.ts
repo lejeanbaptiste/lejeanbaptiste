@@ -207,10 +207,10 @@ export const resetAll = async ({ state }: Context) => {
 
 export const download = ({ state, actions }: Context) => {
   const { resource } = state.common;
-  if (!resource) return null;
+  if (!resource) return;
 
   const { content, filename } = resource;
-  if (!content || !filename) return null;
+  if (!content || !filename) return;
 
   const blob = new Blob([content]); //, { type: 'text/plain;charset=utf-8' });
   saveAs(blob, filename);

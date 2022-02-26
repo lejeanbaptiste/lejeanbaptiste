@@ -4,7 +4,7 @@ import { Context } from '../';
 
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const onInitializeOvermind = async ({ state }: Context, overmind: any) => {
+export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
   //DARK MODE
   const prefDarkMode = localStorage.getItem('darkMode');
   const darkMode = prefDarkMode === 'true' ? true : false;

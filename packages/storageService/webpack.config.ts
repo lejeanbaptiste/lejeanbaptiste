@@ -1,7 +1,6 @@
 import path from 'path';
 
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
-// import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { ESBuildMinifyPlugin } from 'esbuild-loader';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import webpack, { EntryObject } from 'webpack';
@@ -15,7 +14,6 @@ const cache = env === 'development' ? true : false;
 const devtool = env === 'development' ? 'inline-source-map' : 'source-map'; //'eval-source-map' (might be faster for dev)
 
 const entry: EntryObject = {
-  // app: [path.resolve(__dirname, 'src', 'index.tsx')],
   StorageDialog: [path.resolve(__dirname, 'src', 'StorageDialog.tsx')],
   headless: [path.resolve(__dirname, 'src', 'headless.ts')],
   'StorageDialog.min': [path.resolve(__dirname, 'src', 'StorageDialog.tsx')],
@@ -26,8 +24,8 @@ const output = {
   path: path.resolve(__dirname, 'dist'),
   publicPath: '/',
   pathinfo: env === 'development' ? true : false,
+  library: 'storage-service',
   libraryTarget: 'umd',
-  library: 'StorageService',
   umdNamedDefine: true,
 };
 
@@ -36,34 +34,25 @@ const resolve = {
   extensions: ['.tsx', '.ts', '.js', '.json'],
 };
 
-// const esMinimizer =
-
 const optimization = {
   emitOnErrors: env === 'development' ? true : false,
   minimize: env === 'development' ? false : true,
   minimizer:
     env === 'development'
-    ? []
-    : [new ESBuildMinifyPlugin({ target: 'es2020', css: true, include: /\.min\.js$/ })],
-      
+      ? []
+      : [new ESBuildMinifyPlugin({ target: 'es2020', css: true, include: /\.min\.js$/ })],
   sideEffects: env === 'development' ? false : true,
   usedExports: env === 'development' ? false : true,
 };
 
 const plugins = [
   new CleanWebpackPlugin({ cleanStaleWebpackAssets: false }),
-  // new CopyWebpackPlugin({
-  //   patterns: [{ from: path.resolve(__dirname, 'src'), to: 'lib' }],
-  // }),
   new MiniCssExtractPlugin(),
-  new WebpackBar({ color: env === 'development' ? '#7e57c2' : '#9ccc65' }),
   new webpack.ProvidePlugin({ process: 'process/browser' }),
+  new WebpackBar({ color: env === 'development' ? '#7e57c2' : '#9ccc65' }),
 ];
 
-const performanceHints = env === 'development' ? false : 'warning';
-
-const debug = env === 'development' && false;
-const stats = debug ? { children: true } : {};
+const stats = env === 'development' ? { children: true } : {};
 
 const webpackConfig: webpack.Configuration = {
   cache,
@@ -96,7 +85,9 @@ const webpackConfig: webpack.Configuration = {
   },
   optimization,
   output,
-  performance: { hints: performanceHints },
+  performance: {
+    hints: env === 'development' ? false : 'warning',
+  },
   plugins,
   resolve,
   stats,
