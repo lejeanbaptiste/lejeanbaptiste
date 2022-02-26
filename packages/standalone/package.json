@@ -38,7 +38,7 @@
 	},
 	"dependencies": {
 		"@cwrc/leafwriter": "^1.0.1",
-		"@cwrc/leafwriter-storage-service": "^0.2.2",
+		"@cwrc/leafwriter-storage-service": "^0.2.3",
 		"@emotion/react": "^11.7.1",
 		"@emotion/styled": "^11.6.0",
 		"@fontsource/lato": "^4.5.1",
