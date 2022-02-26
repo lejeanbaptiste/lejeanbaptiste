@@ -87,7 +87,7 @@ const storePossibleTags = (possibleAt: EventSet) => {
     if (skipEvent.has(event.name)) return;
 
     if ('namePattern' in event && 'name' in event.namePattern) {
-      const { name, ns, documentation } = event.namePattern;
+      const { name, documentation } = event.namePattern;
       const fullName = documentation ? getFullNameFromDocumentation(documentation) : undefined;
       possibleTags.push({ name, fullName });
     }

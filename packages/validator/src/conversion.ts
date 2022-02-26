@@ -76,7 +76,7 @@ const convertSchema = async (url: string): Promise<SchemaResponse> => {
 };
 
 // eslint-disable-next-line no-unused-vars
-const extractElementsDefinitions = (convertedSchema: ConversionResult) => {
+export const extractElementsDefinitions = (convertedSchema: ConversionResult) => {
   const schemaDocumentation = new Set();
 
   //@ts-ignore

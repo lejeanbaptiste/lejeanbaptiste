@@ -194,13 +194,13 @@ export const validatePossibleAt = async (
   const container = evaluateXPath(xpath, virtualEditor.document);
 
   const possibleAt: EventSet = virtualEditor.validator.possibleAt(container, index, isAttr);
-  const { possibleNodes, possibleTags } = parsePossibleAt(possibleAt, isAttr);
+  const { possibleNodes, possibleTags } = parsePossibleAt(possibleAt);
 
   console.timeEnd(`Validate ${type}`);
   return { xpath, index, possibleNodes, possibleTags };
 };
 
-const parsePossibleAt = (possibleAt: EventSet, isAttr: boolean) => {
+const parsePossibleAt = (possibleAt: EventSet) => {
   //Pepare to store possible events
   const possibleNodes: PossibleNodes[] = []; //specific for text or end-tag
   let possibleTags: Tag[] = [];

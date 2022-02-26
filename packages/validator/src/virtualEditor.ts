@@ -1,4 +1,8 @@
-import { Grammar, GrammarWalker, NameResolver } from 'salve-annos/build/dist';
+import {
+  Grammar,
+  // GrammarWalker,
+  // NameResolver
+} from 'salve-annos/build/dist';
 import { safeParse, Validator } from 'salve-dom/build/dist';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,7 +11,7 @@ class VirtualEditor {
   #validatorPrefix: string;
   #schemaId?: string;
   #schema?: Grammar;
-  #walker?: GrammarWalker<NameResolver>;
+  // #walker?: GrammarWalker<NameResolver>;
   #docXML?: Document;
   #validator?: Validator;
 
@@ -21,7 +25,7 @@ class VirtualEditor {
     this.#id = uuidv4();
     this.#schemaId = undefined;
     this.#schema = undefined;
-    this.#walker = undefined;
+    // this.#walker = undefined;
     this.#docXML = undefined;
     this.#validator = undefined;
 
