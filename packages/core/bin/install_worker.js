@@ -8,8 +8,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const src = path.join('node_modules', '@cwrc/worker-validator', 'dist', 'cwrc.worker.js');
-const dst = path.join(process.argv[2], 'cwrc.worker.js');
+const src = path.join('node_modules', '@cwrc/leafwriter-validator', 'dist', 'leafwriter-validator.worker.js');
+const dst = path.join(process.argv[2], 'leafwriter-validator.worker.js');
 
 try {
   fs.copyFileSync(src, dst, fs.constants.COPYFILE_EXCL);

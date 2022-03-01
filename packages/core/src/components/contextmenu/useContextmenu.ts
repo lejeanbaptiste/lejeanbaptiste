@@ -3,7 +3,7 @@ import type { ContextMenuState } from '@src/@types';
 import { useActions, useAppState } from '@src/overmind';
 import { v4 as uuidv4 } from 'uuid';
 import type { Item as ItemType } from './types';
-import type { Selection, PossibleRequest, Tag } from '@cwrc/leafwriter-validator-worker';
+import type { Selection, PossibleRequest, Tag } from '@cwrc/leafwriter-validator';
 import Writer from '../../js/Writer';
 import type { Action } from '../../js/tagger';
 import { EntityTypes } from '@src/js/schema/types';
@@ -238,6 +238,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
             return;
           }
 
+          //@ts-ignore
           writer.editor.currentBookmark.tagId = context.tagId;
           writer.tagger.addTagDialog({
             tagName: name,
@@ -280,7 +281,8 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
         return true;
       }
 
-      context.rng = writer.editor?.currentBookmark?.rng;
+      //@ts-ignore
+      context.rng = writer.editor.currentBookmark.rng;
       if (!context.rng) return null;
 
       context.element =

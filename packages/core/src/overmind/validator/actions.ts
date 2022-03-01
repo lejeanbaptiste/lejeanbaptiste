@@ -1,18 +1,19 @@
 import type {
-  CwrcWorkerValidator,
   PossibleRequest,
   Tag,
   TagRequest,
   ValidationNodeElement,
   ValidationNodeTarget,
-  ValidationResponse
-} from '@cwrc/leafwriter-validator-worker';
+  ValidationResponse,
+  Validator,
+} from '@cwrc/leafwriter-validator';
 import * as Comlink from 'comlink';
 import { Context } from '../';
+import { webpackEnv } from '../../@types';
 
 declare global {
   interface Window {
-    workerValidator: Comlink.Remote<CwrcWorkerValidator>;
+    leafwriterValidator: Comlink.Remote<Validator>;
   }
 }
 
@@ -20,26 +21,25 @@ export const onInitializeOvermind = async ({ state }: Context, overmind: any) =>
   const validator = await loadWorkerValidator();
   if (!validator) return;
 
-  window.workerValidator = validator;
+  window.leafwriterValidator = validator;
   state.validator.hasValidator = true;
 };
 
-const loadWorkerValidator = async (): Promise<Comlink.Remote<CwrcWorkerValidator>> => {
+const loadWorkerValidator = async (): Promise<Comlink.Remote<Validator>> => {
   return await new Promise((resolve) => {
     // TODO: Improve the way to load webworkers for dev
     // * Check ThreadsJS once again.
     // * Or maybe experiment with ESBUILD
 
-    //@ts-ignore
-    if (WORKER_ENV === 'development') {
+    if (webpackEnv.WORKER_ENV === 'development') {
       //? WORKER DEV:
-      const worker = new Worker(new URL('@cwrc/leafwriter-validator-worker', import.meta.url));
-      const validator: Comlink.Remote<CwrcWorkerValidator> = Comlink.wrap(worker);
+      const worker = new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url));
+      const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
       resolve(validator);
     } else {
       //? WORKER PRODUCTION:
-      const worker = new Worker('leaf-writer-validator.worker.js');
-      const validator: Comlink.Remote<CwrcWorkerValidator> = Comlink.wrap(worker);
+      const worker = new Worker('leafwriter-validator.worker.js');
+      const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
       resolve(validator);
     }
   });
@@ -51,7 +51,7 @@ export const workerLoadSchema = async ({ state }: Context) => {
 
   if (!state.validator.hasValidator) return;
 
-  const workerValidator = window.workerValidator;
+  const workerValidator = window.leafwriterValidator;
 
   const id = writer.schemaManager.getCurrentSchema()?.id;
   const schemaURI = writer.schemaManager.getXMLUrl();
@@ -78,7 +78,7 @@ export const workerValidate = async ({ state }: Context) => {
   const writer = window.writer;
   if (!writer || !state.validator.hasValidator) return;
 
-  const workerValidator = window.workerValidator;
+  const workerValidator = window.leafwriterValidator;
   const documentString = await writer.converter.getDocumentContent(false);
 
   const validationProgress = ({ partDone, state, valid, errors }: ValidationResponse) => {
@@ -102,7 +102,7 @@ export const workerGetPossibleFromError = async (
   }: { type: string; target: ValidationNodeTarget; element: ValidationNodeElement }
 ) => {
   if (!state.validator.hasValidator) return;
-  const workerValidator = window.workerValidator;
+  const workerValidator = window.leafwriterValidator;
 
   let xpath = target.xpath;
   let index = target.index;
@@ -127,7 +127,7 @@ export const workerGetPossibleFromError = async (
 
 export const workerPossibleAtContextMenu = async ({ state }: Context, params: PossibleRequest) => {
   if (!state.validator.hasValidator) return;
-  const workerValidator = window.workerValidator;
+  const workerValidator = window.leafwriterValidator;
 
   const response = await workerValidator.possibleAtContextMenu(params);
   const tags: Tag[] = response.tags.speculative || response.tags.possible;
@@ -136,7 +136,7 @@ export const workerPossibleAtContextMenu = async ({ state }: Context, params: Po
 
 export const workerTagAt = async ({ state }: Context, params: TagRequest) => {
   if (!state.validator.hasValidator) return;
-  const workerValidator = window.workerValidator;
+  const workerValidator = window.leafwriterValidator;
 
   const tag = await workerValidator.tagAt(params);
   return tag;
@@ -144,7 +144,7 @@ export const workerTagAt = async ({ state }: Context, params: TagRequest) => {
 
 export const workerAttributesForTag = async ({ state }: Context, xpath: string) => {
   if (!state.validator.hasValidator) return;
-  const workerValidator = window.workerValidator;
+  const workerValidator = window.leafwriterValidator;
 
   const tagAttributes = await workerValidator.attributesForTag(xpath);
   return tagAttributes;
