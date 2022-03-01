@@ -5,12 +5,7 @@ import { ESBuildMinifyPlugin } from 'esbuild-loader';
 import webpack, { EntryObject } from 'webpack';
 import WebpackBar from 'webpackbar';
 
-const env = process.env.NODE_ENV;
-
-const mode = env === 'development' ? 'development' : 'production';
-const watch = env === 'development' ? true : false;
-const cache = env === 'development' ? true : false;
-const devtool = env === 'development' ? 'inline-source-map' : 'source-map'; // inline-source-map //'eval-source-map' (might be faster for dev)
+const isDev = process.env.NODE_isDev;
 
 const entry: EntryObject = {
   'leafwriter-validator.worker': path.resolve(__dirname, 'src', 'index.worker.ts'),
@@ -24,19 +19,16 @@ const output = {
   umdNamedDefine: true,
 };
 
-const plugins = [
-  new CleanWebpackPlugin(),
-  new WebpackBar()
-];
+const plugins = [new CleanWebpackPlugin(), new WebpackBar()];
 
 const webpackConfig: webpack.Configuration = {
-  cache,
-  devtool,
   entry,
-  mode,
   output,
   plugins,
+  cache: isDev ? true : false,
+  devtool: isDev ? 'inline-source-map' : 'source-map', // inline-source-map //'eval-source-map' (might be faster for dev),
   resolve: { extensions: ['.ts', '.js'] },
+  mode: isDev ? 'development' : 'production',
   module: {
     rules: [
       {
@@ -52,16 +44,13 @@ const webpackConfig: webpack.Configuration = {
     ],
   },
   optimization: {
-    emitOnErrors: env === 'development' ? true : false,
-    minimize: env === 'development' ? false : true,
-    minimizer:
-      env === 'development'
-        ? []
-        : [new ESBuildMinifyPlugin({ target: 'es2020', css: true })],
-    sideEffects: env === 'development' ? false : true,
-    usedExports: env === 'development' ? false : true,
+    emitOnErrors: isDev ? true : false,
+    minimize: isDev ? false : true,
+    minimizer: isDev ? [] : [new ESBuildMinifyPlugin({ target: 'es2020', css: true })],
+    sideEffects: isDev ? false : true,
+    usedExports: isDev ? false : true,
   },
-  watch,
+  watch: isDev ? true : false,
 };
 
 export default webpackConfig;
