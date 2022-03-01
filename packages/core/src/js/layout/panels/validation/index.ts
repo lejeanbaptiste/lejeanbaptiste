@@ -2,7 +2,7 @@ import type {
   ValidatePossibleAtResponse,
   ValidationNodeElement,
   ValidationNodeTarget,
-} from '@cwrc/leafwriter-validator-worker';
+} from '@cwrc/leafwriter-validator';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import ProgressBar from 'progressbar.js';

@@ -49,9 +49,9 @@ const plugins = [
       },
       {
         //Copy pre-compiled worker
-        context: path.resolve(__dirname, '..', 'worker-validator', 'dist'),
-        from: 'cwrc.worker.js',
-        to: 'cwrc.worker.js',
+        context: path.resolve(__dirname, '..', 'validator', 'dist'),
+        from: 'leafwriter-validator.worker.js',
+        to: 'leafwriter-validator.worker.js',
         toType: 'file',
       },
     ],
