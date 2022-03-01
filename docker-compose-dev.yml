@@ -22,6 +22,4 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - ./:/app/
-    environment:
-      - AUTHORIZATION_CALLBACK_URL=https://localhost
     restart: unless-stopped
