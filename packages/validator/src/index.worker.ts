@@ -31,7 +31,7 @@ self.salve = salve;
 
 console.info('WORKER VALIDATOR READY');
 
-const cwrcWorkerValidator = {
+const validator = {
   async loadSchema(schema: SchemaRequest) {
     return await loadSchema(schema);
   },
@@ -55,6 +55,6 @@ const cwrcWorkerValidator = {
   },
 };
 
-export type CwrcWorkerValidator = typeof cwrcWorkerValidator;
+export type Validator = typeof validator;
 
-Comlink.expose(cwrcWorkerValidator);
+Comlink.expose(validator);

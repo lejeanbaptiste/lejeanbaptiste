@@ -13,13 +13,13 @@ const cache = env === 'development' ? true : false;
 const devtool = env === 'development' ? 'inline-source-map' : 'source-map'; // inline-source-map //'eval-source-map' (might be faster for dev)
 
 const entry: EntryObject = {
-  'leaf-writer-validator.worker': path.resolve(__dirname, 'src', 'index.worker.ts'),
+  'leafwriter-validator.worker': path.resolve(__dirname, 'src', 'index.worker.ts'),
 };
 
 const output = {
   path: path.resolve(__dirname, 'dist'),
   globalObject: 'this',
-  library: 'leaf-writer-validator-worker',
+  library: 'leafwriter-validator',
   libraryTarget: 'umd',
   umdNamedDefine: true,
 };
