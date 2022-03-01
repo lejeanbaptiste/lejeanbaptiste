@@ -62,8 +62,11 @@ const plugins = [
   new webpack.ProvidePlugin({ process: 'process/browser' }),
   new MonacoWebpackPlugin({ languages: ['xml', 'json'] }),
   new webpack.DefinePlugin({
-    'process.env.NODE_ENV': JSON.stringify(env),
-    WORKER_ENV: JSON.stringify(envWorker),
+    webpackEnv: {
+      LEAFWRITER_VERSION: JSON.stringify(pkg.version),
+      NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+      WORKER_ENV: JSON.stringify(process.env.WORKER_ENV),
+    },
   }),
 ];
 

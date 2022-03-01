@@ -6,9 +6,9 @@ import {
   serialize as RDFserialize,
   sym as RDFsym,
 } from 'rdflib';
+import { webpackEnv } from '../../@types';
 import Writer from '../Writer';
 import Entity, { IannotationRange, IEntityConfig } from './Entity';
-import leafWriterPackage from '../../../package.json';
 import type {
   IAnnotation,
   IAnnotationContributor,
@@ -16,7 +16,7 @@ import type {
   IAnnotationFormat,
 } from './types';
 
-const leafWriterVersion = leafWriterPackage.version;
+const leafWriterVersion = webpackEnv.LEAFWRITER_VERSION; //'1.0.0' //pkg.version;
 
 const prefixMap: Map<string, string> = new Map([
   ['bibo', 'http://purl.org/ontology/bibo/'],

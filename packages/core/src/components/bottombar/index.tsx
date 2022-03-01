@@ -1,12 +1,12 @@
 import { Box, Link, Paper, Stack } from '@mui/material';
-import pkg from '@src/../package.json';
 import React, { FC } from 'react';
+import { webpackEnv } from '../../@types';
 import AnnotationMode from './AnnotationMode';
 import EditorMode from './EditorMode';
 import Schema from './Schema';
 
 const BottomBar: FC = () => {
-  const version = pkg.version;
+  const version = webpackEnv.LEAFWRITER_VERSION; //'1.0.0' //pkg.version;
 
   return (
     <Box bottom={0} position="fixed" width="100vw">
