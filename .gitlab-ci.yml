@@ -1,0 +1,47 @@
+# Use Auto DevOps pipeline
+# https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Auto-DevOps.gitlab-ci.yml
+include:
+  - template: Auto-DevOps.gitlab-ci.yml
+
+variables:
+  # GitLab CI configuration
+  BROWSER_PERFORMANCE_DISABLED: 1
+  CODE_QUALITY_DISABLED: 1
+  LICENSE_MANAGEMENT_DISABLED: 1
+  DISABLE_LICENSE_SCANNING: 1
+  SAST_DISABLED: 1
+  SECRET_DETECTION_DISABLED: 1
+  DAST_DISABLED: 1
+  PERFORMANCE_DISABLED: 1
+  TEST_DISABLED: 1
+  POSTGRES_ENABLED: "false"
+  STAGING_ENABLED: 1
+
+  AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: --build-arg MY_VAR=my_value
+
+  K8S_SECRET_AUTHORIZATION_CALLBACK_URL: https://leaf-writer.$KUBE_INGRESS_BASE_DOMAIN
+
+# Only rebuild node_modules if package.json changes
+cache:
+  key:
+    files:
+      - package.json
+  paths:
+    - node_modules
+
+review:
+  variables:
+    K8S_SECRET_AUTHORIZATION_CALLBACK_URL: https://$CI_PROJECT_ID-$CI_ENVIRONMENT_SLUG.$KUBE_INGRESS_BASE_DOMAIN
+
+# Template to override common stage/prod parameters
+.deployment: &deployment
+  environment:
+    url: http://leaf-writer.$KUBE_INGRESS_BASE_DOMAIN
+
+# override some staging parameters
+staging:
+  <<: *deployment
+
+# override some production parameters
+production_manual:
+  <<: *deployment
