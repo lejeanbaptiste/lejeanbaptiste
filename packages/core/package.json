@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter",
-  "version": "1.0.1",
+  "version": "1.0.7",
   "description": "intuitive document editing with xml and rdf",
   "keywords": [
     "xml",
@@ -26,22 +26,26 @@
     "James Chartrand <jc.chartrand@gmail.com>"
   ],
   "exports": {
-    ".": {
-      "import": "./src/index.tsx",
-      "require": "./dist/index.js"
-    }
+    ".": "./dist/index.js"
   },
-  "types": "lib/src/index.d.ts",
-  "module": "src/index.js",
-  "main": "src/index.tsx",
+  "types": "lib/index.d.ts",
+  "module": "src/index.tsx",
   "files": [
     "bin",
-    "lib",
     "dist",
-    "src"
+    "lib",
+    "src",
+    "images",
+    "css"
   ],
   "scripts": {
-    "build": "webpack"
+    "build": "npm run clean && tsc && webpack && npm run copy-assets",
+    "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack && npm run copy-validator-worker",
+    "copy-assets": "npm run copy-assets_images && npm run copy-assets_editor_css && npm run copy-assets_tinymce_skin",
+    "copy-assets_images": "shx cp -r ./src/images ./images",
+    "copy-assets_editor_css": "shx mkdir css && shx cp -r ./src/css/build/editor.css ./css",
+    "copy-assets_tinymce_skin": "shx mkdir -p ./css/tinymce/skins && shx cp -r ./src/css/tinymce/**/* ./css/tinymce/skins/",
+    "clean": "shx rm -rf dist lib lib-esm css images"
   },
   "dependencies": {
     "@cwrc/leafwriter-validator": "^0.4.2",
@@ -106,6 +110,7 @@
     "@types/progressbar.js": "^1.1.2",
     "@types/react-dom": "^17.0.11",
     "@types/uuid": "^8.3.4",
+    "@types/wikidata-sdk": "^6.1.0",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",
     "clean-webpack-plugin": "^4.0.0",
@@ -114,6 +119,7 @@
     "eslint-plugin-react": "^7.28.0",
     "mini-css-extract-plugin": "^2.5.3",
     "monaco-editor-webpack-plugin": "^7.0.1",
+    "shx": "^0.3.4",
     "webpack": "^5.69.1",
     "webpackbar": "^5.0.2"
   }
