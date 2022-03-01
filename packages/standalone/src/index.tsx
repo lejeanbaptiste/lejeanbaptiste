@@ -27,4 +27,4 @@ render(
   document.querySelector('#app')
 );
 
-if (module.hot) module.hot.accept();
+// if (module.hot) module.hot.accept();
