@@ -5,6 +5,9 @@
 **/dist
 **/NOTES
 
+/css
+/images
+
 # Logs
 logs
 *.log
