@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-storage-service",
-  "version": "0.2.3",
+  "version": "0.2.7",
   "description": "storage service for leaf-writer",
   "keywords": [
     "storage",
@@ -23,24 +23,15 @@
   "author": "Luciano Frizzera <lucaju@gmail.com>",
   "exports": {
     ".": {
-      "import": [
-        "./src/index.ts",
-        "./lib/index.js"
-      ],
+      "import": "./lib/index.js",
       "require": "./dist/index.js"
     },
     "./Dialog": {
-      "import": [
-        "./src/StorageDialog.ts",
-        "./lib/StorageDialog.js"
-      ],
+      "import": "./lib/StorageDialog.js",
       "require": "./dist/StorageDialog.js"
     },
     "./headless": {
-      "import": [
-        "./src/headless.ts",
-        "./lib/headless.js"
-      ],
+      "import": "./lib/headless.js",
       "require": "./dist/headless.js"
     }
   },
