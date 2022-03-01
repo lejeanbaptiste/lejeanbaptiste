@@ -1,0 +1,11 @@
+service:
+  externalPort: 3000
+  internalPort: 3000
+livenessProbe:
+  path: "/favicon-32x32.png"
+  initialDelaySeconds: 10
+  timeoutSeconds: 10
+readinessProbe:
+  path: "/favicon-32x32.png"
+  initialDelaySeconds: 10
+  timeoutSeconds: 10
