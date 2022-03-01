@@ -1,10 +1,7 @@
 import Keycloak, { KeycloakTokenParsed } from 'keycloak-js';
+import { webpackEnv } from '../@types/types';
 
-//Documentation
-// https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
-
-// Instantiate keycloak with nssi config file
-const keycloak = Keycloak('/config/nssi-keycloak.json');
+//Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
 
 interface tokenParsed extends KeycloakTokenParsed {
   identity_provider?: string;
@@ -13,6 +10,11 @@ interface tokenParsed extends KeycloakTokenParsed {
   email?: string;
   preferred_username?: string;
 }
+
+const redirectUri = webpackEnv.AUTHORIZATION_CALLBACK_URL
+
+// Instantiate keycloak with nssi config file
+const keycloak = Keycloak('/config/nssi-keycloak.json');
 
 const init = async () => {
   const sessionAuthenticated = await keycloak
@@ -29,7 +31,6 @@ const init = async () => {
 };
 
 const doLogin = async () => {
-  const redirectUri = process.env.AUTHORIZATION_CALLBACK_URL ?? 'https://localhost';
   return await keycloak.login({ redirectUri });
 };
 

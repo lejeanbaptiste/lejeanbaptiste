@@ -98,8 +98,11 @@ const plugins = [
     languages: ['xml', 'json'],
   }),
   new webpack.DefinePlugin({
-    'process.env.NODE_ENV': JSON.stringify(env),
-    WORKER_ENV: JSON.stringify(envWorker),
+    webpackEnv: {
+      AUTHORIZATION_CALLBACK_URL: JSON.stringify(process.env.AUTHORIZATION_CALLBACK_URL),
+      NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+      WORKER_ENV: JSON.stringify(process.env.WORKER_ENV),
+    },
   }),
 ];
 
