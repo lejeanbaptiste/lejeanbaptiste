@@ -1,13 +1,11 @@
+import type { Resource } from '@cwrc/leafwriter-storage-service';
 import { Backdrop, LinearProgress } from '@mui/material';
 import { usePermalink } from '@src/hooks/permalink';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC, Suspense, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router';
-// import { loadDocument, Resource } from '@cwrc/leafwriter-storage-service';
-// const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
+import { useLocation, useNavigate } from 'react-router';
 
-import { Resource } from '@cwrc/leafwriter-storage-service/headless';
-const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service/Dialog'));
+const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
 
 const Storage: FC = () => {
   const navigate = useNavigate();
@@ -15,7 +13,6 @@ const Storage: FC = () => {
   const { resource, storageDialogState, user, userAuthenticated } = useAppState();
   const {
     closeStorageDialog,
-    // getStorageProviderAuth,
     getStorageProvidersAuth,
     openStorageDialog,
     setResource,
@@ -39,7 +36,6 @@ const Storage: FC = () => {
       return;
     }
 
-    // if (permalink.resource.filename) return loadDocumentFromPermalink(permalink.resource);
     if (!permalink.resource.filename) {
       openStorageDialog({ source: 'cloud', type: 'load', resource: permalink.resource });
     }
@@ -117,23 +113,6 @@ const Storage: FC = () => {
           />
         </Suspense>
       )}
-      {/* {type === 'save' && open && (
-        <Suspense fallback={<Progress />}>
-          <StorageDialog
-            config={{
-              allowedMimeTypes: ['text/xml'],
-              defaultCommitMessage: 'Updated via leaf-writer',
-              providers: getStorageProvidersAuth(),
-              preferProvider: user?.prefStorageProvider,
-            }}
-            onCancel={close}
-            onSave={handleSave}
-            resource={resource}
-            open={open}
-            type="save"
-          />
-        </Suspense>
-      )} */}
     </>
   );
 };

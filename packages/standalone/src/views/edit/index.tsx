@@ -1,5 +1,5 @@
-import type { Resource } from '../../@types/types';
-import { loadDocument, saveDocument } from '@cwrc/leafwriter-storage-service/headless';
+import { loadDocument, saveDocument } from '@cwrc/leafwriter-storage-service';
+import { LWDocument } from '@cwrc/leafwriter/src/@types';
 import { Backdrop, LinearProgress } from '@mui/material';
 import Page from '@src/components/Page';
 import { usePermalink } from '@src/hooks/permalink';
@@ -7,7 +7,7 @@ import { useActions, useAppState } from '@src/overmind';
 import React, { FC, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { LWDocument } from '@cwrc/leafwriter/src/@types';
+import type { Resource } from '../../@types/types';
 
 const Leafwriter = React.lazy(() => import('@cwrc/leafwriter'));
 
@@ -70,7 +70,7 @@ const Editor: FC = () => {
     const providerAuth = getStorageProviderAuth(resource.provider);
     if (!providerAuth) return;
 
-    const document: Resource = await loadDocument(providerAuth, resource);
+    const document = await loadDocument(providerAuth, resource);
     if (!document || 'error' in document || !document.content || !document.url) {
       // console.log(document);
       return
@@ -98,6 +98,9 @@ const Editor: FC = () => {
     if (!providerAuth) return { success: false, reason: 'Provider token not found' };
 
     const response = await saveDocument(providerAuth, document.file, true);
+    if ('error' in response) {
+      return { success: false, reason: response.error }
+    }
 
     return { success: true, hash: response.hash };
   };

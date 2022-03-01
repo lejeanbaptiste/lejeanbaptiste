@@ -1,6 +1,6 @@
-import { loadDocument } from '@cwrc/leafwriter-storage-service/headless';
+import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { Button, Stack, Typography } from '@mui/material';
-import { Resource } from '@src/@types/types';
+import type { Resource } from '@src/@types/types';
 import { usePermalink } from '@src/hooks/permalink';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC } from 'react';
@@ -20,7 +20,7 @@ const Recent: FC = () => {
     const providerAuth = getStorageProviderAuth(resource.provider);
     if (!providerAuth) return;
 
-    const document: Resource = await loadDocument(providerAuth, resource);
+    const document = await loadDocument(providerAuth, resource);
     if (!document || 'error' in document || !document.content || !document.url) {
       return;
     }
