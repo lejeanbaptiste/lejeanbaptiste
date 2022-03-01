@@ -24,7 +24,7 @@
     "./packages/standalone",
     "./packages/core",
     "./packages/storageService",
-    "./packages/worker-validator"
+    "./packages/validator"
   ],
   "scripts": {
     "bootstrap-hoist": "lerna bootstrap --hoist",
