@@ -1,3 +1,4 @@
+//@ts-nocheck 
 import $ from 'jquery';
 import type { Bookmark } from 'tinymce';
 import Entity from './entities/Entity';
@@ -648,7 +649,7 @@ class Tagger {
       $.extend(config, info.properties);
 
       this.writer.editor.selection.moveToBookmark(this.writer.editor.currentBookmark);
-      const range: Range = this.writer.editor.selection.getRng(true);
+      const range: Range = this.writer.editor.selection.getRng();
 
       this.writer.entitiesManager.addEntity(config, range);
     } else {

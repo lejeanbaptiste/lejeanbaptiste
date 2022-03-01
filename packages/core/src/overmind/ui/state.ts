@@ -1,4 +1,4 @@
-import { ContextMenuState, Language, PaletteMode } from '@src/@types';
+import { ContextMenuState, Language } from '@src/@types';
 import type { PopupProps } from '../../components/popup';
 import type { IEditSourceDialogProps } from '../../components/editSource';
 import { EntityLookupDialogProps } from '../../components/entityLookups/types';

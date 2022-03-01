@@ -209,7 +209,7 @@ class StructureTree {
           this.writer.tagger.removeStructureTag(nodeId, true);
 
           if (newCurrentNode != null) {
-            const rng = this.writer.editor.selection.getRng(true);
+            const rng = this.writer.editor.selection.getRng();
             rng.selectNodeContents(newCurrentNode);
             rng.collapse(collapseToStart);
             this.writer.editor.selection.setRng(rng);

@@ -5,12 +5,14 @@ import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
 import Converter from './conversion/converter';
 import DialogManager from './dialogManager';
+import { ITriple } from './dialogs/triple';
 import AnnotationsManager from './entities/annotationsManager';
 import EntitiesManager from './entities/entitiesManager';
 import EventManager from './eventManager';
 import LayoutManager from './layout/layoutManager';
 import EntitiesList from './layout/panels/entitiesList';
 import Selection from './layout/panels/selection';
+import StructureTree from './layout/panels/structureTree';
 import Validation from './layout/panels/validation';
 import SchemaManager from './schema/schemaManager';
 import Tagger from './tagger';
@@ -35,17 +37,13 @@ import Utilities from './utilities';
 //  * @param {String} [config.buttons3]
 //  */
 
-// interface IWriter {
-//   event: IEvent;
-// }
-
 class Writer extends EventManager {
   overmindState?: any;
   overmindActions?: any;
 
   readonly initialConfig: ConfigLegacy;
   readonly containerId: string;
-  readonly cwrcRootUrl: string; // the url which points to the root of the leafwriter location
+  readonly rootUrl: string; // the url which points to the root of the leafwriter location
 
   // possible editor modes
   readonly XMLRDF = 0; // XML + RDF
@@ -54,7 +52,7 @@ class Writer extends EventManager {
   readonly JSON = 3; // annotation type
 
   editor?: LeafWriterEditor; // reference to the tinyMCE instance we're creating, set in setup
-  triples: [] = []; // triples store
+  triples: ITriple[] = []; // triples store
 
   currentDocId: string | null = null;
   isInitialized: boolean = false; // is the editor initialized
@@ -93,6 +91,7 @@ class Writer extends EventManager {
   entitiesList?: EntitiesList;
   selection?: Selection;
   validation?: Validation;
+  tree?: StructureTree;
 
   constructor(config: ConfigLegacy) {
     super();
@@ -108,11 +107,11 @@ class Writer extends EventManager {
       const { protocol, host, pathname } = window.location;
       let rootUrl = `${protocol}//${host}/${pathname.split('/')[1]}/`;
       if (rootUrl.endsWith('//')) rootUrl = rootUrl.slice(0, -1);
-      this.cwrcRootUrl = rootUrl;
+      this.rootUrl = rootUrl;
 
       console.info('using default leafRootUrl', rootUrl);
     } else {
-      this.cwrcRootUrl = config.cwrcRootUrl;
+      this.rootUrl = config.cwrcRootUrl;
     }
 
     if (config.readonly) this.isReadOnly = config.readonly;

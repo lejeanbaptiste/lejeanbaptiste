@@ -1,5 +1,5 @@
+//@ts-nocheck 
 import $ from 'jquery';
-// import Mapper from '../schema/mapper';
 import Writer from '../Writer';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
 

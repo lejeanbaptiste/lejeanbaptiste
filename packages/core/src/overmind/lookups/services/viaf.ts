@@ -48,7 +48,7 @@ export default class Viaf implements ILookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
   private readonly baseURL = 'https://viaf.org/viaf';
   private readonly FORMAT = 'application/json';
-  private readonly MAX_HITS = 10; //default: 10
+  // private readonly MAX_HITS = 10; //default: 10
   private readonly timeout = 3_000;
 
   constructor() {

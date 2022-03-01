@@ -20,7 +20,7 @@ export interface LeafWriterConfig {
     };
     //? legacy
     legacy?: ConfigLegacy;
-    lookups: ILookupsConfig
+    lookups: ILookupsConfig;
   };
   onLoadRequest?: () => void;
   onSaveRequest?: (document: LWDocument, saveAs?: boolean) => Promise<onSaveRequestResults>;
@@ -125,7 +125,7 @@ export interface User {
   };
   prefferedID?: string;
   prefStorageProvider?: string;
-  
+
   signOut?: () => Promise<void>;
 }
 
@@ -148,8 +148,8 @@ export type Schema = {
   schemaMappingsId: string;
   xml?: string | string[];
   css?: string | string[];
-  xmlUrl: string| string[];
-  cssUrl: string| string[];
+  xmlUrl: string | string[];
+  cssUrl: string | string[];
 };
 
 export interface Language {
@@ -206,7 +206,6 @@ export interface ContextMenuState {
   rng?: Range;
   tagName?: string | null;
 }
-
 
 //---------
 

@@ -1,3 +1,4 @@
+//@ts-nocheck 
 import tinymce from 'tinymce';
 
 tinymce.PluginManager.add('cwrcpath', function (editor) {

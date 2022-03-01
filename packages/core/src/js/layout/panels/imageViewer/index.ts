@@ -87,7 +87,9 @@ class ImageViewer {
     });
 
     this.writer.event('contentChanged').subscribe(() => {
-      this.processDocument(this.writer.editor.getDoc(), false);
+      const document = this.writer.editor.getDoc();
+      //@ts-ignore
+      this.processDocument(document, false);
     });
 
     this.writer.event('writerInitialized').subscribe(() => {

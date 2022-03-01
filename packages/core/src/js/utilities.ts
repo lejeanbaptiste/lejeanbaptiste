@@ -205,14 +205,14 @@ class Utilities {
       id = id[id.length - 1];
     }
 
-    const node = $(`#${id}`, this.writer.editor.getBody());
+    const node = $(`#${id}`, this.writer.editor?.getBody());
     const nodeEl = node[0];
     if (!nodeEl) return;
     if (nodeEl) {
       // show the element if it's inside a note
       node.parents('.noteWrapper').removeClass('hide');
 
-      const rng = this.writer.editor.dom.createRng();
+      const rng = this.writer.editor?.dom.createRng();
       if (selectContentsOnly) {
         //@ts-ignore
         if (tinymce.isWebKit) {
@@ -227,9 +227,9 @@ class Utilities {
         rng.selectNode(nodeEl);
       }
 
-      this.writer.editor.selection.setRng(rng);
+      this.writer.editor?.selection.setRng(rng);
 
-      this.writer.editor.currentBookmark = this.writer.editor.selection.getBookmark(1);
+      this.writer.editor.currentBookmark = this.writer.editor?.selection.getBookmark(1);
 
       // scroll node into view
       let nodeTop = 0;
@@ -243,21 +243,21 @@ class Utilities {
       const newScrollTop =
         //@ts-ignore
         nodeTop - $(this.writer.editor.getContentAreaContainer()).height() * 0.25;
-      $(this.writer.editor.getDoc()).scrollTop(newScrollTop);
+      $(this.writer.editor.getDoc())?.scrollTop(newScrollTop);
 
       // using setRng triggers nodeChange event so no need to call it manually
       //            _fireNodeChange(nodeEl);
 
       // need focus to happen after timeout, otherwise it doesn't always work (in FF)
       window.setTimeout(() => {
-        this.writer.editor.focus();
+        this.writer.editor?.focus();
         this.writer.event('tagSelected').publish(id, selectContentsOnly);
       }, 0);
     }
   };
 
   getRootTag = () => {
-    return $('[_tag]:first', this.writer.editor.getBody());
+    return $('[_tag]:first', this.writer.editor?.getBody());
   };
 
   /**
@@ -324,16 +324,17 @@ class Utilities {
   evaluateXPath(contextNode: Document | Element, xpath: string) {
     const doc = contextNode.ownerDocument ? contextNode.ownerDocument : contextNode; // then the contextNode is a doc
 
-    const isCWRC = doc === this.writer.editor.getDoc();
+    const isCWRC = doc === this.writer.editor?.getDoc();
 
     // grouped matches: 1 separator, 2 axis, 3 namespace, 4 element name or attribute name or function, 5 predicate
     const regex = /(\/{0,2})([\w-]+::|@)?(\w+?:)?([\w-(\.\*)]+)(\[.+?\])?/g;
 
     let nsResolver = null;
-    const defaultNamespace = doc.documentElement.getAttribute('xmlns');
+    const defaultNamespace =
+      doc instanceof Document ? doc.documentElement.getAttribute('xmlns') : '';
 
     // TODO should doc.documentElement.namespaceURI also be checked? it will return http://wwthis.writer.w3.org/1999/xhtml for the editor doc
-    if (!isCWRC) {
+    if (!isCWRC && doc instanceof Document) {
       const nsr = doc.createNSResolver(doc.documentElement);
       //@ts-ignore
       nsResolver = (prefix) => nsr.lookupNamespaceURI(prefix) || defaultNamespace;
@@ -401,7 +402,10 @@ class Utilities {
 
     let evalResult;
     try {
-      evalResult = doc.evaluate(xpath, contextNode, nsResolver, XPathResult.ANY_TYPE, null);
+      evalResult =
+        doc instanceof Document
+          ? doc.evaluate(xpath, contextNode, nsResolver, XPathResult.ANY_TYPE, null)
+          : new Error();
     } catch (error) {
       console.warn(`utilities.evaluateXPath: there was an error evaluating the xpath ${error}`);
       return null;
@@ -500,7 +504,7 @@ class Utilities {
     if (!$parent) return position;
 
     let offP = $el.offsetParent();
-    while ($parent.find(offP).length == 1) {
+    while ($parent.find(offP[0]).length === 1) {
       const pos = offP.position();
       position.top += pos.top;
       position.left += pos.left;

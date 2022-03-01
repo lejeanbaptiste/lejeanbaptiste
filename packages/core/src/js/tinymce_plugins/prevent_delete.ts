@@ -1,5 +1,5 @@
 // https://stackoverflow.com/questions/9856269/protect-div-element-from-being-deleted-within-tinymce
-
+//@ts-nocheck 
 import tinymce, { Editor, EditorEvent } from 'tinymce';
 
 //! THESE FUNCTIONS NEED BE REVIEWED: KEYBOARD_EVENT.keyCode is deprecated. -- see WIP on the commented code bellow
