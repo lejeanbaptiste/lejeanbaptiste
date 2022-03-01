@@ -24,14 +24,11 @@
   "author": "Luciano Frizzera <lucaju@gmail.com>",
   "exports": {
     ".": {
-      "import": [
-        "./src/index.ts",
-        "./lib/index.js"
-      ],
-      "require": "./dist/leaf-writer-validator.worker.js"
+      "import": "./lib/index.worker.js",
+      "require": "./dist/leafwriter-validator.worker.js"
     }
   },
-  "types": "lib/index.worler.d.ts",
+  "types": "lib/index.worker.d.ts",
   "module": "src/index.worker.ts",
   "files": [
     "dist",
