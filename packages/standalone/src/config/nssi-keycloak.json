@@ -4,5 +4,6 @@
     "public-client": true,
     "realm": "lincs",
     "resource": "leaf-writer",
-    "ssl-required": "external"
+    "ssl-required": "external",
+    "enable-cors": true
 }
