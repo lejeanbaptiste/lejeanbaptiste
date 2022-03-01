@@ -4,29 +4,36 @@ import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { ESBuildMinifyPlugin } from 'esbuild-loader';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 import webpack, { EntryObject } from 'webpack';
 import WebpackBar from 'webpackbar';
-import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 
-const env = process.env.NODE_ENV;
-const envWorker = process.env.WORKER_ENV;
+import pkg from './package.json';
 
-const mode = env === 'development' ? 'development' : 'production';
-const watch = env === 'development' ? true : false;
-const cache = env === 'development' ? true : false;
-const devtool = env === 'development' ? 'inline-source-map' : 'source-map'; // inline-source-map //'eval-source-map' (might be faster for dev)
+const isDev = process.env.NODE_isDev;
 
 const entry: EntryObject = {
-  'leaf-writer': [path.resolve(__dirname, 'src', 'index.tsx')],
+  index: [path.resolve(__dirname, 'src', 'index.tsx')],
+  'index.min': [path.resolve(__dirname, 'src', 'index.tsx')],
 };
 
 const output = {
   path: path.resolve(__dirname, 'dist'),
   publicPath: '/',
-  pathinfo: env === 'development' ? true : false,
-  libraryTarget: 'umd',
+  pathinfo: isDev ? true : false,
   library: 'leaf-writer',
+  libraryTarget: 'umd',
   umdNamedDefine: true,
+};
+
+const optimization = {
+  emitOnErrors: isDev ? true : false,
+  minimize: isDev ? false : true,
+  minimizer: isDev
+    ? []
+    : [new ESBuildMinifyPlugin({ target: 'es2020', css: true, include: /\.min\.js$/ })],
+  sideEffects: isDev ? false : true,
+  usedExports: isDev ? false : true,
 };
 
 const plugins = [
@@ -58,9 +65,8 @@ const plugins = [
   }),
 
   new MiniCssExtractPlugin(),
-  new WebpackBar({ color: env === 'development' ? '#7e57c2' : '#9ccc65' }),
-  new webpack.ProvidePlugin({ process: 'process/browser' }),
   new MonacoWebpackPlugin({ languages: ['xml', 'json'] }),
+  new WebpackBar({ color: isDev ? '#7e57c2' : '#9ccc65' }),
   new webpack.DefinePlugin({
     webpackEnv: {
       LEAFWRITER_VERSION: JSON.stringify(pkg.version),
@@ -68,18 +74,17 @@ const plugins = [
       WORKER_ENV: JSON.stringify(process.env.WORKER_ENV),
     },
   }),
+  new webpack.ProvidePlugin({ process: 'process/browser' }),
 ];
 
-const performanceHints = env === 'development' ? false : 'warning';
-
-const debug = env === 'development' && false;
-const stats = debug ? { children: true } : {};
-
 const webpackConfig: webpack.Configuration = {
-  cache,
-  devtool,
   entry,
-  mode,
+  optimization,
+  output,
+  plugins,
+  cache: isDev ? true : false,
+  devtool: isDev ? 'inline-source-map' : 'source-map', // inline-source-map //'eval-source-map' (might be faster for dev),
+  mode: isDev ? 'development' : 'production',
   module: {
     rules: [
       {
@@ -121,27 +126,11 @@ const webpackConfig: webpack.Configuration = {
       {
         test: /\.svg$/,
         loader: 'svg-inline-loader',
-        options: {
-          removeSVGTagAttrs: false,
-        },
+        options: { removeSVGTagAttrs: false },
       },
     ],
   },
-  optimization: {
-    emitOnErrors: env === 'development' ? true : false,
-    minimize: env === 'development' ? false : true,
-    minimizer:
-      env === 'development'
-        ? []
-        : [new ESBuildMinifyPlugin({ target: 'es2020', css: true, include: /\.min\.js$/ })],
-    sideEffects: env === 'development' ? false : true,
-    usedExports: env === 'development' ? false : true,
-  },
-  output,
-  performance: {
-    hints: performanceHints,
-  },
-  plugins,
+  performance: { hints: isDev ? false : 'warning' },
   resolve: {
     alias: { '@src': path.resolve(__dirname, 'src/') },
     extensions: ['.tsx', '.ts', '.js', '.json'],
@@ -155,10 +144,8 @@ const webpackConfig: webpack.Configuration = {
       url: false,
     },
   },
-  stats,
-  watch,
+  stats: isDev ? { children: true } : {},
+  watch: isDev ? true : false,
 };
-
-webpackConfig.resolve?.fallback;
 
 export default webpackConfig;
