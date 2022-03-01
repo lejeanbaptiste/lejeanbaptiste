@@ -357,6 +357,7 @@ class CWRC2XML {
         // To allow this function to exit recursion it must be able to return false.
         let ret: boolean = true;
 
+        //@ts-ignore
         parent.contents().each((index, element) => {
           const $el = $(element);
           let start: boolean;

@@ -274,7 +274,8 @@ class SchemaManager {
       }
 
       // now process the references
-      currEl.find('ref').each((index, el) => {
+      //@ts-ignore
+      currEl.find('ref').each((_index, el) => {
         const name = $(el).attr('name');
         if ($(el).parents('element').length > 0 && level > 0) {
           return; // ignore other elements
@@ -575,7 +576,8 @@ class SchemaManager {
       });
 
       // if loaded, convert to XML, break the loop and return
-      if (response?.status === 200) {
+      if (!response) return;
+      if (response.status === 200) {
         const body = await response.text();
         xml = this.writer.utilities.stringToXML(body);
         this.xmlUrl = url;
@@ -815,7 +817,8 @@ class SchemaManager {
       });
 
       //if loaded, break the loop and return
-      if (response?.status === 200) {
+      if (!response) return
+      if (response.status === 200) {
         css = await response.text();
         this.cssUrl = url; // redefine schema manager css based on the available url
         break;

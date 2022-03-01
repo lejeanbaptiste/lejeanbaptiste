@@ -4,16 +4,17 @@ import {
   graph as RDFgraph,
   parse as RDFparse,
   serialize as RDFserialize,
-  sym as RDFsym,
+  sym as RDFsym
 } from 'rdflib';
 import { webpackEnv } from '../../@types';
+import { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
 import Entity, { IannotationRange, IEntityConfig } from './Entity';
 import type {
   IAnnotation,
   IAnnotationContributor,
   IAnnotationCreator,
-  IAnnotationFormat,
+  IAnnotationFormat
 } from './types';
 
 const leafWriterVersion = webpackEnv.LEAFWRITER_VERSION; //'1.0.0' //pkg.version;
@@ -333,25 +334,26 @@ class AnnotationsManager {
     );
 
     let rdfString = rdfStringArray.join('');
+    
     // triples
-    for (const triple of this.writer.triples) {
-      rdfString += `
-        <rdf:Description
-          rdf:about="${triple.subject.uri}"
-          cw:external="${triple.subject.external}"
-        >
-          <cw:triple.predicate.name
-            cw:text="${triple.predicate.text}"
-            cw:external="${triple.predicate.external}"
-          >
-            <rdf:Description
-              rdf:about="${triple.object.uri}"
-              cw:external="${triple.object.external}"
-            />
-          </cw:triple.predicate.name>
-        </rdf:Description>
-      `;
-    }
+    // for (const triple of this.writer.triples) {
+    //   rdfString += `
+    //     <rdf:Description
+    //       rdf:about="${triple.subject.uri}"
+    //       cw:external="${triple.subject.external}"
+    //     >
+    //       <cw:triple.predicate.name
+    //         cw:text="${triple.predicate.text}"
+    //         cw:external="${triple.predicate.external}"
+    //       >
+    //         <rdf:Description
+    //           rdf:about="${triple.object.uri}"
+    //           cw:external="${triple.object.external}"
+    //         />
+    //       </cw:triple.predicate.name>
+    //     </rdf:Description>
+    //   `;
+    // }
 
     const nsAttr = [...namespaces].map(([namespace, uri]) => `xmlns:${namespace}="${uri}"`);
     return `<rdf:RDF ${nsAttr.join(' ')}>${rdfString}</rdf:RDF>`
@@ -485,6 +487,7 @@ class AnnotationsManager {
     // type
     let annotationTypes: string | string[] =
       annotation['oa:hasBody']['type'] || annotation['oa:hasBody']['@type'];
+      //@ts-ignore
     entityConfig.type = this.getEntityTypeForAnnotation(annotationTypes);
 
     //uri
@@ -540,7 +543,7 @@ class AnnotationsManager {
       if (entityType !== null) break;
     }
 
-    entityConfig.type = entityType;
+    entityConfig.type = entityType as EntityTypes;
 
     // range
     let rangeObj: IannotationRange | undefined = undefined;
@@ -612,7 +615,7 @@ class AnnotationsManager {
     }
     const entityConfig: Partial<IEntityConfig> = {};
 
-    const entityType = this.getEntityTypeForAnnotationLegacy(typeUri);
+    const entityType = this.getEntityTypeForAnnotationLegacy(typeUri) as EntityTypes;
     if (entityType) entityConfig.type = entityType;
 
     // range

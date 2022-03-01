@@ -81,6 +81,7 @@ class Relations {
     this.writer.event('schemaLoaded').subscribe(() => this.update());
 
     // add to writer
+    //@ts-ignore
     this.writer.relations = this;
   }
 
@@ -94,6 +95,7 @@ class Relations {
 
     for (let i = 0; i < this.writer.triples.length; i++) {
       const { subject, predicate, object } = this.writer.triples[i];
+       //@ts-ignore
       relationsString += `<li> ${subject.text} ${predicate.text} ${object.text}</li>`;
     }
 

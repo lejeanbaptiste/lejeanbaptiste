@@ -286,6 +286,7 @@ class Mapper {
     // attributes
     isCWRC
       ? (obj.attributes = this.writer.tagger.getAttributesForTag(element))
+      //@ts-ignore
       : $.map(element.attributes, (att) => (obj.attributes[att.name] = att.value));
 
     // mapping values
@@ -609,13 +610,13 @@ class Mapper {
         // if (typesToFind.length == 0 || typesToFind.indexOf(type) != -1) {
         let entityTagNames: string[] = [];
 
-        let parentTag = entityMappings.get(type as EntityTypes)?.parentTag;
+        let parentTag = entityMappings.get(type as EntityTypes).parentTag;
         if (Array.isArray(parentTag)) entityTagNames = [...entityTagNames, ...parentTag];
-        if (parentTag && Array.isArray(parentTag)) {
+        if (Array.isArray(parentTag)) {
           parentTag = parentTag[0];
           if (parentTag !== '') entityTagNames.push(parentTag);
         }
-        if (parentTag && parentTag !== '') entityTagNames.push(parentTag);
+        if (parentTag !== '') entityTagNames.push(parentTag);
 
         entityTagNames = entityTagNames.map((name) => `[_tag="${name}"]`);
 

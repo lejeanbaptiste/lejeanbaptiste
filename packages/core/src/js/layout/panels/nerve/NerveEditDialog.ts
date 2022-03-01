@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import DialogForm from '../../../dialogs/dialogForm/dialogForm';
-import { doLookup } from './util';
+// import { doLookup } from './util';
 
 function NerveEditDialog(writer: any, parentEl: HTMLElement) {
   let forceSave = false; // needed for confirmation dialog in beforeSave
@@ -43,10 +43,10 @@ function NerveEditDialog(writer: any, parentEl: HTMLElement) {
     //@ts-ignore
     const entity = dialog.showConfig.entry;
     const query = entity.content.trim().replace(/\s+/g, ' ');
-    doLookup(writer, query, type, ({ name, uri }: { name: string; uri: string }) => {
-      dialog.$el.find('input[data-mapping="prop.lemma"]').val(name);
-      dialog.$el.find('input[data-mapping="prop.uri"]').val(uri);
-    });
+    // doLookup(writer, query, type, ({ name, uri }: { name: string; uri: string }) => {
+    //   dialog.$el.find('input[data-mapping="prop.lemma"]').val(name);
+    //   dialog.$el.find('input[data-mapping="prop.uri"]').val(uri);
+    // });
   });
 
   dialog.$el.on('beforeShow', () => (forceSave = false));

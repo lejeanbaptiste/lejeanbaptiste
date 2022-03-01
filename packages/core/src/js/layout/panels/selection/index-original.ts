@@ -30,6 +30,7 @@ class Selection {
     this.lastUpdate = new Date().getTime();
 
     // add to writer
+    //@ts-ignore
     this.writer.selection = this; // needed by view markup button
 
     $(`#${parentId}`).append(`
@@ -93,7 +94,7 @@ class Selection {
       this.showString(content);
     } else {
       this.showingFullDoc = false;
-      const range = this.writer.editor?.selection.getRng(true);
+      const range = this.writer.editor?.selection.getRng();
       const contents = range?.cloneContents();
       if (contents) this.$selectionContents.html(contents);
       const xmlString = this.writer.converter.buildXMLString(this.$selectionContents[0]);

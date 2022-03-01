@@ -1366,16 +1366,17 @@ const NerveEditDialog = (writer: any, parentEl: HTMLElement) => {
 
   dialog.$el
     .find('button[data-action=lookup]')
+    //@ts-ignore
     .button({ icon: 'ui-icon-search' })
     .on('click', () => {
       const type = dialog.$el.find('select').val();
       //@ts-ignore
       const entity = dialog.showConfig.entry;
       const query = entity.content.trim().replace(/\s+/g, ' ');
-      doLookup(writer, query, type, ({ name, uri }: { name: string; uri: string }) => {
-        dialog.$el.find('input[data-mapping="prop.lemma"]').val(name);
-        dialog.$el.find('input[data-mapping="prop.uri"]').val(uri);
-      });
+      // doLookup(writer, query, type, ({ name, uri }: { name: string; uri: string }) => {
+      //   dialog.$el.find('input[data-mapping="prop.lemma"]').val(name);
+      //   dialog.$el.find('input[data-mapping="prop.uri"]').val(uri);
+      // });
     });
 
   dialog.$el.on('beforeShow', () => (forceSave = false));
@@ -1522,9 +1523,9 @@ function MergeDialog(writer: any, parentEl: HTMLElement) {
     .on('click', function () {
       const query = currEntities[0].getContent();
       const type = currEntities[0].getType();
-      doLookup(writer, query, type, (result: any) => {
-        $el.find('input[name=otherLink]').val(result.uri);
-      });
+      // doLookup(writer, query, type, (result: any) => {
+      //   $el.find('input[name=otherLink]').val(result.uri);
+      // });
     });
 
   const reset = function () {

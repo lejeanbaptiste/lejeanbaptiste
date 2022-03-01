@@ -34,7 +34,7 @@ export default class Wikidata implements ILookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
   private readonly baseURL = '';
   private readonly FORMAT = 'json';
-  private readonly MAX_HITS = 20; //defaut: 20
+  // private readonly MAX_HITS = 20; //defaut: 20
   private readonly LANGUAGE = 'en';
   private readonly timeout = 3_000;
 

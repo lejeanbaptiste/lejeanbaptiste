@@ -10,9 +10,16 @@ interface IPredicateList {
 }
 
 interface IComponent {
-  text: string;
-  uri: string;
   external: boolean;
+  name?: string;
+  text: string;
+  uri?: string;
+}
+
+export interface ITriple {
+  subject: IComponent;
+  predicate: IComponent;
+  object: IComponent;
 }
 
 const predicateList: IPredicateList = {
@@ -116,7 +123,7 @@ class Triple {
           return;
         }
 
-        this.writer.triples.push({
+        const triple: ITriple = {
           subject,
           predicate: {
             text: predicate.text,
@@ -124,7 +131,10 @@ class Triple {
             external: predicate.external,
           },
           object,
-        });
+        }
+        
+        this.writer.triples.push(triple);
+        //@ts-ignore
         this.writer.relations.update();
       });
   }
@@ -180,6 +190,7 @@ class Triple {
         let uri = '';
         const id = s.attr('name');
 
+        //@ts-ignore
         if (id) uri = _this.writer.entitiesManager.getEntity(id).getUris().annotationId;
 
         components[index] = {
