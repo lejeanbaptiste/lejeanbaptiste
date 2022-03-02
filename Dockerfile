@@ -3,9 +3,6 @@ FROM node:16.14-alpine
 # Needed because some dependencies are fetch from git and alpine does not come with git
 RUN apk add --no-cache git
 
-ARG AUTHORIZATION_CALLBACK_URL
-ARG GA_MEASUREMENT_ID
-
 RUN npm install pm2 ts-node -g
 
 WORKDIR /app

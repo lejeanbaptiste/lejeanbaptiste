@@ -87,7 +87,6 @@ const plugins = [
   new WebpackBar({ color: isDev ? '#7e57c2' : '#9ccc65' }),
   new webpack.DefinePlugin({
     webpackEnv: {
-      AUTHORIZATION_CALLBACK_URL: JSON.stringify(process.env.AUTHORIZATION_CALLBACK_URL),
       NODE_ENV: JSON.stringify(process.env.NODE_ENV),
       WORKER_ENV: JSON.stringify(process.env.WORKER_ENV),
     },
