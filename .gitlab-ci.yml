@@ -27,10 +27,6 @@ cache:
   paths:
     - node_modules
 
-review:
-  variables:
-    K8S_SECRET_AUTHORIZATION_CALLBACK_URL: https://$CI_PROJECT_ID-$CI_ENVIRONMENT_SLUG.$KUBE_INGRESS_BASE_DOMAIN
-
 # Template to override common stage/prod parameters
 .deployment: &deployment
   environment:
