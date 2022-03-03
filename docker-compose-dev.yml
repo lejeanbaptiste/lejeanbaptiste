@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
 
   leafwriter:
-    container_name: leaf-writer
+    container_name: leaf-writer-dev
     build:
       dockerfile: Dockerfile.dev
     volumes:
