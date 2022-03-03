@@ -26,7 +26,7 @@ const plugins = [
   new CopyWebpackPlugin({
     patterns: [
       { from: path.resolve(__dirname, 'src', 'assets'), to: 'assets' },
-      { from: path.resolve(__dirname, 'src', 'config'), to: 'config' },
+      // { from: path.resolve(__dirname, 'src', 'config'), to: 'config' },
       { from: path.resolve(__dirname, 'src', 'content'), to: 'content' },
       {
         context: path.resolve(__dirname, 'src'),
