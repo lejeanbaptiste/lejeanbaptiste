@@ -1,4 +1,5 @@
 import { supportedSchemas } from './supportedSchemas';
+import { NSSI_BASE_URL } from '../config/config';
 
 export type EditorMode = 'rdf' | 'xml' | 'xml-rdf_overlap' | 'xml-rdf_nooverlap';
 
@@ -17,7 +18,7 @@ export const config = {
     lookups: {
       service: {
         name: 'nssi',
-        apiURL: 'https://keycloak.dev.lincsproject.ca',
+        apiURL: NSSI_BASE_URL, //'https://keycloak.stage.lincsproject.ca',
       },
     },
     authentication: [{ name: 'nssi', service: {} }],
