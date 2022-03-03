@@ -1,9 +1,0 @@
-{
-    "auth-server-url": "https://keycloak.dev.lincsproject.ca/auth",
-    "confidential-port": 0,
-    "public-client": true,
-    "realm": "lincs",
-    "resource": "leaf-writer",
-    "ssl-required": "external",
-    "enable-cors": true
-}
