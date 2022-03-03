@@ -4,12 +4,7 @@ services:
   leafwriter:
     build:
       dockerfile: Dockerfile
-      args:
-        - AUTHORIZATION_CALLBACK_URL=http://localhost:3000
-        - GA_MEASUREMENT_ID=UA-29631253-4
     environment:
-      - AUTHORIZATION_CALLBACK_URL=https://localhost:3000
-      # TODO needs to be updated
-      - GA_MEASUREMENT_ID=UA-29631253-4
+      - GA_MEASUREMENT_ID
     ports:
       - 3000:3000

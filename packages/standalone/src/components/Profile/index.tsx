@@ -18,12 +18,14 @@ import Language from './Language';
 import Identity from './Identity';
 import Storage from './Storage';
 import ThemeAppearance from './ThemeAppearance';
+import { KEYCLOACK_BASE_URL } from '../../config/config';
+
 interface ProfileProps {
   anchor: HTMLDivElement;
   handleClose: () => void;
 }
 
-const ACCOUNT_MANAGMENT_URL = 'https://keycloak.dev.lincsproject.ca/auth/realms/lincs/account/#/';
+const ACCOUNT_MANAGMENT_URL = `${KEYCLOACK_BASE_URL}/auth/realms/lincs/account/#/`;
 
 const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
   const { t } = useTranslation();
