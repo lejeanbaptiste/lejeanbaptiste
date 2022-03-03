@@ -17,7 +17,7 @@ import type {
   IAnnotationFormat
 } from './types';
 
-const leafWriterVersion = webpackEnv.LEAFWRITER_VERSION; //'1.0.0' //pkg.version;
+const leafWriterVersion = 'dev'; //webpackEnv?.LEAFWRITER_VERSION ?? '' ;
 
 const prefixMap: Map<string, string> = new Map([
   ['bibo', 'http://purl.org/ontology/bibo/'],
