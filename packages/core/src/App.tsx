@@ -19,7 +19,7 @@ declare global {
   }
 }
 
-const CONTAINER = 'cwrcWriterContainer';
+const CONTAINER = 'leafwriterContainer';
 
 const App: FC<LeafWriterConfig> = ({ document, editor, onLoadRequest, onSaveRequest, user }) => {
   const actions = useActions();
