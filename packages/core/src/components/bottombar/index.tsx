@@ -6,7 +6,7 @@ import EditorMode from './EditorMode';
 import Schema from './Schema';
 
 const BottomBar: FC = () => {
-  const version = webpackEnv.LEAFWRITER_VERSION; //'1.0.0' //pkg.version;
+  const version = 'dev'; //webpackEnv?.LEAFWRITER_VERSION ?? '';
 
   return (
     <Box bottom={0} position="fixed" width="100vw">

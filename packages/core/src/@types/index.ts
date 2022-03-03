@@ -3,7 +3,7 @@ import { Bookmark, Editor } from 'tinymce/tinymce';
 import { ILookupsConfig } from '@src/components/entityLookups/types';
 
 export declare var webpackEnv: {
-  LEAFWRITER_VERSION: string;
+  LEAFWRITER_VERSION?: string;
   NODE_ENV: string;
   WORKER_ENV: string;
 };
