@@ -1,6 +1,6 @@
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import OrcidIcon from '@src/assets/icons/orcid';
+import OrcidIcon from '../icons/orcid';
 import { Gitlab } from 'mdi-material-ui';
 
 const icons: Map<string, any> = new Map();

@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter",
-  "version": "1.0.7",
+  "version": "1.0.10",
   "description": "intuitive document editing with xml and rdf",
   "keywords": [
     "xml",
@@ -25,9 +25,6 @@
     "Andrew MacDonald <andrewjames.code@gmail.com>",
     "James Chartrand <jc.chartrand@gmail.com>"
   ],
-  "exports": {
-    ".": "./dist/index.js"
-  },
   "types": "lib/index.d.ts",
   "module": "src/index.tsx",
   "files": [

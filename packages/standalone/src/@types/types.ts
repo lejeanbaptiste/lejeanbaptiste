@@ -1,5 +1,4 @@
 export declare var webpackEnv : {
-  AUTHORIZATION_CALLBACK_URL: string
   NODE_ENV: string
   WORKER_ENV: string;
 }
