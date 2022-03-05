@@ -331,7 +331,7 @@ class Utilities {
 
     let nsResolver = null;
     const defaultNamespace =
-      doc instanceof Document ? doc.documentElement.getAttribute('xmlns') : '';
+      doc instanceof Document ? doc.documentElement.getAttribute('xmlns') : null;
 
     // TODO should doc.documentElement.namespaceURI also be checked? it will return http://wwthis.writer.w3.org/1999/xhtml for the editor doc
     if (!isCWRC && doc instanceof Document) {
@@ -400,18 +400,16 @@ class Utilities {
       });
     }
 
-    let evalResult;
+    let evalResult: XPathResult;
     try {
-      evalResult =
-        doc instanceof Document
-          ? doc.evaluate(xpath, contextNode, nsResolver, XPathResult.ANY_TYPE, null)
-          : new Error();
+      //@ts-ignore
+      evalResult = doc.evaluate(xpath, contextNode, nsResolver, XPathResult.ANY_TYPE, null);
     } catch (error) {
       console.warn(`utilities.evaluateXPath: there was an error evaluating the xpath ${error}`);
       return null;
     }
 
-    let result: number | string | boolean | Node | null = null;
+    let result: number | string | boolean | Node = null;
 
     switch (evalResult.resultType) {
       case XPathResult.NUMBER_TYPE:
