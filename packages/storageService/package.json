@@ -23,20 +23,20 @@
   "author": "Luciano Frizzera <lucaju@gmail.com>",
   "exports": {
     ".": {
-      "import": "./lib/index.js",
+      "import": ["./src/index.tsx","./lib/index.js"],
       "require": "./dist/index.js"
     },
     "./Dialog": {
-      "import": "./lib/StorageDialog.js",
+      "import": ["./src/StorageDialog.tsx","./lib/StorageDialog.js"],
       "require": "./dist/StorageDialog.js"
     },
     "./headless": {
-      "import": "./lib/headless.js",
+      "import": ["./src/headless.ts","./lib/headless.js"],
       "require": "./dist/headless.js"
     }
   },
   "types": "lib/index.d.ts",
-  "module": "src/index.ts",
+  "module": "src/index.tsx",
   "files": [
     "dist",
     "lib"
