@@ -1,14 +1,15 @@
-import { colors, createTheme } from '@mui/material';
+import { createTheme } from '@mui/material';
+import chroma from 'chroma-js';
 
 const theme = (darkMode: boolean) =>
   createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: colors.orange[800],
+        main: chroma.rgb(70, 136, 240).hex(),
       },
       secondary: {
-        main: colors.blue[600],
+        main: chroma.rgb(255, 114, 0).hex(),
       },
     },
     typography: {
