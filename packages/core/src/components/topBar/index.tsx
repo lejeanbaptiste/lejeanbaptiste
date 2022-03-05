@@ -1,5 +1,5 @@
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
-import { AppBar, Box, IconButton, Toolbar, Typography, useTheme } from '@mui/material';
+import { AppBar, Box, IconButton, Toolbar, Tooltip, Typography, useTheme } from '@mui/material';
 import Badge, { BadgeProps } from '@mui/material/Badge';
 import { styled } from '@mui/material/styles';
 import { AnimatePresence } from 'framer-motion';
@@ -53,10 +53,12 @@ const TopBar: FC<TopBarProps> = ({ title = 'leaf writer' }) => {
               >
                 {resource.filename ?? 'untitled.xml'}
               </Typography>
-              <IconButton aria-label="save" onClick={handleSave} size="small" sx={{ ml: 0.5 }}>
-                {isEditorDirty && <StyledBadge color="primary" variant="dot"></StyledBadge>}
-                <CloudQueueIcon fontSize="inherit" sx={{ width: 12, height: 12 }} />
-              </IconButton>
+              <Tooltip title={isEditorDirty ? 'Click to sync' : 'Synced to the cloud'}>
+                <IconButton aria-label="save" onClick={handleSave} size="small" sx={{ ml: 0.5 }}>
+                  {isEditorDirty && <StyledBadge color="primary" variant="dot"></StyledBadge>}
+                  <CloudQueueIcon fontSize="inherit" sx={{ width: 12, height: 12 }} />
+                </IconButton>
+              </Tooltip>
             </>
           )}
 
