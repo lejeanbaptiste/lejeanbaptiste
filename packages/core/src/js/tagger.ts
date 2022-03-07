@@ -1120,7 +1120,7 @@ class Tagger {
     //? what to do if id is multiple
     if (Array.isArray(id)) id = id[0];
 
-    if (!removeContents) {
+    if (removeContents === undefined) {
       if (
         this.writer.tree &&
         this.writer.tree.currentlySelectedNodes.length > 0 &&
