@@ -24,7 +24,7 @@ import SettingsDialog from '../../../components/SettingsDialog';
 
 const Filename: FC = () => {
   const { t } = useTranslation();
-  const { resource } = useAppState().common;
+  const { resource, allowedFileTypes } = useAppState().common;
   const { setFilename } = useActions().common;
   const { saveDocument } = useActions().cloud;
   const [value, setValue] = useState<string>('');
@@ -42,19 +42,31 @@ const Filename: FC = () => {
     setValue(resource?.filename ?? '');
   }, []);
 
+  const addFileExtension = (fileName: string) => {
+    if (!allowedFileTypes || allowedFileTypes.length === 0) return fileName;
+
+    //TODO allow saving wih different extension if allowed
+    const extension = allowedFileTypes[0];
+
+    if (fileName.endsWith(`.${extension}`)) return fileName;
+    
+    return `${fileName}.${extension}`
+  }
+
   const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
-    const inputValue = event.target.value;
+    const inputValue = addFileExtension(event.target.value);
     setFilename(inputValue);
   };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const inputValue = event.target.value;
+    let inputValue = event.target.value;
     setValue(inputValue);
   };
 
   const handleKeyPress = async (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.code !== 'Enter') return;
-    setFilename(value);
+    const inputValue = addFileExtension(value);
+    setFilename(inputValue);
     await saveDocument();
   };
 

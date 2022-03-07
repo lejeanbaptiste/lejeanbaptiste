@@ -5,6 +5,7 @@ import type {
 } from '@cwrc/leafwriter-validator';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
+import 'jquery-ui/ui/widgets/tooltip';
 import ProgressBar from 'progressbar.js';
 import Circle from 'progressbar.js/circle';
 import Writer from '../../../Writer';
@@ -156,19 +157,28 @@ class Validation {
     $stats.empty();
     $stats.append(`
     <div id="stats-container">
-      <div id="info" >
+      <div id="info" title="Rerun validator">
         <i class="fas fa-exclamation-circle"></i>
         ${errors.length}
-      </div>
-      <div class="revalidate-bt">
-        <i class="fas fa-redo-alt"></i>
       </div>
      </div>
     `);
 
     //@ts-ignore
-    const $validateButton = $(`.revalidate-bt`).button();
-    $validateButton.on('click', () => this.writer.validate());
+    const $infoBadge = $stats.find('#info').button();
+    $infoBadge.on('click', () => this.writer.validate());
+    
+    $infoBadge.on('mouseover', (event: JQuery.MouseOverEvent) => {
+      const $icon = $(event.currentTarget).find('i');
+      $icon.toggleClass('fa-exclamation-circle', false)
+      $icon.toggleClass('fa-arrow-rotate-right', true)
+    })
+
+    $infoBadge.on('mouseout', (event: JQuery.MouseOutEvent) => {
+      const $icon = $(event.currentTarget).find('i');
+      $icon.toggleClass('fa-exclamation-circle', true)
+      $icon.toggleClass('fa-arrow-rotate-right', false)
+    })
 
     this.writer.tagger.addNoteWrappersForEntities();
 

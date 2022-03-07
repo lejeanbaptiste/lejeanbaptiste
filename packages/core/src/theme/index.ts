@@ -1,5 +1,6 @@
-import { colors, createTheme } from '@mui/material';
+import { createTheme } from '@mui/material';
 import { SimplePaletteColorOptions } from '@mui/material/styles';
+import chroma from 'chroma-js';
 
 interface Entity {
   color: SimplePaletteColorOptions;
@@ -55,70 +56,66 @@ const theme = (darkMode: boolean) =>
   createTheme({
     entity: {
       person: {
-        color: { main: colors.red[500] },
+        color: { main: chroma.rgb(46, 134, 222).hex() },
         icon: 'person',
       },
       place: {
-        color: { main: colors.cyan[500] },
+        color: { main: chroma.rgb(255, 159, 67).hex() },
         icon: 'place',
       },
       organization: {
-        color: { main: colors.deepPurple[500] },
+        color: { main: chroma.rgb(176, 185, 122).hex() },
         icon: 'organization',
       },
       org: {
-        color: { main: colors.deepPurple[500] },
+        color: { main: chroma.rgb(176, 185, 122).hex() },
         icon: 'organization',
       },
       title: {
-        color: { main: colors.yellow[600] },
+        color: { main: chroma.rgb(175, 70, 240).hex() },
         icon: 'title',
       },
       referencing_string: {
-        color: { main: colors.lightGreen[700] },
+        color: { main: chroma.rgb(131, 149, 167).hex() },
         icon: 'referencing_string',
       },
       rs: {
-        color: { main: colors.lightGreen[700] },
+        color: { main: chroma.rgb(131, 149, 167).hex() },
         icon: 'referencing_string',
       },
       citation: {
-        color: { main: colors.pink[500] },
+        color: { main: chroma.rgb(0, 128, 64).hex() },
         icon: 'citation',
       },
       note: {
-        color: { main: colors.blue[800] },
+        color: { main: chroma.rgb(224, 190, 0).hex() },
         icon: 'note',
       },
       date: {
-        color: { main: colors.orange[500] },
+        color: { main: chroma.rgb(253, 119, 170).hex() },
         icon: 'date',
       },
       correction: {
-        color: { main: colors.red[800] },
+        color: { main: chroma.rgb(191, 4, 4).hex() },
         icon: 'correction',
       },
       keyword: {
-        color: { main: colors.green[900] },
+        color: { main: chroma.rgb(16, 172, 132).hex() },
         icon: 'keyword',
       },
       link: {
-        color: { main: colors.lightBlue[500] },
+        color: { main: chroma.rgb(70, 130, 180).hex() },
         icon: 'link',
       },
     },
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: colors.orange[800],
+        main: chroma.rgb(70, 136, 240).hex(),
       },
       secondary: {
-        main: colors.indigo[500],
+        main: chroma.rgb(255, 114, 0).hex(),
       },
-      // person: {
-      //   main: colors.red[500],
-      //   // contrastText: '#fff',
-      // }
     },
     typography: {
       fontFamily: 'Lato, Helvetica, Arial, sans-serif',
