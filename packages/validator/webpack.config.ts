@@ -46,7 +46,7 @@ const webpackConfig: webpack.Configuration = {
   optimization: {
     emitOnErrors: isDev ? true : false,
     minimize: isDev ? false : true,
-    minimizer: isDev ? [] : [new ESBuildMinifyPlugin({ target: 'es2020', css: true })],
+    minimizer: isDev ? [] : [new ESBuildMinifyPlugin({ target: 'es2020' })],
     sideEffects: isDev ? false : true,
     usedExports: isDev ? false : true,
   },
