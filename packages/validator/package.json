@@ -42,10 +42,10 @@
     "cm": "git-cz"
   },
   "dependencies": {
+    "@cwrc/salve-dom-leafwriter": "^6.0.3",
+    "@cwrc/salve-leafwriter": "^1.2.2",
     "comlink": "^4.3.1",
     "lodash": "^4.17.21",
-    "salve-annos": "github:cwrc/salve#develop",
-    "salve-dom": "github:cwrc/salve-dom",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

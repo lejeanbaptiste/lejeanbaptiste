@@ -1,3 +1,5 @@
+import { ErrorData, WorkingState, WorkingStateData } from '@cwrc/salve-dom-leafwriter';
+import { EndTagEvent, EventSet, TextEvent } from '@cwrc/salve-leafwriter';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/unionBy';
 import { EventSet } from 'salve-annos/build/dist';

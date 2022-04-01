@@ -4,7 +4,7 @@ import {
   Grammar,
   readTreeFromJSON,
   writeTreeToJSON,
-} from 'salve-annos/build/dist';
+} from '@cwrc/salve-leafwriter';
 import { virtualEditor } from './virtualEditor';
 export interface SchemaRequest {
   id: string;

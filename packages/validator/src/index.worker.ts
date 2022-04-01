@@ -1,8 +1,8 @@
+import * as salve from '@cwrc/salve-leafwriter';
 import * as Comlink from 'comlink';
-import * as salve from 'salve-annos/build/dist';
 import { loadSchema, SchemaRequest } from './conversion';
 //@ts-ignore
-import jsdom from './lib/jsdom/jsdom-browserified.js';
+import jsdom from './lib/jsdom/jsdom-browserified';
 import { possibleAt, PossibleRequest } from './possible';
 import { attributesForTag, tagAt, TagRequest } from './tag';
 import { validate, validatePossibleAt, ValidationResponse } from './validate';
