@@ -24,7 +24,7 @@
   "author": "Luciano Frizzera <lucaju@gmail.com>",
   "exports": {
     ".": {
-      "import": "./lib/index.worker.js",
+      "import": "./src/index.worker",
       "require": "./dist/leafwriter-validator.worker.js"
     }
   },
@@ -32,7 +32,8 @@
   "module": "src/index.worker.ts",
   "files": [
     "dist",
-    "lib"
+    "lib",
+    "src"
   ],
   "scripts": {
     "browserify-jsdom": "browserify -r jsdom -s jsdom -o src/lib/jsdom/jsdom-browserified.js",
