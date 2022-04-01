@@ -45,8 +45,7 @@
     "clean": "shx rm -rf dist lib lib-esm css images"
   },
   "dependencies": {
-    "@cwrc/leafwriter-validator": "^0.4.2",
-    "@dnd-kit/core": "^5.0.1",
+    "@cwrc/leafwriter-validator": "^0.5.0",
     "@dnd-kit/modifiers": "^5.0.0",
     "@dnd-kit/sortable": "^6.0.0",
     "@emotion/react": "^11.7.1",
