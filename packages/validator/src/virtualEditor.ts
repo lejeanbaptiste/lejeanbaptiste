@@ -3,97 +3,100 @@ import { Grammar /* , GrammarWalker, NameResolver */ } from '@cwrc/salve-leafwri
 import { v4 as uuidv4 } from 'uuid';
 
 class VirtualEditor {
-  #id: string;
-  #validatorPrefix: string;
-  #schemaId?: string;
-  #schema?: Grammar;
-  // #walker?: GrammarWalker<NameResolver>;
-  #docXML?: Document;
-  #validator?: Validator;
+  private readonly validatorPrefix: string;
+
+  private _id: string;
+  private _schemaId?: string;
+  private _schema?: Grammar;
+  // private walker?: GrammarWalker<NameResolver>;
+  private _docXML?: Document;
+  private _validator?: Validator;
 
   constructor() {
-    this.#id = uuidv4();
-    this.#validatorPrefix = 'cwrc';
+    this._id = uuidv4();
+    this.validatorPrefix = 'cwrc';
   }
 
   reset() {
     this.stopValidator();
-    this.#id = uuidv4();
-    this.#schemaId = undefined;
-    this.#schema = undefined;
-    // this.#walker = undefined;
-    this.#docXML = undefined;
-    this.#validator = undefined;
+    this._id = uuidv4();
+    this._schemaId = undefined;
+    this._schema = undefined;
+    // this.walker = undefined;
+    this._docXML = undefined;
+    this._validator = undefined;
 
     return this;
   }
 
   get id() {
-    return this.#id;
+    return this._id;
   }
 
   get schemaId() {
-    return this.#schemaId;
+    return this._schemaId;
   }
 
   get schema() {
-    return this.#schema;
+    return this._schema;
   }
 
   async setSchema({ id, grammar }: { id: string; grammar: Grammar }): Promise<Grammar> {
-    this.#schemaId = id;
-    this.#schema = grammar;
-    // this.#walker = grammar.newWalker();
+    this._schemaId = id;
+    this._schema = grammar;
+    // this.walker = grammar.newWalker();
 
-    return this.#schema;
+    return this._schema;
   }
 
   get document() {
-    return this.#docXML;
+    return this._docXML;
   }
 
   setDocument(documentString: string) {
-    this.#docXML = safeParse(documentString, window);
-    return this.#docXML;
+    this._docXML = safeParse(documentString, window);
+    return this._docXML;
   }
 
   get validator() {
-    return this.#validator;
+    return this._validator;
   }
 
   setValidator() {
-    if (!this.#docXML) throw new Error('Document is not set');
+    if (!this._docXML) throw new Error('Document is not set');
+    if (!this._schema) throw new Error('Schema is not set');
 
-    const validator: Validator = new Validator(this.#schema, this.#docXML, {
-      prefix: this.#validatorPrefix,
+    const validator: Validator = new Validator(this._schema, this._docXML, {
+      prefix: this.validatorPrefix,
       timeout: 0,
       maxTimespan: 0,
     });
 
-    this.#validator = validator;
+    this._validator = validator;
 
-    return this.#validator;
+    return this._validator;
   }
 
   hasValidator() {
-    return this.#validator ? true : false;
+    return this._validator ? true : false;
   }
 
   startValidator() {
-    if (!this.#validator) throw new Error('Validator is not set');
+    if (!this._validator) throw new Error('Validator is not set');
 
-    this.#validator.start();
+    this._validator.start();
 
-    return this.#validator;
+    return this._validator;
   }
 
   stopValidator() {
-    if (!this.#validator) throw new Error('Validator is not set');
-    this.#validator.stop();
+    if (!this._validator) throw new Error('Validator is not set');
+    this._validator.stop();
 
-    return this.#validator;
+    return this._validator;
   }
 }
 
 export const virtualEditor = new VirtualEditor();
+
 export default VirtualEditor;
