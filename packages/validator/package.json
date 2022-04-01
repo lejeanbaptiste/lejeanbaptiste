@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-validator",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "webworker to handle validation on Leaf-Writer",
   "keywords": [
     "xml",
@@ -24,7 +24,7 @@
   "author": "Luciano Frizzera <lucaju@gmail.com>",
   "exports": {
     ".": {
-      "import": "./lib/index.worker.js",
+      "import": "./src/index.worker",
       "require": "./dist/leafwriter-validator.worker.js"
     }
   },
@@ -32,7 +32,8 @@
   "module": "src/index.worker.ts",
   "files": [
     "dist",
-    "lib"
+    "lib",
+    "src"
   ],
   "scripts": {
     "browserify-jsdom": "browserify -r jsdom -s jsdom -o src/lib/jsdom/jsdom-browserified.js",
@@ -42,33 +43,33 @@
     "cm": "git-cz"
   },
   "dependencies": {
+    "@cwrc/salve-dom-leafwriter": "^6.0.3",
+    "@cwrc/salve-leafwriter": "^1.2.2",
     "comlink": "^4.3.1",
     "lodash": "^4.17.21",
-    "salve-annos": "github:cwrc/salve#develop",
-    "salve-dom": "github:cwrc/salve-dom",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@types/jsdom": "^16.2.14",
-    "@types/lodash": "^4.14.178",
+    "@types/lodash": "^4.14.181",
     "@types/uuid": "^8.3.4",
-    "@typescript-eslint/parser": "^5.12.0",
+    "@typescript-eslint/parser": "^5.17.0",
     "browserify": "^17.0.0",
     "clean-webpack-plugin": "^4.0.0",
     "commitizen": "^4.2.4",
     "esbuild-loader": "^2.18.0",
-    "eslint": "^8.9.0",
-    "eslint-config-prettier": "^8.3.0",
+    "eslint": "^8.12.0",
+    "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
     "git-cz": "^4.8.0",
     "husky": "^7.0.4",
     "jsdom": "19.0.0",
-    "prettier": "^2.5.1",
+    "prettier": "^2.6.1",
     "semantic-release": "^19.0.2",
     "shx": "^0.3.4",
-    "ts-loader": "^9.2.6",
-    "typescript": "^4.6.2",
-    "webpack": "^5.69.1",
+    "ts-loader": "^9.2.8",
+    "typescript": "^4.6.3",
+    "webpack": "^5.70.0",
     "webpack-cli": "^4.9.2",
     "webpackbar": "^5.0.2"
   }
