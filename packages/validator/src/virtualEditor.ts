@@ -1,9 +1,5 @@
-import {
-  Grammar,
-  // GrammarWalker,
-  // NameResolver
-} from 'salve-annos/build/dist';
-import { safeParse, Validator } from 'salve-dom/build/dist';
+import { safeParse, Validator } from '@cwrc/salve-dom-leafwriter';
+import { Grammar /* , GrammarWalker, NameResolver */ } from '@cwrc/salve-leafwriter';
 import { v4 as uuidv4 } from 'uuid';
 
 class VirtualEditor {
