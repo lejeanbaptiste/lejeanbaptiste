@@ -1,6 +1,6 @@
+import { EventSet } from '@cwrc/salve-leafwriter';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/unionBy';
-import { EventSet } from 'salve-annos/build/dist';
 import { Tag } from './sharedTypes';
 import { evaluateXPath, getFullNameFromDocumentation } from './utils';
 import { virtualEditor } from './virtualEditor';
