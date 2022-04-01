@@ -2,9 +2,6 @@ import { ErrorData, WorkingState, WorkingStateData } from '@cwrc/salve-dom-leafw
 import { EndTagEvent, EventSet, TextEvent } from '@cwrc/salve-leafwriter';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/unionBy';
-import { EventSet } from 'salve-annos/build/dist';
-import { EndTagEvent, TextEvent } from 'salve-annos/build/dist/salve/events';
-import { ErrorData, WorkingState, WorkingStateData } from 'salve-dom/build/dist';
 import { Tag } from './sharedTypes';
 import { evaluateXPath, getFullNameFromDocumentation, getXPathForElement } from './utils';
 import { virtualEditor } from './virtualEditor';
@@ -133,16 +130,16 @@ const parseErrors = ({ error, index, node }: ErrorData): ValidationNode => {
     isAttr: type === 'AttributeNameError' ? true : false,
   };
 
-  if (error.name) {
-    target.name = error.name.name;
-    target.ns = error.name.ns;
-    target.documentation = error.name.documentation
-      ? error.name.documentation
-      : getDocumentation(target.name) ?? undefined;
-    target.fullName = target.documentation
-      ? getFullNameFromDocumentation(target.documentation)
-      : undefined;
-  }
+  // if (error.name) {
+  //   target.name = error.name.name;
+  //   target.ns = error.name.ns;
+  //   target.documentation = error.name.documentation
+  //     ? error.name.documentation
+  //     : getDocumentation(target.name) ?? undefined;
+  //   target.fullName = target.documentation
+  //     ? getFullNameFromDocumentation(target.documentation)
+  //     : undefined;
+  // }
 
   if (!node) return { type, msg, target };
 
