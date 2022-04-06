@@ -29,7 +29,6 @@ type GetAuthenticatedResponseDataType = GetResponseDataTypeFromEndpointMethod<
   typeof octokit.users.getAuthenticated
 >;
 
-
 //  ---------- API
 
 /**
@@ -48,10 +47,7 @@ const authenticate = ({ access_token, IDPTokens, userId, userName }: Authenticat
   _userId = userId ?? '';
   _userName = userName ?? '';
 
-  octokit = new Octokit({
-    auth: access_token,
-    userAgent: 'CWRC-Writer',
-  });
+  octokit = new Octokit({ auth: access_token, userAgent: 'Leaf-Writer' });
 };
 
 /**
