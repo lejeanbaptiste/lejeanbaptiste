@@ -10,13 +10,13 @@ const app = express();
 app.use(express.json({ limit: '5mb' })); // support json encoded bodies
 app.use('/schema', schemaRouter);
 
-// dev tools
-const loadDevTools = async () => {
-  const { devTools } = await import('./dev/dev');
-  devTools(app);
+// dev server
+const loadDevServer  = async () => {
+  const { devServer } = await import('./dev');
+  devServer(app);
 };
 
-if (process.env.WEBPACK_DEV === 'true') loadDevTools();
+if (process.env.WEBPACK_DEV === 'true') loadDevServer ();
 
 app.use(helmet.frameguard({ action: 'SAMEORIGIN' }));
 

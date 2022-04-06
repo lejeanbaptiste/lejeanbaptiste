@@ -5,7 +5,7 @@ import webpackDevMiddleware from 'webpack-dev-middleware';
 // import webpackHotMiddleware from 'webpack-hot-middleware';
 import config from '../../webpack.config';
 
-export const devTools = (app: Express) => {
+export const devServer = (app: Express) => {
   // // webpack middleware and hot reload
   // if (!config.entry) return;
   // config.entry.index.unshift(
