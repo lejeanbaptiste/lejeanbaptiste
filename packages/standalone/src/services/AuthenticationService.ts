@@ -1,4 +1,4 @@
-import Keycloak, { KeycloakTokenParsed, KeycloakConfig } from 'keycloak-js';
+import Keycloak, { KeycloakTokenParsed } from 'keycloak-js';
 import { KEYCLOACK_BASE_URL } from '../config/config';
 
 //Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
