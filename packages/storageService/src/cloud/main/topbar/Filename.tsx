@@ -20,11 +20,11 @@ import React, {
   useState
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import SettingsDialog from '../../../components/SettingsDialog';
+import SaveSettingsDialog from '../../../components/SaveSettingsDialog';
 
 const Filename: FC = () => {
   const { t } = useTranslation();
-  const { resource, allowedFileTypes } = useAppState().common;
+  const { allowAllFileTypes, allowedFileTypes, resource } = useAppState().common;
   const { setFilename } = useActions().common;
   const { saveDocument } = useActions().cloud;
   const [value, setValue] = useState<string>('');
@@ -43,6 +43,7 @@ const Filename: FC = () => {
   }, []);
 
   const addFileExtension = (fileName: string) => {
+    if (allowAllFileTypes) return fileName;
     if (!allowedFileTypes || allowedFileTypes.length === 0) return fileName;
 
     //TODO allow saving wih different extension if allowed
@@ -97,7 +98,7 @@ const Filename: FC = () => {
       </Paper>
       <Box flexGrow={1} />
       {openSettings && (
-        <SettingsDialog
+        <SaveSettingsDialog
           anchor={container.current}
           onDone={handleCloseSettings}
           open={openSettings}

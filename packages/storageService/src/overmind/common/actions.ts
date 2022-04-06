@@ -12,9 +12,7 @@ import i18next from '../../i18n';
 import { saveAs } from 'file-saver';
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
-
   actions.ui.updateTranslation();
-
 
   const { common, cloud } = state;
 
@@ -53,6 +51,10 @@ export const setDialogType = ({ state }: Context, value: DialogType) => {
 
 export const setAllowPaste = ({ state }: Context, value: boolean) => {
   state.common.allowPaste = value;
+};
+
+export const setAllowedAllFileTypes = ({ state }: Context, value: boolean) => {
+  state.common.allowAllFileTypes = value;
 };
 
 export const setAllowedMimeTypes = ({ state }: Context, value: AllowedMimeType[]) => {
@@ -157,7 +159,10 @@ export const clearSubmit = ({ state }: Context) => {
   state.common.submit = undefined;
 };
 
-export const setResource = ({ state }: Context, { filename, content, hash, url }: Partial<Resource>) => {
+export const setResource = (
+  { state }: Context,
+  { filename, content, hash, url }: Partial<Resource>
+) => {
   const { cloud, common } = state;
 
   const provider = common.source === 'cloud' ? cloud.name : undefined;

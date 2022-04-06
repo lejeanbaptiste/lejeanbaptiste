@@ -673,8 +673,12 @@ export const searchBlobs = async (
 
   if (!state.cloud.owner) return { searchType: 'blobs', results: [] };
 
-  const allowedFileTypes = state.common.allowedFileTypes;
-  const extension = allowedFileTypes?.length === 1 ? allowedFileTypes[0] : undefined;
+  const { allowAllFileTypes, allowedFileTypes } = state.common;
+  const extension = allowAllFileTypes
+    ? undefined
+    : allowedFileTypes?.length === 1
+    ? allowedFileTypes[0]
+    : undefined;
 
   const response: SearchResultsBlobs[] | undefined = await provider.searchBlobs({
     extension,

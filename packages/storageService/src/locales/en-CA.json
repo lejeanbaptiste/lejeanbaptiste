@@ -62,6 +62,7 @@
     "private": "Private",
     "processing": "Processing",
     "save": "Save",
+    "settings": "settings",
     "show_less": "Show less",
     "show_more": "Show more",
     "yes": "yes"
@@ -99,5 +100,8 @@
   "local": {
     "drag_drop": "Click or Drag 'n' drop to upload a file",
     "paste_document_here": "Paste document here"
+  },
+  "settings": {
+    "allow_all_files": "Allow all files"
   }
 }

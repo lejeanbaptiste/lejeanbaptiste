@@ -62,6 +62,7 @@
     "private": "Privé",
     "processing": "Traitement",
     "save": "Enregistrer",
+    "settings": "",
     "show_less": "Afficher moins",
     "show_more": "Afficher plus",
     "yes": "oui"
@@ -99,5 +100,8 @@
   "local": {
     "drag_drop": "Cliquez ou faites glisser 'n' drop pour télécharger un fichier",
     "paste_document_here": "Coller le document ici"
+  },
+  "settings": {
+    "allow_all_files": ""
   }
 }
