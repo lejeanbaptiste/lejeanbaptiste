@@ -10,7 +10,7 @@ interface ContentProps {
 }
 
 const Content: FC<ContentProps> = ({ content }) => {
-  const { dialogType, allowedFileTypes } = useAppState().common;
+  const { allowAllFileTypes, allowedFileTypes, dialogType } = useAppState().common;
   const { fetchDocument, navigateTo } = useActions().cloud;
   const { load , setFilename} = useActions().common;
   const { name, path, type } = content;
@@ -20,7 +20,7 @@ const Content: FC<ContentProps> = ({ content }) => {
     const isAllowed = !allowedFileTypes
       ? true
       : allowedFileTypes?.some((type) => content.name.endsWith(type));
-    return !isFolder && !isAllowed;
+    return !allowAllFileTypes && !isFolder && !isAllowed;
   };
 
   const handleClick = async () => {

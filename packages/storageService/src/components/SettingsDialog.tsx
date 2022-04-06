@@ -1,16 +1,7 @@
-import {
-  Button,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Popover,
-  TextField,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
-import { useAppState, useActions } from '../overmind';
-import React, { ChangeEvent, FC, FocusEvent, useState } from 'react';
+import { ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, Switch } from '@mui/material';
+import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../overmind';
 
 interface SettingsDialogProps {
   anchor?: HTMLDivElement | null;
@@ -20,56 +11,41 @@ interface SettingsDialogProps {
 
 const SettingsDialog: FC<SettingsDialogProps> = ({ anchor, onDone, open }) => {
   const { t } = useTranslation();
-  const { commitMessage } = useAppState().cloud;
-  const { setCommitMessage } = useActions().cloud;
+  const { allowAllFileTypes } = useAppState().common;
+  const { setAllowedAllFileTypes } = useActions().common;
 
-  const theme = useTheme();
-  const isSM = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const [commitMessageLocal, setCommitMessageLocal] = useState(commitMessage);
-
-  const handleComitMessageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const inputValue = event.target.value;
-    setCommitMessageLocal(inputValue);
-  };
-
-  const handleComitMessageBlur = (event: FocusEvent<HTMLInputElement>) => {
-    const inputValue = event.target.value;
-    setCommitMessage(inputValue);
+  const handleToggleAllowAllFiles = () => {
+    setAllowedAllFileTypes(!allowAllFileTypes);
   };
 
   const handleDone = () => onDone();
 
   return (
-    <Popover
+    <Menu
       anchorEl={anchor}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-      id="save-settings-popper"
-      onClose={handleDone}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      id="settings-popper"
       open={open}
+      onClose={handleDone}
+      transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
     >
-      <DialogTitle id="save-settings-title" sx={{ textAlign: 'center' }}>
-        {t('cloud:settings:save_settings')}
-      </DialogTitle>
-      <DialogContent sx={{ width: isSM ? 300 : 400 }}>
-        <TextField
-          autoComplete="off"
-          autoFocus
-          fullWidth
-          id="comit-message"
-          label={t('cloud:settings:comit_message')}
-          onBlur={handleComitMessageBlur}
-          onChange={handleComitMessageChange}
-          placeholder={commitMessage}
-          value={commitMessageLocal}
-          variant="standard"
-        />
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={handleDone}>{t('cloud:settings:done')}</Button>
-      </DialogActions>
-    </Popover>
+      <ListItem disablePadding>
+        <ListItemButton role={undefined} onClick={handleToggleAllowAllFiles} dense>
+          <ListItemIcon>
+            <Switch
+              checked={allowAllFileTypes}
+              inputProps={{ 'aria-label': 'allow-all-files' }}
+              onChange={handleToggleAllowAllFiles}
+              size="small"
+            />
+          </ListItemIcon>
+          <ListItemText
+            primary={t('settings:allow_all_files')}
+            sx={{ textTransform: 'capitalize' }}
+          />
+        </ListItemButton>
+      </ListItem>
+    </Menu>
   );
 };
 

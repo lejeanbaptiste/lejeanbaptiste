@@ -11,6 +11,7 @@ import type {
 import { derived } from 'overmind';
 
 type State = {
+  allowAllFileTypes: boolean;
   allowedFileTypes?: string[];
   allowedMimeTypes?: AllowedMimeType[];
   allowPaste?: boolean;
@@ -25,6 +26,7 @@ type State = {
 };
 
 export const state: State = {
+  allowAllFileTypes: false,
   allowedFileTypes: derived((state: State) => {
     if (!state.allowedMimeTypes) return;
     return state.allowedMimeTypes.map((mimeType) => {

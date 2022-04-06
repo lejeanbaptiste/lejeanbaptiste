@@ -26,7 +26,7 @@ interface ItemProps {
 }
 
 const Item: FC<ItemProps> = ({ item, onPrimaryAction, onSecondaryAction }) => {
-  const { allowedFileTypes } = useAppState().common;
+  const { allowAllFileTypes, allowedFileTypes } = useAppState().common;
   const { repository: currentRepo, owner: currentOnwer } = useAppState().cloud;
   const { fetchDocument, navigateTo } = useActions().cloud;
   const { load } = useActions().common;
@@ -64,7 +64,7 @@ const Item: FC<ItemProps> = ({ item, onPrimaryAction, onSecondaryAction }) => {
     const isAllowed = !allowedFileTypes
       ? true
       : allowedFileTypes?.some((type) => name.endsWith(type));
-    return isFile && !isAllowed;
+    return !allowAllFileTypes && isFile && !isAllowed;
   };
 
   return (
