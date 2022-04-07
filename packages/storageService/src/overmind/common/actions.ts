@@ -1,15 +1,16 @@
 import type {
   AllowedMimeType,
   DialogType,
+  ISelectedItem,
+  IValidate,
   MessageDialog,
   Resource,
   StorageDialogConfig,
   StorageSource,
-  IValidate,
 } from '@src/@types/types';
+import { saveAs } from 'file-saver';
 import { Context } from '../';
 import i18next from '../../i18n';
-import { saveAs } from 'file-saver';
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
   actions.ui.updateTranslation();
@@ -106,6 +107,10 @@ export const setFilename = async ({ state }: Context, filename: string) => {
 
 //---------------
 
+export const setSelectedItem = ({ state }: Context, value?: ISelectedItem) => {
+  state.common.selectedItem = value;
+};
+
 export const showMessageDialog = (
   { state }: Context,
   messageDialog: Omit<MessageDialog, 'open'>
@@ -195,6 +200,7 @@ export const resetAll = async ({ state }: Context) => {
   state.common.allowPaste = true;
   state.common.messageDialog = { open: false };
   state.common.resource = undefined;
+  state.common.selectedItem = undefined;
   state.common.source = 'cloud';
   state.common.dialogType = 'load';
 

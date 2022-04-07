@@ -37,6 +37,13 @@ export type AllowedMimeType =
   | 'text/txt'
   | 'text/xml';
 
+export interface ISelectedItem {
+  organization?: Organization;
+  path?: string;
+  repository?: Repository;
+  type?: 'file' | 'folder' | 'repo' | 'org';
+}
+
 export type IValidate = (content: string) => { valid: boolean; error?: string };
 
 export type SuportedProviders = 'github' | 'gitlab';

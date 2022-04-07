@@ -59,6 +59,7 @@
     },
     "name": "Name",
     "no": "no",
+    "open": "open",
     "private": "Private",
     "processing": "Processing",
     "save": "Save",

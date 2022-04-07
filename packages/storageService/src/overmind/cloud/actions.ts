@@ -583,6 +583,9 @@ export const navigateTo = (
   { state, actions }: Context,
   { org, repo, path }: NavigateToPathParams
 ) => {
+
+  state.common.selectedItem = undefined;
+
   if (org) {
     const { id, name, username } = org;
     if (state.cloud.owner?.username !== name) state.cloud.repositories = undefined;
