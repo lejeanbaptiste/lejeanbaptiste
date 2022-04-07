@@ -9,18 +9,31 @@ interface RepoProps {
 }
 
 const Repo: FC<RepoProps> = ({ repo }) => {
+  const { selectedItem } = useAppState().common;
   const { collectionSource } = useAppState().cloud;
+  const { setSelectedItem } = useActions().common;
   const { navigateTo } = useActions().cloud;
   const { name, description, visibility } = repo;
 
   const handleClick = () => {
+    if (!visibility && visibility === 'private') return;
+    setSelectedItem({ repository: repo, type: 'repo' });
+  };
+
+  const handleDoubleClick = () => {
     if (!visibility && visibility === 'private') return;
     navigateTo({ repo });
   };
 
   return (
     <ListItem alignItems="flex-start" disablePadding disableGutters divider>
-      <ListItemButton data-testid={`repository-item-${name}`} alignItems={description ? 'flex-start' : 'center'} onClick={handleClick}>
+      <ListItemButton
+        alignItems={description ? 'flex-start' : 'center'}
+        data-testid={`repository-item-${name}`}
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+        selected={selectedItem?.repository?.id === repo.id}
+      >
         <Grid container alignItems={description ? 'flex-start' : 'center'}>
           <Grid item xs="auto" pr={2}>
             <FolderSpecialOutlinedIcon sx={{ mt: 0.5 }} />
@@ -28,7 +41,6 @@ const Repo: FC<RepoProps> = ({ repo }) => {
           <Grid item xs>
             <Stack alignItems="flex-start">
               <Stack direction="row" alignItems="center" spacing={1}>
-                
                 {collectionSource === 'collaborator' && (
                   <Chip
                     avatar={

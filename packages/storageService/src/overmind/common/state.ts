@@ -1,12 +1,13 @@
 import type {
   AllowedMimeType,
   DialogType,
+  ISelectedItem,
   ISourcePanelOption,
+  IValidate,
   MessageDialog,
   Resource,
   StorageSource,
   Submit,
-  IValidate
 } from '@src/@types/types';
 import { derived } from 'overmind';
 
@@ -19,6 +20,7 @@ type State = {
   messageDialog: MessageDialog;
   resource?: Resource;
   showInvisibleFiles: boolean;
+  selectedItem?: ISelectedItem;
   source: StorageSource;
   sources: ISourcePanelOption[];
   submit?: Submit;
