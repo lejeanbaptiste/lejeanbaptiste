@@ -4,7 +4,7 @@ import About from './About';
 import Team from './Team';
 
 const AboutSction: FC = () => (
-  <Box py={20} px={2}>
+  <Box py={10} px={2}>
     <Container maxWidth="lg">
       <Grid container columnSpacing={12} rowSpacing={4} mb={5}>
         <Grid item xs={12} sm={7} md={8}>
