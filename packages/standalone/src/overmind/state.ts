@@ -1,10 +1,10 @@
 import {
   Language,
   MessageDialog,
-  Resource,
   PaletteMode,
-  StorageProvider,
+  Resource,
   StorageDialogState,
+  StorageProvider,
   User,
 } from '@src/@types/types';
 import type { IdentityProvider } from '@src/services/IdentityProvider';
@@ -17,6 +17,7 @@ type State = {
   messageDialog: MessageDialog;
   recentDocuments: Resource[];
   resource?: Resource;
+  sampleDocuments?: { title: string; url: string }[];
   storageDialogState: StorageDialogState;
   storageProviders: StorageProvider[];
   templates: { title: string; url: string }[];
@@ -32,6 +33,16 @@ export const state: State = {
   language: { code: 'en-CA', name: 'english', shortName: 'en' },
   messageDialog: { open: false },
   recentDocuments: [],
+  sampleDocuments: [
+    {
+      title: 'Sample Letter',
+      url: 'https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20letter%20template.xml',
+    },
+    {
+      title: 'Sample Poem',
+      url: 'https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20poem%20template.xml',
+    },
+  ],
   storageDialogState: { open: false },
   storageProviders: [],
   templates: [
