@@ -34,6 +34,7 @@ const Editor: FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!userAuthenticated) return navigate('/', { replace: true });
     resource ? setPermalink(resource) : checkPermalink();
   }, [userAuthenticated]);
 
@@ -72,8 +73,7 @@ const Editor: FC = () => {
 
     const document = await loadDocument(providerAuth, resource);
     if (!document || 'error' in document || !document.content || !document.url) {
-      // console.log(document);
-      return
+      return;
     }
 
     setResource(document);
@@ -99,7 +99,7 @@ const Editor: FC = () => {
 
     const response = await saveDocument(providerAuth, document.file, true);
     if ('error' in response) {
-      return { success: false, reason: response.error }
+      return { success: false, reason: response.error };
     }
 
     return { success: true, hash: response.hash };
