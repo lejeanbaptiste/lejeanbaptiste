@@ -56,6 +56,7 @@ export const setAllowPaste = ({ state }: Context, value: boolean) => {
 
 export const setAllowedAllFileTypes = ({ state }: Context, value: boolean) => {
   state.common.allowAllFileTypes = value;
+  state.common.selectedItem = undefined;
 };
 
 export const setAllowedMimeTypes = ({ state }: Context, value: AllowedMimeType[]) => {
