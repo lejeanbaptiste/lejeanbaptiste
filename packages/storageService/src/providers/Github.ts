@@ -6,9 +6,9 @@
 import { Octokit } from '@octokit/rest';
 import type * as Types from '@src/@types/Provider';
 import type Provider from '@src/@types/Provider';
+import type * as T from '@src/@types/types';
 import axios, { AxiosInstance } from 'axios';
 import { Buffer } from 'buffer/';
-import type * as T from '@src/@types/types';
 
 // ------------- Internal types --------------
 
@@ -406,6 +406,39 @@ export default class Github implements Provider {
   }
 
   /**
+   * Latest commit
+   * Based on {@link https://docs.github.com/en/rest/reference/commits#list-commits}
+   * @param {String} ownerUsername user
+   * @param {String} repoName The repository
+   * @param {String} path The path (Optional)
+   * @returns {Promise}
+   */
+  async getLatestCommit({ ownerUsername, repoName, path }: Types.GetLatestCommitParams) {
+    if (!ownerUsername || !repoName) return null;
+
+    const response = await this.octokit.rest.repos.listCommits({
+      owner: ownerUsername,
+      path,
+      per_page: 1,
+      repo: repoName,
+    });
+
+    if (!response) return null;
+
+    const latest = response.data[0];
+    const commit = latest.commit;
+
+    const latestCommit: Types.ILatestCommit = {
+      authorEmail: commit.author?.email,
+      authorName: commit.author?.name,
+      date: commit.author?.date,
+      html_url: latest.html_url,
+      message: commit.message,
+    };
+    return latestCommit;
+  }
+
+  /**
    * Get a document from GitHub.
    * See {@link https://developer.github.com/v3/repos/contents/#get-contents}
    * See {@link https://this.octokit.github.io/rest.js/#this.octokit-routes-repos-get-contents}
@@ -743,11 +776,7 @@ export default class Github implements Provider {
    * @param {String} title The title of the pull request
    * @returns {Promise}
    */
-  private async checkForPullRequest({
-    ownerUsername,
-    repoName,
-    title,
-  }: ICheckForPullRequest) {
+  private async checkForPullRequest({ ownerUsername, repoName, title }: ICheckForPullRequest) {
     const query = `state:open type:pr repo:${ownerUsername}/${repoName} ${title} in:title`;
 
     const result = await this.octokit.rest.search.issuesAndPullRequests({ q: query });

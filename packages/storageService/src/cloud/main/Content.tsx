@@ -1,9 +1,20 @@
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import { ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import {
+  IconButton,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+} from '@mui/material';
+import { formatDistance } from 'date-fns';
+import React, { FC, useState } from 'react';
+import type { ILatestCommit } from '../../@types/Provider';
 import type { Content as ContentType } from '../../@types/types';
-import { useAppState, useActions } from '../../overmind';
-import React, { FC } from 'react';
+import { useActions, useAppState } from '../../overmind';
+import ContentDetails from './ContentDetails';
 
 interface ContentProps {
   content: ContentType;
@@ -11,8 +22,11 @@ interface ContentProps {
 
 const Content: FC<ContentProps> = ({ content }) => {
   const { allowAllFileTypes, allowedFileTypes, dialogType, selectedItem } = useAppState().common;
-  const { fetchDocument, navigateTo } = useActions().cloud;
+  const { getLatestCommit, fetchDocument, navigateTo } = useActions().cloud;
   const { load, setFilename, setSelectedItem } = useActions().common;
+
+  const [latestCommit, setLatestCommig] = useState<ILatestCommit | null>(null);
+
   const { name, path, type } = content;
 
   const isDisabled = () => {
@@ -48,9 +62,33 @@ const Content: FC<ContentProps> = ({ content }) => {
     if (document) load();
   };
 
+  const handleSecondaryActionClick = async () => {
+    const latestCommit = await getLatestCommit(path);
+    if (latestCommit?.date) {
+      latestCommit.relativeDate = formatDistance(Date.parse(latestCommit.date), new Date(), {
+        addSuffix: true,
+      });
+    }
+    setLatestCommig(latestCommit);
+  };
+
   return (
-    <ListItem alignItems="flex-start" disablePadding disableGutters divider>
+    <ListItem
+      alignItems="flex-start"
+      disablePadding
+      disableGutters
+      divider
+      secondaryAction={
+        selectedItem?.path === path &&
+        !latestCommit && (
+          <IconButton edge="end" onClick={handleSecondaryActionClick} size="small" sx={{ mr: 1 }}>
+            <InfoOutlinedIcon fontSize="inherit" />
+          </IconButton>
+        )
+      }
+    >
       <ListItemButton
+        alignItems={latestCommit ? 'flex-start' : 'center'}
         data-testid={`content-button-${name}`}
         disabled={isDisabled()}
         onClick={handleClick}
@@ -62,10 +100,14 @@ const Content: FC<ContentProps> = ({ content }) => {
           },
         }}
       >
-        <ListItemIcon>
+        <ListItemIcon sx={{ minWidth: 40 }}>
           {type === 'folder' ? <FolderOpenIcon /> : <DescriptionOutlinedIcon />}
         </ListItemIcon>
-        <ListItemText primary={name} />
+        <ListItemText
+          disableTypography
+          primary={<Typography>{name}</Typography>}
+          secondary={latestCommit && <ContentDetails latestCommit={latestCommit} />}
+        />
       </ListItemButton>
     </ListItem>
   );

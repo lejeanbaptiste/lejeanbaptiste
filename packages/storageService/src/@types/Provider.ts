@@ -56,6 +56,22 @@ export interface RepoContentParams {
   repoName?: string;
 }
 
+export interface GetLatestCommitParams {
+  ownerUsername?: string;
+  path?: string;
+  repoId?: string;
+  repoName?: string;
+}
+
+export interface ILatestCommit {
+  authorEmail?: string;
+  authorName?: string;
+  date?: string;
+  relativeDate?: string;
+  html_url: string;
+  message: string;
+}
+
 export interface SearchUserParams {
   query: string;
 }
@@ -164,6 +180,7 @@ export default interface Provider {
   getAuthenticatedUser(): Promise<any>;
   getBranch: (params: IGetBranch) => Promise<any>;
   getDetailsForUser(params: UserDetailParams): Promise<any>;
+  getLatestCommit: (params: GetLatestCommitParams) => Promise<ILatestCommit | null>;
   getDocument: (params: RepoContentParams) => Promise<DocumentDetails | null>;
   getOrganization?: (params: GetOrganization) => Promise<Organization | null>;
   getOrganizationsForAuthenticatedUser(params: PaginatorParams): Promise<{
