@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import type { AuthenticateProp, IdentityProvider } from '../IdentityProvider';
 
 const BASE_URL = 'https://gitlab.com/api/v4';
@@ -34,7 +34,12 @@ const authenticate = ({ access_token, IDPTokens, userId, userName }: Authenticat
 };
 
 const getAuthenticatedUser = async (userId: string) => {
-  const response = await axiosApi.get(`/users/${userId}`);
+  const response: AxiosResponse<any> | null = await axiosApi.get('/user').catch((error) => {
+    console.warn(error);
+    return null;
+  });
+  
+  if (!response) return null;
 
   const { data } = response;
   const user = { ...data, uri: data.web_url };

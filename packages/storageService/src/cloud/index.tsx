@@ -8,7 +8,7 @@ const CloudDialog: FC = () => {
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
-    <Stack direction={isSM ? 'column' : 'row'}>
+    <Stack direction={isSM ? 'column' : 'row'} height="100%">
       <Sidebar />
       <Main />
     </Stack>

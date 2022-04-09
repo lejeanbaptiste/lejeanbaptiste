@@ -1,23 +1,31 @@
 import { Avatar, Grid, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
-import type { Organization } from '../../@types/types';
-import { useActions } from '../../overmind';
 import React, { FC } from 'react';
+import type { Organization } from '../../@types/types';
+import { useActions, useAppState } from '../../overmind';
 
 interface OrgProps {
   org: Organization;
 }
 
 const Org: FC<OrgProps> = ({ org }) => {
+  const { selectedItem } = useAppState().common;
+  const { setSelectedItem } = useActions().common;
   const { navigateTo } = useActions().cloud;
   const { name, description } = org;
 
-  const handleClick = () => navigateTo({ org });
+  const handleClick = () => setSelectedItem({ organization: org, type: 'org' });
+
+  const handleDoubleClick = () => {
+    navigateTo({ org });
+  };
 
   return (
     <ListItem alignItems="flex-start" disablePadding disableGutters divider>
       <ListItemButton
         alignItems={description ? 'flex-start' : 'center'}
         onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+        selected={selectedItem?.organization?.id === org.id}
         sx={{ py: 1 }}
       >
         <Grid container alignItems={description ? 'flex-start' : 'center'}>

@@ -1,20 +1,19 @@
 import type {
   AllowedMimeType,
   DialogType,
+  ISelectedItem,
+  IValidate,
   MessageDialog,
   Resource,
   StorageDialogConfig,
   StorageSource,
-  IValidate,
 } from '@src/@types/types';
+import { saveAs } from 'file-saver';
 import { Context } from '../';
 import i18next from '../../i18n';
-import { saveAs } from 'file-saver';
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
-
   actions.ui.updateTranslation();
-
 
   const { common, cloud } = state;
 
@@ -53,6 +52,11 @@ export const setDialogType = ({ state }: Context, value: DialogType) => {
 
 export const setAllowPaste = ({ state }: Context, value: boolean) => {
   state.common.allowPaste = value;
+};
+
+export const setAllowedAllFileTypes = ({ state }: Context, value: boolean) => {
+  state.common.allowAllFileTypes = value;
+  state.common.selectedItem = undefined;
 };
 
 export const setAllowedMimeTypes = ({ state }: Context, value: AllowedMimeType[]) => {
@@ -103,6 +107,10 @@ export const setFilename = async ({ state }: Context, filename: string) => {
 };
 
 //---------------
+
+export const setSelectedItem = ({ state }: Context, value?: ISelectedItem) => {
+  state.common.selectedItem = value;
+};
 
 export const showMessageDialog = (
   { state }: Context,
@@ -157,7 +165,10 @@ export const clearSubmit = ({ state }: Context) => {
   state.common.submit = undefined;
 };
 
-export const setResource = ({ state }: Context, { filename, content, hash, url }: Partial<Resource>) => {
+export const setResource = (
+  { state }: Context,
+  { filename, content, hash, url }: Partial<Resource>
+) => {
   const { cloud, common } = state;
 
   const provider = common.source === 'cloud' ? cloud.name : undefined;
@@ -190,6 +201,7 @@ export const resetAll = async ({ state }: Context) => {
   state.common.allowPaste = true;
   state.common.messageDialog = { open: false };
   state.common.resource = undefined;
+  state.common.selectedItem = undefined;
   state.common.source = 'cloud';
   state.common.dialogType = 'load';
 

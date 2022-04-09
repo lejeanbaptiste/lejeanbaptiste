@@ -1,10 +1,10 @@
 import { Stack, useMediaQuery, useTheme } from '@mui/material';
 import React, { FC, useEffect, useState } from 'react';
+import { useWindowSize } from 'react-use';
 import CreateFolderDialog from '../../components/CreateFolderDialog';
 import CreateRepoDialog from '../../components/CreateRepoDialog';
 import Collection from './Collection';
 import Topbar from './topbar';
-import { useWindowSize } from 'react-use';
 
 const Main: FC = () => {
   const theme = useTheme();
@@ -20,7 +20,7 @@ const Main: FC = () => {
     ? height - 32 - topBarHeight // 32px (heigh of side bar stacked on top of main section)
     : isMD
     ? height - topBarHeight
-    : 600 - topBarHeight;
+    : 600 - topBarHeight + 8;
   const [collectionHeight, setCollectionHeight] = useState(heighBase);
 
   useEffect(() => {
@@ -39,11 +39,7 @@ const Main: FC = () => {
   const handleCloseFolderDialog = () => setOpenFolderDialog(false);
 
   return (
-    <Stack
-      width="100%"
-      ml={isSM ? 0 : 2}
-      pr={isSM ? 0 : 2}
-    >
+    <Stack width="100%" ml={isSM ? 0 : 2} pr={isSM ? 0 : 2}>
       <Topbar onChangeSize={updateTopBarSize} onOpenCreateDialog={toggleCreateDialog} />
       <Collection height={collectionHeight} />
       {openRepoDialog && (

@@ -435,6 +435,22 @@ export const checkRepoUserWritenPermission = async ({
   return permission;
 };
 
+export const getLatestCommit = async ({ state, actions }: Context, path: string) => {
+  const { owner, repository } = state.cloud;
+  const provider = actions.cloud.getProvider();
+  if (!provider) return null;
+  if (!repository || !owner) return null;
+
+  const latestCommit = await provider.getLatestCommit({
+    ownerUsername: owner.username,
+    repoId: repository.id,
+    repoName: repository.name,
+    path,
+  });
+
+  return latestCommit;
+};
+
 export const fetchRepoContent = async ({ state, actions }: Context): Promise<Content[] | null> => {
   const { owner, repository, repositoryContent } = state.cloud;
   const provider = actions.cloud.getProvider();
@@ -583,6 +599,8 @@ export const navigateTo = (
   { state, actions }: Context,
   { org, repo, path }: NavigateToPathParams
 ) => {
+  state.common.selectedItem = undefined;
+
   if (org) {
     const { id, name, username } = org;
     if (state.cloud.owner?.username !== name) state.cloud.repositories = undefined;
@@ -673,8 +691,12 @@ export const searchBlobs = async (
 
   if (!state.cloud.owner) return { searchType: 'blobs', results: [] };
 
-  const allowedFileTypes = state.common.allowedFileTypes;
-  const extension = allowedFileTypes?.length === 1 ? allowedFileTypes[0] : undefined;
+  const { allowAllFileTypes, allowedFileTypes } = state.common;
+  const extension = allowAllFileTypes
+    ? undefined
+    : allowedFileTypes?.length === 1
+    ? allowedFileTypes[0]
+    : undefined;
 
   const response: SearchResultsBlobs[] | undefined = await provider.searchBlobs({
     extension,
