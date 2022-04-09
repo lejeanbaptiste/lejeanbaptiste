@@ -9,19 +9,54 @@ export interface FooterProps {
 }
 
 const FooterLoad: FC<FooterProps> = ({ onCancel }) => {
+  const { selectedItem, source } = useAppState().common;
   const { isLoading } = useAppState().cloud;
   const { load } = useActions().common;
+  const { fetchDocument, navigateTo } = useActions().cloud;
   const { t } = useTranslation();
 
-  const handleLoad = () => load();
+  const handleLoad = async () => {
+    if (source !== 'cloud') {
+      load();
+      return;
+    }
+
+    if (!selectedItem) return;
+
+    if (selectedItem.type === 'file' && selectedItem.path) {
+      const document = await fetchDocument({ path: selectedItem.path });
+      if (document) load();
+      return;
+    }
+
+    if (selectedItem.type === 'folder') {
+      navigateTo({ path: selectedItem.path });
+      return;
+    }
+
+    if (selectedItem.type === 'repo' && selectedItem.repository) {
+      navigateTo({ repo: selectedItem.repository });
+      return;
+    }
+
+    if (selectedItem.type === 'org' && selectedItem.organization) {
+      navigateTo({ org: selectedItem.organization });
+      return;
+    }
+  };
 
   return (
     <DialogActions sx={{ justifyContent: 'space-between' }}>
       <Button onClick={onCancel} variant="outlined">
         {t('commons:cancel')}
       </Button>
-      <LoadingButton loading={isLoading} onClick={handleLoad} variant="contained">
-        {t('commons:load')}
+      <LoadingButton
+        disabled={source === 'cloud' && !selectedItem}
+        loading={isLoading}
+        onClick={handleLoad}
+        variant="contained"
+      >
+        {selectedItem?.type === 'file' ? t('commons:load') : t('commons:open')}
       </LoadingButton>
     </DialogActions>
   );

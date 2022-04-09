@@ -107,7 +107,7 @@ const Storage: FC = () => {
             onLoad={handleLoad}
             onSave={handleSave}
             open={open}
-            resource={resource}
+            resource={storageDialogState.resource}
             source={source}
             type={type}
           />

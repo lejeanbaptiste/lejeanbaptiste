@@ -33,9 +33,9 @@ const SignInSection: FC = () => {
   const handleClick = () => signIn();
 
   const conainerVariants = {
-    initial: { height: 0 },
-    visible: { height: 'auto' },
-    exit: { height: 0 },
+    initial: { scale: 0 },
+    visible: { scale: 1 },
+    exit: { scale: 0 },
   };
 
   return (
@@ -51,7 +51,7 @@ const SignInSection: FC = () => {
           justifyContent="center"
           py={6}
         >
-          <Button onClick={handleClick} size="large" variant="contained">
+          <Button onClick={handleClick} size="large" variant="contained" sx={{ width: 150 }}>
             {t('home:signin')}
           </Button>
         </Box>

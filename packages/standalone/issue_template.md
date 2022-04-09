@@ -33,4 +33,4 @@
 * Attachements:
 <!--- Please attach any relevant files (XML documents, screenshots, etc.) or specify the document template you were using -->
 
-* CWRC user name if submitting an issue for the CWRC research space, or the Github username if using GitWriter.
+*LINCS/Leaf user name if submitting an issue for the LINCS/Leaf research space, or the Github / GitLab username if using Leaf Writer.

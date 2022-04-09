@@ -212,6 +212,28 @@ export const _linkStorageProvider = ({ state }: Context, providerName: string) =
   state.storageProviders = [...state.storageProviders, storage];
 };
 
+export const setSampleUser = ({ state }: Context) => {
+  state.user = {
+    email: 'sampleUser@sample.com',
+    firstName: 'Sample',
+    lastName: 'User',
+    username: 'sampleUser',
+    identities: {
+      github: {
+        id: 0,
+        email: 'sampleUser@sample.com',
+        name: 'Sample User',
+        login: "lucaju",
+        username: 'sampleUser',
+      }
+    },
+    prefferedID: 'github',
+    prefStorageProvider: 'github',
+  };
+
+  state.userAuthenticated = true;
+};
+
 //* UI
 
 export const switchLanguage = ({ state }: Context, value: string) => {
@@ -356,7 +378,7 @@ export const addToRecentDocument = ({ state }: Context, document: Resource) => {
   localStorage.setItem('recentFiles', JSON.stringify(state.recentDocuments));
 };
 
-export const loadTemplate = async ({ effects }: Context, url: string ) => {
+export const loadTemplate = async ({ effects }: Context, url: string) => {
   const documentString = await effects.localAPI.loadTemplate(url);
   return documentString;
-}
+};

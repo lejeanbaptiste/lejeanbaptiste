@@ -1,8 +1,19 @@
-import { Icon, Paper, ToggleButton, ToggleButtonGroup, Tooltip, useTheme } from '@mui/material';
-import React, { FC, MouseEvent, useEffect, useState } from 'react';
+import SettingsIcon from '@mui/icons-material/Settings';
+import {
+  Icon,
+  IconButton,
+  Paper,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  useTheme,
+} from '@mui/material';
+import React, { FC, MouseEvent, useEffect, useState, useRef } from 'react';
 import type { StorageSource, SuportedProviders } from '../@types/types';
 import { useActions, useAppState } from '../overmind';
 import { getIcon } from '../utilities/icons';
+import SettingsDialog from '../components/SettingsDialog';
 
 type Source = StorageSource | SuportedProviders;
 
@@ -13,6 +24,8 @@ const SidePanel: FC = () => {
   const { changeProvider } = useActions().cloud;
   const { setSource } = useActions().common;
   const [active, setActive] = useState<Source>(source);
+  const [openSettings, setOpenSettings] = useState(false);
+  const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     source === 'cloud' && providerName ? setActive(providerName) : setActive(source);
@@ -33,33 +46,42 @@ const SidePanel: FC = () => {
     if (provider) changeProvider(provider);
   };
 
+  const handleOpenSettings = () => setOpenSettings(true);
+  const handleCloseSettings = () => setOpenSettings(false);
+
   return (
-    <Paper elevation={2} square>
-      <ToggleButtonGroup
-        color="primary"
-        exclusive
-        onChange={handleChange}
-        orientation="vertical"
-        size="small"
-        sx={{
-          '& .MuiToggleButtonGroup-grouped': {
-            margin: theme.spacing(0.5),
-            border: 0,
-            '&.Mui-disabled': { border: 0 },
-            '&:not(:first-of-type)': { borderRadius: 1 },
-            '&:first-of-type': { borderRadius: 1 },
-          },
-        }}
-        value={active}
-      >
-        {sources.map(({ value, label, icon }) => (
-          <ToggleButton data-testid={`source_panel-${value}`} key={value} value={value}>
-            <Tooltip enterDelay={1000} placement="right" title={label}>
-              <Icon component={getIcon(icon)} />
-            </Tooltip>
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
+    <Paper ref={container} elevation={2} square>
+      <Stack alignItems="center" justifyContent="space-between" height="100%" pb={1}>
+        <ToggleButtonGroup
+          color="primary"
+          exclusive
+          onChange={handleChange}
+          orientation="vertical"
+          size="small"
+          sx={{
+            '& .MuiToggleButtonGroup-grouped': {
+              margin: theme.spacing(0.5),
+              border: 0,
+              '&.Mui-disabled': { border: 0 },
+              '&:not(:first-of-type)': { borderRadius: 1 },
+              '&:first-of-type': { borderRadius: 1 },
+            },
+          }}
+          value={active}
+        >
+          {sources.map(({ value, label, icon }) => (
+            <ToggleButton data-testid={`source_panel-${value}`} key={value} value={value}>
+              <Tooltip enterDelay={1000} placement="right" title={label}>
+                <Icon component={getIcon(icon)} />
+              </Tooltip>
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+        <IconButton onClick={handleOpenSettings} size="small" sx={{ borderRadius: 1 }}>
+          <SettingsIcon />
+        </IconButton>
+      </Stack>
+      <SettingsDialog anchor={container.current} onDone={handleCloseSettings} open={openSettings} />
     </Paper>
   );
 };

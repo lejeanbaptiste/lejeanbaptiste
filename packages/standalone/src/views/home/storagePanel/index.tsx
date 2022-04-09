@@ -20,7 +20,9 @@ const StoragePanel: FC = () => {
 
   return (
     <AnimatePresence>
-      {userAuthenticated === 'authenticating' ? (
+      {!userAuthenticated ? (
+        ''
+      ) : userAuthenticated === 'authenticating' ? (
         <Skeleton variant="rectangular" width="100%" height={100} />
       ) : (
         <Paper
@@ -51,7 +53,7 @@ const StoragePanel: FC = () => {
                   <OpenOptions />
                 </>
               )}
-              {userAuthenticated === false && <SampleSection />}
+              {/* {userAuthenticated === false && <SampleSection />} */}
             </Stack>
           </Container>
         </Paper>

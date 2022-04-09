@@ -407,6 +407,30 @@ export default class Gitlab implements Provider {
     return searchResults;
   }
 
+  async getLatestCommit({ repoId, path = '' }: Types.GetLatestCommitParams) {
+    if (!repoId) return null;
+
+    const encodedPath = encodeURIComponent(path);
+    const response: AxiosResponse<any> | null = await this.axios
+      .get(`/projects/${repoId}/repository/commits`, {
+        params: { path: encodedPath },
+      })
+      .catch(() => null);
+
+    if (!response) return null;
+
+    const latest = response.data[0];
+
+    const latestCommit: Types.ILatestCommit = {
+      authorEmail: latest.author_email,
+      authorName: latest.author_name,
+      date: latest.authored_date,
+      html_url: latest.web_url,
+      message: latest.message,
+    };
+    return latestCommit;
+  }
+
   async getDocument({ path = '', branch: ref, repoId }: Types.RepoContentParams) {
     if (!repoId) return null;
     const encodedPath = encodeURIComponent(path);

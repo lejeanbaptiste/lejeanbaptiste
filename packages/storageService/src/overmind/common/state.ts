@@ -1,16 +1,18 @@
 import type {
   AllowedMimeType,
   DialogType,
+  ISelectedItem,
   ISourcePanelOption,
+  IValidate,
   MessageDialog,
   Resource,
   StorageSource,
   Submit,
-  IValidate
 } from '@src/@types/types';
 import { derived } from 'overmind';
 
 type State = {
+  allowAllFileTypes: boolean;
   allowedFileTypes?: string[];
   allowedMimeTypes?: AllowedMimeType[];
   allowPaste?: boolean;
@@ -18,6 +20,7 @@ type State = {
   messageDialog: MessageDialog;
   resource?: Resource;
   showInvisibleFiles: boolean;
+  selectedItem?: ISelectedItem;
   source: StorageSource;
   sources: ISourcePanelOption[];
   submit?: Submit;
@@ -25,6 +28,7 @@ type State = {
 };
 
 export const state: State = {
+  allowAllFileTypes: false,
   allowedFileTypes: derived((state: State) => {
     if (!state.allowedMimeTypes) return;
     return state.allowedMimeTypes.map((mimeType) => {

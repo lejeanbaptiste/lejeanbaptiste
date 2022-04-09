@@ -16,6 +16,6 @@ You can use leaf-writer to edit XML documents or produce new documents from temp
 
 To learn more about how to use leaf-writer, see  [cwrc.ca/Documentation/CWRC-Writer](https://cwrc.ca/Documentation/CWRC-Writer). We recommend starting with the  _video tutorial_  and the  _quick start guide_.
 
-If you run into a bug or there is a feature you would like to see added, please submit a ticket to [github.com/cwrc/CWRC-WriterBase/issues](https://github.com/cwrc/CWRC-WriterBase/issues).
+If you run into a bug or there is a feature you would like to see added, please submit a ticket to <https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues>.
 
-If you are interested in adopting/adapting the Writer to a different environment, please consult [this reference](https://github.com/cwrc/tech_documentation/blob/master/Tools-reference.md#cwrc-writer). You can contact us through a GitHub ticket on any of the leaf-writer code repositories. Finally, if you have found leaf-writer useful for your research or teaching, please let us know! We’d love to hear it.
+If you are interested in adopting/adapting Leaf Writer to a different environment, please consult [this reference](https://github.com/cwrc/tech_documentation/blob/master/Tools-reference.md#cwrc-writer). You can contact us through a Gitlab ticket on any of the leaf-writer code repositories. Finally, if you have found leaf-writer useful for your research or teaching, please let us know! We’d love to hear it.
