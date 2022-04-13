@@ -1,5 +1,5 @@
 import { Box, Button } from '@mui/material';
-import { usePermalink } from '@src/hooks/permalink';
+import { usePermalink } from '@src/hooks/usePermalink';
 import { useActions, useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
 import Cookies from 'js-cookie';
