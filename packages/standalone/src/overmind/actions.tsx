@@ -1,3 +1,4 @@
+import { Button } from '@mui/material';
 import type {
   IAnnotationUserProfile,
   INotification,
@@ -12,8 +13,9 @@ import type {
 import { setIndentityProvider, suportedStorageProviders } from '@src/services';
 import AuthenticationService from '@src/services/AuthenticationService';
 import { supportedLanguages } from '@src/utilities/util';
-import { Context } from './';
-import { IHTTPRequestError } from './effects';
+import React from 'react';
+import { Context } from '.';
+import { ILinkedAccount } from './effects';
 
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -160,23 +162,25 @@ export const linkAccount = async ({ actions, effects }: Context, identity_provid
   return linkAccountUrl;
 };
 
-interface LinkedAccount {
-  identityProvider: string;
-  userId?: string;
-  userName?: string;
-}
-
 export const getLinkedAccounts = async ({ state, actions, effects }: Context) => {
   if (!state.user) return;
   const token = await actions.getLincsAauthenticationToken();
   if (!token) return console.warn('No Authentication token');
 
-  const linkedAccounts: LinkedAccount[] | IHTTPRequestError =
-    await effects.NSSIApi.getLinkedAccounts(token);
+  const linkedAccounts = await effects.NSSIApi.getLinkedAccounts(token);
+
   if ('error' in linkedAccounts) {
     actions.notifyViaSnackbar({
       message: linkedAccounts.error.message,
-      options: { variant: 'error' },
+      options: {
+        action: (key) => (
+          <Button color="inherit" onClick={() => actions.closeNotificationSnackbar(key)}>
+            Dismiss
+          </Button>
+        ),
+        persist: true,
+        variant: 'error',
+      },
     });
     return;
   }
@@ -199,7 +203,7 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
 
 export const _linkIdentityProvider = async (
   { state, actions, effects }: Context,
-  { identityProvider: providerName, userId, userName }: LinkedAccount
+  { identityProvider: providerName, userId, userName }: ILinkedAccount
 ) => {
   if (!state.user) return;
 
@@ -279,10 +283,6 @@ export const getUserProfile = ({ state }: Context) => {
 //* UI
 
 export const switchLanguage = ({ state }: Context, value: string) => {
-  // const language = supportedLanguages[value];
-  // state.language = language;
-  // return value;
-
   const language = supportedLanguages.get(value) ?? {
     code: 'en-CA',
     name: 'english',
@@ -431,10 +431,7 @@ export const notifyViaSnackbar = ({ state }: Context, notification: INotificatio
   let key = notification.options && notification.options.key;
   if (!key) key = new Date().getTime() + Math.random();
 
-  state.notifications = [
-    ...state.notifications,
-    { ...notification, key },
-  ];
+  state.notifications = [...state.notifications, { ...notification, key }];
 };
 
 export const closeNotificationSnackbar = ({ state }: Context, key?: string | number) => {
