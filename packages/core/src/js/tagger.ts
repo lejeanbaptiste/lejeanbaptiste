@@ -917,7 +917,7 @@ class Tagger {
   addNoteWrapper = (tag: Element, type: string) => {
     $(tag)
       .filter(':visible') //! don't add to invisible tags
-      .wrap(`<span class="noteWrapper ${type} hide" />`)
+      .wrap(`<span class="noteWrapper ${type} hide" title="${tag.textContent}" />`)
       .parent()
       .on('click', ({ target }) => {
         const $target = $(target);
