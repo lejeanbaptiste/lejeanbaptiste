@@ -1,7 +1,13 @@
-import axios, { AxiosResponse, AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { KEYCLOACK_BASE_URL, NSSI_BASE_URL } from '../config/config';
 
 const LINK_ACCOUNTS_CALLBACK_URL = `${window.location.origin}/link-accounts`;
+
+export interface ILinkedAccount {
+  identityProvider: string;
+  userId?: string;
+  userName?: string;
+}
 
 export interface IHTTPRequestError {
   error: {
@@ -39,7 +45,9 @@ export const KeycloakApi = {
 };
 
 export const NSSIApi = {
-  getLinkedAccounts: async (keycloakAccessCode: string) => {
+  getLinkedAccounts: async (
+    keycloakAccessCode: string
+  ): Promise<ILinkedAccount[] | IHTTPRequestError> => {
     const response = await axios
       .get(`${NSSI_BASE_URL}/userinfo/linkedAccounts`, {
         headers: { Authorization: `Bearer ${keycloakAccessCode}` },
@@ -57,8 +65,6 @@ export const NSSIApi = {
     if (status >= 400) {
       return { error: { status, message: `Linked Accounts: ${data.error}` } };
     }
-
-    // return { error: { status, message: `Linked Accounts Error` } };
 
     return data;
   },
