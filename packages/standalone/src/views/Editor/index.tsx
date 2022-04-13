@@ -2,12 +2,12 @@ import { loadDocument, saveDocument } from '@cwrc/leafwriter-storage-service';
 import { LWDocument } from '@cwrc/leafwriter/src/@types';
 import { Backdrop, LinearProgress } from '@mui/material';
 import Page from '@src/components/Page';
-import { usePermalink } from '@src/hooks/permalink';
+import { usePermalink } from '@src/hooks/usePermalink';
 import { useActions, useAppState } from '@src/overmind';
-import React, { FC, Suspense, useEffect } from 'react';
+import React, { FC, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import type { Resource } from '../../@types/types';
+import type { IAnnotationUserProfile, Resource } from '../../@types/types';
 
 const Leafwriter = React.lazy(() => import('@cwrc/leafwriter'));
 
@@ -16,15 +16,19 @@ const Editor: FC = () => {
   const navigate = useNavigate();
   const { parsePermalink, setPermalink } = usePermalink();
   const { resource, user, userAuthenticated } = useAppState();
+
   const {
     addToRecentDocument,
     getStorageProviderAuth,
     getLincsAauthenticationToken,
+    getUserProfile,
     openStorageDialog,
     setResource,
     signOut,
     showMessageDialog,
   } = useActions();
+
+  const [userProfile, setUserProfile] = useState<IAnnotationUserProfile | undefined>();
 
   useEffect(() => {
     if (resource) {
@@ -34,12 +38,20 @@ const Editor: FC = () => {
   }, []);
 
   useEffect(() => {
+    if (userAuthenticated === 'authenticating') return;
     if (!userAuthenticated) return navigate('/', { replace: true });
+
+    const profile = getUserProfile();
+    if (!profile) return navigate('/');
+    setUserProfile(profile);
+
     resource ? setPermalink(resource) : checkPermalink();
   }, [userAuthenticated]);
 
   useEffect(() => {
     if (resource) {
+      if (!getUserProfile()) return navigate('/', { replace: true });
+
       setPermalink(resource);
       addToRecentDocument(resource);
     } else {
@@ -113,7 +125,7 @@ const Editor: FC = () => {
 
   return (
     <Page title={t('home:homepage')}>
-      {!resource ? (
+      {!resource || !userProfile ? (
         <Progress />
       ) : (
         <Suspense fallback={<Progress />}>
@@ -136,16 +148,7 @@ const Editor: FC = () => {
             }}
             onLoadRequest={handleLoadRequest}
             onSaveRequest={handleSaveRequest}
-            user={{
-              name: user?.identities[user.prefferedID].name,
-              url: user?.identities[user.prefferedID].uri,
-              username: user?.identities[user.prefferedID].username,
-
-              avatar_url: user?.avatar_url,
-              prefferedID: user?.prefferedID,
-              email: user?.email,
-              signOut,
-            }}
+            user={{ ...userProfile, signOut }}
           />
         </Suspense>
       )}

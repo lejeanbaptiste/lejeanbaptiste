@@ -1,4 +1,4 @@
-//@ts-nocheck 
+//@ts-nocheck
 import $ from 'jquery';
 import type { Bookmark } from 'tinymce';
 import Entity from './entities/Entity';
@@ -230,7 +230,7 @@ class Tagger {
    * @param {String} id The tag id
    */
   editTagDialog(id: string | string[]) {
-    if (!this.writer.editor) return
+    if (!this.writer.editor) return;
     //? what to do if id is multiple
     if (Array.isArray(id)) id = id[0];
 
@@ -280,7 +280,7 @@ class Tagger {
     //? what to do if id is multiple
     if (Array.isArray(id)) id = id[0];
 
-    const tag = this.getCurrentTag(id)  as JQuery<HTMLElement>;
+    const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
 
     if (tag.attr('_entity')) {
       this.writer.dialogManager.confirm({
@@ -417,7 +417,7 @@ class Tagger {
    * @param {String} [id] The id of the tag to remove
    */
   removeTag(id: string) {
-    const $tag = this.getCurrentTag(id) as JQuery<HTMLElement>;;
+    const $tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
     $tag.attr('_entity') ? this.removeEntity(id) : this.removeStructureTag(id);
   }
 
@@ -429,7 +429,7 @@ class Tagger {
 
     //? what to do if id is multiple
     if (Array.isArray(id)) id = id[0];
-    const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;;
+    const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
 
     if (tag.attr('_entity')) {
       const clone = tag.attr('_note') ? tag.parent('.noteWrapper').clone(true) : tag.clone();
@@ -917,7 +917,7 @@ class Tagger {
   addNoteWrapper = (tag: Element, type: string) => {
     $(tag)
       .filter(':visible') //! don't add to invisible tags
-      .wrap(`<span class="noteWrapper ${type} hide" />`)
+      .wrap(`<span class="noteWrapper ${type} hide" title="${tag.textContent}" />`)
       .parent()
       .on('click', ({ target }) => {
         const $target = $(target);
@@ -1167,7 +1167,7 @@ class Tagger {
       this.writer.event('tagRemoved').publish(id);
     };
 
-    const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;;
+    const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
     const entry = this.writer.entitiesManager.getEntity(id);
     // id = tag.attr('id') ?? id;
 
@@ -1196,7 +1196,7 @@ class Tagger {
     //? what to do if id is multiple
     if (Array.isArray(id)) id = id[0];
 
-    const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;;
+    const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
 
     const doRemove = () => {
       tag

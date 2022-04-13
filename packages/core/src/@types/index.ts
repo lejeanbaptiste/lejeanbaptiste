@@ -111,21 +111,22 @@ export const SupportedSchemas: Map<string, Schema> = new Map();
 
 export interface User {
   name: string;
-  permissions?: string;
-  username?: string;
   url: string;
+
+  permissions?: string;
+  prefferedID?: string;
+  username?: string;
 
   avatar_url?: string;
   email?: string;
   emailVerified?: boolean;
   firstName?: string;
   lastName?: string;
+  prefStorageProvider?: string;
   identities?: {
     [x: string]: any; //Allow more properties
   };
-  prefferedID?: string;
-  prefStorageProvider?: string;
-
+  
   signOut?: () => Promise<void>;
 }
 

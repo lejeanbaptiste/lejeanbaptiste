@@ -1,4 +1,5 @@
 import {
+  INotification,
   Language,
   MessageDialog,
   PaletteMode,
@@ -15,6 +16,7 @@ type State = {
   identityProviders: { [key: string]: IdentityProvider };
   language: Language;
   messageDialog: MessageDialog;
+  notifications: INotification[];
   recentDocuments: Resource[];
   resource?: Resource;
   sampleDocuments?: { title: string; url: string }[];
@@ -32,6 +34,7 @@ export const state: State = {
   identityProviders: {},
   language: { code: 'en-CA', name: 'english', shortName: 'en' },
   messageDialog: { open: false },
+  notifications: [],
   recentDocuments: [],
   sampleDocuments: [
     {

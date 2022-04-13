@@ -11,7 +11,7 @@ const Page = forwardRef<PageProps, any>(({ children, title = '', ...rest }, ref)
   return (
     <div ref={ref} {...rest}>
       <Helmet>
-        <title>leaf-writer</title>
+        <title>LEAF-Writer</title>
       </Helmet>
       {children}
     </div>

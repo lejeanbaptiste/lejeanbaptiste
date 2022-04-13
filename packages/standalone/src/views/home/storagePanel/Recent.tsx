@@ -1,7 +1,7 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { Button, Stack, Typography } from '@mui/material';
 import type { Resource } from '@src/@types/types';
-import { usePermalink } from '@src/hooks/permalink';
+import { usePermalink } from '@src/hooks/usePermalink';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
