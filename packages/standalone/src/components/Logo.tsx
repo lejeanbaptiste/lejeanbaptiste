@@ -8,28 +8,25 @@ interface LogoProps extends BoxProps {
 }
 
 const Logo: FC<LogoProps> = ({ height = 'auto', type = 'standard', ...props }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const filename = theme.palette.mode === 'dark' ? 'cwrclogo-white.png' : 'cwrclogo-black.png';
+  const { breakpoints, palette } = useTheme();
+  const isMobile = useMediaQuery(breakpoints.down('sm'));
+  const filename = palette.mode === 'dark' ? 'cwrclogo-white.png' : 'cwrclogo-black.png';
 
   return (
     <Box {...props}>
       {type === 'standard' ? (
         <Stack direction="row">
-          <img alt="CWRC-Writer" height={height} src={`/assets/logo/${filename}`} />
+          <img alt="Leaf-Writer" height={height} src={`/assets/logo/${filename}`} />
           <Typography
             component="h1"
-            sx={{
-              ml: '1rem',
-              fontWeight: 400,
-            }}
+            sx={{ ml: '1rem', fontWeight: 400 }}
             variant={isMobile ? 'h4' : 'h2'}
           >
-            leaf-writer
+            LEAF-Writer
           </Typography>
         </Stack>
       ) : (
-        <img alt="CWRC-Writer" height={height} src={`/assets/logo/${filename}`} />
+        <img alt="Leaf-Writer" height={height} src={`/assets/logo/${filename}`} />
       )}
     </Box>
   );

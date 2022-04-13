@@ -1,6 +1,6 @@
 {
 	"name": "@cwrc/leafwriter-standalone",
-	"version": "1.0.2",
+	"version": "1.1.1",
 	"private": true,
 	"description": "xml editing and rdf annotation using github as document store",
 	"keywords": [
@@ -31,8 +31,8 @@
 		"build": "env-cmd -e production webpack"
 	},
 	"dependencies": {
-		"@cwrc/leafwriter": "^1.1.0",
-		"@cwrc/leafwriter-storage-service": "^0.3.0",
+		"@cwrc/leafwriter": "^1.1.1",
+		"@cwrc/leafwriter-storage-service": "^0.3.1",
 		"@emotion/react": "^11.8.2",
 		"@emotion/styled": "^11.8.1",
 		"@fontsource/lato": "^4.5.5",

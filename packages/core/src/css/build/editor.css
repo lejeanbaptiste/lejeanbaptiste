@@ -250,7 +250,7 @@
   content: url(../images/citation_inline_large_highlight.png);
 } */
 
-.noteWrapper.note.entityHighlight::before {
+.noteWrapper.citation.entityHighlight::before {
   content: url(../images/citation.svg);
   background-color: rgb(205, 0, 116);
   border-radius: 2px;

@@ -4,7 +4,7 @@ import Storage from '@src/components/Storage';
 import React, { FC, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRoutes } from 'react-router-dom';
-import { useTracking } from './hooks/tracking';
+import { useTracking } from './hooks/useTracking';
 import { useAppState } from './overmind';
 import routes from './routes';
 import theme from './theme';

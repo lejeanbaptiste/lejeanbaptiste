@@ -1,6 +1,6 @@
 import type { Resource } from '@cwrc/leafwriter-storage-service';
 import { Backdrop, LinearProgress } from '@mui/material';
-import { usePermalink } from '@src/hooks/permalink';
+import { usePermalink } from '@src/hooks/usePermalink';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC, Suspense, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';

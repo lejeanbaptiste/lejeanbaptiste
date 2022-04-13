@@ -14,34 +14,33 @@ import { useActions, useAppState } from '@src/overmind';
 import { supportedIdentityProviders } from '@src/services';
 import { getIcon } from '@src/utilities/icons';
 import { BroadcastChannel } from 'broadcast-channel';
-import { useSnackbar } from 'notistack';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const Identity: FC = () => {
-  const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation();
   const { user } = useAppState();
-  const actions = useActions();
+  const { changePrefferedID, getLinkedAccounts, linkAccount, notifyViaSnackbar } = useActions();
 
   const handleIdClick = async (provider: IdentityProvider) => {
-    if (user?.prefferedID === provider) return;
-    user?.identities[provider]
-      ? actions.changePrefferedID(provider)
-      : await connectAccount(provider);
+    if (!user || user?.prefferedID === provider) return;
+    user.identities.get(provider) ? changePrefferedID(provider) : await connectAccount(provider);
   };
 
   const connectAccount = async (provider: string) => {
-    const linkAccountUrl = await actions.linkAccount(provider);
+    const linkAccountUrl = await linkAccount(provider);
 
     const channel = new BroadcastChannel('Leaf-Writer-Link-Accounts');
     channel.onmessage = async (linkAccountCallback) => {
       channel.close();
 
-      if (!linkAccountCallback.success) enqueueSnackbar(t(`error:somethingWentWrong`));
+      if (!linkAccountCallback.success) {
+        notifyViaSnackbar(t(`error:somethingWentWrong`));
+        return;
+      }
 
-      await actions.getLinkedAccounts();
-      enqueueSnackbar('Account Linked');
+      await getLinkedAccounts();
+      notifyViaSnackbar('Account Linked');
     };
 
     window.open(linkAccountUrl);
@@ -63,7 +62,7 @@ const Identity: FC = () => {
             <Tooltip
               key={provider}
               title={
-                user?.identities[provider] === undefined
+                !user?.identities.get(provider)
                   ? `Link your ${provider} account`
                   : provider === user?.prefferedID
                   ? provider
@@ -93,7 +92,7 @@ const Identity: FC = () => {
                     sx={{
                       width: 16,
                       height: 16,
-                      opacity: user?.identities[provider] ? 1 : 0.3,
+                      opacity: user?.identities.get(provider) ? 1 : 0.3,
                     }}
                   />
                 </IconButton>
