@@ -1,12 +1,13 @@
 import type {
+  IAnnotationUserProfile,
   INotification,
-  MessageDialog,
   IProviderAuth,
+  MessageDialog,
   PaletteMode,
   Resource,
   StorageDialogState,
-  User,
   StorageProvider,
+  User,
 } from '@src/@types/types';
 import { setIndentityProvider, suportedStorageProviders } from '@src/services';
 import AuthenticationService from '@src/services/AuthenticationService';
@@ -113,7 +114,7 @@ export const setUserProfile = async ({ state, actions }: Context) => {
   if (!state.identityProviders) return;
 
   //augment user profile
-  state.user.identities = {};
+  state.user.identities = new Map();
   await actions.getLinkedAccounts();
 
   //prefferedID
@@ -124,7 +125,7 @@ export const setUserProfile = async ({ state, actions }: Context) => {
     : actions.changePrefferedID(Object.keys(state.identityProviders)[0]);
 
   //use avatar from preffed ID
-  state.user.avatar_url = user.identities[user.prefferedID]?.avatar_url ?? undefined;
+  state.user.avatar_url = user.identities.get(user.prefferedID)?.avatar_url ?? undefined;
 };
 
 export const setupStorageProvider = async ({ state, actions }: Context) => {
@@ -185,7 +186,7 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
   for await (const account of linkedAccounts) {
     //IDENTITY
     const providerName = account.identityProvider;
-    if (state.user.identities[providerName]) continue;
+    if (state.user.identities.get(providerName)) continue;
 
     const identityProvider = await actions._linkIdentityProvider(account);
 
@@ -214,7 +215,7 @@ export const _linkIdentityProvider = async (
   if (!userDetails) return;
 
   state.identityProviders[providerName] = provider;
-  state.user.identities[providerName] = userDetails;
+  state.user.identities.set(providerName, userDetails);
 
   return provider;
 };
@@ -228,25 +229,51 @@ export const _linkStorageProvider = ({ state }: Context, providerName: string) =
 };
 
 export const setSampleUser = ({ state }: Context) => {
-  state.user = {
-    email: 'sampleUser@sample.com',
-    firstName: 'Sample',
-    lastName: 'User',
-    username: 'sampleUser',
-    identities: {
-      github: {
-        id: 0,
-        email: 'sampleUser@sample.com',
-        name: 'Sample User',
-        login: "lucaju",
-        username: 'sampleUser',
-      }
-    },
-    prefferedID: 'github',
-    prefStorageProvider: 'github',
+  // state.user = {
+  //   email: 'sampleUser@sample.com',
+  //   firstName: 'Sample',
+  //   lastName: 'User',
+  //   username: 'sampleUser',
+  //   identities: {
+  //     github: {
+  //       id: 0,
+  //       email: 'sampleUser@sample.com',
+  //       name: 'Sample User',
+  //       login: 'lucaju',
+  //       username: 'sampleUser',
+  //     },
+  //   },
+  //   prefferedID: 'github',
+  //   prefStorageProvider: 'github',
+  // };
+  // state.userAuthenticated = true;
+};
+
+export const getUserProfile = ({ state }: Context) => {
+  const { user } = state;
+  if (!user || user.identities.size === 0) return;
+
+  const prefferedID = user.prefferedID;
+
+  const name = user.identities.get(prefferedID)?.name;
+  const url = user.identities.get(prefferedID)?.uri;
+
+  if (!name || !url) return;
+
+  const username = user.identities.get(prefferedID)?.username;
+  const avatar_url = user.avatar_url;
+  const email = user.email;
+
+  const annotationUserProfile: IAnnotationUserProfile = {
+    name,
+    url,
+    avatar_url,
+    email,
+    prefferedID,
+    username,
   };
 
-  state.userAuthenticated = true;
+  return annotationUserProfile;
 };
 
 //* UI
@@ -283,7 +310,7 @@ export const changePrefferedID = ({ state }: Context, iDproviderName: string) =>
   state.user.prefferedID = iDproviderName;
   localStorage.setItem('prefIdProvider', iDproviderName);
 
-  state.user.avatar_url = state.user.identities[iDproviderName].avatar_url ?? undefined;
+  state.user.avatar_url = state.user.identities.get(iDproviderName)?.avatar_url ?? undefined;
 
   return iDproviderName;
 };

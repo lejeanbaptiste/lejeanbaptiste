@@ -32,11 +32,26 @@ export interface User {
   firstName?: string;
   lastName?: string;
   username?: string;
-  identities: {
-    [x: string]: any; //Allow more properties
-  };
+  identities: Map<string, IIdentity>;
   prefferedID: string;
   prefStorageProvider: string;
+}
+
+export interface IIdentity {
+  name: string;
+  uri: string;
+  username: string;
+  [x: string]: any; //Allow more properties
+}
+
+export interface IAnnotationUserProfile {
+  name: string;
+  url: string;
+
+  avatar_url?: string;
+  email?: string;
+  prefferedID: string;
+  username?: string;
 }
 
 export type AffiliationType = 'owner' | 'collaborator' | 'organization';
