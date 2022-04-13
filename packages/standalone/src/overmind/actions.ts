@@ -1,4 +1,5 @@
 import type {
+  INotification,
   MessageDialog,
   IProviderAuth,
   PaletteMode,
@@ -172,6 +173,10 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
   const linkedAccounts: LinkedAccount[] | IHTTPRequestError =
     await effects.NSSIApi.getLinkedAccounts(token);
   if ('error' in linkedAccounts) {
+    actions.notifyViaSnackbar({
+      message: linkedAccounts.error.message,
+      options: { variant: 'error' },
+    });
     return;
   }
 
@@ -391,4 +396,29 @@ export const addToRecentDocument = ({ state }: Context, document: Resource) => {
 export const loadTemplate = async ({ effects }: Context, url: string) => {
   const documentString = await effects.localAPI.loadTemplate(url);
   return documentString;
+};
+
+export const notifyViaSnackbar = ({ state }: Context, notification: INotification | string) => {
+  if (typeof notification === 'string') notification = { message: notification };
+
+  let key = notification.options && notification.options.key;
+  if (!key) key = new Date().getTime() + Math.random();
+
+  state.notifications = [
+    ...state.notifications,
+    { ...notification, key },
+  ];
+};
+
+export const closeNotificationSnackbar = ({ state }: Context, key?: string | number) => {
+  const dismissAll = !key;
+  state.notifications = state.notifications.map((notification) =>
+    dismissAll || notification.key === key
+      ? { ...notification, dismissed: true }
+      : { ...notification }
+  );
+};
+
+export const removeNotificationSnackbar = ({ state }: Context, key: string | number) => {
+  state.notifications = state.notifications.filter((notification) => notification.key !== key);
 };
