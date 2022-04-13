@@ -1,7 +1,10 @@
-export declare var webpackEnv : {
-  NODE_ENV: string
+import { SnackbarMessage, OptionsObject } from 'notistack';
+
+export declare var webpackEnv: {
+  NODE_ENV: string;
   WORKER_ENV: string;
-}
+};
+
 export interface Language {
   code: string;
   name: string;
@@ -14,6 +17,13 @@ export const Languages: Map<string, Language> = new Map();
 
 export type IdentityProvider = 'github' | 'gitlab' | 'orcid';
 export type StorageProvider = 'github' | 'gitlab';
+
+export interface INotification {
+  dismissed?: boolean;
+  key?: string | number;
+  message: SnackbarMessage;
+  options?: OptionsObject;
+} 
 
 export interface User {
   avatar_url?: string;

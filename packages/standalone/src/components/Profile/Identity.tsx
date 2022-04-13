@@ -14,7 +14,6 @@ import { useActions, useAppState } from '@src/overmind';
 import { supportedIdentityProviders } from '@src/services';
 import { getIcon } from '@src/utilities/icons';
 import { BroadcastChannel } from 'broadcast-channel';
-import { useSnackbar } from 'notistack';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -22,7 +21,7 @@ const Identity: FC = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation();
   const { user } = useAppState();
-  const actions = useActions();
+  const { changePrefferedID, getLinkedAccounts, linkAccount, notifyViaSnackbar } = useActions();
 
   const handleIdClick = async (provider: IdentityProvider) => {
     if (user?.prefferedID === provider) return;
@@ -32,16 +31,19 @@ const Identity: FC = () => {
   };
 
   const connectAccount = async (provider: string) => {
-    const linkAccountUrl = await actions.linkAccount(provider);
+    const linkAccountUrl = await linkAccount(provider);
 
     const channel = new BroadcastChannel('Leaf-Writer-Link-Accounts');
     channel.onmessage = async (linkAccountCallback) => {
       channel.close();
 
-      if (!linkAccountCallback.success) enqueueSnackbar(t(`error:somethingWentWrong`));
+      if (!linkAccountCallback.success) {
+        notifyViaSnackbar(t(`error:somethingWentWrong`));
+        return;
+      }
 
-      await actions.getLinkedAccounts();
-      enqueueSnackbar('Account Linked');
+      await getLinkedAccounts();
+      notifyViaSnackbar('Account Linked');
     };
 
     window.open(linkAccountUrl);
