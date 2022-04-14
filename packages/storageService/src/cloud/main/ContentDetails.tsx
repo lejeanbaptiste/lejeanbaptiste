@@ -8,7 +8,7 @@ interface ContentDetailsProps {
 
 const ContentDetails: FC<ContentDetailsProps> = ({ latestCommit }) => {
   return (
-    <Box pt={0.25}>
+    <Box data-testid="content-details" pt={0.25}>
       <Typography component="p" variant="caption">
         Last Modified:{' '}
         <Typography color="text.secondary" title={latestCommit.date} variant="caption">
@@ -18,7 +18,7 @@ const ContentDetails: FC<ContentDetailsProps> = ({ latestCommit }) => {
           color="text.secondary"
           component={Link}
           href={`mailto:${latestCommit.authorEmail}`}
-          title={`${latestCommit.authorName}(${latestCommit.authorEmail})`}
+          title={`${latestCommit.authorName} (${latestCommit.authorEmail})`}
           underline="hover"
           variant="caption"
         >
@@ -27,7 +27,7 @@ const ContentDetails: FC<ContentDetailsProps> = ({ latestCommit }) => {
       </Typography>
       <Typography component="p" variant="caption">
         Message:{' '}
-        <Typography color="text.secondary" variant="caption">
+        <Typography color="text.secondary" data-testid="message" variant="caption">
           {latestCommit.message}{' '}
         </Typography>
         <Typography
@@ -35,10 +35,7 @@ const ContentDetails: FC<ContentDetailsProps> = ({ latestCommit }) => {
           component={Link}
           href={latestCommit.html_url}
           rel="noreferrer"
-          sx={{
-            ':before': { content: '"("' },
-            ':after': { content: '")"' },
-          }}
+          sx={{ ':before': { content: '"("' }, ':after': { content: '")"' } }}
           target="_blank"
           title={latestCommit.html_url}
           underline="hover"

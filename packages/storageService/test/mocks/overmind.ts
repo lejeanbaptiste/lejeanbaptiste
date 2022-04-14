@@ -13,7 +13,8 @@ export const resetOvermind = () => {
     };
 
     state.common = {
-      allowedFileTypes: ['application/xml'],
+      allowAllFileTypes: false,
+      allowedMimeTypes: ['application/xml'],
       dialogType: 'load',
       messageDialog: { open: false },
       showInvisibleFiles: false,
