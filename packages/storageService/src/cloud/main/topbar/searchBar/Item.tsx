@@ -69,7 +69,6 @@ const Item: FC<ItemProps> = ({ item, onPrimaryAction, onSecondaryAction }) => {
 
   return (
     <ListItem
-      data-testid={`search-global-item-${item.name}`}
       dense
       disablePadding
       // {...getOptionProps({ option, index })}
@@ -80,33 +79,38 @@ const Item: FC<ItemProps> = ({ item, onPrimaryAction, onSecondaryAction }) => {
           <Stack direction="row" spacing={1}>
             {text_matches && (
               <IconButton
-                data-testid="show-match-text-button"
+                data-testid="tertiary-button"
                 edge="end"
                 onClick={() => setShowContentMatch(!showContentMatch)}
                 size="small"
+                title="details"
               >
                 <CodeIcon fontSize="inherit" />
               </IconButton>
             )}
             {type === 'file' && (
-              <IconButton edge="end" onClick={handleSecondaryAction} size="small">
+              <IconButton
+                data-testid="secondary-button"
+                edge="end"
+                onClick={handleSecondaryAction}
+                size="small"
+                title="show in folder"
+              >
                 <FolderOpenIcon fontSize="inherit" />
               </IconButton>
             )}
           </Stack>
         )
       }
+      title={item.name}
     >
       <ListItemButton
         alignItems="flex-start"
+        data-testid="primary-button"
         dense
         disabled={isDisabled()}
         onClick={handlePrimaryAction}
-        sx={{
-          m: 0.5,
-          borderRadius: 1,
-          width: '100%',
-        }}
+        sx={{ width: '100%', m: 0.5, borderRadius: 1 }}
       >
         {!isSM && (
           <ListItemIcon sx={{ minWidth: 40 }}>

@@ -24,6 +24,7 @@ const SettingsDialog: FC<SettingsDialogProps> = ({ anchor, onDone, open }) => {
     <Menu
       anchorEl={anchor}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      data-testid="global_settings-dialog"
       id="settings-popper"
       open={open}
       onClose={handleDone}
@@ -34,8 +35,10 @@ const SettingsDialog: FC<SettingsDialogProps> = ({ anchor, onDone, open }) => {
           <ListItemIcon>
             <Switch
               checked={allowAllFileTypes}
+              data-testid="global_settings-dialog-allow_all_files-switch"
               inputProps={{ 'aria-label': 'allow-all-files' }}
               onChange={handleToggleAllowAllFiles}
+              title="Allow all files"
               size="small"
             />
           </ListItemIcon>

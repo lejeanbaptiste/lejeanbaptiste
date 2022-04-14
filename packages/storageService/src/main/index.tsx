@@ -111,6 +111,7 @@ const Main: FC<StorageDialogProps> = ({
 
   return (
     <Dialog
+      data-testid="storage-dialog"
       fullScreen={isMD}
       fullWidth
       maxWidth="md"

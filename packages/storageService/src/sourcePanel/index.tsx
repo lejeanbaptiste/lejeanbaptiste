@@ -50,7 +50,7 @@ const SidePanel: FC = () => {
   const handleCloseSettings = () => setOpenSettings(false);
 
   return (
-    <Paper ref={container} elevation={2} square>
+    <Paper data-testid="source_panel" elevation={2} ref={container} square>
       <Stack alignItems="center" justifyContent="space-between" height="100%" pb={1}>
         <ToggleButtonGroup
           color="primary"
@@ -77,7 +77,13 @@ const SidePanel: FC = () => {
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
-        <IconButton onClick={handleOpenSettings} size="small" sx={{ borderRadius: 1 }}>
+        <IconButton
+          data-testid="source_panel-settings_button"
+          onClick={handleOpenSettings}
+          size="small"
+          sx={{ borderRadius: 1 }}
+          title="settings"
+        >
           <SettingsIcon />
         </IconButton>
       </Stack>

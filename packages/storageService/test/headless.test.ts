@@ -13,7 +13,7 @@ beforeEach(() => {
   spyProviderFunctions();
 });
 
-describe.only('headless', () => {
+describe('headless', () => {
   describe('Load document', () => {
     describe('Resource invalid', () => {
       test.each([
@@ -162,7 +162,7 @@ describe.only('headless', () => {
       test.each([{ provider: 'github' }, { provider: 'gitlab' }])(
         '$provider: File already exist && override not allowed',
         async ({ provider }) => {
-          const doc = { content: 'test', hash: '111' };
+          const doc = { content: 'test', hash: '111', url: 'https://document.xml' };
 
           jest.spyOn(Github.prototype, 'getDocument').mockImplementationOnce(async () => doc);
           jest.spyOn(Gitlab.prototype, 'getDocument').mockImplementationOnce(async () => doc);
@@ -180,7 +180,7 @@ describe.only('headless', () => {
       test.each([{ provider: 'github' }, { provider: 'gitlab' }])(
         '$provider: File already exist && override allowed',
         async ({ provider }) => {
-          const doc = { content: 'test', hash: '111' };
+          const doc = { content: 'test', hash: '111', url: 'https://document.xml' };
 
           jest.spyOn(Github.prototype, 'getDocument').mockImplementationOnce(async () => doc);
           jest.spyOn(Gitlab.prototype, 'getDocument').mockImplementationOnce(async () => doc);

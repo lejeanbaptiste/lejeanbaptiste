@@ -20,7 +20,7 @@ interface TextMatch {
   }[];
 }
 
-interface SearchBlobsItem {
+export interface SearchBlobsItem {
   name: string;
   type: 'file';
   path: string;
@@ -403,6 +403,8 @@ export default class Gitlab implements Provider {
 
       searchResults.push(simplifiedItem);
     });
+
+    console.log(searchResults)
 
     return searchResults;
   }

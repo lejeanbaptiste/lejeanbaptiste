@@ -21,7 +21,12 @@ const Sidebar: FC = () => {
   }, [cloud.name]);
 
   return (
-    <Stack spacing={isSM ? 0 : 3} width={isSM ? '100%' : 300} pt={isSM ? 1 : 2}>
+    <Stack
+      data-testid="sidebar"
+      width={isSM ? '100%' : 300}
+      pt={isSM ? 1 : 2}
+      spacing={isSM ? 0 : 3}
+    >
       {isSM ? (
         <MobileMenu onSelect={setSelectedMenu} selectedMenu={selectedMenu} />
       ) : (

@@ -110,6 +110,7 @@ const SearchBar: FC<SearchBarProps> = ({
   return (
     <Box
       ref={container}
+      data-testid="search-bar"
       height={40}
       px={isSM ? 1 : 0}
       component={motion.div}
@@ -149,7 +150,7 @@ const SearchBar: FC<SearchBarProps> = ({
             fullWidth
             inputProps={
               !submitted
-                ? { ...getInputProps(), 'data-testid': 'search-file-input' }
+                ? { ...getInputProps(), title: 'search' }
                 : { 'data-testid': 'search-file-input', id: 'search', value: inputValue }
             }
             onClick={() => setSearchFocused(true)}

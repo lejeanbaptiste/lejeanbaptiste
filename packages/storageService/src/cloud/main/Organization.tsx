@@ -20,9 +20,10 @@ const Org: FC<OrgProps> = ({ org }) => {
   };
 
   return (
-    <ListItem alignItems="flex-start" disablePadding disableGutters divider>
+    <ListItem alignItems="flex-start" disablePadding disableGutters divider title={name}>
       <ListItemButton
         alignItems={description ? 'flex-start' : 'center'}
+        data-testid="primary-button"
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         selected={selectedItem?.organization?.id === org.id}
