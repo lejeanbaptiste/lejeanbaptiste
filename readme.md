@@ -1,5 +1,18 @@
 # Leaf-Writer
 
+================
+
+![Picture](https://cwrc.ca/logos/CWRC_logos_2016_versions/CWRCLogo-Horz-FullColour.png)
+
+[![Travis](https://img.shields.io/travis/cwrc/CWRC-WriterBase.svg)](https://travis-ci.org/cwrc/CWRC-WriterBase)
+[![Codecov](https://img.shields.io/codecov/c/github/cwrc/CWRC-WriterBase.svg)](https://codecov.io/gh/cwrc/CWRC-WriterBase)
+[![version](https://img.shields.io/npm/v/cwrc-writer-base.svg)](http://npm.im/cwrc-writer-base)
+[![downloads](https://img.shields.io/npm/dm/cwrc-writer-base.svg)](http://npm-stat.com/charts.html?package=cwrc-writer-base&from=2015-08-01)
+[![GPL-2.0](https://img.shields.io/npm/l/cwrc-writer-base.svg)](http://opensource.org/licenses/GPL-2.0)
+[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
+[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+[![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
+
 The [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca) has developed an in-browser text markup editor (LEAF-Writer) for use by individual scholars and collaborative scholarly editing projects that require a light-weight online editing environment. LEAF-Writer is an enhancement to the existing CWRC-Writer; a default version of the CWRC-Writer that uses GitHub for storage is available for anyone's use at [https://cwrc-writer.cwrc.ca/](https://cwrc-writer.cwrc.ca/).
 
 ## Table of Contents
