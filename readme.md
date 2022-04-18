@@ -13,7 +13,7 @@
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
 
-The [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca) has developed an in-browser text markup editor (LEAF-Writer) for use by individual scholars and collaborative scholarly editing projects that require a light-weight online editing environment. LEAF-Writer is an enhancement to the existing CWRC-Writer; a default version of the CWRC-Writer that uses GitHub for storage is available for anyone's use at [https://cwrc-writer.cwrc.ca/](https://cwrc-writer.cwrc.ca/).
+The [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca) has developed an in-browser text markup editor LEAF-Writer (a modular component of the Linked Editorial Academic Framework) for use by individual scholars and collaborative scholarly editing projects that require a light-weight online editing environment. LEAF-Writer is an enhancement to the existing CWRC-Writer; a default version of the CWRC-Writer that uses GitHub for storage is available for anyone's use at [https://cwrc-writer.cwrc.ca/](https://cwrc-writer.cwrc.ca/).
 
 ## Table of Contents
 
