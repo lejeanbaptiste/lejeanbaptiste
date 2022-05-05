@@ -1,12 +1,10 @@
 import type {
-  PossibleRequest,
-  Tag,
-  TagRequest,
-  ValidationNodeElement,
-  ValidationNodeTarget,
+  GetValidTagsAtParameters,
   ValidationResponse,
   Validator,
-} from '@cwrc/leafwriter-validator';
+// } from '@cwrc/leafwriter-validator';
+} from '../../../../validator/src/index.worker';
+import Writer from '@src/js/Writer';
 import * as Comlink from 'comlink';
 import { Context } from '../';
 import { webpackEnv } from '../../@types';
@@ -14,50 +12,49 @@ import { webpackEnv } from '../../@types';
 declare global {
   interface Window {
     leafwriterValidator: Comlink.Remote<Validator>;
+    writer: Writer;
   }
 }
 
 export const onInitializeOvermind = async ({ state }: Context, overmind: any) => {
-  const validator = await loadWorkerValidator();
+  const validator = await loadWebworker();
   if (!validator) return;
 
   window.leafwriterValidator = validator;
-  state.validator.hasValidator = true;
+  state.validator.hasWorkerValidator = true;
 };
 
-const loadWorkerValidator = async (): Promise<Comlink.Remote<Validator>> => {
+const loadWebworker = async (): Promise<Comlink.Remote<Validator>> => {
   return await new Promise((resolve) => {
     // TODO: Improve the way to load webworkers for dev
     // * Check ThreadsJS once again.
     // * Or maybe experiment with ESBUILD
 
-    if (webpackEnv.WORKER_ENV === 'development') {
-      //? WORKER DEV:
-      const worker = new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url));
-      const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
-      resolve(validator);
-    } else {
-      //? WORKER PRODUCTION:
-      const worker = new Worker('leafwriter-validator.worker.js');
-      const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
-      resolve(validator);
-    }
+    const worker =
+      webpackEnv.WORKER_ENV === 'development'
+        ? new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url))
+        : new Worker('leafwriter-validator.worker.js');
+
+    const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
+
+    resolve(validator);
   });
 };
 
-export const workerLoadSchema = async ({ state }: Context) => {
+export const initialize = async ({ state }: Context) => {
   const writer = window.writer;
   if (!writer) return;
 
-  if (!state.validator.hasValidator) return;
+  if (!state.validator.hasWorkerValidator) return;
 
   const workerValidator = window.leafwriterValidator;
+  state.validator.hasWorkerValidator = !!workerValidator;
 
   const id = writer.schemaManager.getCurrentSchema()?.id;
   const schemaURI = writer.schemaManager.getXMLUrl();
   if (!id || !schemaURI) return;
 
-  const localData = localStorage.getItem(`schema_${id}`) ?? undefined;
+  const cachedSchema = localStorage.getItem(`schema_${id}`) ?? undefined;
 
   //CORS: Some of the schemas might have blocke by CORS
   //If provide, we wrap the schema URL in a requeste to the proxy server
@@ -65,20 +62,26 @@ export const workerLoadSchema = async ({ state }: Context) => {
     ? `${state.editor.schemaProxyXmlEndpoint}${encodeURIComponent(schemaURI)}`
     : schemaURI;
 
-  const { status, remoteData } = await workerValidator.loadSchema({ id, localData, url });
+  const { parsedSchema, status } = await workerValidator.initialize({ id, cachedSchema, url });
   console.info(status);
 
-  if (remoteData) {
-    localStorage.setItem(`schema_${id}`, JSON.stringify(remoteData));
+  if (parsedSchema) {
+    localStorage.setItem(`schema_${id}`, parsedSchema);
     console.info('Schema cached.');
   }
+
+  state.validator.hasSchema = true;
+
+  window.writer?.event('workerValidatorLoaded').publish();
 };
 
-export const workerValidate = async ({ state }: Context) => {
+export const validate = async ({ state }: Context) => {
   const writer = window.writer;
-  if (!writer || !state.validator.hasValidator) return;
+  if (!writer || !state.validator.hasWorkerValidator) return;
 
   const workerValidator = window.leafwriterValidator;
+  if (!workerValidator.hasValidator()) return;
+
   const documentString = await writer.converter.getDocumentContent(false);
 
   const validationProgress = ({ partDone, state, valid, errors }: ValidationResponse) => {
@@ -93,59 +96,125 @@ export const workerValidate = async ({ state }: Context) => {
   if (documentString) workerValidator.validate(documentString, Comlink.proxy(validationProgress));
 };
 
-export const workerGetPossibleFromError = async (
-  { state }: Context,
+type GetAtAction =
+  | 'TagAt'
+  | 'ElementsForTagAt'
+  | 'AttributesForTagAt'
+  | 'AttributeAt'
+  | 'ValuesForTagAttributeAt';
+
+export const getAt = async (
+  { actions }: Context,
   {
-    type,
-    target,
-    element,
-  }: { type: string; target: ValidationNodeTarget; element: ValidationNodeElement }
+    action,
+    attributeName,
+    index,
+    parentXpath,
+    tagName,
+    xpath,
+  }: {
+    action: GetAtAction;
+    attributeName?: string;
+    index?: number;
+    parentXpath?: string;
+    tagName?: string;
+    xpath?: string;
+  }
 ) => {
-  if (!state.validator.hasValidator) return;
-  const workerValidator = window.leafwriterValidator;
+  const {
+    getTagAt,
+    getElementsForTagAt,
+    getAttributesForTagAt,
+    getTagAttributeAt,
+    getValuesForTagAttributeAt,
+  } = actions.validator;
 
-  let xpath = target.xpath;
-  let index = target.index;
+  switch (action) {
+    case 'TagAt':
+      if (!tagName || !parentXpath) return;
+      return await getTagAt({ tagName, parentXpath, index });
 
-  if (type === 'ElementNameError') xpath = element.xpath;
+    case 'ElementsForTagAt':
+      if (!xpath) return;
+      return await getElementsForTagAt({ xpath, index });
 
-  if (type === 'AttributeNameError') {
-    xpath = element.parentElementXpath;
-    index = element.parentElementIndex;
+    case 'AttributesForTagAt':
+      if (!xpath) return;
+      return await getAttributesForTagAt({ xpath, index });
+
+    case 'AttributeAt':
+      if (!attributeName || !parentXpath) return;
+      return await getTagAttributeAt({ attributeName, parentXpath });
+
+    case 'ValuesForTagAttributeAt':
+      if (!xpath) return;
+      return await getValuesForTagAttributeAt({ xpath });
+
+    default:
+      return;
   }
-
-  if (type === 'ValidationError') {
-    xpath = element.xpath;
-    //@ts-ignore
-    index = element.index;
-  }
-
-  //@ts-ignore
-  const response = await workerValidator.validatePossible(xpath, index, type);
-  return response;
 };
 
-export const workerPossibleAtContextMenu = async ({ state }: Context, params: PossibleRequest) => {
-  if (!state.validator.hasValidator) return;
+export const getTagAt = async (
+  { state }: Context,
+  { tagName, parentXpath, index }: { tagName: string; parentXpath: string; index?: number }
+) => {
+  if (!state.validator.hasWorkerValidator) return;
   const workerValidator = window.leafwriterValidator;
 
-  const response = await workerValidator.possibleAtContextMenu(params);
-  const tags: Tag[] = response.tags.speculative || response.tags.possible;
-  return tags;
-};
-
-export const workerTagAt = async ({ state }: Context, params: TagRequest) => {
-  if (!state.validator.hasValidator) return;
-  const workerValidator = window.leafwriterValidator;
-
-  const tag = await workerValidator.tagAt(params);
+  const tag = await workerValidator.getTagAt(tagName, parentXpath, index);
   return tag;
 };
 
-export const workerAttributesForTag = async ({ state }: Context, xpath: string) => {
-  if (!state.validator.hasValidator) return;
+export const getElementsForTagAt = async (
+  { state }: Context,
+  { xpath, index }: { xpath: string; index?: number }
+) => {
+  if (!state.validator.hasWorkerValidator) return;
   const workerValidator = window.leafwriterValidator;
 
-  const tagAttributes = await workerValidator.attributesForTag(xpath);
-  return tagAttributes;
+  const tags = await workerValidator.getElementsForTagAt(xpath, index);
+  return tags;
+};
+
+export const getAttributesForTagAt = async (
+  { state }: Context,
+  { xpath, index }: { xpath: string; index?: number }
+) => {
+  if (!state.validator.hasWorkerValidator) return;
+  const workerValidator = window.leafwriterValidator;
+
+  const attributes = await workerValidator.getAttributesForTagAt(xpath, index);
+  return attributes;
+};
+
+export const getTagAttributeAt = async (
+  { state }: Context,
+  { attributeName, parentXpath }: { attributeName: string; parentXpath: string }
+) => {
+  if (!state.validator.hasWorkerValidator) return;
+  const workerValidator = window.leafwriterValidator;
+
+  const attribute = await workerValidator.getTagAttributeAt(attributeName, parentXpath);
+  return attribute;
+};
+
+export const getValuesForTagAttributeAt = async (
+  { state }: Context,
+  { xpath }: { xpath: string }
+) => {
+  if (!state.validator.hasWorkerValidator) return;
+  const workerValidator = window.leafwriterValidator;
+
+  const values = await workerValidator.getValuesForTagAttributeAt(xpath);
+  return values;
+};
+
+export const getValidTagsAt = async ({ state }: Context, params: GetValidTagsAtParameters) => {
+  if (!state.validator.hasWorkerValidator) return;
+  const workerValidator = window.leafwriterValidator;
+
+  const response = await workerValidator.getValidTagsAt(params);
+  const tags = response.speculative || response.possible;
+  return tags;
 };

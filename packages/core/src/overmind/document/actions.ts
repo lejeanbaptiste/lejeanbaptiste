@@ -1,5 +1,12 @@
 import { Resource } from '../../@types';
 import { Context } from '../';
+import Writer from '@src/js/Writer';
+
+declare global {
+  interface Window {
+    writer: Writer
+  }
+}
 
 export const setInitialStateSchema = ({ state }: Context, id: string) => {
   state.document.schemaId = id;
