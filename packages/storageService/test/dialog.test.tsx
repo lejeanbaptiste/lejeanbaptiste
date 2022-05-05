@@ -4,7 +4,6 @@ import {
   fireEvent,
   getByTestId,
   getByTitle,
-  prettyDOM,
   render,
   screen,
   waitFor,
