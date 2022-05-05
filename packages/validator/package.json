@@ -41,6 +41,8 @@
     "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
     "clean": "shx rm -rf dist lib lib-esm",
     "cm": "git-cz"
+    "test": "jest",
+    "test-watch": "jest --watchAll --verbose",
   },
   "dependencies": {
     "@cwrc/salve-dom-leafwriter": "^6.0.3",
@@ -64,6 +66,8 @@
     "eslint-plugin-prettier": "^4.0.0",
     "git-cz": "^4.8.0",
     "husky": "^7.0.4",
+    "jest": "^27.5.1",
+    "jest-fetch-mock": "^3.0.3",
     "jsdom": "19.0.0",
     "prettier": "^2.6.1",
     "semantic-release": "^19.0.2",
