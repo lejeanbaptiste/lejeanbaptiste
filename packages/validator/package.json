@@ -30,11 +30,6 @@
   },
   "types": "lib/index.worker.d.ts",
   "module": "src/index.worker.ts",
-  "files": [
-    "dist",
-    "lib",
-    "src"
-  ],
   "scripts": {
     "browserify-jsdom": "browserify -r jsdom -s jsdom -o src/lib/jsdom/jsdom-browserified.js",
     "build": "npm run clean && tsc && webpack",
@@ -44,6 +39,7 @@
     "test-watch": "jest --watchAll --verbose",
     "build-documentation": "typedoc --out docs src/index.worker.ts",
     "cm": "git-cz",
+    "prepublishOnly": "npm test && npm run build_es6"
   },
   "dependencies": {
     "@cwrc/salve-dom-leafwriter": "^6.0.3",
