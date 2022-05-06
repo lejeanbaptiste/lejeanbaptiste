@@ -16,7 +16,9 @@ variables:
   TEST_DISABLED: 1
   POSTGRES_ENABLED: "false"
   STAGING_ENABLED: 1
-  CI_KUBERNETES_ACTIVE: "true"
+  KUBE_INGRESS_BASE_DOMAIN: leaf-vre.org
+  KUBE_CONTEXT: "calincs/gitlab-agents:leaf-agent"
+  KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG
 
   K8S_SECRET_GA_MEASUREMENT_ID: $GA_MEASUREMENT_ID
 
@@ -35,8 +37,16 @@ cache:
 
 # override some staging parameters
 staging:
+  variables:
+    KUBE_INGRESS_BASE_DOMAIN: stage.lincsproject.ca
+    KUBE_CONTEXT: "calincs/gitlab-agents:stage-agent"
+    KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_PROJECT_ID-staging
   <<: *deployment
 
 # override some production parameters
 production_manual:
+  variables:
+    KUBE_INGRESS_BASE_DOMAIN: lincsproject.ca
+    KUBE_CONTEXT: "calincs/gitlab-agents:prod-agent"
+    KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_PROJECT_ID-production
   <<: *deployment
