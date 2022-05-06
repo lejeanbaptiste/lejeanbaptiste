@@ -1,5 +1,9 @@
 # LEAF-Writer Validator
 
+![NPM](https://img.shields.io/npm/l/@cwrc/leafwriter-validator)
+[![version](https://img.shields.io/npm/v/@cwrc/leafwriter-validator.svg)](https://www.npmjs.com/package/@cwrc/leafwriter-validator)
+![npm type definitions](https://img.shields.io/npm/types/@cwrc/leafwriter-validator)
+
 LEAF-Writer Validator is a web worker able to validate XML documents stored in DOM trees according to a Relax NG schema. It is a fully typed wrapper around [Salve (Schema-Aware Library for Validation and Edition)](https://github.com/mangalam-research/salve) and [salve-dom](https://github.com/mangalam-research/salve-dom), which are de facto the library that validates XML documents. Please refer to their respective documentation for information about how these two libraries work.
 
 Given an XML document and its Relax NG schema, LEAF-Writer Validator can perform validation, retrieve information about errors (including documentation, if available), get information about elements defined in the schema (tags, attributes values), list possible attributes and children elements for a tag, and speculative validate insertion of tags in a specific context (before, after, inside, or around a tag) to assist the user in editing the document.
@@ -258,7 +262,7 @@ console.log(tags);
 
 ### Get Attributes for a Tag at
 
-Get a list of attributes for a tag using xpath. Call `getElementsForTagAt` passing `xpath` and `index` . The validator return an array of objects [ElementDetail](#elementdetail) with the element type (`attribute`), the attribute `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
+Get a list of attributes for a tag using xpath. Call `getAttributesForTagAt` passing `xpath` and `index` . The validator return an array of objects [ElementDetail](#elementdetail) with the element type (`attribute`), the attribute `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
 
 **Parameters**
 
@@ -270,7 +274,7 @@ Get a list of attributes for a tag using xpath. Call `getElementsForTagAt` passi
 Example:
 
 ```ts
-const attributes = await getAttributesForTagAt.getElementsForTagAt('TEI/text/body/div/p');
+const attributes = await validator.getAttributesForTagAt('TEI/text/body/div/p');
 
 console.log(attributes);
 /*
@@ -301,7 +305,7 @@ Get attribute's details for a tag using xpath. Call `getTagAttributeAt` passing 
 Example:
 
 ```ts
-const attribute = await getTagAttributeAt.getElementsForTagAt('seg','TEI/text/body/div/p');
+const attribute = await validator.getTagAttributeAt('seg','TEI/text/body/div/p');
 
 console.log(attribute);
 /*
@@ -328,7 +332,7 @@ Get a list of possible values for tag's attribute using xpath. Call `getValuesFo
 Example:
 
 ```ts
-const attributeValue = await getTagAttributeAt.getValuesForTagAttributeAt('/TEI/text/body/div/closer/signed/persName/persName/@cert');
+const attributeValue = await validator.getValuesForTagAttributeAt('/TEI/text/body/div/closer/signed/persName/persName/@cert');
 
 console.log(attributeValue);
 /*

@@ -27,7 +27,7 @@ self.window = DOM.window as Window;
 //@ts-ignore
 self.salve = salve;
 
-console.info('WORKER DEV VALIDATOR READY');
+console.info('WORKER VALIDATOR READY');
 
 export type Validator = typeof Validator;
 
