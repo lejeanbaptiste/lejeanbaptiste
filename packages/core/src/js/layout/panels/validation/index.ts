@@ -1,8 +1,11 @@
 import type {
-  ValidatePossibleAtResponse,
-  ValidationNodeElement,
-  ValidationNodeTarget,
-} from '@cwrc/leafwriter-validator';
+  ElementDetail,
+  ErrorNames,
+  ValidationError,
+  ValidationErrorElement,
+  ValidationErrorTarget,
+  ValidationResponse,
+  } from '@cwrc/leafwriter-validator';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/tooltip';
@@ -15,20 +18,13 @@ interface ValidationProps {
   writer: Writer;
 }
 
-type ValidationErrorType =
-  | 'AttributeNameError'
-  | 'AttributeValueError'
-  | 'ElementNameError'
-  | 'ChoiceError'
-  | 'ValidationError'; // more severe?
-
 class Validation {
   readonly id: string;
   readonly writer: Writer;
 
   readonly AUTO_VALIDATE_ONCHANGE_TIMER = 10000;
   autoValidateTimerActive = false;
-  autoValidateTimer: any;
+  autoValidateTimer: ReturnType<typeof setTimeout>;
 
   progressBar?: Circle; //typeof ProgressBar | null = null;
 
@@ -61,7 +57,13 @@ class Validation {
 
     this.writer.event('documentLoaded').subscribe(() => {
       this.clearResult();
-      this.writer.validate();
+      const hasValidorHasSchema = writer.overmindState.validator.hasSchema;
+      if (hasValidorHasSchema) this.writer.validate();
+    });
+
+    this.writer.event('workerValidatorLoaded').subscribe(() => {
+      this.clearResult();
+      if (writer.isDocLoaded) this.writer.validate();
     });
 
     this.writer.event('validationRequested').subscribe(() => {
@@ -80,7 +82,7 @@ class Validation {
       this.validate();
     });
 
-    this.writer.event('documentValidated').subscribe((valid: boolean, result: any) => {
+    this.writer.event('documentValidated').subscribe((valid: boolean, result: ValidationResponse) => {
       $(`#${this.id}_indicator`).hide();
       this.showValidationResult(result);
       if (result.errors) this.writer.layoutManager.showModule('validation');
@@ -97,7 +99,7 @@ class Validation {
   }
 
   async validate() {
-    await this.writer.overmindActions.validator.workerValidate();
+    await this.writer.overmindActions.validator.validate();
   }
 
   /**
@@ -106,7 +108,7 @@ class Validation {
    * @param result.valid {boolean} Whether the document is valid or not
    * @param result.errors {array} List of errors
    */
-  showValidationResult({ valid, errors }: { valid: boolean; errors: any[] }) {
+  showValidationResult({ valid, errors }: ValidationResponse) {
     const list = $(`#${this.id} > div.validationList`);
     list.empty();
 
@@ -167,18 +169,18 @@ class Validation {
     //@ts-ignore
     const $infoBadge = $stats.find('#info').button();
     $infoBadge.on('click', () => this.writer.validate());
-    
+
     $infoBadge.on('mouseover', (event: JQuery.MouseOverEvent) => {
       const $icon = $(event.currentTarget).find('i');
-      $icon.toggleClass('fa-exclamation-circle', false)
-      $icon.toggleClass('fa-arrow-rotate-right', true)
-    })
+      $icon.toggleClass('fa-exclamation-circle', false);
+      $icon.toggleClass('fa-arrow-rotate-right', true);
+    });
 
     $infoBadge.on('mouseout', (event: JQuery.MouseOutEvent) => {
       const $icon = $(event.currentTarget).find('i');
-      $icon.toggleClass('fa-exclamation-circle', true)
-      $icon.toggleClass('fa-arrow-rotate-right', false)
-    })
+      $icon.toggleClass('fa-exclamation-circle', true);
+      $icon.toggleClass('fa-arrow-rotate-right', false);
+    });
 
     this.writer.tagger.addNoteWrappersForEntities();
 
@@ -271,17 +273,7 @@ class Validation {
     return editorPath;
   }
 
-  private createErrorMessage({
-    type,
-    msg,
-    target,
-    element,
-  }: {
-    type: ValidationErrorType;
-    msg: string;
-    target: any;
-    element: any;
-  }) {
+  private createErrorMessage({ type, msg, target, element }: ValidationError) {
     switch (type) {
       case 'ElementNameError':
         msg = `Tag
@@ -352,8 +344,11 @@ class Validation {
     return msg;
   }
 
-  private createErrorMessageComponent(data: any): { html: string; data: any } {
-    const { type } = data;
+  private createErrorMessageComponent(data: ValidationError): {
+    html: string;
+    data: ValidationError;
+  } {
+    const { type }: ValidationError = data;
     const errorMessage = this.createErrorMessage(data);
 
     const html = `
@@ -379,7 +374,7 @@ class Validation {
   }
 
   private async createDocumentationComponent($item: JQuery<HTMLElement>) {
-    const { target, element } = $item.data().data;
+    const { target, element }: ValidationError = $item.data().data;
 
     $($item).show();
     const $details = $item.find('#details');
@@ -405,7 +400,7 @@ class Validation {
 
     $details.append(html);
 
-    let possibilities: ValidatePossibleAtResponse | undefined;
+    let possibilities: ElementDetail[];
     if ($item.data().data.possibilities) {
       possibilities = $item.data().data.possibilities;
     } else {
@@ -416,34 +411,18 @@ class Validation {
     }
 
     if (!possibilities) return;
-    if (!possibilities.possibleNodes && !possibilities.possibleTags) return;
 
     const $possibleHTML = $item.find('.possible');
     let possibleItems = '<span>Expected </span>';
 
-    if (possibilities.possibleNodes && possibilities.possibleNodes.length > 0) {
-      possibilities.possibleNodes.map(({ name }: { name: string }) => {
-        if (name === 'endTag') name = 'end of tag';
-        possibleItems += `<span class="element">${name}</span>`;
-      });
-    }
-
-    if (possibilities.possibleNodes && possibilities.possibleTags) {
-      possibleItems += '<span> or </span>';
-    }
-
-    if (possibilities.possibleTags) {
-      possibilities.possibleTags.map(({ name, fullName }: { name: string; fullName?: string }) => {
-        possibleItems += `
-          <span
-            class="element"
-            ${fullName ? `data-tooltip="${fullName}"` : ''}
-          >
-            ${name}
-          </span>
-        `;
-      });
-    }
+    possibilities.forEach((value) => {
+      const { fullName, name } = value;
+      possibleItems += `
+        <span class="element" ${fullName ? `data-tooltip="${fullName}"` : ''}>
+          ${name}
+        </span>
+      `;
+    });
 
     $possibleHTML.append(possibleItems);
   }
@@ -453,18 +432,31 @@ class Validation {
     target,
     element,
   }: {
-    type: string;
-    target: ValidationNodeTarget;
-    element: ValidationNodeElement;
-  }) {
-    const response: ValidatePossibleAtResponse | undefined =
-      await this.writer.overmindActions.validator.workerGetPossibleFromError({
-        type,
-        target,
-        element,
-      });
-    if (!response) return;
-    return response;
+    type: ErrorNames;
+    target: ValidationErrorTarget;
+    element: ValidationErrorElement;
+  }): Promise<ElementDetail[]> {
+    switch (type) {
+      case 'ElementNameError':
+        return this.writer.overmindActions.validator.getElementsForTagAt({
+          xpath: element.xpath,
+          index: target.index,
+        });
+
+      case 'AttributeNameError':
+        return this.writer.overmindActions.validator.getAttributesForTagAt({
+          xpath: element.parentElementXpath,
+          index: element.parentElementIndex,
+        });
+
+      case 'AttributeValueError':
+        return this.writer.overmindActions.validator.getValuesForTagAttributeAt({
+          xpath: target.xpath,
+        });
+
+      default:
+        return;
+    }
   }
 
   clearResult = () => {

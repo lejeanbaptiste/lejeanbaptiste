@@ -1,15 +1,23 @@
-import React from 'react';
-import { act, render, fireEvent, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import {
+  act,
+  fireEvent,
+  getByTestId,
+  getByTitle,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import React from 'react';
 import StorageDialog from '../src';
 import type { StorageDialogProps } from '../src/@types/types';
-import * as mock from './mocks/resource';
-import { spyProviderFunctions } from './mocks/provider';
-import userEvent from '@testing-library/user-event';
 import Github from '../src/providers/Github';
 import Gitlab from '../src/providers/Gitlab';
+import { spyProviderFunctions } from './mocks/provider';
+import * as mock from './mocks/resource';
 
-jest.setTimeout(20000);
+jest.setTimeout(30_000);
 
 beforeAll(() => {
   spyProviderFunctions();
@@ -25,6 +33,11 @@ const setup = async (props: Omit<StorageDialogProps, 'open'> = {}) => {
   await act(async () => render(<StorageDialog open={true} {...props} />));
 };
 
+const closeLoadDialog = async () => {
+  const footer = screen.getByTestId('footer-load');
+  await act(async () => userEvent.click(getByTitle(footer, 'cancel')));
+};
+
 describe('Dialog', () => {
   describe('Load', () => {
     describe('From local (default)', () => {
@@ -37,7 +50,7 @@ describe('Dialog', () => {
         expect(screen.getByTestId('header-source')).toHaveTextContent('local');
       });
 
-      // test('Open dialog -> select file', async () => {
+      // test('select file', async () => {
       //   await setup();
 
       //   expect.assertions(2);
@@ -56,7 +69,7 @@ describe('Dialog', () => {
     });
 
     describe('From Paste', () => {
-      test('Open dialog -> change from local to paste -> add paste content', async () => {
+      test('change from local to paste -> add paste content', async () => {
         await setup();
 
         expect.assertions(4);
@@ -73,7 +86,7 @@ describe('Dialog', () => {
         expect(input).toHaveTextContent('<xml>');
       });
 
-      test('Open dialog -> Source Paste', async () => {
+      test('Source Paste', async () => {
         await setup({ source: 'paste' });
 
         expect.assertions(2);
@@ -82,7 +95,7 @@ describe('Dialog', () => {
         expect(screen.getByTestId('header-source')).toHaveTextContent('paste');
       });
 
-      test('Open dialog -> Source Paste with content', async () => {
+      test('Source Paste with content', async () => {
         await setup({ resource: { content: '<xml>' } });
 
         expect.assertions(3);
@@ -93,214 +106,536 @@ describe('Dialog', () => {
       });
     });
 
-    describe('From Cloud', () => {
-      test('Open dialog', async () => {
-        await setup({
-          config: {
-            providers: [mock.githubAuth, mock.gitlabAuth],
-            preferProvider: 'github',
-          },
+    describe.each([
+      { name: '[Github] From Cloud', preferProvider: 'github' },
+      { name: '[Gitlab] From Cloud', preferProvider: 'gitlab' },
+    ])('$name', ({ preferProvider }) => {
+      describe('General', () => {
+        test('Open dialog', async () => {
+          await setup({
+            config: {
+              preferProvider,
+              providers: [mock.githubAuth, mock.gitlabAuth],
+            },
+          });
+
+          expect.assertions(3);
+
+          const storageDialog = screen.getByTestId('storage-dialog');
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+          await waitFor(
+            () => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(),
+            {
+              timeout: 500,
+            }
+          );
+
+          await closeLoadDialog();
         });
 
-        await waitFor(() => screen.getByTestId('header-dialog-title'));
+        test('Open dialog mobile', async () => {
+          //* ALLOWS TO RESIZE WINDOW
+          const matchMediaBK = window.matchMedia;
+          //@ts-ignore
+          window.matchMedia = (match: string) => ({
+            //@ts-ignore
+            matches: true, // <-- Set according to what you want to test
+            addListener: () => {},
+            removeListener: () => {},
+          });
 
-        expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-        expect(screen.getByTestId('header-source')).toHaveTextContent('github');
+          expect.assertions(4);
 
-        await waitFor(() => {}, { timeout: 500 });
+          //resize window to load mobile menu
+          global.innerWidth = 500;
+          window.dispatchEvent(new Event('resize'));
+          expect(window.innerWidth).toBe(500);
 
-        await waitFor(() =>
-          expect(screen.getByTestId('repository-list-repos')).toBeInTheDocument()
-        );
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
+
+          const storageDialog = screen.getByTestId('storage-dialog');
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+          await waitFor(
+            () => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(),
+            {
+              timeout: 500,
+            }
+          );
+
+          //* RESTORE
+          window.matchMedia = matchMediaBK;
+          global.innerWidth = 1024;
+          window.dispatchEvent(new Event('resize'));
+
+          await closeLoadDialog();
+        });
       });
 
-      test('Open dialog -> No repositories', async () => {
-        jest
-          .spyOn(Github.prototype, 'getReposForAuthenticatedUser')
-          .mockImplementationOnce(async () => ({ collection: [], nextPage: null }));
+      describe('Settings', () => {
+        test('Toggle Allow All Files', async () => {
+          await setup({
+            config: {
+              allowedMimeTypes: ['application/xml'],
+              preferProvider,
+              providers: [mock.githubAuth, mock.gitlabAuth],
+            },
+          });
 
-        await setup({
-          config: {
-            providers: [mock.githubAuth, mock.gitlabAuth],
-            preferProvider: 'github',
-          },
+          expect.assertions(11);
+
+          const storageDialog = screen.getByTestId('storage-dialog');
+
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+          const repositories = getByTestId(storageDialog, 'list-repos');
+          await waitFor(() => expect(repositories).toBeInTheDocument());
+
+          const repo = getByTitle(repositories, 'repo1');
+          await act(async () => userEvent.dblClick(getByTestId(repo, 'primary-button')));
+
+          const repositoryList = getByTestId(storageDialog, 'list-content');
+          await waitFor(() => expect(repositoryList).toBeInTheDocument());
+
+          const file = getByTitle(storageDialog, 'file_name_without_extension');
+          expect(getByTestId(file, 'primary-button')).toHaveClass('Mui-disabled');
+
+          await act(async () => {
+            const sourcePanel = getByTestId(storageDialog, 'source_panel');
+            userEvent.click(getByTitle(sourcePanel, 'settings'));
+          });
+
+          const globalSettingsDialog = screen.getByTestId('global_settings-dialog');
+          await waitFor(() => expect(globalSettingsDialog).toBeInTheDocument());
+
+          const allowAllFilesButton = getByTitle(globalSettingsDialog, 'Allow all files');
+          expect(allowAllFilesButton).not.toHaveClass('Mui-checked');
+
+          //toggle allow all
+          await act(async () => userEvent.click(allowAllFilesButton));
+          expect(allowAllFilesButton).toHaveClass('Mui-checked');
+          expect(getByTestId(file, 'primary-button')).not.toHaveClass('Mui-disabled');
+
+          //toggle not allow all
+          await act(async () => userEvent.click(allowAllFilesButton));
+          expect(allowAllFilesButton).not.toHaveClass('Mui-checked');
+          expect(getByTestId(file, 'primary-button')).toHaveClass('Mui-disabled');
+
+          await closeLoadDialog();
         });
-
-        await waitFor(() => screen.getByTestId('header-dialog-title'));
-
-        expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-        expect(screen.getByTestId('header-source')).toHaveTextContent('github');
-
-        await waitFor(() => expect(screen.getByTestId('list-empty')).toBeInTheDocument());
       });
 
-      test('Open dialog -> Select shared with me', async () => {
-        await setup({
-          config: {
-            providers: [mock.githubAuth, mock.gitlabAuth],
-            preferProvider: 'github',
-          },
+      describe('Organizations', () => {
+        test('Select and Open Organization', async () => {
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
+
+          expect.assertions(8);
+
+          const storageDialog = screen.getByTestId('storage-dialog');
+          const footer = getByTestId(storageDialog, 'footer-load');
+          const footerLoadButton = getByTitle(footer, 'load');
+
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          expect(footerLoadButton).not.toBeEnabled();
+
+          const sidebar = getByTestId(storageDialog, 'sidebar');
+          const organizationsButton = getByTitle(sidebar, 'Organizations');
+          await act(async () =>
+            userEvent.click(getByTestId(organizationsButton, 'primary-button'))
+          );
+
+          const organizations = await waitFor(() => {
+            const listOrganizations = getByTestId(storageDialog, 'list-organizations');
+            expect(listOrganizations).toBeInTheDocument();
+            return listOrganizations;
+          });
+
+          const organization = getByTitle(organizations, 'organization 1');
+          const orgButton = getByTestId(organization, 'primary-button');
+          await act(async () => userEvent.click(orgButton));
+
+          expect(orgButton).toHaveClass('Mui-selected');
+          expect(footerLoadButton).toBeEnabled();
+          expect(footerLoadButton).toHaveTextContent('open');
+
+          await act(async () => userEvent.click(footerLoadButton));
+          await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument());
+
+          await closeLoadDialog();
         });
 
-        await waitFor(() => screen.getByTestId('header-dialog-title'));
+        test('Open Organization', async () => {
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
 
-        expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-        expect(screen.getByTestId('header-source')).toHaveTextContent('github');
+          expect.assertions(4);
 
-        await act(async () =>
-          userEvent.click(screen.getByTestId('sideButton-listItem-button-collaborator'))
-        );
+          const storageDialog = screen.getByTestId('storage-dialog');
 
-        await waitFor(() =>
-          expect(screen.getByTestId('repository-list-repos')).toBeInTheDocument()
-        );
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+          const sidebar = getByTestId(storageDialog, 'sidebar');
+          const organizationsButton = getByTitle(sidebar, 'Organizations');
+          await act(async () =>
+            userEvent.click(getByTestId(organizationsButton, 'primary-button'))
+          );
+
+          const organizations = await waitFor(() => {
+            const listOrganizations = getByTestId(storageDialog, 'list-organizations');
+            expect(listOrganizations).toBeInTheDocument();
+            return listOrganizations;
+          });
+
+          const organization = getByTitle(organizations, 'organization 1');
+          const orgButton = getByTestId(organization, 'primary-button');
+          await act(async () => userEvent.dblClick(orgButton));
+
+          await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument());
+
+          await closeLoadDialog();
+        });
       });
 
-      test('Open dialog -> Select organization', async () => {
-        await setup({
-          config: {
-            providers: [mock.githubAuth, mock.gitlabAuth],
-            preferProvider: 'github',
-          },
+      describe('Repositories', () => {
+        test('No repositories', async () => {
+          const provider = preferProvider === 'github' ? Github.prototype : Gitlab.prototype;
+          jest
+            .spyOn(provider, 'getReposForAuthenticatedUser')
+            .mockImplementationOnce(async () => ({ collection: [], nextPage: null }));
+
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
+
+          expect.assertions(3);
+
+          const storageDialog = screen.getByTestId('storage-dialog');
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+          await waitFor(() => expect(getByTestId(storageDialog, 'list-empty')).toBeInTheDocument());
+
+          await closeLoadDialog();
         });
 
-        await waitFor(() => screen.getByTestId('header-dialog-title'));
+        test('Select shared with me', async () => {
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
 
-        expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-        expect(screen.getByTestId('header-source')).toHaveTextContent('github');
+          expect.assertions(3);
 
-        await act(async () =>
-          userEvent.click(screen.getByTestId('sideButton-listItem-button-organization'))
-        );
+          const storageDialog = screen.getByTestId('storage-dialog');
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
 
-        await waitFor(() =>
-          expect(screen.getByTestId('repository-list-organizations')).toBeInTheDocument()
-        );
+          const sidebar = getByTestId(storageDialog, 'sidebar');
+          const shared = getByTitle(sidebar, 'Shared with me');
+          await act(async () => userEvent.click(getByTestId(shared, 'primary-button')));
+
+          await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument());
+
+          await closeLoadDialog();
+        });
+
+        test('Select and Open repository', async () => {
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
+
+          expect.assertions(8);
+
+          const storageDialog = screen.getByTestId('storage-dialog');
+          const footer = getByTestId(storageDialog, 'footer-load');
+          const footerLoadButton = getByTitle(footer, 'load');
+
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+          const repositories = getByTestId(storageDialog, 'list-repos');
+          await waitFor(() => expect(repositories).toBeInTheDocument());
+          expect(footerLoadButton).not.toBeEnabled();
+
+          const repo = getByTitle(repositories, 'repo1');
+          const repoButton = getByTestId(repo, 'primary-button');
+          await act(async () => userEvent.click(repoButton));
+
+          expect(repoButton).toHaveClass('Mui-selected');
+          expect(footerLoadButton).toBeEnabled();
+          expect(footerLoadButton).toHaveTextContent('open');
+
+          await act(async () => userEvent.click(footerLoadButton));
+
+          await waitFor(() =>
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+          );
+
+          await closeLoadDialog();
+        });
+
+        test('Open repository', async () => {
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
+
+          expect.assertions(4);
+
+          const storageDialog = screen.getByTestId('storage-dialog');
+
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+          const repositories = getByTestId(storageDialog, 'list-repos');
+          await waitFor(() => expect(repositories).toBeInTheDocument());
+
+          const repo = getByTitle(repositories, 'repo1');
+          await act(async () => userEvent.dblClick(getByTestId(repo, 'primary-button')));
+
+          await waitFor(() =>
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+          );
+
+          await closeLoadDialog();
+        });
+
+        describe('Folder', () => {
+          test('Select and Open folder', async () => {
+            await setup({
+              config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+            });
+
+            expect.assertions(9);
+
+            const storageDialog = screen.getByTestId('storage-dialog');
+            const footer = getByTestId(storageDialog, 'footer-load');
+            const footerLoadButton = getByTitle(footer, 'load');
+
+            expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+            expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+            expect(footerLoadButton).not.toBeEnabled();
+
+            const repositories = getByTestId(storageDialog, 'list-repos');
+            await waitFor(() => expect(repositories).toBeInTheDocument());
+
+            const repo = getByTitle(repositories, 'repo1');
+            await act(async () => userEvent.dblClick(getByTestId(repo, 'primary-button')));
+
+            expect(footerLoadButton).not.toBeEnabled();
+
+            const folder = getByTitle(storageDialog, 'folder1');
+            const folderButton = getByTestId(folder, 'primary-button');
+            await act(async () => userEvent.click(folderButton));
+
+            expect(folderButton).toHaveClass('Mui-selected');
+            expect(footerLoadButton).toBeEnabled();
+            expect(footerLoadButton).toHaveTextContent('open');
+
+            await act(async () => userEvent.click(footerLoadButton));
+
+            await waitFor(() =>
+              expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+            );
+
+            await closeLoadDialog();
+          });
+
+          test('Open folder', async () => {
+            await setup({
+              config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+            });
+
+            expect.assertions(5);
+
+            const storageDialog = screen.getByTestId('storage-dialog');
+
+            expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+            expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+            const repositories = getByTestId(storageDialog, 'list-repos');
+            await waitFor(() => expect(repositories).toBeInTheDocument());
+
+            const repo = getByTitle(repositories, 'repo1');
+            await act(async () => userEvent.dblClick(getByTestId(repo, 'primary-button')));
+
+            const repositoryList = getByTestId(storageDialog, 'list-content');
+            await waitFor(() => expect(repositoryList).toBeInTheDocument());
+
+            await act(async () => userEvent.dblClick(getByTitle(repositoryList, 'folder1')));
+            await waitFor(() => expect(repositoryList).toBeInTheDocument());
+
+            await closeLoadDialog();
+          });
+        });
+
+        describe('File', () => {
+          test('Select file and Get details', async () => {
+            await setup({
+              config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+            });
+
+            expect.assertions(11);
+
+            const storageDialog = screen.getByTestId('storage-dialog');
+
+            expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+            expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+            const repositories = getByTestId(storageDialog, 'list-repos');
+            await waitFor(() => expect(repositories).toBeInTheDocument());
+
+            const repo = getByTitle(repositories, 'repo1');
+            await act(async () => userEvent.dblClick(getByTestId(repo, 'primary-button')));
+
+            const repositoryList = getByTestId(storageDialog, 'list-content');
+            await waitFor(() => expect(repositoryList).toBeInTheDocument());
+
+            const file = getByTitle(storageDialog, 'file1.xml');
+            await act(async () => userEvent.click(getByTestId(file, 'primary-button')));
+
+            const secondaryButton = getByTestId(file, 'secondary-button');
+            await waitFor(() => expect(secondaryButton).toBeInTheDocument());
+            await act(async () => userEvent.click(secondaryButton));
+
+            const contentDetails = getByTestId(file, 'content-details');
+            await waitFor(() => expect(contentDetails).toBeInTheDocument());
+
+            const { authorEmail, authorName, date, html_url, message } =
+              mock.getLatestCommitResults;
+            const author = getByTitle(contentDetails, `${authorName} (${authorEmail})`);
+
+            expect(getByTitle(contentDetails, date)).toBeInTheDocument();
+            expect(author).toHaveTextContent(authorName);
+            expect(author).toHaveAttribute('href', `mailto:${authorEmail}`);
+            expect(getByTestId(contentDetails, 'message')).toHaveTextContent(message);
+            expect(getByTitle(contentDetails, html_url)).toHaveAttribute('href', html_url);
+
+            await closeLoadDialog();
+          });
+        });
       });
 
-      test('Open dialog -> Select repository', async () => {
-        await setup({
-          config: {
-            providers: [mock.githubAuth, mock.gitlabAuth],
-            preferProvider: 'github',
-          },
+      describe('Search', () => {
+        test('Users', async () => {
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
+
+          expect.assertions(4);
+
+          const storageDialog = screen.getByTestId('storage-dialog');
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+          const input = screen.getByTestId('search-user-input') as HTMLInputElement;
+          userEvent.type(input, 'anto');
+          await waitFor(() => {}, { timeout: 800 });
+          expect(input).toHaveValue('anto');
+
+          await waitFor(() => expect(screen.getByTestId('search-user-result')).toBeInTheDocument());
+
+          // await closeLoadDialog();
+        });
+        test('Content', async () => {
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
+
+          expect.assertions(7);
+
+          const storageDialog = screen.getByTestId('storage-dialog');
+
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+
+          const repositories = getByTestId(storageDialog, 'list-repos');
+          await waitFor(() => expect(repositories).toBeInTheDocument());
+
+          const repo = getByTitle(repositories, 'repo1');
+          await act(async () => userEvent.dblClick(getByTestId(repo, 'primary-button')));
+
+          await waitFor(() =>
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+          );
+
+          const searchBar = getByTestId(storageDialog, 'search-bar');
+          expect(searchBar).toBeInTheDocument();
+
+          const input = getByTitle(searchBar, 'search') as HTMLInputElement;
+
+          await act(async () => userEvent.type(input, 'car', { delay: 50 })); //simulate user typing
+          expect(input).toHaveValue('car');
+
+          await waitFor(
+            () => expect(getByTestId(searchBar, 'results')).toBeInTheDocument(),
+            { timeout: 2000 } //animation
+          );
+
+          // await closeLoadDialog();
         });
 
-        await waitFor(() => screen.getByTestId('header-dialog-title'));
+        test('Content and display details', async () => {
+          await setup({
+            config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          });
 
-        expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-        expect(screen.getByTestId('header-source')).toHaveTextContent('github');
+          expect.assertions(9);
 
-        await act(async () => userEvent.click(screen.getByTestId('repository-item-repo1')));
+          const storageDialog = screen.getByTestId('storage-dialog');
 
-        await waitFor(() =>
-          expect(screen.getByTestId('repository-list-content')).toBeInTheDocument()
-        );
-      });
+          expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
 
-      test('Open dialog -> Select repository -> Select folder', async () => {
-        await setup({
-          config: {
-            providers: [mock.githubAuth, mock.gitlabAuth],
-            preferProvider: 'github',
-          },
+          const repositories = getByTestId(storageDialog, 'list-repos');
+          await waitFor(() => expect(repositories).toBeInTheDocument());
+
+          const repo = getByTitle(repositories, 'repo1');
+          await act(async () => userEvent.dblClick(getByTestId(repo, 'primary-button')));
+
+          await waitFor(() =>
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+          );
+
+          const searchBar = getByTestId(storageDialog, 'search-bar');
+          expect(searchBar).toBeInTheDocument();
+
+          const input = getByTitle(searchBar, 'search') as HTMLInputElement;
+
+          await act(async () => userEvent.type(input, 'lang', { delay: 50 })); //simulate user typing
+          expect(input).toHaveValue('lang');
+
+          const searchResult = await waitFor(
+            () => {
+              const results = getByTestId(searchBar, 'results');
+              expect(results).toBeInTheDocument();
+              return results;
+            },
+            { timeout: 2000 } //animation
+          );
+
+          const item = getByTitle(searchResult, 'language.xml');
+          await act(async () => userEvent.hover(item));
+
+          const terciaryButton = getByTestId(item, 'tertiary-button');
+          await waitFor(() => expect(terciaryButton).toBeInTheDocument());
+          await act(async () => userEvent.click(terciaryButton));
+
+          await waitFor(() =>
+            expect(getByTestId(item, 'search-match-details')).toBeInTheDocument()
+          );
+
+          // await closeLoadDialog();
         });
-
-        await waitFor(() => screen.getByTestId('header-dialog-title'));
-
-        expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-        expect(screen.getByTestId('header-source')).toHaveTextContent('github');
-
-        await act(async () => userEvent.click(screen.getByTestId('repository-item-repo1')));
-        await act(async () => userEvent.click(screen.getByTestId('content-button-folder1')));
-
-        await waitFor(() =>
-          expect(screen.getByTestId('repository-list-content')).toBeInTheDocument()
-        );
-      });
-
-      test('Open dialog -> Search content', async () => {
-        await setup({
-          config: {
-            providers: [mock.githubAuth, mock.gitlabAuth],
-            preferProvider: 'github',
-          },
-        });
-
-        await waitFor(() => screen.getByTestId('header-dialog-title'));
-
-        expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-        expect(screen.getByTestId('header-source')).toHaveTextContent('github');
-
-        await act(async () => userEvent.click(screen.getByTestId('repository-item-repo1')));
-
-        await waitFor(() =>
-          expect(screen.getByTestId('repository-list-content')).toBeInTheDocument()
-        );
-
-        const input = screen.getByTestId('search-file-input') as HTMLInputElement;
-
-        userEvent.type(input, 'car');
-        await waitFor(() => {}, { timeout: 800 });
-
-        expect(input).toHaveValue('car');
-        await waitFor(() =>
-          expect(screen.getByTestId('search-global-result-collection')).toBeInTheDocument()
-        );
-      });
-
-      test('Open dialog -> Search content -> view match', async () => {
-        await setup({
-          config: {
-            providers: [mock.githubAuth, mock.gitlabAuth],
-            preferProvider: 'github',
-          },
-        });
-
-        await waitFor(() => screen.getByTestId('header-dialog-title'));
-
-        expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-        expect(screen.getByTestId('header-source')).toHaveTextContent('github');
-
-        const input = screen.getByTestId('search-file-input') as HTMLInputElement;
-        userEvent.type(input, 'car');
-        await waitFor(() => {}, { timeout: 800 });
-        expect(input).toHaveValue('car');
-
-        await waitFor(() =>
-          expect(screen.getByTestId('search-global-result-collection')).toBeInTheDocument()
-        );
-        userEvent.hover(screen.getByTestId('search-global-item-languages.xml'));
-
-        await waitFor(() =>
-          expect(screen.getByTestId('show-match-text-button')).toBeInTheDocument()
-        );
-        fireEvent.click(screen.getByTestId('show-match-text-button'));
-
-        await waitFor(() =>
-          expect(screen.getByTestId('search-content-match-blog')).toBeInTheDocument()
-        );
-      });
-
-      test('Open dialog -> Search users', async () => {
-        await setup({
-          config: {
-            providers: [mock.githubAuth, mock.gitlabAuth],
-            preferProvider: 'github',
-          },
-        });
-
-        await waitFor(() => screen.getByTestId('header-dialog-title'));
-
-        expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-        expect(screen.getByTestId('header-source')).toHaveTextContent('github');
-
-        const input = screen.getByTestId('search-user-input') as HTMLInputElement;
-        userEvent.type(input, 'anto');
-        await waitFor(() => {}, { timeout: 800 });
-        expect(input).toHaveValue('anto');
-
-        await waitFor(() => expect(screen.getByTestId('search-user-result')).toBeInTheDocument());
       });
     });
   });

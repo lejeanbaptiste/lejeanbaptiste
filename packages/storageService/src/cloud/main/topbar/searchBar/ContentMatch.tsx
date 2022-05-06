@@ -30,7 +30,7 @@ const ContentMatch: FC<ContentMatchProps> = ({ text_matches }) => {
 
   return (
     <Stack
-      data-testid="search-content-match-blog"
+      data-testid="search-match-details"
       component={motion.div}
       variants={variants}
       initial="initial"

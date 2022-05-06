@@ -16,6 +16,7 @@ import { supportedLanguages } from '@src/utilities/util';
 import React from 'react';
 import { Context } from '.';
 import { ILinkedAccount } from './effects';
+import { VariantType } from 'notistack';
 
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -101,6 +102,13 @@ export const setupMainIdentityProvider = async ({ state, actions, effects }: Con
     identity_provider,
     token
   );
+
+  if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) {
+    const { message } = IDPTokens.error;
+    actions._emitNotification({ message });
+    return;
+  }
+
   if (!IDPTokens) return console.warn('No identity_provider tokens');
 
   const provider = setIndentityProvider({ IDPTokens, providerName: identity_provider });
@@ -158,8 +166,36 @@ export const linkAccount = async ({ actions, effects }: Context, identity_provid
   const token = await actions.getLincsAauthenticationToken();
   if (!token) return console.warn('No Authentication token');
 
-  const linkAccountUrl = await effects.NSSIApi.linkAccount(identity_provider, token);
+  const linkAccountUrl = await effects.NSSIApi.getLinkAccountUrl(identity_provider, token);
+  if (typeof linkAccountUrl !== 'string') {
+    const { message } = linkAccountUrl.error;
+    actions._emitNotification({ message });
+    return;
+  }
+
   return linkAccountUrl;
+};
+
+export const _emitNotification = async (
+  { actions }: Context,
+  {
+    message,
+    persist = true,
+    variant = 'error',
+  }: { message: string; persist?: boolean; variant?: VariantType }
+) => {
+  actions.notifyViaSnackbar({
+    message,
+    options: {
+      action: (key) => (
+        <Button color="inherit" onClick={() => actions.closeNotificationSnackbar(key)}>
+          Dismiss
+        </Button>
+      ),
+      persist,
+      variant,
+    },
+  });
 };
 
 export const getLinkedAccounts = async ({ state, actions, effects }: Context) => {
@@ -168,20 +204,9 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
   if (!token) return console.warn('No Authentication token');
 
   const linkedAccounts = await effects.NSSIApi.getLinkedAccounts(token);
-
   if ('error' in linkedAccounts) {
-    actions.notifyViaSnackbar({
-      message: linkedAccounts.error.message,
-      options: {
-        action: (key) => (
-          <Button color="inherit" onClick={() => actions.closeNotificationSnackbar(key)}>
-            Dismiss
-          </Button>
-        ),
-        persist: true,
-        variant: 'error',
-      },
-    });
+    const { message } = linkedAccounts.error;
+    actions._emitNotification({ message });
     return;
   }
 
@@ -211,6 +236,12 @@ export const _linkIdentityProvider = async (
   if (!token) return console.warn('No Authentication token');
 
   const IDPTokens = await effects.KeycloakApi.getExternalIDPTokens('lincs', providerName, token);
+  if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) {
+    const { message } = IDPTokens.error;
+    actions._emitNotification({ message });
+    return;
+  }
+
   if (!IDPTokens) return console.warn('No identity_provider tokens');
 
   const provider = setIndentityProvider({ IDPTokens, providerName, userId, userName });

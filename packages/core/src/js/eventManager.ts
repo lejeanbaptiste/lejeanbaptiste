@@ -135,6 +135,12 @@ class EventManager {
     this.event('schemaAdded');
 
     /**
+     * The worker validator was loaded
+     * @event Writer#workerValidatorLoaded
+     */
+    this.event('workerValidatorLoaded');
+
+    /**
      * A document was sent to the validation service
      * @event Writer#validationInitiated
      */

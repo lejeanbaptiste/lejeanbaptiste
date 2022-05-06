@@ -1,6 +1,8 @@
-export interface Tag {
+export type ElementType = 'node' | 'tag' | 'attribute' | 'attributeValue';
+export interface ElementDetail {
   name: string;
-  ns?: string;
-  fullName?: string;
+  type: ElementType;
   documentation?: string;
+  fullName?: string;
+  ns?: string;
 }

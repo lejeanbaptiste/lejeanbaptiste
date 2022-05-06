@@ -1,11 +1,11 @@
 import { Box, Tooltip, Typography } from '@mui/material';
-import type { Tag } from '@cwrc/leafwriter-validator';
+import type { ElementDetail } from '@cwrc/leafwriter-validator';
 import React, { FC, useEffect, useState } from 'react';
 
 interface HeaderProps {
   tagName?: string;
   xpath?: string;
-  tagMeta?: Tag;
+  tagMeta?: ElementDetail;
 }
 
 const Header: FC<HeaderProps> = ({ tagName = '', xpath = '', tagMeta }) => {
