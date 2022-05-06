@@ -1,8 +1,8 @@
 # leaf writer Storage Service
 
-<!-- [![version](https://img.shields.io/npm/v/@cwrc/leafwriter-storage-service.svg)](http://npm.im/@cwrc/leafwriter-storage-service)
-![GPL-2.0](https://img.shields.io/npm/l/@cwrc/leafwriter-storage-service.svg) -->
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+![NPM](https://img.shields.io/npm/l/@cwrc/leafwriter-storage-service)
+[![version](https://img.shields.io/npm/v/@cwrc/leafwriter-storage-service.svg)](https://www.npmjs.com/package/@cwrc/leafwriter-storage-service)
+![npm type definitions](https://img.shields.io/npm/types/@cwrc/leafwriter-storage-service)
 
 - [leaf writer Storage Service](#leaf-writer-storage-service)
   - [Overview](#overview)
