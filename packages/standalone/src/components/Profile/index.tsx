@@ -14,18 +14,16 @@ import {
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import Language from './Language';
+import { accountManagement } from '../../services/AuthenticationService';
 import Identity from './Identity';
+import Language from './Language';
 import Storage from './Storage';
 import ThemeAppearance from './ThemeAppearance';
-import { KEYCLOACK_BASE_URL } from '../../config/config';
 
 interface ProfileProps {
   anchor: HTMLDivElement;
   handleClose: () => void;
 }
-
-const ACCOUNT_MANAGMENT_URL = `${KEYCLOACK_BASE_URL}/auth/realms/lincs/account/#/`;
 
 const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
   const { t } = useTranslation();
@@ -33,6 +31,8 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
   const { user } = useAppState();
   const { signOut } = useActions();
   const open = Boolean(anchor);
+
+  const handleManageAccontClick = () => accountManagement();
 
   const handleSignOut = async () => {
     await signOut();
@@ -62,7 +62,7 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
           </Typography>
           <Typography variant="body2">{user?.email}</Typography>
         </Stack>
-        <IconButton size="small" target="_blank" href={ACCOUNT_MANAGMENT_URL}>
+        <IconButton onClick={handleManageAccontClick} size="small">
           <Tooltip title="Manage your Lincs account">
             <ManageAccountsIcon fontSize="inherit" />
           </Tooltip>
@@ -71,10 +71,12 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
 
       <Divider />
 
-      <List sx={{
-        width: 280,
-        background: ({ palette }) => (palette.mode === 'dark' ? 'inherent' : '#f9f9f9')
-      }}>
+      <List
+        sx={{
+          width: 280,
+          background: ({ palette }) => (palette.mode === 'dark' ? 'inherent' : '#f9f9f9'),
+        }}
+      >
         <Identity />
         <Storage />
       </List>
