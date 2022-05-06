@@ -1,16 +1,12 @@
-# Leaf Writer (Standalone)
+# LEAF-Writer Commons
 
-## ToDo
+![GPL-2.0](https://img.shields.io/badge/license-GLP--2.0-orange)
+![type definitions](https://img.shields.io/badge/types-TypeScript-blue)
 
-- Authentication
-  - check token refresh timeout
-  - handle token refresh
+## To do
+
 - Layout
   - improve Hero
 - Setup test unit
 - Documentation
   - Writer readme file
-- CI/CD
-  - Husky
-    - Run tests before commit
-    - Run tests before commit
