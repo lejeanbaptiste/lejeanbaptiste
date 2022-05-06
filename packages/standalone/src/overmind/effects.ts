@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import { KEYCLOACK_BASE_URL, NSSI_BASE_URL } from '../config/config';
+import queryString from 'query-string';
 
 const LINK_ACCOUNTS_CALLBACK_URL = `${window.location.origin}/link-accounts`;
 
@@ -37,7 +38,7 @@ export const KeycloakApi = {
 
     const { status, data } = response;
     if (status >= 400) {
-      return { error: { status, message: `Linked Accounts Tokens: ${data.error}` } };
+      return { error: { status, message: `getExternalIDPTokens: ${data.error}` } };
     }
 
     return data;
@@ -69,12 +70,20 @@ export const NSSIApi = {
     return data;
   },
 
-  linkAccount: async (identity_provider: string, keycloakAccessCode: string): Promise<any> => {
+  getLinkAccountUrl: async (
+    identity_provider: string,
+    keycloakAccessCode: string
+  ): Promise<string | IHTTPRequestError> => {
+    const url = queryString.stringifyUrl({
+      url: `${NSSI_BASE_URL}/userinfo/accountLinkUrl`,
+      query: {
+        provider: identity_provider,
+        redirectUri: LINK_ACCOUNTS_CALLBACK_URL,
+      },
+    });
+
     const response = await axios
-      .get(
-        `${NSSI_BASE_URL}/userinfo/accountLinkUrl?provider=${identity_provider}&redirectUri=${LINK_ACCOUNTS_CALLBACK_URL}`,
-        { headers: { Authorization: `Bearer ${keycloakAccessCode}` } }
-      )
+      .get(url, { headers: { Authorization: `Bearer ${keycloakAccessCode}` } })
       .catch((error: AxiosError) => {
         if (error.response) return error.response;
 
@@ -86,7 +95,7 @@ export const NSSIApi = {
 
     const { status, data } = response;
     if (status >= 400) {
-      return { error: { status, message: `Link Account: ${data.error}` } };
+      return { error: { status, message: `Link Account URL: ${data.error}` } };
     }
 
     return data;

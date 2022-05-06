@@ -8,44 +8,77 @@ export const spyProviderFunctions = () => {
 };
 
 const spyGithub = () => {
+  const provider = Github.prototype;
   jest
-    .spyOn(Github.prototype, 'getAuthenticatedUser')
+    .spyOn(provider, 'getAuthenticatedUser')
     .mockImplementation(async () => mock.authenticatedUser);
 
-  jest.spyOn(Github.prototype, 'getRepo').mockImplementation(async () => mock.repository);
+  jest.spyOn(provider, 'getRepo').mockImplementation(async () => mock.repository);
 
-  jest.spyOn(Github.prototype, 'getDocument').mockImplementation(async () => mock.document);
-  jest
-    .spyOn(Github.prototype, 'checkRepoUserWritenPermission')
-    .mockImplementation(async () => true);
+  jest.spyOn(provider, 'getDocument').mockImplementation(async () => mock.document);
+  jest.spyOn(provider, 'checkRepoUserWritenPermission').mockImplementation(async () => true);
 
-  jest.spyOn(Github.prototype, 'saveDocument').mockImplementation(async () => mock.savedDocument);
+  jest.spyOn(provider, 'saveDocument').mockImplementation(async () => mock.savedDocument);
 
   jest
-    .spyOn(Github.prototype, 'getReposForAuthenticatedUser')
+    .spyOn(provider, 'getReposForAuthenticatedUser')
     .mockImplementation(async () => ({ collection: mock.repositories, nextPage: null }));
 
-  jest.spyOn(Github.prototype, 'getRepoContent').mockImplementation(async () => mock.repoContent);
+  jest.spyOn(provider, 'getRepoContent').mockImplementation(async () => mock.repoContent);
 
   jest
-    .spyOn(Github.prototype, 'getOrganizationsForAuthenticatedUser')
+    .spyOn(provider, 'getOrganizationsForAuthenticatedUser')
     .mockImplementation(async () => ({ collection: mock.organizations, nextPage: null }));
 
-  jest.spyOn(Github.prototype, 'searchBlobs').mockImplementation(async () => mock.resultSearchBlob);
-  jest.spyOn(Github.prototype, 'searchUsers').mockImplementation(async () => mock.searchUsersResult);
+  jest
+    .spyOn(provider, 'getReposForOrganization')
+    .mockImplementation(async () => ({ collection: mock.repositories, nextPage: null }));
+
+  jest.spyOn(provider, 'searchBlobs').mockImplementation(async () => mock.githubResultSearchBlob);
+  jest.spyOn(provider, 'searchUsers').mockImplementation(async () => mock.searchUsersResult);
+
+  jest
+    .spyOn(provider, 'getLatestCommit')
+    .mockImplementation(async () => mock.getLatestCommitResults);
 };
 
 const spyGitlab = () => {
+  const provider = Gitlab.prototype;
+
   jest
-    .spyOn(Gitlab.prototype, 'getAuthenticatedUser')
+    .spyOn(provider, 'getAuthenticatedUser')
     .mockImplementation(async () => mock.authenticatedUser);
 
-  jest.spyOn(Gitlab.prototype, 'getRepo').mockImplementation(async () => mock.repository);
+  jest.spyOn(provider, 'getRepo').mockImplementation(async () => mock.repository);
 
-  jest.spyOn(Gitlab.prototype, 'getDocument').mockImplementation(async () => mock.document);
+  jest.spyOn(provider, 'getDocument').mockImplementation(async () => mock.document);
+  jest.spyOn(provider, 'checkRepoUserWritenPermission').mockImplementation(async () => true);
+
+  jest.spyOn(provider, 'saveDocument').mockImplementation(async () => mock.savedDocument);
+
   jest
-    .spyOn(Gitlab.prototype, 'checkRepoUserWritenPermission')
-    .mockImplementation(async () => true);
+    .spyOn(provider, 'getReposForAuthenticatedUser')
+    .mockImplementation(async () => ({ collection: mock.repositories, nextPage: null }));
 
-  jest.spyOn(Gitlab.prototype, 'saveDocument').mockImplementation(async () => mock.savedDocument);
+  jest
+    .spyOn(provider, 'getOrganizationsForAuthenticatedUser')
+    .mockImplementation(async () => ({ collection: mock.organizations, nextPage: null }));
+
+  jest
+    .spyOn(provider, 'getReposForOrganization')
+    .mockImplementation(async () => ({ collection: mock.repositories, nextPage: null }));
+
+  jest.spyOn(provider, 'getRepoContent').mockImplementation(async () => mock.repoContent);
+
+  jest.spyOn(provider, 'searchBlobs').mockImplementation(async () => mock.gitlabResultSearchBlob);
+
+  jest
+    .spyOn(provider, 'getRepoContentRecursively')
+    .mockImplementation(async () => mock.getRepoContentRecursivelyResults);
+
+  jest.spyOn(provider, 'searchUsers').mockImplementation(async () => mock.searchUsersResult);
+
+  jest
+    .spyOn(provider, 'getLatestCommit')
+    .mockImplementation(async () => mock.getLatestCommitResults);
 };

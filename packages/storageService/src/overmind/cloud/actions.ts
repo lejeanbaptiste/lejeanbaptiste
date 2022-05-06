@@ -723,14 +723,16 @@ export const searchByFilename = async (
     results: [] as Content[],
   };
 
-  if (!state.cloud.repository || !provider.getRepoContentRecursively) return searchResults;
+  // if (!state.cloud.repository || !provider.getRepoContentRecursively) return searchResults;
+  if (!state.cloud.repository) return searchResults;
+  const { repository, owner } = state.cloud;
 
-  if (state.cloud.owner && !state.cloud.repository.tree) {
+  if (owner && !repository.tree) {
     const repoTree = await provider.getRepoContentRecursively({
-      branch: state.cloud.repository.default_branch,
-      ownerUsername: state.cloud.owner.username,
-      repoId: state.cloud.repository.id,
-      repoName: state.cloud.repository.name,
+      branch: repository.default_branch,
+      ownerUsername: owner.username,
+      repoId: repository.id,
+      repoName: repository.name,
     });
 
     state.cloud.repository.tree = repoTree as Content[];

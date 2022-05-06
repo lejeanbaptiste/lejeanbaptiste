@@ -39,22 +39,28 @@ const SideButton: FC<SideButtonProps> = ({
 
   return (
     <ListItem
-      data-testid={`sideButton-listItem-${value}`}
       disablePadding
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       secondaryAction={
         !!onDelete &&
         hover && (
-          <IconButton aria-label="Remove" onClick={handleDelete} edge="end" size="small">
+          <IconButton
+            aria-label="Remove"
+            data-testid={`secondary-button`}
+            onClick={handleDelete}
+            edge="end"
+            size="small"
+          >
             <HighlightOffOutlinedIcon fontSize="inherit" />
           </IconButton>
         )
       }
       sx={{ whiteSpace: isSM ? 'nowrap' : 'inherit' }}
+      title={label}
     >
       <ListItemButton
-        data-testid={`sideButton-listItem-button-${value}`}
+        data-testid={`primary-button`}
         alignItems="flex-start"
         autoFocus={active}
         onClick={handleClick}

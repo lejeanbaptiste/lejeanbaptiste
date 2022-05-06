@@ -11,7 +11,6 @@ interface tokenParsed extends KeycloakTokenParsed {
   preferred_username?: string;
 }
 
-// Instantiate keycloak with nssi config file
 const keycloak = Keycloak({
   clientId: 'leaf-writer',
   realm: 'lincs',
@@ -19,21 +18,22 @@ const keycloak = Keycloak({
 });
 
 const init = async () => {
+  const { origin } = window.location;
+  
   const sessionAuthenticated = await keycloak
     .init({
       onLoad: 'check-sso',
-      silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
+      silentCheckSsoRedirectUri: `${origin}/silent-check-sso.html`,
       pkceMethod: 'S256',
     })
-    .catch(() => {
-      console.warn('failed to contact keycloak');
-    });
+    .catch(() => console.warn('failed to contact keycloak'))
 
   return sessionAuthenticated;
 };
 
 const doLogin = async () => {
-  return await keycloak.login({ redirectUri: window.location.origin });
+  const { origin } = window.location;
+  return await keycloak.login({ redirectUri: origin });
 };
 
 const doLogout = keycloak.logout;
@@ -71,6 +71,8 @@ const hasResourceRole = (role: string, resource?: string) => {
   return keycloak.hasResourceRole(role, resource);
 };
 
+export const accountManagement = () => keycloak.accountManagement();
+
 const AuthenticationService = {
   init,
   doLogin,
@@ -83,6 +85,7 @@ const AuthenticationService = {
   getIdentityProvider,
   hasRole,
   hasResourceRole,
+  accountManagement,
 };
 
 export default AuthenticationService;

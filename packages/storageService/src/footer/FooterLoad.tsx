@@ -46,14 +46,15 @@ const FooterLoad: FC<FooterProps> = ({ onCancel }) => {
   };
 
   return (
-    <DialogActions sx={{ justifyContent: 'space-between' }}>
-      <Button onClick={onCancel} variant="outlined">
+    <DialogActions data-testid="footer-load" sx={{ justifyContent: 'space-between' }}>
+      <Button onClick={onCancel} title="cancel" variant="outlined">
         {t('commons:cancel')}
       </Button>
       <LoadingButton
         disabled={source === 'cloud' && !selectedItem}
         loading={isLoading}
         onClick={handleLoad}
+        title="load"
         variant="contained"
       >
         {selectedItem?.type === 'file' ? t('commons:load') : t('commons:open')}

@@ -17,7 +17,7 @@ export const parseXMLString = (content: string) => {
   return xml;
 };
 
-export const evaluateXPath = (xpath: string, docXML: Document): Node => {
+export const evaluateXPath = (xpath: string, docXML: Document): Node | null => {
   const evalResult = window.document.evaluate(xpath, docXML, null, XPathResult.ANY_TYPE, null);
 
   let result: any;
@@ -79,7 +79,7 @@ export const getXPathForElement = (el: any, xml: Document) => {
  * @param {String} documentation The documentation string
  * @returns {String} The full name
  */
-export const getFullNameFromDocumentation = (documentation: string): string | undefined => {
+export const getFullNameFromDocumentation = (documentation: string = ''): string | undefined => {
   const hit = /^\((.*?)\)/.exec(documentation);
   if (hit === null) return;
   return hit[1];

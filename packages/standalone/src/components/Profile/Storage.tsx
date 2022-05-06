@@ -32,6 +32,7 @@ const Storage: FC = () => {
 
   const connectAccount = async (provider: string) => {
     const linkAccountUrl = await linkAccount(provider);
+    if (!linkAccountUrl) return;
 
     const channel = new BroadcastChannel('Leaf-Writer-Link-Accounts');
     channel.onmessage = async (linkAccountCallback) => {

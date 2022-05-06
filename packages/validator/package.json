@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-validator",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "webworker to handle validation on Leaf-Writer",
   "keywords": [
     "xml",
@@ -30,23 +30,23 @@
   },
   "types": "lib/index.worker.d.ts",
   "module": "src/index.worker.ts",
-  "files": [
-    "dist",
-    "lib",
-    "src"
-  ],
   "scripts": {
     "browserify-jsdom": "browserify -r jsdom -s jsdom -o src/lib/jsdom/jsdom-browserified.js",
     "build": "npm run clean && tsc && webpack",
     "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
     "clean": "shx rm -rf dist lib lib-esm",
-    "cm": "git-cz"
+    "test": "jest",
+    "test-watch": "jest --watchAll --verbose",
+    "build-documentation": "typedoc --out docs src/index.worker.ts",
+    "cm": "git-cz",
+    "prepublishOnly": "npm test && npm run build_es6"
   },
   "dependencies": {
     "@cwrc/salve-dom-leafwriter": "^6.0.3",
     "@cwrc/salve-leafwriter": "^1.2.2",
     "comlink": "^4.3.1",
     "lodash": "^4.17.21",
+    "lzutf8": "^0.6.2",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
@@ -63,14 +63,20 @@
     "eslint-plugin-prettier": "^4.0.0",
     "git-cz": "^4.8.0",
     "husky": "^7.0.4",
+    "jest": "^27.5.1",
+    "jest-fetch-mock": "^3.0.3",
     "jsdom": "19.0.0",
     "prettier": "^2.6.1",
     "semantic-release": "^19.0.2",
     "shx": "^0.3.4",
     "ts-loader": "^9.2.8",
+    "typedoc": "^0.22.15",
     "typescript": "^4.6.3",
     "webpack": "^5.70.0",
     "webpack-cli": "^4.9.2",
     "webpackbar": "^5.0.2"
+  },
+  "peerDependencies": {
+    "comlink": "^4.3.1"
   }
 }

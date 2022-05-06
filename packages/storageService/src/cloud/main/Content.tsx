@@ -81,15 +81,23 @@ const Content: FC<ContentProps> = ({ content }) => {
       secondaryAction={
         selectedItem?.path === path &&
         !latestCommit && (
-          <IconButton edge="end" onClick={handleSecondaryActionClick} size="small" sx={{ mr: 1 }}>
+          <IconButton
+            data-testid="secondary-button"
+            edge="end"
+            onClick={handleSecondaryActionClick}
+            size="small"
+            sx={{ mr: 1 }}
+            title="details"
+          >
             <InfoOutlinedIcon fontSize="inherit" />
           </IconButton>
         )
       }
+      title={name}
     >
       <ListItemButton
         alignItems={latestCommit ? 'flex-start' : 'center'}
-        data-testid={`content-button-${name}`}
+        data-testid="primary-button"
         disabled={isDisabled()}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}

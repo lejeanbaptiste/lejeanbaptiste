@@ -1,7 +1,9 @@
 type State = {
-  hasValidator: boolean;
+  hasSchema: boolean;
+  hasWorkerValidator: boolean;
 };
 
 export const state: State = {
-  hasValidator: false,
+  hasSchema: false,
+  hasWorkerValidator: false,
 };
