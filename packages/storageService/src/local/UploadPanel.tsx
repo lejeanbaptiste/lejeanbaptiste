@@ -49,10 +49,22 @@ const UploadPanel: FC = () => {
     load();
   };
 
+  const mimeTypeTransformation = () => {
+    if (!allowedMimeTypes) return;
+    const mimeTypes: { [key: string]: string[] } = {};
+    allowedMimeTypes?.forEach((mimeType) => {
+      const [type, ext] = mimeType.split('/');
+      if (!mimeTypes[type]) mimeTypes[type] = [];
+      if (!mimeTypes[type].includes(ext)) mimeTypes[type].push(`.${ext}`);
+    });
+
+    return mimeTypes;
+  };
+
   return (
     <Box ref={container} height="100%">
       <Dropzone
-        accept={allowedMimeTypes}
+        accept={mimeTypeTransformation()}
         maxFiles={1}
         multiple={false}
         noDragEventsBubbling={true}
