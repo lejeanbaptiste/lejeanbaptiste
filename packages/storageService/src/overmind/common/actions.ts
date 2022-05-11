@@ -7,7 +7,7 @@ import type {
   Resource,
   StorageDialogConfig,
   StorageSource,
-} from '@src/@types/types';
+} from '../../@types/types';
 import { saveAs } from 'file-saver';
 import { Context } from '../';
 import i18next from '../../i18n';

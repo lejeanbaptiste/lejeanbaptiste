@@ -4,9 +4,9 @@
  */
 
 import { Octokit } from '@octokit/rest';
-import type * as Types from '@src/@types/Provider';
-import type Provider from '@src/@types/Provider';
-import type * as T from '@src/@types/types';
+import type * as Types from '../@types/Provider';
+import type Provider from '../@types/Provider';
+import type * as T from '../@types/types';
 import axios, { AxiosInstance } from 'axios';
 import { Buffer } from 'buffer/';
 

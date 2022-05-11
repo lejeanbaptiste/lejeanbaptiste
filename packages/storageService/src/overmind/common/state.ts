@@ -8,7 +8,7 @@ import type {
   Resource,
   StorageSource,
   Submit,
-} from '@src/@types/types';
+} from '../../@types/types';
 import { derived } from 'overmind';
 
 type State = {

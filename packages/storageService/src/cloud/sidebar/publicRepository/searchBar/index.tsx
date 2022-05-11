@@ -13,7 +13,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import type { Owner } from '@src/@types/types';
+import type { Owner } from '../../../../@types/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import debounce from 'lodash/debounce';
 import React, { FC, useMemo, useState } from 'react';

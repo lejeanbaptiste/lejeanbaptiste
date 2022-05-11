@@ -10,7 +10,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import type { UserType } from '@src/@types/types';
+import type { UserType } from '../../@types/types';
 import React, { FC, useState } from 'react';
 
 interface SideButtonProps {
