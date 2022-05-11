@@ -1,6 +1,6 @@
 import { Resource } from '../../@types';
 import { Context } from '../';
-import Writer from '@src/js/Writer';
+import Writer from '../../js/Writer';
 
 declare global {
   interface Window {

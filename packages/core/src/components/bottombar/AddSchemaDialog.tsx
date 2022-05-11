@@ -6,7 +6,7 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import { Schema } from '@src/@types/index';
+import { Schema } from '../../@types/index';
 import { Formik } from 'formik';
 import React, { FC } from 'react';
 import * as yup from 'yup';

@@ -1,4 +1,4 @@
-import { ContextMenuState, PaletteMode } from '@src/@types/';
+import { ContextMenuState, PaletteMode } from '../../@types/';
 import { Context } from '../';
 import type { PopupProps } from '../../components/popup';
 import { EntityLink, EntityLookupDialogProps } from '../../components/entityLookups/types';

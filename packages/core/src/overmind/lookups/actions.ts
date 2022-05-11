@@ -1,6 +1,6 @@
-import { DialogLookupType } from '@src/js/dialogs/types';
-import Entity from '@src/js/entities/Entity';
-import { EntityTypes } from '@src/js/schema/types';
+import { DialogLookupType } from '../../js/dialogs/types';
+import Entity from '../../js/entities/Entity';
+import { EntityTypes } from '../../js/schema/types';
 import { Context } from '..';
 import { EntityLink, EntryLink, LookupsEntityType } from '../../components/entityLookups/types';
 

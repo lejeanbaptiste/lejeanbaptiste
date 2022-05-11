@@ -1,5 +1,5 @@
 import { Button, DialogActions } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
+import { useActions, useAppState } from '../../overmind';
 import React, { FC } from 'react';
 import { EntityLink } from './types';
 

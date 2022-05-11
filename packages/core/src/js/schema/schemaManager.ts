@@ -1,4 +1,4 @@
-import type { MappingID } from '@src/@types';
+import type { MappingID } from '../../@types';
 import css from 'css';
 import $ from 'jquery';
 import Writer from '../Writer';

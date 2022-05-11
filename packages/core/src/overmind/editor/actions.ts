@@ -4,7 +4,7 @@ import type {
   ILookupService,
   ILookupServiceEntity,
   LookupsEntityType,
-} from '@src/components/entityLookups/types';
+} from '../../components/entityLookups/types';
 import $ from 'jquery';
 import Cookies from 'js-cookie';
 import { Context } from '../';

@@ -1,8 +1,8 @@
-import type { MappingID } from '@src/@types';
-import type { EntityLink } from '@src/components/entityLookups/types';
-import Entity from '@src/js/entities/Entity';
-import type { EntityTypes } from '@src/js/schema/types';
-import Writer from '@src/js/Writer';
+import type { MappingID } from '../../../@types';
+import type { EntityLink } from '../../../components/entityLookups/types';
+import Entity from '../../../js/entities/Entity';
+import type { EntityTypes } from '../../../js/schema/types';
+import Writer from '../../../js/Writer';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import DialogForm from '../dialogForm/dialogForm';

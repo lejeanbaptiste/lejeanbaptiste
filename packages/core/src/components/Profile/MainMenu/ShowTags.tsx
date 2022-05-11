@@ -7,7 +7,7 @@ import {
   ListItemText,
   Switch,
 } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
+import { useActions, useAppState } from '../../../overmind';
 import React, { ChangeEvent, FC } from 'react';
 
 const ShowTags: FC = () => {

@@ -8,8 +8,8 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useActions, useAppState } from '@src/overmind';
-import { supportedLanguages } from '@src/utilities/util';
+import { useActions, useAppState } from '../../../overmind';
+import { supportedLanguages } from '../../../utilities/util';
 import React, { FC, MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 

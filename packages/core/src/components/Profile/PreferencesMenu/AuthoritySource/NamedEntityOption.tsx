@@ -1,6 +1,6 @@
 import DoNotDisturbAltIcon from '@mui/icons-material/DoNotDisturbAlt';
 import { IconButton, useTheme } from '@mui/material';
-import { ILookupServiceEntity, LookupsEntityType } from '@src/components/entityLookups/types';
+import { ILookupServiceEntity, LookupsEntityType } from '../../../../components/entityLookups/types';
 import React, { FC, useState } from 'react';
 import useUI from '../../../useUI';
 

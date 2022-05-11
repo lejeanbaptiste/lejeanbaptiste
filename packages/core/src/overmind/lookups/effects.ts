@@ -1,4 +1,4 @@
-import { Authority, ILookupService, IResult } from '@src/components/entityLookups/types';
+import { Authority, ILookupService, IResult } from '../../components/entityLookups/types';
 import ILookupServiceApi, { IFindParams } from './services/type';
 
 type Sources = { [key: string]: ILookupServiceApi };

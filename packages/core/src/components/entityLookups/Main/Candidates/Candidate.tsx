@@ -1,6 +1,6 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IconButton, ListItem, ListItemButton, ListItemText } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
+import { useActions, useAppState } from '../../../../overmind';
 import React, { FC, useState } from 'react';
 import { EntryLink, IResult } from '../../types';
 

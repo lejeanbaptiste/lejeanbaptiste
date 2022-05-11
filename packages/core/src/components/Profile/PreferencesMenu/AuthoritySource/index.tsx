@@ -4,8 +4,8 @@ import { restrictToFirstScrollableAncestor, restrictToVerticalAxis } from '@dnd-
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import FilterTiltShiftIcon from '@mui/icons-material/FilterTiltShift';
 import { Stack, Typography } from '@mui/material';
-import { ILookupService } from '@src/components/entityLookups/types';
-import { useActions, useAppState } from '@src/overmind';
+import { ILookupService } from '../../../../components/entityLookups/types';
+import { useActions, useAppState } from '../../../../overmind';
 import React, { FC, useEffect, useState } from 'react';
 import AuthoritySource from './AuthoritySource';
 

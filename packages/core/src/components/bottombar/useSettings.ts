@@ -1,4 +1,4 @@
-import { useActions } from '@src/overmind';
+import { useActions } from '../../overmind';
 
 const useSettings = () => {
   const { document, editor } = useActions();

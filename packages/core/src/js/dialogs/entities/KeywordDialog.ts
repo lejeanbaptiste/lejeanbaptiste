@@ -1,6 +1,6 @@
-import { MappingID } from '@src/@types';
-import Entity from '@src/js/entities/Entity';
-import { EntityTypes } from '@src/js/schema/types';
+import { MappingID } from '../../../@types';
+import Entity from '../../../js/entities/Entity';
+import { EntityTypes } from '../../../js/schema/types';
 import $ from 'jquery';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
