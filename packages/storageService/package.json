@@ -56,7 +56,7 @@
     "clean": "shx rm -rf dist lib lib-esm",
     "test": "jest",
     "test-watch": "jest --watchAll --verbose",
-    "prepublishOnly": "npm test && npm run build_es6"
+    "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {
     "@emotion/react": "^11.9.0",
@@ -71,7 +71,7 @@
     "buffer": "^6.0.3",
     "date-fns": "^2.28.0",
     "file-saver": "^2.0.5",
-    "framer-motion": "^6.3.3",
+    "framer-motion": "^6.2.8",
     "i18next": "^21.8.0",
     "lodash": "^4.17.21",
     "mdi-material-ui": "^7.2.0",
@@ -101,6 +101,7 @@
     "eslint-plugin-react": "^7.29.4",
     "jest-environment-jsdom": "^28.1.0",
     "mini-css-extract-plugin": "^2.6.0",
+    "process": "^0.11.10",
     "shx": "^0.3.4",
     "ts-jest": "^28.0.2",
     "webpack": "^5.72.1",
