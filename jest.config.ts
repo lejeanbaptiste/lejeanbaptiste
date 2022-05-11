@@ -17,12 +17,11 @@ const config: Config.InitialOptions = {
       displayName: { name: 'Validator', color: 'magenta'},
       automock: false,
       clearMocks: true,
-      coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
-      // testPathIgnorePatterns: ['<rootDir>/packages/validator/test/mocks/**/*'],
+      coveragePathIgnorePatterns: ['/node_modules/', '/dist', '**/lib/*', '**/lib-esm/*', '/test'],
       resetMocks: false,
       setupFiles: ['<rootDir>/packages/validator/test/setup/index.ts'],
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/packages/validator/**/?(*.)+(spec|test).[jt]s?(x)'],
+      testMatch: ['<rootDir>/packages/validator/test/**/?(*.)+(spec|test).[jt]s?(x)'],
     },
     {
       displayName: { name: 'Storage Dialog', color: 'cyanBright'},
@@ -30,7 +29,7 @@ const config: Config.InitialOptions = {
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       resetMocks: false,
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/packages/storageService/**/?(*.)+(spec|test).[jt]s?(x)'],
+      testMatch: ['<rootDir>/packages/storageService/test/**/?(*.)+(spec|test).[jt]s?(x)'],
     },
     {
       displayName: { name: 'Core', color: 'blue'},
@@ -38,7 +37,7 @@ const config: Config.InitialOptions = {
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       resetMocks: false,
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/packages/core/**/?(*.)+(spec|test).[jt]s?(x)'],
+      testMatch: ['<rootDir>/packages/core/test/**/?(*.)+(spec|test).[jt]s?(x)'],
     },
     {
       displayName: { name: 'Standalone', color: 'red'},
@@ -46,7 +45,7 @@ const config: Config.InitialOptions = {
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       resetMocks: false,
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/packages/core/**/?(*.)+(spec|test).[jt]s?(x)'],
+      testMatch: ['<rootDir>/packages/standalone/test/**/?(*.)+(spec|test).[jt]s?(x)'],
     },
   ],
 };
