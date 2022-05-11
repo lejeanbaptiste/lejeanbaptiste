@@ -6,9 +6,9 @@
 
 LEAF-Writer Validator is a web worker able to validate XML documents stored in DOM trees according to a Relax NG schema. It is a fully typed wrapper around [Salve (Schema-Aware Library for Validation and Edition)](https://github.com/mangalam-research/salve) and [salve-dom](https://github.com/mangalam-research/salve-dom), which are de facto the library that validates XML documents. Please refer to their respective documentation for information about how these two libraries work.
 
-Given an XML document and its Relax NG schema, LEAF-Writer Validator can perform validation, retrieve information about errors (including documentation, if available), get information about elements defined in the schema (tags, attributes values), list possible attributes and children elements for a tag, and speculative validate insertion of tags in a specific context (before, after, inside, or around a tag) to assist the user in editing the document.
+Given an XML document and its Relax NG schema, LEAF-Writer Validator can perform validation, retrieve information about errors (including documentation, if available), get information about elements defined in the schema (tags, attributes values), list possible attributes and children elements for a tag, and speculatively validated insertion of tags in a specific context (before, after, inside, or around a tag) to assist the user in editing the document.
 
-As a web worker, LEAF-Writer Validator is fast and non-blocking. Validation will occur in parallel to the browser’s main thread. However, depending on the schema's complexity and the document's length, the validation processes (including all the features listed above) might take some time to respond. When simply validating the document, the web worker emits events as it goes through the document. These events can be used to keep the UI updated. Other features, such as speculative validates insertion of a tag in a specific context, are asynchronous, and they will only return at the end of the process.
+As a web worker, LEAF-Writer Validator is fast and non-blocking. Validation will occur in parallel to the browser’s main thread. However, depending on the schema's complexity and the document's length, the validation processes (including all the features listed above) might take some time to respond. When simply validating the document, the web worker emits events as it goes through the document. These events can be used to keep the UI updated. Other features, such as speculatively validated insertion of a tag in a specific context, are asynchronous, and they will only return at the end of the process.
 
 - [Install](#install)
 - [Load as a web worker](#load-as-a-web-worker)
@@ -412,7 +412,7 @@ Run `npm run build-documentation` to get a nice page with all the types.
 | xpath* | string | The tag Xpath in the document. |
 | index* | number | The index position relative to its parent. |
 | selection | [GetValidTagsAtParametersSelection](#getvalidtagsatparametersselection) | Omit to consider the exact caret position. Otherwise, pass a `getvalidtagsatparametersselection` object giving more specificity to the request. |
-| speculate* | boolean | Enabled/disabled speculative validation. Default is `true` |
+| speculate* | boolean | Enabled/disabled speculatively validation. Default is `true` |
 
 ### GetValidTagsAtResponse
 
@@ -421,7 +421,7 @@ Run `npm run build-documentation` to get a nice page with all the types.
 | xpath* | string | The tag xpath in the document. |
 | index* | number | The index position relative to its parent. |
 | possible* | [ElementDetail](#elementdetail)[] | An array of possible tags. |
-| speculative* | [ElementDetail](#elementdetail)[] | An array of speculative valid tags. |
+| speculative* | [ElementDetail](#elementdetail)[] | An array of speculatively valided tags. |
 
 ### GetValidTagsAtParametersSelection
 
@@ -506,7 +506,7 @@ Validating an XML document is CPU-intensive. JavaScript is a single tread langua
 
 However, web workers have some limitations. The main limitation is that it does not have access to the DOM, where the XML document is located, nor access to DOM APIs, which salve-dom relies on. This limitation can be overcome by using JSDOM (read more below) to be able to manipulate a virtual DOM on the web worker. The downside is that the size of the web worker file increases substantially, but when minified by Webpack and cached in the browser won't cause a significant impact on the loading time.
 
-Since the DOM cannot be accessed, the document needs to be stringfied and transferred to the web worker to be validated. Moreover, this transfer most occurs every time the document changes to keep both versions in sync, which is essential to support some of the functions on LEAF-Writer (e.g., get tag attributes, speculative validation).
+Since the DOM cannot be accessed, the document needs to be stringfied and transferred to the web worker to be validated. Moreover, this transfer most occurs every time the document changes to keep both versions in sync, which is essential to support some of the functions on LEAF-Writer (e.g., get tag attributes, speculatively validation).
 
 Besides these limitations, using a web worker for validation is better than other solutions we have in the past — an external micro-service based on Java and having the validator in the main thread. We have not run a benchmark test (yet), but we have tested with large files (a whole 2 MB XML book in TEI): validation is done in 1-2 seconds.
 
