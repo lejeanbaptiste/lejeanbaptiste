@@ -1,3 +1,5 @@
+// @ts-nocheck
+import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import { loadDocument, saveDocument } from '../src/headless';
 import Github from '../src/providers/Github';
 import Gitlab from '../src/providers/Gitlab';
