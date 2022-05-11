@@ -7,7 +7,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useActions } from '@src/overmind';
+import { useActions } from '../../../overmind';
 import { useSnackbar } from 'notistack';
 import React, { FC } from 'react';
 

@@ -1,5 +1,5 @@
 import { Box, Button, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
-import { useAppState } from '@src/overmind';
+import { useAppState } from '../../overmind';
 import { SnackbarKey, useSnackbar } from 'notistack';
 import React, { FC, MouseEvent, useState } from 'react';
 import useSettings from './useSettings';

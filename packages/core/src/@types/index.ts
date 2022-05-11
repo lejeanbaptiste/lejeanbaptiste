@@ -1,6 +1,6 @@
 import Writer from '../js/Writer';
 import { Bookmark, Editor } from 'tinymce/tinymce';
-import { ILookupsConfig } from '@src/components/entityLookups/types';
+import { ILookupsConfig } from '../components/entityLookups/types';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;

@@ -132,7 +132,7 @@ const webpackConfig: webpack.Configuration = {
   },
   performance: { hints: isDev ? false : 'warning' },
   resolve: {
-    alias: { '@src': path.resolve(__dirname, 'src/') },
+    // alias: { '@src': path.resolve(__dirname, 'src/') },
     extensions: ['.tsx', '.ts', '.js', '.json'],
     fallback: {
       buffer: false,

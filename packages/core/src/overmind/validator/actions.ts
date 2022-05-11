@@ -2,9 +2,8 @@ import type {
   GetValidTagsAtParameters,
   ValidationResponse,
   Validator,
-// } from '@cwrc/leafwriter-validator';
-} from '../../../../validator/src/index.worker';
-import Writer from '@src/js/Writer';
+} from '@cwrc/leafwriter-validator';
+import Writer from '../../js/Writer';
 import * as Comlink from 'comlink';
 import { Context } from '../';
 import { webpackEnv } from '../../@types';

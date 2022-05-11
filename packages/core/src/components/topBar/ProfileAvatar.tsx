@@ -1,9 +1,9 @@
 import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
-import { useAppState } from '@src/overmind';
+import { useAppState } from '../../overmind';
 import { motion } from 'framer-motion';
 import React, { FC, useRef, useState } from 'react';
 import Profile from '../Profile';
-import { getIcon } from '@src/utilities/icons';
+import { getIcon } from '../../utilities/icons';
 
 const ProfileAvatar: FC = () => {
   const theme = useTheme();

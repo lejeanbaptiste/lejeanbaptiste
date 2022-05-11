@@ -1,4 +1,4 @@
-import { IResult, LookupsEntityType } from '@src/components/entityLookups/types';
+import { IResult, LookupsEntityType } from '../../../components/entityLookups/types';
 
 export interface IFindParams {
   config?: {[x: string]: any};

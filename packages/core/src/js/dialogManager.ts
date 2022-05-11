@@ -1,4 +1,4 @@
-import { EntityLink, LookupsEntityType } from '@src/components/entityLookups/types';
+import { EntityLink } from '../components/entityLookups/types';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/tooltip';

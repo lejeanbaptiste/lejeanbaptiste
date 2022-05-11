@@ -1,6 +1,5 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import { Box, IconButton } from '@mui/material';
-import { useAppState } from '@src/overmind';
 import { motion } from 'framer-motion';
 import React, { FC, useRef, useState } from 'react';
 import Menu from './Menu';

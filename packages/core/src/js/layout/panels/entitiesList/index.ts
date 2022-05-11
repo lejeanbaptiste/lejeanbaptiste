@@ -1,4 +1,4 @@
-import Entity from '@src/js/entities/Entity';
+import Entity from '../../../../js/entities/Entity';
 import $ from 'jquery';
 import 'jquery-ui/ui/effect';
 import 'jquery-ui/ui/widgets/button';

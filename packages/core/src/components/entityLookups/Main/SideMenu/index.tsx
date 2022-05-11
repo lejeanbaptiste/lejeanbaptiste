@@ -1,5 +1,5 @@
 import { Box, Button, ButtonGroup } from '@mui/material';
-import { useAppState } from '@src/overmind';
+import { useAppState } from '../../../../overmind';
 import React, { FC, useRef } from 'react';
 import { Authority } from '../../types';
 import Badge from './Badge';

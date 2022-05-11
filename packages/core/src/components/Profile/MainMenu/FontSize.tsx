@@ -10,7 +10,7 @@ import {
   Menu,
   MenuItem,
 } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
+import { useActions, useAppState } from '../../../overmind';
 import React, { FC, MouseEvent, useState } from 'react';
 
 const FontSize: FC = () => {

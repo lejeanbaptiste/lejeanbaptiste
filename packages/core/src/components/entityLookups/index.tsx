@@ -1,5 +1,5 @@
 import { Dialog } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
+import { useActions, useAppState } from '../../overmind';
 import React, { FC, useEffect } from 'react';
 import Footer from './Footer';
 import Header from './Header';

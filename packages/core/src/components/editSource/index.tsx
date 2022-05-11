@@ -7,7 +7,7 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
+import { useActions, useAppState } from '../../overmind';
 import React, { FC, Suspense, useEffect, useState } from 'react';
 const Editor = React.lazy(() => import('./Editor'));
 

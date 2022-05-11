@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { ContextMenuState } from '@src/@types';
-import { useActions, useAppState } from '@src/overmind';
+import type { ContextMenuState } from '../../@types';
+import { useActions, useAppState } from '../../overmind';
 import { v4 as uuidv4 } from 'uuid';
 import type { Item as ItemType } from './types';
 import type {
@@ -10,7 +10,7 @@ import type {
   } from '@cwrc/leafwriter-validator';
 import Writer from '../../js/Writer';
 import type { Action } from '../../js/tagger';
-import { EntityTypes } from '@src/js/schema/types';
+import { EntityTypes } from '../../js/schema/types';
 
 const logStyle = `
   color: #333;

@@ -1,5 +1,5 @@
-import { DialogLookupType } from '@src/js/dialogs/types';
-import Entity from '@src/js/entities/Entity';
+import { DialogLookupType } from '../../js/dialogs/types';
+import Entity from '../../js/entities/Entity';
 
 export type LookupsEntityType = 'person' | 'place' | 'organization' | 'title' | 'rs';
 export type Authority = 'dbpedia' | 'cwrc' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata';

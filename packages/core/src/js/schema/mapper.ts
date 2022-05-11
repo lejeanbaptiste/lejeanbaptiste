@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import Entity from '../entities/Entity';
 import Writer from '../Writer';
-import { MappingID } from '@src/@types';
+import { MappingID } from '../../@types';
 import { empty, tei, teiLite, orlando, cwrcEntry } from './mappings';
 import type { EntityTypes, IEntityMapping } from './types';
 

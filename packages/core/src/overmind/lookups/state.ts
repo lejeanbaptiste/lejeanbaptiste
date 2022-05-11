@@ -1,4 +1,4 @@
-import { EntityTypes } from '@src/js/schema/types';
+import { EntityTypes } from '../../js/schema/types';
 import { derived } from 'overmind';
 import { Context } from '..';
 import {

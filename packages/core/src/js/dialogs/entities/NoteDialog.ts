@@ -1,11 +1,11 @@
-import { MappingID } from '@src/@types';
+import { MappingID } from '../../../@types';
 import $ from 'jquery';
 import DialogForm from '../dialogForm/dialogForm';
 import Writer from '../../Writer';
 import type { ILWDialogConfigParams } from '../types';
 import { SchemaDialog } from './types';
-import Entity from '@src/js/entities/Entity';
-import { EntityTypes } from '@src/js/schema/types';
+import Entity from '../../../js/entities/Entity';
+import { EntityTypes } from '../../../js/schema/types';
 
 interface IOption {
   label: string;
