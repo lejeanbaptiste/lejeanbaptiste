@@ -1,6 +1,7 @@
 import Github from '../../src/providers/Github';
 import Gitlab from '../../src/providers/Gitlab';
 import * as mock from './resource';
+import { jest } from '@jest/globals';
 
 export const spyProviderFunctions = () => {
   spyGithub();
@@ -24,6 +25,7 @@ const spyGithub = () => {
     .spyOn(provider, 'getReposForAuthenticatedUser')
     .mockImplementation(async () => ({ collection: mock.repositories, nextPage: null }));
 
+  //@ts-ignore
   jest.spyOn(provider, 'getRepoContent').mockImplementation(async () => mock.repoContent);
 
   jest

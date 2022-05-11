@@ -7,9 +7,10 @@ export const unsupportedProviderAuth: ProviderAuth = { name: 'google', access_to
 export const githubAuth: ProviderAuth = { name: 'github', access_token: 'gho_vtkG' };
 export const gitlabAuth: ProviderAuth = { name: 'gitlab', access_token: '1234' };
 
-export const getProviderAuth = (provider = 'github'): ProviderAuth => {
+export const getProviderAuth = (provider = 'github'): ProviderAuth | undefined => {
   if (provider === 'github') return githubAuth;
   if (provider === 'gitlab') return gitlabAuth;
+  return;
 };
 
 type GetResourceParams = {
@@ -17,7 +18,7 @@ type GetResourceParams = {
   provider?: string;
 };
 
-export const getResource = ({ type, provider = 'github' }: GetResourceParams): Resource => {
+export const getResource = ({ type, provider = 'github' }: GetResourceParams): Resource | undefined => {
   if (!type) {
     return {
       provider,
@@ -61,6 +62,8 @@ export const getResource = ({ type, provider = 'github' }: GetResourceParams): R
       filename: 'invalid_filename.xml',
     };
   }
+
+  return;
 };
 
 export const authenticatedUser: User = {
