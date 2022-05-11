@@ -1,4 +1,5 @@
 import { WorkingState } from '@cwrc/salve-dom-leafwriter';
+import { beforeAll, describe, expect, jest, test } from '@jest/globals';
 import fetchMock from 'jest-fetch-mock';
 import Validator from '../src/Validator';
 import cwrcTeiLite from './mocks/cwtcTeiLite';
@@ -93,10 +94,10 @@ describe('Validator', () => {
           // Expect 3 error: 1: ElementNameError; 2: AttributeNameError, 3: AttributeValueError
           const errorTypes = ['ElementNameError', 'AttributeNameError', 'AttributeValueError'];
 
-          expect(errors.length).toBeGreaterThan(0);
-          expect(errors.length).toBe(3);
+          expect(errors?.length).toBeGreaterThan(0);
+          expect(errors?.length).toBe(3);
 
-          errors.forEach((error, i) => {
+          errors?.forEach((error, i) => {
             expect(error).toHaveProperty('type');
             expect(error).toHaveProperty('type', errorTypes[i]);
             expect(error).toHaveProperty('msg', expect.any(String));
@@ -264,14 +265,14 @@ describe('Validator', () => {
       });
 
       expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results.possible.length).toBeGreaterThan(0);
-      results.possible.forEach((tag) => {
+      expect(results?.possible.length).toBeGreaterThan(0);
+      results?.possible.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
 
       expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results.speculative.length).toBeGreaterThan(0);
-      results.speculative.forEach((tag) => {
+      expect(results?.speculative?.length).toBeGreaterThan(0);
+      results?.speculative?.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
     });
@@ -291,14 +292,14 @@ describe('Validator', () => {
       });
 
       expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results.possible.length).toBeGreaterThan(0);
-      results.possible.forEach((tag) => {
+      expect(results?.possible.length).toBeGreaterThan(0);
+      results?.possible.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
 
       expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results.speculative.length).toBeGreaterThan(0);
-      results.speculative.forEach((tag) => {
+      expect(results?.speculative?.length).toBeGreaterThan(0);
+      results?.speculative?.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
     });
@@ -316,14 +317,14 @@ describe('Validator', () => {
       });
 
       expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results.possible.length).toBeGreaterThan(0);
-      results.possible.forEach((tag) => {
+      expect(results?.possible.length).toBeGreaterThan(0);
+      results?.possible.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
 
       expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results.speculative.length).toBeGreaterThan(0);
-      results.speculative.forEach((tag) => {
+      expect(results?.speculative?.length).toBeGreaterThan(0);
+      results?.speculative?.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
     });
@@ -341,14 +342,14 @@ describe('Validator', () => {
       });
 
       expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results.possible.length).toBeGreaterThan(0);
-      results.possible.forEach((tag) => {
+      expect(results?.possible.length).toBeGreaterThan(0);
+      results?.possible.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
 
       expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results.speculative.length).toBeGreaterThan(0);
-      results.speculative.forEach((tag) => {
+      expect(results?.speculative?.length).toBeGreaterThan(0);
+      results?.speculative?.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
     });
@@ -365,8 +366,8 @@ describe('Validator', () => {
       });
 
       expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results.possible.length).toBeGreaterThan(0);
-      results.possible.forEach((tag) => {
+      expect(results?.possible.length).toBeGreaterThan(0);
+      results?.possible.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
     });
@@ -383,8 +384,8 @@ describe('Validator', () => {
       });
 
       expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results.possible.length).toBeGreaterThan(0);
-      results.possible.forEach((tag) => {
+      expect(results?.possible.length).toBeGreaterThan(0);
+      results?.possible.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
     });
@@ -403,14 +404,14 @@ describe('Validator', () => {
       });
 
       expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results.possible.length).toBeGreaterThan(0);
-      results.possible.forEach((tag) => {
+      expect(results?.possible.length).toBeGreaterThan(0);
+      results?.possible.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
 
       expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results.speculative.length).toBeGreaterThan(0);
-      results.speculative.forEach((tag) => {
+      expect(results?.speculative?.length).toBeGreaterThan(0);
+      results?.speculative?.forEach((tag) => {
         expect(tag).toHaveProperty('name', expect.any(String));
       });
     });
