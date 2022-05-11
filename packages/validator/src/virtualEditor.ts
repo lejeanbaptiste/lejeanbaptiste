@@ -10,7 +10,6 @@ import {
 } from '@cwrc/salve-leafwriter';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/unionBy';
-import { v4 as uuidv4 } from 'uuid';
 import { initialize } from './conversion';
 import { GetValidTagsAtParameters, GetValidTagsAtResponse, speculateAt } from './possible';
 import { ElementDetail } from './sharedTypes';
@@ -27,7 +26,7 @@ export interface InitializeOptions {
 class VirtualEditor {
   private readonly validatorPrefix: string;
 
-  id: string;
+  // id: string;
   schemaId?: string;
   schema?: Grammar;
   // private walker?: GrammarWalker<NameResolver>;
@@ -35,7 +34,6 @@ class VirtualEditor {
   validator?: Validator;
 
   constructor() {
-    this.id = uuidv4();
     this.validatorPrefix = 'lw';
   }
 
@@ -331,7 +329,6 @@ class VirtualEditor {
 
   reset() {
     this.stopValidator();
-    this.id = uuidv4();
     this.schemaId = undefined;
     this.schema = undefined;
     // this.walker = undefined;
