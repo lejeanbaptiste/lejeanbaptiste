@@ -1,6 +1,6 @@
-import type * as Types from '@src/@types/Provider';
-import type Provider from '@src/@types/Provider';
-import type * as T from '@src/@types/types';
+import type * as Types from '../@types/Provider';
+import type Provider from '../@types/Provider';
+import type * as T from '../@types/types';
 import match from 'autosuggest-highlight/match';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { Buffer } from 'buffer/';

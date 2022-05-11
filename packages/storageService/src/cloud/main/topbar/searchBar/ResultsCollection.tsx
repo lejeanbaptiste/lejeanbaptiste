@@ -1,5 +1,5 @@
 import { Box, MenuList } from '@mui/material';
-import type { SearchResults, Content, SearchResultsBlobs } from '@src/@types/types';
+import type { SearchResults, Content, SearchResultsBlobs } from '../../../../@types/types';
 import { motion } from 'framer-motion';
 import React, { FC } from 'react';
 import Results from './Results';

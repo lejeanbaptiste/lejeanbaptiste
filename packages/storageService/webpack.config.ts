@@ -44,7 +44,7 @@ const plugins = [
 ];
 
 const resolve = {
-  alias: { '@src': path.resolve(__dirname, 'src/') },
+  // alias: { '@src': path.resolve(__dirname, 'src/') },
   extensions: ['.tsx', '.ts', '.js', '.json'],
 };
 

@@ -1,5 +1,5 @@
 import { Stack } from '@mui/material';
-import { CollectionSource } from '@src/@types/types';
+import { CollectionSource } from '../../@types/types';
 import { useActions } from '../../overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';

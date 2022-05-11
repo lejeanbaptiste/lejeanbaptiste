@@ -1,5 +1,5 @@
 import { Box, MenuList } from '@mui/material';
-import type { Owner } from '@src/@types/types';
+import type { Owner } from '../../../../@types/types';
 import { motion } from 'framer-motion';
 import React, { FC } from 'react';
 import Item from './Item';

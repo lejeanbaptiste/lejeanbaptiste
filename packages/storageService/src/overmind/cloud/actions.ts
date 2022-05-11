@@ -3,7 +3,7 @@ import type {
   CreateRepoParams,
   ICreateFork,
   ProviderAuth,
-} from '@src/@types/Provider';
+} from '../../@types/Provider';
 import type {
   CollectionSource,
   Content,
@@ -22,7 +22,7 @@ import type {
   StorageSource,
   SuportedProviders,
   UserType,
-} from '@src/@types/types';
+} from '../../@types/types';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { Context } from '..';
