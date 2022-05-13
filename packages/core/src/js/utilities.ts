@@ -275,7 +275,7 @@ class Utilities {
     if (tagAttribute) {
       tagAtt = tagAttribute;
     } else if (element.getAttribute('_tag') !== null) {
-      tagAtt = '_tag'; // cwrc-writer format
+      tagAtt = '_tag'; // leaf-writer format
     }
 
     const paths: string[] = [];
@@ -315,7 +315,7 @@ class Utilities {
 
   /**
    * Returns the result of the specified xpath on the specified context node.
-   * Can detect and convert an XML xpath for use with the cwrc-writer format.
+   * Can detect and convert an XML xpath for use with the leaf-writer format.
    * Adds support for default namespace.
    * @param {Document|Element} contextNode
    * @param {String} xpath
@@ -488,9 +488,9 @@ class Utilities {
   }
 
   /**
-   * Get the offset position of an element, relative to the parent (default is cwrc-writer container).
+   * Get the offset position of an element, relative to the parent (default is leaf-writer container).
    * @param {Element} el The element
-   * @param {Element} [parent] The offset parent. Default is the cwrc-writer container.
+   * @param {Element} [parent] The offset parent. Default is the leaf-writer container.
    * @returns {Object} position An object container top and left properties
    */
   getOffsetPosition = (element: Element, parent?: Element) => {

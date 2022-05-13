@@ -11,7 +11,7 @@ import { Context } from '../';
 import { ConfigLegacy, Schema } from '../../@types';
 import { debounce } from 'lodash';
 
-const DIALOG_PREFS_COOKIE_NAME = 'cwrc-writer-base-dialog-preferences';
+const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
 export const writerInitSettings = ({ state: { editor } }: Context, config: ConfigLegacy) => {
   const { container, cwrcRootUrl, helpUrl, schema, services } = config;
