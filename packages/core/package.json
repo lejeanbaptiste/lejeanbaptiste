@@ -31,19 +31,16 @@
     "bin",
     "dist",
     "lib",
-    "src",
-    "images",
-    "css"
+    "src"
   ],
   "scripts": {
-    "build": "npm run clean && tsc && webpack && npm run copy-assets",
-    "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack && npm run copy-validator-worker",
-    "copy-assets": "npm run copy-assets_images && npm run copy-assets_editor_css && npm run copy-assets_tinymce_skin",
-    "copy-assets_images": "shx cp -r ./src/images ./images",
-    "copy-assets_editor_css": "shx mkdir css && shx cp -r ./src/css/build/editor.css ./css",
-    "copy-assets_tinymce_skin": "shx mkdir -p ./css/tinymce/skins && shx cp -r ./src/css/tinymce/**/* ./css/tinymce/skins/",
-    "clean": "shx rm -rf dist lib lib-esm css images"
+    "build": "npm run clean && tsc && webpack && npm run release-copy-assets",
+    "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack && npm run release-copy-assets",
     "release-copy-assets": "ts-node release.ts",
+    "clean": "shx rm -rf dist lib lib-esm",
+    "test": "jest",
+    "cm": "git-cz",
+    "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {
     "@cwrc/leafwriter-validator": "^1.0.2",
