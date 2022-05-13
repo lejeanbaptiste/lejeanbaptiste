@@ -16,7 +16,7 @@ import type { ILWDialog } from './dialogs/types';
 import Writer from './Writer';
 // import Triple from './dialogs/triple.js';
 
-const DIALOG_PREFS_COOKIE_NAME = 'cwrc-writer-base-dialog-preferences';
+const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
 const handleResize = (dialogEl: JQuery<any>) => {
   if (dialogEl.is(':visible')) {
