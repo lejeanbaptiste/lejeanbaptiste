@@ -1,5 +1,5 @@
 module.exports = {
-  format: '{scope}{type}: {emoji}{subject}',
+  format: '{type}{scope}: {emoji}{subject}',
   maxMessageLength: 110,
   questions: ['scope', 'type', 'subject', 'body', 'breaking', 'issues' ],
   scopes: ['root', 'commons', 'core', 'storage service', 'validator'],
