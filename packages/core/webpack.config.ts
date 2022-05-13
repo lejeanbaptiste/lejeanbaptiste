@@ -42,30 +42,17 @@ const plugins = [
     patterns: [
       //copy images
       { from: path.resolve(__dirname, 'src', 'images'), to: 'images' },
-      {
-        //Copy pre-compiled CSS required by tinyMCE
-        from: path.resolve(__dirname, 'src', 'css', 'tinymce', 'skins'),
-        to: 'css/tinymce/skins',
-      },
-      {
-        //Copy pre-compiled CSS to stylize the editor (must be recompiled after each change)
-        context: path.resolve(__dirname, 'src', 'css', 'build'),
-        from: 'editor.css',
-        to: 'css/editor.css',
-        toType: 'file',
-      },
-      {
-        //Copy pre-compiled worker
-        context: path.resolve(__dirname, '..', 'validator', 'dist'),
-        from: 'leafwriter-validator.worker.js',
-        to: 'leafwriter-validator.worker.js',
-        toType: 'file',
-      },
+      //Copy pre-compiled CSS required by tinyMCE
+      { from: path.resolve(__dirname, 'src', 'css', 'tinymce', 'skins'), to: 'css/tinymce/skins' },
+      //Copy pre-compiled CSS to stylize the editor (must be recompiled after each change)
+      { from: path.resolve(__dirname, 'src', 'css', 'build', 'editor.css'), to: 'css/[name][ext]' },
+      //Copy pre-compiled worker
+      { from: path.resolve(__dirname, '..', 'validator', 'dist') },
     ],
   }),
 
-  new MiniCssExtractPlugin(),
-  new MonacoWebpackPlugin({ languages: ['xml', 'json'] }),
+  new MiniCssExtractPlugin({ filename: 'css/[name].css' }),
+  new MonacoWebpackPlugin({ filename: 'monaco-[name].[ext].js', languages: ['xml', 'json'] }),
   new WebpackBar({ color: isDev ? '#7e57c2' : '#9ccc65' }),
   new webpack.DefinePlugin({
     webpackEnv: {
@@ -126,6 +113,7 @@ const webpackConfig: webpack.Configuration = {
       {
         test: /\.svg$/,
         loader: 'svg-inline-loader',
+        generator: { filename: 'images/[name][ext][query]' },
         options: { removeSVGTagAttrs: false },
       },
     ],
