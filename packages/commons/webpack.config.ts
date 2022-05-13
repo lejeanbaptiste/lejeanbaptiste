@@ -57,7 +57,13 @@ const plugins = [
         //Copy pre-compiled worker
         from: isDev
           ? path.resolve(__dirname, '..', 'validator', 'dist')
-          : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter-validator', 'dist'),
+          : path.resolve(
+              __dirname,
+              'node_modules',
+              '@cwrc/leafwriter-validator',
+              'dist',
+              'leafwriter-validator.worker.js'
+            ),
       },
     ],
   }),
