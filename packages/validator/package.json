@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-validator",
-  "version": "2.0.0",
+  "version": "1.0.2",
   "description": "webworker to handle validation on Leaf-Writer",
   "keywords": [
     "xml",
@@ -39,11 +39,6 @@
     "test-watch": "jest --watchAll --verbose",
     "build-documentation": "typedoc --out docs src/index.worker.ts",
     "cm": "git-cz",
-    "release-dry": "npm run release -- --dry-run",
-    "release": "standard-version -- --no-verify",
-    "release:minor": "standard-version -- --no-verify --release-as minor",
-    "release:patch": "standard-version -- --no-verify --release-as patch",
-    "release:major": "standard-version -- --no-verify --release-as major",
     "prepublishOnly": "npm test && npm run build_es6"
   },
   "dependencies": {
@@ -74,8 +69,8 @@
     "jest-fetch-mock": "^3.0.3",
     "jsdom": "19.0.0",
     "prettier": "^2.6.2",
+    "semantic-release": "^19.0.2",
     "shx": "^0.3.4",
-    "standard-version": "^9.3.2",
     "ts-jest": "^28.0.2",
     "ts-loader": "^9.3.0",
     "typedoc": "^0.22.15",
