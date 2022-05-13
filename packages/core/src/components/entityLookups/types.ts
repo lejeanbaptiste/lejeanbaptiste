@@ -27,7 +27,7 @@ export interface ILookupServiceConfig {
     username?: string;
   };
   enabled?: boolean;
-  entities?: LookupsEntityType[] | [LookupsEntityType, { enabled: boolean }][];
+  entities?: Array<LookupsEntityType | [LookupsEntityType, { enabled: boolean }]>;
   id?: Authority;
   name?: string;
   priority?: number;
@@ -47,7 +47,7 @@ export interface ILookups {
 }
 
 export interface ILookupsConfig {
-  authorities?: Authority[] | [Authority, ILookupServiceConfig][];
+  authorities?: Array<Authority | [Authority, ILookupServiceConfig]>;
   showNoLinkButton: boolean;
   showCreateNewButton: boolean;
   showEditButton: boolean;
