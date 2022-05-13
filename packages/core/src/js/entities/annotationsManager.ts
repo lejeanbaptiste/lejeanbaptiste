@@ -228,7 +228,7 @@ class AnnotationsManager {
         '@id': appURI,
         '@type': 'as:Application',
         'rdfs:label': 'Leaf Writer',
-        'schema:url': 'https://cwrc-writer.cwrc.ca',
+        'schema:url': 'https://leaf-writer.lincsproject.ca/',
         'schema:softwareVersion': leafWriterVersion,
       },
     };
