@@ -21,7 +21,7 @@
   "license": "GPL-2.0",
   "main": "index.js",
   "workspaces": [
-    "./packages/standalone",
+    "./packages/commons",
     "./packages/core",
     "./packages/storageService",
     "./packages/validator"
