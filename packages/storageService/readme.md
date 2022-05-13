@@ -48,7 +48,7 @@ Extra features:
 
 ## Demo
 
-The [leaf writer standalone](LINK) is running an instance of [leaf writer](LINK) that uses the NPM package published from this repository.
+The [LEAF-Writer Commons](LINK) is running an instance of [LEAF-Writer](LINK) that uses the NPM package published from this repository.
 
 ## Use
 
