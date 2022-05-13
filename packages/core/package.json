@@ -43,6 +43,7 @@
     "copy-assets_editor_css": "shx mkdir css && shx cp -r ./src/css/build/editor.css ./css",
     "copy-assets_tinymce_skin": "shx mkdir -p ./css/tinymce/skins && shx cp -r ./src/css/tinymce/**/* ./css/tinymce/skins/",
     "clean": "shx rm -rf dist lib lib-esm css images"
+    "release-copy-assets": "ts-node release.ts",
   },
   "dependencies": {
     "@cwrc/leafwriter-validator": "^1.0.2",
@@ -109,6 +110,7 @@
     "@types/prismjs": "^1.26.0",
     "@types/progressbar.js": "^1.1.2",
     "@types/react-dom": "^17.0.11",
+    "@types/shelljs": "^0.8.11",
     "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
@@ -119,6 +121,7 @@
     "husky": "^8.0.1",
     "mini-css-extract-plugin": "^2.6.0",
     "monaco-editor-webpack-plugin": "^7.0.1",
+    "shelljs": "^0.8.5",
     "shx": "^0.3.4",
     "webpack": "^5.72.1",
     "webpackbar": "^5.0.2"
