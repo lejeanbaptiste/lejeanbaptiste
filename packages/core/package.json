@@ -36,11 +36,12 @@
   "scripts": {
     "build": "npm run clean && tsc && webpack && npm run release-copy-assets",
     "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack && npm run release-copy-assets",
+    "build-documentation": "typedoc --out docs src/index.tsx",
     "release-copy-assets": "ts-node release.ts",
     "clean": "shx rm -rf dist lib lib-esm",
     "test": "jest",
     "cm": "git-cz",
-    "prepublishOnly": "npm test && npm run build"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@cwrc/leafwriter-validator": "^1.0.2",
