@@ -53,6 +53,7 @@
   "scripts": {
     "build": "npm run clean && tsc && webpack",
     "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
+    "build-documentation": "typedoc --out docs src/index.tsx",
     "clean": "shx rm -rf dist lib lib-esm",
     "test": "jest",
     "test-watch": "jest --watchAll --verbose",
