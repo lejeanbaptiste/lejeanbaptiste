@@ -14,6 +14,8 @@ import App from './App';
 import i18next from './i18n';
 import { config } from './overmind';
 
+export * as Types from './@types';
+
 const overmind = createOvermind(config, {
   name: 'leafWriter',
   devtools: true,
