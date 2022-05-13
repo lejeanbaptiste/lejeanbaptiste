@@ -17,6 +17,7 @@ const entry: EntryObject = {
 
 const output = {
   path: path.resolve(__dirname, 'dist'),
+  filename: 'js/[name].js',
   publicPath: '/',
   pathinfo: isDev ? true : false,
 };
@@ -28,53 +29,35 @@ const plugins = [
       { from: path.resolve(__dirname, 'src', 'assets'), to: 'assets' },
       // { from: path.resolve(__dirname, 'src', 'config'), to: 'config' },
       { from: path.resolve(__dirname, 'src', 'content'), to: 'content' },
-      {
-        context: path.resolve(__dirname, 'src'),
-        from: 'silent-check-sso.html',
-        to: 'silent-check-sso.html',
-        toType: 'file',
-      },
-      {
-        context: path.resolve(__dirname, 'src'),
-        from: 'manifest.json',
-        to: 'manifest.json',
-        toType: 'file',
-      },
+      { from: 'src/silent-check-sso.html', to: '[name][ext]' },
+      { from: 'src/manifest.json', to: '[name][ext]' },
       //
       {
-        //copy images from Writer-Base
+        //copy images from LEAF-Writer core
         from: isDev
           ? path.resolve(__dirname, '..', 'core', 'src', 'images')
-          : // : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'src', 'images'),
-            path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'images'),
+          : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'lib', 'images'),
         to: 'images',
       },
       {
         context: isDev
-          ? path.resolve(__dirname, '..', 'core', 'src', 'css', 'tinymce')
-          : // : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'src', 'css', 'tinymce'),
-            path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'css', 'tinymce'),
-        from: 'skins',
+          ? path.resolve(__dirname, '..', 'core', 'src')
+          : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'lib'),
+        from: 'css/tinymce/skins',
         to: 'css/tinymce/skins',
       },
       {
         //Copy pre-compiled CSS to stylize the editor (must be recompiled after each change)
-        context: isDev
-          ? path.resolve(__dirname, '..', 'core', 'src', 'css', 'build')
-          : // : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'src', 'css', 'build'),
-            path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'css'),
-        from: 'editor.css',
-        to: 'css/editor.css',
-        toType: 'file',
+        from: isDev
+          ? path.resolve(__dirname, '..', 'core', 'src', 'css', 'build', 'editor.css')
+          : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'lib', 'css', 'editor.css'),
+        to: 'css/[name][ext]',
       },
       {
         //Copy pre-compiled worker
-        context: isDev
+        from: isDev
           ? path.resolve(__dirname, '..', 'validator', 'dist')
           : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter-validator', 'dist'),
-        from: 'leafwriter-validator.worker.js',
-        to: 'leafwriter-validator.worker.js',
-        toType: 'file',
       },
     ],
   }),
@@ -82,8 +65,8 @@ const plugins = [
     template: path.resolve(__dirname, 'src', 'index.html'),
     favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon-32x32.png'),
   }),
-  new MonacoWebpackPlugin({ languages: ['xml', 'json'] }),
-  new MiniCssExtractPlugin(),
+  new MiniCssExtractPlugin({ filename: 'css/[name].css' }),
+  new MonacoWebpackPlugin({ filename: 'monaco-[name].[ext].js', languages: ['xml', 'json'] }),
   new WebpackBar({ color: isDev ? '#7e57c2' : '#9ccc65' }),
   new webpack.DefinePlugin({
     webpackEnv: {
@@ -143,6 +126,7 @@ const webpackConfig: webpack.Configuration = {
       {
         test: /\.svg$/,
         loader: 'svg-inline-loader',
+        generator: { filename: 'images/[name][ext][query]' },
         options: { removeSVGTagAttrs: false },
       },
     ],

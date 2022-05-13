@@ -7,7 +7,7 @@
 ![GPL-2.0](https://img.shields.io/badge/license-GLP--2.0-orange)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
-[![version](https://img.shields.io/badge/LEAF--Writer-Commons-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/standalone)
+[![version](https://img.shields.io/badge/LEAF--Writer-Commons-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/commons)
 [![version](https://img.shields.io/badge/LEAF--Writer-Core-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/core)
 [![version](https://img.shields.io/badge/LEAF--Writer-Storage--Service-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/storageService)
 [![version](https://img.shields.io/badge/LEAF--Writer-Validator-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/validator)

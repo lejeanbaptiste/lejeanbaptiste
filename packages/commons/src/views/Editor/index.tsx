@@ -1,5 +1,5 @@
 import { loadDocument, saveDocument } from '@cwrc/leafwriter-storage-service';
-import { LWDocument } from '@cwrc/leafwriter/src/@types';
+import type { Types } from '@cwrc/leafwriter';
 import { Backdrop, LinearProgress } from '@mui/material';
 import Page from '@src/components/Page';
 import { usePermalink } from '@src/hooks/usePermalink';
@@ -97,7 +97,7 @@ const Editor: FC = () => {
     openStorageDialog({ source: 'cloud', resource: undefined, type: 'load' });
   };
 
-  const handleSaveRequest = async (document: LWDocument, saveAs?: boolean) => {
+  const handleSaveRequest = async (document: Types.LWDocument, saveAs?: boolean) => {
     if (document.file) setResource(document.file);
 
     if (saveAs) {
@@ -142,8 +142,8 @@ const Editor: FC = () => {
                 cwrcRootUrl: './', // '.' | './'
                 helpUrl: 'https://cwrc.ca/CWRC-Writer_Documentation/',
                 nerveUrl: 'https://localhost/nerve/',
-                proxyCssEndpoint: './schema/css/',
-                proxyXmlEndpoint: './schema/xml/',
+                proxyCssEndpoint: '/schema/css/',
+                proxyXmlEndpoint: '/schema/xml/',
               },
             }}
             onLoadRequest={handleLoadRequest}
@@ -158,7 +158,7 @@ const Editor: FC = () => {
 
 export default Editor;
 
-const lookUpsConfig = {
+const lookUpsConfig: Types.ILookupsConfig = {
   authorities: [
     // ['cwrc', { config: { entityCollectionsUrl: '', entityFormsRoot: '', collectionsRoot: '' } }],
     'viaf',

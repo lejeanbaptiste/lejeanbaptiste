@@ -1,11 +1,11 @@
 {
-    "short_name": "Leaf Writer",
-    "name": "Leaf Writer",
+    "short_name": "LEAF-Writer",
+    "name": "LEAF-Writer Commons",
     "icons": [
       {
-        "src": "assets/favicon-32_32.svg",
+        "src": "assets/logo/cwrclogo.png",
         "type": "image/png",
-        "sizes": "32x32"
+        "sizes": "600x600"
       }
     ],
     "start_url": "/",
