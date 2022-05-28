@@ -36,6 +36,7 @@
     "@babel/preset-env": "^7.17.10",
     "@babel/preset-react": "^7.16.7",
     "@babel/preset-typescript": "^7.16.7",
+    "@changesets/cli": "^2.22.0",
     "@octokit/types": "^6.34.0",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^12.1.3",
