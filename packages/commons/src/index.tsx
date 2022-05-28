@@ -7,11 +7,12 @@ import './utilities/devToolsConsole';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
 import React from 'react';
-import { render } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './i18n';
 import { config } from './overmind';
+import './utilities/devToolsConsole';
 
 const overmind = createOvermind(config, {
   name: 'homepage',
@@ -19,13 +20,16 @@ const overmind = createOvermind(config, {
   logProxies: true,
 });
 
-render(
+const container = document.getElementById('app');
+if (!container) throw new Error(`HTML element id 'app' not found`);
+
+const root = createRoot(container);
+root.render(
   <Provider value={overmind}>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </Provider>,
-  document.querySelector('#app')
+  </Provider>
 );
 
 // if (module.hot) module.hot.accept();
