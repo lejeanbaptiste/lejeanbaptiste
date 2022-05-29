@@ -11,6 +11,7 @@ import {
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/unionBy';
 import { initialize } from './conversion';
+import { logEnabledFor } from './log';
 import { GetValidTagsAtParameters, GetValidTagsAtResponse, speculateAt } from './possible';
 import { ElementDetail } from './sharedTypes';
 import { evaluateXPath, getFullNameFromDocumentation } from './utils';
@@ -89,8 +90,10 @@ class VirtualEditor {
       throw new Error('vEditor: Document or Validator not set');
     }
 
-    console.groupCollapsed(`getTagAt: ${tagName} at ${parentXpath}:${index}`);
-    console.time('Timer');
+    if (logEnabledFor('DEBUG')) {
+      console.groupCollapsed(`getTagAt: ${tagName} at ${parentXpath}:${index}`);
+      console.time('Timer');
+    }
 
     const container = this.evaluateXPath(parentXpath);
     if (!container) return;
@@ -112,8 +115,10 @@ class VirtualEditor {
 
     const tag: ElementDetail = { type: 'tag', name, documentation, fullName, ns };
 
-    console.timeEnd('Timer');
-    console.groupEnd();
+    if (logEnabledFor('DEBUG')) {
+      console.timeEnd('Timer');
+      console.groupEnd();
+    }
 
     return tag;
   }
@@ -122,8 +127,10 @@ class VirtualEditor {
       throw new Error('vEditor: Document or Validator not set');
     }
 
-    console.groupCollapsed(`getElementsForTagAt: ${xpath}:${index}`);
-    console.time('Get elements for Tag');
+    if (logEnabledFor('DEBUG')) {
+      console.groupCollapsed(`getElementsForTagAt: ${xpath}:${index}`);
+      console.time('Get elements for Tag');
+    }
 
     const container = this.evaluateXPath(xpath);
     if (!container) return;
@@ -158,8 +165,10 @@ class VirtualEditor {
       elements = sortBy(elements, ['name']);
     }
 
-    console.timeEnd('Get elements for Tag');
-    console.groupEnd();
+    if (logEnabledFor('DEBUG')) {
+      console.timeEnd('Get elements for Tag');
+      console.groupEnd();
+    }
 
     return elements;
   }
@@ -169,8 +178,10 @@ class VirtualEditor {
       throw new Error('vEditor: Document or Validator not set');
     }
 
-    console.groupCollapsed(`getAttributesForTagAt: ${xpath}:${index}`);
-    console.time('Timer');
+    if (logEnabledFor('DEBUG')) {
+      console.groupCollapsed(`getAttributesForTagAt: ${xpath}:${index}`);
+      console.time('Timer');
+    }
 
     const container = this.evaluateXPath(xpath);
     if (!container) return;
@@ -192,8 +203,10 @@ class VirtualEditor {
       atttibutes = sortBy(atttibutes, ['name']);
     }
 
-    console.timeEnd('Timer');
-    console.groupEnd();
+    if (logEnabledFor('DEBUG')) {
+      console.timeEnd('Timer');
+      console.groupEnd();
+    }
 
     return atttibutes;
   }
@@ -202,8 +215,10 @@ class VirtualEditor {
       throw new Error('vEditor: Document or Validator not set');
     }
 
-    console.groupCollapsed(`get tag ${attributeName} at ${parentXpath}`);
-    console.time('Timer');
+    if (logEnabledFor('DEBUG')) {
+      console.groupCollapsed(`get tag ${attributeName} at ${parentXpath}`);
+      console.time('Timer');
+    }
 
     const container = this.evaluateXPath(parentXpath);
     if (!container) return;
@@ -225,8 +240,10 @@ class VirtualEditor {
 
     const attribute: ElementDetail = { type: 'attribute', name, documentation, fullName, ns };
 
-    console.timeEnd('Timer');
-    console.groupEnd();
+    if (logEnabledFor('DEBUG')) {
+      console.timeEnd('Timer');
+      console.groupEnd();
+    }
 
     return attribute;
   }
@@ -235,7 +252,7 @@ class VirtualEditor {
       throw new Error('vEditor: Document or Validator not set');
     }
 
-    console.time(`Get value for tag attribute at ${xpath}`);
+    if (logEnabledFor('DEBUG')) console.time(`Get value for tag attribute at ${xpath}`);
 
     const container = this.evaluateXPath(xpath);
     if (!container) return;
@@ -251,7 +268,7 @@ class VirtualEditor {
       }
     });
 
-    console.timeEnd('Get Value for Tag Attribute');
+    if (logEnabledFor('DEBUG')) console.timeEnd('Get Value for Tag Attribute');
 
     return attrValues;
   }
@@ -262,8 +279,10 @@ class VirtualEditor {
     }
 
     const _type = selection ? ` - ${selection.type}` : '';
-    console.groupCollapsed(`ValidAt: ${xpath}${_type}`);
-    console.time('Timer');
+    if (logEnabledFor('DEBUG')) {
+      console.groupCollapsed(`ValidAt: ${xpath}${_type}`);
+      console.time('Timer');
+    }
 
     const container = this.evaluateXPath(xpath);
     if (!container) return;
@@ -278,8 +297,10 @@ class VirtualEditor {
       result.speculative = speculativeTags;
     }
 
-    console.timeEnd('Timer');
-    console.groupEnd();
+    if (logEnabledFor('DEBUG')) {
+      console.timeEnd('Timer');
+      console.groupEnd();
+    }
 
     return result;
   }
