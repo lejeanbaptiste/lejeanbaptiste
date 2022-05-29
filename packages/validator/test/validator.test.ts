@@ -1,10 +1,23 @@
 import { WorkingState } from '@cwrc/salve-dom-leafwriter';
 import { beforeAll, describe, expect, jest, test } from '@jest/globals';
 import fetchMock from 'jest-fetch-mock';
+import { log, logEnabledFor } from '../src/log';
 import Validator from '../src/Validator';
 import cwrcTeiLite from './mocks/cwtcTeiLite';
 
-beforeAll(() => {});
+beforeAll(() => {
+  global.console = {
+    ...console,
+    // uncomment to ignore a specific log level
+    // log: jest.fn(),
+    // debug: jest.fn(),
+    // info: jest.fn(),
+    // warn: jest.fn(),
+    // error: jest.fn(),
+    time: jest.fn(),
+    groupCollapsed: jest.fn(),
+  };
+});
 
 beforeEach(() => {
   jest.restoreAllMocks();
@@ -14,6 +27,18 @@ beforeEach(() => {
 });
 
 describe('Validator', () => {
+  describe('general', () => {
+    test('log production', async () => {
+      expect.assertions(2);
+
+      log.setLevel('SILENT');
+      expect(logEnabledFor('INFO')).toBeFalsy();
+
+      log.setLevel('TRACE');
+      expect(logEnabledFor('INFO')).toBeTruthy();
+    });
+  });
+
   describe('conversion', () => {
     test('load schema from url', async () => {
       expect.assertions(2);
