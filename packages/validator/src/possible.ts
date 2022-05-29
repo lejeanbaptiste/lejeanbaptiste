@@ -1,3 +1,4 @@
+import { logEnabledFor } from './log';
 import { ElementDetail } from './sharedTypes';
 import { evaluateXPath } from './utils';
 import VirtualEditor from './virtualEditor';
@@ -48,23 +49,25 @@ export const speculateAt = (
   vEditor: VirtualEditor,
   { container, index, possibleTags, selection }: SpeculateRequest
 ) => {
-  // if (!vEditor.validator) throw new Error('vEditor: Validator not set');
-
-  // console.time('Speculative Possibilities');
+  if (logEnabledFor('DEBUG')) console.time('Speculative Possibilities');
   const speculativePossibility: ElementDetail[] = [];
 
   for (const tag of possibleTags) {
     const specContent = speculativeContent(vEditor, tag, selection, container);
     if (!specContent) continue;
 
-    const speculationError = vEditor.validator?.speculativelyValidate(container, index, specContent);
+    const speculationError = vEditor.validator?.speculativelyValidate(
+      container,
+      index,
+      specContent
+    );
 
     //specualtive validate returns an errors when it is not possible to add a
     //specific tag (or event) in the container we add the ones that doesn't have errors.
     if (!speculationError) speculativePossibility.push(tag);
   }
 
-  // console.timeEnd('Speculative Possibilities');
+  if (logEnabledFor('DEBUG')) console.timeEnd('Speculative Possibilities');
   return speculativePossibility;
 };
 
