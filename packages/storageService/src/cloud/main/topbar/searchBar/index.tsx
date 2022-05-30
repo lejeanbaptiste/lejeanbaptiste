@@ -140,7 +140,12 @@ const SearchBar: FC<SearchBarProps> = ({
                 <>
                   {isLoading && <CircularProgress size={16} />}
                   {inputValue.length > 0 && (
-                    <IconButton aria-label="clear" onMouseDown={clearField} size="small">
+                    <IconButton
+                      aria-label="clear"
+                      onMouseDown={clearField}
+                      data-testid="search-clear-field"
+                      size="small"
+                    >
                       <CloseIcon fontSize="inherit" />
                     </IconButton>
                   )}

@@ -47,6 +47,7 @@ const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open 
       id="save-settings-popper"
       onClose={handleDone}
       open={open}
+      data-testid="save:settings-dialog"
     >
       <DialogTitle id="save-settings-title" sx={{ textAlign: 'center' }}>
         {t('cloud:settings:save_settings')}
@@ -57,6 +58,7 @@ const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open 
           autoFocus
           fullWidth
           id="comit-message"
+          inputProps={{ 'data-testid': 'save:settings:commit-input' }}
           label={t('cloud:settings:comit_message')}
           onBlur={handleComitMessageBlur}
           onChange={handleComitMessageChange}

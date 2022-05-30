@@ -579,7 +579,7 @@ export default class Gitlab implements Provider {
       })
       .catch(() => null);
 
-    return response;
+    return response as any;
   }
 
   /**

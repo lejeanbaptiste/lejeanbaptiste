@@ -81,13 +81,19 @@ const Filename: FC = () => {
         <InputBase
           endAdornment={
             <InputAdornment position="end">
-              <IconButton aria-label="open settings" onClick={handleOpenSettings} size="small">
+              <IconButton
+                aria-label="open settings"
+                onClick={handleOpenSettings}
+                size="small"
+                data-testid="save:open-settings-button"
+              >
                 <TuneIcon fontSize="inherit" />
               </IconButton>
             </InputAdornment>
           }
           fullWidth
           id="filename"
+          inputProps={{ 'data-testid': 'save:filename-input' }}
           onBlur={handleBlur}
           onChange={handleChange}
           onKeyPress={handleKeyPress}

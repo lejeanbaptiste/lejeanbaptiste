@@ -1,7 +1,6 @@
 import type { ProviderAuth } from '../../src/@types/Provider';
 import { DocumentDetails, Organization, Repository, Resource, User } from '../../src/@types/types';
 import { SearchBlobsItem } from '../../src/providers/Gitlab';
-// import { SearchBlobsItem } from '../../src/'
 
 export const unsupportedProviderAuth: ProviderAuth = { name: 'google', access_token: '12345' };
 export const githubAuth: ProviderAuth = { name: 'github', access_token: 'gho_vtkG' };
@@ -18,7 +17,10 @@ type GetResourceParams = {
   provider?: string;
 };
 
-export const getResource = ({ type, provider = 'github' }: GetResourceParams): Resource | undefined => {
+export const getResource = ({
+  type,
+  provider = 'github',
+}: GetResourceParams): Resource | undefined => {
   if (!type) {
     return {
       provider,
@@ -63,6 +65,15 @@ export const getResource = ({ type, provider = 'github' }: GetResourceParams): R
     };
   }
 
+  if (type === 'save') {
+    return {
+      provider,
+      hash: '0b0bb91a0b70088815055f5987f04ecce4a00faf',
+      content: '<?xml>content</xml>',
+      filename: 'invalid_filename.xml',
+    };
+  }
+
   return;
 };
 
@@ -84,6 +95,7 @@ export const repository: Repository = {
 export const repositories: Repository[] = [
   {
     name: 'repo1',
+    description: 'some description',
     id: '12345',
     default_branch: 'main',
     owner: { username: 'username' },
@@ -93,8 +105,16 @@ export const repositories: Repository[] = [
     name: 'repo2',
     id: '12346',
     default_branch: 'main',
+    owner: { username: 'username', avatar_url: 'url' },
+    path: '',
+  },
+  {
+    name: 'private_repo',
+    id: '12346',
+    default_branch: 'main',
     owner: { username: 'username' },
     path: '',
+    visibility: 'private',
   },
 ];
 
@@ -133,6 +153,7 @@ export const organizations: Organization[] = [
   {
     id: '1',
     name: 'organization 1',
+    description: 'some description',
     type: 'organization',
     username: 'org1',
   },
@@ -185,11 +206,11 @@ export const githubResultSearchBlob = [
     ],
   },
   {
-    name: 'lang.xml',
+    name: 'lang',
     type: 'folder',
     owner: { id: 1254739, username: 'lucaju' },
     path: 'Apps/CiteLens.app/Contents/Resources/model/library',
-    repository: { id: 8793505, name: 'CiteLens' },
+    repository: { id: 12345, name: 'repo1', owner: { id: 1254739, username: 'lucaju' } },
     score: 1,
     text_matches: [
       {
@@ -207,8 +228,8 @@ export const githubResultSearchBlob = [
     name: 'language.xml',
     type: 'file',
     owner: { id: 1254739, username: 'lucaju' },
-    path: 'src/model/library',
-    repository: { id: 8793505, name: 'CiteLens' },
+    path: '',
+    repository: { id: 12345, name: 'repo1', owner: { id: 1254739, username: 'lucaju' } },
     score: 1,
     text_matches: [
       {
@@ -221,6 +242,33 @@ export const githubResultSearchBlob = [
         matches: [{ text: 'car', indices: [59, 62] }],
       },
     ],
+  },
+  {
+    name: 'doc1.xml',
+    type: 'file',
+    owner: { id: 1254739, username: 'lucaju' },
+    path: 'bin-debug/model/library',
+    repository: { id: 8793505, name: 'CiteLens' },
+    score: 1,
+    text_matches: [],
+  },
+  {
+    name: 'doc2.xml',
+    type: 'file',
+    owner: { id: 1254739, username: 'lucaju' },
+    path: 'bin-debug/model/library',
+    repository: { id: 8793505, name: 'CiteLens' },
+    score: 1,
+    text_matches: [],
+  },
+  {
+    name: 'doc3.xml',
+    type: 'file',
+    owner: { id: 1254739, username: 'lucaju' },
+    path: 'bin-debug/model/library',
+    repository: { id: 8793505, name: 'CiteLens' },
+    score: 1,
+    text_matches: [],
   },
 ];
 

@@ -43,10 +43,10 @@ export default {
   // An object that configures minimum threshold enforcement for coverage results
   coverageThreshold: {
     global: {
-      branches: 65,
-      functions: 35,
-      lines: 55,
-      statements: 55
+      branches: 75,
+      functions: 55,
+      lines: 70,
+      statements: 70,
     },
   },
 
@@ -158,10 +158,7 @@ export default {
   // ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    './lib*'
-  ],
+  testPathIgnorePatterns: ['/node_modules/', './lib*'],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
   // testRegex: [],
@@ -191,7 +188,7 @@ export default {
   // unmockedModulePathPatterns: undefined,
 
   // Indicates whether each individual test should be reported during the run
-  // verbose: true,
+  verbose: true,
 
   // An array of regexp patterns that are matched against all source file paths before re-running tests in watch mode
   // watchPathIgnorePatterns: [],

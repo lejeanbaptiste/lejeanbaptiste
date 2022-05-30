@@ -55,8 +55,8 @@ const FooterSave: FC<Props> = ({ onCancel }) => {
   const handleDownload = () => download();
 
   return (
-    <DialogActions sx={{ justifyContent: 'space-between' }}>
-      <Button onClick={onCancel} variant="outlined">
+    <DialogActions data-testid="save:footer" sx={{ justifyContent: 'space-between' }}>
+      <Button onClick={onCancel} title="cancel" variant="outlined">
         {t('commons:cancel')}
       </Button>
       <Box flexGrow={1} />
@@ -69,6 +69,7 @@ const FooterSave: FC<Props> = ({ onCancel }) => {
           disabled={isSaving}
           onClick={handleDownload}
           startIcon={<DownloadIcon />}
+          title="download"
           variant="outlined"
         >
           {t('footer:download')}

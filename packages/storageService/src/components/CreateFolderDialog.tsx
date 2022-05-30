@@ -54,6 +54,7 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
     <Dialog
       aria-describedby="create-folder"
       aria-labelledby="create-folder-title"
+      data-testid="save:create-folder-dialog"
       fullWidth
       maxWidth="sm"
       open={open}
@@ -65,6 +66,7 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
           autoFocus
           fullWidth
           id="name"
+          inputProps={{ 'data-testid': 'save:create-folder:name-input' }}
           label={t('commons:name')}
           onChange={handleNameChange}
           placeholder={t('cloud:folder_name')}
@@ -77,6 +79,7 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
       <DialogActions>
         <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
         <LoadingButton
+          data-testid="save:create-folder:create-button"
           disabled={name === ''}
           loading={isLoading}
           onClick={handleCreate}
