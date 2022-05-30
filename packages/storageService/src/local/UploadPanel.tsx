@@ -62,7 +62,7 @@ const UploadPanel: FC = () => {
   };
 
   return (
-    <Box ref={container} height="100%">
+    <Box ref={container} height="97%">
       <Dropzone
         accept={mimeTypeTransformation()}
         maxFiles={1}
