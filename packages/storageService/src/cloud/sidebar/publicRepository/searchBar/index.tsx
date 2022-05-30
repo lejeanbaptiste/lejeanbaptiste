@@ -13,12 +13,12 @@ import {
   useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import type { Owner } from '../../../../@types/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import debounce from 'lodash/debounce';
 import React, { FC, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
+import type { Owner } from '../../../../@types/types';
 import Results from './Results';
 
 interface SearchBarProps {

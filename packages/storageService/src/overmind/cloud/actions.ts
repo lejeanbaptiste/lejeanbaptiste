@@ -1,3 +1,6 @@
+import match from 'autosuggest-highlight/match';
+import parse from 'autosuggest-highlight/parse';
+import { Context } from '..';
 import type {
   CreatePrResponse,
   CreateRepoParams,
@@ -23,9 +26,6 @@ import type {
   SuportedProviders,
   UserType,
 } from '../../@types/types';
-import match from 'autosuggest-highlight/match';
-import parse from 'autosuggest-highlight/parse';
-import { Context } from '..';
 import i18next from '../../i18n';
 import { log } from '../../utilities/log';
 import { isErrorMessage } from '../../utilities/util';
@@ -115,7 +115,9 @@ export const initialize = async ({ state, actions }: Context, initialValues: IIn
   if (state.cloud.providers.length > 0 && !source) actions.common.setSource('cloud');
   if (source) actions.common.setSource(source as StorageSource);
 
-  const resourceLoaded = resource ? actions.cloud.rehydrate(resource) : actions.cloud.resetOwner();
+  const resourceLoaded = resource
+    ? await actions.cloud.rehydrate(resource)
+    : actions.cloud.resetOwner();
   return resourceLoaded;
 };
 
@@ -720,7 +722,6 @@ export const searchByFilename = async (
     results: [] as Content[],
   };
 
-  // if (!state.cloud.repository || !provider.getRepoContentRecursively) return searchResults;
   if (!state.cloud.repository) return searchResults;
   const { repository, owner } = state.cloud;
 

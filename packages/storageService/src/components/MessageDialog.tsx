@@ -10,8 +10,8 @@ import {
   IconButton,
   Stack,
 } from '@mui/material';
-import { useActions, useAppState } from '../overmind';
 import React, { FC } from 'react';
+import { useActions, useAppState } from '../overmind';
 
 const MessageDialog: FC = () => {
   const { messageDialog } = useAppState().common;

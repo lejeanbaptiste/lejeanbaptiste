@@ -9,11 +9,11 @@ import {
   Tooltip,
   useTheme,
 } from '@mui/material';
-import React, { FC, MouseEvent, useEffect, useState, useRef } from 'react';
+import React, { FC, MouseEvent, useEffect, useRef, useState } from 'react';
 import type { StorageSource, SuportedProviders } from '../@types/types';
+import SettingsDialog from '../components/SettingsDialog';
 import { useActions, useAppState } from '../overmind';
 import { getIcon } from '../utilities/icons';
-import SettingsDialog from '../components/SettingsDialog';
 
 type Source = StorageSource | SuportedProviders;
 

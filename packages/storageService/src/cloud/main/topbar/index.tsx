@@ -1,12 +1,12 @@
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CreateNewFolderOutlinedIcon from '@mui/icons-material/CreateNewFolderOutlined';
 import { Box, Button, Divider, IconButton, Stack, useMediaQuery, useTheme } from '@mui/material';
-import type { SearchResults } from '../../../@types/types';
-import { useActions, useAppState } from '../../../overmind';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
+import type { SearchResults } from '../../../@types/types';
+import { useActions, useAppState } from '../../../overmind';
 import Breadcrumbs from './Breadcrumbs';
 import Filename from './Filename';
 import SearchBar from './searchBar';

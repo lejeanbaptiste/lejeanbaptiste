@@ -7,9 +7,9 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import { useActions } from '../overmind';
 import React, { ChangeEvent, FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions } from '../overmind';
 
 interface CreateRepoDialogProps {
   onCancel: () => void;
