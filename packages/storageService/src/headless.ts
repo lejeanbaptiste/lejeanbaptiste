@@ -1,5 +1,5 @@
-import type { Repository, Resource } from './@types/types';
 import Provider, { ProviderAuth } from './@types/Provider';
+import type { Repository, Resource } from './@types/types';
 
 let provider: Provider | null;
 

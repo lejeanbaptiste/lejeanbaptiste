@@ -1,8 +1,8 @@
 import { LoadingButton } from '@mui/lab';
 import { Button, DialogActions } from '@mui/material';
-import { useActions, useAppState } from '../overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../overmind';
 
 export interface FooterProps {
   onCancel: () => void;

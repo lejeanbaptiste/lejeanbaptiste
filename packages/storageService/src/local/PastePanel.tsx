@@ -1,7 +1,7 @@
 import { Box, TextField, useMediaQuery, useTheme } from '@mui/material';
-import { useActions, useAppState } from '../overmind';
 import React, { ChangeEvent, FC, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../overmind';
 
 const PastePanel: FC = () => {
   const { t } = useTranslation();
@@ -33,7 +33,7 @@ const PastePanel: FC = () => {
         fullWidth
         inputRef={ref}
         inputProps={{
-          'data-testid': 'paste_panel-input'
+          'data-testid': 'paste_panel-input',
         }}
         multiline
         onChange={onChageOnPastePanel}

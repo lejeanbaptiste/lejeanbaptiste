@@ -1,9 +1,9 @@
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { Box, Stack, Typography, useTheme } from '@mui/material';
-import { useActions, useAppState } from '../overmind';
 import React, { createRef, FC, useEffect, useRef, useState } from 'react';
 import Dropzone, { DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../overmind';
 
 const UploadPanel: FC = () => {
   const { t } = useTranslation();

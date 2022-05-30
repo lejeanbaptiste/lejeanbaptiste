@@ -10,9 +10,9 @@ import {
   Switch,
   TextField,
 } from '@mui/material';
-import { useActions } from '../overmind';
 import React, { ChangeEvent, FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions } from '../overmind';
 
 interface CreateRepoDialogProps {
   onCancel: () => void;
@@ -72,7 +72,9 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
       maxWidth="sm"
       open={open}
     >
-      <DialogTitle id="create-repository-title">{t('cloud:createRepo:create_repository')}</DialogTitle>
+      <DialogTitle id="create-repository-title">
+        {t('cloud:createRepo:create_repository')}
+      </DialogTitle>
       <DialogContent>
         <Stack spacing={4}>
           <TextField

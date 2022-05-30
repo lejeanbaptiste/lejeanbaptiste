@@ -1,8 +1,8 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import parse from 'autosuggest-highlight/parse';
-import React, { FC } from 'react';
 import { motion } from 'framer-motion';
+import React, { FC } from 'react';
 
 export interface ResultItem {
   excerpt?: string;
@@ -61,7 +61,7 @@ const ContentMatch: FC<ContentMatchProps> = ({ text_matches }) => {
                 color={part.highlight ? 'text.primary' : 'text.secondary'}
                 sx={{
                   fontWeight: part.highlight ? 700 : 400,
-                  overflowWrap: 'break-word'
+                  overflowWrap: 'break-word',
                 }}
                 variant="caption"
               >

@@ -1,3 +1,4 @@
+import { derived } from 'overmind';
 import type {
   AllowedMimeType,
   DialogType,
@@ -9,7 +10,6 @@ import type {
   StorageSource,
   Submit,
 } from '../../@types/types';
-import { derived } from 'overmind';
 
 type State = {
   allowAllFileTypes: boolean;
@@ -33,6 +33,7 @@ export const state: State = {
     if (!state.allowedMimeTypes) return;
     return state.allowedMimeTypes.map((mimeType) => {
       const parts = mimeType.split('/');
+      if (parts[1] === 'plain') return '';
       return parts[1];
     });
   }),

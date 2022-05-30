@@ -8,9 +8,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useAppState, useActions } from '../overmind';
 import React, { ChangeEvent, FC, FocusEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../overmind';
 
 interface SaveSettingsDialogProps {
   anchor?: HTMLDivElement | null;
@@ -67,7 +67,9 @@ const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open 
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleDone}>{t('cloud:settings:done')}</Button>
+        <Button onClick={handleDone} title="done">
+          {t('cloud:settings:done')}
+        </Button>
       </DialogActions>
     </Popover>
   );

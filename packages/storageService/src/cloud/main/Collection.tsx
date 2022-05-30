@@ -1,7 +1,7 @@
 import { Box, CircularProgress, List, Skeleton, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useActions, useAppState } from '../../overmind';
 import React, { FC, useEffect, useRef, useState } from 'react';
+import { useActions, useAppState } from '../../overmind';
 import { useScrollSpy } from '../hooks/useScrollSpy';
 import Content from './Content';
 import Empty from './Empty';

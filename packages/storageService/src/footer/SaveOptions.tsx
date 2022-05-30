@@ -10,9 +10,9 @@ import {
   Paper,
   Popper,
 } from '@mui/material';
-import { useAppState } from '../overmind';
 import React, { FC, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAppState } from '../overmind';
 
 type SaveType = 'save' | 'pullRequest';
 

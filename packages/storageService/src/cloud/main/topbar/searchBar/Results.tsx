@@ -1,9 +1,9 @@
 import { Box, Button, Divider, ListSubheader, Stack } from '@mui/material';
-import type { Content, SearchResultsBlobs } from '../../../../@types/types';
 import React, { FC, useState } from 'react';
-import Item from './Item';
-import { useAppState } from '../../../../overmind';
 import { useTranslation } from 'react-i18next';
+import type { Content, SearchResultsBlobs } from '../../../../@types/types';
+import { useAppState } from '../../../../overmind';
+import Item from './Item';
 
 const LIST_SIZE = 5;
 
@@ -27,7 +27,7 @@ const Results: FC<ResultsProps> = ({ list, onPrimaryAction, onSecondaryAction, t
         username: owner?.name ?? owner?.username,
       });
     }
-    if (value === 'blobs' && name === 'gitlab') { 
+    if (value === 'blobs' && name === 'gitlab') {
       label = t('cloud:search:content_on_repository', { repository: repository?.name });
     }
     if (value === 'filename') {
