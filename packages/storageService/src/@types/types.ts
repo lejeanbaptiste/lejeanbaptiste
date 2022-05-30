@@ -32,10 +32,7 @@ export type AllowedMimeType =
   | 'application/xml'
   | 'text/csv'
   | 'text/html'
-  | 'text/md'
-  | 'text/tsv'
-  | 'text/txt'
-  | 'text/xml';
+  | 'text/plain';
 
 export interface ISelectedItem {
   organization?: Organization;
