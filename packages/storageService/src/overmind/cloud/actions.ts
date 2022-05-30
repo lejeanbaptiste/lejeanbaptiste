@@ -102,12 +102,12 @@ export const changeProvider = async (
 
 //---------------
 
-type Iinitialize = {
+interface IInitializeParams {
   resource?: Resource | string;
   source?: string;
-};
+}
 
-export const intialize = async ({ state, actions }: Context, initialValues: Iinitialize) => {
+export const initialize = async ({ state, actions }: Context, initialValues: IInitializeParams) => {
   const { resource, source } = initialValues;
 
   if (typeof resource === 'string') {

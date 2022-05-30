@@ -40,7 +40,7 @@ const Main: FC<StorageDialogProps> = ({
 }) => {
   const { cloud } = useAppState();
   const { resource, submit, source } = useAppState().common;
-  const { intialize } = useActions().cloud;
+  const { initialize } = useActions().cloud;
   const { clearSubmit, configure, resetAll, setDialogType, setResource } = useActions().common;
 
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +90,7 @@ const Main: FC<StorageDialogProps> = ({
 
   const init = async () => {
     await configure(config);
-    await intialize({ source: originSource, resource: originResource });
+    await initialize({ source: originSource, resource: originResource });
     setIsLoading(false);
   };
 
