@@ -259,7 +259,7 @@ export default class Github implements Provider {
     for (const org of collection) {
       const orgDetails = await this.getDetailsForUser({ user: org.login });
       if (!orgDetails) continue;
-      organizaions.push({ username: org.login, ...orgDetails });
+      organizaions.push({ username: org.login, description: orgDetails.bio, ...orgDetails });
     }
 
     const headerLinks = response.headers.link ? this.parseHeaderLink(response.headers.link) : null;
@@ -612,7 +612,7 @@ export default class Github implements Provider {
       branch,
     });
 
-    return response;
+    return response as any;
   }
 
   /**

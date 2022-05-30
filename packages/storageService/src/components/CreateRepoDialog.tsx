@@ -68,6 +68,7 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
     <Dialog
       aria-describedby="create-repository"
       aria-labelledby="create-repository-title"
+      data-testid="save:create-repo-dialog"
       fullWidth
       maxWidth="sm"
       open={open}
@@ -82,6 +83,7 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
             autoFocus
             fullWidth
             id="name"
+            inputProps={{ 'data-testid': 'save:create-repo:name-input' }}
             label={t('commons:name')}
             onChange={handleNameChange}
             placeholder={t('cloud:createRepo:repository_name')}
@@ -94,6 +96,7 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
             fullWidth
             helperText={t('cloud:createRepo:description_help')}
             id="description"
+            inputProps={{ 'data-testid': 'save:create-repo:description-input' }}
             label={t('cloud:createRepo:description')}
             onChange={handleDescriptionChange}
             value={description}
@@ -112,6 +115,7 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
       <DialogActions>
         <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
         <LoadingButton
+          data-testid="save:create-repo:create-button"
           disabled={name === ''}
           loading={isLoading}
           onClick={handleCreate}

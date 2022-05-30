@@ -110,6 +110,7 @@ const Topbar: FC<TopbarProps> = ({ onOpenCreateDialog, onChangeSize }) => {
                   color="primary"
                   onClick={showCreateDialog}
                   size="small"
+                  data-testid={`topbar:create-${repository ? 'folder' : 'repository'}`}
                 >
                   <CreateNewFolderOutlinedIcon fontSize="inherit" />
                 </IconButton>
@@ -124,6 +125,7 @@ const Topbar: FC<TopbarProps> = ({ onOpenCreateDialog, onChangeSize }) => {
                   size="small"
                   startIcon={<AddCircleOutlineIcon fontSize="inherit" />}
                   variant="outlined"
+                  data-testid={`topbar:create-${repository ? 'folder' : 'repository'}`}
                 >
                   {repository ? t('cloud:breadcrumbs:folder') : t('cloud:breadcrumbs:repository')}
                 </Button>

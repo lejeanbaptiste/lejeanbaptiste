@@ -62,6 +62,7 @@ const Results: FC<ResultsProps> = ({ list, onPrimaryAction, onSecondaryAction, t
               {showMoreButton && (
                 <Button
                   color="secondary"
+                  data-testid="search-bar:show-more"
                   onClick={handleShowMore}
                   size="small"
                   sx={{

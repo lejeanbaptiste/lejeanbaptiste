@@ -1,7 +1,7 @@
+import { jest } from '@jest/globals';
 import Github from '../../src/providers/Github';
 import Gitlab from '../../src/providers/Gitlab';
 import * as mock from './resource';
-import { jest } from '@jest/globals';
 
 export const spyProviderFunctions = () => {
   spyGithub();
@@ -42,6 +42,8 @@ const spyGithub = () => {
   jest
     .spyOn(provider, 'getLatestCommit')
     .mockImplementation(async () => mock.getLatestCommitResults);
+
+  jest.spyOn(provider, 'createFolder').mockImplementation(async () => mock.createFolderResults);
 };
 
 const spyGitlab = () => {
@@ -83,4 +85,6 @@ const spyGitlab = () => {
   jest
     .spyOn(provider, 'getLatestCommit')
     .mockImplementation(async () => mock.getLatestCommitResults);
+
+  jest.spyOn(provider, 'createFolder').mockImplementation(async () => mock.createFolderResults);
 };
