@@ -16,12 +16,12 @@ const Repo: FC<RepoProps> = ({ repo }) => {
   const { name, description, visibility } = repo;
 
   const handleClick = () => {
-    if (!visibility && visibility === 'private') return;
+    if (visibility === 'private') return;
     setSelectedItem({ repository: repo, type: 'repo' });
   };
 
   const handleDoubleClick = () => {
-    if (!visibility && visibility === 'private') return;
+    if (visibility === 'private') return;
     navigateTo({ repo });
   };
 
