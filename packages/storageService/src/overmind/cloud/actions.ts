@@ -27,6 +27,7 @@ import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { Context } from '..';
 import i18next from '../../i18n';
+import { log } from '../../utilities/log';
 import { isErrorMessage } from '../../utilities/util';
 
 //* INIITIALIZE
@@ -132,7 +133,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   }
 
   if (!resource.provider) {
-    // console.warn('no provider');
+    log.warn('no provider');
     return null;
   }
 

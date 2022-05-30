@@ -1,6 +1,7 @@
 import i18next from 'i18next';
 import en from './locales/en-CA.json';
 import fr from './locales/fr-CA.json';
+import { log } from './utilities/log';
 
 export const resources = { en, fr } as const;
 
@@ -20,7 +21,7 @@ const i18n = i18next.createInstance(
   // We must provide a function as second parameter, otherwise i18next errors
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (error, _t) => {
-    if (error) return console.log(error);
+    if (error) return log.error(error);
   }
 );
 

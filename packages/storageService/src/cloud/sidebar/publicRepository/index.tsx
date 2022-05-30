@@ -6,6 +6,7 @@ import { AnimatePresence } from 'framer-motion';
 import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SearchBar from './searchBar';
+import { log } from '../../../utilities/log';
 import SideButton from '../SideButton';
 
 interface PublicRepositoriesProps {
@@ -59,7 +60,7 @@ const PublicRepositories: FC<PublicRepositoriesProps> = ({ onSelect, selectedMen
 
   const handleClick = (value: string) => {
     const owner = getPublicRepository(value);
-    if (!owner) return console.log('public repository not found');
+    if (!owner) return log.warn('public repository not found');
     onSelect(owner.username);
     setOwner(owner);
   };
