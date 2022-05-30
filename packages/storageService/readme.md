@@ -148,7 +148,7 @@ export const MyFStorageDialog = () => {
   return (
     <StorageDialog
       config={{
-        allowedMimeTypes: ['text/xml'],
+        allowedMimeTypes: ['application/xml'],
         allowPaste: true,
         providers: [
           { name: 'github', access_token: 'github_token' },
@@ -201,7 +201,7 @@ export const MyFStorageDialog = () => {
   return (
     <StorageDialog
       config={{
-        allowedMimeTypes: ['text/xml'],
+        allowedMimeTypes: ['application/xml'],
         defaultCommitMessage: 'Updated via leaf-writer',
         providers: [
           { name: 'github', access_token: 'github_token' },
@@ -350,7 +350,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 
 | Name                 | Type                   | Default  | Description                                                                                                                                                                                                                                              |
 | -------------------- | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| allowedMimeTypes     | Array [`MIMEType`]     | []       | Restrict the file types  allowed. Empty array means no restriction.<br /> <br /> MIME type suported: `'application/json'`, `'application/pdf'`, `'application/xml'`, `'text/csv'`, `'text/html'`, `'text/md'`, `'text/tsv'`, `'text/txt'`, `'text/xml'`. |
+| allowedMimeTypes     | Array [`MIMEType`]     | []       | Restrict the file types  allowed. Empty array means no restriction.<br /> <br /> MIME type suported: `'application/json'`, `'application/pdf'`, `'application/xml'`, `'text/csv'`, `'text/html'`, `'text/plain'`. |
 | allowPaste           | boolean                | true     | `Load dialog`: Allows paste from clipboard.                                                                                                                                                                                                              |
 | defaultCommitMessage | string                 | 'update' | `Save Dialog`: Defines the default commit message.                                                                                                                                                                                                       |
 | providers            | Array [`ProviderAuth`] | []       | Setup Github / Gitlab providers.<br /> <br /> `ProviderAuth`: {<br />name: 'github' \| 'gitlab',<br /> access_token: 'string<br />}                                                                                                                      |

@@ -53,9 +53,9 @@ const UploadPanel: FC = () => {
     if (!allowedMimeTypes) return;
     const mimeTypes: { [key: string]: string[] } = {};
     allowedMimeTypes?.forEach((mimeType) => {
-      const [type, ext] = mimeType.split('/');
-      if (!mimeTypes[type]) mimeTypes[type] = [];
-      if (!mimeTypes[type].includes(ext)) mimeTypes[type].push(`.${ext}`);
+      const [, ext] = mimeType.split('/');
+      if (!mimeTypes[mimeType]) mimeTypes[mimeType] = [];
+      if (!mimeTypes[mimeType].includes(ext)) mimeTypes[mimeType].push(`.${ext}`);
     });
 
     return mimeTypes;
