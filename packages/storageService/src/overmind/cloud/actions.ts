@@ -44,10 +44,6 @@ export const onInitializeOvermind = async ({ state }: Context, _overmind: any) =
   }
 };
 
-export const setIsFetching = ({ state }: Context, value: boolean) => {
-  state.cloud.isFetching = value;
-};
-
 export const setIsLoading = ({ state }: Context, value: boolean) => {
   state.cloud.isLoading = value;
 };
