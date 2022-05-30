@@ -4,6 +4,7 @@ import type * as T from '../@types/types';
 import match from 'autosuggest-highlight/match';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { Buffer } from 'buffer/';
+import { log } from '../utilities/log';
 
 const BASE_URL = 'https://gitlab.com/api/v4';
 
@@ -404,7 +405,7 @@ export default class Gitlab implements Provider {
       searchResults.push(simplifiedItem);
     });
 
-    console.log(searchResults)
+    log.info(searchResults);
 
     return searchResults;
   }
