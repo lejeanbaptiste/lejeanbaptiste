@@ -24,7 +24,7 @@ export const devServer = (app: Express) => {
   // Enable "webpack-hot-middleware"
   // app.use(
   //   webpackHotMiddleware(compiler, {
-  //     log: console.log,
+  //     log: log.info,
   //     path: '/__webpack_hmr',
   //     heartbeat: 10 * 1000,
   //   })

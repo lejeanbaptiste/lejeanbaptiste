@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { KEYCLOACK_BASE_URL, NSSI_BASE_URL } from '../config/config';
 import queryString from 'query-string';
+import { log } from '../utilities/log';
 
 const LINK_ACCOUNTS_CALLBACK_URL = `${window.location.origin}/link-accounts`;
 
@@ -31,7 +32,7 @@ export const KeycloakApi = {
         if (error.response) return error.response;
 
         const errorJson = error.toJSON();
-        console.error(errorJson);
+        log.error(errorJson);
 
         throw new Error(error.message);
       });
@@ -57,7 +58,7 @@ export const NSSIApi = {
         if (error.response) return error.response;
 
         const errorJson = error.toJSON();
-        console.error(errorJson);
+        log.error(errorJson);
 
         throw new Error(error.message);
       });
@@ -88,7 +89,7 @@ export const NSSIApi = {
         if (error.response) return error.response;
 
         const errorJson = error.toJSON();
-        console.error(errorJson);
+        log.error(errorJson);
 
         throw new Error(error.message);
       });

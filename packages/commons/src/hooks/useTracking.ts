@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { log } from '../utilities/log';
 
 declare global {
   interface Window {
@@ -14,7 +15,7 @@ export const useTracking = (trackingId: string | undefined = process.env.GA_MEAS
     const unlisten = () => {
       if (!window.gtag) return;
       if (!trackingId) {
-        console.info(
+        log.warn(
           'Tracking not enabled, as `trackingId` was not given and there is no `GA_MEASUREMENT_ID`.'
         );
         return;

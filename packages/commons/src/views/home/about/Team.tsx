@@ -1,6 +1,7 @@
 import { Box, Stack, Typography } from '@mui/material';
 import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { log } from '../../../utilities/log';
 import TeamProfile, { Profile } from './TeamProfile';
 
 const Team: FC = () => {
@@ -12,7 +13,7 @@ const Team: FC = () => {
     fetch('./content/team.json')
       .then((res) => res.json())
       .then((res: Profile[]) => setTeam(res))
-      .catch((err) => console.log(err));
+      .catch((err) => log.error(err));
   }, []);
 
   return (
