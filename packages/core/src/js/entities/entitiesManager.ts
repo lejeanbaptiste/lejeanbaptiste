@@ -1,9 +1,9 @@
 import $ from 'jquery';
 import { Bookmark } from 'tinymce';
-import Entity, { IannotationRange, IEntityConfig } from './Entity';
-import Writer from '../Writer';
 import { EntityTypes } from '../schema/types';
+import Writer from '../Writer';
 import { log } from './../../utilities';
+import Entity, { IEntityConfig } from './Entity';
 
 interface Iinfo {
   attributes: { [x: string]: any }; //Key/value pairs of attributes

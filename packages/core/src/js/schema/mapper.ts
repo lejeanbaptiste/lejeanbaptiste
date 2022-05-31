@@ -1,9 +1,9 @@
 import $ from 'jquery';
+import { MappingID } from '../../@types';
 import { log } from '../../utilities';
 import Entity from '../entities/Entity';
 import Writer from '../Writer';
-import { MappingID } from '../../@types';
-import { empty, tei, teiLite, orlando, cwrcEntry } from './mappings';
+import { cwrcEntry, empty, orlando, tei, teiLite } from './mappings';
 import type { EntityTypes, IEntityMapping } from './types';
 
 // a list of reserved attribute names that are used by the editor
@@ -287,8 +287,8 @@ class Mapper {
     // attributes
     isCWRC
       ? (obj.attributes = this.writer.tagger.getAttributesForTag(element))
-      //@ts-ignore
-      : $.map(element.attributes, (att) => (obj.attributes[att.name] = att.value));
+      : //@ts-ignore
+        $.map(element.attributes, (att) => (obj.attributes[att.name] = att.value));
 
     // mapping values
     if (mapping) {

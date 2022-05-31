@@ -1,25 +1,17 @@
-import { useEffect, useState } from 'react';
-import type { ContextMenuState } from '../../@types';
-import { useActions, useAppState } from '../../overmind';
-import { v4 as uuidv4 } from 'uuid';
-import type { Item as ItemType } from './types';
 import type {
   ElementDetail,
-  GetValidTagsAtParametersSelection,
   GetValidTagsAtParameters,
-  } from '@cwrc/leafwriter-validator';
-import Writer from '../../js/Writer';
-import type { Action } from '../../js/tagger';
+  GetValidTagsAtParametersSelection,
+} from '@cwrc/leafwriter-validator';
+import { useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import type { ContextMenuState } from '../../@types';
 import { EntityTypes } from '../../js/schema/types';
-
-const logStyle = `
-  color: #333;
-  font-weight: bold;
-  background-color: #ededed;
-  padding: 5px;
-  border-radius: 5px
-`;
+import type { Action } from '../../js/tagger';
+import Writer from '../../js/Writer';
+import { useActions, useAppState } from '../../overmind';
 import { log } from './../../utilities';
+import type { Item as ItemType } from './types';
 
 export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuState) => {
   const actions = useActions();
@@ -179,7 +171,11 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
     const elementChildren = Array.from(context.element.parentNode.childNodes);
     const index = elementChildren.findIndex((child) => child === context.element) + 1;
 
-    const selection: GetValidTagsAtParametersSelection = { type: 'after', xpath, containerIndex: index };
+    const selection: GetValidTagsAtParametersSelection = {
+      type: 'after',
+      xpath,
+      containerIndex: index,
+    };
     const request: GetValidTagsAtParameters = { xpath, index, selection };
 
     return request;
@@ -197,7 +193,10 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
 
     const selectionXpath = writer.utilities.getElementXPath(context.element);
 
-    const selection: GetValidTagsAtParametersSelection = { type: 'around', xpath: selectionXpath ?? '' };
+    const selection: GetValidTagsAtParametersSelection = {
+      type: 'around',
+      xpath: selectionXpath ?? '',
+    };
     const request: GetValidTagsAtParameters = { xpath, index, selection };
 
     return request;
@@ -212,7 +211,10 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
     const index = 0;
     const selectionXpath = writer.utilities.getElementXPath(context.element);
 
-    const selection: GetValidTagsAtParametersSelection = { type: 'inside', xpath: selectionXpath ?? '' };
+    const selection: GetValidTagsAtParametersSelection = {
+      type: 'inside',
+      xpath: selectionXpath ?? '',
+    };
     const request: GetValidTagsAtParameters = { xpath, index, selection };
 
     return request;

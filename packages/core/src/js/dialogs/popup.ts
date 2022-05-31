@@ -118,7 +118,7 @@ class Popup implements ILWDialog {
     //   );
     // }
 
-     // ! Deprecated
+    // ! Deprecated
     // const urlKeys = this.writer.schemaManager.mapper.getUrlAttributes();
     // this.linkSelector = '';
 
@@ -131,14 +131,14 @@ class Popup implements ILWDialog {
     //   body.on('mouseover', this.linkSelector, (event: JQuery.Event) => this.linkMouseover(event));
     // }
 
-     // ! Deprecated
+    // ! Deprecated
     // body.on('mouseover', this.noteMouseoverSelector, (event: JQuery.Event) =>
     //   this.noteMouseover(event)
     // );
 
     // body.on('click', this.noteClickSelector, (event: JQuery.Event) => this.noteClick(event));
 
-     // ! Deprecated
+    // ! Deprecated
     body.on('contextmenu', () => this.hidePopup());
   }
 
@@ -228,7 +228,7 @@ class Popup implements ILWDialog {
     const popupId = target.getAttribute('id') || target.getAttribute('name');
     this.setCurrentTag(popupId);
 
-     // ! Deprecated
+    // ! Deprecated
     // const popKeys = this.writer.schemaManager.mapper.getPopupAttributes();
     // let popText = null;
 
@@ -250,7 +250,7 @@ class Popup implements ILWDialog {
     const entityId = target.getAttribute('id') || target.getAttribute('name');
     this.setCurrentTag(entityId);
 
-      // ! Deprecated
+    // ! Deprecated
     // const urlKeys = this.writer.schemaManager.mapper.getUrlAttributes();
     // let url = null;
 
@@ -320,7 +320,7 @@ class Popup implements ILWDialog {
 
     const body = $(editor.getBody());
 
-     // ! Deprecated
+    // ! Deprecated
     // body.off('mouseover', this.attributeSelector, (event: JQuery.Event) =>
     //   this.attributeMouseover(event)
     // );

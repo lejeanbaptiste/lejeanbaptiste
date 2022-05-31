@@ -267,7 +267,7 @@ class StructureTree {
       $.vakata.dnd.stop(event);
     }
     data.helper.appendTo(this.writer.layoutManager.getContainer());
-  }
+  };
 
   private handleDnDMove = (event: any, data: any) => {
     // TODO fullscreen support
@@ -277,7 +277,7 @@ class StructureTree {
     }
     // const o = marker.offset();
     // marker.offset({top: p.top-60, left: p.left-2});
-  }
+  };
 
   /**
    * Updates the tree to reflect the document structure.
@@ -665,7 +665,7 @@ class StructureTree {
     }
 
     return true;
-  }
+  };
 
   private onNodeSelect = (event: any, data: any) => {
     // if (this.ignoreSelect) return;
@@ -709,7 +709,7 @@ class StructureTree {
     }
 
     this.selectionType = null;
-  }
+  };
 
   private onDragDrop(data: any, isCopy: boolean) {
     const dragNode = data.node;

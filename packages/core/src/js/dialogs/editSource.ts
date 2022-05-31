@@ -9,7 +9,6 @@ import { logEnabledFor } from './../../utilities';
 class EditSource {
   readonly writer: Writer;
   readonly $edit: JQuery<HTMLElement>;
-  
 
   constructor(writer: Writer, parentEl: JQuery<HTMLElement>) {
     this.writer = writer;

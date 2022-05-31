@@ -2,6 +2,7 @@ import fscreen from 'fscreen';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/tabs';
 import 'layout-jquery3';
+import Writer from '../Writer';
 import { log } from './../../utilities';
 import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
@@ -10,7 +11,6 @@ import Relations from './panels/relations';
 import Selection from './panels/selection';
 import StructureTree from './panels/structureTree';
 import Validation from './panels/validation';
-import Writer from '../Writer';
 
 interface InitConfigProps {
   editorId: string;

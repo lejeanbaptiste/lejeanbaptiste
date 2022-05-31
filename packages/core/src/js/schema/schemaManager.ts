@@ -1,6 +1,6 @@
-import type { MappingID } from '../../@types';
 import css from 'css';
 import $ from 'jquery';
+import type { MappingID } from '../../@types';
 import { log } from '../../utilities';
 import Writer from '../Writer';
 import Mapper from './mapper';
@@ -818,7 +818,7 @@ class SchemaManager {
       });
 
       //if loaded, break the loop and return
-      if (!response) return
+      if (!response) return;
       if (response.status === 200) {
         css = await response.text();
         this.cssUrl = url; // redefine schema manager css based on the available url

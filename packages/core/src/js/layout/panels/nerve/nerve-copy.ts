@@ -1,12 +1,10 @@
+import axios from 'axios';
 import $ from 'jquery';
-
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/selectmenu';
 import 'jquery-ui/ui/widgets/tooltip';
 import { log } from '../../../../utilities';
 import DialogForm from '../../../dialogs/dialogForm/dialogForm';
-
-import axios from 'axios';
 
 interface NerveConfig {
   writer: any;
@@ -80,7 +78,7 @@ const iconsMap = new Map([
  * @param {String} config.nerveUrl
  */
 function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
-  if (nerveUrl === undefined) console.error('Nerve: no nerveUrl specified!');
+  if (nerveUrl === undefined) log.error('Nerve: no nerveUrl specified!');
 
   const id = parentId;
 
@@ -676,7 +674,6 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
     const type: string = entity.getType();
     const content: string = entity.getContent();
     const hasMatching = getMatchesForEntity(entity.getId()).length > 0;
-    
 
     const acceptAllMatchesComponent =
       hasMatching === true
@@ -1315,9 +1312,7 @@ const doLookup = (writer: any, query: string, type: string, callback: Function) 
   // // cD.showCreateNewButton(false);
   // // cD.showNoLinkButton(false);
   // // cD.showEditButton(false);
-
   // if (type === 'org') type = 'organization';
-
   // cD.popSearch[type]({
   //   query: query,
   //   parentEl: writer.dialogManager.getDialogWrapper(),

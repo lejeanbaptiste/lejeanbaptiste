@@ -1,9 +1,10 @@
-import { EntityLink } from '../components/entityLookups/types';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/tooltip';
 import Cookies from 'js-cookie';
+import { EntityLink } from '../components/entityLookups/types';
 import '../lib/jquery/jquery.popup';
+// import Triple from './dialogs/triple.js';
 import { log } from './../utilities';
 import AttributesEditor from './dialogs/attributesEditor/attributesEditor';
 import CopyPaste from './dialogs/copyPaste';
@@ -15,7 +16,6 @@ import Popup from './dialogs/popup';
 import Translation from './dialogs/translation';
 import type { ILWDialog } from './dialogs/types';
 import Writer from './Writer';
-// import Triple from './dialogs/triple.js';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
