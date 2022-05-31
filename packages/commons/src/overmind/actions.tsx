@@ -13,11 +13,11 @@ import type {
 import { setIndentityProvider, suportedStorageProviders } from '@src/services';
 import AuthenticationService from '@src/services/AuthenticationService';
 import { supportedLanguages } from '@src/utilities/util';
+import { VariantType } from 'notistack';
 import React from 'react';
 import { Context } from '.';
 import { log } from '../utilities/log';
 import { ILinkedAccount } from './effects';
-import { VariantType } from 'notistack';
 
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

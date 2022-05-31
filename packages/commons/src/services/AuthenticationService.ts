@@ -20,7 +20,7 @@ const keycloak = Keycloak({
 
 const init = async () => {
   const { origin } = window.location;
-  
+
   const sessionAuthenticated = await keycloak
     .init({
       onLoad: 'check-sso',

@@ -1,9 +1,9 @@
-import path from 'path';
 import express from 'express';
 import helmet from 'helmet';
+import path from 'path';
+import schemaRouter from './routes/schema';
 
 const publicPath = path.join(__dirname, '..', 'dist');
-import schemaRouter from './routes/schema';
 
 const server = express();
 
@@ -11,12 +11,12 @@ server.use(express.json({ limit: '5mb' })); // support json encoded bodies
 server.use('/schema', schemaRouter);
 
 // dev server
-const loadDevServer  = async () => {
+const loadDevServer = async () => {
   const { devServer } = await import('./dev');
   devServer(server);
 };
 
-if (process.env.WEBPACK_DEV === 'true') loadDevServer ();
+if (process.env.WEBPACK_DEV === 'true') loadDevServer();
 
 server.use(helmet.frameguard({ action: 'SAMEORIGIN' }));
 

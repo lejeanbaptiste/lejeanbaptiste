@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { log } from '../../utilities/log';
 import type { AuthenticateProp, IdentityProvider } from '../IdentityProvider';
 
@@ -35,11 +35,11 @@ const authenticate = ({ access_token, IDPTokens, userId, userName }: Authenticat
 };
 
 const getAuthenticatedUser = async (userId: string) => {
-  const response: AxiosResponse<any> | null = await axiosApi.get('/user').catch((error) => {
+  const response = await axiosApi.get('/user').catch((error) => {
     log.error(error);
     return null;
   });
-  
+
   if (!response) return null;
 
   const { data } = response;
