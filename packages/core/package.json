@@ -71,6 +71,7 @@
     "jstree": "^3.3.12",
     "layout-jquery3": "^1.8.5",
     "lodash": "^4.17.21",
+    "loglevel": "^1.8.0",
     "luxon": "^2.4.0",
     "mdi-material-ui": "^7.3.0",
     "monaco-editor": "^0.33.0",

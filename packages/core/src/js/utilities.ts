@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import ObjTree from '../lib/objtree/ObjTree';
+import { log } from './../utilities';
 import Writer from './Writer';
 
 export const capitalizeFirstLetter = (string: string) => {
@@ -26,7 +27,7 @@ class Utilities {
     try {
       xmlString = new XMLSerializer().serializeToString(xmlData);
     } catch (error) {
-      console.warn(error);
+      log.warn(error);
     }
     return xmlString;
   }
@@ -36,7 +37,7 @@ class Utilities {
     const parsererror = doc.querySelector('parsererror');
     if (parsererror) {
       //@ts-ignore
-      console.error(`utilities.stringToXML parse error: ${parsererror.innerText}`);
+      log.error(`utilities.stringToXML parse error: ${parsererror.innerText}`);
       return null;
     }
     return doc;
@@ -223,7 +224,7 @@ class Utilities {
         }
       } else {
         $('[data-mce-bogus]', node.parent()).remove();
-        // console.log(nodeEl);
+        // log.info(nodeEl);
         rng.selectNode(nodeEl);
       }
 
@@ -405,7 +406,7 @@ class Utilities {
       //@ts-ignore
       evalResult = doc.evaluate(xpath, contextNode, nsResolver, XPathResult.ANY_TYPE, null);
     } catch (error) {
-      console.warn(`utilities.evaluateXPath: there was an error evaluating the xpath ${error}`);
+      log.warn(`utilities.evaluateXPath: there was an error evaluating the xpath ${error}`);
       return null;
     }
 

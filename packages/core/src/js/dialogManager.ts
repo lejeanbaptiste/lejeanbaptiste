@@ -4,6 +4,7 @@ import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/tooltip';
 import Cookies from 'js-cookie';
 import '../lib/jquery/jquery.popup';
+import { log } from './../utilities';
 import AttributesEditor from './dialogs/attributesEditor/attributesEditor';
 import CopyPaste from './dialogs/copyPaste';
 import EntitiesDialogs from './dialogs/entities';
@@ -184,7 +185,7 @@ class DialogManager {
     const loadSchemaDialogs = () => {
       const schemaMappingsId = this.writer.schemaManager.getCurrentSchema()?.schemaMappingsId;
       if (!schemaMappingsId) {
-        console.warn('schemaMappingsId is undefined');
+        log.warn('schemaMappingsId is undefined');
         return;
       }
 
@@ -224,7 +225,7 @@ class DialogManager {
   show(type: string, config?: object) {
     const dialog = this.dialogs.get(type) ?? this.schemaDialogs.get(type);
     if (!dialog) {
-      console.warn(`Dialog ${type} not found!`);
+      log.warn(`Dialog ${type} not found!`);
       return;
     }
 

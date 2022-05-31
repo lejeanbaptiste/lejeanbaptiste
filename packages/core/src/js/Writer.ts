@@ -3,6 +3,7 @@ import tinymce from 'tinymce';
 import { ConfigLegacy, LeafWriterEditor, LWDocument, onSaveRequestResults } from '../@types';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
+import { log } from './../utilities';
 import Converter from './conversion/converter';
 import DialogManager from './dialogManager';
 import { ITriple } from './dialogs/triple';
@@ -109,7 +110,7 @@ class Writer extends EventManager {
       if (rootUrl.endsWith('//')) rootUrl = rootUrl.slice(0, -1);
       this.rootUrl = rootUrl;
 
-      console.info('using default leafRootUrl', rootUrl);
+      log.info('using default leafRootUrl', rootUrl);
     } else {
       this.rootUrl = config.cwrcRootUrl;
     }
@@ -125,7 +126,7 @@ class Writer extends EventManager {
     if (config.allowOverlap) this.allowOverlap = config.allowOverlap;
     if (this.allowOverlap && this.mode === this.XML) {
       this.allowOverlap = false;
-      console.warn(
+      log.warn(
         "Mode set to XML and overlap allowed. Disabling overlap since XML doesn't allow it."
       );
     }
@@ -150,7 +151,7 @@ class Writer extends EventManager {
         // clear the editor first (large docs can cause the browser to freeze)
         this.utilities.getRootTag().remove();
       } catch (e) {
-        console.log(e);
+        log.log(e);
       }
     });
 
@@ -276,7 +277,7 @@ class Writer extends EventManager {
     const document = { file: { ...resource }, url, xml: resource.content };
 
     if (!this.onSaveRequest) {
-      console.warn('No save function');
+      log.warn('No save function');
       return;
     }
 
@@ -358,7 +359,7 @@ class Writer extends EventManager {
    * Destroy the Leaf-Writer
    */
   destroy() {
-    // console.info('destroying', this.editor?.id);
+    // log.info('destroying', this.editor?.id);
 
     const editor = this.editor;
     if (!editor) return;
@@ -367,7 +368,7 @@ class Writer extends EventManager {
       // clear the editor first (large docs can cause the browser to freeze)
       $(editor.getBody()).empty();
     } catch (e) {
-      console.log(e);
+      log.info(e);
     }
 
     window.removeEventListener('keydown', (event: KeyboardEvent) =>

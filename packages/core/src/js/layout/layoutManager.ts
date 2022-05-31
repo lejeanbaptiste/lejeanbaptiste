@@ -2,6 +2,7 @@ import fscreen from 'fscreen';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/tabs';
 import 'layout-jquery3';
+import { log } from './../../utilities';
 import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
 import Nerve from './panels/nerve';
@@ -202,7 +203,7 @@ class LayoutManager {
         //@ts-ignore
         onresize_end: (region, pane, state, options) => {
           // // ! DEPRECATED resizeEditor might not be necessary anymore.
-          // console.info(
+          // log.info(
           //   '%c"resizeEditor" DEPRECATED: might not be necessary anymore.',
           //   'color: gray;'
           // );
@@ -402,7 +403,7 @@ class LayoutManager {
     this.modules.forEach((module) => {
       module.destroy
         ? module.destroy()
-        : console.warn(`LayoutManager: no destroy method for ${module}`);
+        : log.warn(`LayoutManager: no destroy method for ${module}`);
     });
 
     //@ts-ignore

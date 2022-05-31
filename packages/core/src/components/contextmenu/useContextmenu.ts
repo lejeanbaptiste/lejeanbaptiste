@@ -19,6 +19,7 @@ const logStyle = `
   padding: 5px;
   border-radius: 5px
 `;
+import { log } from './../../utilities';
 
 export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuState) => {
   const actions = useActions();
@@ -233,7 +234,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
         displayName: name,
         description: fullName,
         onClick: () => {
-          if (context.tagId === undefined) return console.warn('No Tag selected');
+          if (context.tagId === undefined) return log.warn('No Tag selected');
           writer.editor.currentBookmark = writer.editor?.selection.getBookmark(1);
 
           context.tagId;
@@ -322,8 +323,6 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
         context.isEntity = context.element.getAttribute('_entity') !== null;
         context.useSelection = context.useSelection ? context.useSelection : false;
       }
-
-      // console.log(`${'%c'}Context Menu for ${context.tagName}`, logStyle);
 
       const elementXpath = writer.utilities.getElementXPath(context.element);
       if (!elementXpath) return false;

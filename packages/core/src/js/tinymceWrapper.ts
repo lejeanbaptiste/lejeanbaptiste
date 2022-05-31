@@ -2,6 +2,7 @@
 import $ from 'jquery';
 import tinymce, { TinyMCE } from 'tinymce/tinymce';
 import { LeafWriterEditor } from '../@types';
+import { log } from './../utilities';
 import Writer from './Writer';
 
 declare global {
@@ -162,8 +163,8 @@ export const tinymceWrapperInit = function ({
         editor.on('Change', onChangeHandler);
         editor.on('Undo', onUndoHandler);
         editor.on('Redo', onRedoHandler);
-        editor.on('BeforeAddUndo', (event) => {
-          // console.log('before add undo');
+        editor.on('BeforeAddUndo', () => {
+          /*log.info('before add undo'); */
         });
         editor.on('NodeChange', onNodeChangeHandler);
         editor.on('copy', onCopyHandler);
@@ -209,7 +210,7 @@ export const tinymceWrapperInit = function ({
   // writer listeners
 
   writer.event('contentChanged').subscribe(() => {
-    // console.log('contentChanged');
+    /* log.info('contentChanged'); */
   });
 
   writer.event('documentLoaded').subscribe(() => {
@@ -263,12 +264,12 @@ export const tinymceWrapperInit = function ({
   };
 
   const onUndoHandler = (event: any) => {
-    console.log('undoHandler', event);
+    log.info('undoHandler', event);
     writer.event('contentChanged').publish();
   };
 
   const onRedoHandler = (event: any) => {
-    console.log('redoHandler', event);
+    log.info('redoHandler', event);
     writer.event('contentChanged').publish();
   };
 
@@ -383,7 +384,7 @@ export const tinymceWrapperInit = function ({
     if (event.code === 'Enter') {
       const node = writer.editor?.currentNode; // the new element inserted by tinymce
       if (!node) {
-        console.warn('tinymceWrapper: user pressed enter but no new node found');
+        log.warn('tinymceWrapper: user pressed enter but no new node found');
       } else {
         if (event.shiftKey) {
           // TODO replace linebreaks inserted on shift+enter with schema specific linebreak tag

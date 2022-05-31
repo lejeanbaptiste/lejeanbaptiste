@@ -10,6 +10,7 @@ import Cookies from 'js-cookie';
 import { Context } from '../';
 import { ConfigLegacy, Schema } from '../../@types';
 import { debounce } from 'lodash';
+import { log } from './../../utilities';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
@@ -36,7 +37,7 @@ export const initiateLookupServices = async (
   { state, actions, effects }: Context,
   serviceType?: 'custom' | 'nssi'
 ) => {
-  // console.log(serviceType);
+  // log.info(serviceType);
   // serviceType = 'nssi';
   const _token = await state.editor.nssiToken;
   const token = await actions.editor.getNssiToken();
@@ -99,7 +100,7 @@ export const initiateLookupSources = async (
     // * geonames warning
     if (authorityId === 'geonames') {
       if (!authorityConfig.config?.username || authorityConfig.config.username === '') {
-        console.warn(
+        log.warn(
           'Lookups config: You must define a username to be able to make requests to Geonames'
         );
         return;

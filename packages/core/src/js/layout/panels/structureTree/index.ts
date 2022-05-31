@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import 'jstree';
+import { log } from '../../../../utilities';
 import Writer from '../../../Writer';
 
 interface StructureTreeProps {
@@ -126,7 +127,7 @@ class StructureTree {
     this.$tree.on('move_node.jstree', (event: any, data: any) => this.onDragDrop(data, false));
 
     this.$tree.on('keydown.jstree', (event: any) => {
-      //console.log(event);
+      //log.info(event);
     });
 
     this.$tree.on('ready.jstree', (event: any, data: any) => {
@@ -560,7 +561,7 @@ class StructureTree {
     if (this.writer.isReadOnly === false && node.attr('_entity')) {
       const id = node.attr('name');
       if (id === undefined) {
-        console.warn('structureTree: no id for', tag);
+        log.warn('structureTree: no id for', tag);
         return null;
       }
 
@@ -580,7 +581,7 @@ class StructureTree {
       ) {
         const id = node.attr('id');
         if (!id) {
-          console.warn('structureTree: no id for', tag);
+          log.warn('structureTree: no id for', tag);
           return null;
         }
 

@@ -2,6 +2,7 @@ import $ from 'jquery';
 import Writer from '../../Writer';
 import AttributeWidget from '../attributeWidget/attributeWidget';
 import type { ILWDialog, ILWDialogConfigParams } from '../types';
+import { log } from './../../../utilities';
 
 class AttributesEditor implements ILWDialog {
   readonly writer: Writer;
@@ -138,7 +139,7 @@ class AttributesEditor implements ILWDialog {
         //@ts-ignore
         $('ins', this.$schemaDialog).tooltip('destroy');
       } catch (e) {
-        if (console) console.log('error destroying tooltip');
+        if (console) log.info('error destroying tooltip');
       }
 
       this.currentCallback?.call(this.writer, attributes);
@@ -159,7 +160,7 @@ class AttributesEditor implements ILWDialog {
         //@ts-ignore
         $('ins', this.$schemaDialog).tooltip('destroy');
       } catch (e) {
-        if (console) console.log('error destroying tooltip');
+        if (console) log.info('error destroying tooltip');
       }
 
       this.currentCallback?.call(this.writer, null);

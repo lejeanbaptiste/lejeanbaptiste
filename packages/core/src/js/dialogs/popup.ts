@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import '../../lib/jquery/jquery.popup';
 import Writer from '../Writer';
+import { log } from './../../utilities';
 import type { ILWDialog, ILWDialogConfigParams } from './types';
 
 class Popup implements ILWDialog {
@@ -332,7 +333,7 @@ class Popup implements ILWDialog {
   }
 
   show() {
-    console.warn("dialogManager.popup: shouldn't call show directly");
+    log.warn("dialogManager.popup: shouldn't call show directly");
   }
 
   destroy() {

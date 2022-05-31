@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { IResult } from '../../../components/entityLookups/types';
+import { log } from './../../../utilities';
 import ILookupServiceApi, { IFindParams } from './type';
 
 type NamedEntityType =
@@ -86,8 +87,7 @@ export default class Viaf implements ILookupServiceApi {
         Something wrong with the call to DBPedia, possibly a problem with the network or the server.
         HTTP error: ${response.statusText}
       `;
-      // throw new Error(errorMsg);
-      console.warn(errorMsg);
+      log.warn(errorMsg);
       return [];
     }
     const data: IVIAFResults = response.data;

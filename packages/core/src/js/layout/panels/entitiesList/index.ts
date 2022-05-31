@@ -4,6 +4,7 @@ import 'jquery-ui/ui/effect';
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/selectmenu';
 import 'jquery-ui/ui/widgets/tooltip';
+import { log } from '../../../../utilities';
 import type { SortingTypes } from '../../../entities/entitiesManager';
 // import Mapper from '../../../schema/mapper';
 import { RESERVED_ATTRIBUTES } from '../../../schema/mapper';
@@ -385,7 +386,7 @@ class EntitiesList {
       const value = entityAttributes[name];
 
       if (!value) {
-        console.warn(`entitiesList: undefined value for ${name}in `, entity);
+        log.warn(`entitiesList: undefined value for ${name}in `, entity);
         continue;
       }
 
