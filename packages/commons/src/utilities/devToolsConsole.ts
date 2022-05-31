@@ -1,3 +1,8 @@
+import loglevel from 'loglevel';
+
+export const log = loglevel.getLogger('commons-devtools');
+log.setLevel('INFO')
+
 const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 const titleStyle = `
@@ -12,7 +17,7 @@ const textStyle = `
   letter-spacing: .05em;
 `;
 
-console.log(`
+log.info(`
 %cLEAF-Writer
 %c
 The semantic online editor developed by the Canadian Writing Research Collaboratory

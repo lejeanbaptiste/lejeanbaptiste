@@ -15,6 +15,7 @@ import AuthenticationService from '@src/services/AuthenticationService';
 import { supportedLanguages } from '@src/utilities/util';
 import React from 'react';
 import { Context } from '.';
+import { log } from '../utilities/log';
 import { ILinkedAccount } from './effects';
 import { VariantType } from 'notistack';
 
@@ -92,10 +93,10 @@ export const initiateUserProvider = async ({ state, actions }: Context) => {
 
 export const setupMainIdentityProvider = async ({ state, actions, effects }: Context) => {
   const token = await actions.getLincsAauthenticationToken();
-  if (!token) return console.warn('No Authentication token');
+  if (!token) return log.warn('No Authentication token');
 
   const identity_provider = AuthenticationService.getIdentityProvider();
-  if (!identity_provider) return console.warn('No identity_provider');
+  if (!identity_provider) return log.warn('No identity_provider');
 
   const IDPTokens = await effects.KeycloakApi.getExternalIDPTokens(
     'lincs',
@@ -109,7 +110,7 @@ export const setupMainIdentityProvider = async ({ state, actions, effects }: Con
     return;
   }
 
-  if (!IDPTokens) return console.warn('No identity_provider tokens');
+  if (!IDPTokens) return log.warn('No identity_provider tokens');
 
   const provider = setIndentityProvider({ IDPTokens, providerName: identity_provider });
 
@@ -140,10 +141,10 @@ export const setUserProfile = async ({ state, actions }: Context) => {
 
 export const setupStorageProvider = async ({ state, actions }: Context) => {
   const token = await actions.getLincsAauthenticationToken();
-  if (!token) return console.warn('No Authentication token');
+  if (!token) return log.warn('No Authentication token');
 
   const identity_provider = AuthenticationService.getIdentityProvider();
-  if (!identity_provider) return console.warn('No identity_provider');
+  if (!identity_provider) return log.warn('No identity_provider');
 
   if (!state.identityProviders) return;
 
@@ -164,7 +165,7 @@ export const setupStorageProvider = async ({ state, actions }: Context) => {
 
 export const linkAccount = async ({ actions, effects }: Context, identity_provider: string) => {
   const token = await actions.getLincsAauthenticationToken();
-  if (!token) return console.warn('No Authentication token');
+  if (!token) return log.warn('No Authentication token');
 
   const linkAccountUrl = await effects.NSSIApi.getLinkAccountUrl(identity_provider, token);
   if (typeof linkAccountUrl !== 'string') {
@@ -201,7 +202,7 @@ export const _emitNotification = async (
 export const getLinkedAccounts = async ({ state, actions, effects }: Context) => {
   if (!state.user) return;
   const token = await actions.getLincsAauthenticationToken();
-  if (!token) return console.warn('No Authentication token');
+  if (!token) return log.warn('No Authentication token');
 
   const linkedAccounts = await effects.NSSIApi.getLinkedAccounts(token);
   if ('error' in linkedAccounts) {
@@ -233,7 +234,7 @@ export const _linkIdentityProvider = async (
   if (!state.user) return;
 
   const token = await actions.getLincsAauthenticationToken();
-  if (!token) return console.warn('No Authentication token');
+  if (!token) return log.warn('No Authentication token');
 
   const IDPTokens = await effects.KeycloakApi.getExternalIDPTokens('lincs', providerName, token);
   if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) {
@@ -242,7 +243,7 @@ export const _linkIdentityProvider = async (
     return;
   }
 
-  if (!IDPTokens) return console.warn('No identity_provider tokens');
+  if (!IDPTokens) return log.warn('No identity_provider tokens');
 
   const provider = setIndentityProvider({ IDPTokens, providerName, userId, userName });
 

@@ -1,5 +1,6 @@
 import Keycloak, { KeycloakTokenParsed } from 'keycloak-js';
 import { KEYCLOACK_BASE_URL } from '../config/config';
+import { log } from '../utilities/log';
 
 //Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
 
@@ -26,7 +27,7 @@ const init = async () => {
       silentCheckSsoRedirectUri: `${origin}/silent-check-sso.html`,
       pkceMethod: 'S256',
     })
-    .catch(() => console.warn('failed to contact keycloak'))
+    .catch(() => log.error('failed to contact keycloak'));
 
   return sessionAuthenticated;
 };

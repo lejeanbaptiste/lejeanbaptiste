@@ -13,6 +13,7 @@ import App from './App';
 import './i18n';
 import { config } from './overmind';
 import './utilities/devToolsConsole';
+import './utilities/log';
 
 const overmind = createOvermind(config, {
   name: 'homepage',

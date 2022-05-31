@@ -25,8 +25,8 @@ server.use(express.static(publicPath));
 // catch all
 // * turn off on dev. reason HMR doesn't work with this on.
 // if (process.env.NODE_ENV !== 'development') {
-  server.get('*', (req, res) => {
-  // console.log('catch all');
+server.get('*', (req, res) => {
+  // log.info('catch all');
   // res.set('Content-Type', 'text/event-stream');
   res.status(200).sendFile(path.join(publicPath, 'index.html'));
 });
