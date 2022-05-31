@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
-import { KEYCLOACK_BASE_URL, NSSI_BASE_URL } from '../config/config';
 import queryString from 'query-string';
+import { KEYCLOACK_BASE_URL, NSSI_BASE_URL } from '../config/config';
 import { log } from '../utilities/log';
 
 const LINK_ACCOUNTS_CALLBACK_URL = `${window.location.origin}/link-accounts`;
