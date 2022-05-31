@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import { log } from '../../utilities';
 import Entity from '../entities/Entity';
 import Writer from '../Writer';
 import { MappingID } from '../../@types';
@@ -189,7 +190,7 @@ class Mapper {
           break;
 
         default:
-          console.warn(
+          log.warn(
             `mapper.getReverseMapping.cleanupMappings: cannot remove node with unknown type ${match}`
           );
           break;
@@ -244,7 +245,7 @@ class Mapper {
 
         // hack: if innerResult return undefined, result is also undefined
         if (!innerResult) {
-          console.warn(
+          log.warn(
             `mapper.getReverseMapping.getValueFromXPath: cannot get match for unrecognizable xpath ${xpath}`
           );
           result = undefined;
@@ -252,7 +253,7 @@ class Mapper {
           result = innerResult.match;
         }
       } else {
-        console.warn(
+        log.warn(
           `mapper.getReverseMapping.getValueFromXPath: cannot get match for unrecognizable xpath ${xpath}`
         );
       }
@@ -520,7 +521,7 @@ class Mapper {
     const _tagAttr = tag.getAttribute('_tag');
 
     if (!entityType) {
-      console.warn(`mapper.convertTagToEntity: tag ${_tagAttr} cannot be converted to an entity!`);
+      log.warn(`mapper.convertTagToEntity: tag ${_tagAttr} cannot be converted to an entity!`);
       return;
     }
 

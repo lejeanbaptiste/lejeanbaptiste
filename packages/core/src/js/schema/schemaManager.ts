@@ -1,6 +1,7 @@
 import type { MappingID } from '../../@types';
 import css from 'css';
 import $ from 'jquery';
+import { log } from '../../utilities';
 import Writer from '../Writer';
 import Mapper from './mapper';
 import * as schemaNavigator from './schemaNavigator';
@@ -416,7 +417,7 @@ class SchemaManager {
     while (parentTag === null) {
       parentEl = parentEl?.parentElement ?? null;
       if (parentEl === null) {
-        console.warn('schemaManager.wouldDeleteInvalidate: outside of document!');
+        log.warn('schemaManager.wouldDeleteInvalidate: outside of document!');
         return false;
       }
       parentTag = parentEl.getAttribute('_tag');
@@ -572,7 +573,7 @@ class SchemaManager {
         : url;
 
       const response = await fetch(urlToFetch).catch((err) => {
-        console.log(err);
+        log.log(err);
       });
 
       // if loaded, convert to XML, break the loop and return
@@ -697,7 +698,7 @@ class SchemaManager {
     this.schemaJSON = this.writer.utilities.xmlToJSON(schemaGrammar);
 
     if (this.schemaJSON === null) {
-      console.warn('schemaManager.loadSchema: schema XML could not be converted to JSON');
+      log.warn('schemaManager.loadSchema: schema XML could not be converted to JSON');
     }
 
     schemaNavigator.setSchemaJSON(this.schemaJSON);
@@ -813,7 +814,7 @@ class SchemaManager {
         : url;
 
       const response = await fetch(urlToFetch).catch((err) => {
-        console.log(err);
+        log.info(err);
       });
 
       //if loaded, break the loop and return

@@ -1,5 +1,6 @@
 import { Authority, ILookupService, IResult } from '../../components/entityLookups/types';
 import ILookupServiceApi, { IFindParams } from './services/type';
+import { log } from './../../utilities';
 
 type Sources = { [key: string]: ILookupServiceApi };
 
@@ -59,7 +60,7 @@ class Api {
   async useNssi({ query, type }: IFindParams) {
     if (this.nssi) {
       const response = await this.nssi.find({ query, type });
-      // console.log(response)
+      // log.info(response)
     }
   }
 }

@@ -1,5 +1,6 @@
 // a wrapper for the pub/sub pattern described here: http://api.jquery.com/jQuery.Callbacks/
 import $ from 'jquery';
+import { log } from './../utilities';
 
 interface IEvents {
   [x: string]: IEvent;
@@ -289,7 +290,7 @@ class EventManager {
       event = {
         publish: function () {
           if (_this.doDebug) {
-            console.debug(`Leaf-Writer "${this.event}": ${arguments}`);
+            log.debug(`Leaf-Writer "${this.event}": ${arguments}`);
           }
           //@ts-ignore
           callbacks.fire.apply(this, arguments);

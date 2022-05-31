@@ -13,6 +13,7 @@ import type { LeafWriterConfig } from './@types';
 import App from './App';
 import i18next from './i18n';
 import { config } from './overmind';
+import './utilities/log';
 
 export * as Types from './@types';
 

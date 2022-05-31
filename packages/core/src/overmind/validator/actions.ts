@@ -7,6 +7,7 @@ import Writer from '../../js/Writer';
 import * as Comlink from 'comlink';
 import { Context } from '../';
 import { webpackEnv } from '../../@types';
+import { log } from './../../utilities';
 
 declare global {
   interface Window {
@@ -62,11 +63,11 @@ export const initialize = async ({ state }: Context) => {
     : schemaURI;
 
   const { parsedSchema, status } = await workerValidator.initialize({ id, cachedSchema, url });
-  console.info(status);
+  log.info(status);
 
   if (parsedSchema) {
     localStorage.setItem(`schema_${id}`, parsedSchema);
-    console.info('Schema cached.');
+    log.info('Schema cached.');
   }
 
   state.validator.hasSchema = true;

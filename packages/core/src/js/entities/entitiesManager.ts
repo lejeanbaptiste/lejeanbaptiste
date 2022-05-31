@@ -3,6 +3,7 @@ import { Bookmark } from 'tinymce';
 import Entity, { IannotationRange, IEntityConfig } from './Entity';
 import Writer from '../Writer';
 import { EntityTypes } from '../schema/types';
+import { log } from './../../utilities';
 
 interface Iinfo {
   attributes: { [x: string]: any }; //Key/value pairs of attributes
@@ -174,7 +175,7 @@ class EntitiesManager {
   setEntity(id: string, entity: Entity) {
     entity instanceof Entity
       ? (this.entities[id] = entity)
-      : console.warn('entitiesManager: trying to set a non-Entity object.');
+      : log.warn('entitiesManager: trying to set a non-Entity object.');
   }
 
   /**

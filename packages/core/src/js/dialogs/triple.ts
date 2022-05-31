@@ -3,6 +3,7 @@ import 'jquery-ui/ui/widgets/button';
 import '../../lib/jquery/jquery.watermark.min';
 import Entity from '../entities/Entity';
 import Writer from '../Writer';
+import { log } from './../../utilities';
 
 interface IPredicateList {
   person: string[];
@@ -119,7 +120,7 @@ class Triple {
         const object = components[2];
 
         if (!subject || !predicate || !object) {
-          console.warn(`subject or predicate or object is null:`, subject, predicate, object);
+          log.warn(`subject or predicate or object is null:`, subject, predicate, object);
           return;
         }
 

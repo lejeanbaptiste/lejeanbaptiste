@@ -9,6 +9,7 @@ import {
 import { webpackEnv } from '../../@types';
 import { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
+import { log } from './../../utilities';
 import Entity, { IannotationRange, IEntityConfig } from './Entity';
 import type {
   IAnnotation,
@@ -372,7 +373,7 @@ class AnnotationsManager {
       return e.annotation(this, entity);
     }
     //  else {
-    console.warn('annotationsManager.getAnnotation: no mapping found for', type);
+    log.warn('annotationsManager.getAnnotation: no mapping found for', type);
     return undefined;
     // }
   }
@@ -385,7 +386,7 @@ class AnnotationsManager {
 
     if (format === 'xml') {
       const xmlAnnotation = await this.convertJSONAnnotationToXML(annotation).catch((err: any) => {
-        console.warn('rdflib:', err);
+        log.warn('rdflib:', err);
 
         const message = this.writer.utilities.convertTextForExport(err.message);
         this.writer.dialogManager.show('message', {
@@ -610,7 +611,7 @@ class AnnotationsManager {
     }
 
     if (typeUri == null) {
-      console.warn("can't determine type for", xml);
+      log.warn("can't determine type for", xml);
       return null;
     }
     const entityConfig: Partial<IEntityConfig> = {};

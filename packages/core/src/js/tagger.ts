@@ -1,6 +1,7 @@
 //@ts-nocheck
 import $ from 'jquery';
 import type { Bookmark } from 'tinymce';
+import { log } from './../utilities';
 import Entity from './entities/Entity';
 import { RESERVED_ATTRIBUTES } from './schema/mapper';
 import { EntityTypes } from './schema/types';
@@ -245,7 +246,7 @@ class Tagger {
         const entry = this.writer.entitiesManager.getEntity(attrID);
         if (entry) this.writer.dialogManager.show(entry.getType(), { entry });
       } else {
-        console.warn('tagger.editTag: no entry for entity', tag);
+        log.warn('tagger.editTag: no entry for entity', tag);
       }
     } else {
       const tagName = tag.attr('_tag');
@@ -292,8 +293,8 @@ class Tagger {
           if (!confirmed) return;
 
           const newTag = this.removeEntity(id);
-          if (!newTag) return console.warn('new tag not found');
-          if (!newTag.parentElement) return console.warn('new tag parentElement not found');
+          if (!newTag) return log.warn('new tag not found');
+          if (!newTag.parentElement) return log.warn('new tag parentElement not found');
 
           let tagPath = this.writer.utilities.getElementXPath(newTag.parentElement);
           tagPath += `/${tagName}`;
@@ -460,7 +461,7 @@ class Tagger {
     const range: Range = this.writer.editor?.selection.getRng(true);
 
     if (range.startContainer.nodeType !== Node.TEXT_NODE) {
-      console.warn('tagger.splitTag: no text selection!');
+      log.warn('tagger.splitTag: no text selection!');
       return;
     }
 
@@ -468,12 +469,12 @@ class Tagger {
     const parent = textNode.parentNode as HTMLElement;
 
     if (!parent || parent.nodeType !== Node.ELEMENT_NODE) {
-      console.warn('tagger.splitTag: tag parent not found');
+      log.warn('tagger.splitTag: tag parent not found');
       return;
     }
 
     if (parent.getAttribute('_entity')) {
-      console.warn('tagger.splitTag: cannot split an entity!');
+      log.warn('tagger.splitTag: cannot split an entity!');
       return;
     }
 
@@ -560,9 +561,7 @@ class Tagger {
               newEntity.setId(newId);
               this.writer.entitiesManager.setEntity(newId, newEntity);
             } else {
-              console.warn(
-                `processNewContent: copied entity tag had no Entity to clone for ${oldId}`
-              );
+              log.warn(`processNewContent: copied entity tag had no Entity to clone for ${oldId}`);
 
               const tag = currNodeElement.getAttribute('_tag');
               const type = currNodeElement.getAttribute('_type');
@@ -684,7 +683,7 @@ class Tagger {
 
     const type: string = info.properties.type || entity.getType();
     if (type !== entity.getType()) {
-      console.log('tagger.editEntity: changing entity type'); // only possible via nerve
+      log.info('tagger.editEntity: changing entity type'); // only possible via nerve
     }
 
     // named entity check
@@ -1241,7 +1240,7 @@ class Tagger {
       ) {
         const id = currNode.getAttribute('name');
         if (id) {
-          console.log('entity will be removed', id);
+          log.info('entity will be removed', id);
           this.writer.entitiesManager.removeEntity(id);
         }
       } else {

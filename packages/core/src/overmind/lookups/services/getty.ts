@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { IResult } from '../../../components/entityLookups/types';
+import { log } from './../../../utilities';
 import ILookupServiceApi, { IFindParams } from './type';
 
 type NamedEntityType = 'ulan' | 'tgn';
@@ -84,8 +85,7 @@ export default class Getty implements ILookupServiceApi {
         Something wrong with the call to Getty, possibly a problem with the network or the server.
         HTTP error: ${response.statusText}
       `;
-      // throw new Error(errorMsg);
-      console.warn(errorMsg);
+      log.warn(errorMsg);
       return [];
     }
 
