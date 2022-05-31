@@ -1,8 +1,17 @@
-//@ts-nocheck 
+//@ts-nocheck
 import $ from 'jquery';
+import 'tinymce/icons/default';
+import 'tinymce/plugins/paste';
+import 'tinymce/themes/silver';
 import tinymce, { TinyMCE } from 'tinymce/tinymce';
 import { LeafWriterEditor } from '../@types';
 import { log } from './../utilities';
+import { addIconPack } from './tinymce/tinymceIconPack';
+import { configureToolbar, toolbarOptions } from './tinymce/tinymceToolbar';
+import './tinymce_plugins/prevent_delete';
+//TODO: Reassess plugins on tinymce 5.0
+// import './tinymce_plugins/cwrc_path';
+import './tinymce_plugins/treepaste';
 import Writer from './Writer';
 
 declare global {
@@ -12,17 +21,6 @@ declare global {
 }
 
 window.tinymce = tinymce;
-import 'tinymce/icons/default';
-import 'tinymce/themes/silver';
-import 'tinymce/plugins/paste';
-
-//TODO: Reassess plugins on tinymce 5.0
-// import './tinymce_plugins/cwrc_path';
-import './tinymce_plugins/treepaste';
-import './tinymce_plugins/prevent_delete';
-
-import { addIconPack } from './tinymce/tinymceIconPack';
-import { configureToolbar, toolbarOptions } from './tinymce/tinymceToolbar';
 
 interface TinymceWrapperConfig {
   writer: Writer;

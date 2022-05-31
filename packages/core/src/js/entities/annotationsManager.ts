@@ -4,9 +4,8 @@ import {
   graph as RDFgraph,
   parse as RDFparse,
   serialize as RDFserialize,
-  sym as RDFsym
+  sym as RDFsym,
 } from 'rdflib';
-import { webpackEnv } from '../../@types';
 import { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
@@ -15,7 +14,7 @@ import type {
   IAnnotation,
   IAnnotationContributor,
   IAnnotationCreator,
-  IAnnotationFormat
+  IAnnotationFormat,
 } from './types';
 
 const leafWriterVersion = 'dev'; //webpackEnv?.LEAFWRITER_VERSION ?? '' ;
@@ -149,7 +148,7 @@ class AnnotationsManager {
     const originalData = entity.originalData;
 
     //check if any thing got modified
-    const hasMutated = this.checkAnnotationChanges({docId, entity, originalData});
+    const hasMutated = this.checkAnnotationChanges({ docId, entity, originalData });
 
     // Check if annotation mutated.
     if (originalData && !hasMutated) return originalData as IAnnotation;
@@ -335,7 +334,7 @@ class AnnotationsManager {
     );
 
     let rdfString = rdfStringArray.join('');
-    
+
     // triples
     // for (const triple of this.writer.triples) {
     //   rdfString += `
@@ -357,7 +356,7 @@ class AnnotationsManager {
     // }
 
     const nsAttr = [...namespaces].map(([namespace, uri]) => `xmlns:${namespace}="${uri}"`);
-    return `<rdf:RDF ${nsAttr.join(' ')}>${rdfString}</rdf:RDF>`
+    return `<rdf:RDF ${nsAttr.join(' ')}>${rdfString}</rdf:RDF>`;
   }
 
   /**
@@ -488,7 +487,7 @@ class AnnotationsManager {
     // type
     let annotationTypes: string | string[] =
       annotation['oa:hasBody']['type'] || annotation['oa:hasBody']['@type'];
-      //@ts-ignore
+    //@ts-ignore
     entityConfig.type = this.getEntityTypeForAnnotation(annotationTypes);
 
     //uri

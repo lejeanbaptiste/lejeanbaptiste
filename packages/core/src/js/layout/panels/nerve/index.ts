@@ -1,11 +1,11 @@
+import axios from 'axios';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/selectmenu';
 import 'jquery-ui/ui/widgets/tooltip';
-import axios from 'axios';
-import NerveEditDialog from './NerveEditDialog';
 import { log } from '../../../../utilities';
 import MergeDialog from './MergeDialog';
+import NerveEditDialog from './NerveEditDialog';
 
 interface NerveConfig {
   writer: any;
@@ -70,8 +70,7 @@ const iconsMap = new Map([
   ['link', 'link'],
 ]);
 
-const NSSI_API_BASE_URL =
-  'https://api.nssi.dev.lincsproject.ca/api';
+const NSSI_API_BASE_URL = 'https://api.nssi.dev.lincsproject.ca/api';
 
 /**
  * @class Nerve
@@ -309,7 +308,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
 
     // const response = await requestLegacy(document, nerveContext);
     const response = await requestNssi(document, nerveContext);
-  
+
     if (!response || response.status === 400) {
       const msg = `
         NERVE server returned an error. Bad request (possibly encode error): ${response.statusText}
@@ -324,7 +323,6 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       return;
     }
     postProcess(response.data);
-  
   };
 
   const requestNssi = async (document: string, context: IContext) => {
@@ -1421,62 +1419,62 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
 export default Nerve;
 
 const nerveResultsTestSampleLetter = {
-	processingDate: '2021-12-06T23:44:55.807495',
-	metadata: {},
-	data: [
-		{
-			selections: [{ lemma: 'John', selection: { start: 220, end: 224 } }],
-			classification: 'MISC',
-			entity: 'John',
-		},
-		{
-			selections: [{ lemma: 'Anglo - Norwegian Society', selection: { start: 979, end: 1006 } }],
-			classification: 'MISC',
-			entity: 'Anglo - Norwegian Society',
-		},
-		{
-			selections: [{ lemma: 'Bergen', selection: { start: 1092, end: 1098 } }],
-			classification: 'MISC',
-			entity: 'Bergen',
-		},
-		{
-			selections: [{ lemma: 'Sundays', selection: { start: 536, end: 552 } }],
-			classification: 'MISC',
-			entity: 'Sundays',
-		},
-		{
-			selections: [{ lemma: 'Fri.', selection: { start: 1036, end: 1054 } }],
-			classification: 'MISC',
-			entity: 'Fri.',
-		},
-		{
-			selections: [{ lemma: 'Brynjulf Bull', selection: { start: 362, end: 375 } }],
-			classification: 'MISC',
-			entity: 'Brynjulf Bull',
-		},
-		{
-			selections: [{ lemma: 'Copenhagen', selection: { start: 290, end: 300 } }],
-			classification: 'LOCATION',
-			entity: 'Copenhagen',
-		},
-		{
-			selections: [
-				{ lemma: 'Oslo', selection: { start: 338, end: 342 } },
-				{ lemma: 'Oslo', selection: { start: 739, end: 743 } },
-				{ lemma: 'Oslo', selection: { start: 1030, end: 1034 } },
-			],
-			classification: 'MISC',
-			entity: 'Oslo',
-		},
-		{
-			selections: [{ lemma: 'Bergen', selection: { start: 117, end: 123 } }],
-			classification: 'LOCATION',
-			entity: 'Bergen',
-		},
-		{
-			selections: [{ lemma: 'Sunday', selection: { start: 815, end: 821 } }],
-			classification: 'MISC',
-			entity: 'Sunday',
-		},
-	],
+  processingDate: '2021-12-06T23:44:55.807495',
+  metadata: {},
+  data: [
+    {
+      selections: [{ lemma: 'John', selection: { start: 220, end: 224 } }],
+      classification: 'MISC',
+      entity: 'John',
+    },
+    {
+      selections: [{ lemma: 'Anglo - Norwegian Society', selection: { start: 979, end: 1006 } }],
+      classification: 'MISC',
+      entity: 'Anglo - Norwegian Society',
+    },
+    {
+      selections: [{ lemma: 'Bergen', selection: { start: 1092, end: 1098 } }],
+      classification: 'MISC',
+      entity: 'Bergen',
+    },
+    {
+      selections: [{ lemma: 'Sundays', selection: { start: 536, end: 552 } }],
+      classification: 'MISC',
+      entity: 'Sundays',
+    },
+    {
+      selections: [{ lemma: 'Fri.', selection: { start: 1036, end: 1054 } }],
+      classification: 'MISC',
+      entity: 'Fri.',
+    },
+    {
+      selections: [{ lemma: 'Brynjulf Bull', selection: { start: 362, end: 375 } }],
+      classification: 'MISC',
+      entity: 'Brynjulf Bull',
+    },
+    {
+      selections: [{ lemma: 'Copenhagen', selection: { start: 290, end: 300 } }],
+      classification: 'LOCATION',
+      entity: 'Copenhagen',
+    },
+    {
+      selections: [
+        { lemma: 'Oslo', selection: { start: 338, end: 342 } },
+        { lemma: 'Oslo', selection: { start: 739, end: 743 } },
+        { lemma: 'Oslo', selection: { start: 1030, end: 1034 } },
+      ],
+      classification: 'MISC',
+      entity: 'Oslo',
+    },
+    {
+      selections: [{ lemma: 'Bergen', selection: { start: 117, end: 123 } }],
+      classification: 'LOCATION',
+      entity: 'Bergen',
+    },
+    {
+      selections: [{ lemma: 'Sunday', selection: { start: 815, end: 821 } }],
+      classification: 'MISC',
+      entity: 'Sunday',
+    },
+  ],
 };

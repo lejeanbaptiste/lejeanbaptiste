@@ -1,3 +1,8 @@
+import $ from 'jquery';
+import Cookies from 'js-cookie';
+import { debounce } from 'lodash';
+import { Context } from '../';
+import { ConfigLegacy, Schema } from '../../@types';
 import type {
   Authority,
   ILookupsConfig,
@@ -5,11 +10,6 @@ import type {
   ILookupServiceEntity,
   LookupsEntityType,
 } from '../../components/entityLookups/types';
-import $ from 'jquery';
-import Cookies from 'js-cookie';
-import { Context } from '../';
-import { ConfigLegacy, Schema } from '../../@types';
-import { debounce } from 'lodash';
 import { log } from './../../utilities';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';

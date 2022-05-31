@@ -1,7 +1,7 @@
-//@ts-nocheck 
+//@ts-nocheck
 import $ from 'jquery';
-import Writer from '../Writer';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
+import Writer from '../Writer';
 import { log } from './../../utilities';
 
 /**

@@ -1,16 +1,15 @@
-import Entity from '../../../../js/entities/Entity';
 import $ from 'jquery';
 import 'jquery-ui/ui/effect';
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/selectmenu';
 import 'jquery-ui/ui/widgets/tooltip';
+import Entity from '../../../../js/entities/Entity';
 import { log } from '../../../../utilities';
+import { getSvg } from '../../../../utilities/icons';
 import type { SortingTypes } from '../../../entities/entitiesManager';
 // import Mapper from '../../../schema/mapper';
 import { RESERVED_ATTRIBUTES } from '../../../schema/mapper';
 import Writer from '../../../Writer';
-
-import { getSvg } from '../../../../utilities/icons';
 
 interface EntitiesListProps {
   parentId: string;

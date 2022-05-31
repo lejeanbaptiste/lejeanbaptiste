@@ -3,10 +3,10 @@ import type {
   ValidationResponse,
   Validator,
 } from '@cwrc/leafwriter-validator';
-import Writer from '../../js/Writer';
 import * as Comlink from 'comlink';
 import { Context } from '../';
 import { webpackEnv } from '../../@types';
+import Writer from '../../js/Writer';
 import { log } from './../../utilities';
 
 declare global {
@@ -56,7 +56,7 @@ export const initialize = async ({ state }: Context) => {
 
   const cachedSchema = localStorage.getItem(`schema_${id}`) ?? undefined;
 
-  //CORS: Some of the schemas might have blocke by CORS
+  // * CORS: Some of the schemas might have blocke by CORS
   //If provide, we wrap the schema URL in a requeste to the proxy server
   const url = state.editor.schemaProxyXmlEndpoint
     ? `${state.editor.schemaProxyXmlEndpoint}${encodeURIComponent(schemaURI)}`

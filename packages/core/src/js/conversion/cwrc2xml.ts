@@ -399,7 +399,7 @@ class CWRC2XML {
         });
 
         return ret;
-      }
+      };
 
       getOffset(parent);
       return offset;
