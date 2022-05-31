@@ -2,9 +2,9 @@
 '@cwrc/leafwriter-storage-service': minor
 ---
 
-### Stotage Service
+### Storage Service
 
-- [feat] Add a looger manager to improve dev/prod versions
+- [feat] Add a log manager to improve dev/prod versions
 
 We use loglevel to control when to output logs. Improve development and production verion (no more dirty logs on production version).
 
