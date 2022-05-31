@@ -95,8 +95,8 @@ const Storage: FC = () => {
         <Suspense fallback={<Progress />}>
           <StorageDialog
             config={{
-              allowedMimeTypes: ['text/xml'],
-              defaultCommitMessage: 'Updated via leaf-writer',
+              allowedMimeTypes: ['application/xml'],
+              defaultCommitMessage: 'Updated via LEAF-Writer',
               providers: getStorageProvidersAuth(),
               preferProvider: user?.prefStorageProvider,
               validate: validXML,
