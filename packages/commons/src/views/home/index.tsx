@@ -11,7 +11,23 @@ import SignInSection from './SignInSection';
 import StoragePanel from './storagePanel';
 
 const HomeView: FC = () => {
+  const { userState } = useAppState().auth;
+  const { openStorageDialog } = useActions().storage;
+
   const { t } = useTranslation();
+  const { getResourceFromPermalink } = usePermalink();
+
+  useEffect(() => {
+    const resource = getResourceFromPermalink();
+    if (!resource) return;
+    if (!resource.filename) {
+      openStorageDialog({
+        source: 'cloud',
+        type: 'load',
+        resource,
+      });
+    }
+  }, [userState]);
 
   return (
     <Page title={t('home:homepage')}>

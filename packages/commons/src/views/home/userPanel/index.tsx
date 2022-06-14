@@ -1,36 +1,12 @@
-import {
-  Box,
-  Grid,
-  Container,
-  Divider,
-  Paper,
-  Skeleton,
-  Stack,
-  useMediaQuery,
-  useTheme,
-  Typography,
-} from '@mui/material';
-import { useAppState } from '@src/overmind';
-import { AnimatePresence, motion } from 'framer-motion';
-import React, { FC } from 'react';
+import { Box, Container, Grid, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import Logo from '@src/components/Logo';
+import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-// import OpenOptions from './OpenOptions';
-// import Recent from './Recent';
-// import Templates from './Templates';
-// import SampleSection from './SampleSection';
 
 const userPanel: FC = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { userAuthenticated } = useAppState();
-
-  const conainerVariants = {
-    initial: { height: 0 },
-    visible: { height: 'auto' },
-    exit: { height: 0 },
-  };
 
   return (
     <Box
