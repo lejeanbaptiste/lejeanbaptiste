@@ -92,3 +92,11 @@ export const switchLanguage = ({ state }: Context, value: string) => {
   state.ui.language = language;
   return value;
 };
+
+export const openSettingsDialog = ({ state }: Context) => {
+  state.ui.settingsDialogOpen = true;
+};
+
+export const closeSettingsDialog = ({ state }: Context) => {
+  state.ui.settingsDialogOpen = false;
+};

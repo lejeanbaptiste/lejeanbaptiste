@@ -4,9 +4,9 @@ import { restrictToFirstScrollableAncestor, restrictToVerticalAxis } from '@dnd-
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import FilterTiltShiftIcon from '@mui/icons-material/FilterTiltShift';
 import { Stack, Typography } from '@mui/material';
-import { ILookupService } from '../../../../components/entityLookups/types';
-import { useActions, useAppState } from '../../../../overmind';
-import React, { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState, type FC } from 'react';
+import { ILookupService } from '../../../components/entityLookups/types';
+import { useActions, useAppState } from '../../../overmind';
 import AuthoritySource from './AuthoritySource';
 
 const AutoritiesPanel: FC = () => {
@@ -39,25 +39,30 @@ const AutoritiesPanel: FC = () => {
   };
 
   return (
-    <Stack width="'100%'" mb={2}>
-      <Stack direction="row" sx={{ p: 2 }}>
-        <FilterTiltShiftIcon fontSize="small" sx={{ mt: 0.25, mr: 2 }} />
+    <Stack width="100%" py={1}>
+      <Stack direction="row">
+        <FilterTiltShiftIcon sx={{ mx: 1, height: 18, width: 18 }} />
         <Typography>Entities Lookup Sources</Typography>
       </Stack>
-      {items && (
-        <DndContext
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-          modifiers={[restrictToVerticalAxis, restrictToFirstScrollableAncestor]}
-          sensors={sensors}
-        >
-          <SortableContext items={items} strategy={verticalListSortingStrategy}>
-            {items.map((authority) => (
-              <AuthoritySource key={authority.id} authority={authority} />
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
+      <Typography ml={4.5} variant="caption">
+        Drag to reorder the priority
+      </Typography>
+      <Stack mt={1} spacing={1}>
+        {items && (
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            modifiers={[restrictToVerticalAxis, restrictToFirstScrollableAncestor]}
+            sensors={sensors}
+          >
+            <SortableContext items={items} strategy={verticalListSortingStrategy}>
+              {items.map((authority) => (
+                <AuthoritySource key={authority.id} authority={authority} />
+              ))}
+            </SortableContext>
+          </DndContext>
+        )}
+      </Stack>
     </Stack>
   );
 };

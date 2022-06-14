@@ -1,8 +1,8 @@
 import DoNotDisturbAltIcon from '@mui/icons-material/DoNotDisturbAlt';
 import { IconButton, useTheme } from '@mui/material';
-import { ILookupServiceEntity, LookupsEntityType } from '../../../../components/entityLookups/types';
-import React, { FC, useState } from 'react';
-import useUI from '../../../useUI';
+import React, { useState, type FC } from 'react';
+import { ILookupServiceEntity, LookupsEntityType } from '../../../components/entityLookups/types';
+import useUI from '../../useUI';
 
 interface NamedEntityOptionProps {
   available: boolean;
@@ -50,7 +50,6 @@ const NamedEntityOption: FC<NamedEntityOptionProps> = ({
       onClick={handleClick}
       onMouseOver={handleMouseOver}
       onMouseOut={handleMouseOut}
-      // sx={{ color: hover ? color() : 'inherit' }}
     >
       {Icon && (
         <Icon

@@ -28,6 +28,7 @@ const toolbarOptions = [
   '|',
   'validate',
   '|',
+  'settings',
   'fullscreen',
 ];
 
@@ -224,6 +225,12 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       icon: 'validate',
       tooltip: 'Validate',
       onAction: () => writer.validate(),
+    },
+    {
+      slug: 'settings',
+      icon: 'settings',
+      tooltip: 'Settings',
+      onAction: () => writer.overmindActions.ui.openSettingsDialog(),
     },
   ];
 
