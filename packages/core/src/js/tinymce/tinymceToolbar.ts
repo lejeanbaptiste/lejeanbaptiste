@@ -32,13 +32,13 @@ const toolbarOptions = [
 ];
 
 interface IButton {
-  text?: string,
-  slug: string,
-  icon: string,
-  tooltip: string,
-  entityType?: EntityTypes,
-  entityButton?: boolean,
-  onAction: (api: any) => void,
+  text?: string;
+  slug: string;
+  icon: string;
+  tooltip: string;
+  entityType?: EntityTypes;
+  entityButton?: boolean;
+  onAction: (api: any) => void;
 }
 
 const configureToolbar = (writer: Writer, editor: Editor) => {
