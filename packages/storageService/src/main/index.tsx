@@ -99,8 +99,11 @@ const Main: FC<StorageDialogProps> = ({
     onCancel && onCancel();
   };
 
-  const clickAway = () => {
-    onBackdropClick && resetAll() && onBackdropClick();
+  const clickAway = async () => {
+    if (onBackdropClick) {
+      await resetAll();
+      onBackdropClick();
+    }
   };
 
   return (
