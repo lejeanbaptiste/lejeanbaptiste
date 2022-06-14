@@ -1,8 +1,8 @@
 import $ from 'jquery';
 import tinymce from 'tinymce';
-import { ConfigLegacy, LeafWriterEditor, LWDocument, onSaveRequestResults } from '../@types';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
+import type { ConfigLegacy, LeafWriterEditor } from '../types';
 import { log } from './../utilities';
 import Converter from './conversion/converter';
 import DialogManager from './dialogManager';
@@ -67,9 +67,6 @@ class Writer extends EventManager {
 
   // entityLookupDialogs: EntityLookupDialogsLegacy
 
-  onLoadRequest?: () => void;
-  onSaveRequest?: (document: LWDocument, saveAs?: boolean) => Promise<onSaveRequestResults>;
-
   _settings: {
     filterTags: {
       useDocumentTags: boolean;
@@ -131,9 +128,6 @@ class Writer extends EventManager {
       );
     }
 
-    if (config.onLoadRequest) this.onLoadRequest = config.onLoadRequest;
-    if (config.onSaveRequest) this.onSaveRequest = config.onSaveRequest;
-
     //tag filter
     this._settings = {
       filterTags: {
@@ -154,11 +148,6 @@ class Writer extends EventManager {
         log.log(e);
       }
     });
-
-    window.addEventListener('keydown', (event: KeyboardEvent) =>
-      this.handleKeyStrokeCapture(event)
-    );
-    this.event('writerKeydown').subscribe(this.handleKeyStrokeCapture);
 
     this.event('processingDocument').subscribe(() => {
       this.triples = [];
@@ -218,25 +207,6 @@ class Writer extends EventManager {
     });
   }
 
-  handleKeyStrokeCapture(event: KeyboardEvent) {
-    if (!event.metaKey) return;
-
-    let action: 'save' | 'saveas' | 'load' | '' = '';
-
-    if (event.shiftKey && event.code === 'KeyS') action = 'saveas';
-    if (event.code === 'KeyS') action = 'save';
-    if (event.code === 'KeyO') action = 'load';
-
-    if (action === '') return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (action === 'saveas') return this.overmindActions.editor.saveDocument(true);
-    if (action === 'save') return this.overmindActions.editor.saveDocument();
-    if (action === 'load') return this.showLoadDialog();
-  }
-
   /**
    * Gets a unique ID for use within Leaf-Writer.
    * @param {String} prefix The prefix to attach to the ID.
@@ -264,27 +234,12 @@ class Writer extends EventManager {
     this.converter.loadDocumentXML(docXml);
   }
 
-  showLoadDialog() {
-    if (this.onLoadRequest) this.onLoadRequest();
-  }
-
-  async save(saveAs?: boolean) {
+  async getContent() {
     const docString = await this.getDocumentString();
 
     this.overmindActions.document.updateContent(docString);
 
-    const { resource, url, content } = this.overmindState.document;
-    const document = { file: { ...resource }, url, xml: resource.content };
-
-    if (!this.onSaveRequest) {
-      log.warn('No save function');
-      return;
-    }
-
-    const response = await this.onSaveRequest(document, saveAs);
-    if (response.success && response.hash) {
-      this.overmindActions.document.updateResourceHash(response.hash);
-    }
+    return docString;
   }
 
   getDocumentURI() {
@@ -371,9 +326,6 @@ class Writer extends EventManager {
       log.info(e);
     }
 
-    window.removeEventListener('keydown', (event: KeyboardEvent) =>
-      this.handleKeyStrokeCapture(event)
-    );
     window.removeEventListener('beforeunload', this.handleUnload);
 
     editor.remove();

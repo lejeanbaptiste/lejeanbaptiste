@@ -1,15 +1,18 @@
-import { Resource } from '../../@types';
 import { Context } from '../';
 import Writer from '../../js/Writer';
 
 declare global {
   interface Window {
-    writer: Writer
+    writer: Writer;
   }
 }
 
 export const setInitialStateSchema = ({ state }: Context, id: string) => {
   state.document.schemaId = id;
+};
+
+export const setLoaded = ({ state }: Context, value: boolean) => {
+  state.document.loaded = value;
 };
 
 export const setSchema = ({ state }: Context, id: string) => {
@@ -23,25 +26,15 @@ export const setDocumentUrl = ({ state }: Context, url: string) => {
   state.document.url = url;
 };
 
-export const setResource = ({ state }: Context, resource: Resource) => {
-  state.document.resource = { ...resource };
-};
-
-export const updateResourceHash = ({ state }: Context, hash: string) => {
-  if (!state.document.resource) return;
-  state.document.resource.hash = hash;
-  state.editor.isEditorDirty = false;
-};
-
 export const updateContent = ({ state }: Context, content: string) => {
-  if (!state.document.resource) return;
-  state.document.resource.content = content;
+  if (!state.document.xml) return;
+  state.document.xml = content;
 };
 
 export const clear = ({ state }: Context) => {
-  state.document.resource = undefined;
   state.document.schemaId = '';
   state.document.url = undefined;
+  state.document.xml = undefined;
 };
 
 export const loadDocumentXML = ({ actions }: Context, content: string) => {

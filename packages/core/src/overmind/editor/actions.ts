@@ -1,6 +1,5 @@
 import $ from 'jquery';
 import Cookies from 'js-cookie';
-import { debounce } from 'lodash';
 import { Context } from '../';
 import type {
   Authority,
@@ -376,18 +375,9 @@ export const retrieveLookupAutoritiesConfig = ({ effects }: Context) => {
   return JSON.parse(prefs);
 };
 
-// * Important
-// Save debounce multiple calls to avoid sync conflict when saving into cloud storage like Github.
-// It will execute immedaiatly. Subsequently calls will be blocked until the timeout, when the last call is executed.
-// After timeout, the subsquently call executes immedaitly again.
-export const saveDocument = debounce(
-  ({ state }: Context, saveAs?: boolean) => {
-    if (!window.writer) return;
-    window.writer.save(saveAs);
-  },
-  60_000,
-  { leading: true, trailing: true }
-);
+export const getContent = async ({ state }: Context) => {
+  return await window.writer.getContent();
+};
 
 export const setIsEditorDirty = ({ state }: Context, value: boolean) => {
   state.editor.isEditorDirty = value;
