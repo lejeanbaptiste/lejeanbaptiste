@@ -5,6 +5,7 @@ import { SnackbarProvider } from 'notistack';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRoutes } from 'react-router-dom';
+import AlertDialog from './components/AlertDialog';
 import { useTracking } from './hooks/useTracking';
 import { useAppState } from './overmind';
 import routes from './routes';
@@ -28,6 +29,7 @@ const App: FC = () => {
         <CssBaseline enableColorScheme />
         <Storage />
         <MessageDialog />
+        <AlertDialog />
         {routing}
       </SnackbarProvider>
     </ThemeProvider>

@@ -49,12 +49,12 @@ const MessageDialog: FC = () => {
 
   return (
     <Dialog
-      aria-describedby="alert-dialog-description"
-      aria-labelledby="alert-dialog-title"
+      aria-describedby="dialog-description"
+      aria-labelledby="dialog-title"
       onBackdropClick={handleBackdropClick}
       open={open}
     >
-      <DialogTitle id="alert-dialog-title">
+      <DialogTitle id="dialog-title">
         {title}
         {closable && (
           <IconButton
@@ -72,7 +72,7 @@ const MessageDialog: FC = () => {
         )}
       </DialogTitle>
       <DialogContent>
-        <DialogContentText id="alert-dialog-description">{message}</DialogContentText>
+        <DialogContentText id="dialog-description">{message}</DialogContentText>
       </DialogContent>
 
       <DialogActions>
