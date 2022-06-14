@@ -3,7 +3,7 @@ import { Box, IconButton, Stack, Typography } from '@mui/material';
 import { AnimatePresence } from 'framer-motion';
 import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Owner } from '../../../@types/types';
+import type { Owner } from '../../../types';
 import { useActions, useAppState } from '../../../overmind';
 import { log } from '../../../utilities/log';
 import SideButton from '../SideButton';

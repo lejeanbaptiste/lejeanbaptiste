@@ -1,7 +1,7 @@
 import { Box, MenuList } from '@mui/material';
 import { motion } from 'framer-motion';
 import React, { FC } from 'react';
-import type { Owner } from '../../../../@types/types';
+import type { Owner } from '../../../../types';
 import Item from './Item';
 
 interface ResultsProps {

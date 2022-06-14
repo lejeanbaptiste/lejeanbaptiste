@@ -10,7 +10,7 @@ import type {
   Resource,
   StorageSource,
   Submit,
-} from '../../@types/types';
+} from '../../types';
 
 type State = {
   allowAllFileTypes: boolean;

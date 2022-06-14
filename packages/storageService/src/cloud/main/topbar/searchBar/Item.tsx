@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { AnimatePresence } from 'framer-motion';
 import React, { FC, useState } from 'react';
-import type { Content, SearchResultsBlobs } from '../../../../@types/types';
+import type { Content, SearchResultsBlobs } from '../../../../types';
 import { useActions, useAppState } from '../../../../overmind';
 import ContentMatch from './ContentMatch';
 

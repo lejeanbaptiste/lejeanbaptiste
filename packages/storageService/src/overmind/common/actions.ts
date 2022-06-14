@@ -1,6 +1,7 @@
 import { saveAs } from 'file-saver';
 import { Context } from '../';
 import type {
+  AlertDialog,
   AllowedMimeType,
   DialogType,
   ISelectedItem,
@@ -9,7 +10,7 @@ import type {
   Resource,
   StorageDialogConfig,
   StorageSource,
-} from '../../@types/types';
+} from '../../types';
 import i18next from '../../i18n';
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {

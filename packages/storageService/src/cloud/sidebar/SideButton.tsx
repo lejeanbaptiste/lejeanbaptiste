@@ -11,7 +11,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { FC, useState } from 'react';
-import type { UserType } from '../../@types/types';
+import type { UserType } from '../../types';
 
 interface SideButtonProps {
   active?: boolean;

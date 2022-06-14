@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
-import type { SearchResults } from '../../../@types/types';
+import type { SearchResults } from '../../../types';
 import { useActions, useAppState } from '../../../overmind';
 import Breadcrumbs from './Breadcrumbs';
 import Filename from './Filename';

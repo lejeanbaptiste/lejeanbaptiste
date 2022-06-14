@@ -2,7 +2,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import GroupWorkIcon from '@mui/icons-material/GroupWork';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import React, { FC } from 'react';
-import type { Owner } from '../../../../@types/types';
+import type { Owner } from '../../../../types';
 
 interface ItemProps {
   item: Owner;

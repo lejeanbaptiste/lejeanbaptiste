@@ -1,6 +1,6 @@
 import { Avatar, Grid, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
 import React, { FC } from 'react';
-import type { Organization } from '../../@types/types';
+import type { Organization } from '../../types';
 import { useActions, useAppState } from '../../overmind';
 
 interface OrgProps {

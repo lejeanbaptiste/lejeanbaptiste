@@ -18,7 +18,7 @@ import debounce from 'lodash/debounce';
 import React, { FC, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
-import type { Owner } from '../../../../@types/types';
+import type { Owner } from '../../../../types';
 import Results from './Results';
 
 interface SearchBarProps {

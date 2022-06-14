@@ -1,4 +1,4 @@
-import Provider, { ProviderAuth } from '../../@types/Provider';
+import Provider, { ProviderAuth } from '../../types/Provider';
 
 type Providers = { [key: string]: Provider };
 

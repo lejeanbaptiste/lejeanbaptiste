@@ -6,7 +6,7 @@ import type {
   CreateRepoParams,
   ICreateFork,
   ProviderAuth,
-} from '../../@types/Provider';
+} from '../../types/Provider';
 import type {
   CollectionSource,
   Content,
@@ -25,7 +25,7 @@ import type {
   StorageSource,
   SuportedProviders,
   UserType,
-} from '../../@types/types';
+} from '../../types';
 import i18next from '../../i18n';
 import { log } from '../../utilities/log';
 import { isErrorMessage } from '../../utilities/util';
