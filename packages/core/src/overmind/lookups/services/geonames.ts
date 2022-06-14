@@ -25,8 +25,10 @@ export default class Geonames implements ILookupServiceApi {
   private readonly username: string;
 
   constructor(config: any) {
-    if (!config.username || config.username === '') {
-      throw new Error('You must define a username to be able to make requests to Geonames');
+    if (!config?.username || config?.username === '') {
+      // throw new Error('You must define a username to be able to make requests to Geonames');
+      log.warn('GEONAME: You must define a username to be able to make requests to Geonames');
+      return;
     }
     this.username = config.username;
     this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
