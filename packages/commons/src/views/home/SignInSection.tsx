@@ -39,7 +39,7 @@ const SignInSection: FC = () => {
 
   return (
     <AnimatePresence>
-      {userAuthenticated === false && (
+      {userState === 'UNAUTHENTICATED' && (
         <Box
           component={motion.div}
           variants={conainerVariants}
