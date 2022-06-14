@@ -1,5 +1,5 @@
 import Keycloak, { KeycloakTokenParsed } from 'keycloak-js';
-import { KEYCLOACK_BASE_URL } from '../config/config';
+import { KEYCLOACK_BASE_URL } from '../config';
 import { log } from '../utilities/log';
 
 //Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc

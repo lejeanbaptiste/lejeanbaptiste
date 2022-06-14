@@ -1,5 +1,5 @@
 import { supportedSchemas } from './supportedSchemas';
-import { NSSI_BASE_URL } from '../config/config';
+import { NSSI_BASE_URL } from './';
 
 export type EditorMode = 'rdf' | 'xml' | 'xml-rdf_overlap' | 'xml-rdf_nooverlap';
 
