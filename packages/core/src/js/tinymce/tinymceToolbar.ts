@@ -48,7 +48,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       icon: 'code',
       tooltip: 'Toggle Tags',
       onAction: (api: any) => {
-        $('body', writer.editor?.getDoc()).toggleClass('showTags');
+        writer.overmindActions.editor.toggleShowTags();
         api.setActive(!api.isActive());
       },
     },
