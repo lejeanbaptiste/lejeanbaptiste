@@ -1,8 +1,8 @@
 import {
   Box,
+  CircularProgress,
   Dialog,
   DialogContent,
-  LinearProgress,
   Slide,
   SlideProps,
   Stack,
@@ -103,12 +103,6 @@ const Main: FC<StorageDialogProps> = ({
     onBackdropClick && resetAll() && onBackdropClick();
   };
 
-  const LoadingProgress = () => (
-    <Box display="flex" flexDirection="column">
-      <LinearProgress />
-    </Box>
-  );
-
   return (
     <Dialog
       data-testid="storage-dialog"
@@ -119,12 +113,14 @@ const Main: FC<StorageDialogProps> = ({
       open={open}
       TransitionComponent={Transition}
     >
-      {isLoading ? (
-        <LoadingProgress />
-      ) : (
-        <Box role="panel" height={isMD ? '100vh' : HEIGHT}>
-          <Stack direction="row" height="100%">
-            <SourcePanel />
+      <Box role="panel" height={isMD ? '100vh' : HEIGHT}>
+        <Stack direction="row" height="100%">
+          <SourcePanel />
+          {isLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" width="100%">
+              <CircularProgress />
+            </Box>
+          ) : (
             <Stack height="100%" width="100%">
               <Header />
               <DialogContent
@@ -141,11 +137,12 @@ const Main: FC<StorageDialogProps> = ({
                   type === 'load' && source === 'cloud' && <CloudDialog />
                 )}
               </DialogContent>
+
               {type === 'save' ? <FooterSave onCancel={close} /> : <FooterLoad onCancel={close} />}
             </Stack>
-          </Stack>
-        </Box>
-      )}
+          )}
+        </Stack>
+      </Box>
     </Dialog>
   );
 };
