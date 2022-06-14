@@ -183,7 +183,11 @@ export const setNssiToken = (
 
 export const getNssiToken = async ({ state }: Context) => {
   const { nssiToken } = state.editor;
-  if (!nssiToken) throw Error('Nssi token was not set up');
+  // if (!nssiToken) throw Error('Nssi token was not set up');
+  if (!nssiToken) {
+    log.error('Nssi token was not set up');
+    return;
+  }
 
   const token = typeof nssiToken === 'string' ? nssiToken : await nssiToken();
   return token;
