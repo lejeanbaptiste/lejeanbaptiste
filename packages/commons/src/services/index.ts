@@ -1,8 +1,8 @@
-import type { IdentityProvider, AuthenticateProp } from './IdentityProvider';
+import type { IdentityProvider as IdentityProviderType, StorageProvider } from '@src/types';
 import { GithubIdentityProvider } from './github';
 import { GitlabIdentityProvider } from './gitlab';
+import type { AuthenticateProp, IdentityProvider } from './IdentityProvider';
 import { OrcidIdentityProvider } from './orcid';
-import type { IdentityProvider as IdentityProviderType, StorageProvider } from '@src/@types/types';
 
 // export const supportedIdentityProviders: IdentityProviderType[] = ['orcid', 'gitlab', 'github'];
 export const supportedIdentityProviders: IdentityProviderType[] = ['gitlab', 'github'];

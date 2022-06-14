@@ -1,6 +1,6 @@
-import { IconButton } from '@mui/material';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
+import { IconButton } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import { motion } from 'framer-motion';
 import React, { FC } from 'react';

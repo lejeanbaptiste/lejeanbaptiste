@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import React, { FC } from 'react';
 import { Outlet } from 'react-router-dom';
-import { useNotifier } from '../../hooks/useNotifier';
+import { useNotifier } from '@src/hooks/useNotifier';
 
 const BlankLayout: FC = () => {
   useNotifier();

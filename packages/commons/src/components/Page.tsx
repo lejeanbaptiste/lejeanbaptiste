@@ -1,5 +1,3 @@
-/* eslint-disable react/prop-types */
-/* eslint-disable react/display-name */
 import React, { forwardRef } from 'react';
 import { Helmet } from 'react-helmet';
 
