@@ -7,13 +7,18 @@ import { Gitlab } from 'mdi-material-ui';
 import FeatherIcon from '../icons/Feather';
 import OrcidIcon from '../icons/Orcid';
 
-const icons: Map<string, any> = new Map();
-icons.set('github', GitHubIcon);
-icons.set('gitlab', Gitlab);
-icons.set('orcid', OrcidIcon);
-icons.set('fingerprint', FingerprintIcon);
+const icons = new Map([
+  ['github', GitHubIcon],
+  ['gitlab', Gitlab],
+  ['orcid', OrcidIcon],
+  ['fingerprint', FingerprintIcon],
+  ['blankPage', InsertDriveFileOutlinedIcon],
+  ['letter', MailOutlinedIcon],
+  ['feather', FeatherIcon],
+  ['prose', FormatAlignLeftOutlinedIcon],
+]);
 
-export const getIcon = (name: string): any => {
+export const getIcon = (name: string) => {
   const icon = icons.get(name);
   if (!icon) return FingerprintIcon;
   return icon;
