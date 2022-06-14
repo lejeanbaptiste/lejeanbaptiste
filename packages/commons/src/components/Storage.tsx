@@ -41,17 +41,7 @@ const Storage: FC = () => {
     }
   };
 
-  const clickAway = () => {
-    closeStorageDialog();
-    if (location.pathname !== '/') return;
-    setPermalink('/');
-  };
 
-  const close = () => {
-    closeStorageDialog();
-    if (location.pathname !== '/') return;
-    if (type === 'load') setPermalink('/');
-  };
 
   const handleOnChange = (resource?: Resource) => {
     if (location.pathname !== '/') return;
@@ -78,11 +68,17 @@ const Storage: FC = () => {
     closeStorageDialog();
   };
 
-  const Progress = () => (
-    <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }} open={true}>
-      <LinearProgress sx={{ width: '100%' }} />
-    </Backdrop>
-  );
+  const close = () => {
+    closeStorageDialog();
+    if (location.pathname !== '/') return;
+    if (type === 'load') setPermalink('/');
+  };
+
+  const clickAway = () => {
+    closeStorageDialog();
+    if (location.pathname !== '/') return;
+    setPermalink('/');
+  };
 
   const validXML = (content: string) => {
     const isContentValid = isValidXml(content);
@@ -92,7 +88,7 @@ const Storage: FC = () => {
   return (
     <>
       {open && (
-        <Suspense fallback={<Progress />}>
+        <Suspense fallback={<LoadingMask />}>
           <StorageDialog
             config={{
               allowedMimeTypes: ['application/xml'],

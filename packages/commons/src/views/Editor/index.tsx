@@ -1,6 +1,7 @@
 import { loadDocument, saveDocument } from '@cwrc/leafwriter-storage-service';
 import type { Types } from '@cwrc/leafwriter';
 import { Backdrop, LinearProgress } from '@mui/material';
+import LoadingMask from '@src/components/loadingMask';
 import Page from '@src/components/Page';
 import { usePermalink } from '@src/hooks/usePermalink';
 import { useActions, useAppState } from '@src/overmind';
@@ -152,6 +153,7 @@ const Editor: FC = () => {
           />
         </Suspense>
       )}
+      {!resource ? <LoadingMask /> : <Editor />}
     </Page>
   );
 };
