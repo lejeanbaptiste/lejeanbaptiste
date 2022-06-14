@@ -21,10 +21,12 @@ const StoragePanel: FC = () => {
 
   return (
     <AnimatePresence>
-      {!userAuthenticated ? (
-        ''
-      ) : userAuthenticated === 'authenticating' ? (
-        <Skeleton variant="rectangular" width="100%" height={100} />
+      {userState === 'UNAUTHENTICATED' ? (
+        <></>
+      ) : userState === 'AUTHENTICATING' ? (
+        <Stack width="100%" height={289} alignItems="center" justifyContent="center" spacing={1}>
+          <TeaIcon color={palette.secondary.dark} size={2} />
+        </Stack>
       ) : (
         <Paper
           component={motion.div}
@@ -32,29 +34,16 @@ const StoragePanel: FC = () => {
           initial="initial"
           animate="visible"
           exit="exit"
-          elevation={theme.palette.mode === 'dark' ? 2 : 0}
-          sx={{
-            py: 5,
-            background: theme.palette.mode === 'dark' ? 'inherent' : '#f9f9f9',
-            overflow: 'hidden',
-          }}
+          elevation={palette.mode === 'dark' ? 0 : 0}
+          sx={{ py: 5, overflow: 'hidden' }}
         >
-          <Container maxWidth="lg">
-            <Stack
-              direction={isMobile ? 'column-reverse' : 'row'}
-              justifyContent="center"
-              alignItems={isMobile ? 'center' : 'flex-start'}
-              divider={<Divider orientation={isMobile ? 'horizontal' : 'vertical'} flexItem />}
-              spacing={5}
-            >
-              {userAuthenticated === true && (
-                <>
-                  <Templates />
-                  {recentDocuments.length > 0 && <Recent />}
-                  <OpenOptions />
-                </>
-              )}
-              {/* {userAuthenticated === false && <SampleSection />} */}
+          <Container>
+            <Stack alignItems="center" spacing={3}>
+              <Templates />
+              <Stack direction={isMobile ? 'column-reverse' : 'row'} spacing={5} width={600} pl={2}>
+                <OpenOptions />
+                <Recent />
+              </Stack>
             </Stack>
           </Container>
         </Paper>
