@@ -153,8 +153,8 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   });
 
   if (!ownerDetails) {
-    actions.common.showMessageDialog({
-      title: i18next.t('error:title:warning'),
+    actions.common.showAlertDialog({
+      type: 'error',
       message: i18next.t('error:message:user_not_found', { username: resource.owner }),
       onClose: () => {
         if (!provider) return;
@@ -182,8 +182,8 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   });
 
   if (!repo) {
-    actions.common.showMessageDialog({
-      title: i18next.t('error:title:warning'),
+    actions.common.showAlertDialog({
+      type: 'error',
       message: i18next.t('error:message:repository_not_found', {
         username: resource.owner,
         repository: resource.repo,
@@ -201,8 +201,8 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
 
   const content = await actions.cloud.fetchRepoContent();
   if (!content) {
-    actions.common.showMessageDialog({
-      title: i18next.t('error:title:warning'),
+    actions.common.showAlertDialog({
+      type: 'error',
       message: i18next.t('error:message:path_not_found', {
         repository: resource.repo,
         path: resource.path,
@@ -940,8 +940,9 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
       response.error === 'conflict'
         ? i18next.t('error:message:conflictFIle')
         : i18next.t('error:message:unableToSave');
-    actions.common.showMessageDialog({
-      title: i18next.t('error:title:error'),
+
+    actions.common.showAlertDialog({
+      type: 'error',
       message,
       onClose: () => actions.cloud.setIsSaving(false),
     });
@@ -988,8 +989,8 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
   }
 
   if (isErrorMessage(pullRequestResponse)) {
-    actions.common.showMessageDialog({
-      title: i18next.t(`error:title:${pullRequestResponse.type}`),
+    actions.common.showAlertDialog({
+      type: 'error',
       message: pullRequestResponse.message,
       onClose: () => actions.cloud.setIsSaving(false),
     });
