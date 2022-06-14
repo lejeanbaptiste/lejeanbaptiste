@@ -6,10 +6,7 @@ interface ItemsSkeletonProps {
   skeletonCount?: number;
 }
 
-const ItemsSkeleton: FC<ItemsSkeletonProps> = ({
-  minWidth = 250,
-  skeletonCount = 5,
-}) => {
+const ItemsSkeleton: FC<ItemsSkeletonProps> = ({ minWidth = 250, skeletonCount = 5 }) => {
   if (skeletonCount < 1) skeletonCount = 1;
   if (minWidth < 100) skeletonCount = 100;
   const skeletons = Array(skeletonCount).fill(0, 0);
@@ -22,14 +19,14 @@ const ItemsSkeleton: FC<ItemsSkeletonProps> = ({
             <Skeleton
               animation="wave"
               variant="text"
-              width={25 + (Math.random() * (minWidth - 75))}
+              width={25 + Math.random() * (minWidth - 75)}
             />
           </Typography>
           <Typography variant="caption">
             <Skeleton
               animation="wave"
               variant="text"
-              width={50 + (Math.random() * (minWidth - 75))}
+              width={50 + Math.random() * (minWidth - 75)}
             />
           </Typography>
         </Box>
