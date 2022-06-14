@@ -5,11 +5,11 @@ import type {
 } from '@cwrc/leafwriter-validator';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { ContextMenuState } from '../../@types';
 import { EntityTypes } from '../../js/schema/types';
 import type { Action } from '../../js/tagger';
 import Writer from '../../js/Writer';
 import { useActions, useAppState } from '../../overmind';
+import type { ContextMenuState } from '../../types';
 import { log } from './../../utilities';
 import type { Item as ItemType } from './types';
 

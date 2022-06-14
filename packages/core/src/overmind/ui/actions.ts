@@ -1,7 +1,7 @@
-import { ContextMenuState, PaletteMode } from '../../@types/';
 import { Context } from '../';
+import type { EntityLink, EntityLookupDialogProps } from '../../components/entityLookups/types';
 import type { PopupProps } from '../../components/popup';
-import { EntityLink, EntityLookupDialogProps } from '../../components/entityLookups/types';
+import { ContextMenuState, PaletteMode } from '../../types';
 import { supportedLanguages } from '../../utilities/util';
 
 export const onInitializeOvermind = ({ actions }: Context, overmind: any) => {

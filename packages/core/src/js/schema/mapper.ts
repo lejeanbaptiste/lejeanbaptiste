@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import { MappingID } from '../../@types';
+import { MappingID } from '../../types';
 import { log } from '../../utilities';
 import Entity from '../entities/Entity';
 import Writer from '../Writer';

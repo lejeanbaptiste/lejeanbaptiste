@@ -1,6 +1,6 @@
 import css from 'css';
 import $ from 'jquery';
-import type { MappingID } from '../../@types';
+import type { MappingID } from '../../types';
 import { log } from '../../utilities';
 import Writer from '../Writer';
 import Mapper from './mapper';
@@ -648,27 +648,41 @@ class SchemaManager {
 
     $('element', this.schemaXML).each((index, el) => {
       const tag = $(el).attr('name');
-      if (tag && elements.includes(tag)) {
+      if (tag && !elements.includes(tag)) {
         elements.push(tag);
         schemaTags += `
           .showTags *[_tag=${tag}]:before {
+            background-color: white;
             color: #aaa !important;
+            padding-left: 2px;
+            padding-right: 2px;
+            padding-bottom: 2px;
+            margin-right: 4px;
+            border-radius: 4px;
+            font-family: 'Lato';
             font-size: 13px !important;
             font-weight: normal !important;
             font-style: normal !important;
-            font-family: monospace !important;
             font-variant: normal !important;
+            box-shadow: 0 0 2px #aaaa;
             content: "<${tag}>";
           }
         `;
         schemaTags += `
           .showTags *[_tag=${tag}]:after {
+            background-color: white;
             color: #aaa !important;
+            padding-left: 2px;
+            padding-right: 2px;
+            padding-bottom: 2px;
+            margin-left: 4px;
+            border-radius: 4px;
+            font-family: 'Lato';
             font-size: 13px !important;
             font-weight: normal !important;
             font-style: normal !important;
-            font-family: monospace !important;
             font-variant: normal !important;
+            box-shadow: 0 0 2px #aaaa;
             content: "</${tag}>";
           }
         `;

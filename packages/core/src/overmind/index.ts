@@ -1,4 +1,4 @@
-import { IContext } from 'overmind';
+import type { IContext } from 'overmind';
 import {
   createActionsHook,
   createEffectsHook,
@@ -12,7 +12,6 @@ import * as lookups from './lookups';
 import * as ui from './ui';
 import * as user from './user';
 import * as validator from './validator';
-
 
 export const config = namespaced({
   document,

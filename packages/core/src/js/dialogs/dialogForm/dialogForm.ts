@@ -1,9 +1,9 @@
-import Entity from '../../../js/entities/Entity';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/controlgroup';
 import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/selectmenu';
+import Entity from '../../../js/entities/Entity';
 import Writer from '../../Writer';
 import AttributeWidget from '../attributeWidget/attributeWidget';
 

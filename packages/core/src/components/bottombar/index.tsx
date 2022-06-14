@@ -1,6 +1,6 @@
 import { Box, Link, Paper, Stack } from '@mui/material';
-import React, { FC } from 'react';
-import { webpackEnv } from '../../@types';
+import React, { type FC } from 'react';
+import { webpackEnv } from '../../types';
 import AnnotationMode from './AnnotationMode';
 import EditorMode from './EditorMode';
 import Schema from './Schema';

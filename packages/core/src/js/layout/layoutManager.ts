@@ -298,7 +298,6 @@ class LayoutManager {
   }
 
   hideModule(moduleId: string) {
-    
     this.modulesLayout.forEach((modules, region) => {
       if (!Array.isArray(modules)) {
         if (modules.id === moduleId) this.hideRegion(region);
@@ -435,10 +434,12 @@ class LayoutManager {
     return `
       <div class="cwrc tabs ui-layout-${panelRegion}">
         <ul>
-          ${panelConfig.map(({ id, title }) => {
-            if (!title) title = id.charAt(0).toUpperCase() + id.slice(1);
-            return `<li><a href="#${this.editorId}-${id}">${title}</a></li>`;
-          }).join('')}
+          ${panelConfig
+            .map(({ id, title }) => {
+              if (!title) title = id.charAt(0).toUpperCase() + id.slice(1);
+              return `<li><a href="#${this.editorId}-${id}">${title}</a></li>`;
+            })
+            .join('')}
         </ul>
         <div class="ui-layout-content">
           ${panelConfig.map(({ id }) => `<div id="${this.editorId}-${id}"/>`).join('')}

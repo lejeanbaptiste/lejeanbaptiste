@@ -1,7 +1,7 @@
 import { Box, Button, ButtonGroup } from '@mui/material';
+import React, { useRef, type FC } from 'react';
 import { useAppState } from '../../../../overmind';
-import React, { FC, useRef } from 'react';
-import { Authority } from '../../types';
+import type { Authority } from '../../types';
 import Badge from './Badge';
 
 interface SideMenuProps {

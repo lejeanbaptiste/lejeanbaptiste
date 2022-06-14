@@ -1,4 +1,4 @@
-import { DialogLookupType } from '../../js/dialogs/types';
+import type { DialogLookupType } from '../../js/dialogs/types';
 import Entity from '../../js/entities/Entity';
 
 export type LookupsEntityType = 'person' | 'place' | 'organization' | 'title' | 'rs';

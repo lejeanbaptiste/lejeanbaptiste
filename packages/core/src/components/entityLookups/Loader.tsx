@@ -1,5 +1,5 @@
 import { Box, Skeleton, Stack, Typography } from '@mui/material';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 
 const Loader: FC = () => (
   <Box p={4}>

@@ -1,14 +1,14 @@
-import { MappingID } from '../../../@types';
-import Entity from '../../../js/entities/Entity';
-import { EntityTypes } from '../../../js/schema/types';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/datepicker';
 import { DateTime } from 'luxon';
+import Entity from '../../../js/entities/Entity';
+import type { EntityTypes } from '../../../js/schema/types';
+import type { MappingID } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { ILWDialogConfigParams } from '../types';
-import { SchemaDialog } from './types';
+import type { SchemaDialog } from './types';
 
 type DateTypes = 'date' | 'range' | 'DATE' | 'DATERANGE' | 'DATESTRUCT';
 

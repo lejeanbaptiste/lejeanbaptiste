@@ -1,6 +1,6 @@
-import axios, { AxiosInstance } from 'axios';
-import { IResult } from '../../../components/entityLookups/types';
-import ILookupServiceApi, { IFindParams } from './type';
+import axios, { type AxiosInstance } from 'axios';
+import { type IResult } from '../../../components/entityLookups/types';
+import ILookupServiceApi, { type IFindParams } from './type';
 
 type NamedEntityType = 'person' | 'place' | 'organization' | 'title';
 

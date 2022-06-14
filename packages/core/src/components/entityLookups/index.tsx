@@ -1,6 +1,6 @@
 import { Dialog } from '@mui/material';
+import React, { useEffect, type FC } from 'react';
 import { useActions, useAppState } from '../../overmind';
-import React, { FC, useEffect } from 'react';
 import Footer from './Footer';
 import Header from './Header';
 import Loader from './Loader';
@@ -14,7 +14,7 @@ const EntityLookupDialog: FC = () => {
 
   useEffect(() => {
     if (!open || !type) return;
-    initiate({entry, type});
+    initiate({ entry, type });
 
     return () => {
       reset();

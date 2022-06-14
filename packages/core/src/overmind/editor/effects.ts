@@ -1,4 +1,4 @@
-import { ILookups } from '../../components/entityLookups/types';
+import type { ILookups } from '../../components/entityLookups/types';
 
 export const api = (() => {
   let lookupsDefaults: ILookups | undefined;
