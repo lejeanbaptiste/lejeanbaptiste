@@ -1,13 +1,13 @@
 import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
 import { useAppState } from '@src/overmind';
+import { getIcon } from '@src/utilities/icons';
 import { motion } from 'framer-motion';
 import React, { FC, useRef, useState } from 'react';
-import Profile from '../Profile';
-import { getIcon } from '@src/utilities/icons';
+import Profile from './Profile';
 
 const ProfileAvatar: FC = () => {
+  const { user } = useAppState().auth;
   const theme = useTheme();
-  const { user } = useAppState();
 
   const ref = useRef(null);
   const [anchorProfileEl, setAnchorProfileEl] = useState<HTMLDivElement | null>(null);
@@ -38,10 +38,10 @@ const ProfileAvatar: FC = () => {
             <Icon
               component={getIcon(user?.prefferedID)}
               sx={{
-                width: 22,
-                height: 22,
+                width: 16,
+                height: 16,
                 borderRadius: '50%',
-                border: `2px solid ${theme.palette.background.paper}`,
+                border: `1px solid ${theme.palette.background.paper}`,
                 backgroundColor: theme.palette.background.paper,
               }}
             />
@@ -54,7 +54,7 @@ const ProfileAvatar: FC = () => {
           whileHover={{ boxShadow: `${theme.palette.primary.main} 0px 0px 3px 1px` }}
           onClick={handleProfileClick}
           src={user?.avatar_url}
-          sx={{ cursor: 'pointer' }}
+          sx={{ width: 32, height: 32, cursor: 'pointer' }}
         />
       </Badge>
       {anchorProfileEl && <Profile anchor={anchorProfileEl} handleClose={handleProfileClose} />}
