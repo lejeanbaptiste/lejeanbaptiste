@@ -11,23 +11,16 @@ import { useNavigate } from 'react-router';
 import type { IAnnotationUserProfile, Resource } from '../../@types/types';
 
 const Leafwriter = React.lazy(() => import('@cwrc/leafwriter'));
+  const { userState } = useAppState().auth;
+  const { resource } = useAppState().storage;
+
+  const { editor } = useActions();
+  const { getStorageProviderAuth, openStorageDialog, setResource } = useActions().storage;
+  const { showAlertDialog } = useActions().ui;
 
 const Editor: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { parsePermalink, setPermalink } = usePermalink();
-  const { resource, user, userAuthenticated } = useAppState();
-
-  const {
-    addToRecentDocument,
-    getStorageProviderAuth,
-    getLincsAauthenticationToken,
-    getUserProfile,
-    openStorageDialog,
-    setResource,
-    signOut,
-    showMessageDialog,
-  } = useActions();
 
   const [userProfile, setUserProfile] = useState<IAnnotationUserProfile | undefined>();
 

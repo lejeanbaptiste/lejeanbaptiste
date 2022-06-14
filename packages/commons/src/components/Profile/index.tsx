@@ -26,10 +26,11 @@ interface ProfileProps {
 }
 
 const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
+  const { user } = useAppState().auth;
+  const { leafWriter } = useAppState().editor;
+  const { signOut } = useActions().auth;
   const { t } = useTranslation();
 
-  const { user } = useAppState();
-  const { signOut } = useActions();
   const open = Boolean(anchor);
 
   const handleManageAccontClick = () => accountManagement();

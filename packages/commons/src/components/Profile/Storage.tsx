@@ -18,10 +18,14 @@ import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const Storage: FC = () => {
+  const { user } = useAppState().auth;
+  const { storageProviders } = useAppState().storage;
+
+  const { getLinkedAccounts, linkAccount } = useActions().auth;
+  const { changePrefStorageProvider } = useActions().storage;
+  const { notifyViaSnackbar } = useActions().ui;
+
   const { t } = useTranslation();
-  const { user, storageProviders } = useAppState();
-  const { changePrefStorageProvider, getLinkedAccounts, linkAccount, notifyViaSnackbar } =
-    useActions();
 
   const handleStorageClick = async (provider: StorageProvider) => {
     if (user?.prefStorageProvider === provider) return;

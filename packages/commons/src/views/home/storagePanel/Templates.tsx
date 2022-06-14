@@ -1,16 +1,16 @@
-import { Button, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Button, Divider, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { useActions, useAppState } from '@src/overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAppState, useActions } from '@src/overmind';
 import { useNavigate } from 'react-router';
 
 const Templates: FC = () => {
   const navigate = useNavigate();
-  const { templates } = useAppState();
-  const { loadTemplate, setResource } = useActions();
+  const { templates } = useAppState().storage;
+  const { loadTemplate, setResource } = useActions().storage;
   const { t } = useTranslation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { breakpoints, palette } = useTheme();
+  const isMobile = useMediaQuery(breakpoints.down('sm'));
 
   const handleClick = async (url: string) => {
     const documentString = await loadTemplate(url);

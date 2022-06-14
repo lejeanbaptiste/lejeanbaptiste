@@ -5,8 +5,8 @@ import { useActions, useAppState } from '../overmind';
 let displayed: (string | number)[] = [];
 
 export const useNotifier = () => {
-  const { notifications } = useAppState();
-  const { removeNotificationSnackbar } = useActions();
+  const { notifications } = useAppState().ui;
+  const { removeNotificationSnackbar } = useActions().ui;
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
 
   const storeDisplayed = (id: string | number) => {

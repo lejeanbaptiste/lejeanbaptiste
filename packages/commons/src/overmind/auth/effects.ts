@@ -1,7 +1,7 @@
+import { KEYCLOACK_BASE_URL, NSSI_BASE_URL } from '@src/config';
+import { log } from '@src/utilities/log';
 import axios, { AxiosError } from 'axios';
 import queryString from 'query-string';
-import { KEYCLOACK_BASE_URL, NSSI_BASE_URL } from '../config/config';
-import { log } from '../utilities/log';
 
 const LINK_ACCOUNTS_CALLBACK_URL = `${window.location.origin}/link-accounts`;
 
@@ -100,12 +100,5 @@ export const NSSIApi = {
     }
 
     return data;
-  },
-};
-
-export const localAPI = {
-  async loadTemplate(url: string) {
-    const response = await axios.get(url);
-    return response.data;
   },
 };

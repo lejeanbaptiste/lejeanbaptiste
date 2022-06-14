@@ -32,8 +32,8 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
 const Language: FC = () => {
   const { t, i18n } = useTranslation();
 
-  const { language } = useAppState();
-  const { switchLanguage } = useActions();
+  const { language } = useAppState().ui;
+  const { switchLanguage } = useActions().ui;
 
   const changeLanguage = (event: MouseEvent<HTMLElement>, code: string) => {
     if (!code) code = language.code;

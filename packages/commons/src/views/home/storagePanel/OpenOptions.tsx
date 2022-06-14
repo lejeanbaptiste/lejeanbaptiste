@@ -1,11 +1,11 @@
-import CloudIcon from '@mui/icons-material/Cloud';
-import { Button, Stack, TextField, Typography } from '@mui/material';
+import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
+import { Button, Divider, Stack, TextField, Typography, useTheme } from '@mui/material';
 import { useActions } from '@src/overmind';
-import React, { ChangeEvent, FC } from 'react';
+import React, { useState, type ChangeEvent, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const OpenOptions: FC = () => {
-  const { openStorageDialog } = useActions();
+  const { openStorageDialog } = useActions().storage;
   const { t } = useTranslation();
 
   const onCloudClick = () => openStorageDialog({ source: 'cloud', type: 'load' });

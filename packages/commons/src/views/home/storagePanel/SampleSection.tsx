@@ -7,7 +7,7 @@ import {
   ListItemText,
   Paper,
   Stack,
-  Typography
+  Typography,
 } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC } from 'react';
@@ -16,8 +16,9 @@ import { useNavigate } from 'react-router';
 
 const SampleSection: FC = () => {
   const navigate = useNavigate();
-  const { sampleDocuments } = useAppState();
-  const { loadTemplate, setResource, setSampleUser } = useActions();
+  const { sampleDocuments } = useAppState().storage;
+  const { setSampleUser } = useActions().auth;
+  const { loadTemplate, setResource } = useActions().storage;
   const { t } = useTranslation();
 
   const handleClick = async (url: string) => {

@@ -1,16 +1,17 @@
-import { Container, Divider, Paper, Skeleton, Stack, useMediaQuery, useTheme } from '@mui/material';
+import { Container, Paper, Stack, useMediaQuery, useTheme } from '@mui/material';
+import TeaIcon from '@src/assets/icons/tea';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { type FC } from 'react';
 import OpenOptions from './OpenOptions';
 import Recent from './Recent';
 import Templates from './Templates';
-import SampleSection from './SampleSection';
 
 const StoragePanel: FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { recentDocuments, userAuthenticated } = useAppState();
+  const { userState } = useAppState().auth;
+
+  const { breakpoints, palette } = useTheme();
+  const isMobile = useMediaQuery(breakpoints.down('sm'));
 
   const conainerVariants = {
     initial: { height: 0 },
