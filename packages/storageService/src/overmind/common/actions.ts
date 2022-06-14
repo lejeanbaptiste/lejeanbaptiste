@@ -112,6 +112,15 @@ export const setSelectedItem = ({ state }: Context, value?: ISelectedItem) => {
   state.common.selectedItem = value;
 };
 
+export const showAlertDialog = ({ state }: Context, alertDialog: Omit<AlertDialog, 'open'>) => {
+  if (!alertDialog.type) alertDialog.type = 'error';
+  state.common.alertDialog = { open: true, ...alertDialog };
+};
+
+export const closeAlertDialog = ({ state }: Context) => {
+  state.common.alertDialog = { open: false };
+};
+
 export const showMessageDialog = (
   { state }: Context,
   messageDialog: Omit<MessageDialog, 'open'>
@@ -138,8 +147,8 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
     const { valid, error } = state.common.validate(resource.content);
 
     if (!valid) {
-      actions.common.showMessageDialog({
-        title: i18next.t('error:title:error'),
+      actions.common.showAlertDialog({
+        type: 'error',
         message: error ?? i18next.t('error:message:document_not_valid'),
       });
       if (state.common.resource) state.common.resource.filename = undefined;

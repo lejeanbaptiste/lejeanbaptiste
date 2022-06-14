@@ -10,7 +10,7 @@ const UploadPanel: FC = () => {
   const { palette } = useTheme();
   const { allowedMimeTypes } = useAppState().common;
   const { setResource, uploadFile } = useActions().local;
-  const { load, showMessageDialog } = useActions().common;
+  const { load, showAlertDialog } = useActions().common;
   const dropzoneRef = createRef<DropzoneRef>();
 
   const container = useRef<HTMLDivElement>(null);
@@ -38,8 +38,8 @@ const UploadPanel: FC = () => {
   const handleSelectFile = async (file: File) => {
     const document = await uploadFile(file);
     if (!document) {
-      showMessageDialog({
-        title: t('error:title:error'),
+      showAlertDialog({
+        type: 'error',
         message: t('error:message:unable_to_upload_file', { filename: file.name }),
       });
       return;

@@ -19,7 +19,7 @@ interface CreateRepoDialogProps {
 
 const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open }) => {
   const { t } = useTranslation();
-  const { showMessageDialog } = useActions().common;
+  const { showAlertDialog } = useActions().common;
   const { createFolder } = useActions().cloud;
 
   const [name, setName] = useState<string>('');
@@ -38,8 +38,8 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
     const folder = await createFolder(name);
 
     if (!folder) {
-      showMessageDialog({
-        title: t('error:title:error'),
+      showAlertDialog({
+        type: 'error',
         message: t('error:message:folder_creation_error'),
         onClose: async () => setIsLoading(false),
       });
