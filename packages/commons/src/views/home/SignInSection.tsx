@@ -1,32 +1,13 @@
 import { Box, Button } from '@mui/material';
-import { usePermalink } from '@src/hooks/usePermalink';
 import { useActions, useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
-import Cookies from 'js-cookie';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const SignInSection: FC = () => {
-
-  useEffect(() => {
-    if (userAuthenticated === false) {
-      const permalink = parsePermalink();
-      if (permalink?.valid) {
-        Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
-        signIn();
-      }
-    }
   const { userState } = useAppState().auth;
   const { signIn } = useActions().auth;
 
-    if (userAuthenticated === true) {
-      const resource = Cookies.get('resource');
-      if (resource) {
-        Cookies.remove('resource');
-        setPermalink(resource);
-      }
-    }
-  }, [userAuthenticated]);
   const { t } = useTranslation();
 
   const handleClick = () => signIn();
@@ -50,7 +31,13 @@ const SignInSection: FC = () => {
           justifyContent="center"
           py={6}
         >
-          <Button onClick={handleClick} size="large" variant="contained" sx={{ width: 150 }}>
+          <Button
+            disableElevation
+            onClick={handleClick}
+            size="large"
+            variant="contained"
+            sx={{ width: 150 }}
+          >
             {t('home:signin')}
           </Button>
         </Box>
