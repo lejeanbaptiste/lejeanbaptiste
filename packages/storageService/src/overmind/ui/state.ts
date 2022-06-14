@@ -1,4 +1,4 @@
-import type { Language } from '../../@types/types';
+import type { Language } from '../../types';
 import { supportedLanguages } from '../../utilities/util';
 
 type State = {

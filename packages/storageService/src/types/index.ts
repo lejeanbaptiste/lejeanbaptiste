@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ProviderAuth } from './Provider';
 
 export interface StorageDialogProps {
@@ -183,6 +184,13 @@ export interface MessageDialog {
   onConfirm?: () => void;
   progress?: boolean;
   title?: string;
+}
+
+export interface AlertDialog {
+  open: boolean;
+  message?: string;
+  onClose?: () => void;
+  type?: 'error' | 'info' | 'success' | 'warning';
 }
 
 export interface Submit {

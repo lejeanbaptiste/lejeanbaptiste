@@ -1,7 +1,7 @@
 import FolderSpecialOutlinedIcon from '@mui/icons-material/FolderSpecialOutlined';
 import { Avatar, Chip, Grid, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
 import React, { FC } from 'react';
-import type { Repository } from '../../@types/types';
+import type { Repository } from '../../types';
 import { useActions, useAppState } from '../../overmind';
 
 interface RepoProps {

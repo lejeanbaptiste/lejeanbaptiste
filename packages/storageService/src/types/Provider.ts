@@ -4,7 +4,7 @@ import type {
   Organization,
   PublicRepository,
   Repository,
-} from './types';
+} from '.';
 
 export type ProviderAuth = {
   access_token: string;

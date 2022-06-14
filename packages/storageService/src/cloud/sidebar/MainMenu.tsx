@@ -1,7 +1,7 @@
 import { Stack } from '@mui/material';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CollectionSource } from '../../@types/types';
+import { CollectionSource } from '../../types';
 import { useActions } from '../../overmind';
 import SideButton from './SideButton';
 

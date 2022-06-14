@@ -9,8 +9,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { FC, forwardRef, useEffect, useState } from 'react';
-import type { Resource, StorageDialogProps } from '../@types/types';
+import React, { forwardRef, useEffect, useState, type FC } from 'react';
 import CloudDialog from '../cloud';
 import FooterLoad from '../footer/FooterLoad';
 import FooterSave from '../footer/FooterSave';
@@ -19,6 +18,7 @@ import PastePanel from '../local/PastePanel';
 import UploadPanel from '../local/UploadPanel';
 import { useActions, useAppState } from '../overmind';
 import SourcePanel from '../sourcePanel';
+import type { Resource, StorageDialogProps } from '../types';
 
 const HEIGHT = 600;
 
