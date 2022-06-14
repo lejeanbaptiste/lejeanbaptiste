@@ -22,7 +22,7 @@ interface CreateRepoDialogProps {
 
 const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open }) => {
   const { t } = useTranslation();
-  const { showMessageDialog } = useActions().common;
+  const { showAlertDialog } = useActions().common;
   const { createRepo } = useActions().cloud;
 
   const [name, setName] = useState<string>('');
@@ -52,8 +52,8 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
     const repo = await createRepo({ name, description, isPrivate: privateRepo });
 
     if (!repo) {
-      showMessageDialog({
-        title: t('error:title:error'),
+      showAlertDialog({
+        type: 'error',
         message: t('error:message:repo_creation_error'),
         onClose: async () => setIsLoading(false),
       });

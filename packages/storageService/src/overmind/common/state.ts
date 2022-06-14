@@ -1,5 +1,6 @@
 import { derived } from 'overmind';
 import type {
+  AlertDialog,
   AllowedMimeType,
   DialogType,
   ISelectedItem,
@@ -17,6 +18,7 @@ type State = {
   allowedMimeTypes?: AllowedMimeType[];
   allowPaste?: boolean;
   dialogType: DialogType;
+  alertDialog: AlertDialog;
   messageDialog: MessageDialog;
   resource?: Resource;
   showInvisibleFiles: boolean;
@@ -38,6 +40,7 @@ export const state: State = {
     });
   }),
   dialogType: 'load',
+  alertDialog: { open: false },
   messageDialog: { open: false },
   showInvisibleFiles: false,
   source: 'local',
