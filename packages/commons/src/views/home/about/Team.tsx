@@ -1,7 +1,7 @@
 import { Box, Stack, Typography } from '@mui/material';
+import { log } from '@src/utilities/log';
 import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { log } from '../../../utilities/log';
 import TeamProfile, { Profile } from './TeamProfile';
 
 const Team: FC = () => {

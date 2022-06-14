@@ -12,8 +12,8 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
-import { PaletteMode } from '@src/@types/types';
 import { useActions, useAppState } from '@src/overmind';
+import { PaletteMode } from '@src/types';
 import React, { FC, MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 

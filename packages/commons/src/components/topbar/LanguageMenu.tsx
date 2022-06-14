@@ -1,5 +1,5 @@
-import { Box, Button, Menu, MenuItem } from '@mui/material';
 import LanguageIcon from '@mui/icons-material/Language';
+import { Box, Button, Menu, MenuItem } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities/util';
 import { motion } from 'framer-motion';

@@ -9,9 +9,9 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
-import type { StorageProvider } from '@src/@types/types';
 import { useActions, useAppState } from '@src/overmind';
 import { suportedStorageProviders } from '@src/services';
+import type { StorageProvider } from '@src/types';
 import { getIcon } from '@src/utilities/icons';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { FC } from 'react';

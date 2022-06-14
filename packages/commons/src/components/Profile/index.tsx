@@ -12,9 +12,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
+import { accountManagement } from '@src/services/AuthenticationService';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { accountManagement } from '../../services/AuthenticationService';
 import Identity from './Identity';
 import Language from './Language';
 import Storage from './Storage';

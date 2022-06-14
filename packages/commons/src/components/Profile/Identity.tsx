@@ -9,9 +9,9 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
-import type { IdentityProvider } from '@src/@types/types';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedIdentityProviders } from '@src/services';
+import type { IdentityProvider } from '@src/types';
 import { getIcon } from '@src/utilities/icons';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { FC } from 'react';

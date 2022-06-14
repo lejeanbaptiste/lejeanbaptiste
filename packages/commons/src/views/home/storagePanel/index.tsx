@@ -1,7 +1,7 @@
 import { Container, Divider, Paper, Skeleton, Stack, useMediaQuery, useTheme } from '@mui/material';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 import OpenOptions from './OpenOptions';
 import Recent from './Recent';
 import Templates from './Templates';

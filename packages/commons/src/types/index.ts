@@ -1,4 +1,5 @@
-import { SnackbarMessage, OptionsObject } from 'notistack';
+import { OptionsObject, SnackbarMessage } from 'notistack';
+import React from 'react';
 
 export declare var webpackEnv: {
   NODE_ENV: string;
@@ -23,7 +24,7 @@ export interface INotification {
   key?: string | number;
   message: SnackbarMessage;
   options?: OptionsObject;
-} 
+}
 
 export interface User {
   avatar_url?: string;
@@ -35,6 +36,7 @@ export interface User {
   identities: Map<string, IIdentity>;
   prefferedID: string;
   prefStorageProvider: string;
+  url: string;
 }
 
 export interface IIdentity {
@@ -58,7 +60,7 @@ export type AffiliationType = 'owner' | 'collaborator' | 'organization';
 
 export interface MessageDialog {
   closable?: boolean;
-  message?: string;
+  message?: string | React.ReactNode;
   labelNoButton?: string;
   labelYesButton?: string;
   onClose?: () => void;
@@ -66,6 +68,13 @@ export interface MessageDialog {
   onYes?: () => void;
   open: boolean;
   title?: string;
+}
+
+export interface AlertDialog {
+  open: boolean;
+  message?: string;
+  onClose?: () => void;
+  type?: 'error' | 'info' | 'success' | 'warning';
 }
 
 export interface StorageDialogState {
@@ -92,6 +101,8 @@ export interface Resource {
   content?: string;
   hash?: string;
   url?: string;
+  schemaName?: string;
+  modifiedAt?: Date;
 }
 
 export type ErrorType = 'info' | 'warning' | 'error';
@@ -102,6 +113,6 @@ export interface Error {
 }
 
 export interface IProviderAuth {
-  name: string;
   access_token: string;
+  name: string;
 }
