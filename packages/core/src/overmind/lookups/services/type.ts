@@ -1,9 +1,9 @@
-import { IResult, LookupsEntityType } from '../../../components/entityLookups/types';
+import type { IResult, LookupsEntityType } from '../../../components/entityLookups/types';
 
 export interface IFindParams {
-  config?: {[x: string]: any};
-  query: string,
-  type: LookupsEntityType
+  config?: { [x: string]: any };
+  query: string;
+  type: LookupsEntityType;
 }
 
 export default interface ILookupServiceApi {

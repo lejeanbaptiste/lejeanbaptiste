@@ -1,8 +1,8 @@
+import type { Bookmark, Editor } from 'tinymce/tinymce';
+import type { ILookupsConfig } from '../components/entityLookups/types';
 import Writer from '../js/Writer';
-import { Bookmark, Editor } from 'tinymce/tinymce';
-import { ILookupsConfig } from '../components/entityLookups/types';
 
-export type { ILookupsConfig, Authority } from '../components/entityLookups/types';
+export type { Authority, ILookupsConfig } from '../components/entityLookups/types';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;
@@ -10,26 +10,22 @@ export declare var webpackEnv: {
   WORKER_ENV: string;
 };
 
-export interface LeafWriterConfig {
+export interface ILeafWriterOptions {
   document: LWDocument;
-  user: User;
-  editor: {
-    language?: string;
-    colorScheme?: string;
-    schemas?: [SupportedSchemasId | Schema];
+  settings?: {
     credentials?: {
       nssiToken?: string | (() => Promise<string | undefined>);
     };
-    //? legacy
+    colorScheme?: string;
+    language?: string;
     legacy?: ConfigLegacy;
-    lookups: ILookupsConfig;
+    lookups?: ILookupsConfig;
+    schemas?: [SupportedSchemasId | Schema];
   };
-  onLoadRequest?: () => void;
-  onSaveRequest?: (document: LWDocument, saveAs?: boolean) => Promise<onSaveRequestResults>;
+  user?: User;
   preferences?: {
-    themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
     fontSize?: number; // [Optional] Changes the document's default font size. Default: 11. Options: 10-18
-    // [Optional] Reorganize panels position in space. If present, both left and right side must be defined.
+    themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
     workspace?: {
       leftSide: string[]; // [Required] List of panel names. Default: ['structure', 'nerve']
       rightSide: string[]; // [Required] List of panel names. Default: ['xml-viewer', 'image-viewer', 'validator']
@@ -37,16 +33,8 @@ export interface LeafWriterConfig {
   };
 }
 
-export interface onSaveRequestResults {
-  hash?: string;
-  reason?: string;
-  success: boolean;
-}
-
 export interface LWDocument {
-  file?: Resource;
-  title?: string;
-  url: string;
+  url?: string;
   xml: string;
 }
 
@@ -56,9 +44,6 @@ export interface ConfigLegacy {
   nerveUrl?: string;
   proxyXmlEndpoint?: string;
   proxyCssEndpoint?: string;
-
-  onLoadRequest?: () => void;
-  onSaveRequest?: (document: LWDocument, saveAs?: boolean) => Promise<onSaveRequestResults>;
 
   services?: any;
 
@@ -73,18 +58,6 @@ export interface ConfigLegacy {
   buttons1?: string[];
   buttons2?: string[];
   buttons3?: string[];
-}
-
-export interface Resource {
-  provider?: string;
-  owner?: string;
-  ownertype?: string;
-  repo?: string;
-  path?: string;
-  filename?: string;
-  content?: string;
-  hash?: string;
-  url?: string;
 }
 
 export type SupportedSchemasId =
@@ -112,36 +85,10 @@ export type SupportedEntityLookups =
 export const SupportedSchemas: Map<string, Schema> = new Map();
 
 export interface User {
-  name: string;
-  url: string;
-
-  permissions?: string;
-  prefferedID?: string;
-  username?: string;
-
   avatar_url?: string;
   email?: string;
-  emailVerified?: boolean;
-  firstName?: string;
-  lastName?: string;
-  prefStorageProvider?: string;
-  identities?: {
-    [x: string]: any; //Allow more properties
-  };
-  
-  signOut?: () => Promise<void>;
-}
-
-export interface Resource {
-  provider?: string;
-  owner?: string;
-  ownertype?: string;
-  repo?: string;
-  path?: string;
-  filename?: string;
-  content?: string;
-  hash?: string;
-  url?: string;
+  name: string;
+  uri: string;
 }
 
 export type Schema = {

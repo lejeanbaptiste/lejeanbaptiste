@@ -132,8 +132,8 @@ class Triple {
             external: predicate.external,
           },
           object,
-        }
-        
+        };
+
         this.writer.triples.push(triple);
         //@ts-ignore
         this.writer.relations.update();

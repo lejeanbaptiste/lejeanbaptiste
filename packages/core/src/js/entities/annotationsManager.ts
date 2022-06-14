@@ -6,10 +6,10 @@ import {
   serialize as RDFserialize,
   sym as RDFsym,
 } from 'rdflib';
-import { EntityTypes } from '../schema/types';
+import type { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
-import Entity, { IannotationRange, IEntityConfig } from './Entity';
+import Entity, { type IannotationRange, type IEntityConfig } from './Entity';
 import type {
   IAnnotation,
   IAnnotationContributor,

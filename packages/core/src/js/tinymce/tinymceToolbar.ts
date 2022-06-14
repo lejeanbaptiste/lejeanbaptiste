@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { Editor } from 'tinymce';
-import { EntityTypes } from '../schema/types';
+import type { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
 
 const toolbarOptions = [

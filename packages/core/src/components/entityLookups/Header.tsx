@@ -1,6 +1,6 @@
 import { Box, Typography, useTheme } from '@mui/material';
+import React, { type FC } from 'react';
 import { useAppState } from '../../overmind';
-import React, { FC } from 'react';
 import useUI from '../useUI';
 
 const Header: FC = () => {

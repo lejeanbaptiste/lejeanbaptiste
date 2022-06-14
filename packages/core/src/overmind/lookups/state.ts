@@ -1,12 +1,12 @@
-import { EntityTypes } from '../../js/schema/types';
 import { derived } from 'overmind';
 import { Context } from '..';
-import {
+import type {
   Authority,
   EntryLink,
   IResult,
   LookupsEntityType,
 } from '../../components/entityLookups/types';
+import type { EntityTypes } from '../../js/schema/types';
 
 type State = {
   isUriValid: boolean;

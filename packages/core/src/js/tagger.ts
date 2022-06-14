@@ -4,7 +4,7 @@ import type { Bookmark } from 'tinymce';
 import { log } from './../utilities';
 import Entity from './entities/Entity';
 import { RESERVED_ATTRIBUTES } from './schema/mapper';
-import { EntityTypes } from './schema/types';
+import type { EntityTypes } from './schema/types';
 import Writer from './Writer';
 
 export type Action = 'add' | 'before' | 'after' | 'around' | 'inside' | 'change';

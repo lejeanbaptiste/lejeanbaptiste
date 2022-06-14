@@ -1,7 +1,7 @@
-import axios, { AxiosInstance } from 'axios';
-import { IResult } from '../../../components/entityLookups/types';
-import ILookupServiceApi, { IFindParams } from './type';
+import axios, { type AxiosInstance } from 'axios';
+import type { IResult } from '../../../components/entityLookups/types';
 import { log } from './../../../utilities';
+import ILookupServiceApi, { type IFindParams } from './type';
 
 interface Doc {
   [x: string]: any;

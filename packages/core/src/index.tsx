@@ -7,15 +7,17 @@ import '@fortawesome/fontawesome-free/css/all.css';
 // import '@fortawesome/fontawesome-free/webfonts/fa-regular-400.woff2';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
-import React, { FC } from 'react';
+import React from 'react';
 import { I18nextProvider } from 'react-i18next';
 import type { LeafWriterConfig } from './@types';
 import App from './App';
+import type { Authority, LookupsEntityType } from './components/entityLookups/types';
 import i18next from './i18n';
 import { config } from './overmind';
+import type { ILeafWriterOptions, LWDocument } from './types';
 import './utilities/log';
 
-export * as Types from './@types';
+export * as Types from './types';
 
 const overmind = createOvermind(config, {
   name: 'leafWriter',

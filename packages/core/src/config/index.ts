@@ -1,7 +1,7 @@
-import type { ConfigLegacy, LeafWriterConfig, Schema, SupportedSchemasId } from '../@types';
+import type { ConfigLegacy, ILeafWriterOptions, Schema, SupportedSchemasId } from '../types';
 import { schemas as defaultSchemas } from './schemas';
 
-export const createConfigLegacy = ({ editor }: LeafWriterConfig) => {
+export const createConfigLegacy = ({ settings: editor }: ILeafWriterOptions) => {
   if (!editor.legacy) return {} as ConfigLegacy;
 
   const { cwrcRootUrl, helpUrl, nerveUrl, proxyCssEndpoint, proxyXmlEndpoint } = editor.legacy;

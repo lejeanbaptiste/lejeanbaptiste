@@ -5,8 +5,8 @@ import type {
 } from '@cwrc/leafwriter-validator';
 import * as Comlink from 'comlink';
 import { Context } from '../';
-import { webpackEnv } from '../../@types';
 import Writer from '../../js/Writer';
+import { webpackEnv } from '../../types';
 import { log } from './../../utilities';
 
 declare global {

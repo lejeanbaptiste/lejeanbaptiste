@@ -1,10 +1,10 @@
-import { Box, CircularProgress, MenuItem, Typography, useTheme } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import BlockIcon from '@mui/icons-material/Block';
-import { EntityType } from '../../@types';
+import { Box, CircularProgress, MenuItem, Typography, useTheme } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import React, { forwardRef, useEffect, useState, type MouseEvent } from 'react';
 import { useActions } from '../../overmind';
-import React, { MouseEvent, forwardRef, useEffect, useState } from 'react';
+import { EntityType } from '../../types';
 import useUI from '../useUI';
 import NestedMenu from './NestedMenu';
 import type { Item as ItemType, Type } from './types';

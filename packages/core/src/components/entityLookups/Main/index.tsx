@@ -1,6 +1,6 @@
 import { DialogContent, List, Stack } from '@mui/material';
+import React, { useState, type FC } from 'react';
 import { useAppState } from '../../../overmind';
-import React, { FC, useState } from 'react';
 import CandidateList from './Candidates';
 import ManualEntryField from './Candidates/ManualEntryField';
 import SideMenu from './SideMenu';

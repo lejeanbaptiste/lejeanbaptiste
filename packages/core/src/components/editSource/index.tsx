@@ -7,8 +7,8 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material';
+import React, { Suspense, useEffect, useState, type FC } from 'react';
 import { useActions, useAppState } from '../../overmind';
-import React, { FC, Suspense, useEffect, useState } from 'react';
 const Editor = React.lazy(() => import('./Editor'));
 
 export interface IEditSourceDialogProps {

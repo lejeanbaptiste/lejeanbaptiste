@@ -1,4 +1,4 @@
-import type { MappingID } from '../../../@types';
+import type { MappingID } from '../../../types';
 import type { EntityLink } from '../../../components/entityLookups/types';
 import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';

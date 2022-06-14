@@ -1,7 +1,7 @@
-import CWRC2XML from './cwrc2xml';
-import XML2CWRC from './xml2cwrc';
 import axios from 'axios';
 import Writer from '../Writer';
+import CWRC2XML from './cwrc2xml';
+import XML2CWRC from './xml2cwrc';
 
 /**
  * @class Converter
@@ -83,7 +83,7 @@ class Converter {
   async getDocument(asString: boolean, callback?: Function) {
     const docString = await this.getDocumentContent(true);
     if (!docString) return null;
-    
+
     if (asString === true) {
       if (callback) callback.call(this, docString);
       return docString;

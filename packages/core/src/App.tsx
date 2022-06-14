@@ -1,7 +1,6 @@
 import { Box, ThemeProvider, useMediaQuery } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
-import React, { FC, useEffect, useState } from 'react';
-import type { LeafWriterConfig } from './@types';
+import React, { useEffect, useState, type FC } from 'react';
 import BottomBar from './components/bottombar';
 import ContextMenu from './components/contextmenu';
 import EditSourceDialog from './components/editSource';
@@ -12,6 +11,7 @@ import { createConfigLegacy } from './config';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import theme from './theme';
+import type { ILeafWriterOptions } from './types';
 
 declare global {
   interface Window {

@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import Entity, { IannotationRange } from '../entities/Entity';
+import Entity, { type IannotationRange } from '../entities/Entity';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 

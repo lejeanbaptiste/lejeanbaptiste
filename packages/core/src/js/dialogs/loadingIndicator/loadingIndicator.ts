@@ -3,7 +3,6 @@ import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/progressbar';
 import type { ILWDialog, ILWDialogConfigParams } from '../types';
 
-
 class LoadingIndicator implements ILWDialog {
   readonly $loadingIndicator: JQuery<HTMLElement>;
   readonly $progressBar: JQuery<HTMLElement>;

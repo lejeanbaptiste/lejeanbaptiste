@@ -4,7 +4,7 @@ import 'jquery-ui/ui/widgets/dialog';
 // import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 // import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import Writer from '../Writer';
-import { logEnabledFor } from './../../utilities';
+import type { logEnabledFor } from './../../utilities';
 
 class EditSource {
   readonly writer: Writer;

@@ -1,4 +1,4 @@
-import { EntityType } from '../../@types/index';
+import { EntityType } from '../../types/index';
 
 export type Item = {
   childrenItems?: Item[] | (() => Promise<Item[]>);

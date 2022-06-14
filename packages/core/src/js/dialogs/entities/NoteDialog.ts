@@ -1,11 +1,11 @@
-import { MappingID } from '../../../@types';
 import $ from 'jquery';
-import DialogForm from '../dialogForm/dialogForm';
-import Writer from '../../Writer';
-import type { ILWDialogConfigParams } from '../types';
-import { SchemaDialog } from './types';
 import Entity from '../../../js/entities/Entity';
-import { EntityTypes } from '../../../js/schema/types';
+import type { EntityTypes } from '../../../js/schema/types';
+import type { MappingID } from '../../../types';
+import Writer from '../../Writer';
+import DialogForm from '../dialogForm/dialogForm';
+import type { ILWDialogConfigParams } from '../types';
+import type { SchemaDialog } from './types';
 
 interface IOption {
   label: string;
@@ -34,7 +34,7 @@ class NoteDialog implements SchemaDialog {
     this.id = writer.getUniqueId('noteForm_');
 
     const atts = writer.schemaManager.getAttributesForTag(this.type);
-    
+
     this.typeAtt = atts.find(({ name }) => name === 'type');
 
     const entityAttributesSection = `

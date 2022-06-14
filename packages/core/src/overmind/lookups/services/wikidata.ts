@@ -1,8 +1,8 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import wdk from 'wikidata-sdk';
-import { IResult } from '../../../components/entityLookups/types';
+import type { IResult } from '../../../components/entityLookups/types';
 import { log } from './../../../utilities';
-import ILookupServiceApi, { IFindParams } from './type';
+import ILookupServiceApi, { type IFindParams } from './type';
 
 type NamedEntityType = 'person' | 'place' | 'org' | 'title' | 'rs';
 
