@@ -10,6 +10,7 @@ type State = {
   entityLookupDialogProps: EntityLookupDialogProps;
   language: Language;
   popupProps: PopupProps;
+  settingsDialogOpen: boolean;
   themeAppearance: 'light' | 'auto' | 'dark';
   title: string;
 };
@@ -21,6 +22,7 @@ export const state: State = {
   entityLookupDialogProps: { open: false },
   language: { code: 'en-CA', name: 'english', shortName: 'en' },
   popupProps: { open: false },
+  settingsDialogOpen: false,
   themeAppearance: 'auto',
   title: 'Leaf Writer',
 };

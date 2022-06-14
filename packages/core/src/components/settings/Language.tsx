@@ -1,17 +1,10 @@
 import TranslateIcon from '@mui/icons-material/Translate';
-import {
-  ListItem,
-  ListItemIcon,
-  ListItemSecondaryAction,
-  ListItemText,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material';
+import { Box, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useActions, useAppState } from '../../../overmind';
-import { supportedLanguages } from '../../../utilities/util';
-import React, { FC, MouseEvent } from 'react';
+import React, { type FC, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../../overmind';
+import { supportedLanguages } from '../../utilities/util';
 
 const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
   '& .MuiToggleButtonGroup-grouped': {
@@ -42,22 +35,22 @@ const Language: FC = () => {
   };
 
   return (
-    <ListItem>
-      <ListItemIcon sx={{ minWidth: 40 }}>
-        <TranslateIcon fontSize="small" />
-      </ListItemIcon>
-      <ListItemText id="language" primary={t('ui:language')} />
-      <ListItemSecondaryAction>
+    <Stack direction="row" alignItems="center">
+      <TranslateIcon sx={{ mx: 1, height: 18, width: 18 }} />
+      <Typography>{t('ui:language')}</Typography>
+      <Box flexGrow={1} />
+      <Stack direction="row">
         <StyledToggleButtonGroup
           aria-label="language"
           exclusive
           onChange={changeLanguage}
           value={language.code}
         >
-          {Object.values(supportedLanguages).map(({ code, shortName }) => (
+          {Array.from(supportedLanguages.values()).map(({ code, shortName }) => (
             <ToggleButton
               key={code}
               aria-label={shortName}
+              color="primary"
               size="small"
               sx={{ height: 28 }}
               value={code}
@@ -66,8 +59,8 @@ const Language: FC = () => {
             </ToggleButton>
           ))}
         </StyledToggleButtonGroup>
-      </ListItemSecondaryAction>
-    </ListItem>
+      </Stack>
+    </Stack>
   );
 };
 
