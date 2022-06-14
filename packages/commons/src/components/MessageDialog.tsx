@@ -1,3 +1,4 @@
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Button,
   Dialog,
@@ -7,13 +8,10 @@ import {
   DialogTitle,
   IconButton,
 } from '@mui/material';
-import React, { FC } from 'react';
-import CloseIcon from '@mui/icons-material/Close';
 import { useActions, useAppState } from '@src/overmind';
+import React, { FC } from 'react';
 
 const MessageDialog: FC = () => {
-  const { messageDialog } = useAppState();
-  const { closeCloseMessageDialog } = useActions();
   const {
     closable = true,
     message,
@@ -24,7 +22,9 @@ const MessageDialog: FC = () => {
     onYes,
     open,
     title,
-  } = messageDialog;
+  } = useAppState().ui.messageDialog;
+
+  const { closeCloseMessageDialog } = useActions().ui;
 
   const handleBackdropClick = () => {
     if (!closable) return;

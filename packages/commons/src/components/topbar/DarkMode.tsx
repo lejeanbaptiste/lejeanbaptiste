@@ -6,8 +6,8 @@ import { motion } from 'framer-motion';
 import React, { FC } from 'react';
 
 const DarkMode: FC = () => {
-  const { darkMode } = useAppState();
-  const { setDarkMode } = useActions();
+  const { darkMode } = useAppState().ui;
+  const { setDarkMode } = useActions().ui;
 
   const switchAppearenceMode = () => {
     const value = !darkMode;

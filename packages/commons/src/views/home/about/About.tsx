@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 
 const About: FC = () => {
   const [content, setContent] = useState('');
-  const { language } = useAppState();
+  const { language } = useAppState().ui;
 
   useEffect(() => {
     loadContent();

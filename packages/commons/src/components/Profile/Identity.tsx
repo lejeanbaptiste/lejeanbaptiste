@@ -18,9 +18,10 @@ import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const Identity: FC = () => {
+  const { user } = useAppState().auth;
+  const { changePrefferedID, getLinkedAccounts, linkAccount } = useActions().auth;
+  const { notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation();
-  const { user } = useAppState();
-  const { changePrefferedID, getLinkedAccounts, linkAccount, notifyViaSnackbar } = useActions();
 
   const handleIdClick = async (provider: IdentityProvider) => {
     if (!user || user?.prefferedID === provider) return;

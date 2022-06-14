@@ -11,9 +11,9 @@ import routes from './routes';
 import theme from './theme';
 
 const App: FC = () => {
+  const { darkMode, language } = useAppState().ui;
 
   const routing = useRoutes(routes);
-  const { darkMode, language } = useAppState();
   const { i18n } = useTranslation();
 
   useTracking(process.env.GA_MEASUREMENT_ID);

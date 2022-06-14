@@ -7,9 +7,9 @@ import React, { FC, MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const LanguageMenu: FC = () => {
+  const { language } = useAppState().ui;
+  const { switchLanguage } = useActions().ui;
   const { t } = useTranslation();
-  const { language } = useAppState();
-  const { switchLanguage } = useActions();
 
   const optionVariants = {
     initial: { y: -100 },

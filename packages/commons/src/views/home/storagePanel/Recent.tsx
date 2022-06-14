@@ -9,8 +9,8 @@ import { useNavigate } from 'react-router';
 
 const Recent: FC = () => {
   const navigate = useNavigate();
+  const { recentDocuments } = useAppState().storage;
   const { t } = useTranslation();
-  const { recentDocuments } = useAppState();
   const { getStorageProviderAuth, setResource } = useActions();
   const { setPermalink } = usePermalink();
 

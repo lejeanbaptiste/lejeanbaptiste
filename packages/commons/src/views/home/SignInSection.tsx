@@ -3,14 +3,10 @@ import { usePermalink } from '@src/hooks/usePermalink';
 import { useActions, useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
 import Cookies from 'js-cookie';
-import React, { FC, useEffect } from 'react';
+import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const SignInSection: FC = () => {
-  const { t } = useTranslation();
-  const { parsePermalink, setPermalink } = usePermalink();
-  const { userAuthenticated } = useAppState();
-  const { signIn } = useActions();
 
   useEffect(() => {
     if (userAuthenticated === false) {
@@ -20,6 +16,8 @@ const SignInSection: FC = () => {
         signIn();
       }
     }
+  const { userState } = useAppState().auth;
+  const { signIn } = useActions().auth;
 
     if (userAuthenticated === true) {
       const resource = Cookies.get('resource');
@@ -29,6 +27,7 @@ const SignInSection: FC = () => {
       }
     }
   }, [userAuthenticated]);
+  const { t } = useTranslation();
 
   const handleClick = () => signIn();
 

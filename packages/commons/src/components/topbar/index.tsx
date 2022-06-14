@@ -7,7 +7,7 @@ import LanguageMenu from './LanguageMenu';
 import ProfileAvatar from './ProfileAvatar';
 
 const TopBar: FC = () => {
-  const { userAuthenticated } = useAppState();
+  const { userState } = useAppState().auth;
 
   return (
     <Box position="absolute" width={'100%'}>

@@ -54,9 +54,10 @@ const StyledToolTip = styled(({ className, ...props }: TooltipProps) => (
 }));
 
 const ThemeAppearance: FC = () => {
+  const { themeAppearance } = useAppState().ui;
+  const { setThemeAppearance } = useActions().ui;
+
   const { t } = useTranslation();
-  const { themeAppearance } = useAppState();
-  const { setThemeAppearance } = useActions();
 
   const changePaletteMode = (event: MouseEvent<HTMLElement>, value: PaletteMode | null) => {
     if (!value || value === themeAppearance) return;

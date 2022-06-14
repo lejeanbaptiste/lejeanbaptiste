@@ -1,40 +1,15 @@
-import {
-  INotification,
-  Language,
-  MessageDialog,
-  PaletteMode,
-  Resource,
-  StorageDialogState,
-  StorageProvider,
-  User,
-} from '@src/@types/types';
-import type { IdentityProvider } from '@src/services/IdentityProvider';
+import { Resource, StorageDialogState, StorageProvider } from '@src/types';
 
 type State = {
-  authenticationServiceName: string;
-  darkMode: boolean;
-  identityProviders: { [key: string]: IdentityProvider };
-  language: Language;
-  messageDialog: MessageDialog;
-  notifications: INotification[];
   recentDocuments: Resource[];
   resource?: Resource;
   sampleDocuments?: { title: string; url: string }[];
+  templates: { icon: string; title: string; url: string }[];
   storageDialogState: StorageDialogState;
   storageProviders: StorageProvider[];
-  templates: { title: string; url: string }[];
-  themeAppearance: PaletteMode;
-  user?: User;
-  userAuthenticated: boolean | 'authenticating';
 };
 
 export const state: State = {
-  authenticationServiceName: 'lincs-keycloak',
-  darkMode: false,
-  identityProviders: {},
-  language: { code: 'en-CA', name: 'english', shortName: 'en' },
-  messageDialog: { open: false },
-  notifications: [],
   recentDocuments: [],
   sampleDocuments: [
     {
@@ -46,26 +21,29 @@ export const state: State = {
       url: 'https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20poem%20template.xml',
     },
   ],
+
   storageDialogState: { open: false },
   storageProviders: [],
   templates: [
     {
+      icon: 'blankPage',
       title: 'Blank',
       url: 'https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20blank%20template.xml',
     },
     {
+      icon: 'letter',
       title: 'Letter',
       url: 'https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20letter%20template.xml',
     },
     {
+      icon: 'feather',
       title: 'Poem',
       url: 'https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20poem%20template.xml',
     },
     {
+      icon: 'prose',
       title: 'Prose',
       url: 'https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20prose%20template.xml',
     },
   ],
-  themeAppearance: 'auto',
-  userAuthenticated: 'authenticating',
 };
