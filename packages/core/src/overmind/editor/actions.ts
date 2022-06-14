@@ -2,7 +2,6 @@ import $ from 'jquery';
 import Cookies from 'js-cookie';
 import { debounce } from 'lodash';
 import { Context } from '../';
-import { ConfigLegacy, Schema } from '../../@types';
 import type {
   Authority,
   ILookupsConfig,
@@ -10,6 +9,7 @@ import type {
   ILookupServiceEntity,
   LookupsEntityType,
 } from '../../components/entityLookups/types';
+import { ConfigLegacy, Schema } from '../../types';
 import { log } from './../../utilities';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
@@ -197,8 +197,9 @@ export const setFontSize = ({ state }: Context, value: number) => {
   state.editor.currentFontSize = value;
 };
 
-export const showTags = ({ state }: Context, value: boolean) => {
+export const toggleShowTags = ({ state }: Context, value?: boolean) => {
   if (!window.writer?.editor) return;
+  if (!value) value = !state.editor.showTags;
 
   $('body', window.writer.editor.getDoc()).toggleClass('showTags');
   state.editor.showTags = value;
@@ -291,7 +292,7 @@ export const resetDialogWarnings = ({ state }: Context) => {
 
 export const resetPreferences = ({ state, actions, effects }: Context) => {
   if (state.editor.currentFontSize !== 11) actions.editor.setFontSize(11);
-  if (state.editor.showTags !== false) actions.editor.showTags(false);
+  if (state.editor.showTags !== false) actions.editor.toggleShowTags(false);
   if (state.editor.showEntities !== true) actions.editor.showEntities(true);
   if (state.editor.editorMode !== 'xmlrdfoverlap') actions.editor.setEditorMode('xmlrdf');
   if (state.editor.annotationMode !== 3) actions.editor.setAnnotationrMode(3);
