@@ -15,6 +15,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { accountManagement } from '@src/services/AuthenticationService';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
+import EditorSettings from './EditorSettings';
 import Identity from './Identity';
 import Language from './Language';
 import Storage from './Storage';
@@ -43,17 +44,11 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
   return (
     <Popover
       anchorEl={anchor}
-      anchorOrigin={{
-        vertical: 'bottom',
-        horizontal: 'right',
-      }}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       id="profile"
       onClose={handleClose}
       open={open}
-      transformOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
     >
       <Stack direction="row" alignItems="flex-start" spacing={2} p={2}>
         <Avatar src={user?.avatar_url} />
@@ -69,9 +64,7 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
           </Tooltip>
         </IconButton>
       </Stack>
-
       <Divider />
-
       <List
         sx={{
           width: 280,
@@ -82,17 +75,18 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
         <Storage />
       </List>
 
-      {/* <Services /> */}
-
       <Divider />
-
       <List sx={{ width: 280 }}>
         <ThemeAppearance />
         <Language />
       </List>
-
       <Divider />
-
+      {leafWriter && (
+        <>
+          <EditorSettings />
+          <Divider />
+        </>
+      )}
       <Box display="flex" justifyContent="center" mt={2} mb={2}>
         <Button onClick={handleSignOut} size="small" variant="outlined">
           {t('home:signOut')}

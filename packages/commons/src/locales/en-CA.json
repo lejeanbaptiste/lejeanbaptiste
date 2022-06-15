@@ -28,6 +28,7 @@
     "team": "Team",
     "templates": "templates"
   },
+  "settings": "Settings",
   "storageDialog": {
     "load": "load",
     "pasteXml": "paste XML",
