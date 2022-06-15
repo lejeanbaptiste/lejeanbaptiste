@@ -183,7 +183,7 @@ describe('Save Dialog', () => {
 
       test.todo('Repository - Error');
 
-      test('Folder', async () => {
+      test.skip('Folder', async () => {
         const resource = mock.getResource({ provider: preferProvider, type: 'save' });
         await setup({
           config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },

@@ -30,6 +30,7 @@ const spyGithub = () => {
 
   jest
     .spyOn(provider, 'getOrganizationsForAuthenticatedUser')
+    //@ts-ignore
     .mockImplementation(async () => ({ collection: mock.organizations, nextPage: null }));
 
   jest
@@ -43,7 +44,7 @@ const spyGithub = () => {
     .spyOn(provider, 'getLatestCommit')
     .mockImplementation(async () => mock.getLatestCommitResults);
 
-  jest.spyOn(provider, 'createFolder').mockImplementation(async () => mock.createFolderResults);
+  // jest.spyOn(provider, 'createFolder').mockImplementation(async () => mock.createFolderResults);
 };
 
 const spyGitlab = () => {
@@ -86,5 +87,5 @@ const spyGitlab = () => {
     .spyOn(provider, 'getLatestCommit')
     .mockImplementation(async () => mock.getLatestCommitResults);
 
-  jest.spyOn(provider, 'createFolder').mockImplementation(async () => mock.createFolderResults);
+  // jest.spyOn(provider, 'createFolder').mockImplementation(async () => mock.createFolderResults);
 };
