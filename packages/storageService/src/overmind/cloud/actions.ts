@@ -98,7 +98,7 @@ export const changeProvider = async (
 
 //---------------
 
-interface IInitializeParams {
+export interface IInitializeParams {
   resource?: Resource | string;
   source?: string;
 }
