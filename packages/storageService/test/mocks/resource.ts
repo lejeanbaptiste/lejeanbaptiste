@@ -1,5 +1,5 @@
-import type { ProviderAuth } from '../../src/@types/Provider';
-import { DocumentDetails, Organization, Repository, Resource, User } from '../../src/@types/types';
+import type { ProviderAuth } from '../../src/types/Provider';
+import { DocumentDetails, Organization, Repository, Resource, User } from '../../src/types';
 import { SearchBlobsItem } from '../../src/providers/Gitlab';
 
 export const unsupportedProviderAuth: ProviderAuth = { name: 'google', access_token: '12345' };
