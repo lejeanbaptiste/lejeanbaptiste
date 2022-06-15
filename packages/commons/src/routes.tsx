@@ -1,6 +1,6 @@
 import React from 'react';
 import BlankLayout from './layouts/BlankLayout';
-import EditView from './views/editor';
+import EditView from './views/edit';
 import NotFoundView from './views/error/NotFoundView';
 import HomeView from './views/home';
 import LinkAccounts from './views/LinkAccounts';
