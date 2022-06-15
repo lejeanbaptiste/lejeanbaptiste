@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
 
-const Editor: FC = () => {
+const LeafWriterContainer: FC = () => {
   const { user } = useAppState().auth;
   const { leafWriter } = useAppState().editor;
   const { resource } = useAppState().storage;
@@ -70,4 +70,4 @@ const Editor: FC = () => {
   return <Box ref={divEl} sx={{ height: 'calc(100vh - 48px)', overflow: 'hidden' }} />;
 };
 
-export default Editor;
+export default LeafWriterContainer;

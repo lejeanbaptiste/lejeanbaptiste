@@ -5,7 +5,7 @@ import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutl
 import MailOutlinedIcon from '@mui/icons-material/MailOutlined';
 import { Gitlab } from 'mdi-material-ui';
 import FeatherIcon from '../icons/Feather';
-import OrcidIcon from '../icons/Orcid';
+import OrcidIcon from '../icons/OrcidIcon';
 
 const icons = new Map([
   ['github', GitHubIcon],
