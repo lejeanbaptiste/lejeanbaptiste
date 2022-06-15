@@ -1,8 +1,8 @@
 import React from 'react';
 import BlankLayout from './layouts/BlankLayout';
-import NotFoundView from './views/Error/NotFoundView';
-import HomeView from './views/Home';
-import EditView from './views/Editor';
+import EditView from './views/editor';
+import NotFoundView from './views/error/NotFoundView';
+import HomeView from './views/home';
 import LinkAccounts from './views/LinkAccounts';
 
 const routes = [
