@@ -7,7 +7,7 @@ import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import Editor from './LeafWriterContainer';
+import LeafWriterContainer from './LeafWriterContainer';
 import TopBar from './topBar';
 
 const EditView: FC = () => {
@@ -85,7 +85,7 @@ const EditView: FC = () => {
   return (
     <Page title={t('home:homepage')}>
       <TopBar />
-      {!resource ? <LoadingMask /> : <Editor />}
+      {!resource ? <LoadingMask /> : <LeafWriterContainer />}
     </Page>
   );
 };
