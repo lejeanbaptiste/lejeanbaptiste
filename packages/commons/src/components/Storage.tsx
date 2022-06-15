@@ -1,47 +1,25 @@
 import type { Resource } from '@cwrc/leafwriter-storage-service';
-import { Backdrop, LinearProgress } from '@mui/material';
 import { usePermalink } from '@src/hooks/usePermalink';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+import LoadingMask from './loadingMask';
 
 const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
 
 const Storage: FC = () => {
+  const { user } = useAppState().auth;
+  const { storageDialogState } = useAppState().storage;
+
+  const { closeStorageDialog, getStorageProvidersAuth, setResource, isValidXml } =
+    useActions().storage;
+
   const navigate = useNavigate();
   const location = useLocation();
-  const { resource, storageDialogState, user, userAuthenticated } = useAppState();
-  const {
-    closeStorageDialog,
-    getStorageProvidersAuth,
-    openStorageDialog,
-    setResource,
-    showMessageDialog,
-    isValidXml,
-  } = useActions();
-  const { parsePermalink, setPermalink } = usePermalink();
+
+  const { setPermalink } = usePermalink();
 
   const { open, source, type } = storageDialogState;
-
-  useEffect(() => {
-    if (userAuthenticated === true) checkPermalink();
-  }, [userAuthenticated]);
-
-  const checkPermalink = () => {
-    const permalink = parsePermalink();
-    if (!permalink) return;
-
-    if ('error' in permalink || !permalink.valid || !permalink.resource) {
-      showMessageDialog({ title: 'Warning', message: permalink.error, onClose: close });
-      return;
-    }
-
-    if (!permalink.resource.filename) {
-      openStorageDialog({ source: 'cloud', type: 'load', resource: permalink.resource });
-    }
-  };
-
-
 
   const handleOnChange = (resource?: Resource) => {
     if (location.pathname !== '/') return;
@@ -50,9 +28,9 @@ const Storage: FC = () => {
 
   const handleLoad = (res: Resource) => {
     setResource(res);
-    setPermalink(res);
+    const permalink = setPermalink(res);
     closeStorageDialog();
-    navigate('/edit', { replace: true });
+    navigate(`/edit${permalink}`, { replace: true });
 
     //? open on a new tab
     //! works fine with cloud document on the cloud.
