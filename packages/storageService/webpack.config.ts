@@ -39,7 +39,7 @@ const optimization = {
 const plugins = [
   new CleanWebpackPlugin({ cleanStaleWebpackAssets: false }),
   new MiniCssExtractPlugin(),
-  new webpack.ProvidePlugin({ process: 'process/browser' }),
+  // new webpack.ProvidePlugin({ process: 'process/browser' }),
   new WebpackBar({ color: isDev ? '#7e57c2' : '#9ccc65' }),
 ];
 
