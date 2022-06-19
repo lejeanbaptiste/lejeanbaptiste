@@ -1,5 +1,13 @@
 ## 1.2.0
 
+## 1.2.1
+
+### Patch Changes
+
+- 2a97acf: Allows to open the settings dialog from outside LEAF-Writer
+- Updated dependencies [2a97acf]
+  - @cwrc/leafwriter@1.3.0
+
 ### Minor Changes
 
 [0e565de]
@@ -33,8 +41,9 @@
 [924a08a]
 
 - **Update to Reac 18**
+
   - Update dependencies
-  
+
 [924a08a]
 
 - Updated dependencies
