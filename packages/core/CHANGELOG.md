@@ -1,5 +1,11 @@
 ## 1.2.0
 
+## 1.2.1
+
+### Patch Changes
+
+- 5c31be0: Build: fix tinymce css path
+
 ### Minor Changes
 
 [0e565de]
