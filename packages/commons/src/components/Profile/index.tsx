@@ -83,7 +83,7 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
       <Divider />
       {leafWriter && (
         <>
-          <EditorSettings />
+          <EditorSettings handleClose={handleClose} />
           <Divider />
         </>
       )}
