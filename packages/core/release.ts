@@ -14,7 +14,7 @@ shell.cp('./src/css/build/editor.css', './lib/css');
 
 //copy tinymce skins
 shell.mkdir('-p', './lib/css/tinymce/skins');
-shell.cp('-r', './src/css/tinymce/skins', './lib/css/tinymce/skins');
+shell.cp('-r', './src/css/tinymce/skins', './lib/css/tinymce/');
 
 //copy @cwrc/leafwriter-validator worker
 shell.cp('../validator/dist/leafwriter-validator.worker.*', './lib');
