@@ -1,5 +1,11 @@
 ## 1.2.0
 
+## 1.3.0
+
+### Minor Changes
+
+- 2a97acf: Allows to open the settings dialog from outside LEAF-Writer
+
 ## 1.2.1
 
 ### Patch Changes
