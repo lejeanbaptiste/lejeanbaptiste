@@ -212,6 +212,10 @@ class Leafwriter {
     overmind.actions.validator.validate();
   }
 
+  async showSettingsDialog() {
+    overmind.actions.ui.openSettingsDialog();
+  }
+
   dispose() {
     //todo
     this._isDirty.complete();
