@@ -31,7 +31,7 @@
 		"build": "env-cmd -e production webpack"
 	},
 	"dependencies": {
-		"@cwrc/leafwriter": "^1.2.0",
+		"@cwrc/leafwriter": "^1.2.1",
 		"@cwrc/leafwriter-storage-service": "^1.1.0",
 		"@emotion/react": "^11.9.3",
 		"@emotion/styled": "^11.9.3",
