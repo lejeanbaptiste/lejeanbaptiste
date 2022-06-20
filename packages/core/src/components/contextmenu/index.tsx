@@ -1,11 +1,11 @@
 import { Menu } from '@mui/material';
+import React, { useEffect, useState, type FC } from 'react';
+import Writer from '../../js/Writer';
 import { useActions, useAppState } from '../../overmind';
-import React, { FC, useEffect, useState } from 'react';
 import Collection from './Collection';
 import Header from './Header';
-import { Item as ItemType } from './types';
+import type { Item as ItemType } from './types';
 import useContextmenu from './useContextmenu';
-import Writer from '../../js/Writer';
 
 interface ContextMenuProps {
   writer: Writer;
@@ -14,10 +14,8 @@ interface ContextMenuProps {
 const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
   const actions = useActions();
   const { editor, ui } = useAppState();
-  const { collectionType, getItems, initialize, MIN_WIDTH, query, tagName, xpath, tagMeta } = useContextmenu(
-    writer,
-    ui.contextMenu
-  );
+  const { collectionType, getItems, initialize, MIN_WIDTH, query, tagName, xpath, tagMeta } =
+    useContextmenu(writer, ui.contextMenu);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>();
   const [options, setOptions] = useState<ItemType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -90,7 +88,7 @@ const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
           open={show}
           PaperProps={{ elevation: 4 }}
         >
-          <Header tagName={tagName} xpath={xpath} tagMeta={tagMeta}/>
+          <Header tagName={tagName} xpath={xpath} tagMeta={tagMeta} />
 
           <Collection
             handleQuery={handleQuery}

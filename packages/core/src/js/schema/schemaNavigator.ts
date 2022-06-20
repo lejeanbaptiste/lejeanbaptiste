@@ -1,3 +1,5 @@
+import { log } from '../../utilities';
+
 /**
  * Navigates the schema JSON to get parents, children, and attributes for tags or paths.
  * Paths are essentially XPaths, however only element names and the child axis "/" are supported, e.g. TEI/text/body/div/p
@@ -23,7 +25,7 @@ export const getParentsForTag = (tag: string) => {
   const elements = getEntriesForTag(tag);
 
   if (elements.length == 0) {
-    console.warn(`schemaNavigator: cannot find element for ${tag}`);
+    log.warn(`schemaNavigator: cannot find element for ${tag}`);
     return [];
   }
 
@@ -44,7 +46,7 @@ export const getParentsForTag = (tag: string) => {
 export const getParentsForPath = (path: string) => {
   const element = getEntryForPath(path);
   if (element === null) {
-    console.warn(`schemaNavigator: cannot find element for ${path}`);
+    log.warn(`schemaNavigator: cannot find element for ${path}`);
     return [];
   }
 
@@ -63,7 +65,7 @@ export const getChildrenForTag = (tag: string) => {
   const elements = getEntriesForTag(tag);
 
   if (elements.length == 0) {
-    console.warn(`schemaNavigator: cannot find element for ${tag}`);
+    log.warn(`schemaNavigator: cannot find element for ${tag}`);
     return [];
   }
 
@@ -84,7 +86,7 @@ export const getChildrenForTag = (tag: string) => {
 export const getChildrenForPath = (path: string) => {
   const element = getEntryForPath(path);
   if (element === null) {
-    console.warn(`schemaNavigator: cannot find element for ${path}`);
+    log.warn(`schemaNavigator: cannot find element for ${path}`);
     return [];
   }
 
@@ -101,7 +103,7 @@ export const getChildrenForPath = (path: string) => {
 export const getAttributesForTag = (tag: string) => {
   const elements = getEntriesForTag(tag);
   if (elements.length === 0) {
-    // console.warn('schemaNavigator: cannot find element for '+tag);
+    // log.warn('schemaNavigator: cannot find element for '+tag);
     return [];
   }
 
@@ -118,7 +120,7 @@ export const getAttributesForTag = (tag: string) => {
 export const getAttributesForPath = (path: string) => {
   const element = getEntryForPath(path);
   if (element === null) {
-    console.warn(`schemaNavigator: cannot find element for ${path}`);
+    log.warn(`schemaNavigator: cannot find element for ${path}`);
     return [];
   }
 
@@ -639,7 +641,7 @@ const getDefinition = (name: string) => {
     if (d['@name'] == name) return d;
   }
 
-  console.warn('schemaNavigator: no definition found for', name);
+  log.warn('schemaNavigator: no definition found for', name);
   return null;
 };
 

@@ -1,10 +1,11 @@
+import axios from 'axios';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/selectmenu';
 import 'jquery-ui/ui/widgets/tooltip';
-import axios from 'axios';
-import NerveEditDialog from './NerveEditDialog';
+import { log } from '../../../../utilities';
 import MergeDialog from './MergeDialog';
+import NerveEditDialog from './NerveEditDialog';
 
 interface NerveConfig {
   writer: any;
@@ -69,8 +70,7 @@ const iconsMap = new Map([
   ['link', 'link'],
 ]);
 
-const NSSI_API_BASE_URL =
-  'https://api.nssi.dev.lincsproject.ca/api';
+const NSSI_API_BASE_URL = 'https://api.nssi.dev.lincsproject.ca/api';
 
 /**
  * @class Nerve
@@ -80,7 +80,7 @@ const NSSI_API_BASE_URL =
  * @param {String} config.nerveUrl
  */
 function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
-  if (nerveUrl === undefined) console.error('Nerve: no nerveUrl specified!');
+  if (nerveUrl === undefined) log.error('Nerve: no nerveUrl specified!');
 
   const id = parentId;
 
@@ -308,12 +308,12 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
 
     // const response = await requestLegacy(document, nerveContext);
     const response = await requestNssi(document, nerveContext);
-  
+
     if (!response || response.status === 400) {
       const msg = `
         NERVE server returned an error. Bad request (possibly encode error): ${response.statusText}
       `;
-      console.warn(msg);
+      log.warn(msg);
       li?.hide?.();
       writer.dialogManager.show('message', {
         title: 'Error',
@@ -323,7 +323,6 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       return;
     }
     postProcess(response.data);
-  
   };
 
   const requestNssi = async (document: string, context: IContext) => {
@@ -350,10 +349,10 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       },
     });
 
-    console.log(response);
+    log.info(response);
 
     if (response.status >= 300) {
-      console.log(response);
+      log.info(response);
       return response;
     }
 
@@ -366,7 +365,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
     }
 
     const results = await getNssiResults({ jobId, resultsUri });
-    console.log(results);
+    log.info(results);
 
     return results;
   };
@@ -385,7 +384,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
 
       attempts++;
 
-      console.log(response);
+      log.info(response);
       const data = response.data;
 
       if (data.status === 'READY') {
@@ -415,19 +414,19 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    console.log(response);
+    log.info(response);
 
     return response;
   };
 
   const requestLegacy = async (document: string, context: IContext) => {
-    console.log(context);
+    log.info(context);
     // const apiUrl = `${nerveUrl}/ner`;
     const apiUrl = 'https://cwrc-writer.cwrc.ca/nerve//ner';
 
     const response = await axios.post(apiUrl, { document, context });
     // .catch((error) => {
-    //   console.warn('encoding failed', error);
+    //   log.warn('encoding failed', error);
     //   li.hide();
     //   writer.dialogManager.show('message', {
     //     title: 'Error',
@@ -437,20 +436,20 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
     //   return null;
     // });
 
-    // console.log(response);
+    // log.info(response);
     // if (!response) return;
 
     return response;
   };
 
   const postProcess = async (results: any) => {
-    console.log(results)
+    log.info(results);
     const li = writer.dialogManager.getDialog('loadingindicator');
     writer.event('massUpdateStarted').publish();
 
     const doc: XMLDocument | null = writer.utilities.stringToXML(results.document);
     if (!doc) {
-      console.warn('nerve.run: could not parse response from NERVE');
+      log.warn('nerve.run: could not parse response from NERVE');
       li?.hide?.();
       return;
     }
@@ -619,7 +618,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
         const mapping = sm.mapper.getReverseMapping(el, true);
 
         if (mapping.type === undefined) {
-          console.warn('nerve: unrecognized entity type for', tag);
+          log.warn('nerve: unrecognized entity type for', tag);
         } else {
           if (mapping.lemma !== undefined || mapping.uri !== undefined) {
             const xpath = writer.utilities.getElementXPath(el.parentElement);
@@ -986,7 +985,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
   const selectRangeForEntity = (entry: any) => {
     const parent = writer.utilities.evaluateXPath(writer.editor.getBody(), entry.xpath);
     if (parent === null) {
-      console.warn('nerve: could not get parent for "', entry.lemma, '" at:', entry.xpath);
+      log.warn('nerve: could not get parent for "', entry.lemma, '" at:', entry.xpath);
       return null;
     }
 
@@ -1020,7 +1019,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       return range;
     } catch (event) {
       range.collapse();
-      console.warn('nerve: could not select range for', entry);
+      log.warn('nerve: could not select range for', entry);
       return null;
     }
   };
@@ -1048,7 +1047,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
           parentEl.getAttribute('_entity') === 'true' ||
           namedEntityTags.indexOf(parentEl.getAttribute('_tag')) !== -1
         ) {
-          console.log('nerve: entity already exists for', entry);
+          log.info('nerve: entity already exists for', entry);
           range.collapse();
           return false;
         }
@@ -1420,62 +1419,62 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
 export default Nerve;
 
 const nerveResultsTestSampleLetter = {
-	processingDate: '2021-12-06T23:44:55.807495',
-	metadata: {},
-	data: [
-		{
-			selections: [{ lemma: 'John', selection: { start: 220, end: 224 } }],
-			classification: 'MISC',
-			entity: 'John',
-		},
-		{
-			selections: [{ lemma: 'Anglo - Norwegian Society', selection: { start: 979, end: 1006 } }],
-			classification: 'MISC',
-			entity: 'Anglo - Norwegian Society',
-		},
-		{
-			selections: [{ lemma: 'Bergen', selection: { start: 1092, end: 1098 } }],
-			classification: 'MISC',
-			entity: 'Bergen',
-		},
-		{
-			selections: [{ lemma: 'Sundays', selection: { start: 536, end: 552 } }],
-			classification: 'MISC',
-			entity: 'Sundays',
-		},
-		{
-			selections: [{ lemma: 'Fri.', selection: { start: 1036, end: 1054 } }],
-			classification: 'MISC',
-			entity: 'Fri.',
-		},
-		{
-			selections: [{ lemma: 'Brynjulf Bull', selection: { start: 362, end: 375 } }],
-			classification: 'MISC',
-			entity: 'Brynjulf Bull',
-		},
-		{
-			selections: [{ lemma: 'Copenhagen', selection: { start: 290, end: 300 } }],
-			classification: 'LOCATION',
-			entity: 'Copenhagen',
-		},
-		{
-			selections: [
-				{ lemma: 'Oslo', selection: { start: 338, end: 342 } },
-				{ lemma: 'Oslo', selection: { start: 739, end: 743 } },
-				{ lemma: 'Oslo', selection: { start: 1030, end: 1034 } },
-			],
-			classification: 'MISC',
-			entity: 'Oslo',
-		},
-		{
-			selections: [{ lemma: 'Bergen', selection: { start: 117, end: 123 } }],
-			classification: 'LOCATION',
-			entity: 'Bergen',
-		},
-		{
-			selections: [{ lemma: 'Sunday', selection: { start: 815, end: 821 } }],
-			classification: 'MISC',
-			entity: 'Sunday',
-		},
-	],
+  processingDate: '2021-12-06T23:44:55.807495',
+  metadata: {},
+  data: [
+    {
+      selections: [{ lemma: 'John', selection: { start: 220, end: 224 } }],
+      classification: 'MISC',
+      entity: 'John',
+    },
+    {
+      selections: [{ lemma: 'Anglo - Norwegian Society', selection: { start: 979, end: 1006 } }],
+      classification: 'MISC',
+      entity: 'Anglo - Norwegian Society',
+    },
+    {
+      selections: [{ lemma: 'Bergen', selection: { start: 1092, end: 1098 } }],
+      classification: 'MISC',
+      entity: 'Bergen',
+    },
+    {
+      selections: [{ lemma: 'Sundays', selection: { start: 536, end: 552 } }],
+      classification: 'MISC',
+      entity: 'Sundays',
+    },
+    {
+      selections: [{ lemma: 'Fri.', selection: { start: 1036, end: 1054 } }],
+      classification: 'MISC',
+      entity: 'Fri.',
+    },
+    {
+      selections: [{ lemma: 'Brynjulf Bull', selection: { start: 362, end: 375 } }],
+      classification: 'MISC',
+      entity: 'Brynjulf Bull',
+    },
+    {
+      selections: [{ lemma: 'Copenhagen', selection: { start: 290, end: 300 } }],
+      classification: 'LOCATION',
+      entity: 'Copenhagen',
+    },
+    {
+      selections: [
+        { lemma: 'Oslo', selection: { start: 338, end: 342 } },
+        { lemma: 'Oslo', selection: { start: 739, end: 743 } },
+        { lemma: 'Oslo', selection: { start: 1030, end: 1034 } },
+      ],
+      classification: 'MISC',
+      entity: 'Oslo',
+    },
+    {
+      selections: [{ lemma: 'Bergen', selection: { start: 117, end: 123 } }],
+      classification: 'LOCATION',
+      entity: 'Bergen',
+    },
+    {
+      selections: [{ lemma: 'Sunday', selection: { start: 815, end: 821 } }],
+      classification: 'MISC',
+      entity: 'Sunday',
+    },
+  ],
 };

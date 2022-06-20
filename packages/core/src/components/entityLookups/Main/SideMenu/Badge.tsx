@@ -1,5 +1,5 @@
-import { Box, alpha } from '@mui/material';
-import React, { FC } from 'react';
+import { Box } from '@mui/material';
+import React, { type FC } from 'react';
 
 interface BadgeProps {
   count?: number;

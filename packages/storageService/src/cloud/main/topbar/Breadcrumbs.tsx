@@ -7,9 +7,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useActions, useAppState } from '../../../overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../../../overmind';
 import Crumb from './Crumb';
 
 const Breadcrumbs: FC = () => {
@@ -43,7 +43,9 @@ const Breadcrumbs: FC = () => {
         maxItems={isSM ? 2 : 6}
         sx={{ '& ol': { alignItems: 'flex-end' } }}
       >
-        {collectionType === 'organizations' && <Typography mt={2}>{t('cloud:breadcrumbs:organizations')}</Typography>}
+        {collectionType === 'organizations' && (
+          <Typography mt={2}>{t('cloud:breadcrumbs:organizations')}</Typography>
+        )}
 
         {collectionType === 'repos' && collectionSource === 'organization' && (
           <Crumb level={-1} name={t('cloud:breadcrumbs:organizations')} onClick={handleClickOrgs} />

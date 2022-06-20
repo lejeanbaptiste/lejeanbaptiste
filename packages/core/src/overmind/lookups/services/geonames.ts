@@ -1,6 +1,7 @@
-import axios, { AxiosInstance } from 'axios';
-import { IResult } from '../../../components/entityLookups/types';
-import ILookupServiceApi, { IFindParams } from './type';
+import axios, { type AxiosInstance } from 'axios';
+import type { IResult } from '../../../components/entityLookups/types';
+import { log } from './../../../utilities';
+import ILookupServiceApi, { type IFindParams } from './type';
 
 interface Geoname {
   [x: string]: any;
@@ -24,8 +25,10 @@ export default class Geonames implements ILookupServiceApi {
   private readonly username: string;
 
   constructor(config: any) {
-    if (!config.username || config.username === '') {
-      throw new Error('You must define a username to be able to make requests to Geonames');
+    if (!config?.username || config?.username === '') {
+      // throw new Error('You must define a username to be able to make requests to Geonames');
+      log.warn('GEONAME: You must define a username to be able to make requests to Geonames');
+      return;
     }
     this.username = config.username;
     this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
@@ -59,8 +62,7 @@ export default class Geonames implements ILookupServiceApi {
         Something wrong with the call to geonames, possibly a problem with the network or the server.
         HTTP error: ${response.statusText}
       `;
-      // throw new Error(errorMsg);
-      console.warn(errorMsg);
+      log.warn(errorMsg);
       return [];
     }
 

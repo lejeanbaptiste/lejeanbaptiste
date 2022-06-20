@@ -1,16 +1,15 @@
 import {
   Box,
+  CircularProgress,
   Dialog,
   DialogContent,
-  LinearProgress,
   Slide,
   SlideProps,
   Stack,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { FC, forwardRef, useEffect, useState } from 'react';
-import type { Resource, StorageDialogProps } from '../@types/types';
+import React, { forwardRef, useEffect, useState, type FC } from 'react';
 import CloudDialog from '../cloud';
 import FooterLoad from '../footer/FooterLoad';
 import FooterSave from '../footer/FooterSave';
@@ -19,6 +18,7 @@ import PastePanel from '../local/PastePanel';
 import UploadPanel from '../local/UploadPanel';
 import { useActions, useAppState } from '../overmind';
 import SourcePanel from '../sourcePanel';
+import type { Resource, StorageDialogProps } from '../types';
 
 const HEIGHT = 600;
 
@@ -40,7 +40,7 @@ const Main: FC<StorageDialogProps> = ({
 }) => {
   const { cloud } = useAppState();
   const { resource, submit, source } = useAppState().common;
-  const { intialize } = useActions().cloud;
+  const { initialize } = useActions().cloud;
   const { clearSubmit, configure, resetAll, setDialogType, setResource } = useActions().common;
 
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +90,7 @@ const Main: FC<StorageDialogProps> = ({
 
   const init = async () => {
     await configure(config);
-    await intialize({ source: originSource, resource: originResource });
+    await initialize({ source: originSource, resource: originResource });
     setIsLoading(false);
   };
 
@@ -99,15 +99,12 @@ const Main: FC<StorageDialogProps> = ({
     onCancel && onCancel();
   };
 
-  const clickAway = () => {
-    onBackdropClick && resetAll() && onBackdropClick();
+  const clickAway = async () => {
+    if (onBackdropClick) {
+      await resetAll();
+      onBackdropClick();
+    }
   };
-
-  const LoadingProgress = () => (
-    <Box display="flex" flexDirection="column">
-      <LinearProgress />
-    </Box>
-  );
 
   return (
     <Dialog
@@ -119,12 +116,14 @@ const Main: FC<StorageDialogProps> = ({
       open={open}
       TransitionComponent={Transition}
     >
-      {isLoading ? (
-        <LoadingProgress />
-      ) : (
-        <Box role="panel" height={isMD ? '100vh' : HEIGHT}>
-          <Stack direction="row" height="100%">
-            <SourcePanel />
+      <Box role="panel" height={isMD ? '100vh' : HEIGHT}>
+        <Stack direction="row" height="100%">
+          <SourcePanel />
+          {isLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" width="100%">
+              <CircularProgress />
+            </Box>
+          ) : (
             <Stack height="100%" width="100%">
               <Header />
               <DialogContent
@@ -141,11 +140,12 @@ const Main: FC<StorageDialogProps> = ({
                   type === 'load' && source === 'cloud' && <CloudDialog />
                 )}
               </DialogContent>
+
               {type === 'save' ? <FooterSave onCancel={close} /> : <FooterLoad onCancel={close} />}
             </Stack>
-          </Stack>
-        </Box>
-      )}
+          )}
+        </Stack>
+      </Box>
     </Dialog>
   );
 };

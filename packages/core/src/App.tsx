@@ -1,17 +1,17 @@
 import { Box, ThemeProvider, useMediaQuery } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
-import React, { FC, useEffect, useState } from 'react';
-import type { LeafWriterConfig } from './@types';
+import React, { useEffect, useState, type FC } from 'react';
 import BottomBar from './components/bottombar';
 import ContextMenu from './components/contextmenu';
 import EditSourceDialog from './components/editSource';
 import EntityLookupDialog from './components/entityLookups';
 import Popup from './components/popup';
-import TopBar from './components/topBar';
+import SetingsDialog from './components/settings';
 import { createConfigLegacy } from './config';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import theme from './theme';
+import type { ILeafWriterOptions } from './types';
 
 declare global {
   interface Window {
@@ -21,7 +21,7 @@ declare global {
 
 const CONTAINER = 'leafwriterContainer';
 
-const App: FC<LeafWriterConfig> = ({ document, editor, onLoadRequest, onSaveRequest, user }) => {
+const App: FC<ILeafWriterOptions> = ({ document, settings: editor, user }) => {
   const actions = useActions();
   const state = useAppState();
   const [writer, setWriter] = useState<Writer | null>(null);
@@ -34,8 +34,9 @@ const App: FC<LeafWriterConfig> = ({ document, editor, onLoadRequest, onSaveRequ
   }, [preferDark]);
 
   useEffect(() => {
-    if (state.document.url !== document.url) {
+    if (document.url === undefined || state.document.url !== document.url) {
       if (writer) writer.destroy();
+      actions.document.setLoaded(false);
       window.writer = null;
       setWriter(null);
       setup();
@@ -43,19 +44,17 @@ const App: FC<LeafWriterConfig> = ({ document, editor, onLoadRequest, onSaveRequ
   }, [document]);
 
   const setup = async () => {
-    const config = createConfigLegacy({ document, editor, user });
+    const config = createConfigLegacy({ document, settings: editor, user });
     const { credentials } = editor;
 
     config.container = CONTAINER;
-    if (onLoadRequest) config.onLoadRequest = onLoadRequest;
-    if (onSaveRequest) config.onSaveRequest = onSaveRequest;
 
     actions.document.clear();
     actions.editor.clear();
 
     actions.editor.writerInitSettings(config);
-   
-    if (credentials?.nssiToken) actions.editor.setNssiToken(credentials?.nssiToken);
+
+    if (credentials?.nssiToken) actions.editor.setNssiToken(credentials.nssiToken);
 
     actions.editor.initiateLookupSources(editor.lookups);
 
@@ -72,11 +71,14 @@ const App: FC<LeafWriterConfig> = ({ document, editor, onLoadRequest, onSaveRequ
     //@ts-ignore
     _writer.event('writerInitialized').subscribe(() => {
       actions.document.setDocumentUrl(document.url);
-      if (document.file) actions.document.setResource(document.file);
 
       _writer.setDocument(document.xml);
 
       setWriter(window.writer);
+    });
+
+    _writer.event('documentLoaded').subscribe((success: boolean) => {
+      actions.document.setLoaded(true);
     });
   };
 
@@ -84,14 +86,11 @@ const App: FC<LeafWriterConfig> = ({ document, editor, onLoadRequest, onSaveRequ
     <ThemeProvider theme={theme(state.ui.darkMode)}>
       <SnackbarProvider>
         {/* <CssBaseline /> */}
-        <TopBar />
         <Box
           id={CONTAINER}
           sx={{
-            position: 'absolute',
-            height: 'calc(100vh - 48px - 32px)',
+            height: 'calc(100% - 32px)',
             width: '100vw',
-            top: '48px',
             paddingTop: '8px',
             backgroundColor: '#f5f5f5',
           }}
@@ -101,6 +100,7 @@ const App: FC<LeafWriterConfig> = ({ document, editor, onLoadRequest, onSaveRequ
         <Popup />
         <EditSourceDialog />
         <EntityLookupDialog />
+        <SetingsDialog />
       </SnackbarProvider>
     </ThemeProvider>
   );

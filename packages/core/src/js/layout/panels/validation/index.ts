@@ -5,7 +5,7 @@ import type {
   ValidationErrorElement,
   ValidationErrorTarget,
   ValidationResponse,
-  } from '@cwrc/leafwriter-validator';
+} from '@cwrc/leafwriter-validator';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/tooltip';
@@ -82,11 +82,13 @@ class Validation {
       this.validate();
     });
 
-    this.writer.event('documentValidated').subscribe((valid: boolean, result: ValidationResponse) => {
-      $(`#${this.id}_indicator`).hide();
-      this.showValidationResult(result);
-      if (result.errors) this.writer.layoutManager.showModule('validation');
-    });
+    this.writer
+      .event('documentValidated')
+      .subscribe((valid: boolean, result: ValidationResponse) => {
+        $(`#${this.id}_indicator`).hide();
+        this.showValidationResult(result);
+        if (result.errors) this.writer.layoutManager.showModule('validation');
+      });
 
     this.writer.event('documentValidating').subscribe((partDone: number) => {
       const pct = `${Math.floor(partDone * 100)}%`;

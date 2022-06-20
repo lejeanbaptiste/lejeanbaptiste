@@ -1,11 +1,11 @@
-import { MappingID } from '@src/@types';
-import Entity from '@src/js/entities/Entity';
-import { EntityTypes } from '@src/js/schema/types';
 import $ from 'jquery';
+import Entity from '../../../js/entities/Entity';
+import type { EntityTypes } from '../../../js/schema/types';
+import type { MappingID } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { ILWDialogConfigParams } from '../types';
-import { SchemaDialog } from './types';
+import type { SchemaDialog } from './types';
 
 class KeywordDialog implements SchemaDialog {
   readonly writer: Writer;

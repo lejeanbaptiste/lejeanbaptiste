@@ -1,7 +1,7 @@
-import { User } from '../../@types';
+import type { User } from '../../types';
 
 export const state: User = {
+  email: 'plchldr',
   name: 'Placeholder',
-  url: 'http://id.cwrc.ca/user/placeholder',
-  username: 'plchldr',
+  uri: 'http://id.cwrc.ca/user/placeholder',
 };

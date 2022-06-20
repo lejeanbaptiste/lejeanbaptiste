@@ -1,8 +1,8 @@
-import { EntityLink } from '@src/components/entityLookups/types';
-import Entity from '@src/js/entities/Entity';
-import { EntityTypes } from '@src/js/schema/types';
-import Writer from '@src/js/Writer';
 import $ from 'jquery';
+import type { EntityLink } from '../../../components/entityLookups/types';
+import Entity from '../../../js/entities/Entity';
+import type { EntityTypes } from '../../../js/schema/types';
+import Writer from '../../../js/Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { ILWDialogConfigParams } from '../types';
 import { SchemaDialog } from './types';

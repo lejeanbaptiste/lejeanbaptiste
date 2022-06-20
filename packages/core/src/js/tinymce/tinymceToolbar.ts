@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { Editor } from 'tinymce';
-import { EntityTypes } from '../schema/types';
+import type { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
 
 const toolbarOptions = [
@@ -28,17 +28,18 @@ const toolbarOptions = [
   '|',
   'validate',
   '|',
+  'settings',
   'fullscreen',
 ];
 
 interface IButton {
-  text?: string,
-  slug: string,
-  icon: string,
-  tooltip: string,
-  entityType?: EntityTypes,
-  entityButton?: boolean,
-  onAction: (api: any) => void,
+  text?: string;
+  slug: string;
+  icon: string;
+  tooltip: string;
+  entityType?: EntityTypes;
+  entityButton?: boolean;
+  onAction: (api: any) => void;
 }
 
 const configureToolbar = (writer: Writer, editor: Editor) => {
@@ -48,7 +49,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       icon: 'code',
       tooltip: 'Toggle Tags',
       onAction: (api: any) => {
-        $('body', writer.editor?.getDoc()).toggleClass('showTags');
+        writer.overmindActions.editor.toggleShowTags();
         api.setActive(!api.isActive());
       },
     },
@@ -224,6 +225,12 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       icon: 'validate',
       tooltip: 'Validate',
       onAction: () => writer.validate(),
+    },
+    {
+      slug: 'settings',
+      icon: 'settings',
+      tooltip: 'Settings',
+      onAction: () => writer.overmindActions.ui.openSettingsDialog(),
     },
   ];
 

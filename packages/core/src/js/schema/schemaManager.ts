@@ -1,6 +1,7 @@
-import type { MappingID } from '@src/@types';
 import css from 'css';
 import $ from 'jquery';
+import type { MappingID } from '../../types';
+import { log } from '../../utilities';
 import Writer from '../Writer';
 import Mapper from './mapper';
 import * as schemaNavigator from './schemaNavigator';
@@ -416,7 +417,7 @@ class SchemaManager {
     while (parentTag === null) {
       parentEl = parentEl?.parentElement ?? null;
       if (parentEl === null) {
-        console.warn('schemaManager.wouldDeleteInvalidate: outside of document!');
+        log.warn('schemaManager.wouldDeleteInvalidate: outside of document!');
         return false;
       }
       parentTag = parentEl.getAttribute('_tag');
@@ -572,7 +573,7 @@ class SchemaManager {
         : url;
 
       const response = await fetch(urlToFetch).catch((err) => {
-        console.log(err);
+        log.log(err);
       });
 
       // if loaded, convert to XML, break the loop and return
@@ -647,27 +648,41 @@ class SchemaManager {
 
     $('element', this.schemaXML).each((index, el) => {
       const tag = $(el).attr('name');
-      if (tag && elements.includes(tag)) {
+      if (tag && !elements.includes(tag)) {
         elements.push(tag);
         schemaTags += `
           .showTags *[_tag=${tag}]:before {
+            background-color: white;
             color: #aaa !important;
+            padding-left: 2px;
+            padding-right: 2px;
+            padding-bottom: 2px;
+            margin-right: 4px;
+            border-radius: 4px;
+            font-family: 'Lato';
             font-size: 13px !important;
             font-weight: normal !important;
             font-style: normal !important;
-            font-family: monospace !important;
             font-variant: normal !important;
+            box-shadow: 0 0 2px #aaaa;
             content: "<${tag}>";
           }
         `;
         schemaTags += `
           .showTags *[_tag=${tag}]:after {
+            background-color: white;
             color: #aaa !important;
+            padding-left: 2px;
+            padding-right: 2px;
+            padding-bottom: 2px;
+            margin-left: 4px;
+            border-radius: 4px;
+            font-family: 'Lato';
             font-size: 13px !important;
             font-weight: normal !important;
             font-style: normal !important;
-            font-family: monospace !important;
             font-variant: normal !important;
+            box-shadow: 0 0 2px #aaaa;
             content: "</${tag}>";
           }
         `;
@@ -697,7 +712,7 @@ class SchemaManager {
     this.schemaJSON = this.writer.utilities.xmlToJSON(schemaGrammar);
 
     if (this.schemaJSON === null) {
-      console.warn('schemaManager.loadSchema: schema XML could not be converted to JSON');
+      log.warn('schemaManager.loadSchema: schema XML could not be converted to JSON');
     }
 
     schemaNavigator.setSchemaJSON(this.schemaJSON);
@@ -813,11 +828,11 @@ class SchemaManager {
         : url;
 
       const response = await fetch(urlToFetch).catch((err) => {
-        console.log(err);
+        log.info(err);
       });
 
       //if loaded, break the loop and return
-      if (!response) return
+      if (!response) return;
       if (response.status === 200) {
         css = await response.text();
         this.cssUrl = url; // redefine schema manager css based on the available url

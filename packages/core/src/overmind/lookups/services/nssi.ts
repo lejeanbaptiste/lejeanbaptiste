@@ -1,6 +1,7 @@
-import axios, { AxiosInstance } from 'axios';
-import { IResult } from '../../../components/entityLookups/types';
-import ILookupServiceApi, { IFindParams } from './type';
+import axios, { type AxiosInstance } from 'axios';
+import type { IResult } from '../../../components/entityLookups/types';
+import { log } from './../../../utilities';
+import ILookupServiceApi, { type IFindParams } from './type';
 
 interface Doc {
   [x: string]: any;
@@ -30,7 +31,7 @@ export default class Nssi implements ILookupServiceApi {
 
   async find({ query, type }: IFindParams) {
     return [];
-    // // console.log(this.token)
+    // // log.info(this.token)
 
     // // const response = await fetch({
     // //   url:'https://api.nssi.dev.lincsproject.ca/api/jobs',
@@ -59,7 +60,7 @@ export default class Nssi implements ILookupServiceApi {
     //   }
     // );
 
-    // console.log(response);
+    // log.info(response);
 
     // if (response.status >= 400) {
     //   const errorMsg = `
@@ -67,13 +68,13 @@ export default class Nssi implements ILookupServiceApi {
     //     HTTP error: ${response.statusText}
     //   `;
     //   // throw new Error(errorMsg);
-    //   console.warn(errorMsg);
+    //   log.warn(errorMsg);
     //   return [];
     // }
 
     // const data = response.data;
 
-    // console.log(data);
+    // log.info(data);
 
     // return [];
   }

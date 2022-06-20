@@ -11,8 +11,8 @@ import {
 } from '@mui/material';
 import { formatDistance } from 'date-fns';
 import React, { FC, useState } from 'react';
-import type { ILatestCommit } from '../../@types/Provider';
-import type { Content as ContentType } from '../../@types/types';
+import type { ILatestCommit } from '../../types/Provider';
+import type { Content as ContentType } from '../../types';
 import { useActions, useAppState } from '../../overmind';
 import ContentDetails from './ContentDetails';
 

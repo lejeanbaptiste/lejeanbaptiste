@@ -1,6 +1,6 @@
 import { Menu } from '@mui/material';
+import React, { useEffect, useState, type FC } from 'react';
 import useWindowSize from '../useWindowSize';
-import React, { FC, useEffect, useState } from 'react';
 import Collection from './Collection';
 import type { Item as ItemType } from './types';
 import useContextmenu from './useContextmenu';

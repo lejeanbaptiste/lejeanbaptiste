@@ -1,8 +1,8 @@
-import { Avatar, Chip, Grid, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
 import FolderSpecialOutlinedIcon from '@mui/icons-material/FolderSpecialOutlined';
-import type { Repository } from '../../@types/types';
-import { useActions, useAppState } from '../../overmind';
+import { Avatar, Chip, Grid, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
 import React, { FC } from 'react';
+import type { Repository } from '../../types';
+import { useActions, useAppState } from '../../overmind';
 
 interface RepoProps {
   repo: Repository;
@@ -16,12 +16,12 @@ const Repo: FC<RepoProps> = ({ repo }) => {
   const { name, description, visibility } = repo;
 
   const handleClick = () => {
-    if (!visibility && visibility === 'private') return;
+    if (visibility === 'private') return;
     setSelectedItem({ repository: repo, type: 'repo' });
   };
 
   const handleDoubleClick = () => {
-    if (!visibility && visibility === 'private') return;
+    if (visibility === 'private') return;
     navigateTo({ repo });
   };
 

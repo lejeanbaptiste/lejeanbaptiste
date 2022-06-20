@@ -1,6 +1,7 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import type { IResult } from '../../../components/entityLookups/types';
-import ILookupServiceApi, { IFindParams } from './type';
+import { log } from './../../../utilities';
+import ILookupServiceApi, { type IFindParams } from './type';
 
 type NamedEntityType = 'person' | 'place' | 'organisation' | 'work' | 'thing';
 
@@ -61,7 +62,7 @@ export default class Dbpedia implements ILookupServiceApi {
         Something wrong with the call to DBPedia, possibly a problem with the network or the server.
         HTTP error: ${response.statusText}
       `;
-      console.warn(errorMsg);
+      log.warn(errorMsg);
       return [];
     }
 

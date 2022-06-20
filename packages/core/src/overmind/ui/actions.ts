@@ -1,7 +1,7 @@
-import { ContextMenuState, PaletteMode } from '@src/@types/';
 import { Context } from '../';
+import type { EntityLink, EntityLookupDialogProps } from '../../components/entityLookups/types';
 import type { PopupProps } from '../../components/popup';
-import { EntityLink, EntityLookupDialogProps } from '../../components/entityLookups/types';
+import { ContextMenuState, PaletteMode } from '../../types';
 import { supportedLanguages } from '../../utilities/util';
 
 export const onInitializeOvermind = ({ actions }: Context, overmind: any) => {
@@ -91,4 +91,12 @@ export const switchLanguage = ({ state }: Context, value: string) => {
   };
   state.ui.language = language;
   return value;
+};
+
+export const openSettingsDialog = ({ state }: Context) => {
+  state.ui.settingsDialogOpen = true;
+};
+
+export const closeSettingsDialog = ({ state }: Context) => {
+  state.ui.settingsDialogOpen = false;
 };

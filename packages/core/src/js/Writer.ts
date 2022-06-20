@@ -1,8 +1,9 @@
 import $ from 'jquery';
 import tinymce from 'tinymce';
-import { ConfigLegacy, LeafWriterEditor, LWDocument, onSaveRequestResults } from '../@types';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
+import type { ConfigLegacy, LeafWriterEditor } from '../types';
+import { log } from './../utilities';
 import Converter from './conversion/converter';
 import DialogManager from './dialogManager';
 import { ITriple } from './dialogs/triple';
@@ -66,9 +67,6 @@ class Writer extends EventManager {
 
   // entityLookupDialogs: EntityLookupDialogsLegacy
 
-  onLoadRequest?: () => void;
-  onSaveRequest?: (document: LWDocument, saveAs?: boolean) => Promise<onSaveRequestResults>;
-
   _settings: {
     filterTags: {
       useDocumentTags: boolean;
@@ -109,7 +107,7 @@ class Writer extends EventManager {
       if (rootUrl.endsWith('//')) rootUrl = rootUrl.slice(0, -1);
       this.rootUrl = rootUrl;
 
-      console.info('using default leafRootUrl', rootUrl);
+      log.info('using default leafRootUrl', rootUrl);
     } else {
       this.rootUrl = config.cwrcRootUrl;
     }
@@ -125,13 +123,10 @@ class Writer extends EventManager {
     if (config.allowOverlap) this.allowOverlap = config.allowOverlap;
     if (this.allowOverlap && this.mode === this.XML) {
       this.allowOverlap = false;
-      console.warn(
+      log.warn(
         "Mode set to XML and overlap allowed. Disabling overlap since XML doesn't allow it."
       );
     }
-
-    if (config.onLoadRequest) this.onLoadRequest = config.onLoadRequest;
-    if (config.onSaveRequest) this.onSaveRequest = config.onSaveRequest;
 
     //tag filter
     this._settings = {
@@ -150,14 +145,9 @@ class Writer extends EventManager {
         // clear the editor first (large docs can cause the browser to freeze)
         this.utilities.getRootTag().remove();
       } catch (e) {
-        console.log(e);
+        log.log(e);
       }
     });
-
-    window.addEventListener('keydown', (event: KeyboardEvent) =>
-      this.handleKeyStrokeCapture(event)
-    );
-    this.event('writerKeydown').subscribe(this.handleKeyStrokeCapture);
 
     this.event('processingDocument').subscribe(() => {
       this.triples = [];
@@ -217,25 +207,6 @@ class Writer extends EventManager {
     });
   }
 
-  handleKeyStrokeCapture(event: KeyboardEvent) {
-    if (!event.metaKey) return;
-
-    let action: 'save' | 'saveas' | 'load' | '' = '';
-
-    if (event.shiftKey && event.code === 'KeyS') action = 'saveas';
-    if (event.code === 'KeyS') action = 'save';
-    if (event.code === 'KeyO') action = 'load';
-
-    if (action === '') return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (action === 'saveas') return this.overmindActions.editor.saveDocument(true);
-    if (action === 'save') return this.overmindActions.editor.saveDocument();
-    if (action === 'load') return this.showLoadDialog();
-  }
-
   /**
    * Gets a unique ID for use within Leaf-Writer.
    * @param {String} prefix The prefix to attach to the ID.
@@ -263,27 +234,12 @@ class Writer extends EventManager {
     this.converter.loadDocumentXML(docXml);
   }
 
-  showLoadDialog() {
-    if (this.onLoadRequest) this.onLoadRequest();
-  }
-
-  async save(saveAs?: boolean) {
+  async getContent() {
     const docString = await this.getDocumentString();
 
     this.overmindActions.document.updateContent(docString);
 
-    const { resource, url, content } = this.overmindState.document;
-    const document = { file: { ...resource }, url, xml: resource.content };
-
-    if (!this.onSaveRequest) {
-      console.warn('No save function');
-      return;
-    }
-
-    const response = await this.onSaveRequest(document, saveAs);
-    if (response.success && response.hash) {
-      this.overmindActions.document.updateResourceHash(response.hash);
-    }
+    return docString;
   }
 
   getDocumentURI() {
@@ -358,7 +314,7 @@ class Writer extends EventManager {
    * Destroy the Leaf-Writer
    */
   destroy() {
-    // console.info('destroying', this.editor?.id);
+    // log.info('destroying', this.editor?.id);
 
     const editor = this.editor;
     if (!editor) return;
@@ -367,12 +323,9 @@ class Writer extends EventManager {
       // clear the editor first (large docs can cause the browser to freeze)
       $(editor.getBody()).empty();
     } catch (e) {
-      console.log(e);
+      log.info(e);
     }
 
-    window.removeEventListener('keydown', (event: KeyboardEvent) =>
-      this.handleKeyStrokeCapture(event)
-    );
     window.removeEventListener('beforeunload', this.handleUnload);
 
     editor.remove();

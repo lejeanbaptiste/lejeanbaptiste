@@ -1,6 +1,6 @@
-import { Button, IconButton, Slide, Snackbar } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import React, { FC } from 'react';
+import { Button, IconButton, Slide, Snackbar } from '@mui/material';
+import React, { type FC } from 'react';
 
 interface NotificationProps {
   message: string;

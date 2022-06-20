@@ -1,7 +1,7 @@
 import { Box, MenuList } from '@mui/material';
-import type { Owner } from '@src/@types/types';
 import { motion } from 'framer-motion';
 import React, { FC } from 'react';
+import type { Owner } from '../../../../types';
 import Item from './Item';
 
 interface ResultsProps {
@@ -18,7 +18,7 @@ const Results: FC<ResultsProps> = ({ listBoxProps, options, onSelect }) => {
   };
 
   const handleSelectOption = (onwer: Owner) => onSelect && onSelect(onwer);
-  
+
   return (
     <Box
       data-testid="search-user-result"

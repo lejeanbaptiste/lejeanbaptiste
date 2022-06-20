@@ -9,9 +9,9 @@ import {
   InputLabel,
   Typography,
 } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
-import React, { ChangeEvent, FC, useEffect } from 'react';
+import React, { useEffect, type ChangeEvent, type FC } from 'react';
 import { useInView } from 'react-intersection-observer';
+import { useActions, useAppState } from '../../../../overmind';
 
 interface ManualEntryFieldProps {
   setAuthorityInView: (view: { id: string; inView: boolean }) => void;

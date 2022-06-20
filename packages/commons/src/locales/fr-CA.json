@@ -1,0 +1,37 @@
+{
+  "error": {
+    "fileError": "",
+    "message404": "Vous vous avancer sur des zones obscures, ou bien c'est une erreur. Retournez à <1>l'accueil.</1>",
+    "pageNotFound": "Page non trouvée",
+    "somethingWentWrong": "",
+    "xmlNotWellFormed": ""
+  },
+  "home": {
+    "appearance": "",
+    "darkMode": "Mode sombre",
+    "english": "Anglaise",
+    "french": "Française",
+    "from_Your_computer": "De votre ordinateur",
+    "from_cloud": "",
+    "homepage": "accueil",
+    "identity": "identitiy",
+    "language": "Langue",
+    "open": "ouvrir",
+    "orTrySample": "Ou essayez avec des exemples de fichiers :",
+    "or_paste_your_XML_here": "ou collez votre XML ici",
+    "paste_your_XML_here": "",
+    "recent": "récents",
+    "signOut": "Se déconnecter",
+    "signin": "Se connecter",
+    "storage": "storage",
+    "subtitle": "L'éditeur en ligne XML & RDF développé par le Canadian Writing Research Collaboratory",
+    "team": "Équipe",
+    "templates": "modèle"
+  },
+  "settings": "",
+  "storageDialog": {
+    "load": "",
+    "pasteXml": "",
+    "save": ""
+  }
+}

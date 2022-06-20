@@ -1,8 +1,8 @@
 import { Stack } from '@mui/material';
-import { CollectionSource } from '@src/@types/types';
-import { useActions } from '../../overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CollectionSource } from '../../types';
+import { useActions } from '../../overmind';
 import SideButton from './SideButton';
 
 interface MainMenuProps {

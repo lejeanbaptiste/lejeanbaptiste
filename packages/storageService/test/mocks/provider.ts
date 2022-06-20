@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import Github from '../../src/providers/Github';
 import Gitlab from '../../src/providers/Gitlab';
 import * as mock from './resource';
@@ -24,10 +25,12 @@ const spyGithub = () => {
     .spyOn(provider, 'getReposForAuthenticatedUser')
     .mockImplementation(async () => ({ collection: mock.repositories, nextPage: null }));
 
+  //@ts-ignore
   jest.spyOn(provider, 'getRepoContent').mockImplementation(async () => mock.repoContent);
 
   jest
     .spyOn(provider, 'getOrganizationsForAuthenticatedUser')
+    //@ts-ignore
     .mockImplementation(async () => ({ collection: mock.organizations, nextPage: null }));
 
   jest
@@ -40,6 +43,8 @@ const spyGithub = () => {
   jest
     .spyOn(provider, 'getLatestCommit')
     .mockImplementation(async () => mock.getLatestCommitResults);
+
+  // jest.spyOn(provider, 'createFolder').mockImplementation(async () => mock.createFolderResults);
 };
 
 const spyGitlab = () => {
@@ -81,4 +86,6 @@ const spyGitlab = () => {
   jest
     .spyOn(provider, 'getLatestCommit')
     .mockImplementation(async () => mock.getLatestCommitResults);
+
+  // jest.spyOn(provider, 'createFolder').mockImplementation(async () => mock.createFolderResults);
 };

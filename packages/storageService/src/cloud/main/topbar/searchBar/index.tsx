@@ -10,15 +10,15 @@ import {
   InputBase,
   Paper,
   useMediaQuery,
-  useTheme,
+  useTheme
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import type { Content, SearchResults, SearchResultsBlobs } from '@src/@types/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import debounce from 'lodash/debounce';
 import React, { FC, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
+import type { Content, SearchResults, SearchResultsBlobs } from '../../../../types';
 import ResultsCollection from './ResultsCollection';
 
 interface SearchBarProps {
@@ -140,7 +140,12 @@ const SearchBar: FC<SearchBarProps> = ({
                 <>
                   {isLoading && <CircularProgress size={16} />}
                   {inputValue.length > 0 && (
-                    <IconButton aria-label="clear" onMouseDown={clearField} size="small">
+                    <IconButton
+                      aria-label="clear"
+                      onMouseDown={clearField}
+                      data-testid="search-clear-field"
+                      size="small"
+                    >
                       <CloseIcon fontSize="inherit" />
                     </IconButton>
                   )}

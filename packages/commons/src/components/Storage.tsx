@@ -1,0 +1,94 @@
+import type { Resource } from '@cwrc/leafwriter-storage-service';
+import { usePermalink } from '@src/hooks/usePermalink';
+import { useActions, useAppState } from '@src/overmind';
+import React, { FC, Suspense } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import LoadingMask from './loadingMask';
+
+const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
+
+const Storage: FC = () => {
+  const { user } = useAppState().auth;
+  const { storageDialogState } = useAppState().storage;
+
+  const { closeStorageDialog, getStorageProvidersAuth, setResource, isValidXml } =
+    useActions().storage;
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { setPermalink } = usePermalink();
+
+  const { open, source, type } = storageDialogState;
+
+  const handleOnChange = (resource?: Resource) => {
+    if (location.pathname !== '/') return;
+    setPermalink(resource);
+  };
+
+  const handleLoad = (res: Resource) => {
+    setResource(res);
+    const permalink = setPermalink(res);
+    closeStorageDialog();
+    navigate(`/edit${permalink}`, { replace: true });
+
+    //? open on a new tab
+    //! works fine with cloud document on the cloud.
+    //! The problem is how to pass local document to the new tab
+    // const permalink = parsePermalink();
+    // const newTabLocation = `${window.location.origin}/edit${window.location.search}`
+    // window.open(newTabLocation, 'test');
+  };
+
+  const handleSave = (res: Resource) => {
+    setResource(res);
+    setPermalink(res);
+    closeStorageDialog();
+  };
+
+  const close = () => {
+    closeStorageDialog();
+    if (location.pathname !== '/') return;
+    if (type === 'load') setPermalink('/');
+  };
+
+  const clickAway = () => {
+    closeStorageDialog();
+    if (location.pathname !== '/') return;
+    setPermalink('/');
+  };
+
+  const validXML = (content: string) => {
+    const isContentValid = isValidXml(content);
+    return isContentValid ? { valid: true } : { valid: false, error: 'xml_not_well_formed' };
+  };
+
+  return (
+    <>
+      {open && (
+        <Suspense fallback={<LoadingMask />}>
+          <StorageDialog
+            config={{
+              allowedMimeTypes: ['application/xml'],
+              defaultCommitMessage: 'Updated via LEAF-Writer',
+              providers: getStorageProvidersAuth(),
+              preferProvider: user?.prefStorageProvider,
+              validate: validXML,
+            }}
+            onBackdropClick={type === 'load' ? clickAway : undefined}
+            onCancel={close}
+            onChange={handleOnChange}
+            onLoad={handleLoad}
+            onSave={handleSave}
+            open={open}
+            resource={storageDialogState.resource}
+            source={source}
+            type={type}
+          />
+        </Suspense>
+      )}
+    </>
+  );
+};
+
+export default Storage;

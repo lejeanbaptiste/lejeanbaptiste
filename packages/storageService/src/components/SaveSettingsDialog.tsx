@@ -8,9 +8,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useAppState, useActions } from '../overmind';
 import React, { ChangeEvent, FC, FocusEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../overmind';
 
 interface SaveSettingsDialogProps {
   anchor?: HTMLDivElement | null;
@@ -47,6 +47,7 @@ const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open 
       id="save-settings-popper"
       onClose={handleDone}
       open={open}
+      data-testid="save:settings-dialog"
     >
       <DialogTitle id="save-settings-title" sx={{ textAlign: 'center' }}>
         {t('cloud:settings:save_settings')}
@@ -57,6 +58,7 @@ const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open 
           autoFocus
           fullWidth
           id="comit-message"
+          inputProps={{ 'data-testid': 'save:settings:commit-input' }}
           label={t('cloud:settings:comit_message')}
           onBlur={handleComitMessageBlur}
           onChange={handleComitMessageChange}
@@ -67,7 +69,9 @@ const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open 
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleDone}>{t('cloud:settings:done')}</Button>
+        <Button onClick={handleDone} title="done">
+          {t('cloud:settings:done')}
+        </Button>
       </DialogActions>
     </Popover>
   );

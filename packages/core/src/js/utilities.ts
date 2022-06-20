@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import ObjTree from '../lib/objtree/ObjTree';
+import { log } from './../utilities';
 import Writer from './Writer';
 
 export const capitalizeFirstLetter = (string: string) => {
@@ -26,7 +27,7 @@ class Utilities {
     try {
       xmlString = new XMLSerializer().serializeToString(xmlData);
     } catch (error) {
-      console.warn(error);
+      log.warn(error);
     }
     return xmlString;
   }
@@ -36,7 +37,7 @@ class Utilities {
     const parsererror = doc.querySelector('parsererror');
     if (parsererror) {
       //@ts-ignore
-      console.error(`utilities.stringToXML parse error: ${parsererror.innerText}`);
+      log.error(`utilities.stringToXML parse error: ${parsererror.innerText}`);
       return null;
     }
     return doc;
@@ -223,7 +224,7 @@ class Utilities {
         }
       } else {
         $('[data-mce-bogus]', node.parent()).remove();
-        // console.log(nodeEl);
+        // log.info(nodeEl);
         rng.selectNode(nodeEl);
       }
 
@@ -275,7 +276,7 @@ class Utilities {
     if (tagAttribute) {
       tagAtt = tagAttribute;
     } else if (element.getAttribute('_tag') !== null) {
-      tagAtt = '_tag'; // cwrc-writer format
+      tagAtt = '_tag'; // leaf-writer format
     }
 
     const paths: string[] = [];
@@ -315,7 +316,7 @@ class Utilities {
 
   /**
    * Returns the result of the specified xpath on the specified context node.
-   * Can detect and convert an XML xpath for use with the cwrc-writer format.
+   * Can detect and convert an XML xpath for use with the leaf-writer format.
    * Adds support for default namespace.
    * @param {Document|Element} contextNode
    * @param {String} xpath
@@ -405,7 +406,7 @@ class Utilities {
       //@ts-ignore
       evalResult = doc.evaluate(xpath, contextNode, nsResolver, XPathResult.ANY_TYPE, null);
     } catch (error) {
-      console.warn(`utilities.evaluateXPath: there was an error evaluating the xpath ${error}`);
+      log.warn(`utilities.evaluateXPath: there was an error evaluating the xpath ${error}`);
       return null;
     }
 
@@ -488,9 +489,9 @@ class Utilities {
   }
 
   /**
-   * Get the offset position of an element, relative to the parent (default is cwrc-writer container).
+   * Get the offset position of an element, relative to the parent (default is leaf-writer container).
    * @param {Element} el The element
-   * @param {Element} [parent] The offset parent. Default is the cwrc-writer container.
+   * @param {Element} [parent] The offset parent. Default is the leaf-writer container.
    * @returns {Object} position An object container top and left properties
    */
   getOffsetPosition = (element: Element, parent?: Element) => {

@@ -7,7 +7,7 @@ import type {
   PublicRepository,
   Repository,
   SuportedProviders,
-} from '@src/@types/types';
+} from '../../types';
 import i18next from '../../i18n';
 
 type State = {

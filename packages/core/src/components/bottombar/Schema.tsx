@@ -14,9 +14,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useAppState } from '@src/overmind';
 import { SnackbarKey, useSnackbar } from 'notistack';
-import React, { FC, MouseEvent, useEffect, useState } from 'react';
+import React, { MouseEvent, useEffect, useState, type FC } from 'react';
+import { useAppState } from '../../overmind';
 import AddSchemaDialog from './AddSchemaDialog';
 import useSettings from './useSettings';
 

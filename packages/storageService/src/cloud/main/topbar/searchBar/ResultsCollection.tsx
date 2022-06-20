@@ -1,7 +1,7 @@
 import { Box, MenuList } from '@mui/material';
-import type { SearchResults, Content, SearchResultsBlobs } from '@src/@types/types';
 import { motion } from 'framer-motion';
 import React, { FC } from 'react';
+import type { Content, SearchResults, SearchResultsBlobs } from '../../../../types';
 import Results from './Results';
 
 interface ResultsCollectionProps {

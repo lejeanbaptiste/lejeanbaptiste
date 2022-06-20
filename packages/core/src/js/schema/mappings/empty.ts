@@ -1,4 +1,4 @@
-import { ISchemaMapping } from '../types';
+import type { ISchemaMapping } from '../types';
 
 export const empty: ISchemaMapping = {
   blockElements: [],

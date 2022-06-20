@@ -1,5 +1,5 @@
-import type { IAnnotationCreator } from './types';
 import type { EntityTypes } from '../schema/types';
+import type { IAnnotationCreator } from './types';
 
 export interface IannotationRange {
   startXPath?: string;

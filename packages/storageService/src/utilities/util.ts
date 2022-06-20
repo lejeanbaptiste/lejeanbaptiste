@@ -1,4 +1,4 @@
-import { IError, Languages } from '@src/@types/types';
+import { IError, Languages } from '../types';
 
 export const supportedLanguages: Languages = {
   'en-CA': { code: 'en-CA', name: 'english', shortName: 'en' },

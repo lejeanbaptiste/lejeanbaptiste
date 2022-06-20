@@ -1,16 +1,16 @@
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { Box, Stack, Typography, useTheme } from '@mui/material';
-import { useActions, useAppState } from '../overmind';
 import React, { createRef, FC, useEffect, useRef, useState } from 'react';
 import Dropzone, { DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../overmind';
 
 const UploadPanel: FC = () => {
   const { t } = useTranslation();
   const { palette } = useTheme();
   const { allowedMimeTypes } = useAppState().common;
   const { setResource, uploadFile } = useActions().local;
-  const { load, showMessageDialog } = useActions().common;
+  const { load, showAlertDialog } = useActions().common;
   const dropzoneRef = createRef<DropzoneRef>();
 
   const container = useRef<HTMLDivElement>(null);
@@ -38,8 +38,8 @@ const UploadPanel: FC = () => {
   const handleSelectFile = async (file: File) => {
     const document = await uploadFile(file);
     if (!document) {
-      showMessageDialog({
-        title: t('error:title:error'),
+      showAlertDialog({
+        type: 'error',
         message: t('error:message:unable_to_upload_file', { filename: file.name }),
       });
       return;
@@ -49,10 +49,22 @@ const UploadPanel: FC = () => {
     load();
   };
 
+  const mimeTypeTransformation = () => {
+    if (!allowedMimeTypes) return;
+    const mimeTypes: { [key: string]: string[] } = {};
+    allowedMimeTypes?.forEach((mimeType) => {
+      const [, ext] = mimeType.split('/');
+      if (!mimeTypes[mimeType]) mimeTypes[mimeType] = [];
+      if (!mimeTypes[mimeType].includes(ext)) mimeTypes[mimeType].push(`.${ext}`);
+    });
+
+    return mimeTypes;
+  };
+
   return (
-    <Box ref={container} height="100%">
+    <Box ref={container} height="97%">
       <Dropzone
-        accept={allowedMimeTypes}
+        accept={mimeTypeTransformation()}
         maxFiles={1}
         multiple={false}
         noDragEventsBubbling={true}

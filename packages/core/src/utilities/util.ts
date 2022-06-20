@@ -1,4 +1,4 @@
-import { IError, Languages } from '../@types';
+import { Languages, type IError } from '../types';
 
 export const supportedLanguages: typeof Languages = new Map([
   ['en-CA', { code: 'en-CA', name: 'english', shortName: 'en' }],

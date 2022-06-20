@@ -1,6 +1,6 @@
-import { Box, Tooltip, Typography } from '@mui/material';
 import type { ElementDetail } from '@cwrc/leafwriter-validator';
-import React, { FC, useEffect, useState } from 'react';
+import { Box, Tooltip, Typography } from '@mui/material';
+import React, { useEffect, useState, type FC } from 'react';
 
 interface HeaderProps {
   tagName?: string;

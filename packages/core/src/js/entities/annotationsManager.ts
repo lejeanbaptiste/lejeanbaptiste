@@ -4,17 +4,17 @@ import {
   graph as RDFgraph,
   parse as RDFparse,
   serialize as RDFserialize,
-  sym as RDFsym
+  sym as RDFsym,
 } from 'rdflib';
-import { webpackEnv } from '../../@types';
-import { EntityTypes } from '../schema/types';
+import type { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
-import Entity, { IannotationRange, IEntityConfig } from './Entity';
+import { log } from './../../utilities';
+import Entity, { type IannotationRange, type IEntityConfig } from './Entity';
 import type {
   IAnnotation,
   IAnnotationContributor,
   IAnnotationCreator,
-  IAnnotationFormat
+  IAnnotationFormat,
 } from './types';
 
 const leafWriterVersion = 'dev'; //webpackEnv?.LEAFWRITER_VERSION ?? '' ;
@@ -148,7 +148,7 @@ class AnnotationsManager {
     const originalData = entity.originalData;
 
     //check if any thing got modified
-    const hasMutated = this.checkAnnotationChanges({docId, entity, originalData});
+    const hasMutated = this.checkAnnotationChanges({ docId, entity, originalData });
 
     // Check if annotation mutated.
     if (originalData && !hasMutated) return originalData as IAnnotation;
@@ -228,7 +228,7 @@ class AnnotationsManager {
         '@id': appURI,
         '@type': 'as:Application',
         'rdfs:label': 'Leaf Writer',
-        'schema:url': 'https://cwrc-writer.cwrc.ca',
+        'schema:url': 'https://leaf-writer.lincsproject.ca/',
         'schema:softwareVersion': leafWriterVersion,
       },
     };
@@ -334,7 +334,7 @@ class AnnotationsManager {
     );
 
     let rdfString = rdfStringArray.join('');
-    
+
     // triples
     // for (const triple of this.writer.triples) {
     //   rdfString += `
@@ -356,7 +356,7 @@ class AnnotationsManager {
     // }
 
     const nsAttr = [...namespaces].map(([namespace, uri]) => `xmlns:${namespace}="${uri}"`);
-    return `<rdf:RDF ${nsAttr.join(' ')}>${rdfString}</rdf:RDF>`
+    return `<rdf:RDF ${nsAttr.join(' ')}>${rdfString}</rdf:RDF>`;
   }
 
   /**
@@ -372,7 +372,7 @@ class AnnotationsManager {
       return e.annotation(this, entity);
     }
     //  else {
-    console.warn('annotationsManager.getAnnotation: no mapping found for', type);
+    log.warn('annotationsManager.getAnnotation: no mapping found for', type);
     return undefined;
     // }
   }
@@ -385,7 +385,7 @@ class AnnotationsManager {
 
     if (format === 'xml') {
       const xmlAnnotation = await this.convertJSONAnnotationToXML(annotation).catch((err: any) => {
-        console.warn('rdflib:', err);
+        log.warn('rdflib:', err);
 
         const message = this.writer.utilities.convertTextForExport(err.message);
         this.writer.dialogManager.show('message', {
@@ -487,7 +487,7 @@ class AnnotationsManager {
     // type
     let annotationTypes: string | string[] =
       annotation['oa:hasBody']['type'] || annotation['oa:hasBody']['@type'];
-      //@ts-ignore
+    //@ts-ignore
     entityConfig.type = this.getEntityTypeForAnnotation(annotationTypes);
 
     //uri
@@ -610,7 +610,7 @@ class AnnotationsManager {
     }
 
     if (typeUri == null) {
-      console.warn("can't determine type for", xml);
+      log.warn("can't determine type for", xml);
       return null;
     }
     const entityConfig: Partial<IEntityConfig> = {};

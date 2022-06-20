@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import 'jstree';
+import { log } from '../../../../utilities';
 import Writer from '../../../Writer';
 
 interface StructureTreeProps {
@@ -126,7 +127,7 @@ class StructureTree {
     this.$tree.on('move_node.jstree', (event: any, data: any) => this.onDragDrop(data, false));
 
     this.$tree.on('keydown.jstree', (event: any) => {
-      //console.log(event);
+      //log.info(event);
     });
 
     this.$tree.on('ready.jstree', (event: any, data: any) => {
@@ -266,7 +267,7 @@ class StructureTree {
       $.vakata.dnd.stop(event);
     }
     data.helper.appendTo(this.writer.layoutManager.getContainer());
-  }
+  };
 
   private handleDnDMove = (event: any, data: any) => {
     // TODO fullscreen support
@@ -276,7 +277,7 @@ class StructureTree {
     }
     // const o = marker.offset();
     // marker.offset({top: p.top-60, left: p.left-2});
-  }
+  };
 
   /**
    * Updates the tree to reflect the document structure.
@@ -560,7 +561,7 @@ class StructureTree {
     if (this.writer.isReadOnly === false && node.attr('_entity')) {
       const id = node.attr('name');
       if (id === undefined) {
-        console.warn('structureTree: no id for', tag);
+        log.warn('structureTree: no id for', tag);
         return null;
       }
 
@@ -580,7 +581,7 @@ class StructureTree {
       ) {
         const id = node.attr('id');
         if (!id) {
-          console.warn('structureTree: no id for', tag);
+          log.warn('structureTree: no id for', tag);
           return null;
         }
 
@@ -664,7 +665,7 @@ class StructureTree {
     }
 
     return true;
-  }
+  };
 
   private onNodeSelect = (event: any, data: any) => {
     // if (this.ignoreSelect) return;
@@ -708,7 +709,7 @@ class StructureTree {
     }
 
     this.selectionType = null;
-  }
+  };
 
   private onDragDrop(data: any, isCopy: boolean) {
     const dragNode = data.node;

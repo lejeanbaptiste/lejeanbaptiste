@@ -7,9 +7,9 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import { useActions } from '../overmind';
 import React, { ChangeEvent, FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions } from '../overmind';
 
 interface CreateRepoDialogProps {
   onCancel: () => void;
@@ -19,7 +19,7 @@ interface CreateRepoDialogProps {
 
 const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open }) => {
   const { t } = useTranslation();
-  const { showMessageDialog } = useActions().common;
+  const { showAlertDialog } = useActions().common;
   const { createFolder } = useActions().cloud;
 
   const [name, setName] = useState<string>('');
@@ -38,8 +38,8 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
     const folder = await createFolder(name);
 
     if (!folder) {
-      showMessageDialog({
-        title: t('error:title:error'),
+      showAlertDialog({
+        type: 'error',
         message: t('error:message:folder_creation_error'),
         onClose: async () => setIsLoading(false),
       });
@@ -54,6 +54,7 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
     <Dialog
       aria-describedby="create-folder"
       aria-labelledby="create-folder-title"
+      data-testid="save:create-folder-dialog"
       fullWidth
       maxWidth="sm"
       open={open}
@@ -65,6 +66,7 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
           autoFocus
           fullWidth
           id="name"
+          inputProps={{ 'data-testid': 'save:create-folder:name-input' }}
           label={t('commons:name')}
           onChange={handleNameChange}
           placeholder={t('cloud:folder_name')}
@@ -77,6 +79,7 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
       <DialogActions>
         <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
         <LoadingButton
+          data-testid="save:create-folder:create-button"
           disabled={name === ''}
           loading={isLoading}
           onClick={handleCreate}

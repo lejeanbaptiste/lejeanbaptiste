@@ -9,12 +9,12 @@
   - [Demo](#demo)
   - [Use](#use)
     - [Install](#install)
-    - [Basic examples](#basic-examples)
-      - [Load dialog](#load-dialog)
-      - [Save dialog](#save-dialog)
-    - [Full feature examples](#full-feature-examples)
-      - [Load dialog](#load-dialog-1)
-      - [Save dialog](#save-dialog-1)
+    - [Basic Examples](#basic-examples)
+      - [Load Dialog](#load-dialog)
+      - [Save Dialog](#save-dialog)
+    - [Full Feature Examples](#full-feature-examples)
+      - [Load Dialog](#load-dialog-1)
+      - [Save Dialog](#save-dialog-1)
     - [React Suspence](#react-suspence)
   - [Bypass the Dialog with handy functions](#bypass-the-dialog-with-handy-functions)
     - [loadDocument](#loaddocument)
@@ -27,20 +27,20 @@
 
 ## Overview
 
-A React file storage component for listing, loading, saving files from and to the local computer and Git hosting (GitHub and Gitlab). I was buld to be used in conjuntion with [leaf writer](LINK), but it is general enough to be freely used anywhere by anyone.
+This is React File Storage component for listing, loading, and saving files from and to the local computer and Git hosting (GitHub and Gitlab). It was built to be used in conjunction with [LEAF-Writer-Commons](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer), but it is general enough to be freely used anywhere.
 
-The **Load Dialog** suports paste from clipboard, select file from local computer, drag & drop a file directly to the UI, and load from Git hosting. On the git hosting users can access their own repositories, shared repositories, repositoties owned by organizations/groups, and search public respositories. Git repositories are limited to the default branch (usually 'master' or 'main'). There is also search funcionalities by file name and within files' content.
+The **Load Dialog** supports pasting from the clipboard, selecting files from the local computer, dragging & drop a file directly to the UI, and loading from a Git hoster (GitHub / Gitlab). On the git hoster, users can access their own repositories, shared repositories, repositories owned by organizations/groups, and search public repositories. Git repositories are limited to the default branch (usually 'master' or 'main'). There are also search functionalities by file name and within files' content.
 
-The **Save Dialog** suports download o the local computer and save to Git hosting. On the git hosting users can create new repositories, folders and files, and overwrite files. Optionall, users can save the content as Pull Request (save into a differnt branch). If the user does not have written permission to a repository, they can Fork the respository and make a Pull Resquest to the original repository.
+The **Save Dialog** supports downloading to the local computer and saving to Git hosting. On the git hoster, users can create new repositories and new folders and create and overwrite files. Optionally, users can make Pull Requests, saving the file into a different branch. If the user does not have written permission to a repository, they can Fork the repository and make a Pull Request to the original repository.
 
 Extra features:
 
 - Bypass the dialog UI with a streamlined function to save/load resources.
 - Pass validation function before load.
-- Define commit message.
+- Define a commit message.
 - Show/hide invisible files.
 - Restrict files by MIME type.
-- **Resposive**: Adapts to large displays and mobile devices.
+- **Responsive**: Adapts to large displays and mobile devices.
 - **Dark mode**: light and dark themes.
 - **Localized**: English and French.
 
@@ -48,7 +48,7 @@ Extra features:
 
 ## Demo
 
-The [leaf writer standalone](LINK) is running an instance of [leaf writer](LINK) that uses the NPM package published from this repository.
+The [LEAF-Writer Commons](LINK) is running an instance of [LEAF-Writer](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/core) that uses the NPM package published from this repository.
 
 ## Use
 
@@ -58,9 +58,9 @@ The [leaf writer standalone](LINK) is running an instance of [leaf writer](LINK)
 npm i @cwrc/leafwriter-storage-service
 ```
 
-### Basic examples
+### Basic Examples
 
-#### Load dialog
+#### Load Dialog
 
 ```ts
 import React, { useState } from  'react';
@@ -83,9 +83,9 @@ export  const  MyFStorageDialog  = () => {
 };
 ```
 
-If the property `type` is not defined, the component displays the Load Dialog. Property `open` controls the component visibility; `onCancel` is triggered by the `cancel` button; `onLoad` is triggered by the `load` button
+If the property `type` is not defined, the component displays the Load Dialog. Property `open` controls the component visibility; `onCancel` is triggered by the `cancel` button; `onLoad` is triggered by the `load` button.
 
-#### Save dialog
+#### Save Dialog
 
 ```ts
 import React, { useState } from 'react';
@@ -108,11 +108,11 @@ export const MyFStorageDialog = () => {
 };
 ```
 
-Property `open` controls the component visibility; `onCancel` is triggered by the `cancel` button; `onSave` is triggered by the `load` button
+Property `open` controls the component visibility; `onCancel` is triggered by the `cancel` button; `onSave` is triggered by the `load` button.
 
-### Full feature examples
+### Full Feature Examples
 
-#### Load dialog
+#### Load Dialog
 
 ```ts
 import React, { useState } from 'react';
@@ -148,7 +148,7 @@ export const MyFStorageDialog = () => {
   return (
     <StorageDialog
       config={{
-        allowedMimeTypes: ['text/xml'],
+        allowedMimeTypes: ['application/xml'],
         allowPaste: true,
         providers: [
           { name: 'github', access_token: 'github_token' },
@@ -176,9 +176,9 @@ export const MyFStorageDialog = () => {
 };
 ```
 
-See the API section for me details.
+See the API section for more details.
 
-#### Save dialog
+#### Save Dialog
 
 ```ts
 import React, { useState } from 'react';
@@ -201,7 +201,7 @@ export const MyFStorageDialog = () => {
   return (
     <StorageDialog
       config={{
-        allowedMimeTypes: ['text/xml'],
+        allowedMimeTypes: ['application/xml'],
         defaultCommitMessage: 'Updated via leaf-writer',
         providers: [
           { name: 'github', access_token: 'github_token' },
@@ -229,11 +229,11 @@ export const MyFStorageDialog = () => {
 };
 ```
 
-See the API section for me details.
+See the API section for more details.
 
 ### React Suspence
 
-You can use React suspence to optimize your code . The module will only be loaded when the Dialog is triggered for the first time.
+You can use React suspense to optimize your code. The module will only be loaded when the Dialog is triggered for the first time.
 
 Example:
 
@@ -268,9 +268,9 @@ export  const  MyFStorageDialog = () => {
 
 ### loadDocument
 
-Use this function to load a document from a git provider without opening the dialog. You must pass the provider providerAuth and the resource location.
+Use this function to load a document from a git provider without opening the dialog. You must pass the provider authorization and the resource location.
 
-The function returns the resourse with the content and hash.
+The function returns the resource with the content and its hash.
 
 ```ts
 import { loadDocument } from '@cwrc/leafwriter-storage-service/headless';
@@ -295,11 +295,11 @@ const document: Resource = await loadDocument(providerAuth, resource);
 
 ### saveDocument
 
-Use this function to save a document to a git provider without opening the dialog. You must pass the provider providerAuth and the resource object, including the location, filenamen, and content.
+Use this function to save a document to a git provider without opening the dialog. You must pass the provider authorization and the resource object, including the location, filename, and content.
 
-By default, the function will not overwrite any file. To overwrite you must pass a third argument `true` and provide the hash for the file in the resource object.
+By default, the function will not overwrite any file. To overwrite, you must pass a third argument, `true` and provide the hash for the file in the resource object.
 
-The function returns the resourse with the content and a new hash.
+The function returns the resource with the content and a new hash.
 
 ```ts
 import { saveDocument } from '@cwrc/leafwriter-storage-service/headless';
@@ -350,7 +350,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 
 | Name                 | Type                   | Default  | Description                                                                                                                                                                                                                                              |
 | -------------------- | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| allowedMimeTypes     | Array [`MIMEType`]     | []       | Restrict the file types  allowed. Empty array means no restriction.<br /> <br /> MIME type suported: `'application/json'`, `'application/pdf'`, `'application/xml'`, `'text/csv'`, `'text/html'`, `'text/md'`, `'text/tsv'`, `'text/txt'`, `'text/xml'`. |
+| allowedMimeTypes     | Array [`MIMEType`]     | []       | Restrict the file types  allowed. Empty array means no restriction.<br /> <br /> MIME type suported: `'application/json'`, `'application/pdf'`, `'application/xml'`, `'text/csv'`, `'text/html'`, `'text/plain'`. |
 | allowPaste           | boolean                | true     | `Load dialog`: Allows paste from clipboard.                                                                                                                                                                                                              |
 | defaultCommitMessage | string                 | 'update' | `Save Dialog`: Defines the default commit message.                                                                                                                                                                                                       |
 | providers            | Array [`ProviderAuth`] | []       | Setup Github / Gitlab providers.<br /> <br /> `ProviderAuth`: {<br />name: 'github' \| 'gitlab',<br /> access_token: 'string<br />}                                                                                                                      |
@@ -362,18 +362,18 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 
 | Name      | Type   | Default | Description                                                                                                                                                                       |
 | --------- | ------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| provider  | string |         | `'github'`, `'gitlab'`, or empty if not from git repository.                                                                                                                      |
+| provider  | string |         | `'github'`, `'gitlab'`, or empty if not from the git repository.                                                                                                                      |
 | owner     | string |         | Github `username` or Gitlab: `user id`.                                                                                                                                           |
 | ownertype | string |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation.                                                                                                               |
 | repo      | string |         | Github `repository name`. Gitlab `repository id`.                                                                                                                                 |
 | path      | string |         | Folder structure. *e.g.*, `'path/to/file'`.                                                                                                                                       |
 | filename  | string |         | The file name.                                                                                                                                                                    |
 | content   | string |         | The document content.                                                                                                                                                             |
-| hash      | string |         | The Commit hash. On **Github** it is the SHA value. On **Gitlab** it is the lastCommitId. if present the dialog with prompt the user that the content of the will be overwritten. |
+| hash      | string |         | The Commit hash. On **Github**, it is the SHA value. On **Gitlab**, it is the lastCommitId. If present, the dialog alerts the user that the content will be overwritten. |
 
 ## Development
 
-This component is part of a leaf writer monorepo. Refer to [lead writer Dev Docs](LINK) for a broader picture of the project.
+This component is part of a leaf writer monorepo. Refer to [LEAF-Writer Dev Docs](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer) for the project's bigger picture.
 
 We use **Material** UI (@mui/material) to build the visual elements, **@octokit/rest** and **axios** to fetch data from and to Github and Gitlab, **overmind** to control react state, and **i18next** for localization.
 

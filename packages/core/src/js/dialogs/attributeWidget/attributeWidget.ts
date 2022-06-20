@@ -4,6 +4,7 @@ import $ from 'jquery';
 import { RESERVED_ATTRIBUTES } from '../../schema/mapper';
 import { capitalizeFirstLetter } from '../../utilities';
 import Writer from '../../Writer';
+import { log } from './../../../utilities';
 
 interface IAttributeWidgetConfig {
   writer: Writer;
@@ -313,7 +314,7 @@ class AttributeWidget {
     const li = $(`.attributeSelector li[data-name="${name}"]`, this.$parent);
 
     if (li.length !== 1) {
-      console.warn(`attributeWidget: no attribute for ${name}`);
+      log.warn(`attributeWidget: no attribute for ${name}`);
       return false;
     }
 

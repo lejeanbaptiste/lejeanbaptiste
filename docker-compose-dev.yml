@@ -1,9 +1,9 @@
-version: '3.8'
+version: '3.9'
 
 services:
   traefik:
     container_name: traefik
-    image: traefik:v2.6
+    image: traefik:v2.7
     command: --configFile=/etc/traefik/traefik.yml
     ports:
       - 80:80

@@ -10,9 +10,9 @@ import {
   Paper,
   Popper,
 } from '@mui/material';
-import { useAppState } from '../overmind';
 import React, { FC, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAppState } from '../overmind';
 
 type SaveType = 'save' | 'pullRequest';
 
@@ -66,9 +66,11 @@ const SaveOptions: FC<Props> = ({ enabled, onSelect }) => {
     <>
       <ButtonGroup variant="contained" ref={anchor} aria-label="split save button">
         <LoadingButton
+          data-testid="save"
           disabled={!enabled || resource?.filename === ''}
           loading={isSaving}
           onClick={() => handleClick(saveOptions.at(selectedIndex)?.value)}
+          title="save"
         >
           {saveOptions.at(selectedIndex)?.label}
         </LoadingButton>
@@ -77,6 +79,7 @@ const SaveOptions: FC<Props> = ({ enabled, onSelect }) => {
           aria-expanded={open ? 'true' : undefined}
           aria-haspopup="menu"
           aria-label="select save option"
+          data-testid="save-options-button"
           disabled={!enabled || resource?.filename === '' || isSaving}
           onClick={handleToggle}
           size="small"
@@ -84,18 +87,26 @@ const SaveOptions: FC<Props> = ({ enabled, onSelect }) => {
           <ArrowDropDownIcon />
         </Button>
       </ButtonGroup>
-      <Popper open={open} anchorEl={anchor.current} role={undefined} transition disablePortal>
+      <Popper
+        open={open}
+        anchorEl={anchor.current}
+        role={undefined}
+        transition
+        disablePortal
+        // data-testid="save:footer:save-options-dialog"
+      >
         {({ TransitionProps, placement }) => (
           <Grow
             {...TransitionProps}
             style={{ transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom' }}
           >
-            <Paper sx={{ mr: 1 }}>
+            <Paper sx={{ mr: 1 }} data-testid="save:footer:save-options-dialog">
               <ClickAwayListener onClickAway={handleClose}>
                 <MenuList id="split-button-menu">
                   {saveOptions.map(({ label, value }, index) => (
                     <MenuItem
                       key={value}
+                      data-testid={`save-options:${value}-button`}
                       disabled={!enabled || resource?.filename === '' || isSaving}
                       onClick={() => handleSelect(index, value)}
                       selected={index === selectedIndex}

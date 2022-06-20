@@ -1,7 +1,7 @@
+import SearchIcon from '@mui/icons-material/Search';
 import { Box, InputBase } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import SearchIcon from '@mui/icons-material/Search';
-import React, { ChangeEvent, FC, KeyboardEvent, useState } from 'react';
+import React, { useState, type ChangeEvent, type FC, type KeyboardEvent } from 'react';
 
 interface searchProps {
   handleQuery: (query: string) => void;

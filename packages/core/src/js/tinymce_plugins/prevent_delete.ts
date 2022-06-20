@@ -1,6 +1,6 @@
 // https://stackoverflow.com/questions/9856269/protect-div-element-from-being-deleted-within-tinymce
-//@ts-nocheck 
-import tinymce, { Editor, EditorEvent } from 'tinymce';
+//@ts-nocheck
+import tinymce, { type Editor, type EditorEvent } from 'tinymce';
 
 //! THESE FUNCTIONS NEED BE REVIEWED: KEYBOARD_EVENT.keyCode is deprecated. -- see WIP on the commented code bellow
 const contains = (array: number[], item: number) => {
@@ -120,7 +120,7 @@ const deleteConfirm = (editor: Editor, range: Range, direction: 'back' | 'forwar
       editor.focus();
     },
   });
-}
+};
 
 const moveToTextNode = (
   event: EditorEvent<KeyboardEvent>,
@@ -178,7 +178,7 @@ const moveToTextNode = (
       }
     }
   }
-}
+};
 
 const preventDelete = (editor: Editor, event: EditorEvent<KeyboardEvent>) => {
   const range = editor.selection.getRng();

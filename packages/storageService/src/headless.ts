@@ -1,5 +1,5 @@
-import type { Repository, Resource } from './@types/types';
-import Provider, { ProviderAuth } from '@src/@types/Provider';
+import Provider, { ProviderAuth } from './types/Provider';
+import type { Repository, Resource } from './types';
 
 let provider: Provider | null;
 
@@ -13,7 +13,7 @@ interface IGetFileLatestHashParams {
   owner: string;
 }
 
-export type { Resource } from './@types/types';
+export type { Resource } from './types';
 
 export const loadDocument = async (providerAuth: ProviderAuth, resource: Resource) => {
   const { provider: providerName, owner, ownertype, repo, filename } = resource;
