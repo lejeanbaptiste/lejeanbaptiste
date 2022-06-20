@@ -6,11 +6,11 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import { Schema } from '@src/@types/index';
 import { Formik } from 'formik';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 import * as yup from 'yup';
 import { useActions } from '../../overmind';
+import type { Schema } from '../../types/index';
 
 interface AddSchemaDialogProps {
   handleClose: (schema?: SchemaEssentials) => void;

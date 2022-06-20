@@ -4,11 +4,11 @@ import 'jquery-ui/ui/widgets/dialog';
 // import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 // import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import Writer from '../Writer';
+import type { logEnabledFor } from './../../utilities';
 
 class EditSource {
   readonly writer: Writer;
   readonly $edit: JQuery<HTMLElement>;
-  
 
   constructor(writer: Writer, parentEl: JQuery<HTMLElement>) {
     this.writer = writer;
@@ -102,16 +102,16 @@ class EditSource {
 
         this.writer.overmindActions.ui.openEditSourceDialog(docText);
 
-        // console.time('dialog open');
+        // if (logEnabledFor('DEBUG')) console.time('dialog open');
         // //@ts-ignore
         // this.$edit.dialog('open');
-        // console.timeEnd('dialog open');
+        // if (logEnabledFor('DEBUG')) console.timeEnd('dialog open');
 
-        // console.time('set doc text');
+        // if (logEnabledFor('DEBUG')) console.time('set doc text');
         // const escapedContents = this.writer.utilities.escapeHTMLString(docText);
         // // $('code', this.$edit).val(escapedContents);
         // $('code').text(docText)
-        // console.timeEnd('set doc text');
+        // if (logEnabledFor('DEBUG')) console.timeEnd('set doc text');
 
         // highlightElement($('code', this.$edit)[0]);
       },

@@ -1,7 +1,8 @@
-//@ts-nocheck 
+//@ts-nocheck
 import $ from 'jquery';
-import Writer from '../Writer';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
+import Writer from '../Writer';
+import { log } from './../../utilities';
 
 /**
  * @class XML2CWRC
@@ -325,13 +326,13 @@ class XML2CWRC {
         // find the associated element and do additional processing
         const startXPath = entityConfig.range?.startXPath;
         if (!startXPath) {
-          console.warn(`xml2cwrc.processRDF: no matching entity element for ${entityConfig}`);
+          log.warn(`xml2cwrc.processRDF: no matching entity element for ${entityConfig}`);
           return;
         }
 
         const entityEl = this.writer.utilities.evaluateXPath(doc, startXPath);
         if (!entityEl) {
-          console.warn(`xml2cwrc.processRDF: no matching entity element for ${entityConfig}`);
+          log.warn(`xml2cwrc.processRDF: no matching entity element for ${entityConfig}`);
           return;
         }
 
@@ -341,7 +342,7 @@ class XML2CWRC {
         );
 
         if (mappingInfo.type !== entityConfig.type) {
-          console.warn(
+          log.warn(
             `xml2cwrc.processRDF: entity type mismatch. RDF = ${entityConfig.type}. Element = ${mappingInfo.type}.`
           );
         }
@@ -394,14 +395,14 @@ class XML2CWRC {
       ) {
         rdfParent = rdfParent.parent();
         if (rdfParent.length === 0) {
-          console.warn('xml2cwrc: went beyond doc root');
+          log.warn('xml2cwrc: went beyond doc root');
           break;
         }
         rdfParent.children(currNode).remove();
         currNode = rdfParent[0].nodeName;
       }
     } else {
-      console.warn("xml2cwrc: couldn't find the rdfParent");
+      log.warn("xml2cwrc: couldn't find the rdfParent");
     }
 
     return true;
@@ -450,9 +451,7 @@ class XML2CWRC {
       }
 
       if (node.hasAttribute('id')) {
-        console.warn(
-          `xml2cwrc.buildEditorString: node already had an ID! ${node.getAttribute('id')}`
-        );
+        log.warn(`xml2cwrc.buildEditorString: node already had an ID! ${node.getAttribute('id')}`);
         node.removeAttribute('id');
       }
 
@@ -506,7 +505,7 @@ class XML2CWRC {
       openingTagString += `<!--${node.data}`;
       closingTagString = '-->';
     } else {
-      console.warn(`xml2cwrc.buildEditorString: unsupported node type: ${node.nodeType}`);
+      log.warn(`xml2cwrc.buildEditorString: unsupported node type: ${node.nodeType}`);
     }
 
     return [openingTagString, closingTagString];
@@ -681,7 +680,7 @@ class XML2CWRC {
             this.writer.entitiesManager.highlightEntity();
           }
         } catch (error) {
-          console.warn(`xml2cwrc: error adding overlapping entity ${error}`);
+          log.warn(`xml2cwrc: error adding overlapping entity ${error}`);
         }
         // markup
       } else if (range.startXPath) {
@@ -709,7 +708,7 @@ class XML2CWRC {
             entry.setNoteContent($(entityNode).html());
           }
         } else {
-          console.warn('xml2cwrc.insertEntities: cannot find entity tag for', range.startXPath);
+          log.warn('xml2cwrc.insertEntities: cannot find entity tag for', range.startXPath);
         }
       }
     };

@@ -1,0 +1,17 @@
+{
+    "short_name": "LEAF-Writer",
+    "name": "LEAF-Writer Commons",
+    "icons": [
+      {
+        "src": "assets/logo/cwrclogo.png",
+        "type": "image/png",
+        "sizes": "600x600"
+      }
+    ],
+    "start_url": "/",
+    "background_color": "#FFFFFF",
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#3367D6",
+    "description": "XML annotation editor"
+  }

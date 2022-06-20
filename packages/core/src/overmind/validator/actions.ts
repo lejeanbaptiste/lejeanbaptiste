@@ -2,12 +2,12 @@ import type {
   GetValidTagsAtParameters,
   ValidationResponse,
   Validator,
-// } from '@cwrc/leafwriter-validator';
-} from '../../../../validator/src/index.worker';
-import Writer from '@src/js/Writer';
+} from '@cwrc/leafwriter-validator';
 import * as Comlink from 'comlink';
 import { Context } from '../';
-import { webpackEnv } from '../../@types';
+import Writer from '../../js/Writer';
+import { webpackEnv } from '../../types';
+import { log } from './../../utilities';
 
 declare global {
   interface Window {
@@ -56,18 +56,18 @@ export const initialize = async ({ state }: Context) => {
 
   const cachedSchema = localStorage.getItem(`schema_${id}`) ?? undefined;
 
-  //CORS: Some of the schemas might have blocke by CORS
+  // * CORS: Some of the schemas might have blocke by CORS
   //If provide, we wrap the schema URL in a requeste to the proxy server
   const url = state.editor.schemaProxyXmlEndpoint
     ? `${state.editor.schemaProxyXmlEndpoint}${encodeURIComponent(schemaURI)}`
     : schemaURI;
 
   const { parsedSchema, status } = await workerValidator.initialize({ id, cachedSchema, url });
-  console.info(status);
+  log.info(status);
 
   if (parsedSchema) {
     localStorage.setItem(`schema_${id}`, parsedSchema);
-    console.info('Schema cached.');
+    log.info('Schema cached.');
   }
 
   state.validator.hasSchema = true;

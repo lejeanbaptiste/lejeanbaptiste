@@ -1,8 +1,12 @@
-import { DialogLookupType } from '@src/js/dialogs/types';
-import Entity from '@src/js/entities/Entity';
-import { EntityTypes } from '@src/js/schema/types';
 import { Context } from '..';
-import { EntityLink, EntryLink, LookupsEntityType } from '../../components/entityLookups/types';
+import type {
+  EntityLink,
+  EntryLink,
+  LookupsEntityType,
+} from '../../components/entityLookups/types';
+import type { DialogLookupType } from '../../js/dialogs/types';
+import Entity from '../../js/entities/Entity';
+import type { EntityTypes } from '../../js/schema/types';
 
 export const initiate = (
   { state: { lookups }, actions }: Context,
@@ -36,7 +40,7 @@ export const search = async ({ state: { lookups }, effects }: Context, query: st
   if (query === '') return [];
 
   const response = await effects.lookups.api.find({ query, type: lookups.typeLookup });
-  
+
   lookups.results = response;
   return response;
 };

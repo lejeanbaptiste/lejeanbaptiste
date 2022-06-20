@@ -7,9 +7,8 @@ import {
   Paper,
   Stack,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from '@mui/material';
-import { useActions, useAppState } from '../../../overmind';
 import React, {
   ChangeEvent,
   FC,
@@ -17,10 +16,11 @@ import React, {
   KeyboardEvent,
   useEffect,
   useRef,
-  useState
+  useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import SaveSettingsDialog from '../../../components/SaveSettingsDialog';
+import { useActions, useAppState } from '../../../overmind';
 
 const Filename: FC = () => {
   const { t } = useTranslation();
@@ -46,13 +46,13 @@ const Filename: FC = () => {
     if (allowAllFileTypes) return fileName;
     if (!allowedFileTypes || allowedFileTypes.length === 0) return fileName;
 
-    //TODO allow saving wih different extension if allowed
+    //TODO saving wih different extension if allowed
     const extension = allowedFileTypes[0];
 
     if (fileName.endsWith(`.${extension}`)) return fileName;
-    
-    return `${fileName}.${extension}`
-  }
+
+    return `${fileName}.${extension}`;
+  };
 
   const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
     const inputValue = addFileExtension(event.target.value);
@@ -81,13 +81,19 @@ const Filename: FC = () => {
         <InputBase
           endAdornment={
             <InputAdornment position="end">
-              <IconButton aria-label="open settings" onClick={handleOpenSettings} size="small">
+              <IconButton
+                aria-label="open settings"
+                onClick={handleOpenSettings}
+                size="small"
+                data-testid="save:open-settings-button"
+              >
                 <TuneIcon fontSize="inherit" />
               </IconButton>
             </InputAdornment>
           }
           fullWidth
           id="filename"
+          inputProps={{ 'data-testid': 'save:filename-input' }}
           onBlur={handleBlur}
           onChange={handleChange}
           onKeyPress={handleKeyPress}

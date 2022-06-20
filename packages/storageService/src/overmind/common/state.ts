@@ -1,4 +1,6 @@
+import { derived } from 'overmind';
 import type {
+  AlertDialog,
   AllowedMimeType,
   DialogType,
   ISelectedItem,
@@ -8,8 +10,7 @@ import type {
   Resource,
   StorageSource,
   Submit,
-} from '@src/@types/types';
-import { derived } from 'overmind';
+} from '../../types';
 
 type State = {
   allowAllFileTypes: boolean;
@@ -17,6 +18,7 @@ type State = {
   allowedMimeTypes?: AllowedMimeType[];
   allowPaste?: boolean;
   dialogType: DialogType;
+  alertDialog: AlertDialog;
   messageDialog: MessageDialog;
   resource?: Resource;
   showInvisibleFiles: boolean;
@@ -33,10 +35,12 @@ export const state: State = {
     if (!state.allowedMimeTypes) return;
     return state.allowedMimeTypes.map((mimeType) => {
       const parts = mimeType.split('/');
+      if (parts[1] === 'plain') return '';
       return parts[1];
     });
   }),
   dialogType: 'load',
+  alertDialog: { open: false },
   messageDialog: { open: false },
   showInvisibleFiles: false,
   source: 'local',

@@ -1,4 +1,4 @@
-import Provider, { ProviderAuth } from '@src/@types/Provider';
+import Provider, { ProviderAuth } from '../../types/Provider';
 
 type Providers = { [key: string]: Provider };
 
@@ -18,9 +18,8 @@ export class Api {
     const Provider = module.default;
     const provider = new Provider(providerAuth);
     await provider.getAuthenticatedUser();
-    
-    this.providers[providerAuth.name] = provider;
 
+    this.providers[providerAuth.name] = provider;
   }
 }
 

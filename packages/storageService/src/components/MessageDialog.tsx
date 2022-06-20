@@ -8,10 +8,10 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
-  Stack,
+  Stack
 } from '@mui/material';
-import { useActions, useAppState } from '../overmind';
 import React, { FC } from 'react';
+import { useActions, useAppState } from '../overmind';
 
 const MessageDialog: FC = () => {
   const { messageDialog } = useAppState().common;
@@ -55,8 +55,8 @@ const MessageDialog: FC = () => {
 
   return (
     <Dialog
-      aria-describedby="alert-dialog-description"
-      aria-labelledby="alert-dialog-title"
+      aria-describedby="message-dialog-description"
+      aria-labelledby="message-dialog-title"
       disableEnforceFocus
       fullWidth={fullWidth}
       maxWidth={maxWidth}
@@ -64,7 +64,7 @@ const MessageDialog: FC = () => {
       open={open}
     >
       {title && (
-        <DialogTitle id="alert-dialog-title">
+        <DialogTitle id="message-dialog-title">
           {title}
           {closable && (
             <IconButton
@@ -86,7 +86,7 @@ const MessageDialog: FC = () => {
       <DialogContent>
         <Stack direction="row">
           {progress && <CircularProgress color="secondary" size={20} sx={{ mr: 1.5 }} />}
-          <DialogContentText id="alert-dialog-description">{message}</DialogContentText>
+          <DialogContentText id="message-dialog-description">{message}</DialogContentText>
         </Stack>
       </DialogContent>
 

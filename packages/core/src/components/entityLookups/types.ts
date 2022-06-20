@@ -1,5 +1,5 @@
-import { DialogLookupType } from '@src/js/dialogs/types';
-import Entity from '@src/js/entities/Entity';
+import type { DialogLookupType } from '../../js/dialogs/types';
+import Entity from '../../js/entities/Entity';
 
 export type LookupsEntityType = 'person' | 'place' | 'organization' | 'title' | 'rs';
 export type Authority = 'dbpedia' | 'cwrc' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata';
@@ -27,7 +27,7 @@ export interface ILookupServiceConfig {
     username?: string;
   };
   enabled?: boolean;
-  entities?: LookupsEntityType[] | [LookupsEntityType, { enabled: boolean }][];
+  entities?: Array<LookupsEntityType | [LookupsEntityType, { enabled: boolean }]>;
   id?: Authority;
   name?: string;
   priority?: number;
@@ -47,7 +47,7 @@ export interface ILookups {
 }
 
 export interface ILookupsConfig {
-  authorities?: Authority[] | [Authority, ILookupServiceConfig][];
+  authorities?: Array<Authority | [Authority, ILookupServiceConfig]>;
   showNoLinkButton: boolean;
   showCreateNewButton: boolean;
   showEditButton: boolean;

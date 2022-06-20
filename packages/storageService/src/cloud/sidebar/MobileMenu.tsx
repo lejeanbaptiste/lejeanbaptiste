@@ -2,10 +2,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import { IconButton, ListSubheader, MenuItem, Stack } from '@mui/material';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import type { Owner, CollectionSource } from '../../@types/types';
-import { useActions, useAppState } from '../../overmind';
 import React, { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { CollectionSource, Owner } from '../../types';
+import { useActions, useAppState } from '../../overmind';
+import { log } from '../../utilities/log';
 import SearchBar from './publicRepository/searchBar';
 
 interface MobileMenuProps {
@@ -43,7 +44,7 @@ const MobileMenu: FC<MobileMenuProps> = ({ onSelect, selectedMenu }) => {
       setCollectionSource(value as CollectionSource);
     } else {
       const owner = getPublicRepository(value);
-      if (!owner) return console.log('public repository not found');
+      if (!owner) return log.warn('public repository not found');
       onSelect(owner.username);
       setOwner(owner);
     }

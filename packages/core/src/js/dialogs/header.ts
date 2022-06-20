@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 import Writer from '../Writer';
+import { log } from './../../utilities';
 
 class Header {
   readonly writer: Writer;
@@ -12,7 +13,7 @@ class Header {
 
     const headerLink = this.writer.layoutManager.getHeaderButtonsParent();
     if (!headerLink) {
-      console.warn('Header link  / buttons parent not found');
+      log.warn('Header link  / buttons parent not found');
       // return;
     }
 

@@ -1,8 +1,9 @@
 import $ from 'jquery';
+import { MappingID } from '../../types';
+import { log } from '../../utilities';
 import Entity from '../entities/Entity';
 import Writer from '../Writer';
-import { MappingID } from '@src/@types';
-import { empty, tei, teiLite, orlando, cwrcEntry } from './mappings';
+import { cwrcEntry, empty, orlando, tei, teiLite } from './mappings';
 import type { EntityTypes, IEntityMapping } from './types';
 
 // a list of reserved attribute names that are used by the editor
@@ -189,7 +190,7 @@ class Mapper {
           break;
 
         default:
-          console.warn(
+          log.warn(
             `mapper.getReverseMapping.cleanupMappings: cannot remove node with unknown type ${match}`
           );
           break;
@@ -244,7 +245,7 @@ class Mapper {
 
         // hack: if innerResult return undefined, result is also undefined
         if (!innerResult) {
-          console.warn(
+          log.warn(
             `mapper.getReverseMapping.getValueFromXPath: cannot get match for unrecognizable xpath ${xpath}`
           );
           result = undefined;
@@ -252,7 +253,7 @@ class Mapper {
           result = innerResult.match;
         }
       } else {
-        console.warn(
+        log.warn(
           `mapper.getReverseMapping.getValueFromXPath: cannot get match for unrecognizable xpath ${xpath}`
         );
       }
@@ -286,8 +287,8 @@ class Mapper {
     // attributes
     isCWRC
       ? (obj.attributes = this.writer.tagger.getAttributesForTag(element))
-      //@ts-ignore
-      : $.map(element.attributes, (att) => (obj.attributes[att.name] = att.value));
+      : //@ts-ignore
+        $.map(element.attributes, (att) => (obj.attributes[att.name] = att.value));
 
     // mapping values
     if (mapping) {
@@ -520,7 +521,7 @@ class Mapper {
     const _tagAttr = tag.getAttribute('_tag');
 
     if (!entityType) {
-      console.warn(`mapper.convertTagToEntity: tag ${_tagAttr} cannot be converted to an entity!`);
+      log.warn(`mapper.convertTagToEntity: tag ${_tagAttr} cannot be converted to an entity!`);
       return;
     }
 

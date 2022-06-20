@@ -1,6 +1,7 @@
-import axios, { AxiosInstance } from 'axios';
-import { IResult } from '../../../components/entityLookups/types';
-import ILookupServiceApi, { IFindParams } from './type';
+import axios, { type AxiosInstance } from 'axios';
+import type { IResult } from '../../../components/entityLookups/types';
+import { log } from './../../../utilities';
+import ILookupServiceApi, { type IFindParams } from './type';
 
 type NamedEntityType = 'person' | 'place';
 
@@ -54,8 +55,7 @@ export default class Lgpn implements ILookupServiceApi {
         Something wrong with the call to LGPN, possibly a problem with the network or the server.
         HTTP error: ${response.statusText}
       `;
-      // throw new Error(errorMsg);
-      console.warn(errorMsg);
+      log.warn(errorMsg);
       return [];
     }
 

@@ -1,6 +1,6 @@
-import { Schema } from '../../@types';
 import { derived } from 'overmind';
-import { ILookups } from '../../components/entityLookups/types';
+import type { ILookups } from '../../components/entityLookups/types';
+import type { Schema } from '../../types';
 
 type State = {
   advancedSettings: boolean;
@@ -141,8 +141,6 @@ export const state: State = {
         name: 'Geonames',
         priority: 5,
       },
-
-      
     },
 
     showNoLinkButton: true,

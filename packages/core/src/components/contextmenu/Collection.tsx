@@ -1,9 +1,9 @@
 import { Box, Collapse, Divider } from '@mui/material';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 import { TransitionGroup } from 'react-transition-group';
 import { v4 as uuidv4 } from 'uuid';
-import ItemsSkeleton from './ItemsSkeleton';
 import Item from './Item';
+import ItemsSkeleton from './ItemsSkeleton';
 import Search from './Search';
 import type { Item as ItemType } from './types';
 

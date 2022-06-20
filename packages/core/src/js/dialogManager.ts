@@ -1,22 +1,23 @@
-import { EntityLink, LookupsEntityType } from '@src/components/entityLookups/types';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/tooltip';
 import Cookies from 'js-cookie';
+import type { EntityLink } from '../components/entityLookups/types';
 import '../lib/jquery/jquery.popup';
+// import Triple from './dialogs/triple.js';
+import { log } from './../utilities';
 import AttributesEditor from './dialogs/attributesEditor/attributesEditor';
 import CopyPaste from './dialogs/copyPaste';
 import EntitiesDialogs from './dialogs/entities';
-import { SchemaDialog } from './dialogs/entities/types';
+import type { SchemaDialog } from './dialogs/entities/types';
 import LoadingIndicator from './dialogs/loadingIndicator/loadingIndicator';
 import Message from './dialogs/message';
 import Popup from './dialogs/popup';
 import Translation from './dialogs/translation';
 import type { ILWDialog } from './dialogs/types';
 import Writer from './Writer';
-// import Triple from './dialogs/triple.js';
 
-const DIALOG_PREFS_COOKIE_NAME = 'cwrc-writer-base-dialog-preferences';
+const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
 const handleResize = (dialogEl: JQuery<any>) => {
   if (dialogEl.is(':visible')) {
@@ -184,7 +185,7 @@ class DialogManager {
     const loadSchemaDialogs = () => {
       const schemaMappingsId = this.writer.schemaManager.getCurrentSchema()?.schemaMappingsId;
       if (!schemaMappingsId) {
-        console.warn('schemaMappingsId is undefined');
+        log.warn('schemaMappingsId is undefined');
         return;
       }
 
@@ -224,7 +225,7 @@ class DialogManager {
   show(type: string, config?: object) {
     const dialog = this.dialogs.get(type) ?? this.schemaDialogs.get(type);
     if (!dialog) {
-      console.warn(`Dialog ${type} not found!`);
+      log.warn(`Dialog ${type} not found!`);
       return;
     }
 

@@ -1,6 +1,6 @@
-import React, { FC } from 'react';
 import { Link, Popover, Typography } from '@mui/material';
-import { useAppState } from '@src/overmind';
+import React, { type FC } from 'react';
+import { useAppState } from '../../overmind';
 
 export interface PopupProps {
   content?: string;

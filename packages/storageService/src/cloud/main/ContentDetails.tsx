@@ -1,6 +1,6 @@
 import { Box, Link, Typography } from '@mui/material';
 import React, { FC } from 'react';
-import type { ILatestCommit } from '../../@types/Provider';
+import type { ILatestCommit } from '../../types/Provider';
 
 interface ContentDetailsProps {
   latestCommit: ILatestCommit;

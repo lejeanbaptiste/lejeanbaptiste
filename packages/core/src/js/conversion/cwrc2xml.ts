@@ -1,6 +1,7 @@
 import $ from 'jquery';
-import Entity, { IannotationRange } from '../entities/Entity';
+import Entity, { type IannotationRange } from '../entities/Entity';
 import Writer from '../Writer';
+import { log } from './../../utilities';
 
 /**
  * @class CWRC2XML
@@ -34,7 +35,7 @@ class CWRC2XML {
     let $rootEl = $body.children(`[_tag=${root}]`);
 
     if ($rootEl.length === 0) {
-      console.warn('converter: no root found for', root);
+      log.warn('converter: no root found for', root);
       $rootEl = $body.find('[_tag]:eq(0)'); // fallback
     }
 
@@ -57,9 +58,9 @@ class CWRC2XML {
     xmlString += `<?xml-model href="${this.writer.schemaManager.getCurrentDocumentSchemaUrl()}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>\n`;
     xmlString += `<?xml-stylesheet type="text/css" href="${this.writer.schemaManager.getCurrentDocumentCSSUrl()}"?>\n`;
 
-    // console.time('buildXMLString');
+    // if (logEnabledFor('DEBUG')) console.time('buildXMLString');
     xmlString += this.buildXMLString($rootEl, includeRDF);
-    // console.timeEnd('buildXMLString');
+    // if (logEnabledFor('DEBUG')) console.timeEnd('buildXMLString');
 
     xmlString = xmlString.replace(/&(?!amp;)/g, '&amp;'); //replace all '&' with '&amp;' allowing html/xml to validate.
 
@@ -70,23 +71,23 @@ class CWRC2XML {
       return xmlString;
     }
 
-    // console.time('stringToXML');
+    // if (logEnabledFor('DEBUG'))console.time('stringToXML');
     const xmlDoc = this.writer.utilities.stringToXML(xmlString);
-    // console.timeEnd('stringToXML');
+    // if (logEnabledFor('DEBUG'))console.timeEnd('stringToXML');
 
     // parse error in document
     if (!xmlDoc) return null;
 
-    // console.time('setEntityRanges');
+    // if (logEnabledFor('DEBUG'))console.time('setEntityRanges');
     this.setEntityRanges(xmlDoc);
-    // console.timeEnd('setEntityRanges');
+    // if (logEnabledFor('DEBUG'))console.timeEnd('setEntityRanges');
 
-    // console.time('cleanUp');
+    // if (logEnabledFor('DEBUG')) console.time('cleanUp');
     // clean up temp ids used by setEntityRanges
     $('[cwrcTempId]', xmlDoc).each((index, element) => {
       $(element).removeAttr('cwrcTempId');
     });
-    // console.timeEnd('cleanUp');
+    // if (logEnabledFor('DEBUG')) console.timeEnd('cleanUp');
 
     const rdfmode = this.writer.annotationMode === this.writer.XML ? 'xml' : 'json';
 
@@ -155,7 +156,7 @@ class CWRC2XML {
             break;
 
           default:
-            console.warn('cwrc2xml: axis', axis, 'not supported');
+            log.warn('cwrc2xml: axis', axis, 'not supported');
             break;
         }
       }
@@ -164,12 +165,12 @@ class CWRC2XML {
     if ($currNode !== $docEl) {
       $currNode.append(rdfString);
     } else {
-      console.warn("cwrc2xml: couldn't find rdfParent for", selector);
+      log.warn("cwrc2xml: couldn't find rdfParent for", selector);
     }
 
-    // console.time('xmlToString');
+    // if (logEnabledFor('DEBUG')) console.time('xmlToString');
     xmlString = this.writer.utilities.xmlToString(xmlDoc);
-    // console.timeEnd('xmlToString');
+    // if (logEnabledFor('DEBUG'))console.timeEnd('xmlToString');
 
     xmlString = xmlString.replace(/\uFEFF/g, ''); // remove characters inserted by node selecting
 
@@ -210,7 +211,7 @@ class CWRC2XML {
           }
         } else {
           // TODO this occurs if the selection panel is open and we're finalizing an entity
-          console.warn('cwrc2xml.buildXMLString: no entity entry for', id);
+          log.warn('cwrc2xml.buildXMLString: no entity entry for', id);
           array = ['', ''];
         }
       } else {
@@ -398,7 +399,7 @@ class CWRC2XML {
         });
 
         return ret;
-      }
+      };
 
       getOffset(parent);
       return offset;

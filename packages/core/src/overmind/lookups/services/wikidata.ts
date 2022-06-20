@@ -1,7 +1,8 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import wdk from 'wikidata-sdk';
-import { IResult } from '../../../components/entityLookups/types';
-import ILookupServiceApi, { IFindParams } from './type';
+import type { IResult } from '../../../components/entityLookups/types';
+import { log } from './../../../utilities';
+import ILookupServiceApi, { type IFindParams } from './type';
 
 type NamedEntityType = 'person' | 'place' | 'org' | 'title' | 'rs';
 
@@ -73,8 +74,7 @@ export default class Wikidata implements ILookupServiceApi {
         Something wrong with the call to Wikidata, possibly a problem with the network or the server.
         HTTP error: ${response.statusText}
       `;
-      // throw new Error(errorMsg);
-      console.warn(errorMsg);
+      log.warn(errorMsg);
       return [];
     }
 

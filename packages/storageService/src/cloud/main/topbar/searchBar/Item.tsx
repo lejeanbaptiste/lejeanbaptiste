@@ -1,6 +1,6 @@
+import CodeIcon from '@mui/icons-material/Code';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import CodeIcon from '@mui/icons-material/Code';
 import {
   Box,
   IconButton,
@@ -13,11 +13,11 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { FC, useState } from 'react';
-import ContentMatch from './ContentMatch';
 import { AnimatePresence } from 'framer-motion';
-import type { Content, SearchResultsBlobs } from '../../../../@types/types';
+import React, { FC, useState } from 'react';
+import type { Content, SearchResultsBlobs } from '../../../../types';
 import { useActions, useAppState } from '../../../../overmind';
+import ContentMatch from './ContentMatch';
 
 interface ItemProps {
   item: Content | SearchResultsBlobs;

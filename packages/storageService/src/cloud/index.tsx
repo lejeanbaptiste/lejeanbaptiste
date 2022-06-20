@@ -1,7 +1,7 @@
 import { Stack, useMediaQuery, useTheme } from '@mui/material';
 import React, { FC } from 'react';
-import Sidebar from './sidebar';
 import Main from './main';
+import Sidebar from './sidebar';
 
 const CloudDialog: FC = () => {
   const theme = useTheme();

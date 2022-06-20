@@ -10,9 +10,9 @@ import {
   Switch,
   TextField,
 } from '@mui/material';
-import { useActions } from '../overmind';
 import React, { ChangeEvent, FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useActions } from '../overmind';
 
 interface CreateRepoDialogProps {
   onCancel: () => void;
@@ -22,7 +22,7 @@ interface CreateRepoDialogProps {
 
 const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open }) => {
   const { t } = useTranslation();
-  const { showMessageDialog } = useActions().common;
+  const { showAlertDialog } = useActions().common;
   const { createRepo } = useActions().cloud;
 
   const [name, setName] = useState<string>('');
@@ -52,8 +52,8 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
     const repo = await createRepo({ name, description, isPrivate: privateRepo });
 
     if (!repo) {
-      showMessageDialog({
-        title: t('error:title:error'),
+      showAlertDialog({
+        type: 'error',
         message: t('error:message:repo_creation_error'),
         onClose: async () => setIsLoading(false),
       });
@@ -68,11 +68,14 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
     <Dialog
       aria-describedby="create-repository"
       aria-labelledby="create-repository-title"
+      data-testid="save:create-repo-dialog"
       fullWidth
       maxWidth="sm"
       open={open}
     >
-      <DialogTitle id="create-repository-title">{t('cloud:createRepo:create_repository')}</DialogTitle>
+      <DialogTitle id="create-repository-title">
+        {t('cloud:createRepo:create_repository')}
+      </DialogTitle>
       <DialogContent>
         <Stack spacing={4}>
           <TextField
@@ -80,6 +83,7 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
             autoFocus
             fullWidth
             id="name"
+            inputProps={{ 'data-testid': 'save:create-repo:name-input' }}
             label={t('commons:name')}
             onChange={handleNameChange}
             placeholder={t('cloud:createRepo:repository_name')}
@@ -92,6 +96,7 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
             fullWidth
             helperText={t('cloud:createRepo:description_help')}
             id="description"
+            inputProps={{ 'data-testid': 'save:create-repo:description-input' }}
             label={t('cloud:createRepo:description')}
             onChange={handleDescriptionChange}
             value={description}
@@ -110,6 +115,7 @@ const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open 
       <DialogActions>
         <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
         <LoadingButton
+          data-testid="save:create-repo:create-button"
           disabled={name === ''}
           loading={isLoading}
           onClick={handleCreate}

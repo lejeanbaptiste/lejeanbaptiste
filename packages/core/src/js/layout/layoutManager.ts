@@ -2,6 +2,8 @@ import fscreen from 'fscreen';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/tabs';
 import 'layout-jquery3';
+import Writer from '../Writer';
+import { log } from './../../utilities';
 import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
 import Nerve from './panels/nerve';
@@ -9,7 +11,6 @@ import Relations from './panels/relations';
 import Selection from './panels/selection';
 import StructureTree from './panels/structureTree';
 import Validation from './panels/validation';
-import Writer from '../Writer';
 
 interface InitConfigProps {
   editorId: string;
@@ -202,7 +203,7 @@ class LayoutManager {
         //@ts-ignore
         onresize_end: (region, pane, state, options) => {
           // // ! DEPRECATED resizeEditor might not be necessary anymore.
-          // console.info(
+          // log.info(
           //   '%c"resizeEditor" DEPRECATED: might not be necessary anymore.',
           //   'color: gray;'
           // );
@@ -297,7 +298,6 @@ class LayoutManager {
   }
 
   hideModule(moduleId: string) {
-    
     this.modulesLayout.forEach((modules, region) => {
       if (!Array.isArray(modules)) {
         if (modules.id === moduleId) this.hideRegion(region);
@@ -402,7 +402,7 @@ class LayoutManager {
     this.modules.forEach((module) => {
       module.destroy
         ? module.destroy()
-        : console.warn(`LayoutManager: no destroy method for ${module}`);
+        : log.warn(`LayoutManager: no destroy method for ${module}`);
     });
 
     //@ts-ignore
@@ -434,10 +434,12 @@ class LayoutManager {
     return `
       <div class="cwrc tabs ui-layout-${panelRegion}">
         <ul>
-          ${panelConfig.map(({ id, title }) => {
-            if (!title) title = id.charAt(0).toUpperCase() + id.slice(1);
-            return `<li><a href="#${this.editorId}-${id}">${title}</a></li>`;
-          }).join('')}
+          ${panelConfig
+            .map(({ id, title }) => {
+              if (!title) title = id.charAt(0).toUpperCase() + id.slice(1);
+              return `<li><a href="#${this.editorId}-${id}">${title}</a></li>`;
+            })
+            .join('')}
         </ul>
         <div class="ui-layout-content">
           ${panelConfig.map(({ id }) => `<div id="${this.editorId}-${id}"/>`).join('')}

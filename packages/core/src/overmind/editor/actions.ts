@@ -1,17 +1,17 @@
+import $ from 'jquery';
+import Cookies from 'js-cookie';
+import { Context } from '../';
 import type {
   Authority,
   ILookupsConfig,
   ILookupService,
   ILookupServiceEntity,
   LookupsEntityType,
-} from '@src/components/entityLookups/types';
-import $ from 'jquery';
-import Cookies from 'js-cookie';
-import { Context } from '../';
-import { ConfigLegacy, Schema } from '../../@types';
-import { debounce } from 'lodash';
+} from '../../components/entityLookups/types';
+import { ConfigLegacy, Schema } from '../../types';
+import { log } from './../../utilities';
 
-const DIALOG_PREFS_COOKIE_NAME = 'cwrc-writer-base-dialog-preferences';
+const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
 export const writerInitSettings = ({ state: { editor } }: Context, config: ConfigLegacy) => {
   const { container, cwrcRootUrl, helpUrl, schema, services } = config;
@@ -36,7 +36,7 @@ export const initiateLookupServices = async (
   { state, actions, effects }: Context,
   serviceType?: 'custom' | 'nssi'
 ) => {
-  // console.log(serviceType);
+  // log.info(serviceType);
   // serviceType = 'nssi';
   const _token = await state.editor.nssiToken;
   const token = await actions.editor.getNssiToken();
@@ -99,7 +99,7 @@ export const initiateLookupSources = async (
     // * geonames warning
     if (authorityId === 'geonames') {
       if (!authorityConfig.config?.username || authorityConfig.config.username === '') {
-        console.warn(
+        log.warn(
           'Lookups config: You must define a username to be able to make requests to Geonames'
         );
         return;
@@ -182,7 +182,11 @@ export const setNssiToken = (
 
 export const getNssiToken = async ({ state }: Context) => {
   const { nssiToken } = state.editor;
-  if (!nssiToken) throw Error('Nssi token was not set up');
+  // if (!nssiToken) throw Error('Nssi token was not set up');
+  if (!nssiToken) {
+    log.error('Nssi token was not set up');
+    return;
+  }
 
   const token = typeof nssiToken === 'string' ? nssiToken : await nssiToken();
   return token;
@@ -196,8 +200,9 @@ export const setFontSize = ({ state }: Context, value: number) => {
   state.editor.currentFontSize = value;
 };
 
-export const showTags = ({ state }: Context, value: boolean) => {
+export const toggleShowTags = ({ state }: Context, value?: boolean) => {
   if (!window.writer?.editor) return;
+  if (!value) value = !state.editor.showTags;
 
   $('body', window.writer.editor.getDoc()).toggleClass('showTags');
   state.editor.showTags = value;
@@ -290,7 +295,7 @@ export const resetDialogWarnings = ({ state }: Context) => {
 
 export const resetPreferences = ({ state, actions, effects }: Context) => {
   if (state.editor.currentFontSize !== 11) actions.editor.setFontSize(11);
-  if (state.editor.showTags !== false) actions.editor.showTags(false);
+  if (state.editor.showTags !== false) actions.editor.toggleShowTags(false);
   if (state.editor.showEntities !== true) actions.editor.showEntities(true);
   if (state.editor.editorMode !== 'xmlrdfoverlap') actions.editor.setEditorMode('xmlrdf');
   if (state.editor.annotationMode !== 3) actions.editor.setAnnotationrMode(3);
@@ -370,18 +375,9 @@ export const retrieveLookupAutoritiesConfig = ({ effects }: Context) => {
   return JSON.parse(prefs);
 };
 
-// * Important
-// Save debounce multiple calls to avoid sync conflict when saving into cloud storage like Github.
-// It will execute immedaiatly. Subsequently calls will be blocked until the timeout, when the last call is executed.
-// After timeout, the subsquently call executes immedaitly again.
-export const saveDocument = debounce(
-  ({ state }: Context, saveAs?: boolean) => {
-    if (!window.writer) return;
-    window.writer.save(saveAs);
-  },
-  60_000,
-  { leading: true, trailing: true }
-);
+export const getContent = async ({ state }: Context) => {
+  return await window.writer.getContent();
+};
 
 export const setIsEditorDirty = ({ state }: Context, value: boolean) => {
   state.editor.isEditorDirty = value;

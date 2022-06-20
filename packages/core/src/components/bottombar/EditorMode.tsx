@@ -11,9 +11,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useAppState } from '@src/overmind';
 import { SnackbarKey, useSnackbar } from 'notistack';
-import React, { FC, MouseEvent, useEffect, useState } from 'react';
+import React, { MouseEvent, useEffect, useState, type FC } from 'react';
+import { useAppState } from '../../overmind';
 import useSettings from './useSettings';
 
 const EditorMode: FC = () => {
@@ -74,7 +74,7 @@ const EditorMode: FC = () => {
 
   const handleUndo = (snackbarKey: SnackbarKey, previousValue: string) => {
     closeSnackbar(snackbarKey);
-    
+
     const response = changeEditorMode({ mode: previousValue, isUndo: true });
     enqueueSnackbar(response);
   };

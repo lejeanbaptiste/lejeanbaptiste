@@ -1,4 +1,5 @@
 import { ErrorData, WorkingState, WorkingStateData } from '@cwrc/salve-dom-leafwriter';
+import { logEnabledFor } from './log';
 import { getFullNameFromDocumentation, getXPathForElement } from './utils';
 import VirtualEditor from './virtualEditor';
 
@@ -59,7 +60,7 @@ export const validate = (
   vEditor: VirtualEditor,
   callback?: (workingStateData: ValidationResponse) => void
 ) => {
-  console.time('Validate Document');
+  if (logEnabledFor('DEBUG')) console.time('Validate Document');
 
   vEditor.validator?.events.addEventListener('error', () => {
     //TODO Informe progress to the UI
@@ -90,7 +91,7 @@ const handleValidatorStateUpdate = (
   //* State [4] VALID: Resolve
   if (state === WorkingState.VALID) {
     vEditor.validator.events.removeAllListeners('state-update');
-    console.timeEnd('Validate Document');
+    if (logEnabledFor('DEBUG')) console.timeEnd('Validate Document');
     return { partDone, state, valid };
   }
 
@@ -100,7 +101,7 @@ const handleValidatorStateUpdate = (
   );
 
   vEditor.validator.events.removeAllListeners('state-update');
-  console.timeEnd('Validate Document');
+  if (logEnabledFor('DEBUG')) console.timeEnd('Validate Document');
 
   return { errors, partDone, state, valid };
 };

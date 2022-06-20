@@ -307,7 +307,6 @@ class ImageViewer {
 //     tileSources.push({ type: 'image', url });
 //   });
 
-
 // }
 
 export default ImageViewer;

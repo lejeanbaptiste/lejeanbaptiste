@@ -1,9 +1,12 @@
+import match from 'autosuggest-highlight/match';
+import parse from 'autosuggest-highlight/parse';
+import { Context } from '..';
 import type {
   CreatePrResponse,
   CreateRepoParams,
   ICreateFork,
   ProviderAuth,
-} from '@src/@types/Provider';
+} from '../../types/Provider';
 import type {
   CollectionSource,
   Content,
@@ -22,11 +25,9 @@ import type {
   StorageSource,
   SuportedProviders,
   UserType,
-} from '@src/@types/types';
-import match from 'autosuggest-highlight/match';
-import parse from 'autosuggest-highlight/parse';
-import { Context } from '..';
+} from '../../types';
 import i18next from '../../i18n';
+import { log } from '../../utilities/log';
 import { isErrorMessage } from '../../utilities/util';
 
 //* INIITIALIZE
@@ -41,10 +42,6 @@ export const onInitializeOvermind = async ({ state }: Context, _overmind: any) =
   if (publicRepositories) {
     state.cloud.publicRepositories = JSON.parse(publicRepositories);
   }
-};
-
-export const setIsFetching = ({ state }: Context, value: boolean) => {
-  state.cloud.isFetching = value;
 };
 
 export const setIsLoading = ({ state }: Context, value: boolean) => {
@@ -101,12 +98,12 @@ export const changeProvider = async (
 
 //---------------
 
-type Iinitialize = {
+export interface IInitializeParams {
   resource?: Resource | string;
   source?: string;
-};
+}
 
-export const intialize = async ({ state, actions }: Context, initialValues: Iinitialize) => {
+export const initialize = async ({ state, actions }: Context, initialValues: IInitializeParams) => {
   const { resource, source } = initialValues;
 
   if (typeof resource === 'string') {
@@ -118,7 +115,9 @@ export const intialize = async ({ state, actions }: Context, initialValues: Iini
   if (state.cloud.providers.length > 0 && !source) actions.common.setSource('cloud');
   if (source) actions.common.setSource(source as StorageSource);
 
-  const resourceLoaded = resource ? actions.cloud.rehydrate(resource) : actions.cloud.resetOwner();
+  const resourceLoaded = resource
+    ? await actions.cloud.rehydrate(resource)
+    : actions.cloud.resetOwner();
   return resourceLoaded;
 };
 
@@ -132,7 +131,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   }
 
   if (!resource.provider) {
-    // console.warn('no provider');
+    log.warn('no provider');
     return null;
   }
 
@@ -154,8 +153,8 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   });
 
   if (!ownerDetails) {
-    actions.common.showMessageDialog({
-      title: i18next.t('error:title:warning'),
+    actions.common.showAlertDialog({
+      type: 'error',
       message: i18next.t('error:message:user_not_found', { username: resource.owner }),
       onClose: () => {
         if (!provider) return;
@@ -183,8 +182,8 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   });
 
   if (!repo) {
-    actions.common.showMessageDialog({
-      title: i18next.t('error:title:warning'),
+    actions.common.showAlertDialog({
+      type: 'error',
       message: i18next.t('error:message:repository_not_found', {
         username: resource.owner,
         repository: resource.repo,
@@ -202,8 +201,8 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
 
   const content = await actions.cloud.fetchRepoContent();
   if (!content) {
-    actions.common.showMessageDialog({
-      title: i18next.t('error:title:warning'),
+    actions.common.showAlertDialog({
+      type: 'error',
       message: i18next.t('error:message:path_not_found', {
         repository: resource.repo,
         path: resource.path,
@@ -723,7 +722,6 @@ export const searchByFilename = async (
     results: [] as Content[],
   };
 
-  // if (!state.cloud.repository || !provider.getRepoContentRecursively) return searchResults;
   if (!state.cloud.repository) return searchResults;
   const { repository, owner } = state.cloud;
 
@@ -942,8 +940,9 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
       response.error === 'conflict'
         ? i18next.t('error:message:conflictFIle')
         : i18next.t('error:message:unableToSave');
-    actions.common.showMessageDialog({
-      title: i18next.t('error:title:error'),
+
+    actions.common.showAlertDialog({
+      type: 'error',
       message,
       onClose: () => actions.cloud.setIsSaving(false),
     });
@@ -990,8 +989,8 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
   }
 
   if (isErrorMessage(pullRequestResponse)) {
-    actions.common.showMessageDialog({
-      title: i18next.t(`error:title:${pullRequestResponse.type}`),
+    actions.common.showAlertDialog({
+      type: 'error',
       message: pullRequestResponse.message,
       onClose: () => actions.cloud.setIsSaving(false),
     });
