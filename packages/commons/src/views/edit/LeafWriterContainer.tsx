@@ -22,6 +22,12 @@ const LeafWriterContainer: FC = () => {
           xml: resource.content ?? '',
         },
         settings: {
+          baseUrl: '.', // '.' | './'
+          nerveUrl: 'https://localhost/nerve/',
+          proxyLoaders: {
+            cssEndpoint: '/schema/css/',
+            xmlEndpoint: '/schema/xml/',
+          },
           credentials: { nssiToken: getLincsAauthenticationToken },
           lookups: {
             authorities: [
@@ -37,13 +43,6 @@ const LeafWriterContainer: FC = () => {
             showCreateNewButton: false,
             showEditButton: false,
             serviceType: 'custom',
-          },
-          legacy: {
-            cwrcRootUrl: './', // '.' | './'
-            helpUrl: 'https://cwrc.ca/CWRC-Writer_Documentation/',
-            nerveUrl: 'https://localhost/nerve/',
-            proxyCssEndpoint: '/schema/css/',
-            proxyXmlEndpoint: '/schema/xml/',
           },
         },
         user: {
