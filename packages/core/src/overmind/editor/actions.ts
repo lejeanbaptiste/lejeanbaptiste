@@ -8,28 +8,23 @@ import type {
   ILookupServiceEntity,
   LookupsEntityType,
 } from '../../components/entityLookups/types';
-import { ConfigLegacy, Schema } from '../../types';
+import { ILeafWriterOptionsSettings, Schema } from '../../types';
 import { log } from './../../utilities';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
-export const writerInitSettings = ({ state: { editor } }: Context, config: ConfigLegacy) => {
-  const { container, cwrcRootUrl, helpUrl, schema, services } = config;
+export const writerInitSettings = ({ state: { editor }, actions }: Context, settings: ILeafWriterOptionsSettings) => {
+  const { baseUrl, proxyLoaders, schemas } = settings;
 
-  const settings = {
-    container,
-    cwrcRootUrl,
-    helpUrl,
-    schemas: schema.schemas,
-    nerveUrl: services.nerve.url,
-  };
-
+  editor.baseUrl = baseUrl;
   editor.settings = settings;
 
-  editor.schemaProxyXmlEndpoint = schema.proxyXmlEndpoint;
-  editor.schemaProxyCssEndpoint = schema.proxyCssEndpoint;
+  editor.proxyLoaderXmlEndpoint = proxyLoaders.xmlEndpoint;
+  editor.proxyLoaderCssEndpoint = proxyLoaders.cssEndpoint;
 
-  editor.schemas = schema.schemas;
+  editor.schemas = schemas;
+
+  actions.validator.loadValidator()
 };
 
 export const initiateLookupServices = async (

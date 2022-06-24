@@ -1,23 +1,15 @@
-import type { ConfigLegacy, ILeafWriterOptions, Schema, SupportedSchemasId } from '../types';
+import type { ILeafWriterOptionsSettings, Schema, SupportedSchemasId } from '../types';
 import { schemas as defaultSchemas } from './schemas';
 
-export const createConfigLegacy = ({ settings: editor }: ILeafWriterOptions) => {
-  if (!editor.legacy) return {} as ConfigLegacy;
+export const createConfig = (settings: ILeafWriterOptionsSettings) => {
+  const supportedSchemas = setupSupportedSchemas(settings.schemas ?? settings.schemasId);
 
-  const { cwrcRootUrl, helpUrl, nerveUrl, proxyCssEndpoint, proxyXmlEndpoint } = editor.legacy;
-
-  const supportedSchemas = setupSupportedSchemas(editor.schemas);
-
-  const config: ConfigLegacy = {
+  const config: ILeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
-    cwrcRootUrl,
-    helpUrl,
-    nerveUrl,
-    schema: {
-      proxyCssEndpoint: proxyCssEndpoint ?? undefined,
-      proxyXmlEndpoint: proxyXmlEndpoint ?? undefined,
-      schemas: supportedSchemas,
-    },
+    baseUrl: settings.baseUrl,
+    nerveUrl: settings.nerveUrl,
+    proxyLoaders: settings.proxyLoaders,
+    schemas: supportedSchemas,
     modules: {
       west: [
         { id: 'structure', title: 'Markup' },
@@ -29,13 +21,13 @@ export const createConfigLegacy = ({ settings: editor }: ILeafWriterOptions) => 
         { id: 'validation', title: 'Validation' },
       ],
     },
-    services: { nerve: { url: nerveUrl } },
+    services: { nerve: { url: settings.nerveUrl } },
   };
 
   return config;
 };
 
-const setupSupportedSchemas = (schemas?: [SupportedSchemasId | Schema]) => {
+export const setupSupportedSchemas = (schemas?: Array<SupportedSchemasId | Schema>) => {
   if (!schemas) return defaultSchemas;
 
   let supportedSchemas: Schema[] = [];
