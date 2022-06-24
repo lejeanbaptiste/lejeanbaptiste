@@ -1,5 +1,13 @@
 ## 1.2.0
 
+## 1.2.2
+
+### Patch Changes
+
+- changes how LEAF-Writer configures itself, specifically the path to dep files and proxies
+- Updated dependencies
+  - @cwrc/leafwriter@1.4.0
+
 ## 1.2.1
 
 ### Patch Changes
