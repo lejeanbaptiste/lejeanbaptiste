@@ -1,5 +1,11 @@
 ## 1.2.0
 
+## 1.4.0
+
+### Minor Changes
+
+- changes how LEAF-Writer configures itself, specifically the path to dep files and proxies
+
 ## 1.3.0
 
 ### Minor Changes
