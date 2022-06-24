@@ -39,27 +39,24 @@ export const tinymceWrapperInit = function ({
   buttons2,
   buttons3,
 }: TinymceWrapperConfig) {
-  tinymce.baseURL = `${writer.rootUrl}/js`; // need for skin
+  tinymce.baseURL = `${writer.baseUrl}/js`; // need for skin
   tinymce.init({
     selector: `#${editorId}`,
     ui_container: `#${layoutContainerId}`,
-
-    // skin_url: `${writer.cwrcRootUrl}css/tinymce/skins/ui/oxide`,
     skin_url: window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? `${writer.rootUrl}css/tinymce/skins/ui/oxide-dark`
-      : `${writer.rootUrl}css/tinymce/skins/ui/oxide`,
+      ? `${writer.baseUrl}/css/tinymce/skins/ui/oxide-dark`
+      : `${writer.baseUrl}/css/tinymce/skins/ui/oxide`,
 
     height: '100%',
     width: '100%',
-    // content_css: `${writer.cwrcRootUrl}css/editor.css`,
     content_css: window.matchMedia('(prefers-color-scheme: dark)').matches
       ? [
-          `${writer.rootUrl}css/tinymce/skins/content/dark/content.min.css`,
-          `${writer.rootUrl}css/editor.css`,
+          `${writer.baseUrl}/css/tinymce/skins/content/dark/content.min.css`,
+          `${writer.baseUrl}/css/editor.css`,
         ]
       : [
-          `${writer.rootUrl}css/tinymce/skins/content/writer/content.min.css`,
-          `${writer.rootUrl}css/editor.css`,
+          `${writer.baseUrl}/css/tinymce/skins/content/writer/content.min.css`,
+          `${writer.baseUrl}/css/editor.css`,
         ],
 
     doctype:

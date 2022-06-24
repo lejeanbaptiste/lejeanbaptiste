@@ -12,17 +12,6 @@ export declare var webpackEnv: {
 
 export interface ILeafWriterOptions {
   document: LWDocument;
-  settings?: {
-    credentials?: {
-      nssiToken?: string | (() => Promise<string | undefined>);
-    };
-    colorScheme?: string;
-    language?: string;
-    legacy?: ConfigLegacy;
-    lookups?: ILookupsConfig;
-    schemas?: [SupportedSchemasId | Schema];
-  };
-  user?: User;
   preferences?: {
     fontSize?: number; // [Optional] Changes the document's default font size. Default: 11. Options: 10-18
     themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
@@ -31,6 +20,8 @@ export interface ILeafWriterOptions {
       rightSide: string[]; // [Required] List of panel names. Default: ['xml-viewer', 'image-viewer', 'validator']
     };
   };
+  settings?: ILeafWriterOptionsSettings;
+  user?: User;
 }
 
 export interface LWDocument {
@@ -38,19 +29,30 @@ export interface LWDocument {
   xml: string;
 }
 
-export interface ConfigLegacy {
-  cwrcRootUrl?: string;
-  helpUrl?: string;
-  nerveUrl?: string;
-  proxyXmlEndpoint?: string;
-  proxyCssEndpoint?: string;
+export interface ILeafWriterOptionsSettings {
+  container?: string;
 
+  baseUrl?: string;
+  nerveUrl?: string;
+  proxyLoaders: {
+    cssEndpoint: string;
+    xmlEndpoint: string;
+  };
+
+  credentials?: {
+    nssiToken?: string | (() => Promise<string | undefined>);
+  };
+
+  colorScheme?: string;
+  language?: string;
+
+  lookups?: ILookupsConfig;
+  schemas?: Schema[];
+  schemasId?: SupportedSchemasId[];
+
+  modules?: Object;
   services?: any;
 
-  container?: string;
-  storageDialogs?: Object;
-  schema?: any;
-  modules?: Object;
   readonly?: boolean;
   annotator?: boolean;
   mode?: string;

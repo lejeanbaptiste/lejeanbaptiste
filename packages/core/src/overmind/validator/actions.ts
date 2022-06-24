@@ -16,24 +16,27 @@ declare global {
   }
 }
 
-export const onInitializeOvermind = async ({ state }: Context, overmind: any) => {
-  const validator = await loadWebworker();
+export const loadValidator = async ({ state }: Context) => {
+  const baseUrl = state.editor.baseUrl;
+  const validator = await loadWebworker(baseUrl);
   if (!validator) return;
 
   window.leafwriterValidator = validator;
   state.validator.hasWorkerValidator = true;
 };
 
-const loadWebworker = async (): Promise<Comlink.Remote<Validator>> => {
+const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<Validator>> => {
   return await new Promise((resolve) => {
     // TODO: Improve the way to load webworkers for dev
     // * Check ThreadsJS once again.
     // * Or maybe experiment with ESBUILD
 
+    console.log(baseUrl)
+
     const worker =
       webpackEnv.WORKER_ENV === 'development'
         ? new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url))
-        : new Worker('leafwriter-validator.worker.js');
+        : new Worker(`${baseUrl}/leafwriter-validator.worker.js`);
 
     const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
 
@@ -58,8 +61,8 @@ export const initialize = async ({ state }: Context) => {
 
   // * CORS: Some of the schemas might have blocke by CORS
   //If provide, we wrap the schema URL in a requeste to the proxy server
-  const url = state.editor.schemaProxyXmlEndpoint
-    ? `${state.editor.schemaProxyXmlEndpoint}${encodeURIComponent(schemaURI)}`
+  const url = state.editor.proxyLoaderXmlEndpoint
+    ? `${state.editor.proxyLoaderXmlEndpoint}${encodeURIComponent(schemaURI)}`
     : schemaURI;
 
   const { parsedSchema, status } = await workerValidator.initialize({ id, cachedSchema, url });

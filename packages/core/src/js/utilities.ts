@@ -95,7 +95,7 @@ class Utilities {
   }
 
   addCSS(cssHref: string) {
-    const fullHref = this.writer.rootUrl + cssHref;
+    const fullHref = this.writer.baseUrl + cssHref;
     if (document.querySelector(`link[rel=stylesheet][href="${fullHref}"]`)) return;
 
     $(document.head).append(`<link type="text/css" rel="stylesheet" href="${fullHref}" />`);

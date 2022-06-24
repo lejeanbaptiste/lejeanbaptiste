@@ -12,6 +12,7 @@ type State = {
     label: string;
     disabled?: boolean;
   }[];
+  baseUrl?: string,
   currentFontSize: number;
   editorMode: string;
   editorModeLabel: string;
@@ -27,8 +28,8 @@ type State = {
   mode: number;
   nssiToken?: string | (() => Promise<string | undefined>);
   schemas: Schema[];
-  schemaProxyXmlEndpoint?: string;
-  schemaProxyCssEndpoint?: string;
+  proxyLoaderXmlEndpoint?: string;
+  proxyLoaderCssEndpoint?: string;
   settings?: any;
   showEntities: boolean;
   showTags: boolean;
@@ -49,6 +50,7 @@ export const state: State = {
     if (!annotatonMode) return '';
     return annotatonMode.label;
   }),
+  baseUrl: '.',
   currentFontSize: 11,
   editorMode: 'xmlrdf',
   editorModeLabel: derived((state: State) => {

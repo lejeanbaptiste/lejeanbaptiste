@@ -14,12 +14,6 @@ interface ISchema {
   cssUrl: string | string[];
 }
 
-interface ISchemaManagerConfig {
-  schemas?: ISchema[];
-  proxyXmlEndpoint?: string;
-  proxyCssEndpoint?: string;
-}
-
 /**
  * @class SchemaManager
  * @param {Writer} writer
@@ -78,7 +72,7 @@ class SchemaManager {
   private currentDocumentSchemaUrl: string | null = null;
   private currentDocumentCSSUrl: string | null = null;
 
-  constructor(writer: Writer, config: ISchemaManagerConfig) {
+  constructor(writer: Writer, schemas: ISchema[], proxies: { css: string; xml: string}) {
     this.writer = writer;
 
     this.mapper = new Mapper(writer);
@@ -95,12 +89,12 @@ class SchemaManager {
     /**
      * The proxy endpoint through which the schema XML is loaded
      */
-    this.proxyXmlEndpoint = config.proxyXmlEndpoint ?? null;
+    this.proxyXmlEndpoint = proxies.xml ?? null;
 
     /**
      * The proxy endpoint through which the schema CSS is loaded
      */
-    this.proxyCssEndpoint = config.proxyCssEndpoint ?? null;
+    this.proxyCssEndpoint = proxies.css ?? null;
 
     /**
      * An array of schema objects. Each object should have the following properties:
@@ -111,7 +105,7 @@ class SchemaManager {
      * @property {string} cssUrl Collection of URLs where the schema's CSS is located
      *
      */
-    this.schemas = config.schemas ?? [];
+    this.schemas = schemas ?? [];
 
     this.writer.event('schemaChanged').subscribe(async (schemaId: string) => {
       // this event is only fired by the settings dialog (by the user), so update the current document urls
