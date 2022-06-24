@@ -106,7 +106,7 @@
     "@types/js-cookie": "^3.0.2",
     "@types/jstree": "^3.3.41",
     "@types/luxon": "^2.3.2",
-    "@types/node": "^17.0.42",
+    "@types/node": "^18.0.0",
     "@types/openseadragon": "^3.0.3",
     "@types/prismjs": "^1.26.0",
     "@types/progressbar.js": "^1.1.2",
