@@ -31,8 +31,6 @@ const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<Validator>> =
     // * Check ThreadsJS once again.
     // * Or maybe experiment with ESBUILD
 
-    console.log(baseUrl)
-
     const worker =
       webpackEnv.WORKER_ENV === 'development'
         ? new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url))
