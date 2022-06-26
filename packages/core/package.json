@@ -25,8 +25,16 @@
     "Andrew MacDonald <andrewjames.code@gmail.com>",
     "James Chartrand <jc.chartrand@gmail.com>"
   ],
+  "exports": {
+    ".": {
+      "import": [
+        "./src/index.tsx",
+        "./lib/index.js"
+      ],
+      "require": "./dist/index.js"
+    }
+  },
   "types": "lib/index.d.ts",
-  "module": "src/index.tsx",
   "files": [
     "bin",
     "dist",
