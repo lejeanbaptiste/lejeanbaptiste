@@ -90,9 +90,7 @@ const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
           id={CONTAINER}
           sx={{
             height: 'calc(100% - 32px)',
-            width: '100vw',
-            paddingTop: '8px',
-            backgroundColor: '#f5f5f5',
+            width: '100%',
           }}
         />
         {writer && <ContextMenu writer={writer} />}

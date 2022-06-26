@@ -23,9 +23,10 @@ export * as Types from './types';
 
 const overmind = createOvermind(config, {
   name: 'leaf-writer',
-  // devtools: true,
   logProxies: true,
 });
+
+const DEFAULT_HEIGHT = '700px';
 
 class Leafwriter {
   private readonly domElement: HTMLElement;
@@ -39,6 +40,10 @@ class Leafwriter {
     this.domElement = domElement;
     this._isDirty = new Subject();
     this._onLoad = new Subject();
+
+    //scontainer height
+    const containerHeight = domElement.style.height ? domElement.style.height : DEFAULT_HEIGHT;
+    domElement.style.height = `clamp(400px, ${containerHeight}, 100vh)`;
 
     if (options) this.options = options;
 
