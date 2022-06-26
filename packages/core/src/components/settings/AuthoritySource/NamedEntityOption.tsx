@@ -50,6 +50,7 @@ const NamedEntityOption: FC<NamedEntityOptionProps> = ({
       onClick={handleClick}
       onMouseOver={handleMouseOver}
       onMouseOut={handleMouseOut}
+      sx={{ borderRadius: 1 }}
     >
       {Icon && (
         <Icon

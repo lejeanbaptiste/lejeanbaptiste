@@ -72,7 +72,7 @@ const AuthoritySource: FC<AuthoritySource> = ({ authority: { enabled, entities, 
 
   return (
     <Paper
-      elevation={isDragging ? 8 : 1}
+      elevation={isDragging ? 8 : hover ? 1 : 0}
       ref={setNodeRef}
       square
       style={style}
@@ -86,9 +86,9 @@ const AuthoritySource: FC<AuthoritySource> = ({ authority: { enabled, entities, 
       onMouseOut={handleMouseOut}
       onMouseUp={handleHadleMouseUp}
     >
-      <Grid container sx={{ height: 34, pl: 0.5 }}>
+      <Grid container alignItems="center" sx={{ height: 34, pl: 0.25 }}>
         <Grid item xs={5}>
-          <Stack direction="row" spacing={1} alignItems="center" pt={0.25}>
+          <Stack direction="row" spacing={1} alignItems="center">
             <ToggleButton
               color="primary"
               onChange={handleAuthorityToogle}
