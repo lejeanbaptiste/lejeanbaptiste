@@ -3,7 +3,6 @@
 
 notes.md
 Makefile
-**/dist
 
 # Logs
 logs
@@ -90,8 +89,7 @@ web_modules/
 out
 
 # Nuxt.js build / generate output
-.nuxt
-dist
+.Nuxt
 
 # Gatsby files
 .cache/
