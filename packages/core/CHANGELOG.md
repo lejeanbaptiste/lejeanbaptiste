@@ -1,5 +1,22 @@
 ## 1.2.0
 
+## 1.4.1
+
+### Patch Changes
+
+- [fix]
+
+  - [Settings Panel] Adjust lookups spacing and overall look
+  - [Settings Panel] Improve header. Add close button.
+  - [Status / bottom bar] Remove box shadow for better external integration
+  - [General] Manage main container. Auto-defines the container height if not pre-defined
+
+  [chore]
+
+  - [webpack] Rename less parent Id to create a scope for leafwriter less generated css
+  - [webpack] Unset publicPath. We can later use gloval var `webpack_public_path` to dynamically set the path where the files will be located. This is usuful for external integration where we don't know here the files will be placed.
+  - [package] Expose both ts (for impor) and js (for require) on package.json
+
 ## 1.4.0
 
 ### Minor Changes
