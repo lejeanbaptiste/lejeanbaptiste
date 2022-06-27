@@ -1,5 +1,4 @@
-import Leafwriter from '@cwrc/leafwriter/src/index';
-import { Box } from '@mui/material';
+import Leafwriter from '@cwrc/leafwriter';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
 
@@ -66,7 +65,7 @@ const LeafWriterContainer: FC = () => {
     }
   }, []);
 
-  return <Box ref={divEl} sx={{ height: 'calc(100vh - 48px)', overflow: 'hidden' }} />;
+  return <div ref={divEl} id="leaf-writer-container" style={{ height: 'calc(100vh - 48px)' }} />;
 };
 
 export default LeafWriterContainer;
