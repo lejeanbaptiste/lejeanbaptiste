@@ -1,4 +1,4 @@
-import Leafwriter from '@cwrc/leafwriter/src/index';
+import Leafwriter from '@cwrc/leafwriter';
 
 type State = {
   leafWriter?: Leafwriter;
