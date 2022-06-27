@@ -18,7 +18,7 @@ const entry: EntryObject = {
 const output = {
   path: path.resolve(__dirname, 'dist'),
   filename: 'js/[name].js',
-  publicPath: '/',
+  // publicPath: '/',
   pathinfo: isDev ? true : false,
 };
 
