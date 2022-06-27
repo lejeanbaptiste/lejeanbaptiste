@@ -1,0 +1,449 @@
+import $ from 'jquery';
+import { getAttributeString, getTagAndDefaultAttributes } from '../mapper';
+import { handleGraphics } from './utitlities';
+const person = {
+    label: 'Person',
+    mapping: {
+        certainty: '@cert',
+        lemma: '@key',
+        uri: '@ref',
+    },
+    parentTag: 'persName',
+    types: ['cwrc:NaturalPerson', 'schema:Person', 'cwrc:FictionalPerson'],
+    annotation: (annotationsManager, entity) => {
+        let types;
+        const type = entity.getAttribute('type');
+        switch (type) {
+            case 'real':
+                types = 'cwrc:NaturalPerson';
+                break;
+            case 'fictional':
+                types = ['schema:Person', 'cwrc:FictionalPerson'];
+                break;
+            case 'both':
+                types = ['cwrc:NaturalPerson', 'schema:Person', 'cwrc:FictionalPerson'];
+                break;
+            default:
+                types = 'cwrc:NaturalPerson';
+                break;
+        }
+        return annotationsManager.commonAnnotation(entity, types);
+    },
+};
+const place = {
+    label: 'Place',
+    mapping: {
+        certainty: '@cert',
+        customValues: {
+            precision: 'precision/@precision',
+        },
+        lemma: '@key',
+        uri: '@ref',
+    },
+    parentTag: 'placeName',
+    types: ['cwrc:RealPlace'],
+    mappingFunction: (entity) => {
+        const startTag = getTagAndDefaultAttributes(entity);
+        let endTag = '';
+        const precision = entity.getCustomValue('precision');
+        if (precision) {
+            endTag += `<precision match="@ref" precision="${precision}" />`;
+        }
+        const tag = entity.getTag();
+        endTag += `</${tag}>`;
+        return [startTag, endTag];
+    },
+    annotation: (annotationsManager, entity) => {
+        const anno = annotationsManager.commonAnnotation(entity, 'cwrc:RealPlace');
+        const precision = entity.getCustomValue('precision');
+        if (precision) {
+            anno['cwrc:hasPrecision'] = `cwrc:${precision}Certainty`;
+        }
+        return anno;
+    },
+};
+const organization = {
+    label: 'Organization',
+    mapping: {
+        certainty: '@cert',
+        lemma: '@key',
+        uri: '@ref',
+    },
+    parentTag: 'orgName',
+    types: ['org:Organization'],
+    annotation: (annotationsManager, entity) => {
+        return annotationsManager.commonAnnotation(entity, 'org:Organization');
+    },
+};
+const title = {
+    label: 'Title',
+    mapping: {
+        certainty: '@cert',
+        lemma: '@key',
+        uri: '@ref',
+    },
+    parentTag: 'title',
+    types: ['bf:Title'],
+    annotation: (annotationsManager, entity) => {
+        return annotationsManager.commonAnnotation(entity, 'bf:Title');
+    },
+};
+const rs = {
+    label: 'Referencing String',
+    mapping: {
+        certainty: '@cert',
+        lemma: '@key',
+        uri: '@ref',
+    },
+    parentTag: 'rs',
+    types: ['owl:Thing'],
+    annotation: (annotationsManager, entity) => {
+        let type = entity.getAttribute('type');
+        if (!type || type === '')
+            type = 'owl:Thing';
+        type = type.replace('http://sparql.cwrc.ca/ontology/cwrc#', 'cwrc:');
+        return annotationsManager.commonAnnotation(entity, type);
+    },
+};
+const citation = {
+    isNote: true,
+    label: 'Citation',
+    mapping: {
+        certainty: '@cert',
+        noteContent: 'bibl/text()',
+        uri: 'bibl/ref/@target',
+    },
+    parentTag: 'note',
+    requiresSelection: false,
+    textTag: 'bibl',
+    types: ['cito:Citation'],
+    xpathSelector: 'self::note[@type="citation"]/bibl',
+    mappingFunction: (entity) => {
+        let startTag = `${getTagAndDefaultAttributes(entity)}<bibl>`;
+        const lookupId = entity.getURI();
+        if (lookupId)
+            startTag += `<ref target="${lookupId}"/>`;
+        const endTag = '</bibl></note>';
+        return [startTag, endTag];
+    },
+    annotation: (annotationsManager, entity) => {
+        const anno = annotationsManager.commonAnnotation(entity, 'cito:Citation', 'cwrc:citing');
+        if (entity.getURI()) {
+            //add citation body
+            const hasBodyCitation = {
+                '@id': `${anno['id']}#Cites`,
+                '@type': 'cito:Citation',
+                'cito:hasCitingEntity': anno['id'],
+                'cito:hasCitedEntity': entity.getURI(),
+                'cito:hasCitationEvent': 'cito:cites',
+            };
+            anno['oa:hasBody'] = Array.isArray(anno['oa:hasBody'])
+                ? [...anno['oa:hasBody'], hasBodyCitation]
+                : [anno['oa:hasBody'], hasBodyCitation];
+            anno['@context']['cito'] = 'http://purl.org/spar/cito/';
+        }
+        return anno;
+    },
+};
+// TODO add resp for note type entities
+const note = {
+    isNote: true,
+    label: 'Note',
+    mapping: {
+        noteContent: '.',
+    },
+    parentTag: 'note',
+    requiresSelection: false,
+    types: ['cwrc:NoteInternal', 'cwrc:NoteScholarly', 'oa:TextualBody', 'cwrc:Note'],
+    xpathSelector: 'self::note[not(@type="citation")]',
+    annotation: (annotationsManager, entity) => {
+        let types = '';
+        const type = entity.getAttribute('type');
+        switch (type) {
+            case 'researchNote':
+                types = 'cwrc:NoteInternal';
+                break;
+            case 'scholarNote':
+                types = 'cwrc:NoteScholarly';
+                break;
+            case 'annotation':
+                types = 'oa:TextualBody';
+                break;
+            default:
+                types = 'cwrc:Note';
+                break;
+        }
+        return annotationsManager.commonAnnotation(entity, types, 'oa:describing');
+    },
+};
+const date = {
+    label: 'Date',
+    parentTag: 'date',
+    types: ['xsd:date'],
+    annotation: (annotationsManager, entity) => {
+        const anno = annotationsManager.commonAnnotation(entity, 'xsd:date');
+        const when = entity.getAttribute('when');
+        const date = when ? when : `${entity.getAttribute('from')}/${entity.getAttribute('to')}`;
+        //! Assumption: rdf:value was been added to hasBody.
+        // Now that it hasBody is defined to be either a single instance or multiple instances of hasBody
+        // we can't just add 'value' if has body has multiple instances.
+        // Option 1: only add it when has body is a single instance
+        // Option 2: If multiple instances, add it to the first instance
+        // Option 3: If multiple instances, added to all of them
+        // Option 4: If multiple instances, create new instance to add value.
+        //? We are using option 1 for now and all places this happens
+        if (!Array.isArray(anno['oa:hasBody']))
+            anno['oa:hasBody']['rdf:value'] = date;
+        return anno;
+    },
+};
+const correction = {
+    label: 'Correction',
+    mapping: {
+        customValues: {
+            sicText: 'sic/text()',
+            corrText: 'corr/text()',
+        },
+    },
+    parentTag: ['choice', 'corr'],
+    requiresSelection: false,
+    textTag: 'sic',
+    types: ['fabio:Correction'],
+    xpathSelector: 'self::choice|self::corr',
+    mappingFunction: (entity) => {
+        const corrText = entity.getCustomValue('corrText');
+        const sicText = entity.getCustomValue('sicText');
+        const tag = sicText ? 'choice' : 'corr';
+        let startTag = `<${tag}${getAttributeString(entity.getAttributes())}>`;
+        let endTag;
+        if (sicText) {
+            startTag += '<sic>';
+            endTag = `</sic><corr>${corrText}</corr></choice>`;
+        }
+        else {
+            endTag = `</${tag}>`;
+        }
+        return [startTag, endTag];
+    },
+    annotation: (annotationsManager, entity) => {
+        const anno = annotationsManager.commonAnnotation(entity, 'fabio:Correction', 'oa:editing');
+        anno['oa:hasBody'] = {
+            '@type': 'fabio:Correction',
+            'dc:format': 'text/xml',
+            'rdf:value': entity.getCustomValue('corrText'),
+        };
+        return anno;
+    },
+};
+const keyword = {
+    isNote: true,
+    label: 'Keyword',
+    mapping: {
+        noteContent: 'term/text()',
+    },
+    parentTag: 'seg',
+    requiresSelection: false,
+    textTag: 'term',
+    types: ['fabio:ControlledVocabulary', 'fabio:UncontrolledVocabulary'],
+    xpathSelector: 'self::seg/term',
+    mappingFunction: (entity) => {
+        const startTag = `${getTagAndDefaultAttributes(entity)}<term>`;
+        const endTag = '</term></seg>';
+        return [startTag, endTag];
+    },
+    annotation: (annotationsManager, entity) => {
+        let types = '';
+        let motivations = '';
+        const ana = entity.getAttribute('ana');
+        const hasAna = !!ana;
+        const hasRef = hasAna && ana.indexOf('http') === 0;
+        if (hasRef) {
+            types = 'fabio:ControlledVocabulary';
+            motivations = 'oa:classifying';
+        }
+        else {
+            types = 'fabio:UncontrolledVocabulary';
+            motivations = 'oa:tagging';
+        }
+        const anno = annotationsManager.commonAnnotation(entity, types, motivations);
+        if (hasRef) {
+            anno['oa:hasBody'] = [
+                {
+                    '@type': 'fabio:ControlledVocabulary',
+                    'rdf:value': ana,
+                },
+                {
+                    'dc:format': 'text/xml',
+                    'skos:altLabel': entity.getContent(),
+                },
+            ];
+            anno['@context']['skos'] = 'http://www.w3.org/2004/02/skos/';
+        }
+        else if (hasAna) {
+            anno['oa:hasBody'] = [
+                {
+                    '@type': 'fabio:UncontrolledVocabulary',
+                    'rdf:value': ana,
+                },
+                {
+                    'dc:format': 'text/xml',
+                    'skos:altLabel': entity.getContent(),
+                },
+            ];
+            anno['@context']['skos'] = 'http://www.w3.org/2004/02/skos/';
+        }
+        else {
+            anno['oa:hasBody'] = {
+                '@type': 'fabio:UncontrolledVocabulary',
+                'dc:format': 'text/xml',
+                'rdf:value': entity.getContent(),
+            };
+        }
+        return anno;
+    },
+};
+const link = {
+    label: 'Link',
+    parentTag: 'ref',
+    types: ['cnt:ContentAsText'],
+    annotation: (annotationsManager, entity) => {
+        const anno = annotationsManager.commonAnnotation(entity, 'cnt:ContentAsText', 'oa:linking');
+        anno['oa:hasBody'] = {
+            '@id': entity.getAttribute('target'),
+            '@type': 'cnt:ContentAsText',
+        };
+        return anno;
+    },
+};
+export const tei = {
+    blockElements: [
+        'argument',
+        'back',
+        'bibl',
+        'biblFull',
+        'biblScope',
+        'body',
+        'byline',
+        'category',
+        'change',
+        'cit',
+        'classCode',
+        'elementSpec',
+        'macroSpec',
+        'classSpec',
+        'closer',
+        'creation',
+        'date',
+        'distributor',
+        'div',
+        'div1',
+        'div2',
+        'div3',
+        'div4',
+        'div5',
+        'div6',
+        'div7',
+        'docAuthor',
+        'edition',
+        'editionStmt',
+        'editor',
+        'eg',
+        'epigraph',
+        'extent',
+        'figure',
+        'front',
+        'funder',
+        'group',
+        'head',
+        'dateline',
+        'idno',
+        'item',
+        'keywords',
+        'l',
+        'label',
+        'langUsage',
+        'lb',
+        'lg',
+        'list',
+        'listBibl',
+        'note',
+        'noteStmt',
+        'opener',
+        'p',
+        'principal',
+        'publicationStmt',
+        'publisher',
+        'pubPlace',
+        'q',
+        'rendition',
+        'resp',
+        'respStmt',
+        'salute',
+        'samplingDecl',
+        'seriesStmt',
+        'signed',
+        'sp',
+        'sponsor',
+        'tagUsage',
+        'taxonomy',
+        'textClass',
+        'titlePage',
+        'titlePart',
+        'trailer',
+        'TEI',
+        'teiHeader',
+        'text',
+        'authority',
+        'availability',
+        'fileDesc',
+        'sourceDesc',
+        'revisionDesc',
+        'catDesc',
+        'encodingDesc',
+        'profileDesc',
+        'projectDesc',
+        'docDate',
+        'docEdition',
+        'docImprint',
+        'docTitle',
+    ],
+    header: 'teiHeader',
+    id: 'xml:id',
+    namespace: 'http://www.tei-c.org/ns/1.0',
+    responsibility: 'resp',
+    rdfParentSelector: '/TEI/teiHeader/fileDesc/following-sibling::xenoData',
+    root: ['TEI', 'teiCorpus'],
+    urlAttributes: ['ref', 'target'],
+    entities: new Map([
+        ['person', person],
+        ['place', place],
+        ['organization', organization],
+        ['title', title],
+        ['rs', rs],
+        ['citation', citation],
+        ['note', note],
+        ['date', date],
+        ['correction', correction],
+        ['keyword', keyword],
+        ['link', link],
+    ]),
+    listeners: {
+        tagAdded: (tag) => {
+            const $tag = $(tag);
+            if ($tag.attr('_tag') === 'graphic')
+                handleGraphics($tag);
+        },
+        tagEdited: (tag) => {
+            const $tag = $(tag);
+            if ($tag.attr('_tag') === 'graphic')
+                handleGraphics($tag);
+        },
+        documentLoaded: (success, body) => {
+            $(body)
+                .find('*[_tag="graphic"]')
+                .each((index, element) => handleGraphics($(element)));
+        },
+    },
+};
+export default tei;
+//# sourceMappingURL=tei.js.map

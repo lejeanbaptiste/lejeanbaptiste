@@ -1,0 +1,1 @@
+{"version":3,"file":"state.d.ts","sourceRoot":"","sources":["../../../src/overmind/document/state.ts"],"names":[],"mappings":"AAGA,aAAK,KAAK,GAAG;IACX,MAAM,EAAE,OAAO,CAAC;IAChB,QAAQ,EAAE,MAAM,CAAC;IACjB,UAAU,EAAE,MAAM,CAAC;IACnB,GAAG,CAAC,EAAE,MAAM,CAAC;IACb,GAAG,CAAC,EAAE,MAAM,CAAC;CACd,CAAC;AAEF,eAAO,MAAM,KAAK,EAAE,KAQnB,CAAC"}

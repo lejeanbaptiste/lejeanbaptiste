@@ -1,0 +1,1 @@
+{"version":3,"file":"AuthoritySource.d.ts","sourceRoot":"","sources":["../../../../src/components/settings/AuthoritySource/AuthoritySource.tsx"],"names":[],"mappings":"AAOA,OAAc,EAAY,KAAK,EAAE,EAAE,MAAM,OAAO,CAAC;AACjD,OAAO,EAAE,cAAc,EAAqB,MAAM,yCAAyC,CAAC;AAI5F,UAAU,eAAe;IACvB,SAAS,EAAE,cAAc,CAAC;CAC3B;AAED,QAAA,MAAM,eAAe,EAAE,EAAE,CAAC,eAAe,CA+HxC,CAAC;AAEF,eAAe,eAAe,CAAC"}
