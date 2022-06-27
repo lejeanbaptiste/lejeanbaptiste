@@ -113,7 +113,7 @@ const webpackConfig: webpack.Configuration = {
             options: {
               lessOptions: {
                 relativeUrls: 'local',
-                globalVars: { parentId: '#leafwriterContainer' },
+                globalVars: { parentId: '#leaf-writer-container' },
               },
             },
           },
