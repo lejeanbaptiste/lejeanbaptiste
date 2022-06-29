@@ -1,6 +1,6 @@
 {
   "name": "leafwriter/leafwriter",
-  "type": "drupal-library",
+  "type": "npm-asset",
   "description": "XML editing and RDF annotation using github as document store.",
   "repositories" : [
     {
