@@ -28,7 +28,7 @@ const overmind = createOvermind(config, {
 
 const DEFAULT_HEIGHT = '700px';
 
-class Leafwriter {
+export class Leafwriter {
   private readonly domElement: HTMLElement;
 
   private _isDirty: Subject<boolean>;
