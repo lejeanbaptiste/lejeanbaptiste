@@ -1,8 +1,11 @@
-**/node_modules
+#root
 .DS_store
-
 notes.md
 Makefile
+
+#packages
+**/node_modules
+**/commons/dist
 
 # Logs
 logs
