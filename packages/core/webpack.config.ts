@@ -21,9 +21,11 @@ const output = {
   path: path.resolve(__dirname, 'dist'),
   // publicPath: '/',
   pathinfo: isDev ? true : false,
-  library: 'leaf-writer',
-  libraryTarget: 'umd',
-  umdNamedDefine: true,
+  library: {
+    name: 'Leafwriter',
+    type: 'umd',
+    umdNamedDefine: true,
+  }
 };
 
 const optimization = {
