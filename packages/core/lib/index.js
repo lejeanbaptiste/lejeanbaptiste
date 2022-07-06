@@ -21,7 +21,7 @@ const overmind = createOvermind(config, {
     logProxies: true,
 });
 const DEFAULT_HEIGHT = '700px';
-class Leafwriter {
+export class Leafwriter {
     domElement;
     _isDirty;
     _onLoad;

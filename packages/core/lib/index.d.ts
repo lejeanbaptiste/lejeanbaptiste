@@ -10,7 +10,7 @@ import type { Authority, LookupsEntityType } from './components/entityLookups/ty
 import type { ILeafWriterOptions, LWDocument } from './types';
 import './utilities/log';
 export * as Types from './types';
-declare class Leafwriter {
+export declare class Leafwriter {
     private readonly domElement;
     private _isDirty;
     private _onLoad;
