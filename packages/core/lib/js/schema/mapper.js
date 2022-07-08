@@ -527,11 +527,10 @@ class Mapper {
         // TODO tei mapping for correction will match on both choice and corr tags, creating 2 entities when it should be one
         //? Maybe fix... double check
         const entityMappings = this.getMappings().entities;
-        for (const type in entityMappings) {
-            if (typesToFind.length === 0 || typesToFind.indexOf(type) !== -1) {
-                // if (typesToFind.length == 0 || typesToFind.indexOf(type) != -1) {
+        for (const [type, entity] of entityMappings.entries()) {
+            if (typesToFind.length !== 0 || typesToFind.indexOf(type) !== -1) {
                 let entityTagNames = [];
-                let parentTag = entityMappings.get(type).parentTag;
+                let parentTag = entity.parentTag;
                 if (Array.isArray(parentTag))
                     entityTagNames = [...entityTagNames, ...parentTag];
                 if (Array.isArray(parentTag)) {

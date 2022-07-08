@@ -74,7 +74,7 @@ declare class Writer extends EventManager {
      * @param {Document|String} docXml An XML document or a string representation of such.
      */
     loadDocumentXML(docXml: string): void;
-    getContent(): Promise<any>;
+    getContent(): Promise<string>;
     getDocumentURI(): any;
     getUserInfo: () => {
         id: any;
@@ -91,7 +91,7 @@ declare class Writer extends EventManager {
      * Get the document contents as a string
      * @param {Function} callback Callback is called with a string representation of the document
      */
-    getDocumentString(callback?: Function): Promise<any>;
+    getDocumentString(callback?: Function): Promise<string>;
     /**
      * Set the current document for the editor
      * @param {Document|String} document Can be one of: URL, XML document, XML string

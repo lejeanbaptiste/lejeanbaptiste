@@ -147,7 +147,7 @@ export declare const useActions: () => {
         }) => void;
         readonly reorderLookupPriority: (payload?: import("../components/entityLookups/types").ILookupService[]) => void;
         readonly retrieveLookupAutoritiesConfig: () => any;
-        readonly getContent: () => Promise<any>;
+        readonly getContent: () => Promise<string>;
         readonly setIsEditorDirty: (payload?: boolean) => void;
         readonly clear: () => void;
     };
