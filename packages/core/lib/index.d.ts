@@ -21,7 +21,7 @@ export declare class Leafwriter {
     get onLoad(): Subject<{
         schemaName: string;
     }>;
-    getContent(): Promise<any>;
+    getContent(): Promise<string>;
     setContent(document: LWDocument): Promise<void>;
     getAllowOverlap(): boolean;
     getAnnotationMode(): number;

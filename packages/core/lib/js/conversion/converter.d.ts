@@ -16,7 +16,7 @@ declare class Converter {
     buildXMLString(node: Element, identifyEntities?: boolean): string;
     loadDocumentURL(docUrl: string): Promise<void>;
     loadDocumentXML(docXml: XMLDocument | string): boolean;
-    getDocument(asString: boolean, callback?: Function): Promise<any>;
+    getDocument(asString: boolean, callback?: Function): Promise<string | null>;
     setDocument(document: XMLDocument | string): void;
 }
 export default Converter;

@@ -54,7 +54,7 @@ export declare const toggleLookupEntity: ({ state: { editor }, effects }: Contex
 }) => void;
 export declare const reorderLookupPriority: ({ state: { editor }, effects }: Context, authorities: ILookupService[]) => void;
 export declare const retrieveLookupAutoritiesConfig: ({ effects }: Context) => any;
-export declare const getContent: ({ state }: Context) => Promise<any>;
+export declare const getContent: ({ state }: Context) => Promise<string>;
 export declare const setIsEditorDirty: ({ state }: Context, value: boolean) => void;
 export declare const clear: ({ state }: Context) => void;
 //# sourceMappingURL=actions.d.ts.map
