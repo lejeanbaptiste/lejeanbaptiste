@@ -81,7 +81,7 @@
     "layout-jquery3": "^1.8.5",
     "lodash": "^4.17.21",
     "loglevel": "^1.8.0",
-    "luxon": "^2.4.0",
+    "luxon": "^3.0.1",
     "mdi-material-ui": "^7.4.0",
     "monaco-editor": "^0.33.0",
     "notistack": "^2.0.5",
