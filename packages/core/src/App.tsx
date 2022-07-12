@@ -13,6 +13,9 @@ import { useActions, useAppState } from './overmind';
 import theme from './theme';
 import type { ILeafWriterOptions } from './types';
 
+import CssBaseline from '@mui/material/CssBaseline';
+import ScopedCssBaseline from '@mui/material/ScopedCssBaseline';
+
 declare global {
   interface Window {
     writer: Writer | null;
@@ -84,22 +87,24 @@ const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
 
   return (
     <ThemeProvider theme={theme(state.ui.darkMode)}>
-      <SnackbarProvider>
-        {/* <CssBaseline /> */}
-        <Box
-          id={CONTAINER}
-          sx={{
-            height: 'calc(100% - 32px)',
-            width: '100%',
-          }}
-        />
-        {writer && <ContextMenu writer={writer} />}
-        <BottomBar />
-        <Popup />
-        <EditSourceDialog />
-        <EntityLookupDialog />
-        <SetingsDialog />
-      </SnackbarProvider>
+      <CssBaseline />
+      <ScopedCssBaseline enableColorScheme style={{ height: '100%' }}>
+        <SnackbarProvider>
+          <Box
+            id={CONTAINER}
+            sx={{
+              height: 'calc(100% - 32px)',
+              width: '100%',
+            }}
+          />
+          {writer && <ContextMenu writer={writer} />}
+          <BottomBar />
+          <Popup />
+          <EditSourceDialog />
+          <EntityLookupDialog />
+          <SetingsDialog />
+        </SnackbarProvider>
+      </ScopedCssBaseline>
     </ThemeProvider>
   );
 };
