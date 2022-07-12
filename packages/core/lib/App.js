@@ -11,8 +11,6 @@ import { createConfig } from './config';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import theme from './theme';
-import CssBaseline from '@mui/material/CssBaseline';
-import ScopedCssBaseline from '@mui/material/ScopedCssBaseline';
 const CONTAINER = 'leafwriterContainer';
 const App = ({ document, settings, user }) => {
     const actions = useActions();
@@ -62,19 +60,17 @@ const App = ({ document, settings, user }) => {
         });
     };
     return (React.createElement(ThemeProvider, { theme: theme(state.ui.darkMode) },
-        React.createElement(CssBaseline, null),
-        React.createElement(ScopedCssBaseline, { enableColorScheme: true, style: { height: '100%' } },
-            React.createElement(SnackbarProvider, null,
-                React.createElement(Box, { id: CONTAINER, sx: {
-                        height: 'calc(100% - 32px)',
-                        width: '100%',
-                    } }),
-                writer && React.createElement(ContextMenu, { writer: writer }),
-                React.createElement(BottomBar, null),
-                React.createElement(Popup, null),
-                React.createElement(EditSourceDialog, null),
-                React.createElement(EntityLookupDialog, null),
-                React.createElement(SetingsDialog, null)))));
+        React.createElement(SnackbarProvider, null,
+            React.createElement(Box, { id: CONTAINER, sx: {
+                    height: 'calc(100% - 32px)',
+                    width: '100%',
+                } }),
+            writer && React.createElement(ContextMenu, { writer: writer }),
+            React.createElement(BottomBar, null),
+            React.createElement(Popup, null),
+            React.createElement(EditSourceDialog, null),
+            React.createElement(EntityLookupDialog, null),
+            React.createElement(SetingsDialog, null))));
 };
 export default App;
 //# sourceMappingURL=App.js.map
