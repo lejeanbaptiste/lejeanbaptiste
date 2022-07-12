@@ -87,24 +87,21 @@ const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
 
   return (
     <ThemeProvider theme={theme(state.ui.darkMode)}>
-      <CssBaseline />
-      <ScopedCssBaseline enableColorScheme style={{ height: '100%' }}>
-        <SnackbarProvider>
-          <Box
-            id={CONTAINER}
-            sx={{
-              height: 'calc(100% - 32px)',
-              width: '100%',
-            }}
-          />
-          {writer && <ContextMenu writer={writer} />}
-          <BottomBar />
-          <Popup />
-          <EditSourceDialog />
-          <EntityLookupDialog />
-          <SetingsDialog />
-        </SnackbarProvider>
-      </ScopedCssBaseline>
+      <SnackbarProvider>
+        <Box
+          id={CONTAINER}
+          sx={{
+            height: 'calc(100% - 32px)',
+            width: '100%',
+          }}
+        />
+        {writer && <ContextMenu writer={writer} />}
+        <BottomBar />
+        <Popup />
+        <EditSourceDialog />
+        <EntityLookupDialog />
+        <SetingsDialog />
+      </SnackbarProvider>
     </ThemeProvider>
   );
 };
