@@ -58,7 +58,7 @@ export const schemas: Schema[] = [
     name: 'EpiDoc Schema',
     schemaMappingsId: 'tei',
     xmlUrl: [
-      'http://www.stoa.org/epidoc/schema/latest/tei-epidoc.rng',
+      'https://www.stoa.org/epidoc/schema/latest/tei-epidoc.rng',
       'https://cwrc.ca/epidoc/schema/latest/tei-epidoc.rng',
     ],
     cssUrl: ['https://cwrc.ca/templates/css/tei.css'],
