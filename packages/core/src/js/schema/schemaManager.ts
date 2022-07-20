@@ -72,7 +72,7 @@ class SchemaManager {
   private currentDocumentSchemaUrl: string | null = null;
   private currentDocumentCSSUrl: string | null = null;
 
-  constructor(writer: Writer, schemas: ISchema[], proxies: { css: string; xml: string}) {
+  constructor(writer: Writer, schemas: ISchema[], proxies?: { css: string; xml: string}) {
     this.writer = writer;
 
     this.mapper = new Mapper(writer);

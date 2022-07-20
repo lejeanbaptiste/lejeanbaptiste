@@ -33,10 +33,9 @@ export interface ILeafWriterOptionsSettings {
   container?: string;
 
   baseUrl?: string;
-  nerveUrl?: string;
-  proxyLoaders: {
-    cssEndpoint: string;
-    xmlEndpoint: string;
+  proxyLoaders?: {
+    cssEndpoint?: string;
+    xmlEndpoint?: string;
   };
 
   credentials?: {

@@ -6,8 +6,7 @@ export const createConfig = (settings: ILeafWriterOptionsSettings) => {
 
   const config: ILeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
-    baseUrl: settings.baseUrl,
-    nerveUrl: settings.nerveUrl,
+    baseUrl: settings.baseUrl ?? '.',
     proxyLoaders: settings.proxyLoaders,
     schemas: supportedSchemas,
     modules: {
@@ -21,7 +20,6 @@ export const createConfig = (settings: ILeafWriterOptionsSettings) => {
         { id: 'validation', title: 'Validation' },
       ],
     },
-    services: { nerve: { url: settings.nerveUrl } },
   };
 
   return config;
