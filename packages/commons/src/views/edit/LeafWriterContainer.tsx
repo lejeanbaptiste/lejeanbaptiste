@@ -21,8 +21,6 @@ const LeafWriterContainer: FC = () => {
           xml: resource.content ?? '',
         },
         settings: {
-          baseUrl: '.', // '.' | './'
-          nerveUrl: 'https://localhost/nerve/',
           proxyLoaders: {
             cssEndpoint: '/schema/css/',
             xmlEndpoint: '/schema/xml/',
