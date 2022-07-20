@@ -2,7 +2,7 @@ import { Context } from '..';
 import type {
   EntityLink,
   EntryLink,
-  LookupsEntityType,
+  NamedEntityType,
 } from '../../components/entityLookups/types';
 import type { DialogLookupType } from '../../js/dialogs/types';
 import Entity from '../../js/entities/Entity';
@@ -33,7 +33,7 @@ export const initiate = (
 
 export const setType = ({ state: { lookups } }: Context, type: EntityTypes) => {
   lookups.typeEntity = type;
-  lookups.typeLookup = type === 'citation' ? 'title' : (type as LookupsEntityType);
+  lookups.typeLookup = type === 'citation' ? 'title' : (type as NamedEntityType);
 };
 
 export const search = async ({ state: { lookups }, effects }: Context, query: string) => {

@@ -77,13 +77,7 @@ export const state: State = {
     authorities: {
       viaf: {
         enabled: true,
-        entities: {
-          person: { enabled: true, name: 'person' },
-          place: { enabled: true, name: 'place' },
-          organization: { enabled: true, name: 'organization' },
-          title: { enabled: true, name: 'title' },
-          rs: { enabled: true, name: 'rs' },
-        },
+        entities: { person: true, place: true, organization: true, title: true, rs: true },
         id: 'viaf',
         name: 'VIAF',
         priority: 0,
@@ -91,13 +85,7 @@ export const state: State = {
 
       wikidata: {
         enabled: true,
-        entities: {
-          person: { enabled: true, name: 'person' },
-          place: { enabled: true, name: 'place' },
-          organization: { enabled: true, name: 'organization' },
-          title: { enabled: true, name: 'title' },
-          rs: { enabled: true, name: 'rs' },
-        },
+        entities: { person: true, place: true, organization: true, title: true, rs: true },
         id: 'wikidata',
         name: 'Wikidata',
         priority: 1,
@@ -105,13 +93,7 @@ export const state: State = {
 
       dbpedia: {
         enabled: true,
-        entities: {
-          person: { enabled: true, name: 'person' },
-          place: { enabled: true, name: 'place' },
-          organization: { enabled: true, name: 'organization' },
-          title: { enabled: true, name: 'title' },
-          rs: { enabled: true, name: 'rs' },
-        },
+        entities: { person: true, place: true, organization: true, title: true, rs: true },
         id: 'dbpedia',
         name: 'DBpedia',
         priority: 2,
@@ -119,30 +101,29 @@ export const state: State = {
 
       getty: {
         enabled: true,
-        entities: {
-          person: { enabled: true, name: 'person' },
-          place: { enabled: true, name: 'place' },
-        },
+        entities: { person: true, place: true },
         id: 'getty',
         name: 'Getty',
         priority: 3,
       },
 
-      lgpn: {
-        enabled: true,
-        entities: { person: { enabled: true, name: 'person' } },
-        id: 'lgpn',
-        name: 'LGPN',
-        priority: 4,
-      },
-
       geonames: {
         enabled: false,
-        entities: { place: { enabled: true, name: 'place' } },
+        entities: { place: true },
         id: 'geonames',
         name: 'Geonames',
+        priority: 4,
+        requireAuth: true,
+      },
+
+      lgpn: {
+        enabled: false,
+        entities: { person: false },
+        id: 'lgpn',
+        name: 'LGPN',
         priority: 5,
       },
+      
     },
 
     serviceType: 'custom',

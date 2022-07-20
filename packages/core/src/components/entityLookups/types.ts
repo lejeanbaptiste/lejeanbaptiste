@@ -1,46 +1,44 @@
 import type { DialogLookupType } from '../../js/dialogs/types';
 import Entity from '../../js/entities/Entity';
 
-export type LookupsEntityType = 'person' | 'place' | 'organization' | 'title' | 'rs';
+export type NamedEntityType = 'person' | 'place' | 'organization' | 'title' | 'rs';
 export type Authority = 'dbpedia' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata';
+export type ServiceType = 'nssi' | 'custom';
 
-export interface ILookupServiceEntity {
-  enabled: boolean;
-  name: LookupsEntityType;
-}
-
-export interface ILookupService {
+export interface IAuthorityService {
   config?: {
     [x: string]: any;
     username?: string;
   };
   enabled: boolean;
-  entities: { [key: string]: ILookupServiceEntity };
+  entities: { [key: string]: boolean };
   id: Authority;
   name?: string;
   priority: number;
-}
-
-export interface ILookupServiceConfig {
-  config?: {
-    [x: string]: any;
-    username?: string;
-  };
-  enabled?: boolean;
-  entities?: Array<LookupsEntityType | [LookupsEntityType, { enabled: boolean }]>;
-  id?: Authority;
-  name?: string;
-  priority?: number;
+  readonly requireAuth?: boolean;
 }
 
 export interface ILookups {
-  authorities: { [key: string]: ILookupService };
+  authorities: { [key: string]: IAuthorityService };
   serviceType: 'nssi' | 'custom';
 }
 
 export interface ILookupsConfig {
-  authorities?: Array<Authority | [Authority, ILookupServiceConfig]>;
-  serviceType: 'nssi' | 'custom';
+  authorities: Array<
+    | Authority
+    | [
+        Authority,
+        {
+          config?: {
+            [x: string]: any;
+            username?: string;
+          };
+          enabled?: boolean;
+          entities?: Array<[NamedEntityType, boolean]>;
+        }
+      ]
+  >;
+  serviceType?: ServiceType;
 }
 
 export interface IResult {
