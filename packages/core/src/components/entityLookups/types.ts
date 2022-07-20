@@ -2,7 +2,7 @@ import type { DialogLookupType } from '../../js/dialogs/types';
 import Entity from '../../js/entities/Entity';
 
 export type LookupsEntityType = 'person' | 'place' | 'organization' | 'title' | 'rs';
-export type Authority = 'dbpedia' | 'cwrc' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata';
+export type Authority = 'dbpedia' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata';
 
 export interface ILookupServiceEntity {
   enabled: boolean;
@@ -35,27 +35,11 @@ export interface ILookupServiceConfig {
 
 export interface ILookups {
   authorities: { [key: string]: ILookupService };
-  showNoLinkButton: boolean;
-  showCreateNewButton: boolean;
-  showEditButton: boolean;
-
-  entityCollectionsUrl?: string;
-  entityFormsRoot?: string;
-  collectionsRoot?: string;
-
   serviceType: 'nssi' | 'custom';
 }
 
 export interface ILookupsConfig {
   authorities?: Array<Authority | [Authority, ILookupServiceConfig]>;
-  showNoLinkButton: boolean;
-  showCreateNewButton: boolean;
-  showEditButton: boolean;
-
-  entityCollectionsUrl?: string;
-  entityFormsRoot?: string;
-  collectionsRoot?: string;
-
   serviceType: 'nssi' | 'custom';
 }
 

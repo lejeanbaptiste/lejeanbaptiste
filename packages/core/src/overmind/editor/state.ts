@@ -145,9 +145,6 @@ export const state: State = {
       },
     },
 
-    showNoLinkButton: true,
-    showCreateNewButton: false,
-    showEditButton: false,
     serviceType: 'custom',
   },
 };

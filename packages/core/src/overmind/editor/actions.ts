@@ -52,18 +52,6 @@ export const initiateLookupSources = async (
     return;
   }
 
-  if (typeof config?.showNoLinkButton === 'boolean') {
-    lookups.showNoLinkButton = config.showNoLinkButton;
-  }
-
-  if (typeof config?.showCreateNewButton === 'boolean') {
-    lookups.showCreateNewButton = config.showCreateNewButton;
-  }
-
-  if (typeof config?.showEditButton === 'boolean') {
-    lookups.showEditButton = config.showEditButton;
-  }
-
   if (typeof config?.serviceType === 'string' && ['custom', 'nssi'].includes(config.serviceType)) {
     lookups.serviceType = config.serviceType;
   }
