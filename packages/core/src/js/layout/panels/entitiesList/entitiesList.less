@@ -79,17 +79,18 @@
   width: 20px;
   height: 20px;
   background: unset !important;
+  color: rgba(0, 0, 0, 0.5) !important;
   border: unset !important;
   border-radius: 4px;
 }
 
 .entitiesList .actions > span:hover {
   background: rgba(255, 255, 255, 0.4) !important;
+  color: black !important;
 }
 
 .entitiesList .actions > span > i {
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.5);
 }
 
 .entitiesList .actions > span > i:hover {
@@ -104,15 +105,12 @@
   display: flex;
   flex-direction: row;
   align-items: flex-start;
+  overflow: hidden !important;
   padding: 0px;
   background-color: #fff;
   border: 0px;
   border-radius: 4px;
   box-shadow: 0 0px 8px rgba(0, 0, 0, 0.2);
-
-  // border-width: 1px;
-  // border-style: solid;
-  // border-color: #fff;;
 }
 
 .entitiesList #container #side {
@@ -219,6 +217,8 @@
   max-height: 160px;
   margin-top: 8px;
   margin-bottom: 4px;
+  margin-left: 0;
+  margin-right: 0;
   padding: 0px;
   gap: 2px;
   color: #000;
