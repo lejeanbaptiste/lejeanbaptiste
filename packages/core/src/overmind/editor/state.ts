@@ -12,7 +12,7 @@ type State = {
     label: string;
     disabled?: boolean;
   }[];
-  baseUrl?: string,
+  baseUrl?: string;
   currentFontSize: number;
   editorMode: string;
   editorModeLabel: string;
