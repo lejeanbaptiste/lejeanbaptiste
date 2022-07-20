@@ -24,16 +24,6 @@ class Api {
 
       this.services[authority.id] = source;
     }
-
-    if (token) {
-      const module = await import(`./services/nssi`);
-      if (!module) return;
-
-      const Service = module.default;
-      const source = new Service({ token });
-
-      this.nssi = source;
-    }
   }
 
   async find({ query, type }: IFindParams) {
