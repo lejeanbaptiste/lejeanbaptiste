@@ -27,16 +27,7 @@ const LeafWriterContainer: FC = () => {
           },
           credentials: { nssiToken: getLincsAauthenticationToken },
           lookups: {
-            authorities: [
-              // ['cwrc', { config: { entityCollectionsUrl: '', entityFormsRoot: '', collectionsRoot: '' } }],
-              'viaf',
-              ['wikidata', { enabled: true }],
-              'dbpedia',
-              ['getty', { entities: ['person', ['place', { enabled: false }]] }],
-              'lgpn',
-              ['geonames', { config: { username: 'cwrcgeonames' } }],
-            ],
-            serviceType: 'custom',
+            authorities: [['geonames', { config: { username: 'cwrcgeonames' } }]],
           },
         },
         user: {
