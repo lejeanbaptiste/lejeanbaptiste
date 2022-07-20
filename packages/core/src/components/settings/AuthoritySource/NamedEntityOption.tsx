@@ -1,20 +1,17 @@
 import DoNotDisturbAltIcon from '@mui/icons-material/DoNotDisturbAlt';
 import { IconButton, useTheme } from '@mui/material';
 import React, { useState, type FC } from 'react';
-import { ILookupServiceEntity, LookupsEntityType } from '../../../components/entityLookups/types';
+import { NamedEntityType } from '../../../components/entityLookups/types';
 import useUI from '../../useUI';
 
 interface NamedEntityOptionProps {
   available: boolean;
-  entity: ILookupServiceEntity;
-  onClick: (name: LookupsEntityType) => void;
+  enabled: boolean;
+  onClick: (name: NamedEntityType) => void;
+  name: NamedEntityType;
 }
 
-const NamedEntityOption: FC<NamedEntityOptionProps> = ({
-  available,
-  entity: { enabled, name },
-  onClick,
-}) => {
+const NamedEntityOption: FC<NamedEntityOptionProps> = ({ available, enabled, onClick, name }) => {
   const theme = useTheme();
   const { getIcon } = useUI();
   const [hover, setHover] = useState(false);

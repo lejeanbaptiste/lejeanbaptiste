@@ -2,7 +2,7 @@ import type { Bookmark, Editor } from 'tinymce/tinymce';
 import type { ILookupsConfig } from '../components/entityLookups/types';
 import Writer from '../js/Writer';
 
-export type { Authority, ILookupsConfig } from '../components/entityLookups/types';
+export type { Authority, ILookups } from '../components/entityLookups/types';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;

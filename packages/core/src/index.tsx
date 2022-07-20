@@ -13,7 +13,7 @@ import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
 import App from './App';
-import type { Authority, LookupsEntityType } from './components/entityLookups/types';
+import type { Authority, NamedEntityType } from './components/entityLookups/types';
 import i18next from './i18n';
 import { config } from './overmind';
 import type { ILeafWriterOptions, LWDocument } from './types';
@@ -202,7 +202,7 @@ export class Leafwriter {
     enabled?: boolean;
     prioity?: number;
     entity?: {
-      name: LookupsEntityType;
+      name: NamedEntityType;
       enabled?: string;
     };
     config?: {

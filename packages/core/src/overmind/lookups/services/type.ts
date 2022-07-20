@@ -1,8 +1,8 @@
-import type { IResult, LookupsEntityType } from '../../../components/entityLookups/types';
+import type { IResult, NamedEntityType } from '../../../components/entityLookups/types';
 
 export interface IFindParams {
   query: string;
-  type: LookupsEntityType;
+  type: NamedEntityType;
 }
 
 export default interface ILookupServiceApi {
