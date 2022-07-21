@@ -39,7 +39,15 @@ interface IButton {
   tooltip: string;
   entityType?: EntityTypes;
   entityButton?: boolean;
-  onAction: (api: any) => void;
+  onSetup?: (api: IAPI) => (api: IAPI) => void;
+  onAction: (api: IAPI) => void;
+}
+
+interface IAPI {
+  isDisabled: () => boolean;
+  setDisabled: (state: boolean) => void;
+  isActive?: () => boolean;
+  setActive?: (state: boolean) => void;
 }
 
 const configureToolbar = (writer: Writer, editor: Editor) => {
@@ -48,7 +56,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'toggle-tags',
       icon: 'code',
       tooltip: 'Toggle Tags',
-      onAction: (api: any) => {
+      onAction: (api) => {
         writer.overmindActions.editor.toggleShowTags();
         api.setActive(!api.isActive());
       },
@@ -57,7 +65,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'fullscreen',
       icon: 'fullscreen',
       tooltip: 'Toggle Fullscreen',
-      onAction: (api: any) => {
+      onAction: (api) => {
         writer.layoutManager.toggleFullScreen();
         api.setActive(!api.isActive());
       },
