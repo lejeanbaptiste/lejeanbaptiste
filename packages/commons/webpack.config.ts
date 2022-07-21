@@ -69,7 +69,7 @@ const plugins = [
   }),
   new HtmlWebpackPlugin({
     template: path.resolve(__dirname, 'src', 'index.html'),
-    favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon-32x32.png'),
+    favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon.svg'),
   }),
   new MiniCssExtractPlugin({ filename: 'css/[name].css' }),
   new MonacoWebpackPlugin({ filename: 'monaco-[name].[ext].js', languages: ['xml', 'json'] }),
