@@ -375,7 +375,7 @@ class LayoutManager {
       return;
     }
 
-    const container = this.getContainer();
+    const container = this.getContainer().parent();
     if (container) fscreen.requestFullscreen(container[0]);
   }
 
