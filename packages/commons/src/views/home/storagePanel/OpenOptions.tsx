@@ -1,7 +1,15 @@
 import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import ComputerIcon from '@mui/icons-material/Computer';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
-import { Button, Divider, Stack, TextField, Typography, useTheme } from '@mui/material';
+import {
+  Button,
+  Divider,
+  Stack,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { useActions } from '@src/overmind';
 import React, { useState, type ChangeEvent, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,8 +17,10 @@ import { useTranslation } from 'react-i18next';
 const OpenOptions: FC = () => {
   const { openStorageDialog } = useActions().storage;
   const { t } = useTranslation();
-  const { palette } = useTheme();
+  const { breakpoints, palette } = useTheme();
   const [pasteHover, setPasteHover] = useState(false);
+
+  const isMobile = useMediaQuery(breakpoints.down('sm'));
 
   const onCloudClick = () => openStorageDialog({ source: 'cloud', type: 'load' });
   const onLocalClick = () => openStorageDialog({ source: 'local', type: 'load' });
@@ -27,11 +37,13 @@ const OpenOptions: FC = () => {
         {t('home:open')}
       </Typography>
       <Stack direction="row" spacing={1}>
-        <Divider
-          flexItem
-          orientation="vertical"
-          sx={{ borderColor: '#999', ml: 0.5, boxShadow: '2px 0px 2px 0px rgb(0 0 0 / 15%)' }}
-        />
+        {!isMobile && (
+          <Divider
+            flexItem
+            orientation="vertical"
+            sx={{ borderColor: '#999', ml: 0.5, boxShadow: '2px 0px 2px 0px rgb(0 0 0 / 15%)' }}
+          />
+        )}
         <Stack spacing={2} alignItems="flex-start">
           <Button
             color="primary"
