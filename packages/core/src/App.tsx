@@ -22,7 +22,7 @@ declare global {
   }
 }
 
-const CONTAINER = 'leafwriterContainer';
+const CONTAINER = 'lw-layout-container';
 
 const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
   const actions = useActions();
@@ -94,8 +94,9 @@ const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
             height: 'calc(100% - 32px)',
             width: '100%',
           }}
-        />
-        {writer && <ContextMenu writer={writer} />}
+        >
+          {writer && <ContextMenu writer={writer} />}
+        </Box>
         <BottomBar />
         <Popup />
         <EditSourceDialog />

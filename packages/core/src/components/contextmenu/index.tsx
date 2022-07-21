@@ -76,6 +76,7 @@ const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
           anchorPosition={menuPosition}
           anchorReference="anchorPosition"
           id="contextmenu"
+          container={document.getElementById(`#${editor.settings.container}`)}
           keepMounted
           MenuListProps={{
             sx: {
@@ -87,6 +88,7 @@ const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
           onClose={handleClose}
           open={show}
           PaperProps={{ elevation: 4 }}
+          variant="menu"
         >
           <Header tagName={tagName} xpath={xpath} tagMeta={tagMeta} />
 
