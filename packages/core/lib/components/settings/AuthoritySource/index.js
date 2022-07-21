@@ -14,7 +14,7 @@ const AutoritiesPanel = () => {
     useEffect(() => {
         if (!authorities)
             return;
-        const authtoriesList = Object.values(authorities).sort((a, b) => a.priority - b.priority);
+        const authtoriesList = [...Object.values(authorities)].sort((a, b) => a.priority - b.priority);
         setItems(authtoriesList);
         return () => { };
     }, [authorities]);
@@ -36,7 +36,7 @@ const AutoritiesPanel = () => {
             React.createElement(Typography, null, "Entities Lookup Sources")),
         React.createElement(Typography, { ml: 4.5, variant: "caption" }, "Drag to reorder the priority"),
         React.createElement(Stack, { mt: 1, spacing: 1 }, items && (React.createElement(DndContext, { collisionDetection: closestCenter, onDragEnd: handleDragEnd, modifiers: [restrictToVerticalAxis, restrictToFirstScrollableAncestor], sensors: sensors },
-            React.createElement(SortableContext, { items: items, strategy: verticalListSortingStrategy }, items.map((authority) => (React.createElement(AuthoritySource, { key: authority.id, authority: authority })))))))));
+            React.createElement(SortableContext, { items: items, strategy: verticalListSortingStrategy }, items.map((authority) => (React.createElement(AuthoritySource, { key: authority.id, authorityService: authority })))))))));
 };
 export default AutoritiesPanel;
 //# sourceMappingURL=index.js.map

@@ -45,7 +45,7 @@ export declare const config: {
             settings?: any;
             showEntities: boolean;
             showTags: boolean;
-            lookups: import("../components/entityLookups/types").ILookups;
+            lookups: import("../types").ILookups;
         };
         lookups: {
             isUriValid: boolean;
@@ -54,7 +54,7 @@ export declare const config: {
             results?: Map<import("../types").Authority, import("../components/entityLookups/types").IResult[]>;
             selected?: import("../components/entityLookups/types").EntryLink;
             typeEntity: import("../js/schema/types").EntityTypes;
-            typeLookup: import("../components/entityLookups/types").LookupsEntityType;
+            typeLookup: import("../components/entityLookups/types").NamedEntityType;
         };
         ui: {
             contextMenu: import("../types").ContextMenuState;
@@ -95,8 +95,8 @@ export declare const useAppState: import("overmind-react").StateHook<Context>;
 export declare const useActions: () => {
     editor: {
         readonly writerInitSettings: (payload?: import("../types").ILeafWriterOptionsSettings) => void;
-        readonly initiateLookupServices: (payload?: "nssi" | "custom") => Promise<void>;
-        readonly initiateLookupSources: (payload?: import("../types").ILookupsConfig) => Promise<void>;
+        readonly initiateLookupServices: () => Promise<void>;
+        readonly initiateLookupSources: (payload?: import("../components/entityLookups/types").ILookupsConfig) => Promise<void>;
         readonly applyInitialSettings: () => void;
         readonly setNssiToken: (payload?: string | (() => Promise<string>)) => void;
         readonly getNssiToken: () => Promise<string>;
@@ -143,9 +143,9 @@ export declare const useActions: () => {
         readonly toggleLookupAuthority: (payload?: import("../types").Authority) => void;
         readonly toggleLookupEntity: (payload?: {
             authorityId: import("../types").Authority;
-            entityName: import("../components/entityLookups/types").LookupsEntityType;
+            entityName: import("../components/entityLookups/types").NamedEntityType;
         }) => void;
-        readonly reorderLookupPriority: (payload?: import("../components/entityLookups/types").ILookupService[]) => void;
+        readonly reorderLookupPriority: (payload?: import("../components/entityLookups/types").IAuthorityService[]) => void;
         readonly retrieveLookupAutoritiesConfig: () => any;
         readonly getContent: () => Promise<string>;
         readonly setIsEditorDirty: (payload?: boolean) => void;

@@ -1,4 +1,4 @@
-import type { Authority, EntryLink, IResult, LookupsEntityType } from '../../components/entityLookups/types';
+import type { Authority, EntryLink, IResult, NamedEntityType } from '../../components/entityLookups/types';
 import type { EntityTypes } from '../../js/schema/types';
 declare type State = {
     isUriValid: boolean;
@@ -7,7 +7,7 @@ declare type State = {
     results?: Map<Authority, IResult[]>;
     selected?: EntryLink;
     typeEntity: EntityTypes;
-    typeLookup: LookupsEntityType;
+    typeLookup: NamedEntityType;
 };
 export declare const state: State;
 export {};

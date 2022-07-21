@@ -2,7 +2,7 @@ import DoNotDisturbAltIcon from '@mui/icons-material/DoNotDisturbAlt';
 import { IconButton, useTheme } from '@mui/material';
 import React, { useState } from 'react';
 import useUI from '../../useUI';
-const NamedEntityOption = ({ available, entity: { enabled, name }, onClick, }) => {
+const NamedEntityOption = ({ available, enabled, onClick, name }) => {
     const theme = useTheme();
     const { getIcon } = useUI();
     const [hover, setHover] = useState(false);

@@ -13,7 +13,7 @@ class LoadingIndicator {
       </div>`).appendTo(parentEl);
         //@ts-ignore
         this.$loadingIndicator.dialog({
-            title: 'CWRC-Writer',
+            title: 'LEAF-Writer',
             modal: true,
             resizable: false,
             closeOnEscape: false,

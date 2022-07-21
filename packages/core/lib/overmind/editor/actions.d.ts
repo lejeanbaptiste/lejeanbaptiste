@@ -1,9 +1,9 @@
 import { Context } from '../';
-import type { Authority, ILookupsConfig, ILookupService, LookupsEntityType } from '../../components/entityLookups/types';
+import type { Authority, IAuthorityService, ILookupsConfig, NamedEntityType } from '../../components/entityLookups/types';
 import { ILeafWriterOptionsSettings, Schema } from '../../types';
 export declare const writerInitSettings: ({ state: { editor }, actions }: Context, settings: ILeafWriterOptionsSettings) => void;
-export declare const initiateLookupServices: ({ state, actions, effects }: Context, serviceType?: 'custom' | 'nssi') => Promise<void>;
-export declare const initiateLookupSources: ({ state: { editor }, actions, effects }: Context, config?: ILookupsConfig) => Promise<void>;
+export declare const initiateLookupServices: ({ state, actions, effects }: Context) => Promise<void>;
+export declare const initiateLookupSources: ({ state, actions, effects }: Context, config?: ILookupsConfig) => Promise<void>;
 export declare const applyInitialSettings: ({ state, actions }: Context) => void;
 export declare const setNssiToken: ({ state }: Context, value: string | (() => Promise<string | undefined>)) => void;
 export declare const getNssiToken: ({ state }: Context) => Promise<string>;
@@ -50,9 +50,9 @@ export declare const setIsAnnotator: ({ state }: Context, value: boolean) => voi
 export declare const toggleLookupAuthority: ({ state: { editor }, effects }: Context, id: Authority) => void;
 export declare const toggleLookupEntity: ({ state: { editor }, effects }: Context, { authorityId, entityName }: {
     authorityId: Authority;
-    entityName: LookupsEntityType;
+    entityName: NamedEntityType;
 }) => void;
-export declare const reorderLookupPriority: ({ state: { editor }, effects }: Context, authorities: ILookupService[]) => void;
+export declare const reorderLookupPriority: ({ state: { editor }, effects }: Context, authorities: IAuthorityService[]) => void;
 export declare const retrieveLookupAutoritiesConfig: ({ effects }: Context) => any;
 export declare const getContent: ({ state }: Context) => Promise<string>;
 export declare const setIsEditorDirty: ({ state }: Context, value: boolean) => void;

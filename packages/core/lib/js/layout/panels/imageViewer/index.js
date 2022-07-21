@@ -21,10 +21,10 @@ class ImageViewer {
       <div id="${this.id}" class="imageViewer" style="background-color: #f5f5f5">
         <div class="toolbar">
           <div class="navigation">
-            <span id="${this.id}_prev" class="button">
+            <span id="${this.id}_prev" class="lw-button">
               <i class="fas fa-arrow-left"></i>
             </span>
-            <span id="${this.id}_next" class="button">
+            <span id="${this.id}_next" class="lw-button">
               <i class="fas fa-arrow-right"></i>
             </span>
             <span class="pageInfo">
@@ -32,13 +32,13 @@ class ImageViewer {
             </span>
           </div>
           <div class="zoom">
-            <span id="${this.id}_zoomIn" class="button">
+            <span id="${this.id}_zoomIn" class="lw-button">
               <i class="fas fa-search-plus"></i>
             </span>
-            <span id="${this.id}_zoomOut" class="button">
+            <span id="${this.id}_zoomOut" class="lw-button">
               <i class="fas fa-search-minus"></i>
             </span>
-            <span id="${this.id}_home" class="button">
+            <span id="${this.id}_home" class="lw-button">
               <i class="fas fa-compress"></i>
             </span>
           </div>

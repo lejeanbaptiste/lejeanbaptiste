@@ -3,8 +3,7 @@ export const createConfig = (settings) => {
     const supportedSchemas = setupSupportedSchemas(settings.schemas ?? settings.schemasId);
     const config = {
         container: 'leaft-writer-app',
-        baseUrl: settings.baseUrl,
-        nerveUrl: settings.nerveUrl,
+        baseUrl: settings.baseUrl ?? '.',
         proxyLoaders: settings.proxyLoaders,
         schemas: supportedSchemas,
         modules: {
@@ -18,7 +17,6 @@ export const createConfig = (settings) => {
                 { id: 'validation', title: 'Validation' },
             ],
         },
-        services: { nerve: { url: settings.nerveUrl } },
     };
     return config;
 };

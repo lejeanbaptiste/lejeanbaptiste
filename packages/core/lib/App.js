@@ -11,7 +11,7 @@ import { createConfig } from './config';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import theme from './theme';
-const CONTAINER = 'leafwriterContainer';
+const CONTAINER = 'lw-layout-container';
 const App = ({ document, settings, user }) => {
     const actions = useActions();
     const state = useAppState();
@@ -64,8 +64,7 @@ const App = ({ document, settings, user }) => {
             React.createElement(Box, { id: CONTAINER, sx: {
                     height: 'calc(100% - 32px)',
                     width: '100%',
-                } }),
-            writer && React.createElement(ContextMenu, { writer: writer }),
+                } }, writer && React.createElement(ContextMenu, { writer: writer })),
             React.createElement(BottomBar, null),
             React.createElement(Popup, null),
             React.createElement(EditSourceDialog, null),

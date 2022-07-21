@@ -80,7 +80,7 @@ class StructureTree {
             setTimeout(() => {
                 this.writer.overmindActions.ui.showContextMenu({
                     show: true,
-                    position: { posX: event.pageX, posY: event.pageY },
+                    position: { posX: event.clientX, posY: event.clientY },
                     useSelection: false,
                     tagId,
                 });

@@ -1,9 +1,10 @@
 import { type FC } from 'react';
-import { ILookupServiceEntity, LookupsEntityType } from '../../../components/entityLookups/types';
+import { NamedEntityType } from '../../../components/entityLookups/types';
 interface NamedEntityOptionProps {
     available: boolean;
-    entity: ILookupServiceEntity;
-    onClick: (name: LookupsEntityType) => void;
+    enabled: boolean;
+    onClick: (name: NamedEntityType) => void;
+    name: NamedEntityType;
 }
 declare const NamedEntityOption: FC<NamedEntityOptionProps>;
 export default NamedEntityOption;
