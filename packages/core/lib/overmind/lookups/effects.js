@@ -1,35 +1,27 @@
 class Api {
     services = {};
-    currentState = {};
+    currentState;
     nssi;
     async initialize(authorities, { token }) {
         this.currentState = authorities;
-        for (const authority of Object.values(authorities)) {
-            if (this.services[authority.id])
+        for (const [authority, authorityService] of Object.entries(authorities)) {
+            if (this.services[authority])
                 return;
-            const module = await import(`./services/${authority.id}`);
+            const module = await import(`./services/${authority}`);
             if (!module)
                 return;
             const Service = module.default;
-            const source = new Service(authority.config);
-            this.services[authority.id] = source;
-        }
-        if (token) {
-            const module = await import(`./services/nssi`);
-            if (!module)
-                return;
-            const Service = module.default;
-            const source = new Service({ token });
-            this.nssi = source;
+            const source = new Service(authorityService.config);
+            this.services[authority] = source;
         }
     }
     async find({ query, type }) {
         const results = new Map();
-        const listPriority = Object.values(this.currentState).sort((a, b) => a.priority - b.priority);
-        await Promise.all(listPriority.map(async ({ enabled, id, entities }) => {
+        const listPriority = new Map([...Object.entries(this.currentState)].sort(([, serviceA], [, serviceB]) => serviceA.priority - serviceB.priority));
+        await Promise.all([...listPriority.entries()].map(async ([, { enabled, id, entities }]) => {
             if (!enabled)
                 return;
-            if (!entities[type]?.enabled)
+            if (!entities[type])
                 return;
             results.set(id, []); //* guarantee the order
             const response = await this.services[id].find({ query, type });

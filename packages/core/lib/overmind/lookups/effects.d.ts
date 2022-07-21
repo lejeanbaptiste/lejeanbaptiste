@@ -1,11 +1,11 @@
-import type { Authority, ILookupService, IResult } from '../../components/entityLookups/types';
+import type { Authority, IAuthorityService, IResult } from '../../components/entityLookups/types';
 import { type IFindParams } from './services/type';
 declare class Api {
     private readonly services;
     private currentState;
     private nssi;
     initialize(authorities: {
-        [key: string]: ILookupService;
+        [key: string]: IAuthorityService;
     }, { token }: {
         token?: string;
     }): Promise<void>;

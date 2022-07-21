@@ -57,7 +57,7 @@ declare class SchemaManager {
     private cssUrl;
     private currentDocumentSchemaUrl;
     private currentDocumentCSSUrl;
-    constructor(writer: Writer, schemas: ISchema[], proxies: {
+    constructor(writer: Writer, schemas: ISchema[], proxies?: {
         css: string;
         xml: string;
     });

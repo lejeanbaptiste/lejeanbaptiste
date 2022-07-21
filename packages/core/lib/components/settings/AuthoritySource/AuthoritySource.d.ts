@@ -1,7 +1,7 @@
 import { type FC } from 'react';
-import { ILookupService } from '../../../components/entityLookups/types';
+import { IAuthorityService } from '../../../components/entityLookups/types';
 interface AuthoritySource {
-    authority: ILookupService;
+    authorityService: IAuthorityService;
 }
 declare const AuthoritySource: FC<AuthoritySource>;
 export default AuthoritySource;

@@ -6,7 +6,7 @@ import '@fontsource/lato/900.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 import { PaletteMode } from '@mui/material';
 import { Subject } from 'rxjs';
-import type { Authority, LookupsEntityType } from './components/entityLookups/types';
+import type { Authority, NamedEntityType } from './components/entityLookups/types';
 import type { ILeafWriterOptions, LWDocument } from './types';
 import './utilities/log';
 export * as Types from './types';
@@ -71,7 +71,7 @@ export declare class Leafwriter {
         enabled?: boolean;
         prioity?: number;
         entity?: {
-            name: LookupsEntityType;
+            name: NamedEntityType;
             enabled?: string;
         };
         config?: {

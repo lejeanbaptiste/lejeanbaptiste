@@ -11,106 +11,70 @@ export const writerInitSettings = ({ state: { editor }, actions }, settings) => 
     editor.schemas = schemas;
     actions.validator.loadValidator();
 };
-export const initiateLookupServices = async ({ state, actions, effects }, serviceType) => {
+export const initiateLookupServices = async ({ state, actions, effects }) => {
     // log.info(serviceType);
     // serviceType = 'nssi';
     const _token = await state.editor.nssiToken;
     const token = await actions.editor.getNssiToken();
     await effects.lookups.api.initialize(state.editor.lookups.authorities, { token });
 };
-export const initiateLookupSources = async ({ state: { editor }, actions, effects }, config) => {
-    const { lookups } = editor;
-    //* no config, use defal
+export const initiateLookupSources = async ({ state, actions, effects }, config) => {
+    const { lookups } = state.editor;
+    //* no config, use default
     if (!config) {
         await actions.editor.initiateLookupServices();
         effects.editor.api.setLookupsDefaults({ ...lookups });
         return;
     }
-    if (typeof config?.showNoLinkButton === 'boolean') {
-        lookups.showNoLinkButton = config.showNoLinkButton;
-    }
-    if (typeof config?.showCreateNewButton === 'boolean') {
-        lookups.showCreateNewButton = config.showCreateNewButton;
-    }
-    if (typeof config?.showEditButton === 'boolean') {
-        lookups.showEditButton = config.showEditButton;
-    }
     if (typeof config?.serviceType === 'string' && ['custom', 'nssi'].includes(config.serviceType)) {
-        lookups.serviceType = config.serviceType;
+        state.editor.lookups.serviceType = config.serviceType;
     }
     //* no config, use default
-    if (!Array.isArray(config.authorities))
+    if (!config.authorities || !Array.isArray(config.authorities))
         return;
-    const authorities = new Map();
-    config.authorities.forEach((config) => {
-        const [authorityId, authorityConfig] = typeof config === 'string' ? [config] : config;
-        //* invalid
-        if (!['cwrc', 'dbpedia', 'geonames', 'getty', 'lgpn', 'viaf', 'wikidata'].includes(authorityId)) {
+    config.authorities.forEach((confgAuthority) => {
+        const [authorityId, configAuthorityService] = typeof confgAuthority === 'string' ? [confgAuthority] : confgAuthority;
+        if (authorityId !== state.editor.lookups.authorities[authorityId].id) {
+            // implement new lookup
             return;
         }
-        //*  no config, use default
-        if (!authorityConfig) {
-            if (lookups.authorities[authorityId]) {
-                authorities.set(authorityId, lookups.authorities[authorityId]);
+        //required authentication?
+        if (state.editor.lookups.authorities[authorityId].requireAuth &&
+            configAuthorityService?.config?.username === '') {
+            log.warn(`Lookups: You must define a username to make requests to ${authorityId}`);
+            return;
+        }
+        //* No config, enabled and use default
+        if (!configAuthorityService) {
+            if (!state.editor.lookups.authorities[authorityId].enabled) {
+                actions.editor.toggleLookupAuthority(authorityId);
             }
             return;
         }
-        // * geonames warning
-        if (authorityId === 'geonames') {
-            if (!authorityConfig.config?.username || authorityConfig.config.username === '') {
-                log.warn('Lookups config: You must define a username to be able to make requests to Geonames');
-                return;
-            }
+        //config
+        if (configAuthorityService.config) {
+            state.editor.lookups.authorities[authorityId].config = configAuthorityService.config;
+            state.editor.lookups.authorities[authorityId].enabled = true;
         }
-        //* entities
-        let entities = new Map();
-        //* no config, use default
-        if (!authorityConfig.entities && lookups.authorities[authorityId]) {
-            entities = new Map(Object.entries(lookups.authorities[authorityId].entities));
+        //enabled
+        if (configAuthorityService.enabled) {
+            state.editor.lookups.authorities[authorityId].enabled = configAuthorityService.enabled;
         }
-        if (Array.isArray(authorityConfig.entities)) {
-            authorityConfig.entities.forEach((config) => {
-                const [entityId, entityConfig] = typeof config === 'string' ? [config] : config;
-                //* invalid
-                if (!['person', 'place', 'organization', 'title', 'rs'].includes(entityId)) {
-                    return;
-                }
-                if (!entityConfig) {
-                    //* use dafault
-                    entities.set(entityId, lookups.authorities[authorityId].entities[entityId]);
-                }
-                else {
-                    //*  apply config
-                    entities.set(entityId, { enabled: entityConfig.enabled, name: entityId });
-                }
-            });
-        }
-        // * no entity configured
-        if (entities.size === 0)
+        //if not entities, use default
+        if (!configAuthorityService.entities || !Array.isArray(configAuthorityService.entities))
             return;
-        // * push config
-        authorities.set(authorityId, {
-            config: authorityConfig.config,
-            enabled: typeof authorityConfig.enabled === 'boolean' ? authorityConfig.enabled : true,
-            entities: Object.fromEntries(entities),
-            id: authorityId,
-            name: authorityConfig.name,
-            priority: authorities.size,
+        //entity types
+        configAuthorityService.entities.forEach(([entityName, enabled]) => {
+            state.editor.lookups.authorities[authorityId].entities[entityName] = enabled;
         });
     });
-    // * No valid setup
-    if (authorities.size === 0)
-        return;
-    // * Apply config
-    lookups.authorities = Object.fromEntries(authorities);
     // * Setup default
-    effects.editor.api.setLookupsDefaults({ ...lookups });
+    effects.editor.api.setLookupsDefaults({ ...state.editor.lookups });
     // * User saved preferences
-    const savedPreferences = actions.editor.retrieveLookupAutoritiesConfig();
-    if (savedPreferences)
-        editor.lookups = savedPreferences;
+    // const savedPreferences = actions.editor.retrieveLookupAutoritiesConfig();
+    // if (savedPreferences) state.editor.lookups = savedPreferences;
     // * Setup services
-    await actions.editor.initiateLookupServices(config.serviceType);
+    await actions.editor.initiateLookupServices();
 };
 export const applyInitialSettings = ({ state, actions }) => {
     if (!window.writer?.editor)
@@ -258,24 +222,22 @@ export const setIsAnnotator = ({ state }, value) => {
 export const toggleLookupAuthority = ({ state: { editor }, effects }, id) => {
     if (!editor.lookups.authorities)
         return;
-    const authority = editor.lookups.authorities[id];
-    if (!authority)
+    const authorityService = editor.lookups.authorities[id];
+    if (!authorityService)
         return;
-    authority.enabled = !authority.enabled;
+    authorityService.enabled = !authorityService.enabled;
     //deactivate // reactivate  entities
-    Object.entries(authority.entities).forEach(([entityId]) => {
-        authority.entities[entityId].enabled = authority.enabled;
+    [...Object.entries(authorityService.entities)].forEach(([namedEntityType]) => {
+        authorityService.entities[namedEntityType] = authorityService.enabled;
     });
     effects.editor.api.saveToLocalStorage('lookup_preferences', JSON.stringify(editor.lookups));
 };
 export const toggleLookupEntity = ({ state: { editor }, effects }, { authorityId, entityName }) => {
-    if (!editor.lookups.authorities)
+    const authorityService = editor.lookups.authorities[authorityId];
+    if (authorityService.entities[entityName] === undefined)
         return;
-    const authority = editor.lookups.authorities[authorityId];
-    const entity = authority.entities[entityName];
-    if (!entity)
-        return;
-    entity.enabled = !entity.enabled;
+    const entityEnabled = authorityService.entities[entityName];
+    authorityService.entities[entityName] = !entityEnabled;
     effects.editor.api.saveToLocalStorage('lookup_preferences', JSON.stringify(editor.lookups));
 };
 export const reorderLookupPriority = ({ state: { editor }, effects }, authorities) => {

@@ -1,7 +1,7 @@
 import type { Bookmark, Editor } from 'tinymce/tinymce';
 import type { ILookupsConfig } from '../components/entityLookups/types';
 import Writer from '../js/Writer';
-export type { Authority, ILookupsConfig } from '../components/entityLookups/types';
+export type { Authority, ILookups } from '../components/entityLookups/types';
 export declare var webpackEnv: {
     LEAFWRITER_VERSION?: string;
     NODE_ENV: string;
@@ -27,10 +27,9 @@ export interface LWDocument {
 export interface ILeafWriterOptionsSettings {
     container?: string;
     baseUrl?: string;
-    nerveUrl?: string;
-    proxyLoaders: {
-        cssEndpoint: string;
-        xmlEndpoint: string;
+    proxyLoaders?: {
+        cssEndpoint?: string;
+        xmlEndpoint?: string;
     };
     credentials?: {
         nssiToken?: string | (() => Promise<string | undefined>);

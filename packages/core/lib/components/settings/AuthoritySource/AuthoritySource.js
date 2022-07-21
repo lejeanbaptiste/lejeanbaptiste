@@ -8,7 +8,7 @@ import { useSnackbar } from 'notistack';
 import React, { useState } from 'react';
 import { useActions, useAppState } from '../../../overmind';
 import NamedEntityOption from './NamedEntityOption';
-const AuthoritySource = ({ authority: { enabled, entities, id, name } }) => {
+const AuthoritySource = ({ authorityService: { enabled, entities, id, name }, }) => {
     const { toggleLookupAuthority, toggleLookupEntity } = useActions().editor;
     const { authorities } = useAppState().editor.lookups;
     const { enqueueSnackbar } = useSnackbar();
@@ -24,32 +24,18 @@ const AuthoritySource = ({ authority: { enabled, entities, id, name } }) => {
     const handleHadleMouseDown = () => setIsDragging(true);
     const handleHadleMouseUp = () => setIsDragging(false);
     const getNamedEntity = (name) => {
-        const entity = entities[name];
-        if (!entity)
-            return;
-        return React.createElement(NamedEntityOption, { available: enabled, entity: entity, onClick: handleEntityToggle });
+        if (entities[name] === undefined)
+            return null;
+        const entityEnabled = entities[name];
+        return (React.createElement(NamedEntityOption, { available: enabled, enabled: entityEnabled, onClick: handleEntityToggle, name: name }));
     };
-    // const handleAuthorityToogle = (event: ChangeEvent<HTMLInputElement>) => {
-    //   if (id === 'geonames') {
-    //     const source = authorities?.[id];
-    //     if (source && !source.config?.username) {
-    //       enqueueSnackbar('You must provide a username to make requests to GeoNames.', {
-    //         variant: 'error',
-    //       });
-    //       return;
-    //     }
-    //   }
-    //   toggleLookupAuthority(id);
-    // };
     const handleAuthorityToogle = () => {
-        if (id === 'geonames') {
-            const source = authorities?.[id];
-            if (source && !source.config?.username) {
-                enqueueSnackbar('You must provide a username to make requests to GeoNames.', {
-                    variant: 'error',
-                });
-                return;
-            }
+        const authorityService = authorities[id];
+        if (authorityService.requireAuth && !authorityService.config?.username) {
+            enqueueSnackbar(`You must provide a username to make requests to ${id}.`, {
+                variant: 'error',
+            });
+            return;
         }
         toggleLookupAuthority(id);
     };
@@ -59,8 +45,8 @@ const AuthoritySource = ({ authority: { enabled, entities, id, name } }) => {
     return (React.createElement(Paper, { elevation: isDragging ? 8 : hover ? 1 : 0, ref: setNodeRef, square: true, style: style, sx: {
             zIndex: isDragging ? 1 : 0,
             backgroundColor: isDragging ? ({ palette }) => palette.background.paper : 'transparent',
-            cursor: isDragging ? 'grabbing' : 'default',
             borderRadius: 1,
+            cursor: isDragging ? 'grabbing' : 'default',
         }, onMouseOver: handleMouseOver, onMouseOut: handleMouseOut, onMouseUp: handleHadleMouseUp },
         React.createElement(Grid, { container: true, alignItems: "center", sx: { height: 34, pl: 0.25 } },
             React.createElement(Grid, { item: true, xs: 5 },

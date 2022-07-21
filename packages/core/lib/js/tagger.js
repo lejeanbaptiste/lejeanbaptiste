@@ -54,7 +54,7 @@ class Tagger {
     /**
      * Adds (non-reserved) attributes to the tag. All attributes get added to the _attributes holder.
      * Overwrites previously set attributes.
-     * Assumes the attributes object does not contain CWRC-Writer related attributes, e.g. _tag.
+     * Assumes the attributes object does not contain LEAF-Writer related attributes, e.g. _tag.
      * @param {Element} tag The tag
      * @param {Object} attributes A name/value map of attributes
      */

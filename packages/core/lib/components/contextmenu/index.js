@@ -54,13 +54,13 @@ const ContextMenu = ({ writer }) => {
     const handleClose = () => {
         actions.ui.closeContextMenu();
     };
-    return (React.createElement(React.Fragment, null, show && (React.createElement(Menu, { anchorPosition: menuPosition, anchorReference: "anchorPosition", id: "contextmenu", keepMounted: true, MenuListProps: {
+    return (React.createElement(React.Fragment, null, show && (React.createElement(Menu, { anchorPosition: menuPosition, anchorReference: "anchorPosition", id: "contextmenu", container: document.getElementById(`#${editor.settings.container}`), keepMounted: true, MenuListProps: {
             sx: {
                 minWidth: MIN_WIDTH,
                 py: 0.5,
                 borderRadius: 1,
             },
-        }, onClose: handleClose, open: show, PaperProps: { elevation: 4 } },
+        }, onClose: handleClose, open: show, PaperProps: { elevation: 4 }, variant: "menu" },
         React.createElement(Header, { tagName: tagName, xpath: xpath, tagMeta: tagMeta }),
         React.createElement(Collection, { handleQuery: handleQuery, collectionType: collectionType, fullLength: options.length, isLoading: isLoading, list: visibleList, minWidth: MIN_WIDTH })))));
 };

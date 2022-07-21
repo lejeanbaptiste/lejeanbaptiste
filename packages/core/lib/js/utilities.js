@@ -430,9 +430,9 @@ class Utilities {
     }
     /**
      * Get the offset position of an element, relative to the parent (default is leaf-writer container).
-     * @param {Element} el The element
-     * @param {Element} [parent] The offset parent. Default is the leaf-writer container.
-     * @returns {Object} position An object container top and left properties
+     * @param {Element} element The element
+     * @param {Element} parent The offset parent. Default is the leaf-writer container.
+     * @returns {JQuery.Coordinates} position An object container top and left properties
      */
     getOffsetPosition = (element, parent) => {
         const $parent = parent === undefined ? this.writer.layoutManager.getContainer() : $(parent);
