@@ -86,8 +86,8 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
         const buttonOffset = $button.offset();
         const buttonHeight = $button.height() ?? 0;
 
-        const posX = buttonOffset ? buttonOffset.left : 0;
-        const posY = buttonOffset ? buttonOffset.top + buttonHeight : 0;
+        const posX = buttonOffset.left;
+        const posY = buttonOffset.top - $(window).scrollTop() + buttonHeight;
 
         writer.overmindActions.ui.showContextMenu({
           show: true,
