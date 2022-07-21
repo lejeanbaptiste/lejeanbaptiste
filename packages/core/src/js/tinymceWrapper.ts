@@ -11,6 +11,7 @@ import { configureToolbar, toolbarOptions } from './tinymce/tinymceToolbar';
 import './tinymce_plugins/prevent_delete';
 //TODO: Reassess plugins on tinymce 5.0
 // import './tinymce_plugins/cwrc_path';
+import fscreen from 'fscreen';
 import './tinymce_plugins/treepaste';
 import Writer from './Writer';
 
@@ -89,6 +90,8 @@ export const tinymceWrapperInit = function ({
     toolbar1: buttons1.length > 0 ? buttons1.join(' ') : toolbarOptions.join(' '),
     toolbar2: buttons2 === undefined ? 'cwrcpath' : buttons2.join(' '),
     toolbar3: buttons3 === undefined ? '' : buttons3.join(' '),
+    
+    toolbar_mode: 'sliding',
 
     menubar: false,
     elementpath: true,
@@ -170,24 +173,13 @@ export const tinymceWrapperInit = function ({
 
           if (writer.isReadOnly) return;
 
-          const editorPosition = writer.utilities.getOffsetPosition(
-            editor.getContentAreaContainer(),
-            window.document.documentElement
-          );
+          // const editorPosition = writer.utilities.getOffsetPosition(
+          //   editor.getContentAreaContainer()
+          // );
 
-          const $editorBody = $(editor.getDoc().documentElement);
-          const editorScrollTop = $editorBody.scrollTop();
-          const editorScrollLeft = $editorBody.scrollLeft();
-
-          const adjustLeft = editorScrollLeft
-            ? editorPosition.left - editorScrollLeft
-            : editorPosition.left;
-          const adjustTop = editorScrollTop
-            ? editorPosition.top - editorScrollTop
-            : editorPosition.top;
-
-          const posX = event.pageX + adjustLeft;
-          const posY = event.pageY + adjustTop;
+          const posX = event.screenX;
+          let posY = event.screenY - 39;
+          if (!fscreen.fullscreenElement) posY = posY - 78;
 
           writer.overmindActions.ui.showContextMenu({
             show: true,
