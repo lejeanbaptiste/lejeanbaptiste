@@ -21,11 +21,11 @@ const Templates: FC = () => {
 
   return (
     <Stack
-      direction="row"
-      spacing={3}
+      direction={isMobile ? 'column' : 'row'}
+      spacing={isMobile ? 1 : 3}
       alignItems="center"
       sx={{
-        width: 600,
+        width: isMobile ? '90vw' : 600,
         py: 0.75,
         px: 2,
         backgroundColor: palette.mode === 'dark' ? palette.grey[900] : palette.grey[50],
@@ -37,10 +37,24 @@ const Templates: FC = () => {
       </Typography>
       <Divider
         flexItem
-        orientation="vertical"
-        sx={{ borderColor: '#999', boxShadow: '2px 0px 2px 0px rgb(0 0 0 / 15%)' }}
+        orientation={isMobile ? 'horizontal' : 'vertical'}
+        sx={{
+          alignSelf: isMobile ? 'center' : 'auto',
+          width: isMobile ? 120 : 0,
+          height: isMobile ? 0 : 20,
+          borderColor: '#999',
+          boxShadow: '2px 0px 2px 0px rgb(0 0 0 / 15%)',
+        }}
       />
-      <Stack direction="row" justifyContent="center" spacing={3}>
+      <Stack
+        direction={isMobile ? 'row' : 'row'}
+        justifyContent={isMobile ? 'flex-start' : 'center'}
+        spacing={3}
+        overflow="auto"
+        width="100%"
+        pb={isMobile ? 1 : 0}
+        px={isMobile ? 1 : 0}
+      >
         {templates.map(({ icon, title, url }) => {
           const Icon = getIcon(icon);
           return (
