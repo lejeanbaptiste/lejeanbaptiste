@@ -19,7 +19,7 @@ class LoadingIndicator implements ILWDialog {
 
     //@ts-ignore
     this.$loadingIndicator.dialog({
-      title: 'CWRC-Writer',
+      title: 'LEAF-Writer',
       modal: true,
       resizable: false,
       closeOnEscape: false,

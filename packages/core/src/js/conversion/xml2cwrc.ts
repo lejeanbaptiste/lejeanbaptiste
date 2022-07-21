@@ -51,7 +51,7 @@ class XML2CWRC {
           title: 'Missing Schema',
           msg: `
             <p>There is no schema associated with your document.
-            Should CWRC-Writer try to determine the schema by examining the document root?</p>
+            Should LEAF-Writer try to determine the schema by examining the document root?</p>
           `,
           type: 'error',
           callback: (doIt: boolean) => {
@@ -67,7 +67,7 @@ class XML2CWRC {
             if (schemaId === undefined) {
               this.writer.dialogManager.show('message', {
                 title: 'Warning',
-                msg: `<p>CWRC-Writer could not determine the schema for: ${rootName}</p>`,
+                msg: `<p>LEAF-Writer could not determine the schema for: ${rootName}</p>`,
                 type: 'error',
                 callback: () => {
                   this.writer.event('documentLoaded').publish(false, null);
@@ -79,7 +79,7 @@ class XML2CWRC {
 
             this.writer.dialogManager.show('message', {
               title: 'Schema',
-              msg: `<p>CWRC-Writer determined the schema to be: ${schemaId}</p>`,
+              msg: `<p>LEAF-Writer determined the schema to be: ${schemaId}</p>`,
               type: 'info',
               callback: async () => {
                 if (schemaId === this.writer.schemaManager.schemaId) {
@@ -99,7 +99,7 @@ class XML2CWRC {
       if (schemaId === undefined) {
         this.writer.dialogManager.confirm({
           title: 'Warning',
-          msg: `<p>The document you are loading is not fully supported by CWRC-Writer.
+          msg: `<p>The document you are loading is not fully supported by LEAF-Writer.
             You may not be able to use the ribbon to tag named entities.</p>
             <p>Load document anyways?</p>`,
           type: 'error',
@@ -141,7 +141,7 @@ class XML2CWRC {
               title: 'Error Loading Schema',
               msg: `
                 <p>The schema associated with your document could not be loaded.
-                Should CWRC-Writer try to determine the schema by examining the document root?</p>
+                Should LEAF-Writer try to determine the schema by examining the document root?</p>
               `,
               type: 'error',
               callback: (doIt: boolean) => {
@@ -160,7 +160,7 @@ class XML2CWRC {
                 if (schemaId === undefined) {
                   this.writer.dialogManager.show('message', {
                     title: 'Warning',
-                    msg: `<p>CWRC-Writer could not determine the schema for: ${rootName}</p>`,
+                    msg: `<p>FEAD-Writer could not determine the schema for: ${rootName}</p>`,
                     type: 'error',
                     callback: () => {
                       this.writer.event('documentLoaded').publish(false, null);
@@ -172,7 +172,7 @@ class XML2CWRC {
 
                 this.writer.dialogManager.show('message', {
                   title: 'Schema',
-                  msg: `<p>CWRC-Writer determined the schema to be: ${schemaId}</p>`,
+                  msg: `<p>LEAF-Writer determined the schema to be: ${schemaId}</p>`,
                   type: 'info',
                   callback: async () => {
                     if (schemaId === this.writer.schemaManager.schemaId) {
@@ -803,7 +803,7 @@ class XML2CWRC {
     }
 
     this.writer.dialogManager.show('message', {
-      title: 'CWRC-Writer Mode',
+      title: 'LEAF-Writer Mode',
       msg: msg,
       type: 'info',
     });

@@ -24,7 +24,7 @@ class CopyPaste implements ILWDialog {
         </a>
     `;
     this.pasteMsg = `
-      It looks like you are trying to paste from outside CWRC-Writer.
+      It looks like you are trying to paste from outside LEAF-Writer.
       Be aware that <b>all tags will be removed</b> and only plain text will remain.<br/>
       Consider having a look at the
       <a
