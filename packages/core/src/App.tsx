@@ -13,9 +13,6 @@ import { useActions, useAppState } from './overmind';
 import theme from './theme';
 import type { ILeafWriterOptions } from './types';
 
-import CssBaseline from '@mui/material/CssBaseline';
-import ScopedCssBaseline from '@mui/material/ScopedCssBaseline';
-
 declare global {
   interface Window {
     writer: Writer | null;
