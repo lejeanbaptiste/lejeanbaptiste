@@ -104,8 +104,8 @@ export const initiateLookupSources = async (
   effects.editor.api.setLookupsDefaults({ ...state.editor.lookups });
 
   // * User saved preferences
-  // const savedPreferences = actions.editor.retrieveLookupAutoritiesConfig();
-  // if (savedPreferences) state.editor.lookups = savedPreferences;
+  const savedPreferences = actions.editor.retrieveLookupAutoritiesConfig();
+  if (savedPreferences) state.editor.lookups = savedPreferences;
 
   // * Setup services
   await actions.editor.initiateLookupServices();
