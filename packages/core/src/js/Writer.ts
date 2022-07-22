@@ -328,8 +328,8 @@ class Writer extends EventManager {
 
     window.removeEventListener('beforeunload', this.handleUnload);
 
-    editor.remove();
-    editor.destroy();
+    // editor.remove();
+    // editor.destroy();
 
     this.utilities.destroy();
     this.dialogManager.destroy();
@@ -337,6 +337,7 @@ class Writer extends EventManager {
 
     this.overmindActions.document.clear();
     this.overmindActions.editor.clear();
+    this.overmindActions.validator.clear();
   }
 
   handleUnload(event: BeforeUnloadEvent) {
