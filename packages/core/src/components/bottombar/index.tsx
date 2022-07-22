@@ -1,11 +1,12 @@
 import { Box, Link, Paper, Stack } from '@mui/material';
 import React, { type FC } from 'react';
+import pck from '../../../package.json';
 import AnnotationMode from './AnnotationMode';
 import EditorMode from './EditorMode';
 import Schema from './Schema';
 
 const BottomBar: FC = () => {
-  const version = 'dev'; //webpackEnv?.LEAFWRITER_VERSION ?? '';
+  const version = pck.version;
 
   return (
     <Paper
@@ -27,10 +28,10 @@ const BottomBar: FC = () => {
         <Link
           color="text.secondary"
           variant="caption"
-          href={`https://github.com/cwrc/CWRC-WriterBase/releases/tag/v${version}`}
+          href={pck.homepage}
           rel="noopener"
           target="_blank"
-          title="GitHub Release Notes"
+          title="Repository"
         >
           {`LEAF-Writer ${version}`}
         </Link>
