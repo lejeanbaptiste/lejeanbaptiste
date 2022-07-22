@@ -4,7 +4,6 @@ export const createConfig = (settings) => {
     const config = {
         container: 'leaft-writer-app',
         baseUrl: settings.baseUrl ?? '.',
-        proxyLoaders: settings.proxyLoaders,
         schemas: supportedSchemas,
         modules: {
             west: [
@@ -33,10 +32,10 @@ export const setupSupportedSchemas = (schemas) => {
             return;
         }
         const exists = supportedSchemas.some(({ id }) => id === schema.id);
-        const isValid = schema.mapId !== null &&
+        const isValid = schema.mapping !== null &&
             schema.name !== null &&
-            typeof schema.xml === 'string' &&
-            isValidURL(schema.xml);
+            typeof schema.rng === 'string' &&
+            isValidURL(schema.rng);
         if (!exists && isValid)
             supportedSchemas = [...supportedSchemas, schema];
     }

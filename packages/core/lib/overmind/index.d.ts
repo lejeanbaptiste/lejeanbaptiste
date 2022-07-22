@@ -228,6 +228,7 @@ export declare const useActions: () => {
             xpath: string;
         }) => Promise<import("@cwrc/leafwriter-validator").ElementDetail[]>;
         readonly getValidTagsAt: (payload?: import("@cwrc/leafwriter-validator").GetValidTagsAtParameters) => Promise<import("@cwrc/leafwriter-validator").ElementDetail[]>;
+        readonly clear: () => void;
     };
 };
 export declare const useEffects: () => import("overmind/lib/internalTypes").SubType<{
