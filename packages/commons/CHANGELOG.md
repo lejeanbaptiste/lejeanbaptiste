@@ -1,4 +1,26 @@
-## 1.2.0
+## 1.3.0
+### Major
+
+This version brings two new features:
+
+1. Remove endpoints acting as proxy for loading external resources.
+2. New logo :)
+
+### Features
+
+[892431842c5f4e9d528fa534c9819d2787e9a820] server: remove endpoints acting as proxy for loading external resources due to CORS. LEAF-Writer will handle this internally.
+[5d85f0c2da0a92fe733497561e7ad5c90168d527][e7fb7df8fb66e155158a49250f207b1983b294c7] New logo
+
+### Fix
+
+[d076bc471a019a195c1f19d126117d9ddc272960] Adjust homepage layout on mobile
+[2c27a2a03059a71afce5748f7bf00e3fe52c2d97] leafwriter config: remove baseUrl and nerveUrl
+[d11962a645d08d87344b64da132cd3acd6c02e91] Remove configurations for CWRC lookups (deprecated)
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter@1.5.0
 
 ## 1.2.2
 
