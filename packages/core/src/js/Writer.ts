@@ -188,10 +188,7 @@ class Writer extends EventManager {
       container: $(`#${this.containerId}`),
     });
 
-    this.schemaManager = new SchemaManager(this, config.schemas, {
-      css: config.proxyLoaders.cssEndpoint,
-      xml: config.proxyLoaders.xmlEndpoint,
-    });
+    this.schemaManager = new SchemaManager(this, config.schemas);
     this.entitiesManager = new EntitiesManager(this);
     this.dialogManager = new DialogManager(this); // needs to load before SettingsDialog
     this.tagger = new Tagger(this);

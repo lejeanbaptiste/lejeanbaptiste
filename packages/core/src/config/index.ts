@@ -7,7 +7,6 @@ export const createConfig = (settings: ILeafWriterOptionsSettings) => {
   const config: ILeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
     baseUrl: settings.baseUrl ?? '.',
-    proxyLoaders: settings.proxyLoaders,
     schemas: supportedSchemas,
     modules: {
       west: [
@@ -39,10 +38,10 @@ export const setupSupportedSchemas = (schemas?: Array<SupportedSchemasId | Schem
     }
     const exists = supportedSchemas.some(({ id }) => id === schema.id);
     const isValid =
-      schema.mapId !== null &&
+      schema.mapping !== null &&
       schema.name !== null &&
-      typeof schema.xml === 'string' &&
-      isValidURL(schema.xml);
+      typeof schema.rng === 'string' &&
+      isValidURL(schema.rng);
     if (!exists && isValid) supportedSchemas = [...supportedSchemas, schema];
   }
 

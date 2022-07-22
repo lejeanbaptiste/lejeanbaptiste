@@ -56,7 +56,7 @@ class Tagger {
    * @returns {Object}
    */
   getAttributesForTag(tag: Element) {
-    const attributes = tag.getAttribute('_attributes');
+    const attributes = tag?.getAttribute('_attributes');
     if (!attributes) return {};
 
     const jsonAttrsString = attributes.replace(/&quot;/g, '"');

@@ -56,7 +56,7 @@ class CWRC2XML {
 
     let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xmlString += `<?xml-model href="${this.writer.schemaManager.getCurrentDocumentSchemaUrl()}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>\n`;
-    xmlString += `<?xml-stylesheet type="text/css" href="${this.writer.schemaManager.getCurrentDocumentCSSUrl()}"?>\n`;
+    xmlString += `<?xml-stylesheet type="text/css" href="${this.writer.schemaManager.getCurrentDocumentCss()}"?>\n`;
 
     // if (logEnabledFor('DEBUG')) console.time('buildXMLString');
     xmlString += this.buildXMLString($rootEl, includeRDF);
