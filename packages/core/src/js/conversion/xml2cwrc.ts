@@ -160,7 +160,7 @@ class XML2CWRC {
                 if (schemaId === undefined) {
                   this.writer.dialogManager.show('message', {
                     title: 'Warning',
-                    msg: `<p>FEAD-Writer could not determine the schema for: ${rootName}</p>`,
+                    msg: `<p>LEAF-Writer could not determine the schema for: ${rootName}</p>`,
                     type: 'error',
                     callback: () => {
                       this.writer.event('documentLoaded').publish(false, null);
