@@ -1,12 +1,6 @@
+import type { Schema } from '../../types';
 import Writer from '../Writer';
 import Mapper from './mapper';
-interface ISchema {
-    id: string;
-    name: string;
-    schemaMappingsId: string;
-    xmlUrl: string | string[];
-    cssUrl: string | string[];
-}
 /**
  * @class SchemaManager
  * @param {Writer} writer
@@ -27,7 +21,7 @@ declare class SchemaManager {
     }[];
     readonly proxyXmlEndpoint: string | null;
     readonly proxyCssEndpoint: string | null;
-    schemas: ISchema[];
+    schemas: Schema[];
     /**
      * The ID of the current validation schema, according to config.schemas
      */
@@ -37,7 +31,7 @@ declare class SchemaManager {
      * @member {Document}
      */
     schemaXML: any;
-    xmlUrl: string | null;
+    rng: string | null;
     /**
      * A JSON version of the schema
      * @member {Object}
@@ -54,25 +48,22 @@ declare class SchemaManager {
     private root;
     private header;
     private idName;
-    private cssUrl;
-    private currentDocumentSchemaUrl;
-    private currentDocumentCSSUrl;
-    constructor(writer: Writer, schemas: ISchema[], proxies?: {
-        css: string;
-        xml: string;
-    });
+    private css;
+    private currentDocumentRng;
+    private currentDocumentCss;
+    constructor(writer: Writer, schemas: Schema[]);
     getBlockTag(): string;
     getInlineTag(): string;
     /**
      * Get the URL for the XML for the current schema.
      * @returns {String}
      */
-    getXMLUrl(): string;
+    getRng(): string;
     /**
      * Gets the schema object for the current schema.
      * @returns {Object}
      */
-    getCurrentSchema(): ISchema;
+    getCurrentSchema(): Schema;
     /**
      * Returns the schemaId associated with a specific root
      * @param {String} root The root name
@@ -81,10 +72,10 @@ declare class SchemaManager {
     getSchemaIdFromRoot(root: string): string;
     /**
      * Returns the schemaId associated with the specified schema url.
-     * @param {String} xmlUrl The schema url
+     * @param {String} url The schema url
      * @returns {String|undefined} The schemaId
      */
-    getSchemaIdFromUrl(xmlUrl: string): string;
+    getSchemaIdFromUrl(url: string): string;
     /**
      * Get the root tag name for the current schema.
      * @returns {String}
@@ -104,7 +95,7 @@ declare class SchemaManager {
      * Get the URL for the CSS for the current schema.
      * @returns {String}
      */
-    getCSSUrl(): string;
+    getCss(): string;
     /**
      * Is the current schema custom? I.e. is it lacking entity mappings?
      * @returns {Boolean}
@@ -112,8 +103,8 @@ declare class SchemaManager {
     isSchemaCustom(): boolean;
     getCurrentDocumentSchemaUrl(): string;
     setCurrentDocumentSchemaUrl(url: string): void;
-    getCurrentDocumentCSSUrl(): string;
-    setCurrentDocumentCSSUrl(url: string): void;
+    getCurrentDocumentCss(): string;
+    setCurrentDocumentCss(url: string): void;
     /**
      * Checks to see if the tag can contain text, as specified in the schema
      * @param {string} tag The tag to check
@@ -168,33 +159,30 @@ declare class SchemaManager {
      * @fires Writer#schemaAdded
      * @param {Object} config The config object
      * @param {String} config.name A name for the schema
-     * @param {Array} config.xmlUrl The xml url(s) for the schema
-     * @param {Array} config.cssUrl The css url(s) for the schema
+     * @param {Array} config.rng The xml url(s) for the schema
+     * @param {Array} config.css The css url(s) for the schema
      * @returns {String} id The id for the schema
      *
      */
-    addSchema(config: Omit<ISchema, 'id'>): string;
+    addSchema(config: Omit<Schema, 'id'>): string;
     /**
      * Gets the url(s) associated with the schema
      * @param {String} schemaId The ID of the schema
      * @returns {Array|null} Collection of urls for the schema
      */
-    getUrlForSchema(schemaId: string): string | string[];
+    getUrlForSchema(schemaId: string): string[];
     /**
      * Gets the name of the root element for the schema
      * @param {String} schemaId The ID of the schema
      * @returns {String} The (first) root name
      */
     getRootForSchema(schemaId: string): Promise<any>;
-    /*****************************
-     * LOAD SCHEMA XML
-     *****************************/
     /**
      * Load a Schema XML.
-     * @param {Array} xmlUrl Collection of url sources
+     * @param {Array} urls Collection of url sources
      * @returns {Document} The XML
      */
-    private loadXMLFile;
+    private loadSchemaFile;
     /**
      * Load an include schema.
      * @param {String} schemaEntry The Schchema object, including the Schema URL
@@ -217,20 +205,17 @@ declare class SchemaManager {
      * @param {Function} [callback] Callback for when the load is complete
      */
     loadSchema(schemaId: string, loadCss: boolean, callback?: Function): Promise<any>;
-    /*****************************
-     * LOAD SCHEMA CSS
-     *****************************/
     /**
      * Load a Schema CSS.
-     * @param {Array} cssUrl Collection of url sources
+     * @param {Array} urls Collection of url sources
      * @returns {String} The CSS
      */
     private loadCSSFile;
     /**
      * Load the CSS and convert it to the internal format
-     * @param {Array} cssURL Collection of url sources
+     * @param {Array} schemaId Collection of url sources
      */
-    loadSchemaCSS(cssURL: string | string[]): Promise<any>;
+    loadSchemaCSS(schemaId: string): Promise<any>;
 }
 export default SchemaManager;
 //# sourceMappingURL=schemaManager.d.ts.map

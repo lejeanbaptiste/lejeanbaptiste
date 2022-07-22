@@ -152,10 +152,7 @@ class Writer extends EventManager {
             modules: config.modules,
             container: $(`#${this.containerId}`),
         });
-        this.schemaManager = new SchemaManager(this, config.schemas, {
-            css: config.proxyLoaders.cssEndpoint,
-            xml: config.proxyLoaders.xmlEndpoint,
-        });
+        this.schemaManager = new SchemaManager(this, config.schemas);
         this.entitiesManager = new EntitiesManager(this);
         this.dialogManager = new DialogManager(this); // needs to load before SettingsDialog
         this.tagger = new Tagger(this);
@@ -274,13 +271,14 @@ class Writer extends EventManager {
             log.info(e);
         }
         window.removeEventListener('beforeunload', this.handleUnload);
-        editor.remove();
-        editor.destroy();
+        // editor.remove();
+        // editor.destroy();
         this.utilities.destroy();
         this.dialogManager.destroy();
         this.layoutManager.destroy();
         this.overmindActions.document.clear();
         this.overmindActions.editor.clear();
+        this.overmindActions.validator.clear();
     }
     handleUnload(event) {
         if ((!this.isReadOnly || this.isAnnotator) && window.location.hostname !== 'localhost') {

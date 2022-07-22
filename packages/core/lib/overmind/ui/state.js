@@ -7,6 +7,6 @@ export const state = {
     popupProps: { open: false },
     settingsDialogOpen: false,
     themeAppearance: 'auto',
-    title: 'Leaf Writer',
+    title: 'LEAF-Writer',
 };
 //# sourceMappingURL=state.js.map

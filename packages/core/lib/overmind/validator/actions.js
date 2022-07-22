@@ -30,17 +30,11 @@ export const initialize = async ({ state }) => {
     const workerValidator = window.leafwriterValidator;
     state.validator.hasWorkerValidator = !!workerValidator;
     const id = writer.schemaManager.getCurrentSchema()?.id;
-    const schemaURI = writer.schemaManager.getXMLUrl();
-    if (!id || !schemaURI)
+    const schemaURL = writer.schemaManager.getRng();
+    if (!id || !schemaURL)
         return;
     const cachedSchema = localStorage.getItem(`schema_${id}`) ?? undefined;
-    // * CORS: Some of the schemas might have blocke by CORS
-    //If provide, we wrap the schema URL in a requeste to the proxy server
-    const url = state.editor.proxyLoaderXmlEndpoint
-        ? `${state.editor.proxyLoaderXmlEndpoint}${encodeURIComponent(schemaURI)}`
-        : schemaURI;
-    const { parsedSchema, status } = await workerValidator.initialize({ id, cachedSchema, url });
-    log.info(status);
+    const { parsedSchema } = await workerValidator.initialize({ id, cachedSchema, url: schemaURL });
     if (parsedSchema) {
         localStorage.setItem(`schema_${id}`, parsedSchema);
         log.info('Schema cached.');
@@ -135,5 +129,9 @@ export const getValidTagsAt = async ({ state }, params) => {
     const response = await workerValidator.getValidTagsAt(params);
     const tags = response.speculative || response.possible;
     return tags;
+};
+export const clear = ({ state }) => {
+    state.validator.hasSchema = false;
+    state.validator.hasWorkerValidator = false;
 };
 //# sourceMappingURL=actions.js.map

@@ -41,5 +41,6 @@ export declare const getValuesForTagAttributeAt: ({ state }: Context, { xpath }:
     xpath: string;
 }) => Promise<import("@cwrc/leafwriter-validator").ElementDetail[]>;
 export declare const getValidTagsAt: ({ state }: Context, params: GetValidTagsAtParameters) => Promise<import("@cwrc/leafwriter-validator").ElementDetail[]>;
+export declare const clear: ({ state }: Context) => void;
 export {};
 //# sourceMappingURL=actions.d.ts.map

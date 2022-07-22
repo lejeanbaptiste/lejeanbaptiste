@@ -3,11 +3,9 @@ import Cookies from 'js-cookie';
 import { log } from './../../utilities';
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 export const writerInitSettings = ({ state: { editor }, actions }, settings) => {
-    const { baseUrl, proxyLoaders, schemas } = settings;
+    const { baseUrl, schemas } = settings;
     editor.baseUrl = baseUrl;
     editor.settings = settings;
-    editor.proxyLoaderXmlEndpoint = proxyLoaders.xmlEndpoint;
-    editor.proxyLoaderCssEndpoint = proxyLoaders.cssEndpoint;
     editor.schemas = schemas;
     actions.validator.loadValidator();
 };
@@ -71,8 +69,9 @@ export const initiateLookupSources = async ({ state, actions, effects }, config)
     // * Setup default
     effects.editor.api.setLookupsDefaults({ ...state.editor.lookups });
     // * User saved preferences
-    // const savedPreferences = actions.editor.retrieveLookupAutoritiesConfig();
-    // if (savedPreferences) state.editor.lookups = savedPreferences;
+    const savedPreferences = actions.editor.retrieveLookupAutoritiesConfig();
+    if (savedPreferences)
+        state.editor.lookups = savedPreferences;
     // * Setup services
     await actions.editor.initiateLookupServices();
 };

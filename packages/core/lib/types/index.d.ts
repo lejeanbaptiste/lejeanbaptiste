@@ -27,10 +27,6 @@ export interface LWDocument {
 export interface ILeafWriterOptionsSettings {
     container?: string;
     baseUrl?: string;
-    proxyLoaders?: {
-        cssEndpoint?: string;
-        xmlEndpoint?: string;
-    };
     credentials?: {
         nssiToken?: string | (() => Promise<string | undefined>);
     };
@@ -58,15 +54,13 @@ export interface User {
     name: string;
     uri: string;
 }
+export declare type MappingID = 'cwrcEntry' | 'orlando' | 'tei' | 'teiLite';
 export declare type Schema = {
     id: string;
     name: string;
-    mapId?: string;
-    schemaMappingsId: string;
-    xml?: string | string[];
-    css?: string | string[];
-    xmlUrl: string | string[];
-    cssUrl: string | string[];
+    mapping: MappingID;
+    rng: string[];
+    css: string[];
 };
 export interface Language {
     code: string;
@@ -125,5 +119,4 @@ export interface LeafWriterEditor extends Editor {
     copiedEntity?: any;
     lastKeyPress?: string;
 }
-export declare type MappingID = 'cwrcEntry' | 'orlando' | 'tei' | 'teiLite';
 //# sourceMappingURL=index.d.ts.map
