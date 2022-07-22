@@ -21,10 +21,6 @@ const LeafWriterContainer: FC = () => {
           xml: resource.content ?? '',
         },
         settings: {
-          proxyLoaders: {
-            cssEndpoint: '/schema/css/',
-            xmlEndpoint: '/schema/xml/',
-          },
           credentials: { nssiToken: getLincsAauthenticationToken },
           lookups: {
             authorities: [['geonames', { config: { username: 'cwrcgeonames' } }]],

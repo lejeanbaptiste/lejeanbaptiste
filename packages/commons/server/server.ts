@@ -1,14 +1,12 @@
 import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
-import schemaRouter from './routes/schema';
 
 const publicPath = path.join(__dirname, '..', 'dist');
 
 const server = express();
 
 server.use(express.json({ limit: '5mb' })); // support json encoded bodies
-server.use('/schema', schemaRouter);
 
 // dev server
 const loadDevServer = async () => {
