@@ -1,18 +1,11 @@
-import css from 'css';
+import axios from 'axios';
+import CSS from 'css';
 import $ from 'jquery';
-import type { MappingID } from '../../types';
+import type { Schema } from '../../types';
 import { log } from '../../utilities';
 import Writer from '../Writer';
 import Mapper from './mapper';
 import * as schemaNavigator from './schemaNavigator';
-
-interface ISchema {
-  id: string;
-  name: string;
-  schemaMappingsId: string;
-  xmlUrl: string | string[];
-  cssUrl: string | string[];
-}
 
 /**
  * @class SchemaManager
@@ -38,7 +31,7 @@ class SchemaManager {
   readonly proxyXmlEndpoint: string | null = null;
   readonly proxyCssEndpoint: string | null = null;
 
-  schemas: ISchema[] = [];
+  schemas: Schema[] = [];
 
   /**
    * The ID of the current validation schema, according to config.schemas
@@ -50,7 +43,7 @@ class SchemaManager {
    * @member {Document}
    */
   schemaXML: any = null;
-  xmlUrl: string | null = null;
+  rng: string | null = null;
 
   /**
    * A JSON version of the schema
@@ -68,11 +61,11 @@ class SchemaManager {
   private root: string | null = null;
   private header: string = '';
   private idName: string | null = null;
-  private cssUrl: string | null = null;
-  private currentDocumentSchemaUrl: string | null = null;
-  private currentDocumentCSSUrl: string | null = null;
+  private css: string | null = null;
+  private currentDocumentRng: string | null = null;
+  private currentDocumentCss: string | null = null;
 
-  constructor(writer: Writer, schemas: ISchema[], proxies?: { css: string; xml: string}) {
+  constructor(writer: Writer, schemas: Schema[]) {
     this.writer = writer;
 
     this.mapper = new Mapper(writer);
@@ -87,22 +80,12 @@ class SchemaManager {
     // this.getParentsForPath = (tag) => this.navigator.getParentsForPath(tag);
 
     /**
-     * The proxy endpoint through which the schema XML is loaded
-     */
-    this.proxyXmlEndpoint = proxies.xml ?? null;
-
-    /**
-     * The proxy endpoint through which the schema CSS is loaded
-     */
-    this.proxyCssEndpoint = proxies.css ?? null;
-
-    /**
      * An array of schema objects. Each object should have the following properties:
      * @member {Array} of {Objects}
      * @property {String} id A id for the schema
      * @property {String} name A name/label for the schema
-     * @property {Array} xmlUrl Collection of URLs where the schema is located
-     * @property {string} cssUrl Collection of URLs where the schema's CSS is located
+     * @property {Array} rng Collection of URLs where the schema is located
+     * @property {string} css Collection of URLs where the schema's CSS is located
      *
      */
     this.schemas = schemas ?? [];
@@ -111,10 +94,10 @@ class SchemaManager {
       // this event is only fired by the settings dialog (by the user), so update the current document urls
       const res = await this.loadSchema(schemaId, true);
       if (res.success) {
-        const xmlUrl = this.getXMLUrl();
-        const cssUrl = this.getCSSUrl();
-        if (xmlUrl) this.setCurrentDocumentSchemaUrl(xmlUrl);
-        if (cssUrl) this.setCurrentDocumentCSSUrl(cssUrl);
+        const rng = this.getRng();
+        const css = this.getCss();
+        if (rng) this.setCurrentDocumentSchemaUrl(rng);
+        if (css) this.setCurrentDocumentCss(css);
       }
     });
   }
@@ -131,8 +114,8 @@ class SchemaManager {
    * Get the URL for the XML for the current schema.
    * @returns {String}
    */
-  getXMLUrl() {
-    return this.xmlUrl;
+  getRng() {
+    return this.rng;
   }
 
   /**
@@ -149,34 +132,26 @@ class SchemaManager {
    * @returns {String|undefined} The schemaId
    */
   getSchemaIdFromRoot(root: string) {
-    const mapping = Object.entries(this.mapper.mappings).find(([, mapping]) => {
-      return mapping.root.includes(root);
+    const schemaMapping = Array.from(this.mapper.mappings.entries()).find(([id, schemaMapping]) => {
+      return schemaMapping.root.includes(root)
     });
-
-    // this.mapper.mappings.forEach((mapping, schemaId) => {
-    //   if (mapping.root.includes(root)) {
-    //     idFromRoot = schemaId;
-    //     return schemaId;
-    //   }
-    // });
-
-    return mapping?.[0];
+    
+    return schemaMapping?.[0];
   }
 
   /**
    * Returns the schemaId associated with the specified schema url.
-   * @param {String} xmlUrl The schema url
+   * @param {String} url The schema url
    * @returns {String|undefined} The schemaId
    */
-  getSchemaIdFromUrl(xmlUrl: string) {
+  getSchemaIdFromUrl(url: string) {
     // remove the protocol in order to disregard http/https for improved chances of matching below
-    const xmlUrlNoProtocol = xmlUrl.split(/^.*?\/\//)[1];
+    const urlNoProtocol = url.split(/^.*?\/\//)[1];
 
     // search the known schemas, if the url matches it must be the same one
     const schema = this.schemas.find((schema) => {
-      for (const url of schema.xmlUrl) {
-        if (url.includes(xmlUrlNoProtocol)) return schema;
-      }
+      const match = schema.rng.find((url) => url.includes(urlNoProtocol));
+      if (match) return schema;
     });
 
     return schema?.id;
@@ -210,8 +185,8 @@ class SchemaManager {
    * Get the URL for the CSS for the current schema.
    * @returns {String}
    */
-  getCSSUrl() {
-    return this.cssUrl;
+  getCss() {
+    return this.css;
   }
 
   /**
@@ -219,23 +194,23 @@ class SchemaManager {
    * @returns {Boolean}
    */
   isSchemaCustom() {
-    return this.getCurrentSchema()?.schemaMappingsId === undefined;
+    return this.getCurrentSchema()?.mapping === undefined;
   }
 
   getCurrentDocumentSchemaUrl() {
-    return this.currentDocumentSchemaUrl;
+    return this.currentDocumentRng;
   }
 
   setCurrentDocumentSchemaUrl(url: string) {
-    this.currentDocumentSchemaUrl = url;
+    this.currentDocumentRng = url;
   }
 
-  getCurrentDocumentCSSUrl() {
-    return this.currentDocumentCSSUrl;
+  getCurrentDocumentCss() {
+    return this.currentDocumentCss;
   }
 
-  setCurrentDocumentCSSUrl(url: string) {
-    this.currentDocumentCSSUrl = url;
+  setCurrentDocumentCss(url: string) {
+    this.currentDocumentCss = url;
   }
 
   /**
@@ -485,20 +460,20 @@ class SchemaManager {
    * @fires Writer#schemaAdded
    * @param {Object} config The config object
    * @param {String} config.name A name for the schema
-   * @param {Array} config.xmlUrl The xml url(s) for the schema
-   * @param {Array} config.cssUrl The css url(s) for the schema
+   * @param {Array} config.rng The xml url(s) for the schema
+   * @param {Array} config.css The css url(s) for the schema
    * @returns {String} id The id for the schema
    *
    */
-  addSchema(config: Omit<ISchema, 'id'>) {
-    const { xmlUrl, cssUrl } = config;
+  addSchema(config: Omit<Schema, 'id'>) {
+    const { rng, css } = config;
 
-    const id: string = this.writer.getUniqueId('schema') ?? 'newSchema'; //? hack. find abetter way
+    const id = this.writer.getUniqueId('schema');
 
-    if (xmlUrl && typeof xmlUrl === 'string') config.xmlUrl = [xmlUrl];
-    if (cssUrl && typeof cssUrl === 'string') config.cssUrl = [cssUrl];
+    if (rng && typeof rng === 'string') config.rng = [rng];
+    if (css && typeof css === 'string') config.css = [css];
 
-    const newSchema: ISchema = { id, ...config };
+    const newSchema: Schema = { id, ...config };
 
     this.schemas.push(newSchema);
     this.writer.event('schemaAdded').publish(newSchema.id);
@@ -512,7 +487,7 @@ class SchemaManager {
    */
   getUrlForSchema(schemaId: string) {
     const schemaEntry = this.schemas.find((schema) => schema.id === schemaId);
-    if (schemaEntry) return schemaEntry.xmlUrl;
+    if (schemaEntry) return schemaEntry.rng;
     return null;
   }
 
@@ -529,12 +504,12 @@ class SchemaManager {
       if (name) return name;
     }
 
-    const xmlUrl = this.getUrlForSchema(schemaId);
+    const rng = this.getUrlForSchema(schemaId);
 
-    if (!xmlUrl) throw `schemaManager.getRootForSchema: no url for ${schemaId}`;
+    if (!rng) throw `schemaManager.getRootForSchema: no url for ${schemaId}`;
 
     //load resource
-    const schemaXML = await this.loadXMLFile(xmlUrl);
+    const schemaXML = await this.loadSchemaFile(rng);
     if (!schemaXML) throw `schemaManager.getRootForSchema: could not connect to ${schemaId}`;
 
     let rootEl = $('start element:first', schemaXML).attr('name');
@@ -546,41 +521,53 @@ class SchemaManager {
     return rootEl;
   }
 
-  /*****************************
-   * LOAD SCHEMA XML
-   *****************************/
-
   /**
    * Load a Schema XML.
-   * @param {Array} xmlUrl Collection of url sources
+   * @param {Array} urls Collection of url sources
    * @returns {Document} The XML
    */
-  private async loadXMLFile(xmlUrl: string | string[]) {
-    if (typeof xmlUrl === 'string') xmlUrl = [xmlUrl];
-    let xml;
-
-    //loop through URL collection
-    for await (let url of xmlUrl) {
-      //use the proxy if available.
-      const urlToFetch = this.proxyXmlEndpoint
-        ? `${this.proxyXmlEndpoint}${encodeURIComponent(url)}`
-        : url;
-
-      const response = await fetch(urlToFetch).catch((err) => {
-        log.log(err);
-      });
-
-      // if loaded, convert to XML, break the loop and return
-      if (!response) return;
-      if (response.status === 200) {
-        const body = await response.text();
-        xml = this.writer.utilities.stringToXML(body);
-        this.xmlUrl = url;
-        break;
-      }
+  private async loadSchemaFile(urls: string[]) {
+    // prioritize the document schema
+    if (this.currentDocumentRng && !urls.includes(this.currentDocumentRng)) {
+      urls = [this.currentDocumentRng, ...urls];
     }
 
-    return xml;
+    let isAltRoute = false;
+
+    let i = 0;
+    for await (const url of urls) {
+      i++;
+      const response = await axios.get<string>(url).catch((error) => {
+        if (error.response) {
+          const message = `A network error occurred while trying to reach ${url}. This could be a CORS issue or a dropped internet connection. ${
+            i < urls.length
+              ? 'LEAF-Writer will try to load the Schema using an alternative route.'
+              : 'LEAF-Writer could not load a schema for this document.'
+          }`;
+          log.warn(message);
+        } else if (error.request) {
+          log.warn(error.request);
+        } else {
+          log.warn('Error', error.message);
+        }
+        // log.warn(error);
+      });
+
+      //if no response, try another url. This is our tactic to deal with CORS in some resoruces
+      if (!response) {
+        isAltRoute = true;
+        continue;
+      }
+
+      if (isAltRoute) log.info(`Schema loaded from an alternative route: ${url}`);
+
+      // Convert to XML
+      const xml = this.writer.utilities.stringToXML(response.data);
+      this.rng = url;
+      return xml;
+    }
+
+    return;
   }
 
   /**
@@ -602,7 +589,7 @@ class SchemaManager {
     const url = schemaBase !== null ? schemaBase + schemaFile : `schema/${schemaFile}`;
 
     //load resource
-    const includesXML = await this.loadXMLFile([url]);
+    const includesXML = await this.loadSchemaFile([url]);
     if (!includesXML) return null;
 
     include.children().each((index, el) => {
@@ -741,11 +728,11 @@ class SchemaManager {
 
     this.writer.overmindActions.document.setInitialStateSchema(schemaId);
 
-    const schemaMappingsId = schemaEntry.schemaMappingsId as MappingID;
+    const schemaMappingsId = schemaEntry.mapping;
     this.mapper.loadMappings(schemaMappingsId);
 
     //load resource
-    const schemaXML = await this.loadXMLFile(schemaEntry.xmlUrl);
+    const schemaXML = await this.loadSchemaFile(schemaEntry.rng);
 
     if (!schemaXML) {
       this.schemaId = null;
@@ -789,7 +776,7 @@ class SchemaManager {
     }
 
     //load CSS
-    if (loadCss === true) this.loadSchemaCSS(schemaEntry.cssUrl);
+    if (loadCss === true) this.loadSchemaCSS(schemaEntry.id);
 
     //Process schema
     this.processSchema();
@@ -801,52 +788,75 @@ class SchemaManager {
     return { success: true };
   }
 
-  /*****************************
-   * LOAD SCHEMA CSS
-   *****************************/
-
   /**
    * Load a Schema CSS.
-   * @param {Array} cssUrl Collection of url sources
+   * @param {Array} urls Collection of url sources
    * @returns {String} The CSS
    */
-  private async loadCSSFile(cssUrl: string | string[]) {
-    if (typeof cssUrl === 'string') cssUrl = [cssUrl];
-    let css;
-
-    //loop through URL collection
-    for (let url of cssUrl) {
-      //use the proxy if available.
-      const urlToFetch = this.proxyCssEndpoint
-        ? `${this.proxyCssEndpoint}${encodeURIComponent(url)}`
-        : url;
-
-      const response = await fetch(urlToFetch).catch((err) => {
-        log.info(err);
-      });
-
-      //if loaded, break the loop and return
-      if (!response) return;
-      if (response.status === 200) {
-        css = await response.text();
-        this.cssUrl = url; // redefine schema manager css based on the available url
-        break;
-      }
+  private async loadCSSFile(urls: string[]) {
+    // prioritize the document CSS
+    if (this.currentDocumentCss && !urls.includes(this.currentDocumentCss)) {
+      urls = [this.currentDocumentCss, ...urls];
     }
 
-    return css;
+    let isAltRoute = false;
+
+    let i = 0;
+    for await (const url of urls) {
+      i++;
+
+      const response = await axios.get<string>(url).catch((error) => {
+        if (error.response) {
+          const message = `A network error occurred while trying to reach ${url}. This could be a CORS issue or a dropped internet connection. ${
+            i < urls.length
+              ? 'LEAF-Writer will try to load the CSS using an alternative route.'
+              : 'LEAF-Writer could not load a CSS for this document.'
+          }`;
+          log.warn(message);
+        } else if (error.request) {
+          log.warn(error.request);
+        } else {
+          log.warn('Error', error.message);
+        }
+        // log.warn(error);
+      });
+
+      //if no response, try another url. This is our tactic to deal with CORS in some resoruces
+      if (!response) {
+        isAltRoute = true;
+        continue;
+      }
+
+      // Convert to XML
+      if (isAltRoute) log.info(`CSS loaded from an alternative route: ${url}`);
+      this.css = url; // redefine schema manager css based on the available url
+      return response.data;
+    }
+
+    return;
   }
 
   /**
    * Load the CSS and convert it to the internal format
-   * @param {Array} cssURL Collection of url sources
+   * @param {Array} schemaId Collection of url sources
    */
-  async loadSchemaCSS(cssURL: string | string[]) {
+  async loadSchemaCSS(schemaId: string) {
     $('#schemaRules', this.writer.editor?.dom.doc).remove();
     $('#schemaRules', document).remove();
 
+    const schemaEntry = this.schemas.find((schema) => schema.id === schemaId);
+
+    if (!schemaEntry) {
+      this.writer.dialogManager.show('message', {
+        title: 'Error',
+        msg: `Error loading schema. No entry found for: ${schemaId}`,
+        type: 'error',
+      });
+      return;
+    }
+
     //load resource
-    const cssData = await this.loadCSSFile(cssURL);
+    const cssData = await this.loadCSSFile(schemaEntry.css);
     if (!cssData) {
       this.writer.dialogManager.show('message', {
         title: 'Error',
@@ -856,7 +866,7 @@ class SchemaManager {
       return null;
     }
 
-    const cssObj = css.parse(cssData);
+    const cssObj = CSS.parse(cssData);
     const popupCssObj: { stylesheet: { rules: any[] } } = {
       stylesheet: { rules: [] },
     };
@@ -895,8 +905,8 @@ class SchemaManager {
       }
     }
 
-    const cssString = css.stringify(cssObj);
-    const popupCssString = css.stringify(popupCssObj);
+    const cssString = CSS.stringify(cssObj);
+    const popupCssString = CSS.stringify(popupCssObj);
 
     $('head', this.writer.editor?.dom.doc).append('<style id="schemaRules" type="text/css" />');
     $('#schemaRules', this.writer.editor?.dom.doc).text(cssString);

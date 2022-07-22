@@ -13,28 +13,20 @@ import { useActions } from '../../overmind';
 import type { Schema } from '../../types/index';
 
 interface AddSchemaDialogProps {
-  handleClose: (schema?: SchemaEssentials) => void;
+  handleClose: () => void;
   open: boolean;
 }
 
-type SchemaEssentials = Pick<Schema, 'name' | 'cssUrl' | 'xmlUrl'>;
-
-const initialValues: SchemaEssentials = {
-  name: '',
-  cssUrl: '',
-  xmlUrl: '',
-};
-
 const formValidation = yup.object().shape({
   name: yup.string().min(3).required('must be have at least ${min} chatacters'),
-  cssUrl: yup.string().required().url('Must be a valid URL'),
-  xmlUrl: yup.string().required().url('Must be a valid URL'),
+  css: yup.string().required().url('Must be a valid URL'),
+  rng: yup.string().required().url('Must be a valid URL'),
 });
 
 const AddSchemaDialog: FC<AddSchemaDialogProps> = ({ handleClose, open }) => {
   const { editor } = useActions();
 
-  const submit = (schema: SchemaEssentials) => {
+  const submit = (schema: Partial<Schema>) => {
     editor.addShema(schema as Schema);
     handleClose();
   };
@@ -46,8 +38,12 @@ const AddSchemaDialog: FC<AddSchemaDialogProps> = ({ handleClose, open }) => {
       <DialogTitle id="form-dialog-title">Add Schema</DialogTitle>
       <Formik
         enableReinitialize={true}
-        initialValues={initialValues}
-        onSubmit={submit}
+        initialValues={{ name: '', css: '', rng: '' }}
+        onSubmit={(values) => {
+          //convert css and schema urls into array
+          const newSchema = { name: values.name, rng: [values.rng], css: [values.css] };
+          submit(newSchema);
+        }}
         validationSchema={formValidation}
       >
         {({ errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
@@ -67,29 +63,29 @@ const AddSchemaDialog: FC<AddSchemaDialogProps> = ({ handleClose, open }) => {
                 variant="standard"
               />
               <TextField
-                error={Boolean(touched.xmlUrl && errors.xmlUrl)}
+                error={Boolean(touched.rng && errors.rng)}
                 fullWidth
-                helperText={touched.xmlUrl && errors.xmlUrl}
+                helperText={touched.rng && errors.rng}
                 label="Schema URL"
                 margin="dense"
-                name="xmlUrl"
+                name="rng"
                 onBlur={handleBlur}
                 onChange={handleChange}
                 placeholder="https://"
-                value={values.xmlUrl}
+                value={values.rng}
                 variant="standard"
               />
               <TextField
-                error={Boolean(touched.cssUrl && errors.cssUrl)}
+                error={Boolean(touched.css && errors.css)}
                 fullWidth
-                helperText={touched.cssUrl && errors.cssUrl}
+                helperText={touched.css && errors.css}
                 label="Schema CSS URL"
                 margin="dense"
-                name="cssUrl"
+                name="css"
                 onBlur={handleBlur}
                 onChange={handleChange}
                 placeholder="https://"
-                value={values.cssUrl}
+                value={values.css}
                 variant="standard"
               />
             </DialogContent>

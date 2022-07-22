@@ -52,19 +52,12 @@ export const initialize = async ({ state }: Context) => {
   state.validator.hasWorkerValidator = !!workerValidator;
 
   const id = writer.schemaManager.getCurrentSchema()?.id;
-  const schemaURI = writer.schemaManager.getXMLUrl();
-  if (!id || !schemaURI) return;
+  const schemaURL = writer.schemaManager.getRng();
+  if (!id || !schemaURL) return;
 
   const cachedSchema = localStorage.getItem(`schema_${id}`) ?? undefined;
 
-  // * CORS: Some of the schemas might have blocke by CORS
-  //If provide, we wrap the schema URL in a requeste to the proxy server
-  const url = state.editor.proxyLoaderXmlEndpoint
-    ? `${state.editor.proxyLoaderXmlEndpoint}${encodeURIComponent(schemaURI)}`
-    : schemaURI;
-
-  const { parsedSchema, status } = await workerValidator.initialize({ id, cachedSchema, url });
-  log.info(status);
+  const { parsedSchema } = await workerValidator.initialize({ id, cachedSchema, url: schemaURL });
 
   if (parsedSchema) {
     localStorage.setItem(`schema_${id}`, parsedSchema);
@@ -218,4 +211,9 @@ export const getValidTagsAt = async ({ state }: Context, params: GetValidTagsAtP
   const response = await workerValidator.getValidTagsAt(params);
   const tags = response.speculative || response.possible;
   return tags;
+};
+
+export const clear = ({ state }: Context) => {
+  state.validator.hasSchema = false;
+  state.validator.hasWorkerValidator = false;
 };

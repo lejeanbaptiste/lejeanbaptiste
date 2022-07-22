@@ -16,14 +16,10 @@ export const writerInitSettings = (
   { state: { editor }, actions }: Context,
   settings: ILeafWriterOptionsSettings
 ) => {
-  const { baseUrl, proxyLoaders, schemas } = settings;
+  const { baseUrl, schemas } = settings;
 
   editor.baseUrl = baseUrl;
   editor.settings = settings;
-
-  editor.proxyLoaderXmlEndpoint = proxyLoaders.xmlEndpoint;
-  editor.proxyLoaderCssEndpoint = proxyLoaders.cssEndpoint;
-
   editor.schemas = schemas;
 
   actions.validator.loadValidator();
