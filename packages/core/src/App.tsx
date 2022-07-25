@@ -93,12 +93,12 @@ const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
           }}
         >
           {writer && <ContextMenu writer={writer} />}
+          <Popup />
+          <EditSourceDialog />
+          <EntityLookupDialog />
+          <SetingsDialog />
         </Box>
         <BottomBar />
-        <Popup />
-        <EditSourceDialog />
-        <EntityLookupDialog />
-        <SetingsDialog />
       </SnackbarProvider>
     </ThemeProvider>
   );
