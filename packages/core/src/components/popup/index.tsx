@@ -13,8 +13,10 @@ export interface PopupProps {
   };
 }
 
-const Popup: FC = (props) => {
+const Popup: FC = () => {
+  const { settings } = useAppState().editor;
   const { popupProps } = useAppState().ui;
+
   const { content, id, isLink, open, position } = popupProps;
   const { left, top } = position ?? { left: 0, top: 0 };
 
@@ -25,6 +27,7 @@ const Popup: FC = (props) => {
       anchorReference="anchorPosition"
       anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
       anchorPosition={{ left, top }}
+      container={document.getElementById(`${settings?.container}`)}
       disableRestoreFocus
       id="popup"
       onClose={handlePopoverClose}

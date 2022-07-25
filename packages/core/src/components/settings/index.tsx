@@ -12,16 +12,16 @@ import ShowEntities from './ShowEntities';
 import ThemeAppearance from './ThemeAppearance';
 
 const SettingsDialog: FC = () => {
+  const { settings } = useAppState().editor;
   const { settingsDialogOpen } = useAppState().ui;
   const { closeSettingsDialog } = useActions().ui;
 
-  const handleClose = () => {
-    closeSettingsDialog();
-  };
+  const handleClose = () => closeSettingsDialog();
 
   return (
     <Dialog
       aria-labelledby="settings-title"
+      container={document.getElementById(`${settings?.container}`)}
       fullWidth
       maxWidth="sm"
       onClose={handleClose}

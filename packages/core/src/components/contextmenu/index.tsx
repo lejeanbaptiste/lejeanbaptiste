@@ -12,10 +12,12 @@ interface ContextMenuProps {
 }
 
 const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
-  const actions = useActions();
   const { editor, ui } = useAppState();
+  const { closeContextMenu } = useActions().ui;
+
   const { collectionType, getItems, initialize, MIN_WIDTH, query, tagName, xpath, tagMeta } =
     useContextmenu(writer, ui.contextMenu);
+
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>();
   const [options, setOptions] = useState<ItemType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,27 +25,26 @@ const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
   const [visibleList, setVisibleList] = useState<ItemType[]>(options);
 
   useEffect(() => {
-    if (!ui.contextMenu.show) return; //setShow(false);
-    if (editor.isReadonly) return; //actions.ui.closeContextMenu();
+    if (!ui.contextMenu.show) return;
+    if (editor.isReadonly) return;
 
     setShow(true);
 
     const initialzed = initialize();
-    if (!initialzed) return; //setShow(false);
+    if (!initialzed) return;
 
     const loadItems = async () => {
       setIsLoading(true);
       const options = await getItems();
       setIsLoading(false);
 
-      if (!options) return; //setShow(false);
+      if (!options) return;
 
       setOptions(options);
       setVisibleList(options);
     };
 
     loadItems();
-    // setShow(true);
 
     setMenuPosition({
       top: ui.contextMenu.position?.posY ?? 0,
@@ -62,12 +63,11 @@ const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
   const handleQuery = (searchQuery: string) => {
     const result = query(options, searchQuery);
     if (!result) return setVisibleList(options);
+    
     setVisibleList(result);
   };
 
-  const handleClose = () => {
-    actions.ui.closeContextMenu();
-  };
+  const handleClose = () => closeContextMenu();
 
   return (
     <>
@@ -76,22 +76,15 @@ const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
           anchorPosition={menuPosition}
           anchorReference="anchorPosition"
           id="contextmenu"
-          container={document.getElementById(`#${editor.settings.container}`)}
+          container={document.getElementById(`${editor.settings.container}`)}
           keepMounted
-          MenuListProps={{
-            sx: {
-              minWidth: MIN_WIDTH,
-              py: 0.5,
-              borderRadius: 1,
-            },
-          }}
+          MenuListProps={{ sx: { minWidth: MIN_WIDTH, py: 0.5, borderRadius: 1 } }}
           onClose={handleClose}
           open={show}
           PaperProps={{ elevation: 4 }}
           variant="menu"
         >
           <Header tagName={tagName} xpath={xpath} tagMeta={tagMeta} />
-
           <Collection
             handleQuery={handleQuery}
             collectionType={collectionType}
