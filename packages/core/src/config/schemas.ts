@@ -124,15 +124,6 @@ export const schemas: Schema[] = [
     css: ['https://cwrc.ca/templates/css/tei.css'],
   },
   {
-    id: 'moravian',
-    name: 'Moravian Lives (TEI)',
-    mapping: 'tei',
-    rng: [
-      'https://raw.githubusercontent.com/moravianlives/ML/master/Projects/TEI_Memoirs/out/MoravianMemoirs.rng',
-    ],
-    css: ['https://cwrc.ca/templates/css/tei.css'],
-  },
-  {
     id: 'reed',
     name: 'Reed',
     mapping: 'tei',
