@@ -1,1 +1,0 @@
-{"version":3,"file":"ItemsSkeleton.d.ts","sourceRoot":"","sources":["../../../src/components/contextmenu/ItemsSkeleton.tsx"],"names":[],"mappings":"AACA,OAAc,EAAE,KAAK,EAAE,EAAE,MAAM,OAAO,CAAC;AAEvC,UAAU,kBAAkB;IAC1B,QAAQ,CAAC,EAAE,MAAM,CAAC;IAClB,aAAa,CAAC,EAAE,MAAM,CAAC;CACxB;AAED,QAAA,MAAM,aAAa,EAAE,EAAE,CAAC,kBAAkB,CA2BzC,CAAC;AAEF,eAAe,aAAa,CAAC"}
