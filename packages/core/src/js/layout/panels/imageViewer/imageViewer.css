@@ -30,7 +30,7 @@
     gap: 8px;
 }
 
-.imageViewer .button {
+.imageViewer .lw-button {
     display: flex !important;
     align-items: center;
     justify-content: center;
@@ -39,7 +39,7 @@
     border-radius: 3px;
 }
 
-.imageViewer .button:hover {
+.imageViewer .lw-button:hover {
     cursor: pointer;
     background-color: rgba(0, 0, 0, .1);
     /* border: 1px solid #aaa; */

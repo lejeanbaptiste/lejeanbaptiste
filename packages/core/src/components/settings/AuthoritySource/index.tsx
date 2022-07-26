@@ -5,7 +5,7 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-ki
 import FilterTiltShiftIcon from '@mui/icons-material/FilterTiltShift';
 import { Stack, Typography } from '@mui/material';
 import React, { useEffect, useState, type FC } from 'react';
-import { ILookupService } from '../../../components/entityLookups/types';
+import { Authority, IAuthorityService } from '../../../components/entityLookups/types';
 import { useActions, useAppState } from '../../../overmind';
 import AuthoritySource from './AuthoritySource';
 
@@ -13,14 +13,12 @@ const AutoritiesPanel: FC = () => {
   const { authorities } = useAppState().editor.lookups;
   const { reorderLookupPriority } = useActions().editor;
   const sensors = useSensors(useSensor(PointerSensor));
-  const [items, setItems] = useState<ILookupService[]>([]);
+  const [items, setItems] = useState<IAuthorityService[]>([]);
 
   useEffect(() => {
     if (!authorities) return;
-
-    const authtoriesList = Object.values(authorities).sort((a, b) => a.priority - b.priority);
+    const authtoriesList = [...Object.values(authorities)].sort((a, b) => a.priority - b.priority);
     setItems(authtoriesList);
-
     return () => {};
   }, [authorities]);
 
@@ -57,7 +55,7 @@ const AutoritiesPanel: FC = () => {
           >
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
               {items.map((authority) => (
-                <AuthoritySource key={authority.id} authority={authority} />
+                <AuthoritySource key={authority.id} authorityService={authority} />
               ))}
             </SortableContext>
           </DndContext>

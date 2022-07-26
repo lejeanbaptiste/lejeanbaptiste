@@ -1,5 +1,4 @@
-import Leafwriter from '@cwrc/leafwriter/src/index';
-import { Box } from '@mui/material';
+import Leafwriter from '@cwrc/leafwriter';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
 
@@ -24,26 +23,7 @@ const LeafWriterContainer: FC = () => {
         settings: {
           credentials: { nssiToken: getLincsAauthenticationToken },
           lookups: {
-            authorities: [
-              // ['cwrc', { config: { entityCollectionsUrl: '', entityFormsRoot: '', collectionsRoot: '' } }],
-              'viaf',
-              ['wikidata', { enabled: true }],
-              'dbpedia',
-              ['getty', { entities: ['person', ['place', { enabled: false }]] }],
-              'lgpn',
-              ['geonames', { config: { username: 'cwrcgeonames' } }],
-            ],
-            showNoLinkButton: true,
-            showCreateNewButton: false,
-            showEditButton: false,
-            serviceType: 'custom',
-          },
-          legacy: {
-            cwrcRootUrl: './', // '.' | './'
-            helpUrl: 'https://cwrc.ca/CWRC-Writer_Documentation/',
-            nerveUrl: 'https://localhost/nerve/',
-            proxyCssEndpoint: '/schema/css/',
-            proxyXmlEndpoint: '/schema/xml/',
+            authorities: [['geonames', { config: { username: 'cwrcgeonames' } }]],
           },
         },
         user: {
@@ -67,7 +47,7 @@ const LeafWriterContainer: FC = () => {
     }
   }, []);
 
-  return <Box ref={divEl} sx={{ height: 'calc(100vh - 48px)', overflow: 'hidden' }} />;
+  return <div ref={divEl} id="leaf-writer-container" style={{ height: 'calc(100vh - 48px)' }} />;
 };
 
 export default LeafWriterContainer;

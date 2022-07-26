@@ -7,7 +7,7 @@ import EditSourceDialog from './components/editSource';
 import EntityLookupDialog from './components/entityLookups';
 import Popup from './components/popup';
 import SetingsDialog from './components/settings';
-import { createConfigLegacy } from './config';
+import { createConfig } from './config';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import theme from './theme';
@@ -19,9 +19,9 @@ declare global {
   }
 }
 
-const CONTAINER = 'leafwriterContainer';
+const CONTAINER = 'lw-layout-container';
 
-const App: FC<ILeafWriterOptions> = ({ document, settings: editor, user }) => {
+const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
   const actions = useActions();
   const state = useAppState();
   const [writer, setWriter] = useState<Writer | null>(null);
@@ -44,8 +44,8 @@ const App: FC<ILeafWriterOptions> = ({ document, settings: editor, user }) => {
   }, [document]);
 
   const setup = async () => {
-    const config = createConfigLegacy({ document, settings: editor, user });
-    const { credentials } = editor;
+    const config = createConfig(settings);
+    const { credentials } = settings;
 
     config.container = CONTAINER;
 
@@ -56,7 +56,7 @@ const App: FC<ILeafWriterOptions> = ({ document, settings: editor, user }) => {
 
     if (credentials?.nssiToken) actions.editor.setNssiToken(credentials.nssiToken);
 
-    actions.editor.initiateLookupSources(editor.lookups);
+    actions.editor.initiateLookupSources(settings.lookups);
 
     actions.user.setUser(user);
 
@@ -85,22 +85,20 @@ const App: FC<ILeafWriterOptions> = ({ document, settings: editor, user }) => {
   return (
     <ThemeProvider theme={theme(state.ui.darkMode)}>
       <SnackbarProvider>
-        {/* <CssBaseline /> */}
         <Box
           id={CONTAINER}
           sx={{
             height: 'calc(100% - 32px)',
-            width: '100vw',
-            paddingTop: '8px',
-            backgroundColor: '#f5f5f5',
+            width: '100%',
           }}
-        />
-        {writer && <ContextMenu writer={writer} />}
+        >
+          {writer && <ContextMenu writer={writer} />}
+          <Popup />
+          <EditSourceDialog />
+          <EntityLookupDialog />
+          <SetingsDialog />
+        </Box>
         <BottomBar />
-        <Popup />
-        <EditSourceDialog />
-        <EntityLookupDialog />
-        <SetingsDialog />
       </SnackbarProvider>
     </ThemeProvider>
   );

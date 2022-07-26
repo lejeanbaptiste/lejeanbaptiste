@@ -3,9 +3,9 @@
     "name": "LEAF-Writer Commons",
     "icons": [
       {
-        "src": "assets/logo/cwrclogo.png",
+        "src": "assets/logo/logo.png",
         "type": "image/png",
-        "sizes": "600x600"
+        "sizes": "512x512"
       }
     ],
     "start_url": "/",

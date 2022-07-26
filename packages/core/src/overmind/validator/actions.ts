@@ -16,15 +16,16 @@ declare global {
   }
 }
 
-export const onInitializeOvermind = async ({ state }: Context, overmind: any) => {
-  const validator = await loadWebworker();
+export const loadValidator = async ({ state }: Context) => {
+  const baseUrl = state.editor.baseUrl;
+  const validator = await loadWebworker(baseUrl);
   if (!validator) return;
 
   window.leafwriterValidator = validator;
   state.validator.hasWorkerValidator = true;
 };
 
-const loadWebworker = async (): Promise<Comlink.Remote<Validator>> => {
+const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<Validator>> => {
   return await new Promise((resolve) => {
     // TODO: Improve the way to load webworkers for dev
     // * Check ThreadsJS once again.
@@ -33,7 +34,7 @@ const loadWebworker = async (): Promise<Comlink.Remote<Validator>> => {
     const worker =
       webpackEnv.WORKER_ENV === 'development'
         ? new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url))
-        : new Worker('leafwriter-validator.worker.js');
+        : new Worker(`${baseUrl}/leafwriter-validator.worker.js`);
 
     const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
 
@@ -51,19 +52,12 @@ export const initialize = async ({ state }: Context) => {
   state.validator.hasWorkerValidator = !!workerValidator;
 
   const id = writer.schemaManager.getCurrentSchema()?.id;
-  const schemaURI = writer.schemaManager.getXMLUrl();
-  if (!id || !schemaURI) return;
+  const schemaURL = writer.schemaManager.getRng();
+  if (!id || !schemaURL) return;
 
   const cachedSchema = localStorage.getItem(`schema_${id}`) ?? undefined;
 
-  // * CORS: Some of the schemas might have blocke by CORS
-  //If provide, we wrap the schema URL in a requeste to the proxy server
-  const url = state.editor.schemaProxyXmlEndpoint
-    ? `${state.editor.schemaProxyXmlEndpoint}${encodeURIComponent(schemaURI)}`
-    : schemaURI;
-
-  const { parsedSchema, status } = await workerValidator.initialize({ id, cachedSchema, url });
-  log.info(status);
+  const { parsedSchema } = await workerValidator.initialize({ id, cachedSchema, url: schemaURL });
 
   if (parsedSchema) {
     localStorage.setItem(`schema_${id}`, parsedSchema);
@@ -217,4 +211,9 @@ export const getValidTagsAt = async ({ state }: Context, params: GetValidTagsAtP
   const response = await workerValidator.getValidTagsAt(params);
   const tags = response.speculative || response.possible;
   return tags;
+};
+
+export const clear = ({ state }: Context) => {
+  state.validator.hasSchema = false;
+  state.validator.hasWorkerValidator = false;
 };

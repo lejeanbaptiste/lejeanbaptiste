@@ -24,5 +24,5 @@ export const state: State = {
   popupProps: { open: false },
   settingsDialogOpen: false,
   themeAppearance: 'auto',
-  title: 'Leaf Writer',
+  title: 'LEAF-Writer',
 };

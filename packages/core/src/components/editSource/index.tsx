@@ -17,10 +17,12 @@ export interface IEditSourceDialogProps {
 }
 
 const EditSourceDialog: FC = () => {
-  const [originalContent, setOriginalContent] = useState('');
-  const [content, setContent] = useState('');
+  const { editor } = useAppState();
   const { editSourceProps } = useAppState().ui;
   const { closeEditSourceDialog, processEditSource } = useActions().ui;
+
+  const [originalContent, setOriginalContent] = useState('');
+  const [content, setContent] = useState('');
 
   useEffect(() => {
     if (editSourceProps.content) setContent(editSourceProps.content);
@@ -51,7 +53,13 @@ const EditSourceDialog: FC = () => {
   );
 
   return (
-    <Dialog aria-labelledby="edit-source-title" fullWidth maxWidth="lg" open={editSourceProps.open}>
+    <Dialog
+      aria-labelledby="edit-source-title"
+      container={document.getElementById(`${editor.settings?.container}`)}
+      fullWidth
+      maxWidth="lg"
+      open={editSourceProps.open}
+    >
       <DialogTitle
         id="edit-source-title"
         sx={{ textAlign: 'center', fontSize: '1rem', padding: 0 }}

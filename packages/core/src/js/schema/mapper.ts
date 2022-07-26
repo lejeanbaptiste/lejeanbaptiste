@@ -606,12 +606,12 @@ class Mapper {
 
     const entityMappings = this.getMappings().entities;
 
-    for (const type in entityMappings) {
-      if (typesToFind.length === 0 || typesToFind.indexOf(type) !== -1) {
-        // if (typesToFind.length == 0 || typesToFind.indexOf(type) != -1) {
+
+    for (const [type, entity] of entityMappings.entries()) {
+      if (typesToFind.length !== 0 || typesToFind.indexOf(type) !== -1) {
         let entityTagNames: string[] = [];
 
-        let parentTag = entityMappings.get(type as EntityTypes).parentTag;
+        let parentTag = entity.parentTag;
         if (Array.isArray(parentTag)) entityTagNames = [...entityTagNames, ...parentTag];
         if (Array.isArray(parentTag)) {
           parentTag = parentTag[0];

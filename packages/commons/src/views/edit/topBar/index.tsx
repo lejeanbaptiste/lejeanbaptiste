@@ -16,6 +16,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { AnimatePresence } from 'framer-motion';
 import React, { FC } from 'react';
 import MainMenu from './MainMenu';
+import Logo from '@src/components/Logo';
 
 const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
   '& .MuiBadge-badge': { top: -3, left: 9, minWidth: 4, height: 4 },
@@ -49,18 +50,7 @@ const TopBar: FC<TopBarProps> = ({ title = 'LEAF-Writer' }) => {
       <Toolbar variant="dense">
         <Stack direction="row" alignItems="center">
           <MainMenu />
-
-          <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center">
-            <img
-              src={`/images/cwrclogo-${palette.mode === 'light' ? 'black' : 'white'}.png`}
-              alt="leaf writer"
-              height={24}
-            />
-          </Box>
-
-          <Typography component="h1" sx={{ marginLeft: 1, cursor: 'default' }} variant="subtitle1">
-            {title}
-          </Typography>
+          <Logo height={24} size="small" />
         </Stack>
 
         {resource && (

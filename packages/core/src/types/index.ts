@@ -2,7 +2,7 @@ import type { Bookmark, Editor } from 'tinymce/tinymce';
 import type { ILookupsConfig } from '../components/entityLookups/types';
 import Writer from '../js/Writer';
 
-export type { Authority, ILookupsConfig } from '../components/entityLookups/types';
+export type { Authority, ILookups } from '../components/entityLookups/types';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;
@@ -12,17 +12,6 @@ export declare var webpackEnv: {
 
 export interface ILeafWriterOptions {
   document: LWDocument;
-  settings?: {
-    credentials?: {
-      nssiToken?: string | (() => Promise<string | undefined>);
-    };
-    colorScheme?: string;
-    language?: string;
-    legacy?: ConfigLegacy;
-    lookups?: ILookupsConfig;
-    schemas?: [SupportedSchemasId | Schema];
-  };
-  user?: User;
   preferences?: {
     fontSize?: number; // [Optional] Changes the document's default font size. Default: 11. Options: 10-18
     themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
@@ -31,6 +20,8 @@ export interface ILeafWriterOptions {
       rightSide: string[]; // [Required] List of panel names. Default: ['xml-viewer', 'image-viewer', 'validator']
     };
   };
+  settings?: ILeafWriterOptionsSettings;
+  user?: User;
 }
 
 export interface LWDocument {
@@ -38,19 +29,25 @@ export interface LWDocument {
   xml: string;
 }
 
-export interface ConfigLegacy {
-  cwrcRootUrl?: string;
-  helpUrl?: string;
-  nerveUrl?: string;
-  proxyXmlEndpoint?: string;
-  proxyCssEndpoint?: string;
+export interface ILeafWriterOptionsSettings {
+  container?: string;
 
+  baseUrl?: string;
+
+  credentials?: {
+    nssiToken?: string | (() => Promise<string | undefined>);
+  };
+
+  colorScheme?: string;
+  language?: string;
+
+  lookups?: ILookupsConfig;
+  schemas?: Schema[];
+  schemasId?: SupportedSchemasId[];
+
+  modules?: Object;
   services?: any;
 
-  container?: string;
-  storageDialogs?: Object;
-  schema?: any;
-  modules?: Object;
   readonly?: boolean;
   annotator?: boolean;
   mode?: string;
@@ -91,15 +88,14 @@ export interface User {
   uri: string;
 }
 
+export type MappingID = 'cwrcEntry' | 'orlando' | 'tei' | 'teiLite';
+
 export type Schema = {
   id: string;
   name: string;
-  mapId?: string;
-  schemaMappingsId: string;
-  xml?: string | string[];
-  css?: string | string[];
-  xmlUrl: string | string[];
-  cssUrl: string | string[];
+  mapping: MappingID;
+  rng: string[];
+  css: string[];
 };
 
 export interface Language {
@@ -170,5 +166,3 @@ export interface LeafWriterEditor extends Editor {
   copiedEntity?: any;
   lastKeyPress?: string;
 }
-
-export type MappingID = 'cwrcEntry' | 'orlando' | 'tei' | 'teiLite';

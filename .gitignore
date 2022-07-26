@@ -1,9 +1,11 @@
-**/node_modules
+#root
 .DS_store
-
 notes.md
 Makefile
-**/dist
+
+#packages
+**/node_modules
+**/commons/dist
 
 # Logs
 logs
@@ -90,8 +92,7 @@ web_modules/
 out
 
 # Nuxt.js build / generate output
-.nuxt
-dist
+.Nuxt
 
 # Gatsby files
 .cache/

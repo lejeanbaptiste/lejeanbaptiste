@@ -34,24 +34,24 @@ class XML2CWRC {
       let schemaId: string;
       let loadSchemaCss: boolean;
 
-      let { xmlUrl, cssUrl } = this.getSchemaUrls(doc);
-      this.writer.schemaManager.setCurrentDocumentSchemaUrl(xmlUrl);
-      this.writer.schemaManager.setCurrentDocumentCSSUrl(cssUrl);
+      let { rng, css } = this.getSchemaUrls(doc);
+      this.writer.schemaManager.setCurrentDocumentSchemaUrl(rng);
+      this.writer.schemaManager.setCurrentDocumentCss(css);
 
       if (schemaIdOverride !== undefined) {
         schemaId = schemaIdOverride;
         loadSchemaCss = true;
       } else {
-        schemaId = this.writer.schemaManager.getSchemaIdFromUrl(xmlUrl);
-        loadSchemaCss = cssUrl === undefined; // load schema css if none was found in the document
+        schemaId = this.writer.schemaManager.getSchemaIdFromUrl(rng);
+        loadSchemaCss = css === undefined; // load schema css if none was found in the document
       }
 
-      if (xmlUrl === undefined && schemaId === undefined) {
+      if (rng === undefined && schemaId === undefined) {
         this.writer.dialogManager.confirm({
           title: 'Missing Schema',
           msg: `
             <p>There is no schema associated with your document.
-            Should CWRC-Writer try to determine the schema by examining the document root?</p>
+            Should LEAF-Writer try to determine the schema by examining the document root?</p>
           `,
           type: 'error',
           callback: (doIt: boolean) => {
@@ -67,7 +67,7 @@ class XML2CWRC {
             if (schemaId === undefined) {
               this.writer.dialogManager.show('message', {
                 title: 'Warning',
-                msg: `<p>CWRC-Writer could not determine the schema for: ${rootName}</p>`,
+                msg: `<p>LEAF-Writer could not determine the schema for: ${rootName}</p>`,
                 type: 'error',
                 callback: () => {
                   this.writer.event('documentLoaded').publish(false, null);
@@ -79,7 +79,7 @@ class XML2CWRC {
 
             this.writer.dialogManager.show('message', {
               title: 'Schema',
-              msg: `<p>CWRC-Writer determined the schema to be: ${schemaId}</p>`,
+              msg: `<p>LEAF-Writer determined the schema to be: ${schemaId}</p>`,
               type: 'info',
               callback: async () => {
                 if (schemaId === this.writer.schemaManager.schemaId) {
@@ -99,7 +99,7 @@ class XML2CWRC {
       if (schemaId === undefined) {
         this.writer.dialogManager.confirm({
           title: 'Warning',
-          msg: `<p>The document you are loading is not fully supported by CWRC-Writer.
+          msg: `<p>The document you are loading is not fully supported by LEAF-Writer.
             You may not be able to use the ribbon to tag named entities.</p>
             <p>Load document anyways?</p>`,
           type: 'error',
@@ -110,17 +110,17 @@ class XML2CWRC {
               return;
             }
 
-            if (cssUrl !== undefined) await this.writer.schemaManager.loadSchemaCSS([cssUrl]);
+            if (css !== undefined) await this.writer.schemaManager.loadSchemaCSS([css]);
 
-            if (xmlUrl === undefined) {
+            if (rng === undefined) {
               this.doBasicProcessing(doc);
               return;
             }
 
             const customSchemaId = this.writer.schemaManager.addSchema({
               name: 'Custom Schema',
-              xmlUrl: [xmlUrl],
-              cssUrl: [cssUrl],
+              rng: [rng],
+              css: [css],
             });
 
             const res = await this.writer.schemaManager.loadSchema(customSchemaId, loadSchemaCss);
@@ -141,7 +141,7 @@ class XML2CWRC {
               title: 'Error Loading Schema',
               msg: `
                 <p>The schema associated with your document could not be loaded.
-                Should CWRC-Writer try to determine the schema by examining the document root?</p>
+                Should LEAF-Writer try to determine the schema by examining the document root?</p>
               `,
               type: 'error',
               callback: (doIt: boolean) => {
@@ -160,7 +160,7 @@ class XML2CWRC {
                 if (schemaId === undefined) {
                   this.writer.dialogManager.show('message', {
                     title: 'Warning',
-                    msg: `<p>CWRC-Writer could not determine the schema for: ${rootName}</p>`,
+                    msg: `<p>LEAF-Writer could not determine the schema for: ${rootName}</p>`,
                     type: 'error',
                     callback: () => {
                       this.writer.event('documentLoaded').publish(false, null);
@@ -172,7 +172,7 @@ class XML2CWRC {
 
                 this.writer.dialogManager.show('message', {
                   title: 'Schema',
-                  msg: `<p>CWRC-Writer determined the schema to be: ${schemaId}</p>`,
+                  msg: `<p>LEAF-Writer determined the schema to be: ${schemaId}</p>`,
                   type: 'info',
                   callback: async () => {
                     if (schemaId === this.writer.schemaManager.schemaId) {
@@ -193,16 +193,16 @@ class XML2CWRC {
       }
 
       if (schemaId !== this.writer.schemaManager.schemaId) {
-        if (cssUrl !== undefined) await this.writer.schemaManager.loadSchemaCSS([cssUrl]);
+        if (css !== undefined) await this.writer.schemaManager.loadSchemaCSS(schemaId);
         const res = await this.writer.schemaManager.loadSchema(schemaId, loadSchemaCss);
         res.success ? this.doProcessing(doc) : this.doBasicProcessing(doc);
         return;
       }
 
-      if (cssUrl !== undefined && cssUrl !== this.writer.schemaManager.getCSSUrl()) {
+      if (css !== undefined && css !== this.writer.schemaManager.getCss()) {
         const currentSchema = this.writer.schemaManager.getCurrentSchema();
-        const matchCSSUrl = currentSchema.cssUrl.find((url: string) => url === cssUrl);
-        if (matchCSSUrl === null) await this.writer.schemaManager.loadSchemaCSS([cssUrl]);
+        const matchCsss = currentSchema.css.find((url: string) => url === css);
+        if (matchCsss === null) await this.writer.schemaManager.loadSchemaCSS([css]);
       }
 
       this.doProcessing(doc);
@@ -241,29 +241,25 @@ class XML2CWRC {
    * @returns {Object} urls
    */
   private getSchemaUrls(doc: Document) {
-    let xmlUrl: string = '';
-    let cssUrl: string = '';
+    let rng: string | undefined;
+    let css: string | undefined;
 
     //extract url from element's attribute wrapped with double or single quote ('|")"
     const urlRegex = /href=('|")([^('|")]*)('|")/;
 
-    for (let i = 0; i < doc.childNodes.length; i++) {
-      const node = doc.childNodes[i];
-
+    doc.childNodes.forEach((node) => {
       if (node.nodeName === 'xml-model') {
-        //@ts-ignore
-        const xmlModelData = node.data;
-        xmlUrl = xmlModelData.match(urlRegex);
-        xmlUrl = xmlUrl[2];
+        const xmlModelData = node.data as string;
+        rng = xmlModelData.match(urlRegex)[2];
+        if (rng === 'undefined') rng = rng = undefined;
       } else if (node.nodeName === 'xml-stylesheet') {
-        //@ts-ignore
-        const xmlStylesheetData = node.data;
-        cssUrl = xmlStylesheetData.match(urlRegex);
-        cssUrl = cssUrl[2];
+        const xmlStylesheetData = node.data as string;
+        css = xmlStylesheetData.match(urlRegex)[2];
+        if (css === 'undefined') css = css = undefined;
       }
-    }
+    });
 
-    return { xmlUrl, cssUrl };
+    return { rng, css };
   }
 
   /**
@@ -803,7 +799,7 @@ class XML2CWRC {
     }
 
     this.writer.dialogManager.show('message', {
-      title: 'CWRC-Writer Mode',
+      title: 'LEAF-Writer Mode',
       msg: msg,
       type: 'info',
     });
