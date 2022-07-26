@@ -18,7 +18,7 @@ const entry: EntryObject = {
 const output = {
   path: path.resolve(__dirname, 'dist'),
   filename: 'js/[name].js',
-  publicPath: '/',
+  // publicPath: '/',
   pathinfo: isDev ? true : false,
 };
 
@@ -69,7 +69,7 @@ const plugins = [
   }),
   new HtmlWebpackPlugin({
     template: path.resolve(__dirname, 'src', 'index.html'),
-    favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon-32x32.png'),
+    favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon.svg'),
   }),
   new MiniCssExtractPlugin({ filename: 'css/[name].css' }),
   new MonacoWebpackPlugin({ filename: 'monaco-[name].[ext].js', languages: ['xml', 'json'] }),
@@ -113,7 +113,7 @@ const webpackConfig: webpack.Configuration = {
             options: {
               lessOptions: {
                 relativeUrls: 'local',
-                globalVars: { parentId: '#leafwriterContainer' },
+                globalVars: { parentId: '#leaf-writer-container' },
               },
             },
           },

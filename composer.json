@@ -1,0 +1,17 @@
+{
+  "name": "leafwriter/leafwriter",
+  "type": "npm-asset",
+  "description": "XML editing and RDF annotation using github as document store.",
+  "repositories" : [
+    {
+      "type": "git",
+      "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
+    }
+  ],
+  "authors": [
+    {
+      "name": "Luciano Frizzera",
+      "email": "lucaju@gmail.com"
+    }
+  ]
+}

@@ -183,7 +183,7 @@ class DialogManager {
     defaultDialogs.forEach((dialogConfig, name) => this.addDialog(name, dialogConfig));
 
     const loadSchemaDialogs = () => {
-      const schemaMappingsId = this.writer.schemaManager.getCurrentSchema()?.schemaMappingsId;
+      const schemaMappingsId = this.writer.schemaManager.getCurrentSchema()?.mapping;
       if (!schemaMappingsId) {
         log.warn('schemaMappingsId is undefined');
         return;

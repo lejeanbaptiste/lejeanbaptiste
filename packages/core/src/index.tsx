@@ -13,7 +13,7 @@ import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
 import App from './App';
-import type { Authority, LookupsEntityType } from './components/entityLookups/types';
+import type { Authority, NamedEntityType } from './components/entityLookups/types';
 import i18next from './i18n';
 import { config } from './overmind';
 import type { ILeafWriterOptions, LWDocument } from './types';
@@ -23,11 +23,12 @@ export * as Types from './types';
 
 const overmind = createOvermind(config, {
   name: 'leaf-writer',
-  // devtools: true,
   logProxies: true,
 });
 
-class Leafwriter {
+const DEFAULT_HEIGHT = '700px';
+
+export class Leafwriter {
   private readonly domElement: HTMLElement;
 
   private _isDirty: Subject<boolean>;
@@ -39,6 +40,10 @@ class Leafwriter {
     this.domElement = domElement;
     this._isDirty = new Subject();
     this._onLoad = new Subject();
+
+    //scontainer height
+    const containerHeight = domElement.style.height ? domElement.style.height : DEFAULT_HEIGHT;
+    domElement.style.height = `clamp(400px, ${containerHeight}, 100vh)`;
 
     if (options) this.options = options;
 
@@ -197,7 +202,7 @@ class Leafwriter {
     enabled?: boolean;
     prioity?: number;
     entity?: {
-      name: LookupsEntityType;
+      name: NamedEntityType;
       enabled?: string;
     };
     config?: {

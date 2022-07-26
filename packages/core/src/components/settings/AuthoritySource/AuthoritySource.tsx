@@ -6,15 +6,17 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import { Grid, IconButton, Paper, Stack, ToggleButton, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import React, { useState, type FC } from 'react';
-import { ILookupService, LookupsEntityType } from '../../../components/entityLookups/types';
+import { IAuthorityService, NamedEntityType } from '../../../components/entityLookups/types';
 import { useActions, useAppState } from '../../../overmind';
 import NamedEntityOption from './NamedEntityOption';
 
 interface AuthoritySource {
-  authority: ILookupService;
+  authorityService: IAuthorityService;
 }
 
-const AuthoritySource: FC<AuthoritySource> = ({ authority: { enabled, entities, id, name } }) => {
+const AuthoritySource: FC<AuthoritySource> = ({
+  authorityService: { enabled, entities, id, name },
+}) => {
   const { toggleLookupAuthority, toggleLookupEntity } = useActions().editor;
   const { authorities } = useAppState().editor.lookups;
   const { enqueueSnackbar } = useSnackbar();
@@ -34,61 +36,54 @@ const AuthoritySource: FC<AuthoritySource> = ({ authority: { enabled, entities, 
   const handleHadleMouseDown = () => setIsDragging(true);
   const handleHadleMouseUp = () => setIsDragging(false);
 
-  const getNamedEntity = (name: LookupsEntityType) => {
-    const entity = entities[name];
-    if (!entity) return;
-    return <NamedEntityOption available={enabled} entity={entity} onClick={handleEntityToggle} />;
+  const getNamedEntity = (name: NamedEntityType) => {
+    if (entities[name] === undefined) return null;
+
+    const entityEnabled = entities[name];
+    return (
+      <NamedEntityOption
+        available={enabled}
+        enabled={entityEnabled}
+        onClick={handleEntityToggle}
+        name={name}
+      />
+    );
   };
 
-  // const handleAuthorityToogle = (event: ChangeEvent<HTMLInputElement>) => {
-  //   if (id === 'geonames') {
-  //     const source = authorities?.[id];
-  //     if (source && !source.config?.username) {
-  //       enqueueSnackbar('You must provide a username to make requests to GeoNames.', {
-  //         variant: 'error',
-  //       });
-  //       return;
-  //     }
-  //   }
-  //   toggleLookupAuthority(id);
-  // };
-
   const handleAuthorityToogle = () => {
-    if (id === 'geonames') {
-      const source = authorities?.[id];
-      if (source && !source.config?.username) {
-        enqueueSnackbar('You must provide a username to make requests to GeoNames.', {
-          variant: 'error',
-        });
-        return;
-      }
+    const authorityService = authorities[id];
+    if (authorityService.requireAuth && !authorityService.config?.username) {
+      enqueueSnackbar(`You must provide a username to make requests to ${id}.`, {
+        variant: 'error',
+      });
+      return;
     }
     toggleLookupAuthority(id);
   };
 
-  const handleEntityToggle = (entityName: LookupsEntityType) => {
+  const handleEntityToggle = (entityName: NamedEntityType) => {
     toggleLookupEntity({ authorityId: id, entityName });
   };
 
   return (
     <Paper
-      elevation={isDragging ? 8 : 1}
+      elevation={isDragging ? 8 : hover ? 1 : 0}
       ref={setNodeRef}
       square
       style={style}
       sx={{
         zIndex: isDragging ? 1 : 0,
         backgroundColor: isDragging ? ({ palette }) => palette.background.paper : 'transparent',
-        cursor: isDragging ? 'grabbing' : 'default',
         borderRadius: 1,
+        cursor: isDragging ? 'grabbing' : 'default',
       }}
       onMouseOver={handleMouseOver}
       onMouseOut={handleMouseOut}
       onMouseUp={handleHadleMouseUp}
     >
-      <Grid container sx={{ height: 34, pl: 0.5 }}>
+      <Grid container alignItems="center" sx={{ height: 34, pl: 0.25 }}>
         <Grid item xs={5}>
-          <Stack direction="row" spacing={1} alignItems="center" pt={0.25}>
+          <Stack direction="row" spacing={1} alignItems="center">
             <ToggleButton
               color="primary"
               onChange={handleAuthorityToogle}

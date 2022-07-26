@@ -4,7 +4,7 @@ import type {
   Authority,
   EntryLink,
   IResult,
-  LookupsEntityType,
+  NamedEntityType,
 } from '../../components/entityLookups/types';
 import type { EntityTypes } from '../../js/schema/types';
 
@@ -15,7 +15,7 @@ type State = {
   results?: Map<Authority, IResult[]>;
   selected?: EntryLink;
   typeEntity: EntityTypes;
-  typeLookup: LookupsEntityType;
+  typeLookup: NamedEntityType;
 };
 
 export const state: State = {

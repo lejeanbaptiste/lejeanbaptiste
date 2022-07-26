@@ -20,7 +20,7 @@ const textStyle = `
 log.info(`
 %cLEAF-Writer
 %c
-The semantic online editor developed by the Canadian Writing Research Collaboratory
+The XML & RDF online editor of the Linked Editing Academic Framework
 `,
   titleStyle,
   textStyle

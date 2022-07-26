@@ -145,7 +145,7 @@ class DateDialog implements SchemaDialog {
       maxDate: new Date(upperLimit, 11, 31),
       showOn: 'button',
       buttonText: 'Date Picker',
-      buttonImage: `${writer.rootUrl}images/calendar-alt-regular.svg`,
+      buttonImage: `${writer.baseUrl}/images/calendar-alt-regular.svg`,
       buttonImageOnly: true,
     });
 
@@ -176,7 +176,7 @@ class DateDialog implements SchemaDialog {
       maxDate: new Date(upperLimit, 11, 31),
       showOn: 'button',
       buttonText: 'Date Picker',
-      buttonImage: `${writer.rootUrl}images/calendar-alt-regular.svg`,
+      buttonImage: `${writer.baseUrl}/images/calendar-alt-regular.svg`,
       buttonImageOnly: true,
       onSelect: function (selectedDate: any) {
         const option = this.id.indexOf('startDate') === -1 ? 'maxDate' : 'minDate';

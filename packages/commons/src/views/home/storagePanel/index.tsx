@@ -35,12 +35,17 @@ const StoragePanel: FC = () => {
           animate="visible"
           exit="exit"
           elevation={palette.mode === 'dark' ? 0 : 0}
-          sx={{ py: 5, overflow: 'hidden' }}
+          sx={{ py: isMobile ? 1   : 5, overflow: 'hidden' }}
         >
           <Container>
-            <Stack alignItems="center" spacing={3}>
+            <Stack direction={isMobile ? 'column-reverse' : 'column'} alignItems="center" spacing={isMobile ? 5 : 3}>
               <Templates />
-              <Stack direction={isMobile ? 'column-reverse' : 'row'} spacing={5} width={600} pl={2}>
+              <Stack
+                direction={isMobile ? 'column-reverse' : 'row'}
+                spacing={5}
+                width={isMobile ? '90vw' : 600}
+                pl={2}
+              >
                 <OpenOptions />
                 <Recent />
               </Stack>

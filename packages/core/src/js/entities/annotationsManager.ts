@@ -159,7 +159,7 @@ class AnnotationsManager {
     const userInfo = this.writer.getUserInfo();
 
     // APP
-    const appURI = window.location.origin; // the URI from where CWRC-Writer is been used
+    const appURI = window.location.origin; // the URI from where LEAF-Writer is been used
 
     // TIME
     const createdDate = entity.getDateCreated();
@@ -389,7 +389,7 @@ class AnnotationsManager {
 
         const message = this.writer.utilities.convertTextForExport(err.message);
         this.writer.dialogManager.show('message', {
-          title: 'CWRC-Writer Export',
+          title: 'LEAF-Writer Export',
           msg: `There was an error exporting your document: ${message}`,
           type: 'error',
         });

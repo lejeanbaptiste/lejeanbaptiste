@@ -19,11 +19,13 @@ const entry: EntryObject = {
 
 const output = {
   path: path.resolve(__dirname, 'dist'),
-  publicPath: '/',
+  // publicPath: '/',
   pathinfo: isDev ? true : false,
-  library: 'leaf-writer',
-  libraryTarget: 'umd',
-  umdNamedDefine: true,
+  library: {
+    name: 'Leafwriter',
+    type: 'umd',
+    umdNamedDefine: true,
+  }
 };
 
 const optimization = {
@@ -40,13 +42,13 @@ const plugins = [
   new CleanWebpackPlugin({ cleanStaleWebpackAssets: false }),
   new CopyWebpackPlugin({
     patterns: [
-      //copy images
+      //images
       { from: path.resolve(__dirname, 'src', 'images'), to: 'images' },
-      //Copy pre-compiled CSS required by tinyMCE
+      //pre-compiled CSS required by tinyMCE
       { from: path.resolve(__dirname, 'src', 'css', 'tinymce', 'skins'), to: 'css/tinymce/skins' },
-      //Copy pre-compiled CSS to stylize the editor (must be recompiled after each change)
+      //pre-compiled CSS to stylize the editor
       { from: path.resolve(__dirname, 'src', 'css', 'build', 'editor.css'), to: 'css/[name][ext]' },
-      //Copy pre-compiled worker
+      //pre-compiled worker
       { from: path.resolve(__dirname, '..', 'validator', 'dist') },
     ],
   }),
@@ -94,7 +96,7 @@ const webpackConfig: webpack.Configuration = {
             options: {
               lessOptions: {
                 relativeUrls: 'local',
-                globalVars: { parentId: '#leafwriterContainer' },
+                globalVars: { parentId: '#leaf-writer-container' },
               },
             },
           },

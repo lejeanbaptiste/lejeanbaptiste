@@ -11,6 +11,7 @@ import { configureToolbar, toolbarOptions } from './tinymce/tinymceToolbar';
 import './tinymce_plugins/prevent_delete';
 //TODO: Reassess plugins on tinymce 5.0
 // import './tinymce_plugins/cwrc_path';
+import fscreen from 'fscreen';
 import './tinymce_plugins/treepaste';
 import Writer from './Writer';
 
@@ -39,27 +40,24 @@ export const tinymceWrapperInit = function ({
   buttons2,
   buttons3,
 }: TinymceWrapperConfig) {
-  tinymce.baseURL = `${writer.rootUrl}/js`; // need for skin
+  tinymce.baseURL = `${writer.baseUrl}/js`; // need for skin
   tinymce.init({
     selector: `#${editorId}`,
     ui_container: `#${layoutContainerId}`,
-
-    // skin_url: `${writer.cwrcRootUrl}css/tinymce/skins/ui/oxide`,
     skin_url: window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? `${writer.rootUrl}css/tinymce/skins/ui/oxide-dark`
-      : `${writer.rootUrl}css/tinymce/skins/ui/oxide`,
+      ? `${writer.baseUrl}/css/tinymce/skins/ui/oxide-dark`
+      : `${writer.baseUrl}/css/tinymce/skins/ui/oxide`,
 
     height: '100%',
     width: '100%',
-    // content_css: `${writer.cwrcRootUrl}css/editor.css`,
     content_css: window.matchMedia('(prefers-color-scheme: dark)').matches
       ? [
-          `${writer.rootUrl}css/tinymce/skins/content/dark/content.min.css`,
-          `${writer.rootUrl}css/editor.css`,
+          `${writer.baseUrl}/css/tinymce/skins/content/dark/content.min.css`,
+          `${writer.baseUrl}/css/editor.css`,
         ]
       : [
-          `${writer.rootUrl}css/tinymce/skins/content/writer/content.min.css`,
-          `${writer.rootUrl}css/editor.css`,
+          `${writer.baseUrl}/css/tinymce/skins/content/writer/content.min.css`,
+          `${writer.baseUrl}/css/editor.css`,
         ],
 
     doctype:
@@ -92,6 +90,8 @@ export const tinymceWrapperInit = function ({
     toolbar1: buttons1.length > 0 ? buttons1.join(' ') : toolbarOptions.join(' '),
     toolbar2: buttons2 === undefined ? 'cwrcpath' : buttons2.join(' '),
     toolbar3: buttons3 === undefined ? '' : buttons3.join(' '),
+    
+    toolbar_mode: 'sliding',
 
     menubar: false,
     elementpath: true,
@@ -173,24 +173,13 @@ export const tinymceWrapperInit = function ({
 
           if (writer.isReadOnly) return;
 
-          const editorPosition = writer.utilities.getOffsetPosition(
-            editor.getContentAreaContainer(),
-            window.document.documentElement
-          );
+          // const editorPosition = writer.utilities.getOffsetPosition(
+          //   editor.getContentAreaContainer()
+          // );
 
-          const $editorBody = $(editor.getDoc().documentElement);
-          const editorScrollTop = $editorBody.scrollTop();
-          const editorScrollLeft = $editorBody.scrollLeft();
-
-          const adjustLeft = editorScrollLeft
-            ? editorPosition.left - editorScrollLeft
-            : editorPosition.left;
-          const adjustTop = editorScrollTop
-            ? editorPosition.top - editorScrollTop
-            : editorPosition.top;
-
-          const posX = event.pageX + adjustLeft;
-          const posY = event.pageY + adjustTop;
+          const posX = event.screenX;
+          let posY = event.screenY - 39;
+          if (!fscreen.fullscreenElement) posY = posY - 78;
 
           writer.overmindActions.ui.showContextMenu({
             show: true,

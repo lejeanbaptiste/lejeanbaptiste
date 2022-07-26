@@ -2,7 +2,7 @@ import $ from 'jquery';
 import tinymce from 'tinymce';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
-import type { ConfigLegacy, LeafWriterEditor } from '../types';
+import type { ILeafWriterOptionsSettings, LeafWriterEditor } from '../types';
 import { log } from './../utilities';
 import Converter from './conversion/converter';
 import DialogManager from './dialogManager';
@@ -28,7 +28,7 @@ import Utilities from './utilities';
 //  * @param {Object} config.entityLookupDialogs
 //  * @param {Object} config.schemas
 //  * @param {Object} config.modules
-//  * @param {String} [config.cwrcRootUrl]
+//  * @param {String} [config.baseUrl]
 //  * @param {Boolean} [config.readonly]
 //  * @param {Boolean} [config.annotator]
 //  * @param {String} [config.mode]
@@ -42,9 +42,9 @@ class Writer extends EventManager {
   overmindState?: any;
   overmindActions?: any;
 
-  readonly initialConfig: ConfigLegacy;
+  readonly initialConfig: ILeafWriterOptionsSettings;
   readonly containerId: string;
-  readonly rootUrl: string; // the url which points to the root of the leafwriter location
+  readonly baseUrl: string; // the url which points to the root of the leafwriter location
 
   // possible editor modes
   readonly XMLRDF = 0; // XML + RDF
@@ -91,7 +91,7 @@ class Writer extends EventManager {
   validation?: Validation;
   tree?: StructureTree;
 
-  constructor(config: ConfigLegacy) {
+  constructor(config: ILeafWriterOptionsSettings) {
     super();
 
     this.initialConfig = config;
@@ -101,15 +101,15 @@ class Writer extends EventManager {
     this.containerId = config.container;
 
     //root URL
-    if (!config.cwrcRootUrl || config.cwrcRootUrl === '') {
+    if (!config.baseUrl || config.baseUrl === '') {
       const { protocol, host, pathname } = window.location;
-      let rootUrl = `${protocol}//${host}/${pathname.split('/')[1]}/`;
-      if (rootUrl.endsWith('//')) rootUrl = rootUrl.slice(0, -1);
-      this.rootUrl = rootUrl;
+      let baseUrl = `${protocol}//${host}/${pathname.split('/')[1]}/`;
+      if (baseUrl.endsWith('//')) baseUrl = baseUrl.slice(0, -1);
+      this.baseUrl = baseUrl;
 
-      log.info('using default leafRootUrl', rootUrl);
+      log.info('using default leafRootUrl', baseUrl);
     } else {
-      this.rootUrl = config.cwrcRootUrl;
+      this.baseUrl = config.baseUrl;
     }
 
     if (config.readonly) this.isReadOnly = config.readonly;
@@ -188,7 +188,7 @@ class Writer extends EventManager {
       container: $(`#${this.containerId}`),
     });
 
-    this.schemaManager = new SchemaManager(this, config.schema);
+    this.schemaManager = new SchemaManager(this, config.schemas);
     this.entitiesManager = new EntitiesManager(this);
     this.dialogManager = new DialogManager(this); // needs to load before SettingsDialog
     this.tagger = new Tagger(this);
@@ -328,8 +328,8 @@ class Writer extends EventManager {
 
     window.removeEventListener('beforeunload', this.handleUnload);
 
-    editor.remove();
-    editor.destroy();
+    // editor.remove();
+    // editor.destroy();
 
     this.utilities.destroy();
     this.dialogManager.destroy();
@@ -337,6 +337,7 @@ class Writer extends EventManager {
 
     this.overmindActions.document.clear();
     this.overmindActions.editor.clear();
+    this.overmindActions.validator.clear();
   }
 
   handleUnload(event: BeforeUnloadEvent) {
