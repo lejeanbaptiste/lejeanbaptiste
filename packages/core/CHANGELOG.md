@@ -1,3 +1,46 @@
+## 1.6.0
+
+### Features
+
+[569c99ae3633b84631c46a50e20eb9acb9227592] Schema: drop support to Moravian schema. **THIS IS A BREAKING CHANGE!!!**
+
+## Fix
+
+[db576550322f22e89814ae0dc0860a6fcdcc8c93] Fullscreen: move modals to a more internal div so htey can be displayed correctly in fullscreen
+
+## Dependencies
+
+[74b9e893d425c95b3331d66e6eccf4d44342818c] Update dependencies
+
+- core
+  - update
+    - @mui/lab@5.0.0-alpha.92
+    - @mui/material@5.9.2
+    - framer-motion@6.5.1
+    - react@18.2.0
+    - react-dom@18.2.0
+    - react-i18next@11.18.1
+    - react-intersection-observer@9.4.0
+  - bump up
+    - @dnd-kit/core@6.0.5
+    - @dnd-kit/sortable@7.0.1
+    - @fortawesome/fontawesome-free@6.1.2
+    - i18next@21.8.14
+    - iso-639-2@3.0.2
+    - jquery-ui@1.13.2
+    - rxjs@7.5.6
+- dev
+  - update
+    - @types/node@18.6.1
+    - @typescript-eslint/eslint-plugin@5.31.0
+    - @typescript-eslint/parser@5.31.0
+    - webpack@5.74.0
+  - bump up
+    - @types/chroma-js@2.1.4
+    - @types/react-dom@18.0.6
+    - eslint-plugin-react@7.30.1
+    - mini-css-extract-plugin@2.6.1
+
 ## 1.5.0
 
 ### Major
@@ -22,7 +65,7 @@ For example, a TEI-ALL document that points to the following schema:
 
 In addition, LEAF-Writer supports the following URLs for a TEI-ALL document:
 
-- `https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng` 
+- `https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng`
 - `https://jenkins.tei-c.org/job/TEIP5/lastSuccessfulBuild/artifact/P5/release/xml/tei/custom/schema/relaxng/tei_all.rng`
 
 LEAF-Writer will try to load the document's declared schema first, if it fails it will try the alternatives.
