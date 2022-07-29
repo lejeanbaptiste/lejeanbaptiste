@@ -59,7 +59,7 @@ interface IAnnotationTargetHasSource {
 interface IAnnotationTargetRenderVia {
   '@id': string;
   '@type': 'as:Application'; //string?;
-  'rdfs:label': string;
+  'rdfs:label': 'LEAF-Writer';
   'schema:softwareVersion': string;
 }
 
@@ -108,7 +108,7 @@ export interface IAnnotationHasBody {
 interface IAnnotationGenerator {
   '@id': string;
   '@type': 'as:Application'; //string?
-  'rdfs:label': 'Leaf Writer'; //string?
+  'rdfs:label': 'LEAF-Writer'; //string?
   'schema:url': string;
   'schema:softwareVersion': string;
 }
