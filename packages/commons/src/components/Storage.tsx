@@ -30,7 +30,7 @@ const Storage: FC = () => {
     setResource(res);
     const permalink = setPermalink(res);
     closeStorageDialog();
-    navigate(`/edit${permalink}`, { replace: true });
+    navigate(`/edit${permalink ?? ''}`, { replace: true });
 
     //? open on a new tab
     //! works fine with cloud document on the cloud.
