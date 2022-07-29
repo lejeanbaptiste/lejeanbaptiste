@@ -6,6 +6,7 @@ import {
   serialize as RDFserialize,
   sym as RDFsym,
 } from 'rdflib';
+import pck from '../../../package.json';
 import type { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
@@ -17,7 +18,7 @@ import type {
   IAnnotationFormat,
 } from './types';
 
-const leafWriterVersion = 'dev'; //webpackEnv?.LEAFWRITER_VERSION ?? '' ;
+const leafWriterVersion = pck.version;
 
 const prefixMap: Map<string, string> = new Map([
   ['bibo', 'http://purl.org/ontology/bibo/'],
@@ -217,7 +218,7 @@ class AnnotationsManager {
         'oa:renderedVia': {
           '@id': appURI,
           '@type': 'as:Application',
-          'rdfs:label': 'Leaf Writer',
+          'rdfs:label': 'LEAF-Writer',
           'schema:softwareVersion': leafWriterVersion,
         },
       },
@@ -227,7 +228,7 @@ class AnnotationsManager {
       'as:generator': {
         '@id': appURI,
         '@type': 'as:Application',
-        'rdfs:label': 'Leaf Writer',
+        'rdfs:label': 'LEAF-Writer',
         'schema:url': 'https://leaf-writer.lincsproject.ca/',
         'schema:softwareVersion': leafWriterVersion,
       },
