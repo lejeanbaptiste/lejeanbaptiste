@@ -1,6 +1,16 @@
-## 1.3.1
 
-### Patch Changes
+## 1.3.2
+
+## Fix
+
+[6ac21389238cdb01a5bc2db39d1e84892d16ccb0] Regression: keycloak endpoint change: Remove `/auth` .
+
+## Dependencies
+
+[161ed59eebaa0e22f1a9e4d4c7405136c6527922] core: upgrade: keycloak-js@19.0.1
+[8bf3ee71a31d396e6deba4d68d086e2dd928bd3c] core: bump up: @cwrc/leafwriter@1.6.1
+
+## 1.3.1
 
 ## Fix
 
