@@ -4,16 +4,16 @@ import 'tinymce/icons/default';
 import 'tinymce/plugins/paste';
 import 'tinymce/themes/silver';
 import tinymce, { type TinyMCE } from 'tinymce/tinymce';
-import type { LeafWriterEditor } from '../types';
-import { log } from './../utilities';
-import { addIconPack } from './tinymce/tinymceIconPack';
-import { configureToolbar, toolbarOptions } from './tinymce/tinymceToolbar';
-import './tinymce_plugins/prevent_delete';
+import type { LeafWriterEditor } from '../../types';
+import { log } from '../../utilities';
+import { addIconPack } from './iconPack';
+import { configureToolbar, toolbarOptions } from './toolbar';
+import './plugins/prevent_delete';
 //TODO: Reassess plugins on tinymce 5.0
 // import './tinymce_plugins/cwrc_path';
 import fscreen from 'fscreen';
-import './tinymce_plugins/treepaste';
-import Writer from './Writer';
+import './plugins/treepaste';
+import Writer from '../Writer';
 
 declare global {
   interface Window {
