@@ -21,7 +21,7 @@ const toolbarOptions = [
   '|',
   // 'edit-tag',
   // 'remove-tag',
-  '|',
+  // '|',
   'toggle-tags',
   'show-raw-xml',
   'edit-raw-xml',
@@ -37,6 +37,7 @@ interface IButton {
   slug: string;
   icon: string;
   tooltip: string;
+  disabled: boolean;
   entityType?: EntityTypes;
   entityButton?: boolean;
   onSetup?: (api: IAPI) => (api: IAPI) => void;
@@ -56,6 +57,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'toggle-tags',
       icon: 'code',
       tooltip: 'Toggle Tags',
+      disabled: false,
       onAction: (api) => {
         writer.overmindActions.editor.toggleShowTags();
         api.setActive(!api.isActive());
@@ -65,6 +67,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'fullscreen',
       icon: 'fullscreen',
       tooltip: 'Toggle Fullscreen',
+      disabled: false,
       onAction: (api) => {
         writer.layoutManager.toggleFullScreen();
         api.setActive(!api.isActive());
@@ -78,6 +81,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tags',
       icon: 'tags',
       tooltip: 'Tags',
+      disabled: false,
       onAction: () => {
         const $button = $('.tox-tbtn').filter(
           (_index, element) => $(element).attr('title') === 'Tags'
@@ -101,6 +105,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-person',
       icon: 'person',
       tooltip: 'Tag Person',
+      disabled: false,
       entityButton: true,
       entityType: 'person',
       onAction: () => writer.tagger.addEntityDialog('person'),
@@ -109,6 +114,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-place',
       icon: 'place',
       tooltip: 'Tag Place',
+      disabled: false,
       entityButton: true,
       entityType: 'place',
       onAction: () => writer.tagger.addEntityDialog('place'),
@@ -117,6 +123,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-organization',
       icon: 'organization',
       tooltip: 'Tag Organization',
+      disabled: false,
       entityButton: true,
       entityType: 'organization',
       onAction: () => writer.tagger.addEntityDialog('organization'),
@@ -125,6 +132,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-title',
       icon: 'title',
       tooltip: 'Tag Text/Title',
+      disabled: false,
       entityButton: true,
       entityType: 'title',
       onAction: () => writer.tagger.addEntityDialog('title'),
@@ -133,6 +141,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-date',
       icon: 'date',
       tooltip: 'Tag Date',
+      disabled: false,
       entityButton: true,
       entityType: 'date',
       onAction: () => writer.tagger.addEntityDialog('date'),
@@ -141,6 +150,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-citation',
       icon: 'citation',
       tooltip: 'Tag Citation',
+      disabled: false,
       entityButton: true,
       entityType: 'citation',
       onAction: () => writer.tagger.addEntityDialog('citation'),
@@ -149,6 +159,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-note',
       icon: 'note',
       tooltip: 'Tag Note',
+      disabled: false,
       entityButton: true,
       entityType: 'note',
       onAction: () => writer.tagger.addEntityDialog('note'),
@@ -157,6 +168,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-correction',
       icon: 'correction',
       tooltip: 'Tag Correction',
+      disabled: false,
       entityButton: true,
       entityType: 'correction',
       onAction: () => writer.tagger.addEntityDialog('correction'),
@@ -165,6 +177,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-keyword',
       icon: 'keyword',
       tooltip: 'Tag Keyword',
+      disabled: false,
       entityButton: true,
       entityType: 'keyword',
       onAction: () => writer.tagger.addEntityDialog('keyword'),
@@ -173,6 +186,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-link',
       icon: 'link',
       tooltip: 'Tag Link',
+      disabled: false,
       entityButton: true,
       entityType: 'link',
       onAction: () => writer.tagger.addEntityDialog('link'),
@@ -181,6 +195,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'tag-referencing-string',
       icon: 'rs',
       tooltip: 'Tag Referencing String',
+      disabled: false,
       entityButton: true,
       entityType: 'rs',
       onAction: () => writer.tagger.addEntityDialog('rs'),
@@ -189,24 +204,28 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'add-translation',
       icon: 'translation',
       tooltip: 'Add Translation',
+      disabled: false,
       onAction: () => writer.dialogManager.show('translation'),
     },
     // {
     //   slug: 'edit-tag',
     //   icon: 'tag-edit',
     //   tooltip: 'Edit Tag/Entity',
+    //   disabled: false,
     //   onAction: () => writer.tagger.editTagDialog(),
     // },
     // {
     //   slug: 'remove-tag',
     //   icon: 'tag-remove',
     //   tooltip: 'Remove Tag',
+    //   disabled: false,
     //   onAction: () => writer.tagger.removeTag(),
     // },
     // {
     //   slug: 'add-relation',
     //   icon: `relation`,
     //   tooltip: 'Add Relation',
+    //   disabled: false,
     //   onAction: () => {
     //     //@ts-ignore
     //     $('#westTabs').tabs('option', 'active', 2);
@@ -217,12 +236,14 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'show-raw-xml',
       icon: 'markup-file',
       tooltip: 'Show Raw XML',
+      disabled: false,
       onAction: () => writer.selection?.showSelection(),
     },
     {
       slug: 'edit-raw-xml',
       icon: 'edit',
       tooltip: 'Edit Raw XML',
+      disabled: false,
       onAction: async () => {
         const docText = await writer.converter.getDocumentContent(true);
         writer.overmindActions.ui.openEditSourceDialog(docText);
@@ -232,12 +253,14 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       slug: 'validate',
       icon: 'validate',
       tooltip: 'Validate',
+      disabled: false,
       onAction: () => writer.validate(),
     },
     {
       slug: 'settings',
       icon: 'settings',
       tooltip: 'Settings',
+      disabled: false,
       onAction: () => writer.overmindActions.ui.openSettingsDialog(),
     },
   ];

@@ -5,7 +5,7 @@ import '../lib/jquery/jquery_3.5_workaround';
 import type { ILeafWriterOptionsSettings, LeafWriterEditor } from '../types';
 import { log } from './../utilities';
 import Converter from './conversion/converter';
-import DialogManager from './dialogManager';
+import DialogManager from './dialogs/dialogManager';
 import { ITriple } from './dialogs/triple';
 import AnnotationsManager from './entities/annotationsManager';
 import EntitiesManager from './entities/entitiesManager';
@@ -17,7 +17,7 @@ import StructureTree from './layout/panels/structureTree';
 import Validation from './layout/panels/validation';
 import SchemaManager from './schema/schemaManager';
 import Tagger from './tagger';
-import { tinymceWrapperInit } from './tinymceWrapper';
+import { tinymceWrapperInit } from './tinymce/tinymceWrapper';
 import Utilities from './utilities';
 
 // /**

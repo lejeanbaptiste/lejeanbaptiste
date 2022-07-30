@@ -1,3 +1,14 @@
+
+## 1.6.1
+
+## Fix
+
+[1a1b40580f5cd1c8ae62a7f089ee58be5abef9b5] Web annotation: re add app version and rename app to 'LEAF-Writer'
+
+## Chore
+
+[59a052cb25abfb2856ea58830c8433ff16f2994c] Organize tinyMCE files
+
 ## 1.6.0
 
 ### Features
