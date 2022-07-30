@@ -15,7 +15,7 @@ interface tokenParsed extends KeycloakTokenParsed {
 const keycloak = Keycloak({
   clientId: 'leaf-writer',
   realm: 'lincs',
-  url: `${KEYCLOACK_BASE_URL}/auth/`,
+  url: `${KEYCLOACK_BASE_URL}`,
 });
 
 const init = async () => {
