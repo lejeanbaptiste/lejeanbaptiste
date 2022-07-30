@@ -7,7 +7,6 @@ import Entity from '../../../../js/entities/Entity';
 import { log } from '../../../../utilities';
 import { getSvg } from '../../../../utilities/icons';
 import type { SortingTypes } from '../../../entities/entitiesManager';
-// import Mapper from '../../../schema/mapper';
 import { RESERVED_ATTRIBUTES } from '../../../schema/mapper';
 import Writer from '../../../Writer';
 
@@ -185,8 +184,6 @@ class EntitiesList {
 
     this.$entities.find('select[name="filter"]').on('selectmenuchange', () => this.update());
     this.$entities.find('select[name="sorting"]').on('selectmenuchange', () => this.update());
-    // $entities.find('select[name="filter"]').on('change', () => pm.update() );
-    // $entities.find('select[name="sorting"]').on('change', () => { pm.update() );
 
     this.writer.event('loadingDocument').subscribe(() => {
       this.clear();
@@ -379,7 +376,6 @@ class EntitiesList {
     const urlAttributes = this.writer.schemaManager.mapper.getUrlAttributes();
 
     for (const name in entityAttributes) {
-      // if (Mapper.reservedAttributes[name] === true) continue;
       if (RESERVED_ATTRIBUTES.has(name)) continue;
 
       const value = entityAttributes[name];
@@ -494,7 +490,6 @@ class EntitiesList {
     let potentialEntities: HTMLElement[] = [];
     for (const type in potentialEntitiesByType) {
       potentialEntities = [...potentialEntities, ...potentialEntitiesByType[type]];
-      // potentialEntities = [...potentialEntities, potentialEntitiesByType[type]];
     }
 
     // filter out duplicates
@@ -572,7 +567,7 @@ class EntitiesList {
     this.$entities.find('div.entitiesList > li > div').on('click', (event) => {
       const $currentTargetParent = $(event.currentTarget).parent();
       if ($currentTargetParent.hasClass('expanded')) {
-        //@ts-ignore : because jquery-ui doesn't have types
+        //@ts-ignore
         $currentTargetParent.toggleClass('expanded', { duration: 200, queue: true });
         return;
       }
