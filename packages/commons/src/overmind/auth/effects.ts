@@ -25,7 +25,7 @@ export const KeycloakApi = {
     keycloakAccessCode: string
   ): Promise<any> => {
     const response = await axios
-      .get(`${KEYCLOACK_BASE_URL}/auth/realms/${realm}/broker/${provider_alias}/token`, {
+      .get(`${KEYCLOACK_BASE_URL}/realms/${realm}/broker/${provider_alias}/token`, {
         headers: { Authorization: `Bearer ${keycloakAccessCode}` },
       })
       .catch((error: AxiosError) => {
