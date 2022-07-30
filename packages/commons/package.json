@@ -54,7 +54,7 @@
 		"i18next": "^21.8.14",
 		"i18next-browser-languagedetector": "^6.1.4",
 		"js-cookie": "^3.0.1",
-		"keycloak-js": "^18.0.1",
+		"keycloak-js": "^19.0.1",
 		"kleur": "^4.1.5",
 		"loglevel": "^1.8.0",
 		"md5": "^2.3.0",
