@@ -4,7 +4,7 @@ include:
   - template: Auto-DevOps.gitlab-ci.yml
 
 variables:
-  # GitLab CI configuration
+  # Disable some Auto DevOps tests
   BROWSER_PERFORMANCE_DISABLED: 1
   CODE_QUALITY_DISABLED: 1
   LICENSE_MANAGEMENT_DISABLED: 1
@@ -13,7 +13,9 @@ variables:
   SECRET_DETECTION_DISABLED: 1
   DAST_DISABLED: 1
   PERFORMANCE_DISABLED: 1
-  TEST_DISABLED: 1
+
+  # GitLab CI configuration
+  # TEST_DISABLED: 1
   POSTGRES_ENABLED: "false"
   STAGING_ENABLED: 1
   KUBE_INGRESS_BASE_DOMAIN: leaf-vre.org
@@ -29,6 +31,16 @@ cache:
       - package.json
   paths:
     - node_modules
+
+# Overwrite test job
+test:
+  stage: test
+  image: node:18.1-alpine
+  script:
+    - npm install
+    - npm run test
+  needs:
+    - build
 
 # Template to override common stage/prod parameters
 .deployment: &deployment
