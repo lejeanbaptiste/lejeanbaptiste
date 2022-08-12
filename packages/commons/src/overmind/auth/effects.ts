@@ -100,5 +100,5 @@ export const NSSIApi = {
     }
 
     return data;
-  },
-};
+//@ts-ignore
+export const api = new Api('leaf-writer', process.env.KEYCLOAK_URL || '', process.env.NSSI_URL);
