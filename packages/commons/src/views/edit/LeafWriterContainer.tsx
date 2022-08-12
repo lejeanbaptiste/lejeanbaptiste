@@ -1,4 +1,4 @@
-import Leafwriter from '@cwrc/leafwriter';
+import { Leafwriter } from '@cwrc/leafwriter';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
 
@@ -23,7 +23,8 @@ const LeafWriterContainer: FC = () => {
         settings: {
           credentials: { nssiToken: getLincsAauthenticationToken },
           lookups: {
-            authorities: [['geonames', { config: { username: 'cwrcgeonames' } }]],
+            //@ts-ignore
+            authorities: [['geonames', { config: { username: process.env.GEONAMES_USERNAME } }]],
           },
         },
         user: {

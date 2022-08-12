@@ -17,6 +17,7 @@ const App: FC = () => {
   const routing = useRoutes(routes);
   const { i18n } = useTranslation();
 
+  //@ts-ignore
   useTracking(process.env.GA_MEASUREMENT_ID);
 
   useEffect(() => {

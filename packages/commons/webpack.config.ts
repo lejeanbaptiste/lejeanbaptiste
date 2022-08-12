@@ -5,9 +5,10 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { ESBuildMinifyPlugin } from 'esbuild-loader';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
-import webpack, { EntryObject } from 'webpack';
+import webpack, { type EntryObject } from 'webpack';
 import WebpackBar from 'webpackbar';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
+import Dotenv from 'dotenv-webpack';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -67,6 +68,7 @@ const plugins = [
       },
     ],
   }),
+  new Dotenv(),
   new HtmlWebpackPlugin({
     template: path.resolve(__dirname, 'src', 'index.html'),
     favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon.svg'),
