@@ -5,8 +5,6 @@
 
 ## To do
 
-- Layout
-  - improve Hero
 - Setup test unit
 - Documentation
   - Writer readme file
