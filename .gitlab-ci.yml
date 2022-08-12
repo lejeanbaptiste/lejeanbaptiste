@@ -38,7 +38,7 @@ test:
   image: node:18.1-alpine
   script:
     - npm install
-    - npm run test
+    - npm test
   needs:
     - build
 
