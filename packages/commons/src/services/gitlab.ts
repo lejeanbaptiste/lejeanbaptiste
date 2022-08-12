@@ -1,6 +1,6 @@
-import axios, { AxiosInstance } from 'axios';
 import { log } from '@src/utilities/log';
-import type { AuthenticateProp, IdentityProvider } from '../IdentityProvider';
+import axios, { AxiosInstance } from 'axios';
+import type { AuthenticateProp, IIdentityProvider } from './';
 
 const BASE_URL = 'https://gitlab.com/api/v4';
 
@@ -48,7 +48,7 @@ const getAuthenticatedUser = async (userId: string) => {
   return user;
 };
 
-export const GitlabIdentityProvider: IdentityProvider = {
+export const GitlabIdentityProvider: IIdentityProvider = {
   name,
   getAccessToken,
   getUserId,

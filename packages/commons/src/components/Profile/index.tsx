@@ -12,7 +12,6 @@ import {
   Typography,
 } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
-import { accountManagement } from '@src/services/AuthenticationService';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import EditorSettings from './EditorSettings';
@@ -29,7 +28,7 @@ interface ProfileProps {
 const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
   const { user } = useAppState().auth;
   const { leafWriter } = useAppState().editor;
-  const { signOut } = useActions().auth;
+  const { accountManagement, signOut } = useActions().auth;
   const { t } = useTranslation();
 
   const open = Boolean(anchor);

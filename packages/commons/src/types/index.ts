@@ -1,11 +1,6 @@
 import { OptionsObject, SnackbarMessage } from 'notistack';
 import React from 'react';
 
-export declare var webpackEnv: {
-  NODE_ENV: string;
-  WORKER_ENV: string;
-};
-
 export interface Language {
   code: string;
   name: string;
@@ -13,11 +8,6 @@ export interface Language {
 }
 
 export type PaletteMode = 'light' | 'auto' | 'dark';
-
-export const Languages: Map<string, Language> = new Map();
-
-export type IdentityProvider = 'github' | 'gitlab' | 'orcid';
-export type StorageProvider = 'github' | 'gitlab';
 
 export interface INotification {
   dismissed?: boolean;
@@ -34,7 +24,7 @@ export interface User {
   lastName?: string;
   username?: string;
   identities: Map<string, IIdentity>;
-  prefferedID: string;
+  preferredID: string;
   prefStorageProvider: string;
   url: string;
 }
@@ -52,11 +42,9 @@ export interface IAnnotationUserProfile {
 
   avatar_url?: string;
   email?: string;
-  prefferedID: string;
+  preferredID: string;
   username?: string;
 }
-
-export type AffiliationType = 'owner' | 'collaborator' | 'organization';
 
 export interface MessageDialog {
   closable?: boolean;
@@ -82,13 +70,6 @@ export interface StorageDialogState {
   source?: 'cloud' | 'local' | 'paste';
   type?: 'load' | 'save';
   resource?: Resource | string;
-}
-
-export type DialogType = 'load' | 'save';
-export type SourceFile = 'cloud' | 'local' | 'paste';
-export interface DropFile {
-  file: File;
-  preview: string;
 }
 
 export interface Resource {
