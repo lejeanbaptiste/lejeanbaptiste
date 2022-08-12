@@ -1,3 +1,22 @@
+## 1.4.0
+
+### Minor Changes
+
+## Feature
+
+[7b90ba27ea6ab179188f2c5d5298e1d2dc8f106b] Service provider: Reorganize types and improve typying
+
+## Fix
+
+[5532b0c7035e3fe878ed658bd2098835eca9543a] Localization: Remove unused terms
+
+## CI
+
+[cade8ad0292f8cca4a02a1d7a36fc166e395df21][c79b58dcc1b499947980fd8f10bfe468587d8a71] Use enviroment variables
+
+## Chore
+
+[de7cb02044fe4b4932754a8cfc0ca8ad06230a8][96308bb1d4ef67d0b97cd1d324e7c28df86e3f2e]  Upate Dependencies
 
 ## 1.3.2
 
