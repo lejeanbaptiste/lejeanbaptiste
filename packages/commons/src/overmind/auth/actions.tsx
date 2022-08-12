@@ -13,32 +13,35 @@ import { ILinkedAccount } from './effects';
 //* INIITIALIZE
 export const onInitializeOvermind = async ({ actions }: Context, overmind: any) => {
   //Authenticate
-  await actions.auth.initiateUserProvider();
+  await actions.auth.authenticateUser();
 };
 
 //* AUTHENTICATION
 
-export const getLincsAauthenticationToken = async ({ effects }: Context) => {
-  await effects.auth.api.updateToken();
-  const token = effects.auth.api.getToken();
-  return token;
-};
-
-export const initiateUserProvider = async ({ state, actions, effects }: Context) => {
+export const authenticateUser = async ({ state, actions, effects }: Context) => {
   state.auth.userState = 'AUTHENTICATING';
   const sessionAuthenticated = await effects.auth.api.init();
 
   if (!sessionAuthenticated) {
-    return (state.auth.userState = 'UNAUTHENTICATED');
+    state.auth.userState = 'UNAUTHENTICATED';
+    return;
   }
 
+  const token = await effects.auth.api.getToken();
+  if (!token) return log.warn('No Authentication token');
+
   //Identity provider
-  await actions.auth.setupMainIdentityProvider();
+  await actions.auth.setupMainIdentityProvider(token);
   await actions.auth.setUserProfile();
-  await actions.storage.setupStorageProvider(); //based on identity providers
+  await actions.storage.setupStorageProvider(token); //based on identity providers
 
   //
   state.auth.userState = sessionAuthenticated ? 'AUTHENTICATED' : 'UNAUTHENTICATED';
+};
+
+export const getKeycloskAuthenticationToken = async ({ effects }: Context) => {
+  const token = await effects.auth.api.getToken();
+  return token;
 };
 
 export const setIndentityProvider = async (
@@ -57,10 +60,10 @@ export const setIndentityProvider = async (
   return provider;
 };
 
-export const setupMainIdentityProvider = async ({ state, actions, effects }: Context) => {
-  const token = await actions.auth.getLincsAauthenticationToken();
-  if (!token) return log.warn('No Authentication token');
-
+export const setupMainIdentityProvider = async (
+  { state, actions, effects }: Context,
+  token: string
+) => {
   const identity_provider = effects.auth.api.getIdentityProvider();
   if (!identity_provider) return log.warn('No identity_provider');
 
@@ -105,7 +108,7 @@ export const setUserProfile = async ({ state, actions, effects }: Context) => {
 };
 
 export const linkAccount = async ({ actions, effects }: Context, identity_provider: string) => {
-  const token = await actions.auth.getLincsAauthenticationToken();
+  const token = await effects.auth.api.getToken();
   if (!token) return log.warn('No Authentication token');
 
   const linkAccountUrl = await effects.auth.api.getLinkAccountUrl(identity_provider, token);
@@ -120,7 +123,7 @@ export const linkAccount = async ({ actions, effects }: Context, identity_provid
 
 export const getLinkedAccounts = async ({ state, actions, effects }: Context) => {
   if (!state.auth.user) return;
-  const token = await actions.auth.getLincsAauthenticationToken();
+  const token = await effects.auth.api.getToken();
   if (!token) return log.warn('No Authentication token');
 
   const linkedAccounts = await effects.auth.api.getLinkedAccounts(token);
@@ -153,7 +156,7 @@ export const _linkIdentityProvider = async (
   if (!state.auth.user) return;
   const { auth, ui } = actions;
 
-  const token = await auth.getLincsAauthenticationToken();
+  const token = await effects.auth.api.getToken();
   if (!token) return log.warn('No Authentication token');
 
   const IDPTokens = await effects.auth.api.getExternalIDPTokens(providerName, token);
@@ -235,7 +238,6 @@ export const accountManagement = ({ effects }: Context) => {
 };
 
 export const signOut = async ({ effects }: Context) => {
-  console.log('opa');
   localStorage.clear();
   Cookies.remove('resource');
   await effects.auth.api.logout();
