@@ -11,11 +11,13 @@ export interface IHTTPRequestError {
     message: string;
   };
 }
+
 export interface ILinkedAccount {
   identityProvider: string;
   userId?: string;
   userName?: string;
 }
+
 interface tokenParsed extends KeycloakTokenParsed {
   identity_provider?: string;
   given_name?: string;
@@ -27,55 +29,74 @@ interface tokenParsed extends KeycloakTokenParsed {
 /* The Api class is a wrapper for the Keycloak object that provides a set of functions that are used to
 authenticate the user and get the user's profile data */
 export class Api {
-  readonly KEYCLOACK_BASE_URL: string;
-  readonly NSSI_BASE_URL?: string;
+  readonly clientId: string;
   readonly LINK_ACCOUNTS_CALLBACK_URL: string;
-  readonly keycloak: Keycloak;
-
   readonly realm: string;
 
+  private KEYCLOACK_BASE_URL!: string;
+  private NSSI_BASE_URL?: string;
+  
+  private keycloak!: Keycloak;
+
   /**
-   * The constructor function takes in three parameters: clientId, KeycloakBaseUrl, and NSSIBaseUrl.
-   * The clientId is the client ID of the application that is being used to authenticate the user. The
-   * KeycloakBaseUrl is the URL of the Keycloak server. The NSSIBaseUrl is the URL of the NSSI server.
-   * The constructor function then sets the realm to 'lincs' and creates a new Keycloak object
-   * @param {string} clientId - The client ID of the application you want to authenticate with.
-   * @param {string} KeycloakBaseUrl - The base URL of the Keycloak server.
-   * @param {string} [NSSIBaseUrl] - The base URL of the NSSI server.
+   * The constructor function is called when the class is instantiated. It sets the realm, clientId,
+   * and LINK_ACCOUNTS_CALLBACK_URL variables
    */
-  constructor(clientId: string, KeycloakBaseUrl: string, NSSIBaseUrl?: string) {
-    const { origin } = window.location;
-
-    this.KEYCLOACK_BASE_URL = KeycloakBaseUrl;
-    this.NSSI_BASE_URL = NSSIBaseUrl;
-    this.LINK_ACCOUNTS_CALLBACK_URL = `${origin}/link-accounts`;
-
+  constructor() {
     this.realm = 'lincs';
+    this.clientId = 'leaf-writer';
 
-    this.keycloak = new Keycloak({
-      clientId,
-      realm: this.realm,
-      url: `${this.KEYCLOACK_BASE_URL}`,
-    });
+    const { origin } = window.location;
+    this.LINK_ACCOUNTS_CALLBACK_URL = `${origin}/link-accounts`;
   }
 
   /**
-   * The function initializes the keycloak object and returns a promise that resolves to true if the
+   * This function initializes the keycloak object and returns a promise that resolves to true if the
    * user is authenticated and false if the user is not authenticated
    * @returns A promise that resolves to a boolean.
    */
   async init() {
     const { origin } = window.location;
 
+    this.KEYCLOACK_BASE_URL = await this.getKeycloakUrl();
+    if (!this.KEYCLOACK_BASE_URL) throw log.error('Failed to configure KEYCLOACK_BASE_URL');
+    
+    this.NSSI_BASE_URL = await this.getNSSIUrl();
+    if (!this.NSSI_BASE_URL) throw log.error('Failed to configure NSSI_BASE_URL');
+
+    this.keycloak = new Keycloak({
+      clientId: this.clientId,
+      realm: this.realm,
+      url: `${this.KEYCLOACK_BASE_URL}`,
+    });
+
     const sessionAuthenticated = await this.keycloak
       .init({
         onLoad: 'check-sso',
-        silentCheckSsoRedirectUri: `${origin}/silent-check-sso.html`,
         pkceMethod: 'S256',
+        silentCheckSsoRedirectUri: `${origin}/silent-check-sso.html`,
       })
-      .catch(() => log.error('failed to contact keycloak'));
+      .catch(() => log.error('Failed to contact keycloak'));
 
     return sessionAuthenticated;
+  }
+
+  /**
+   * It makes a GET request to the `/api/keycloak-url` endpoint, and returns the response data
+   * @returns The response.data is being returned.
+   */
+  async getKeycloakUrl() {
+    const response = await axios.get('./api/keycloak-url'); 
+    return response.data;
+  }
+
+  /**
+   * It makes a GET request to the server, and returns the data from the server
+   * @returns The response.data is being returned.
+   */
+  async getNSSIUrl() {
+    const response = await axios.get('./api/nssi-url');
+    return response.data;
   }
 
   /**
@@ -99,7 +120,8 @@ export class Api {
    * It returns the token from the keycloak object
    * @returns The token.
    */
-  getToken() {
+  async getToken() {
+    if (this.isTokenExpired()) await this.updateToken();
     return this.keycloak.token;
   }
 
@@ -284,4 +306,4 @@ export class Api {
 }
 
 //@ts-ignore
-export const api = new Api('leaf-writer', process.env.KEYCLOAK_URL || '', process.env.NSSI_URL);
+export const api = new Api();

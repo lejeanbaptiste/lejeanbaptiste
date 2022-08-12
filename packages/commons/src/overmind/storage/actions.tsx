@@ -12,10 +12,7 @@ export const onInitializeOvermind = async ({ state }: Context, overmind: any) =>
   state.storage.recentDocuments = recentFiles;
 };
 
-export const setupStorageProvider = async ({ state, actions, effects }: Context) => {
-  const token = await actions.auth.getLincsAauthenticationToken();
-  if (!token) return log.warn('No Authentication token');
-
+export const setupStorageProvider = async ({ state, actions, effects }: Context, token: string) => {
   const identity_provider = effects.auth.api.getIdentityProvider();
   if (!identity_provider) return log.warn('No identity_provider');
 
