@@ -1,3 +1,26 @@
+## 1.5.0
+
+### Minor
+
+[7c21ecc9e2a2a639e4297111488e48988223bcd9] Setup analytics
+
+[d4ce4a2a86b30af92212108ef094f9a996eb2389] Lookups: Get geonames username from the server
+
+[3af22b514f923cb8034ef3b57d317c8a4dad6c66] Authentication: get keycloak and nssi url from the server
+
+[586764da5cfc3acbb61ccc6b9120dad27ff6d133] Server add endpoints to fetch env variables
+
+## Fix
+
+[89f3979aa71aa67fe15279e474618907e3f34a5d] Get identity provider
+
+### Chores
+
+[bc8535061183ba35ccb89fb5121bdd925f4c0d0b] Update dependecies
+
+[f845dcdc0df0aedd79e80d5a7f23073788841add] nodemon: extend watch to sub folders
+
+[8988f3be436f1fdb8bd40e4a75a0b28ec99f968c] remove .env from webpack build
 
 ## 1.4.1
 
@@ -11,40 +34,40 @@
 
 ### Minor Changes
 
-## Feature
+### Feature
 
 [7b90ba27ea6ab179188f2c5d5298e1d2dc8f106b] Service provider: Reorganize types and improve typying
 
-## Fix
+### Fix
 
 [5532b0c7035e3fe878ed658bd2098835eca9543a] Localization: Remove unused terms
 
-## CI
+### CI
 
 [cade8ad0292f8cca4a02a1d7a36fc166e395df21][c79b58dcc1b499947980fd8f10bfe468587d8a71] Use enviroment variables
 
-## Chore
+### Chore
 
 [de7cb02044fe4b4932754a8cfc0ca8ad06230a8][96308bb1d4ef67d0b97cd1d324e7c28df86e3f2e] Upate Dependencies
 
 ## 1.3.2
 
-## Fix
+### Fix
 
 [6ac21389238cdb01a5bc2db39d1e84892d16ccb0] Regression: keycloak endpoint change: Remove `/auth` .
 
-## Dependencies
+### Dependencies
 
 [161ed59eebaa0e22f1a9e4d4c7405136c6527922] core: upgrade: keycloak-js@19.0.1
 [8bf3ee71a31d396e6deba4d68d086e2dd928bd3c] core: bump up: @cwrc/leafwriter@1.6.1
 
 ## 1.3.1
 
-## Fix
+### Fix
 
 [d8eaf9aebe1693d02dcd5486c21ac241d4f25d30] Homepage: update the subtile and the About section
 
-## Dependencies
+### Dependencies
 
 [3946c6c8dd89d11338ef55777fafb3dfe01cf0a4] Core: update: @cwrc/leafwriter@1.6.0
 
