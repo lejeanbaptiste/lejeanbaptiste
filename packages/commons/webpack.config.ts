@@ -8,7 +8,6 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import webpack, { type EntryObject } from 'webpack';
 import WebpackBar from 'webpackbar';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
-import Dotenv from 'dotenv-webpack';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -28,7 +27,6 @@ const plugins = [
   new CopyWebpackPlugin({
     patterns: [
       { from: path.resolve(__dirname, 'src', 'assets'), to: 'assets' },
-      // { from: path.resolve(__dirname, 'src', 'config'), to: 'config' },
       { from: path.resolve(__dirname, 'src', 'content'), to: 'content' },
       { from: 'src/silent-check-sso.html', to: '[name][ext]' },
       { from: 'src/manifest.json', to: '[name][ext]' },
@@ -68,7 +66,6 @@ const plugins = [
       },
     ],
   }),
-  new Dotenv({ systemvars: true }),
   new HtmlWebpackPlugin({
     template: path.resolve(__dirname, 'src', 'index.html'),
     favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon.svg'),
