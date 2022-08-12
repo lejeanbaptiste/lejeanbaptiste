@@ -31,6 +31,7 @@
 		"build": "env-cmd -e production webpack"
 	},
 	"dependencies": {
+		"@analytics/google-analytics": "^1.0.3",
 		"@cwrc/leafwriter": "^1.6.2",
 		"@cwrc/leafwriter-storage-service": "^1.1.0",
 		"@emotion/react": "^11.10.0",
@@ -40,6 +41,7 @@
 		"@mui/lab": "^5.0.0-alpha.94",
 		"@mui/material": "^5.10.0",
 		"@octokit/rest": "^19.0.3",
+		"analytics": "^0.8.1",
 		"axios": "^0.27.2",
 		"body-parser": "^1.20.0",
 		"broadcast-channel": "^4.14.0",
@@ -76,7 +78,7 @@
 		"@types/dotenv-webpack": "^7.0.3",
 		"@types/express": "^4.17.13",
 		"@types/md5": "^2.3.2",
-		"@types/node": "^18.7.1",
+		"@types/node": "^18.7.2",
 		"@types/react-helmet": "^6.1.5",
 		"@types/react-router-dom": "^5.3.3",
 		"@types/webpack": "^5.28.0",
@@ -88,7 +90,6 @@
 		"copy-webpack-plugin": "^11.0.0",
 		"css-loader": "^6.7.1",
 		"css-minimizer-webpack-plugin": "^4.0.0",
-		"dotenv-webpack": "^8.0.0",
 		"esbuild-loader": "^2.19.0",
 		"eslint": "^8.21.0",
 		"eslint-config-prettier": "^8.5.0",
