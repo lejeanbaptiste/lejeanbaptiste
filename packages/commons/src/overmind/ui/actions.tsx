@@ -23,6 +23,11 @@ export const onInitializeOvermind = async ({ state, actions }: Context, overmind
   }
 };
 
+export const getGAID = async ({ effects }: Context) => {
+  const response = await effects.ui.api.getGAID();
+  return response;
+}
+
 export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
 

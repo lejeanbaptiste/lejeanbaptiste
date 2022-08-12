@@ -22,7 +22,7 @@ export interface User {
   emailVerified?: boolean;
   firstName?: string;
   lastName?: string;
-  username?: string;
+  username: string;
   identities: Map<string, IIdentity>;
   preferredID: string;
   prefStorageProvider: string;
