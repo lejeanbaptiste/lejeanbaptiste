@@ -99,9 +99,10 @@ export const setUserProfile = async ({ state, actions, effects }: Context) => {
   //preferredID
   const preferredID = localStorage.getItem('prefIdProvider');
   //if not preferredID, use the first identityProviders linked Account
+  console.log({preferredID, user, idp: [...state.auth.identityProviders.keys()] })
   preferredID
     ? (state.auth.user.preferredID = preferredID)
-    : actions.auth.changePreferredID(Object.keys(state.auth.identityProviders)[0]);
+    : actions.auth.changePreferredID([...state.auth.identityProviders.keys()][0]);
 
   //use avatar from preffed ID
   state.auth.user.avatar_url = user.identities.get(user.preferredID)?.avatar_url ?? undefined;
