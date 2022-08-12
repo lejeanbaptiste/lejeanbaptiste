@@ -1,3 +1,12 @@
+
+## 1.4.1
+
+### Patch Changes
+
+- New release
+- Updated dependencies
+  - @cwrc/leafwriter@1.6.2
+
 ## 1.4.0
 
 ### Minor Changes
@@ -16,7 +25,7 @@
 
 ## Chore
 
-[de7cb02044fe4b4932754a8cfc0ca8ad06230a8][96308bb1d4ef67d0b97cd1d324e7c28df86e3f2e]  Upate Dependencies
+[de7cb02044fe4b4932754a8cfc0ca8ad06230a8][96308bb1d4ef67d0b97cd1d324e7c28df86e3f2e] Upate Dependencies
 
 ## 1.3.2
 
