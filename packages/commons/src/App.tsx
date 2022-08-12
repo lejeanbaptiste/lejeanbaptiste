@@ -4,36 +4,48 @@ import Storage from '@src/components/Storage';
 import { SnackbarProvider } from 'notistack';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRoutes } from 'react-router-dom';
+import { useLocation, useRoutes } from 'react-router-dom';
+import { analytics, initAnalytics } from './analytics';
 import AlertDialog from './components/AlertDialog';
-import { useTracking } from './hooks/useTracking';
-import { useAppState } from './overmind';
+import { useActions, useAppState } from './overmind';
 import routes from './routes';
 import theme from './theme';
 
 const App: FC = () => {
+  const { getGAID } = useActions().ui;
   const { darkMode, language } = useAppState().ui;
+  const location = useLocation();
 
   const routing = useRoutes(routes);
   const { i18n } = useTranslation();
 
-  //@ts-ignore
-  useTracking(process.env.GA_MEASUREMENT_ID);
+  useEffect(() => {
+    setupAnalytics();
+  }, []);
+
+  const setupAnalytics = async () => {
+    const analytics = await initAnalytics(getGAID);
+    analytics.page();
+  };
+
+  useEffect(() => {
+    if (analytics) analytics.page();
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     i18n.changeLanguage(language.code);
   }, [language]);
 
   return (
-    <ThemeProvider theme={theme(darkMode)}>
-      <SnackbarProvider>
-        <CssBaseline enableColorScheme />
-        <Storage />
-        <MessageDialog />
-        <AlertDialog />
-        {routing}
-      </SnackbarProvider>
-    </ThemeProvider>
+      <ThemeProvider theme={theme(darkMode)}>
+        <SnackbarProvider>
+          <CssBaseline enableColorScheme />
+          <Storage />
+          <MessageDialog />
+          <AlertDialog />
+          {routing}
+        </SnackbarProvider>
+      </ThemeProvider>
   );
 };
 

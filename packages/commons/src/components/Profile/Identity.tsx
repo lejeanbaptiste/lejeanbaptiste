@@ -7,11 +7,12 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Stack,
-  Tooltip,
+  Tooltip
 } from '@mui/material';
+import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
-import { supportedIdentityProviders } from '@src/services';
 import type { IdentityProviderName } from '@src/services';
+import { supportedIdentityProviders } from '@src/services';
 import { getIcon } from '@src/utilities/icons';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { FC } from 'react';
@@ -26,6 +27,8 @@ const Identity: FC = () => {
   const handleIdClick = async (provider: IdentityProviderName) => {
     if (!user || user?.preferredID === provider) return;
     user.identities.get(provider) ? changePreferredID(provider) : await connectAccount(provider);
+
+    analytics.track('identity', { identityProvider: provider });
   };
 
   const connectAccount = async (provider: string) => {

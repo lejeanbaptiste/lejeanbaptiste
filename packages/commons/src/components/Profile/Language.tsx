@@ -8,6 +8,7 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities/util';
 import React, { FC, MouseEvent } from 'react';
@@ -30,15 +31,17 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
 }));
 
 const Language: FC = () => {
-  const { t, i18n } = useTranslation();
-
   const { language } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
+
+  const { t, i18n } = useTranslation();
 
   const changeLanguage = (event: MouseEvent<HTMLElement>, code: string) => {
     if (!code) code = language.code;
     switchLanguage(code);
     i18n.changeLanguage(code);
+
+    analytics.track('language', { language: code });
   };
 
   return (

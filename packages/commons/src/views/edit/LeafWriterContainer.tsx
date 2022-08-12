@@ -1,6 +1,7 @@
 import { Leafwriter } from '@cwrc/leafwriter';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
+import { analytics } from '@src/analytics';
 
 const LeafWriterContainer: FC = () => {
   const { user } = useAppState().auth;
@@ -47,6 +48,8 @@ const LeafWriterContainer: FC = () => {
       });
 
       setLeafWriter(leafWriter);
+
+      analytics.track('editor', { opened: true });
 
       // return () => {
       //   leafWriter.isDisrty.unsubscribe();

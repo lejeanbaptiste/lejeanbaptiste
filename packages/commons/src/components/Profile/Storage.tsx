@@ -7,8 +7,9 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Stack,
-  Tooltip,
+  Tooltip
 } from '@mui/material';
+import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
 import { suportedStorageProviders, type StorageProviderName } from '@src/services';
 import { getIcon } from '@src/utilities/icons';
@@ -31,6 +32,8 @@ const Storage: FC = () => {
     storageProviders.includes(provider)
       ? changePrefStorageProvider(provider)
       : await connectAccount(provider);
+
+    analytics.track('storage', { storage: provider });
   };
 
   const connectAccount = async (provider: string) => {
