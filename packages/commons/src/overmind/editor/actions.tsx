@@ -4,6 +4,11 @@ import { log } from '@src/utilities/log';
 import { Context } from '../';
 import { StorageProviderName } from '@src/services';
 
+export const getGeonameUsername = async ({ effects }: Context) => {
+  const response = await effects.editor.api.getGeonameUsername();
+  return response;
+}
+
 export const setLeafWriter = ({ state }: Context, leafWriter?: Leafwriter) => {
   state.editor.leafWriter = leafWriter;
 };

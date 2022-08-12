@@ -7,24 +7,30 @@ const LeafWriterContainer: FC = () => {
   const { leafWriter } = useAppState().editor;
   const { resource } = useAppState().storage;
 
-  const { getLincsAauthenticationToken } = useActions().auth;
+  const { getKeycloskAuthenticationToken } = useActions().auth;
+  const { getGeonameUsername, setIsDirty, setLeafWriter } = useActions().editor;
   const { addToRecentDocument } = useActions().storage;
-  const { setIsDirty, setLeafWriter } = useActions().editor;
 
   const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (divEl.current && !leafWriter && user && resource?.content) {
+    if (divEl.current && !leafWriter) createLFInstance();
+  }, []);
+
+  const createLFInstance = async () => {
+    if (user && resource?.content) {
+      const geonamesUsername = await getGeonameUsername();
+
       const leafWriter = new Leafwriter(divEl.current, {
         document: {
           url: resource.url,
           xml: resource.content ?? '',
         },
         settings: {
-          credentials: { nssiToken: getLincsAauthenticationToken },
+          credentials: { nssiToken: getKeycloskAuthenticationToken },
           lookups: {
             //@ts-ignore
-            authorities: [['geonames', { config: { username: process.env.GEONAMES_USERNAME } }]],
+            authorities: [['geonames', { config: { username: geonamesUsername } }]],
           },
         },
         user: {
@@ -46,7 +52,7 @@ const LeafWriterContainer: FC = () => {
       //   leafWriter.isDisrty.unsubscribe();
       // };
     }
-  }, []);
+  };
 
   return <div ref={divEl} id="leaf-writer-container" style={{ height: 'calc(100vh - 48px)' }} />;
 };
