@@ -6,5 +6,8 @@ services:
       dockerfile: Dockerfile
     environment:
       - GA_MEASUREMENT_ID
+      - GEONAMES_USERNAME
+      - KEYCLOAK_URL
+      - NSSI_URL
     ports:
       - 3000:3000
