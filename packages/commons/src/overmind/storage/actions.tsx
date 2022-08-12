@@ -1,23 +1,22 @@
-import { suportedStorageProviders } from '@src/services';
-import AuthenticationService from '@src/services/AuthenticationService';
-import type { IProviderAuth, Resource, StorageDialogState, StorageProvider } from '@src/types';
+import type { IProviderAuth, Resource, StorageDialogState } from '@src/types';
 import { log } from '@src/utilities/log';
+import { StorageProviderName, suportedStorageProviders } from '../../services';
 import { Context } from '../index';
 
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const onInitializeOvermind = async ({ state, actions }: Context, overmind: any) => {
+export const onInitializeOvermind = async ({ state }: Context, overmind: any) => {
   //Recent Files
   const recentFilesSTRING = localStorage.getItem('recentFiles') ?? '[]';
   const recentFiles: Resource[] = JSON.parse(recentFilesSTRING);
   state.storage.recentDocuments = recentFiles;
 };
 
-export const setupStorageProvider = async ({ state, actions }: Context) => {
+export const setupStorageProvider = async ({ state, actions, effects }: Context) => {
   const token = await actions.auth.getLincsAauthenticationToken();
   if (!token) return log.warn('No Authentication token');
 
-  const identity_provider = AuthenticationService.getIdentityProvider();
+  const identity_provider = effects.auth.api.getIdentityProvider();
   if (!identity_provider) return log.warn('No identity_provider');
 
   if (!state.auth.identityProviders) return;
@@ -26,21 +25,21 @@ export const setupStorageProvider = async ({ state, actions }: Context) => {
     actions.storage._linkStorageProvider(iDProvider.name);
   });
 
-  //prefferedStorage
+  //preferredStorage
 
   if (!state.auth.user) return;
-  //if not prefferrdStorage, use the first StorageProvider linked Account
-  const prefferedStorage = localStorage.getItem('prefStorageProvider');
+  //if not preferredStorage, use the first StorageProvider linked Account
+  const preferredStorage = localStorage.getItem('prefStorageProvider');
 
-  prefferedStorage
-    ? (state.auth.user.prefStorageProvider = prefferedStorage)
+  preferredStorage
+    ? (state.auth.user.prefStorageProvider = preferredStorage)
     : actions.storage.changePrefStorageProvider(state.storage.storageProviders[0]);
 };
 
 export const _linkStorageProvider = ({ state }: Context, providerName: string) => {
-  if (!suportedStorageProviders.includes(providerName as StorageProvider)) return;
+  if (!suportedStorageProviders.includes(providerName as StorageProviderName)) return;
 
-  const storage = providerName as StorageProvider;
+  const storage = providerName as StorageProviderName;
   if (state.storage.storageProviders.includes(storage)) return;
   state.storage.storageProviders = [...state.storage.storageProviders, storage];
 };
@@ -57,16 +56,23 @@ export const clearResource = async ({ state }: Context) => {
   state.storage.resource = undefined;
 };
 
-export const getStorageProviderAuth = ({ state, actions }: Context, name: string) => {
+export const getStorageProviderAuth = ({ state, actions }: Context, name: StorageProviderName) => {
   const provider = actions.auth.getIdentityProvider(name);
   if (!provider) return;
   return { name: provider.name, access_token: provider.getAccessToken() };
 };
 
 export const getStorageProvidersAuth = ({ state, actions }: Context) => {
-  const providers: IProviderAuth[] = state.storage.storageProviders.map((provider) => {
+  const providers: IProviderAuth[] = [];
+
+  state.storage.storageProviders.forEach((provider) => {
     const identityProvider = actions.auth.getIdentityProvider(provider);
-    return { name: identityProvider.name, access_token: identityProvider.getAccessToken() };
+    if (identityProvider) {
+      providers.push({
+        name: identityProvider.name,
+        access_token: identityProvider.getAccessToken(),
+      });
+    }
   });
 
   return providers;
@@ -90,9 +96,8 @@ export const closeStorageDialog = async ({ state }: Context) => {
   state.storage.storageDialogState = { open: false };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const isStorageProviderSupported = ({ state }: Context, providerName: string) => {
-  return suportedStorageProviders.includes(providerName as StorageProvider);
+  return suportedStorageProviders.includes(providerName as StorageProviderName);
 };
 
 //
@@ -148,6 +153,6 @@ export const updateRecentDocument = ({ state }: Context) => {
 };
 
 export const loadTemplate = async ({ effects }: Context, url: string) => {
-  const documentString = await effects.storage.localAPI.loadTemplate(url);
+  const documentString = await effects.storage.api.loadTemplate(url);
   return documentString;
 };

@@ -13,7 +13,7 @@ type State = {
 export const state: State = {
   alertDialog: { open: false },
   darkMode: false,
-  language: Object.fromEntries(supportedLanguages)['en-CA'],
+  language: supportedLanguages.get('en-CA')!,
   messageDialog: { open: false },
   notifications: [],
   themeAppearance: 'auto',

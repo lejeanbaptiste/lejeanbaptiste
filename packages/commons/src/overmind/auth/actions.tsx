@@ -1,30 +1,32 @@
 import { log } from '@src//utilities/log';
-import { setIndentityProvider } from '@src/services';
-import AuthenticationService from '@src/services/AuthenticationService';
 import type { IAnnotationUserProfile, User } from '@src/types';
 import Cookies from 'js-cookie';
+import {
+  AuthenticateProp,
+  IdentityProviderName,
+  identityServices,
+  supportedIdentityProviders,
+} from '../../services';
 import { Context } from '../index';
 import { ILinkedAccount } from './effects';
 
 //* INIITIALIZE
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const onInitializeOvermind = async ({ state, actions }: Context, overmind: any) => {
+export const onInitializeOvermind = async ({ actions }: Context, overmind: any) => {
   //Authenticate
   await actions.auth.initiateUserProvider();
 };
 
 //* AUTHENTICATION
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const getLincsAauthenticationToken = async ({ state }: Context) => {
-  await AuthenticationService.updateToken();
-  const token = AuthenticationService.getToken();
+export const getLincsAauthenticationToken = async ({ effects }: Context) => {
+  await effects.auth.api.updateToken();
+  const token = effects.auth.api.getToken();
   return token;
 };
 
-export const initiateUserProvider = async ({ state, actions }: Context) => {
+export const initiateUserProvider = async ({ state, actions, effects }: Context) => {
   state.auth.userState = 'AUTHENTICATING';
-  const sessionAuthenticated = await AuthenticationService.init();
+  const sessionAuthenticated = await effects.auth.api.init();
 
   if (!sessionAuthenticated) {
     return (state.auth.userState = 'UNAUTHENTICATED');
@@ -39,18 +41,30 @@ export const initiateUserProvider = async ({ state, actions }: Context) => {
   state.auth.userState = sessionAuthenticated ? 'AUTHENTICATED' : 'UNAUTHENTICATED';
 };
 
+export const setIndentityProvider = async (
+  { state }: Context,
+  { IDPTokens, providerName, userId, userName }: AuthenticateProp
+) => {
+  if (!providerName || !supportedIdentityProviders.includes(providerName as IdentityProviderName)) {
+    throw new Error('Identity Provider not supported');
+  }
+
+  const provider = identityServices.get(providerName as IdentityProviderName);
+  if (!provider) throw new Error('Identity Provider not supported');
+
+  provider.authenticate({ IDPTokens, userName, userId });
+
+  return provider;
+};
+
 export const setupMainIdentityProvider = async ({ state, actions, effects }: Context) => {
   const token = await actions.auth.getLincsAauthenticationToken();
   if (!token) return log.warn('No Authentication token');
 
-  const identity_provider = AuthenticationService.getIdentityProvider();
+  const identity_provider = effects.auth.api.getIdentityProvider();
   if (!identity_provider) return log.warn('No identity_provider');
 
-  const IDPTokens = await effects.auth.KeycloakApi.getExternalIDPTokens(
-    'lincs',
-    identity_provider,
-    token
-  );
+  const IDPTokens = await effects.auth.api.getExternalIDPTokens(identity_provider, token);
 
   if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) {
     const { message } = IDPTokens.error;
@@ -60,13 +74,16 @@ export const setupMainIdentityProvider = async ({ state, actions, effects }: Con
 
   if (!IDPTokens) return log.warn('No identity_provider tokens');
 
-  const provider = setIndentityProvider({ IDPTokens, providerName: identity_provider });
+  const provider = await actions.auth.setIndentityProvider({
+    IDPTokens,
+    providerName: identity_provider,
+  });
 
-  state.auth.identityProviders[identity_provider] = provider;
+  state.auth.identityProviders.set(identity_provider as IdentityProviderName, provider);
 };
 
-export const setUserProfile = async ({ state, actions }: Context) => {
-  const keyCloakProfile = await AuthenticationService.getUserData();
+export const setUserProfile = async ({ state, actions, effects }: Context) => {
+  const keyCloakProfile = await effects.auth.api.getUserData();
   const user = keyCloakProfile as User;
   state.auth.user = user;
 
@@ -76,22 +93,22 @@ export const setUserProfile = async ({ state, actions }: Context) => {
   state.auth.user.identities = new Map();
   await actions.auth.getLinkedAccounts();
 
-  //prefferedID
-  const prefferedID = localStorage.getItem('prefIdProvider');
-  //if not prefferedID, use the first identityProviders linked Account
-  prefferedID
-    ? (state.auth.user.prefferedID = prefferedID)
-    : actions.auth.changePrefferedID(Object.keys(state.auth.identityProviders)[0]);
+  //preferredID
+  const preferredID = localStorage.getItem('prefIdProvider');
+  //if not preferredID, use the first identityProviders linked Account
+  preferredID
+    ? (state.auth.user.preferredID = preferredID)
+    : actions.auth.changePreferredID(Object.keys(state.auth.identityProviders)[0]);
 
   //use avatar from preffed ID
-  state.auth.user.avatar_url = user.identities.get(user.prefferedID)?.avatar_url ?? undefined;
+  state.auth.user.avatar_url = user.identities.get(user.preferredID)?.avatar_url ?? undefined;
 };
 
 export const linkAccount = async ({ actions, effects }: Context, identity_provider: string) => {
   const token = await actions.auth.getLincsAauthenticationToken();
   if (!token) return log.warn('No Authentication token');
 
-  const linkAccountUrl = await effects.auth.NSSIApi.getLinkAccountUrl(identity_provider, token);
+  const linkAccountUrl = await effects.auth.api.getLinkAccountUrl(identity_provider, token);
   if (typeof linkAccountUrl !== 'string') {
     const { message } = linkAccountUrl.error;
     actions.ui.emitNotification({ message });
@@ -106,7 +123,7 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
   const token = await actions.auth.getLincsAauthenticationToken();
   if (!token) return log.warn('No Authentication token');
 
-  const linkedAccounts = await effects.auth.NSSIApi.getLinkedAccounts(token);
+  const linkedAccounts = await effects.auth.api.getLinkedAccounts(token);
   if ('error' in linkedAccounts) {
     const { message } = linkedAccounts.error;
     actions.ui.emitNotification({ message });
@@ -134,29 +151,26 @@ export const _linkIdentityProvider = async (
   { identityProvider: providerName, userId, userName }: ILinkedAccount
 ) => {
   if (!state.auth.user) return;
+  const { auth, ui } = actions;
 
-  const token = await actions.auth.getLincsAauthenticationToken();
+  const token = await auth.getLincsAauthenticationToken();
   if (!token) return log.warn('No Authentication token');
 
-  const IDPTokens = await effects.auth.KeycloakApi.getExternalIDPTokens(
-    'lincs',
-    providerName,
-    token
-  );
+  const IDPTokens = await effects.auth.api.getExternalIDPTokens(providerName, token);
   if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) {
     const { message } = IDPTokens.error;
-    actions.ui.emitNotification({ message });
+    ui.emitNotification({ message });
     return;
   }
 
   if (!IDPTokens) return log.warn('No identity_provider tokens');
 
-  const provider = setIndentityProvider({ IDPTokens, providerName, userId, userName });
+  const provider = await auth.setIndentityProvider({ IDPTokens, providerName, userId, userName });
 
   const userDetails = await provider.getAuthenticatedUser(userId);
   if (!userDetails) return;
 
-  state.auth.identityProviders[providerName] = provider;
+  state.auth.identityProviders.set(providerName as IdentityProviderName, provider);
   state.auth.user.identities.set(providerName, userDetails);
 
   return provider;
@@ -177,7 +191,7 @@ export const setSampleUser = ({ state }: Context) => {
   //       username: 'sampleUser',
   //     },
   //   },
-  //   prefferedID: 'github',
+  //   preferredID: 'github',
   //   prefStorageProvider: 'github',
   // };
   // state.auth.userAuthenticated = true;
@@ -187,14 +201,14 @@ export const getUserProfile = ({ state }: Context) => {
   const { user } = state.auth;
   if (!user || user.identities.size === 0) return;
 
-  const prefferedID = user.prefferedID;
+  const preferredID = user.preferredID;
 
-  const name = user.identities.get(prefferedID)?.name;
-  const url = user.identities.get(prefferedID)?.uri;
+  const name = user.identities.get(preferredID)?.name;
+  const url = user.identities.get(preferredID)?.uri;
 
   if (!name || !url) return;
 
-  const username = user.identities.get(prefferedID)?.username;
+  const username = user.identities.get(preferredID)?.username;
   const avatar_url = user.avatar_url;
   const email = user.email;
 
@@ -203,7 +217,7 @@ export const getUserProfile = ({ state }: Context) => {
     url,
     avatar_url,
     email,
-    prefferedID,
+    preferredID,
     username,
   };
 
@@ -212,21 +226,24 @@ export const getUserProfile = ({ state }: Context) => {
 
 //* USER
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const signIn = ({ state }: Context) => {
-  AuthenticationService.doLogin();
+export const signIn = ({ effects }: Context) => {
+  effects.auth.api.login();
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const signOut = async ({ state }: Context) => {
+export const accountManagement = ({ effects }: Context) => {
+  effects.auth.api.accountManagement();
+};
+
+export const signOut = async ({ effects }: Context) => {
+  console.log('opa');
   localStorage.clear();
   Cookies.remove('resource');
-  await AuthenticationService.doLogout();
+  await effects.auth.api.logout();
 };
 
-export const changePrefferedID = ({ state }: Context, iDproviderName: string) => {
+export const changePreferredID = ({ state }: Context, iDproviderName: string) => {
   if (!state.auth.user) return;
-  state.auth.user.prefferedID = iDproviderName;
+  state.auth.user.preferredID = iDproviderName;
   localStorage.setItem('prefIdProvider', iDproviderName);
 
   state.auth.user.avatar_url =
@@ -235,6 +252,6 @@ export const changePrefferedID = ({ state }: Context, iDproviderName: string) =>
   return iDproviderName;
 };
 
-export const getIdentityProvider = ({ state }: Context, name: string) => {
-  return state.auth.identityProviders[name];
+export const getIdentityProvider = ({ state }: Context, name: IdentityProviderName) => {
+  return state.auth.identityProviders.get(name);
 };

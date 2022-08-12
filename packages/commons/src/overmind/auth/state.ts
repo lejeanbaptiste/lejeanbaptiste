@@ -1,15 +1,13 @@
-import type { IdentityProvider } from '@src/services/IdentityProvider';
-import { User } from '@src/types';
+import type { identityServices } from '@src/services';
+import type { User } from '@src/types';
 
 type State = {
-  authenticationServiceName: string;
-  identityProviders: { [key: string]: IdentityProvider };
+  identityProviders: typeof identityServices;
   user?: User;
   userState: 'UNAUTHENTICATED' | 'AUTHENTICATING' | 'AUTHENTICATED';
 };
 
 export const state: State = {
-  authenticationServiceName: 'lincs-keycloak',
-  identityProviders: {},
+  identityProviders: new Map(),
   userState: 'UNAUTHENTICATED',
 };
