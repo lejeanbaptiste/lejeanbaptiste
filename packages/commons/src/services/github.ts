@@ -1,7 +1,7 @@
 import { Octokit } from '@octokit/rest';
 import { GetResponseDataTypeFromEndpointMethod } from '@octokit/types';
 import queryString from 'query-string';
-import type { AuthenticateProp, IdentityProvider } from '../IdentityProvider';
+import type { AuthenticateProp, IIdentityProvider } from './';
 
 let octokit: Octokit;
 const name = 'github';
@@ -14,13 +14,6 @@ const getUserId = () => _userId;
 
 let _userName: string;
 const getUserName = () => _userName;
-
-// We chain together the calls to github as a series of chained promises, and pass
-// the growing result as an object (strictly speaking, creating a copy of the object
-// at each point in the chain, so no arguments are mutated) along the promise chain, ultimately returning
-// the object, which holds the new document, new annotations, treeSHA, and commitSHA
-// The document and annotations are new because we rewrite all the annotations to use
-// new raw github URIs for the newly saved document and annotation files.
 
 //  ---------- TYPES
 octokit = new Octokit();
@@ -64,7 +57,7 @@ const getAuthenticatedUser = async (): Promise<GetAuthenticatedResponseDataType>
   return user;
 };
 
-export const GithubIdentityProvider: IdentityProvider = {
+export const GithubIdentityProvider: IIdentityProvider = {
   name,
   getAccessToken,
   getUserId,

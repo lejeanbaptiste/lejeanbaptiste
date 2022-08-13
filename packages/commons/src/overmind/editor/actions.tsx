@@ -1,7 +1,13 @@
 import { saveDocument } from '@cwrc/leafwriter-storage-service';
-import Leafwriter from '@cwrc/leafwriter';
+import { Leafwriter } from '@cwrc/leafwriter';
 import { log } from '@src/utilities/log';
 import { Context } from '../';
+import { StorageProviderName } from '@src/services';
+
+export const getGeonameUsername = async ({ effects }: Context) => {
+  const response = await effects.editor.api.getGeonameUsername();
+  return response;
+}
 
 export const setLeafWriter = ({ state }: Context, leafWriter?: Leafwriter) => {
   state.editor.leafWriter = leafWriter;
@@ -27,7 +33,7 @@ export const save = async ({ state, actions }: Context) => {
     return;
   }
 
-  const providerAuth = actions.storage.getStorageProviderAuth(storage.resource.provider);
+  const providerAuth = actions.storage.getStorageProviderAuth(storage.resource.provider as StorageProviderName);
   if (!providerAuth) {
     log.error('Provider token not found');
     return;

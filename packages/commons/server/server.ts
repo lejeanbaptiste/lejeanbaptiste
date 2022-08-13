@@ -1,12 +1,14 @@
 import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
+import { api } from './routes';
 
 const publicPath = path.join(__dirname, '..', 'dist');
 
 const server = express();
 
 server.use(express.json({ limit: '5mb' })); // support json encoded bodies
+server.use('/api', api);
 
 // dev server
 const loadDevServer = async () => {

@@ -1,6 +1,5 @@
 {
   "error": {
-    "fileError": "",
     "message404": "Vous vous avancer sur des zones obscures, ou bien c'est une erreur. Retournez à <1>l'accueil.</1>",
     "pageNotFound": "Page non trouvée",
     "somethingWentWrong": "",
@@ -8,7 +7,6 @@
   },
   "home": {
     "appearance": "",
-    "darkMode": "Mode sombre",
     "english": "Anglaise",
     "french": "Française",
     "from_Your_computer": "De votre ordinateur",
@@ -19,19 +17,13 @@
     "open": "ouvrir",
     "orTrySample": "Ou essayez avec des exemples de fichiers :",
     "or_paste_your_XML_here": "ou collez votre XML ici",
-    "paste_your_XML_here": "",
     "recent": "récents",
+    "settings": "",
     "signOut": "Se déconnecter",
     "signin": "Se connecter",
     "storage": "storage",
     "subtitle": "L'éditeur en ligne XML & RDF du Linked Editing Academic Framework",
     "team": "Équipe",
     "templates": "modèle"
-  },
-  "settings": "",
-  "storageDialog": {
-    "load": "",
-    "pasteXml": "",
-    "save": ""
   }
 }

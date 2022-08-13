@@ -1,9 +1,9 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
-// const Leafwriter = React.lazy(() => import('@cwrc/leafwriter'));
 import LoadingMask from '@src/components/loadingMask';
 import Page from '@src/components/Page';
 import { usePermalink } from '@src/hooks/usePermalink';
 import { useActions, useAppState } from '@src/overmind';
+import { StorageProviderName } from '@src/services';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -40,7 +40,7 @@ const EditView: FC = () => {
     if (!resource) return showErrorMessage('Resource not found');
     if (!resource.provider) return showErrorMessage('Provider not found');
 
-    const providerAuth = getStorageProviderAuth(resource.provider);
+    const providerAuth = getStorageProviderAuth(resource.provider as StorageProviderName);
     if (!providerAuth) return showErrorMessage('Provider not found');
 
     const document = await loadDocument(providerAuth, resource);

@@ -1,31 +1,39 @@
-import type { IdentityProvider as IdentityProviderType, StorageProvider } from '@src/types';
-import { GithubIdentityProvider } from './github';
-import { GitlabIdentityProvider } from './gitlab';
-import type { AuthenticateProp, IdentityProvider } from './IdentityProvider';
-import { OrcidIdentityProvider } from './orcid';
+import { GithubIdentityProvider as github } from './github';
+import { GitlabIdentityProvider as gitlab } from './gitlab';
+// import { OrcidIdentityProvider as orcid } from './orcid';
 
-// export const supportedIdentityProviders: IdentityProviderType[] = ['orcid', 'gitlab', 'github'];
-export const supportedIdentityProviders: IdentityProviderType[] = ['gitlab', 'github'];
-export const suportedStorageProviders: StorageProvider[] = ['gitlab', 'github'];
+export type IdentityProviderName = 'github' | 'gitlab' | 'orcid';
+export type StorageProviderName = 'github' | 'gitlab';
 
-export const setIndentityProvider = ({
-  IDPTokens,
-  providerName,
-  userId,
-  userName,
-}: AuthenticateProp) => {
-  if (!providerName || !supportedIdentityProviders.includes(providerName as IdentityProviderType)) {
-    throw new Error('Identity Provider not supported');
-  }
-
-  let provider: IdentityProvider;
-
-  if (providerName === 'github') provider = GithubIdentityProvider;
-  else if (providerName === 'gitlab') provider = GitlabIdentityProvider;
-  else if (providerName === 'orcid') provider = OrcidIdentityProvider;
-  else throw new Error('Identity Provider not supported');
-
-  provider.authenticate({ IDPTokens, userName, userId });
-
-  return provider;
+export type AuthenticateProp = {
+  access_token?: string;
+  IDPTokens?: string | any;
+  providerName?: string;
+  userId?: string;
+  userName?: Readonly<string>;
 };
+
+export interface IIdentityProvider {
+  name: string;
+  authenticate(params: AuthenticateProp): void;
+  getAccessToken: () => string;
+  getAuthenticatedUser(userId?: string): any;
+  getUserId: () => string;
+  getUserName: () => string;
+}
+
+export type IStorageProvider = IIdentityProvider;
+
+export const identityServices: Map<IdentityProviderName, IIdentityProvider> = new Map([
+  ['github', github],
+  ['gitlab', gitlab],
+  // ['orcid', orcid],
+]);
+
+export const storageServices: Map<StorageProviderName, IStorageProvider> = new Map([
+  ['github', github],
+  ['gitlab', gitlab],
+]);
+
+export const supportedIdentityProviders = [...identityServices.keys()];
+export const suportedStorageProviders = [...storageServices.keys()]; 

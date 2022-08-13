@@ -13,5 +13,5 @@
     "display": "standalone",
     "scope": "/",
     "theme_color": "#3367D6",
-    "description": "XML annotation editor"
+    "description": "xml editing and rdf annotation using github as document store"
   }

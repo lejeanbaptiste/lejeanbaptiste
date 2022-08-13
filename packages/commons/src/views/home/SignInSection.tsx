@@ -1,12 +1,19 @@
 import { Box, Button } from '@mui/material';
+import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { FC } from 'react';
+import React, { FC, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const SignInSection: FC = () => {
-  const { userState } = useAppState().auth;
+  const { userState, user } = useAppState().auth;
   const { signIn } = useActions().auth;
+
+  useEffect(() => {
+    if (userState === 'AUTHENTICATED' && user) {
+      analytics.identify(user.username);
+    }
+  }, [userState]);
 
   const { t } = useTranslation();
 

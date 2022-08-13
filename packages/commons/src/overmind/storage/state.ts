@@ -1,12 +1,13 @@
-import { Resource, StorageDialogState, StorageProvider } from '@src/types';
+import { Resource, StorageDialogState } from '@src/types';
+import { StorageProviderName } from '@src/services';
 
 type State = {
   recentDocuments: Resource[];
   resource?: Resource;
   sampleDocuments?: { title: string; url: string }[];
-  templates: { icon: string; title: string; url: string }[];
   storageDialogState: StorageDialogState;
-  storageProviders: StorageProvider[];
+  storageProviders: StorageProviderName[];
+  templates: { icon: string; title: string; url: string }[];
 };
 
 export const state: State = {

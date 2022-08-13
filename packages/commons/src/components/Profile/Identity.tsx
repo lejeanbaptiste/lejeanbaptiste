@@ -7,11 +7,12 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Stack,
-  Tooltip,
+  Tooltip
 } from '@mui/material';
+import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
+import type { IdentityProviderName } from '@src/services';
 import { supportedIdentityProviders } from '@src/services';
-import type { IdentityProvider } from '@src/types';
 import { getIcon } from '@src/utilities/icons';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { FC } from 'react';
@@ -19,13 +20,15 @@ import { useTranslation } from 'react-i18next';
 
 const Identity: FC = () => {
   const { user } = useAppState().auth;
-  const { changePrefferedID, getLinkedAccounts, linkAccount } = useActions().auth;
+  const { changePreferredID, getLinkedAccounts, linkAccount } = useActions().auth;
   const { notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation();
 
-  const handleIdClick = async (provider: IdentityProvider) => {
-    if (!user || user?.prefferedID === provider) return;
-    user.identities.get(provider) ? changePrefferedID(provider) : await connectAccount(provider);
+  const handleIdClick = async (provider: IdentityProviderName) => {
+    if (!user || user?.preferredID === provider) return;
+    user.identities.get(provider) ? changePreferredID(provider) : await connectAccount(provider);
+
+    analytics.track('identity', { identityProvider: provider });
   };
 
   const connectAccount = async (provider: string) => {
@@ -66,7 +69,7 @@ const Identity: FC = () => {
               title={
                 !user?.identities.get(provider)
                   ? `Link your ${provider} account`
-                  : provider === user?.prefferedID
+                  : provider === user?.preferredID
                   ? provider
                   : `Switch to ${provider}`
               }
@@ -80,13 +83,13 @@ const Identity: FC = () => {
                     height: 22,
                     width: 22,
                     color: ({ palette }) =>
-                      user?.prefferedID === provider
+                      user?.preferredID === provider
                         ? palette.mode === 'dark'
                           ? palette.common.white
                           : palette.common.black
                         : 'inherit',
                     border: ({ palette }) =>
-                      user?.prefferedID === provider ? `2px solid ${palette.primary.light}` : 0,
+                      user?.preferredID === provider ? `2px solid ${palette.primary.light}` : 0,
                   }}
                 >
                   <Icon

@@ -7,11 +7,11 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Stack,
-  Tooltip,
+  Tooltip
 } from '@mui/material';
+import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
-import { suportedStorageProviders } from '@src/services';
-import type { StorageProvider } from '@src/types';
+import { suportedStorageProviders, type StorageProviderName } from '@src/services';
 import { getIcon } from '@src/utilities/icons';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { FC } from 'react';
@@ -27,11 +27,13 @@ const Storage: FC = () => {
 
   const { t } = useTranslation();
 
-  const handleStorageClick = async (provider: StorageProvider) => {
+  const handleStorageClick = async (provider: StorageProviderName) => {
     if (user?.prefStorageProvider === provider) return;
     storageProviders.includes(provider)
       ? changePrefStorageProvider(provider)
       : await connectAccount(provider);
+
+    analytics.track('storage', { storage: provider });
   };
 
   const connectAccount = async (provider: string) => {
