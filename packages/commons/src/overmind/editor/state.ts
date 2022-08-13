@@ -1,8 +1,8 @@
-import Leafwriter from '@cwrc/leafwriter';
+import { Leafwriter } from '@cwrc/leafwriter';
 
 type State = {
-  leafWriter?: Leafwriter;
   isDirty: boolean;
+  leafWriter?: Leafwriter;
 };
 
 export const state: State = {

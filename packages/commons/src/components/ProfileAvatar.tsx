@@ -34,9 +34,9 @@ const ProfileAvatar: FC = () => {
       <Badge
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         badgeContent={
-          user?.prefferedID && (
+          user?.preferredID && (
             <Icon
-              component={getIcon(user?.prefferedID)}
+              component={getIcon(user?.preferredID)}
               sx={{
                 width: 16,
                 height: 16,

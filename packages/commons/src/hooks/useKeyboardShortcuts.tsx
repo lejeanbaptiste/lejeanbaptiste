@@ -6,9 +6,6 @@ export const useKeyboardShortcut = () => {
     event.stopPropagation();
     event.preventDefault();
     if (event.repeat) return;
-    if (combo === '⌘O') return console.log(combo);
-    if (combo === '⌘S') return console.log(combo);
-    if (combo === '⌘⌥⇧S') return console.log(combo);
   };
 
   useKey(

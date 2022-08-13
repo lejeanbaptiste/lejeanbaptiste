@@ -1,3 +1,8 @@
+## 1.6.2
+
+### Patch Changes
+
+- New release
 
 ## 1.6.1
 

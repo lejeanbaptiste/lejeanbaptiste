@@ -5,7 +5,7 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { ESBuildMinifyPlugin } from 'esbuild-loader';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
-import webpack, { EntryObject } from 'webpack';
+import webpack, { type EntryObject } from 'webpack';
 import WebpackBar from 'webpackbar';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 
@@ -27,7 +27,6 @@ const plugins = [
   new CopyWebpackPlugin({
     patterns: [
       { from: path.resolve(__dirname, 'src', 'assets'), to: 'assets' },
-      // { from: path.resolve(__dirname, 'src', 'config'), to: 'config' },
       { from: path.resolve(__dirname, 'src', 'content'), to: 'content' },
       { from: 'src/silent-check-sso.html', to: '[name][ext]' },
       { from: 'src/manifest.json', to: '[name][ext]' },

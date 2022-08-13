@@ -1,29 +1,37 @@
-import Leafwriter from '@cwrc/leafwriter';
+import { Leafwriter } from '@cwrc/leafwriter';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
+import { analytics } from '@src/analytics';
 
 const LeafWriterContainer: FC = () => {
   const { user } = useAppState().auth;
   const { leafWriter } = useAppState().editor;
   const { resource } = useAppState().storage;
 
-  const { getLincsAauthenticationToken } = useActions().auth;
+  const { getKeycloskAuthenticationToken } = useActions().auth;
+  const { getGeonameUsername, setIsDirty, setLeafWriter } = useActions().editor;
   const { addToRecentDocument } = useActions().storage;
-  const { setIsDirty, setLeafWriter } = useActions().editor;
 
   const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (divEl.current && !leafWriter && user && resource?.content) {
+    if (divEl.current && !leafWriter) createLFInstance();
+  }, []);
+
+  const createLFInstance = async () => {
+    if (user && resource?.content) {
+      const geonamesUsername = await getGeonameUsername();
+
       const leafWriter = new Leafwriter(divEl.current, {
         document: {
           url: resource.url,
           xml: resource.content ?? '',
         },
         settings: {
-          credentials: { nssiToken: getLincsAauthenticationToken },
+          credentials: { nssiToken: getKeycloskAuthenticationToken },
           lookups: {
-            authorities: [['geonames', { config: { username: 'cwrcgeonames' } }]],
+            //@ts-ignore
+            authorities: [['geonames', { config: { username: geonamesUsername } }]],
           },
         },
         user: {
@@ -41,11 +49,13 @@ const LeafWriterContainer: FC = () => {
 
       setLeafWriter(leafWriter);
 
+      analytics.track('editor', { opened: true });
+
       // return () => {
       //   leafWriter.isDisrty.unsubscribe();
       // };
     }
-  }, []);
+  };
 
   return <div ref={divEl} id="leaf-writer-container" style={{ height: 'calc(100vh - 48px)' }} />;
 };

@@ -4,6 +4,7 @@ import { useActions, useAppState } from '@src/overmind';
 import React, { FC, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import LoadingMask from './loadingMask';
+import { useTranslation } from 'react-i18next';
 
 const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
 
@@ -16,6 +17,7 @@ const Storage: FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const { setPermalink } = usePermalink();
 
@@ -60,7 +62,7 @@ const Storage: FC = () => {
 
   const validXML = (content: string) => {
     const isContentValid = isValidXml(content);
-    return isContentValid ? { valid: true } : { valid: false, error: 'xml_not_well_formed' };
+    return isContentValid ? { valid: true } : { valid: false, error: t('error:xmlNotWellFormed')};
   };
 
   return (

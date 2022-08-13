@@ -23,7 +23,7 @@ const EditorSettings: FC<Props> = ({ handleClose }) => {
         <ListItemIcon sx={{ minWidth: 40 }}>
           <TuneIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText id="settings" primary={t('settings')} sx={{ textTransform: 'capitalize' }} />
+        <ListItemText id="settings" primary={t('home:settings')} sx={{ textTransform: 'capitalize' }} />
       </ListItemButton>
     </ListItem>
   );

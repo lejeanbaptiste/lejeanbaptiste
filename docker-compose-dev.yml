@@ -20,6 +20,8 @@ services:
     container_name: leaf-writer-dev
     build:
       dockerfile: Dockerfile.dev
+    env_file:
+      - .env
     volumes:
       - ./:/app/
     restart: unless-stopped

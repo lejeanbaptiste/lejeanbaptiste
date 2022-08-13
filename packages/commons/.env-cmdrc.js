@@ -1,5 +1,5 @@
 module.exports = {
-  'development': {
+  development: {
     NODE_ENV: 'development',
     WORKER_ENV: 'production',
   },
