@@ -1,3 +1,11 @@
+## 1.6.0
+
+### Minor Changes
+
+[6741e61de29e4db4281755c097026e3ac89d4214] Add suport for gzip compression.
+
+[108f58be6df4cc6be543e9c62815e7cc822c8564] Temporarily drop support for GitLab identity and storage (see issue #33)
+
 ## 1.5.0
 
 ### Minor
