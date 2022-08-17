@@ -7,7 +7,7 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Stack,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
@@ -28,6 +28,8 @@ const Storage: FC = () => {
   const { t } = useTranslation();
 
   const handleStorageClick = async (provider: StorageProviderName) => {
+    if (suportedStorageProviders.length === 1) return;
+
     if (user?.prefStorageProvider === provider) return;
     storageProviders.includes(provider)
       ? changePrefStorageProvider(provider)
@@ -82,7 +84,6 @@ const Storage: FC = () => {
               <span>
                 <IconButton
                   key={provider}
-                  // disabled={suportedStorageProviders.length === 1}
                   onClick={() => handleStorageClick(provider)}
                   size="small"
                   sx={{

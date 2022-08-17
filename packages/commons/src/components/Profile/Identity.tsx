@@ -7,12 +7,11 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Stack,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
-import type { IdentityProviderName } from '@src/services';
-import { supportedIdentityProviders } from '@src/services';
+import { supportedIdentityProviders, type IdentityProviderName } from '@src/services';
 import { getIcon } from '@src/utilities/icons';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { FC } from 'react';
@@ -25,6 +24,8 @@ const Identity: FC = () => {
   const { t } = useTranslation();
 
   const handleIdClick = async (provider: IdentityProviderName) => {
+    if (supportedIdentityProviders.length === 1) return;
+
     if (!user || user?.preferredID === provider) return;
     user.identities.get(provider) ? changePreferredID(provider) : await connectAccount(provider);
 
@@ -76,7 +77,6 @@ const Identity: FC = () => {
             >
               <span>
                 <IconButton
-                  disabled={supportedIdentityProviders.length === 1}
                   onClick={() => handleIdClick(provider)}
                   size="small"
                   sx={{
