@@ -49,11 +49,11 @@ export const setIndentityProvider = async (
   { IDPTokens, providerName, userId, userName }: AuthenticateProp
 ) => {
   if (!providerName || !supportedIdentityProviders.includes(providerName as IdentityProviderName)) {
-    throw new Error('Identity Provider not supported');
+    return;
   }
 
   const provider = identityServices.get(providerName as IdentityProviderName);
-  if (!provider) throw new Error('Identity Provider not supported');
+  if (!provider) return;
 
   provider.authenticate({ IDPTokens, userName, userId });
 
@@ -81,6 +81,11 @@ export const setupMainIdentityProvider = async (
     IDPTokens,
     providerName: identity_provider,
   });
+
+  if (!provider) {
+    log.warn(`Identity Provider ${identity_provider} is not supported`);
+    return;
+  }
 
   state.auth.identityProviders.set(identity_provider as IdentityProviderName, provider);
 };
@@ -169,6 +174,10 @@ export const _linkIdentityProvider = async (
   if (!IDPTokens) return log.warn('No identity_provider tokens');
 
   const provider = await auth.setIndentityProvider({ IDPTokens, providerName, userId, userName });
+  if (!provider) {
+    log.warn(`Identity Provider ${providerName} is not supported`);
+    return;
+  }
 
   const userDetails = await provider.getAuthenticatedUser(userId);
   if (!userDetails) return;
