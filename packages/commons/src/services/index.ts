@@ -1,9 +1,9 @@
 import { GithubIdentityProvider as github } from './github';
-import { GitlabIdentityProvider as gitlab } from './gitlab';
+// import { GitlabIdentityProvider as gitlab } from './gitlab';
 // import { OrcidIdentityProvider as orcid } from './orcid';
 
-export type IdentityProviderName = 'github' | 'gitlab' | 'orcid';
-export type StorageProviderName = 'github' | 'gitlab';
+export type IdentityProviderName = 'github';// | 'gitlab' | 'orcid';
+export type StorageProviderName = 'github';// | 'gitlab';
 
 export type AuthenticateProp = {
   access_token?: string;
@@ -26,13 +26,13 @@ export type IStorageProvider = IIdentityProvider;
 
 export const identityServices: Map<IdentityProviderName, IIdentityProvider> = new Map([
   ['github', github],
-  ['gitlab', gitlab],
+  // ['gitlab', gitlab],
   // ['orcid', orcid],
 ]);
 
 export const storageServices: Map<StorageProviderName, IStorageProvider> = new Map([
   ['github', github],
-  ['gitlab', gitlab],
+  // ['gitlab', gitlab],
 ]);
 
 export const supportedIdentityProviders = [...identityServices.keys()];
