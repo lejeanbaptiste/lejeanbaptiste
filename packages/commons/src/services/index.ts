@@ -1,9 +1,9 @@
 import { GithubIdentityProvider as github } from './github';
-// import { GitlabIdentityProvider as gitlab } from './gitlab';
+import { GitlabIdentityProvider as gitlab } from './gitlab';
 // import { OrcidIdentityProvider as orcid } from './orcid';
 
-export type IdentityProviderName = 'github';// | 'gitlab' | 'orcid';
-export type StorageProviderName = 'github';// | 'gitlab';
+export type IdentityProviderName = 'github'; // | 'gitlab' | 'orcid';
+export type StorageProviderName = 'github'; // | 'gitlab';
 
 export type AuthenticateProp = {
   access_token?: string;
@@ -24,16 +24,23 @@ export interface IIdentityProvider {
 
 export type IStorageProvider = IIdentityProvider;
 
-export const identityServices: Map<IdentityProviderName, IIdentityProvider> = new Map([
+export const authServices: Map<IdentityProviderName, IIdentityProvider> = new Map([
   ['github', github],
   // ['gitlab', gitlab],
-  // ['orcid', orcid],
 ]);
+
+export const identityServices: Map<IdentityProviderName, IIdentityProvider> = new Map(
+  ...[authServices],
+  [
+    // ['orcid', orcid],
+  ]
+);
 
 export const storageServices: Map<StorageProviderName, IStorageProvider> = new Map([
   ['github', github],
   // ['gitlab', gitlab],
 ]);
 
+export const supportedAuthProviders = [...authServices.keys()];
 export const supportedIdentityProviders = [...identityServices.keys()];
-export const suportedStorageProviders = [...storageServices.keys()]; 
+export const suportedStorageProviders = [...storageServices.keys()];

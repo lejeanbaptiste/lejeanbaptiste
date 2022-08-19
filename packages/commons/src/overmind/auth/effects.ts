@@ -104,9 +104,13 @@ export class Api {
    * authenticated, the user will be redirected back to the application
    * @returns The login method returns a promise that resolves to a boolean value.
    */
-  async login() {
+  async login(options?: { idpHint?: string }) {
+    const opt = {
+      ...options,
+      origin: window.location
+    }
     const { origin } = window.location;
-    return await this.keycloak.login({ redirectUri: origin });
+    return await this.keycloak.login(opt);
   }
 
   /**

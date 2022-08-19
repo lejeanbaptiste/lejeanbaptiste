@@ -238,8 +238,8 @@ export const getUserProfile = ({ state }: Context) => {
 
 //* USER
 
-export const signIn = ({ effects }: Context) => {
-  effects.auth.api.login();
+export const signIn = ({ effects }: Context, options?: { idpHint?: string }) => {
+  effects.auth.api.login(options);
 };
 
 export const accountManagement = ({ effects }: Context) => {
