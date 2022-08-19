@@ -2,15 +2,15 @@
   "error": {
     "message404": "Vous vous avancer sur des zones obscures, ou bien c'est une erreur. Retournez à <1>l'accueil.</1>",
     "pageNotFound": "Page non trouvée",
-    "somethingWentWrong": "",
-    "xmlNotWellFormed": ""
+    "somethingWentWrong": "quelque chose s'est mal passé",
+    "xmlNotWellFormed": "Le document que vous essayez de télécharger n'est pas bien formé. Vérifiez qu'il a l'extension XML et qu'il respecte la grammaire XML appropriée."
   },
   "home": {
-    "appearance": "",
+    "appearance": "Appearance",
     "english": "Anglaise",
     "french": "Française",
     "from_Your_computer": "De votre ordinateur",
-    "from_cloud": "",
+    "from_cloud": "en nuage",
     "homepage": "accueil",
     "identity": "identitiy",
     "language": "Langue",
@@ -18,9 +18,11 @@
     "orTrySample": "Ou essayez avec des exemples de fichiers :",
     "or_paste_your_XML_here": "ou collez votre XML ici",
     "recent": "récents",
-    "settings": "",
+    "settings": "Paramètres",
     "signOut": "Se déconnecter",
     "signin": "Se connecter",
+    "signinWith-github": "Se connecter avec GitHub",
+    "signinWith-gitlab": "Se connecter avec GitLab",
     "storage": "storage",
     "subtitle": "L'éditeur en ligne XML & RDF du Linked Editing Academic Framework",
     "team": "Équipe",
