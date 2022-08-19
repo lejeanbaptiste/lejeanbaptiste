@@ -14,7 +14,7 @@ const TopBar: FC = () => {
       <Container maxWidth="xl">
         <Box display="flex" justifyContent="flex-end" py={2}>
           <Stack direction="row" alignItems="center" spacing={2}>
-            <AnimatePresence exitBeforeEnter>
+            <AnimatePresence mode='wait'>
               {userState === 'AUTHENTICATED' ? (
                 <ProfileAvatar />
               ) : (

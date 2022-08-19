@@ -75,7 +75,7 @@ const TopBar: FC<TopBarProps> = ({ title = 'LEAF-Writer' }) => {
         <Box flexGrow={1} />
 
         <Stack width={186} alignItems="flex-end">
-          <AnimatePresence exitBeforeEnter>
+          <AnimatePresence mode='wait'>
             {userState === 'AUTHENTICATED' && <ProfileAvatar />}
           </AnimatePresence>
         </Stack>
