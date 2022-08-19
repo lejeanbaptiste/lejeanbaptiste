@@ -1,3 +1,15 @@
+## 1.7.0
+
+### Minor Changes
+
+- [c9e4b571fca179b9adc2a0b4c16d412baafb4f0d] auth: Bypass keycloak login screen allowing sign in directly from providers
+
+### Patch Changes
+
+- [ef2eea5a15235c0742220bb95226b8fc0b96a087] Theme: align primary color with the brand style guide
+- [97d08bfcee68318629de215c326089d5c6b43ea8] Update framer-motion attributes
+- [ec12bad89bcd1c3fb42b6c0220f01b949c06f3ef] Improve localization
+
 ## 1.6.0
 
 ### Minor Changes
