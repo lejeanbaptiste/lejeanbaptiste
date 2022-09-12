@@ -1,5 +1,11 @@
 # @cwrc/leafwriter-storage-service
 
+## 1.1.1
+
+### Patch Changes
+
+- Fix typo on the main menu: Respositories -> Repositories [33cb0950f4bf2c7cbbd7df4e839da98070f70c85]
+
 ## 1.1.0
 
 ### Minor Changes
@@ -12,7 +18,7 @@
 - [Perf] Simplify code logic
 - [Chore] Rename types folder
 - [Dependencies] update
-  
+
 [a885b2f]
 
 - [feat] Add a log manager to improve dev/prod versions

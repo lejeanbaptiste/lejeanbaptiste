@@ -5,23 +5,22 @@ import ILookupServiceApi, { type IFindParams } from './type';
 
 type NamedEntityType = 'ulan' | 'tgn';
 
-interface IBinding {
-  [x: string]: any;
-  Descr: {
-    type: string;
-    value: string;
-  };
-  Subject: {
-    type: string;
-    value: string;
-  };
-  Term: {
-    type: string;
-    value: string;
-  };
+interface GettyAttr {
+  type: string;
+  value: string;
 }
 
-interface ILGPNResults {
+interface IBinding {
+  [x: string]: any;
+  Descr?: GettyAttr;
+  ExtraType: GettyAttr;
+  Parents: GettyAttr;
+  Subject: GettyAttr;
+  Term: GettyAttr;
+  Type: GettyAttr;
+}
+
+interface IGettyResults {
   header: {
     vars: string[];
   };
@@ -33,10 +32,11 @@ interface ILGPNResults {
 export default class Getty implements ILookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
 
+  // * Apparently, we don't need the proxy anymore
   // Calls a cwrc proxy (https://lookup.services.cwrc.ca/getty), so that we can make https calls from the browser.
   // The proxy in turn then calls http://vocab.getty.edu
   // The getty lookup doesn't seem to have an https endpoint
-  private readonly baseURL = 'https://lookup.services.cwrc.ca/getty';
+  private readonly baseURL = 'https://vocab.getty.edu';
   private readonly FORMAT = 'json';
   private readonly MAX_HITS = 25; // default: unlimited? (over 100)
   private readonly timeout = 3_000;
@@ -89,12 +89,12 @@ export default class Getty implements ILookupServiceApi {
       return [];
     }
 
-    const data: ILGPNResults = response.data;
+    const data: IGettyResults = response.data;
     if (!data) return [];
 
-    const results: IResult[] = data.results.bindings.map(({ Subject, Term, Descr }) => {
+    const results: IResult[] = data.results.bindings.map(({ Subject, Term, ExtraType }) => {
       return {
-        description: Descr?.value,
+        description: ExtraType?.value,
         id: Subject.value,
         name: Term.value,
         repository: 'getty',

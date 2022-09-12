@@ -2,6 +2,7 @@ import $ from 'jquery';
 import { Editor } from 'tinymce';
 import type { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
+import i18n from 'i18next';
 
 const toolbarOptions = [
   'tags',
@@ -30,6 +31,7 @@ const toolbarOptions = [
   '|',
   'settings',
   'fullscreen',
+  'documentation',
 ];
 
 interface IButton {
@@ -262,6 +264,15 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       tooltip: 'Settings',
       disabled: false,
       onAction: () => writer.overmindActions.ui.openSettingsDialog(),
+    },
+    {
+      slug: 'documentation',
+      icon: 'help',
+      tooltip: i18n.t('Documentation'),
+      disabled: false,
+      onAction: () => {
+        window.open('https://www.leaf-vre.org/docs/documentation/leaf-writer-documentation');
+      },
     },
   ];
 

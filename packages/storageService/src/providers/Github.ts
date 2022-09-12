@@ -236,6 +236,7 @@ export default class Github implements Provider {
         return item;
       });
     } else {
+      // @ts-ignore
       content.type = content.type === 'dir' ? 'folder' : content.type;
     }
 
@@ -462,6 +463,7 @@ export default class Github implements Provider {
     if (!result) return null;
 
     if (Array.isArray(result.data)) return null;
+    //@ts-ignore
     if (result.data.type === 'dir') return null;
 
     //@ts-ignore
