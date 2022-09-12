@@ -24,13 +24,13 @@ export default class Geonames implements ILookupServiceApi {
   private readonly timeout = 3_000;
   private readonly username: string;
 
-  constructor(config: any) {
-    if (!config?.username || config?.username === '') {
+  constructor({ username }: { username: string }) {
+    if (!username || username === '') {
       // throw new Error('You must define a username to be able to make requests to Geonames');
       log.warn('GEONAME: You must define a username to be able to make requests to Geonames');
       return;
     }
-    this.username = config.username;
+    this.username = username;
     this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
   }
 
@@ -47,7 +47,7 @@ export default class Geonames implements ILookupServiceApi {
       maxRows: this.MAX_HITS.toString(),
     });
 
-    const urlQuery = `searchJSON?$${params}`;
+    const urlQuery = `searchJSON?${params}`;
 
     const response = await this.axiosInstance.get(urlQuery).catch((error) => {
       return {
