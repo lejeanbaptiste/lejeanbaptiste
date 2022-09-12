@@ -1,3 +1,15 @@
+## 1.7.0
+
+### Minor Changes
+
+- Add link to the documentation in the ribbon [9121ab1181737f64e223d7a9f8d4713dfdf8dba1]
+- Add link to report bugs at the bottom bar [6d6c10654ba1339bb493d09c89a89ae7ec9dd9a5]
+
+### Patch Changes
+
+- Geonames: remove extra `$` signal in the request URL [c9dc8303147e201f6c4a78f8e1fae838e5d3f0f6]
+- Getty: remove the proxy server. Call it directly from the browser [14c5236ab401070282df2df1059987e35dc49ed5]
+
 ## 1.6.2
 
 ### Patch Changes
