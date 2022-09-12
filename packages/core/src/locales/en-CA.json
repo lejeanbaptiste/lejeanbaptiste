@@ -1,5 +1,8 @@
 {
+  "Bugs": "Bugs",
   "Documentation": "Documentation",
+  "Powered by": "Powered by",
+  "Requests": "Requests",
   "ui": {
     "appearance": "Appearance",
     "english": "English",
