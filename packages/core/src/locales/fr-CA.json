@@ -5,12 +5,12 @@
   "Requests": "",
   "ui": {
     "appearance": "Apparence",
+    "auto": "auto",
+    "dark": "sombre",
     "english": "Anglaise",
     "french": "Française",
     "language": "Langue",
-    "signOut": "Se déconnecter",
     "light": "lumière",
-    "dark": "sombre",
-    "auto": "auto"
+    "signOut": "Se déconnecter"
   }
 }
