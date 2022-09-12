@@ -1,11 +1,13 @@
 import { Box, Link, Paper, Stack } from '@mui/material';
 import React, { type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import pck from '../../../package.json';
 import AnnotationMode from './AnnotationMode';
 import EditorMode from './EditorMode';
 import Schema from './Schema';
 
 const BottomBar: FC = () => {
+  const { t } = useTranslation();
   const version = pck.version;
 
   return (
@@ -28,6 +30,15 @@ const BottomBar: FC = () => {
         <Link
           color="text.secondary"
           variant="caption"
+          href="https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report"
+          target="_blank"
+        >
+          {t('Bugs')} / {t('Requests')}
+        </Link>
+
+        <Link
+          color="text.secondary"
+          variant="caption"
           href={pck.homepage}
           rel="noopener"
           target="_blank"
@@ -41,9 +52,9 @@ const BottomBar: FC = () => {
           href="https://www.tiny.cloud"
           target="_blank"
           rel="noopener"
-          title="Powered by Tiny"
+          title={t('Powered by')}
         >
-          Powered by Tiny
+          {t('Powered by')} Tiny
         </Link>
       </Stack>
     </Paper>

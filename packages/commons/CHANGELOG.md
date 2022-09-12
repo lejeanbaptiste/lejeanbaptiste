@@ -1,3 +1,9 @@
+## 1.7.1
+
+- Updated dependencies
+  - @cwrc/leafwriter@1.7.0
+  - @cwrc/leafwriter-storage-service@1.1.1
+
 ## 1.7.0
 
 ### Minor Changes
