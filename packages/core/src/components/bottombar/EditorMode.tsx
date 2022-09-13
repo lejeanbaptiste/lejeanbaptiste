@@ -116,10 +116,11 @@ const EditorMode: FC = () => {
             Editor Mode
           </Typography>
         </Box>
-        {editor.editorModes.map(({ value, label }) => (
+        {editor.editorModes.map(({ disabled, label, value }) => (
           <MenuItem
             key={value}
             dense
+            disabled={disabled}
             onClick={() => handleChange(value)}
             selected={value === editor.editorMode}
             sx={{ mx: 0.5, borderRadius: 1 }}
