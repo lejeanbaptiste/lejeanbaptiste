@@ -1,4 +1,15 @@
+## 1.8.0
+
+### Minor Changes
+
+- Topbar: Add full path to the file while hovering filename [8b5aadc4f231e26ae8204592bf3f95cade719938]
+- Save: Change cloud icons for clarity [f72ab1d5943a782e8b7caa0c27f88ad32453f028]
+
 ## 1.7.1
+
+- Updated dependencies
+
+  - @cwrc/leafwriter@1.8.0
 
 - Updated dependencies
   - @cwrc/leafwriter@1.7.0
