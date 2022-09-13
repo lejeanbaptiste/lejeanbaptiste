@@ -1,3 +1,4 @@
+import CloudDoneIcon from '@mui/icons-material/CloudDone';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import {
   AppBar,
@@ -18,7 +19,6 @@ import { useActions, useAppState } from '@src/overmind';
 import { AnimatePresence } from 'framer-motion';
 import React, { FC, useMemo } from 'react';
 import MainMenu from './MainMenu';
-import Logo from '@src/components/Logo';
 
 const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
   '& .MuiBadge-badge': { top: -3, left: 9, minWidth: 4, height: 4 },
@@ -86,8 +86,14 @@ const TopBar: FC<TopBarProps> = ({ title = 'LEAF-Writer' }) => {
 
             <Tooltip title={isDirty ? 'Click to sync' : 'Synced to the cloud'}>
               <IconButton aria-label="save" onClick={handleSave} size="small" sx={{ ml: 0.5 }}>
-                {isDirty && <StyledBadge color="primary" variant="dot"></StyledBadge>}
-                <CloudQueueIcon fontSize="inherit" sx={{ width: 12, height: 12 }} />
+                {isDirty ? (
+                  <>
+                    <StyledBadge color="warning" variant="dot" />
+                    <CloudQueueIcon color="warning" sx={{ width: 12, height: 12 }} />
+                  </>
+                ) : (
+                  <CloudDoneIcon sx={{ width: 12, height: 12 }} />
+                )}
               </IconButton>
             </Tooltip>
           </>
@@ -96,7 +102,7 @@ const TopBar: FC<TopBarProps> = ({ title = 'LEAF-Writer' }) => {
         <Box flexGrow={1} />
 
         <Stack width={186} alignItems="flex-end">
-          <AnimatePresence mode='wait'>
+          <AnimatePresence mode="wait">
             {userState === 'AUTHENTICATED' && <ProfileAvatar />}
           </AnimatePresence>
         </Stack>
