@@ -1,3 +1,13 @@
+## 1.8.0
+
+### Minor Changes
+
+- RDF Only: grey out due to lack of implementation [32b9cb76d7899624ab8a906f05399e2cdd277356]
+
+### Patch Changes
+
+- Annotation mode: enabled but, but prevent clicking [c33c5bbe5ec1680856d22bea9d49a42a9d5cff5f]
+
 ## 1.7.0
 
 ### Minor Changes
