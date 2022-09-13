@@ -20,6 +20,7 @@ type State = {
     key: number;
     value: string;
     label: string;
+    disabled?: boolean;
   }[];
   fontSizeOptions: number[];
   isAnnotator: boolean;
@@ -59,10 +60,10 @@ export const state: State = {
     return editMode.label;
   }),
   editorModes: [
-    { key: 1, value: 'xml', label: 'XML only (no overlap)' },
+    { key: 1, value: 'xml', label: 'XML only (no overlap)'},
     { key: 0, value: 'xmlrdf', label: 'XML and RDF (no overlap)' },
     { key: 0, value: 'xmlrdfoverlap', label: 'XML and RDF (overlapping entities)' },
-    { key: 2, value: 'rdf', label: 'RDF only' },
+    { key: 2, value: 'rdf', label: 'RDF only', disabled: true },
   ],
   fontSizeOptions: [8, 9, 10, 11, 12, 13, 14, 16, 18],
   isEditorDirty: false,
