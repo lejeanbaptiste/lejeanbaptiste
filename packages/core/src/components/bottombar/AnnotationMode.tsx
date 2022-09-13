@@ -48,16 +48,15 @@ const AnnotationMode: FC = () => {
             aria-expanded={openMenu ? 'true' : undefined}
             aria-haspopup="true"
             // disabled={editor.isReadonly}
-            disabled
             onClick={handleButtonClick}
             size="small"
-            sx={{ color: 'text.primary' }}
+            sx={{ color: 'text.primary', cursor: 'default' }}
           >
             {editor.annotationModeLabel}
           </Button>
         </span>
       </Tooltip>
-      <Menu
+      {/* <Menu
         anchorEl={anchorEl}
         anchorOrigin={{ horizontal: 'left', vertical: 'top' }}
         id="annotation-mode-menu"
@@ -90,7 +89,7 @@ const AnnotationMode: FC = () => {
             {label}
           </MenuItem>
         ))}
-      </Menu>
+      </Menu> */}
     </Box>
   );
 };
