@@ -68,7 +68,7 @@ class Converter {
         this.writer.event('documentLoaded').publish(false, null);
         this.writer.dialogManager.show('message', {
           title: 'Error',
-          msg: 'The document you are trying to upload is not well-formed. Check that it has the xml extension and that it follows <a href="https://wwthis.writer.w3resource.com/xml/well-formed.php" target="_blank" rel="noopener noreferrer">propper xml grammar</a>.',
+          msg: 'The document you are trying to upload is not well-formed. Check that it has the xml extension and that it follows <a href="https://wwthis.writer.w3resource.com/xml/well-formed.php" target="_blank" rel="noopener noreferrer">proper xml grammar</a>.',
           type: 'error',
         });
         return false;
