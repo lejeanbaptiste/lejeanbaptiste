@@ -50,7 +50,7 @@ export const getXPathForElement = (el: any, xml: Document) => {
   let pos: number;
   let tempitem: any;
 
-  while (el !== xml.documentElement) {
+  while (el !== xml.documentElement && el.nodeName !== '#document') {
     pos = 0;
     tempitem = el;
     while (tempitem) {
