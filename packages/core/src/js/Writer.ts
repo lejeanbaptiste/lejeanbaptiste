@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import { ConsoleNetworkOutline } from 'mdi-material-ui';
 import tinymce from 'tinymce';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
@@ -138,7 +139,7 @@ class Writer extends EventManager {
 
     //----
 
-    window.addEventListener('beforeunload', this.handleUnload);
+    window.addEventListener('beforeunload', this.handleUnload.bind(this));
 
     $(window).on('unload', () => {
       try {
@@ -342,7 +343,8 @@ class Writer extends EventManager {
 
   handleUnload(event: BeforeUnloadEvent) {
     if ((!this.isReadOnly || this.isAnnotator) && window.location.hostname !== 'localhost') {
-      if (tinymce.get(this.editorId).isDirty()) {
+      if (this.overmindState.editor.isEditorDirty) {
+        event.preventDefault();
         const msg = 'You have unsaved changes.';
         (event || window.event).returnValue = msg;
         return msg;
