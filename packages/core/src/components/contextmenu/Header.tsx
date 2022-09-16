@@ -27,7 +27,7 @@ const Header: FC<HeaderProps> = ({ tagName = '', xpath = '', tagMeta }) => {
         mb={0.5}
         sx={{
           cursor: 'default',
-          background: ({ palette }) => palette.action.hover,
+          background: ({ palette }) => palette.action.selected,
         }}
       >
         <Typography variant="caption">
