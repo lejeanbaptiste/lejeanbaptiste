@@ -520,6 +520,13 @@ class PersonDialog implements SchemaDialog {
         </div>
         <select data-type="select" data-mapping="role" style="width: 100%;">
           ${marcRoles
+            .sort((a, b) => {
+              const nameA = a.title.toUpperCase(); // ignore upper and lowercase
+              const nameB = b.title.toUpperCase(); // ignore upper and lowercase
+              if (nameA < nameB) return -1;
+              if (nameA > nameB) return 1;
+              return 0;
+            })
             .map((role) => `<option value="${role.code}">${role.title}</option>`)
             .join('\n')}
         </select>
