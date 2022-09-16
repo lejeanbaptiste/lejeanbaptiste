@@ -545,7 +545,7 @@ Not everything works perfectly when running jsdom inside a web browser. Sometime
 
 ### How To use JSDOM on LEAF-Writer Validator Web Worker
 
-A browserified and fixed version of jsdom (v. 16.6.0) is already in place on the web workers folder `/src/lib/jsdom`
+A browserified version of jsdom (v20.0.0) is already in place on the web workers folder `/src/lib/jsdom`
 
 If the file needs to be updated or regenerated, follow these steps:
 
@@ -555,7 +555,7 @@ If the file needs to be updated or regenerated, follow these steps:
 2. Browserify jsdom
 `npm run browserify-jsdom` (check package.json for the details)
 
-3. Fixes
+3. Fixes (Since v20.0.0 maybe not neeed anymore)
 3.1 fix *AsyncIteratorPrototype*
 AsyncIteratorPrototype is throwing an error when running on workers. We return it as an empty object since we don't use this method.
 
