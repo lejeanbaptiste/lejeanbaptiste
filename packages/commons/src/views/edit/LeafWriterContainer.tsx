@@ -12,6 +12,8 @@ const LeafWriterContainer: FC = () => {
   const { getGeonameUsername, setIsDirty, setLeafWriter } = useActions().editor;
   const { addToRecentDocument } = useActions().storage;
 
+  const navigate = useNavigate();
+
   const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,6 +47,12 @@ const LeafWriterContainer: FC = () => {
       leafWriter.isDirty.subscribe((value) => setIsDirty(value));
       leafWriter.onLoad.subscribe(({ schemaName }) => {
         addToRecentDocument({ ...resource, schemaName });
+      });
+
+      leafWriter.onClose.subscribe(() => {
+        close();
+        setIsDirty(false);
+        navigate('/', { replace: true });
       });
 
       setLeafWriter(leafWriter);
