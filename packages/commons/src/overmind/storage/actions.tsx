@@ -149,6 +149,14 @@ export const updateRecentDocument = ({ state }: Context) => {
   localStorage.setItem('recentFiles', JSON.stringify(state.storage.recentDocuments));
 };
 
+export const removeRecentDocument = ({ state }: Context, url: string) => {
+  state.storage.recentDocuments = state.storage.recentDocuments.filter((document) => 
+    document.url !== url
+  );
+
+  localStorage.setItem('recentFiles', JSON.stringify(state.storage.recentDocuments));
+};
+
 export const loadTemplate = async ({ effects }: Context, url: string) => {
   const documentString = await effects.storage.api.loadTemplate(url);
   return documentString;
