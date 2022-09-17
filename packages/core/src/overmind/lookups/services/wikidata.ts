@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance } from 'axios';
 import wdk from 'wikidata-sdk';
-import type { IResult } from '../../../components/entityLookups/types';
+import type { IResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
 import ILookupServiceApi, { type IFindParams } from './type';
 

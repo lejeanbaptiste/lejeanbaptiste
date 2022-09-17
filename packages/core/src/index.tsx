@@ -5,17 +5,16 @@ import '@fontsource/lato/700.css';
 import '@fontsource/lato/900.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 import { PaletteMode } from '@mui/material';
-// import '@fortawesome/fontawesome-free/webfonts/fa-regular-400.woff2';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
-import App from './App';
-import type { Authority, NamedEntityType } from './components/entityLookups/types';
+import type { Authority, NamedEntityType } from './dialogs/entityLookups/types';
 import i18next from './i18n';
 import { config } from './overmind';
+import Providers from './Providers';
 import type { ILeafWriterOptions, LWDocument } from './types';
 import './utilities/log';
 
@@ -33,6 +32,7 @@ export class Leafwriter {
 
   private _isDirty: Subject<boolean>;
   private _onLoad: Subject<{ schemaName: string }>;
+  private _onClose: Subject<boolean>;
 
   private options?: ILeafWriterOptions;
 
@@ -40,6 +40,7 @@ export class Leafwriter {
     this.domElement = domElement;
     this._isDirty = new Subject();
     this._onLoad = new Subject();
+    this._onClose = new Subject();
 
     //scontainer height
     const containerHeight = domElement.style.height ? domElement.style.height : DEFAULT_HEIGHT;
@@ -58,6 +59,11 @@ export class Leafwriter {
           this._onLoad.next({ schemaName: overmind.state.document.schemaName });
         }
       }
+      if (mutation.path === 'editor.latestEvent') {
+        if (overmind.state.editor.latestEvent === 'close') {
+          this._onClose.next(true);
+        }
+      }
     });
   }
 
@@ -66,7 +72,7 @@ export class Leafwriter {
     root.render(
       <Provider value={overmind}>
         <I18nextProvider i18n={i18next}>
-          <App {...this.options} />
+          <Providers {...this.options} />
         </I18nextProvider>
       </Provider>
     );
@@ -78,6 +84,10 @@ export class Leafwriter {
 
   get onLoad() {
     return this._onLoad;
+  }
+
+  get onClose() {
+    return this._onClose;
   }
 
   async getContent() {
@@ -132,7 +142,7 @@ export class Leafwriter {
   }
 
   getSchemas() {
-    return overmind.state.editor.schemas;
+    return overmind.state.editor.schemasList;
   }
 
   setDocumentSchema(schemaId: string) {

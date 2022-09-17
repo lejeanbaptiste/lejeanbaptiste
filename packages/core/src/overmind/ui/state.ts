@@ -1,13 +1,15 @@
-import type { IEditSourceDialogProps } from '../../components/editSource';
-import type { EntityLookupDialogProps } from '../../components/entityLookups/types';
 import type { PopupProps } from '../../components/popup';
-import type { ContextMenuState, Language } from '../../types';
+import type { IDialogBar } from '../../dialogs';
+import type { IEditSourceDialogProps, EntityLookupDialogProps } from '../../dialogs';
+import type { ContextMenuState, Language, INotification } from '../../types';
 
 type State = {
   contextMenu: ContextMenuState;
   darkMode: boolean;
+  dialogBar: IDialogBar[];
   editSourceProps: IEditSourceDialogProps;
   entityLookupDialogProps: EntityLookupDialogProps;
+  notifications: INotification[];
   language: Language;
   popupProps: PopupProps;
   settingsDialogOpen: boolean;
@@ -18,9 +20,11 @@ type State = {
 export const state: State = {
   contextMenu: { show: false },
   darkMode: false,
+  dialogBar: [],
   editSourceProps: { open: false },
   entityLookupDialogProps: { open: false },
   language: { code: 'en-CA', name: 'english', shortName: 'en' },
+  notifications: [],
   popupProps: { open: false },
   settingsDialogOpen: false,
   themeAppearance: 'auto',

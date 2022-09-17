@@ -2,16 +2,18 @@ import { Menu } from '@mui/material';
 import React, { useEffect, useState, type FC } from 'react';
 import Writer from '../../js/Writer';
 import { useActions, useAppState } from '../../overmind';
-import Collection from './Collection';
+import Collection from './collection';
+import type { IItem } from './collection/Item';
 import Header from './Header';
-import type { Item as ItemType } from './types';
-import useContextmenu from './useContextmenu';
+import { useContextmenu } from './hooks/useContextmenu';
+
+export { useContextmenu } from './hooks/useContextmenu';
 
 interface ContextMenuProps {
   writer: Writer;
 }
 
-const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
+export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
   const { editor, ui } = useAppState();
   const { closeContextMenu } = useActions().ui;
 
@@ -19,10 +21,10 @@ const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
     useContextmenu(writer, ui.contextMenu);
 
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>();
-  const [options, setOptions] = useState<ItemType[]>([]);
+  const [options, setOptions] = useState<IItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [show, setShow] = useState(false);
-  const [visibleList, setVisibleList] = useState<ItemType[]>(options);
+  const [visibleList, setVisibleList] = useState<IItem[]>(options);
 
   useEffect(() => {
     if (!ui.contextMenu.show) return;
@@ -63,7 +65,7 @@ const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
   const handleQuery = (searchQuery: string) => {
     const result = query(options, searchQuery);
     if (!result) return setVisibleList(options);
-    
+
     setVisibleList(result);
   };
 
@@ -98,5 +100,3 @@ const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
     </>
   );
 };
-
-export default ContextMenu;

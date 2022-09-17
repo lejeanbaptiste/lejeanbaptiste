@@ -1,8 +1,9 @@
 import type { Bookmark, Editor } from 'tinymce/tinymce';
-import type { ILookupsConfig } from '../components/entityLookups/types';
+import type { ILookupsConfig } from '../dialogs/entityLookups/types';
 import Writer from '../js/Writer';
+import { OptionsObject, SnackbarMessage } from 'notistack';
 
-export type { Authority, ILookups } from '../components/entityLookups/types';
+export type { Authority, ILookups } from '../dialogs/entityLookups/types';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;
@@ -88,14 +89,16 @@ export interface User {
   uri: string;
 }
 
-export type MappingID = 'cwrcEntry' | 'orlando' | 'tei' | 'teiLite';
+export const SchemaMappings = ['cwrcEntry', 'orlando', 'tei', 'teiLite'] as const;
+export type SchemaMappingType = typeof SchemaMappings[number];
 
 export type Schema = {
   id: string;
   name: string;
-  mapping: MappingID;
+  mapping: SchemaMappingType;
   rng: string[];
   css: string[];
+  editable?: boolean;
 };
 
 export interface Language {
@@ -165,4 +168,11 @@ export interface LeafWriterEditor extends Editor {
   };
   copiedEntity?: any;
   lastKeyPress?: string;
+}
+
+export interface INotification {
+  dismissed?: boolean;
+  key?: string | number;
+  message: SnackbarMessage;
+  options?: OptionsObject;
 }

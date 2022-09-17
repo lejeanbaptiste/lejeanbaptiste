@@ -13,7 +13,7 @@ export interface PopupProps {
   };
 }
 
-const Popup: FC = () => {
+export const Popup: FC = () => {
   const { settings } = useAppState().editor;
   const { popupProps } = useAppState().ui;
 
@@ -47,5 +47,3 @@ const Popup: FC = () => {
     </Popover>
   );
 };
-
-export default Popup;
