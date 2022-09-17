@@ -286,7 +286,7 @@ export const toggleLookupAuthority = ({ state: { editor }, effects }: Context, i
     authorityService.entities[namedEntityType] = authorityService.enabled;
   });
 
-  effects.editor.api.saveToLocalStorage('lookup_preferences', JSON.stringify(editor.lookups));
+  effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
 };
 
 export const toggleLookupEntity = (
@@ -299,7 +299,7 @@ export const toggleLookupEntity = (
   const entityEnabled = authorityService.entities[entityName];
   authorityService.entities[entityName] = !entityEnabled;
 
-  effects.editor.api.saveToLocalStorage('lookup_preferences', JSON.stringify(editor.lookups));
+  effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
 };
 
 export const reorderLookupPriority = (
@@ -313,13 +313,12 @@ export const reorderLookupPriority = (
     editor.lookups.authorities[authority.id].priority = index;
   });
 
-  effects.editor.api.saveToLocalStorage('lookup_preferences', JSON.stringify(editor.lookups));
+  effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
 };
 
 export const retrieveLookupAutoritiesConfig = ({ effects }: Context) => {
-  const prefs = effects.editor.api.getFromLocalStorage('lookup_preferences');
-  if (!prefs) return;
-  return JSON.parse(prefs);
+  const prefs: ILookups = effects.editor.api.getFromLocalStorage('lookup_preferences');
+  return prefs;
 };
 
 export const getContent = async ({ state }: Context) => {
