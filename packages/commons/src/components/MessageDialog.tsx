@@ -75,7 +75,7 @@ const MessageDialog: FC = () => {
         <DialogContentText id="dialog-description">{message}</DialogContentText>
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions sx={{ justifyContent: 'space-between' }}>
         {onNo && <Button onClick={handleNo}>{labelNoButton}</Button>}
         {onYes && (
           <Button onClick={handleYes} autoFocus>
