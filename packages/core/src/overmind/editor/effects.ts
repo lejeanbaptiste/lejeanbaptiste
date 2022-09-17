@@ -10,11 +10,12 @@ export const api = (() => {
     setLookupsDefaults: (value: ILookups) => {
       lookupsDefaults = value;
     },
-    saveToLocalStorage: (key: string, value: string) => {
-      localStorage.setItem(key, value);
+    saveToLocalStorage: (key: string, value: unknown) => {
+      localStorage.setItem(key, JSON.stringify(value));
     },
     getFromLocalStorage: (key: string) => {
-      return localStorage.getItem(key);
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) : null;
     },
     removeFromLocalStorage: (key: string) => {
       localStorage.removeItem(key);
