@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 interface MenuProps {
@@ -23,7 +24,9 @@ const Menu: FC<MenuProps> = ({ anchor, onClose }) => {
   const { isDirty } = useAppState().editor;
   const { editor, storage, ui } = useActions();
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
   const open = Boolean(anchor);
 
   const handleOpen = () => {
@@ -38,7 +41,17 @@ const Menu: FC<MenuProps> = ({ anchor, onClose }) => {
   const handleSave = async () => {
     onClose();
     const saved = await editor.save();
-    if (saved?.success === true) storage.updateRecentDocument();
+
+    if (!saved || saved.success === false) {
+      ui.notifyViaSnackbar({
+        message: `${t('Something went wrong')}. ${t('Document not saved')}!`,
+        options: { variant: 'error' },
+      });
+      return;
+    }
+
+    storage.updateRecentDocument();
+    ui.notifyViaSnackbar({ message: t('Document Saved'), options: { variant: 'success' } });
   };
 
   const handleSaveAs = async () => {
@@ -58,8 +71,8 @@ const Menu: FC<MenuProps> = ({ anchor, onClose }) => {
 
     ui.showMessageDialog({
       title: 'Unsaved changes',
-      message: 'You have made changes. Do you want to save or dicard them?',
-      closable: true,
+      message: 'Do you want to save or dicard them?',
+      closable: false,
       labelYesButton: 'Save',
       labelNoButton: 'Discard',
       onClose: () => ui.closeCloseMessageDialog(),

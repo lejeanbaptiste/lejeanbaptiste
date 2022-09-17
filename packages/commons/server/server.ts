@@ -22,7 +22,7 @@ const loadDevServer = async () => {
 
 if (process.env.WEBPACK_DEV === 'true') loadDevServer();
 
-server.use(helmet.frameguard({ action: 'SAMEORIGIN' }));
+server.use(helmet.frameguard({ action: 'sameorigin' }));
 
 server.use(express.static(publicPath));
 
