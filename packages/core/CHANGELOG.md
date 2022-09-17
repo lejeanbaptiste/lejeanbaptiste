@@ -1,5 +1,112 @@
-## 1.7.0
+## 1.8.0
 
+### Features
+
+### Better schema processing and UX for not supported schemas
+
+Rework the logic of check, loading, and processing document schemas. The system is more strict and comprehensive now.
+
+#### 1. Check root element
+
+It will fail on any document wihout a suported root element:
+
+- For TEI: `TEI`, `teiCorpus`
+- For TEILite: : `TEI`, `teiCorpus`
+- For Orlando: `ENTRY`, `EVENT`, `BIOGRAPHY`, `WRITING`
+- For CWRCEntry: `CWRC`
+
+#### 2. Check if the document has a schema attached to its metatag
+
+If it does not, the system will promt the user to select a supported schema or add a custom one.
+The document's root element is used to determine the mappings.
+
+#### 3. Check if the schema is supported
+
+If it is not, the system will promt the user to select a supported schema or add a custom one.
+The document's root element is used to determine the mappings.
+
+#### 4. Check if the schema loads
+
+If it does not, the system will promt the user to select a supported schema or add a custom one.
+The document's root element is used to determine the mappings.
+
+### Add/edit/remove custom schemas on localstorage
+
+Much improved system to add, edit, and remove custom schemas. Custom schemas now persists on the browser's localStorage, making it more convient for peope working on non-soported schemas. Custom scheams needs a name, the schema url, and optional (but recommended) CSS URL. The document's root element is used to determine the mappings.
+
+### New dialog box
+
+Started the transition of Messages and Confirmation Dialog Box to React. Introduce new Dialog Box manager, new designs and UX. Implemented on:
+
+- Load schema process
+- Editor mode
+- Annotation mode
+- Schema change
+
+### 4. Close Event
+
+`onClose` event allows the parent holding LEAF-Writer to react when the editor is about to close.
+
+### Minor Changes
+
+- Validador: Add validation feedback in the bottom bar [66ee06f2746b829f64a823427ee0727bea169cbd]
+- Better handling non suported schemas, add custom schema, new dialog boxes, onClose event [f10426f84b954161bade42f4105bd05a5d1823ea]
+  - Includes:
+    - Split Dialogs from Components on file tree
+    - Add types
+    - Localization
+
+### Patch
+
+- Tag person: Alphabetize list of roles [1085f1ee0b87cdf8a4dae9a3f98740ffd023e237]
+- Fix typo in a dialog box message [a1a9e72b621f588a3b80ceca83df485570a58d4b]
+- Context menu: improve header hightlight [d9771768d4691e36ff96402804e99911a1e56806]
+- Warning before close tab/window if dcoument has changes [f5de1b40c35a104ff04d130c59702a34416c89e1]
+- localStorage: improve api to ge from / set to localStorage [26a29af3cfd797562dab1a4efe7d497ca8a84462]
+- Theme: Tweak colour on dark mode [2800bf6f10edea5ff28444b7d8e1dd52b40351d3]
+- Schemas: Reorder list [57b851b64057c041dfc9b83e2836feb8406b8a15]
+- Types: Fix type source on package.json [d653f15247d5e6f560c2a5806a7885147603077d]
+- eslint: add plugin to lint typescript [82521ec420b43585187157292a3e9f9a52749197]
+- i18n: tweak configure and add scope (namespace) [c456a509c5a3bdc32ff43a891036f70a3ad6a28d]
+- Editor mode: rename options [e919bd2937ea40fa1f6047b178d0c7873366205a]
+- Update Dependencies [d60a2b7eb487387f0e394d792cce23e89e986f5d]
+  - core:
+    - add:
+      - mui-modal-provider@2.1.0
+    - upgrade:
+      - uuid@9.0.0
+    - update:
+      - @fortawesome/fontawesome-free@6.2.0
+      - @mui/icons-material@5.10.3
+      - framer-motion@7.3.5
+      - prismjs@1.29.0
+      - react-router-dom@6.4.0
+    - bump up:
+      - @emotion/react@11.10.4
+      - @emotion/styled@11.10.4
+      - @mui/lab@5.0.0-alpha.99
+      - @mui/material@5.10.5
+      - i18next@21.91.1
+      - jquery@3.6.1
+      - luxon@3.0.3
+      - overmind@28.0.2
+      - overmind-react@29.0.2
+      - rdflib@2.2.20
+      - react-i18next@11.18.6
+      - wikidata-sdk@8.0.3
+  - dev:
+    - update:
+      - @typescript-eslint/eslint-plugin@5.37.0
+      - @typescript-eslint/parser@5.37.0
+      - esbuild-loader@2.20.0
+      - eslint-plugin-react@7.31.8
+    - bump up:
+      - @types/luxon@3.0.1
+      - @types/node@18.7.18
+- Updated dependencies
+  - @cwrc/leafwriter-validator@1.2.0
+
+## 1.7.0
 ### Minor Changes
 
 - Add link to the documentation in the ribbon [9121ab1181737f64e223d7a9f8d4713dfdf8dba1]
