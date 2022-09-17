@@ -1,4 +1,35 @@
-# @cwrc/leafwriter-storage-service
+## 1.1.2
+
+### Patch Changes### Chore
+
+- Update dependencies [401d3af7e4cadba4700ee0073e0733bc5e908951]:
+  - core:
+    - update:
+      - @mui/icons-material@5.10.3
+      - framer-motion@7.3.5
+    - bump up:
+      - @emotion/react@11.10.4
+      - @emotion/styled@11.10.4
+      - @mui/base@5.0.0-alpha.97
+      - @mui/lab@5.0.0-alpha.99
+      - @mui/material@5.10.5
+      - @octokit/rest@19.0.4
+      - date-fns@2.29.3
+      - i18next@21.9.1
+      - overmind@28.0.2
+      - overmind-react@29.0.2
+      - react-i18next@ 11.18.6
+  - dev:
+    - upgrade:
+      - @types/jest@29.0.3
+      - jest-environment-jsdom@29.0.3
+      - ts-jest@29.0.1
+    - update:
+      - @testing-library/react@13.4.0
+      - @typescript-eslint/eslint-plugin@5.37.0
+      - @typescript-eslint/parser@5.37.0
+      - esbuild-loader@2.20.0
+      - eslint-plugin-react@7.31.9
 
 ## 1.1.1
 
