@@ -1,4 +1,8 @@
 {
+  "Document Saved": "Document Saved",
+  "Document not saved": "Document not saved",
+  "Something went wrong": "Something went wrong",
+  "Something went wrong Document not saved": "Something went wrong",
   "error": {
     "message404": "You either tried some shady route or you came here by mistake. Go back to the <1>main page.</1>",
     "pageNotFound": "Page Not Found",
@@ -7,6 +11,7 @@
   },
   "home": {
     "appearance": "Appearance",
+    "bugs": "bugs",
     "english": "English",
     "french": "French",
     "from_Your_computer": "from your computer",
@@ -18,6 +23,7 @@
     "orTrySample": "Or try out with sample files",
     "or_paste_your_XML_here": "or paste your XML here",
     "recent": "recent",
+    "requests": "requests",
     "settings": "Settings",
     "signOut": "Sign Out",
     "signin": "Sign In",
@@ -27,5 +33,6 @@
     "subtitle": "The XML & RDF online editor of the Linked Editing Academic Framework",
     "team": "Team",
     "templates": "templates"
-  }
+  },
+  "remove from recents": "remove from recents"
 }
