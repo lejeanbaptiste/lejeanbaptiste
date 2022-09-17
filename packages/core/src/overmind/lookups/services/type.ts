@@ -1,4 +1,4 @@
-import type { IResult, NamedEntityType } from '../../../components/entityLookups/types';
+import type { IResult, NamedEntityType } from '../../../dialogs/entityLookups/types';
 
 export interface IFindParams {
   query: string;

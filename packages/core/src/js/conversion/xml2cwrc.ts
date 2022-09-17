@@ -1,8 +1,10 @@
-//@ts-nocheck
 import $ from 'jquery';
+import { log } from '../../utilities';
+import { isValidHttpsURL } from '../../utilities/util';
+import { IEntityConfig } from '../entities/Entity';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
 import Writer from '../Writer';
-import { log } from './../../utilities';
+import { openEditorModeDialog, openProcessIssueDialog, type IProcessSchemaParams } from './prompts';
 
 /**
  * @class XML2CWRC
@@ -18,195 +20,68 @@ class XML2CWRC {
     this.writer = writer;
   }
 
+  private async clearDocument() {
+    return new Promise((resolve) => {
+      $(this.writer.editor.getBody()).empty();
+      setTimeout(resolve, 0);
+    });
+  }
+
   /**
    * Processes a document and loads it into the editor.
    * @fires Writer#processingDocument
    * @fires Writer#documentLoaded
    * @param {Document} doc An XML DOM
-   * @param {String} [schemaIdOverride] An optional schemaId to override the one from the document
    */
-  processDocument(doc: Document, schemaIdOverride?: string) {
+  async processDocument(doc: XMLDocument) {
     // clear current doc
-    $(this.writer.editor.getBody()).empty();
+    await this.clearDocument();
 
-    // setTimeout to make sure doc clears first
-    setTimeout(async () => {
-      let schemaId: string;
-      let loadSchemaCss: boolean;
+    const { overmindActions, schemaManager } = this.writer;
+    let schemaProcess: IProcessSchemaParams = { doc, writer: this.writer };
 
-      let { rng, css } = this.getSchemaUrls(doc);
-      this.writer.schemaManager.setCurrentDocumentSchemaUrl(rng);
-      this.writer.schemaManager.setCurrentDocumentCss(css);
+    // * IS ROOT ELEMENT SUPPORTED?
+    schemaProcess.rootName = doc.firstElementChild.nodeName;
+    schemaProcess.rootIsSupported = schemaManager.isRootSupported(schemaProcess.rootName);
+    if (!schemaProcess.rootIsSupported) return openProcessIssueDialog(schemaProcess);
 
-      if (schemaIdOverride !== undefined) {
-        schemaId = schemaIdOverride;
-        loadSchemaCss = true;
-      } else {
-        schemaId = this.writer.schemaManager.getSchemaIdFromUrl(rng);
-        loadSchemaCss = css === undefined; // load schema css if none was found in the document
-      }
+    overmindActions.document.setRootname(schemaProcess.rootName);
 
-      if (rng === undefined && schemaId === undefined) {
-        this.writer.dialogManager.confirm({
-          title: 'Missing Schema',
-          msg: `
-            <p>There is no schema associated with your document.
-            Should LEAF-Writer try to determine the schema by examining the document root?</p>
-          `,
-          type: 'error',
-          callback: (doIt: boolean) => {
-            if (!doIt) {
-              this.writer.event('documentLoaded').publish(false, null);
-              this.writer.showLoadDialog();
-              return;
-            }
+    // * HAS SCHEMA?
+    schemaProcess.docSchema = this.getSchemaUrls(doc);
+    schemaProcess.schemaFound = !!schemaProcess.docSchema.rng;
+    if (!schemaProcess.schemaFound) return openProcessIssueDialog(schemaProcess);
 
-            const rootName = doc.firstElementChild?.nodeName;
-            schemaId = this.writer.schemaManager.getSchemaIdFromRoot(rootName);
+    // * IS SCHEMA SUPPORTED?
+    schemaProcess.schemaId = schemaManager.getSchemaIdFromUrl(schemaProcess.docSchema.rng);
+    schemaProcess.schemaSupported = !!schemaProcess.schemaId;
+    if (!schemaProcess.schemaSupported) return openProcessIssueDialog(schemaProcess);
 
-            if (schemaId === undefined) {
-              this.writer.dialogManager.show('message', {
-                title: 'Warning',
-                msg: `<p>LEAF-Writer could not determine the schema for: ${rootName}</p>`,
-                type: 'error',
-                callback: () => {
-                  this.writer.event('documentLoaded').publish(false, null);
-                  this.writer.showLoadDialog();
-                },
-              });
-              return;
-            }
+    schemaManager.setDocumentSchemaUrl(schemaProcess.docSchema.rng);
+    if (schemaProcess.docSchema.css) schemaManager.setDocumentCssUrl(schemaProcess.docSchema.css);
 
-            this.writer.dialogManager.show('message', {
-              title: 'Schema',
-              msg: `<p>LEAF-Writer determined the schema to be: ${schemaId}</p>`,
-              type: 'info',
-              callback: async () => {
-                if (schemaId === this.writer.schemaManager.schemaId) {
-                  this.doProcessing(doc);
-                  return;
-                }
-                const res = await this.writer.schemaManager.loadSchema(schemaId, true);
-                res.success ? this.doProcessing(doc) : this.doBasicProcessing(doc);
-              },
-            });
-          },
-        });
+    if (schemaProcess.schemaId !== schemaManager.schemaId) {
+      const { schemaId, docSchema } = schemaProcess;
+      schemaProcess.schemaLoaded = await schemaManager.loadSchema(schemaId, docSchema.css);
 
+      // * IS SCHEMA LOADED
+      if (!schemaProcess.schemaLoaded) {
+        openProcessIssueDialog(schemaProcess);
         return;
-      }
-
-      if (schemaId === undefined) {
-        this.writer.dialogManager.confirm({
-          title: 'Warning',
-          msg: `<p>The document you are loading is not fully supported by LEAF-Writer.
-            You may not be able to use the ribbon to tag named entities.</p>
-            <p>Load document anyways?</p>`,
-          type: 'error',
-          callback: async (doIt: boolean) => {
-            if (!doIt) {
-              this.writer.event('documentLoaded').publish(false, null);
-              this.writer.showLoadDialog();
-              return;
-            }
-
-            if (css !== undefined) await this.writer.schemaManager.loadSchemaCSS([css]);
-
-            if (rng === undefined) {
-              this.doBasicProcessing(doc);
-              return;
-            }
-
-            const customSchemaId = this.writer.schemaManager.addSchema({
-              name: 'Custom Schema',
-              rng: [rng],
-              css: [css],
-            });
-
-            const res = await this.writer.schemaManager.loadSchema(customSchemaId, loadSchemaCss);
-            if (res.success) {
-              this.doProcessing(doc);
-              return;
-            }
-
-            // close schema error dialog
-            const schemaErrDialog = this.writer.dialogManager
-              .getDialog('message')
-              .getOpenDialogs()
-              .pop();
-
-            if (schemaErrDialog) schemaErrDialog.dialog('close');
-
-            this.writer.dialogManager.confirm({
-              title: 'Error Loading Schema',
-              msg: `
-                <p>The schema associated with your document could not be loaded.
-                Should LEAF-Writer try to determine the schema by examining the document root?</p>
-              `,
-              type: 'error',
-              callback: (doIt: boolean) => {
-                if (!doIt) {
-                  this.writer.event('documentLoaded').publish(false, null);
-                  this.writer.showLoadDialog();
-                  return;
-                }
-
-                const rootName = doc.firstElementChild?.nodeName;
-                if (rootName) {
-                  const schemaIdFromRoot = this.writer.schemaManager.getSchemaIdFromRoot(rootName);
-                  if (schemaIdFromRoot) schemaId = schemaIdFromRoot;
-                }
-
-                if (schemaId === undefined) {
-                  this.writer.dialogManager.show('message', {
-                    title: 'Warning',
-                    msg: `<p>LEAF-Writer could not determine the schema for: ${rootName}</p>`,
-                    type: 'error',
-                    callback: () => {
-                      this.writer.event('documentLoaded').publish(false, null);
-                      this.writer.showLoadDialog();
-                    },
-                  });
-                  return;
-                }
-
-                this.writer.dialogManager.show('message', {
-                  title: 'Schema',
-                  msg: `<p>LEAF-Writer determined the schema to be: ${schemaId}</p>`,
-                  type: 'info',
-                  callback: async () => {
-                    if (schemaId === this.writer.schemaManager.schemaId) {
-                      this.doProcessing(doc);
-                      return;
-                    }
-
-                    const res = await this.writer.schemaManager.loadSchema(schemaId, true);
-                    res.success ? this.doProcessing(doc) : this.doBasicProcessing(doc);
-                  },
-                });
-              },
-            });
-          },
-        });
-
-        return;
-      }
-
-      if (schemaId !== this.writer.schemaManager.schemaId) {
-        if (css !== undefined) await this.writer.schemaManager.loadSchemaCSS(schemaId);
-        const res = await this.writer.schemaManager.loadSchema(schemaId, loadSchemaCss);
-        res.success ? this.doProcessing(doc) : this.doBasicProcessing(doc);
-        return;
-      }
-
-      if (css !== undefined && css !== this.writer.schemaManager.getCss()) {
-        const currentSchema = this.writer.schemaManager.getCurrentSchema();
-        const matchCsss = currentSchema.css.find((url: string) => url === css);
-        if (matchCsss === null) await this.writer.schemaManager.loadSchemaCSS([css]);
       }
 
       this.doProcessing(doc);
-    }, 0);
+      return;
+    }
+
+    const { docSchema } = schemaProcess;
+    if (docSchema.css && docSchema.css !== schemaManager.getCss()) {
+      const currentSchema = schemaManager.getCurrentSchema();
+      const matchCsss = currentSchema.css.some((url: string) => url === docSchema.css);
+      if (!matchCsss) await schemaManager.loadSchemaCSS(docSchema.css);
+    }
+
+    this.doProcessing(schemaProcess.doc);
   }
 
   /**
@@ -240,22 +115,35 @@ class XML2CWRC {
    * @param {Document} doc
    * @returns {Object} urls
    */
-  private getSchemaUrls(doc: Document) {
-    let rng: string | undefined;
-    let css: string | undefined;
+  private getSchemaUrls(doc: Document): { rng?: string; css?: string } {
+    let rng: string;
+    let css: string;
 
-    //extract url from element's attribute wrapped with double or single quote ('|")"
-    const urlRegex = /href=('|")([^('|")]*)('|")/;
+    const parseData = (nodeData: string) => {
+      const attributes = Object.assign(
+        {},
+        ...nodeData
+          .replaceAll('"', '')
+          .split(' ')
+          .map((s) => s.split('='))
+          .map(([k, v]) => ({ [k]: v }))
+      );
+
+      if ('href' in attributes) {
+        const url: string = attributes.href;
+        if (isValidHttpsURL(url)) return url;
+      }
+    };
 
     doc.childNodes.forEach((node) => {
       if (node.nodeName === 'xml-model') {
-        const xmlModelData = node.data as string;
-        rng = xmlModelData.match(urlRegex)[2];
-        if (rng === 'undefined') rng = rng = undefined;
+        //@ts-ignore
+        const nodeData = node.data as string;
+        rng = parseData(nodeData);
       } else if (node.nodeName === 'xml-stylesheet') {
-        const xmlStylesheetData = node.data as string;
-        css = xmlStylesheetData.match(urlRegex)[2];
-        if (css === 'undefined') css = css = undefined;
+        //@ts-ignore
+        const nodeData = node.data as string;
+        css = parseData(nodeData);
       }
     });
 
@@ -278,7 +166,9 @@ class XML2CWRC {
     return hasRdf && (hasOldAnnotationIds || hasOldRdfParent);
   }
 
-  private doBasicProcessing(doc: Document) {
+  // ? Apparently, this function is only called when there is no schema.
+  // ! Deprecated -> remove in next iterations
+  doBasicProcessing(doc: Document) {
     this.writer.event('processingDocument').publish();
 
     $(doc).find('rdf\\:RDF, RDF').remove();
@@ -289,7 +179,7 @@ class XML2CWRC {
     this.writer.event('documentLoaded').publish(false, this.writer.editor.getBody());
   }
 
-  private doProcessing(doc: Document) {
+  doProcessing(doc: Document) {
     this.writer.event('processingDocument').publish();
 
     this._isLegacyDocument = this.isLegacyDocument(doc);
@@ -299,7 +189,9 @@ class XML2CWRC {
     this.buildDocumentAndInsertEntities(doc).then(() => {
       // we need loading indicator to close before showing another modal dialog, so publish event before showMessage
       this.writer.event('documentLoaded').publish(true, this.writer.editor.getBody());
-      this.showMessage(doc);
+
+      if (this.writer.isReadOnly) return;
+      openEditorModeDialog(this.writer);
     });
   }
 
@@ -355,16 +247,22 @@ class XML2CWRC {
         }
 
         // replace annotationId with xpath
-        const entityEl = this.writer.utilities.evaluateXPath(doc, entityConfig.range.startXPath);
+        const entityEl = this.writer.utilities.evaluateXPath(
+          doc,
+          entityConfig.range.startXPath
+        ) as Element;
         entityConfig.range.startXPath = this.writer.utilities.getElementXPath(entityEl);
 
         if (isOverlapping) {
-          const entityElEnd = this.writer.utilities.evaluateXPath(doc, entityConfig.range.endXPath);
+          const entityElEnd = this.writer.utilities.evaluateXPath(
+            doc,
+            entityConfig.range.endXPath
+          ) as Element;
           entityConfig.range.endXPath = this.writer.utilities.getElementXPath(entityElEnd);
         }
       }
 
-      this.writer.entitiesManager.addEntity(entityConfig);
+      this.writer.entitiesManager.addEntity(entityConfig as IEntityConfig);
     });
 
     $rdfs.remove();
@@ -654,17 +552,17 @@ class XML2CWRC {
 
       // just rdf, no markup
       if (range.endXPath) {
-        let parent = this.writer.utilities.evaluateXPath(docRoot, range.startXPath);
+        let parent = this.writer.utilities.evaluateXPath(docRoot, range.startXPath) as Element;
         let result = this.getTextNodeFromParentAndOffset(parent, range.startOffset);
         startNode = result.textNode;
         startOffset = result.offset;
-        parent = this.writer.utilities.evaluateXPath(docRoot, range.endXPath);
+        parent = this.writer.utilities.evaluateXPath(docRoot, range.endXPath) as Element;
         result = this.getTextNodeFromParentAndOffset(parent, range.endOffset);
         endNode = result.textNode;
         endOffset = result.offset;
 
         try {
-          const selRange = this.writer.editor.selection.getRng(true);
+          const selRange = this.writer.editor.selection.getRng();
           selRange.setStart(startNode, startOffset);
           selRange.setEnd(endNode, endOffset);
           this.writer.tagger.addEntityTag(entry, selRange);
@@ -680,7 +578,7 @@ class XML2CWRC {
         }
         // markup
       } else if (range.startXPath) {
-        const entityNode = this.writer.utilities.evaluateXPath(docRoot, range.startXPath);
+        const entityNode = this.writer.utilities.evaluateXPath(docRoot, range.startXPath) as Node;
         if (entityNode !== null) {
           const type = entry.getType();
 
@@ -755,54 +653,6 @@ class XML2CWRC {
     getTextNode(parent);
 
     return { textNode, offset: currentOffset };
-  }
-
-  private showMessage(doc: Document) {
-    if (this.writer.isReadOnly) return;
-
-    const rootEl = doc.documentElement;
-    if (rootEl.nodeName.toLowerCase() !== this.writer.schemaManager.getRoot().toLowerCase()) {
-      this.writer.dialogManager.show('message', {
-        title: 'Schema Mismatch',
-        msg: `
-          The wrong schema is specified.<br/>Schema root: ${this.writer.schemaManager.getRoot()}<br/>
-          Document root: ${rootEl.nodeName}<br/><br/>
-          Go to <b>Settings</b> to change the schema association.
-        `,
-        type: 'error',
-      });
-    }
-
-    let msg = '';
-
-    if (this.writer.mode === this.writer.XML) {
-      msg = `
-        <b>XML only</b><br/>
-        Only XML tags and no RDF/Semantic Web annotations will be created.
-      `;
-    } else {
-      if (this.writer.allowOverlap) {
-        msg = `
-          <b>XML and RDF (overlap)</b><br/>
-          XML tags and RDF/Semantic Web annotations equivalent to the XML tags will be created,
-          to the extent that the hierarchy of the XML schema allows.
-          Annotations that overlap will be created in RDF only, with no equivalent XML tags.
-        `;
-      } else {
-        msg = `
-          <b>XML and RDF (no overlap)</b><br/>
-          XML tags and RDF/Semantic Web annotations equivalent to the XML tags will be created,
-          consistent with the hierarchy of the XML schema,
-          so annotations will not be allowed to overlap.
-        `;
-      }
-    }
-
-    this.writer.dialogManager.show('message', {
-      title: 'LEAF-Writer Mode',
-      msg: msg,
-      type: 'info',
-    });
   }
 }
 

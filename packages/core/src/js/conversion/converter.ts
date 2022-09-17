@@ -19,8 +19,8 @@ class Converter {
     this.cwrc2xml = new CWRC2XML(writer);
   }
 
-  processDocument(doc: XMLDocument, schemaIdOverride?: string) {
-    return this.xml2cwrc.processDocument(doc, schemaIdOverride);
+  processDocument(doc: XMLDocument) {
+    return this.xml2cwrc.processDocument(doc);
   }
 
   buildEditorString(node: Element, includeComments?: boolean) {

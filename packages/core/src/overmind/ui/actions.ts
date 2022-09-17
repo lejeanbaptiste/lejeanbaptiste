@@ -1,8 +1,10 @@
 import { Context } from '../';
-import type { EntityLink, EntityLookupDialogProps } from '../../components/entityLookups/types';
+import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups/types';
 import type { PopupProps } from '../../components/popup';
-import { ContextMenuState, PaletteMode } from '../../types';
+import { ContextMenuState, INotification, PaletteMode } from '../../types';
+import type { IDialogBar } from '../../dialogs/type';
 import { supportedLanguages } from '../../utilities/util';
+import { v4 as uuidv4 } from 'uuid';
 
 export const onInitializeOvermind = ({ actions }: Context, overmind: any) => {
   //DARK MODE
@@ -99,4 +101,82 @@ export const openSettingsDialog = ({ state }: Context) => {
 
 export const closeSettingsDialog = ({ state }: Context) => {
   state.ui.settingsDialogOpen = false;
+};
+
+export const openDialog = ({ state }: Context, dialogBar: IDialogBar) => {
+  if (!dialogBar.props.id) dialogBar.props.id = uuidv4();
+  if (!dialogBar.type) dialogBar.type = 'simple';
+  state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
+};
+
+// export const closeDialogBar = ({ state }: Context, id: string) => {
+//   const dismissAll = !id;
+//   state.ui.dialogBar = state.ui.dialogBar.map((dialogBar) =>
+//     dismissAll || dialogBar.props.id === id ? { ...dialogBar, dismissed: true } : { ...dialogBar }
+//   );
+// };
+
+export const closeDialog = ({ state }: Context, id: string) => {
+  state.ui.dialogBar = [
+    ...state.ui.dialogBar.map((dialogBar) => {
+      if (dialogBar.props.id === id) dialogBar.dismissed = true;
+      return dialogBar;
+    }),
+  ];
+};
+
+export const removeDialog = ({ state }: Context, id: string) => {
+  state.ui.dialogBar = state.ui.dialogBar.filter((dialogBar) => dialogBar.props.id !== id);
+};
+
+export const setDialogDisplayId = (
+  { state }: Context,
+  { id, displayId }: { id: string; displayId: string }
+) => {
+  state.ui.dialogBar = [
+    ...state.ui.dialogBar.map((dialogBar) => {
+      if (dialogBar.props.id === id) dialogBar.displayId = displayId;
+      return dialogBar;
+    }),
+  ];
+};
+
+export const notifyViaSnackbar = ({ state }: Context, notification: INotification | string) => {
+  if (typeof notification === 'string') notification = { message: notification };
+
+  let key = notification.options && notification.options.key;
+  if (!key) key = new Date().getTime() + Math.random();
+
+  state.ui.notifications = [...state.ui.notifications, { ...notification, key }];
+};
+
+export const closeNotificationSnackbar = ({ state }: Context, key?: string | number) => {
+  const dismissAll = !key;
+  state.ui.notifications = state.ui.notifications.map((notification) =>
+    dismissAll || notification.key === key
+      ? { ...notification, dismissed: true }
+      : { ...notification }
+  );
+};
+
+export const removeNotificationSnackbar = ({ state }: Context, key: string | number) => {
+  state.ui.notifications = state.ui.notifications.filter(
+    (notification) => notification.key !== key
+  );
+};
+
+export const shouldDisplayDialog = ({ effects }: Context, value: string) => {
+  const dialogs: string[] = effects.editor.api.getFromLocalStorage('doNotDisplayDialogs') ?? [];
+  if (dialogs.includes(value)) return false;
+  return true;
+};
+
+export const doNotDisplayDialog = ({ effects }: Context, value: string) => {
+  let dialogs: string[] = effects.editor.api.getFromLocalStorage('doNotDisplayDialogs') ?? [];
+  dialogs = [...dialogs, value];
+  effects.editor.api.saveToLocalStorage('doNotDisplayDialogs', dialogs);
+};
+
+export const resetDoNotDisplayDialogs = ({ effects }: Context) => {
+  effects.editor.api.removeFromLocalStorage('doNotDisplayDialogs');
 };

@@ -8,3 +8,8 @@ export const supportedLanguages: typeof Languages = new Map([
 export function isErrorMessage(param: any): param is IError {
   return (param as IError).message !== undefined;
 }
+
+export const isValidHttpsURL = (value: string) => {
+  const res = value.match(/^https\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\/\S*)?$/);
+  return res !== null;
+};

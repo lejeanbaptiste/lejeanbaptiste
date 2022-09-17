@@ -1,0 +1,68 @@
+import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DragEndEvent } from '@dnd-kit/core/dist/types';
+import { restrictToFirstScrollableAncestor, restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import FilterTiltShiftIcon from '@mui/icons-material/FilterTiltShift';
+import { Stack, Typography } from '@mui/material';
+import React, { useEffect, useState, type FC } from 'react';
+import { Authority, IAuthorityService } from '../../entityLookups/types';
+import { useActions, useAppState } from '../../../overmind';
+import AuthoritySource from './AuthoritySource';
+
+const AutoritiesPanel: FC = () => {
+  const { authorities } = useAppState().editor.lookups;
+  const { reorderLookupPriority } = useActions().editor;
+  const sensors = useSensors(useSensor(PointerSensor));
+  const [items, setItems] = useState<IAuthorityService[]>([]);
+
+  useEffect(() => {
+    if (!authorities) return;
+    const authtoriesList = [...Object.values(authorities)].sort((a, b) => a.priority - b.priority);
+    setItems(authtoriesList);
+    return () => {};
+  }, [authorities]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!items || !over) return;
+
+    if (active.id !== over.id) {
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
+      const newOrder = arrayMove(items, oldIndex, newIndex);
+
+      setItems(newOrder);
+      reorderLookupPriority(newOrder);
+    }
+  };
+
+  return (
+    <Stack width="100%" py={1}>
+      <Stack direction="row">
+        <FilterTiltShiftIcon sx={{ mx: 1, height: 18, width: 18 }} />
+        <Typography>Entities Lookup Sources</Typography>
+      </Stack>
+      <Typography ml={4.5} variant="caption">
+        Drag to reorder the priority
+      </Typography>
+      <Stack mt={1} spacing={1}>
+        {items && (
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            modifiers={[restrictToVerticalAxis, restrictToFirstScrollableAncestor]}
+            sensors={sensors}
+          >
+            <SortableContext items={items} strategy={verticalListSortingStrategy}>
+              {items.map((authority) => (
+                <AuthoritySource key={authority.id} authorityService={authority} />
+              ))}
+            </SortableContext>
+          </DndContext>
+        )}
+      </Stack>
+    </Stack>
+  );
+};
+
+export default AutoritiesPanel;

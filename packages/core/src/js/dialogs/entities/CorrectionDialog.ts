@@ -2,7 +2,7 @@ import $ from 'jquery';
 import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
-import type { MappingID } from '../../../types';
+import type { SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { ILWDialogConfigParams } from '../types';
 import type { SchemaDialog } from './types';
@@ -10,7 +10,7 @@ import type { SchemaDialog } from './types';
 class DateDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
-  readonly mappingID: MappingID;
+  readonly mappingID: SchemaMappingType;
 
   entry?: Entity;
   selectedText?: string;

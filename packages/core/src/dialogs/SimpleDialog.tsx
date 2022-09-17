@@ -1,0 +1,100 @@
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import React, { type FC, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useActions } from '../overmind';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { type ISimpleDialog } from './type';
+
+export const SimpleDialog: FC<ISimpleDialog> = ({
+  actions = [{ action: 'close', label: 'close' }],
+  id,
+  maxWidth = 'sm',
+  Message,
+  onBeforeClose,
+  onClose,
+  open,
+  preventEscape = false,
+  severity,
+  title,
+  children,
+}) => {
+  const { closeDialog } = useActions().ui;
+  const { t } = useTranslation(['leafwriter']);
+
+  const [data, setData] = useState<{ [key: string]: any }>({});
+
+  const handleShouldCLose = async (action?: string) => {
+    if (!onBeforeClose) return true;
+    return await onBeforeClose(action);
+  };
+
+  const handleClose = async (_event: MouseEvent, reason: string) => {
+    if (preventEscape && (reason === 'backdropClick' || reason === 'escapeKeyDown')) {
+      return;
+    }
+
+    const shouldClose = await handleShouldCLose();
+    if (!shouldClose) return;
+
+    closeDialog(id);
+    onClose && onClose(reason, data);
+  };
+
+  const handleAction = async (action: string) => {
+    const shouldClose = await handleShouldCLose(action);
+    if (!shouldClose) return;
+
+    closeDialog(id);
+    onClose && onClose(action, data);
+  };
+
+  return (
+    <Dialog
+      aria-labelledby="alert-dialog-title"
+      // disableAutoFocus
+      fullWidth
+      id={id}
+      maxWidth={maxWidth}
+      onClose={handleClose}
+      open={open}
+    >
+      <DialogTitle
+        id="alert-dialog-title"
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, textTransform: 'capitalize' }}
+        // variant="h5"
+      >
+        {severity === 'error' && <ErrorOutlineIcon color="error" />}
+        {severity === 'warning' && <WarningAmberIcon color="warning" />}
+        {title}
+      </DialogTitle>
+      {(children || Message) && (
+        <DialogContent sx={{ pt: 0.5 }}>
+          {children ? (
+            children
+          ) : typeof Message === 'string' ? (
+            Message
+          ) : (
+            <Message data={data} onChangeData={setData} />
+          )}
+        </DialogContent>
+      )}
+      <DialogActions
+        sx={{
+          justifyContent: actions.length > 1 ? 'space-between' : 'flex-end',
+          '& :first-of-type': {
+            marginRight: actions.length > 1 ? 'auto' : 0,
+          },
+        }}
+      >
+        {actions.map(({ action, label, variant }, index) => (
+          <Button key={index} onClick={() => handleAction(action)} variant={variant ?? 'text'}>
+            {t(`${label ?? action}`)}
+          </Button>
+        ))}
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default SimpleDialog;

@@ -1,4 +1,4 @@
-import type { Authority, IAuthorityService, IResult } from '../../components/entityLookups/types';
+import type { Authority, IAuthorityService, IResult } from '../../dialogs/entityLookups/types';
 import { log } from './../../utilities';
 import ILookupServiceApi, { type IFindParams } from './services/type';
 

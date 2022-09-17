@@ -15,11 +15,15 @@ export const setLoaded = ({ state }: Context, value: boolean) => {
   state.document.loaded = value;
 };
 
+export const setRootname = ({ state }: Context, value: string) => {
+  state.document.rootName = value;
+};
+
 export const setSchema = ({ state }: Context, id: string) => {
   window.writer?.event('schemaChanged').publish(id);
 
   state.document.schemaId = id;
-  return state.editor.schemas.find((schema) => schema.id === id);
+  return state.editor.schemasList.find((schema) => schema.id === id);
 };
 
 export const setDocumentUrl = ({ state }: Context, url: string) => {

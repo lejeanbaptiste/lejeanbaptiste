@@ -4,7 +4,7 @@ import 'jquery-ui/ui/widgets/datepicker';
 import { DateTime } from 'luxon';
 import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';
-import type { MappingID } from '../../../types';
+import type { SchemaMappingType } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { ILWDialogConfigParams } from '../types';
@@ -48,7 +48,7 @@ class DateDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
   readonly $dateInput: JQuery<HTMLElement>;
-  readonly mappingID: MappingID;
+  readonly mappingID: SchemaMappingType;
 
   readonly DATE_DATA_FIELD: 'when' | 'VALUE';
   readonly FROM_DATA_FIELD: 'from' | 'FROM';
@@ -583,7 +583,7 @@ class DateDialog implements SchemaDialog {
     return html;
   }
 
-  private schemaMappingMatch(value: MappingID | MappingID[]) {
+  private schemaMappingMatch(value: SchemaMappingType | SchemaMappingType[]) {
     if (Array.isArray(value)) {
       for (const mappingID of value) {
         if (this.mappingID === mappingID) return true;

@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import { MappingID } from '../../types';
+import { SchemaMappingType } from '../../types';
 import { log } from '../../utilities';
 import Entity from '../entities/Entity';
 import Writer from '../Writer';
@@ -76,7 +76,7 @@ class Mapper {
     ['cwrcEntry', cwrcEntry],
   ]);
 
-  currentMappingsId?: MappingID;
+  currentMappingsId?: SchemaMappingType;
 
   constructor(writer: Writer) {
     this.writer = writer;
@@ -87,7 +87,7 @@ class Mapper {
    * @param schemaMappingsId {String} The schema mapping ID.
    * @returns {Deferred} Deferred object that resolves when the mappings are loaded.
    */
-  loadMappings(schemaMappingsId: MappingID) {
+  loadMappings(schemaMappingsId: SchemaMappingType) {
     this.clearMappings();
     this.currentMappingsId = schemaMappingsId;
 

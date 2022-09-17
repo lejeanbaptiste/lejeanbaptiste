@@ -1,6 +1,6 @@
 import { derived } from 'overmind';
-import type { ILookups } from '../../components/entityLookups/types';
-import type { Schema } from '../../types';
+import type { ILookups } from '../../dialogs/entityLookups/types';
+import type { Schema, SchemaMappingType } from '../../types';
 
 type State = {
   advancedSettings: boolean;
@@ -20,6 +20,7 @@ type State = {
     key: number;
     value: string;
     label: string;
+    disabled?: boolean;
   }[];
   fontSizeOptions: number[];
   isAnnotator: boolean;
@@ -27,12 +28,16 @@ type State = {
   isReadonly: boolean;
   mode: number;
   nssiToken?: string | (() => Promise<string | undefined>);
-  schemas: Schema[];
+  schemas: { [key: string]: Schema };
+  schemasList: Schema[];
+  schemaMappings: SchemaMappingType[];
   proxyLoaderXmlEndpoint?: string;
   proxyLoaderCssEndpoint?: string;
   settings?: any;
   showEntities: boolean;
   showTags: boolean;
+
+  latestEvent?: string;
 
   lookups: ILookups;
 };
@@ -71,7 +76,9 @@ export const state: State = {
   mode: 0,
   showEntities: true,
   showTags: false,
-  schemas: [],
+  schemas: {},
+  schemasList: derived((state: State) => Object.values(state.schemas)),
+  schemaMappings: ['cwrcEntry', 'orlando', 'tei', 'teiLite'],
 
   lookups: {
     authorities: {
@@ -123,7 +130,6 @@ export const state: State = {
         name: 'LGPN',
         priority: 5,
       },
-      
     },
 
     serviceType: 'custom',

@@ -5,7 +5,7 @@ import type {
   EntryLink,
   IResult,
   NamedEntityType,
-} from '../../components/entityLookups/types';
+} from '../../dialogs/entityLookups/types';
 import type { EntityTypes } from '../../js/schema/types';
 
 type State = {
