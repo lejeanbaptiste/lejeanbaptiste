@@ -68,7 +68,7 @@ const Templates: FC = () => {
                 color: 'inherit',
                 px: 1,
                 '&:hover': {
-                  color: palette.primary.main,
+                  color: palette.primary.light,
                   backgroundColor: 'transparent',
                 },
               }}
