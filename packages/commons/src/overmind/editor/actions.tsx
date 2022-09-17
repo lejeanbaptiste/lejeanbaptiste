@@ -1,5 +1,5 @@
 import { saveDocument } from '@cwrc/leafwriter-storage-service';
-import { Leafwriter } from '@cwrc/leafwriter';
+import { type Leafwriter } from '@cwrc/leafwriter';
 import { log } from '@src/utilities/log';
 import { Context } from '../';
 import { StorageProviderName } from '@src/services';

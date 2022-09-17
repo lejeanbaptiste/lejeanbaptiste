@@ -1,4 +1,4 @@
-import { Leafwriter } from '@cwrc/leafwriter';
+import { type Leafwriter } from '@cwrc/leafwriter';
 
 type State = {
   isDirty: boolean;

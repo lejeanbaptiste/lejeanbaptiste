@@ -1,7 +1,7 @@
 import { Stack } from '@mui/material';
 import Page from '@src/components/Page';
 import TopBar from '@src/components/topbar';
-import { usePermalink } from '@src/hooks/usePermalink';
+import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
