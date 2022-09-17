@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import AboutSection from './about';
 import Header from './Header';
 import SignInSection from './SignInSection';
+import { StatusBar } from './StatusBar';
 import StoragePanel from './storagePanel';
 
 const HomeView: FC = () => {
@@ -33,9 +34,12 @@ const HomeView: FC = () => {
     <Page title={t('home:homepage')}>
       <TopBar />
       <Stack>
-        <Header />
-        <SignInSection />
-        <StoragePanel />
+        <Stack>
+          <Header />
+          <SignInSection />
+          <StoragePanel />
+          <StatusBar />
+        </Stack>
         <AboutSection />
       </Stack>
     </Page>
