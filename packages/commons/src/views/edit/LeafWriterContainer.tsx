@@ -1,15 +1,16 @@
-import { Leafwriter } from '@cwrc/leafwriter';
-import { useActions, useAppState } from '@src/overmind';
-import React, { useEffect, useRef, type FC } from 'react';
 import { analytics } from '@src/analytics';
+import { useActions, useAppState } from '@src/overmind';
+import { Resource } from '@src/types';
+import React, { useEffect, useRef, useState, type FC } from 'react';
+import { useNavigate } from 'react-router';
 
 const LeafWriterContainer: FC = () => {
   const { user } = useAppState().auth;
-  const { leafWriter } = useAppState().editor;
   const { resource } = useAppState().storage;
+  const [currentResource, setCurrentResource] = useState<Resource>();
 
   const { getKeycloskAuthenticationToken } = useActions().auth;
-  const { getGeonameUsername, setIsDirty, setLeafWriter } = useActions().editor;
+  const { close, getGeonameUsername, setIsDirty, setLeafWriter } = useActions().editor;
   const { addToRecentDocument } = useActions().storage;
 
   const navigate = useNavigate();
@@ -17,14 +18,17 @@ const LeafWriterContainer: FC = () => {
   const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (divEl.current && !leafWriter) createLFInstance();
-  }, []);
+    if (divEl.current && resource?.url !== currentResource?.url) createLFInstance();
+  }, [resource]);
 
   const createLFInstance = async () => {
-    if (user && resource?.content) {
+    setCurrentResource(resource);
+    const LWmodule = (await import('@cwrc/leafwriter')).default;
+
+    if (user && resource?.content && divEl.current !== null) {
       const geonamesUsername = await getGeonameUsername();
 
-      const leafWriter = new Leafwriter(divEl.current, {
+      const leafWriter = new LWmodule(divEl.current, {
         document: {
           url: resource.url,
           xml: resource.content ?? '',
@@ -32,7 +36,6 @@ const LeafWriterContainer: FC = () => {
         settings: {
           credentials: { nssiToken: getKeycloskAuthenticationToken },
           lookups: {
-            //@ts-ignore
             authorities: [['geonames', { config: { username: geonamesUsername } }]],
           },
         },
