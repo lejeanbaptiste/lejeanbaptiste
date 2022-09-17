@@ -59,10 +59,10 @@ export const state: State = {
     return editMode.label;
   }),
   editorModes: [
-    { key: 1, value: 'xml', label: 'XML only (no overlap)' },
-    { key: 0, value: 'xmlrdf', label: 'XML and RDF (no overlap)' },
-    { key: 0, value: 'xmlrdfoverlap', label: 'XML and RDF (overlapping entities)' },
-    { key: 2, value: 'rdf', label: 'RDF only' },
+    { key: 1, value: 'xml', label: 'Markup only'},
+    { key: 0, value: 'xmlrdf', label: 'Markup & Linking' },
+    { key: 0, value: 'xmlrdfoverlap', label: 'Markup & Linking with overlap' },
+    { key: 2, value: 'rdf', label: 'Linking Only', disabled: true },
   ],
   fontSizeOptions: [8, 9, 10, 11, 12, 13, 14, 16, 18],
   isEditorDirty: false,
