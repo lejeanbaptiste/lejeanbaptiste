@@ -69,7 +69,7 @@ export const initialize = async ({ state }: Context) => {
   window.writer?.event('workerValidatorLoaded').publish();
 };
 
-export const validate = async ({ state }: Context) => {
+export const validate = async ({ state, actions }: Context) => {
   const writer = window.writer;
   if (!writer || !state.validator.hasWorkerValidator) return;
 
@@ -84,10 +84,15 @@ export const validate = async ({ state }: Context) => {
       return;
     }
 
+    if (errors) actions.validator.updateValidationError(errors.length);
     writer.event('documentValidated').publish(valid, { valid, errors }, documentString);
   };
 
   if (documentString) workerValidator.validate(documentString, Comlink.proxy(validationProgress));
+};
+
+export const updateValidationError = async ({ state }: Context, value: number) => {
+  state.validator.validationErrors = value;
 };
 
 type GetAtAction =
