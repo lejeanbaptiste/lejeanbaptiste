@@ -5,8 +5,10 @@ import pck from '../../../package.json';
 import AnnotationMode from './AnnotationMode';
 import EditorMode from './EditorMode';
 import Schema from './Schema';
+import { ValdidationErrors } from './ValdidationErrors';
 
-const BottomBar: FC = () => {
+export const BottomBar: FC = () => {
+  const { validationErrors } = useAppState().validator;
   const { t } = useTranslation();
   const version = pck.version;
 
@@ -24,6 +26,8 @@ const BottomBar: FC = () => {
         <EditorMode />
         <AnnotationMode />
         <Schema />
+
+        {validationErrors > 0 && <ValdidationErrors />}
 
         <Box flexGrow={1} />
 
