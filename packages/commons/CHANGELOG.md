@@ -1,3 +1,77 @@
+## 1.8.0
+
+### Features
+
+#### See document's full path
+
+Hovering on top of the docuemnt's title at the top bar reveals its full path, including storage provider, owner, and repository
+
+#### Saving feedback UX
+
+The cloud next to the document's title got new and bigger icons:
+
+- Checkmarck cloud: Document is saved. Document has no changes
+- Orange cloud with a dot: Document has changes, needs to be saved.
+
+After saving, a snackbar will inform the user if the saving was successfull.
+
+#### Bugs / Requests
+
+Users have a quick access to GitLab tickecting system on LEAF-Writer homepage.
+
+### Minor Changes
+
+- Return to home when close editor [12b254a97e6d69c54cfb09b1ff199b7e6942a8b1]
+- Show full document path in the top bar. Better UX feedback when saving [62bdb960ac5dc41b495f50c7b0d49ab372c931a5]
+- Recent document: show full path. Add button to remove from list [e0947168de000f0d07d9397b76fb4301cb7be754]
+- Add bugs/requests button [2f3f3dfcf9da3e940f95ceca013d3f5cf4c19e79]
+
+### Patch Changes
+
+- Load new document with another already loaded [4cdf888b0f6b2026be7fd2fde5460629261aa43e]
+- Fix color and spacing [31118574ad074f7ebdaf49fd530e18db1e6aff08]
+- Organize files, improve types, formating [7d3ed04cb3b8d7b4f4f9761be453a28e84bfaa3d]
+- Improve keyboard sensor for menu access by keyboard shortcuts [fa3c364fbad216cc7f8465097bbd8379d00fef02]
+- Add localization [ba80c86ae51669834e3576826adbe8b21b2021d8]
+- Dependencies [0276292bc38c9f822157affd5375b337a810de00]:
+  - core:
+    - upgrade:
+      - helmet@6.0.0
+    - update:
+      - @mui/icons-material@5.10.3
+      - broadcast-channel@4.17.0
+      - framer-motion@7.3.5
+      - react-router-dom@6.4.0
+    - bump up:
+      - @emotion/react@11.10.4
+      - @emotion/styled@11.10.4
+      - @mui/lab@5.0.0-alpha.99
+      - @mui/material@5.10.5
+      - @octokit/rest@19.0.4
+      - date-fns@2.29.3
+      - i18next@21.9.1
+      - keycloak-js@19.0.2
+      - overmind@28.0.2
+      - overmind-react@29.0.2
+      - react-i18next@11.18.6
+  - dev:
+    - update:
+      - @types/webpack-env@1.18.0
+      - @typescript-eslint/eslint-plugin@5.37.0
+      - @typescript-eslint/parser@5.37.0
+      - css-minimizer-webpack-plugin@4.1.0
+      - esbuild-loader@2.20.0
+      - eslint@8.23.1
+      - eslint-plugin-react@7.31.8
+      - typescript@4.8.3
+    - bump up:
+      - @types/express@4.17.14
+      - @types/node@18.7.18
+      - nodemon@2.0.20
+      - webpack-bundle-analyzer@4.5.1
+  - @cwrc/leafwriter@1.9.0
+  - @cwrc/leafwriter-storage-service@1.1.2
+
 ## 1.7.1
 
 - Updated dependencies
