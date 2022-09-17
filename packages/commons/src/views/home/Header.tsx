@@ -9,10 +9,10 @@ const Header: FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
-    <Box mt={isMobile ? 4 : 0} py={6}>
+    <Box mt={isMobile ? 4 : 0} py={3}>
       <Container maxWidth="sm">
         <Stack justifyContent="center" alignItems="center">
-          <Logo height={isMobile ? 140 : 230} sx={{ mb: isMobile ? 2 : 3 }} variant="vertical" />
+          <Logo height={isMobile ? 140 : 230} sx={{ mb: isMobile ? 2 : 2 }} variant="vertical" />
           <Typography
             align="center"
             component="h2"

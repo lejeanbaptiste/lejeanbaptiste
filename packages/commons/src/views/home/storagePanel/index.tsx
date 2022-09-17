@@ -15,7 +15,7 @@ const StoragePanel: FC = () => {
 
   const conainerVariants: Variants = {
     initial: { height: 0 },
-    visible: { height: 'auto' },
+    visible: { height: '50vh' },
     exit: { height: 0 },
   };
 
@@ -36,7 +36,7 @@ const StoragePanel: FC = () => {
           exit="exit"
           transition={{ type: 'tween' }}
           elevation={palette.mode === 'dark' ? 0 : 0}
-          sx={{ py: isMobile ? 1 : 5, overflow: 'hidden' }}
+          sx={{ py: isMobile ? 1 : 2, overflow: 'hidden' }}
         >
           <Container>
             <Stack
