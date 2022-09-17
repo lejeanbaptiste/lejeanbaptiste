@@ -9,24 +9,13 @@ const AlertDialog: FC = () => {
 
   const { message, onClose, open, type } = alertDialog;
 
-  const handleBackdropClick = () => {
-    onClose && onClose();
-    closeAlertDialog();
-  };
-
   const handleClose = () => {
     onClose && onClose();
     closeAlertDialog();
   };
 
   return (
-    <Dialog
-      aria-describedby="alert-dialog-description"
-      aria-labelledby="alert-dialog-title"
-      disableEnforceFocus
-      onBackdropClick={handleBackdropClick}
-      open={open}
-    >
+    <Dialog disableEnforceFocus onClose={handleClose} open={open}>
       <Alert
         action={
           <IconButton aria-label="close" color="inherit" onClick={handleClose} size="small">

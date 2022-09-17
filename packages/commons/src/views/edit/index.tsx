@@ -1,7 +1,7 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import LoadingMask from '@src/components/loadingMask';
 import Page from '@src/components/Page';
-import { usePermalink } from '@src/hooks/usePermalink';
+import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { StorageProviderName } from '@src/services';
 import React, { useEffect, type FC } from 'react';

@@ -1,10 +1,10 @@
 import type { Resource } from '@cwrc/leafwriter-storage-service';
-import { usePermalink } from '@src/hooks/usePermalink';
+import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
 import LoadingMask from './loadingMask';
-import { useTranslation } from 'react-i18next';
 
 const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
 
