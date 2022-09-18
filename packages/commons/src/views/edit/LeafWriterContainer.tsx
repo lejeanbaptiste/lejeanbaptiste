@@ -18,7 +18,11 @@ const LeafWriterContainer: FC = () => {
   const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (divEl.current && resource?.url !== currentResource?.url) createLFInstance();
+    if (divEl.current && resource?.url !== currentResource?.url) {
+      createLFInstance();
+      return;
+    }
+    if (divEl.current && resource?.content) createLFInstance();
   }, [resource]);
 
   const createLFInstance = async () => {
