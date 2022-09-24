@@ -8,42 +8,35 @@ import {
   DialogTitle,
 } from '@mui/material';
 import React, { Suspense, useEffect, useState, type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
+import { IDialog } from '../type';
 const Editor = React.lazy(() => import('./Editor'));
-
-export interface IEditSourceDialogProps {
+export interface IEditSourceDialogProps extends IDialog {
   content?: string;
-  open: boolean;
 }
 
-export const EditSourceDialog: FC = () => {
-  const { editor } = useAppState();
-  const { editSourceProps } = useAppState().ui;
-  const { closeEditSourceDialog, processEditSource } = useActions().ui;
+export const EditSourceDialog: FC<IEditSourceDialogProps> = ({ content = '', id, onClose, open }) => {
+  const { settings } = useAppState().editor;
+  const { processEditSource } = useActions().ui;
 
-  const [originalContent, setOriginalContent] = useState('');
-  const [content, setContent] = useState('');
+  const { t } = useTranslation(['leafwriter']);
+
+  const [currentContent, setCurrentContent] = useState('');
 
   useEffect(() => {
-    if (editSourceProps.content) setContent(editSourceProps.content);
-    if (editSourceProps.content) setOriginalContent(editSourceProps.content);
-  }, [editSourceProps.content]);
+    setCurrentContent(content);
+  }, []);
 
-  const handleUpdateContent = (value: string) => {
-    setContent(value);
-  };
+  const handleUpdateContent = (value: string) => setCurrentContent(value);
 
-  const handleClose = () => {
-    closeEditSourceDialog();
-  };
+  const handleClose = () => onClose(id);
 
-  const handleOk = () => {
-    if (content === originalContent) {
-      closeEditSourceDialog();
-      return;
-    }
+  const handleChange = () => {
+    if (currentContent === content) return onClose(id);
 
-    processEditSource(content);
+    processEditSource(currentContent);
+    onClose(id);
   };
 
   const Progress = () => (
@@ -55,30 +48,29 @@ export const EditSourceDialog: FC = () => {
   return (
     <Dialog
       aria-labelledby="edit-source-title"
-      container={document.getElementById(`${editor.settings?.container}`)}
+      container={document.getElementById(`${settings?.container}`)}
       fullWidth
       maxWidth="lg"
-      open={editSourceProps.open}
+      open={open}
     >
       <DialogTitle
         id="edit-source-title"
-        sx={{ textAlign: 'center', fontSize: '1rem', padding: 0 }}
+        p={0}
+        sx={{ textAlign: 'center', fontSize: '1rem', textTransform: 'capitalize' }}
       >
-        Edit Source
+        {t('edit source')}
       </DialogTitle>
       <DialogContent sx={{ minHeight: 600, padding: 0 }}>
         <Suspense fallback={<Progress />}>
-          {editSourceProps.content && (
-            <Editor content={editSourceProps.content} updateContent={handleUpdateContent} />
-          )}
+          <Editor content={content} updateContent={handleUpdateContent} />
         </Suspense>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button autoFocus onClick={handleClose} variant="outlined">
-          Cancel
+        <Button autoFocus onClick={handleClose}>
+          {t('cancel')}
         </Button>
-        <Button onClick={handleOk} variant="contained">
-          Ok
+        <Button onClick={handleChange} variant="outlined">
+          {t('change')}
         </Button>
       </DialogActions>
     </Dialog>

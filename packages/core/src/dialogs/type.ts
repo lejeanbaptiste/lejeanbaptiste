@@ -21,13 +21,19 @@ export interface IDialog extends Partial<MuiDialogProps> {
   title?: string;
 }
 
-export type DialogType = 'simple' | 'selectSchema' | 'editSchema';
-
+export type DialogType =
+  | 'editSchema'
+  | 'editSource'
+  | 'popup'
+  | 'selectSchema'
+  | 'simple'
+  | 'settings';
 
 interface ISimpleDialogMessage {
-  data?: {[key: string]: any},
-  onChangeData?: (data: {[key: string]: any}) => void;
+  data?: { [key: string]: any };
+  onChangeData?: (data: { [key: string]: any }) => void;
 }
+
 export interface ISimpleDialog extends IDialog {
   Message?: React.FC<ISimpleDialogMessage> | string;
 }
@@ -47,6 +53,6 @@ export interface IDialogBar {
   dismissed?: boolean;
   displayId?: string;
   options?: ModalProviderOptions;
-  props: ModalComponentProps<DialogProps>;
+  props?: ModalComponentProps<DialogProps>;
   type: DialogType;
 }

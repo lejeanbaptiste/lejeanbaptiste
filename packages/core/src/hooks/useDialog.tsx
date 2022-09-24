@@ -1,7 +1,14 @@
 import { useModal } from 'mui-modal-provider';
 import { useEffect } from 'react';
-import { EditSchemaDialog, SelectSchemaDialog, SimpleDialog } from '../dialogs';
-import { DialogType } from '../dialogs/type';
+import {
+  DialogType,
+  EditSchemaDialog,
+  EditSourceDialog,
+  SelectSchemaDialog,
+  SettingsDialog,
+  SimpleDialog,
+  Popup,
+} from '../dialogs';
 import { useActions, useAppState } from '../overmind';
 
 let displayed: string[] = [];
@@ -35,7 +42,6 @@ export const useDialog = () => {
       if (!component) return;
 
       // display dialog
-      // const { id } = showModal(component, props, options);
       const { id } = showModal(
         component,
         {
@@ -58,5 +64,8 @@ export const useDialog = () => {
     if (type === 'simple') return SimpleDialog;
     if (type === 'selectSchema') return SelectSchemaDialog;
     if (type === 'editSchema') return EditSchemaDialog;
+    if (type === 'editSource') return EditSourceDialog;
+    if (type === 'settings') return SettingsDialog;
+    if (type === 'popup') return Popup;
   };
 };

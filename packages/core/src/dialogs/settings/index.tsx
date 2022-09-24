@@ -2,7 +2,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import TuneIcon from '@mui/icons-material/Tune';
 import { Dialog, DialogContent, IconButton, Stack, Typography } from '@mui/material';
 import React, { type FC } from 'react';
-import { useActions, useAppState } from '../../overmind';
+import { useAppState } from '../../overmind';
+import { IDialog } from '../type';
 import AutoritiesPanel from './AuthoritySource';
 import FontSize from './FontSize';
 import Language from './Language';
@@ -10,13 +11,14 @@ import Resets from './Resets';
 import Section from './Section';
 import ShowEntities from './ShowEntities';
 import ThemeAppearance from './ThemeAppearance';
+import { useTranslation } from 'react-i18next';
 
-export const SettingsDialog: FC = () => {
+export const SettingsDialog: FC<IDialog> = ({ id, onClose, open }) => {
   const { settings } = useAppState().editor;
-  const { settingsDialogOpen } = useAppState().ui;
-  const { closeSettingsDialog } = useActions().ui;
 
-  const handleClose = () => closeSettingsDialog();
+  const { t } = useTranslation(['leafwriter']);
+
+  const handleClose = () => onClose(id);
 
   return (
     <Dialog
@@ -25,16 +27,16 @@ export const SettingsDialog: FC = () => {
       fullWidth
       maxWidth="sm"
       onClose={handleClose}
-      open={settingsDialogOpen}
+      open={open}
     >
       <Stack direction="row" justifyContent="center" alignItems="center" py={2} spacing={2}>
         <TuneIcon sx={{ height: 24, width: 24 }} />
         <Typography sx={{ textTransform: 'capitalize' }} variant="h5">
-          Settings
+          {t('Settings')}
         </Typography>
         <IconButton
           aria-label="close"
-          onClick={closeSettingsDialog}
+          onClick={handleClose}
           sx={{
             position: 'absolute',
             right: 8,

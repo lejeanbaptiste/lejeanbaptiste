@@ -1,12 +1,12 @@
 import { Box } from '@mui/material';
 import React, { useEffect, useState, type FC } from 'react';
-import { BottomBar, ContextMenu, Popup } from './components';
-import { EditSourceDialog, EntityLookupDialog, SettingsDialog } from './dialogs';
+import { BottomBar, ContextMenu } from './components';
 import { createConfig } from './config';
+import { EntityLookupDialog } from './dialogs';
+import { useDialog, useNotifier } from './hooks';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import type { ILeafWriterOptions } from './types';
-import { useDialog, useNotifier } from './hooks';
 
 declare global {
   interface Window {
@@ -25,7 +25,8 @@ const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
 
   useEffect(() => {
     if (document.url === undefined || state.document.url !== document.url) {
-      if (writer) writer.destroy();
+      // if (writer) writer.destroy();
+      actions.document.setDocumentTouched(false);
       actions.document.setLoaded(false);
       window.writer = null;
       setWriter(null);
@@ -76,10 +77,7 @@ const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
     <>
       <Box id={CONTAINER} sx={{ height: 'calc(100% - 32px)', width: '100%' }}>
         {writer && <ContextMenu writer={writer} />}
-        <Popup />
-        <EditSourceDialog />
         <EntityLookupDialog />
-        <SettingsDialog />
       </Box>
       <BottomBar />
     </>

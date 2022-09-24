@@ -1,8 +1,9 @@
 import { Link, Popover, Typography } from '@mui/material';
 import React, { type FC } from 'react';
 import { useAppState } from '../../overmind';
+import { IDialog } from '../type';
 
-export interface PopupProps {
+export interface PopupProps extends IDialog {
   content?: string;
   id?: string;
   isLink?: boolean;
@@ -13,14 +14,14 @@ export interface PopupProps {
   };
 }
 
-export const Popup: FC = () => {
+export const Popup: FC<PopupProps> = ({ content, id, isLink, onClose, open, position }) => {
   const { settings } = useAppState().editor;
-  const { popupProps } = useAppState().ui;
+  // const { popupProps } = useAppState().ui;
 
-  const { content, id, isLink, open, position } = popupProps;
+  // const { content, id, isLink, open, position } = popupProps;
   const { left, top } = position ?? { left: 0, top: 0 };
 
-  const handlePopoverClose = () => {};
+  const handlePopoverClose = () => onClose(id);
 
   return (
     <Popover
@@ -29,7 +30,7 @@ export const Popup: FC = () => {
       anchorPosition={{ left, top }}
       container={document.getElementById(`${settings?.container}`)}
       disableRestoreFocus
-      id="popup"
+      id={id}
       onClose={handlePopoverClose}
       open={open}
       transformOrigin={{ horizontal: 'left', vertical: 'top' }}
