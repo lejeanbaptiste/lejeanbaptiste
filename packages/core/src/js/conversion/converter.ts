@@ -107,7 +107,7 @@ class Converter {
   }
 
   setDocument(document: XMLDocument | string) {
-    if (typeof document === 'string' && document.indexOf('http') === 0) {
+    if (typeof document === 'string' && document.indexOf('https') === 0) {
       this.loadDocumentURL(document);
     } else {
       this.loadDocumentXML(document);
