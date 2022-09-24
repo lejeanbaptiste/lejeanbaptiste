@@ -3,7 +3,7 @@ import React, { type FC } from 'react';
 
 interface TextEmphasis {
   children: string;
-  color?: 'primary' | 'seconday' | 'info' | 'warning' | 'error' | 'inherit';
+  color?: 'primary' | 'secondary' | 'info' | 'warning' | 'error' | 'inherit';
   disablePadding?: boolean;
   variation?: 'filled' | 'outlined' | 'text';
 }
