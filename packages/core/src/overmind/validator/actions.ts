@@ -84,7 +84,9 @@ export const validate = async ({ state, actions }: Context) => {
       return;
     }
 
-    if (errors) actions.validator.updateValidationError(errors.length);
+    const totalError = valid ? 0 : errors.length;
+    actions.validator.updateValidationError(totalError);
+
     writer.event('documentValidated').publish(valid, { valid, errors }, documentString);
   };
 
