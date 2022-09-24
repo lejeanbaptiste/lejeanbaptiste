@@ -1,4 +1,9 @@
+import CloudDownloadOutlinedIcon from '@mui/icons-material/CloudDownloadOutlined';
+import CloudQueueIcon from '@mui/icons-material/CloudQueue';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import FilterDramaOutlinedIcon from '@mui/icons-material/FilterDramaOutlined';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import FormatAlignLeftOutlinedIcon from '@mui/icons-material/FormatAlignLeftOutlined';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
@@ -6,6 +11,7 @@ import MailOutlinedIcon from '@mui/icons-material/MailOutlined';
 import { Gitlab } from 'mdi-material-ui';
 import FeatherIcon from '../icons/Feather';
 import OrcidIcon from '../icons/OrcidIcon';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 
 const icons = new Map([
   ['github', GitHubIcon],
@@ -15,7 +21,13 @@ const icons = new Map([
   ['blankPage', InsertDriveFileOutlinedIcon],
   ['letter', MailOutlinedIcon],
   ['feather', FeatherIcon],
+  ['download', CloudDownloadOutlinedIcon],
+  ['save', CloudQueueIcon],
+  ['recentDocument', DescriptionOutlinedIcon],
+  ['saveAs', FilterDramaOutlinedIcon],
   ['prose', FormatAlignLeftOutlinedIcon],
+  ['open', FolderOpenIcon],
+  ['newDocument', ArticleOutlinedIcon],
 ]);
 
 export const getIcon = (name: string) => {

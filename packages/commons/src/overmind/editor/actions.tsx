@@ -1,5 +1,4 @@
 import { saveDocument } from '@cwrc/leafwriter-storage-service';
-import { type Leafwriter } from '@cwrc/leafwriter';
 import { log } from '@src/utilities';
 import { Context } from '../';
 import { StorageProviderName } from '@src/services';
@@ -9,33 +8,31 @@ export const getGeonameUsername = async ({ effects }: Context) => {
   return response;
 };
 
-export const setLeafWriter = ({ state }: Context, leafWriter?: Leafwriter) => {
-  state.editor.leafWriter = leafWriter;
+export const loadLeafWriter = async ({ state }: Context, container: HTMLElement) => {
+  const LeafWriter = (await import('@cwrc/leafwriter')).Leafwriter;
+  const leafWriter = new LeafWriter(container);
+  state.editor.libLoaded = true;
+  return leafWriter;
 };
 
-export const save = async ({ state, actions }: Context) => {
-  const { editor, storage } = state;
+export const save = async ({ state, actions }: Context, content: string) => {
+  state.editor.isSaving = true;
+
+  const { storage } = state;
 
   if (!storage.resource?.provider) {
     log.error('Storage Provider not found!');
+    state.editor.isSaving = false;
     return;
   }
 
-  if (!editor.leafWriter) {
-    log.error('Leafwriter found!');
-    return;
-  }
+  const providerAuth = actions.storage.getStorageProviderAuth(
+    storage.resource.provider as StorageProviderName
+  );
 
-  const content = await editor.leafWriter.getContent();
-
-  if (typeof content !== 'string') {
-    log.error(typeof content, 'something wrong');
-    return;
-  }
-
-  const providerAuth = actions.storage.getStorageProviderAuth(storage.resource.provider as StorageProviderName);
   if (!providerAuth) {
     log.error('Provider token not found');
+    state.editor.isSaving = false;
     return;
   }
 
@@ -62,25 +59,23 @@ export const save = async ({ state, actions }: Context) => {
   // );
 
   const response = await saveDocument(providerAuth, updatedResourse, true);
+
   if ('error' in response) {
     log.error(response.error);
+    state.editor.isSaving = false;
     return;
   }
 
-  editor.leafWriter.setIsEditorDirty(false);
+  actions.storage.updateRecentDocument();
+  actions.editor.setIsDirty(false);
 
-  return { success: true };
+  state.editor.isSaving = false;
+
+  return true;
 };
 
-export const saveAs = async ({ state, actions }: Context) => {
-  const { editor, storage } = state;
-
-  const content = await editor.leafWriter?.getContent();
-
-  if (typeof content !== 'string') {
-    log.warn(typeof content, 'something wrong');
-    return;
-  }
+export const saveAs = async ({ state, actions }: Context, content: string) => {
+  const { storage } = state;
 
   actions.storage.setResource({
     ...storage.resource,
@@ -93,7 +88,10 @@ export const saveAs = async ({ state, actions }: Context) => {
     type: 'save',
   });
 
-  return { success: true };
+  actions.storage.updateRecentDocument();
+  actions.editor.setIsDirty(false);
+
+  return true;;
 };
 
 export const setIsDirty = async ({ state }: Context, value: boolean) => {
@@ -101,7 +99,7 @@ export const setIsDirty = async ({ state }: Context, value: boolean) => {
 };
 
 export const close = async ({ state, actions }: Context) => {
-  await state.editor.leafWriter?.dispose();
-  actions.editor.setLeafWriter();
   actions.storage.setResource();
+  state.editor.libLoaded = false;
+  state.editor.isDirty = false;
 };
