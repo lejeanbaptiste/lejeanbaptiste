@@ -1,4 +1,5 @@
 {
+  "cancel": "",
   "cloud": {
     "breadcrumbs": {
       "branch": "Branche",
@@ -69,11 +70,14 @@
     "yes": "oui"
   },
   "error": {
+    "conflict": "",
+    "loading error": "",
     "message": {
       "conflictFIle": "Conflit trouvé. Impossible d'écraser le fichier.",
       "document_not_valid": "Document non valide",
       "file_not_found": "Impossible de trouver la ressource demandée. Fichier '{{file}}' introuvable.",
       "folder_creation_error": "Erreur de création de dossier",
+      "loading error": "",
       "overwriteFileConfirmation": "Le fichier existe déjà. Voulez-vous l'écraser ?",
       "path_not_found": "Impossible de trouver la ressource demandée. Le chemin de {{repository}} '{{path}}' n'a pas été trouvé",
       "repo_creation_error": "Erreur de création du dépôt",
@@ -87,10 +91,13 @@
       "unable_to_upload_file": "{{filename}}.",
       "user_not_found": "Impossible de télécharger le fichier '{{username}}' "
     },
+    "path not found": "",
     "title": {
       "error": "Erreur",
       "warning": "Avertissement"
-    }
+    },
+    "unable to overwrite file": "",
+    "unabled to save": ""
   },
   "footer": {
     "download": "télécharger",
@@ -98,10 +105,25 @@
     "pasteXml": "coller XML",
     "save_as_pull_request": "Enregistrer et Pull Request"
   },
+  "leafwriter-storage-service": {
+    "Do you want to overwrite": "",
+    "Storage provider not defined": "",
+    "cancel": "",
+    "error": "",
+    "forking": "",
+    "loading error": "",
+    "overwrite": "",
+    "path not found": "",
+    "user not found": ""
+  },
+  "loading error": "",
   "local": {
     "drag_drop": "Cliquez ou faites glisser 'n' drop pour télécharger un fichier",
     "paste_document_here": "Coller le document ici"
   },
+  "not found": "",
+  "overwrite": "",
+  "path not found": "",
   "settings": {
     "allow_all_files": ""
   }

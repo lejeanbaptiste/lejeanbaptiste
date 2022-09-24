@@ -9,7 +9,7 @@ interface SettingsDialogProps {
   open: boolean;
 }
 
-const SettingsDialog: FC<SettingsDialogProps> = ({ anchor, onDone, open }) => {
+export const SettingsDialog: FC<SettingsDialogProps> = ({ anchor, onDone, open }) => {
   const { t } = useTranslation();
   const { allowAllFileTypes } = useAppState().common;
   const { setAllowedAllFileTypes } = useActions().common;
@@ -51,5 +51,3 @@ const SettingsDialog: FC<SettingsDialogProps> = ({ anchor, onDone, open }) => {
     </Menu>
   );
 };
-
-export default SettingsDialog;

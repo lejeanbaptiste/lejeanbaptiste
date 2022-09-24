@@ -1,12 +1,10 @@
+import { Icon, Stack } from '@mui/material';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
+import React from 'react';
 import { Context } from '..';
-import type {
-  CreatePrResponse,
-  CreateRepoParams,
-  ICreateFork,
-  ProviderAuth,
-} from '../../types/Provider';
+import { TextEmphasis } from '../../components/TextEmphasis';
+import i18next from '../../i18n';
 import type {
   CollectionSource,
   Content,
@@ -26,9 +24,15 @@ import type {
   SuportedProviders,
   UserType,
 } from '../../types';
-import i18next from '../../i18n';
-import { log } from '../../utilities/log';
-import { isErrorMessage } from '../../utilities/util';
+import type {
+  CreatePrResponse,
+  CreateRepoParams,
+  ICreateFork,
+  ProviderAuth,
+} from '../../types/Provider';
+import { getIcon, isErrorMessage, log } from '../../utilities';
+
+// useTranslation('leafwriter-storage-service');
 
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -117,7 +121,7 @@ export const initialize = async ({ state, actions }: Context, initialValues: IIn
 
   const resourceLoaded = resource
     ? await actions.cloud.rehydrate(resource)
-    : actions.cloud.resetOwner();
+    : await actions.cloud.resetOwner();
   return resourceLoaded;
 };
 
@@ -153,12 +157,28 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   });
 
   if (!ownerDetails) {
-    actions.common.showAlertDialog({
-      type: 'error',
-      message: i18next.t('error:message:user_not_found', { username: resource.owner }),
-      onClose: () => {
-        if (!provider) return;
-        actions.cloud.resetOwner();
+    actions.ui.openDialog({
+      props: {
+        maxWidth: 'xs',
+        preventEscape: true,
+        severity: 'error',
+        title: i18next.t('user not found'),
+        Message: () => (
+          <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
+            {resource.provider ? (
+              <Icon component={getIcon(resource.provider)} fontSize="small" mb="-3px" />
+            ) : (
+              <TextEmphasis disablePadding>{resource.provider ?? ''} :</TextEmphasis>
+            )}
+            <TextEmphasis color="error" variation="filled">
+              {resource.owner ?? ''}
+            </TextEmphasis>
+          </Stack>
+        ),
+        onClose: () => {
+          if (!provider) return;
+          actions.cloud.resetOwner();
+        },
       },
     });
     return;
@@ -182,33 +202,68 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   });
 
   if (!repo) {
-    actions.common.showAlertDialog({
-      type: 'error',
-      message: i18next.t('error:message:repository_not_found', {
-        username: resource.owner,
-        repository: resource.repo,
-      }),
-      onClose: async () => {
-        ownertype === 'organization'
-          ? await actions.cloud.fetchReposForOrgs()
-          : await actions.cloud.fetchRepos();
+    actions.ui.openDialog({
+      props: {
+        maxWidth: 'xs',
+        preventEscape: true,
+        severity: 'error',
+        title: i18next.t('path not found'),
+        Message: () => (
+          <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
+            {resource.provider ? (
+              <Icon component={getIcon(resource.provider)} fontSize="small" mb="-3px" />
+            ) : (
+              <TextEmphasis disablePadding>{resource.provider ?? ''} :</TextEmphasis>
+            )}
+            <TextEmphasis>{resource.owner ?? ''}</TextEmphasis>:
+            <TextEmphasis color="error" variation="filled">
+              {resource.repo ?? ''}
+            </TextEmphasis>
+          </Stack>
+        ),
+        onClose: async () => {
+          ownertype === 'organization'
+            ? await actions.cloud.fetchReposForOrgs()
+            : await actions.cloud.fetchRepos();
+        },
       },
     });
+
     return;
   }
 
   state.cloud.repositoryContent.path = resource.path ? resource.path.split('/') : [''];
 
   const content = await actions.cloud.fetchRepoContent();
+
   if (!content) {
-    actions.common.showAlertDialog({
-      type: 'error',
-      message: i18next.t('error:message:path_not_found', {
-        repository: resource.repo,
-        path: resource.path,
-      }),
-      onClose: async () => actions.cloud.setPath(['']),
+    actions.ui.openDialog({
+      props: {
+        maxWidth: 'xs',
+        preventEscape: true,
+        severity: 'error',
+        title: i18next.t('path not found'),
+        Message: () => (
+          <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
+            {resource.provider ? (
+              <Icon component={getIcon(resource.provider)} fontSize="small" mb="-3px" />
+            ) : (
+              <TextEmphasis disablePadding>{resource.provider ?? ''} :</TextEmphasis>
+            )}
+            <TextEmphasis>{resource.owner ?? ''}</TextEmphasis>:
+            <TextEmphasis>{resource.repo ?? ''}</TextEmphasis>/
+            <TextEmphasis color="error" variation="filled">
+              {resource.path ?? ''}
+            </TextEmphasis>
+          </Stack>
+        ),
+        onClose: () => {
+          if (!provider) return;
+          actions.cloud.resetOwner();
+        },
+      },
     });
+
     return;
   }
 
@@ -867,19 +922,27 @@ export const saveDocument = async ({ state, actions }: Context) => {
 
   //file exist but hash doesn't match. Overwrite file?
   if (fileLatestHash !== state.common.resource?.hash) {
-    actions.common.showMessageDialog({
-      title: i18next.t('error:title:warning'),
-      message: i18next.t('error:message:overwriteFileConfirmation'),
-      closable: false,
-      labelCancelButton: i18next.t('commons:no'),
-      labelConfirmButton: i18next.t('commons:yes'),
-      maxWidth: 'xs',
-      onConfirm: async () => {
-        await actions.cloud._createOrUpdateFile(fileLatestHash);
-        actions.cloud.setIsSaving(false);
+    actions.ui.openDialog({
+      props: {
+        maxWidth: 'xs',
+        severity: 'warning',
+        preventEscape: true,
+        title: i18next.t('error:message:overwriteFileConfirmation'),
+        Message: `${i18next.t('Do you want to overwrite')}?`,
+        actions: [
+          { action: 'cancel', label: i18next.t('cancel'), variant: 'outlined' },
+          { action: 'overwrite', label: i18next.t('overwrite') },
+        ],
+        //@ts-ignore
+        onClose: async (action: string) => {
+          if (action === 'cancel') return actions.cloud.setIsSaving(false);
+
+          await actions.cloud._createOrUpdateFile(fileLatestHash);
+          actions.cloud.setIsSaving(false);
+        },
       },
-      onCancel: () => actions.cloud.setIsSaving(false),
     });
+
     return;
   }
 
@@ -904,17 +967,19 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
 
   actions.cloud.setIsSaving(true);
 
-  actions.common.showMessageDialog({
-    message: `${i18next.t('commons:processing')}...`,
-    closable: false,
-    fullWidth: false,
-    maxWidth: 'xs',
-    progress: true,
+  actions.ui.openDialog({
+    props: {
+      id: 'progress',
+      maxWidth: 'xs',
+      preventEscape: true,
+      severity: 'info',
+      title: `${i18next.t('commons:processing')}...`,
+    },
   });
 
   const hasPermission = await actions.cloud.checkRepoUserWritenPermission();
   if (!hasPermission) {
-    actions.common.closeMessageDialog();
+    actions.ui.closeDialog('progress');
     actions.cloud.setIsSaving(false);
     return null;
   }
@@ -934,17 +999,25 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
   });
 
   if (!response || response.error) {
-    actions.common.closeMessageDialog();
+    actions.ui.closeDialog('progress');
+
+    const title = response.error === 'conflict' ? i18next.t('error:conflict') : i18next.t('error');
 
     const message =
       response.error === 'conflict'
-        ? i18next.t('error:message:conflictFIle')
-        : i18next.t('error:message:unableToSave');
+        ? i18next.t('error:unable to overwrite file')
+        : i18next.t('error:unabled to save');
 
-    actions.common.showAlertDialog({
-      type: 'error',
-      message,
-      onClose: () => actions.cloud.setIsSaving(false),
+    actions.ui.openDialog({
+      props: {
+        id: 'progress',
+        maxWidth: 'xs',
+        preventEscape: true,
+        severity: 'error',
+        title: title,
+        Message: message,
+        onClose: () => actions.cloud.setIsSaving(false),
+      },
     });
 
     return null;
@@ -956,7 +1029,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     hash: response.hash,
   });
 
-  actions.common.closeMessageDialog();
+  actions.ui.closeDialog('progress');
   actions.cloud.setIsSaving(false);
 
   actions.common.afterSave();
@@ -969,19 +1042,21 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
 
   actions.cloud.setIsSaving(true);
 
-  actions.common.showMessageDialog({
-    message: `${i18next.t('commons:processing')}...`,
-    closable: false,
-    fullWidth: false,
-    maxWidth: 'xs',
-    progress: true,
+  actions.ui.openDialog({
+    props: {
+      id: 'progress',
+      maxWidth: 'xs',
+      preventEscape: true,
+      severity: 'info',
+      title: `${i18next.t('commons:processing')}...`,
+    },
   });
 
   const pullRequestResponse = crossOrigin
     ? await actions.cloud.pullRequestFromFork()
     : await actions.cloud.pullRequest();
 
-  actions.common.closeMessageDialog();
+  actions.ui.closeDialog('progress');
 
   if (!pullRequestResponse) {
     actions.cloud.setIsSaving(false);
@@ -989,11 +1064,16 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
   }
 
   if (isErrorMessage(pullRequestResponse)) {
-    actions.common.showAlertDialog({
-      type: 'error',
-      message: pullRequestResponse.message,
-      onClose: () => actions.cloud.setIsSaving(false),
+    actions.ui.openDialog({
+      props: {
+        maxWidth: 'xs',
+        preventEscape: true,
+        severity: 'error',
+        title: pullRequestResponse.message,
+        onClose: () => actions.cloud.setIsSaving(false),
+      },
     });
+
     return null;
   }
 
@@ -1049,8 +1129,13 @@ export const pullRequestFromFork = async ({
   if (!fork) return { type: 'error', message: i18next.t('error:message:unable_fork_repo') };
   if (isErrorMessage(fork)) return fork;
 
-  actions.common.updataeMessageDialog({
-    message: i18next.t('cloud:messages:create_merge_request'),
+  actions.ui.openDialog({
+    props: {
+      id: 'merge-progress',
+      maxWidth: 'xs',
+      severity: 'info',
+      title: i18next.t('cloud:messages:create_merge_request'),
+    },
   });
 
   const pullRequestResponse = await provider.createPullRequestFromFork({
@@ -1150,8 +1235,13 @@ export const forkFile = async ({
   const currentPath = repositoryContent.path.join('');
   const path = currentPath === '' ? resource.filename : `${currentPath}/${resource.filename}`;
 
-  actions.common.updataeMessageDialog({
-    message: i18next.t('commons:messages:saving_document'),
+  actions.ui.openDialog({
+    props: {
+      id: 'saving-document',
+      maxWidth: 'xs',
+      severity: 'info',
+      title: i18next.t('commons:messages:saving_document'),
+    },
   });
 
   const forkDocument = await provider.getDocument({
@@ -1202,8 +1292,14 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | IE
   if (repo) return repo;
 
   setTimeout(() => {
-    actions.common.updataeMessageDialog({
-      message: i18next.t('cloud:messages:forking_can_take_minutes'),
+    actions.ui.openDialog({
+      props: {
+        id: 'forking-repository',
+        maxWidth: 'xs',
+        severity: 'info',
+        title: i18next.t('forking'),
+        Message: i18next.t('cloud:messages:forking_can_take_minutes'),
+      },
     });
   }, 5_000);
 

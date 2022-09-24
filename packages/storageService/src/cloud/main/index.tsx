@@ -1,8 +1,7 @@
 import { Stack, useMediaQuery, useTheme } from '@mui/material';
 import React, { FC, useEffect, useState } from 'react';
 import { useWindowSize } from 'react-use';
-import CreateFolderDialog from '../../components/CreateFolderDialog';
-import CreateRepoDialog from '../../components/CreateRepoDialog';
+import { CreateFolderDialog, CreateRepoDialog } from '../../dialogs';
 import Collection from './Collection';
 import Topbar from './topbar';
 

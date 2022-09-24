@@ -17,10 +17,10 @@ interface CreateRepoDialogProps {
   open: boolean;
 }
 
-const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open }) => {
+export const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open }) => {
   const { t } = useTranslation();
-  const { showAlertDialog } = useActions().common;
   const { createFolder } = useActions().cloud;
+  const { openDialog } = useActions().ui;
 
   const [name, setName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,10 +38,14 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
     const folder = await createFolder(name);
 
     if (!folder) {
-      showAlertDialog({
-        type: 'error',
-        message: t('error:message:folder_creation_error'),
-        onClose: async () => setIsLoading(false),
+      openDialog({
+        props: {
+          maxWidth: 'xs',
+          preventEscape: true,
+          severity: 'error',
+          title: t('error:message:folder_creation_error'),
+          onClose: () => setIsLoading(false),
+        },
       });
       return;
     }
@@ -91,5 +95,3 @@ const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, ope
     </Dialog>
   );
 };
-
-export default CreateFolderDialog;

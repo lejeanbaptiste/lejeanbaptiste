@@ -113,33 +113,6 @@ export const setSelectedItem = ({ state }: Context, value?: ISelectedItem) => {
   state.common.selectedItem = value;
 };
 
-export const showAlertDialog = ({ state }: Context, alertDialog: Omit<AlertDialog, 'open'>) => {
-  if (!alertDialog.type) alertDialog.type = 'error';
-  state.common.alertDialog = { open: true, ...alertDialog };
-};
-
-export const closeAlertDialog = ({ state }: Context) => {
-  state.common.alertDialog = { open: false };
-};
-
-export const showMessageDialog = (
-  { state }: Context,
-  messageDialog: Omit<MessageDialog, 'open'>
-) => {
-  state.common.messageDialog = { open: true, ...messageDialog };
-};
-
-export const closeMessageDialog = ({ state }: Context) => {
-  state.common.messageDialog = { open: false };
-};
-
-export const updataeMessageDialog = (
-  { state }: Context,
-  messageDialog: Omit<MessageDialog, 'open'>
-) => {
-  state.common.messageDialog = { ...state.common.messageDialog, ...messageDialog };
-};
-
 export const load = async ({ state, actions }: Context, resource?: Resource) => {
   if (!resource) resource = state.common.resource;
   if (!resource || !resource.content) return;
@@ -148,9 +121,13 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
     const { valid, error } = state.common.validate(resource.content);
 
     if (!valid) {
-      actions.common.showAlertDialog({
-        type: 'error',
-        message: error ?? i18next.t('error:message:document_not_valid'),
+      actions.ui.openDialog({
+        props: {
+          maxWidth: 'xs',
+          preventEscape: true,
+          severity: 'error',
+          title: error ?? i18next.t('error:message:document_not_valid'),
+        },
       });
       if (state.common.resource) state.common.resource.filename = undefined;
       if (state.common.resource) state.common.resource.content = undefined;

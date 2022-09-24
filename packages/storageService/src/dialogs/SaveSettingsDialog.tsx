@@ -18,7 +18,7 @@ interface SaveSettingsDialogProps {
   open: boolean;
 }
 
-const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open }) => {
+export const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open }) => {
   const { t } = useTranslation();
   const { commitMessage } = useAppState().cloud;
   const { setCommitMessage } = useActions().cloud;
@@ -76,5 +76,3 @@ const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open 
     </Popover>
   );
 };
-
-export default SaveSettingsDialog;
