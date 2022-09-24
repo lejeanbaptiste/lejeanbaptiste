@@ -1,4 +1,4 @@
-import { log } from '@src/utilities/log';
+import { log } from '@src/utilities';
 import axios, { AxiosInstance } from 'axios';
 import type { AuthenticateProp, IIdentityProvider } from './';
 

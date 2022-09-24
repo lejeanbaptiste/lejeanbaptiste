@@ -1,6 +1,6 @@
 import { Button, Divider, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
-import { getIcon } from '@src/utilities/icons';
+import { getIcon } from '@src/utilities';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';

@@ -12,11 +12,10 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './i18n';
 import { config } from './overmind';
-import './utilities/devToolsConsole';
 import './utilities/log';
 
 const overmind = createOvermind(config, {
-  name: 'homepage',
+  name: 'Commons',
   devtools: true, // defaults to 'localhost:3031'
   logProxies: true,
 });

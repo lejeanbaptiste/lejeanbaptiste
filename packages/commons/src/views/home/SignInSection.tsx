@@ -1,12 +1,11 @@
 import { Box, Button, Stack } from '@mui/material';
 import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
+import { supportedAuthProviders } from '@src/services';
+import { getIcon } from '@src/utilities';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { FC, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getIcon } from '@src/utilities/icons';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import { supportedAuthProviders } from '@src/services';
 
 const SignInSection: FC = () => {
   const { userState, user } = useAppState().auth;

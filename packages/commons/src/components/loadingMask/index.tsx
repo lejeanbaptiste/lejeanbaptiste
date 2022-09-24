@@ -2,7 +2,7 @@ import { Backdrop, useTheme } from '@mui/material';
 import React, { FC } from 'react';
 import TeaIcon from '@src/assets/icons/tea';
 
-const LoadingMask: FC = () => {
+export const LoadingMask: FC = () => {
   const { palette, zIndex } = useTheme();
   return (
     <Backdrop sx={{ zIndex: zIndex.drawer + 1 }} open={true} invisible>
@@ -10,5 +10,3 @@ const LoadingMask: FC = () => {
     </Backdrop>
   );
 };
-
-export default LoadingMask;

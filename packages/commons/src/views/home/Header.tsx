@@ -1,5 +1,5 @@
 import { Box, Container, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
-import Logo from '@src/components/Logo';
+import { Logo } from '@src/components';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 

@@ -8,7 +8,7 @@ interface LogoProps extends BoxProps {
   variant?: 'horizontal' | 'vertical';
 }
 
-const Logo: FC<LogoProps> = ({ height = 'auto', size = 'large', variant = 'horizontal', ...props }) => {
+export const Logo: FC<LogoProps> = ({ height = 'auto', size = 'large', variant = 'horizontal', ...props }) => {
   const { mode } = useTheme().palette;
 
   return (
@@ -21,5 +21,3 @@ const Logo: FC<LogoProps> = ({ height = 'auto', size = 'large', variant = 'horiz
     </Box>
   );
 };
-
-export default Logo;

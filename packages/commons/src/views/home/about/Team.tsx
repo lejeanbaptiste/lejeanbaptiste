@@ -1,5 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material';
-import { log } from '@src/utilities/log';
+import { log } from '@src/utilities';
 import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import TeamProfile, { Profile } from './TeamProfile';

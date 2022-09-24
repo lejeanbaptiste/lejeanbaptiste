@@ -1,6 +1,6 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import MessageDialog from '@src/components/MessageDialog';
-import Storage from '@src/components/Storage';
+import { Storage } from '@src/components';
 import { SnackbarProvider } from 'notistack';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';

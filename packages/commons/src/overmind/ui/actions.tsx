@@ -1,6 +1,6 @@
 import { Button } from '@mui/material';
 import type { AlertDialog, INotification, MessageDialog, PaletteMode } from '@src/types';
-import { supportedLanguages } from '@src/utilities/util';
+import { supportedLanguages } from '@src/utilities';
 import { VariantType } from 'notistack';
 import React from 'react';
 import { Context } from '../index';

@@ -5,7 +5,7 @@ import { usePermalink } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import { StorageProviderName } from '@src/services';
 import type { Resource } from '@src/types';
-import { getIcon } from '@src/utilities/icons';
+import { getIcon } from '@src/utilities';
 import { formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, type FC, type MouseEvent } from 'react';
