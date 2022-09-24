@@ -8,7 +8,7 @@ import { PaletteMode } from '@mui/material';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, Root } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
 import type { Authority, NamedEntityType } from './dialogs/entityLookups';
@@ -21,14 +21,18 @@ import './utilities/log';
 export * as Types from './types';
 
 const overmind = createOvermind(config, {
-  name: 'leaf-writer',
+  name: 'LEAF-Writer',
   logProxies: true,
 });
 
 const DEFAULT_HEIGHT = '700px';
 
+let hasOvermindListeners = false;
+
 export class Leafwriter {
   private readonly domElement: HTMLElement;
+
+  private reactReact: Root;
 
   private _isDirty: Subject<boolean>;
   private _onLoad: Subject<{ schemaName: string }>;
@@ -36,40 +40,45 @@ export class Leafwriter {
 
   private options?: ILeafWriterOptions;
 
-  constructor(domElement: HTMLElement, options?: ILeafWriterOptions) {
+  constructor(domElement?: HTMLElement) {
     this.domElement = domElement;
     this._isDirty = new Subject();
     this._onLoad = new Subject();
     this._onClose = new Subject();
 
-    //scontainer height
+    //container height
     const containerHeight = domElement.style.height ? domElement.style.height : DEFAULT_HEIGHT;
     domElement.style.height = `clamp(400px, ${containerHeight}, 100vh)`;
 
-    if (options) this.options = options;
+    if (!this.reactReact) this.reactReact = createRoot(this.domElement);
 
+    if (!hasOvermindListeners) {
+      overmind.addMutationListener((mutation) => {
+        if (mutation.path === 'editor.isEditorDirty') {
+          this._isDirty.next(overmind.state.editor.isEditorDirty);
+        }
+        if (mutation.path === 'document.loaded') {
+          if (overmind.state.document.loaded === true) {
+            this._onLoad.next({ schemaName: overmind.state.document.schemaName });
+          }
+        }
+        if (mutation.path === 'editor.latestEvent') {
+          if (overmind.state.editor.latestEvent === 'close') {
+            this._onClose.next(true);
+          }
+        }
+      });
+      hasOvermindListeners = true;
+    }
+  }
+
+  init(options: ILeafWriterOptions) {
+    this.options = options;
     this.render();
-
-    overmind.addMutationListener((mutation) => {
-      if (mutation.path === 'editor.isEditorDirty') {
-        this._isDirty.next(overmind.state.editor.isEditorDirty);
-      }
-      if (mutation.path === 'document.loaded') {
-        if (overmind.state.document.loaded === true) {
-          this._onLoad.next({ schemaName: overmind.state.document.schemaName });
-        }
-      }
-      if (mutation.path === 'editor.latestEvent') {
-        if (overmind.state.editor.latestEvent === 'close') {
-          this._onClose.next(true);
-        }
-      }
-    });
   }
 
   private render() {
-    const root = createRoot(this.domElement);
-    root.render(
+    this.reactReact.render(
       <Provider value={overmind}>
         <I18nextProvider i18n={i18next}>
           <Providers {...this.options} />
@@ -165,7 +174,7 @@ export class Leafwriter {
     return overmind.state.editor.fontSizeOptions;
   }
 
-  getFontSize(value: number) {
+  getFontSize() {
     return overmind.state.editor.currentFontSize;
   }
 
@@ -198,6 +207,10 @@ export class Leafwriter {
     overmind.actions.editor.setIsEditorDirty(value);
   }
 
+  setDocumentTouched(value: boolean) {
+    overmind.actions.document.setDocumentTouched(value);
+  }
+
   resetSettings() {
     overmind.actions.editor.resetDialogWarnings();
     overmind.actions.editor.resetPreferences();
@@ -228,13 +241,15 @@ export class Leafwriter {
   }
 
   async showSettingsDialog() {
-    overmind.actions.ui.openSettingsDialog();
+    overmind.actions.ui.openDialog({ type: 'settings' });
   }
 
   dispose() {
     //todo
     this._isDirty.complete();
+    overmind.actions.document.clear();
     window.writer?.destroy();
+    window.writer = null;
   }
 }
 

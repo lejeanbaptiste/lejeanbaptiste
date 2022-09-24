@@ -36,7 +36,10 @@ export const updateContent = ({ state }: Context, content: string) => {
 };
 
 export const clear = ({ state }: Context) => {
+  state.document.loaded = false;
+  state.document.rootName = undefined;
   state.document.schemaId = '';
+  state.document.loaded = false;
   state.document.url = undefined;
   state.document.xml = undefined;
 };
@@ -44,4 +47,8 @@ export const clear = ({ state }: Context) => {
 export const loadDocumentXML = ({ actions }: Context, content: string) => {
   window.writer?.loadDocumentXML(content);
   actions.document.updateContent(content);
+};
+
+export const setDocumentTouched = ({ state }: Context, value: boolean) => {
+  state.document.touched = value;
 };

@@ -6,8 +6,9 @@ type State = {
   rootName?: string;
   schemaId: string;
   schemaName: string;
-  xml?: string;
+  touched: boolean;
   url?: string;
+  xml?: string;
 };
 
 export const state: State = {
@@ -18,4 +19,5 @@ export const state: State = {
     if (!schema) return '';
     return schema.name;
   }),
+  touched: false,
 };
