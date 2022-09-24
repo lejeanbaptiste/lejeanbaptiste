@@ -161,3 +161,16 @@ export const loadTemplate = async ({ effects }: Context, url: string) => {
   const documentString = await effects.storage.api.loadTemplate(url);
   return documentString;
 };
+
+export const download = ({ state }: Context, content: string) => {
+  const { resource } = state.storage;
+  if (!resource) return;
+
+  const { filename } = resource;
+  if (!content || !filename) return;
+
+  const blob = new Blob([content]); //, { type: 'text/plain;charset=utf-8' });
+  saveAs(blob, filename);
+
+  return true;
+};
