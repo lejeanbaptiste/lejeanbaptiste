@@ -97,3 +97,10 @@ export interface IProviderAuth {
   access_token: string;
   name: string;
 }
+
+export interface IDocTemplate {
+  category: string;
+  icon?: string;
+  title: string;
+  url: string;
+}
