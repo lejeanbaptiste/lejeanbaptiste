@@ -1,4 +1,4 @@
-import { log } from '@src/utilities/log';
+import { log } from '@src/utilities';
 import axios, { AxiosError } from 'axios';
 import Keycloak, { KeycloakTokenParsed } from 'keycloak-js';
 import queryString from 'query-string';

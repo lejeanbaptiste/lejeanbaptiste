@@ -4,11 +4,11 @@ import { useActions, useAppState } from '@src/overmind';
 import React, { FC, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
-import LoadingMask from './loadingMask';
+import { LoadingMask } from './loadingMask';
 
 const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
 
-const Storage: FC = () => {
+export const Storage: FC = () => {
   const { user } = useAppState().auth;
   const { storageDialogState } = useAppState().storage;
 
@@ -62,7 +62,7 @@ const Storage: FC = () => {
 
   const validXML = (content: string) => {
     const isContentValid = isValidXml(content);
-    return isContentValid ? { valid: true } : { valid: false, error: t('error:xmlNotWellFormed')};
+    return isContentValid ? { valid: true } : { valid: false, error: t('error:xmlNotWellFormed') };
   };
 
   return (
@@ -92,5 +92,3 @@ const Storage: FC = () => {
     </>
   );
 };
-
-export default Storage;

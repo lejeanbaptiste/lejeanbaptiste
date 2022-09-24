@@ -1,5 +1,5 @@
 import type { IProviderAuth, Resource, StorageDialogState } from '@src/types';
-import { log } from '@src/utilities/log';
+import { log } from '@src/utilities';
 import { StorageProviderName, suportedStorageProviders } from '../../services';
 import { Context } from '../index';
 

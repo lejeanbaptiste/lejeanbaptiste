@@ -1,6 +1,6 @@
 import { Box, Link, Stack, Typography } from '@mui/material';
-import Logo from '@src/components/Logo';
 import Page from '@src/components/Page';
+import { Logo } from '@src/components';
 import React, { FC } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';

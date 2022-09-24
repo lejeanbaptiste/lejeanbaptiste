@@ -1,4 +1,4 @@
-import { log } from '@src//utilities/log';
+import { log } from '@src//utilities';
 import type { IAnnotationUserProfile, User } from '@src/types';
 import Cookies from 'js-cookie';
 import {

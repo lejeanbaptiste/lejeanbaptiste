@@ -1,5 +1,5 @@
 import { AlertDialog, INotification, Language, MessageDialog, PaletteMode } from '@src/types';
-import { supportedLanguages } from '@src/utilities/util';
+import { supportedLanguages } from '@src/utilities';
 
 type State = {
   alertDialog: AlertDialog;
