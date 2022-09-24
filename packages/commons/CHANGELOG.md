@@ -1,5 +1,61 @@
-## 1.8.0
+## 2.0.0
 
+### Major Changes
+
+- Change LEAF-Writer instantiation. Improve topbar, saving feedback, and main menu [6801bbea37e06faeca3d8d7c0e7044e46e3cc265]
+
+Top bar has improved UX to show the document full path and saving feedback.
+
+Main Menu was redesigns and has new options: 1. New from a template, 2. Open Recent.
+
+BREAKING CHANGE: 🧨 LEAF-Writer must be instantiate just with the container element. To render the editor, we need to run the method `init` passing the document and other options.
+
+- Add option to download the file from the main menu [39bc96213e15319e236ec3f32e7ebb842a50d468]
+- Improve UX access to template [102ed3b08f300e66a1a975605c936f70edf54296]
+
+Move templates to a json file. Create a Dialog to show and select templates.
+
+- Redesign dialogs to match the rest of the UX. [ea9539f34110741bd03e30f7d814f4f68313a81f]
+
+Messages Dialogs are now centralized in a manager and UX is more aligned to the core LEAF-Writer. More localization were added.
+
+### Patch
+
+- Improve API to save/retrieve from localstorage [53024c90c970cca49a13d83444651d0f92b15803]
+- Redesign recent document section [b01dda0319b9ba01af6f80381c3ac7a91ebb5d5c]
+- Auto-dectect dark mode [ca21a8a95da2d427b00179612876e3f78b33977a]
+- Reorganize folder and paths [aaf6b98380e825c4ce1bd67e67ae784c3f47647f]
+- Update Dependencies [e7688fa7641b3c6caa1477c2bbcaa41717de6769]
+  - core:
+    - add:
+      - file-saver@2.0.5
+      - material-ui-popup-state@4.1.0
+      - mui-modal-provider@2.1.0
+      - uuid@9.0.0
+    - bump up:
+      - @mui/icons-material@5.10.6
+      - @mui/lab@5.0.0-alpha.100
+      - @mui/material@5.10.6
+      - framer-motion@7.3.6
+      - i18next@21.9.2
+      - react-router-dom@6.4.1
+  - dev:
+    - update:
+      - webpack-bundle-analyzer@4.6.1
+      - eslint@8.24.0
+      - ts-loader@9.4.1
+    - bump up:
+      - @types/node@18.7.19
+      - @typescript-eslint/eslint-plugin@5.38.0
+      - @typescript-eslint/parser@5.38.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter@2.0.0
+  - @cwrc/leafwriter-storage-service@1.2.0
+
+## 1.8.0
 ### Features
 
 #### See document's full path
