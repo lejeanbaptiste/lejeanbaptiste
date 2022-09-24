@@ -1,14 +1,20 @@
 import type { IProviderAuth, Resource, StorageDialogState } from '@src/types';
 import { log } from '@src/utilities';
+import { saveAs } from 'file-saver';
 import { StorageProviderName, suportedStorageProviders } from '../../services';
 import { Context } from '../index';
 
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const onInitializeOvermind = async ({ state }: Context, overmind: any) => {
+export const onInitializeOvermind = async ({ state, effects }: Context, overmind: any) => {
+  //templates
+  state.storage.templates = await effects.storage.api.loadTemplates();
+
+  //sample documents
+  state.storage.sampleDocuments = await effects.storage.api.loadSampleDocuments();
+
   //Recent Files
-  const recentFilesSTRING = localStorage.getItem('recentFiles') ?? '[]';
-  const recentFiles: Resource[] = JSON.parse(recentFilesSTRING);
+  const recentFiles: Resource[] = effects.storage.api.getFromLocalStorage('recentFiles') ?? [];
   state.storage.recentDocuments = recentFiles;
 };
 
@@ -26,7 +32,7 @@ export const setupStorageProvider = async ({ state, actions, effects }: Context,
 
   if (!state.auth.user) return;
   //if not preferredStorage, use the first StorageProvider linked Account
-  const preferredStorage = localStorage.getItem('prefStorageProvider');
+  const preferredStorage = effects.storage.api.getFromLocalStorage('prefStorageProvider');
 
   preferredStorage
     ? (state.auth.user.prefStorageProvider = preferredStorage)
@@ -44,16 +50,14 @@ export const _linkStorageProvider = ({ state }: Context, providerName: string) =
 // Resource
 
 export const setResource = async ({ state }: Context, resource?: Resource) => {
-  // if (resource) state.resource = resource;
   state.storage.resource = resource ? { ...resource } : undefined;
-  // state.storage.resource = resource;
 };
 
 export const clearResource = async ({ state }: Context) => {
   state.storage.resource = undefined;
 };
 
-export const getStorageProviderAuth = ({ state, actions }: Context, name: StorageProviderName) => {
+export const getStorageProviderAuth = ({ actions }: Context, name: StorageProviderName) => {
   const provider = actions.auth.getIdentityProvider(name);
   if (!provider) return;
   return { name: provider.name, access_token: provider.getAccessToken() };
@@ -75,10 +79,13 @@ export const getStorageProvidersAuth = ({ state, actions }: Context) => {
   return providers;
 };
 
-export const changePrefStorageProvider = ({ state }: Context, StorageproviderName: string) => {
+export const changePrefStorageProvider = (
+  { state, effects }: Context,
+  StorageproviderName: string
+) => {
   if (!state.auth.user) return;
   state.auth.user.prefStorageProvider = StorageproviderName;
-  localStorage.setItem('prefStorageProvider', StorageproviderName);
+  effects.storage.api.saveToLocalStorage('prefStorageProvider', StorageproviderName);
   return StorageproviderName;
 };
 
@@ -106,7 +113,7 @@ export const isValidXml = ({ state }: Context, string: string) => {
   return !parsererror;
 };
 
-export const addToRecentDocument = ({ state }: Context, document: Resource) => {
+export const addToRecentDocument = ({ state, effects }: Context, document: Resource) => {
   const { content, hash, ...recent } = document;
 
   if (
@@ -133,12 +140,14 @@ export const addToRecentDocument = ({ state }: Context, document: Resource) => {
   state.storage.recentDocuments = [recent, ...state.storage.recentDocuments];
 
   //limit
-  state.storage.recentDocuments = state.storage.recentDocuments.filter((item, index) => index <= 3);
+  state.storage.recentDocuments = state.storage.recentDocuments.filter(
+    (_item, index) => index <= 5
+  );
 
-  localStorage.setItem('recentFiles', JSON.stringify(state.storage.recentDocuments));
+  effects.storage.api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
 };
 
-export const updateRecentDocument = ({ state }: Context) => {
+export const updateRecentDocument = ({ state, effects }: Context) => {
   state.storage.recentDocuments = state.storage.recentDocuments.map((document) => {
     if (document.url === state.storage.resource?.url) {
       document.modifiedAt = new Date();
@@ -146,15 +155,15 @@ export const updateRecentDocument = ({ state }: Context) => {
     return document;
   });
 
-  localStorage.setItem('recentFiles', JSON.stringify(state.storage.recentDocuments));
+  effects.storage.api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
 };
 
-export const removeRecentDocument = ({ state }: Context, url: string) => {
-  state.storage.recentDocuments = state.storage.recentDocuments.filter((document) => 
-    document.url !== url
+export const removeRecentDocument = ({ state, effects }: Context, url: string) => {
+  state.storage.recentDocuments = state.storage.recentDocuments.filter(
+    (document) => document.url !== url
   );
 
-  localStorage.setItem('recentFiles', JSON.stringify(state.storage.recentDocuments));
+  effects.storage.api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
 };
 
 export const loadTemplate = async ({ effects }: Context, url: string) => {
