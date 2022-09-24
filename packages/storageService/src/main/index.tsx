@@ -42,6 +42,8 @@ const Main: FC<StorageDialogProps> = ({
   const { initialize } = useActions().cloud;
   const { clearSubmit, configure, resetAll, setDialogType, setResource } = useActions().common;
 
+  useDialog();
+
   const [isLoading, setIsLoading] = useState(true);
 
   const theme = useTheme();
@@ -98,10 +100,13 @@ const Main: FC<StorageDialogProps> = ({
     onCancel && onCancel();
   };
 
-  const clickAway = async () => {
-    if (onBackdropClick) {
-      await resetAll();
-      onBackdropClick();
+  const handleClose = async (_event: MouseEvent, reason: string) => {
+    if (type === 'save') return;
+    if (reason === 'backdropClick' || reason === 'escapeKeyDown') {
+      if (onBackdropClick) {
+        await resetAll();
+        onBackdropClick();
+      }
     }
   };
 
@@ -111,7 +116,7 @@ const Main: FC<StorageDialogProps> = ({
       fullScreen={isMD}
       fullWidth
       maxWidth="md"
-      onBackdropClick={type === 'load' ? clickAway : undefined}
+      onClose={handleClose}
       open={open}
       TransitionComponent={Transition}
     >

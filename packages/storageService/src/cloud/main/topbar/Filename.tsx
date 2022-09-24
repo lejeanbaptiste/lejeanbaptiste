@@ -19,7 +19,7 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import SaveSettingsDialog from '../../../components/SaveSettingsDialog';
+import { SaveSettingsDialog } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';
 
 const Filename: FC = () => {
