@@ -43,7 +43,7 @@ export const promptRootNotSupported = ({ rootName, writer }: IProcessSchemaParam
       maxWidth: 'xs',
       preventEscape: true,
       severity: 'error',
-      title: t('Document Invalid'),
+      title: t('Document not supported'),
       Message: () => (
         <Trans i18nKey="messages.root element invalid" values={{ rootName }}>
           <Typography>LEAF-Writer cannot open this document.</Typography>
@@ -225,6 +225,10 @@ export const openEditorModeDialog = (writer: Writer) => {
         <Typography>{`${t(
           'Only XML tags. No RDF/Semantic Web annotations will be created'
         )}.`}</Typography>
+        <Typography paragraph mt={3} variant="caption">
+          <b>{`${t('hint')}: `}</b>
+          {`${t('You can change the editor mode anytime in the status bar')}.`}
+        </Typography>
       </>
     );
   } else {
@@ -239,6 +243,10 @@ export const openEditorModeDialog = (writer: Writer) => {
               'Annotations that overlap will be created in RDF only with no equivalent XML tags'
             )}.`}
           </Typography>
+          <Typography paragraph mt={3} variant="caption">
+            <b>{`${t('hint')}: `}</b>
+            {`${t('You can change the editor mode anytime in the status bar')}.`}
+          </Typography>
         </>
       );
     } else {
@@ -250,6 +258,10 @@ export const openEditorModeDialog = (writer: Writer) => {
               'XML tags and RDF/Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap'
             )}.`}
           </Typography>
+          <Typography paragraph mt={3} variant="caption">
+            <b>{`${t('hint')}: `}</b>
+            {`${t('You can change the editor mode anytime in the status bar')}.`}
+          </Typography>
         </>
       );
     }
@@ -257,7 +269,6 @@ export const openEditorModeDialog = (writer: Writer) => {
 
   overmindActions.ui.openDialog({
     props: {
-      maxWidth: 'xs',
       severity: 'info',
       title: t('Editor Mode'),
       Message,
