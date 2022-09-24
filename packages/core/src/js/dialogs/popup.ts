@@ -218,7 +218,10 @@ class Popup implements ILWDialog {
       top: editorRect.top + mceToolbarHeight + (currentTagRect?.bottom || 0),
     };
 
-    this.writer.overmindActions.ui.openPopup({ content, position, isLink: type === 'link' });
+    this.writer.overmindActions.ui.openDialog({
+      type: 'popup',
+      props: { content, position, isLink: type === 'link' },
+    });
   }
 
   private attributeMouseover(event: JQuery.Event) {

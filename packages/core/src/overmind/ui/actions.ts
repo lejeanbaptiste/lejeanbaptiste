@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
-import type { PopupProps } from '../../components/popup';
 import type { PopupProps } from '../../dialogs';
 import type { IDialogBar } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
@@ -49,22 +48,6 @@ export const resetPreferences = () => {
   localStorage.removeItem('paletteMode');
 };
 
-export const openPopup = ({ state }: Context, props: Omit<PopupProps, 'open'>) => {
-  state.ui.popupProps = { ...props, open: true };
-};
-
-export const closePopup = ({ state }: Context, id: string) => {
-  state.ui.popupProps = { open: false };
-};
-
-export const openEditSourceDialog = ({ state }: Context, content: string) => {
-  state.ui.editSourceProps = { content, open: true };
-};
-
-export const closeEditSourceDialog = ({ state }: Context) => {
-  state.ui.editSourceProps = { open: false };
-};
-
 export const processEditSource = ({ state, actions }: Context, newContent: string) => {
   state.ui.editSourceProps = { open: false };
   actions.document.loadDocumentXML(newContent);
@@ -96,26 +79,11 @@ export const switchLanguage = ({ state }: Context, value: string) => {
   return value;
 };
 
-export const openSettingsDialog = ({ state }: Context) => {
-  state.ui.settingsDialogOpen = true;
-};
-
-export const closeSettingsDialog = ({ state }: Context) => {
-  state.ui.settingsDialogOpen = false;
-};
-
 export const openDialog = ({ state }: Context, dialogBar: IDialogBar) => {
-  if (!dialogBar.props.id) dialogBar.props.id = uuidv4();
+  if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
   if (!dialogBar.type) dialogBar.type = 'simple';
   state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
 };
-
-// export const closeDialogBar = ({ state }: Context, id: string) => {
-//   const dismissAll = !id;
-//   state.ui.dialogBar = state.ui.dialogBar.map((dialogBar) =>
-//     dismissAll || dialogBar.props.id === id ? { ...dialogBar, dismissed: true } : { ...dialogBar }
-//   );
-// };
 
 export const closeDialog = ({ state }: Context, id: string) => {
   state.ui.dialogBar = [

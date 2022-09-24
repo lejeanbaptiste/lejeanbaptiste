@@ -6,3 +6,4 @@ export * from './SelectSchemaDialog';
 export * from './EditSchemaDialog';
 
 export * from './type';
+export * from './popup';

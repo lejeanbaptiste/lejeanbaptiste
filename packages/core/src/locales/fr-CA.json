@@ -12,6 +12,7 @@
   "XML tags and RDF": {
     "Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": ""
   },
+  "You have unsaved changes": "",
   "You must provide a username to make requests": "",
   "leafwriter": {
     "Annotation": "",
@@ -28,6 +29,7 @@
     "Current document": "",
     "Do you wish to continue": "",
     "Document Invalid": "",
+    "Document not supported": "",
     "Documentation": "",
     "Editor Mode": "",
     "Editor Mode has changed": "",
@@ -52,6 +54,7 @@
     "Schema not supported": "",
     "Schema restored": "",
     "Select schema": "",
+    "Settings": "",
     "Tagging might not work as expected": "",
     "The current document is using this schema": "",
     "The current documents root element does not match the root elements required by the selected schema": "",
@@ -59,6 +62,7 @@
     "The root element of the schema could not be determined and so it will not be used": "",
     "XML tags and RDF Semantic Web annotations equivalent to the XML tags will be created to the extent that the hierarchy of the XML schema allows": "",
     "XML tags and RDFSemantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": "",
+    "You can change the editor mode anytime in the status bar": "",
     "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "",
     "add": "",
     "add schema": "",
@@ -74,6 +78,8 @@
     "discard": "",
     "dont show again": "",
     "edit schema": "",
+    "edit source": "",
+    "hint": "",
     "language": "",
     "messages": {
       "LEAF-Writer could not find the document schema declaration": "",
