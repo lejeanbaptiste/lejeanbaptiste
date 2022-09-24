@@ -1,5 +1,36 @@
-## 1.8.0
+## 2.0.0
 
+### Major Changes
+
+- Improve the way LEAF-Writer is instantiated and controlled from outside [c20058585c50117dacb513e22d302ae42e1479a6]
+
+BREAKING CHANGE: 🧨 New instance of LEAF-Writer only takes the HTML container where it will be attached. To actually render it, you must use the method `init` passing the document and other options
+
+- Dialogs: Move more dialogs to the new dialog manager[6c9e63e2a0d48880a34c68a2b3bd4c3b1fcfa0ee]
+
+More Dialogs are now centralized in a manager making UX more coherent.
+
+### Patch
+
+- Messages: add hint to how change editor mode [b743598e05adf9b714c9d5120fdfee80c50d345b]
+- fix typo in a type [b743598e05adf9b714c9d5120fdfee80c50d345b]
+- validation: update number of error to 0 when document is valid [c2607a26cb7ba1379a0bfdd23cb97681a6b6f7b2]
+- organize folder and paths [4f54c167e5615b9d12985e413ddf7beec57104fb]
+- certify the document comes from https when loading directly from url [01e805f188dedaeb34194dbdcde49a79fb5ebc27]
+- Strucure tree: reduce interference with top menu on commons [b339d0f77d151a2c76daba753866f63bd2c60c9b]
+- Update Dependencies [55f12f4806025fab0d8c39b716ead1d84c870168]:
+  - core:
+    - lock: tinymce@5.10.5
+    - bump up:
+      - @mui/icons-material@5.10.6
+      - @mui/lab@5.0.0-alpha.100
+      - @mui/material@5.10.6
+      - framer-motion@7.3.6
+      - i18next@21.9.2
+      - react-router-dom@6.4.1
+      - wikidata-sdk@8.0.5
+
+  ## 1.8.0
 ### Features
 
 ### Better schema processing and UX for not supported schemas
@@ -107,6 +138,7 @@ Started the transition of Messages and Confirmation Dialog Box to React. Introdu
   - @cwrc/leafwriter-validator@1.2.0
 
 ## 1.7.0
+
 ### Minor Changes
 
 - Add link to the documentation in the ribbon [9121ab1181737f64e223d7a9f8d4713dfdf8dba1]
