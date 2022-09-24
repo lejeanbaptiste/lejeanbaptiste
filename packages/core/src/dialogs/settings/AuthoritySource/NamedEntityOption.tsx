@@ -1,8 +1,8 @@
 import DoNotDisturbAltIcon from '@mui/icons-material/DoNotDisturbAlt';
 import { IconButton, useTheme } from '@mui/material';
 import React, { useState, type FC } from 'react';
-import { NamedEntityType } from '../../entityLookups/types';
 import { useUI } from '../../../hooks';
+import { NamedEntityType } from '../../entityLookups';
 
 interface NamedEntityOptionProps {
   available: boolean;

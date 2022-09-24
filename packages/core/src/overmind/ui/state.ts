@@ -1,4 +1,4 @@
-import type { PopupProps } from '../../components/popup';
+import type { PopupProps } from '../../components';
 import type { IDialogBar } from '../../dialogs';
 import type { IEditSourceDialogProps, EntityLookupDialogProps } from '../../dialogs';
 import type { ContextMenuState, Language, INotification } from '../../types';

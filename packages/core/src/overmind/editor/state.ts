@@ -1,5 +1,5 @@
 import { derived } from 'overmind';
-import type { ILookups } from '../../dialogs/entityLookups/types';
+import type { ILookups } from '../../dialogs/entityLookups';
 import type { Schema, SchemaMappingType } from '../../types';
 
 type State = {

@@ -1,10 +1,11 @@
-import { Context } from '../';
-import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups/types';
-import type { PopupProps } from '../../components/popup';
-import { ContextMenuState, INotification, PaletteMode } from '../../types';
-import type { IDialogBar } from '../../dialogs/type';
-import { supportedLanguages } from '../../utilities/util';
 import { v4 as uuidv4 } from 'uuid';
+import { Context } from '../';
+import type { PopupProps } from '../../components/popup';
+import type { PopupProps } from '../../dialogs';
+import type { IDialogBar } from '../../dialogs';
+import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
+import { ContextMenuState, INotification, PaletteMode } from '../../types';
+import { supportedLanguages } from '../../utilities';
 
 export const onInitializeOvermind = ({ actions }: Context, overmind: any) => {
   //DARK MODE

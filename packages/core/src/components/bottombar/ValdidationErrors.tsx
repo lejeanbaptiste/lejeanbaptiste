@@ -1,5 +1,5 @@
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { Button, Stack, Tooltip, Typography } from '@mui/material';
+import { Button, Tooltip } from '@mui/material';
 import React, { type FC } from 'react';
 import { useAppState } from '../../overmind';
 

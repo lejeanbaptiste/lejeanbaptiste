@@ -5,8 +5,8 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-ki
 import FilterTiltShiftIcon from '@mui/icons-material/FilterTiltShift';
 import { Stack, Typography } from '@mui/material';
 import React, { useEffect, useState, type FC } from 'react';
-import { Authority, IAuthorityService } from '../../entityLookups/types';
 import { useActions, useAppState } from '../../../overmind';
+import { IAuthorityService } from '../../entityLookups';
 import AuthoritySource from './AuthoritySource';
 
 const AutoritiesPanel: FC = () => {

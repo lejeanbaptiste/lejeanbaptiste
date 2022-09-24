@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Stack } from '@mui/system';
 import { Formik } from 'formik';
+import { useModal } from 'mui-modal-provider';
 import React, { useEffect, useState, type FC } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import * as yup from 'yup';
@@ -19,7 +20,6 @@ import { TextEmphasis } from '../components';
 import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
 import { type IEditSchemaDialog } from './type';
-import { useModal } from 'mui-modal-provider';
 
 interface SchemaData {
   name: string;

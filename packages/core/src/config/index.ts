@@ -1,7 +1,7 @@
 import type { ILeafWriterOptionsSettings, Schema } from '../types';
 import { SchemaMappings } from '../types';
+import { isValidHttpsURL } from '../utilities';
 import { schemas as defaultSchemas } from './schemas';
-import { isValidHttpsURL } from '../utilities/util';
 
 export const createConfig = ({ baseUrl, schemas }: ILeafWriterOptionsSettings) => {
   const supportedSchemas = schemas ? setupSchemas(schemas) : setupSchemas(defaultSchemas);

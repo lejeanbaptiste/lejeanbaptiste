@@ -4,7 +4,7 @@ import { styled } from '@mui/material/styles';
 import React, { type FC, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
-import { supportedLanguages } from '../../utilities/util';
+import { supportedLanguages } from '../../utilities';
 
 const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
   '& .MuiToggleButtonGroup-grouped': {
