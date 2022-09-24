@@ -1,7 +1,7 @@
 import LanguageIcon from '@mui/icons-material/Language';
 import { Box, Button, Menu, MenuItem } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
-import { supportedLanguages } from '@src/utilities/util';
+import { supportedLanguages } from '@src/utilities';
 import { motion } from 'framer-motion';
 import React, { FC, MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';

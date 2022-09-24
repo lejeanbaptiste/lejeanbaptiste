@@ -1,11 +1,11 @@
 import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import { getIcon } from '@src/utilities/icons';
+import { getIcon } from '@src/utilities';
 import { motion } from 'framer-motion';
 import React, { FC, useRef, useState } from 'react';
-import Profile from './Profile';
+import { Profile } from './profile';
 
-const ProfileAvatar: FC = () => {
+export const ProfileAvatar: FC = () => {
   const { user } = useAppState().auth;
   const theme = useTheme();
 
@@ -61,5 +61,3 @@ const ProfileAvatar: FC = () => {
     </Box>
   );
 };
-
-export default ProfileAvatar;

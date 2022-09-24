@@ -1,8 +1,16 @@
 {
+  "Do you want to save or dicard them": "",
   "Document Saved": "",
   "Document not saved": "",
+  "Provider not found": "",
+  "Resource not found": "",
   "Something went wrong": "",
   "Something went wrong Document not saved": "",
+  "Unsaved changes": "",
+  "cancel": "",
+  "close": "",
+  "discard changes": "",
+  "download": "",
   "error": {
     "message404": "Vous vous avancer sur des zones obscures, ou bien c'est une erreur. Retournez à <1>l'accueil.</1>",
     "pageNotFound": "Page non trouvée",
@@ -34,5 +42,17 @@
     "team": "Équipe",
     "templates": "modèle"
   },
-  "remove from recents": ""
+  "leafwriter": {
+    "Select a template": "",
+    "cancel": "",
+    "create": ""
+  },
+  "more": "",
+  "new": "",
+  "open": "",
+  "open recent": "",
+  "recent": "",
+  "remove from recents": "",
+  "save": "",
+  "save as": ""
 }

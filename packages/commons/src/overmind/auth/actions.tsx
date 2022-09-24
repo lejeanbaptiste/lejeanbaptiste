@@ -39,7 +39,7 @@ export const authenticateUser = async ({ state, actions, effects }: Context) => 
   state.auth.userState = sessionAuthenticated ? 'AUTHENTICATED' : 'UNAUTHENTICATED';
 };
 
-export const getKeycloskAuthenticationToken = async ({ effects }: Context) => {
+export const getKeycloakAuthToken = async ({ effects }: Context) => {
   const token = await effects.auth.api.getToken();
   return token;
 };

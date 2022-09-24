@@ -1,4 +1,4 @@
-import Page from '@src/components/Page';
+import { Page } from '@src/layouts/components';
 import React, { FC, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BroadcastChannel } from 'broadcast-channel';

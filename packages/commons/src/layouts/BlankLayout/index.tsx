@@ -1,10 +1,11 @@
 import { Box } from '@mui/material';
-import { useNotifier } from '@src/hooks';
+import { useDialog, useNotifier } from '@src/hooks';
 import React, { FC } from 'react';
 import { Outlet } from 'react-router-dom';
 
 const BlankLayout: FC = () => {
   useNotifier();
+  useDialog();
 
   return (
     <Box sx={{ display: 'flex', width: '100%', backgroundColor: 'background.default' }}>
