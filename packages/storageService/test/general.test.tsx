@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import '@testing-library/jest-dom';
-import { log, logEnabledFor } from '../src/utilities/log';
+import { log, logEnabledFor } from '../src/utilities';
 
 describe('General', () => {
   test('log production', async () => {

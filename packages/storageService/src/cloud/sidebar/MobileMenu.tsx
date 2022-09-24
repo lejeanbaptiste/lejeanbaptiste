@@ -4,9 +4,9 @@ import { IconButton, ListSubheader, MenuItem, Stack } from '@mui/material';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import React, { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CollectionSource, Owner } from '../../types';
 import { useActions, useAppState } from '../../overmind';
-import { log } from '../../utilities/log';
+import type { CollectionSource, Owner } from '../../types';
+import { log } from '../../utilities';
 import SearchBar from './publicRepository/searchBar';
 
 interface MobileMenuProps {
