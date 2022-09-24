@@ -1,5 +1,5 @@
+import i18n from 'i18next';
 import $ from 'jquery';
-import { ConsoleNetworkOutline } from 'mdi-material-ui';
 import tinymce from 'tinymce';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
@@ -330,7 +330,7 @@ class Writer extends EventManager {
     window.removeEventListener('beforeunload', this.handleUnload);
 
     // editor.remove();
-    // editor.destroy();
+    editor.destroy(true);
 
     this.utilities.destroy();
     this.dialogManager.destroy();
@@ -342,14 +342,14 @@ class Writer extends EventManager {
   }
 
   handleUnload(event: BeforeUnloadEvent) {
-    if ((!this.isReadOnly || this.isAnnotator) && window.location.hostname !== 'localhost') {
-      if (this.overmindState.editor.isEditorDirty) {
-        event.preventDefault();
-        const msg = 'You have unsaved changes.';
-        (event || window.event).returnValue = msg;
-        return msg;
-      }
-    }
+    if (this.isReadOnly) return;
+    if (!this.overmindState.editor.isEditorDirty) return;
+    if (window.location.hostname === 'localhost') return;
+
+    event.preventDefault();
+    const msg = i18n.t('You have unsaved changes');
+    (event || window.event).returnValue = msg;
+    return msg;
   }
 }
 
