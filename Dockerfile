@@ -8,6 +8,7 @@ RUN npm install pm2 ts-node -g
 WORKDIR /app
 
 COPY ./packages/commons/package.json .
+COPY ./package-lock.json .
 
 RUN npm install
 
