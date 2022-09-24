@@ -1,9 +1,9 @@
-import type { Bookmark, Editor } from 'tinymce/tinymce';
-import type { ILookupsConfig } from '../dialogs/entityLookups/types';
-import Writer from '../js/Writer';
 import { OptionsObject, SnackbarMessage } from 'notistack';
+import type { Bookmark, Editor } from 'tinymce/tinymce';
+import type { ILookupsConfig } from '../dialogs/entityLookups';
+import Writer from '../js/Writer';
 
-export type { Authority, ILookups } from '../dialogs/entityLookups/types';
+export type { Authority, ILookups } from '../dialogs/entityLookups';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;

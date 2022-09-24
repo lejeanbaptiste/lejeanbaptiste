@@ -1,9 +1,9 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
-import React, { type FC, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useActions } from '../overmind';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import React, { useState, type FC } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useActions } from '../overmind';
 import { type ISimpleDialog } from './type';
 
 export const SimpleDialog: FC<ISimpleDialog> = ({
