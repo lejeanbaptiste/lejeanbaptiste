@@ -11,7 +11,7 @@ const Recent: FC = () => {
   const isMobile = useMediaQuery(breakpoints.down('sm'));
 
   return (
-    <Stack spacing={1} sx={{ width: 320 }}>
+    <Stack spacing={1} sx={{ width: 400 }}>
       <Typography sx={{ fontWeight: 700, letterSpacing: '.15rem', textTransform: 'uppercase' }}>
         {t('home:recent')}
       </Typography>
@@ -29,7 +29,7 @@ const Recent: FC = () => {
             Recent documents are listed here
           </Typography>
         ) : (
-          <Stack spacing={1} width={275}>
+          <Stack spacing={1} width={375}>
             {recentDocuments.map((resource, index) => (
               <RecentFile key={index} resource={resource} />
             ))}

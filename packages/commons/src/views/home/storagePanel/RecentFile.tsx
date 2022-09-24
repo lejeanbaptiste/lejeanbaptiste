@@ -1,6 +1,6 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import ClearIcon from '@mui/icons-material/Clear';
-import { Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
+import { Box, Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import { StorageProviderName } from '@src/services';
@@ -60,9 +60,8 @@ const RecentFile: FC<RecentFileProps> = ({ resource }) => {
   };
 
   const extraInfoVariant = {
-    initial: { height: 0 },
-    visible: { height: 'auto' },
-    exit: { height: 0 },
+    visible: { x: 0, opacity: 1 },
+    hidden: { x: 10, opacity: 0 },
   };
 
   return (
@@ -74,62 +73,65 @@ const RecentFile: FC<RecentFileProps> = ({ resource }) => {
       raised={hover ? true : false}
     >
       <Stack>
-        <Stack sx={{ py: 0.5, px: 1 }}>
-          <AnimatePresence>
-            {hover && (
-              <Stack
-                direction="row"
-                alignItems="center"
-                gap={0.5}
-                component={motion.div}
-                variants={extraInfoVariant}
-                initial="initial"
-                animate="visible"
-                exit="exit"
-                transition={{ type: 'tween' }}
-                sx={{ overflow: 'hidden' }}
-              >
-                <Icon
-                  component={getIcon(provider as StorageProviderName)}
-                  sx={{ width: 14, height: 14 }}
-                />
-                <Typography variant="caption">
-                  {owner}: {repo}/{path && `${path}/`}
-                </Typography>
-                <IconButton
-                  aria-label={t('remove from recents')}
-                  onClick={handleRemove}
-                  size="small"
-                  sx={{ ml: 'auto' }}
-                >
-                  <ClearIcon sx={{ height: 12, width: 12 }} />
-                </IconButton>
-              </Stack>
-            )}
-          </AnimatePresence>
-          <Typography
-            color={hover ? 'primary' : 'inherit'}
-            sx={{
-              textTransform: 'unset',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-            variant="button"
-          >
-            {filename}
-          </Typography>
-        </Stack>
         <Stack
-          direction="row"
           justifyContent="space-between"
+          px={1}
           sx={{
-            px: 1,
-            backgroundColor: palette.mode === 'dark' ? palette.grey[800] : palette.grey[100],
+            backgroundColor: palette.mode === 'dark' ? palette.grey[900] : palette.grey[200],
           }}
         >
-          <Typography variant="caption">{schemaName}</Typography>
-          <Typography variant="caption">{lastDate}</Typography>
+          <Stack
+            direction="row"
+            alignItems="center"
+            gap={0.5}
+            sx={{ height: 22, overflow: 'hidden' }}
+          >
+            <Icon
+              component={getIcon(provider as StorageProviderName)}
+              sx={{ width: 14, height: 14 }}
+            />
+            <Typography variant="caption">
+              {owner}: {repo}/{path && `${path}/`}
+            </Typography>
+            {hover && (
+              <IconButton
+                aria-label={t('remove from recents')}
+                onClick={handleRemove}
+                size="small"
+                sx={{ ml: 'auto' }}
+              >
+                <ClearIcon sx={{ height: 12, width: 12 }} />
+              </IconButton>
+            )}
+          </Stack>
+        </Stack>
+        <Stack direction="column">
+          <Box py={0.5} px={1}>
+            <Typography variant="subtitle1">{filename}</Typography>
+          </Box>
+          <AnimatePresence>
+            {hover && (
+              <Box
+                alignSelf="flex-end"
+                mt={-3}
+                component={motion.div}
+                variants={extraInfoVariant}
+                initial="hidden"
+                animate={hover ? 'visible' : 'hidden'}
+              >
+                <Box
+                  px={1}
+                  sx={{
+                    backgroundColor:
+                      palette.mode === 'dark' ? palette.action.hover : palette.grey[50],
+                    borderTopLeftRadius: '6px',
+                  }}
+                >
+                  <Typography variant="caption">{lastDate}</Typography>
+                </Box>
+              </Box>
+            )}
+          </AnimatePresence>
         </Stack>
       </Stack>
     </Card>

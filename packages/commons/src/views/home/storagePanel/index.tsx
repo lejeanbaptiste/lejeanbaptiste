@@ -5,7 +5,7 @@ import { AnimatePresence, motion, Variants } from 'framer-motion';
 import React, { type FC } from 'react';
 import OpenOptions from './OpenOptions';
 import Recent from './Recent';
-import Templates from './Templates';
+import { Templates } from './Templates';
 
 const StoragePanel: FC = () => {
   const { userState } = useAppState().auth;
@@ -48,7 +48,7 @@ const StoragePanel: FC = () => {
               <Stack
                 direction={isMobile ? 'column-reverse' : 'row'}
                 spacing={5}
-                width={isMobile ? '90vw' : 600}
+                width={isMobile ? '90vw' : 700}
                 pl={2}
               >
                 <OpenOptions />
