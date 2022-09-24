@@ -1,15 +1,14 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
-import MessageDialog from '@src/components/MessageDialog';
 import { Storage } from '@src/components';
 import { SnackbarProvider } from 'notistack';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useRoutes } from 'react-router-dom';
 import { analytics, initAnalytics } from './analytics';
-import AlertDialog from './components/AlertDialog';
 import { useActions, useAppState } from './overmind';
 import routes from './routes';
 import theme from './theme';
+import ModalProvider from 'mui-modal-provider';
 
 const App: FC = () => {
   const { getGAID } = useActions().ui;
@@ -37,15 +36,15 @@ const App: FC = () => {
   }, [language]);
 
   return (
-      <ThemeProvider theme={theme(darkMode)}>
+    <ThemeProvider theme={theme(darkMode)}>
+      <ModalProvider>
         <SnackbarProvider>
           <CssBaseline enableColorScheme />
           <Storage />
-          <MessageDialog />
-          <AlertDialog />
           {routing}
         </SnackbarProvider>
-      </ThemeProvider>
+      </ModalProvider>
+    </ThemeProvider>
   );
 };
 

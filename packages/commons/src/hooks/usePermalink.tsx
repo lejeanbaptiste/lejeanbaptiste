@@ -16,7 +16,6 @@ export const usePermalink = () => {
 
   const { signIn } = useActions().auth;
   const { clearResource, isStorageProviderSupported } = useActions().storage;
-  const { showAlertDialog } = useActions().ui;
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -99,11 +98,6 @@ export const usePermalink = () => {
       }
 
       if (!permalink) return navigate('/', { replace: true }); //return;
-
-      if ('error' in permalink || !permalink.valid || !permalink.resource) {
-        showAlertDialog({ type: 'error', message: permalink.error });
-        return;
-      }
 
       return permalink.resource;
     }

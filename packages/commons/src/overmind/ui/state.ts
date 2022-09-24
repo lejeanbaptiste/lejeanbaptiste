@@ -1,20 +1,19 @@
-import { AlertDialog, INotification, Language, MessageDialog, PaletteMode } from '@src/types';
+import { INotification, Language, PaletteMode } from '@src/types';
 import { supportedLanguages } from '@src/utilities';
+import type { IDialogBar } from '../../dialogs';
 
 type State = {
-  alertDialog: AlertDialog;
   darkMode: boolean;
+  dialogBar: IDialogBar[];
   language: Language;
-  messageDialog: MessageDialog;
   notifications: INotification[];
   themeAppearance: PaletteMode;
 };
 
 export const state: State = {
-  alertDialog: { open: false },
   darkMode: false,
+  dialogBar: [],
   language: supportedLanguages.get('en-CA')!,
-  messageDialog: { open: false },
   notifications: [],
   themeAppearance: 'auto',
 };

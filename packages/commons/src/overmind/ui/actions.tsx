@@ -1,8 +1,10 @@
 import { Button } from '@mui/material';
-import type { AlertDialog, INotification, MessageDialog, PaletteMode } from '@src/types';
+import type { INotification, PaletteMode } from '@src/types';
 import { supportedLanguages } from '@src/utilities';
 import { VariantType } from 'notistack';
 import React from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import type { IDialogBar } from '../../dialogs';
 import { Context } from '../index';
 
 //* INIITIALIZE
@@ -26,7 +28,7 @@ export const onInitializeOvermind = async ({ state, actions }: Context, overmind
 export const getGAID = async ({ effects }: Context) => {
   const response = await effects.ui.api.getGAID();
   return response;
-}
+};
 
 export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
@@ -80,28 +82,6 @@ export const switchLanguage = ({ state }: Context, value: string) => {
   return value;
 };
 
-// Message
-
-export const showAlertDialog = ({ state }: Context, alertDialog: Omit<AlertDialog, 'open'>) => {
-  if (!alertDialog.type) alertDialog.type = 'error';
-  state.ui.alertDialog = { open: true, ...alertDialog };
-};
-
-export const closeAlertDialog = ({ state }: Context) => {
-  state.ui.alertDialog = { open: false };
-};
-
-export const showMessageDialog = (
-  { state }: Context,
-  messageDialog: Omit<MessageDialog, 'open'>
-) => {
-  state.ui.messageDialog = { open: true, ...messageDialog };
-};
-
-export const closeCloseMessageDialog = ({ state }: Context) => {
-  state.ui.messageDialog = { open: false };
-};
-
 export const notifyViaSnackbar = ({ state }: Context, notification: INotification | string) => {
   if (typeof notification === 'string') notification = { message: notification };
 
@@ -124,4 +104,35 @@ export const removeNotificationSnackbar = ({ state }: Context, key: string | num
   state.ui.notifications = state.ui.notifications.filter(
     (notification) => notification.key !== key
   );
+};
+
+export const openDialog = ({ state }: Context, dialogBar: IDialogBar) => {
+  if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
+  if (!dialogBar.type) dialogBar.type = 'simple';
+  state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
+};
+
+export const closeDialog = ({ state }: Context, id: string) => {
+  state.ui.dialogBar = [
+    ...state.ui.dialogBar.map((dialogBar) => {
+      if (dialogBar.props?.id === id) dialogBar.dismissed = true;
+      return dialogBar;
+    }),
+  ];
+};
+
+export const removeDialog = ({ state }: Context, id: string) => {
+  state.ui.dialogBar = state.ui.dialogBar.filter((dialogBar) => dialogBar.props?.id !== id);
+};
+
+export const setDialogDisplayId = (
+  { state }: Context,
+  { id, displayId }: { id: string; displayId: string }
+) => {
+  state.ui.dialogBar = [
+    ...state.ui.dialogBar.map((dialogBar) => {
+      if (dialogBar.props?.id === id) dialogBar.displayId = displayId;
+      return dialogBar;
+    }),
+  ];
 };

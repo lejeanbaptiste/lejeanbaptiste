@@ -1,8 +1,16 @@
 {
+  "Do you want to save or dicard them": "Do you want to save or dicard them",
   "Document Saved": "Document Saved",
   "Document not saved": "Document not saved",
+  "Provider not found": "Provider not found",
+  "Resource not found": "Resource not found",
   "Something went wrong": "Something went wrong",
   "Something went wrong Document not saved": "Something went wrong",
+  "Unsaved changes": "Unsaved changes",
+  "cancel": "cancel",
+  "close": "close",
+  "discard changes": "discard changes",
+  "download": "download",
   "error": {
     "message404": "You either tried some shady route or you came here by mistake. Go back to the <1>main page.</1>",
     "pageNotFound": "Page Not Found",
@@ -34,5 +42,17 @@
     "team": "Team",
     "templates": "templates"
   },
-  "remove from recents": "remove from recents"
+  "leafwriter": {
+    "Select a template": "Select a template",
+    "cancel": "cancel",
+    "create": "create"
+  },
+  "more": "more",
+  "new": "new",
+  "open": "open",
+  "open recent": "open recent",
+  "recent": "recent",
+  "remove from recents": "remove from recents",
+  "save": "save",
+  "save as": "save as"
 }

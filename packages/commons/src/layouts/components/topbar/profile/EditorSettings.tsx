@@ -1,6 +1,6 @@
 import TuneIcon from '@mui/icons-material/Tune';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
-import { useAppState } from '@src/overmind';
+import { useLeafWriter } from '@src/views/edit/useLeafWriter';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,8 +9,8 @@ interface Props {
 }
 
 const EditorSettings: FC<Props> = ({ handleClose }) => {
-  const { leafWriter } = useAppState().editor;
   const { t } = useTranslation();
+  const { leafWriter } = useLeafWriter();
 
   const handleClick = () => {
     handleClose();
@@ -23,7 +23,11 @@ const EditorSettings: FC<Props> = ({ handleClose }) => {
         <ListItemIcon sx={{ minWidth: 40 }}>
           <TuneIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText id="settings" primary={t('home:settings')} sx={{ textTransform: 'capitalize' }} />
+        <ListItemText
+          id="settings"
+          primary={t('home:settings')}
+          sx={{ textTransform: 'capitalize' }}
+        />
       </ListItemButton>
     </ListItem>
   );

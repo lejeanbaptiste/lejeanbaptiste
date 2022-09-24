@@ -5,7 +5,7 @@ interface PageProps {
   title?: string;
 }
 
-const Page = forwardRef<PageProps, any>(({ children, title = '', ...rest }, ref) => {
+export const Page = forwardRef<PageProps, any>(({ children, title = '', ...rest }, ref) => {
   return (
     <div ref={ref} {...rest}>
       <Helmet>
@@ -15,5 +15,3 @@ const Page = forwardRef<PageProps, any>(({ children, title = '', ...rest }, ref)
     </div>
   );
 });
-
-export default Page;

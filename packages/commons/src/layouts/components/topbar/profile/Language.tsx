@@ -10,7 +10,7 @@ import {
 import { styled } from '@mui/material/styles';
 import { analytics } from '@src/analytics';
 import { useActions, useAppState } from '@src/overmind';
-import { supportedLanguages } from '@src/utilities/util';
+import { supportedLanguages } from '@src/utilities';
 import React, { FC, MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 

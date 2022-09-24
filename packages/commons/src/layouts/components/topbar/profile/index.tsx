@@ -11,13 +11,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { Storage } from '@src/components/Storage';
 import { useActions, useAppState } from '@src/overmind';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import EditorSettings from './EditorSettings';
 import Identity from './Identity';
 import Language from './Language';
-import Storage from './Storage';
 import ThemeAppearance from './ThemeAppearance';
 
 interface ProfileProps {
@@ -25,9 +25,9 @@ interface ProfileProps {
   handleClose: () => void;
 }
 
-const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
+export const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
   const { user } = useAppState().auth;
-  const { leafWriter } = useAppState().editor;
+  const { libLoaded } = useAppState().editor;
   const { accountManagement, signOut } = useActions().auth;
   const { t } = useTranslation();
 
@@ -80,7 +80,7 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
         <Language />
       </List>
       <Divider />
-      {leafWriter && (
+      {libLoaded && (
         <>
           <EditorSettings handleClose={handleClose} />
           <Divider />
@@ -94,5 +94,3 @@ const Profile: FC<ProfileProps> = ({ anchor, handleClose }) => {
     </Popover>
   );
 };
-
-export default Profile;
