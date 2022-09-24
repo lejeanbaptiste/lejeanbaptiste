@@ -1,6 +1,33 @@
+## 1.2.0
+
+### Minor Changes
+
+- Rework message dialogs to make it more coherent with the UI/UX [462c17c74a11d57bc4ed26d19455728d0fc44dfa]
+
+Messages Dialogs are now centralized in a manager and UX is more aligned to the core LEAF-Writer. More localization were added.
+
+### Patch
+
+- Localization: define namespace: leafwriter-storage-service [e0127d599c0660fcd703727e0ae5515fc5b5e9dc]
+- Reorganize folder structure [b4bd86fa60a80057a3eb0d49c4594745c02da99a]
+- Update Dependencies [6c5de2829246bfcc0fd54d5260e55168fb9eb0c2]:
+  - core:
+    - add:
+      - mui-modal-provider@2.1.0
+    - bump up:
+      - @mui/base@5.0.0-alpha.98
+      - @mui/icons-material@5.10.6
+      - @mui/lab@5.0.0-alpha.100
+      - framer-motion@7.3.6
+      - i18next@21.9.2
+  - dev:
+    - bump up:
+      - @typescript-eslint/eslint-plugin@5.38.0
+      - @typescript-eslint/parser@5.38.0
+
 ## 1.1.2
 
-### Patch Changes### Chore
+### Patch Changes
 
 - Update dependencies [401d3af7e4cadba4700ee0073e0733bc5e908951]:
   - core:
