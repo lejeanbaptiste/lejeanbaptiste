@@ -1,10 +1,10 @@
 import match from 'autosuggest-highlight/match';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { Buffer } from 'buffer/';
+import type * as T from '../types';
 import type * as Types from '../types/Provider';
 import type Provider from '../types/Provider';
-import type * as T from '../types';
-import { log } from '../utilities/log';
+import { log } from '../utilities';
 
 const BASE_URL = 'https://gitlab.com/api/v4';
 

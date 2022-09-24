@@ -1,6 +1,6 @@
 import { Context } from '../';
 import i18next from '../../i18n';
-import { supportedLanguages } from '../../utilities/util';
+import { supportedLanguages } from '../../utilities';
 
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

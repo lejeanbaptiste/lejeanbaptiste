@@ -1,5 +1,5 @@
 import type { Language } from '../../types';
-import { supportedLanguages } from '../../utilities/util';
+import { supportedLanguages } from '../../utilities';
 
 type State = {
   darkMode: boolean;

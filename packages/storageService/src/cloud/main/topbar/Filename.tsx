@@ -10,10 +10,10 @@ import {
   useTheme,
 } from '@mui/material';
 import React, {
-  ChangeEvent,
-  FC,
-  FocusEvent,
-  KeyboardEvent,
+  type ChangeEvent,
+  type FC,
+  type FocusEvent,
+  type KeyboardEvent,
   useEffect,
   useRef,
   useState,

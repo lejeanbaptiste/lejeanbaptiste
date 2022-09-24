@@ -5,7 +5,7 @@ import Dropzone, { DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 
-const UploadPanel: FC = () => {
+export const UploadPanel: FC = () => {
   const { t } = useTranslation();
   const { palette } = useTheme();
   const { allowedMimeTypes } = useAppState().common;
@@ -104,5 +104,3 @@ const UploadPanel: FC = () => {
     </Box>
   );
 };
-
-export default UploadPanel;

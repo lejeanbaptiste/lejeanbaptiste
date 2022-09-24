@@ -10,7 +10,7 @@ export interface Props {
   onCancel: () => void;
 }
 
-const FooterSave: FC<Props> = ({ onCancel }) => {
+export const FooterSave: FC<Props> = ({ onCancel }) => {
   const { t } = useTranslation();
   const { resource } = useAppState().common;
   const { isSaving, owner, repository } = useAppState().cloud;
@@ -89,5 +89,3 @@ const FooterSave: FC<Props> = ({ onCancel }) => {
     </DialogActions>
   );
 };
-
-export default FooterSave;
