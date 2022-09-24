@@ -1,0 +1,26 @@
+[
+  {
+    "category": "tei",
+    "icon": "blankPage",
+    "title": "Blank",
+    "url": "https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20blank%20template.xml"
+  },
+  {
+    "category": "tei",
+    "icon": "letter",
+    "title": "Letter",
+    "url": "https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20letter%20template.xml"
+  },
+  {
+    "category": "tei",
+    "icon": "feather",
+    "title": "Poem",
+    "url": "https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20poem%20template.xml"
+  },
+  {
+    "category": "tei",
+    "icon": "prose",
+    "title": "Prose",
+    "url": "https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20prose%20template.xml"
+  }
+]
