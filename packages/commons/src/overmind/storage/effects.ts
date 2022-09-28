@@ -14,11 +14,14 @@ export const api = {
     return response.data;
   },
   saveToLocalStorage: (key: string, value: unknown) => {
-    localStorage.setItem(key, JSON.stringify(value));
+    const stringfiedValue = typeof value === 'string' ? value : JSON.stringify(value);
+    localStorage.setItem(key, stringfiedValue);
   },
   getFromLocalStorage: (key: string) => {
     const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : null;
+    if (!value) return null;
+    const parsedValue = value.startsWith('{') || value.startsWith('[') ? JSON.parse(value) : value;
+    return parsedValue;
   },
   removeFromLocalStorage: (key: string) => {
     localStorage.removeItem(key);
