@@ -1,3 +1,10 @@
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter@2.0.1
+
 ## 2.0.0
 
 ### Major Changes
@@ -56,6 +63,7 @@ Messages Dialogs are now centralized in a manager and UX is more aligned to the 
   - @cwrc/leafwriter-storage-service@1.2.0
 
 ## 1.8.0
+
 ### Features
 
 #### See document's full path
