@@ -1,3 +1,9 @@
+## 2.0.2
+
+### Patch Changes
+
+- Tweak get / set from localstorage
+
 ## 2.0.1
 
 ### Patch Changes
