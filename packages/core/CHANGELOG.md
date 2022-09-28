@@ -1,3 +1,10 @@
+## 2.0.1
+
+### Patch Changes
+
+- CRITICAL UPDATE: Use local version of 'jquery-layout3' [2d1e2757f65ba50a4e573474edaef86e1e39fdd1]
+A deep dependency of 'jquery-layout3' is broken. This lib is very old and it is unlikelly to be updated. Need to move away from jquery an continue transition to React.
+
 ## 2.0.0
 
 ### Major Changes
@@ -19,6 +26,7 @@ More Dialogs are now centralized in a manager making UX more coherent.
 - certify the document comes from https when loading directly from url [01e805f188dedaeb34194dbdcde49a79fb5ebc27]
 - Strucure tree: reduce interference with top menu on commons [b339d0f77d151a2c76daba753866f63bd2c60c9b]
 - Update Dependencies [55f12f4806025fab0d8c39b716ead1d84c870168]:
+
   - core:
     - lock: tinymce@5.10.5
     - bump up:
@@ -31,6 +39,7 @@ More Dialogs are now centralized in a manager making UX more coherent.
       - wikidata-sdk@8.0.5
 
   ## 1.8.0
+
 ### Features
 
 ### Better schema processing and UX for not supported schemas
