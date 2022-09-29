@@ -191,14 +191,8 @@ export const promptAddSchema = (params: IProcessSchemaParams) => {
     props: {
       docSchema,
       mappingIds,
-      onAcceptChanges: async (schema: Partial<Schema>) => {
-        const { addSchema } = overmindActions.editor;
-
-        //* ADD
-        const customSchema = addSchema(schema);
-
-        const { id, css } = customSchema;
-        params.schemaLoaded = await schemaManager.loadSchema(id, css);
+      onAcceptChanges: async (newSchema: Schema) => {
+        params.schemaLoaded = await schemaManager.loadSchema(newSchema.id);
         if (!params.schemaLoaded) return openProcessIssueDialog(params);
 
         converter.xml2cwrc.doProcessing(doc);

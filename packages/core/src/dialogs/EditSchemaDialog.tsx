@@ -21,14 +21,14 @@ import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
 import { type IEditSchemaDialog } from './type';
 
-interface SchemaData {
+interface SchemaForm {
   name: string;
   mapping: SchemaMappingType;
   rng: string;
   css: string;
 }
 
-const defaultValue: SchemaData = { name: '', mapping: 'tei', rng: '', css: '' };
+const defaultValue: SchemaForm = { name: '', mapping: 'tei', rng: '', css: '' };
 
 const regexHttps = /^(https)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\/\S*)?$/;
 
@@ -54,7 +54,7 @@ export const EditSchemaDialog: FC<IEditSchemaDialog> = ({
 
   const { t } = useTranslation('leafwriter');
 
-  const [initialValues, setInitialValues] = useState<SchemaData>(defaultValue);
+  const [initialValues, setInitialValues] = useState<SchemaForm>(defaultValue);
 
   const preventEscape = actionType === 'add';
 
@@ -128,7 +128,7 @@ export const EditSchemaDialog: FC<IEditSchemaDialog> = ({
           if (action !== 'delete') return;
 
           destroyModal(id);
-          handleCancel()
+          handleCancel();
 
           deleteSchema(schemaId);
 
@@ -141,8 +141,8 @@ export const EditSchemaDialog: FC<IEditSchemaDialog> = ({
     });
   };
 
-  const submit = async ({ name, mapping, rng, css }: SchemaData) => {
-    const schema: Schema | Omit<Schema, 'id'> = {
+  const submit = async ({ name, mapping, rng, css }: SchemaForm) => {
+    const schemaToSubmit: Schema | Omit<Schema, 'id'> = {
       id: schemaId ?? undefined,
       name,
       mapping,
@@ -151,7 +151,9 @@ export const EditSchemaDialog: FC<IEditSchemaDialog> = ({
       editable: true,
     };
 
-    schemaId ? updateSchema(schema) : addSchema(schema);
+    const schema = schemaId ? updateSchema(schemaToSubmit) : addSchema(schemaToSubmit);
+
+    if (!schemaId) schema.id = schemaId;
 
     handleBeforeClose();
     onAcceptChanges && (await onAcceptChanges(schema));
