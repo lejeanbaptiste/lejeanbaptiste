@@ -22,5 +22,10 @@
     "icon": "prose",
     "title": "Prose",
     "url": "https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20prose%20template.xml"
+  },
+   {
+    "category": "Orlondo",
+    "title": "Prose",
+    "url": "https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/TEI%20prose%20template.xml"
   }
 ]
