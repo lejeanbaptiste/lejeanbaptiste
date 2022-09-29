@@ -27,8 +27,6 @@ const overmind = createOvermind(config, {
 
 const DEFAULT_HEIGHT = '700px';
 
-let hasOvermindListeners = false;
-
 export class Leafwriter {
   private readonly domElement: HTMLElement;
 
@@ -52,24 +50,21 @@ export class Leafwriter {
 
     if (!this.reactReact) this.reactReact = createRoot(this.domElement);
 
-    if (!hasOvermindListeners) {
-      overmind.addMutationListener((mutation) => {
+    overmind.addMutationListener((mutation) => {
       if (mutation.path === 'editor.isEditorDirty' && mutation.hasChangedValue) {
-          this._isDirty.next(overmind.state.editor.isEditorDirty);
+        this._isDirty.next(overmind.state.editor.isEditorDirty);
+      }
+      if (mutation.path === 'document.loaded') {
+        if (overmind.state.document.loaded === true) {
+          this._onLoad.next({ schemaName: overmind.state.document.schemaName });
         }
-        if (mutation.path === 'document.loaded') {
-          if (overmind.state.document.loaded === true) {
-            this._onLoad.next({ schemaName: overmind.state.document.schemaName });
-          }
+      }
+      if (mutation.path === 'editor.latestEvent') {
+        if (overmind.state.editor.latestEvent === 'close') {
+          this._onClose.next(true);
         }
-        if (mutation.path === 'editor.latestEvent') {
-          if (overmind.state.editor.latestEvent === 'close') {
-            this._onClose.next(true);
-          }
-        }
-      });
-      hasOvermindListeners = true;
-    }
+      }
+    });
   }
 
   init(options: ILeafWriterOptions) {
