@@ -54,7 +54,7 @@ export class Leafwriter {
 
     if (!hasOvermindListeners) {
       overmind.addMutationListener((mutation) => {
-        if (mutation.path === 'editor.isEditorDirty') {
+      if (mutation.path === 'editor.isEditorDirty' && mutation.hasChangedValue) {
           this._isDirty.next(overmind.state.editor.isEditorDirty);
         }
         if (mutation.path === 'document.loaded') {
