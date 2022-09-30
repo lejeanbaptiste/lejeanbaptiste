@@ -53,7 +53,7 @@
     "@types/jest": "^29.0.3",
     "@types/jsdom": "^20.0.0",
     "@types/lodash": "^4.14.185",
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.38.0",
     "@typescript-eslint/parser": "^5.38.0",
     "browserify": "^17.0.0",
