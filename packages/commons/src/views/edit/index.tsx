@@ -10,11 +10,18 @@ import { useNavigate } from 'react-router';
 
 const EditView: FC = () => {
   const { userState, user } = useAppState().auth;
-  const { libLoaded } = useAppState().editor;
+  const { isDirty, libLoaded } = useAppState().editor;
   const { resource } = useAppState().storage;
 
   const { getKeycloakAuthToken } = useActions().auth;
-  const { getGeonameUsername, loadLeafWriter, setIsDirty } = useActions().editor;
+  const {
+    getGeonameUsername,
+    loadLeafWriter,
+    setContentLastSaved,
+    setIsDirty,
+    subscribeToTimerService,
+    unsubscribeFromTimerService,
+  } = useActions().editor;
   const { addToRecentDocument } = useActions().storage;
 
   const navigate = useNavigate();
@@ -85,13 +92,22 @@ const EditView: FC = () => {
       },
     });
 
-    leafWriter.isDirty.subscribe((value) => setIsDirty(value));
-
-    leafWriter.onLoad.subscribe(({ schemaName }) => {
-      addToRecentDocument({ ...resource, schemaName });
+    leafWriter.isDirty.subscribe((value) => {
+      setIsDirty(value);
     });
 
-    leafWriter.onClose.subscribe(() => disposeLeafWriter());
+    leafWriter.onLoad.subscribe(async ({ schemaName }) => {
+      subscribeToTimerService(leafWriter);
+      addToRecentDocument({ ...resource, schemaName });
+
+      const content = await leafWriter.getContent();
+      setContentLastSaved(content);
+    });
+
+    leafWriter.onClose.subscribe(() => {
+      unsubscribeFromTimerService();
+      disposeLeafWriter();
+    });
 
     analytics.track('editor', { opened: true });
   };

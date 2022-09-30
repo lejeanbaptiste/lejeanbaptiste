@@ -1,7 +1,9 @@
 import { saveDocument } from '@cwrc/leafwriter-storage-service';
-import { log } from '@src/utilities';
+import { isErrorMessage, log } from '@src/utilities';
 import { Context } from '../';
 import { StorageProviderName } from '@src/services';
+import { IError } from '@src/types';
+import LeafWriter from '@cwrc/leafwriter';
 
 export const getGeonameUsername = async ({ effects }: Context) => {
   const response = await effects.editor.api.getGeonameUsername();
@@ -9,72 +11,105 @@ export const getGeonameUsername = async ({ effects }: Context) => {
 };
 
 export const loadLeafWriter = async ({ state }: Context, container: HTMLElement) => {
-  const LeafWriter = (await import('@cwrc/leafwriter')).Leafwriter;
-  const leafWriter = new LeafWriter(container);
+  const LW = (await import('@cwrc/leafwriter')).Leafwriter;
+  const leafWriter = new LW(container);
   state.editor.libLoaded = true;
   return leafWriter;
 };
 
-export const save = async ({ state, actions }: Context, content: string) => {
+export const isContentSameAsLastSaved = ({ state }: Context, content: string) => {
+  return state.editor.contentLastSaved === content;
+};
+
+export const save = async (
+  { state, actions }: Context,
+  content: string
+): Promise<{ success: boolean; error?: IError }> => {
   state.editor.isSaving = true;
+
+  // Check diff document
+  if (actions.editor.isContentSameAsLastSaved(content)) {
+    actions.editor.afterSave();
+    return { success: true };
+  }
 
   const { storage } = state;
 
+  //Check provider
   if (!storage.resource?.provider) {
-    log.error('Storage Provider not found!');
+    const message = 'Storage Provider not found!';
+    log.error(message);
     state.editor.isSaving = false;
-    return;
+    return { success: false, error: { type: 'error', message } };
   }
 
   const providerAuth = actions.storage.getStorageProviderAuth(
     storage.resource.provider as StorageProviderName
   );
 
+  //Check provider token
   if (!providerAuth) {
-    log.error('Provider token not found');
+    const message = 'Provider token not found';
+    log.error(message);
     state.editor.isSaving = false;
-    return;
+    return { success: false, error: { type: 'error', message } };
   }
 
-  //update resourse
-  const updatedResourse = {
+  //Prepare resource
+  const updatedResource = {
     ...storage.resource,
     content,
   };
 
-  actions.storage.setResource(updatedResourse);
+  //* Resquest save
+  const response = await saveDocument(providerAuth, updatedResource, true);
 
-  //Save
+  if (isErrorMessage(response)) {
+    log.error(response.message);
 
-  // * Important
-  // Save debounce multiple calls to avoid sync conflict when saving into cloud storage like Github.
-  // It will execute immedaiatly. Subsequently calls will be blocked until the timeout, when the last call is executed.
-  // After timeout, the subsquently call executes immedaitly again.
-  // export const saveDocument = debounce(
-  //   ({ state }: Context, saveAs?: boolean) => {
-  //     if (!window.writer) return;
-  //   },
-  //   60_000,
-  //   { leading: true, trailing: true }
-  // );
+    if (response.message !== 'conflict') {
+      state.editor.isSaving = false;
+      return { success: false, error: response };
+    }
 
-  const response = await saveDocument(providerAuth, updatedResourse, true);
+    const { timerService } = state.editor;
+    if (timerService.maxAttempts === Infinity) {
+      state.editor.saveDelayed = true;
+      // actions.editor.delaySave({ content });
+      timerService.stop().setDuration(10_000).setMaxAttempt(5).start();
+    }
 
-  if ('error' in response) {
-    log.error(response.error);
-    state.editor.isSaving = false;
-    return;
+    return { success: false, error: response };
   }
 
+  // Finalize
+  actions.storage.setResource(updatedResource);
+
+  actions.editor.afterSave();
+
+  state.editor.contentLastSaved = content;
+
+  return { success: true };
+};
+
+export const afterSave = async ({ state, actions }: Context) => {
   actions.storage.updateRecentDocument();
   actions.editor.setIsDirty(false);
 
+  state.editor.saveDelayed = false;
   state.editor.isSaving = false;
 
-  return true;
+  return { success: true };
 };
 
-export const saveAs = async ({ state, actions }: Context, content: string) => {
+export const setContentLastSaved = ({ state }: Context, content: string) => {
+  state.editor.contentLastSaved = content;
+};
+
+export const saveAs = async (
+  { state, actions }: Context,
+  content: string
+): Promise<{ success: boolean; error?: IError }> => {
   const { storage } = state;
 
   actions.storage.setResource({
@@ -89,13 +124,31 @@ export const saveAs = async ({ state, actions }: Context, content: string) => {
   });
 
   actions.storage.updateRecentDocument();
-  actions.editor.setIsDirty(false);
+  // actions.editor.setIsDirty(false);
 
-  return true;;
+  return { success: true };
 };
 
 export const setIsDirty = async ({ state }: Context, value: boolean) => {
-  state.editor.isDirty = value;
+  if (state.editor.isDirty !== value) state.editor.isDirty = value;
+
+  if (value === false) {
+    state.editor.timerService.stop();
+    return;
+  }
+
+  if (state.editor.autosave) state.editor.timerService.start();
+};
+
+export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
+  state.editor.timerService.onTimer.subscribe(async (value) => {
+    const content = await editor.getContent();
+    await actions.editor.save(content);
+  });
+};
+
+export const unsubscribeFromTimerService = ({ state }: Context) => {
+  state.editor.timerService.onTimer.unsubscribe();
 };
 
 export const close = async ({ state, actions }: Context) => {
