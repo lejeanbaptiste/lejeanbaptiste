@@ -2,7 +2,7 @@ import { Box, Icon, MenuItem, MenuItemProps, Stack, Typography } from '@mui/mate
 import { getIcon } from '@src/utilities';
 import React, { useCallback, useContext } from 'react';
 import { CascadingContext } from '.';
-import { type ItemType, type MenuAction } from './useMenu';
+import { type ItemType } from './useMenu';
 
 export interface IItem extends MenuItemProps {
   data?: { [key: string]: any };
@@ -12,7 +12,6 @@ export interface IItem extends MenuItemProps {
   onTrigger?: (data?: any) => void;
   shortcut?: string;
   type?: ItemType;
-  trigger?: MenuAction;
 }
 
 export const Item = ({
@@ -24,7 +23,6 @@ export const Item = ({
   onTrigger,
   shortcut,
   type = 'menuItem',
-  trigger,
   ...props
 }: IItem) => {
   const { rootPopupState } = useContext(CascadingContext);
