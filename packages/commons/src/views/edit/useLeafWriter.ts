@@ -5,6 +5,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { StorageProviderName } from '@src/services';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
+import { useEffect } from 'react';
 
 let leafWriter: Leafwriter | null = null;
 
@@ -19,6 +20,10 @@ export const useLeafWriter = () => {
   const { t } = useTranslation();
 
   const { getResourceFromPermalink } = usePermalink();
+
+  useEffect(() => {
+    leafWriter?.setIsEditorDirty(isDirty);
+  }, [isDirty]);
 
   const setCurrentLeafWriter = (lw: Leafwriter | null) => (leafWriter = lw);
 
@@ -59,13 +64,23 @@ export const useLeafWriter = () => {
 
     const content = await leafWriter.getContent();
 
-    if (action === 'save') {
-      const saved = !!(await save(content));
-      saveFeedback(saved);
+    if (action === 'saveAs') {
+      saveAs(content);
       return;
     }
 
-    saveAs(content);
+    const saved = await save(content);
+
+    if (!saved.success && saved.error?.message === 'conflict') return;
+
+    const type = saved.success ? 'success' : saved.error?.type ?? 'info';
+    const message = saved.success
+      ? t('Document Saved')
+      : `${t('Something went wrong')}. ${t('Document not saved')}!`;
+
+    if (saved.success) leafWriter.setIsEditorDirty(false);
+
+    notifyViaSnackbar({ message, options: { variant: type } });
   };
 
   const saveFeedback = (saved: boolean) => {
