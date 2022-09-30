@@ -998,15 +998,33 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     hash,
   });
 
-  if (!response || response.error) {
+  if (!response) {
+    actions.ui.closeDialog('progress');
+    actions.ui.openDialog({
+      props: {
+        id: 'progress',
+        maxWidth: 'xs',
+        preventEscape: true,
+        severity: 'error',
+        title: i18next.t('error'),
+        Message: i18next.t('error:unabled to save'),
+        onClose: () => actions.cloud.setIsSaving(false),
+      },
+    });
+
+    return null;
+  }
+
+  if (isErrorMessage(response)) {
     actions.ui.closeDialog('progress');
 
-    const title = response.error === 'conflict' ? i18next.t('error:conflict') : i18next.t('error');
+    const title =
+      response.message === 'conflict' ? i18next.t('error:conflict') : i18next.t('error');
 
     const message =
-      response.error === 'conflict'
+      response.message === 'conflict'
         ? i18next.t('error:unable to overwrite file')
-        : i18next.t('error:unabled to save');
+        : `${i18next.t('error:unabled to save')}. ${response.message}`;
 
     actions.ui.openDialog({
       props: {
@@ -1195,7 +1213,7 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
     hash: branchDocumentHash,
   });
 
-  if (!saveOnBranchResponse) {
+  if (!saveOnBranchResponse || saveOnBranchResponse.status === 409) {
     return {
       type: 'error',
       message: i18next.t('error:message:unable_save_on_branch', { branch: branchHead }),
@@ -1265,7 +1283,7 @@ export const forkFile = async ({
     hash: forkDocumentHash,
   });
 
-  if (!saveOnForkResponse) {
+  if (!saveOnForkResponse || saveOnForkResponse.status === 409) {
     return {
       type: 'error',
       message: i18next.t('error:message:unable_save_document_on_fork', { fork: fork.name }),
