@@ -1,4 +1,6 @@
 {
+  "All changes salved": "",
+  "Click to save": "",
   "Do you want to save or dicard them": "",
   "Document Saved": "",
   "Document not saved": "",
@@ -7,6 +9,7 @@
   "Something went wrong": "",
   "Something went wrong Document not saved": "",
   "Unsaved changes": "",
+  "Waiting for": "",
   "cancel": "",
   "close": "",
   "discard changes": "",
@@ -54,5 +57,6 @@
   "recent": "",
   "remove from recents": "",
   "save": "",
-  "save as": ""
+  "save as": "",
+  "saving": ""
 }
