@@ -199,6 +199,7 @@ export class Leafwriter {
   }
 
   setIsEditorDirty(value: boolean) {
+    if (overmind.state.editor.isEditorDirty === value) return;
     overmind.actions.editor.setIsEditorDirty(value);
   }
 
