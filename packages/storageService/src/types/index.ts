@@ -67,7 +67,7 @@ export interface ISourcePanelOption {
 export type ErrorType = 'info' | 'warning' | 'error';
 
 export interface IError {
-  type?: ErrorType;
+  type: ErrorType;
   message: string;
 }
 

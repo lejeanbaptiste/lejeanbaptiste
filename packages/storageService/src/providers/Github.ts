@@ -6,9 +6,10 @@
 import { Octokit } from '@octokit/rest';
 import axios, { AxiosInstance } from 'axios';
 import { Buffer } from 'buffer/';
+import type * as T from '../types';
 import type * as Types from '../types/Provider';
 import type Provider from '../types/Provider';
-import type * as T from '../types';
+import { isErrorMessage } from '../utilities';
 
 // ------------- Internal types --------------
 
@@ -644,9 +645,20 @@ export default class Github implements Provider {
         branch,
         sha: hash,
       })
-      .catch(() => null);
+      .catch((error) => {
+        console.log(error)
+        console.log(error.message)
+        console.log(error.message.includes('does not match'))
+        if (error.message.includes('does not match')) {
+          return { type: 'warning', status: 409, message: 'conflict' } as Types.IProviderError;
+        }
+        return null;
+      });
+
+    console.log(response)
 
     if (!response) return null;
+    if (isErrorMessage(response)) return response;
 
     const updatedResource = { ...params, hash: response.data.content?.sha };
     return updatedResource;

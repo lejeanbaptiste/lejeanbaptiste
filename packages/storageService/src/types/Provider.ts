@@ -5,6 +5,7 @@ import type {
   PublicRepository,
   Repository,
 } from '.';
+import type { IError } from '../types';
 
 export type ProviderAuth = {
   access_token: string;
@@ -160,6 +161,10 @@ export interface ICreatePrFromForkParams {
   title: string;
 }
 
+export interface IProviderError extends IError {
+  status: number;
+}
+
 export type CreatePrResponse = 'created' | 'exists' | null;
 
 export default interface Provider {
@@ -203,7 +208,7 @@ export default interface Provider {
     collection: Repository[];
     nextPage: string | null;
   } | null>;
-  saveDocument: (params: ISaveDocument) => Promise<any>;
+  saveDocument: (params: ISaveDocument) => Promise<null | IProviderError | { [key: string]: any }>;
   searchBlobs: (params: SearchBlobsParams) => Promise<any[]>;
   searchUsers: (query: string) => Promise<PublicRepository[]>;
 }

@@ -1,11 +1,8 @@
+import type { IError, Repository, Resource } from './types';
 import Provider, { ProviderAuth } from './types/Provider';
-import type { Repository, Resource } from './types';
+import { isErrorMessage } from './utilities';
 
 let provider: Provider | null;
-
-interface IError {
-  error: string;
-}
 
 interface IGetFileLatestHashParams {
   filePath: string;
@@ -13,7 +10,7 @@ interface IGetFileLatestHashParams {
   owner: string;
 }
 
-export type { Resource } from './types';
+export type { Resource, IError } from './types';
 
 export const loadDocument = async (providerAuth: ProviderAuth, resource: Resource) => {
   const { provider: providerName, owner, ownertype, repo, filename } = resource;
@@ -67,21 +64,23 @@ export const saveDocument = async (
   const { provider: providerName, owner, ownertype, repo, filename, content, hash } = resource;
   let { path } = resource;
 
-  if (!providerName) return { error: 'Document provider not defined' };
-  if (!owner) return { error: "Document's owner not defined" };
-  if (!ownertype) return { error: "Document's ownertype not defined" };
-  if (!repo) return { error: "Document's repository not defined" };
+  if (!providerName) return { type: 'error', message: 'Document provider not defined' };
+  if (!owner) return { type: 'error', message: "Document's owner not defined" };
+  if (!ownertype) return { type: 'error', message: "Document's ownertype not defined" };
+  if (!repo) return { type: 'error', message: "Document's repository not defined" };
+
   if (!path) path = '';
-  if (!filename) return { error: "Document's filename not defined" };
-  if (!content) return { error: 'Document has not content' };
+
+  if (!filename) return { type: 'error', message: "Document's filename not defined" };
+  if (!content) return { type: 'error', message: 'Document has not content' };
 
   provider = await initializeProvider(providerAuth);
-  if (!provider) return { error: 'Provider not supported' };
+  if (!provider) return { type: 'error', message: 'Provider not supported' };
 
   const repository = await provider
     .getRepo({ username: owner, repoId: repo, repoName: repo })
     .catch(() => null);
-  if (!repository) return { error: "Document's repositoty not found" };
+  if (!repository) return { type: 'error', message: "Document's repositoty not found" };
 
   const filePath = path === '' ? filename : `${path}/${filename}`;
 
@@ -93,14 +92,18 @@ export const saveDocument = async (
     username: provider.username,
     userId: provider.userId,
   });
+
   if (!hasPermission) {
-    return { error: 'User has no permission to save a document in this repository' };
+    return {
+      type: 'error',
+      message: 'User has no permission to save a document in this repository',
+    };
   }
 
   //check file exist
   const fileLatestHash = await getFileLatestHash({ filePath, repository, owner });
   if (fileLatestHash === hash && !overwrite) {
-    return { error: 'File already exists. Unable to overwrite.' };
+    return { type: 'error', message: 'File already exists. Unable to overwrite.' };
   }
 
   //save
@@ -115,8 +118,10 @@ export const saveDocument = async (
     hash: fileLatestHash ?? undefined,
   });
 
-  if (!response) return { error: 'Something went wrong. Unabled to save.' };
-  if (response.error) return { error: 'Conflict found. Unabled to save.' };
+  console.log(response);
+
+  if (!response) return { type: 'error', message: 'Something went wrong. Unabled to save.' };
+  if (isErrorMessage(response)) return { type: response.type, message: response.message };
 
   const documentResource = {
     provider: providerName,
