@@ -86,10 +86,11 @@ export interface Resource {
   modifiedAt?: Date;
 }
 
-export type ErrorType = 'info' | 'warning' | 'error';
+export const ErrorTypes = ["info", "warning", "error"] as const;
+type ErrorType = typeof ErrorTypes[number];
 
-export interface Error {
-  type?: ErrorType;
+export interface IError {
+  type: ErrorType;
   message: string;
 }
 
