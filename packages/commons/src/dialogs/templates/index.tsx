@@ -15,7 +15,7 @@ export const TemplateDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
   const { closeDialog } = useActions().ui;
 
   const navigate = useNavigate();
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('commons');
 
   const [selected, setSelected] = useState<IDocTemplate | null>(null);
 
@@ -47,7 +47,9 @@ export const TemplateDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
 
   return (
     <Dialog fullWidth id={id} maxWidth="sm" onClose={handleClose} open={open}>
-      <DialogTitle>{t('Select a template')}</DialogTitle>
+      <DialogTitle sx={{ ':first-letter': { textTransform: 'uppercase' } }}>
+        {t('templates:choose_a_template')}
+      </DialogTitle>
       <DialogContent>
         <Stack my={2} spacing={3}>
           {[...categories.values()].map((category) => (
