@@ -4,7 +4,7 @@ import About from './About';
 import Team from './Team';
 import chroma from 'chroma-js';
 
-const AboutSction: FC = () => {
+export const AboutSection: FC = () => {
   const { mode, primary } = useTheme().palette;
 
   const backgroundColor = useMemo(
@@ -31,5 +31,3 @@ const AboutSction: FC = () => {
     </Box>
   );
 };
-
-export default AboutSction;

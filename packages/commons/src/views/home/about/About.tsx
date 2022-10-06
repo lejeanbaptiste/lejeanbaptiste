@@ -1,6 +1,6 @@
 import { Link, Typography } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import React, { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState, type FC } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 const About: FC = () => {

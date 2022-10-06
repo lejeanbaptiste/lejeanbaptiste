@@ -7,9 +7,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { FC, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const SignInSection: FC = () => {
   const { userState, user } = useAppState().auth;
   const { signIn } = useActions().auth;
+export const SignInSection: FC = () => {
 
   useEffect(() => {
     if (userState === 'AUTHENTICATED' && user) {
@@ -70,5 +70,3 @@ const SignInSection: FC = () => {
     </AnimatePresence>
   );
 };
-
-export default SignInSection;
