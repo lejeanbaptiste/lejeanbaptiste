@@ -7,7 +7,7 @@ import OpenOptions from './OpenOptions';
 import Recent from './Recent';
 import { Templates } from './Templates';
 
-const StoragePanel: FC = () => {
+export const StoragePanel: FC = () => {
   const { userState } = useAppState().auth;
 
   const { breakpoints, palette } = useTheme();
@@ -61,5 +61,3 @@ const StoragePanel: FC = () => {
     </AnimatePresence>
   );
 };
-
-export default StoragePanel;

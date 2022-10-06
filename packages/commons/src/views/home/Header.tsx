@@ -3,7 +3,7 @@ import { Logo } from '@src/components';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const Header: FC = () => {
+export const Header: FC = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -26,5 +26,3 @@ const Header: FC = () => {
     </Box>
   );
 };
-
-export default Header;

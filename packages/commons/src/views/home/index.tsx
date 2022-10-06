@@ -4,11 +4,11 @@ import { Page, TopBar } from '@src/layouts/components';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import AboutSection from './about';
-import Header from './Header';
-import SignInSection from './SignInSection';
+import { AboutSection } from './about';
+import { Header } from './Header';
+import { SignInSection } from './SignInSection';
 import { StatusBar } from './StatusBar';
-import StoragePanel from './storagePanel';
+import { StoragePanel } from './storagePanel';
 
 const HomeView: FC = () => {
   const { userState } = useAppState().auth;

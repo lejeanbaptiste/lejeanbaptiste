@@ -20,7 +20,7 @@ const Team: FC = () => {
     <Box>
       {team && (
         <>
-          <Typography component="h3" variant="h5">
+          <Typography component="h3" variant="h5" sx={{ textTransform: 'capitalize' }}>
             {t('home:team')}
           </Typography>
           <Stack mt={4} rowGap={2.5}>
