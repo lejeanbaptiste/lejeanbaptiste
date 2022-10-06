@@ -1,3 +1,4 @@
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import CloudDownloadOutlinedIcon from '@mui/icons-material/CloudDownloadOutlined';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
@@ -8,10 +9,9 @@ import FormatAlignLeftOutlinedIcon from '@mui/icons-material/FormatAlignLeftOutl
 import GitHubIcon from '@mui/icons-material/GitHub';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import MailOutlinedIcon from '@mui/icons-material/MailOutlined';
+import FeatherIcon from '@src/assets/icons/Feather';
+import OrcidIcon from '@src/assets/icons/OrcidIcon';
 import { Gitlab } from 'mdi-material-ui';
-import FeatherIcon from '../icons/Feather';
-import OrcidIcon from '../icons/OrcidIcon';
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 
 const icons = new Map([
   ['github', GitHubIcon],
