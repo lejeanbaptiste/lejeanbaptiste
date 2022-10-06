@@ -8,9 +8,8 @@ import { MainMenu, Meta, useMenu } from './Components';
 import { useLeafWriter } from './useLeafWriter';
 import { useNavigate } from 'react-router';
 
-const EditView: FC = () => {
+export const EditView: FC = () => {
   const { userState, user } = useAppState().auth;
-  const { isDirty, libLoaded } = useAppState().editor;
   const { resource } = useAppState().storage;
 
   const { getKeycloakAuthToken } = useActions().auth;
@@ -121,5 +120,3 @@ const EditView: FC = () => {
     </Page>
   );
 };
-
-export default EditView;

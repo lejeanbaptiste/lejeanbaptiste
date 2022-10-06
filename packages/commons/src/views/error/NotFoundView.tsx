@@ -5,7 +5,7 @@ import React, { FC } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 
-const NotFoundView: FC = () => {
+export const NotFoundView: FC = () => {
   const { t } = useTranslation();
 
   return (
@@ -26,13 +26,7 @@ const NotFoundView: FC = () => {
           </Typography>
         </Box>
         <Stack textAlign="center" mt={3}>
-          <img
-            alt="Absurd Illustration"
-            src="/assets/images/07.png"
-            style={{
-              width: 400,
-            }}
-          />
+          <img alt="Absurd Illustration" src="/assets/images/07.png" style={{ width: 400 }} />
           <Typography variant="caption">
             Illustration from{' '}
             <Link underline="hover" href="https://absurd.design" target="_blank" rel="noopener">
@@ -44,5 +38,3 @@ const NotFoundView: FC = () => {
     </Page>
   );
 };
-
-export default NotFoundView;

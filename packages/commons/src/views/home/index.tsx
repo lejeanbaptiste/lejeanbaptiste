@@ -10,7 +10,7 @@ import { SignInSection } from './SignInSection';
 import { StatusBar } from './StatusBar';
 import { StoragePanel } from './storagePanel';
 
-const HomeView: FC = () => {
+export const HomeView: FC = () => {
   const { userState } = useAppState().auth;
   const { openStorageDialog } = useActions().storage;
 
@@ -44,5 +44,3 @@ const HomeView: FC = () => {
     </Page>
   );
 };
-
-export default HomeView;
