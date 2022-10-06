@@ -3,8 +3,8 @@ import React, { FC, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BroadcastChannel } from 'broadcast-channel';
 
-const LinkAccounts: FC = () => {
   const { t } = useTranslation();
+export const LinkAccounts: FC = () => {
   const query = new URLSearchParams(location.search);
   const error = query.get('error');
 
@@ -16,5 +16,3 @@ const LinkAccounts: FC = () => {
 
   return <Page title={t('home:homepage')}></Page>;
 };
-
-export default LinkAccounts;
