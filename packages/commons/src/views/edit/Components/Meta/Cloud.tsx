@@ -18,7 +18,7 @@ export const Cloud: FC = () => {
   const { isDirty, isSaving, saveDelayed } = useAppState().editor;
   const { resource } = useAppState().storage;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('storage');
 
   const { handleSave } = useLeafWriter();
 
@@ -35,7 +35,7 @@ export const Cloud: FC = () => {
   return (
     <Stack direction="row">
       <Tooltip
-        title={isDirty ? t('Click to save') : isSaving ? t('saving') : t('All changes salved')}
+        title={isDirty ? t('click to save') : isSaving ? t('saving') : t('all changes salved')}
       >
         <IconButton
           aria-label="save"
@@ -71,7 +71,7 @@ export const Cloud: FC = () => {
         animate={saveDelayed ? 'visible' : 'hidden'}
       >
         <Typography ml={0.5} textTransform="capitalize" variant="caption" whiteSpace="nowrap">
-          {`${t('Waiting for')} ${resource?.provider}`}
+          {t('waiting for resource', { provider: resource?.provider })}
         </Typography>
       </Box>
     </Stack>

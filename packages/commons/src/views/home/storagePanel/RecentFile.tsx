@@ -20,7 +20,7 @@ const RecentFile: FC<RecentFileProps> = ({ resource }) => {
   const { getStorageProviderAuth, removeRecentDocument, setResource } = useActions().storage;
 
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation('recents');
   const { setPermalink } = usePermalink();
   const { palette } = useTheme();
 

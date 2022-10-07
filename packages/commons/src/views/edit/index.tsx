@@ -25,7 +25,8 @@ export const EditView: FC = () => {
   const { addToRecentDocument } = useActions().storage;
 
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation('commons');
+
   const { analytics } = useAnalytics();
 
   const { disposeLeafWriter, leafWriter, loadDocumentFromPermalink, setCurrentLeafWriter } =
@@ -117,7 +118,7 @@ export const EditView: FC = () => {
   };
 
   return (
-    <Page title={t('home:homepage')}>
+    <Page title={t('homepage')}>
       <TopBar Left={<MainMenu />} Meta={<Meta />} />
       <div ref={divEl} id="leaf-writer-container" style={{ height: 'calc(100vh - 48px)' }}>
         {(!libLoaded || !resource) && <LoadingMask />}

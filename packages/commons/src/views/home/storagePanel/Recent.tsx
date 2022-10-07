@@ -6,14 +6,14 @@ import RecentFile from './RecentFile';
 
 const Recent: FC = () => {
   const { recentDocuments } = useAppState().storage;
-  const { t } = useTranslation();
+  const { t } = useTranslation('commons');
   const { breakpoints } = useTheme();
   const isMobile = useMediaQuery(breakpoints.down('sm'));
 
   return (
     <Stack spacing={1} sx={{ width: 400 }}>
       <Typography sx={{ fontWeight: 700, letterSpacing: '.15rem', textTransform: 'uppercase' }}>
-        {t('home:recent')}
+        {t('recent')}
       </Typography>
       <Stack direction="row" spacing={2} minHeight={145}>
         {!isMobile && (

@@ -14,7 +14,7 @@ export const Templates: FC = () => {
   const { loadTemplate, setResource } = useActions().storage;
   const { openDialog } = useActions().ui;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('commons');
   const { breakpoints, palette } = useTheme();
   const isMobile = useMediaQuery(breakpoints.down('sm'));
 
@@ -42,7 +42,7 @@ export const Templates: FC = () => {
       }}
     >
       <Typography sx={{ fontWeight: 700, letterSpacing: '.15rem', textTransform: 'uppercase' }}>
-        {t('home:templates')}
+        {t('templates')}
       </Typography>
       <Divider
         flexItem

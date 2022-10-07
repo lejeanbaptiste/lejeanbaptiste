@@ -15,7 +15,7 @@ export const HomeView: FC = () => {
   const { userState } = useAppState().auth;
   const { openStorageDialog } = useActions().storage;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('commons');
   const { getResourceFromPermalink } = usePermalink();
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export const HomeView: FC = () => {
   }, [userState]);
 
   return (
-    <Page title={t('home:homepage')}>
+    <Page title={t('homepage')}>
       <TopBar />
       <Stack>
         <Stack>

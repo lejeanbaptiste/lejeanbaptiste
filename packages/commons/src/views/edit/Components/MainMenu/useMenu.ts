@@ -21,7 +21,7 @@ export const useMenu = () => {
   const { openDialog } = useActions().ui;
 
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation('commons');
 
   const { setPermalink } = usePermalink();
   const { handleCloseDocument, handleDownload, handleSave } = useLeafWriter();
@@ -78,7 +78,7 @@ export const useMenu = () => {
             props: {
               maxWidth: 'xs',
               severity: 'warning',
-              title: t('Unsaved changes'),
+              title: t('unsaved changes'),
               actions: [
                 { action: 'cancel', label: t('cancel') },
                 { action: 'discard', label: t('discard changes') },

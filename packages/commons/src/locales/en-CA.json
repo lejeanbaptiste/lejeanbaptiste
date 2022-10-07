@@ -1,62 +1,125 @@
 {
-  "All changes salved": "All changes salved",
-  "Click to save": "Click to save",
-  "Do you want to save or dicard them": "Do you want to save or dicard them",
-  "Document Saved": "Document Saved",
-  "Document not saved": "Document not saved",
-  "Provider not found": "Provider not found",
-  "Resource not found": "Resource not found",
-  "Something went wrong": "Something went wrong",
-  "Something went wrong Document not saved": "Something went wrong",
-  "Unsaved changes": "Unsaved changes",
-  "Waiting for": "Waiting for",
-  "cancel": "cancel",
-  "close": "close",
-  "discard changes": "discard changes",
-  "download": "download",
-  "error": {
-    "message404": "You either tried some shady route or you came here by mistake. Go back to the <1>main page.</1>",
-    "pageNotFound": "Page Not Found",
-    "somethingWentWrong": "something went wrong",
-    "xmlNotWellFormed": "The document you are trying to upload is not well-formed. Check that it has the XML extension and that it follows proper XML grammar."
-  },
-  "home": {
-    "appearance": "Appearance",
-    "bugs": "bugs",
-    "english": "English",
-    "french": "French",
-    "from_Your_computer": "from your computer",
-    "from_cloud": "from the cloud",
+  "commons": {
+    "acceptAll": "accept all",
+    "and": "and",
+    "cancel": "cancel",
+    "close": "close",
+    "contactUs": "contact us",
+    "create": "create",
+    "description": "description",
+    "discard changes": "discard changes",
+    "download": "download",
     "homepage": "homepage",
     "identity": "identity",
-    "language": "Language",
+    "language": "language",
+    "more": "more",
+    "moreInformation": "More information",
+    "name": "name",
+    "new": "new",
     "open": "open",
-    "orTrySample": "Or try out with sample files",
-    "or_paste_your_XML_here": "or paste your XML here",
+    "open recent": "open recent",
+    "or": "or",
+    "privacy": "privacy",
+    "privacyPolicy": "Privacy Policy",
     "recent": "recent",
-    "requests": "requests",
-    "settings": "Settings",
-    "signOut": "Sign Out",
-    "signin": "Sign In",
-    "signinWith-github": "Sign In with GitHub",
-    "signinWith-gitlab": "Sign In with GitLab",
+    "rejectAll": "reject all",
+    "save": "save",
+    "save as": "save as",
+    "saveSettings": "save settings",
+    "session": "session",
+    "settings": "settings",
+    "sign out": "sign out",
     "storage": "storage",
+    "templates": "templates",
+    "terms of service": "Terms of Service",
+    "unsaved changes": "unsaved changes"
+  },
+  "cookieConsent": {
+    "consentBanner": {
+      "let me choose": "let me choose",
+      "line1": "We and selected third parties use cookies or similar technologies for technical purposes and, with your consent, for measurement. Denying consent may make related features unavailable.",
+      "line2": "You can freely give, deny, or withdraw your consent at any time.",
+      "line3": "Use the “Accept” button to consent to the use of such technologies. Use the “Reject” button or close this notice to continue without accepting.",
+      "we use cookies": "We use cookies"
+    },
+    "privacy_settings": "privacy settings",
+    "remove consent and sign out": "remove consent and sign out",
+    "settingsModal": {
+      "AUTH_SESSION_description": "LINCS Keycloak store user session login data",
+      "_ga_ description": "Used by Google Analytics to collect data on the number of times a user has visited the website as well as dates for the first and most recent visit.",
+      "basic interactions and functionalities": "Basic interactions & functionalities",
+      "basic interactions and functionalities description": "These trackers are used for LEAF-Writer basic functionalities, which includes the correct identification of web anotation authors and access to repositories git repositories where the user can load and save files. LEAF-Writer is able delivered limited functionalities without these cookies.",
+      "cc_cookie description": "Store cookies consent preferences",
+      "consent preferences": "Consent Preferences",
+      "cookie usage": "Cookie usage",
+      "cookie usage description": "The following panel allows you to customize your consent preferences for the usage of cookies technology to help us achieve the features and activities described below. You may review and change your choices at any time. Please be aware that denying consent for a particular purpose may make related features unavailable. For more details relative to cookies and other sensitive data, please read the full",
+      "cookie_expiration_time": "{{value}} {{period}}",
+      "domain": "domain",
+      "expiration": "expiration",
+      "indefinitely until user sign out": "indefinitely until user sign out",
+      "lw_ description": "Store usage data on the browser's local storage (prefer ID / language / storage, recent documents / repositories, XML schemas, etc.)",
+      "measurement": "Measurement",
+      "measurement description": "These cookies collect information about how you use the website, which pages you visited and which links you clicked on. All of the data is anonymized and cannot be used to identify you. These trackers help us to measure traffic and analyze your behavior with the goal of improving our service",
+      "more information description": "For any queries in relation to our policy on cookies and your choices, please",
+      "strictly necessary": "Strictly necessary",
+      "strictly necessary description": "Necessary cookies help make a website usable by enabling basic functions like page navigation and access to secure areas of the website. The website cannot function properly without these cookies."
+    },
+    "warning": {
+      "mustAcceptCookies_message": "You must accept our cookie policies to be able to sign in. Click on the shield icon above.",
+      "remove consent basic interactions": "<0>Removing consent for</0><1>Basic interactions & functionalities</1><2>will sign you out</2>"
+    }
+  },
+  "error": {
+    "Something went wrong": "Something went wrong",
+    "message404": "You either tried some shady route or you came here by mistake. Go back to the <1>main page.</1>",
+    "pageNotFound": "Page not found",
+    "something went wrong": "something went wrong"
+  },
+  "home": {
+    "bugs": "bugs",
+    "requests": "requests",
+    "sign in with provider": "sign in with {{provider}}",
     "subtitle": "The XML & RDF online editor of the Linked Editing Academic Framework",
-    "team": "Team",
-    "templates": "templates"
+    "team": "team"
   },
-  "leafwriter": {
-    "Select a template": "Select a template",
-    "cancel": "cancel",
-    "create": "create"
+  "language": {
+    "english": "English",
+    "french": "French"
   },
-  "more": "more",
-  "new": "new",
-  "open": "open",
-  "open recent": "open recent",
-  "recent": "recent",
-  "remove from recents": "remove from recents",
-  "save": "save",
-  "save as": "save as",
-  "saving": "saving"
+  "profile": {
+    "link your account": "Link your {{provider}} account",
+    "manageYourLincsAccount": "manage your Lincs account",
+    "switch account": "Switch to {{provider}}"
+  },
+  "recents": {
+    "remove from recents": "remove from recents"
+  },
+  "storage": {
+    "all changes salved": "all changes saved",
+    "click to save": "click to save",
+    "document not found": "document not found",
+    "document not saved": "document not saved",
+    "document saved": "document saved",
+    "error": {
+      "xml not well-formed message": "The document you are trying to upload is not well-formed. Check that it has the XML extension and that it follows proper XML grammar."
+    },
+    "from the cloud": "from the cloud",
+    "from your computer": "from your computer",
+    "link your account": "link your {{provider}} account",
+    "paste your XML here": "paste your XML here",
+    "provider not found": "provider not found",
+    "saving": "saving",
+    "switch account": "switch to {{provider}}",
+    "try out with sample files": "try out with sample files",
+    "waiting for resource": "waiting for {{provider}}"
+  },
+  "templates": {
+    "choose_a_template": "choose a template"
+  },
+  "ui": {
+    "appearance": "appearance",
+    "auto": "auto",
+    "dark": "dark",
+    "light": "light"
+  }
 }

@@ -9,4 +9,21 @@ export const resources = { en, fr } as const;
 i18next
   .use(LanguageDetector)
   .use(initReactI18next)
-  .init({ fallbackLng: 'en-CA', resources });
+  .init({
+    // debug: true,
+    defaultNS: 'commons',
+    fallbackLng: 'en-CA',
+    lng: 'en-CA',
+    ns: [
+      'commons',
+      'cookieConsent',
+      'error',
+      'home',
+      'language',
+      'profile',
+      'recents',
+      'storage',
+      'templates',
+    ],
+    resources,
+  });
