@@ -12,7 +12,7 @@ export const SignInSection: FC = () => {
 
   const { signIn } = useActions().auth;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('home');
 
   const singInClick = (idpHint: string) => {
     signIn({ idpHint });

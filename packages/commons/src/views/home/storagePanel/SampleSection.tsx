@@ -19,7 +19,7 @@ const SampleSection: FC = () => {
   const { sampleDocuments } = useAppState().storage;
   const { setSampleUser } = useActions().auth;
   const { loadTemplate, setResource } = useActions().storage;
-  const { t } = useTranslation();
+  const { t } = useTranslation('storage');
 
   const handleClick = async (url: string) => {
     const documentString = await loadTemplate(url);
@@ -31,7 +31,7 @@ const SampleSection: FC = () => {
   return (
     <Stack justifyContent="center" alignItems="stretch" spacing={2}>
       <Typography align="center" component="h6" variant="subtitle1" mr={3}>
-        {t('home:orTrySample')}
+        `{t('commons:or')} {t('try out with sample files')}`
       </Typography>
       <Paper>
         <List dense disablePadding>

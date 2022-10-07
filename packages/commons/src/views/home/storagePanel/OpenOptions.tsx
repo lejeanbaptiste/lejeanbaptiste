@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 const OpenOptions: FC = () => {
   const { openStorageDialog } = useActions().storage;
-  const { t } = useTranslation();
+  const { t } = useTranslation('storage');
   const { breakpoints, palette } = useTheme();
   const [pasteHover, setPasteHover] = useState(false);
 
@@ -34,7 +34,7 @@ const OpenOptions: FC = () => {
   return (
     <Stack spacing={1} alignItems="flex-start" sx={{ width: 240 }}>
       <Typography sx={{ fontWeight: 700, letterSpacing: '.15rem', textTransform: 'uppercase' }}>
-        {t('home:open')}
+        {t('commons:open')}
       </Typography>
       <Stack direction="row" spacing={1}>
         {!isMobile && (
@@ -58,7 +58,7 @@ const OpenOptions: FC = () => {
               },
             }}
           >
-            {t('home:from_cloud')}
+            {t('from the cloud')}
           </Button>
           <Button
             color="primary"
@@ -73,7 +73,7 @@ const OpenOptions: FC = () => {
               },
             }}
           >
-            {t('home:from_Your_computer')}
+            {t('from your computer')}
           </Button>
           <Stack
             direction="row"
@@ -88,7 +88,7 @@ const OpenOptions: FC = () => {
               color="primary"
               InputProps={{ sx: { fontSize: '0.9rem' } }}
               onChange={onChageTextfield}
-              placeholder={t('home:or_paste_your_XML_here')}
+              placeholder={`${t('commons:or')} ${t('paste your XML here')}`}
               size="small"
               sx={{
                 '& fieldset': {
