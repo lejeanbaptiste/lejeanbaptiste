@@ -1,15 +1,18 @@
 import LanguageIcon from '@mui/icons-material/Language';
 import { Box, Button, Menu, MenuItem } from '@mui/material';
+import { useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities';
 import { motion } from 'framer-motion';
 import React, { FC, MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const LanguageMenu: FC = () => {
+export const LanguageMenu: FC = () => {
   const { language } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
-  const { t } = useTranslation();
+  const { t } = useTranslation('language');
+
+  const { switchLanguage: switchLanguageConsent } = useCookieConsent();
 
   const optionVariants = {
     initial: { y: -100 },
@@ -23,6 +26,7 @@ const LanguageMenu: FC = () => {
   const handleClick = (code: string) => {
     if (!code) code = language.code;
     switchLanguage(code);
+    switchLanguageConsent(code);
     handleClose();
   };
 
@@ -53,12 +57,10 @@ const LanguageMenu: FC = () => {
       <Menu anchorEl={anchorEl} id="language-menu" onClose={handleClose} open={open}>
         {Array.from(supportedLanguages).map(([, { code, name }]) => (
           <MenuItem key={code} onClick={() => handleClick(code)} value={code}>
-            {t(`home:${name}`)}
+            {t(name)}
           </MenuItem>
         ))}
       </Menu>
     </Box>
   );
 };
-
-export default LanguageMenu;

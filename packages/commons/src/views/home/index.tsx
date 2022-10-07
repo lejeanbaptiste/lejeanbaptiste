@@ -1,6 +1,6 @@
 import { Stack } from '@mui/material';
 import { usePermalink } from '@src/hooks';
-import { Page, TopBar } from '@src/layouts/components';
+import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';

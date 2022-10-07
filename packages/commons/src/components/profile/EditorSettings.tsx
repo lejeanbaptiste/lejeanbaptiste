@@ -1,19 +1,20 @@
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TuneIcon from '@mui/icons-material/Tune';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { useLeafWriter } from '@src/views/edit/useLeafWriter';
-import React, { FC } from 'react';
+import React, { FC, MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
-  handleClose: () => void;
+  onClick: () => void;
 }
 
-const EditorSettings: FC<Props> = ({ handleClose }) => {
-  const { t } = useTranslation();
+export const EditorSettings: FC<Props> = ({ onClick }) => {
+  const { t } = useTranslation('commons');
   const { leafWriter } = useLeafWriter();
 
-  const handleClick = () => {
-    handleClose();
+  const handleClick = (event: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => {
+    onClick();
     leafWriter?.showSettingsDialog();
   };
 
@@ -23,14 +24,9 @@ const EditorSettings: FC<Props> = ({ handleClose }) => {
         <ListItemIcon sx={{ minWidth: 40 }}>
           <TuneIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText
-          id="settings"
-          primary={t('home:settings')}
-          sx={{ textTransform: 'capitalize' }}
-        />
+        <ListItemText id="settings" primary={t('settings')} sx={{ textTransform: 'capitalize' }} />
+        <ChevronRightIcon />
       </ListItemButton>
     </ListItem>
   );
 };
-
-export default EditorSettings;
