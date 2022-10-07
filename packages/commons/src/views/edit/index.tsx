@@ -1,6 +1,6 @@
 import { analytics } from '@src/analytics';
 import { LoadingMask } from '@src/components';
-import { Page, TopBar } from '@src/layouts/components';
+import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -8,10 +8,8 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   ToggleButton,
-  ToggleButtonGroup,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
+import { StyledToggleButtonGroup, StyledToolTip } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
 import { PaletteMode } from '@src/types';
 import React, { FC, MouseEvent } from 'react';
@@ -28,36 +26,11 @@ const options: Option[] = [
   { name: 'dark', Icon: DarkModeIcon },
 ];
 
-const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
-  '& .MuiToggleButtonGroup-grouped': {
-    margin: theme.spacing(0.5),
-    border: 0,
-    '&.Mui-disabled': { border: 0 },
-    '&:not(:first-of-type)': {
-      borderRadius: theme.shape.borderRadius,
-    },
-    '&:first-of-type': {
-      borderRadius: theme.shape.borderRadius,
-    },
-  },
-}));
-
-const StyledToolTip = styled(({ className, ...props }: TooltipProps) => (
-  <Tooltip {...props} classes={{ popper: className }} />
-))(({ theme }) => ({
-  [`& .${tooltipClasses.tooltip}`]: {
-    textTransform: 'capitalize !important',
-  },
-  [`& .${tooltipClasses.tooltipPlacementBottom}`]: {
-    marginTop: '10px !important',
-  },
-}));
-
-const ThemeAppearance: FC = () => {
+export const ThemeAppearance: FC = () => {
   const { themeAppearance } = useAppState().ui;
   const { setThemeAppearance } = useActions().ui;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('ui');
 
   const changePaletteMode = (event: MouseEvent<HTMLElement>, value: PaletteMode | null) => {
     if (!value || value === themeAppearance) return;
@@ -69,7 +42,11 @@ const ThemeAppearance: FC = () => {
       <ListItemIcon sx={{ minWidth: 40 }}>
         <SettingsBrightnessIcon fontSize="small" />
       </ListItemIcon>
-      <ListItemText id="appearance" primary={t('home:appearance')} />
+      <ListItemText
+        id="appearance"
+        primary={t('appearance')}
+        sx={{ textTransform: 'capitalize' }}
+      />
       <ListItemSecondaryAction>
         <StyledToggleButtonGroup
           aria-label="appearance"
@@ -79,7 +56,7 @@ const ThemeAppearance: FC = () => {
           value={themeAppearance}
         >
           {options.map(({ name, Icon }) => (
-            <ToggleButton key={name} aria-label={name} size="small" value={t(`ui:${name}`)}>
+            <ToggleButton key={name} aria-label={name} size="small" value={t(name)}>
               <StyledToolTip enterDelay={1000} title={t(name) ?? name}>
                 <Icon fontSize="small" sx={{ height: 16, width: 16 }} />
               </StyledToolTip>
@@ -90,5 +67,3 @@ const ThemeAppearance: FC = () => {
     </ListItem>
   );
 };
-
-export default ThemeAppearance;

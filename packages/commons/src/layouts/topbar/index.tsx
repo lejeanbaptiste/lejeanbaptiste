@@ -1,10 +1,11 @@
 import { AppBar, Box, Stack, Toolbar, useTheme } from '@mui/material';
+import { ProfileAvatar } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence } from 'framer-motion';
 import React, { FC } from 'react';
-import DarkMode from './DarkMode';
-import LanguageMenu from './LanguageMenu';
-import { ProfileAvatar } from './ProfileAvatar';
+import { DarkMode } from './DarkMode';
+import { LanguageMenu } from './LanguageMenu';
+import { ProfileAnchor } from './ProfileAnchor';
 
 interface TopBarProps {
   Left?: React.ReactNode;
@@ -40,12 +41,13 @@ export const TopBar: FC<TopBarProps> = ({ Left, Meta, title = 'LEAF-Writer' }) =
           alignItems="center"
           spacing={2}
           width={187}
-          // alignItems="flex-end"
           justifyContent="flex-end"
         >
           <AnimatePresence mode="wait">
             {userState === 'AUTHENTICATED' ? (
-              <ProfileAvatar />
+              <ProfileAnchor>
+                <ProfileAvatar />
+              </ProfileAnchor>
             ) : (
               <>
                 <DarkMode />

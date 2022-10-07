@@ -5,7 +5,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { motion } from 'framer-motion';
 import React, { FC } from 'react';
 
-const DarkMode: FC = () => {
+export const DarkMode: FC = () => {
   const { darkMode } = useAppState().ui;
   const { setDarkMode } = useActions().ui;
 
@@ -35,5 +35,3 @@ const DarkMode: FC = () => {
     </IconButton>
   );
 };
-
-export default DarkMode;

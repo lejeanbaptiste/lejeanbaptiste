@@ -1,4 +1,4 @@
-import FingerprintIcon from '@mui/icons-material/Fingerprint';
+import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import {
   Icon,
   IconButton,
@@ -7,29 +7,37 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Stack,
-  Tooltip,
 } from '@mui/material';
-import { analytics } from '@src/analytics';
+import { StyledToolTip } from '@src/components';
+import { useAnalytics } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { supportedIdentityProviders, type IdentityProviderName } from '@src/services';
+import { suportedStorageProviders, type StorageProviderName } from '@src/services';
 import { getIcon } from '@src/utilities';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const Identity: FC = () => {
+export const Storage: FC = () => {
   const { user } = useAppState().auth;
-  const { changePreferredID, getLinkedAccounts, linkAccount } = useActions().auth;
+  const { storageProviders } = useAppState().storage;
+
+  const { getLinkedAccounts, linkAccount } = useActions().auth;
+  const { changePrefStorageProvider } = useActions().storage;
   const { notifyViaSnackbar } = useActions().ui;
-  const { t } = useTranslation();
 
-  const handleIdClick = async (provider: IdentityProviderName) => {
-    if (supportedIdentityProviders.length === 1) return;
+  const { t } = useTranslation('storage');
 
-    if (!user || user?.preferredID === provider) return;
-    user.identities.get(provider) ? changePreferredID(provider) : await connectAccount(provider);
+  const { analytics } = useAnalytics();
 
-    analytics.track('identity', { identityProvider: provider });
+  const handleStorageClick = async (provider: StorageProviderName) => {
+    if (suportedStorageProviders.length === 1) return;
+
+    if (user?.prefStorageProvider === provider) return;
+    storageProviders.includes(provider)
+      ? changePrefStorageProvider(provider)
+      : await connectAccount(provider);
+
+    if (analytics) analytics.track('storage', { storage: provider });
   };
 
   const connectAccount = async (provider: string) => {
@@ -41,7 +49,7 @@ const Identity: FC = () => {
       channel.close();
 
       if (!linkAccountCallback.success) {
-        notifyViaSnackbar(t(`error:somethingWentWrong`));
+        notifyViaSnackbar(t(`error:Something went wrong`));
         return;
       }
 
@@ -55,41 +63,44 @@ const Identity: FC = () => {
   return (
     <ListItem dense>
       <ListItemIcon sx={{ minWidth: 40 }}>
-        <FingerprintIcon fontSize="small" />
+        <SettingsSystemDaydreamIcon fontSize="small" />
       </ListItemIcon>
       <ListItemText
         id="identity"
-        primary={t('home:identity')}
+        primary={t('commons:storage')}
         sx={{ textTransform: 'capitalize' }}
       />
       <ListItemSecondaryAction>
         <Stack direction="row" gap={1.5} mr={1}>
-          {supportedIdentityProviders.map((provider) => (
-            <Tooltip
+          {suportedStorageProviders.map((provider) => (
+            <StyledToolTip
               key={provider}
               title={
-                !user?.identities.get(provider)
-                  ? `Link your ${provider} account`
-                  : provider === user?.preferredID
+                !storageProviders.includes(provider) === undefined
+                  ? t('link your account', { account: provider })
+                  : user?.prefStorageProvider === provider
                   ? provider
-                  : `Switch to ${provider}`
+                  : t('switch account', { account: provider })
               }
             >
               <span>
                 <IconButton
-                  onClick={() => handleIdClick(provider)}
+                  key={provider}
+                  onClick={() => handleStorageClick(provider)}
                   size="small"
                   sx={{
                     height: 22,
                     width: 22,
                     color: ({ palette }) =>
-                      user?.preferredID === provider
+                      user?.prefStorageProvider === provider
                         ? palette.mode === 'dark'
                           ? palette.common.white
                           : palette.common.black
                         : 'inherit',
                     border: ({ palette }) =>
-                      user?.preferredID === provider ? `2px solid ${palette.primary.light}` : 0,
+                      user?.prefStorageProvider === provider
+                        ? `2px solid ${palette.primary.light}`
+                        : 0,
                   }}
                 >
                   <Icon
@@ -97,17 +108,15 @@ const Identity: FC = () => {
                     sx={{
                       width: 16,
                       height: 16,
-                      opacity: user?.identities.get(provider) ? 1 : 0.3,
+                      opacity: storageProviders.includes(provider) ? 1 : 0.3,
                     }}
                   />
                 </IconButton>
               </span>
-            </Tooltip>
+            </StyledToolTip>
           ))}
         </Stack>
       </ListItemSecondaryAction>
     </ListItem>
   );
 };
-
-export default Identity;

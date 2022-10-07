@@ -1,4 +1,4 @@
-import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
+import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import {
   Icon,
   IconButton,
@@ -7,35 +7,26 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Stack,
-  Tooltip,
 } from '@mui/material';
-import { analytics } from '@src/analytics';
+import { StyledToolTip } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
-import { suportedStorageProviders, type StorageProviderName } from '@src/services';
+import { supportedIdentityProviders, type IdentityProviderName } from '@src/services';
 import { getIcon } from '@src/utilities';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const Storage: FC = () => {
+export const Identity: FC = () => {
   const { user } = useAppState().auth;
-  const { storageProviders } = useAppState().storage;
-
-  const { getLinkedAccounts, linkAccount } = useActions().auth;
-  const { changePrefStorageProvider } = useActions().storage;
+  const { changePreferredID, getLinkedAccounts, linkAccount } = useActions().auth;
   const { notifyViaSnackbar } = useActions().ui;
+  const { t } = useTranslation('profile');
 
-  const { t } = useTranslation();
+  const handleIdClick = async (provider: IdentityProviderName) => {
+    if (supportedIdentityProviders.length === 1) return;
 
-  const handleStorageClick = async (provider: StorageProviderName) => {
-    if (suportedStorageProviders.length === 1) return;
-
-    if (user?.prefStorageProvider === provider) return;
-    storageProviders.includes(provider)
-      ? changePrefStorageProvider(provider)
-      : await connectAccount(provider);
-
-    analytics.track('storage', { storage: provider });
+    if (!user || user?.preferredID === provider) return;
+    user.identities.get(provider) ? changePreferredID(provider) : await connectAccount(provider);
   };
 
   const connectAccount = async (provider: string) => {
@@ -47,7 +38,7 @@ const Storage: FC = () => {
       channel.close();
 
       if (!linkAccountCallback.success) {
-        notifyViaSnackbar(t(`error:somethingWentWrong`));
+        notifyViaSnackbar(t(`error:Something went wrong`));
         return;
       }
 
@@ -61,44 +52,41 @@ const Storage: FC = () => {
   return (
     <ListItem dense>
       <ListItemIcon sx={{ minWidth: 40 }}>
-        <SettingsSystemDaydreamIcon fontSize="small" />
+        <FingerprintIcon fontSize="small" />
       </ListItemIcon>
       <ListItemText
         id="identity"
-        primary={t('home:storage')}
+        primary={t('commons:identity')}
         sx={{ textTransform: 'capitalize' }}
       />
       <ListItemSecondaryAction>
         <Stack direction="row" gap={1.5} mr={1}>
-          {suportedStorageProviders.map((provider) => (
-            <Tooltip
+          {supportedIdentityProviders.map((provider) => (
+            <StyledToolTip
               key={provider}
               title={
-                !storageProviders.includes(provider) === undefined
-                  ? `Link your ${provider} account`
-                  : user?.prefStorageProvider === provider
+                !user?.identities.get(provider)
+                  ? t('link your account', { account: provider })
+                  : provider === user?.preferredID
                   ? provider
-                  : `Switch to ${provider}`
+                  : t('switch account', { account: provider })
               }
             >
               <span>
                 <IconButton
-                  key={provider}
-                  onClick={() => handleStorageClick(provider)}
+                  onClick={() => handleIdClick(provider)}
                   size="small"
                   sx={{
                     height: 22,
                     width: 22,
                     color: ({ palette }) =>
-                      user?.prefStorageProvider === provider
+                      user?.preferredID === provider
                         ? palette.mode === 'dark'
                           ? palette.common.white
                           : palette.common.black
                         : 'inherit',
                     border: ({ palette }) =>
-                      user?.prefStorageProvider === provider
-                        ? `2px solid ${palette.primary.light}`
-                        : 0,
+                      user?.preferredID === provider ? `2px solid ${palette.primary.light}` : 0,
                   }}
                 >
                   <Icon
@@ -106,17 +94,15 @@ const Storage: FC = () => {
                     sx={{
                       width: 16,
                       height: 16,
-                      opacity: storageProviders.includes(provider) ? 1 : 0.3,
+                      opacity: user?.identities.get(provider) ? 1 : 0.3,
                     }}
                   />
                 </IconButton>
               </span>
-            </Tooltip>
+            </StyledToolTip>
           ))}
         </Stack>
       </ListItemSecondaryAction>
     </ListItem>
   );
 };
-
-export default Storage;
