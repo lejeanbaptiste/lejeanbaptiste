@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*", "server/**/*", "*", "src/**/*.json"],
+  "include": ["src/**/*", "server/**/*", "*", "src/**/*.json", "./package.json"],
   "exclude": ["node_modules"],
   /* Most ts-node options can be specified here using their programmatic names. */
   "ts-node": {
