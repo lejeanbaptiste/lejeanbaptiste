@@ -30,6 +30,10 @@ export const getGAID = async ({ effects }: Context) => {
   return response;
 };
 
+export const setCookieConsent = ({ state }: Context, values?: string[]) => {
+  state.ui.cookieConsent = values ?? [];
+};
+
 export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
 
@@ -47,6 +51,16 @@ export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMo
 
 export const setDarkMode = ({ state }: Context, value: boolean) => {
   state.ui.darkMode = value;
+
+  //consent form
+  if (value && !document.body.classList.contains('c_darkmode')) {
+    document.body.classList.add('c_darkmode');
+  }
+
+  if (!value && document.body.classList.contains('c_darkmode')) {
+    document.body.classList.remove('c_darkmode');
+  }
+
   return state.ui.darkMode;
 };
 

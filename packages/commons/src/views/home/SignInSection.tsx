@@ -1,21 +1,16 @@
-import { Box, Button, Stack } from '@mui/material';
-import { analytics } from '@src/analytics';
+import { Box, Button, Stack, Tooltip } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedAuthProviders } from '@src/services';
 import { getIcon } from '@src/utilities';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { FC, useEffect } from 'react';
+import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-  const { userState, user } = useAppState().auth;
-  const { signIn } = useActions().auth;
 export const SignInSection: FC = () => {
+  const { userState } = useAppState().auth;
+  const { cookieConsent } = useAppState().ui;
 
-  useEffect(() => {
-    if (userState === 'AUTHENTICATED' && user) {
-      analytics.identify(user.username);
-    }
-  }, [userState]);
+  const { signIn } = useActions().auth;
 
   const { t } = useTranslation();
 
@@ -46,22 +41,34 @@ export const SignInSection: FC = () => {
             {supportedAuthProviders.map((provider) => {
               const Icon = getIcon(provider);
               return (
-                <Button
+                <Tooltip
                   key={provider}
-                  color="primary"
-                  onClick={() => singInClick(provider)}
-                  size="large"
-                  startIcon={<Icon />}
-                  variant="contained"
-                  sx={{
-                    width: 280,
-                    fontSize: '1.05rem',
-                    letterSpacing: '0.01rem',
-                    textTransform: 'initial',
-                  }}
+                  title={
+                    !cookieConsent.includes('interaction')
+                      ? t('cookieConsent:warning:mustAcceptCookies_message')
+                      : ''
+                  }
                 >
-                  {t(`home:signinWith-${provider}`)}
-                </Button>
+                  <span>
+                    <Button
+                      key={provider}
+                      color="primary"
+                      disabled={!cookieConsent.includes('interaction')}
+                      onClick={() => singInClick(provider)}
+                      size="large"
+                      startIcon={<Icon />}
+                      variant="contained"
+                      sx={{
+                        width: 280,
+                        fontSize: '1.05rem',
+                        letterSpacing: '0.01rem',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {t('sign in with provider', { provider })}
+                    </Button>
+                  </span>
+                </Tooltip>
               );
             })}
           </Stack>

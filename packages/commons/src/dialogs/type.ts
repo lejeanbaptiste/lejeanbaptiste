@@ -20,7 +20,7 @@ export interface IDialog extends Partial<MuiDialogProps> {
   title?: string;
 }
 
-export type DialogType = 'simple' | 'templates';
+export type DialogType = 'simple' | 'templates' | 'privacy';
 
 interface ISimpleDialogMessage {
   onClose?: <T>(action?: string, data?: T) => void;

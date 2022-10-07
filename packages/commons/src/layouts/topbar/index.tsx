@@ -5,6 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import React, { FC } from 'react';
 import { DarkMode } from './DarkMode';
 import { LanguageMenu } from './LanguageMenu';
+import { Privacy } from './Privacy';
 import { ProfileAnchor } from './ProfileAnchor';
 
 interface TopBarProps {
@@ -50,6 +51,7 @@ export const TopBar: FC<TopBarProps> = ({ Left, Meta, title = 'LEAF-Writer' }) =
               </ProfileAnchor>
             ) : (
               <>
+                <Privacy />
                 <DarkMode />
                 <LanguageMenu />
               </>

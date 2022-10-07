@@ -1,4 +1,4 @@
-import { analytics } from '@src/analytics';
+import { useAnalytics } from '@src/hooks';
 import { LoadingMask } from '@src/components';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router';
 
 export const EditView: FC = () => {
   const { userState, user } = useAppState().auth;
+  const { libLoaded } = useAppState().editor;
   const { resource } = useAppState().storage;
 
   const { getKeycloakAuthToken } = useActions().auth;
@@ -25,6 +26,7 @@ export const EditView: FC = () => {
 
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { analytics } = useAnalytics();
 
   const { disposeLeafWriter, leafWriter, loadDocumentFromPermalink, setCurrentLeafWriter } =
     useLeafWriter();
@@ -108,7 +110,10 @@ export const EditView: FC = () => {
       disposeLeafWriter();
     });
 
-    analytics.track('editor', { opened: true });
+    if (analytics) {
+      analytics.track('editor', { opened: true });
+      analytics.page();
+    }
   };
 
   return (

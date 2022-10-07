@@ -5,8 +5,10 @@ import { suportedStorageProviders, supportedIdentityProviders } from '@src/servi
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EditorSettings } from './EditorSettings';
+import { Footer } from './Footer';
 import { Identity } from './Identity';
 import { Language } from './Language';
+import { PrivacySettings } from './PrivacySettings';
 import { Storage } from './Storage';
 import { ThemeAppearance } from './ThemeAppearance';
 import { UserCard } from './UserCard';
@@ -57,6 +59,7 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
 
       <Divider />
 
+      <PrivacySettings onClick={onClose} />
       {libLoaded && <EditorSettings onClick={onClose} />}
 
       <Divider />
@@ -73,6 +76,7 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
       </Box>
 
       <Divider />
+      <Footer onClick={onClose} />
     </Popover>
   );
 };

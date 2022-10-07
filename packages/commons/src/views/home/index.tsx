@@ -9,6 +9,7 @@ import { Header } from './Header';
 import { SignInSection } from './SignInSection';
 import { StatusBar } from './StatusBar';
 import { StoragePanel } from './storagePanel';
+import { Footer } from './Footer';
 
 export const HomeView: FC = () => {
   const { userState } = useAppState().auth;
@@ -40,6 +41,7 @@ export const HomeView: FC = () => {
           <StatusBar />
         </Stack>
         <AboutSection />
+        <Footer />
       </Stack>
     </Page>
   );
