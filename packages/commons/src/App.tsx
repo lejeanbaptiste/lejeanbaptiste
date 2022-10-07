@@ -4,31 +4,28 @@ import { SnackbarProvider } from 'notistack';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useRoutes } from 'react-router-dom';
-import { analytics, initAnalytics } from './analytics';
+import { useAnalytics, useCookieConsent } from './hooks';
 import { useActions, useAppState } from './overmind';
 import routes from './routes';
 import theme from './theme';
 import ModalProvider from 'mui-modal-provider';
 
 const App: FC = () => {
-  const { getGAID } = useActions().ui;
-  const { darkMode, language, themeAppearance } = useAppState().ui;
+  const { cookieConsent, darkMode, language, themeAppearance } = useAppState().ui;
   const { setDarkMode } = useActions().ui;
+
   const location = useLocation();
-
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-
   const routing = useRoutes(routes);
   const { i18n } = useTranslation();
 
-  useEffect(() => {
-    setupAnalytics();
-  }, []);
+  useCookieConsent();
+  const { analytics, initAnalytics, stopAnalytics } = useAnalytics();
 
-  const setupAnalytics = async () => {
-    const analytics = await initAnalytics(getGAID);
-    analytics.page();
-  };
+  useEffect(() => {
+    if (cookieConsent.includes('measurement')) initAnalytics();
+    if (!cookieConsent.includes('measurement')) stopAnalytics();
+  }, [cookieConsent]);
 
   useEffect(() => {
     if (analytics) analytics.page();

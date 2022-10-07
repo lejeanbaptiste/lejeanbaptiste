@@ -3,6 +3,7 @@ import { supportedLanguages } from '@src/utilities';
 import type { IDialogBar } from '../../dialogs';
 
 type State = {
+  cookieConsent: string[];
   darkMode: boolean;
   dialogBar: IDialogBar[];
   language: Language;
@@ -11,6 +12,7 @@ type State = {
 };
 
 export const state: State = {
+  cookieConsent: [''],
   darkMode: false,
   dialogBar: [],
   language: supportedLanguages.get('en-CA')!,

@@ -1,3 +1,5 @@
+export { useCookieConsent } from './cookieConsent/useCookieConsent';
+export { useAnalytics } from './useAnalytics';
 export { useDialog } from './useDialog';
 export { useKeyboardShortcut } from './useKeyboardShortcuts';
 export { useNotifier } from './useNotifier';

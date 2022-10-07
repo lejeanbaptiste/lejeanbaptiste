@@ -1,6 +1,6 @@
 import { useModal } from 'mui-modal-provider';
 import { useEffect } from 'react';
-import { SimpleDialog, TemplateDialog, type DialogType } from '../dialogs';
+import { PrivacyDialog, SimpleDialog, TemplateDialog, type DialogType } from '../dialogs';
 import { useActions, useAppState } from '../overmind';
 
 let displayed: string[] = [];
@@ -59,5 +59,6 @@ export const useDialog = () => {
     if (!type) return SimpleDialog;
     if (type === 'simple') return SimpleDialog;
     if (type === 'templates') return TemplateDialog;
+    if (type === 'privacy') return PrivacyDialog;
   };
 };
