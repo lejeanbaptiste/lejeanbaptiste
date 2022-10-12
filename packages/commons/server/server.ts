@@ -1,16 +1,15 @@
+import compression from 'compression';
 import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
 import { api } from './routes';
-import compression from 'compression';
 
 const publicPath = path.join(__dirname, '..', 'dist');
 
-const server = express();
-
+export const server = express();
 
 server.use(express.json({ limit: '5mb' })); // support json encoded bodies
-server.use(compression())
+server.use(compression());
 
 server.use('/api', api);
 

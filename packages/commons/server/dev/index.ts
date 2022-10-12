@@ -1,4 +1,4 @@
-import { Express } from 'express';
+import type { Express } from 'express';
 import kleur from 'kleur';
 import webpack from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
