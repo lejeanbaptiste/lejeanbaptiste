@@ -34,6 +34,51 @@ export const useCookieConsent = () => {
     if (linkPrivacyPolicy) linkPrivacyPolicy.onclick = handleClickPrivacyPolicy;
   }, []);
 
+  const beforeRemoveBasicConsent = (cookie: any) => {
+    if (auth.userState == 'AUTHENTICATED') {
+      openDialog({
+        props: {
+          severity: 'warning',
+          title: t('privacy_settings'),
+          Message: () => (
+            <>
+              <Typography paragraph>
+                <Trans i18nKey="cookie_consent:warning.remove_consent_basic_interactions_message">
+                  <Typography component="span">Removing consent for </Typography>
+                  <TextEmphasis color="warning">
+                    {`Basic interactions & functionalities`}
+                  </TextEmphasis>
+                  <Typography component="span">will sign you out.</Typography>
+                </Trans>
+              </Typography>
+              {ui.page === 'edit' && editor.isDirty && (
+                <Typography>{t('storage:you_will_lose_any_unsaved_changes')}.</Typography>
+              )}
+            </>
+          ),
+          actions: [
+            { action: 'cancel', label: t('commons:cancel'), variant: 'outlined' },
+            {
+              action: 'signout',
+              label: `${t('remove_consent')} ${t('commons:and')} ${t('commons:sign_out')}`,
+            },
+          ],
+          //@ts-ignore
+          onClose: async (action: string) => {
+            if (action === 'cancel') {
+              //restablish categories
+              cookieConsent.accept([...cookie.categories, 'interaction']);
+              return;
+            }
+
+            clearCookieConsent();
+            signOut();
+          },
+        },
+      });
+    }
+  };
+
   const initialize = () => {
     cookieConsent.run({
       current_lang: 'en-CA',
@@ -56,38 +101,8 @@ export const useCookieConsent = () => {
 
         if (!cookie.categories.includes('measurement')) stopAnalytics();
 
-        if (!cookie.categories.includes('interaction') && userState !== 'UNAUTHENTICATED') {
-          openDialog({
-            props: {
-              severity: 'warning',
-              title: t('privacy_settings'),
-              Message: () => (
-                <Trans i18nKey="cookieConsent:warning.remove consent basic interactions">
-                  <Typography>
-                    Removing consent for{' '}
-                    <TextEmphasis color="warning" px={0.5}>
-                      {`Basic interactions & functionalities`}
-                    </TextEmphasis>{' '}
-                    will sign you out
-                  </Typography>
-                </Trans>
-              ),
-              actions: [
-                { action: 'cancel', label: t('commons:cancel') },
-                { action: 'signout', label: t('remove consent and sign out') },
-              ],
-              //@ts-ignore
-              onClose: async (action: string) => {
-                if (action === 'cancel') {
-                  //restablish categories
-                  cookieConsent.accept([...cookie.categories, 'interaction']);
-                }
-
-                clearCookieConsent();
-                signOut();
-              },
-            },
-          });
+        if (!cookie.categories.includes('interaction')) {
+          beforeRemoveBasicConsent(cookie);
         }
       },
 
