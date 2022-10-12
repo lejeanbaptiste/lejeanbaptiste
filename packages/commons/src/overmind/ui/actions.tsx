@@ -7,9 +7,15 @@ import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../index';
 
-//* INIITIALIZE
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const onInitializeOvermind = async ({ state, actions }: Context, overmind: any) => {
+//* INITIALIZE
+/**
+ * Run during initialization
+ * It sets the theme appearance and language based on the user's preferences
+ */
+export const onInitializeOvermind = async (
+  { state, actions, effects }: Context,
+  _overmind: any
+) => {
   //DARK MODE
   const prefPaletteMode: PaletteMode =
     (localStorage.getItem('themeAppearance') as PaletteMode) ?? 'auto';
@@ -31,6 +37,10 @@ export const onInitializeOvermind = async ({ state, actions }: Context, overmind
 export const setPage = async ({ state }: Context, value: string) => {
   state.ui.page = value;
 };
+
+/**
+ * Gets Google Analitics ID from the our local sercer API
+ */
 export const getGAID = async ({ effects }: Context) => {
   const response = await effects.ui.api.getGAID();
   return response;
@@ -58,7 +68,7 @@ export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMo
 export const setDarkMode = ({ state }: Context, value: boolean) => {
   state.ui.darkMode = value;
 
-  //consent form
+  //Cookies consent form
   if (value && !document.body.classList.contains('c_darkmode')) {
     document.body.classList.add('c_darkmode');
   }
@@ -92,6 +102,11 @@ export const emitNotification = async (
   });
 };
 
+/**
+ * Switch language to the value provided. If value is not valid, it fallsback to `en-CA`.
+ * @param {string} value - The value of the language code that was selected.
+ * @returns The value of the language code.
+ */
 export const switchLanguage = ({ state }: Context, value: string) => {
   const language = supportedLanguages.get(value) ?? {
     code: 'en-CA',
@@ -101,6 +116,8 @@ export const switchLanguage = ({ state }: Context, value: string) => {
   state.ui.language = language;
   return value;
 };
+
+// * Notification
 
 export const notifyViaSnackbar = ({ state }: Context, notification: INotification | string) => {
   if (typeof notification === 'string') notification = { message: notification };
