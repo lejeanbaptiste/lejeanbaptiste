@@ -86,12 +86,13 @@ export interface Resource {
   modifiedAt?: Date;
 }
 
-export const ErrorTypes = ["info", "warning", "error"] as const;
+export const ErrorTypes = ['info', 'warning', 'error'] as const;
 type ErrorType = typeof ErrorTypes[number];
 
 export interface IError {
-  type: ErrorType;
   message: string;
+  title?: string;
+  type: ErrorType;
 }
 
 export interface IProviderAuth {
