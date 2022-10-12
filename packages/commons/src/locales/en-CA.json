@@ -94,7 +94,7 @@
   },
   "messages": {
     "corpora_need_space": "Annotating large corpora requires mores space.",
-    "rotate_phone": "Please rotate your phone or open LEAF-Writer in a large monitor.",
+    "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large monitor.",
     "you_must_sign_in_to_use_this_feature": "You must sign in to use this feature"
   },
   "profile": {
