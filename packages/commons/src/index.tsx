@@ -7,6 +7,7 @@ import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './i18n';
@@ -26,9 +27,11 @@ if (!container) throw new Error(`HTML element id 'app' not found`);
 const root = createRoot(container);
 root.render(
   <Provider value={overmind}>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </HelmetProvider>
   </Provider>
 );
 

@@ -15,5 +15,5 @@ export const LinkAccounts: FC = () => {
     window.close();
   }, []);
 
-  return <Page title={t('homepage')}></Page>;
+  return <Page></Page>;
 };
