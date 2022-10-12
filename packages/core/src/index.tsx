@@ -14,6 +14,7 @@ import { Subject } from 'rxjs';
 import type { Authority, NamedEntityType } from './dialogs/entityLookups';
 import i18next from './i18n';
 import { config } from './overmind';
+import type { EditorStateType } from './overmind/editor/state';
 import Providers from './Providers';
 import type { ILeafWriterOptions, LWDocument } from './types';
 import './utilities/log';
@@ -35,6 +36,7 @@ export class Leafwriter {
   private _isDirty: Subject<boolean>;
   private _onLoad: Subject<{ schemaName: string }>;
   private _onClose: Subject<boolean>;
+  private _onEditorStateChange: Subject<EditorStateType>;
 
   private options?: ILeafWriterOptions;
 
@@ -43,6 +45,7 @@ export class Leafwriter {
     this._isDirty = new Subject();
     this._onLoad = new Subject();
     this._onClose = new Subject();
+    this._onEditorStateChange = new Subject();
 
     //container height
     const containerHeight = domElement.style.height ? domElement.style.height : DEFAULT_HEIGHT;
@@ -54,15 +57,21 @@ export class Leafwriter {
       if (mutation.path === 'editor.isEditorDirty' && mutation.hasChangedValue) {
         this._isDirty.next(overmind.state.editor.isEditorDirty);
       }
+
       if (mutation.path === 'document.loaded') {
         if (overmind.state.document.loaded === true) {
           this._onLoad.next({ schemaName: overmind.state.document.schemaName });
         }
       }
+
       if (mutation.path === 'editor.latestEvent') {
         if (overmind.state.editor.latestEvent === 'close') {
           this._onClose.next(true);
         }
+      }
+
+      if (mutation.path.split('.')[0] === 'editor') {
+        this._onEditorStateChange.next(overmind.state.editor);
       }
     });
   }
@@ -94,12 +103,24 @@ export class Leafwriter {
     return this._onClose;
   }
 
+  get onEditorStateChange() {
+    return this._onEditorStateChange;
+  }
+
   async getContent() {
     return await overmind.actions.editor.getContent();
   }
 
   async setContent(document: LWDocument) {
     // TODO
+  }
+
+  get autosave() {
+    return overmind.state.editor.autosave;
+  }
+
+  set autosave(value: boolean) {
+    overmind.actions.editor.setAutosave(value);
   }
 
   getAllowOverlap() {

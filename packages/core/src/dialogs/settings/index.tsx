@@ -2,19 +2,20 @@ import CloseIcon from '@mui/icons-material/Close';
 import TuneIcon from '@mui/icons-material/Tune';
 import { Dialog, DialogContent, IconButton, Stack, Typography } from '@mui/material';
 import React, { type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
-import { IDialog } from '../type';
+import type { IDialog } from '../type';
 import AutoritiesPanel from './AuthoritySource';
+import { Autosave } from './Autosave';
 import FontSize from './FontSize';
 import Language from './Language';
 import Resets from './Resets';
 import Section from './Section';
 import ShowEntities from './ShowEntities';
 import ThemeAppearance from './ThemeAppearance';
-import { useTranslation } from 'react-i18next';
 
 export const SettingsDialog: FC<IDialog> = ({ id, onClose, open }) => {
-  const { settings } = useAppState().editor;
+  const { autosave, settings } = useAppState().editor;
 
   const { t } = useTranslation(['leafwriter']);
 
@@ -56,6 +57,7 @@ export const SettingsDialog: FC<IDialog> = ({ id, onClose, open }) => {
           <Section title="Editor">
             <FontSize />
             <ShowEntities />
+            {autosave !== undefined && <Autosave />}
           </Section>
           <Section title="Authorities">
             <AutoritiesPanel />
