@@ -17,12 +17,13 @@ export const onInitializeOvermind = async (
   _overmind: any
 ) => {
   //DARK MODE
-  const prefPaletteMode: PaletteMode =
-    (localStorage.getItem('themeAppearance') as PaletteMode) ?? 'auto';
+  const prefPaletteMode =
+    effects.storage.api.getFromLocalStorage<PaletteMode>('themeAppearance') ?? 'auto';
+
   actions.ui.setThemeAppearance(prefPaletteMode);
 
   //LANGUAGE
-  const prefLanguageCode = localStorage.getItem('i18nextLng');
+  const prefLanguageCode = effects.storage.api.getFromLocalStorage<string>('i18nextLng');
   if (prefLanguageCode) {
     const prefLanguage = supportedLanguages.get(prefLanguageCode);
     state.ui.language = prefLanguage
