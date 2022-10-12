@@ -8,7 +8,7 @@ import type {
   ILookupsConfig,
   NamedEntityType,
 } from '../../dialogs/entityLookups/types';
-import { ILeafWriterOptionsSettings, Schema } from '../../types';
+import type { ILeafWriterOptionsSettings, Schema } from '../../types';
 import { log } from './../../utilities';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
@@ -136,12 +136,16 @@ export const getNssiToken = async ({ state }: Context) => {
   const { nssiToken } = state.editor;
   // if (!nssiToken) throw Error('Nssi token was not set up');
   if (!nssiToken) {
-    log.error('Nssi token was not set up');
+    // log.error('Nssi token was not set up');
     return;
   }
 
   const token = typeof nssiToken === 'string' ? nssiToken : await nssiToken();
   return token;
+};
+
+export const setAutosave = ({ state }: Context, value?: boolean) => {
+  state.editor.autosave = value;
 };
 
 export const setFontSize = ({ state }: Context, value: number) => {
