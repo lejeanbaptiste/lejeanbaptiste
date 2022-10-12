@@ -5,22 +5,31 @@ import { SnackbarProvider } from 'notistack';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useRoutes } from 'react-router-dom';
-import { useAnalytics, useCookieConsent } from './hooks';
+import { useAnalytics, useCookieConsent, usePermalink } from './hooks';
 import { useActions, useAppState } from './overmind';
 import { routes } from './routes';
 import { theme } from './theme';
 
 export const App: FC = () => {
   const { cookieConsent, darkMode, language, themeAppearance } = useAppState().ui;
-  const { setDarkMode } = useActions().ui;
+  const { setDarkMode, switchLanguage } = useActions().ui;
 
   const location = useLocation();
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const routing = useRoutes(routes);
   const { i18n } = useTranslation();
 
-  useCookieConsent();
+  const { switchLanguage: switchLanguageConsent } = useCookieConsent();
   const { analytics, initAnalytics, stopAnalytics } = useAnalytics();
+  const { getLanguage } = usePermalink();
+
+  useEffect(() => {
+    const language = getLanguage();
+    if (language) {
+      switchLanguage(language);
+      switchLanguageConsent(language);
+    }
+  }, []);
 
   useEffect(() => {
     if (cookieConsent.includes('measurement')) initAnalytics();
