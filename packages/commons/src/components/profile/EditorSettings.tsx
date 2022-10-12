@@ -14,6 +14,7 @@ export const EditorSettings: FC<Props> = ({ onClick }) => {
   const { leafWriter } = useLeafWriter();
 
   const handleClick = (event: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => {
+    event.stopPropagation();
     onClick();
     leafWriter?.showSettingsDialog();
   };
