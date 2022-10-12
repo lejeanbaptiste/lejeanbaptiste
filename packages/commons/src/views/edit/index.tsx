@@ -11,12 +11,14 @@ import { useLeafWriter } from './useLeafWriter';
 export const EditView: FC = () => {
   const { userState, user } = useAppState().auth;
   const { libLoaded } = useAppState().editor;
+  const { autosave, libLoaded } = useAppState().editor;
   const { resource } = useAppState().storage;
 
   const { getKeycloakAuthToken } = useActions().auth;
   const {
     getGeonameUsername,
     loadLeafWriter,
+    setAutosave,
     setContentLastSaved,
     setIsDirty,
     subscribeToTimerService,
@@ -107,11 +109,18 @@ export const EditView: FC = () => {
 
       const content = await leafWriter.getContent();
       setContentLastSaved(content);
+      leafWriter.autosave = autosave;
     });
 
     leafWriter.onClose.subscribe(() => {
       unsubscribeFromTimerService();
       disposeLeafWriter();
+    });
+
+    leafWriter.onEditorStateChange.subscribe((editorState) => {
+      if (editorState.autosave !== undefined && editorState.autosave !== autosave) {
+        setAutosave(editorState.autosave);
+      }
     });
 
     if (analytics) {
