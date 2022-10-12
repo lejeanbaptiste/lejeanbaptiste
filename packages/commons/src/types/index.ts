@@ -99,7 +99,7 @@ export interface IProviderAuth {
   name: string;
 }
 
-export interface IDocTemplate {
+export interface ISample {
   category: string;
   icon?: string;
   title: string;
