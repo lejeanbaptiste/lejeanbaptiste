@@ -9,7 +9,7 @@ export const NotFoundView: FC = () => {
   const { t } = useTranslation();
 
   return (
-    <Page title={t('error:pageNotFound')}>
+    <Page title={t('error:page_not_Found')}>
       <Stack justifyContent="center" alignItems="center" py={8}>
         <Logo height={70} sx={{ mb: 4, opacity: 0.7 }} />
         <Typography align="center" component="h2" mb={2} variant="h4">

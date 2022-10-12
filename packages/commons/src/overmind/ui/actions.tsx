@@ -2,6 +2,7 @@ import { Button } from '@mui/material';
 import type { IDialogBar } from '@src/dialogs';
 import type { INotification, PaletteMode } from '@src/types';
 import { supportedLanguages } from '@src/utilities';
+import i18next from 'i18next';
 import type { VariantType } from 'notistack';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -81,28 +82,6 @@ export const setDarkMode = ({ state }: Context, value: boolean) => {
   return state.ui.darkMode;
 };
 
-export const emitNotification = async (
-  { actions }: Context,
-  {
-    message,
-    persist = true,
-    variant = 'error',
-  }: { message: string; persist?: boolean; variant?: VariantType }
-) => {
-  actions.ui.notifyViaSnackbar({
-    message,
-    options: {
-      action: (key) => (
-        <Button color="inherit" onClick={() => actions.ui.closeNotificationSnackbar(key)}>
-          Dismiss
-        </Button>
-      ),
-      persist,
-      variant,
-    },
-  });
-};
-
 /**
  * Switch language to the value provided. If value is not valid, it fallsback to `en-CA`.
  * @param {string} value - The value of the language code that was selected.
@@ -143,6 +122,37 @@ export const removeNotificationSnackbar = ({ state }: Context, key: string | num
     (notification) => notification.key !== key
   );
 };
+
+/**
+ * Convenient method to trigger snackbar notifications
+ * It takes a message and a variant (error, warning, info, success) and emits a notification via the snackbar
+ * @param  - `message` - The message to display in the snackbar.
+ * @param  - Optional - `persists` - If notiicattion should persists until the users dismiss it. (Default: true)
+ * @param  - Optional - `variant` - Type of of notification: error, warning, info, success. (Default: 'error')
+ */
+export const emitNotification = async (
+  { actions }: Context,
+  {
+    message,
+    persist = true,
+    variant = 'error',
+  }: { message: string; persist?: boolean; variant?: VariantType }
+) => {
+  actions.ui.notifyViaSnackbar({
+    message,
+    options: {
+      action: (key) => (
+        <Button color="inherit" onClick={() => actions.ui.closeNotificationSnackbar(key)}>
+          {`${i18next.t('commons:dismiss')}`}
+        </Button>
+      ),
+      persist,
+      variant,
+    },
+  });
+};
+
+// * Dialog
 
 export const openDialog = ({ state }: Context, dialogBar: IDialogBar) => {
   if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };

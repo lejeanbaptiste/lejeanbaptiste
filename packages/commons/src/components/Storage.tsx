@@ -62,7 +62,9 @@ export const Storage: FC = () => {
 
   const validXML = (content: string) => {
     const isContentValid = isValidXml(content);
-    return isContentValid ? { valid: true } : { valid: false, error: t('storage:error:xml not well-formed message') };
+    return isContentValid
+      ? { valid: true }
+      : { valid: false, error: t('storage:error.xml_not_well-formed_message') };
   };
 
   return (

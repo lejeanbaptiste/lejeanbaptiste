@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const PrivacySettings: FC<Props> = ({ onClick }) => {
-  const { t } = useTranslation('cookieConsent');
+  const { t } = useTranslation('cookie_consent');
   const { showSettings } = useCookieConsent();
 
   const handleClick = (event: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => {

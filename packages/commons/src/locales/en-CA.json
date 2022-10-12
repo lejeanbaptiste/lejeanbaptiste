@@ -1,84 +1,90 @@
 {
   "commons": {
-    "acceptAll": "accept all",
+    "accept_all": "accept all",
     "and": "and",
+    "basic_interactions": "basic interactions",
     "cancel": "cancel",
     "close": "close",
-    "contactUs": "contact us",
+    "contact_us": "contact us",
     "create": "create",
     "description": "description",
-    "discard changes": "discard changes",
+    "discard_changes": "discard changes",
+    "dismiss": "dismiss",
     "download": "download",
+    "functionalities": "functionalities",
     "homepage": "homepage",
     "identity": "identity",
     "language": "language",
-    "more": "more",
-    "moreInformation": "More information",
+    "link_your_account": "Link your {{provider}} account",
+    "more_information": "More information",
     "name": "name",
     "new": "new",
+    "not_found": "not found",
     "open": "open",
-    "open recent": "open recent",
+    "open_recent": "open recent",
     "or": "or",
+    "please": "please",
     "privacy": "privacy",
-    "privacyPolicy": "Privacy Policy",
+    "privacy_policy": "Privacy Policy",
     "recent": "recent",
-    "rejectAll": "reject all",
+    "reject_all": "reject all",
+    "sample_document": "sample document",
+    "samples": "samples",
     "save": "save",
-    "save as": "save as",
-    "saveSettings": "save settings",
+    "save_as": "save as",
     "session": "session",
     "settings": "settings",
-    "sign out": "sign out",
+    "sign_in": "sign in",
+    "sign_out": "sign out",
     "storage": "storage",
+    "switch_accounts": "switch accounts",
+    "template": "template",
     "templates": "templates",
-    "terms of service": "Terms of Service",
-    "unsaved changes": "unsaved changes"
+    "unsaved_changes": "unsaved changes",
+    "with": "with"
   },
-  "cookieConsent": {
-    "consentBanner": {
-      "let me choose": "let me choose",
+  "cookie_consent": {
+    "consent_banner": {
+      "let_me_choose": "let me choose",
       "line1": "We and selected third parties use cookies or similar technologies for technical purposes and, with your consent, for measurement. Denying consent may make related features unavailable.",
       "line2": "You can freely give, deny, or withdraw your consent at any time.",
-      "line3": "Use the “Accept” button to consent to the use of such technologies. Use the “Reject” button or close this notice to continue without accepting.",
-      "we use cookies": "We use cookies"
+      "line3": "Use the 'Accept' button to consent to the use of such technologies. Use the 'Reject' button or close this notice to continue without accepting.",
+      "we_use_cookies": "we use cookies"
     },
     "privacy_settings": "privacy settings",
-    "remove consent and sign out": "remove consent and sign out",
-    "settingsModal": {
-      "AUTH_SESSION_description": "LINCS Keycloak store user session login data",
-      "_ga_ description": "Used by Google Analytics to collect data on the number of times a user has visited the website as well as dates for the first and most recent visit.",
-      "basic interactions and functionalities": "Basic interactions & functionalities",
-      "basic interactions and functionalities description": "These trackers are used for LEAF-Writer basic functionalities, which includes the correct identification of web anotation authors and access to repositories git repositories where the user can load and save files. LEAF-Writer is able delivered limited functionalities without these cookies.",
-      "cc_cookie description": "Store cookies consent preferences",
-      "consent preferences": "Consent Preferences",
-      "cookie usage": "Cookie usage",
-      "cookie usage description": "The following panel allows you to customize your consent preferences for the usage of cookies technology to help us achieve the features and activities described below. You may review and change your choices at any time. Please be aware that denying consent for a particular purpose may make related features unavailable. For more details relative to cookies and other sensitive data, please read the full",
+    "remove_consent": "remove consent",
+    "settings_modal": {
+      "AUTH_SESSION_description": "Stores user login and session data.",
+      "_ga_description": "Used by Google Analytics to collect data on the number of times a user has visited the website as well as dates for the first and most recent visit.",
+      "basic_interactions_description": "These trackers are used for LEAF-Writer basic functionalities, which include the correct identification of web annotation authors and access to git repositories where the user can load and save files. LEAF-Writer can only provide limited functionalities without these cookies.",
+      "cc_cookie_description": "Stores cookies consent preferences.",
+      "consent_preferences": "Consent Preferences",
       "cookie_expiration_time": "{{value}} {{period}}",
+      "cookie_usage": "Cookies usage",
+      "cookie_usage_description": "The following panel allows you to customize your consent preferences for the usage of cookies technology to help us achieve the features and activities described below. You may review and change your choices at any time. Please be aware that denying consent for a particular purpose may make related features unavailable. For more details relative to cookies and other sensitive data, please read the full.",
       "domain": "domain",
       "expiration": "expiration",
-      "indefinitely until user sign out": "indefinitely until user sign out",
-      "lw_ description": "Store usage data on the browser's local storage (prefer ID / language / storage, recent documents / repositories, XML schemas, etc.)",
-      "measurement": "Measurement",
-      "measurement description": "These cookies collect information about how you use the website, which pages you visited and which links you clicked on. All of the data is anonymized and cannot be used to identify you. These trackers help us to measure traffic and analyze your behavior with the goal of improving our service",
-      "more information description": "For any queries in relation to our policy on cookies and your choices, please",
-      "strictly necessary": "Strictly necessary",
-      "strictly necessary description": "Necessary cookies help make a website usable by enabling basic functions like page navigation and access to secure areas of the website. The website cannot function properly without these cookies."
+      "indefinitely_until_user_sign_out": "indefinitely until user sign out",
+      "lw_description": "Stores usage data on the browser's local storage: preferred identity and storage providers, preferred language and colour theme, recent repositories and documents, XML schemas, etc.",
+      "measurement": "measurement",
+      "measurement_description": "These cookies collect information about how you use the website, which pages you visited and which links you clicked on. All the data is anonymized and cannot be used to identify you.",
+      "more_information_description": "For any queries about our policy on cookies and your choices.",
+      "strictly_necessary": "strictly necessary",
+      "strictly_necessary_description": "Necessary cookies help make a website usable by enabling basic functions like page navigation and access to secure areas of the website. The website cannot function properly without these cookies."
     },
     "warning": {
-      "mustAcceptCookies_message": "You must accept our cookie policies to be able to sign in. Click on the shield icon above.",
-      "remove consent basic interactions": "<0>Removing consent for</0><1>Basic interactions & functionalities</1><2>will sign you out</2>"
+      "must_accept_cookies_message": "You must accept our cookie policies to be able to sign in. Click on the shield icon at the top.",
+      "remove_consent_basic_interactions_message": "<0>Removing consent for</0> <1>basic interactions & functionalities</1> <2>will sign you out.</2>"
     }
   },
   "error": {
-    "Something went wrong": "Something went wrong",
-    "message404": "You either tried some shady route or you came here by mistake. Go back to the <1>main page.</1>",
-    "pageNotFound": "Page not found",
-    "something went wrong": "something went wrong"
+    "message404": "You either tried some shady route, or you came here by mistake. Go back to the <1>main page.</1>",
+    "page_not_Found": "Page not found",
+    "something_went_wrong": "Something went wrong"
   },
   "home": {
     "bugs": "bugs",
     "requests": "requests",
-    "sign in with provider": "sign in with {{provider}}",
     "subtitle": "The XML & RDF online editor of the Linked Editing Academic Framework",
     "team": "team"
   },
@@ -86,32 +92,38 @@
     "english": "English",
     "french": "French"
   },
+  "messages": {
+    "corpora_need_space": "Annotating large corpora requires mores space.",
+    "rotate_phone": "Please rotate your phone or open LEAF-Writer in a large monitor.",
+    "you_must_sign_in_to_use_this_feature": "You must sign in to use this feature"
+  },
   "profile": {
-    "link your account": "Link your {{provider}} account",
-    "manageYourLincsAccount": "manage your Lincs account",
-    "switch account": "Switch to {{provider}}"
+    "manage_your_lincs_account": "manage your LINCS account"
   },
   "recents": {
-    "remove from recents": "remove from recents"
+    "remove_from_recents": "remove from recents"
   },
   "storage": {
-    "all changes salved": "all changes saved",
-    "click to save": "click to save",
-    "document not found": "document not found",
-    "document not saved": "document not saved",
-    "document saved": "document saved",
+    "all_changes_salved": "all changes saved",
+    "click_to_save": "click to save",
+    "document_not_saved": "Document not saved",
+    "document_saved": "Document saved",
     "error": {
-      "xml not well-formed message": "The document you are trying to upload is not well-formed. Check that it has the XML extension and that it follows proper XML grammar."
+      "xml_not_well-formed_message": "The document you are trying to upload is not well-formed. Check that it has the XML extension and follows proper XML grammar."
     },
-    "from the cloud": "from the cloud",
-    "from your computer": "from your computer",
-    "link your account": "link your {{provider}} account",
-    "paste your XML here": "paste your XML here",
-    "provider not found": "provider not found",
+    "from_the_cloud": "from the cloud",
+    "from_your_device": "From your device",
+    "invalid_request": "Invalid request",
+    "paste_your_XML_here": "paste your XML here",
+    "provider_not_found": "provider not found",
     "saving": "saving",
-    "switch account": "switch to {{provider}}",
-    "try out with sample files": "try out with sample files",
-    "waiting for resource": "waiting for {{provider}}"
+    "sign_in_with_provider": "sign in with {{provider}}",
+    "waiting_for_resource": "waiting for resource",
+    "warning": {
+      "check_URL_structure": "check URL structure",
+      "storage_provider_invalid": "provider '{{provider}}' is invalid or not a supported"
+    },
+    "you_will_lose_any_unsaved_changes": "You will lose any unsaved changes"
   },
   "templates": {
     "choose_a_template": "choose a template"

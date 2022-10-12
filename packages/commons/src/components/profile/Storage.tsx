@@ -49,7 +49,7 @@ export const Storage: FC = () => {
       channel.close();
 
       if (!linkAccountCallback.success) {
-        notifyViaSnackbar(t(`error:Something went wrong`));
+        notifyViaSnackbar(t(`error:something_went_wrong`));
         return;
       }
 
@@ -77,10 +77,10 @@ export const Storage: FC = () => {
               key={provider}
               title={
                 !storageProviders.includes(provider) === undefined
-                  ? t('link your account', { account: provider })
+                  ? t('commons:link_your_account', { account: provider })
                   : user?.prefStorageProvider === provider
                   ? provider
-                  : t('switch account', { account: provider })
+                  : t('commons:switch_accounts', { account: provider })
               }
             >
               <span>

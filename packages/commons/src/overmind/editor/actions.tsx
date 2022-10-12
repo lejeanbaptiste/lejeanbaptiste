@@ -3,6 +3,7 @@ import { saveDocument } from '@cwrc/leafwriter-storage-service';
 import { StorageProviderName } from '@src/services';
 import type { IError } from '@src/types';
 import { isErrorMessage, log } from '@src/utilities';
+import i18next from 'i18next';
 import { Context } from '../';
 
 export const getGeonameUsername = async ({ effects }: Context) => {
@@ -41,7 +42,7 @@ export const save = async (
 
   //Check provider
   if (!storage.resource?.provider) {
-    const message = 'Storage Provider not found!';
+    const message = i18next.t('storage:provider_not_found');
     log.error(message);
     state.editor.isSaving = false;
     return { success: false, error: { type: 'error', message } };
@@ -53,7 +54,7 @@ export const save = async (
 
   //Check provider token
   if (!providerAuth) {
-    const message = 'Provider token not found';
+    const message = i18next.t('storage:provider_not_found');
     log.error(message);
     state.editor.isSaving = false;
     return { success: false, error: { type: 'error', message } };

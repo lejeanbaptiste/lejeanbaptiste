@@ -97,7 +97,7 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
           sx={{ ':first-letter': { textTransform: 'uppercase' } }}
           variant="outlined"
         >
-          {t('sign out')}
+          {t('sign_out')}
         </Button>
       </Box>
 
