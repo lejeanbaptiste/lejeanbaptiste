@@ -1,0 +1,14 @@
+[
+  {
+    "category": "tei",
+    "icon": "letter",
+    "title": "Sample TEI letter",
+    "url": "https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/Sample%20TEI%20letter.xml"
+  },
+  {
+    "category": "tei",
+    "icon": "feather",
+    "title": "Sample TEI poem",
+    "url": "https://raw.githubusercontent.com/cwrc/CWRC-Writer-Templates/master/templates/Sample%20TEI%20poem.xml"
+  }
+]
