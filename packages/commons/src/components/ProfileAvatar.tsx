@@ -1,6 +1,6 @@
 import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import { getIcon } from '@src/utilities';
+import { getIcon } from '@src/assets/icons';
 import { motion } from 'framer-motion';
 import React, { useState, type FC } from 'react';
 
