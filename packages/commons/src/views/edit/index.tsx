@@ -141,7 +141,7 @@ export const EditView: FC = () => {
   };
 
   return (
-    <Page title={t('homepage')}>
+    <Page>
       <TopBar Left={<MainMenu />} Meta={<Meta />} />
       <div ref={divEl} id="leaf-writer-container" style={{ height: 'calc(100vh - 48px)' }}>
         {(!libLoaded || !resource) && <LoadingMask />}

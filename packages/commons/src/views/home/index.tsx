@@ -42,7 +42,7 @@ export const HomeView: FC = () => {
   };
 
   return (
-    <Page title={t('homepage')}>
+    <Page>
       <TopBar />
       <Stack>
         <Main />
