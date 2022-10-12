@@ -31,7 +31,7 @@ export const setupStorageProvider = async ({ state, actions, effects }: Context,
   // preferredStorage
   if (!state.auth.user) return;
   //if not preferredStorage, use the first StorageProvider linked Account
-  const preferredStorage = effects.storage.api.getFromLocalStorage('prefStorageProvider');
+  const preferredStorage = effects.storage.api.getFromLocalStorage<string>('prefStorageProvider');
 
   preferredStorage
     ? (state.auth.user.prefStorageProvider = preferredStorage)
@@ -162,11 +162,24 @@ export const removeRecentDocument = ({ state, effects }: Context, url: string) =
     (document) => document.url !== url
   );
 
-  effects.storage.api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
+export const loadRecentFiles = async ({ state, effects }: Context) => {
+  const recentFiles: Resource[] = effects.storage.api.getFromLocalStorage('recentFiles') ?? [];
+  state.storage.recentDocuments = recentFiles;
+  return recentFiles;
 };
 
-export const loadTemplate = async ({ effects }: Context, url: string) => {
-  const documentString = await effects.storage.api.loadTemplate(url);
+export const getSampleDocuments = async ({ effects }: Context) => {
+  const documents = await effects.storage.api.loadCollection('samples');
+  return documents;
+};
+
+export const getTemplates = async ({ effects }: Context) => {
+  const documents = await effects.storage.api.loadCollection('templates');
+  return documents;
+};
+
+export const loadSample = async ({ effects }: Context, url: string) => {
+  const documentString = await effects.storage.api.loadSample(url);
   return documentString;
 };
 
