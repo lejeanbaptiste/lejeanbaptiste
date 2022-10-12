@@ -11,8 +11,8 @@ import {
 } from '@mui/material';
 import { StyledToggleButtonGroup, StyledToolTip } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
-import { PaletteMode } from '@src/types';
-import React, { FC, MouseEvent } from 'react';
+import type { PaletteMode } from '@src/types';
+import React, { type FC, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type Option = {

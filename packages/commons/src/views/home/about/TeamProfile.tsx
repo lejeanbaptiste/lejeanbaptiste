@@ -1,7 +1,7 @@
 import { Avatar, Box, Stack, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import md5 from 'md5';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 
 export interface Profile {
   name: string;

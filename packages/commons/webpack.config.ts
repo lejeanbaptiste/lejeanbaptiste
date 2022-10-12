@@ -5,9 +5,9 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { ESBuildMinifyPlugin } from 'esbuild-loader';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 import webpack, { type EntryObject } from 'webpack';
 import WebpackBar from 'webpackbar';
-import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 
 const isDev = process.env.NODE_ENV === 'development';
 

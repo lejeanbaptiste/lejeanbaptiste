@@ -1,4 +1,6 @@
+//@ts-ignore
 import { removeCookie } from '@analytics/cookie-utils';
+//@ts-ignore
 import googleAnalytics from '@analytics/google-analytics';
 import Analytics, { type AnalyticsInstance } from 'analytics';
 import pck from '../../package.json';

@@ -1,5 +1,5 @@
 import { log } from '@src/utilities';
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import type { AuthenticateProp, IIdentityProvider } from './';
 
 const BASE_URL = 'https://gitlab.com/api/v4';

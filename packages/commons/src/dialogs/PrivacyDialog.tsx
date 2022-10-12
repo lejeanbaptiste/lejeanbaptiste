@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import { v4 as uuidv4 } from 'uuid';
 import { useActions } from '../overmind';
-import { type IDialog } from './type';
+import type { IDialog } from './type';
 
 export const PrivacyDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
   const { language } = useAppState().ui;

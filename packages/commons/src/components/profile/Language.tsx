@@ -4,13 +4,13 @@ import {
   ListItemIcon,
   ListItemSecondaryAction,
   ListItemText,
-  ToggleButton
+  ToggleButton,
 } from '@mui/material';
 import { StyledToggleButtonGroup } from '@src/components';
 import { useAnalytics } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities';
-import React, { FC, MouseEvent } from 'react';
+import React, { MouseEvent, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const Language: FC = () => {
@@ -18,7 +18,6 @@ export const Language: FC = () => {
   const { switchLanguage } = useActions().ui;
 
   const { t, i18n } = useTranslation('commons');
-
   const { analytics } = useAnalytics();
 
   const changeLanguage = (event: MouseEvent<HTMLElement>, code: string) => {

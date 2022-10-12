@@ -1,14 +1,14 @@
 import { log } from '@src//utilities';
-import type { IAnnotationUserProfile, User } from '@src/types';
-import Cookies from 'js-cookie';
 import {
   AuthenticateProp,
   IdentityProviderName,
   identityServices,
   supportedIdentityProviders,
-} from '../../services';
+} from '@src/services';
+import type { IAnnotationUserProfile, User } from '@src/types';
+import Cookies from 'js-cookie';
 import { Context } from '../index';
-import { ILinkedAccount } from './effects';
+import type { ILinkedAccount } from './effects';
 
 //* INIITIALIZE
 export const onInitializeOvermind = async ({ actions }: Context, overmind: any) => {

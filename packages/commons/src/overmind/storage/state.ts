@@ -1,5 +1,5 @@
 import { IDocTemplate, Resource, StorageDialogState } from '@src/types';
-import { StorageProviderName } from '@src/services';
+import type { StorageProviderName } from '@src/services';
 
 type State = {
   recentDocuments: Resource[];

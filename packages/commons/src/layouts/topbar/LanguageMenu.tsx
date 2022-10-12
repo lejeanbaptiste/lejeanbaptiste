@@ -4,7 +4,7 @@ import { useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities';
 import { motion } from 'framer-motion';
-import React, { FC, MouseEvent, useState } from 'react';
+import React, { useState, type FC, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const LanguageMenu: FC = () => {

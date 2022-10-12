@@ -1,6 +1,6 @@
 import { Link, Stack } from '@mui/material';
 import { useActions } from '@src/overmind';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ProfileProps {

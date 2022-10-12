@@ -1,5 +1,5 @@
-import { useKey, useDebounce } from 'react-use';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useDebounce, useKey } from 'react-use';
 
 export const useKeyboardShortcut = () => {
   const [val, setVal] = useState('');
@@ -8,7 +8,7 @@ export const useKeyboardShortcut = () => {
   const reset = () => {
     setShortcut('');
     setVal('');
-  }
+  };
 
   const [, cancel] = useDebounce(() => setShortcut(val), 2000, [val]);
 

@@ -1,4 +1,4 @@
-import { type Leafwriter } from '@cwrc/leafwriter';
+import type { Leafwriter } from '@cwrc/leafwriter';
 import { TimerService, type ITimerService } from './timerService';
 
 type State = {

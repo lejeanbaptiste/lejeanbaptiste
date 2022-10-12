@@ -11,4 +11,4 @@ export const isErrorMessage = (param: unknown): param is IError => {
   const hasRightType = ErrorTypes.includes((param as IError).type);
 
   return hasMessage && hastype && hasRightType;
-}
+};

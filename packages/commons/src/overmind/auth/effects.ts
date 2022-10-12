@@ -1,6 +1,6 @@
 import { log } from '@src/utilities';
-import axios, { AxiosError } from 'axios';
-import Keycloak, { KeycloakTokenParsed } from 'keycloak-js';
+import axios, { type AxiosError } from 'axios';
+import Keycloak, { type KeycloakTokenParsed } from 'keycloak-js';
 import queryString from 'query-string';
 
 //* Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
@@ -35,7 +35,7 @@ export class Api {
 
   private KEYCLOACK_BASE_URL!: string;
   private NSSI_BASE_URL?: string;
-  
+
   private keycloak!: Keycloak;
 
   /**
@@ -60,7 +60,7 @@ export class Api {
 
     this.KEYCLOACK_BASE_URL = await this.getKeycloakUrl();
     if (!this.KEYCLOACK_BASE_URL) throw log.error('Failed to configure KEYCLOACK_BASE_URL');
-    
+
     this.NSSI_BASE_URL = await this.getNSSIUrl();
     if (!this.NSSI_BASE_URL) throw log.error('Failed to configure NSSI_BASE_URL');
 
@@ -86,7 +86,7 @@ export class Api {
    * @returns The response.data is being returned.
    */
   async getKeycloakUrl() {
-    const response = await axios.get('./api/keycloak-url'); 
+    const response = await axios.get('./api/keycloak-url');
     return response.data;
   }
 

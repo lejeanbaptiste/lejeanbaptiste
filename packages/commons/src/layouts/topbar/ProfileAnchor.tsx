@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
 import { Profile } from '@src/components';
-import React, { FC, useRef, useState } from 'react';
+import React, { useRef, useState, type FC } from 'react';
 
 interface ProfileAnchorProps {
   children?: React.ReactNode;

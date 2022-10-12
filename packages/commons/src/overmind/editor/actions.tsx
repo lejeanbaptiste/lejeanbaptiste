@@ -1,9 +1,9 @@
+import LeafWriter from '@cwrc/leafwriter';
 import { saveDocument } from '@cwrc/leafwriter-storage-service';
+import { StorageProviderName } from '@src/services';
+import type { IError } from '@src/types';
 import { isErrorMessage, log } from '@src/utilities';
 import { Context } from '../';
-import { StorageProviderName } from '@src/services';
-import { IError } from '@src/types';
-import LeafWriter from '@cwrc/leafwriter';
 
 export const getGeonameUsername = async ({ effects }: Context) => {
   const response = await effects.editor.api.getGeonameUsername();
