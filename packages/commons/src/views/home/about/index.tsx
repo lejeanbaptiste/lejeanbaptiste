@@ -1,8 +1,8 @@
-import { Box, Container, Grid, useTheme, rgbToHex } from '@mui/material';
-import React, { FC, useMemo } from 'react';
-import About from './About';
-import Team from './Team';
+import { Box, Container, Grid, rgbToHex, useTheme } from '@mui/material';
 import chroma from 'chroma-js';
+import React, { useMemo, type FC } from 'react';
+import { About } from './About';
+import { Team } from './Team';
 
 export const AboutSection: FC = () => {
   const { mode, primary } = useTheme().palette;

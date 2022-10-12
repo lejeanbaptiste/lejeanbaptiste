@@ -1,10 +1,10 @@
 import { Button } from '@mui/material';
+import type { IDialogBar } from '@src/dialogs';
 import type { INotification, PaletteMode } from '@src/types';
 import { supportedLanguages } from '@src/utilities';
-import { VariantType } from 'notistack';
+import type { VariantType } from 'notistack';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { IDialogBar } from '../../dialogs';
 import { Context } from '../index';
 
 //* INIITIALIZE

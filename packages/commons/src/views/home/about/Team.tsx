@@ -4,7 +4,7 @@ import React, { useEffect, useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import TeamProfile, { Profile } from './TeamProfile';
 
-const Team: FC = () => {
+export const Team: FC = () => {
   const { t } = useTranslation();
 
   const [team, setTeam] = useState<Profile[]>();
@@ -33,5 +33,3 @@ const Team: FC = () => {
     </Box>
   );
 };
-
-export default Team;

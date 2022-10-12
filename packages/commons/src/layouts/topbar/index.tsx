@@ -62,5 +62,3 @@ export const TopBar: FC<TopBarProps> = ({ Left, Meta, title = 'LEAF-Writer' }) =
     </AppBar>
   );
 };
-
-export default TopBar;
