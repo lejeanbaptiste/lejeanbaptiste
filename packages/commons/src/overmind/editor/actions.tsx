@@ -17,6 +17,10 @@ export const loadLeafWriter = async ({ state }: Context, container: HTMLElement)
   return leafWriter;
 };
 
+export const setAutosave = ({ state }: Context, value: boolean) => {
+  state.editor.autosave = !!value;
+};
+
 export const isContentSameAsLastSaved = ({ state }: Context, content: string) => {
   return state.editor.contentLastSaved === content;
 };
@@ -137,7 +141,7 @@ export const setIsDirty = async ({ state }: Context, value: boolean) => {
     return;
   }
 
-  if (state.editor.autosave) state.editor.timerService.start();
+  if (state.editor.autosave && state.storage.resource?.provider) state.editor.timerService.start();
 };
 
 export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
