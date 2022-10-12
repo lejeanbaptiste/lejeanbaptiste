@@ -9,5 +9,5 @@ type State = {
 
 export const state: State = {
   identityProviders: new Map(),
-  userState: 'UNAUTHENTICATED',
+  userState: 'AUTHENTICATING',
 };
