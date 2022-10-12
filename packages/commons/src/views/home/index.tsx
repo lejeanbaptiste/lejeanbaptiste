@@ -2,6 +2,7 @@ import { Stack } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
+import { isErrorMessage } from '@src/utilities';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AboutSection } from './about';
@@ -24,7 +25,16 @@ export const HomeView: FC = () => {
     setPage('home');
   }, []);
 
+  useEffect(() => {
+    loadDocumentFromPermalink();
+  }, [userState]);
+
+  const loadDocumentFromPermalink = async () => {
+    const resource = await getResourceFromPermalink();
     if (!resource) return;
+    if ('category' in resource) return;
+    if (isErrorMessage(resource)) return;
+
     if (!resource.filename) {
       openStorageDialog({
         source: 'cloud',
@@ -32,7 +42,7 @@ export const HomeView: FC = () => {
         resource,
       });
     }
-  }, [userState]);
+  };
 
   return (
     <Page title={t('homepage')}>

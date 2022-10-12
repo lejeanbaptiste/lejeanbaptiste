@@ -1,13 +1,16 @@
-import type { Resource } from '@cwrc/leafwriter-storage-service';
 import { useActions, useAppState } from '@src/overmind';
+import type { IError, ISample, Resource } from '@src/types';
+import { isErrorMessage } from '@src/utilities';
 import Cookies from 'js-cookie';
 import queryString from 'query-string';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 interface Permalink {
-  error?: string;
+  error?: IError;
+  isSample?: boolean;
   raw: string;
-  resource?: Resource;
+  resource?: Resource | ISample;
   valid: boolean;
 }
 
@@ -15,17 +18,56 @@ export const usePermalink = () => {
   const { userState } = useAppState().auth;
 
   const { signIn } = useActions().auth;
-  const { clearResource, isStorageProviderSupported } = useActions().storage;
+  const { clearResource, getSampleDocuments, getTemplates, isStorageProviderSupported } =
+    useActions().storage;
 
+  const { t } = useTranslation('commons');
   const location = useLocation();
   const navigate = useNavigate();
 
-  const parsePermalink = (query?: string): Permalink | null => {
   const getLanguage = () => {
     const { lang } = queryString.parse(location.search);
     if (Array.isArray(lang)) return lang[0];
     return lang;
   };
+
+  const getResourceFromPermalink = async () => {
+    let permalink = await parsePermalink();
+
+    if (permalink && isErrorMessage(permalink)) return permalink;
+
+    if (userState === 'UNAUTHENTICATED' && permalink?.valid) {
+      Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
+      signIn();
+      return;
+    }
+
+    if (userState === 'AUTHENTICATED') {
+      const resource = Cookies.get('resource');
+      if (resource) {
+        Cookies.remove('resource');
+        setPermalink(resource);
+        permalink = await parsePermalink(resource);
+
+        if (isErrorMessage(permalink)) return permalink;
+      }
+
+      if (!permalink) return navigate('/', { replace: true });
+      return permalink.resource;
+    }
+  };
+
+  const getTemplateByTitle = async (title: string) => {
+    const samples = await getTemplates();
+    return samples.find((template) => template.title === title);
+  };
+
+  const getSampleByTitle = async (title: string) => {
+    const samples = await getSampleDocuments();
+    return samples.find((sample) => sample.title === title);
+  };
+
+  const parsePermalink = async (query?: string): Promise<Permalink | IError | null> => {
     if (!query && !location.search) return null;
 
     const search = queryString.parse(query || location.search);
@@ -33,18 +75,42 @@ export const usePermalink = () => {
 
     if (!search) response;
 
+    // * if it is a template
+    if (typeof search.template === 'string') {
+      const document = await getTemplateByTitle(search.template);
+      if (!document) {
+        return {
+          type: 'error',
+          message: `${t('template')} "${search.template}" ${t('not_found')}.`,
+        };
+      }
+
+      return { ...response, isSample: true, resource: document, valid: true };
+    }
+
+    // * if it is a sample
+    if (typeof search.sample === 'string') {
+      const document = await getSampleByTitle(search.sample);
+      if (!document) {
+        return {
+          type: 'error',
+          message: `${t('sample_document')} "${search.sample}" ${t('not_found')}.`,
+        };
+      }
+
+      return { ...response, isSample: true, resource: document, valid: true };
+    }
+
     if (!search.provider || Array.isArray(search.provider)) {
-      return { ...response, error: 'Invalid request. Check URL structure.' };
+      return { type: 'error', message: t('storage:warning.check_URL_structure') };
     }
 
     if (!isStorageProviderSupported(search.provider)) {
       return {
-        ...response,
-        error: `
-          Leaf Writer could not retrieve the requested resource.
-          Storage provider '${search.provider}' is not supported or is invalid.
-          Check URL structure.
-        `,
+        type: 'error',
+        message: `${t('storage:warning.storage_provider_invalid', {
+          provider: search.provider,
+        })}. ${t('storage:warning.check_URL_structure')}`,
       };
     }
 
@@ -83,29 +149,6 @@ export const usePermalink = () => {
     navigate(query, { replace: true });
 
     return query;
-  };
-
-  const getResourceFromPermalink = () => {
-    let permalink = parsePermalink();
-
-    if (userState === 'UNAUTHENTICATED' && permalink?.valid) {
-      Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
-      signIn();
-      return;
-    }
-
-    if (userState === 'AUTHENTICATED') {
-      const resource = Cookies.get('resource');
-      if (resource) {
-        Cookies.remove('resource');
-        setPermalink(resource);
-        permalink = parsePermalink(resource);
-      }
-
-      if (!permalink) return navigate('/', { replace: true }); //return;
-
-      return permalink.resource;
-    }
   };
 
   const stringifyQuery = (query: Resource) => {
