@@ -38,7 +38,7 @@ export const Identity: FC = () => {
       channel.close();
 
       if (!linkAccountCallback.success) {
-        notifyViaSnackbar(t(`error:Something went wrong`));
+        notifyViaSnackbar(t(`error:something_went_wrong`));
         return;
       }
 
@@ -66,10 +66,10 @@ export const Identity: FC = () => {
               key={provider}
               title={
                 !user?.identities.get(provider)
-                  ? t('link your account', { account: provider })
+                  ? t('commons:link_your_account', { account: provider })
                   : provider === user?.preferredID
                   ? provider
-                  : t('switch account', { account: provider })
+                  : t('commons:switch_accounts', { account: provider })
               }
             >
               <span>

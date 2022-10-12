@@ -16,7 +16,7 @@ i18next
     returnEmptyString: false,
     ns: [
       'commons',
-      'cookieConsent',
+      'cookie_consent',
       'error',
       'home',
       'language',

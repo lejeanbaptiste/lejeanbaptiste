@@ -32,7 +32,7 @@ export const UserCard: FC = () => {
         <Typography variant="caption">{user?.email}</Typography>
       </Stack>
       <IconButton onClick={handleManageAccontClick} size="small">
-        <StyledToolTip title={t('profile:manageYourLincsAccount')}>
+        <StyledToolTip title={t('profile:manage_your_lincs_account')}>
           <ManageAccountsIcon fontSize="inherit" />
         </StyledToolTip>
       </IconButton>

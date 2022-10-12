@@ -11,11 +11,12 @@ import './cookieConsent.css';
 let cookieConsent: CookieConsent;
 
 export const useCookieConsent = () => {
-  const { userState } = useAppState().auth;
+  const { auth, editor, ui } = useAppState();
+
   const { signOut } = useActions().auth;
   const { setCookieConsent, openDialog } = useActions().ui;
 
-  const { t } = useTranslation('cookieConsent');
+  const { t } = useTranslation('cookie_consent');
 
   const { stopAnalytics } = useAnalytics();
 
@@ -139,50 +140,50 @@ export const useCookieConsent = () => {
   const consentModalContent = (lng: string) => {
     const pStyle = 'margin-bottom: 8px';
     return {
-      title: `${t('consentBanner.we use cookies', { lng })}!`,
+      title: `${t('consent_banner.we_use_cookies', { lng })}!`,
       description: `
-    <p style="${pStyle}">${t('consentBanner.line1', { lng })}</p>
-    <p style="${pStyle}">${t('consentBanner.line2', { lng })}</p>
-    <p style="${pStyle}">${t('consentBanner.line3', { lng })}</p>
+    <p style="${pStyle}">${t('consent_banner.line1', { lng })}</p>
+    <p style="${pStyle}">${t('consent_banner.line2', { lng })}</p>
+    <p style="${pStyle}">${t('consent_banner.line3', { lng })}</p>
     <button type="button" data-cc="c-settings" class="cc-link" style="text-transform: capitalize">${t(
-      'consentBanner.let me choose'
+      'consent_banner.let_me_choose'
     )}</button>`,
       primary_btn: {
-        text: t('commons:acceptAll', { lng }),
+        text: t('commons:accept_all', { lng }),
         role: 'accept_all', // 'accept_selected' or 'accept_all'
       },
       secondary_btn: {
-        text: t('commons:rejectAll', { lng }),
+        text: t('commons:reject_all', { lng }),
         role: 'accept_necessary', // 'settings' or 'accept_necessary'
       },
     };
   };
 
   const consentSettingsContent = (lng: string) => ({
-    title: t('settingsModal.consent preferences', { lng }),
-    save_settings_btn: t('commons:saveSettings', { lng }),
-    accept_all_btn: t('commons:acceptAll', { lng }),
-    reject_all_btn: t('commons:rejectAll', { lng }),
+    title: t('settings_modal.consent_preferences', { lng }),
+    save_settings_btn: t('commons:save', { lng }),
+    accept_all_btn: t('commons:accept_all', { lng }),
+    reject_all_btn: t('commons:reject_all', { lng }),
     close_btn_label: t('commons:close', { lng }),
     cookie_table_headers: [
       { col1: t('commons:name', { lng }) },
-      { col2: t('settingsModal.domain', { lng }) },
-      { col3: t('settingsModal.expiration', { lng }) },
+      { col2: t('settings_modal.domain', { lng }) },
+      { col3: t('settings_modal.expiration', { lng }) },
       { col4: t('commons:description', { lng }) },
     ],
     blocks: [
       {
-        title: `${t('settingsModal.cookie usage', { lng })}  📢`,
-        description: `<p> ${t('settingsModal.cookie usage description', {
+        title: `${t('settings_modal.cookie_usage', { lng })}  📢`,
+        description: `<p> ${t('settings_modal.cookie_usage_description', {
           lng,
-        })} <span id="linkToPrivacyPolicy" class="cc-link">${t('commons:privacyPolicy', {
+        })} <span id="linkToPrivacyPolicy" class="cc-link">${t('commons:privacy_policy', {
           lng,
         })}</span>.</p>`,
       },
       {
-        title: t('settingsModal.strictly necessary', { lng }),
+        title: t('settings_modal.strictly_necessary', { lng }),
         //e.g., Backup saving and management, Hosting and backend infrastructure, Managing landing and invitation pages, Platform services and hosting, SPAM protection, Traffic optimization and distribution, Infrastructure monitoring, Handling payments
-        description: t('settingsModal.strictly necessary description', { lng }),
+        description: t('settings_modal.strictly_necessary_description', { lng }),
         toggle: {
           value: 'necessary',
           enabled: true,
@@ -193,19 +194,21 @@ export const useCookieConsent = () => {
           {
             col1: 'cc_cookie',
             col2: location.hostname,
-            col3: t('settingsModal.cookie_expiration_time', {
+            col3: t('settings_modal.cookie_expiration_time', {
               lng,
               value: 6,
               period: 'months',
             }),
-            col4: t('settingsModal.cc_cookie description', { lng }),
+            col4: t('settings_modal.cc_cookie_description', { lng }),
           },
         ],
       },
       {
-        title: t('settingsModal.basic interactions and functionalities', { lng }),
+        title: `${t('commons:basic_interactions', { lng })} & ${t('commons:functionalities', {
+          lng,
+        })}`,
         //e.g., Contacting the User, Interaction with live chat platforms Managing web conferencing and online telephony, Managing support and contact requests, Interaction with support and feedback platforms, Tag Management, Registration and authentication, User database management
-        description: t('settingsModal.basic interactions and functionalities description', { lng }),
+        description: t('settings_modal.basic_interactions_description', { lng }),
         toggle: {
           value: 'interaction',
           enabled: true,
@@ -217,22 +220,22 @@ export const useCookieConsent = () => {
             col1: 'AUTH_SESSION_',
             col2: 'lincsproject.ca',
             col3: t('commons:session', { lng }),
-            col4: t('settingsModal.AUTH_SESSION_description', { lng }),
+            col4: t('settings_modal.AUTH_SESSION_description', { lng }),
             is_regex: true,
           },
           {
             col1: 'lw_',
             col2: location.hostname,
-            col3: t('settingsModal.indefinitely until user sign out', { lng }),
-            col4: t('settingsModal.lw_ description', { lng }),
+            col3: t('settings_modal.indefinitely_until_user_sign_out', { lng }),
+            col4: t('settings_modal.lw_description', { lng }),
             is_regex: true,
           },
         ],
       },
       {
-        title: t('settingsModal.measurement', { lng }),
+        title: t('settings_modal.measurement', { lng }),
         // e.g., Analytics, Beta testing, Content performance and feature testing (A/B testing), Heat mapping and session recording, Managing data collection and online surveys
-        description: t('settingsModal.measurement description', { lng }),
+        description: t('settings_modal.measurement_description', { lng }),
         toggle: {
           value: 'measurement',
           enabled: false,
@@ -242,21 +245,23 @@ export const useCookieConsent = () => {
           {
             col1: '_ga_#', // match all cookies starting with "_ga"
             col2: 'google.com',
-            col3: t('settingsModal.cookie_expiration_time', {
+            col3: t('settings_modal.cookie_expiration_time', {
               lng,
               value: 1,
               period: 'year',
             }),
-            col4: t('settingsModal._ga_ description', { lng }),
+            col4: t('settings_modal._ga_description', { lng }),
             is_regex: true,
           },
         ],
       },
       {
-        title: t('commons:moreInformation', { lng }),
-        description: `<p> ${t('settingsModal.more information description', {
+        title: t('commons:more_information', { lng }),
+        description: `<p> ${t('settings_modal.more_information_description', {
           lng,
-        })},  <a href="mailto:cwrc-leaf@ualberta.ca" class="cc-link">${t('commons:contactUs', {
+        })} ${t('commons:please', {
+          lng,
+        })},  <a href="mailto:cwrc-leaf@ualberta.ca" class="cc-link">${t('commons:contact_us', {
           lng,
         })}</a>.</p>`,
       },
