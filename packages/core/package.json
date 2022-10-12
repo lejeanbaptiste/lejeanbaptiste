@@ -73,6 +73,7 @@
     "framer-motion": "^7.3.6",
     "fscreen": "^1.2.0",
     "i18next": "^21.9.2",
+    "html2canvas": "^1.4.1",
     "iso-639-2": "^3.0.2",
     "jquery": "^3.6.1",
     "jquery-ui": "^1.13.2",

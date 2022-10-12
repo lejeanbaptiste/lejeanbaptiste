@@ -5,6 +5,7 @@ import '@fontsource/lato/700.css';
 import '@fontsource/lato/900.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 import { PaletteMode } from '@mui/material';
+import html2canvas from 'html2canvas';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
 import React from 'react';
@@ -109,6 +110,16 @@ export class Leafwriter {
 
   async getContent() {
     return await overmind.actions.editor.getContent();
+  }
+
+  async getDocumentSnapshot() {
+    const page = window.writer.editor.getBody();
+    if (!page) return;
+
+    const canvas = await html2canvas(page, { height: 420 });
+    const snapshot = canvas.toDataURL('image/png', 1.0);
+
+    return snapshot;
   }
 
   async setContent(document: LWDocument) {
