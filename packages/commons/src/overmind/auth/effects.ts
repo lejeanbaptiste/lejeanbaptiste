@@ -105,12 +105,11 @@ export class Api {
    * @returns The login method returns a promise that resolves to a boolean value.
    */
   async login(options?: { idpHint?: string }) {
-    const opt = {
+    
+    return await this.keycloak.login({
       ...options,
-      origin: window.location
-    }
-    const { origin } = window.location;
-    return await this.keycloak.login(opt);
+      redirectUri:  window.location.href,
+    });
   }
 
   /**
