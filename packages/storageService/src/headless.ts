@@ -118,8 +118,6 @@ export const saveDocument = async (
     hash: fileLatestHash ?? undefined,
   });
 
-  console.log(response);
-
   if (!response) return { type: 'error', message: 'Something went wrong. Unabled to save.' };
   if (isErrorMessage(response)) return { type: response.type, message: response.message };
 
