@@ -3,6 +3,7 @@ import { TemplatesView } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { useAnimation } from 'framer-motion';
 import React, { useEffect, useState, type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IView } from '..';
 import { Container } from './Container';
 import { RecentView } from './recent';
@@ -19,7 +20,9 @@ const MAX_HEIGHT = 333;
 
 export const View: FC<ViewProps> = ({ view }) => {
   const { userState } = useAppState().auth;
+  const { language } = useAppState().ui;
 
+  const { t } = useTranslation('commons');
   const animationControl = useAnimation();
 
   const [type, setType] = useState<IView>();
@@ -28,14 +31,19 @@ export const View: FC<ViewProps> = ({ view }) => {
     switchView();
   }, [view]);
 
+  useEffect(() => {
+    switchView();
+  }, [language]);
+
   const switchView = async () => {
     if (!view) return;
 
     await animationControl.start('hide');
 
-    if (view?.value === 'samples') setType({ title: view?.title, value: 'samples' });
-    if (view?.value === 'templates') setType({ title: view?.title, value: 'templates' });
-    if (view?.value === 'recent') setType({ title: view?.title, value: 'recent' });
+    const { title, value } = view;
+
+    const transTitle = value ? t(value) : title;
+    setType({ title: transTitle, value });
 
     await animationControl.start('show');
   };
