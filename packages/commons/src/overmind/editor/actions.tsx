@@ -28,7 +28,13 @@ export const isContentSameAsLastSaved = ({ state }: Context, content: string) =>
 
 export const save = async (
   { state, actions }: Context,
-  content: string
+  {
+    content,
+    snapshot,
+  }: {
+    content: string;
+    snapshot?: string;
+  }
 ): Promise<{ success: boolean; error?: IError }> => {
   state.editor.isSaving = true;
 
@@ -64,6 +70,7 @@ export const save = async (
   const updatedResource = {
     ...storage.resource,
     content,
+    snapshot,
   };
 
   //* Resquest save
@@ -113,13 +120,20 @@ export const setContentLastSaved = ({ state }: Context, content: string) => {
 
 export const saveAs = async (
   { state, actions }: Context,
-  content: string
+  {
+    content,
+    snapshot,
+  }: {
+    content: string;
+    snapshot?: string;
+  }
 ): Promise<{ success: boolean; error?: IError }> => {
   const { storage } = state;
 
   actions.storage.setResource({
     ...storage.resource,
     content,
+    snapshot,
   });
 
   actions.storage.openStorageDialog({
@@ -128,7 +142,7 @@ export const saveAs = async (
     type: 'save',
   });
 
-  actions.storage.updateRecentDocument();
+  // actions.storage.updateRecentDocument();
   // actions.editor.setIsDirty(false);
 
   return { success: true };
@@ -148,7 +162,8 @@ export const setIsDirty = async ({ state }: Context, value: boolean) => {
 export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
   state.editor.timerService.onTimer.subscribe(async (value) => {
     const content = await editor.getContent();
-    await actions.editor.save(content);
+    const snapshot = await editor.getDocumentSnapshot();
+    await actions.editor.save({ content, snapshot });
   });
 };
 

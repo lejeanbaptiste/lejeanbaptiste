@@ -84,6 +84,7 @@ export interface Resource {
   url?: string;
   schemaName?: string;
   modifiedAt?: Date;
+  snapshot?: string;
 }
 
 export const ErrorTypes = ['info', 'warning', 'error'] as const;
