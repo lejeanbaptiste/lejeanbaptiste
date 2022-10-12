@@ -1,12 +1,12 @@
 import { createTheme } from '@mui/material';
 import chroma from 'chroma-js';
 
-const theme = (darkMode: boolean) =>
+export const theme = (darkMode: boolean) =>
   createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: darkMode? chroma.rgb(191, 213, 213).hex() : chroma.rgb(28, 64, 69).hex(),
+        main: darkMode ? chroma.rgb(191, 213, 213).hex() : chroma.rgb(28, 64, 69).hex(),
       },
       secondary: {
         main: chroma.rgb(255, 114, 0).hex(),
@@ -30,5 +30,3 @@ const theme = (darkMode: boolean) =>
       },
     },
   });
-
-export default theme;

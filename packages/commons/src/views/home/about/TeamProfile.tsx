@@ -13,7 +13,7 @@ interface TeamProfileProps {
   profile: Profile;
 }
 
-const TeamProfile: FC<TeamProfileProps> = ({ profile }) => {
+export const TeamProfile: FC<TeamProfileProps> = ({ profile }) => {
   const { name, email, positions } = profile;
 
   const gravatarUrl = email ? `https://www.gravatar.com/avatar/${md5(email)}?s=64` : undefined;
@@ -45,5 +45,3 @@ const TeamProfile: FC<TeamProfileProps> = ({ profile }) => {
     </Box>
   );
 };
-
-export default TeamProfile;

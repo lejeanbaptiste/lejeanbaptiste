@@ -3,8 +3,8 @@ import { useAppState } from '@src/overmind';
 import React, { useEffect, useState, type FC } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-const About: FC = () => {
   const [content, setContent] = useState('');
+export const About: FC = () => {
   const { language } = useAppState().ui;
 
   useEffect(() => {
@@ -44,5 +44,3 @@ const About: FC = () => {
     </ReactMarkdown>
   );
 };
-
-export default About;

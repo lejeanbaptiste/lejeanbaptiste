@@ -2,7 +2,7 @@ import React from 'react';
 import { BasicLayout } from './layouts';
 import { EditView, HomeView, LinkAccounts, NotFoundView } from './views';
 
-const routes = [
+export const routes = [
   {
     path: '/',
     element: <BasicLayout />,
@@ -14,5 +14,3 @@ const routes = [
     ],
   },
 ];
-
-export default routes;
