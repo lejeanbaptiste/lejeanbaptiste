@@ -102,7 +102,7 @@ export const setUserProfile = async ({ state, actions, effects }: Context) => {
   await actions.auth.getLinkedAccounts();
 
   //preferredID
-  const preferredID = localStorage.getItem('prefIdProvider');
+  const preferredID = effects.storage.api.getFromLocalStorage<string>('prefIdProvider');
   //if not preferredID, use the first identityProviders linked Account
   preferredID
     ? (state.auth.user.preferredID = preferredID)
