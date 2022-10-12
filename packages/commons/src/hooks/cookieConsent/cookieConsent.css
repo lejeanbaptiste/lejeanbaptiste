@@ -999,7 +999,7 @@ html.force--consent.show--consent body {
 
 #cm.bar #c-bns {
   /* max-width: 33.75em */
-  gap: 6em;
+  /* gap: 6em; */
 }
 
 #cm.bar #cs {
