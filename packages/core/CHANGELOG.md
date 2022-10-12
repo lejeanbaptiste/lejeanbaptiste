@@ -1,8 +1,53 @@
+# CHANGELOG
+
+## 2.1.0
+
+### Minor Changes
+
+- Add TextEmphasis component: add more flexibility to customize and highlight text message[079c71c33db3db5113a0654d84d8397be58607ee]
+
+- Add autosave toggle to settings panel [221ce25a13683e770821ae5b6fb3f9a6e1fc6dcf]
+
+If the system embedding LEAF-writer has an autosaved mechanism (as LEAF-Writer Commons now has), the user can toggle the service on/off from the settings panel.
+
+- Add Ability to create a document screenshot [aa077328fe5f6740a97fe44f67936943d8ba9be5]
+
+This service API converts the document page into an image. It is helpful to create thumbnails.
+
+### Patch
+
+- Fix: Avoid circular updates on `isDirty`. Limit to fire only if the document changes from `no changes` to `has changed` [6a7a1952dd8a05941c5416ca24f8373871a08a7a] [c7d35c945f7cb6d5623bdae60e18e69273095269]
+- Fix: Initialize overmind mutations listeners in every instance creation [0a2ea30ff61f208d034576e7bab5aa8d42cfe125]
+- Fix: Avoid adding schema custom twice [20d45ef4678f005e6702e0ae2ff953e4519d5c4f]
+
+- Update dependencies [6679ee190cb095ae598000fdf97011711208d4e8]
+  - core:
+    - update:
+      - framer-motion@7.5.3
+      - i18next@21.10.0
+    - bump up:
+      - @fontsource/lato@4.5.10
+      - @mui/icons-material@5.10.9
+      - @mui/lab@5.0.0-alpha.103
+      - @mui/material@5.10.9
+      - luxon@3.0.4
+      - react-router-dom@6.4.2
+      - rxjs@7.5.7
+    - dev:
+      - update:
+        - @types/node@18.8.4
+        - @typescript-eslint/eslint-plugin@5.40.0
+        - @typescript-eslint/parser@5.40.0
+      - bump up:
+        - @types/openseadragon@3.0.4
+        - eslint-plugin-react@7.31.10
+
 ## 2.0.1
 
 ### Patch Changes
 
 - CRITICAL UPDATE: Use local version of 'jquery-layout3' [2d1e2757f65ba50a4e573474edaef86e1e39fdd1]
+
 A deep dependency of 'jquery-layout3' is broken. This lib is very old and it is unlikelly to be updated. Need to move away from jquery an continue transition to React.
 
 ## 2.0.0
