@@ -23,7 +23,7 @@ let timer: NodeJS.Timer;
 
 let currentAttempt: number = 0;
 let currentTick: number = 0;
-let duration: number = 30_000;
+let duration: number = 60_000;
 let isRunning: boolean = false;
 let maxAttempts: number = Infinity;
 
