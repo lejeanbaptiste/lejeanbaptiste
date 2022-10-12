@@ -7,7 +7,7 @@ import {
   ToggleButton,
 } from '@mui/material';
 import { StyledToggleButtonGroup } from '@src/components';
-import { useAnalytics } from '@src/hooks';
+import { useAnalytics, useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities';
 import React, { MouseEvent, type FC } from 'react';
@@ -20,9 +20,12 @@ export const Language: FC = () => {
   const { t, i18n } = useTranslation('commons');
   const { analytics } = useAnalytics();
 
+  const { switchLanguage: switchLanguageConsent } = useCookieConsent();
+
   const changeLanguage = (event: MouseEvent<HTMLElement>, code: string) => {
     if (!code) code = language.code;
     switchLanguage(code);
+    switchLanguageConsent(code);
     i18n.changeLanguage(code);
 
     if (analytics) analytics.track('language', { language: code });
