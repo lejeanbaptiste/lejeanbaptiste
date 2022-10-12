@@ -1,14 +1,14 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import { Box, Divider, IconButton, Stack } from '@mui/material';
+import { Logo } from '@src/components';
+import { useAppState } from '@src/overmind';
+import { AnimatePresence, motion } from 'framer-motion';
 import { bindFocus, bindMenu, bindTrigger, usePopupState } from 'material-ui-popup-state/hooks';
 import React, { createContext } from 'react';
 import { CascadingMenu } from './CascadingMenu';
 import { Item, type IItem } from './Item';
 import { SubMenu, type ISubMenu } from './SubMenu';
 import { useMenu } from './useMenu';
-import { Logo } from '@src/components';
-import { useAppState } from '@src/overmind';
-import { AnimatePresence, motion } from 'framer-motion';
 
 export { useMenu } from './useMenu';
 
@@ -41,13 +41,11 @@ export const MainMenu = () => {
     <Box sx={{ mr: 1 }}>
       <Stack direction="row" alignItems="center">
         <Box
-          // width={20}
           mr={2}
           component={motion.div}
           variants={menuButtonVariants}
           initial="hidden"
           animate={resource ? 'visible' : 'hidden'}
-          // transition={{ type: 'tween' }}
           sx={{ overflow: 'hidden' }}
         >
           <AnimatePresence mode="wait">
@@ -84,6 +82,7 @@ export const MainMenu = () => {
       >
         {mainMenuOptions.map((item, index) => {
           if (item === 'divider') return <Divider key={index} />;
+          if (item?.hide === true) return '';
           if ('popupId' in item) return <SubMenu key={index} {...(item as ISubMenu)} />;
           return <Item key={index} {...(item as IItem)} />;
         })}

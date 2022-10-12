@@ -1,6 +1,8 @@
 import { useModal } from 'mui-modal-provider';
 import { useEffect } from 'react';
+import {
   PrivacyDialog,
+  SignInDialog,
   SimpleDialog,
   TemplateDialog,
   type DialogType,
@@ -64,5 +66,6 @@ export const useDialog = () => {
     if (type === 'simple') return SimpleDialog;
     if (type === 'templates') return TemplateDialog;
     if (type === 'privacy') return PrivacyDialog;
+    if (type === 'signIn') return SignInDialog;
   };
 };

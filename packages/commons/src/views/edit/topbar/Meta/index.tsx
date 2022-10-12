@@ -1,7 +1,7 @@
 import { Stack, Typography } from '@mui/material';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { FC, useState } from 'react';
+import React, { useState, type FC } from 'react';
 import { useLeafWriter } from '../../useLeafWriter';
 import { Cloud } from './Cloud';
 import { FullPath } from './FullPath';
@@ -35,17 +35,12 @@ export const Meta: FC = () => {
           animate="visible"
           exit="hidden"
         >
-          <FullPath show={hover} />
+          {resource.provider && <FullPath show={hover} />}
           <Stack direction="row" alignItems="center">
-            <Typography
-              component="h2"
-              ml={1}
-              sx={{ cursor: 'default' }}
-              variant="subtitle1"
-            >
+            <Typography component="h2" ml={1} sx={{ cursor: 'default' }} variant="subtitle1">
               {resource.filename ?? 'untitled.xml'}
             </Typography>
-            {leafWriter && <Cloud />}
+            {leafWriter && resource.provider && <Cloud />}
           </Stack>
         </Stack>
       )}
