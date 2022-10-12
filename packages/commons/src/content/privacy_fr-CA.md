@@ -1,4 +1,4 @@
-# Conditions d'utilisation et politique de confidentialité de LEAF-Writer
+# Conditions d'utilisation et politique de confidentialité
 
 Cette politique régit votre utilisation de LEAF-Writer ; en utilisant LEAF-Writer, vous acceptez cette politique dans son intégralité. Si vous n'êtes pas d'accord avec cette politique ou toute partie de cette politique, vous ne devez pas utiliser ce site Web.
 
