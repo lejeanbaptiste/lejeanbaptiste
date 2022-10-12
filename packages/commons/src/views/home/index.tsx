@@ -13,13 +13,17 @@ import { Footer } from './Footer';
 
 export const HomeView: FC = () => {
   const { userState } = useAppState().auth;
+
   const { openStorageDialog } = useActions().storage;
+  const { setPage } = useActions().ui;
 
   const { t } = useTranslation('commons');
   const { getResourceFromPermalink } = usePermalink();
 
   useEffect(() => {
-    const resource = getResourceFromPermalink();
+    setPage('home');
+  }, []);
+
     if (!resource) return;
     if (!resource.filename) {
       openStorageDialog({

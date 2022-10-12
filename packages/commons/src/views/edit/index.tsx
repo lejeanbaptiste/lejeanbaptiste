@@ -24,6 +24,8 @@ export const EditView: FC = () => {
   } = useActions().editor;
   const { addToRecentDocument } = useActions().storage;
 
+  const { setPage } = useActions().ui;
+
   const navigate = useNavigate();
   const { t } = useTranslation('commons');
 
@@ -36,7 +38,8 @@ export const EditView: FC = () => {
   const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (divEl.current && !leafWriter) loadLib();
+    // if (divEl.current && !leafWriter) loadLib();
+    setPage('edit');
     window.addEventListener('keydown', onKeydownHandle);
     return () => {
       window.removeEventListener('keydown', onKeydownHandle);
