@@ -1,3 +1,140 @@
+# CHANGELOG
+
+## 2.1.0
+
+## New Features
+
+### Introduce privacy policy and cookie consent management
+
+[19c3cf996623b61288f0a97ae7f6129f47a2762d]
+
+In accordance with **GDPR (Europe), LGPD (Brazil), and CCPA (California)** laws, we add:
+
+- A banner on the homepage asking the user to consent to opt-in to our privacy policy and cookies trackers.
+- A consent management setting allows users to revoke or change the consent at any time.
+- Add Terms of User and Privacy policy.
+
+The cookie’s consent has three levels:
+
+- Strictly necessary (for storing cookies preferences)
+- Basic functionalities (including login, tokens, and user preferences
+- Measurement (for Analytics purposes).
+
+Users can manage their preferences, revoking the consent at any time.
+
+- Revoking `measurement` will block Google Analytics, for instance.
+- Revoking basic functionalities will sign the user out and wipe all cookies (except for the cookie preferences)
+
+**Sign-in is now only enabled when the user accepts the terms.**
+
+### Enable not registered users to use LEAF-Writer [c1501e756ac4a3d62421ed467442a037eff3fb39]
+
+Not registered users can open templates and sample documents as well as upload and paste XML from their devices without having to sign in. They have full access to LEAF-Writer except for a few features that require registration, notably opening and saving files from and to the cloud (GitLab / GitLab)
+
+**When annotation a document, the web annotation will be signed off by an anonymous user without id or URI.**
+
+As a reflection of this change, we completely redesigned the storage panel on the homepage (below)
+
+## Redesign the storage panel on the homepage
+
+The new storage panel allows any user to:
+
+- Open files from the device
+- Paste XML directly on the page
+- Open templates
+- Open sample files
+
+**Only registered users can open from the cloud or see recent documents.**
+
+### Introduce autosave
+
+[554853025bfe3e2a974cd2ef16c93a190b7307d0]
+[bca43e335a36d5fc80bc6f5b76e01622ac334b24]
+
+LEAF-Writer will set a `60s` timer every time the document becomes `modified`. After this time, LEAF-Writer will trigger the save function.
+
+Users can also trigger the save function by themselves, which, in this case, will take priority over the timer.
+
+The timer resets and stops after the file are saved.
+
+If the storage provider responds with a conflict (error 409), LEAF-Writer will make `5 subsequent attempts to save the file in `10s interval`. If the error persists, it continues to try to save the file every `60s`.
+
+### Get language from the URL
+
+[e67f4e81a6905b674cc6731ed38af3a1b8c11aea]
+
+It is possible now to pass the language in the URL. For instance, `https://leaf-writer.leaf-vre.org?lang=fr-CA` will load the page in French without the user’s input.
+
+### Allows open sample and template documents from permalink
+
+[e58efd1267fb960917a6e0cd61c8ba615d53172f]
+
+For instance, users can directly open a prose template by accessing `https://localhost/edit?template=Prose`.
+
+### Keycloak callback right to where the user left off when they sign in
+
+[766b1e417e8cc08ecfc9db7de7cd015e2cee9efc]
+
+This is to allow users that already opened a document or accessed the French version using the search parameters in the URL to come back to the same page they were before clicking on sign in.
+
+## Mobile version will not display the storage panel
+
+The screen is really too tiny for LEAF-Writer. Until we have a good UX plan to allow LEAF-Writer to be used on mobile, we should direct users to a large screen. The following message will display on mobile:
+
+`Annotating large corpora requires more space. Please rotate your phone or open LEAF-Writer on a large monitor.`
+
+### Patch
+
+- Fix: Tweak get / set from localStorage [8249f776c5c55204f9153d45a20f979e35c37fd5]
+- Fix: Localization: reorganize and add new translations [675aa4cdff800f52a432ddbc6caea93e88318191]
+- Fix: Cookies consent: banner buttons position [8a8fc6e3490fc38cd29bd95797f39c67f56c6327]
+
+- Fix: Profile: stop event propagation when click to open settings [fca10f28ebc4bea8cda3f9a03d2e5746d3b843e1]
+- Fix: Localization: change language of cookies consent when switching language [c7952f6805749a82fb3329151d55ddd86de35912]
+- Fix: Warn user of unsaved changes when signing out [12379d84b1e9dbc4f14521d57e7ef38d1de5328c]
+- Fix: Warn user about unsaved changes when revoking all consent categories [6457d82ada9c8b4b109d6c7a38d2578a60d9212b]
+- Fix: Autosave: only if the user is register and the file is in the cloud [0a72fc60519001c16837a7fc86db41286a13d5ce]
+- Fix: Autosave: increase interval from 30s to 60s [21623a851504a4d55c411a316fed7fe64c1d95dd]
+- Fix: About: adjust responsive on mobile [7b22ca6994b6ba73b2c3b56edba46bbff7be707e]
+- Fix: Templates Dialog: redesign [15c1ed1659e087c51ea69e7149d243aeb65f5c4a]
+- Fix: Localization: complete reestructure [1c863598d331a5ba95bfa995f3b43ff6b2377b96]
+
+- Refactor: move icons folder [fe9f418997f65686f460c285565230f273c03b53]
+- Refactor: Rename template dialog component [ee35205850dc94cd3cecbc2dc655e66c82ef2cf8]
+- Refactor: Centralize icon management into a single folder [37337c336a8cc8970d5a37869096b1232450d89a]
+- Refactor: Use named exports instead of the default. Organize import types [f18632925285f3b81627e0131a214afc17ea3b93]
+- Refactor: Storage effects: Use internal API instead of accessing localStorage directly. Rename, coalesce, and add types to functions [ef6aef8017834694a65572a763af9365a9877e3c] [84369af4b5a247151493b3d152bdc0abdf2137f7]
+- Refactor: do not load gitlab service for now [8f74b28a2188a3d4dc204ae5e568740fa4ed1a5a]
+
+- Docs: Add inline documentation [6fdebe74f4cec99c5dd3122fc949bee8d8a0fd7f] [5b6f44b8a6742a58c0164ca7a836fee3a14f28e0]
+
+- Update dependencies:
+  - core:
+    - update:
+      - broadcast-channel@4.18.0
+      - framer-motion@7.5.3
+      - i18next@21.10.0
+    - bump up:
+      - @fontsource/lato@4.5.10
+      - @mui/icons-material@5.10.9
+      - @mui/lab@5.0.0-alpha.103
+      - @mui/material@5.10.9
+      - body-parser@1.20.1
+      - express@4.18.2
+      - i18next-browser-languagedetector@6.1.8
+      - keycloak-js@19.0.3 react-router-dom@6.4.2
+  - dev:
+    - update:
+      - @types/node@18.8.4
+      - @typescript-eslint/eslint-plugin@5.40.0
+      - @typescript-eslint/parser@5.40.0
+      - css-minimizer-webpack-plugin@4.2.1
+      - eslint@8.5.0
+      - less-loader@11.1.0
+    - bump up:
+      - eslint-plugin-react@7.31.10
+      - typescript@4.8.4
+
 ## 2.0.2
 
 ### Patch Changes
