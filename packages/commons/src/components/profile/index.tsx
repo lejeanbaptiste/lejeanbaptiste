@@ -30,7 +30,7 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
   const open = Boolean(anchor);
 
   const handleSignOut = async () => {
-    if (!isDirty) doSignOut();
+    if (!isDirty) return doSignOut();
 
     openDialog({
       props: {
