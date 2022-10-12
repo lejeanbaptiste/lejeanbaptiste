@@ -21,6 +21,11 @@ export const usePermalink = () => {
   const navigate = useNavigate();
 
   const parsePermalink = (query?: string): Permalink | null => {
+  const getLanguage = () => {
+    const { lang } = queryString.parse(location.search);
+    if (Array.isArray(lang)) return lang[0];
+    return lang;
+  };
     if (!query && !location.search) return null;
 
     const search = queryString.parse(query || location.search);
@@ -118,5 +123,5 @@ export const usePermalink = () => {
     return params;
   };
 
-  return { getResourceFromPermalink, parsePermalink, setPermalink };
+  return { getLanguage, getResourceFromPermalink, parsePermalink, setPermalink };
 };
