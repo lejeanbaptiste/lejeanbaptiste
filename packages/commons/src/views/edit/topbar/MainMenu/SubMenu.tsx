@@ -1,6 +1,6 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Box, Divider, Icon, MenuItem, Stack, Typography } from '@mui/material';
-import { getIcon } from '@src/utilities';
+import { getIcon } from '@src/assets/icons';
 import { bindFocus, bindHover, usePopupState } from 'material-ui-popup-state/hooks';
 import React, { useContext, useEffect, useState } from 'react';
 import { CascadingContext } from '.';
@@ -9,6 +9,7 @@ import { Item, type IItem } from './Item';
 import { useMenu, type ItemType } from './useMenu';
 
 export interface ISubMenu {
+  hide?: boolean;
   icon?: string;
   popupId: string;
   title?: string;
@@ -16,7 +17,7 @@ export interface ISubMenu {
   [key: string]: any;
 }
 
-export const SubMenu = ({ icon, title, popupId, ...props }: ISubMenu) => {
+export const SubMenu = ({ hide, icon, title, popupId, ...props }: ISubMenu) => {
   const { parentPopupState } = useContext(CascadingContext);
   const popupState = usePopupState({
     popupId,
@@ -71,6 +72,7 @@ export const SubMenu = ({ icon, title, popupId, ...props }: ISubMenu) => {
       >
         {options.map((item, index) => {
           if (item === 'divider') return <Divider key={index} />;
+          if (item?.hide === true) return '';
           if ('popupId' in item) return <SubMenu key={index} {...(item as ISubMenu)} />;
           return <Item key={index} {...(item as IItem)} />;
         })}

@@ -4,18 +4,18 @@ import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MainMenu, Meta, useMenu } from './Components';
 import { useNavigate } from 'react-router';
+import { MainMenu, Meta, useMenu } from './topbar';
 import { useLeafWriter } from './useLeafWriter';
 
 export const EditView: FC = () => {
   const { userState, user } = useAppState().auth;
-  const { libLoaded } = useAppState().editor;
   const { autosave, libLoaded } = useAppState().editor;
   const { resource } = useAppState().storage;
 
-  const { getKeycloakAuthToken } = useActions().auth;
+  const { createGuestUser, getKeycloakAuthToken } = useActions().auth;
   const {
+    close,
     getGeonameUsername,
     loadLeafWriter,
     setAutosave,
@@ -50,10 +50,21 @@ export const EditView: FC = () => {
   }, []);
 
   useEffect(() => {
-    if (userState === 'AUTHENTICATING') return;
-    if (userState === 'UNAUTHENTICATED') return navigate('/', { replace: true });
+    if (userState === 'AUTHENTICATED') {
+      if (!resource) loadDocumentFromPermalink();
+      loadLib();
+      return;
+    }
 
-    if (!resource) loadDocumentFromPermalink();
+    if (userState === 'UNAUTHENTICATED') {
+      if (!resource) {
+        close();
+        navigate('/', { replace: true });
+        return;
+      }
+      createGuestUser();
+      loadLib();
+    }
   }, [userState]);
 
   useEffect(() => {
@@ -86,7 +97,7 @@ export const EditView: FC = () => {
         xml: resource.content ?? '',
       },
       settings: {
-        credentials: { nssiToken: getKeycloakAuthToken },
+        credentials: { nssiToken: userState === 'AUTHENTICATED' ? getKeycloakAuthToken : '' },
         lookups: {
           authorities: [['geonames', { config: { username: geonamesUsername } }]],
         },

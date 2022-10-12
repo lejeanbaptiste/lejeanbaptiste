@@ -1,12 +1,12 @@
 import CloudDoneOutlinedIcon from '@mui/icons-material/CloudDoneOutlined';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
-import Badge, { BadgeProps } from '@mui/material/Badge';
+import Badge, { type BadgeProps } from '@mui/material/Badge';
 import { styled } from '@mui/material/styles';
 import { useAppState } from '@src/overmind';
 import { motion } from 'framer-motion';
 import { CloudSyncOutline } from 'mdi-material-ui';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLeafWriter } from '../../useLeafWriter';
 
@@ -35,7 +35,7 @@ export const Cloud: FC = () => {
   return (
     <Stack direction="row">
       <Tooltip
-        title={isDirty ? t('click to save') : isSaving ? t('saving') : t('all changes salved')}
+        title={isDirty ? t('click_to_save') : isSaving ? t('saving') : t('all_changes_salved')}
       >
         <IconButton
           aria-label="save"
@@ -71,7 +71,7 @@ export const Cloud: FC = () => {
         animate={saveDelayed ? 'visible' : 'hidden'}
       >
         <Typography ml={0.5} textTransform="capitalize" variant="caption" whiteSpace="nowrap">
-          {t('waiting for resource', { provider: resource?.provider })}
+          {t('waiting_for_resource', { provider: resource?.provider })}
         </Typography>
       </Box>
     </Stack>

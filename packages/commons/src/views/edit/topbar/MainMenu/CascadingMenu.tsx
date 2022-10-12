@@ -9,7 +9,7 @@ export const CascadingMenu = ({ popupState, ...props }) => {
   const { MIN_WIDTH } = useMenu();
 
   const { rootPopupState } = useContext(CascadingContext);
-  
+
   const context = useMemo(
     () => ({
       rootPopupState: rootPopupState || popupState,

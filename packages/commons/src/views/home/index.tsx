@@ -6,11 +6,8 @@ import { isErrorMessage } from '@src/utilities';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AboutSection } from './about';
-import { Header } from './Header';
-import { SignInSection } from './SignInSection';
-import { StatusBar } from './StatusBar';
-import { StoragePanel } from './storagePanel';
 import { Footer } from './Footer';
+import { Main } from './main';
 
 export const HomeView: FC = () => {
   const { userState } = useAppState().auth;
@@ -48,12 +45,7 @@ export const HomeView: FC = () => {
     <Page title={t('homepage')}>
       <TopBar />
       <Stack>
-        <Stack>
-          <Header />
-          <SignInSection />
-          <StoragePanel />
-          <StatusBar />
-        </Stack>
+        <Main />
         <AboutSection />
         <Footer />
       </Stack>

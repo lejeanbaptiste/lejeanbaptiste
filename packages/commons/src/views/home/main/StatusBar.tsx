@@ -1,9 +1,12 @@
-import { Chip, Stack } from '@mui/material';
-import React, { FC } from 'react';
+import { Chip, Stack, useMediaQuery, useTheme } from '@mui/material';
+import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const StatusBar: FC = () => {
   const { t } = useTranslation();
+
+  const { breakpoints } = useTheme();
+  const isMobile = useMediaQuery(breakpoints.down('sm'));
 
   const handleClick = () => {
     window.open(
@@ -12,7 +15,7 @@ export const StatusBar: FC = () => {
   };
 
   return (
-    <Stack justifyContent="center" alignItems="flex-end" px={2}>
+    <Stack justifyContent="center" alignItems="center" px={2} mt={5}>
       <Chip
         label={`${t('home:bugs')} / ${t('home:requests')}`}
         onClick={handleClick}

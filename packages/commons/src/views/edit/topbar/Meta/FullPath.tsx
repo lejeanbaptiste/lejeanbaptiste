@@ -1,8 +1,8 @@
 import { Icon, Stack, Typography } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import { getIcon } from '@src/utilities';
+import { getIcon } from '@src/assets/icons';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { FC, useMemo } from 'react';
+import React, { useMemo, type FC } from 'react';
 
 interface FullPathProps {
   show: boolean;

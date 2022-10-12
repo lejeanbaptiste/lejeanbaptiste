@@ -1,19 +1,21 @@
-import { type Leafwriter } from '@cwrc/leafwriter';
+import type { Leafwriter } from '@cwrc/leafwriter';
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
+import { Typography } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { StorageProviderName } from '@src/services';
+import { isErrorMessage } from '@src/utilities';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { useEffect } from 'react';
 
 let leafWriter: Leafwriter | null = null;
 
 export const useLeafWriter = () => {
-  const { isDirty } = useAppState().editor;
+  const { isDirty, timerService } = useAppState().editor;
 
   const { close, save, saveAs } = useActions().editor;
-  const { download, getStorageProviderAuth, setResource } = useActions().storage;
+  const { download, getStorageProviderAuth, loadSample, setResource } = useActions().storage;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
 
   const navigate = useNavigate();
@@ -28,12 +30,25 @@ export const useLeafWriter = () => {
   const setCurrentLeafWriter = (lw: Leafwriter | null) => (leafWriter = lw);
 
   const loadDocumentFromPermalink = async () => {
-    const resource = getResourceFromPermalink();
-    if (!resource) return showErrorMessage(t('storage:document not found'));
-    if (!resource.provider) return showErrorMessage(t('storage:provider not found'));
+    const resource = await getResourceFromPermalink();
+
+    if (!resource) return showErrorMessage(t('storage:warning.check_URL_structure'));
+
+    if (isErrorMessage(resource)) {
+      showErrorMessage(resource.message);
+      return;
+    }
+
+    if ('category' in resource) {
+      const content = await loadSample(resource.url);
+      setResource({ content, filename: `${resource.title}.xml` });
+      return;
+    }
+
+    if (!resource.provider) return showErrorMessage(t('storage:provider_not_found'));
 
     const providerAuth = getStorageProviderAuth(resource.provider as StorageProviderName);
-    if (!providerAuth) return showErrorMessage(t('storage:provider not found'));
+    if (!providerAuth) return showErrorMessage(t('storage:provider_not_found'));
 
     const document = await loadDocument(providerAuth, resource);
     if ('error' in document) return showErrorMessage(document.error);
@@ -41,13 +56,18 @@ export const useLeafWriter = () => {
     setResource(document);
   };
 
-  const showErrorMessage = (errorMessage: string) => {
+  const showErrorMessage = (message: string) => {
     openDialog({
       props: {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: errorMessage,
+        title: t('storage:invalid_request'),
+        Message: () => (
+          <Typography sx={{ ':first-letter': { textTransform: 'uppercase' } }}>
+            {message}
+          </Typography>
+        ),
         onClose: async () => disposeLeafWriter(),
       },
     });
@@ -63,20 +83,21 @@ export const useLeafWriter = () => {
     if (!leafWriter) return;
 
     const content = await leafWriter.getContent();
+    const snapshot = await leafWriter.getDocumentSnapshot();
 
     if (action === 'saveAs') {
-      saveAs(content);
+      saveAs({content, snapshot});
       return;
     }
 
-    const saved = await save(content);
+    const saved = await save({content, snapshot});
 
     if (!saved.success && saved.error?.message === 'conflict') return;
 
     const type = saved.success ? 'success' : saved.error?.type ?? 'info';
     const message = saved.success
-      ? t('storage:document saved')
-      : `${t('error:Something went wrong')}. ${t('storage:document not saved')}!`;
+      ? t('storage:document_saved')
+      : `${t('error:something_went_wrong')}. ${t('storage:document_not_saved')}!`;
 
     if (saved.success) leafWriter.setIsEditorDirty(false);
 
@@ -86,8 +107,8 @@ export const useLeafWriter = () => {
   const saveFeedback = (saved: boolean) => {
     const type = saved ? 'success' : 'error';
     const message = saved
-      ? t('storage:document saved')
-      : `${t('error:something went wrong')}. ${t('storage:document not saved')}!`;
+      ? t('storage:document_saved')
+      : `${t('error:something_went_wrong')}. ${t('storage:document_not_saved')}!`;
 
     notifyViaSnackbar({ message, options: { variant: type } });
 
@@ -103,10 +124,10 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        title: t('commons:unsaved changes'),
+        title: t('unsaved_changes'),
         actions: [
-          { action: 'cancel', label: t('commons:cancel') },
-          { action: 'discard', label: t('commons:discard changes') },
+          { action: 'cancel', label: t('cancel') },
+          { action: 'discard', label: t('discard_changes') },
         ],
         //@ts-ignore
         onClose: async (action: string) => {
@@ -118,8 +139,11 @@ export const useLeafWriter = () => {
   };
 
   const disposeLeafWriter = () => {
+    timerService.stop();
+
     leafWriter?.dispose();
     leafWriter = null;
+
     navigate('/', { replace: true });
 
     close();

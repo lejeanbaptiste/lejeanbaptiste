@@ -6,16 +6,17 @@ import { Resource } from '@src/types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useLeafWriter } from '../../useLeafWriter';
-import { type IItem } from './Item';
-import { type ISubMenu } from './SubMenu';
+import type { IItem } from './Item';
+import type { ISubMenu } from './SubMenu';
 
 export type ItemType = 'menuItem' | 'document';
 
 const MIN_WIDTH = 250;
 
 export const useMenu = () => {
+  const { userState } = useAppState().auth;
   const { isDirty } = useAppState().editor;
-  const { recentDocuments } = useAppState().storage;
+  const { recentDocuments, resource } = useAppState().storage;
 
   const { getStorageProviderAuth, openStorageDialog, setResource } = useActions().storage;
   const { openDialog } = useActions().ui;
@@ -28,29 +29,44 @@ export const useMenu = () => {
 
   const mainMenuOptions: (IItem | 'divider' | ISubMenu)[] = [
     {
-      icon: 'newDocument',
+      icon: 'template',
       label: `${t('new')}...`,
       onTrigger: () => openDialog({ type: 'templates' }),
     },
     {
-      icon: 'open',
+      icon: 'folderOpen',
       label: `${t('open')}...`,
-      onTrigger: () => openStorageDialog({ source: 'cloud', resource: undefined, type: 'load' }),
+      onTrigger: () =>
+        openStorageDialog({
+          source: userState === 'AUTHENTICATED' ? 'cloud' : 'local',
+          resource: undefined,
+          type: 'load',
+        }),
       shortcut: ' ⌘O',
     },
-    { icon: 'recentDocument', popupId: 'recent', title: t('open recent') },
+    {
+      disabled: !resource?.provider,
+      hide: !recentDocuments || recentDocuments.length === 0,
+      icon: 'recent',
+      popupId: 'recent',
+      title: t('open_recent'),
+    },
     'divider',
     {
+      disabled: !resource?.provider,
       icon: 'save',
       label: t('save'),
       onTrigger: () => handleSave(),
       shortcut: ' ⌘S',
+      tootipText: t('messages:you_must_sign_in_to_use_this_feature'),
     },
     {
+      disabled: !resource?.provider,
       icon: 'saveAs',
-      label: `${t('save as')}...`,
+      label: `${t('save_as')}...`,
       onTrigger: () => handleSave('saveAs'),
       shortcut: ' ⌘⌥⇧S',
+      tootipText: t('messages:you_must_sign_in_to_use_this_feature'),
     },
     {
       icon: 'download',
@@ -68,6 +84,8 @@ export const useMenu = () => {
 
   const getOptions = (trigger?: string): (IItem | 'divider' | ISubMenu)[] => {
     if (trigger === 'recent') {
+      if (!recentDocuments) return [];
+
       const options: IItem[] = recentDocuments.map((document) => ({
         data: document,
         label: document.filename ?? '',
@@ -78,10 +96,10 @@ export const useMenu = () => {
             props: {
               maxWidth: 'xs',
               severity: 'warning',
-              title: t('unsaved changes'),
+              title: t('unsaved_changes'),
               actions: [
                 { action: 'cancel', label: t('cancel') },
-                { action: 'discard', label: t('discard changes') },
+                { action: 'discard', label: t('discard_changes') },
               ],
               //@ts-ignore
               onClose: async (action: string) => {

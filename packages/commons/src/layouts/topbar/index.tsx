@@ -1,5 +1,5 @@
 import { AppBar, Box, Stack, Toolbar, useTheme } from '@mui/material';
-import { ProfileAvatar } from '@src/components';
+import { SigninButton, ProfileAvatar } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence } from 'framer-motion';
 import React, { FC } from 'react';
@@ -17,6 +17,7 @@ interface TopBarProps {
 export const TopBar: FC<TopBarProps> = ({ Left, Meta, title = 'LEAF-Writer' }) => {
   const { userState } = useAppState().auth;
   const { resource } = useAppState().storage;
+  const { page } = useAppState().ui;
 
   const { palette } = useTheme();
 
@@ -49,12 +50,15 @@ export const TopBar: FC<TopBarProps> = ({ Left, Meta, title = 'LEAF-Writer' }) =
               <ProfileAnchor>
                 <ProfileAvatar />
               </ProfileAnchor>
-            ) : (
+            ) : userState === 'UNAUTHENTICATED' ? (
               <>
                 <Privacy />
                 <DarkMode />
                 <LanguageMenu />
+                {page !== 'home' && <SigninButton />}
               </>
+            ) : (
+              ''
             )}
           </AnimatePresence>
         </Stack>

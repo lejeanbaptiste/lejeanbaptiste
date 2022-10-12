@@ -1,32 +1,26 @@
-import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import ClearIcon from '@mui/icons-material/Clear';
 import { Box, Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
-import { usePermalink } from '@src/hooks';
-import { useActions } from '@src/overmind';
-import { StorageProviderName } from '@src/services';
+import { getIcon } from '@src/assets/icons';
+import type { StorageProviderName } from '@src/services';
 import type { Resource } from '@src/types';
-import { getIcon } from '@src/utilities';
 import { formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, type FC, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
 
-interface RecentFileProps {
+interface RecentFileCardProps {
+  onClick: (resource: Resource) => void;
+  onRemove: (url: string) => void;
   resource: Resource;
 }
 
-const RecentFile: FC<RecentFileProps> = ({ resource }) => {
-  const { getStorageProviderAuth, removeRecentDocument, setResource } = useActions().storage;
-
-  const navigate = useNavigate();
+export const RecentFileCard: FC<RecentFileCardProps> = ({ onClick, onRemove, resource }) => {
   const { t } = useTranslation('recents');
-  const { setPermalink } = usePermalink();
   const { palette } = useTheme();
 
   const [hover, setHover] = useState(false);
 
-  const { filename, modifiedAt, owner, path, provider, repo, schemaName, url } = resource;
+  const { filename, modifiedAt, owner, path, provider, repo, url } = resource;
 
   const lastDate = modifiedAt
     ? formatDistanceToNow(new Date(modifiedAt), {
@@ -35,28 +29,14 @@ const RecentFile: FC<RecentFileProps> = ({ resource }) => {
       })
     : '';
 
-  const handleClick = async (resource: Resource) => {
-    if (!resource.provider) return;
-
-    const providerAuth = getStorageProviderAuth(resource.provider as StorageProviderName);
-    if (!providerAuth) return;
-
-    const document = await loadDocument(providerAuth, resource);
-    if (!document || 'error' in document || !document.content || !document.url) {
-      return;
-    }
-
-    setResource(document);
-    const permalink = setPermalink(document);
-    navigate(`/edit${permalink}`, { replace: true });
-  };
+  const handleClick = async () => onClick(resource);
 
   const handleRemove = (event: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
     event.preventDefault();
     event.stopPropagation();
 
     if (!url) return;
-    removeRecentDocument(url);
+    onRemove(url);
   };
 
   const extraInfoVariant = {
@@ -66,11 +46,15 @@ const RecentFile: FC<RecentFileProps> = ({ resource }) => {
 
   return (
     <Card
-      onClick={() => handleClick(resource)}
+      onClick={handleClick}
       onMouseOver={() => setHover(true)}
       onMouseOut={() => setHover(false)}
-      sx={{ cursor: 'pointer' }}
       raised={hover ? true : false}
+      sx={{ mx: 2, cursor: 'pointer' }}
+      component={motion.div}
+      layout
+      exit={{ scale: 0.8, opacity: 0 }}
+      transition={{ type: 'spring' }}
     >
       <Stack>
         <Stack
@@ -95,7 +79,7 @@ const RecentFile: FC<RecentFileProps> = ({ resource }) => {
             </Typography>
             {hover && (
               <IconButton
-                aria-label={t('remove from recents')}
+                aria-label={t('remove_from_recents')}
                 onClick={handleRemove}
                 size="small"
                 sx={{ ml: 'auto' }}
@@ -137,5 +121,3 @@ const RecentFile: FC<RecentFileProps> = ({ resource }) => {
     </Card>
   );
 };
-
-export default RecentFile;

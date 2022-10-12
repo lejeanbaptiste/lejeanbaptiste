@@ -4,20 +4,6 @@ import { log } from '@src/utilities';
 import { saveAs } from 'file-saver';
 import { Context } from '../index';
 
-//* INIITIALIZE
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const onInitializeOvermind = async ({ state, effects }: Context, overmind: any) => {
-  //templates
-  state.storage.templates = await effects.storage.api.loadTemplates();
-
-  //sample documents
-  state.storage.sampleDocuments = await effects.storage.api.loadSampleDocuments();
-
-  //Recent Files
-  const recentFiles: Resource[] = effects.storage.api.getFromLocalStorage('recentFiles') ?? [];
-  state.storage.recentDocuments = recentFiles;
-};
-
 export const setupStorageProvider = async ({ state, actions, effects }: Context, token: string) => {
   const identity_provider = effects.auth.api.getIdentityProvider();
   if (!identity_provider) return log.warn('No identity_provider');
@@ -126,6 +112,8 @@ export const addToRecentDocument = ({ state, effects }: Context, document: Resou
     return;
   }
 
+  if (!state.storage.recentDocuments) state.storage.recentDocuments = [];
+
   // if recent already in the list, remove (and subsequently add in the first position)
   state.storage.recentDocuments = state.storage.recentDocuments.filter(
     ({ provider, owner, ownertype, repo, path, filename }) =>
@@ -146,10 +134,28 @@ export const addToRecentDocument = ({ state, effects }: Context, document: Resou
   effects.storage.api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
 };
 
-export const updateRecentDocument = ({ state, effects }: Context) => {
+// export const downloadImage = async ({ state, effects }: Context, snapshot: string) => {
+//   const fakeLink = window.document.createElement('a');
+//   //@ts-ignore
+//   fakeLink.style = 'display:none;';
+//   fakeLink.download = 'doc';
+
+//   fakeLink.href = snapshot;
+
+//   document.body.appendChild(fakeLink);
+//   fakeLink.click();
+//   document.body.removeChild(fakeLink);
+
+//   fakeLink.remove();
+// };
+
+export const updateRecentDocument = ({ state, actions, effects }: Context) => {
+  if (!state.storage.recentDocuments) return;
+
   state.storage.recentDocuments = state.storage.recentDocuments.map((document) => {
     if (document.url === state.storage.resource?.url) {
       document.modifiedAt = new Date();
+      if (state.storage.resource?.snapshot) document.snapshot = state.storage.resource.snapshot;
     }
     return document;
   });
@@ -158,9 +164,17 @@ export const updateRecentDocument = ({ state, effects }: Context) => {
 };
 
 export const removeRecentDocument = ({ state, effects }: Context, url: string) => {
-  state.storage.recentDocuments = state.storage.recentDocuments.filter(
-    (document) => document.url !== url
-  );
+  if (!state.storage.recentDocuments) return;
+
+  const { api } = effects.storage;
+
+  const recentDocuments = state.storage.recentDocuments.filter((document) => document.url !== url);
+
+  state.storage.recentDocuments = recentDocuments;
+  api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
+
+  if (recentDocuments.length === 0) api.removeFromLocalStorage('recentFiles');
+};
 
 export const loadRecentFiles = async ({ state, effects }: Context) => {
   const recentFiles: Resource[] = effects.storage.api.getFromLocalStorage('recentFiles') ?? [];

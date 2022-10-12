@@ -188,25 +188,19 @@ export const _linkIdentityProvider = async (
   return provider;
 };
 
-export const setSampleUser = ({ state }: Context) => {
-  // state.auth.user = {
-  //   email: 'sampleUser@sample.com',
-  //   firstName: 'Sample',
-  //   lastName: 'User',
-  //   username: 'sampleUser',
-  //   identities: {
-  //     github: {
-  //       id: 0,
-  //       email: 'sampleUser@sample.com',
-  //       name: 'Sample User',
-  //       login: 'lucaju',
-  //       username: 'sampleUser',
-  //     },
-  //   },
-  //   preferredID: 'github',
-  //   prefStorageProvider: 'github',
-  // };
-  // state.auth.userAuthenticated = true;
+export const createGuestUser = ({ state }: Context) => {
+  state.auth.user = {
+    email: 'sampleUser@sample.com',
+    firstName: 'Anonymous',
+    lastName: 'Anonymous',
+    username: 'anonymous',
+    identities: new Map([
+      ['github', { name: 'Anonymous', uri: '#anonymous', username: 'anonymous' }],
+    ]),
+    preferredID: 'github',
+    prefStorageProvider: 'github',
+    url: '#anonymous',
+  };
 };
 
 export const getUserProfile = ({ state }: Context) => {
