@@ -83,8 +83,10 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
 
       <Divider />
 
-      <PrivacySettings onClick={onClose} />
-      {libLoaded && <EditorSettings onClick={onClose} />}
+      <List dense>
+        <PrivacySettings onClick={onClose} />
+        {libLoaded && <EditorSettings onClick={onClose} />}
+      </List>
 
       <Divider />
 
