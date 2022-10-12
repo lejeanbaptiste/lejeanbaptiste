@@ -5,4 +5,5 @@ export { ProfileAvatar } from './ProfileAvatar';
 export { Storage } from './Storage';
 export { StyledToggleButtonGroup } from './StyledToggleButtonGroup';
 export { StyledToolTip } from './StyledToolTip';
+export { TemplatesView } from './templates';
 export { TextEmphasis } from './TextEmphasis';

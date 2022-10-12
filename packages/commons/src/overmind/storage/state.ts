@@ -1,5 +1,5 @@
-import { IDocTemplate, Resource, StorageDialogState } from '@src/types';
 import type { StorageProviderName } from '@src/services';
+import type { Resource, StorageDialogState } from '@src/types';
 
 type State = {
   recentDocuments: Resource[];
@@ -7,7 +7,6 @@ type State = {
   sampleDocuments?: { title: string; url: string }[];
   storageDialogState: StorageDialogState;
   storageProviders: StorageProviderName[];
-  templates: IDocTemplate[];
 };
 
 export const state: State = {
@@ -15,5 +14,4 @@ export const state: State = {
   sampleDocuments: [],
   storageDialogState: { open: false },
   storageProviders: [],
-  templates: [],
 };
