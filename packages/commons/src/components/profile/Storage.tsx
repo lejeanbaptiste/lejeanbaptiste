@@ -12,7 +12,7 @@ import { StyledToolTip } from '@src/components';
 import { useAnalytics } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { suportedStorageProviders, type StorageProviderName } from '@src/services';
-import { getIcon } from '@src/utilities';
+import { getIcon } from '@src/assets/icons';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';

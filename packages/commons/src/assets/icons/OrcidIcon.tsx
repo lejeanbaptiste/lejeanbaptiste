@@ -1,7 +1,7 @@
 import { createSvgIcon } from '@mui/material/utils';
 import React from 'react';
 
-const OrcidIcon = createSvgIcon(
+export const OrcidIcon = createSvgIcon(
   <g>
     <path d="M13.9,8.7h-2.2v7.4H14c3.3,0,4-2.5,4-3.7C18,10.4,16.7,8.7,13.9,8.7z" />
     <path
@@ -12,5 +12,3 @@ const OrcidIcon = createSvgIcon(
   </g>,
   'Orcid'
 );
-
-export default OrcidIcon;

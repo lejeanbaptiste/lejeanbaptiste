@@ -1,5 +1,5 @@
 import { Backdrop, useTheme } from '@mui/material';
-import TeaIcon from '@src/assets/icons/tea';
+import { TeaIcon } from '@src/assets/icons';
 import React, { type FC } from 'react';
 
 export const LoadingMask: FC = () => {
