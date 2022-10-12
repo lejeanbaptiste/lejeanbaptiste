@@ -2,7 +2,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TuneIcon from '@mui/icons-material/Tune';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { useLeafWriter } from '@src/views/edit/useLeafWriter';
-import React, { FC, MouseEvent } from 'react';
+import React, { MouseEvent, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface Props {

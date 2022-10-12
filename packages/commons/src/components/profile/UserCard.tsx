@@ -2,7 +2,7 @@ import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import { IconButton, Stack, Typography } from '@mui/material';
 import { StyledToolTip } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ProfileAvatar } from '../ProfileAvatar';
 

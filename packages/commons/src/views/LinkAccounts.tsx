@@ -1,10 +1,11 @@
 import { Page } from '@src/layouts';
-import React, { FC, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { BroadcastChannel } from 'broadcast-channel';
+import React, { useEffect, type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const LinkAccounts: FC = () => {
   const { t } = useTranslation('commons');
+  
   const query = new URLSearchParams(location.search);
   const error = query.get('error');
 

@@ -5,7 +5,7 @@ import React, { useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import { useActions } from '../overmind';
-import { type ISimpleDialog } from './type';
+import type { ISimpleDialog } from './type';
 
 export const SimpleDialog: FC<ISimpleDialog> = ({
   actions = [{ action: 'close', label: 'close' }],

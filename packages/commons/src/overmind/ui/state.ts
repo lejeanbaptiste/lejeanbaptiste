@@ -1,6 +1,6 @@
-import { INotification, Language, PaletteMode } from '@src/types';
+import type { IDialogBar } from '@src/dialogs';
+import type { INotification, Language, PaletteMode } from '@src/types';
 import { supportedLanguages } from '@src/utilities';
-import type { IDialogBar } from '../../dialogs';
 
 type State = {
   cookieConsent: string[];

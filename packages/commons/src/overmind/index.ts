@@ -1,4 +1,4 @@
-import { IContext } from 'overmind';
+import type { IContext } from 'overmind';
 import {
   createActionsHook,
   createEffectsHook,
@@ -10,7 +10,6 @@ import * as auth from './auth';
 import * as editor from './editor';
 import * as storage from './storage';
 import * as ui from './ui';
-
 
 export const config = namespaced({
   auth,

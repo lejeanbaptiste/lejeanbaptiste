@@ -13,7 +13,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { supportedIdentityProviders, type IdentityProviderName } from '@src/services';
 import { getIcon } from '@src/utilities';
 import { BroadcastChannel } from 'broadcast-channel';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const Identity: FC = () => {

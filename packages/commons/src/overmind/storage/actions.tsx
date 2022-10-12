@@ -1,7 +1,7 @@
+import { suportedStorageProviders, type StorageProviderName } from '@src/services';
 import type { IProviderAuth, Resource, StorageDialogState } from '@src/types';
 import { log } from '@src/utilities';
 import { saveAs } from 'file-saver';
-import { StorageProviderName, suportedStorageProviders } from '../../services';
 import { Context } from '../index';
 
 //* INIITIALIZE
@@ -28,8 +28,7 @@ export const setupStorageProvider = async ({ state, actions, effects }: Context,
     actions.storage._linkStorageProvider(iDProvider.name);
   });
 
-  //preferredStorage
-
+  // preferredStorage
   if (!state.auth.user) return;
   //if not preferredStorage, use the first StorageProvider linked Account
   const preferredStorage = effects.storage.api.getFromLocalStorage('prefStorageProvider');

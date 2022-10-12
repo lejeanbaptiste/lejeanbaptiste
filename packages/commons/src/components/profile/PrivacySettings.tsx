@@ -2,7 +2,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
-import React, { FC, MouseEvent } from 'react';
+import React, { MouseEvent, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface Props {

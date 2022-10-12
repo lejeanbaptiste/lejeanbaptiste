@@ -2,7 +2,7 @@ import { Box, Button, Divider, List, Popover } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { suportedStorageProviders, supportedIdentityProviders } from '@src/services';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EditorSettings } from './EditorSettings';
 import { Footer } from './Footer';

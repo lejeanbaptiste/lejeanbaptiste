@@ -1,4 +1,4 @@
-import { Typography, useTheme, TypographyProps } from '@mui/material';
+import { Typography, useTheme, type TypographyProps } from '@mui/material';
 import React, { type FC } from 'react';
 
 interface TextEmphasis extends TypographyProps {

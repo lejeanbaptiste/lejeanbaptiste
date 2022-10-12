@@ -1,4 +1,4 @@
-import { OptionsObject, SnackbarMessage } from 'notistack';
+import type { OptionsObject, SnackbarMessage } from 'notistack';
 import React from 'react';
 
 export interface Language {
