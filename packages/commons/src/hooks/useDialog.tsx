@@ -1,6 +1,10 @@
 import { useModal } from 'mui-modal-provider';
 import { useEffect } from 'react';
-import { PrivacyDialog, SimpleDialog, TemplateDialog, type DialogType } from '../dialogs';
+  PrivacyDialog,
+  SimpleDialog,
+  TemplateDialog,
+  type DialogType,
+} from '../dialogs';
 import { useActions, useAppState } from '../overmind';
 
 let displayed: string[] = [];
