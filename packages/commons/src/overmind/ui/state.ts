@@ -8,6 +8,7 @@ type State = {
   dialogBar: IDialogBar[];
   language: Language;
   notifications: INotification[];
+  page: string;
   themeAppearance: PaletteMode;
 };
 
@@ -17,5 +18,6 @@ export const state: State = {
   dialogBar: [],
   language: supportedLanguages.get('en-CA')!,
   notifications: [],
+  page: 'home',
   themeAppearance: 'auto',
 };

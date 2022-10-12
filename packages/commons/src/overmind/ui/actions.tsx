@@ -25,6 +25,12 @@ export const onInitializeOvermind = async ({ state, actions }: Context, overmind
   }
 };
 
+/**
+ * Set the current page view
+ */
+export const setPage = async ({ state }: Context, value: string) => {
+  state.ui.page = value;
+};
 export const getGAID = async ({ effects }: Context) => {
   const response = await effects.ui.api.getGAID();
   return response;
