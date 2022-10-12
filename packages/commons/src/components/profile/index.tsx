@@ -1,4 +1,4 @@
-import { Box, Button, Divider, List, Popover } from '@mui/material';
+import { Box, Button, Divider, List, Popover, Typography } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { suportedStorageProviders, supportedIdentityProviders } from '@src/services';
@@ -19,14 +19,38 @@ interface ProfileProps {
 }
 
 export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
-  const { libLoaded } = useAppState().editor;
+  const { isDirty, libLoaded } = useAppState().editor;
+
   const { signOut } = useActions().auth;
+  const { openDialog } = useActions().ui;
+
   const { t } = useTranslation('commons');
   const { clearCookieConsent } = useCookieConsent();
 
   const open = Boolean(anchor);
 
   const handleSignOut = async () => {
+    if (!isDirty) doSignOut();
+
+    openDialog({
+      props: {
+        severity: 'warning',
+        title: t('commons:unsaved_changes'),
+        Message: () => <Typography>{t('storage:you_will_lose_any_unsaved_changes')}.</Typography>,
+        actions: [
+          { action: 'cancel', label: t('commons:cancel') },
+          { action: 'signout', label: t('commons:sign_out'), variant: 'outlined' },
+        ],
+        //@ts-ignore
+        onClose: async (action: string) => {
+          if (action === 'cancel') return onClose();
+          doSignOut();
+        },
+      },
+    });
+  };
+
+  const doSignOut = async () => {
     clearCookieConsent();
     await signOut();
     onClose();
