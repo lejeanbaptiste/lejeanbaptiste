@@ -51,7 +51,7 @@ export const Storage: FC = () => {
   return (
     <Stack direction="row" justifyContent="center">
       {userState === 'UNAUTHENTICATED' && <Sidebar />}
-      <Paper elevation={palette.mode === 'dark' ? 6 : 1}>
+      <Paper elevation={palette.mode === 'dark' ? 6 : 1} sx={{ zIndex: 2 }}>
         <Stack direction="row" justifyContent="center">
           <Menu onSelect={handleSelect} selectedMenu={selectedView?.value} />
           <DocumentView view={selectedView} />

@@ -1,4 +1,4 @@
-import { Divider, Skeleton, Stack, Typography, useTheme } from '@mui/material';
+import { Divider, Stack, Typography, useTheme } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import { IView } from '@src/types';
 import { AnimatePresence } from 'framer-motion';
@@ -63,7 +63,6 @@ export const Menu: FC<MainMenuProps> = ({ onSelect, selectedMenu }) => {
       py={2}
       sx={{
         backgroundColor: palette.mode === 'dark' ? palette.grey[900] : palette.grey[50],
-        zIndex: 2,
         borderTopLeftRadius: 1,
         borderBottomLeftRadius: 1,
       }}
