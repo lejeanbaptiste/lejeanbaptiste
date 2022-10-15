@@ -15,14 +15,13 @@ export const Sidebar: FC = () => {
       <Stack
         direction="column"
         alignItems="'flex-end"
-        pt={2}
         overflow="hidden"
         component={motion.div}
         initial={{ x: MAX_WIDTH, width: 0 }}
         animate={{ x: 0, width: MAX_WIDTH }}
         transition={{ type: 'tween', duration: 2 }}
       >
-        <Box overflow="hidden" width={MAX_WIDTH}>
+        <Box overflow="hidden" width={MAX_WIDTH} pt={2}>
           <Typography
             pr={2}
             fontWeight={700}
