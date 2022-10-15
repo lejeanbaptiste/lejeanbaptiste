@@ -82,9 +82,14 @@ export interface Resource {
   content?: string;
   hash?: string;
   url?: string;
+
   schemaName?: string;
   modifiedAt?: Date;
-  snapshot?: string;
+  screenshot?: string;
+
+  title?: string;
+  category?: string;
+  icon?: string;
 }
 
 export const ErrorTypes = ['info', 'warning', 'error'] as const;
@@ -101,9 +106,7 @@ export interface IProviderAuth {
   name: string;
 }
 
-export interface ISample {
-  category: string;
-  icon?: string;
-  title: string;
-  url: string;
+export interface IView {
+  title?: string;
+  value: string;
 }

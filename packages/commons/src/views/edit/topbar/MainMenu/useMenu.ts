@@ -45,7 +45,7 @@ export const useMenu = () => {
       shortcut: ' ⌘O',
     },
     {
-      disabled: !resource?.provider,
+      disabled: userState !== 'AUTHENTICATED',
       hide: !recentDocuments || recentDocuments.length === 0,
       icon: 'recent',
       popupId: 'recent',
@@ -53,15 +53,15 @@ export const useMenu = () => {
     },
     'divider',
     {
-      disabled: !resource?.provider,
+      disabled: userState !== 'AUTHENTICATED',
       icon: 'save',
       label: t('save'),
-      onTrigger: () => handleSave(),
+      onTrigger: () => (!resource?.provider ? handleSave('saveAs') : handleSave()),
       shortcut: ' ⌘S',
       tootipText: t('messages:you_must_sign_in_to_use_this_feature'),
     },
     {
-      disabled: !resource?.provider,
+      disabled: userState !== 'AUTHENTICATED',
       icon: 'saveAs',
       label: `${t('save_as')}...`,
       onTrigger: () => handleSave('saveAs'),

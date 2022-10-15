@@ -4,7 +4,11 @@ import { useActions } from '@src/overmind';
 import React, { useState, type ChangeEvent, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export const PasteOption: FC = () => {
+interface PasteOptionProps {
+  disabled?: boolean;
+}
+
+export const PasteOption: FC<PasteOptionProps> = ({ disabled }) => {
   const { openStorageDialog } = useActions().storage;
 
   const { t } = useTranslation('storage');
@@ -29,9 +33,13 @@ export const PasteOption: FC = () => {
       onMouseOver={() => setPasteHover(true)}
       onMouseOut={() => setPasteHover(false)}
     >
-      <ContentPasteIcon color={pasteHover ? 'primary' : 'inherit'} />
+      <ContentPasteIcon
+        color={pasteHover ? 'primary' : 'inherit'}
+        sx={{ color: disabled ? palette.action.disabled : 'inheritƒ' }}
+      />
       <TextField
         color="primary"
+        disabled={disabled}
         InputProps={{
           sx: {
             fontSize: '0.8rem',

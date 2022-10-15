@@ -1,9 +1,9 @@
-import { Divider, Stack, Typography, useTheme } from '@mui/material';
+import { Divider, Skeleton, Stack, Typography, useTheme } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
+import { IView } from '@src/types';
 import { AnimatePresence } from 'framer-motion';
 import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IView } from '..';
 import { MenuButton, type MenuButtonProps } from './MenuButton';
 import { PasteOption } from './PasteOption';
 
@@ -21,24 +21,33 @@ export const Menu: FC<MainMenuProps> = ({ onSelect, selectedMenu }) => {
   const { t } = useTranslation('storage');
   const { palette } = useTheme();
 
+  const isLoading = !selectedMenu;
+
   const menuOptions: (MenuButtonProps | 'separator')[] = [
     {
-      disabled: userState !== 'AUTHENTICATED',
-      disabledTooltipText: t('messages:you_must_sign_in_to_use_this_feature'),
+      disabled: isLoading || userState !== 'AUTHENTICATED',
+      disabledTooltipText:
+        userState !== 'AUTHENTICATED' ? t('messages:you_must_sign_in_to_use_this_feature') : '',
       icon: 'cloud',
       label: t('storage:from_the_cloud'),
       value: 'cloud',
     },
-    { icon: 'computer', label: t('storage:from_your_device'), value: 'device' },
+    {
+      disabled: isLoading,
+      icon: 'computer',
+      label: t('storage:from_your_device'),
+      value: 'device',
+    },
     'separator',
     {
+      disabled: isLoading,
       hide: !recentDocuments || recentDocuments.length === 0,
       icon: 'recent',
       label: t('commons:recent'),
       value: 'recent',
     },
-    { icon: 'template', label: t('commons:templates'), value: 'templates' },
-    { icon: 'sample', label: t('commons:samples'), value: 'samples' },
+    { disabled: isLoading, icon: 'template', label: t('commons:templates'), value: 'templates' },
+    { disabled: isLoading, icon: 'sample', label: t('commons:samples'), value: 'samples' },
   ];
 
   const handleClick = (value: string, title?: string) => {
@@ -85,7 +94,7 @@ export const Menu: FC<MainMenuProps> = ({ onSelect, selectedMenu }) => {
             )
           )}
           <Divider sx={{ ml: 2 }} />
-          <PasteOption />
+          <PasteOption disabled={isLoading} />
         </Stack>
       </AnimatePresence>
     </Stack>

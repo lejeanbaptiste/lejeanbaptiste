@@ -1,15 +1,11 @@
 import { Paper, Stack, useTheme } from '@mui/material';
+import { DocumentView } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
+import type { IView } from '@src/types';
 import React, { useEffect, useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Menu } from './menu';
-import { Sidebar } from './sidebar';
-import { View } from './view';
-
-export interface IView {
-  title?: string;
-  value: string;
-}
+import { Sidebar } from './Sidebar';
 
 export const Storage: FC = () => {
   const { userState } = useAppState().auth;
@@ -58,7 +54,7 @@ export const Storage: FC = () => {
       <Paper elevation={palette.mode === 'dark' ? 6 : 1}>
         <Stack direction="row" justifyContent="center">
           <Menu onSelect={handleSelect} selectedMenu={selectedView?.value} />
-          <View view={selectedView} />
+          <DocumentView view={selectedView} />
         </Stack>
       </Paper>
     </Stack>

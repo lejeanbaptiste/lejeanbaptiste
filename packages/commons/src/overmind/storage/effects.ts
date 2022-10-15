@@ -1,14 +1,14 @@
-import type { ISample } from '@src/types';
+import type { Resource } from '@src/types';
 import axios from 'axios';
 
 export const api = {
   /**
    * Get a colleciton of document: either template or sample files
    * @param {string} collection - string - The name of the collection you want to load.
-   * @returns An array of ISample objects.
+   * @returns An array of Resource objects.
    */
   async loadCollection(collection: string) {
-    const { data } = await axios.get<ISample[]>(`./content/${collection}.json`);
+    const { data } = await axios.get<Resource[]>(`./content/${collection}.json`);
     return data;
   },
 

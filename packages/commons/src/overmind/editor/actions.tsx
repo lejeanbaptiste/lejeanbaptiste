@@ -30,10 +30,10 @@ export const save = async (
   { state, actions }: Context,
   {
     content,
-    snapshot,
+    screenshot,
   }: {
     content: string;
-    snapshot?: string;
+    screenshot?: string;
   }
 ): Promise<{ success: boolean; error?: IError }> => {
   state.editor.isSaving = true;
@@ -70,7 +70,7 @@ export const save = async (
   const updatedResource = {
     ...storage.resource,
     content,
-    snapshot,
+    screenshot,
   };
 
   //* Resquest save
@@ -122,10 +122,10 @@ export const saveAs = async (
   { state, actions }: Context,
   {
     content,
-    snapshot,
+    screenshot,
   }: {
     content: string;
-    snapshot?: string;
+    screenshot?: string;
   }
 ): Promise<{ success: boolean; error?: IError }> => {
   const { storage } = state;
@@ -133,7 +133,7 @@ export const saveAs = async (
   actions.storage.setResource({
     ...storage.resource,
     content,
-    snapshot,
+    screenshot,
   });
 
   actions.storage.openStorageDialog({
@@ -162,8 +162,8 @@ export const setIsDirty = async ({ state }: Context, value: boolean) => {
 export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
   state.editor.timerService.onTimer.subscribe(async (value) => {
     const content = await editor.getContent();
-    const snapshot = await editor.getDocumentSnapshot();
-    await actions.editor.save({ content, snapshot });
+    const screenshot = await editor.getDocumentScreenshot();
+    await actions.editor.save({ content, screenshot });
   });
 };
 

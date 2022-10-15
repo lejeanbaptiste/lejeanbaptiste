@@ -4,18 +4,21 @@ import { Typography } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { StorageProviderName } from '@src/services';
+import { Resource } from '@src/types';
 import { isErrorMessage } from '@src/utilities';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 let leafWriter: Leafwriter | null = null;
+let tapDocumentTimer: NodeJS.Timeout;
 
 export const useLeafWriter = () => {
   const { isDirty, timerService } = useAppState().editor;
 
-  const { close, save, saveAs } = useActions().editor;
-  const { download, getStorageProviderAuth, loadSample, setResource } = useActions().storage;
+  const { close, save, saveAs, setContentLastSaved } = useActions().editor;
+  const { addToRecentDocument, download, getStorageProviderAuth, loadSample, setResource } =
+    useActions().storage;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
 
   const navigate = useNavigate();
@@ -39,7 +42,7 @@ export const useLeafWriter = () => {
       return;
     }
 
-    if ('category' in resource) {
+    if (resource.category && resource.url) {
       const content = await loadSample(resource.url);
       setResource({ content, filename: `${resource.title}.xml` });
       return;
@@ -83,14 +86,14 @@ export const useLeafWriter = () => {
     if (!leafWriter) return;
 
     const content = await leafWriter.getContent();
-    const snapshot = await leafWriter.getDocumentSnapshot();
+    const screenshot = await leafWriter.getDocumentScreenshot();
 
     if (action === 'saveAs') {
-      saveAs({content, snapshot});
+      saveAs({ content, screenshot });
       return;
     }
 
-    const saved = await save({content, snapshot});
+    const saved = await save({ content, screenshot });
 
     if (!saved.success && saved.error?.message === 'conflict') return;
 
@@ -138,8 +141,21 @@ export const useLeafWriter = () => {
     });
   };
 
+  const tapDocument = (resource: Resource, schemaName: string) => {
+    tapDocumentTimer = setTimeout(async () => {
+      if (!leafWriter || !resource) return;
+
+      const content = await leafWriter.getContent();
+      const screenshot = await leafWriter.getDocumentScreenshot();
+      
+      setContentLastSaved(content);
+      addToRecentDocument({ ...resource, screenshot, schemaName });
+    }, 5_000);
+  };
+
   const disposeLeafWriter = () => {
     timerService.stop();
+    clearInterval(tapDocumentTimer);
 
     leafWriter?.dispose();
     leafWriter = null;
@@ -158,5 +174,6 @@ export const useLeafWriter = () => {
     loadDocumentFromPermalink,
     saveFeedback,
     setCurrentLeafWriter,
+    tapDocument,
   };
 };
