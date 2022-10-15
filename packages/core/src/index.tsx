@@ -62,12 +62,14 @@ export class Leafwriter {
       if (mutation.path === 'document.loaded') {
         if (overmind.state.document.loaded === true) {
           this._onLoad.next({ schemaName: overmind.state.document.schemaName });
+          this._onLoad.complete();
         }
       }
 
       if (mutation.path === 'editor.latestEvent') {
         if (overmind.state.editor.latestEvent === 'close') {
           this._onClose.next(true);
+          this._onClose.complete()
         }
       }
 
