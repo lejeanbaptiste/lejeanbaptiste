@@ -4,6 +4,8 @@ import { log } from '@src/utilities';
 import { saveAs } from 'file-saver';
 import { Context } from '../index';
 
+const RECENT_LIMIT = 8;
+
 export const setupStorageProvider = async ({ state, actions, effects }: Context, token: string) => {
   const identity_provider = effects.auth.api.getIdentityProvider();
   if (!identity_provider) return log.warn('No identity_provider');
@@ -98,7 +100,7 @@ export const isValidXml = ({ state }: Context, string: string) => {
   return !parsererror;
 };
 
-export const addToRecentDocument = ({ state, effects }: Context, document: Resource) => {
+export const addToRecentDocument = ({ state, actions, effects }: Context, document: Resource) => {
   const { content, hash, ...recent } = document;
 
   if (
@@ -114,40 +116,36 @@ export const addToRecentDocument = ({ state, effects }: Context, document: Resou
 
   if (!state.storage.recentDocuments) state.storage.recentDocuments = [];
 
-  // if recent already in the list, remove (and subsequently add in the first position)
-  state.storage.recentDocuments = state.storage.recentDocuments.filter(
-    ({ provider, owner, ownertype, repo, path, filename }) =>
-      `${provider}/${owner}/${ownertype}/${repo}/${path}/${filename}` !==
-      `${recent.provider}/${recent.owner}/${recent.ownertype}/${recent.repo}/${recent.path}/${recent.filename}`
-  );
+  // if recent document already in the list, remove (and subsequently add in the first position)
+  const newRecents = state.storage.recentDocuments.filter(({ url }) => url !== recent.url);
 
   recent.modifiedAt = new Date();
 
   //add
-  state.storage.recentDocuments = [recent, ...state.storage.recentDocuments];
+  state.storage.recentDocuments = [recent, ...newRecents];
 
   //limit
   state.storage.recentDocuments = state.storage.recentDocuments.filter(
-    (_item, index) => index <= 5
+    (_item, index) => index <= RECENT_LIMIT
   );
 
   effects.storage.api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
 };
 
-// export const downloadImage = async ({ state, effects }: Context, snapshot: string) => {
-//   const fakeLink = window.document.createElement('a');
-//   //@ts-ignore
-//   fakeLink.style = 'display:none;';
-//   fakeLink.download = 'doc';
+export const downloadImage = async ({ state }: Context, screenshot: string) => {
+  const fakeLink = window.document.createElement('a');
+  //@ts-ignore
+  fakeLink.style = 'display:none;';
+  fakeLink.download = 'doc';
 
-//   fakeLink.href = snapshot;
+  fakeLink.href = screenshot;
 
-//   document.body.appendChild(fakeLink);
-//   fakeLink.click();
-//   document.body.removeChild(fakeLink);
+  document.body.appendChild(fakeLink);
+  fakeLink.click();
+  document.body.removeChild(fakeLink);
 
-//   fakeLink.remove();
-// };
+  fakeLink.remove();
+};
 
 export const updateRecentDocument = ({ state, actions, effects }: Context) => {
   if (!state.storage.recentDocuments) return;
@@ -155,7 +153,7 @@ export const updateRecentDocument = ({ state, actions, effects }: Context) => {
   state.storage.recentDocuments = state.storage.recentDocuments.map((document) => {
     if (document.url === state.storage.resource?.url) {
       document.modifiedAt = new Date();
-      if (state.storage.resource?.snapshot) document.snapshot = state.storage.resource.snapshot;
+      if (state.storage.resource?.screenshot) document.screenshot = state.storage.resource.screenshot;
     }
     return document;
   });

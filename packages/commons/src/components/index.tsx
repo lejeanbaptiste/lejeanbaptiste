@@ -1,3 +1,4 @@
+export * from './documentsView';
 export { LoadingMask } from './LoadingMask';
 export { Logo } from './Logo';
 export { Profile } from './profile';
@@ -7,5 +8,4 @@ export { SigninButton } from './SigninButton';
 export { Storage } from './Storage';
 export { StyledToggleButtonGroup } from './StyledToggleButtonGroup';
 export { StyledToolTip } from './StyledToolTip';
-export { TemplatesView } from './templates';
 export { TextEmphasis } from './TextEmphasis';

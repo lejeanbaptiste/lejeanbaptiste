@@ -1,24 +1,28 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
+import { useTheme } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { StorageProviderName } from '@src/services';
 import type { Resource } from '@src/types';
 import React, { useEffect, useState, type FC } from 'react';
+import Masonry from 'react-responsive-masonry';
 import { useNavigate } from 'react-router';
-import { RecentFileCard } from './RecentFileCard';
+import type { DisplayLayout } from '.';
+import { CARD_WIDTH, DocumentCard } from './components';
 
 interface RecentViewProps {
-  height?: number;
+  displayLayout?: DisplayLayout;
+  width: number;
 }
 
-export const RecentView: FC<RecentViewProps> = () => {
+export const RecentView: FC<RecentViewProps> = ({ displayLayout, width }) => {
   const { recentDocuments } = useAppState().storage;
   const { getStorageProviderAuth, loadRecentFiles, removeRecentDocument, setResource } =
     useActions().storage;
 
   const navigate = useNavigate();
-
   const { setPermalink } = usePermalink();
+  const { spacing } = useTheme();
 
   const [recents, setRecents] = useState<Resource[]>([]);
 
@@ -53,11 +57,30 @@ export const RecentView: FC<RecentViewProps> = () => {
 
   const removeItem = (url: string) => removeRecentDocument(url);
 
+  const gap = 12;
+  const columns = displayLayout === 'grid' ? Math.floor((width - gap) / (CARD_WIDTH + gap)) : 1;
+  const widthMasonry = columns * (CARD_WIDTH + gap);
+
   return (
-    <>
+    <Masonry
+      columnsCount={columns}
+      gutter={`${gap}px`}
+      style={{
+        marginInline: spacing(1.5),
+        paddingTop: spacing(1.5),
+        width: displayLayout === 'grid' ? widthMasonry : 'calc(100% - 24px)',
+      }}
+    >
       {recents.map((resource) => (
-        <RecentFileCard key={resource.url} resource={resource} onClick={load} onRemove={removeItem}/>
+        <DocumentCard
+          key={resource.url}
+          deletable={true}
+          displayLayout={displayLayout}
+          onClick={load}
+          onRemove={removeItem}
+          resource={resource}
+        />
       ))}
-    </>
+    </Masonry>
   );
 };

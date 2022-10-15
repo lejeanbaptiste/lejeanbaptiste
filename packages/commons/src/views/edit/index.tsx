@@ -3,7 +3,6 @@ import { useAnalytics } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { MainMenu, Meta, useMenu } from './topbar';
 import { useLeafWriter } from './useLeafWriter';
@@ -19,22 +18,24 @@ export const EditView: FC = () => {
     getGeonameUsername,
     loadLeafWriter,
     setAutosave,
-    setContentLastSaved,
     setIsDirty,
     subscribeToTimerService,
     unsubscribeFromTimerService,
   } = useActions().editor;
-  const { addToRecentDocument } = useActions().storage;
 
   const { setPage } = useActions().ui;
 
   const navigate = useNavigate();
-  const { t } = useTranslation('commons');
 
   const { analytics } = useAnalytics();
 
-  const { disposeLeafWriter, leafWriter, loadDocumentFromPermalink, setCurrentLeafWriter } =
-    useLeafWriter();
+  const {
+    disposeLeafWriter,
+    leafWriter,
+    loadDocumentFromPermalink,
+    setCurrentLeafWriter,
+    tapDocument,
+  } = useLeafWriter();
   const { onKeydownHandle } = useMenu();
 
   const divEl = useRef<HTMLDivElement>(null);
@@ -114,13 +115,10 @@ export const EditView: FC = () => {
       setIsDirty(value);
     });
 
-    leafWriter.onLoad.subscribe(async ({ schemaName }) => {
-      subscribeToTimerService(leafWriter);
-      addToRecentDocument({ ...resource, schemaName });
-
-      const content = await leafWriter.getContent();
-      setContentLastSaved(content);
+    leafWriter.onLoad.subscribe(({ schemaName }) => {
       leafWriter.autosave = autosave;
+      tapDocument(resource, schemaName);
+      subscribeToTimerService(leafWriter);
     });
 
     leafWriter.onClose.subscribe(() => {

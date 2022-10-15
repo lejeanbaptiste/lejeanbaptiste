@@ -1,5 +1,5 @@
 import { useActions, useAppState } from '@src/overmind';
-import type { IError, ISample, Resource } from '@src/types';
+import type { IError, Resource, Resource } from '@src/types';
 import { isErrorMessage } from '@src/utilities';
 import Cookies from 'js-cookie';
 import queryString from 'query-string';
@@ -10,7 +10,7 @@ interface Permalink {
   error?: IError;
   isSample?: boolean;
   raw: string;
-  resource?: Resource | ISample;
+  resource?: Resource | Resource;
   valid: boolean;
 }
 
