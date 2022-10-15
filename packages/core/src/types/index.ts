@@ -13,14 +13,7 @@ export declare var webpackEnv: {
 
 export interface ILeafWriterOptions {
   document: LWDocument;
-  preferences?: {
-    fontSize?: number; // [Optional] Changes the document's default font size. Default: 11. Options: 10-18
-    themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
-    workspace?: {
-      leftSide: string[]; // [Required] List of panel names. Default: ['structure', 'nerve']
-      rightSide: string[]; // [Required] List of panel names. Default: ['xml-viewer', 'image-viewer', 'validator']
-    };
-  };
+  preferences?: ILeafWriterOptionsPreference;
   settings?: ILeafWriterOptionsSettings;
   user?: User;
 }
@@ -28,6 +21,15 @@ export interface ILeafWriterOptions {
 export interface LWDocument {
   url?: string;
   xml: string;
+}
+
+export interface ILeafWriterOptionsPreference {
+  fontSize?: number; // [Optional] Changes the document's default font size. Default: 11. Options: 10-18
+  themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
+  workspace?: {
+    leftSide: string[]; // [Required] List of panel names. Default: ['structure', 'nerve']
+    rightSide: string[]; // [Required] List of panel names. Default: ['xml-viewer', 'image-viewer', 'validator']
+  };
 }
 
 export interface ILeafWriterOptionsSettings {
