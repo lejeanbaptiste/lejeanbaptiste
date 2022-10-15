@@ -178,3 +178,10 @@ export interface INotification {
   message: SnackbarMessage;
   options?: OptionsObject;
 }
+
+export interface ScreenshotParams {
+  width?: number;
+  height?: number;
+  windowWidth?: number;
+  windowHeight?: number;
+}

@@ -17,7 +17,7 @@ import i18next from './i18n';
 import { config } from './overmind';
 import type { EditorStateType } from './overmind/editor/state';
 import Providers from './Providers';
-import type { ILeafWriterOptions, LWDocument } from './types';
+import type { ILeafWriterOptions, LWDocument, ScreenshotParams } from './types';
 import './utilities/log';
 
 export * as Types from './types';
@@ -112,14 +112,22 @@ export class Leafwriter {
     return await overmind.actions.editor.getContent();
   }
 
-  async getDocumentSnapshot() {
+  async getDocumentScreenshot(
+    params: ScreenshotParams = { width: 800, height: 480, windowWidth: 800, windowHeight: 1000 }
+  ) {
     const page = window.writer.editor.getBody();
     if (!page) return;
 
-    const canvas = await html2canvas(page, { height: 420 });
-    const snapshot = canvas.toDataURL('image/png', 1.0);
+    const canvas: HTMLCanvasElement | null = await html2canvas(page, {
+      logging: false,
+      ...params,
+    }).catch(() => null);
 
-    return snapshot;
+    if (!canvas) return null;
+
+    const screenshot = canvas.toDataURL('image/png', 1.0);
+
+    return screenshot;
   }
 
   async setContent(document: LWDocument) {
