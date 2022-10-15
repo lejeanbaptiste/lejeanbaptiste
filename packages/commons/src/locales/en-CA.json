@@ -1,31 +1,138 @@
 {
-  "error": {
-    "message404": "You either tried some shady route or you came here by mistake. Go back to the <1>main page.</1>",
-    "pageNotFound": "Page Not Found",
-    "somethingWentWrong": "something went wrong",
-    "xmlNotWellFormed": "The document you are trying to upload is not well-formed. Check that it has the XML extension and that it follows proper XML grammar."
-  },
-  "home": {
-    "appearance": "Appearance",
-    "english": "English",
-    "french": "French",
-    "from_Your_computer": "from your computer",
-    "from_cloud": "from the cloud",
+  "commons": {
+    "accept_all": "accept all",
+    "and": "and",
+    "basic_interactions": "basic interactions",
+    "cancel": "cancel",
+    "close": "close",
+    "contact_us": "contact us",
+    "create": "create",
+    "description": "description",
+    "discard_changes": "discard changes",
+    "dismiss": "dismiss",
+    "download": "download",
+    "functionalities": "functionalities",
     "homepage": "homepage",
     "identity": "identity",
-    "language": "Language",
+    "language": "language",
+    "link_your_account": "Link your {{provider}} account",
+    "more_information": "More information",
+    "name": "name",
+    "new": "new",
+    "not_found": "not found",
     "open": "open",
-    "orTrySample": "Or try out with sample files",
-    "or_paste_your_XML_here": "or paste your XML here",
+    "open_recent": "open recent",
+    "or": "or",
+    "other": "other",
+    "please": "please",
+    "privacy": "privacy",
+    "privacy_policy": "Privacy Policy",
     "recent": "recent",
-    "settings": "Settings",
-    "signOut": "Sign Out",
-    "signin": "Sign In",
-    "signinWith-github": "Sign In with GitHub",
-    "signinWith-gitlab": "Sign In with GitLab",
+    "reject_all": "reject all",
+    "sample_document": "sample document",
+    "samples": "samples",
+    "save": "save",
+    "save_as": "save as",
+    "session": "session",
+    "settings": "settings",
+    "sign_in": "sign in",
+    "sign_out": "sign out",
     "storage": "storage",
+    "switch_accounts": "switch accounts",
+    "template": "template",
+    "templates": "templates",
+    "unsaved_changes": "unsaved changes",
+    "with": "with"
+  },
+  "cookie_consent": {
+    "consent_banner": {
+      "let_me_choose": "let me choose",
+      "line1": "We and selected third parties use cookies or similar technologies for technical purposes and, with your consent, for measurement. Denying consent may make related features unavailable.",
+      "line2": "You can freely give, deny, or withdraw your consent at any time.",
+      "line3": "Use the 'Accept' button to consent to the use of such technologies. Use the 'Reject' button or close this notice to continue without accepting.",
+      "we_use_cookies": "we use cookies"
+    },
+    "privacy_settings": "privacy settings",
+    "remove_consent": "remove consent",
+    "settings_modal": {
+      "AUTH_SESSION_description": "Stores user login and session data.",
+      "_ga_description": "Used by Google Analytics to collect data on the number of times a user has visited the website as well as dates for the first and most recent visit.",
+      "basic_interactions_description": "These trackers are used for LEAF-Writer basic functionalities, which include the correct identification of web annotation authors and access to git repositories where the user can load and save files. LEAF-Writer can only provide limited functionalities without these cookies.",
+      "cc_cookie_description": "Stores cookies consent preferences.",
+      "consent_preferences": "Consent Preferences",
+      "cookie_expiration_time": "{{value}} {{period}}",
+      "cookie_usage": "Cookies usage",
+      "cookie_usage_description": "The following panel allows you to customize your consent preferences for the usage of cookies technology to help us achieve the features and activities described below. You may review and change your choices at any time. Please be aware that denying consent for a particular purpose may make related features unavailable. For more details relative to cookies and other sensitive data, please read the full.",
+      "domain": "domain",
+      "expiration": "expiration",
+      "indefinitely_until_user_sign_out": "indefinitely until user sign out",
+      "lw_description": "Stores usage data on the browser's local storage: preferred identity and storage providers, preferred language and colour theme, recent repositories and documents, XML schemas, etc.",
+      "measurement": "measurement",
+      "measurement_description": "These cookies collect information about how you use the website, which pages you visited and which links you clicked on. All the data is anonymized and cannot be used to identify you.",
+      "more_information_description": "For any queries about our policy on cookies and your choices.",
+      "strictly_necessary": "strictly necessary",
+      "strictly_necessary_description": "Necessary cookies help make a website usable by enabling basic functions like page navigation and access to secure areas of the website. The website cannot function properly without these cookies."
+    },
+    "warning": {
+      "must_accept_cookies_message": "You must accept our cookie policies to be able to sign in. Click on the shield icon at the top.",
+      "remove_consent_basic_interactions_message": "<0>Removing consent for</0> <1>basic interactions & functionalities</1> <2>will sign you out.</2>"
+    }
+  },
+  "error": {
+    "message404": "You either tried some shady route, or you came here by mistake. Go back to the <1>main page.</1>",
+    "page_not_Found": "Page not found",
+    "something_went_wrong": "Something went wrong"
+  },
+  "home": {
+    "bugs": "bugs",
+    "requests": "requests",
     "subtitle": "The XML & RDF online editor of the Linked Editing Academic Framework",
-    "team": "Team",
-    "templates": "templates"
+    "team": "team"
+  },
+  "language": {
+    "english": "English",
+    "french": "French"
+  },
+  "messages": {
+    "corpora_need_space": "Annotating large corpora requires more space.",
+    "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large monitor.",
+    "you_must_sign_in_to_use_this_feature": "You must sign in to use this feature"
+  },
+  "profile": {
+    "manage_your_lincs_account": "manage your LINCS account"
+  },
+  "recents": {
+    "remove_from_recents": "remove from recents"
+  },
+  "storage": {
+    "all_changes_salved": "all changes saved",
+    "click_to_save": "click to save",
+    "document_not_saved": "Document not saved",
+    "document_saved": "Document saved",
+    "error": {
+      "xml_not_well-formed_message": "The document you are trying to upload is not well-formed. Check that it has the XML extension and follows proper XML grammar."
+    },
+    "from_the_cloud": "from the cloud",
+    "from_your_device": "From your device",
+    "invalid_request": "Invalid request",
+    "paste_your_XML_here": "paste your XML here",
+    "provider_not_found": "provider not found",
+    "saving": "saving",
+    "sign_in_with_provider": "sign in with {{provider}}",
+    "waiting_for_resource": "waiting for resource",
+    "warning": {
+      "check_URL_structure": "check URL structure",
+      "storage_provider_invalid": "provider '{{provider}}' is invalid or not a supported"
+    },
+    "you_will_lose_any_unsaved_changes": "You will lose any unsaved changes"
+  },
+  "templates": {
+    "choose_a_template": "choose a template"
+  },
+  "ui": {
+    "appearance": "appearance",
+    "auto": "auto",
+    "dark": "dark",
+    "light": "light"
   }
 }

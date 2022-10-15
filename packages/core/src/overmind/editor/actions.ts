@@ -4,10 +4,11 @@ import { Context } from '../';
 import type {
   Authority,
   IAuthorityService,
+  ILookups,
   ILookupsConfig,
   NamedEntityType,
-} from '../../components/entityLookups/types';
-import { ILeafWriterOptionsSettings, Schema } from '../../types';
+} from '../../dialogs/entityLookups/types';
+import type { ILeafWriterOptionsSettings, Schema } from '../../types';
 import { log } from './../../utilities';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
@@ -20,7 +21,11 @@ export const writerInitSettings = (
 
   editor.baseUrl = baseUrl;
   editor.settings = settings;
-  editor.schemas = schemas;
+
+  const schemaObjs = {};
+  schemas.forEach((element) => (schemaObjs[element.id] = element));
+
+  editor.schemas = schemaObjs;
 
   actions.validator.loadValidator();
 };
@@ -131,12 +136,16 @@ export const getNssiToken = async ({ state }: Context) => {
   const { nssiToken } = state.editor;
   // if (!nssiToken) throw Error('Nssi token was not set up');
   if (!nssiToken) {
-    log.error('Nssi token was not set up');
+    // log.error('Nssi token was not set up');
     return;
   }
 
   const token = typeof nssiToken === 'string' ? nssiToken : await nssiToken();
   return token;
+};
+
+export const setAutosave = ({ state }: Context, value?: boolean) => {
+  state.editor.autosave = value;
 };
 
 export const setFontSize = ({ state }: Context, value: number) => {
@@ -227,17 +236,80 @@ export const setAnnotationrMode = ({ state }: Context, value: number) => {
   return state.editor.annotationModes.find((annotationMode) => annotationMode.value === value);
 };
 
-export const addShema = ({ state }: Context, newSchema: Schema) => {
+/**
+ * It adds a new schema to the list of schemas
+ * @param schema - Omit<Schema, 'id'>
+ * @returns The new schema that was added.
+ */
+export const addSchema = ({ state, effects }: Context, newSchema: Omit<Schema, 'id'>) => {
   if (!window.writer?.editor) return;
+  const schema = window.writer.schemaManager.addSchema({ ...newSchema, editable: true });
+  state.editor.schemas[schema.id] = schema;
 
-  const schemaId: string = window.writer.schemaManager.addSchema(newSchema);
-  const schema: Schema = { ...newSchema, id: schemaId };
-  state.editor.schemas = [...state.editor.schemas, schema];
+  //Add to localstorage
+  let customSchemas: Schema[] = effects.editor.api.getFromLocalStorage('custom_schemas');
+  customSchemas = customSchemas ?? [];
+
+  customSchemas.push(schema);
+  effects.editor.api.saveToLocalStorage('custom_schemas', customSchemas);
+
   return schema;
 };
 
-export const resetDialogWarnings = ({ state }: Context) => {
+/**
+ * Updates a schema
+ * @param updatedSchema - Schema - this is the updated schema that we're going to use to
+ * update the schemas array.
+ * @returns The updated schema.
+ */
+export const updateSchema = ({ state, effects }: Context, updatedSchema: Schema) => {
+  if (!window.writer?.editor) return;
+  window.writer.schemaManager.updateSchema(updatedSchema);
+  state.editor.schemas[updatedSchema.id] = updatedSchema;
+
+  //update localstorage
+  let customSchemas: Schema[] = effects.editor.api.getFromLocalStorage('custom_schemas');
+  if (!customSchemas) return updatedSchema;
+
+  customSchemas = customSchemas.map((schema) =>
+    schema.id === updatedSchema.id ? updatedSchema : schema
+  );
+  effects.editor.api.saveToLocalStorage('custom_schemas', customSchemas);
+
+  return updatedSchema;
+};
+
+/**
+ * It takes a schemaId as an argument, and then filters the schemas array to remove the schema with
+ * the matching id
+ * @param {string} schemaId - The id of the schema to delete
+ */
+export const deleteSchema = ({ state, effects }: Context, schemaId: string) => {
+  if (!window.writer?.editor) return;
+  window.writer.schemaManager.deleteSchema(schemaId);
+
+  const updatedSchemaList = state.editor.schemasList.filter((schema) => schema.id !== schemaId);
+
+  const schemaObjs = {};
+  updatedSchemaList.forEach((element) => (schemaObjs[element.id] = element));
+
+  state.editor.schemas = schemaObjs;
+
+  //remove from localstorage
+  let customSchemas: Schema[] = effects.editor.api.getFromLocalStorage('custom_schemas');
+  if (!customSchemas) return;
+
+  customSchemas = customSchemas.filter((schema) => schema.id !== schemaId);
+  effects.editor.api.saveToLocalStorage('custom_schemas', customSchemas);
+};
+
+export const getSchemsByMappingId = ({ state }: Context, mappingId: string) => {
+  return state.editor.schemasList.filter((schema) => schema.mapping === mappingId);
+};
+
+export const resetDialogWarnings = ({ actions }: Context) => {
   Cookies.remove(DIALOG_PREFS_COOKIE_NAME, { path: '' });
+  actions.ui.resetDoNotDisplayDialogs();
 };
 
 export const resetPreferences = ({ state, actions, effects }: Context) => {
@@ -286,7 +358,7 @@ export const toggleLookupAuthority = ({ state: { editor }, effects }: Context, i
     authorityService.entities[namedEntityType] = authorityService.enabled;
   });
 
-  effects.editor.api.saveToLocalStorage('lookup_preferences', JSON.stringify(editor.lookups));
+  effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
 };
 
 export const toggleLookupEntity = (
@@ -299,7 +371,7 @@ export const toggleLookupEntity = (
   const entityEnabled = authorityService.entities[entityName];
   authorityService.entities[entityName] = !entityEnabled;
 
-  effects.editor.api.saveToLocalStorage('lookup_preferences', JSON.stringify(editor.lookups));
+  effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
 };
 
 export const reorderLookupPriority = (
@@ -313,13 +385,12 @@ export const reorderLookupPriority = (
     editor.lookups.authorities[authority.id].priority = index;
   });
 
-  effects.editor.api.saveToLocalStorage('lookup_preferences', JSON.stringify(editor.lookups));
+  effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
 };
 
 export const retrieveLookupAutoritiesConfig = ({ effects }: Context) => {
-  const prefs = effects.editor.api.getFromLocalStorage('lookup_preferences');
-  if (!prefs) return;
-  return JSON.parse(prefs);
+  const prefs: ILookups = effects.editor.api.getFromLocalStorage('lookup_preferences');
+  return prefs;
 };
 
 export const getContent = async ({ state }: Context) => {
@@ -328,6 +399,10 @@ export const getContent = async ({ state }: Context) => {
 
 export const setIsEditorDirty = ({ state }: Context, value: boolean) => {
   state.editor.isEditorDirty = value;
+};
+
+export const closeEditor = ({ state }: Context) => {
+  state.editor.latestEvent = 'close';
 };
 
 export const clear = ({ state }: Context) => {
@@ -341,5 +416,5 @@ export const clear = ({ state }: Context) => {
   state.editor.mode = 0;
   state.editor.showEntities = true;
   state.editor.showTags = false;
-  state.editor.schemas = [];
+  state.editor.schemas = {};
 };

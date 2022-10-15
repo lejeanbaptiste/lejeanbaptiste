@@ -3,7 +3,7 @@ import type {
   EntityLink,
   EntryLink,
   NamedEntityType,
-} from '../../components/entityLookups/types';
+} from '../../dialogs/entityLookups/types';
 import type { DialogLookupType } from '../../js/dialogs/types';
 import Entity from '../../js/entities/Entity';
 import type { EntityTypes } from '../../js/schema/types';

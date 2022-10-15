@@ -1,5 +1,5 @@
-import type { MappingID } from '../../../types';
-import type { EntityLink } from '../../../components/entityLookups/types';
+import type { SchemaMappingType } from '../../../types';
+import type { EntityLink } from '../../../dialogs/entityLookups/types';
 import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
@@ -286,7 +286,7 @@ const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
 class PersonDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
-  readonly mappingID: MappingID;
+  readonly mappingID: SchemaMappingType;
 
   entry?: Entity;
   selectedText?: string;
@@ -520,6 +520,13 @@ class PersonDialog implements SchemaDialog {
         </div>
         <select data-type="select" data-mapping="role" style="width: 100%;">
           ${marcRoles
+            .sort((a, b) => {
+              const nameA = a.title.toUpperCase(); // ignore upper and lowercase
+              const nameB = b.title.toUpperCase(); // ignore upper and lowercase
+              if (nameA < nameB) return -1;
+              if (nameA > nameB) return 1;
+              return 0;
+            })
             .map((role) => `<option value="${role.code}">${role.title}</option>`)
             .join('\n')}
         </select>

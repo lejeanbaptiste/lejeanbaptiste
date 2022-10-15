@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import en from './locales/en-CA.json';
 import fr from './locales/fr-CA.json';
-import { log } from './utilities/log';
+import { log } from './utilities';
 
 export const resources = { en, fr } as const;
 
@@ -12,10 +12,11 @@ const i18n = i18next.createInstance(
   {
     lng: 'en-CA',
     fallbackLng: 'en-CA',
-    // ns: ['translation'],
-    // defaultNS: 'translation',
+    ns: ['leafwriter-storage-service'],
+    defaultNS: 'leafwriter-storage-service',
     react: { useSuspense: false },
-    interpolation: { escapeValue: false },
+    // interpolation: { escapeValue: false },
+    // debug: true,
     resources,
   },
   // We must provide a function as second parameter, otherwise i18next errors

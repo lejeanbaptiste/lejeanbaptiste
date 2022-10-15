@@ -3,12 +3,12 @@ import { Box, Tooltip, Typography } from '@mui/material';
 import React, { useEffect, useState, type FC } from 'react';
 
 interface HeaderProps {
+  tagMeta?: ElementDetail;
   tagName?: string;
   xpath?: string;
-  tagMeta?: ElementDetail;
 }
 
-const Header: FC<HeaderProps> = ({ tagName = '', xpath = '', tagMeta }) => {
+const Header: FC<HeaderProps> = ({ tagMeta, tagName = '', xpath = '' }) => {
   const [title, setTitle] = useState(tagName);
   const [fullName, setFullName] = useState<string>();
 
@@ -27,7 +27,7 @@ const Header: FC<HeaderProps> = ({ tagName = '', xpath = '', tagMeta }) => {
         mb={0.5}
         sx={{
           cursor: 'default',
-          background: ({ palette }) => palette.action.hover,
+          background: ({ palette }) => palette.action.selected,
         }}
       >
         <Typography variant="caption">

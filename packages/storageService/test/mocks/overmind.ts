@@ -1,6 +1,6 @@
 import { createOvermindMock, IContext } from 'overmind';
 import { config } from '../../src/overmind';
-import { supportedLanguages } from '../../src/utilities/util';
+import { supportedLanguages } from '../../src/utilities';
 
 export let overmind: IContext<typeof config>;
 
@@ -8,6 +8,7 @@ export const resetOvermind = () => {
   overmind = createOvermindMock(config, (state) => {
     state.ui = {
       darkMode: false,
+      dialogBar: [],
       language: supportedLanguages['en-CA'],
       publicRepositoriesLimit: 5,
     };

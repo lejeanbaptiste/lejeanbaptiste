@@ -1,25 +1,16 @@
 import React from 'react';
-import BlankLayout from './layouts/BlankLayout';
-import EditView from './views/edit';
-import NotFoundView from './views/error/NotFoundView';
-import HomeView from './views/home';
-import LinkAccounts from './views/LinkAccounts';
+import { BasicLayout } from './layouts';
+import { EditView, HomeView, LinkAccounts, NotFoundView } from './views';
 
-const routes = [
-  {
-    path: '/edit',
-    element: <BlankLayout />,
-    children: [{ index: true, element: <EditView /> }],
-  },
+export const routes = [
   {
     path: '/',
-    element: <BlankLayout />,
+    element: <BasicLayout />,
     children: [
       { path: '404', element: <NotFoundView /> },
       { path: '/link-accounts', element: <LinkAccounts /> },
+      { path: '/edit', element: <EditView /> },
       { index: true, element: <HomeView /> },
     ],
   },
 ];
-
-export default routes;

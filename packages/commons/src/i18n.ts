@@ -6,4 +6,24 @@ import fr from './locales/fr-CA.json';
 
 export const resources = { en, fr } as const;
 
-i18next.use(LanguageDetector).use(initReactI18next).init({ resources });
+i18next
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    // debug: true,
+    defaultNS: 'commons',
+    fallbackLng: 'en-CA',
+    returnEmptyString: false,
+    ns: [
+      'commons',
+      'cookie_consent',
+      'error',
+      'home',
+      'language',
+      'profile',
+      'recents',
+      'storage',
+      'templates',
+    ],
+    resources,
+  });

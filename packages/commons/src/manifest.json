@@ -13,5 +13,5 @@
     "display": "standalone",
     "scope": "/",
     "theme_color": "#3367D6",
-    "description": "xml editing and rdf annotation using github as document store"
+    "description": "The XML & RDF online editor of the Linked Editing Academic Framework"
   }

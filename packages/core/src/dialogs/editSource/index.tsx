@@ -1,0 +1,78 @@
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from '@mui/material';
+import React, { Suspense, useEffect, useState, type FC } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../../overmind';
+import { IDialog } from '../type';
+const Editor = React.lazy(() => import('./Editor'));
+export interface IEditSourceDialogProps extends IDialog {
+  content?: string;
+}
+
+export const EditSourceDialog: FC<IEditSourceDialogProps> = ({ content = '', id, onClose, open }) => {
+  const { settings } = useAppState().editor;
+  const { processEditSource } = useActions().ui;
+
+  const { t } = useTranslation(['leafwriter']);
+
+  const [currentContent, setCurrentContent] = useState('');
+
+  useEffect(() => {
+    setCurrentContent(content);
+  }, []);
+
+  const handleUpdateContent = (value: string) => setCurrentContent(value);
+
+  const handleClose = () => onClose(id);
+
+  const handleChange = () => {
+    if (currentContent === content) return onClose(id);
+
+    processEditSource(currentContent);
+    onClose(id);
+  };
+
+  const Progress = () => (
+    <Box display="flex" height={600} width="100%" alignItems="center" justifyContent="center">
+      <CircularProgress sx={{ width: '100%' }} />
+    </Box>
+  );
+
+  return (
+    <Dialog
+      aria-labelledby="edit-source-title"
+      container={document.getElementById(`${settings?.container}`)}
+      fullWidth
+      maxWidth="lg"
+      open={open}
+    >
+      <DialogTitle
+        id="edit-source-title"
+        p={0}
+        sx={{ textAlign: 'center', fontSize: '1rem', textTransform: 'capitalize' }}
+      >
+        {t('edit source')}
+      </DialogTitle>
+      <DialogContent sx={{ minHeight: 600, padding: 0 }}>
+        <Suspense fallback={<Progress />}>
+          <Editor content={content} updateContent={handleUpdateContent} />
+        </Suspense>
+      </DialogContent>
+      <DialogActions sx={{ justifyContent: 'space-between' }}>
+        <Button autoFocus onClick={handleClose}>
+          {t('cancel')}
+        </Button>
+        <Button onClick={handleChange} variant="outlined">
+          {t('change')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};

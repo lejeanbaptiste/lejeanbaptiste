@@ -2,11 +2,14 @@ import { Box, Link, Paper, Stack } from '@mui/material';
 import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import pck from '../../../package.json';
-import AnnotationMode from './AnnotationMode';
-import EditorMode from './EditorMode';
-import Schema from './Schema';
+import { useAppState } from '../../overmind';
+import AnnotationMode from './annotationMode';
+import EditorMode from './editorMode';
+import Schema from './schema';
+import { ValdidationErrors } from './ValdidationErrors';
 
-const BottomBar: FC = () => {
+export const BottomBar: FC = () => {
+  const { validationErrors } = useAppState().validator;
   const { t } = useTranslation();
   const version = pck.version;
 
@@ -24,6 +27,8 @@ const BottomBar: FC = () => {
         <EditorMode />
         <AnnotationMode />
         <Schema />
+
+        {validationErrors > 0 && <ValdidationErrors />}
 
         <Box flexGrow={1} />
 
@@ -60,5 +65,3 @@ const BottomBar: FC = () => {
     </Paper>
   );
 };
-
-export default BottomBar;

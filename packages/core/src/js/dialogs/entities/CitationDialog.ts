@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import type { EntityLink } from '../../../components/entityLookups/types';
+import type { EntityLink } from '../../../dialogs/entityLookups/types';
 import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';

@@ -1,93 +1,149 @@
-import { loadDocument } from '@cwrc/leafwriter-storage-service';
-import LoadingMask from '@src/components/loadingMask';
-import Page from '@src/components/Page';
-import { usePermalink } from '@src/hooks/usePermalink';
+import { LoadingMask } from '@src/components';
+import { useAnalytics } from '@src/hooks';
+import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
-import { StorageProviderName } from '@src/services';
-import React, { useEffect, type FC } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useEffect, useRef, type FC } from 'react';
 import { useNavigate } from 'react-router';
-import LeafWriterContainer from './LeafWriterContainer';
-import TopBar from './topBar';
+import { MainMenu, Meta, useMenu } from './topbar';
+import { useLeafWriter } from './useLeafWriter';
 
-const EditView: FC = () => {
-  const { userState } = useAppState().auth;
+export const EditView: FC = () => {
+  const { userState, user } = useAppState().auth;
+  const { autosave, libLoaded } = useAppState().editor;
   const { resource } = useAppState().storage;
 
-  const { editor } = useActions();
-  const { getStorageProviderAuth, openStorageDialog, setResource } = useActions().storage;
-  const { showAlertDialog } = useActions().ui;
+  const { getKeycloakAuthToken } = useActions().auth;
+  const {
+    close,
+    getGeonameUsername,
+    loadLeafWriter,
+    setAutosave,
+    setIsDirty,
+    subscribeToTimerService,
+    unsubscribeFromTimerService,
+  } = useActions().editor;
 
-  const { t } = useTranslation();
+  const { setPage } = useActions().ui;
+
   const navigate = useNavigate();
 
-  const { getResourceFromPermalink } = usePermalink();
+  const { analytics } = useAnalytics();
+
+  const {
+    disposeLeafWriter,
+    leafWriter,
+    loadDocumentFromPermalink,
+    setCurrentLeafWriter,
+    tapDocument,
+  } = useLeafWriter();
+  const { onKeydownHandle } = useMenu();
+
+  const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // if (divEl.current && !leafWriter) loadLib();
+    setPage('edit');
     window.addEventListener('keydown', onKeydownHandle);
-    return () => window.removeEventListener('keydown', onKeydownHandle);
+    return () => {
+      window.removeEventListener('keydown', onKeydownHandle);
+      setCurrentLeafWriter(null);
+    };
   }, []);
 
   useEffect(() => {
-    if (userState === 'AUTHENTICATING') return;
-    if (userState === 'UNAUTHENTICATED') return navigate('/', { replace: true });
+    if (userState === 'AUTHENTICATED') {
+      if (!resource) loadDocumentFromPermalink();
+      loadLib();
+      return;
+    }
 
-    if (!resource) loadDocumentFromPermalink();
+    if (userState === 'UNAUTHENTICATED') {
+      if (!resource) {
+        close();
+        navigate('/', { replace: true });
+        return;
+      }
+
+      loadLib();
+    }
   }, [userState]);
 
-  const loadDocumentFromPermalink = async () => {
-    const resource = getResourceFromPermalink();
-    if (!resource) return showErrorMessage('Resource not found');
-    if (!resource.provider) return showErrorMessage('Provider not found');
+  useEffect(() => {
+    if (leafWriter) initLeafWriter();
+  }, [leafWriter]);
 
-    const providerAuth = getStorageProviderAuth(resource.provider as StorageProviderName);
-    if (!providerAuth) return showErrorMessage('Provider not found');
+  useEffect(() => {
+    handleResource();
+  }, [resource]);
 
-    const document = await loadDocument(providerAuth, resource);
-    if ('error' in document) return showErrorMessage(document.error);
-
-    setResource(document);
+  const handleResource = async () => {
+    if (!resource) return;
+    if (resource.content) initLeafWriter();
   };
 
-  const showErrorMessage = (error?: string) => {
-    showAlertDialog({
-      type: 'error',
-      message: error ?? 'Something went wrong.',
-      onClose: () => navigate('/', { replace: true }),
+  const loadLib = async () => {
+    if (!divEl.current) return;
+    const lw = await loadLeafWriter(divEl.current);
+    setCurrentLeafWriter(lw);
+  };
+
+  const initLeafWriter = async () => {
+    if (!leafWriter || !resource?.content) return;
+
+    const geonamesUsername = await getGeonameUsername();
+
+    leafWriter.init({
+      document: {
+        url: resource.url,
+        xml: resource.content ?? '',
+      },
+      settings: {
+        credentials: { nssiToken: userState === 'AUTHENTICATED' ? getKeycloakAuthToken : '' },
+        lookups: {
+          authorities: [['geonames', { config: { username: geonamesUsername } }]],
+        },
+      },
+      user: user && {
+        avatar_url: user.avatar_url,
+        email: user.email,
+        name: `${user?.firstName} ${user?.lastName}`,
+        uri: user?.url,
+      },
     });
-  };
 
-  const onKeydownHandle = (event: KeyboardEvent) => {
-    if (!event.metaKey) return;
+    leafWriter.isDirty.subscribe((value) => {
+      setIsDirty(value);
+    });
 
-    let action: 'save' | 'saveAs' | 'load' | '' = '';
+    leafWriter.onLoad.subscribe(({ schemaName }) => {
+      leafWriter.autosave = autosave;
+      tapDocument(resource, schemaName);
+      subscribeToTimerService(leafWriter);
+    });
 
-    if (event.code === 'KeyS') action = 'save';
-    if (event.shiftKey && event.code === 'KeyS') action = 'saveAs';
-    if (event.code === 'KeyO') action = 'load';
+    leafWriter.onClose.subscribe(() => {
+      unsubscribeFromTimerService();
+      disposeLeafWriter();
+    });
 
-    if (action === '') return;
+    leafWriter.onEditorStateChange.subscribe((editorState) => {
+      if (editorState.autosave !== undefined && editorState.autosave !== autosave) {
+        setAutosave(editorState.autosave);
+      }
+    });
 
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (action === 'saveAs') return editor.saveAs();
-    if (action === 'save') return editor.save();
-    if (action === 'load') {
-      return openStorageDialog({
-        source: 'cloud',
-        resource: undefined,
-        type: 'load',
-      });
+    if (analytics) {
+      analytics.track('editor', { opened: true });
+      analytics.page();
     }
   };
 
   return (
-    <Page title={t('home:homepage')}>
-      <TopBar />
-      {!resource ? <LoadingMask /> : <LeafWriterContainer />}
+    <Page>
+      <TopBar Left={<MainMenu />} Meta={<Meta />} />
+      <div ref={divEl} id="leaf-writer-container" style={{ height: 'calc(100vh - 48px)' }}>
+        {(!libLoaded || !resource) && <LoadingMask />}
+      </div>
     </Page>
   );
 };
-
-export default EditView;

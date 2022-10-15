@@ -10,10 +10,10 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { FC, MouseEvent, useEffect, useRef, useState } from 'react';
-import type { StorageSource, SuportedProviders } from '../types';
-import SettingsDialog from '../components/SettingsDialog';
+import { SettingsDialog } from '../dialogs';
 import { useActions, useAppState } from '../overmind';
-import { getIcon } from '../utilities/icons';
+import type { StorageSource, SuportedProviders } from '../types';
+import { getIcon } from '../utilities';
 
 type Source = StorageSource | SuportedProviders;
 

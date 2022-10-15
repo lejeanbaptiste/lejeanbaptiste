@@ -1,18 +1,18 @@
 import { Box, Stack, Typography } from '@mui/material';
-import { log } from '@src/utilities/log';
-import React, { FC, useEffect, useState } from 'react';
+import { log } from '@src/utilities';
+import React, { useEffect, useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import TeamProfile, { Profile } from './TeamProfile';
+import { TeamProfile, type IProfile } from './TeamProfile';
 
-const Team: FC = () => {
+export const Team: FC = () => {
   const { t } = useTranslation();
 
-  const [team, setTeam] = useState<Profile[]>();
+  const [team, setTeam] = useState<IProfile[]>();
 
   useEffect(() => {
     fetch('./content/team.json')
       .then((res) => res.json())
-      .then((res: Profile[]) => setTeam(res))
+      .then((res: IProfile[]) => setTeam(res))
       .catch((err) => log.error(err));
   }, []);
 
@@ -20,7 +20,7 @@ const Team: FC = () => {
     <Box>
       {team && (
         <>
-          <Typography component="h3" variant="h5">
+          <Typography component="h3" variant="h5" sx={{ textTransform: 'capitalize' }}>
             {t('home:team')}
           </Typography>
           <Stack mt={4} rowGap={2.5}>
@@ -33,5 +33,3 @@ const Team: FC = () => {
     </Box>
   );
 };
-
-export default Team;

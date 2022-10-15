@@ -1,4 +1,5 @@
 {
+  "cancel": "annuler",
   "cloud": {
     "breadcrumbs": {
       "branch": "Branche",
@@ -20,6 +21,7 @@
     },
     "create_folder": "Créer un dossier",
     "folder_name": "Nom du dossier",
+    "loading_more": "chargement plus",
     "mainMenu": {
       "groups": "Groupes",
       "my_projects": "Mes projets",
@@ -59,21 +61,24 @@
     },
     "name": "nom",
     "no": "non",
-    "open": "",
+    "open": "ouvert",
     "private": "Privé",
     "processing": "Traitement",
     "save": "Enregistrer",
-    "settings": "",
+    "settings": "réglages",
     "show_less": "Afficher moins",
     "show_more": "Afficher plus",
     "yes": "oui"
   },
   "error": {
+    "conflict": "conflit",
+    "loading error": "erreur de chargement",
     "message": {
       "conflictFIle": "Conflit trouvé. Impossible d'écraser le fichier.",
       "document_not_valid": "Document non valide",
       "file_not_found": "Impossible de trouver la ressource demandée. Fichier '{{file}}' introuvable.",
       "folder_creation_error": "Erreur de création de dossier",
+      "loading error": "Erreur de chargement",
       "overwriteFileConfirmation": "Le fichier existe déjà. Voulez-vous l'écraser ?",
       "path_not_found": "Impossible de trouver la ressource demandée. Le chemin de {{repository}} '{{path}}' n'a pas été trouvé",
       "repo_creation_error": "Erreur de création du dépôt",
@@ -87,10 +92,13 @@
       "unable_to_upload_file": "{{filename}}.",
       "user_not_found": "Impossible de télécharger le fichier '{{username}}' "
     },
+    "path not found": "Chemin non trouvé",
     "title": {
       "error": "Erreur",
       "warning": "Avertissement"
-    }
+    },
+    "unable to overwrite file": "impossible d'écraser le fichier",
+    "unabled to save": "impossible de sauvegarder"
   },
   "footer": {
     "download": "télécharger",
@@ -98,11 +106,26 @@
     "pasteXml": "coller XML",
     "save_as_pull_request": "Enregistrer et Pull Request"
   },
+  "leafwriter-storage-service": {
+    "Do you want to overwrite": "Voulez-vous écraser",
+    "Storage provider not defined": "Fournisseur de stockage non défini",
+    "cancel": "annuler",
+    "error": "Erreur",
+    "forking": "bifurquer",
+    "loading error": "erreur de chargement",
+    "overwrite": "écraser",
+    "path not found": "Chemin non trouvé",
+    "user not found": "Utilisateur non trouvé"
+  },
+  "loading error": "Erreur de chargement",
   "local": {
     "drag_drop": "Cliquez ou faites glisser 'n' drop pour télécharger un fichier",
     "paste_document_here": "Coller le document ici"
   },
+  "not found": "pas trouvé",
+  "overwrite": "écraser",
+  "path not found": "Chemin non trouvé",
   "settings": {
-    "allow_all_files": ""
+    "allow_all_files": "Autoriser tous les fichiers"
   }
 }

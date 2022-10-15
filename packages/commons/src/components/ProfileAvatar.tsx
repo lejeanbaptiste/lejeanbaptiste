@@ -1,19 +1,22 @@
 import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import { getIcon } from '@src/utilities/icons';
+import { getIcon } from '@src/assets/icons';
 import { motion } from 'framer-motion';
-import React, { FC, useRef, useState } from 'react';
-import Profile from './Profile';
+import React, { useState, type FC } from 'react';
 
-const ProfileAvatar: FC = () => {
+interface ProfileAvatarProps {
+  clickable?: boolean;
+  size?: number;
+}
+
+export const ProfileAvatar: FC<ProfileAvatarProps> = ({ clickable = true, size = 32 }) => {
   const { user } = useAppState().auth;
-  const theme = useTheme();
+  const { palette } = useTheme();
 
-  const ref = useRef(null);
-  const [anchorProfileEl, setAnchorProfileEl] = useState<HTMLDivElement | null>(null);
+  const [hover, setHover] = useState(false);
 
-  const handleProfileClick = () => setAnchorProfileEl(ref.current);
-  const handleProfileClose = () => setAnchorProfileEl(null);
+  const handleMouseOver = () => setHover(true);
+  const handleMouseOut = () => setHover(false);
 
   const profileVariants = {
     initial: { scale: 0 },
@@ -21,45 +24,62 @@ const ProfileAvatar: FC = () => {
     exit: { scale: 0 },
   };
 
+  const avatarVariant = {
+    default: { boxShadow: `${palette.primary.main} 0px 0px 0px 0px` },
+    hover: { boxShadow: `${palette.primary.main} 0px 0px 3px 1px` },
+  };
+
+  const badgeVariant = {
+    default: { marginTop: 0, marginLeft: 0 },
+    hover: { marginTop: 8, marginLeft: 8 },
+  };
+
   return (
     <Box
-      ref={ref}
-      key="profile"
       component={motion.div}
       variants={profileVariants}
       initial="initial"
       animate="visible"
       exit="exit"
+      onMouseOver={handleMouseOver}
+      onMouseOut={handleMouseOut}
     >
       <Badge
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         badgeContent={
           user?.preferredID && (
-            <Icon
-              component={getIcon(user?.preferredID)}
-              sx={{
-                width: 16,
-                height: 16,
-                borderRadius: '50%',
-                border: `1px solid ${theme.palette.background.paper}`,
-                backgroundColor: theme.palette.background.paper,
-              }}
-            />
+            <Box
+              component={motion.div}
+              borderRadius="50%"
+              width={size / 2}
+              height={size / 2}
+              variants={badgeVariant}
+              animate={hover && clickable ? 'hover' : 'default'}
+              sx={{ cursor: clickable ? 'pointer' : 'default' }}
+            >
+              <Icon
+                component={getIcon(user?.preferredID)}
+                sx={{
+                  width: size / 2,
+                  height: size / 2,
+                  borderRadius: '50%',
+                  border: `1px solid ${palette.background.paper}`,
+                  backgroundColor: palette.background.paper,
+                }}
+              />
+            </Box>
           )
         }
         overlap="circular"
       >
         <Avatar
           component={motion.div}
-          whileHover={{ boxShadow: `${theme.palette.primary.main} 0px 0px 3px 1px` }}
-          onClick={handleProfileClick}
+          animate={hover && clickable ? 'hover' : 'default'}
+          variants={avatarVariant}
           src={user?.avatar_url}
-          sx={{ width: 32, height: 32, cursor: 'pointer' }}
+          sx={{ width: size, height: size, cursor: clickable ? 'pointer' : 'default' }}
         />
       </Badge>
-      {anchorProfileEl && <Profile anchor={anchorProfileEl} handleClose={handleProfileClose} />}
     </Box>
   );
 };
-
-export default ProfileAvatar;

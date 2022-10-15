@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';
-import type { MappingID } from '../../../types';
+import type { SchemaMappingType } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { ILWDialogConfigParams } from '../types';
@@ -10,7 +10,7 @@ import type { SchemaDialog } from './types';
 class KeywordDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
-  readonly mappingID: MappingID;
+  readonly mappingID: SchemaMappingType;
 
   forceSave = false; // needed for confirmation dialog in beforeSave
 

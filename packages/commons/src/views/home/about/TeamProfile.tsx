@@ -1,19 +1,19 @@
 import { Avatar, Box, Stack, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 import md5 from 'md5';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 
-export interface Profile {
+export interface IProfile {
   name: string;
   email?: string;
   positions: string[];
 }
 
 interface TeamProfileProps {
-  profile: Profile;
+  profile: IProfile;
 }
 
-const TeamProfile: FC<TeamProfileProps> = ({ profile }) => {
+export const TeamProfile: FC<TeamProfileProps> = ({ profile }) => {
   const { name, email, positions } = profile;
 
   const gravatarUrl = email ? `https://www.gravatar.com/avatar/${md5(email)}?s=64` : undefined;
@@ -45,5 +45,3 @@ const TeamProfile: FC<TeamProfileProps> = ({ profile }) => {
     </Box>
   );
 };
-
-export default TeamProfile;

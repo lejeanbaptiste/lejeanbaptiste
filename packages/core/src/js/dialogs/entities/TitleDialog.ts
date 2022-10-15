@@ -1,9 +1,9 @@
 import $ from 'jquery';
-import type { EntityLink } from '../../../components/entityLookups/types';
+import type { EntityLink } from '../../../dialogs/entityLookups/types';
 import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
-import type { MappingID } from '../../../types';
+import type { SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { ILWDialogConfigParams } from '../types';
 import type { SchemaDialog } from './types';
@@ -49,7 +49,7 @@ const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
 class TitleDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
-  readonly mappingID: MappingID;
+  readonly mappingID: SchemaMappingType;
 
   entry?: Entity;
   selectedText?: string;

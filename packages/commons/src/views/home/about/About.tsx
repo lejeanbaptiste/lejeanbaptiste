@@ -1,11 +1,14 @@
-import { Link, Typography } from '@mui/material';
+import { Link, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import React, { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState, type FC } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-const About: FC = () => {
-  const [content, setContent] = useState('');
+export const About: FC = () => {
   const { language } = useAppState().ui;
+
+  const { breakpoints } = useTheme();
+
+  const [content, setContent] = useState('');
 
   useEffect(() => {
     loadContent();
@@ -14,6 +17,8 @@ const About: FC = () => {
   useEffect(() => {
     loadContent();
   }, [language]);
+
+  const isMobile = useMediaQuery(breakpoints.down('sm'));
 
   const loadContent = async () => {
     const file = `about_${language.code}.md`;
@@ -25,15 +30,42 @@ const About: FC = () => {
   return (
     <ReactMarkdown
       components={{
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         h1: ({ node, ...props }) => (
           //@ts-ignore
-          <Typography component="h3" mb={3} sx={{ fontWeight: 300 }} variant="h4" {...props} />
+          <Typography
+            component="h1"
+            mb={4}
+            sx={{ fontWeight: 300 }}
+            variant={isMobile ? 'h3' : 'h2'}
+            {...props}
+          />
+        ),
+
+        h2: ({ node, ...props }) => (
+          //@ts-ignore
+          <Typography component="h2" mb={3} variant={isMobile ? 'h4' : 'h3'} {...props} />
+        ),
+
+        h3: ({ node, ...props }) => (
+          //@ts-ignore
+          <Typography component="h3" mb={2.5} variant={isMobile ? 'h5' : 'h4'} {...props} />
+        ),
+
+        h4: ({ node, ...props }) => (
+          //@ts-ignore
+          <Typography component="h4" mb={2} variant={isMobile ? 'h6' : 'h5'} {...props} />
+        ),
+
+        h5: ({ node, ...props }) => (
+          //@ts-ignore
+          <Typography component="h5" mb={1.5} variant={isMobile ? 'p' : 'h6'} {...props} />
+        ),
+        h6: ({ node, ...props }) => (
+          //@ts-ignore
+          <Typography component="h6" mb={1} paragragh sx={{ fontWeight: 700 }} {...props} />
         ),
         //@ts-ignore
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        p: ({ node, ...props }) => <Typography my={2} {...props} />,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        p: ({ node, ...props }) => <Typography my={1} {...props} />,
         a: ({ node, ...props }) => (
           //@ts-ignore
           <Link underline="hover" target="_blank" rel="noopener noreferrer" {...props} />
@@ -44,5 +76,3 @@ const About: FC = () => {
     </ReactMarkdown>
   );
 };
-
-export default About;

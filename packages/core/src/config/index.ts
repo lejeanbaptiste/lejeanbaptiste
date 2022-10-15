@@ -1,12 +1,14 @@
-import type { ILeafWriterOptionsSettings, Schema, SupportedSchemasId } from '../types';
+import type { ILeafWriterOptionsSettings, Schema } from '../types';
+import { SchemaMappings } from '../types';
+import { isValidHttpsURL } from '../utilities';
 import { schemas as defaultSchemas } from './schemas';
 
-export const createConfig = (settings: ILeafWriterOptionsSettings) => {
-  const supportedSchemas = setupSupportedSchemas(settings.schemas ?? settings.schemasId);
+export const createConfig = ({ baseUrl, schemas }: ILeafWriterOptionsSettings) => {
+  const supportedSchemas = schemas ? setupSchemas(schemas) : setupSchemas(defaultSchemas);
 
   const config: ILeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
-    baseUrl: settings.baseUrl ?? '.',
+    baseUrl: baseUrl ?? '.',
     schemas: supportedSchemas,
     modules: {
       west: [
@@ -24,33 +26,34 @@ export const createConfig = (settings: ILeafWriterOptionsSettings) => {
   return config;
 };
 
-export const setupSupportedSchemas = (schemas?: Array<SupportedSchemasId | Schema>) => {
-  if (!schemas) return defaultSchemas;
+export const setupSchemas = (schemas: Array<Schema>) => {
+  //add custom schemas stored on local storage
+  const customSchemasData = window.localStorage.getItem('custom_schemas');
+  if (customSchemasData) schemas = [...schemas, ...JSON.parse(customSchemasData)];
 
   let supportedSchemas: Schema[] = [];
 
   for (const schema of schemas) {
-    if (typeof schema === 'string') {
-      const defaultSchema = defaultSchemas.find(({ id }) => id === schema);
-      const exists = supportedSchemas.some(({ id }) => id === schema);
-      if (defaultSchema && !exists) supportedSchemas = [...supportedSchemas, defaultSchema];
-      return;
-    }
     const exists = supportedSchemas.some(({ id }) => id === schema.id);
-    const isValid =
-      schema.mapping !== null &&
-      schema.name !== null &&
-      typeof schema.rng === 'string' &&
-      isValidURL(schema.rng);
-    if (!exists && isValid) supportedSchemas = [...supportedSchemas, schema];
+    if (exists) continue;
+
+    const { id, name, mapping, rng, css, editable } = schema;
+
+    if (!id || typeof id !== 'string' || id === '') continue;
+    if (!name || typeof name !== 'string' || name.length < 3 || name.length > 20) continue;
+    if (!mapping || !SchemaMappings.includes(mapping)) continue;
+
+    const validRng = rng.filter((url) => isValidHttpsURL(url));
+    if (validRng.length === 0) continue;
+
+    const validCss = css.filter((url) => isValidHttpsURL(url));
+    if (validCss.length === 0) continue;
+
+    supportedSchemas = [
+      ...supportedSchemas,
+      { id, name, mapping, rng: validRng, css: validCss, editable },
+    ];
   }
 
   return supportedSchemas;
-};
-
-const isValidURL = (value: string) => {
-  const res = value.match(
-    /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g
-  );
-  return res !== null;
 };

@@ -19,8 +19,8 @@ class Converter {
     this.cwrc2xml = new CWRC2XML(writer);
   }
 
-  processDocument(doc: XMLDocument, schemaIdOverride?: string) {
-    return this.xml2cwrc.processDocument(doc, schemaIdOverride);
+  processDocument(doc: XMLDocument) {
+    return this.xml2cwrc.processDocument(doc);
   }
 
   buildEditorString(node: Element, includeComments?: boolean) {
@@ -68,7 +68,7 @@ class Converter {
         this.writer.event('documentLoaded').publish(false, null);
         this.writer.dialogManager.show('message', {
           title: 'Error',
-          msg: 'The document you are trying to upload is not well-formed. Check that it has the xml extension and that it follows <a href="https://wwthis.writer.w3resource.com/xml/well-formed.php" target="_blank" rel="noopener noreferrer">propper xml grammar</a>.',
+          msg: 'The document you are trying to upload is not well-formed. Check that it has the xml extension and that it follows <a href="https://wwthis.writer.w3resource.com/xml/well-formed.php" target="_blank" rel="noopener noreferrer">proper xml grammar</a>.',
           type: 'error',
         });
         return false;
@@ -107,7 +107,7 @@ class Converter {
   }
 
   setDocument(document: XMLDocument | string) {
-    if (typeof document === 'string' && document.indexOf('http') === 0) {
+    if (typeof document === 'string' && document.indexOf('https') === 0) {
       this.loadDocumentURL(document);
     } else {
       this.loadDocumentXML(document);

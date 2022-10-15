@@ -2,7 +2,7 @@ import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/tooltip';
 import Cookies from 'js-cookie';
-import type { EntityLink } from '../../components/entityLookups/types';
+import type { EntityLink } from '../../dialogs/entityLookups/types';
 import '../../lib/jquery/jquery.popup';
 // import Triple from './dialogs/triple.js';
 import { log } from '../../utilities';

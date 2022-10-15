@@ -1,8 +1,9 @@
+import { OptionsObject, SnackbarMessage } from 'notistack';
 import type { Bookmark, Editor } from 'tinymce/tinymce';
-import type { ILookupsConfig } from '../components/entityLookups/types';
+import type { ILookupsConfig } from '../dialogs/entityLookups';
 import Writer from '../js/Writer';
 
-export type { Authority, ILookups } from '../components/entityLookups/types';
+export type { Authority, ILookups } from '../dialogs/entityLookups';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;
@@ -12,14 +13,7 @@ export declare var webpackEnv: {
 
 export interface ILeafWriterOptions {
   document: LWDocument;
-  preferences?: {
-    fontSize?: number; // [Optional] Changes the document's default font size. Default: 11. Options: 10-18
-    themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
-    workspace?: {
-      leftSide: string[]; // [Required] List of panel names. Default: ['structure', 'nerve']
-      rightSide: string[]; // [Required] List of panel names. Default: ['xml-viewer', 'image-viewer', 'validator']
-    };
-  };
+  preferences?: ILeafWriterOptionsPreference;
   settings?: ILeafWriterOptionsSettings;
   user?: User;
 }
@@ -27,6 +21,15 @@ export interface ILeafWriterOptions {
 export interface LWDocument {
   url?: string;
   xml: string;
+}
+
+export interface ILeafWriterOptionsPreference {
+  fontSize?: number; // [Optional] Changes the document's default font size. Default: 11. Options: 10-18
+  themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
+  workspace?: {
+    leftSide: string[]; // [Required] List of panel names. Default: ['structure', 'nerve']
+    rightSide: string[]; // [Required] List of panel names. Default: ['xml-viewer', 'image-viewer', 'validator']
+  };
 }
 
 export interface ILeafWriterOptionsSettings {
@@ -88,14 +91,16 @@ export interface User {
   uri: string;
 }
 
-export type MappingID = 'cwrcEntry' | 'orlando' | 'tei' | 'teiLite';
+export const SchemaMappings = ['cwrcEntry', 'orlando', 'tei', 'teiLite'] as const;
+export type SchemaMappingType = typeof SchemaMappings[number];
 
 export type Schema = {
   id: string;
   name: string;
-  mapping: MappingID;
+  mapping: SchemaMappingType;
   rng: string[];
   css: string[];
+  editable?: boolean;
 };
 
 export interface Language {
@@ -165,4 +170,18 @@ export interface LeafWriterEditor extends Editor {
   };
   copiedEntity?: any;
   lastKeyPress?: string;
+}
+
+export interface INotification {
+  dismissed?: boolean;
+  key?: string | number;
+  message: SnackbarMessage;
+  options?: OptionsObject;
+}
+
+export interface ScreenshotParams {
+  width?: number;
+  height?: number;
+  windowWidth?: number;
+  windowHeight?: number;
 }

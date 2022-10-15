@@ -1,4 +1,4 @@
-import { OptionsObject, SnackbarMessage } from 'notistack';
+import type { OptionsObject, SnackbarMessage } from 'notistack';
 import React from 'react';
 
 export interface Language {
@@ -82,18 +82,31 @@ export interface Resource {
   content?: string;
   hash?: string;
   url?: string;
+
   schemaName?: string;
   modifiedAt?: Date;
+  screenshot?: string;
+
+  title?: string;
+  category?: string;
+  icon?: string;
 }
 
-export type ErrorType = 'info' | 'warning' | 'error';
+export const ErrorTypes = ['info', 'warning', 'error'] as const;
+type ErrorType = typeof ErrorTypes[number];
 
-export interface Error {
-  type?: ErrorType;
+export interface IError {
   message: string;
+  title?: string;
+  type: ErrorType;
 }
 
 export interface IProviderAuth {
   access_token: string;
   name: string;
+}
+
+export interface IView {
+  title?: string;
+  value: string;
 }

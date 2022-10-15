@@ -15,11 +15,15 @@ export const setLoaded = ({ state }: Context, value: boolean) => {
   state.document.loaded = value;
 };
 
+export const setRootname = ({ state }: Context, value: string) => {
+  state.document.rootName = value;
+};
+
 export const setSchema = ({ state }: Context, id: string) => {
   window.writer?.event('schemaChanged').publish(id);
 
   state.document.schemaId = id;
-  return state.editor.schemas.find((schema) => schema.id === id);
+  return state.editor.schemasList.find((schema) => schema.id === id);
 };
 
 export const setDocumentUrl = ({ state }: Context, url: string) => {
@@ -32,7 +36,10 @@ export const updateContent = ({ state }: Context, content: string) => {
 };
 
 export const clear = ({ state }: Context) => {
+  state.document.loaded = false;
+  state.document.rootName = undefined;
   state.document.schemaId = '';
+  state.document.loaded = false;
   state.document.url = undefined;
   state.document.xml = undefined;
 };
@@ -40,4 +47,8 @@ export const clear = ({ state }: Context) => {
 export const loadDocumentXML = ({ actions }: Context, content: string) => {
   window.writer?.loadDocumentXML(content);
   actions.document.updateContent(content);
+};
+
+export const setDocumentTouched = ({ state }: Context, value: boolean) => {
+  state.document.touched = value;
 };

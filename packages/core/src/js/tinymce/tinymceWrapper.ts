@@ -202,9 +202,15 @@ export const tinymceWrapperInit = function ({
 
   writer.event('documentLoaded').subscribe(() => {
     if (!writer.editor) return;
+    const {overmindState, overmindActions} = writer;
+   
     writer.editor.undoManager.clear();
     writer.editor.isNotDirty = true;
-    writer.overmindActions.editor.setIsEditorDirty(false);
+    
+    if (!overmindState.document.touched) {
+      overmindActions.document.setDocumentTouched(true);
+      overmindActions.editor.setIsEditorDirty(false);
+    }
 
     // need to explicitly set focus
     // otherwise writer.editor.selection.getBookmark doesn't work until the user clicks inside the editor
