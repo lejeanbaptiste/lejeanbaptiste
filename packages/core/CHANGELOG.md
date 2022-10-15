@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 2.2.0
+
+### New Features
+
+#### LEAF-Writer will create an anonymous user if a user is not provided
+
+LEAF-Writer now fully supports an anonymous user. The only required attribute to initialize the editor is the content itself.
+
+#### Localization: Add French translation (fr-CA)
+
+[eab31a3b0aab176d782ed1ea58fc444928b61756]
+
+This is a work in progress. Only a small portion of the terms have multilingual support
+
+### Minor
+
+- Rename public API `getDocumentSnapshot` to `getDocumentScreenshot`. Add flexibility, default options, fallback, and types. [e1d0cc32c2b9a2d4caa7f8069821423ed6cc0905]
+  - Note: This is a BREAKING CHANGE 🧨 without a major release.
+
+### Patch
+
+- Fix a bug in which discarded observers keep listening the editor [db4c0bf7b7812a132f3ad72c07ec8ef558cbeae9]
+- Update dependencies [93ccf067ae2269320519d974daa6260160d48076]:
+  - dev:
+    - update:
+      - types/node@18.11.0
+
 ## 2.1.0
 
 ### Minor Changes
