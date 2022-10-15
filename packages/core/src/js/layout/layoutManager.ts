@@ -1,7 +1,8 @@
 import fscreen from 'fscreen';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/tabs';
-import 'layout-jquery3';
+// import 'layout-jquery3';
+import '../../lib/jquery/jquery.layout_and_plugins.js';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import EntitiesList from './panels/entitiesList';

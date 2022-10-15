@@ -1,5 +1,4 @@
-import { Router } from 'express';
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 
 /**
  * It sets the HTTP headers for the response object

@@ -1,5 +1,5 @@
 import { GithubIdentityProvider as github } from './github';
-import { GitlabIdentityProvider as gitlab } from './gitlab';
+// import { GitlabIdentityProvider as gitlab } from './gitlab';
 // import { OrcidIdentityProvider as orcid } from './orcid';
 
 export type IdentityProviderName = 'github'; // | 'gitlab' | 'orcid';

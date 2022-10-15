@@ -10,16 +10,16 @@ import {
   useTheme,
 } from '@mui/material';
 import React, {
-  ChangeEvent,
-  FC,
-  FocusEvent,
-  KeyboardEvent,
+  type ChangeEvent,
+  type FC,
+  type FocusEvent,
+  type KeyboardEvent,
   useEffect,
   useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import SaveSettingsDialog from '../../../components/SaveSettingsDialog';
+import { SaveSettingsDialog } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';
 
 const Filename: FC = () => {

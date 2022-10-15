@@ -248,7 +248,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       disabled: false,
       onAction: async () => {
         const docText = await writer.converter.getDocumentContent(true);
-        writer.overmindActions.ui.openEditSourceDialog(docText);
+        writer.overmindActions.ui.openDialog({ type: 'editSource', props: { content: docText } });
       },
     },
     {
@@ -263,7 +263,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       icon: 'settings',
       tooltip: 'Settings',
       disabled: false,
-      onAction: () => writer.overmindActions.ui.openSettingsDialog(),
+      onAction: () => writer.overmindActions.ui.openDialog({ type: 'settings' }),
     },
     {
       slug: 'documentation',

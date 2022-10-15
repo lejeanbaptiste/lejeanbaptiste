@@ -8,7 +8,7 @@ export interface FooterProps {
   onCancel: () => void;
 }
 
-const FooterLoad: FC<FooterProps> = ({ onCancel }) => {
+export const FooterLoad: FC<FooterProps> = ({ onCancel }) => {
   const { selectedItem, source } = useAppState().common;
   const { isLoading } = useAppState().cloud;
   const { load } = useActions().common;
@@ -62,5 +62,3 @@ const FooterLoad: FC<FooterProps> = ({ onCancel }) => {
     </DialogActions>
   );
 };
-
-export default FooterLoad;

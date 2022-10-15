@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { GetResponseDataTypeFromEndpointMethod } from '@octokit/types';
+import type { GetResponseDataTypeFromEndpointMethod } from '@octokit/types';
 import queryString from 'query-string';
 import type { AuthenticateProp, IIdentityProvider } from './';
 

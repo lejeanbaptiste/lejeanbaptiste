@@ -5,12 +5,14 @@ import Dropzone, { DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 
-const UploadPanel: FC = () => {
+export const UploadPanel: FC = () => {
   const { t } = useTranslation();
   const { palette } = useTheme();
   const { allowedMimeTypes } = useAppState().common;
   const { setResource, uploadFile } = useActions().local;
-  const { load, showAlertDialog } = useActions().common;
+  const { load } = useActions().common;
+  const { openDialog } = useActions().ui;
+
   const dropzoneRef = createRef<DropzoneRef>();
 
   const container = useRef<HTMLDivElement>(null);
@@ -38,10 +40,15 @@ const UploadPanel: FC = () => {
   const handleSelectFile = async (file: File) => {
     const document = await uploadFile(file);
     if (!document) {
-      showAlertDialog({
-        type: 'error',
-        message: t('error:message:unable_to_upload_file', { filename: file.name }),
+      openDialog({
+        props: {
+          maxWidth: 'xs',
+          preventEscape: true,
+          severity: 'error',
+          title: t('error:message:unable_to_upload_file', { filename: file.name }),
+        },
       });
+
       return;
     }
 
@@ -104,5 +111,3 @@ const UploadPanel: FC = () => {
     </Box>
   );
 };
-
-export default UploadPanel;

@@ -125,7 +125,7 @@ describe('headless', () => {
       ])('$name', async ({ auth, resource }) => {
         jest.spyOn(Github.prototype, 'getDocument').mockImplementationOnce(async () => null);
         const response = await saveDocument(auth, resource);
-        expect(response).toHaveProperty('error');
+        expect(response).toHaveProperty(['message']);
       });
 
       test('Repository invalid', async () => {
@@ -137,7 +137,7 @@ describe('headless', () => {
           mock.githubAuth,
           mock.getResource({ type: 'repo_invalid' })
         );
-        expect(response).toHaveProperty('error');
+        expect(response).toHaveProperty(['message']);
       });
     });
 
@@ -157,7 +157,7 @@ describe('headless', () => {
             mock.getProviderAuth(provider),
             mock.getResource({ provider })
           );
-          expect(response).toHaveProperty('error');
+          expect(response).toHaveProperty(['message']);
         }
       );
 
@@ -173,7 +173,7 @@ describe('headless', () => {
             mock.getProviderAuth(provider),
             mock.getResource({ provider })
           );
-          expect(response).toHaveProperty('error');
+          expect(response).toHaveProperty(['message']);
         }
       );
     });

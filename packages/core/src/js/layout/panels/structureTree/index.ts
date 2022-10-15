@@ -39,7 +39,7 @@ class StructureTree {
 
     $(`#${parentId}`).append(
       `<div class="moduleParent">
-        <div id="${this.id}" class="moduleContent"></div>
+        <div id="${this.id}" class="moduleContent" style="flex: inherit"></div>
       </div>`
     );
 

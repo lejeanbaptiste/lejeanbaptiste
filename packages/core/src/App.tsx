@@ -1,16 +1,11 @@
-import { Box, ThemeProvider, useMediaQuery } from '@mui/material';
-import { SnackbarProvider } from 'notistack';
+import { Box } from '@mui/material';
 import React, { useEffect, useState, type FC } from 'react';
-import BottomBar from './components/bottombar';
-import ContextMenu from './components/contextmenu';
-import EditSourceDialog from './components/editSource';
-import EntityLookupDialog from './components/entityLookups';
-import Popup from './components/popup';
-import SetingsDialog from './components/settings';
+import { BottomBar, ContextMenu } from './components';
 import { createConfig } from './config';
+import { EntityLookupDialog } from './dialogs';
+import { useDialog, useNotifier } from './hooks';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
-import theme from './theme';
 import type { ILeafWriterOptions } from './types';
 
 declare global {
@@ -25,17 +20,13 @@ const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
   const actions = useActions();
   const state = useAppState();
   const [writer, setWriter] = useState<Writer | null>(null);
-
-  const preferDark = useMediaQuery('(prefers-color-scheme: dark)');
-
-  useEffect(() => {
-    if (state.ui.themeAppearance === 'auto') actions.ui.setDarkMode(preferDark);
-    return () => {};
-  }, [preferDark]);
+  useDialog();
+  useNotifier();
 
   useEffect(() => {
     if (document.url === undefined || state.document.url !== document.url) {
-      if (writer) writer.destroy();
+      // if (writer) writer.destroy();
+      actions.document.setDocumentTouched(false);
       actions.document.setLoaded(false);
       window.writer = null;
       setWriter(null);
@@ -83,24 +74,13 @@ const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
   };
 
   return (
-    <ThemeProvider theme={theme(state.ui.darkMode)}>
-      <SnackbarProvider>
-        <Box
-          id={CONTAINER}
-          sx={{
-            height: 'calc(100% - 32px)',
-            width: '100%',
-          }}
-        >
-          {writer && <ContextMenu writer={writer} />}
-          <Popup />
-          <EditSourceDialog />
-          <EntityLookupDialog />
-          <SetingsDialog />
-        </Box>
-        <BottomBar />
-      </SnackbarProvider>
-    </ThemeProvider>
+    <>
+      <Box id={CONTAINER} sx={{ height: 'calc(100% - 32px)', width: '100%' }}>
+        {writer && <ContextMenu writer={writer} />}
+        <EntityLookupDialog />
+      </Box>
+      <BottomBar />
+    </>
   );
 };
 

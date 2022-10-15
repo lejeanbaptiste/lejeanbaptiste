@@ -11,11 +11,10 @@ import {
 } from '@mui/material';
 import React, { forwardRef, useEffect, useState, type FC } from 'react';
 import CloudDialog from '../cloud';
-import FooterLoad from '../footer/FooterLoad';
-import FooterSave from '../footer/FooterSave';
+import { FooterLoad, FooterSave } from '../footer';
 import Header from '../header';
-import PastePanel from '../local/PastePanel';
-import UploadPanel from '../local/UploadPanel';
+import { useDialog } from '../hooks/useDialog';
+import { PastePanel, UploadPanel } from '../local';
 import { useActions, useAppState } from '../overmind';
 import SourcePanel from '../sourcePanel';
 import type { Resource, StorageDialogProps } from '../types';
@@ -43,6 +42,8 @@ const Main: FC<StorageDialogProps> = ({
   const { initialize } = useActions().cloud;
   const { clearSubmit, configure, resetAll, setDialogType, setResource } = useActions().common;
 
+  useDialog();
+
   const [isLoading, setIsLoading] = useState(true);
 
   const theme = useTheme();
@@ -53,9 +54,9 @@ const Main: FC<StorageDialogProps> = ({
     init();
   }, []);
 
-  useEffect(() => {
-    if (originResource && typeof originResource !== 'string') setResource(originResource);
-  }, [originResource]);
+  // useEffect(() => {
+  //   if (originResource && typeof originResource !== 'string') setResource(originResource);
+  // }, [originResource]);
 
   useEffect(() => {
     if (type === 'save') return;
@@ -99,10 +100,13 @@ const Main: FC<StorageDialogProps> = ({
     onCancel && onCancel();
   };
 
-  const clickAway = async () => {
-    if (onBackdropClick) {
-      await resetAll();
-      onBackdropClick();
+  const handleClose = async (_event: MouseEvent, reason: string) => {
+    if (type === 'save') return;
+    if (reason === 'backdropClick' || reason === 'escapeKeyDown') {
+      if (onBackdropClick) {
+        await resetAll();
+        onBackdropClick();
+      }
     }
   };
 
@@ -112,7 +116,7 @@ const Main: FC<StorageDialogProps> = ({
       fullScreen={isMD}
       fullWidth
       maxWidth="md"
-      onBackdropClick={type === 'load' ? clickAway : undefined}
+      onClose={handleClose}
       open={open}
       TransitionComponent={Transition}
     >

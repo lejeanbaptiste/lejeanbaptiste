@@ -1,20 +1,30 @@
 import { Button } from '@mui/material';
-import type { AlertDialog, INotification, MessageDialog, PaletteMode } from '@src/types';
-import { supportedLanguages } from '@src/utilities/util';
-import { VariantType } from 'notistack';
+import type { IDialogBar } from '@src/dialogs';
+import type { INotification, PaletteMode } from '@src/types';
+import { supportedLanguages } from '@src/utilities';
+import i18next from 'i18next';
+import type { VariantType } from 'notistack';
 import React from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../index';
 
-//* INIITIALIZE
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const onInitializeOvermind = async ({ state, actions }: Context, overmind: any) => {
+//* INITIALIZE
+/**
+ * Run during initialization
+ * It sets the theme appearance and language based on the user's preferences
+ */
+export const onInitializeOvermind = async (
+  { state, actions, effects }: Context,
+  _overmind: any
+) => {
   //DARK MODE
-  const prefPaletteMode: PaletteMode =
-    (localStorage.getItem('themeAppearance') as PaletteMode) ?? 'auto';
+  const prefPaletteMode =
+    effects.storage.api.getFromLocalStorage<PaletteMode>('themeAppearance') ?? 'auto';
+
   actions.ui.setThemeAppearance(prefPaletteMode);
 
   //LANGUAGE
-  const prefLanguageCode = localStorage.getItem('i18nextLng');
+  const prefLanguageCode = effects.storage.api.getFromLocalStorage<string>('i18nextLng');
   if (prefLanguageCode) {
     const prefLanguage = supportedLanguages.get(prefLanguageCode);
     state.ui.language = prefLanguage
@@ -23,10 +33,24 @@ export const onInitializeOvermind = async ({ state, actions }: Context, overmind
   }
 };
 
+/**
+ * Set the current page view
+ */
+export const setPage = async ({ state }: Context, value: string) => {
+  state.ui.page = value;
+};
+
+/**
+ * Gets Google Analitics ID from the our local sercer API
+ */
 export const getGAID = async ({ effects }: Context) => {
   const response = await effects.ui.api.getGAID();
   return response;
-}
+};
+
+export const setCookieConsent = ({ state }: Context, values?: string[]) => {
+  state.ui.cookieConsent = values ?? [];
+};
 
 export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
@@ -45,31 +69,24 @@ export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMo
 
 export const setDarkMode = ({ state }: Context, value: boolean) => {
   state.ui.darkMode = value;
+
+  //Cookies consent form
+  if (value && !document.body.classList.contains('c_darkmode')) {
+    document.body.classList.add('c_darkmode');
+  }
+
+  if (!value && document.body.classList.contains('c_darkmode')) {
+    document.body.classList.remove('c_darkmode');
+  }
+
   return state.ui.darkMode;
 };
 
-export const emitNotification = async (
-  { actions }: Context,
-  {
-    message,
-    persist = true,
-    variant = 'error',
-  }: { message: string; persist?: boolean; variant?: VariantType }
-) => {
-  actions.ui.notifyViaSnackbar({
-    message,
-    options: {
-      action: (key) => (
-        <Button color="inherit" onClick={() => actions.ui.closeNotificationSnackbar(key)}>
-          Dismiss
-        </Button>
-      ),
-      persist,
-      variant,
-    },
-  });
-};
-
+/**
+ * Switch language to the value provided. If value is not valid, it fallsback to `en-CA`.
+ * @param {string} value - The value of the language code that was selected.
+ * @returns The value of the language code.
+ */
 export const switchLanguage = ({ state }: Context, value: string) => {
   const language = supportedLanguages.get(value) ?? {
     code: 'en-CA',
@@ -80,27 +97,7 @@ export const switchLanguage = ({ state }: Context, value: string) => {
   return value;
 };
 
-// Message
-
-export const showAlertDialog = ({ state }: Context, alertDialog: Omit<AlertDialog, 'open'>) => {
-  if (!alertDialog.type) alertDialog.type = 'error';
-  state.ui.alertDialog = { open: true, ...alertDialog };
-};
-
-export const closeAlertDialog = ({ state }: Context) => {
-  state.ui.alertDialog = { open: false };
-};
-
-export const showMessageDialog = (
-  { state }: Context,
-  messageDialog: Omit<MessageDialog, 'open'>
-) => {
-  state.ui.messageDialog = { open: true, ...messageDialog };
-};
-
-export const closeCloseMessageDialog = ({ state }: Context) => {
-  state.ui.messageDialog = { open: false };
-};
+// * Notification
 
 export const notifyViaSnackbar = ({ state }: Context, notification: INotification | string) => {
   if (typeof notification === 'string') notification = { message: notification };
@@ -124,4 +121,66 @@ export const removeNotificationSnackbar = ({ state }: Context, key: string | num
   state.ui.notifications = state.ui.notifications.filter(
     (notification) => notification.key !== key
   );
+};
+
+/**
+ * Convenient method to trigger snackbar notifications
+ * It takes a message and a variant (error, warning, info, success) and emits a notification via the snackbar
+ * @param  - `message` - The message to display in the snackbar.
+ * @param  - Optional - `persists` - If notiicattion should persists until the users dismiss it. (Default: true)
+ * @param  - Optional - `variant` - Type of of notification: error, warning, info, success. (Default: 'error')
+ */
+export const emitNotification = async (
+  { actions }: Context,
+  {
+    message,
+    persist = true,
+    variant = 'error',
+  }: { message: string; persist?: boolean; variant?: VariantType }
+) => {
+  actions.ui.notifyViaSnackbar({
+    message,
+    options: {
+      action: (key) => (
+        <Button color="inherit" onClick={() => actions.ui.closeNotificationSnackbar(key)}>
+          {`${i18next.t('commons:dismiss')}`}
+        </Button>
+      ),
+      persist,
+      variant,
+    },
+  });
+};
+
+// * Dialog
+
+export const openDialog = ({ state }: Context, dialogBar: IDialogBar) => {
+  if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
+  if (!dialogBar.type) dialogBar.type = 'simple';
+  state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
+};
+
+export const closeDialog = ({ state }: Context, id: string) => {
+  state.ui.dialogBar = [
+    ...state.ui.dialogBar.map((dialogBar) => {
+      if (dialogBar.props?.id === id) dialogBar.dismissed = true;
+      return dialogBar;
+    }),
+  ];
+};
+
+export const removeDialog = ({ state }: Context, id: string) => {
+  state.ui.dialogBar = state.ui.dialogBar.filter((dialogBar) => dialogBar.props?.id !== id);
+};
+
+export const setDialogDisplayId = (
+  { state }: Context,
+  { id, displayId }: { id: string; displayId: string }
+) => {
+  state.ui.dialogBar = [
+    ...state.ui.dialogBar.map((dialogBar) => {
+      if (dialogBar.props?.id === id) dialogBar.displayId = displayId;
+      return dialogBar;
+    }),
+  ];
 };

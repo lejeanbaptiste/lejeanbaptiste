@@ -5,24 +5,25 @@ import '@fontsource/lato/700.css';
 import '@fontsource/lato/900.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 import { PaletteMode } from '@mui/material';
-// import '@fortawesome/fontawesome-free/webfonts/fa-regular-400.woff2';
+import html2canvas from 'html2canvas';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, Root } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
-import App from './App';
-import type { Authority, NamedEntityType } from './components/entityLookups/types';
+import type { Authority, NamedEntityType } from './dialogs/entityLookups';
 import i18next from './i18n';
 import { config } from './overmind';
-import type { ILeafWriterOptions, LWDocument } from './types';
+import type { EditorStateType } from './overmind/editor/state';
+import Providers from './Providers';
+import type { ILeafWriterOptions, LWDocument, ScreenshotParams } from './types';
 import './utilities/log';
 
 export * as Types from './types';
 
 const overmind = createOvermind(config, {
-  name: 'leaf-writer',
+  name: 'LEAF-Writer',
   logProxies: true,
 });
 
@@ -31,42 +32,63 @@ const DEFAULT_HEIGHT = '700px';
 export class Leafwriter {
   private readonly domElement: HTMLElement;
 
+  private reactReact: Root;
+
   private _isDirty: Subject<boolean>;
   private _onLoad: Subject<{ schemaName: string }>;
+  private _onClose: Subject<boolean>;
+  private _onEditorStateChange: Subject<EditorStateType>;
 
   private options?: ILeafWriterOptions;
 
-  constructor(domElement: HTMLElement, options?: ILeafWriterOptions) {
+  constructor(domElement?: HTMLElement) {
     this.domElement = domElement;
     this._isDirty = new Subject();
     this._onLoad = new Subject();
+    this._onClose = new Subject();
+    this._onEditorStateChange = new Subject();
 
-    //scontainer height
+    //container height
     const containerHeight = domElement.style.height ? domElement.style.height : DEFAULT_HEIGHT;
     domElement.style.height = `clamp(400px, ${containerHeight}, 100vh)`;
 
-    if (options) this.options = options;
-
-    this.render();
+    if (!this.reactReact) this.reactReact = createRoot(this.domElement);
 
     overmind.addMutationListener((mutation) => {
-      if (mutation.path === 'editor.isEditorDirty') {
+      if (mutation.path === 'editor.isEditorDirty' && mutation.hasChangedValue) {
         this._isDirty.next(overmind.state.editor.isEditorDirty);
       }
+
       if (mutation.path === 'document.loaded') {
         if (overmind.state.document.loaded === true) {
           this._onLoad.next({ schemaName: overmind.state.document.schemaName });
+          this._onLoad.complete();
         }
+      }
+
+      if (mutation.path === 'editor.latestEvent') {
+        if (overmind.state.editor.latestEvent === 'close') {
+          this._onClose.next(true);
+          this._onClose.complete()
+        }
+      }
+
+      if (mutation.path.split('.')[0] === 'editor') {
+        this._onEditorStateChange.next(overmind.state.editor);
       }
     });
   }
 
+  init(options: ILeafWriterOptions) {
+    this.options = options;
+    this.render();
+  }
+
   private render() {
-    const root = createRoot(this.domElement);
-    root.render(
+    this.reactReact.render(
       <Provider value={overmind}>
         <I18nextProvider i18n={i18next}>
-          <App {...this.options} />
+          <Providers {...this.options} />
         </I18nextProvider>
       </Provider>
     );
@@ -80,12 +102,46 @@ export class Leafwriter {
     return this._onLoad;
   }
 
+  get onClose() {
+    return this._onClose;
+  }
+
+  get onEditorStateChange() {
+    return this._onEditorStateChange;
+  }
+
   async getContent() {
     return await overmind.actions.editor.getContent();
   }
 
+  async getDocumentScreenshot(
+    params: ScreenshotParams = { width: 800, height: 480, windowWidth: 800, windowHeight: 1000 }
+  ) {
+    const page = window.writer.editor.getBody();
+    if (!page) return;
+
+    const canvas: HTMLCanvasElement | null = await html2canvas(page, {
+      logging: false,
+      ...params,
+    }).catch(() => null);
+
+    if (!canvas) return null;
+
+    const screenshot = canvas.toDataURL('image/png', 1.0);
+
+    return screenshot;
+  }
+
   async setContent(document: LWDocument) {
     // TODO
+  }
+
+  get autosave() {
+    return overmind.state.editor.autosave;
+  }
+
+  set autosave(value: boolean) {
+    overmind.actions.editor.setAutosave(value);
   }
 
   getAllowOverlap() {
@@ -132,7 +188,7 @@ export class Leafwriter {
   }
 
   getSchemas() {
-    return overmind.state.editor.schemas;
+    return overmind.state.editor.schemasList;
   }
 
   setDocumentSchema(schemaId: string) {
@@ -155,7 +211,7 @@ export class Leafwriter {
     return overmind.state.editor.fontSizeOptions;
   }
 
-  getFontSize(value: number) {
+  getFontSize() {
     return overmind.state.editor.currentFontSize;
   }
 
@@ -185,7 +241,12 @@ export class Leafwriter {
   }
 
   setIsEditorDirty(value: boolean) {
+    if (overmind.state.editor.isEditorDirty === value) return;
     overmind.actions.editor.setIsEditorDirty(value);
+  }
+
+  setDocumentTouched(value: boolean) {
+    overmind.actions.document.setDocumentTouched(value);
   }
 
   resetSettings() {
@@ -218,13 +279,15 @@ export class Leafwriter {
   }
 
   async showSettingsDialog() {
-    overmind.actions.ui.openSettingsDialog();
+    overmind.actions.ui.openDialog({ type: 'settings' });
   }
 
   dispose() {
     //todo
     this._isDirty.complete();
+    overmind.actions.document.clear();
     window.writer?.destroy();
+    window.writer = null;
   }
 }
 

@@ -3,7 +3,7 @@ import React, { ChangeEvent, FC, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 
-const PastePanel: FC = () => {
+export const PastePanel: FC = () => {
   const { t } = useTranslation();
   const { setResource } = useActions().local;
   const { resource } = useAppState().common;
@@ -44,5 +44,3 @@ const PastePanel: FC = () => {
     </Box>
   );
 };
-
-export default PastePanel;

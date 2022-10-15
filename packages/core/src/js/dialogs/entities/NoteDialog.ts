@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';
-import type { MappingID } from '../../../types';
+import type { SchemaMappingType } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { ILWDialogConfigParams } from '../types';
@@ -18,7 +18,7 @@ class NoteDialog implements SchemaDialog {
   readonly dialog: DialogForm;
 
   readonly id: string;
-  readonly mappingID: MappingID;
+  readonly mappingID: SchemaMappingType;
   readonly typeAtt: any;
 
   entry?: Entity;

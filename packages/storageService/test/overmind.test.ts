@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, test } from '@jest/globals';
-import { supportedLanguages } from '../src/utilities/util';
+import { supportedLanguages } from '../src/utilities';
 import { overmind, resetOvermind } from './mocks/overmind';
 
 beforeAll(() => {

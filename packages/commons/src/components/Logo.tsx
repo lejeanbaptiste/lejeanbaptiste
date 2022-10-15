@@ -1,6 +1,6 @@
 import { useTheme } from '@mui/material';
 import Box, { BoxProps } from '@mui/material/Box';
-import React, { FC } from 'react';
+import React, { type FC } from 'react';
 
 interface LogoProps extends BoxProps {
   height?: string | number;
@@ -8,7 +8,12 @@ interface LogoProps extends BoxProps {
   variant?: 'horizontal' | 'vertical';
 }
 
-const Logo: FC<LogoProps> = ({ height = 'auto', size = 'large', variant = 'horizontal', ...props }) => {
+export const Logo: FC<LogoProps> = ({
+  height = 'auto',
+  size = 'large',
+  variant = 'horizontal',
+  ...props
+}) => {
   const { mode } = useTheme().palette;
 
   return (
@@ -21,5 +26,3 @@ const Logo: FC<LogoProps> = ({ height = 'auto', size = 'large', variant = 'horiz
     </Box>
   );
 };
-
-export default Logo;

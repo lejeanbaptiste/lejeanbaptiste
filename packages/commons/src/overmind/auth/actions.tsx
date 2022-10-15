@@ -1,14 +1,14 @@
-import { log } from '@src//utilities/log';
-import type { IAnnotationUserProfile, User } from '@src/types';
-import Cookies from 'js-cookie';
+import { log } from '@src//utilities';
 import {
   AuthenticateProp,
   IdentityProviderName,
   identityServices,
   supportedIdentityProviders,
-} from '../../services';
+} from '@src/services';
+import type { IAnnotationUserProfile, User } from '@src/types';
+import Cookies from 'js-cookie';
 import { Context } from '../index';
-import { ILinkedAccount } from './effects';
+import type { ILinkedAccount } from './effects';
 
 //* INIITIALIZE
 export const onInitializeOvermind = async ({ actions }: Context, overmind: any) => {
@@ -39,7 +39,7 @@ export const authenticateUser = async ({ state, actions, effects }: Context) => 
   state.auth.userState = sessionAuthenticated ? 'AUTHENTICATED' : 'UNAUTHENTICATED';
 };
 
-export const getKeycloskAuthenticationToken = async ({ effects }: Context) => {
+export const getKeycloakAuthToken = async ({ effects }: Context) => {
   const token = await effects.auth.api.getToken();
   return token;
 };
@@ -102,7 +102,7 @@ export const setUserProfile = async ({ state, actions, effects }: Context) => {
   await actions.auth.getLinkedAccounts();
 
   //preferredID
-  const preferredID = localStorage.getItem('prefIdProvider');
+  const preferredID = effects.storage.api.getFromLocalStorage<string>('prefIdProvider');
   //if not preferredID, use the first identityProviders linked Account
   preferredID
     ? (state.auth.user.preferredID = preferredID)
@@ -186,27 +186,6 @@ export const _linkIdentityProvider = async (
   state.auth.user.identities.set(providerName, userDetails);
 
   return provider;
-};
-
-export const setSampleUser = ({ state }: Context) => {
-  // state.auth.user = {
-  //   email: 'sampleUser@sample.com',
-  //   firstName: 'Sample',
-  //   lastName: 'User',
-  //   username: 'sampleUser',
-  //   identities: {
-  //     github: {
-  //       id: 0,
-  //       email: 'sampleUser@sample.com',
-  //       name: 'Sample User',
-  //       login: 'lucaju',
-  //       username: 'sampleUser',
-  //     },
-  //   },
-  //   preferredID: 'github',
-  //   prefStorageProvider: 'github',
-  // };
-  // state.auth.userAuthenticated = true;
 };
 
 export const getUserProfile = ({ state }: Context) => {

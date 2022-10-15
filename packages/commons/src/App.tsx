@@ -1,32 +1,40 @@
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import MessageDialog from '@src/components/MessageDialog';
-import Storage from '@src/components/Storage';
+import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
+import { Storage } from '@src/components';
+import ModalProvider from 'mui-modal-provider';
 import { SnackbarProvider } from 'notistack';
 import React, { useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useRoutes } from 'react-router-dom';
-import { analytics, initAnalytics } from './analytics';
-import AlertDialog from './components/AlertDialog';
+import { useAnalytics, useCookieConsent, usePermalink } from './hooks';
 import { useActions, useAppState } from './overmind';
-import routes from './routes';
-import theme from './theme';
+import { routes } from './routes';
+import { theme } from './theme';
 
-const App: FC = () => {
-  const { getGAID } = useActions().ui;
-  const { darkMode, language } = useAppState().ui;
+export const App: FC = () => {
+  const { cookieConsent, darkMode, language, themeAppearance } = useAppState().ui;
+  const { setDarkMode, switchLanguage } = useActions().ui;
+
   const location = useLocation();
-
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const routing = useRoutes(routes);
   const { i18n } = useTranslation();
 
+  const { switchLanguage: switchLanguageConsent } = useCookieConsent();
+  const { analytics, initAnalytics, stopAnalytics } = useAnalytics();
+  const { getLanguage } = usePermalink();
+
   useEffect(() => {
-    setupAnalytics();
+    const language = getLanguage();
+    if (language) {
+      switchLanguage(language);
+      switchLanguageConsent(language);
+    }
   }, []);
 
-  const setupAnalytics = async () => {
-    const analytics = await initAnalytics(getGAID);
-    analytics.page();
-  };
+  useEffect(() => {
+    if (cookieConsent.includes('measurement')) initAnalytics();
+    if (!cookieConsent.includes('measurement')) stopAnalytics();
+  }, [cookieConsent]);
 
   useEffect(() => {
     if (analytics) analytics.page();
@@ -36,16 +44,20 @@ const App: FC = () => {
     i18n.changeLanguage(language.code);
   }, [language]);
 
+  useEffect(() => {
+    if (themeAppearance === 'auto') setDarkMode(prefersDarkMode);
+  }, [prefersDarkMode]);
+
   return (
-      <ThemeProvider theme={theme(darkMode)}>
+    <ThemeProvider theme={theme(darkMode)}>
+      <ModalProvider>
         <SnackbarProvider>
           <CssBaseline enableColorScheme />
           <Storage />
-          <MessageDialog />
-          <AlertDialog />
           {routing}
         </SnackbarProvider>
-      </ThemeProvider>
+      </ModalProvider>
+    </ThemeProvider>
   );
 };
 

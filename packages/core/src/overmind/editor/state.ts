@@ -1,8 +1,9 @@
 import { derived } from 'overmind';
-import type { ILookups } from '../../components/entityLookups/types';
-import type { Schema } from '../../types';
+import type { ILookups } from '../../dialogs/entityLookups';
+import type { Schema, SchemaMappingType } from '../../types';
 
-type State = {
+export type EditorStateType = {
+  autosave?: boolean;
   advancedSettings: boolean;
   allowOverlap: boolean;
   annotationMode: number;
@@ -28,17 +29,21 @@ type State = {
   isReadonly: boolean;
   mode: number;
   nssiToken?: string | (() => Promise<string | undefined>);
-  schemas: Schema[];
+  schemas: { [key: string]: Schema };
+  schemasList: Schema[];
+  schemaMappings: SchemaMappingType[];
   proxyLoaderXmlEndpoint?: string;
   proxyLoaderCssEndpoint?: string;
   settings?: any;
   showEntities: boolean;
   showTags: boolean;
 
+  latestEvent?: string;
+
   lookups: ILookups;
 };
 
-export const state: State = {
+export const state: EditorStateType = {
   advancedSettings: true,
   allowOverlap: false,
   annotationMode: 3,
@@ -46,7 +51,7 @@ export const state: State = {
     { value: 1, label: 'RDF/XML', disabled: true },
     { value: 3, label: 'JSON-LD' },
   ],
-  annotationModeLabel: derived((state: State) => {
+  annotationModeLabel: derived((state: EditorStateType) => {
     const annotatonMode = state.annotationModes.find((mode) => mode.value === state.annotationMode);
     if (!annotatonMode) return '';
     return annotatonMode.label;
@@ -54,16 +59,16 @@ export const state: State = {
   baseUrl: '.',
   currentFontSize: 11,
   editorMode: 'xmlrdf',
-  editorModeLabel: derived((state: State) => {
+  editorModeLabel: derived((state: EditorStateType) => {
     const editMode = state.editorModes.find((mode) => mode.value === state.editorMode);
     if (!editMode) return '';
     return editMode.label;
   }),
   editorModes: [
-    { key: 1, value: 'xml', label: 'XML only (no overlap)'},
-    { key: 0, value: 'xmlrdf', label: 'XML and RDF (no overlap)' },
-    { key: 0, value: 'xmlrdfoverlap', label: 'XML and RDF (overlapping entities)' },
-    { key: 2, value: 'rdf', label: 'RDF only', disabled: true },
+    { key: 1, value: 'xml', label: 'Markup only' },
+    { key: 0, value: 'xmlrdf', label: 'Markup & Linking' },
+    { key: 0, value: 'xmlrdfoverlap', label: 'Markup & Linking with overlap' },
+    { key: 2, value: 'rdf', label: 'Linking Only', disabled: true },
   ],
   fontSizeOptions: [8, 9, 10, 11, 12, 13, 14, 16, 18],
   isEditorDirty: false,
@@ -72,7 +77,9 @@ export const state: State = {
   mode: 0,
   showEntities: true,
   showTags: false,
-  schemas: [],
+  schemas: {},
+  schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),
+  schemaMappings: ['cwrcEntry', 'orlando', 'tei', 'teiLite'],
 
   lookups: {
     authorities: {
@@ -124,7 +131,6 @@ export const state: State = {
         name: 'LGPN',
         priority: 5,
       },
-      
     },
 
     serviceType: 'custom',

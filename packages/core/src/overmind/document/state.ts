@@ -3,18 +3,21 @@ import { Context } from '../';
 
 type State = {
   loaded: boolean;
+  rootName?: string;
   schemaId: string;
   schemaName: string;
-  xml?: string;
+  touched: boolean;
   url?: string;
+  xml?: string;
 };
 
 export const state: State = {
   loaded: false,
   schemaId: '',
   schemaName: derived((state: State, rootState: Context['state']) => {
-    const schema = rootState.editor.schemas.find((sch) => sch.id === state.schemaId);
+    const schema = rootState.editor.schemasList.find((sch) => sch.id === state.schemaId);
     if (!schema) return '';
     return schema.name;
   }),
+  touched: false,
 };

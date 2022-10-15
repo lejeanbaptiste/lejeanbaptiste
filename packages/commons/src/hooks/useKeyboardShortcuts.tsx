@@ -1,11 +1,26 @@
-import { useKey } from 'react-use';
+import { useEffect, useState } from 'react';
+import { useDebounce, useKey } from 'react-use';
 
 export const useKeyboardShortcut = () => {
-  
+  const [val, setVal] = useState('');
+  const [shortcut, setShortcut] = useState<string>('');
+
+  const reset = () => {
+    setShortcut('');
+    setVal('');
+  };
+
+  const [, cancel] = useDebounce(() => setShortcut(val), 2000, [val]);
+
+  useEffect(() => {
+    if (shortcut !== '') reset();
+  }, [shortcut]);
+
   const shorcutEventAction = (event: KeyboardEvent, combo: string) => {
     event.stopPropagation();
     event.preventDefault();
     if (event.repeat) return;
+    setVal(combo);
   };
 
   useKey(
@@ -26,4 +41,6 @@ export const useKeyboardShortcut = () => {
     (event) => shorcutEventAction(event, '⌘O'),
     { event: 'keydown' }
   );
+
+  return { shortcut };
 };
