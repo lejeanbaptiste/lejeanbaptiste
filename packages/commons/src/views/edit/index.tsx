@@ -13,7 +13,7 @@ export const EditView: FC = () => {
   const { autosave, libLoaded } = useAppState().editor;
   const { resource } = useAppState().storage;
 
-  const { createGuestUser, getKeycloakAuthToken } = useActions().auth;
+  const { getKeycloakAuthToken } = useActions().auth;
   const {
     close,
     getGeonameUsername,
@@ -87,7 +87,7 @@ export const EditView: FC = () => {
   };
 
   const initLeafWriter = async () => {
-    if (!leafWriter || !user || !resource?.content) return;
+    if (!leafWriter || !resource?.content) return;
 
     const geonamesUsername = await getGeonameUsername();
 
@@ -102,7 +102,7 @@ export const EditView: FC = () => {
           authorities: [['geonames', { config: { username: geonamesUsername } }]],
         },
       },
-      user: {
+      user: user && {
         avatar_url: user.avatar_url,
         email: user.email,
         name: `${user?.firstName} ${user?.lastName}`,
