@@ -62,7 +62,7 @@ export const EditView: FC = () => {
         navigate('/', { replace: true });
         return;
       }
-      createGuestUser();
+
       loadLib();
     }
   }, [userState]);

@@ -188,21 +188,6 @@ export const _linkIdentityProvider = async (
   return provider;
 };
 
-export const createGuestUser = ({ state }: Context) => {
-  state.auth.user = {
-    email: 'sampleUser@sample.com',
-    firstName: 'Anonymous',
-    lastName: 'Anonymous',
-    username: 'anonymous',
-    identities: new Map([
-      ['github', { name: 'Anonymous', uri: '#anonymous', username: 'anonymous' }],
-    ]),
-    preferredID: 'github',
-    prefStorageProvider: 'github',
-    url: '#anonymous',
-  };
-};
-
 export const getUserProfile = ({ state }: Context) => {
   const { user } = state.auth;
   if (!user || user.identities.size === 0) return;
