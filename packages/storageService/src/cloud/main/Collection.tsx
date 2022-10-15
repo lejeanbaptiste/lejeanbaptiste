@@ -7,6 +7,7 @@ import Content from './Content';
 import Empty from './Empty';
 import Org from './Organization';
 import Repository from './Repository';
+import { useTranslation } from 'react-i18next';
 
 interface iCollection {
   height: number | string;
@@ -16,6 +17,8 @@ const Collection: FC<iCollection> = ({ height = '100%' }) => {
   const { collectionType, isFetching, organizations, repositories, repositoryContent } =
     useAppState().cloud;
   const { loadMoreRepos } = useActions().cloud;
+
+  const { t } = useTranslation();
 
   const refContainer = useRef<HTMLElement | null>(null);
   const refTarget = useRef<HTMLElement | null>(null);
@@ -58,7 +61,7 @@ const Collection: FC<iCollection> = ({ height = '100%' }) => {
         sx={{ backgroundColor: ({ palette }) => alpha(palette.text.secondary, 0.05) }}
         onClick={loadMore}
       >
-        <Typography variant="overline">Loading more</Typography>
+        <Typography variant="overline">{t('cloud:loading_more')}</Typography>
         {isLoadingMore && <CircularProgress size={16} />}
       </Stack>
     </Stack>
