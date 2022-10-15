@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 1.3.1
+
+### New Feature
+
+- Localization: Add French translation (fr-CA) [57a311013cbe4839d551395c896adb0a387b3e65]
+
+### Patch
+
+- Update dependencies [a90cdb81dea87bf66f2083045ba48f79d517c85a]:
+  - core:
+    - bump up:
+      - @octokit/rest@19.0.5
+  - dev:
+    - update:
+      - jest-environment-jsdom@29.2.0
+
 ## 1.3.0
 
 ### Breaking Changes
