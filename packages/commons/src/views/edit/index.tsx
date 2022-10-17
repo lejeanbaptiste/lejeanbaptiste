@@ -4,7 +4,7 @@ import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
 import { useNavigate } from 'react-router';
-import { MainMenu, Meta, useMenu } from './topbar';
+import { MainMenu, Meta, useMenu } from './topBar';
 import { useLeafWriter } from './useLeafWriter';
 
 export const EditView: FC = () => {
