@@ -12,7 +12,6 @@
     "dismiss": "rejeter",
     "download": "télécharger",
     "functionalities": "fonctionnalités",
-    "homepage": "homepage",
     "identity": "identité",
     "language": "langue",
     "link_your_account": "Reliez votre compte {{provider}}",
@@ -101,9 +100,6 @@
   "profile": {
     "manage_your_lincs_account": "gérer votre compte LINCS"
   },
-  "recents": {
-    "remove_from_recents": "supprimer des récents"
-  },
   "storage": {
     "all_changes_salved": "tous les changements sont sauvegardés",
     "click_to_save": "cliquez pour sauvegarder",
@@ -118,7 +114,6 @@
     "paste_your_XML_here": "collez votre XML ici",
     "provider_not_found": "fournisseur non trouvé",
     "saving": "en sauvant",
-    "sign_in_with_provider": "se connecter avec {{provider}}",
     "waiting_for_resource": "en attente de la ressource",
     "warning": {
       "check_URL_structure": "vérifier la structure de l'URL",
