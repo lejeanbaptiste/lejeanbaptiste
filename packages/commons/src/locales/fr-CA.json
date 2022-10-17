@@ -94,7 +94,7 @@
     "french": "Français"
   },
   "messages": {
-    "corpora_need_space": "Annoter de grands corpus nécessite plus d'espace.",
+    "annotation_need_space": "Annoter des documents nécessite plus d'espace.",
     "rotate_phone": "Veuillez faire pivoter votre téléphone ou ouvrir LEAF-Writer sur un grand écran.",
     "you_must_sign_in_to_use_this_feature": "Vous devez vous connecter pour utiliser cette fonction"
   },
