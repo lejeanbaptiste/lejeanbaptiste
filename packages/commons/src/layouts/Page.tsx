@@ -1,6 +1,5 @@
 import { useAppState } from '@src/overmind';
 import React, { forwardRef } from 'react';
-// import { Helmet } from 'react-helmet';
 import { Helmet } from 'react-helmet-async';
 
 interface PageProps {

@@ -12,7 +12,6 @@
     "dismiss": "dismiss",
     "download": "download",
     "functionalities": "functionalities",
-    "homepage": "homepage",
     "identity": "identity",
     "language": "language",
     "link_your_account": "Link your {{provider}} account",
@@ -94,15 +93,12 @@
     "french": "French"
   },
   "messages": {
-    "corpora_need_space": "Annotating large corpora requires more space.",
-    "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large monitor.",
+    "annotation_need_space": "Annotating documents requires more space.",
+    "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large screen.",
     "you_must_sign_in_to_use_this_feature": "You must sign in to use this feature"
   },
   "profile": {
     "manage_your_lincs_account": "manage your LINCS account"
-  },
-  "recents": {
-    "remove_from_recents": "remove from recents"
   },
   "storage": {
     "all_changes_salved": "all changes saved",
@@ -118,7 +114,6 @@
     "paste_your_XML_here": "paste your XML here",
     "provider_not_found": "provider not found",
     "saving": "saving",
-    "sign_in_with_provider": "sign in with {{provider}}",
     "waiting_for_resource": "waiting for resource",
     "warning": {
       "check_URL_structure": "check URL structure",

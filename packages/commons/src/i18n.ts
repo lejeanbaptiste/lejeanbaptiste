@@ -21,7 +21,6 @@ i18next
       'home',
       'language',
       'profile',
-      'recents',
       'storage',
       'templates',
     ],

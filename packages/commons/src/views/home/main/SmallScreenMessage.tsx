@@ -13,7 +13,7 @@ export const SmallScreenMessage: FC = () => {
         <ScreenshotMonitorOutlinedIcon sx={{ width: 30, height: 30, opacity: 0.7 }} />
       </Stack>
       <Typography letterSpacing=".05rem" textAlign="center" variant="body2">
-        {`${t('corpora_need_space')} ${t('rotate_phone')}`}
+        {`${t('annotation_need_space')} ${t('rotate_phone')}`}
       </Typography>
     </Stack>
   );
