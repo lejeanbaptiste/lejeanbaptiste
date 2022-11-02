@@ -1,10 +1,13 @@
-# leaf writer Storage Service
+# LEAF-Writer Storage Service
 
 ![NPM](https://img.shields.io/npm/l/@cwrc/leafwriter-storage-service)
 [![version](https://img.shields.io/npm/v/@cwrc/leafwriter-storage-service.svg)](https://www.npmjs.com/package/@cwrc/leafwriter-storage-service)
 ![npm type definitions](https://img.shields.io/npm/types/@cwrc/leafwriter-storage-service)
 
-- [leaf writer Storage Service](#leaf-writer-storage-service)
+## Table of Contents
+
+- [LEAF-Writer Storage Service](#leaf-writer-storage-service)
+  - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
   - [Demo](#demo)
   - [Use](#use)
@@ -54,7 +57,7 @@ The [LEAF-Writer Commons](LINK) is running an instance of [LEAF-Writer](https://
 
 ### Install
 
-```bash
+```nodejs
 npm i @cwrc/leafwriter-storage-service
 ```
 
