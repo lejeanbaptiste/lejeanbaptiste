@@ -15,6 +15,10 @@
   - [Overview](#overview)
   - [Use](#use)
     - [Install](#install)
+    - [NPM and ES6](#npm-and-es6)
+    - [In a Browser (UMD compiled version)](#in-a-browser-umd-compiled-version)
+      - [Using a CDN-like service](#using-a-cdn-like-service)
+      - [Download pre-compiled files from CDN-like service](#download-pre-compiled-files-from-cdn-like-service)
     - [Basic Example](#basic-example)
       - [Instantiate and initialize](#instantiate-and-initialize)
       - [Get current content from the editor](#get-current-content-from-the-editor)
@@ -27,8 +31,38 @@ The Linked Editing Academic Framework (LEAF) has developed an in-browser text ma
 
 ### Install
 
+### NPM and ES6
+
 ```nodejs
 npm install @cwrc/leafwriter
+```
+
+### In a Browser (UMD compiled version)
+
+If you prefer to load the pre-compiled version directly in the browser you have two options.
+
+#### Using a CDN-like service
+
+Load directly from the web using UNPKG.
+
+```html
+<script type="text/javascript" src=“https://unpkg.com/browse/@cwrc/leafwriter/dist/index.min.js”></script> 
+
+<link rel="stylesheet" type="text/css" href=“https://unpkg.com/browse/@cwrc/leafwriter/dist/css/index.css”>
+<link rel="stylesheet" type="text/css" href=“https://unpkg.com/browse/@cwrc/leafwriter/dist/css/editor.css”>
+```
+
+#### Download pre-compiled files from CDN-like service
+
+Download from the web susing JSDELIVER: [https://www.jsdelivr.com/package/npm/@cwrc/leafwriter](https://www.jsdelivr.com/package/npm/@cwrc/leafwriter)
+
+Copy the `dist` somewhere in your project tree. And load files:
+
+```html
+<script type="text/javascript" src=“path/to/leafwriter/dist/index.min.js”></script> 
+
+<link rel="stylesheet" type="text/css" href=“path/to/leafwriter/dist/css/index.css”>
+<link rel="stylesheet" type="text/css" href=“path/to/leafwriter/dist/css/editor.css”>
 ```
 
 ### Basic Example
