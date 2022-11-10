@@ -94,7 +94,7 @@ export interface User {
 export const SchemaMappings = ['cwrcEntry', 'orlando', 'tei', 'teiLite'] as const;
 export type SchemaMappingType = typeof SchemaMappings[number];
 
-export type Schema = {
+export interface Schema {
   id: string;
   name: string;
   mapping: SchemaMappingType;
