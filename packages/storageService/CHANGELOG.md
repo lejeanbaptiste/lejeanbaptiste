@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## 1.3.2
+
+### Patch Changes
+
+- i18next type: wrap translation as a string [36700d9a6556ac0a0cfad6efd2922cc1a885260b]
+- Update dependencies [ae75abb0cf5063315e3e5e4da05fa99df18cbbbc]:
+  - core:
+    - upgrade:
+      - axios@1.1.3
+      - i18next@22.0.4
+      - react-i18next@12.0.0
+    - update:
+      - framer-motion@7.6.5
+      - mdi-material-ui@7.6.0
+    - bump up:
+      - @emotion/react@11.10.5
+      - @emotion/styled@11.10.5
+      - @mui/base@5.0.0-alpha.105
+      - @mui/lab@5.0.0-alpha.107
+      - @mui/material@5.10.13
+      - loglevel@1.8.1
+    - dev:
+      - update:
+        - @types/jest@29.2.2
+        - @typescript-eslint/eslint-plugin@5.42.1
+        - @typescript-eslint/parser@5.42.1
+        - jest-environment-jsdom@28.3.1
+        - webpack@5.75.0
+      - bump up:
+        - @types/lodash@4.14.188
+
 ## 1.3.1
 
 ### New Feature
