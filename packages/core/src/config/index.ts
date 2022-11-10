@@ -3,13 +3,14 @@ import { SchemaMappings } from '../types';
 import { isValidHttpURL } from '../utilities';
 import { schemas as defaultSchemas } from './schemas';
 
-export const createConfig = ({ baseUrl, schemas }: ILeafWriterOptionsSettings) => {
-  const supportedSchemas = schemas ? setupSchemas(schemas) : setupSchemas(defaultSchemas);
+export const createConfig = ({ baseUrl, schemas: configSchemas }: ILeafWriterOptionsSettings) => {
+  const supportedSchemas = configSchemas ? [...configSchemas, ...defaultSchemas] : defaultSchemas;
+  const schemas = setupSchemas(supportedSchemas);
 
   const config: ILeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
     baseUrl: baseUrl ?? '.',
-    schemas: supportedSchemas,
+    schemas,
     modules: {
       west: [
         { id: 'structure', title: 'Markup' },
