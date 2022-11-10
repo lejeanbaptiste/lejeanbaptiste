@@ -334,7 +334,8 @@ class LayoutManager {
       this.$outerLayout.open('east');
     }
 
-    if (tabIndex) {
+    //@ts-ignore
+    if (tabIndex >= 0 && this.$outerLayout.panes[region].tabs('instance')) {
       //@ts-ignore
       this.$outerLayout.panes[region].tabs('option', 'active', tabIndex);
     }

@@ -66,10 +66,10 @@ export const Identity: FC = () => {
               key={provider}
               title={
                 !user?.identities.get(provider)
-                  ? t('commons:link_your_account', { account: provider })
+                  ? t('commons:link_your_account', { provider })
                   : provider === user?.preferredID
                   ? provider
-                  : t('commons:switch_accounts', { account: provider })
+                  : t('commons:switch_accounts', { provider })
               }
             >
               <span>

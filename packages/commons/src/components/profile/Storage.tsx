@@ -76,11 +76,11 @@ export const Storage: FC = () => {
             <StyledToolTip
               key={provider}
               title={
-                !storageProviders.includes(provider) === undefined
-                  ? t('commons:link_your_account', { account: provider })
+                !storageProviders.includes(provider)
+                  ? t('commons:link_your_account', { provider })
                   : user?.prefStorageProvider === provider
                   ? provider
-                  : t('commons:switch_accounts', { account: provider })
+                  : t('commons:switch_accounts', { provider })
               }
             >
               <span>

@@ -256,7 +256,10 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
       icon: 'validate',
       tooltip: 'Validate',
       disabled: false,
-      onAction: () => writer.validate(),
+      onAction: () => {
+        writer.layoutManager.showModule('validation');
+        writer.validate()
+      },
     },
     {
       slug: 'settings',

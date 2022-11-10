@@ -37,7 +37,7 @@
     "sign_in": "sign in",
     "sign_out": "sign out",
     "storage": "storage",
-    "switch_accounts": "switch accounts",
+    "switch_accounts": "switch to {{provider}}",
     "template": "template",
     "templates": "templates",
     "unsaved_changes": "unsaved changes",
