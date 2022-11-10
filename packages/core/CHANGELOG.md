@@ -1,5 +1,54 @@
 # CHANGELOG
 
+## 2.3.0
+
+### Minor Changes
+
+- Ingest optional list of supported schemas. [e1d0cc32c2b9a2d4caa7f8069821423ed6cc0905]
+  - Remove default support to the following schems: `CWRC TEI Lite`, `CWRC Entry`, `REED`, and `Orlando Events`.
+  - Note: This is a BREAKING CHANGE 🧨 without a major release.
+
+### Documentation
+
+- Add instructions to README file: How to install, Initialize, and Configure. [e84e91ea258884efa236aaed6f27906dc758c563]
+
+### Patch Changes
+
+- Parser to get schema and css url from xml headers: it was matching `https` but negleting `http` [182d7e238614812a158c26e38f0e77f587b59fde]
+- Ribbon: `view raw XML` and `validate` should open the respective panels on the sidebar [bd20bd98b94289a64abcf5f71fd6442dc229cd26]
+- Disable and mark jspopup as deprecated [ab4f97b42ad0f35ddd72418e7b672b159f0d517f]
+- Update dependencies [ef6f53c4201353b5123d15e21fc1fa18be613385]:
+  - core:
+    - upgrade:
+      - axios@1.1.3
+      - i18next@22.0.4
+      - react-i18next@12.0.0
+    - update:
+      - framer-motion@7.6.5
+      - luxon@3.1.0
+      - mdi-material-ui@7.6.0
+      - wikidata-sdk@8.1.0
+    - bump up:
+      - @emotion/react@11.10.5
+      - @emotion/styled@11.10.5
+      - @mui/lab@5.0.0-alpha.107
+      - @mui/material@5.10.13
+      - loglevel@1.8.1
+      - monaco-editor@0.34.1
+      - notistack@1.0.8
+      - rdflib@2.2.21
+      - react-router-dom@6.4.3
+  - dev:
+    - update:
+      - @types/luxon@3.1.0
+      - @typescript-eslint/eslint-plugin@5.42.1
+      - @typescript-eslint/parser@5.42.1
+      - webpack@5.75.0
+    - bump up:
+      - @types/node@18.11.9
+      - @types/react-dom@18.0.8
+      - husky@8.0.2
+  
 ## 2.2.0
 
 ### New Features
