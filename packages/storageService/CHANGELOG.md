@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.3.3
+
+### Patch Changes
+
+- Rollback dependency: axios@0.27.2
+
 ## 1.3.2
 
 ### Patch Changes
