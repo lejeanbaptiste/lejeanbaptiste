@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { log } from '../../utilities';
-import { isValidHttpsURL } from '../../utilities/util';
+import { isValidHttpURL } from '../../utilities/util';
 import { IEntityConfig } from '../entities/Entity';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
 import Writer from '../Writer';
@@ -131,7 +131,7 @@ class XML2CWRC {
 
       if ('href' in attributes) {
         const url: string = attributes.href;
-        if (isValidHttpsURL(url)) return url;
+        if (isValidHttpURL(url)) return url;
       }
     };
 
