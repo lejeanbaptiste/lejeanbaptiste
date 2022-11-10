@@ -9,5 +9,6 @@ services:
       - GEONAMES_USERNAME
       - KEYCLOAK_URL
       - NSSI_URL
+      - AUTH_API_URL
     ports:
       - 3000:3000
