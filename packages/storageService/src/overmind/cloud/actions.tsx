@@ -1007,7 +1007,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
         preventEscape: true,
         severity: 'error',
         title: i18next.t('error'),
-        Message: i18next.t('error:unabled to save'),
+        Message: `${i18next.t('error:unabled to save')}`,
         onClose: () => actions.cloud.setIsSaving(false),
       },
     });
@@ -1316,7 +1316,7 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | IE
         maxWidth: 'xs',
         severity: 'info',
         title: i18next.t('forking'),
-        Message: i18next.t('cloud:messages:forking_can_take_minutes'),
+        Message: `${i18next.t('cloud:messages:forking_can_take_minutes')}`,
       },
     });
   }, 5_000);

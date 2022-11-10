@@ -15,7 +15,6 @@ const Providers: FC<ILeafWriterOptions> = (props) => {
 
   useEffect(() => {
     if (themeAppearance === 'auto') setDarkMode(preferDark);
-    return () => {};
   }, [preferDark]);
 
   return (

@@ -139,7 +139,7 @@ class Popup implements ILWDialog {
     // body.on('click', this.noteClickSelector, (event: JQuery.Event) => this.noteClick(event));
 
     // ! Deprecated
-    body.on('contextmenu', () => this.hidePopup());
+    // body.on('contextmenu', () => this.hidePopup());
   }
 
   private setCurrentTag(id: string) {
@@ -157,7 +157,8 @@ class Popup implements ILWDialog {
   }
 
   private doMouseOut() {
-    this.popupCloseId = setTimeout(() => this.hidePopup(), 500);
+    //! Deprecated
+    // this.popupCloseId = setTimeout(() => this.hidePopup(), 500);
   }
 
   private doClick() {
@@ -202,7 +203,8 @@ class Popup implements ILWDialog {
     clearTimeout(this.popupCloseId);
 
     this.$currentTag?.on('mouseout', () => {
-      this.popupCloseId = setTimeout(() => this.hidePopup(), 1000);
+      //! Deprecated
+      // this.popupCloseId = setTimeout(() => this.hidePopup(), 1000);
     });
 
     this.$popupEl.parent().on('mouseover', () => this.doMouseOver());
@@ -307,14 +309,15 @@ class Popup implements ILWDialog {
 
   private noteClick(event: JQuery.Event) {
     // we're showing the note contents so hide the popup
-    this.hidePopup();
+    //! Deprecated
+    // this.hidePopup();
   }
 
   private hidePopup() {
     //@ts-ignore
     this.$popupEl.popup('close');
 
-    this.writer.overmindActions.ui.closePopup();
+    // this.writer.overmindActions.ui.closePopup();
   }
 
   private removeListeners() {

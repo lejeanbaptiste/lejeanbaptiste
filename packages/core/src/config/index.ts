@@ -1,15 +1,16 @@
 import type { ILeafWriterOptionsSettings, Schema } from '../types';
 import { SchemaMappings } from '../types';
-import { isValidHttpsURL } from '../utilities';
+import { isValidHttpURL } from '../utilities';
 import { schemas as defaultSchemas } from './schemas';
 
-export const createConfig = ({ baseUrl, schemas }: ILeafWriterOptionsSettings) => {
-  const supportedSchemas = schemas ? setupSchemas(schemas) : setupSchemas(defaultSchemas);
+export const createConfig = ({ baseUrl, schemas: configSchemas }: ILeafWriterOptionsSettings) => {
+  const supportedSchemas = configSchemas ? [...configSchemas, ...defaultSchemas] : defaultSchemas;
+  const schemas = setupSchemas(supportedSchemas);
 
   const config: ILeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
     baseUrl: baseUrl ?? '.',
-    schemas: supportedSchemas,
+    schemas,
     modules: {
       west: [
         { id: 'structure', title: 'Markup' },
@@ -43,10 +44,10 @@ export const setupSchemas = (schemas: Array<Schema>) => {
     if (!name || typeof name !== 'string' || name.length < 3 || name.length > 20) continue;
     if (!mapping || !SchemaMappings.includes(mapping)) continue;
 
-    const validRng = rng.filter((url) => isValidHttpsURL(url));
+    const validRng = rng.filter((url) => isValidHttpURL(url));
     if (validRng.length === 0) continue;
 
-    const validCss = css.filter((url) => isValidHttpsURL(url));
+    const validCss = css.filter((url) => isValidHttpURL(url));
     if (validCss.length === 0) continue;
 
     supportedSchemas = [
