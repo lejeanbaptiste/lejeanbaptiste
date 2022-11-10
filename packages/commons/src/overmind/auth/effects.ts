@@ -34,6 +34,7 @@ export class Api {
   readonly realm: string;
 
   private KEYCLOACK_BASE_URL!: string;
+  private AUTH_API_URL!: string;
   private NSSI_BASE_URL?: string;
 
   private keycloak!: Keycloak;
@@ -58,10 +59,13 @@ export class Api {
   async init() {
     const { origin } = window.location;
 
-    this.KEYCLOACK_BASE_URL = await this.getKeycloakUrl();
+    this.KEYCLOACK_BASE_URL = await this.getExternalServiceUrl('keycloak');
     if (!this.KEYCLOACK_BASE_URL) throw log.error('Failed to configure KEYCLOACK_BASE_URL');
 
-    this.NSSI_BASE_URL = await this.getNSSIUrl();
+    this.AUTH_API_URL = await this.getExternalServiceUrl('auth-api');
+    if (!this.AUTH_API_URL) throw log.error('Failed to configure AUTH_API_URL');
+
+    this.NSSI_BASE_URL = await this.getExternalServiceUrl('nssi');
     if (!this.NSSI_BASE_URL) throw log.error('Failed to configure NSSI_BASE_URL');
 
     this.keycloak = new Keycloak({
@@ -82,20 +86,12 @@ export class Api {
   }
 
   /**
-   * It makes a GET request to the `/api/keycloak-url` endpoint, and returns the response data
-   * @returns The response.data is being returned.
+   * It makes an HTTP request to the server, and returns the URL of the external service
+   * @param {string} service - The name of the service you want to get the URL for.
+   * @returns The URL of the external service.
    */
-  async getKeycloakUrl() {
-    const response = await axios.get('./api/keycloak-url');
-    return response.data;
-  }
-
-  /**
-   * It makes a GET request to the server, and returns the data from the server
-   * @returns The response.data is being returned.
-   */
-  async getNSSIUrl() {
-    const response = await axios.get('./api/nssi-url');
+  async getExternalServiceUrl(service: string) {
+    const response = await axios.get(`./api/${service}-url`);
     return response.data;
   }
 
@@ -105,10 +101,9 @@ export class Api {
    * @returns The login method returns a promise that resolves to a boolean value.
    */
   async login(options?: { idpHint?: string }) {
-    
     return await this.keycloak.login({
       ...options,
-      redirectUri:  window.location.href,
+      redirectUri: window.location.href,
     });
   }
 
@@ -170,7 +165,6 @@ export class Api {
    */
   async getUserData() {
     if (!this.keycloak.tokenParsed) return;
-
     const userProfile = await this.keycloak.loadUserProfile();
     return userProfile;
   }
@@ -238,16 +232,20 @@ export class Api {
    * @returns An array of linked accounts
    */
   async getLinkedAccounts(
-    keycloakAccessCode: string
+    keycloakAccessCode: string,
+    username: string
   ): Promise<ILinkedAccount[] | IHTTPRequestError> {
     if (!this.NSSI_BASE_URL) {
-      return { error: { message: 'NSSI BSAE URL is unedefined' } };
+      return { error: { message: 'NSSI BASE URL is unedefined' } };
     }
 
+    const url = queryString.stringifyUrl({
+      url: `${this.AUTH_API_URL}/linkedAccounts`,
+      query: { username },
+    });
+
     const response = await axios
-      .get(`${this.NSSI_BASE_URL}/userinfo/linkedAccounts`, {
-        headers: { Authorization: `Bearer ${keycloakAccessCode}` },
-      })
+      .get(url, { headers: { Authorization: `Bearer ${keycloakAccessCode}` } })
       .catch((error: AxiosError) => {
         if (error.response) return error.response;
 
@@ -281,7 +279,7 @@ export class Api {
     }
 
     const url = queryString.stringifyUrl({
-      url: `${this.NSSI_BASE_URL}/userinfo/accountLinkUrl`,
+      url: `${this.AUTH_API_URL}/accountLinkUrl`,
       query: {
         provider: identity_provider,
         redirectUri: this.LINK_ACCOUNTS_CALLBACK_URL,

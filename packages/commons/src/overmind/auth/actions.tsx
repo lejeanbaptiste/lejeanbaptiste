@@ -131,7 +131,7 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
   const token = await effects.auth.api.getToken();
   if (!token) return log.warn('No Authentication token');
 
-  const linkedAccounts = await effects.auth.api.getLinkedAccounts(token);
+  const linkedAccounts = await effects.auth.api.getLinkedAccounts(token, state.auth.user.username);
   if ('error' in linkedAccounts) {
     const { message } = linkedAccounts.error;
     actions.ui.emitNotification({ message });
