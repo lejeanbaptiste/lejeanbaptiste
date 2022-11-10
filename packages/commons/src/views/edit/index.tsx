@@ -1,4 +1,5 @@
 import { LoadingMask } from '@src/components';
+import { schemas } from '@src/config/schemas';
 import { useAnalytics } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
@@ -99,9 +100,8 @@ export const EditView: FC = () => {
       },
       settings: {
         credentials: { nssiToken: userState === 'AUTHENTICATED' ? getKeycloakAuthToken : '' },
-        lookups: {
-          authorities: [['geonames', { config: { username: geonamesUsername } }]],
-        },
+        lookups: { authorities: [['geonames', { config: { username: geonamesUsername } }]] },
+        schemas,
       },
       user: user && {
         avatar_url: user.avatar_url,
