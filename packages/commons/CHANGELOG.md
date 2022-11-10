@@ -1,5 +1,56 @@
 # CHANGELOG
 
+## 2.3.0
+
+### Homepage
+
+- Add info about supported schemas, custom schemas, and guest user. [b09fdcd2b263f87d1b4d2e954494b4f56eaec764]
+
+### Minor Changes
+
+- Include support to LEAF Schemas [649e146c37d373fb9e18eb29eed81e7828d6b664]
+  - Schemas added for dev testing only: `CWRC TEI Lite`, `REED`, `CWRC Entry`, and `Orlando Events`
+
+### Patch Changes
+
+- Profile panel: correct propup message over identity and storage providers [7c31b5504f01256306ff815046f5c716c9357945]
+- Update dependencies [f540e3fc481ca8fe58c22a303769abbd7c872a6c]:
+  - core:
+    - fixed version:
+      - react-markdown@6.0.3
+    - upgrade:
+      - @cwrc/leafwriter@2.3.0
+      - axios@1.1.3
+      - i18next@22.0.4
+      - i18next-browser-languagedetector@7.0.1
+      - keycloak-js@20.0.1
+      - react-i18next@12.0.0
+    - update:
+      - framer-motion@7.6.5
+      - mdi-material-ui@7.6.0
+    - bump up:
+      - @cwrc/leafwriter-storage-service@1.3.2
+      - @analytics/google-analytics@1.0.5
+      - @emotion/react@11.10.5
+      - @emotion/styled@11.10.5
+      - @mui/lab@5.0.0-alpha.107
+      - @mui/material@5.10.13
+      - broadcast-channel@4.18.1
+      - loglevel@1.8.1
+      - notistack@2.0.8
+      - react-router-dom@6.4.3
+      - vanilla-cookieconsent@2.8.8
+  - dev:
+    - update:
+      - @typescript-eslint/eslint-plugin@5.42.1
+      - @typescript-eslint/parser@5.42.1
+      - eslint@8.27.0
+      - webpack@5.75.0
+      - webpack-bundle-analyzer@4.7.0
+    - bump up:
+      - @types/node@18.11.9
+      - tslib@2.4.1
+
 ## 2.2.0
 
 ### New Features
