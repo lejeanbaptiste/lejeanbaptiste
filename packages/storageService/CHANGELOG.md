@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## 1.3.4
+
+### Patch Changes
+
+- Reset: prevent removing prefer provider, list of providers, and public repo when reseting the dialog [a5906fd5aa05a16fedc201e1f01d8709974cf88f]
+- update dependencies [7aa3526562ac49cbb866406ccd36480dca923646]:
+  - core:
+    - bump up:
+    - @mui/base@5.0.0-alpha.106
+    - @mui/icons-material@5.10.14
+    - @mui/lab@5.0.0-alpha.108
+    - @mui/material@5.10.14
+    - framer-motion@7.6.7
+    - i18next@22.0.5
+- dev:
+  - update:
+    - @typescript-eslint/eslint-plugin@5.43.0
+    - @typescript-eslint/parser@5.43.0
+  - bump up:
+    - @types/jest@29.2.3
+    - @types/lodash@4.14.189
+
 ## 1.3.3
 
 ### Patch Changes

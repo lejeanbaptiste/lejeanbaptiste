@@ -36,7 +36,7 @@ api.get('/nssi-url', (_req, res) => {
   res.status(200).send(process.env.NSSI_URL);
 });
 
-/* A route that returns the value of the environment variable NSSI_URL. */
+/* A route that returns the value of the environment variable AUTH-API-URL. */
 api.get('/auth-api-url', (_req, res) => {
   res.status(200).send(process.env.AUTH_API_URL);
 });

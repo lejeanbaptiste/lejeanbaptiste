@@ -1,13 +1,13 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from '@mui/material';
 import { ProviderButton } from '@src/components';
-import { useActions } from '@src/overmind';
-import { supportedAuthProviders } from '@src/services';
+import { useActions, useAppState } from '@src/overmind';
 import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from './type';
 
 export const SignInDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
+  const { authProviders } = useAppState().providers;
   const { closeDialog } = useActions().ui;
 
   const { t } = useTranslation('commons');
@@ -22,8 +22,8 @@ export const SignInDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
       </DialogTitle>
       <DialogContent>
         <Stack gap={2} py={5} alignItems="center">
-          {supportedAuthProviders.map((provider) => (
-            <ProviderButton key={provider} provider={provider} />
+          {authProviders.map(({ providerId }) => (
+            <ProviderButton key={providerId} name={providerId} />
           ))}
         </Stack>
       </DialogContent>

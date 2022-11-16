@@ -17,11 +17,11 @@ export const SigninButton: FC = () => {
     openDialog({
       props: {
         severity: 'warning',
-        title: t('commons:unsaved_changes'),
+        title: `${t('commons:unsaved_changes')}`,
         Message: () => <Typography>{t('storage:you_will_lose_any_unsaved_changes')}.</Typography>,
         actions: [
-          { action: 'cancel', label: t('commons:cancel') },
-          { action: 'signin', label: t('commons:sign_in'), variant: 'outlined' },
+          { action: 'cancel', label: `${t('commons:cancel')}` },
+          { action: 'signin', label: `${t('commons:sign_in')}`, variant: 'outlined' },
         ],
         //@ts-ignore
         onClose: async (action: string) => {

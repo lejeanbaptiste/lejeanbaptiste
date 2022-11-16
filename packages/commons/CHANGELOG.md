@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## 2.4.0
+
+### Minor Changes
+
+- Implement identity provider discovery from keycloak. Reorganize overmind scopes. Fetch provider list from keycloak and use the ones wth supporting libraries. [cabf9bc8a88c11cb37bc2318eb9e250a4bc02097]
+
+### Patch Changes
+
+- update dependencies [f534ed69b4c31cbe406435a70f60f6aa42fd75e6]:
+  - core:
+    - add:
+      - zod@3.19.1
+  - bump up:
+    - @mui/icons-material@5.10.14
+    - @mui/lab@5.0.0-alpha.108
+    - @mui/material@5.10.14
+    - framer-motion@7.6.7
+    - i18next@22.0.5
+- dev:
+  - update:
+    - @typescript-eslint/eslint-plugin@5.43.0
+    - @typescript-eslint/parser@5.43.0
+    - typescript@4.9.3
+  - bump up:
+    - css-loader@6.7.2 webpack-hot-middleware@2.25.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter-storage-service@1.3.4
+
 ## 2.3.1
 
 ### Patch Changes

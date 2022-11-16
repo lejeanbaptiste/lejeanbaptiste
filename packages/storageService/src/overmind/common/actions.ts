@@ -126,7 +126,7 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: error ?? i18next.t('error:message:document_not_valid'),
+          title: error ?? `${i18next.t('error:message:document_not_valid')}`,
         },
       });
       if (state.common.resource) state.common.resource.filename = undefined;
@@ -195,11 +195,8 @@ export const resetAll = async ({ state }: Context) => {
   state.cloud.repositoryContent = {};
   state.cloud.collectionSource = 'owner';
   state.cloud.collectionType = undefined;
-  state.cloud.name = undefined;
   state.cloud.owner = undefined;
   state.cloud.organizations = undefined;
-  state.cloud.providers = [];
-  state.cloud.publicRepositories = undefined;
   state.cloud.repository = undefined;
   state.cloud.repositories = undefined;
 };

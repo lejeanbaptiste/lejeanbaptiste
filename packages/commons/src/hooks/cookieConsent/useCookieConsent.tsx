@@ -40,7 +40,7 @@ export const useCookieConsent = () => {
       openDialog({
         props: {
           severity: 'warning',
-          title: t('privacy_settings'),
+          title: `${t('privacy_settings')}`,
           Message: () => (
             <>
               <Typography paragraph>
@@ -58,7 +58,7 @@ export const useCookieConsent = () => {
             </>
           ),
           actions: [
-            { action: 'cancel', label: t('commons:cancel'), variant: 'outlined' },
+            { action: 'cancel', label: `${t('commons:cancel')}`, variant: 'outlined' },
             {
               action: 'signout',
               label: `${t('remove_consent')} ${t('commons:and')} ${t('commons:sign_out')}`,

@@ -10,7 +10,7 @@ import {
   InputBase,
   Paper,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -159,7 +159,7 @@ const SearchBar: FC<SearchBarProps> = ({
                 : { 'data-testid': 'search-file-input', id: 'search', value: inputValue }
             }
             onClick={() => setSearchFocused(true)}
-            placeholder={t('cloud:search:filename_or_content')}
+            placeholder={`${t('cloud:search:filename_or_content')}`}
             startAdornment={
               <InputAdornment position="start">
                 <SearchIcon fontSize="small" sx={{ opacity: 0.5 }} />

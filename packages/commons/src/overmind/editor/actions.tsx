@@ -1,7 +1,7 @@
 import LeafWriter from '@cwrc/leafwriter';
 import { saveDocument } from '@cwrc/leafwriter-storage-service';
-import { StorageProviderName } from '@src/services';
-import type { IError } from '@src/types';
+import { AUTOSAVE_TIMEOUT_RETRY } from '@src/config';
+import type { IError, Resource } from '@src/types';
 import { isErrorMessage, log } from '@src/utilities';
 import i18next from 'i18next';
 import { Context } from '../';
@@ -16,6 +16,14 @@ export const loadLeafWriter = async ({ state }: Context, container: HTMLElement)
   const leafWriter = new LW(container);
   state.editor.libLoaded = true;
   return leafWriter;
+};
+
+export const setResource = async ({ state }: Context, resource?: Resource) => {
+  state.editor.resource = resource ? { ...resource } : undefined;
+};
+
+export const clearResource = async ({ state }: Context) => {
+  state.editor.resource = undefined;
 };
 
 export const setAutosave = ({ state }: Context, value: boolean) => {
@@ -44,19 +52,17 @@ export const save = async (
     return { success: true };
   }
 
-  const { storage } = state;
+  const { resource } = state.editor;
 
   //Check provider
-  if (!storage.resource?.provider) {
+  if (!resource?.provider) {
     const message = i18next.t('storage:provider_not_found');
     log.error(message);
     state.editor.isSaving = false;
     return { success: false, error: { type: 'error', message } };
   }
 
-  const providerAuth = actions.storage.getStorageProviderAuth(
-    storage.resource.provider as StorageProviderName
-  );
+  const providerAuth = actions.providers.getStorageProviderAuth(resource.provider);
 
   //Check provider token
   if (!providerAuth) {
@@ -68,7 +74,7 @@ export const save = async (
 
   //Prepare resource
   const updatedResource = {
-    ...storage.resource,
+    ...resource,
     content,
     screenshot,
   };
@@ -88,14 +94,14 @@ export const save = async (
     if (timerService.maxAttempts === Infinity) {
       state.editor.saveDelayed = true;
       // actions.editor.delaySave({ content });
-      timerService.stop().setDuration(10_000).setMaxAttempt(5).start();
+      timerService.stop().setDuration(AUTOSAVE_TIMEOUT_RETRY).setMaxAttempt(5).start();
     }
 
     return { success: false, error: response };
   }
 
   // Finalize
-  actions.storage.setResource(updatedResource);
+  actions.editor.setResource(updatedResource);
 
   actions.editor.afterSave();
 
@@ -128,17 +134,17 @@ export const saveAs = async (
     screenshot?: string;
   }
 ): Promise<{ success: boolean; error?: IError }> => {
-  const { storage } = state;
+  const { resource } = state.editor;
 
-  actions.storage.setResource({
-    ...storage.resource,
+  actions.editor.setResource({
+    ...resource,
     content,
     screenshot,
   });
 
   actions.storage.openStorageDialog({
     source: 'cloud',
-    resource: storage.resource,
+    resource,
     type: 'save',
   });
 
@@ -156,7 +162,7 @@ export const setIsDirty = async ({ state }: Context, value: boolean) => {
     return;
   }
 
-  if (state.editor.autosave && state.storage.resource?.provider) state.editor.timerService.start();
+  if (state.editor.autosave && state.editor.resource?.provider) state.editor.timerService.start();
 };
 
 export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
@@ -172,7 +178,7 @@ export const unsubscribeFromTimerService = ({ state }: Context) => {
 };
 
 export const close = async ({ state, actions }: Context) => {
-  actions.storage.setResource();
+  actions.editor.setResource();
   state.editor.libLoaded = false;
   state.editor.isDirty = false;
 };

@@ -1,6 +1,5 @@
 import { Icon, Stack, Typography } from '@mui/material';
 import { getIcon } from '@src/assets/icons';
-import type { StorageProviderName } from '@src/services';
 import React, { type FC } from 'react';
 
 interface PathProps {
@@ -23,7 +22,7 @@ export const Path: FC<PathProps> = ({ owner, path, provider, repo }) => {
       }}
     >
       <Stack direction="row" alignItems="center" gap={0.5} sx={{ height: 22, overflow: 'hidden' }}>
-        <Icon component={getIcon(provider as StorageProviderName)} sx={{ width: 14, height: 14 }} />
+        <Icon component={getIcon(provider)} sx={{ width: 14, height: 14 }} />
         <Typography variant="caption">{fullPath}</Typography>
       </Stack>
     </Stack>

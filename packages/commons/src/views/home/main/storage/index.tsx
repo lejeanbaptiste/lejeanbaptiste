@@ -24,21 +24,21 @@ export const Storage: FC = () => {
 
   useEffect(() => {
     if (recentDocuments?.length === 0) {
-      setSelectedView({ title: t('templates'), value: 'templates' });
+      setSelectedView({ title: `${t('templates')}`, value: 'templates' });
     }
   }, [recentDocuments]);
 
   const setView = async () => {
     if (userState === 'UNAUTHENTICATED') {
-      setSelectedView({ title: t('samples'), value: 'samples' });
+      setSelectedView({ title: `${t('samples')}`, value: 'samples' });
       return;
     }
 
     if (userState === 'AUTHENTICATED') {
       const recent = await loadRecentFiles();
       recent.length > 0
-        ? setSelectedView({ title: t('recent'), value: 'recent' })
-        : setSelectedView({ title: t('templates'), value: 'templates' });
+        ? setSelectedView({ title: `${t('recent')}`, value: 'recent' })
+        : setSelectedView({ title: `${t('templates')}`, value: 'templates' });
       return;
     }
   };

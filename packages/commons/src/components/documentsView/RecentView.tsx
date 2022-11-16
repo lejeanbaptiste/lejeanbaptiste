@@ -2,7 +2,6 @@ import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { useTheme } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { StorageProviderName } from '@src/services';
 import type { Resource } from '@src/types';
 import React, { useEffect, useState, type FC } from 'react';
 import Masonry from 'react-responsive-masonry';
@@ -17,8 +16,9 @@ interface RecentViewProps {
 
 export const RecentView: FC<RecentViewProps> = ({ displayLayout, width }) => {
   const { recentDocuments } = useAppState().storage;
-  const { getStorageProviderAuth, loadRecentFiles, removeRecentDocument, setResource } =
-    useActions().storage;
+  const { setResource } = useActions().editor;
+  const { getStorageProviderAuth } = useActions().providers;
+  const { loadRecentFiles, removeRecentDocument } = useActions().storage;
 
   const navigate = useNavigate();
   const { setPermalink } = usePermalink();
@@ -42,7 +42,7 @@ export const RecentView: FC<RecentViewProps> = ({ displayLayout, width }) => {
   const load = async (resource: Resource) => {
     if (!resource.provider) return;
 
-    const providerAuth = getStorageProviderAuth(resource.provider as StorageProviderName);
+    const providerAuth = getStorageProviderAuth(resource.provider);
     if (!providerAuth) return;
 
     const document = await loadDocument(providerAuth, resource);

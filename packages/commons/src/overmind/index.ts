@@ -8,12 +8,14 @@ import {
 import { namespaced } from 'overmind/config';
 import * as auth from './auth';
 import * as editor from './editor';
+import * as providers from './providers';
 import * as storage from './storage';
 import * as ui from './ui';
 
 export const config = namespaced({
   auth,
   editor,
+  providers,
   storage,
   ui,
 });
