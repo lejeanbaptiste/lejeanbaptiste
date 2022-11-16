@@ -10,8 +10,7 @@ import { useLeafWriter } from './useLeafWriter';
 
 export const EditView: FC = () => {
   const { userState, user } = useAppState().auth;
-  const { autosave, libLoaded } = useAppState().editor;
-  const { resource } = useAppState().storage;
+  const { autosave, libLoaded, resource } = useAppState().editor;
 
   const { getKeycloakAuthToken } = useActions().auth;
   const {

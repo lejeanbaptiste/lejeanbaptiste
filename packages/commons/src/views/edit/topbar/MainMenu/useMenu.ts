@@ -1,7 +1,6 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { StorageProviderName } from '@src/services';
 import { Resource } from '@src/types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -15,10 +14,12 @@ const MIN_WIDTH = 250;
 
 export const useMenu = () => {
   const { userState } = useAppState().auth;
-  const { isDirty } = useAppState().editor;
-  const { recentDocuments, resource } = useAppState().storage;
+  const { isDirty, resource } = useAppState().editor;
+  const { recentDocuments } = useAppState().storage;
 
-  const { getStorageProviderAuth, openStorageDialog, setResource } = useActions().storage;
+  const { setResource } = useActions().editor;
+  const { getStorageProviderAuth } = useActions().providers;
+  const { openStorageDialog } = useActions().storage;
   const { openDialog } = useActions().ui;
 
   const navigate = useNavigate();
@@ -118,7 +119,7 @@ export const useMenu = () => {
   const handleLoadRecentDocument = async (resource: Resource) => {
     if (!resource.provider) return;
 
-    const providerAuth = getStorageProviderAuth(resource.provider as StorageProviderName);
+    const providerAuth = getStorageProviderAuth(resource.provider);
     if (!providerAuth) return;
 
     const document = await loadDocument(providerAuth, resource);

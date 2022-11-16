@@ -9,7 +9,7 @@ interface PageProps {
 const PAGE_TITLE = 'LEAF-Writer Commons';
 
 export const Page = forwardRef<PageProps, any>(({ children, title, ...rest }, ref) => {
-  const { resource } = useAppState().storage;
+  const { resource } = useAppState().editor;
 
   title = title ? title : PAGE_TITLE;
   title = resource?.filename ? `${resource.filename} - ${PAGE_TITLE}` : PAGE_TITLE;

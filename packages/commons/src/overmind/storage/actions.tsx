@@ -1,79 +1,27 @@
-import { suportedStorageProviders, type StorageProviderName } from '@src/services';
-import type { IProviderAuth, Resource, StorageDialogState } from '@src/types';
-import { log } from '@src/utilities';
+import { RECENT_DOCUMENTS_LIMIT } from '@src/config';
+import type { Resource, StorageDialogState } from '@src/types';
 import { saveAs } from 'file-saver';
 import { Context } from '../index';
 
-const RECENT_LIMIT = 8;
-
-export const setupStorageProvider = async ({ state, actions, effects }: Context, token: string) => {
-  const identity_provider = effects.auth.api.getIdentityProvider();
-  if (!identity_provider) return log.warn('No identity_provider');
-
-  if (!state.auth.identityProviders) return;
-
-  Object.values(state.auth.identityProviders).forEach((iDProvider) => {
-    actions.storage._linkStorageProvider(iDProvider.name);
-  });
-
-  // preferredStorage
+export const changePrefStorageProvider = ({ state, effects }: Context, providerId: string) => {
   if (!state.auth.user) return;
-  //if not preferredStorage, use the first StorageProvider linked Account
-  const preferredStorage = effects.storage.api.getFromLocalStorage<string>('prefStorageProvider');
 
-  preferredStorage
-    ? (state.auth.user.prefStorageProvider = preferredStorage)
-    : actions.storage.changePrefStorageProvider(state.storage.storageProviders[0]);
-};
+  const providerHasStorage = !!state.providers.supportedProviders.find(
+    (provider) => provider.providerId === providerId && provider.storeToken === true
+  );
 
-export const _linkStorageProvider = ({ state }: Context, providerName: string) => {
-  if (!suportedStorageProviders.includes(providerName as StorageProviderName)) return;
-
-  const storage = providerName as StorageProviderName;
-  if (state.storage.storageProviders.includes(storage)) return;
-  state.storage.storageProviders = [...state.storage.storageProviders, storage];
-};
-
-// Resource
-
-export const setResource = async ({ state }: Context, resource?: Resource) => {
-  state.storage.resource = resource ? { ...resource } : undefined;
-};
-
-export const clearResource = async ({ state }: Context) => {
-  state.storage.resource = undefined;
-};
-
-export const getStorageProviderAuth = ({ actions }: Context, name: StorageProviderName) => {
-  const provider = actions.auth.getIdentityProvider(name);
-  if (!provider) return;
-  return { name: provider.name, access_token: provider.getAccessToken() };
-};
-
-export const getStorageProvidersAuth = ({ state, actions }: Context) => {
-  const providers: IProviderAuth[] = [];
-
-  state.storage.storageProviders.forEach((provider) => {
-    const identityProvider = actions.auth.getIdentityProvider(provider);
-    if (identityProvider) {
-      providers.push({
-        name: identityProvider.name,
-        access_token: identityProvider.getAccessToken(),
-      });
+  if (!providerHasStorage) {
+    const provider = state.providers.supportedProviders.find((provider) => provider.storeToken);
+    if (!provider) {
+      effects.storage.api.removeFromLocalStorage('prefStorageProvider');
+      return;
     }
-  });
+    providerId = provider.providerId;
+  }
 
-  return providers;
-};
-
-export const changePrefStorageProvider = (
-  { state, effects }: Context,
-  StorageproviderName: string
-) => {
-  if (!state.auth.user) return;
-  state.auth.user.prefStorageProvider = StorageproviderName;
-  effects.storage.api.saveToLocalStorage('prefStorageProvider', StorageproviderName);
-  return StorageproviderName;
+  state.auth.user.prefStorageProvider = providerId;
+  effects.storage.api.saveToLocalStorage('prefStorageProvider', providerId);
+  return providerId;
 };
 
 export const openStorageDialog = async (
@@ -87,20 +35,7 @@ export const closeStorageDialog = async ({ state }: Context) => {
   state.storage.storageDialogState = { open: false };
 };
 
-export const isStorageProviderSupported = ({ state }: Context, providerName: string) => {
-  return suportedStorageProviders.includes(providerName as StorageProviderName);
-};
-
-//
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const isValidXml = ({ state }: Context, string: string) => {
-  const doc = new DOMParser().parseFromString(string, 'text/xml');
-  const parsererror = doc.querySelector('parsererror');
-  return !parsererror;
-};
-
-export const addToRecentDocument = ({ state, actions, effects }: Context, document: Resource) => {
+export const addToRecentDocument = ({ state, effects }: Context, document: Resource) => {
   const { content, hash, ...recent } = document;
 
   if (
@@ -126,7 +61,7 @@ export const addToRecentDocument = ({ state, actions, effects }: Context, docume
 
   //limit
   state.storage.recentDocuments = state.storage.recentDocuments.filter(
-    (_item, index) => index <= RECENT_LIMIT
+    (_item, index) => index <= RECENT_DOCUMENTS_LIMIT
   );
 
   effects.storage.api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
@@ -151,9 +86,9 @@ export const updateRecentDocument = ({ state, actions, effects }: Context) => {
   if (!state.storage.recentDocuments) return;
 
   state.storage.recentDocuments = state.storage.recentDocuments.map((document) => {
-    if (document.url === state.storage.resource?.url) {
+    if (document.url === state.editor.resource?.url) {
       document.modifiedAt = new Date();
-      if (state.storage.resource?.screenshot) document.screenshot = state.storage.resource.screenshot;
+      if (state.editor.resource?.screenshot) document.screenshot = state.editor.resource.screenshot;
     }
     return document;
   });
@@ -196,7 +131,7 @@ export const loadSample = async ({ effects }: Context, url: string) => {
 };
 
 export const download = ({ state }: Context, content: string) => {
-  const { resource } = state.storage;
+  const { resource } = state.editor;
   if (!resource) return;
 
   const { filename } = resource;

@@ -18,7 +18,7 @@ export const CascadingContext = createContext({
 });
 
 export const MainMenu = () => {
-  const { resource } = useAppState().storage;
+  const { resource } = useAppState().editor;
 
   const { mainMenuOptions } = useMenu();
 

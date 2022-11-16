@@ -1,7 +1,6 @@
 import { Box, Button, Divider, List, Popover, Typography } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { suportedStorageProviders, supportedIdentityProviders } from '@src/services';
 import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EditorSettings } from './EditorSettings';
@@ -9,7 +8,7 @@ import { Footer } from './Footer';
 import { Identity } from './Identity';
 import { Language } from './Language';
 import { PrivacySettings } from './PrivacySettings';
-import { Storage } from './Storage';
+// import { Storage } from './Storage';
 import { ThemeAppearance } from './ThemeAppearance';
 import { UserCard } from './UserCard';
 
@@ -20,6 +19,7 @@ interface ProfileProps {
 
 export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
   const { isDirty, libLoaded } = useAppState().editor;
+  const { supportedProviders } = useAppState().providers;
 
   const { signOut } = useActions().auth;
   const { openDialog } = useActions().ui;
@@ -75,8 +75,8 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
       <Divider />
 
       <List sx={{ width: 280 }}>
-        {supportedIdentityProviders.length > 1 && <Identity />}
-        {suportedStorageProviders.length > 1 && <Storage />}
+        {supportedProviders.length > 1 && <Identity />}
+        {/* {supportedProviders.length > 1 && <Storage />} */}
         <ThemeAppearance />
         <Language />
       </List>
