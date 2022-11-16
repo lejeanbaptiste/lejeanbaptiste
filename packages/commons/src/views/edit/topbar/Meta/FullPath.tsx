@@ -1,6 +1,6 @@
 import { Icon, Stack, Typography } from '@mui/material';
-import { useAppState } from '@src/overmind';
 import { getIcon } from '@src/assets/icons';
+import { useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useMemo, type FC } from 'react';
 
@@ -9,7 +9,7 @@ interface FullPathProps {
 }
 
 export const FullPath: FC<FullPathProps> = ({ show }) => {
-  const { resource } = useAppState().storage;
+  const { resource } = useAppState().editor;
 
   const getFullPath = useMemo(() => {
     if (!resource) return '';

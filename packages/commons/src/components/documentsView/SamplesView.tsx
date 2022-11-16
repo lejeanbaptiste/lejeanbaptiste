@@ -1,5 +1,5 @@
-import { useActions } from '@src/overmind';
 import { useTheme } from '@mui/material';
+import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useEffect, useState, type FC } from 'react';
 import Masonry from 'react-responsive-masonry';
@@ -13,7 +13,8 @@ interface SamplesViewProps {
 }
 
 export const SamplesView: FC<SamplesViewProps> = ({ displayLayout, width }) => {
-  const { getSampleDocuments, loadSample, setResource } = useActions().storage;
+  const { setResource } = useActions().editor;
+  const { getSampleDocuments, loadSample } = useActions().storage;
 
   const navigate = useNavigate();
   const { spacing } = useTheme();

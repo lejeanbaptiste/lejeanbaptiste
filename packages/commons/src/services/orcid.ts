@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AuthenticateProp, IIdentityProvider } from './';
+import type { AuthenticateProp, ProviderService } from './types';
 
 const BASE_URL = 'https://pub.sandbox.orcid.org/v2.1';
 
@@ -49,7 +49,7 @@ const getAuthenticatedUser = async (userId?: string) => {
   return user;
 };
 
-export const OrcidIdentityProvider: IIdentityProvider = {
+export const provider: ProviderService = {
   name,
   getAccessToken,
   getUserId,

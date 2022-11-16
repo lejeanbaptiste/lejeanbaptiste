@@ -1,5 +1,5 @@
 import { useActions, useAppState } from '@src/overmind';
-import type { IError, Resource, Resource } from '@src/types';
+import type { IError, Resource } from '@src/types';
 import { isErrorMessage } from '@src/utilities';
 import Cookies from 'js-cookie';
 import queryString from 'query-string';
@@ -18,8 +18,9 @@ export const usePermalink = () => {
   const { userState } = useAppState().auth;
 
   const { signIn } = useActions().auth;
-  const { clearResource, getSampleDocuments, getTemplates, isStorageProviderSupported } =
-    useActions().storage;
+  const { clearResource } = useActions().editor;
+  const { isStorageProviderSupported } = useActions().providers;
+  const { getSampleDocuments, getTemplates } = useActions().storage;
 
   const { t } = useTranslation('commons');
   const location = useLocation();

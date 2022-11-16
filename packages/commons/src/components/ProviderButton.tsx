@@ -6,10 +6,10 @@ import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ProviderButtonProps {
-  provider: string;
+  name: string;
 }
 
-export const ProviderButton: FC<ProviderButtonProps> = ({ provider }) => {
+export const ProviderButton: FC<ProviderButtonProps> = ({ name: provider }) => {
   const { cookieConsent } = useAppState().ui;
   const { signIn } = useActions().auth;
 

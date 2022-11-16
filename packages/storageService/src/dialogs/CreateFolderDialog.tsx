@@ -43,7 +43,7 @@ export const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCrea
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: t('error:message:folder_creation_error'),
+          title: `${t('error:message:folder_creation_error')}`,
           onClose: () => setIsLoading(false),
         },
       });
@@ -73,7 +73,7 @@ export const CreateFolderDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCrea
           inputProps={{ 'data-testid': 'save:create-folder:name-input' }}
           label={t('commons:name')}
           onChange={handleNameChange}
-          placeholder={t('cloud:folder_name')}
+          placeholder={`${t('cloud:folder_name')}`}
           required
           value={name}
           variant="standard"

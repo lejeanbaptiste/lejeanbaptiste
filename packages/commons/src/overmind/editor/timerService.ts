@@ -1,3 +1,4 @@
+import { AUTOSAVE_TIMEOUT } from '@src/config';
 import { Subject } from 'rxjs';
 
 export interface ITimerService {
@@ -23,7 +24,7 @@ let timer: NodeJS.Timer;
 
 let currentAttempt: number = 0;
 let currentTick: number = 0;
-let duration: number = 60_000;
+let duration: number = AUTOSAVE_TIMEOUT;
 let isRunning: boolean = false;
 let maxAttempts: number = Infinity;
 

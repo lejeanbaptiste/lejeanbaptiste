@@ -9,7 +9,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from './type';
 
 export const TemplateDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
-  const { loadSample, setResource } = useActions().storage;
+  const { setResource } = useActions().editor;
+  const { loadSample } = useActions().storage;
   const { closeDialog } = useActions().ui;
 
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ export const TemplateDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
         <TopBar
           displayLayout={displayLayout}
           onChangeDisplayLayout={changeDisplayLayout}
-          title={t('templates:choose_a_template')}
+          title={`${t('templates:choose_a_template')}`}
         />
       </DialogTitle>
       <TemplatesView

@@ -97,7 +97,7 @@ const Filename: FC = () => {
           onBlur={handleBlur}
           onChange={handleChange}
           onKeyPress={handleKeyPress}
-          placeholder={t('cloud:breadcrumbs:filename')}
+          placeholder={`${t('cloud:breadcrumbs:filename')}`}
           sx={{ px: 1.5, flex: 1 }}
           value={value}
         />

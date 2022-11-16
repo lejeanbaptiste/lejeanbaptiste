@@ -1,6 +1,7 @@
 import type { Resource } from '@cwrc/leafwriter-storage-service';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
+import { isValidXml } from '@src/utilities';
 import React, { Suspense, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
@@ -12,8 +13,9 @@ export const Storage: FC = () => {
   const { user } = useAppState().auth;
   const { storageDialogState } = useAppState().storage;
 
-  const { closeStorageDialog, getStorageProvidersAuth, setResource, isValidXml } =
-    useActions().storage;
+  const { setResource } = useActions().editor;
+  const { getStorageProvidersAuth } = useActions().providers;
+  const { closeStorageDialog } = useActions().storage;
 
   const navigate = useNavigate();
   const location = useLocation();

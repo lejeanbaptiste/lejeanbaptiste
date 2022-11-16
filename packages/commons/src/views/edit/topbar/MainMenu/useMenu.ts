@@ -1,7 +1,6 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { StorageProviderName } from '@src/services';
 import { Resource } from '@src/types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -15,10 +14,12 @@ const MIN_WIDTH = 250;
 
 export const useMenu = () => {
   const { userState } = useAppState().auth;
-  const { isDirty } = useAppState().editor;
-  const { recentDocuments, resource } = useAppState().storage;
+  const { isDirty, resource } = useAppState().editor;
+  const { recentDocuments } = useAppState().storage;
 
-  const { getStorageProviderAuth, openStorageDialog, setResource } = useActions().storage;
+  const { setResource } = useActions().editor;
+  const { getStorageProviderAuth } = useActions().providers;
+  const { openStorageDialog } = useActions().storage;
   const { openDialog } = useActions().ui;
 
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ export const useMenu = () => {
       hide: !recentDocuments || recentDocuments.length === 0,
       icon: 'recent',
       popupId: 'recent',
-      title: t('open_recent'),
+      title: `${t('open_recent')}`,
     },
     'divider',
     {
@@ -58,7 +59,7 @@ export const useMenu = () => {
       label: t('save'),
       onTrigger: () => (!resource?.provider ? handleSave('saveAs') : handleSave()),
       shortcut: ' ⌘S',
-      tootipText: t('messages:you_must_sign_in_to_use_this_feature'),
+      tootipText: `${t('messages:you_must_sign_in_to_use_this_feature')}`,
     },
     {
       disabled: userState !== 'AUTHENTICATED',
@@ -66,7 +67,7 @@ export const useMenu = () => {
       label: `${t('save_as')}...`,
       onTrigger: () => handleSave('saveAs'),
       shortcut: ' ⌘⌥⇧S',
-      tootipText: t('messages:you_must_sign_in_to_use_this_feature'),
+      tootipText: `${t('messages:you_must_sign_in_to_use_this_feature')}`,
     },
     {
       icon: 'download',
@@ -96,10 +97,10 @@ export const useMenu = () => {
             props: {
               maxWidth: 'xs',
               severity: 'warning',
-              title: t('unsaved_changes'),
+              title: `${t('unsaved_changes')}`,
               actions: [
-                { action: 'cancel', label: t('cancel') },
-                { action: 'discard', label: t('discard_changes') },
+                { action: 'cancel', label: `${t('cancel')}` },
+                { action: 'discard', label: `${t('discard_changes')}` },
               ],
               //@ts-ignore
               onClose: async (action: string) => {
@@ -118,7 +119,7 @@ export const useMenu = () => {
   const handleLoadRecentDocument = async (resource: Resource) => {
     if (!resource.provider) return;
 
-    const providerAuth = getStorageProviderAuth(resource.provider as StorageProviderName);
+    const providerAuth = getStorageProviderAuth(resource.provider);
     if (!providerAuth) return;
 
     const document = await loadDocument(providerAuth, resource);

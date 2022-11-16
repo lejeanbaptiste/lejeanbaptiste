@@ -3,7 +3,6 @@ import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { Typography } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { StorageProviderName } from '@src/services';
 import { Resource } from '@src/types';
 import { isErrorMessage } from '@src/utilities';
 import React, { useEffect } from 'react';
@@ -16,9 +15,9 @@ let tapDocumentTimer: NodeJS.Timeout;
 export const useLeafWriter = () => {
   const { isDirty, timerService } = useAppState().editor;
 
-  const { close, save, saveAs, setContentLastSaved } = useActions().editor;
-  const { addToRecentDocument, download, getStorageProviderAuth, loadSample, setResource } =
-    useActions().storage;
+  const { close, save, saveAs, setContentLastSaved, setResource } = useActions().editor;
+  const { getStorageProviderAuth } = useActions().providers;
+  const { addToRecentDocument, download, loadSample } = useActions().storage;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
 
   const navigate = useNavigate();
@@ -50,7 +49,7 @@ export const useLeafWriter = () => {
 
     if (!resource.provider) return showErrorMessage(t('storage:provider_not_found'));
 
-    const providerAuth = getStorageProviderAuth(resource.provider as StorageProviderName);
+    const providerAuth = getStorageProviderAuth(resource.provider);
     if (!providerAuth) return showErrorMessage(t('storage:provider_not_found'));
 
     const document = await loadDocument(providerAuth, resource);
@@ -65,7 +64,7 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: t('storage:invalid_request'),
+        title: `${t('storage:invalid_request')}`,
         Message: () => (
           <Typography sx={{ ':first-letter': { textTransform: 'uppercase' } }}>
             {message}
@@ -127,10 +126,10 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        title: t('unsaved_changes'),
+        title: `${t('unsaved_changes')}`,
         actions: [
-          { action: 'cancel', label: t('cancel') },
-          { action: 'discard', label: t('discard_changes') },
+          { action: 'cancel', label: `${t('cancel')}` },
+          { action: 'discard', label: `${t('discard_changes')}` },
         ],
         //@ts-ignore
         onClose: async (action: string) => {
@@ -147,7 +146,7 @@ export const useLeafWriter = () => {
 
       const content = await leafWriter.getContent();
       const screenshot = await leafWriter.getDocumentScreenshot();
-      
+
       setContentLastSaved(content);
       addToRecentDocument({ ...resource, screenshot, schemaName });
     }, 5_000);

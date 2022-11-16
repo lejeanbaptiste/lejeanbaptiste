@@ -1,7 +1,7 @@
 import { Octokit } from '@octokit/rest';
 import type { GetResponseDataTypeFromEndpointMethod } from '@octokit/types';
 import queryString from 'query-string';
-import type { AuthenticateProp, IIdentityProvider } from './';
+import type { AuthenticateProp, ProviderService } from './types';
 
 let octokit: Octokit;
 const name = 'github';
@@ -57,7 +57,7 @@ const getAuthenticatedUser = async (): Promise<GetAuthenticatedResponseDataType>
   return user;
 };
 
-export const GithubIdentityProvider: IIdentityProvider = {
+export const provider: ProviderService = {
   name,
   getAccessToken,
   getUserId,

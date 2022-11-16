@@ -57,7 +57,7 @@ export const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: t('error:message:repo_creation_error'),
+          title: `${t('error:message:repo_creation_error')}`,
           onClose: () => setIsLoading(false),
         },
       });
@@ -91,7 +91,7 @@ export const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate
             inputProps={{ 'data-testid': 'save:create-repo:name-input' }}
             label={t('commons:name')}
             onChange={handleNameChange}
-            placeholder={t('cloud:createRepo:repository_name')}
+            placeholder={`${t('cloud:createRepo:repository_name')}`}
             required
             value={name}
             variant="standard"
