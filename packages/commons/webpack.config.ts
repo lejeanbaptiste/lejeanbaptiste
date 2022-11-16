@@ -153,6 +153,7 @@ const webpackConfig: webpack.Configuration = {
       path: false,
       process: false,
       querystring: false,
+      string_decoder: false,
       url: false,
     },
   },
