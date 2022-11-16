@@ -20,9 +20,9 @@ const MainMenu: FC<MainMenuProps> = ({ onSelect, selectedMenu }) => {
   const { setCollectionSource } = useActions().cloud;
 
   const menuOptions: MenuOption[] = [
-    { label: t('cloud:mainMenu:my_repositories'), value: 'owner' },
-    { label: t('cloud:mainMenu:shared_with_me'), value: 'collaborator' },
-    { label: t('cloud:mainMenu:organizations'), value: 'organization' },
+    { label: `${t('cloud:mainMenu:my_repositories')}`, value: 'owner' },
+    { label: `${t('cloud:mainMenu:shared_with_me')}`, value: 'collaborator' },
+    { label: `${t('cloud:mainMenu:organizations')}`, value: 'organization' },
   ];
 
   const handleClick = (value: string) => {

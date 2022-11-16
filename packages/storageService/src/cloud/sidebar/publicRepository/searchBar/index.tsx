@@ -114,7 +114,7 @@ const SearchBar: FC<SearchBarProps> = ({ collapsible = true, onClear, onChange, 
             fullWidth
             inputProps={{ ...getInputProps(), 'data-testid': 'search-user-input' }}
             onFocus={() => setSearchFocused(true)}
-            placeholder={t('cloud:publicRepositories:user_or_organization')}
+            placeholder={`${t('cloud:publicRepositories:user_or_organization')}`}
             startAdornment={
               <InputAdornment position="start">
                 <SearchIcon fontSize="small" sx={{ opacity: 0.5 }} />

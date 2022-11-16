@@ -37,7 +37,7 @@ export const PastePanel: FC = () => {
         }}
         multiline
         onChange={onChageOnPastePanel}
-        placeholder={t('local:paste_document_here')}
+        placeholder={`${t('local:paste_document_here')}`}
         rows={mobile ? 0 : 19}
         value={text}
       />
