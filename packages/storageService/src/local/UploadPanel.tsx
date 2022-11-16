@@ -45,7 +45,7 @@ export const UploadPanel: FC = () => {
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: t('error:message:unable_to_upload_file', { filename: file.name }),
+          title: `${t('error:message:unable_to_upload_file', { filename: file.name })}`,
         },
       });
 

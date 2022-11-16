@@ -48,13 +48,17 @@ const Breadcrumbs: FC = () => {
         )}
 
         {collectionType === 'repos' && collectionSource === 'organization' && (
-          <Crumb level={-1} name={t('cloud:breadcrumbs:organizations')} onClick={handleClickOrgs} />
+          <Crumb
+            level={-1}
+            name={`${t('cloud:breadcrumbs:organizations')}`}
+            onClick={handleClickOrgs}
+          />
         )}
 
         {owner && collectionType === 'repos' && collectionSource !== 'collaborator' ? (
           <Crumb
             disabled={!repository}
-            label={t('cloud:breadcrumbs:owner')}
+            label={`${t('cloud:breadcrumbs:owner')}`}
             level={-2}
             name={owner.username}
             onClick={handleClickOwner}
@@ -68,7 +72,7 @@ const Breadcrumbs: FC = () => {
         {collectionType === 'content' && !isSM && (
           <Crumb
             disabled={!repository}
-            label={t('cloud:breadcrumbs:owner')}
+            label={`${t('cloud:breadcrumbs:owner')}`}
             level={-1}
             name={repository?.owner?.username}
             onClick={handleClickOwner}
@@ -78,7 +82,7 @@ const Breadcrumbs: FC = () => {
           <Crumb
             color={'primary'}
             disabled={repositoryContent.path && repositoryContent.path[0] === ''}
-            label={t('cloud:breadcrumbs:repository')}
+            label={`${t('cloud:breadcrumbs:repository')}`}
             level={0}
             name={repository?.name}
             onClick={handleClickRepo}
@@ -87,7 +91,7 @@ const Breadcrumbs: FC = () => {
         {collectionType === 'content' && (
           <Crumb
             disabled={true}
-            label={t('cloud:breadcrumbs:branch')}
+            label={`${t('cloud:breadcrumbs:branch')}`}
             level={0}
             name={repository?.default_branch}
             onClick={handleClickRepo}
