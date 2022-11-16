@@ -195,11 +195,8 @@ export const resetAll = async ({ state }: Context) => {
   state.cloud.repositoryContent = {};
   state.cloud.collectionSource = 'owner';
   state.cloud.collectionType = undefined;
-  state.cloud.name = undefined;
   state.cloud.owner = undefined;
   state.cloud.organizations = undefined;
-  state.cloud.providers = [];
-  state.cloud.publicRepositories = undefined;
   state.cloud.repository = undefined;
   state.cloud.repositories = undefined;
 };
