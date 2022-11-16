@@ -27,7 +27,9 @@ export const Menu: FC<MainMenuProps> = ({ onSelect, selectedMenu }) => {
     {
       disabled: isLoading || userState !== 'AUTHENTICATED',
       disabledTooltipText:
-        userState !== 'AUTHENTICATED' ? t('messages:you_must_sign_in_to_use_this_feature') : '',
+        userState !== 'AUTHENTICATED'
+          ? `${t('messages:you_must_sign_in_to_use_this_feature')}`
+          : '',
       icon: 'cloud',
       label: t('storage:from_the_cloud'),
       value: 'cloud',

@@ -56,7 +56,7 @@ export const ThemeAppearance: FC = () => {
           value={themeAppearance}
         >
           {options.map(({ name, Icon }) => (
-            <ToggleButton key={name} aria-label={name} size="small" value={t(name)}>
+            <ToggleButton key={name} aria-label={name} size="small" value={`${t(name)}`}>
               <StyledToolTip enterDelay={1000} title={t(name) ?? name}>
                 <Icon fontSize="small" sx={{ height: 16, width: 16 }} />
               </StyledToolTip>

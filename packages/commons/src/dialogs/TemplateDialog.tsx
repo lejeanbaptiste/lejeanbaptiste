@@ -43,7 +43,7 @@ export const TemplateDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
         <TopBar
           displayLayout={displayLayout}
           onChangeDisplayLayout={changeDisplayLayout}
-          title={t('templates:choose_a_template')}
+          title={`${t('templates:choose_a_template')}`}
         />
       </DialogTitle>
       <TemplatesView
