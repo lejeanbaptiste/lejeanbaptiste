@@ -35,11 +35,11 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
     openDialog({
       props: {
         severity: 'warning',
-        title: t('commons:unsaved_changes'),
+        title: `${t('commons:unsaved_changes')}`,
         Message: () => <Typography>{t('storage:you_will_lose_any_unsaved_changes')}.</Typography>,
         actions: [
-          { action: 'cancel', label: t('commons:cancel') },
-          { action: 'signout', label: t('commons:sign_out'), variant: 'outlined' },
+          { action: 'cancel', label: `${t('commons:cancel')}` },
+          { action: 'signout', label: `${t('commons:sign_out')}`, variant: 'outlined' },
         ],
         //@ts-ignore
         onClose: async (action: string) => {

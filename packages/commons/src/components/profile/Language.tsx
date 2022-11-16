@@ -38,12 +38,7 @@ export const Language: FC = () => {
       </ListItemIcon>
       <ListItemText id="language" primary={t('language')} sx={{ textTransform: 'capitalize' }} />
       <ListItemSecondaryAction>
-        <StyledToggleButtonGroup
-          aria-label={t('language')}
-          exclusive
-          onChange={changeLanguage}
-          value={language.code}
-        >
+        <StyledToggleButtonGroup exclusive onChange={changeLanguage} value={language.code}>
           {Array.from(supportedLanguages).map(([, { code, shortName }]) => (
             <ToggleButton
               key={code}

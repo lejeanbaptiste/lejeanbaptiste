@@ -65,7 +65,7 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: t('storage:invalid_request'),
+        title: `${t('storage:invalid_request')}`,
         Message: () => (
           <Typography sx={{ ':first-letter': { textTransform: 'uppercase' } }}>
             {message}
@@ -127,10 +127,10 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        title: t('unsaved_changes'),
+        title: `${t('unsaved_changes')}`,
         actions: [
-          { action: 'cancel', label: t('cancel') },
-          { action: 'discard', label: t('discard_changes') },
+          { action: 'cancel', label: `${t('cancel')}` },
+          { action: 'discard', label: `${t('discard_changes')}` },
         ],
         //@ts-ignore
         onClose: async (action: string) => {
@@ -147,7 +147,7 @@ export const useLeafWriter = () => {
 
       const content = await leafWriter.getContent();
       const screenshot = await leafWriter.getDocumentScreenshot();
-      
+
       setContentLastSaved(content);
       addToRecentDocument({ ...resource, screenshot, schemaName });
     }, 5_000);

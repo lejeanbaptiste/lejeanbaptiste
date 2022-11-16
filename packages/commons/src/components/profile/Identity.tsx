@@ -38,7 +38,7 @@ export const Identity: FC = () => {
       channel.close();
 
       if (!linkAccountCallback.success) {
-        notifyViaSnackbar(t(`error:something_went_wrong`));
+        notifyViaSnackbar(`${t(`error:something_went_wrong`)}`);
         return;
       }
 

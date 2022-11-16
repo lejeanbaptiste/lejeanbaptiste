@@ -17,7 +17,8 @@ const textStyle = `
   letter-spacing: .05em;
 `;
 
-log.info(`
+log.info(
+  `
 %cLEAF-Writer
 %c
 The XML & RDF online editor of the Linked Editing Academic Framework
