@@ -3,7 +3,6 @@ import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { Typography } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { StorageProviderName } from '@src/services';
 import { Resource } from '@src/types';
 import { isErrorMessage } from '@src/utilities';
 import React, { useEffect } from 'react';
@@ -16,9 +15,9 @@ let tapDocumentTimer: NodeJS.Timeout;
 export const useLeafWriter = () => {
   const { isDirty, timerService } = useAppState().editor;
 
-  const { close, save, saveAs, setContentLastSaved } = useActions().editor;
-  const { addToRecentDocument, download, getStorageProviderAuth, loadSample, setResource } =
-    useActions().storage;
+  const { close, save, saveAs, setContentLastSaved, setResource } = useActions().editor;
+  const { getStorageProviderAuth } = useActions().providers;
+  const { addToRecentDocument, download, loadSample } = useActions().storage;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
 
   const navigate = useNavigate();
@@ -50,7 +49,7 @@ export const useLeafWriter = () => {
 
     if (!resource.provider) return showErrorMessage(t('storage:provider_not_found'));
 
-    const providerAuth = getStorageProviderAuth(resource.provider as StorageProviderName);
+    const providerAuth = getStorageProviderAuth(resource.provider);
     if (!providerAuth) return showErrorMessage(t('storage:provider_not_found'));
 
     const document = await loadDocument(providerAuth, resource);

@@ -1,6 +1,6 @@
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { ProviderButton } from '@src/components';
-import { supportedAuthProviders } from '@src/services';
+import { useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 const MAX_WIDTH = 170;
 
 export const Sidebar: FC = () => {
+  const { authProviders } = useAppState().providers;
   const { t } = useTranslation('storage');
 
   return (
@@ -43,8 +44,8 @@ export const Sidebar: FC = () => {
         />
         {
           <Stack gap={2} pt={2} alignItems="center" pr={2}>
-            {supportedAuthProviders.map((provider) => (
-              <ProviderButton key={provider} provider={provider} />
+            {authProviders.map(({ providerId }) => (
+              <ProviderButton key={providerId} name={providerId} />
             ))}
           </Stack>
         }

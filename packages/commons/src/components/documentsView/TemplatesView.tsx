@@ -24,7 +24,8 @@ export const TemplatesView: FC<TemplatesView> = ({
   type = 'singleClick',
   width = 400,
 }) => {
-  const { getTemplates, loadSample, setResource } = useActions().storage;
+  const { setResource } = useActions().editor;
+  const { getTemplates, loadSample } = useActions().storage;
 
   const { t } = useTranslation('commons');
   const navigate = useNavigate();
@@ -71,7 +72,7 @@ export const TemplatesView: FC<TemplatesView> = ({
               columnsCount={columns}
               gutter={`${gap}px`}
               style={{
-                marginInline: spacing(.5),
+                marginInline: spacing(0.5),
                 paddingTop: spacing(1.5),
                 width: displayLayout === 'grid' ? widthMasonry : 'calc(100% - 24px)',
               }}
@@ -105,7 +106,7 @@ interface ICategory {
 
 export const Category: FC<ICategory> = ({ children, title }) => {
   return (
-    <Stack spacing={.5} px={1} py={.5}>
+    <Stack spacing={0.5} px={1} py={0.5}>
       <Typography
         fontWeight={700}
         letterSpacing=".15rem"

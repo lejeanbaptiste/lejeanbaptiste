@@ -8,22 +8,22 @@ import {
   ListItemText,
   Stack,
 } from '@mui/material';
+import { getIcon } from '@src/assets/icons';
 import { StyledToolTip } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
-import { supportedIdentityProviders, type IdentityProviderName } from '@src/services';
-import { getIcon } from '@src/assets/icons';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const Identity: FC = () => {
   const { user } = useAppState().auth;
-  const { changePreferredID, getLinkedAccounts, linkAccount } = useActions().auth;
+  const { setPreferredId: changePreferredID, getLinkedAccounts, linkAccount } = useActions().auth;
+  const { supportedProviders } = useAppState().providers;
   const { notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation('profile');
 
-  const handleIdClick = async (provider: IdentityProviderName) => {
-    if (supportedIdentityProviders.length === 1) return;
+  const handleIdClick = async (provider: string) => {
+    if (supportedProviders.length === 1) return;
 
     if (!user || user?.preferredID === provider) return;
     user.identities.get(provider) ? changePreferredID(provider) : await connectAccount(provider);
@@ -61,40 +61,36 @@ export const Identity: FC = () => {
       />
       <ListItemSecondaryAction>
         <Stack direction="row" gap={1.5} mr={1}>
-          {supportedIdentityProviders.map((provider) => (
+          {supportedProviders.map(({ providerId }) => (
             <StyledToolTip
-              key={provider}
+              key={providerId}
               title={
-                !user?.identities.get(provider)
-                  ? t('commons:link_your_account', { provider })
-                  : provider === user?.preferredID
-                  ? provider
-                  : t('commons:switch_accounts', { provider })
+                !user?.identities.get(providerId)
+                  ? t('commons:link_your_account', { provider: providerId })
+                  : providerId === user?.preferredID
+                  ? providerId
+                  : t('commons:switch_accounts', { provider: providerId })
               }
             >
               <span>
                 <IconButton
-                  onClick={() => handleIdClick(provider)}
+                  onClick={() => handleIdClick(providerId)}
                   size="small"
                   sx={{
                     height: 22,
                     width: 22,
                     color: ({ palette }) =>
-                      user?.preferredID === provider
-                        ? palette.mode === 'dark'
-                          ? palette.common.white
-                          : palette.common.black
-                        : 'inherit',
+                      user?.preferredID === providerId ? palette.primary.main : 'inherit',
                     border: ({ palette }) =>
-                      user?.preferredID === provider ? `2px solid ${palette.primary.light}` : 0,
+                      user?.preferredID === providerId ? `2px solid ${palette.primary.light}` : 0,
                   }}
                 >
                   <Icon
-                    component={getIcon(provider)}
+                    component={getIcon(providerId)}
                     sx={{
                       width: 16,
                       height: 16,
-                      opacity: user?.identities.get(provider) ? 1 : 0.3,
+                      opacity: user?.identities.has(providerId) ? 1 : 0.7,
                     }}
                   />
                 </IconButton>

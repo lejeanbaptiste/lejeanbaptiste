@@ -7,7 +7,7 @@ import { Cloud } from './Cloud';
 import { FullPath } from './FullPath';
 
 export const Meta: FC = () => {
-  const { resource } = useAppState().storage;
+  const { resource } = useAppState().editor;
 
   const { leafWriter } = useLeafWriter();
 
