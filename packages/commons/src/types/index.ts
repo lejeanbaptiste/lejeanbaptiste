@@ -25,11 +25,12 @@ export interface User {
   username: string;
   identities: Map<string, IdentityProps>;
   preferredID: string;
-  prefStorageProvider: string;
+  prefStorageProvider?: string;
   url: string;
 }
 
 export interface IdentityProps {
+  id: string;
   name: string;
   uri: string;
   username: string;

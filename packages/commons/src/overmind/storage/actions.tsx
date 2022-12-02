@@ -6,22 +6,20 @@ import { Context } from '../index';
 export const changePrefStorageProvider = ({ state, effects }: Context, providerId: string) => {
   if (!state.auth.user) return;
 
-  const providerHasStorage = !!state.providers.supportedProviders.find(
-    (provider) => provider.providerId === providerId && provider.storeToken === true
+  const prefIsStorageProvider = state.providers.storageProviders.some(
+    (provider) => provider.providerId === providerId
   );
 
-  if (!providerHasStorage) {
-    const provider = state.providers.supportedProviders.find((provider) => provider.storeToken);
-    if (!provider) {
-      effects.storage.api.removeFromLocalStorage('prefStorageProvider');
-      return;
-    }
-    providerId = provider.providerId;
-  }
+  const prefStorageProvider = prefIsStorageProvider
+    ? providerId
+    : state.providers.storageProviders[0]?.providerId;
 
-  state.auth.user.prefStorageProvider = providerId;
-  effects.storage.api.saveToLocalStorage('prefStorageProvider', providerId);
-  return providerId;
+  if (!prefStorageProvider) return;
+
+  state.auth.user.prefStorageProvider = prefStorageProvider;
+
+  effects.storage.api.saveToLocalStorage('prefStorageProvider', prefStorageProvider);
+  return prefStorageProvider;
 };
 
 export const openStorageDialog = async (

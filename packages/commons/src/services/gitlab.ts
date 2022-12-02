@@ -9,6 +9,9 @@ const BASE_URL = 'https://gitlab.com/api/v4';
 
 const name = 'gitlab';
 
+const isIdentityProvider = true;
+const isStorageProvider = true;
+
 let _access_token: string;
 const getAccessToken = () => _access_token;
 
@@ -34,7 +37,7 @@ const authenticate = ({ access_token, IDPTokens, userId, userName }: Authenticat
   });
 };
 
-const getAuthenticatedUser = async (userId: string) => {
+const getAuthenticatedUser = async () => {
   const response = await axiosApi.get('/user').catch((error) => {
     log.error(error);
     return null;
@@ -50,6 +53,8 @@ const getAuthenticatedUser = async (userId: string) => {
 
 export const provider: ProviderService = {
   name,
+  isIdentityProvider,
+  isStorageProvider,
   getAccessToken,
   getUserId,
   getUserName,
