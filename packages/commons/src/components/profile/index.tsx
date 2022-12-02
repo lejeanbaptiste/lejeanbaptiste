@@ -8,7 +8,6 @@ import { Footer } from './Footer';
 import { Identity } from './Identity';
 import { Language } from './Language';
 import { PrivacySettings } from './PrivacySettings';
-// import { Storage } from './Storage';
 import { ThemeAppearance } from './ThemeAppearance';
 import { UserCard } from './UserCard';
 
@@ -18,8 +17,9 @@ interface ProfileProps {
 }
 
 export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
-  const { isDirty, libLoaded } = useAppState().editor;
+  const { isDirty } = useAppState().editor;
   const { supportedProviders } = useAppState().providers;
+  const { page } = useAppState().ui;
 
   const { signOut } = useActions().auth;
   const { openDialog } = useActions().ui;
@@ -75,8 +75,7 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
       <Divider />
 
       <List sx={{ width: 280 }}>
-        {supportedProviders.length > 1 && <Identity />}
-        {/* {supportedProviders.length > 1 && <Storage />} */}
+        {supportedProviders.length > 1 && page !== 'edit' && <Identity />}
         <ThemeAppearance />
         <Language />
       </List>
@@ -85,7 +84,7 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
 
       <List dense>
         <PrivacySettings onClick={onClose} />
-        {libLoaded && <EditorSettings onClick={onClose} />}
+        {page === 'edit' && <EditorSettings onClick={onClose} />}
       </List>
 
       <Divider />
