@@ -239,9 +239,9 @@ export class Api {
   async getLinkedAccounts(
     keycloakAccessCode: string,
     username: string
-    if (!this.NSSI_BASE_URL) {
-      return { error: { message: 'NSSI BASE URL is unedefined' } };
   ): Promise<LinkedAccountProps[] | HTTPRequestError> {
+    if (!this.AUTH_API_URL) {
+      return { error: { message: 'AUTH API BASE URL is unedefined' } };
     }
 
     const url = queryString.stringifyUrl({
