@@ -1,23 +1,23 @@
-export type IAnnotationFormat = 'xml' | 'json';
+export type AnnotationFormat = 'xml' | 'json';
 
-interface IAnnotationContextCreated {
+interface AnnotationContextCreated {
   '@type': 'xsd:dateTime'; // string?
   '@id': 'dcterms:created'; // string?
 }
 
-interface IAnnotationContextIssued {
+interface AnnotationContextIssued {
   '@type': 'xsd:dateTime'; // string?
   '@id': 'dcterms:issued'; // string?
 }
 
-interface IAnnotationContextMotivatedBy {
+interface AnnotationContextMotivatedBy {
   '@type': 'oa:Motivation'; // string?
 }
 
-interface IAnnotationContext {
-  'dcterms:created': IAnnotationContextCreated;
-  'dcterms:issued': IAnnotationContextIssued;
-  'oa:motivatedBy': IAnnotationContextMotivatedBy;
+interface AnnotationContext {
+  'dcterms:created': AnnotationContextCreated;
+  'dcterms:issued': AnnotationContextIssued;
+  'oa:motivatedBy': AnnotationContextMotivatedBy;
   '@language': string;
   rdf?: string;
   rdfs?: string;
@@ -39,59 +39,59 @@ interface IAnnotationContext {
 
 type CreatorType = 'cwrc:NaturalPerson' | 'schema:Person';
 
-export interface IAnnotationCreator {
+export interface AnnotationCreator {
   '@id': string;
   '@type'?: CreatorType[];
   'cwrc:hasName': string;
   'foaf:nick'?: string;
 }
 
-export interface IAnnotationContributor {
-  'dcterms:contributor': IAnnotationCreator;
+export interface AnnotationContributor {
+  'dcterms:contributor': AnnotationCreator;
 }
 
-interface IAnnotationTargetHasSource {
+interface AnnotationTargetHasSource {
   '@id': string;
   '@type': 'dctypes:Text'; //string?;
   'dc:format': 'text/xml'; //string?;
 }
 
-interface IAnnotationTargetRenderVia {
+interface AnnotationTargetRenderVia {
   '@id': string;
   '@type': 'as:Application'; //string?;
   'rdfs:label': 'LEAF-Writer';
   'schema:softwareVersion': string;
 }
 
-interface IAnnotationTargetHasSelectorXpathSelector {
+interface AnnotationTargetHasSelectorXpathSelector {
   '@type': 'oa:XPathSelector'; // string?;
   'rdf:value'?: string;
 }
 
-interface IAnnotationTargetHasSelectorRefiinedBy {
+interface AnnotationTargetHasSelectorRefiinedBy {
   '@type': 'oa:TextPositionSelector';
   'oa:start'?: number;
   'oa:end'?: number;
 }
 
-interface IAnnotationTargetHasSelector {
+interface AnnotationTargetHasSelector {
   '@id': string;
   '@type': 'oa:XPathSelector' | 'oa:RangeSelector'; //string
   'rdf:value'?: string;
-  'oa:hasStartSelector'?: IAnnotationTargetHasSelectorXpathSelector;
-  'oa:hasEndSelector'?: IAnnotationTargetHasSelectorXpathSelector;
-  'oa:refinedBy'?: IAnnotationTargetHasSelectorRefiinedBy;
+  'oa:hasStartSelector'?: AnnotationTargetHasSelectorXpathSelector;
+  'oa:hasEndSelector'?: AnnotationTargetHasSelectorXpathSelector;
+  'oa:refinedBy'?: AnnotationTargetHasSelectorRefiinedBy;
 }
 
-interface IAnnotationHasTarget {
+interface AnnotationHasTarget {
   '@id': string;
   '@type': 'oa:SpecificResource'; //string?;
-  'oa:hasSource': IAnnotationTargetHasSource;
-  'oa:renderedVia': IAnnotationTargetRenderVia;
-  'oa:hasSelector'?: IAnnotationTargetHasSelector;
+  'oa:hasSource': AnnotationTargetHasSource;
+  'oa:renderedVia': AnnotationTargetRenderVia;
+  'oa:hasSelector'?: AnnotationTargetHasSelector;
 }
 
-export interface IAnnotationHasBody {
+export interface AnnotationHasBody {
   '@type'?: string | string[];
   '@id'?: string;
   'dc:format'?: string;
@@ -105,7 +105,7 @@ export interface IAnnotationHasBody {
   'cnt:chars'?: string;
 }
 
-interface IAnnotationGenerator {
+interface AnnotationGenerator {
   '@id': string;
   '@type': 'as:Application'; //string?
   'rdfs:label': 'LEAF-Writer'; //string?
@@ -113,18 +113,18 @@ interface IAnnotationGenerator {
   'schema:softwareVersion': string;
 }
 
-export interface IAnnotation {
-  '@context': IAnnotationContext;
+export interface AnnotationProps {
+  '@context': AnnotationContext;
   id: string;
   type: 'oa:Annotation'; //string?
   'dcterms:created'?: string;
   'dcterms:modified'?: string;
-  'dcterms:creator': IAnnotationCreator;
+  'dcterms:creator': AnnotationCreator;
   'oa:motivatedBy': string | string[];
-  'oa:hasTarget': IAnnotationHasTarget;
-  'oa:hasBody': IAnnotationHasBody | IAnnotationHasBody[];
-  'as:generator': IAnnotationGenerator;
-  'dcterms:contributor'?: IAnnotationContributor[];
+  'oa:hasTarget': AnnotationHasTarget;
+  'oa:hasBody': AnnotationHasBody | AnnotationHasBody[];
+  'as:generator': AnnotationGenerator;
+  'dcterms:contributor'?: AnnotationContributor[];
   'cwrc:hasCertainty'?: string;
   'cwrc:hasPrecision'?: string;
 }

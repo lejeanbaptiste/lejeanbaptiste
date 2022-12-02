@@ -6,12 +6,12 @@ import { SeverityType } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';
 import useEditorReaction from '../hooks/useEditorReaction';
 
-interface IMenu {
+interface MenuProps {
   anchorEl?: HTMLElement;
   handleClose: () => void;
 }
 
-export const Menu: FC<IMenu> = ({ anchorEl, handleClose }) => {
+export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
   const { editorMode, editorModes } = useAppState().editor;
   const { closeNotificationSnackbar, openDialog, notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation(['leafwriter']);

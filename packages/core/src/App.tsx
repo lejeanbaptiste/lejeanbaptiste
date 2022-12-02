@@ -6,7 +6,7 @@ import { EntityLookupDialog } from './dialogs';
 import { useDialog, useNotifier } from './hooks';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
-import type { ILeafWriterOptions } from './types';
+import type { LeafWriterOptions } from './types';
 
 declare global {
   interface Window {
@@ -16,7 +16,7 @@ declare global {
 
 const CONTAINER = 'lw-layout-container';
 
-const App: FC<ILeafWriterOptions> = ({ document, settings, user }) => {
+const App: FC<LeafWriterOptions> = ({ document, settings, user }) => {
   const actions = useActions();
   const state = useAppState();
   const [writer, setWriter] = useState<Writer | null>(null);

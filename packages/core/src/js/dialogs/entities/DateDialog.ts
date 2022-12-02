@@ -7,7 +7,7 @@ import type { EntityTypes } from '../../../js/schema/types';
 import type { SchemaMappingType } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
-import type { ILWDialogConfigParams } from '../types';
+import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 
 type DateTypes = 'date' | 'range' | 'DATE' | 'DATERANGE' | 'DATESTRUCT';
@@ -60,7 +60,7 @@ class DateDialog implements SchemaDialog {
 
   dateRange: any;
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     const mappingID = writer.schemaManager.mapper.currentMappingsId;
     if (!mappingID) throw Error('Schema Mappings not found');
 

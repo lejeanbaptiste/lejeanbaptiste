@@ -1,12 +1,12 @@
 import axios, { type AxiosInstance } from 'axios';
 import wdk from 'wikidata-sdk';
-import type { IResult } from '../../../dialogs/entityLookups/types';
+import type { LookUpResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
-import ILookupServiceApi, { type IFindParams } from './type';
+import LookupServiceApi, { type LookUpFindProps } from './type';
 
 type NamedEntityType = 'person' | 'place' | 'org' | 'title' | 'rs';
 
-interface IRecord {
+interface Record {
   id: string;
   title: string;
   pageid: number;
@@ -22,16 +22,16 @@ interface IRecord {
   };
 }
 
-interface IWikidataResults {
+interface WikidataResults {
   searchinfo: {
     search: string;
   };
-  search: IRecord[];
+  search: Record[];
   'search-continue': string;
   success: string;
 }
 
-export default class Wikidata implements ILookupServiceApi {
+export default class Wikidata implements LookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
   private readonly baseURL = '';
   private readonly FORMAT = 'json';
@@ -43,7 +43,7 @@ export default class Wikidata implements ILookupServiceApi {
     this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
   }
 
-  async find({ query, type }: IFindParams) {
+  async find({ query, type }: LookUpFindProps) {
     if (type === 'person') return await this.callWikidata(query, 'person');
     if (type === 'place') return await this.callWikidata(query, 'place');
     if (type === 'organization') return await this.callWikidata(query, 'org');
@@ -78,10 +78,10 @@ export default class Wikidata implements ILookupServiceApi {
       return [];
     }
 
-    const data: IWikidataResults = response.data;
+    const data: WikidataResults = response.data;
     if (!data) return [];
 
-    const results: IResult[] = data.search.map(({ concepturi, label, description }) => {
+    const results: LookUpResult[] = data.search.map(({ concepturi, label, description }) => {
       return {
         description,
         id: concepturi,

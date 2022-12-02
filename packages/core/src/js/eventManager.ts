@@ -2,11 +2,11 @@
 import $ from 'jquery';
 import { log } from './../utilities';
 
-interface IEvents {
-  [x: string]: IEvent;
+interface Events {
+  [x: string]: EventProps;
 }
 
-interface IEvent {
+interface EventProps {
   event: string;
   publish: (...args: any) => any;
   subscribe: (
@@ -22,7 +22,7 @@ interface IEvent {
  */
 class EventManager {
   doDebug = false;
-  events: IEvents = {};
+  events: Events = {};
 
   constructor() {
     this.events = {};
@@ -283,7 +283,7 @@ class EventManager {
 
   event(id: string) {
     const _this = this;
-    let event: IEvent = this.events[id];
+    let event: EventProps = this.events[id];
 
     if (!event) {
       const callbacks = $.Callbacks();

@@ -3,11 +3,11 @@ import { Box, IconButton, Typography } from '@mui/material';
 import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface IHeader {
+interface HeaderProps {
   onClickAdd: (action: 'add') => void;
 }
 
-export const Header: FC<IHeader> = ({ onClickAdd }) => {
+export const Header: FC<HeaderProps> = ({ onClickAdd }) => {
   const { t } = useTranslation(['leafwriter']);
 
   return (

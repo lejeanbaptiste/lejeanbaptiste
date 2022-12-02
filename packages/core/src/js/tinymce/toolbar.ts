@@ -34,7 +34,7 @@ const toolbarOptions = [
   'documentation',
 ];
 
-interface IButton {
+interface ButtonProps {
   text?: string;
   slug: string;
   icon: string;
@@ -42,11 +42,11 @@ interface IButton {
   disabled: boolean;
   entityType?: EntityTypes;
   entityButton?: boolean;
-  onSetup?: (api: IAPI) => (api: IAPI) => void;
-  onAction: (api: IAPI) => void;
+  onSetup?: (api: APIProps) => (api: APIProps) => void;
+  onAction: (api: APIProps) => void;
 }
 
-interface IAPI {
+interface APIProps {
   isDisabled: () => boolean;
   setDisabled: (state: boolean) => void;
   isActive?: () => boolean;
@@ -54,7 +54,7 @@ interface IAPI {
 }
 
 const configureToolbar = (writer: Writer, editor: Editor) => {
-  const toogleButtons: IButton[] = [
+  const toogleButtons: ButtonProps[] = [
     {
       slug: 'toggle-tags',
       icon: 'code',
@@ -77,7 +77,7 @@ const configureToolbar = (writer: Writer, editor: Editor) => {
     },
   ];
 
-  const buttons: IButton[] = [
+  const buttons: ButtonProps[] = [
     {
       text: 'Tags',
       slug: 'tags',

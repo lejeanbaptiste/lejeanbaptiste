@@ -1,5 +1,5 @@
 import { derived } from 'overmind';
-import type { ILookups } from '../../dialogs/entityLookups';
+import type { LookupsProps } from '../../dialogs/entityLookups';
 import type { Schema, SchemaMappingType } from '../../types';
 
 export type EditorStateType = {
@@ -40,7 +40,7 @@ export type EditorStateType = {
 
   latestEvent?: string;
 
-  lookups: ILookups;
+  lookups: LookupsProps;
 };
 
 export const state: EditorStateType = {

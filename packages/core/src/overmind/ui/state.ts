@@ -1,15 +1,15 @@
 import type { PopupProps } from '../../dialogs';
-import type { IDialogBar } from '../../dialogs';
-import type { IEditSourceDialogProps, EntityLookupDialogProps } from '../../dialogs';
-import type { ContextMenuState, Language, INotification } from '../../types';
+import type { DialogBarProps } from '../../dialogs';
+import type { EditSourceDialogProps, EntityLookupDialogProps } from '../../dialogs';
+import type { ContextMenuState, Language, NotificationProps } from '../../types';
 
 type State = {
   contextMenu: ContextMenuState;
   darkMode: boolean;
-  dialogBar: IDialogBar[];
-  editSourceProps: IEditSourceDialogProps;
+  dialogBar: DialogBarProps[];
+  editSourceProps: EditSourceDialogProps;
   entityLookupDialogProps: EntityLookupDialogProps;
-  notifications: INotification[];
+  notifications: NotificationProps[];
   language: Language;
   popupProps: PopupProps;
   settingsDialogOpen: boolean;

@@ -4,10 +4,10 @@ import type { EntityTypes } from '../../../js/schema/types';
 import type { SchemaMappingType } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
-import type { ILWDialogConfigParams } from '../types';
+import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 
-interface IOption {
+interface Option {
   label: string;
   title: string;
   value: string;
@@ -25,7 +25,7 @@ class NoteDialog implements SchemaDialog {
   selectedText?: string;
   type: EntityTypes = 'note';
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     const mappingID = writer.schemaManager.mapper.currentMappingsId;
     if (!mappingID) throw Error('Schema Mappings not found');
 
@@ -173,7 +173,7 @@ class NoteDialog implements SchemaDialog {
     $('.selectedText').text(value);
   }
 
-  private generateTypeOptions(choices: IOption[]) {
+  private generateTypeOptions(choices: Option[]) {
     let html = '<option value="" disabled selected hidden>Please Choose...</option>';
 
     //empty choice
@@ -204,7 +204,7 @@ class NoteDialog implements SchemaDialog {
 
   private setTypeOptions = () => {
     const mappingID = this.writer.schemaManager.mapper.currentMappingsId;
-    let options: IOption[];
+    let options: Option[];
 
     if (mappingID === 'orlando' || mappingID === 'cwrcEntry') {
       options = [

@@ -4,7 +4,7 @@ import { log } from '../../utilities';
 import Entity from '../entities/Entity';
 import Writer from '../Writer';
 import { cwrcEntry, empty, orlando, tei, teiLite } from './mappings';
-import type { EntityTypes, IEntityMapping } from './types';
+import type { EntityTypes, EntityMappingProps } from './types';
 
 // a list of reserved attribute names that are used by the editor
 export const RESERVED_ATTRIBUTES = new Set([
@@ -354,7 +354,7 @@ class Mapper {
 
     // put xpath mappings at beginning
     const mappings = this.getMappings();
-    let sortedMappings: Map<EntityTypes, IEntityMapping> = new Map();
+    let sortedMappings: Map<EntityTypes, EntityMappingProps> = new Map();
 
     mappings.entities.forEach((mapping, type) => {
       if (mapping.xpathSelector) {

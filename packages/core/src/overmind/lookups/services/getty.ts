@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
-import { type IResult } from '../../../dialogs/entityLookups/types';
+import { type LookUpResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
-import ILookupServiceApi, { type IFindParams } from './type';
+import LookupServiceApi, { type LookUpFindProps } from './type';
 
 type NamedEntityType = 'ulan' | 'tgn';
 
@@ -10,7 +10,7 @@ interface GettyAttr {
   value: string;
 }
 
-interface IBinding {
+interface Binding {
   [x: string]: any;
   Descr?: GettyAttr;
   ExtraType: GettyAttr;
@@ -20,16 +20,16 @@ interface IBinding {
   Type: GettyAttr;
 }
 
-interface IGettyResults {
+interface GettyResults {
   header: {
     vars: string[];
   };
   results: {
-    bindings: IBinding[];
+    bindings: Binding[];
   };
 }
 
-export default class Getty implements ILookupServiceApi {
+export default class Getty implements LookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
 
   // * Apparently, we don't need the proxy anymore
@@ -45,7 +45,7 @@ export default class Getty implements ILookupServiceApi {
     this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
   }
 
-  async find({ query, type }: IFindParams) {
+  async find({ query, type }: LookUpFindProps) {
     if (type === 'person') return await this.callGetty(query, 'ulan');
     if (type === 'place') return await this.callGetty(query, 'tgn');
 
@@ -89,10 +89,10 @@ export default class Getty implements ILookupServiceApi {
       return [];
     }
 
-    const data: IGettyResults = response.data;
+    const data: GettyResults = response.data;
     if (!data) return [];
 
-    const results: IResult[] = data.results.bindings.map(({ Subject, Term, ExtraType }) => {
+    const results: LookUpResult[] = data.results.bindings.map(({ Subject, Term, ExtraType }) => {
       return {
         description: ExtraType?.value,
         id: Subject.value,

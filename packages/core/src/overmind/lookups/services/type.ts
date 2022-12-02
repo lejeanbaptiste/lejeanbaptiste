@@ -1,10 +1,10 @@
-import type { IResult, NamedEntityType } from '../../../dialogs/entityLookups/types';
+import type { LookUpResult, NamedEntityType } from '../../../dialogs/entityLookups/types';
 
-export interface IFindParams {
+export interface LookUpFindProps {
   query: string;
   type: NamedEntityType;
 }
 
-export default interface ILookupServiceApi {
-  find: (params: IFindParams) => Promise<IResult[]>;
+export default interface LookupServiceApi {
+  find: (params: LookUpFindProps) => Promise<LookUpResult[]>;
 }

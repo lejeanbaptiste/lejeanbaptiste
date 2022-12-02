@@ -15,12 +15,12 @@ import { useActions, useAppState } from '../../../overmind';
 import useEditorReaction from '../hooks/useEditorReaction';
 import { Header } from './Header';
 
-interface IMenu {
+interface MenuProps {
   anchorEl?: HTMLElement;
   handleClose: () => void;
 }
 
-export const Menu: FC<IMenu> = ({ anchorEl, handleClose }) => {
+export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
   const { document, editor } = useAppState();
   const { closeNotificationSnackbar, openDialog, notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation(['leafwriter']);

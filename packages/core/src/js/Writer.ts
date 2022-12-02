@@ -3,11 +3,11 @@ import $ from 'jquery';
 import tinymce from 'tinymce';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
-import type { ILeafWriterOptionsSettings, LeafWriterEditor } from '../types';
+import type { LeafWriterOptionsSettings, LeafWriterEditor } from '../types';
 import { log } from './../utilities';
 import Converter from './conversion/converter';
 import DialogManager from './dialogs/dialogManager';
-import { ITriple } from './dialogs/triple';
+import { TripleProps } from './dialogs/triple';
 import AnnotationsManager from './entities/annotationsManager';
 import EntitiesManager from './entities/entitiesManager';
 import EventManager from './eventManager';
@@ -43,7 +43,7 @@ class Writer extends EventManager {
   overmindState?: any;
   overmindActions?: any;
 
-  readonly initialConfig: ILeafWriterOptionsSettings;
+  readonly initialConfig: LeafWriterOptionsSettings;
   readonly containerId: string;
   readonly baseUrl: string; // the url which points to the root of the leafwriter location
 
@@ -54,7 +54,7 @@ class Writer extends EventManager {
   readonly JSON = 3; // annotation type
 
   editor?: LeafWriterEditor; // reference to the tinyMCE instance we're creating, set in setup
-  triples: ITriple[] = []; // triples store
+  triples: TripleProps[] = []; // triples store
 
   currentDocId: string | null = null;
   isInitialized: boolean = false; // is the editor initialized
@@ -92,7 +92,7 @@ class Writer extends EventManager {
   validation?: Validation;
   tree?: StructureTree;
 
-  constructor(config: ILeafWriterOptionsSettings) {
+  constructor(config: LeafWriterOptionsSettings) {
     super();
 
     this.initialConfig = config;

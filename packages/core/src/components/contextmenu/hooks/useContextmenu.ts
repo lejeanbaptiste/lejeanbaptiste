@@ -11,7 +11,7 @@ import Writer from '../../../js/Writer';
 import { useActions, useAppState } from '../../../overmind';
 import type { ContextMenuState } from '../../../types';
 import { log } from '../../../utilities';
-import type { IItem } from '../collection/Item';
+import type { ItemProps } from '../collection/Item';
 
 export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuState) => {
   const actions = useActions();
@@ -75,7 +75,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
       ([key, { label }]: [EntityTypes, { label?: string }]) => {
         const displayName = label ? label : `${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 
-        const item: IItem = {
+        const item: ItemProps = {
           id: uuidv4(),
           type,
           name: key,
@@ -229,7 +229,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
   const getTagItems = (tags: ElementDetail[], action: Action) => {
     if (!writer) return;
 
-    const menu: IItem[] = tags.map(({ name, fullName }) => {
+    const menu: ItemProps[] = tags.map(({ name, fullName }) => {
       return {
         id: uuidv4(),
         type: 'tag',
@@ -267,7 +267,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
     tagName,
     tagMeta,
 
-    query: (list: IItem[], searchQuery: string) => {
+    query: (list: ItemProps[], searchQuery: string) => {
       if (searchQuery === '') return;
       const _visible = list.filter((item) => {
         if (!item.displayName) return;
@@ -377,7 +377,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
       if (context.eventSource === 'ribbon') {
         setCollectionType('tags');
         const params = paramsForAddTag();
-        if (!params) return [] as IItem[];
+        if (!params) return [] as ItemProps[];
         const tags = await getTagsFor(params);
         const items = getTagItems(tags, 'add');
         return items;
@@ -390,7 +390,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
 
       if (!context.tagId) return [];
 
-      const items: IItem[] = [];
+      const items: ItemProps[] = [];
 
       // if (this.virtualEditorExists && this.isMultiple) {
       if (context.isMultiple) {
@@ -401,7 +401,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           icon: 'add',
           childrenItems: async () => {
             const params = paramsForAddTagAround();
-            if (!params) return [] as IItem[];
+            if (!params) return [] as ItemProps[];
             const tags = await getTagsFor(params);
             const items = getTagItems(tags, 'around');
             return items ? items : [];
@@ -433,7 +433,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           icon: 'add',
           childrenItems: async () => {
             const params = paramsForAddTag();
-            if (!params) return [] as IItem[];
+            if (!params) return [] as ItemProps[];
             const tags = await getTagsFor(params);
             const items = getTagItems(tags, 'add');
             return items ? items : [];
@@ -461,7 +461,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           icon: 'add',
           childrenItems: async () => {
             const params = paramsForAddTagBefore();
-            if (!params) return [] as IItem[];
+            if (!params) return [] as ItemProps[];
             const tags = await getTagsFor(params);
             const items = getTagItems(tags, 'before');
             return items ? items : [];
@@ -475,7 +475,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           icon: 'add',
           childrenItems: async () => {
             const params = paramsForAddTagAfter();
-            if (!params) return [] as IItem[];
+            if (!params) return [] as ItemProps[];
             const tags = await getTagsFor(params);
             const items = getTagItems(tags, 'after');
             return items ? items : [];
@@ -489,7 +489,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           icon: 'add',
           childrenItems: async () => {
             const params = paramsForAddTagAround();
-            if (!params) return [] as IItem[];
+            if (!params) return [] as ItemProps[];
             const tags = await getTagsFor(params);
             const items = getTagItems(tags, 'around');
             return items ? items : [];
@@ -503,7 +503,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           icon: 'add',
           childrenItems: async () => {
             const params = paramsForAddTagInside();
-            if (!params) return [] as IItem[];
+            if (!params) return [] as ItemProps[];
             const tags = await getTagsFor(params);
             const items = getTagItems(tags, 'inside');
             return items ? items : [];
@@ -549,7 +549,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           icon: 'edit',
           childrenItems: async () => {
             const params = paramsForChangeTag();
-            if (!params) return [] as IItem[];
+            if (!params) return [] as ItemProps[];
             const tags = await getTagsFor(params);
             const items = getTagItems(tags, 'change');
             return items ? items : [];

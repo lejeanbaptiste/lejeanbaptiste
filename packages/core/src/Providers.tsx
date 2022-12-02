@@ -5,9 +5,9 @@ import React, { useEffect, type FC } from 'react';
 import App from './App';
 import { useActions, useAppState } from './overmind';
 import theme from './theme';
-import type { ILeafWriterOptions } from './types';
+import type { LeafWriterOptions } from './types';
 
-const Providers: FC<ILeafWriterOptions> = (props) => {
+const Providers: FC<LeafWriterOptions> = (props) => {
   const { setDarkMode } = useActions().ui;
   const { darkMode, themeAppearance } = useAppState().ui;
 
