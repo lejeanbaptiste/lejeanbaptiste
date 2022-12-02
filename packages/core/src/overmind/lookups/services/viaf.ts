@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
-import type { IResult } from '../../../dialogs/entityLookups/types';
+import type { LookUpResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
-import ILookupServiceApi, { type IFindParams } from './type';
+import LookupServiceApi, { type LookUpFindProps } from './type';
 
 type NamedEntityType =
   | 'personalNames'
@@ -10,12 +10,12 @@ type NamedEntityType =
   | 'uniformTitleWorks'
   | 'names';
 
-interface IRecordDataMainHeadingsData {
+interface RecordDataMainHeadingsData {
   [x: string]: any;
   text: string;
 }
 
-interface IRecordData {
+interface RecordData {
   [x: string]: any;
   nameType: string;
   Document: {
@@ -24,28 +24,28 @@ interface IRecordData {
   };
   mainHeadings: {
     [x: string]: any;
-    data: IRecordDataMainHeadingsData | IRecordDataMainHeadingsData[];
+    data: RecordDataMainHeadingsData | RecordDataMainHeadingsData[];
   };
 }
 
-interface IRecord {
+interface Record {
   record: {
-    recordData: IRecordData;
+    recordData: RecordData;
     recordPacking: string;
     recordSchema: string;
   };
 }
 
-interface IVIAFResults {
+interface VIAFResults {
   searchRetrieveResponse: {
     numberOfRecords: string;
-    records: IRecord[];
+    records: Record[];
     resultSetIdleTime: string;
     version: string;
   };
 }
 
-export default class Viaf implements ILookupServiceApi {
+export default class Viaf implements LookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
   private readonly baseURL = 'https://viaf.org/viaf';
   private readonly FORMAT = 'application/json';
@@ -56,7 +56,7 @@ export default class Viaf implements ILookupServiceApi {
     this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
   }
 
-  async find({ query, type }: IFindParams) {
+  async find({ query, type }: LookUpFindProps) {
     if (type === 'person') return await this.callVIAF(query, 'personalNames');
     if (type === 'place') return await this.callVIAF(query, 'geographicNames');
     if (type === 'organization') return await this.callVIAF(query, 'corporateNames');
@@ -90,10 +90,10 @@ export default class Viaf implements ILookupServiceApi {
       log.warn(errorMsg);
       return [];
     }
-    const data: IVIAFResults = response.data;
+    const data: VIAFResults = response.data;
     if (!data.searchRetrieveResponse.records) return [];
 
-    const results: IResult[] = data.searchRetrieveResponse.records.map((entry) => {
+    const results: LookUpResult[] = data.searchRetrieveResponse.records.map((entry) => {
       const { nameType, Document, mainHeadings } = entry.record.recordData;
       const uri = Document['@about'];
 

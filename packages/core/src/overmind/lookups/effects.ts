@@ -1,17 +1,17 @@
-import type { Authority, IAuthorityService, IResult } from '../../dialogs/entityLookups/types';
+import type { Authority, AuthorityService, LookUpResult } from '../../dialogs/entityLookups/types';
 import { log } from './../../utilities';
-import ILookupServiceApi, { type IFindParams } from './services/type';
+import LookupServiceApi, { type LookUpFindProps } from './services/type';
 
-type Sources = { [key: string]: ILookupServiceApi };
+type Sources = { [key: string]: LookupServiceApi };
 
 class Api {
   private readonly services: Sources = {};
-  private currentState: { [key: string]: IAuthorityService };
+  private currentState: { [key: string]: AuthorityService };
 
-  private nssi: ILookupServiceApi | undefined;
+  private nssi: LookupServiceApi | undefined;
 
   async initialize(
-    authorities: { [key: string]: IAuthorityService },
+    authorities: { [key: string]: AuthorityService },
     { token }: { token?: string }
   ) {
     this.currentState = authorities;
@@ -29,8 +29,8 @@ class Api {
     }
   }
 
-  async find({ query, type }: IFindParams) {
-    const results: Map<Authority, IResult[]> = new Map();
+  async find({ query, type }: LookUpFindProps) {
+    const results: Map<Authority, LookUpResult[]> = new Map();
 
     const listPriority = new Map(
       [...Object.entries(this.currentState)].sort(
@@ -53,7 +53,7 @@ class Api {
     return results;
   }
 
-  async useNssi({ query, type }: IFindParams) {
+  async useNssi({ query, type }: LookUpFindProps) {
     if (this.nssi) {
       const response = await this.nssi.find({ query, type });
       // log.info(response)

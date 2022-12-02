@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
 import type { PopupProps } from '../../dialogs';
-import type { IDialogBar } from '../../dialogs';
+import type { DialogBarProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
-import { ContextMenuState, INotification, PaletteMode } from '../../types';
+import { ContextMenuState, NotificationProps, PaletteMode } from '../../types';
 import { supportedLanguages } from '../../utilities';
 
 export const onInitializeOvermind = ({ actions }: Context, overmind: any) => {
@@ -79,7 +79,7 @@ export const switchLanguage = ({ state }: Context, value: string) => {
   return value;
 };
 
-export const openDialog = ({ state }: Context, dialogBar: IDialogBar) => {
+export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
   if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
   if (!dialogBar.type) dialogBar.type = 'simple';
   state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
@@ -110,7 +110,7 @@ export const setDialogDisplayId = (
   ];
 };
 
-export const notifyViaSnackbar = ({ state }: Context, notification: INotification | string) => {
+export const notifyViaSnackbar = ({ state }: Context, notification: NotificationProps | string) => {
   if (typeof notification === 'string') notification = { message: notification };
 
   let key = notification.options && notification.options.key;

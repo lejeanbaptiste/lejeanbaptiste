@@ -1,9 +1,9 @@
 import { OptionsObject, SnackbarMessage } from 'notistack';
 import type { Bookmark, Editor } from 'tinymce/tinymce';
-import type { ILookupsConfig } from '../dialogs/entityLookups';
+import type { LookupsConfig } from '../dialogs/entityLookups';
 import Writer from '../js/Writer';
 
-export type { Authority, ILookups } from '../dialogs/entityLookups';
+export type { Authority, LookupsProps } from '../dialogs/entityLookups';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;
@@ -11,10 +11,10 @@ export declare var webpackEnv: {
   WORKER_ENV: string;
 };
 
-export interface ILeafWriterOptions {
+export interface LeafWriterOptions {
   document: LWDocument;
-  preferences?: ILeafWriterOptionsPreference;
-  settings?: ILeafWriterOptionsSettings;
+  preferences?: LeafWriterOptionsPreference;
+  settings?: LeafWriterOptionsSettings;
   user?: User;
 }
 
@@ -23,7 +23,7 @@ export interface LWDocument {
   xml: string;
 }
 
-export interface ILeafWriterOptionsPreference {
+export interface LeafWriterOptionsPreference {
   fontSize?: number; // [Optional] Changes the document's default font size. Default: 11. Options: 10-18
   themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
   workspace?: {
@@ -32,7 +32,7 @@ export interface ILeafWriterOptionsPreference {
   };
 }
 
-export interface ILeafWriterOptionsSettings {
+export interface LeafWriterOptionsSettings {
   container?: string;
 
   baseUrl?: string;
@@ -44,7 +44,7 @@ export interface ILeafWriterOptionsSettings {
   colorScheme?: string;
   language?: string;
 
-  lookups?: ILookupsConfig;
+  lookups?: LookupsConfig;
   schemas?: Schema[];
   schemasId?: SupportedSchemasId[];
 
@@ -113,7 +113,7 @@ export const Languages: Map<string, Language> = new Map();
 
 export type ErrorType = 'info' | 'warning' | 'error';
 
-export interface IError {
+export interface Error {
   type?: ErrorType;
   message: string;
 }
@@ -172,7 +172,7 @@ export interface LeafWriterEditor extends Editor {
   lastKeyPress?: string;
 }
 
-export interface INotification {
+export interface NotificationProps {
   dismissed?: boolean;
   key?: string | number;
   message: SnackbarMessage;

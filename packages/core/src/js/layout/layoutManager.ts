@@ -22,7 +22,7 @@ interface InitConfigProps {
 
 type LayoutLocation = 'east' | 'west' | 'north' | 'south';
 
-interface IModuleConfig {
+interface ModuleConfig {
   id: string;
   config?: any;
   title?: string;
@@ -47,7 +47,7 @@ class LayoutManager {
 
   readonly PANEL_MIN_WIDTH = 320;
 
-  modulesLayout = new Map<LayoutLocation, IModuleConfig | IModuleConfig[]>([
+  modulesLayout = new Map<LayoutLocation, ModuleConfig | ModuleConfig[]>([
     ['west', [{ id: 'structure' }, { id: 'entities' }]],
     ['east', [{ id: 'selection' }]],
   ]);
@@ -62,7 +62,7 @@ class LayoutManager {
     if (config.modules) {
       this.modulesLayout.clear();
       const regions = Object.entries(config.modules).forEach(([region, modules]) => {
-        this.modulesLayout.set(region as LayoutLocation, modules as IModuleConfig[]);
+        this.modulesLayout.set(region as LayoutLocation, modules as ModuleConfig[]);
       });
     }
 
@@ -412,13 +412,13 @@ class LayoutManager {
     this.$container?.remove();
   }
 
-  private isModuleAllowed(module: IModuleConfig) {
+  private isModuleAllowed(module: ModuleConfig) {
     return (
       !this.writer.isReadOnly || (this.writer.isReadOnly && !WRITE_ONLY_MODULES.includes(module.id))
     );
   }
 
-  private addPanel(panelRegion: string, panelConfig: IModuleConfig | IModuleConfig[]) {
+  private addPanel(panelRegion: string, panelConfig: ModuleConfig | ModuleConfig[]) {
     if (!panelConfig) return '';
 
     //single module
@@ -450,7 +450,7 @@ class LayoutManager {
     `;
   }
 
-  private initModule(module: IModuleConfig) {
+  private initModule(module: ModuleConfig) {
     if (this.isModuleAllowed(module) === false) return null;
 
     const config = module.config || {};

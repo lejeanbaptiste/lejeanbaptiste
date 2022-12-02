@@ -1,14 +1,14 @@
 import $ from 'jquery';
-import type { ILWDialog, ILWDialogConfigParams } from './types';
+import type { LWDialogProps, LWDialogConfigProps } from './types';
 
 type ActionType = 'copy' | 'paste';
 
-class CopyPaste implements ILWDialog {
+class CopyPaste implements LWDialogProps {
   readonly $copyPasteDialog: JQuery<HTMLElement>;
   readonly copyMsg: string;
   readonly pasteMsg: string;
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     let firstCopy = true;
     let firstPaste = true;
     let cwrcCopy = false;

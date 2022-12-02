@@ -4,9 +4,9 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/
 import React, { useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions } from '../overmind';
-import { type ISimpleDialog } from './type';
+import { type SimpleDialogProps } from './type';
 
-export const SimpleDialog: FC<ISimpleDialog> = ({
+export const SimpleDialog: FC<SimpleDialogProps> = ({
   actions = [{ action: 'close', label: 'close' }],
   id,
   maxWidth = 'sm',

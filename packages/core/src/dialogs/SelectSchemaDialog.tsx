@@ -18,12 +18,12 @@ import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
 import { type IDialog } from './type';
 
-export interface ISelectSchemaDialog extends IDialog {
+export interface SelectSchemaDialogProps extends IDialog {
   mappingIds?: SchemaMappingType[];
   onSchemaSelect?: (schema: Schema) => void;
 }
 
-export const SelectSchemaDialog: FC<ISelectSchemaDialog> = ({
+export const SelectSchemaDialog: FC<SelectSchemaDialogProps> = ({
   id,
   maxWidth = 'xs',
   mappingIds = [],

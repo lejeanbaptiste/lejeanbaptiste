@@ -6,14 +6,14 @@ import FilterTiltShiftIcon from '@mui/icons-material/FilterTiltShift';
 import { Stack, Typography } from '@mui/material';
 import React, { useEffect, useState, type FC } from 'react';
 import { useActions, useAppState } from '../../../overmind';
-import { IAuthorityService } from '../../entityLookups';
+import { AuthorityService } from '../../entityLookups';
 import AuthoritySource from './AuthoritySource';
 
 const AutoritiesPanel: FC = () => {
   const { authorities } = useAppState().editor.lookups;
   const { reorderLookupPriority } = useActions().editor;
   const sensors = useSensors(useSensor(PointerSensor));
-  const [items, setItems] = useState<IAuthorityService[]>([]);
+  const [items, setItems] = useState<AuthorityService[]>([]);
 
   useEffect(() => {
     if (!authorities) return;

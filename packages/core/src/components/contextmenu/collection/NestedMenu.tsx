@@ -3,11 +3,11 @@ import React, { useEffect, useState, type FC } from 'react';
 import Collection from '.';
 import { useContextmenu } from '../';
 import { useWindowSize } from '../../../hooks';
-import type { IItem } from './Item';
+import type { ItemProps } from './Item';
 
 interface NestedMenuProps {
   anchorEl: null | HTMLElement;
-  childrenItems?: IItem[];
+  childrenItems?: ItemProps[];
   collectionType?: string;
   handleClose: () => void;
   handleMouseEnter: () => void;
@@ -23,7 +23,7 @@ const NestedMenu: FC<NestedMenuProps> = ({
   isLoading = false,
 }) => {
   const { MIN_WIDTH, query } = useContextmenu();
-  const [visibleList, setVisibleList] = useState<IItem[]>(childrenItems);
+  const [visibleList, setVisibleList] = useState<ItemProps[]>(childrenItems);
   const isOpen = Boolean(Boolean(anchorEl));
   const windowSize = useWindowSize();
   const anchorBoundingClientRect = anchorEl?.getBoundingClientRect();

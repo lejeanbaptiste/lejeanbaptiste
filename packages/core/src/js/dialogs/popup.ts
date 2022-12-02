@@ -2,9 +2,9 @@ import $ from 'jquery';
 import '../../lib/jquery/jquery.popup';
 import Writer from '../Writer';
 import { log } from './../../utilities';
-import type { ILWDialog, ILWDialogConfigParams } from './types';
+import type { LWDialogProps, LWDialogConfigProps } from './types';
 
-class Popup implements ILWDialog {
+class Popup implements LWDialogProps {
   readonly writer: Writer;
   readonly noteMouseoverSelector = '.noteWrapper.hide';
   readonly noteClickSelector = '.noteWrapper'; // need a different selector because tagger.addNoteWrapper click event fires before this one (and removes hide class)
@@ -16,7 +16,7 @@ class Popup implements ILWDialog {
 
   attributeSelector: string = '';
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
 
     const popupId = this.writer.getUniqueId('popupDialog');

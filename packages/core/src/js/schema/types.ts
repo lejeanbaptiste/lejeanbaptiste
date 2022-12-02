@@ -1,10 +1,10 @@
 import AnnotationsManager from '../entities/annotationsManager';
 import Entity from '../entities/Entity';
-import type { IAnnotation, IAnnotationFormat } from '../entities/types';
+import type { AnnotationProps, AnnotationFormat } from '../entities/types';
 
-export interface ISchemaMapping {
+export interface SchemaMappingProps {
   blockElements: string[]; // Additional block level elements that should be added to TinyMCE
-  entities: Map<EntityTypes, IEntityMapping>; //Entity mappings
+  entities: Map<EntityTypes, EntityMappingProps>; //Entity mappings
   header: string; // The name of the header tag
   id: string; // The name of the ID attribute
   // Listeners to Leaf-Writer events can go here and will subscribe upon mappings load
@@ -35,17 +35,17 @@ export type EntityTypes =
   | 'rs' // ? ORLANDO MIGHT HAVE THIS IN THE NEAR FUTURE
   | 'title';
 
-export interface IEntityMapping {
+export interface EntityMappingProps {
   // a function which accepts the AnnotationsManager, an Entity, and a format string (either 'xml' or 'json').
   // It should return an annotation in the specified format (see AnnotationsManager.commonAnnotation)
   annotation: (
     annotationManage: AnnotationsManager,
     entity: Entity,
-    format?: IAnnotationFormat
-  ) => IAnnotation | void;
+    format?: AnnotationFormat
+  ) => AnnotationProps | void;
   isNote?: boolean; //indicates if the entity is a "note type" (default is false)
   label?: string; // the entity's name
-  mapping?: Imapping; // a map of Entity config properties to XPaths
+  mapping?: MappingProps; // a map of Entity config properties to XPaths
   mappingFunction?: (entity: Entity) => string[]; // a function which accepts an Entity and returns an array of start and end XML strings to be displayed in the Writer (see Mapper.getDefaultMapping)
   parentTag: string | string[]; // the XML tag(s) that encapsulates the entity, also used to determine if an XML tag is associated with an entity
   requiresSelection?: boolean; //indicates id a text selection is required to add the entity (as opposed to a point in the text) (default is true)
@@ -55,7 +55,7 @@ export interface IEntityMapping {
   xpathSelector?: string; // if the entity can have several different parentTags or if several entities share the same parentTag, this selector can help differentiate
 }
 
-export interface Imapping {
+export interface MappingProps {
   // [x: string]: string;
   certainty?: string;
   customValues?: CustomValuesProps;

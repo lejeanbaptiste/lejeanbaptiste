@@ -148,7 +148,7 @@ The settings object has three main properties used to set up and customize LEAF-
 | Name | Type | Default  | Description |
 | - | - | - | - |
 | baseUrl | string | `.` | **Important**: By default, LEAF-Writer will load its dependencies (web workers, on-demand modules, extra CSS files) from the root folder. If these files are not on the root, you should define the path to these dependencies here. For instance, set this property to `/path/to/project/addons/` if you put LEAF-Writer dependencies in this folder. |
-| lookups  | `ILookupsConfig` |  | An object containing to configure the entity lookups. See [Authorities](#authorities) |
+| lookups  | `LookupsProps` |  | An object containing to configure the entity lookups. See [Authorities](#authorities) |
 | schemas  | `Schema[]` |  | An array of schemas to be included as supported by default. See more about Schemas [here](#schemas).  |
 
 
@@ -222,7 +222,7 @@ The schema object as five properties:
 | Name | Type | Default  | Description |
 | - | - | - | - |
 | id* | string |  | Unique id |
-| name*  | `ILookupsConfig` |  | A human-readable name to be displayed to the user |
+| name*  | `LookupsProps` |  | A human-readable name to be displayed to the user |
 | mapping*  | string: `tei \| teiLite \| orlando \| cwrcEntry` |  | Define how to parse tag names and map schema-specific functionalities. LEAF-Writer supports these four mappings, which are bound to the document's root element (except for teiLite, which is a TEI variation and uses the TEI root element) |
 | rng*  | `string[]` |  | A collection of URI pointing to the schema. It must be RNG schemas. LEAF-writer will get the first option unless the connection is not available. In this case, it will try to load the schema from the other options in order. Loading alternative routes to the schema will not change the document definitions. |
 | css*  | `string[]` |  | Similar to the rng property. A collection of URI pointing to the schema's CSS. LEAF-writer will get the first option unless the connection is not available. In this case, it will try to load the CSS from the other options in order. Loading alternative routes to the CSS will not change the document definitions. |

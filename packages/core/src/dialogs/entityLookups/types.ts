@@ -5,7 +5,7 @@ export type NamedEntityType = 'person' | 'place' | 'organization' | 'title' | 'r
 export type Authority = 'dbpedia' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata';
 export type ServiceType = 'nssi' | 'custom';
 
-export interface IAuthorityService {
+export interface AuthorityService {
   config?: {
     [x: string]: any;
     username?: string;
@@ -18,12 +18,12 @@ export interface IAuthorityService {
   readonly requireAuth?: boolean;
 }
 
-export interface ILookups {
-  authorities: { [key: string]: IAuthorityService };
+export interface LookupsProps {
+  authorities: { [key: string]: AuthorityService };
   serviceType: 'nssi' | 'custom';
 }
 
-export interface ILookupsConfig {
+export interface LookupsConfig {
   authorities: Array<
     | Authority
     | [
@@ -41,7 +41,7 @@ export interface ILookupsConfig {
   serviceType?: ServiceType;
 }
 
-export interface IResult {
+export interface LookUpResult {
   description?: string;
   id: string;
   name: string;

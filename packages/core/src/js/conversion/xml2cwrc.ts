@@ -1,10 +1,10 @@
 import $ from 'jquery';
 import { log } from '../../utilities';
 import { isValidHttpURL } from '../../utilities/util';
-import { IEntityConfig } from '../entities/Entity';
+import { EntityConfig } from '../entities/Entity';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
 import Writer from '../Writer';
-import { openEditorModeDialog, openProcessIssueDialog, type IProcessSchemaParams } from './prompts';
+import { openEditorModeDialog, openProcessIssueDialog, type ProcessSchemaProps } from './prompts';
 
 /**
  * @class XML2CWRC
@@ -38,7 +38,7 @@ class XML2CWRC {
     await this.clearDocument();
 
     const { overmindActions, schemaManager } = this.writer;
-    let schemaProcess: IProcessSchemaParams = { doc, writer: this.writer };
+    let schemaProcess: ProcessSchemaProps = { doc, writer: this.writer };
 
     // * IS ROOT ELEMENT SUPPORTED?
     schemaProcess.rootName = doc.firstElementChild.nodeName;
@@ -262,7 +262,7 @@ class XML2CWRC {
         }
       }
 
-      this.writer.entitiesManager.addEntity(entityConfig as IEntityConfig);
+      this.writer.entitiesManager.addEntity(entityConfig as EntityConfig);
     });
 
     $rdfs.remove();
