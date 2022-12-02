@@ -16,7 +16,7 @@ import { useAppState } from '../overmind';
 
 type SaveType = 'save' | 'pullRequest';
 
-interface ISaveOption {
+interface SaveOption {
   label: string;
   value: SaveType;
 }
@@ -35,7 +35,7 @@ const SaveOptions: FC<Props> = ({ enabled, onSelect }) => {
   const anchor = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const saveOptions: ISaveOption[] = [
+  const saveOptions: SaveOption[] = [
     { label: t('commons:save'), value: 'save' },
     { label: t('footer:save_as_pull_request'), value: 'pullRequest' },
   ];

@@ -1,17 +1,15 @@
 import { saveAs } from 'file-saver';
 import { Context } from '../';
+import i18next from '../../i18n';
 import type {
-  AlertDialog,
   AllowedMimeType,
   DialogType,
-  ISelectedItem,
-  IValidate,
-  MessageDialog,
+  SelectedItem,
+  Validate,
   Resource,
   StorageDialogConfig,
   StorageSource,
 } from '../../types';
-import i18next from '../../i18n';
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
   actions.ui.updateTranslation();
@@ -72,7 +70,7 @@ export const setSource = ({ state }: Context, source: StorageSource) => {
   state.common.source = source;
 };
 
-export const setValidate = ({ state }: Context, validate: IValidate) => {
+export const setValidate = ({ state }: Context, validate: Validate) => {
   state.common.validate = validate;
 };
 
@@ -109,7 +107,7 @@ export const setFilename = async ({ state }: Context, filename: string) => {
 
 //---------------
 
-export const setSelectedItem = ({ state }: Context, value?: ISelectedItem) => {
+export const setSelectedItem = ({ state }: Context, value?: SelectedItem) => {
   state.common.selectedItem = value;
 };
 

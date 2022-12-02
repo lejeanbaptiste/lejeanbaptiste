@@ -1,9 +1,9 @@
 import { Box, Link, Typography } from '@mui/material';
 import React, { FC } from 'react';
-import type { ILatestCommit } from '../../types/Provider';
+import type { LatestCommit } from '../../types/Provider';
 
 interface ContentDetailsProps {
-  latestCommit: ILatestCommit;
+  latestCommit: LatestCommit;
 }
 
 const ContentDetails: FC<ContentDetailsProps> = ({ latestCommit }) => {
