@@ -1,6 +1,6 @@
 import { Stack } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import type { IView } from '@src/types';
+import type { ViewProps } from '@src/types';
 import { motion, useAnimation } from 'framer-motion';
 import React, { useEffect, useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +16,7 @@ export { TemplatesView } from './TemplatesView';
 export type DisplayLayout = 'list' | 'grid';
 
 interface DocumentViewProps {
-  view?: IView;
+  view?: ViewProps;
 }
 
 const MIN_WIDTH = 290; // Use to show the login panel // 1 column grid
@@ -33,7 +33,7 @@ export const DocumentView: FC<DocumentViewProps> = ({ view }) => {
   const [width, setWidth] = useState(MIN_WIDTH);
   const [height, setHeight] = useState(MIN_HEIGHT);
   const [displayLayout, setDisplayLayout] = useState<DisplayLayout>('list');
-  const [type, setType] = useState<IView>();
+  const [type, setType] = useState<ViewProps>();
 
   useEffect(() => {
     changeViewSize();

@@ -9,7 +9,7 @@ export interface Language {
 
 export type PaletteMode = 'light' | 'auto' | 'dark';
 
-export interface INotification {
+export interface NotificationProps {
   dismissed?: boolean;
   key?: string | number;
   message: SnackbarMessage;
@@ -23,20 +23,20 @@ export interface User {
   firstName?: string;
   lastName?: string;
   username: string;
-  identities: Map<string, IIdentity>;
+  identities: Map<string, IdentityProps>;
   preferredID: string;
   prefStorageProvider: string;
   url: string;
 }
 
-export interface IIdentity {
+export interface IdentityProps {
   name: string;
   uri: string;
   username: string;
   [x: string]: any; //Allow more properties
 }
 
-export interface IAnnotationUserProfile {
+export interface AnnotationUserProfileProps {
   name: string;
   url: string;
 
@@ -95,18 +95,18 @@ export interface Resource {
 export const ErrorTypes = ['info', 'warning', 'error'] as const;
 type ErrorType = typeof ErrorTypes[number];
 
-export interface IError {
+export interface Error {
   message: string;
   title?: string;
   type: ErrorType;
 }
 
-export interface IProviderAuth {
+export interface ProviderAuthProps {
   access_token: string;
   name: string;
 }
 
-export interface IView {
+export interface ViewProps {
   title?: string;
   value: string;
 }

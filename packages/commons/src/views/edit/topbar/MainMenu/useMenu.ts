@@ -5,8 +5,8 @@ import { Resource } from '@src/types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useLeafWriter } from '../../useLeafWriter';
-import type { IItem } from './Item';
-import type { ISubMenu } from './SubMenu';
+import type { ItemProps } from './Item';
+import type { SubMenuProps } from './SubMenu';
 
 export type ItemType = 'menuItem' | 'document';
 
@@ -28,7 +28,7 @@ export const useMenu = () => {
   const { setPermalink } = usePermalink();
   const { handleCloseDocument, handleDownload, handleSave } = useLeafWriter();
 
-  const mainMenuOptions: (IItem | 'divider' | ISubMenu)[] = [
+  const mainMenuOptions: (ItemProps | 'divider' | SubMenuProps)[] = [
     {
       icon: 'template',
       label: `${t('new')}...`,
@@ -83,11 +83,11 @@ export const useMenu = () => {
     },
   ];
 
-  const getOptions = (trigger?: string): (IItem | 'divider' | ISubMenu)[] => {
+  const getOptions = (trigger?: string): (ItemProps | 'divider' | SubMenuProps)[] => {
     if (trigger === 'recent') {
       if (!recentDocuments) return [];
 
-      const options: IItem[] = recentDocuments.map((document) => ({
+      const options: ItemProps[] = recentDocuments.map((document) => ({
         data: document,
         label: document.filename ?? '',
         onTrigger: () => {

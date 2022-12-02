@@ -1,7 +1,7 @@
 import LeafWriter from '@cwrc/leafwriter';
 import { saveDocument } from '@cwrc/leafwriter-storage-service';
 import { AUTOSAVE_TIMEOUT_RETRY } from '@src/config';
-import type { IError, Resource } from '@src/types';
+import type { Error, Resource } from '@src/types';
 import { isErrorMessage, log } from '@src/utilities';
 import i18next from 'i18next';
 import { Context } from '../';
@@ -43,7 +43,7 @@ export const save = async (
     content: string;
     screenshot?: string;
   }
-): Promise<{ success: boolean; error?: IError }> => {
+): Promise<{ success: boolean; error?: Error }> => {
   state.editor.isSaving = true;
 
   // Check diff document
@@ -133,7 +133,7 @@ export const saveAs = async (
     content: string;
     screenshot?: string;
   }
-): Promise<{ success: boolean; error?: IError }> => {
+): Promise<{ success: boolean; error?: Error }> => {
   const { resource } = state.editor;
 
   actions.editor.setResource({

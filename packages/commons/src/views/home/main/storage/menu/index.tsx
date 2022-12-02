@@ -1,6 +1,6 @@
 import { Divider, Stack, Typography, useTheme } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
-import { IView } from '@src/types';
+import { ViewProps } from '@src/types';
 import { AnimatePresence } from 'framer-motion';
 import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +8,7 @@ import { MenuButton, type MenuButtonProps } from './MenuButton';
 import { PasteOption } from './PasteOption';
 
 interface MainMenuProps {
-  onSelect: (value: IView) => void;
+  onSelect: (value: ViewProps) => void;
   selectedMenu?: string | undefined;
 }
 

@@ -6,8 +6,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { bindFocus, bindMenu, bindTrigger, usePopupState } from 'material-ui-popup-state/hooks';
 import React, { createContext } from 'react';
 import { CascadingMenu } from './CascadingMenu';
-import { Item, type IItem } from './Item';
-import { SubMenu, type ISubMenu } from './SubMenu';
+import { Item, type ItemProps } from './Item';
+import { SubMenu, type SubMenuProps } from './SubMenu';
 import { useMenu } from './useMenu';
 
 export { useMenu } from './useMenu';
@@ -83,8 +83,8 @@ export const MainMenu = () => {
         {mainMenuOptions.map((item, index) => {
           if (item === 'divider') return <Divider key={index} />;
           if (item?.hide === true) return '';
-          if ('popupId' in item) return <SubMenu key={index} {...(item as ISubMenu)} />;
-          return <Item key={index} {...(item as IItem)} />;
+          if ('popupId' in item) return <SubMenu key={index} {...(item as SubMenuProps)} />;
+          return <Item key={index} {...(item as ItemProps)} />;
         })}
       </CascadingMenu>
     </Box>

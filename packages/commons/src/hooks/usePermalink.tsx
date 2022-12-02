@@ -1,5 +1,5 @@
 import { useActions, useAppState } from '@src/overmind';
-import type { IError, Resource } from '@src/types';
+import type { Error, Resource } from '@src/types';
 import { isErrorMessage } from '@src/utilities';
 import Cookies from 'js-cookie';
 import queryString from 'query-string';
@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 interface Permalink {
-  error?: IError;
+  error?: Error;
   isSample?: boolean;
   raw: string;
   resource?: Resource | Resource;
@@ -68,7 +68,7 @@ export const usePermalink = () => {
     return samples.find((sample) => sample.title === title);
   };
 
-  const parsePermalink = async (query?: string): Promise<Permalink | IError | null> => {
+  const parsePermalink = async (query?: string): Promise<Permalink | Error | null> => {
     if (!query && !location.search) return null;
 
     const search = queryString.parse(query || location.search);
