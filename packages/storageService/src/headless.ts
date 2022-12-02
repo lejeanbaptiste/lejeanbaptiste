@@ -1,16 +1,16 @@
-import type { IError, Repository, Resource } from './types';
+import type { Error, Repository, Resource } from './types';
 import Provider, { ProviderAuth } from './types/Provider';
 import { isErrorMessage } from './utilities';
 
 let provider: Provider | null;
 
-interface IGetFileLatestHashParams {
+interface GetFileLatestHashParams {
   filePath: string;
   repository: Repository;
   owner: string;
 }
 
-export type { Resource, IError } from './types';
+export type { Resource, Error } from './types';
 
 export const loadDocument = async (providerAuth: ProviderAuth, resource: Resource) => {
   const { provider: providerName, owner, ownertype, repo, filename } = resource;
@@ -60,7 +60,7 @@ export const saveDocument = async (
   providerAuth: ProviderAuth,
   resource: Resource,
   overwrite = false
-): Promise<Resource | IError> => {
+): Promise<Resource | Error> => {
   const { provider: providerName, owner, ownertype, repo, filename, content, hash } = resource;
   let { path } = resource;
 
@@ -135,7 +135,7 @@ export const saveDocument = async (
   return documentResource;
 };
 
-const getFileLatestHash = async ({ filePath, repository, owner }: IGetFileLatestHashParams) => {
+const getFileLatestHash = async ({ filePath, repository, owner }: GetFileLatestHashParams) => {
   if (!provider) return null;
 
   const document = await provider.getDocument({

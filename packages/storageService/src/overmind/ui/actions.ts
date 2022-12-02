@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
-import type { IDialogBar } from '../../dialogs';
+import type { DialogBarProps } from '../../dialogs';
 import i18next from '../../i18n';
 import { supportedLanguages } from '../../utilities';
 
@@ -33,7 +33,7 @@ export const updateTranslation = ({ state }: Context, value?: string) => {
   }
 };
 
-export const openDialog = ({ state }: Context, dialogBar: IDialogBar) => {
+export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
   if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
   if (!dialogBar.type) dialogBar.type = 'simple';
   state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];

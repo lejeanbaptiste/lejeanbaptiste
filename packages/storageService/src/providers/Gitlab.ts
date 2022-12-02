@@ -28,15 +28,15 @@ export interface SearchBlobsItem {
   text_matches: TextMatch[];
 }
 
-interface ICheckForMergeRequest {
+interface CheckForMergeRequest {
   branchHead: string;
   branchOrigin: string;
   repoId: string;
 }
 
-type IImportStatus = 'none' | 'scheduled' | 'failed' | 'started' | 'finished';
+type ImportStatus = 'none' | 'scheduled' | 'failed' | 'started' | 'finished';
 
-interface IPool {
+interface PoolProps {
   fn: (params: any) => Promise<any>;
   params?: any;
   validate?: (value: any) => boolean;
@@ -232,8 +232,8 @@ export default class Gitlab implements Provider {
 
     if (checkForkStatus) {
       //check status
-      const validateForkCreation = (status: IImportStatus) => status === 'finished';
-      await (<Promise<IImportStatus>>this.pool({
+      const validateForkCreation = (status: ImportStatus) => status === 'finished';
+      await (<Promise<ImportStatus>>this.pool({
         fn: this.getImportStatus,
         params: response.data.id,
         validate: validateForkCreation,
@@ -424,7 +424,7 @@ export default class Gitlab implements Provider {
 
     const latest = response.data[0];
 
-    const latestCommit: Types.ILatestCommit = {
+    const latestCommit: Types.LatestCommit = {
       authorEmail: latest.author_email,
       authorName: latest.author_name,
       date: latest.authored_date,
@@ -564,7 +564,7 @@ export default class Gitlab implements Provider {
    * @param {String} repoId The repo
    * @returns {Promise}
    */
-  async createFolder({ branch, message, path, repoId }: Types.ISaveDocument) {
+  async createFolder({ branch, message, path, repoId }: Types.SaveDocument) {
     if (!repoId) return null;
 
     const filename = '.gitkeep';
@@ -593,7 +593,7 @@ export default class Gitlab implements Provider {
    * @param {String} hash The last_commit_id
    * @returns {Promise}
    */
-  async saveDocument(params: Types.ISaveDocument) {
+  async saveDocument(params: Types.SaveDocument) {
     const { branch, path, repoId, hash } = params;
     if (!params.repoId) return null;
 
@@ -618,7 +618,7 @@ export default class Gitlab implements Provider {
    * @param {String} repoId The repo
    * @returns {Promise}
    */
-  async createFile(params: Types.ISaveDocument) {
+  async createFile(params: Types.SaveDocument) {
     const { branch, content, message, path, repoId } = params;
     const encodedPath = encodeURIComponent(path);
     const response: AxiosResponse<any> | null = await this.axios
@@ -645,7 +645,7 @@ export default class Gitlab implements Provider {
    * @param {String} hash The last_commit_id
    * @returns {Promise}
    */
-  async updateFile(params: Types.ISaveDocument) {
+  async updateFile(params: Types.SaveDocument) {
     const { branch, content, message, path, repoId, hash } = params;
     if (!hash) return null;
 
@@ -670,7 +670,7 @@ export default class Gitlab implements Provider {
    * @param {String} repoId The repo id
    * @returns {Promise}
    */
-  async createFork({ repoId }: Types.ICreateFork) {
+  async createFork({ repoId }: Types.CreateFork) {
     const response = await this.axios
       .post<T.Repository>(`/projects/${repoId}/fork`)
       // .catch(() => nullgetRepo);
@@ -681,7 +681,7 @@ export default class Gitlab implements Provider {
     const fork = response.data;
 
     //check status
-    const validateForkCreation = (status: IImportStatus) => status === 'finished';
+    const validateForkCreation = (status: ImportStatus) => status === 'finished';
     await this.pool({
       fn: this.getImportStatus,
       params: response.data.id,
@@ -702,7 +702,7 @@ export default class Gitlab implements Provider {
    * @param {Number?} maxAttempts The max attempts
    * @returns {Promise}
    */
-  private async pool({ fn, params, validate, interval = 10_000, maxAttempts = 12 }: IPool) {
+  private async pool({ fn, params, validate, interval = 10_000, maxAttempts = 12 }: PoolProps) {
     let attempts = 0;
     const fnToPoll = fn.bind(this);
 
@@ -725,7 +725,7 @@ export default class Gitlab implements Provider {
   /**
    * Get the status of an import.
    * See {@link https://docs.gitlab.com/ee/api/project_import_export.html#import-status}
-   * @param {IImportStatus} repoId The repo id
+   * @param {ImportStatus} repoId The repo id
    * @returns {Promise}
    */
   async getImportStatus(repoId: string) {
@@ -734,7 +734,7 @@ export default class Gitlab implements Provider {
       .catch(() => null);
 
     if (!response) return 'none';
-    return response.data.import_status as IImportStatus;
+    return response.data.import_status as ImportStatus;
   }
 
   /**
@@ -744,7 +744,7 @@ export default class Gitlab implements Provider {
    * @param {String} repoId The repository
    * @returns {Promise}
    */
-  async getBranch({ branch, repoId }: Types.IGetBranch) {
+  async getBranch({ branch, repoId }: Types.GetBranch) {
     if (!repoId) return null;
     const response: AxiosResponse<any> | null = await this.axios
       .get(`/projects/${repoId}/repository/branches/${branch}`)
@@ -760,7 +760,7 @@ export default class Gitlab implements Provider {
    * @param {String} repoId The repository
    * @returns {Promise<boolean>}
    */
-  async checkForBranch({ branch, repoId }: Types.IGetBranch) {
+  async checkForBranch({ branch, repoId }: Types.GetBranch) {
     const response = await this.getBranch({ branch, repoId });
     if (!response) return false;
     return true;
@@ -775,7 +775,7 @@ export default class Gitlab implements Provider {
    * @param {String} ownerUsername The owner username
    * @returns {Promise}
    */
-  async createBranch({ repoId, branchOrigin, branchTarget }: Types.ICreateBranch) {
+  async createBranch({ repoId, branchOrigin, branchTarget }: Types.CreateBranch) {
     if (!repoId) return null;
 
     const response: AxiosResponse<any> | null = await this.axios
@@ -797,7 +797,7 @@ export default class Gitlab implements Provider {
    * @param {String} repoId The repository ID
    * @returns {Promise}
    */
-  private async checkForMergeRequest({ branchHead, branchOrigin, repoId }: ICheckForMergeRequest) {
+  private async checkForMergeRequest({ branchHead, branchOrigin, repoId }: CheckForMergeRequest) {
     const mergeRequests: AxiosResponse<any> | null = await this.axios
       .get(`/projects/${repoId}/merge_requests`, {
         params: {
@@ -822,7 +822,7 @@ export default class Gitlab implements Provider {
    * @param {String} title The title of the pull request
    * @returns {Promise<Types.CreatePrResponse>}
    */
-  async createPullRequest({ branchOrigin, branchHead, origin, title }: Types.ICreatePrParams) {
+  async createPullRequest({ branchOrigin, branchHead, origin, title }: Types.CreatePrParams) {
     // there can be only one PR per branch */
     const doesMergeRequestExist = await this.checkForMergeRequest({
       branchOrigin,
@@ -856,7 +856,7 @@ export default class Gitlab implements Provider {
    * @param {String} title The title of the pull request
    * @returns {Promise<Types.CreatePrResponse>}
    */
-  async createPullRequestFromFork({ fork, origin, title }: Types.ICreatePrFromForkParams) {
+  async createPullRequestFromFork({ fork, origin, title }: Types.CreatePrFromForkProps) {
     // there can be only one PR per branch */
     const doesMergeRequestExist = await this.checkForMergeRequest({
       branchOrigin: origin.default_branch,

@@ -3,9 +3,9 @@ import type {
   AlertDialog,
   AllowedMimeType,
   DialogType,
-  ISelectedItem,
-  ISourcePanelOption,
-  IValidate,
+  SelectedItem,
+  SourcePanelOption,
+  Validate,
   MessageDialog,
   Resource,
   StorageSource,
@@ -22,11 +22,11 @@ type State = {
   messageDialog: MessageDialog;
   resource?: Resource;
   showInvisibleFiles: boolean;
-  selectedItem?: ISelectedItem;
+  selectedItem?: SelectedItem;
   source: StorageSource;
-  sources: ISourcePanelOption[];
+  sources: SourcePanelOption[];
   submit?: Submit;
-  validate?: IValidate;
+  validate?: Validate;
 };
 
 export const state: State = {

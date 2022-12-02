@@ -9,11 +9,11 @@ import Org from './Organization';
 import Repository from './Repository';
 import { useTranslation } from 'react-i18next';
 
-interface iCollection {
+interface Collection {
   height: number | string;
 }
 
-const Collection: FC<iCollection> = ({ height = '100%' }) => {
+const Collection: FC<Collection> = ({ height = '100%' }) => {
   const { collectionType, isFetching, organizations, repositories, repositoryContent } =
     useAppState().cloud;
   const { loadMoreRepos } = useActions().cloud;
