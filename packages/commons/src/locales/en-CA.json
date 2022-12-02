@@ -94,11 +94,14 @@
   },
   "messages": {
     "annotation_need_space": "Annotating documents requires more space.",
+    "must_link_your_account_to_a_storage_provider": "To use this feature you must link your account to an identity provider that has storage capability",
     "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large screen.",
+    "suported_storage_providers": "Suported storage providers",
+    "you_can_do_that_through_the_profile_menu": "You can do that through the profile menu located at the top right corner of the screen",
     "you_must_sign_in_to_use_this_feature": "You must sign in to use this feature"
   },
   "profile": {
-    "manage_your_lincs_account": "manage your LINCS account"
+    "manage_your_lincs_account": "Manage your LINCS account"
   },
   "storage": {
     "all_changes_salved": "all changes saved",
