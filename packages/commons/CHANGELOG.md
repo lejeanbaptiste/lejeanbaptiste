@@ -1,5 +1,59 @@
 # CHANGELOG
 
+## 2.5.0
+
+### New Feature
+
+#### Add support to orcid
+
+[06414acc052432ac622dbbade04f95c701ec4276]
+Users can now choose to sign in using their ORCID as an identity provider. Since ORCID is not a storage provider, will not be able to load/save to the cloud until they link to storage provider (e.g github).
+
+#### User Profile shows URI
+
+[0a3079cfea286bee593e112472bdd9af4fb76def]
+The user profile show userId instead of user email and hide identity providers when editing. This is to prevent the user to change their identity while editing a
+document.
+
+### Patch
+
+- Rename types [a6ce2d6c535a83d1fb7fe73abd63f7fd19e240f0]
+- Handle axios error [b3b556e582d633ffce9f97aa796e3c6466d98b65] [91a362ad2ef98a6089edb223be629468ac562c8b]
+- Add localization [c7f1efb3e4e94a0d2f5312f9c96b121cf0fa42ef]
+- Update dependencies [228a09db7576cb7ee826543477b1d7d943073a8c]
+  - core:
+    - update: axios@1.2.0
+    - bump up:
+      - @mui/icons-material@5.10.16
+      - @mui/lab@5.0.0-alpha.110
+      - @mui/material@5.10.16
+      - framer-motion@7.6.18
+      - helmet@6.0.1
+      - i18next@22.0.6
+      - query-string@7.1.3
+      - react-router-dom@6.4.4
+      - vanilla-cookieconsent@2.8.9
+  - dev:
+    - upgrade:
+      - webpack-cli@5.0.0
+      - webpack-de-middleware
+    - update:
+      - @typescript-eslint/eslint-plugin@5.45.0
+      - @typescript-eslint/parser@5.45.0
+      - eslint@8.28.0
+      - mini-css-extract-plugin@2.7.1
+      - prettier@2.8.0
+    - bump up:
+      - @types/node@18.11.10
+      - eslint-plugin-react@7.31.11
+      - ts-loader@9.4.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter@2.3.1
+  - @cwrc/leafwriter-storage-service@1.3.5
+
 ## 2.4.0
 
 ### Minor Changes
