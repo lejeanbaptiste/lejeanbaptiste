@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## 1.3.5
+
+### Patch
+
+- Expose the Validate type [8e74f5f71502734cf2ae94eaa2e6bb2c9e8e0740]
+- Rename types [b05274cacac55c683f40ca10dbc5d4b57a785510]
+- Update dependencies [7907888909f6635d682b79e2ac15eb9fcb57e341]
+  - core:
+    - upgrade: axios@1.2.0
+    - bump up:
+      - @mui/base@5.0.0-alpha.108
+      - @mui/icons-material@5.10.16
+      - @mui/lab@5.0.0-alpha.110
+      - @mui/material@5.10.16
+  - dev:
+    - update:
+      - @typescript-eslint/eslint-plugin@5.45.0
+      - @typescript-eslint/parser@5.45.0
+      - mini-css-extract-plugin@2.7.1
+    - bump up:
+      - @types/lodash@4.14.191
+      - @types/mocha@10.0.1
+      - eslint-plugin-react@7.31.11
+
 ## 1.3.4
 
 ### Patch Changes
