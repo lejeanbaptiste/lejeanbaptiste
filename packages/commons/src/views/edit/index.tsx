@@ -92,6 +92,11 @@ export const EditView: FC = () => {
 
     const geonamesUsername = await getGeonameUsername();
 
+    const author = user && {
+      name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
+      uri: user?.identities.get(user.preferredID)?.uri ?? '',
+    };
+
     leafWriter.init({
       document: {
         url: resource.url,
@@ -102,12 +107,7 @@ export const EditView: FC = () => {
         lookups: { authorities: [['geonames', { config: { username: geonamesUsername } }]] },
         schemas,
       },
-      user: user && {
-        avatar_url: user.avatar_url,
-        email: user.email,
-        name: `${user?.firstName} ${user?.lastName}`,
-        uri: user?.url,
-      },
+      user: author,
     });
 
     leafWriter.isDirty.subscribe((value) => {
