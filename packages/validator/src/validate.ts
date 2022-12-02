@@ -1,4 +1,5 @@
 import { ErrorData, WorkingState, WorkingStateData } from '@cwrc/salve-dom-leafwriter';
+import { Name } from '@cwrc/salve-leafwriter';
 import { logEnabledFor } from './log';
 import { getFullNameFromDocumentation, getXPathForElement } from './utils';
 import VirtualEditor from './virtualEditor';
@@ -123,8 +124,7 @@ const parseErrors = (
   };
 
   if ('name' in error) {
-    //@ts-ignore
-    const errorName = error.name;
+    const errorName = error.name as Name;
     target.name = errorName.name;
     target.ns = errorName.ns;
     target.documentation = errorName.documentation
