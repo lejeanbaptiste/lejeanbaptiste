@@ -248,8 +248,8 @@ class Writer extends EventManager {
   }
 
   getUserInfo = () => {
-    const { url, name, username } = this.overmindState.user;
-    return { id: url, name, nick: username };
+    const { uri, name } = this.overmindState.user;
+    return { id: uri, name };
   };
 
   //Function to override
