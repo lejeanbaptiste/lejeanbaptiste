@@ -1,8 +1,8 @@
 import { log } from '@src//utilities';
-import type { IAnnotationUserProfile, User } from '@src/types';
+import type { AnnotationUserProfileProps, User } from '@src/types';
 import Cookies from 'js-cookie';
 import { Context } from '../index';
-import type { ILinkedAccount } from './effects';
+import type { LinkedAccountProps } from './effects';
 
 //* INIITIALIZE
 export const onInitializeOvermind = async ({ actions, effects }: Context, overmind: any) => {
@@ -147,7 +147,7 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
 
 export const getUserDetails = async (
   { state }: Context,
-  { identityProvider: providerName, userId }: ILinkedAccount
+  { identityProvider: providerName, userId }: LinkedAccountProps
 ) => {
   const { supportedProviders } = state.providers;
 
@@ -163,7 +163,7 @@ export const getUserDetails = async (
 
 export const setupLinkedAccountProvider = async (
   { actions, effects }: Context,
-  { identityProvider: providerName, userId, userName }: ILinkedAccount
+  { identityProvider: providerName, userId, userName }: LinkedAccountProps
 ) => {
   const token = await effects.auth.api.getToken();
   if (!token) return log.warn('No Authentication token');
@@ -202,7 +202,7 @@ export const getUserProfile = ({ state }: Context) => {
   const avatar_url = user.avatar_url;
   const email = user.email;
 
-  const annotationUserProfile: IAnnotationUserProfile = {
+  const annotationUserProfile: AnnotationUserProfileProps = {
     name,
     url,
     avatar_url,

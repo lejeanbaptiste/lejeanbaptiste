@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import type { IView } from '@src/types';
+import type { ViewProps } from '@src/types';
 import { motion, type AnimationControls } from 'framer-motion';
 import React, { type FC } from 'react';
 import { DisplayLayout } from '..';
@@ -12,7 +12,7 @@ interface ContainerProps {
   animationControl?: AnimationControls;
   displayLayout: DisplayLayout;
   height: number;
-  type?: IView;
+  type?: ViewProps;
   width: number;
 }
 

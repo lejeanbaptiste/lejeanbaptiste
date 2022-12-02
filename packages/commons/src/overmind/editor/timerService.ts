@@ -1,7 +1,7 @@
 import { AUTOSAVE_TIMEOUT } from '@src/config';
 import { Subject } from 'rxjs';
 
-export interface ITimerService {
+export interface TimerServiceProps {
   currentAttempt: number;
   currentTick: number;
   duration: number;
@@ -9,10 +9,10 @@ export interface ITimerService {
   maxAttempts: number;
   tick: number;
 
-  setDuration: (value: number) => ITimerService;
-  setMaxAttempt: (value: number) => ITimerService;
-  start: () => ITimerService;
-  stop: () => ITimerService;
+  setDuration: (value: number) => TimerServiceProps;
+  setMaxAttempt: (value: number) => TimerServiceProps;
+  start: () => TimerServiceProps;
+  stop: () => TimerServiceProps;
 
   onTick: Subject<number>;
   onTimer: Subject<number>;
@@ -77,7 +77,7 @@ const stop = () => {
   return TimerService;
 };
 
-export const TimerService: ITimerService = {
+export const TimerService: TimerServiceProps = {
   currentAttempt,
   currentTick,
   duration,

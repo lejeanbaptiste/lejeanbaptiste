@@ -3,14 +3,14 @@ import { motion } from 'framer-motion';
 import md5 from 'md5';
 import React, { type FC } from 'react';
 
-export interface IProfile {
+export interface ProfileProps {
   name: string;
   email?: string;
   positions: string[];
 }
 
 interface TeamProfileProps {
-  profile: IProfile;
+  profile: ProfileProps;
 }
 
 export const TeamProfile: FC<TeamProfileProps> = ({ profile }) => {

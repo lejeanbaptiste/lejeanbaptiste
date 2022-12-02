@@ -6,14 +6,14 @@ import queryString from 'query-string';
 
 //* Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
 
-export interface IHTTPRequestError {
+export interface HTTPRequestError {
   error: {
     status?: number;
     message: string;
   };
 }
 
-export interface ILinkedAccount {
+export interface LinkedAccountProps {
   identityProvider: string;
   userId?: string;
   userName?: string;
@@ -239,9 +239,9 @@ export class Api {
   async getLinkedAccounts(
     keycloakAccessCode: string,
     username: string
-  ): Promise<ILinkedAccount[] | IHTTPRequestError> {
     if (!this.NSSI_BASE_URL) {
       return { error: { message: 'NSSI BASE URL is unedefined' } };
+  ): Promise<LinkedAccountProps[] | HTTPRequestError> {
     }
 
     const url = queryString.stringifyUrl({
@@ -278,7 +278,7 @@ export class Api {
   async getLinkAccountUrl(
     identity_provider: string,
     keycloakAccessCode: string
-  ): Promise<string | IHTTPRequestError> {
+  ): Promise<string | HTTPRequestError> {
     if (!this.AUTH_API_URL) {
       return { error: { message: 'AUTH API URL is unedefined' } };
     }
@@ -310,7 +310,7 @@ export class Api {
     return data;
   }
 
-  async getProviders(): Promise<Provider[] | IHTTPRequestError> {
+  async getProviders(): Promise<Provider[] | HTTPRequestError> {
     if (!this.AUTH_API_URL) {
       return { error: { message: 'AUTH API URL is unedefined' } };
     }

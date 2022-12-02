@@ -1,6 +1,6 @@
 import { Button } from '@mui/material';
-import type { IDialogBar } from '@src/dialogs';
-import type { INotification, PaletteMode } from '@src/types';
+import type { DialogBarProps } from '@src/dialogs';
+import type { NotificationProps, PaletteMode } from '@src/types';
 import { supportedLanguages } from '@src/utilities';
 import i18next from 'i18next';
 import type { VariantType } from 'notistack';
@@ -99,7 +99,7 @@ export const switchLanguage = ({ state }: Context, value: string) => {
 
 // * Notification
 
-export const notifyViaSnackbar = ({ state }: Context, notification: INotification | string) => {
+export const notifyViaSnackbar = ({ state }: Context, notification: NotificationProps | string) => {
   if (typeof notification === 'string') notification = { message: notification };
 
   let key = notification.options && notification.options.key;
@@ -154,7 +154,7 @@ export const emitNotification = async (
 
 // * Dialog
 
-export const openDialog = ({ state }: Context, dialogBar: IDialogBar) => {
+export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
   if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
   if (!dialogBar.type) dialogBar.type = 'simple';
   state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];

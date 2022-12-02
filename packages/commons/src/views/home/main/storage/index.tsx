@@ -1,7 +1,7 @@
 import { Paper, Stack, useTheme } from '@mui/material';
 import { DocumentView } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
-import type { IView } from '@src/types';
+import type { ViewProps } from '@src/types';
 import React, { useEffect, useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Menu } from './menu';
@@ -16,7 +16,7 @@ export const Storage: FC = () => {
   const { t } = useTranslation('commons');
   const { palette } = useTheme();
 
-  const [selectedView, setSelectedView] = useState<IView | undefined>(undefined);
+  const [selectedView, setSelectedView] = useState<ViewProps | undefined>(undefined);
 
   useEffect(() => {
     if (userState !== 'AUTHENTICATING') setView();
@@ -43,7 +43,7 @@ export const Storage: FC = () => {
     }
   };
 
-  const handleSelect = (view: IView) => {
+  const handleSelect = (view: ViewProps) => {
     if (selectedView?.value === view.value) return;
     setSelectedView(view);
   };

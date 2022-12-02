@@ -4,7 +4,7 @@ import { getIcon } from '@src/assets/icons';
 import React, { useCallback, useContext } from 'react';
 import { CascadingContext } from '.';
 import type { ItemType } from './useMenu';
-export interface IItem extends MenuItemProps {
+export interface ItemProps extends MenuItemProps {
   data?: { [key: string]: any };
   disabled?: boolean;
   hide?: boolean;
@@ -27,7 +27,7 @@ export const Item = ({
   type = 'menuItem',
   tootipText,
   ...props
-}: IItem) => {
+}: ItemProps) => {
   const { rootPopupState } = useContext(CascadingContext);
   if (!rootPopupState) throw new Error('must be used inside a CascadingMenu');
 
