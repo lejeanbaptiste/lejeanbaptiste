@@ -30,7 +30,6 @@ export const initialize = async (
 ) => {
   const { manifest } = cachedSchema ? JSON.parse(cachedSchema) : { manifest: null };
 
-  //@ts-ignore
   const convertedSchema = await convertSchema(url, createManifest);
 
   const newVersion =
