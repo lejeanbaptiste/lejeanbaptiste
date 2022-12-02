@@ -73,7 +73,7 @@ export const Storage: FC = () => {
         <Stack direction="row" gap={1.5} mr={1}>
           {supportedProviders.map(
             (provider) =>
-              provider.storeToken && (
+              provider.service?.isStorageProvider && (
                 <StyledToolTip
                   key={provider.providerId}
                   title={

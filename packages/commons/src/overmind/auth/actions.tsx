@@ -56,7 +56,7 @@ export const setupMainIdentityProvider = async ({ actions, effects }: Context, t
   if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) {
     const { message } = IDPTokens.error;
     actions.ui.emitNotification({ message });
-    return;
+    return 'none';
   }
 
   if (!IDPTokens) return log.warn('No identity_provider tokens');
@@ -82,11 +82,16 @@ export const setUserProfile = async (
   const user = keyCloakProfile as User;
   state.auth.user = user;
 
-  if (state.providers.identityProviders.length === 0) return;
-
   //augment user profile
   state.auth.user.identities = new Map();
-  await actions.auth.getLinkedAccounts();
+  const linkedAccounts = await actions.auth.getLinkedAccounts();
+
+  //in case the user have unloked the main provider from its account.
+  if (identityProvider === 'none' && linkedAccounts) {
+    identityProvider = linkedAccounts[0].identityProvider;
+  }
+
+  if (!identityProvider) return;
 
   //preferredID
   const preferredID = effects.storage.api.getFromLocalStorage<string>('prefIdProvider');
@@ -232,6 +237,7 @@ export const signOut = async ({ effects }: Context) => {
 
 export const setPreferredId = ({ state, actions }: Context, providerId: string) => {
   if (!state.auth.user) return;
+
   state.auth.user.preferredID = providerId;
   localStorage.setItem('prefIdProvider', providerId);
 

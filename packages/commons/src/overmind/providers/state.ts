@@ -1,3 +1,4 @@
+import { SupportedStorageProviders } from '@src/config';
 import type { SupportedProvider } from '@src/services';
 import { derived } from 'overmind';
 
@@ -17,6 +18,6 @@ export const state: State = {
   ),
   supportedProviders: [],
   storageProviders: derived(({ supportedProviders }: State) =>
-    supportedProviders.filter((supported) => supported.storeToken && supported.service)
+    supportedProviders.filter((provider) => SupportedStorageProviders.includes(provider.providerId))
   ),
 };
