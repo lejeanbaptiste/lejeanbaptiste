@@ -9,7 +9,7 @@ import { config } from './overmind';
 import ModalProvider from 'mui-modal-provider';
 
 export type { ProviderAuth } from './types/Provider';
-export type { AllowedMimeType, Resource } from './types';
+export type { AllowedMimeType, Resource, Validate } from './types';
 export { loadDocument, saveDocument } from './headless';
 
 const overmind = createOvermind(config, {
