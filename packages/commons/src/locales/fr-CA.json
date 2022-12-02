@@ -94,7 +94,10 @@
   },
   "messages": {
     "annotation_need_space": "Annoter des documents nécessite plus d'espace.",
+    "must_link_your_account_to_a_storage_provider": "Pour utiliser cette fonctionnalité, vous devez lier votre compte à un fournisseur d'identité disposant d'une capacité de stockage",
     "rotate_phone": "Veuillez faire pivoter votre téléphone ou ouvrir LEAF-Writer sur un grand écran.",
+    "suported_storage_providers": "Fournisseurs de stockage pris en charge",
+    "you_can_do_that_through_the_profile_menu": "Vous pouvez le faire via le menu de profil situé dans le coin supérieur droit de l'écran",
     "you_must_sign_in_to_use_this_feature": "Vous devez vous connecter pour utiliser cette fonction"
   },
   "profile": {
