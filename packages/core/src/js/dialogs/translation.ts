@@ -116,7 +116,7 @@ class Translation implements LWDialogProps {
     $(`#${this.id}_resp`).on('change', (event) => {
       //@ts-ignore
       event.target.checked
-        ? this.attributesWidget.setAttribute(this.respAttribute, this.writer.getUserInfo().nick)
+        ? this.attributesWidget.setAttribute(this.respAttribute, this.writer.getUserInfo().name)
         : this.attributesWidget.setAttribute(this.respAttribute, undefined);
     });
   }

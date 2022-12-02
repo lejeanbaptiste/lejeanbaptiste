@@ -85,8 +85,6 @@ export type SupportedEntityLookups =
 export const SupportedSchemas: Map<string, Schema> = new Map();
 
 export interface User {
-  avatar_url?: string;
-  email?: string;
   name: string;
   uri: string;
 }
