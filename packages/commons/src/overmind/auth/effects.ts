@@ -210,25 +210,21 @@ export class Api {
    * @returns The access token for the external IDP.
    */
   async getExternalIDPTokens(provider_alias: string, keycloakAccessCode: string): Promise<any> {
-    const response = await axios
-      .get(`${this.KEYCLOACK_BASE_URL}/realms/${this.realm}/broker/${provider_alias}/token`, {
+    try {
+      const url = `${this.KEYCLOACK_BASE_URL}/realms/${this.realm}/broker/${provider_alias}/token`;
+      const { data } = await axios.get(url, {
         headers: { Authorization: `Bearer ${keycloakAccessCode}` },
-      })
-      .catch((error: AxiosError) => {
-        if (error.response) return error.response;
-
-        const errorJson = error.toJSON();
-        log.error(errorJson);
-
-        throw new Error(error.message);
       });
-
-    const { status, data } = response;
-    if (status >= 400) {
-      return { error: { status, message: `getExternalIDPTokens: ${data.error}` } };
+      return data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        handleAxiosError(error);
+        return { error: { message: error.message } };
+      } else {
+        handleUnexpectedError(error);
+        return { error: { message: 'error' } };
+      }
     }
-
-    return data;
   }
 
   /**
