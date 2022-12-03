@@ -1,5 +1,5 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
-import { usePermalink } from '@src/hooks';
+import { useMessage, usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { Resource } from '@src/types';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,7 @@ const MIN_WIDTH = 250;
 export const useMenu = () => {
   const { userState } = useAppState().auth;
   const { isDirty, resource } = useAppState().editor;
+  const { storageProviders } = useAppState().providers;
   const { recentDocuments } = useAppState().storage;
 
   const { setResource } = useActions().editor;
@@ -27,6 +28,8 @@ export const useMenu = () => {
 
   const { setPermalink } = usePermalink();
   const { handleCloseDocument, handleDownload, handleSave } = useLeafWriter();
+
+  const { cloudDisabledMessage } = useMessage();
 
   const mainMenuOptions: (ItemProps | 'divider' | SubMenuProps)[] = [
     {
@@ -54,20 +57,24 @@ export const useMenu = () => {
     },
     'divider',
     {
-      disabled: userState !== 'AUTHENTICATED',
+      disabled:
+        userState !== 'AUTHENTICATED' ||
+        !storageProviders.some((provider) => provider.service?.isStorageProvider),
       icon: 'save',
       label: t('save'),
       onTrigger: () => (!resource?.provider ? handleSave('saveAs') : handleSave()),
       shortcut: ' ⌘S',
-      tootipText: `${t('messages:you_must_sign_in_to_use_this_feature')}`,
+      tootipText: cloudDisabledMessage,
     },
     {
-      disabled: userState !== 'AUTHENTICATED',
+      disabled:
+        userState !== 'AUTHENTICATED' ||
+        !storageProviders.some((provider) => provider.service?.isStorageProvider),
       icon: 'saveAs',
       label: `${t('save_as')}...`,
       onTrigger: () => handleSave('saveAs'),
       shortcut: ' ⌘⌥⇧S',
-      tootipText: `${t('messages:you_must_sign_in_to_use_this_feature')}`,
+      tootipText: cloudDisabledMessage,
     },
     {
       icon: 'download',
