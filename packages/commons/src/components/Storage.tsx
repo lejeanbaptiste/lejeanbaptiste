@@ -1,4 +1,4 @@
-import type { Resource, Validate } from '@cwrc/leafwriter-storage-service';
+import type { Resource } from '@cwrc/leafwriter-storage-service';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { isValidXml } from '@src/utilities';
@@ -65,7 +65,7 @@ export const Storage: FC = () => {
     setPermalink('/');
   };
 
-  const validXML = (content: string): Validate => {
+  const validXML = (content: string) => {
     const isContentValid = isValidXml(content);
     return isContentValid
       ? { valid: true }
@@ -79,7 +79,8 @@ export const Storage: FC = () => {
     const prefIdIsStorageProvider = providers.some(
       (provider) => provider.name === user.preferredID
     );
-    return prefIdIsStorageProvider ? user.preferredID : providers[0].name;
+
+    return prefIdIsStorageProvider ? user.preferredID : providers[0]?.name;
   }, [user?.preferredID]);
 
   return (
