@@ -1,3 +1,4 @@
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
   Box,
   IconButton,
@@ -5,14 +6,12 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Typography,
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
 import { getIcon } from '@src/assets/icons';
 import { motion } from 'framer-motion';
 import React, { type FC } from 'react';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { styled } from '@mui/material/styles';
-import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 
 export interface MenuButtonProps {
   active?: boolean;
@@ -29,13 +28,12 @@ const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip {...props} classes={{ popper: className }} />
 ))(({ theme }) => ({
   [`& .${tooltipClasses.tooltip}`]: {
-    backgroundColor: theme.palette.background.paper, //'#f5f5f9',
-    color: theme.palette.text.secondary, //'rgba(0, 0, 0, 0.87)',
-    // maxWidth: 250,
-    // border: '1px solid #dadde9',
+    maxWidth: 220,
     borderWidth: theme.palette.mode === 'dark' ? 1 : 0,
     borderStyle: 'solid',
     borderColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300],
+    backgroundColor: theme.palette.background.paper,
+    color: theme.palette.text.secondary,
     boxShadow: theme.palette.mode === 'dark' ? 0 : `0 0 2px ${theme.palette.grey[400]}`,
   },
 }));
