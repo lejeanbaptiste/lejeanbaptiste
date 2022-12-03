@@ -36,16 +36,7 @@ export const UserCard: FC = () => {
   const handleManageAccontClick = () => accountManagement();
 
   return (
-    <Stack
-      direction="row"
-      alignItems="flex-start"
-      spacing={2}
-      p={2}
-      sx={{
-        backgroundColor: ({ palette }) =>
-          palette.mode === 'dark' ? palette.grey[900] : palette.grey[50],
-      }}
-    >
+    <Stack direction="row" alignItems="flex-start" spacing={2} p={2}>
       <ProfileAvatar clickable={false} size={40} />
       <Stack flexGrow={1} alignItems="flex-start">
         <Typography variant="body1">{userDetail?.name}</Typography>

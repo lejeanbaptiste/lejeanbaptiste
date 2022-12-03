@@ -17,16 +17,7 @@ export const Footer: FC<ProfileProps> = ({ onClick }) => {
   };
 
   return (
-    <Stack
-      direction="row"
-      justifyContent="center"
-      alignItems="center"
-      py={0.5}
-      sx={{
-        background: ({ palette }) =>
-          palette.mode === 'dark' ? palette.grey[900] : palette.grey[50],
-      }}
-    >
+    <Stack direction="row" justifyContent="center" alignItems="center" py={0.5}>
       <Link
         color="text.secondary"
         onClick={handleClickPrivacy}
