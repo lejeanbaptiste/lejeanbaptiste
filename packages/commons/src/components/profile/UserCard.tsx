@@ -1,4 +1,4 @@
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { Button, IconButton, Link, Stack, Typography } from '@mui/material';
 import { StyledToolTip } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
@@ -65,7 +65,7 @@ export const UserCard: FC = () => {
       {page !== 'edit' && (
         <IconButton onClick={handleManageAccontClick} size="small" sx={{ mt: '4px !important' }}>
           <StyledToolTip title={t('profile:manage_your_lincs_account')}>
-            <ManageAccountsIcon fontSize="inherit" />
+            <SettingsIcon fontSize="inherit" />
           </StyledToolTip>
         </IconButton>
       )}
