@@ -1,8 +1,9 @@
 import { Divider, Stack, Typography, useTheme } from '@mui/material';
+import { useMessage } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { ViewProps } from '@src/types';
 import { AnimatePresence } from 'framer-motion';
-import React, { useMemo, type FC } from 'react';
+import React, { type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MenuButton, type MenuButtonProps } from './MenuButton';
 import { PasteOption } from './PasteOption';
@@ -22,50 +23,16 @@ export const Menu: FC<MainMenuProps> = ({ onSelect, selectedMenu }) => {
   const { t } = useTranslation('storage');
   const { palette } = useTheme();
 
+  const { cloudDisabledMessage } = useMessage();
+
   const isLoading = !selectedMenu;
-
-  const lnkedStorageProviders = useMemo(
-    () => storageProviders.some((provider) => provider.service?.isStorageProvider),
-    [storageProviders]
-  );
-
-  const cloudDisabledMessage = useMemo(() => {
-    if (userState !== 'AUTHENTICATED')
-      return `${t('messages:you_must_sign_in_to_use_this_feature')}`;
-    if (!lnkedStorageProviders) {
-      return (
-        <>
-          <Typography paragraph variant="caption">
-            {t('messages:must_link_your_account_to_a_storage_provider')}.
-          </Typography>
-          <Typography paragraph variant="caption">
-            {t('messages:you_can_do_that_through_the_profile_menu')}.
-          </Typography>
-          <Typography variant="caption">
-            {t('messages:suported_storage_providers')}:{' '}
-            {storageProviders.map(({ providerId }, index) => (
-              <span key={providerId}>
-                <Typography fontWeight={700} variant="caption" sx={{ textTransform: 'capitalize' }}>
-                  {providerId}
-                </Typography>
-                {storageProviders.length > 0 &&
-                  (index === storageProviders.length - 1
-                    ? ''
-                    : index === storageProviders.length - 2
-                    ? ` ${t('commons:and')} `
-                    : ' , ')}
-              </span>
-            ))}
-            .
-          </Typography>
-        </>
-      );
-    }
-  }, [userState, lnkedStorageProviders]);
 
   const menuOptions: (MenuButtonProps | 'separator')[] = [
     {
-      disabled: isLoading || userState !== 'AUTHENTICATED' || !lnkedStorageProviders,
+      disabled:
+        isLoading ||
+        userState !== 'AUTHENTICATED' ||
+        !storageProviders.some((provider) => provider.service?.isStorageProvider),
       disabledTooltipText: cloudDisabledMessage,
       icon: 'cloud',
       label: t('storage:from_the_cloud'),
