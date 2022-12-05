@@ -18,6 +18,7 @@
     "more_information": "Plus d'informations",
     "name": "nom",
     "new": "nouveau",
+    "none": "rien",
     "not_found": "non trouvé",
     "open": "ouvrir",
     "open_recent": "Ouvrir le récent",
@@ -37,7 +38,6 @@
     "sign_in": "connexion",
     "sign_out": "se déconnecter",
     "storage": "stockage",
-    "switch_accounts": "changer de compte",
     "template": "modèle",
     "templates": "modèles",
     "unsaved_changes": "modifications non sauvegardées",
@@ -130,6 +130,9 @@
     "appearance": "apparence",
     "auto": "auto",
     "dark": "noir",
-    "light": "light"
+    "dark_theme": "Thème sombre",
+    "device_theme": "Thème de l'appareil",
+    "light": "light",
+    "light_theme": "Thème lumière"
   }
 }

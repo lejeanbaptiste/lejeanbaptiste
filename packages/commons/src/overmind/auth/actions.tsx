@@ -53,11 +53,7 @@ export const setupMainIdentityProvider = async ({ actions, effects }: Context, t
 
   const IDPTokens = await effects.auth.api.getExternalIDPTokens(identity_provider, token);
 
-  if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) {
-    const { message } = IDPTokens.error;
-    actions.ui.emitNotification({ message });
-    return 'none';
-  }
+  if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) return 'none';
 
   if (!IDPTokens) return log.warn('No identity_provider tokens');
 
@@ -94,11 +90,16 @@ export const setUserProfile = async (
   if (!identityProvider) return;
 
   //preferredID
-  const preferredID = effects.storage.api.getFromLocalStorage<string>('prefIdProvider');
+  const preferredID = effects.storage.api.getFromLocalStorage('prefIdProvider');
+
   //if not preferredID, use the first identityProviders linked Account
   preferredID
     ? (state.auth.user.preferredID = preferredID)
     : actions.auth.setPreferredId(identityProvider);
+
+  //get preferred storage if available
+  const prefStorageProvider = effects.storage.api.getFromLocalStorage('prefStorageProvider');
+  if (prefStorageProvider) actions.storage.setPrefStorageProvider(prefStorageProvider);
 
   //use avatar from preffed ID
   state.auth.user.avatar_url = user.identities.get(user.preferredID)?.avatar_url ?? undefined;
@@ -235,16 +236,13 @@ export const signOut = async ({ effects }: Context) => {
   await effects.auth.api.logout();
 };
 
-export const setPreferredId = ({ state, actions }: Context, providerId: string) => {
+export const setPreferredId = ({ state }: Context, providerId: string) => {
   if (!state.auth.user) return;
 
   state.auth.user.preferredID = providerId;
   localStorage.setItem('prefIdProvider', providerId);
 
   state.auth.user.avatar_url = state.auth.user.identities.get(providerId)?.avatar_url ?? undefined;
-
-  //preferred storage
-  actions.storage.changePrefStorageProvider(providerId);
 
   return providerId;
 };

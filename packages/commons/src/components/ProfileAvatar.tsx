@@ -1,8 +1,8 @@
 import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
-import { useAppState } from '@src/overmind';
 import { getIcon } from '@src/assets/icons';
-import { motion } from 'framer-motion';
-import React, { useState, type FC } from 'react';
+import { useAppState } from '@src/overmind';
+import { motion, useAnimation } from 'framer-motion';
+import React, { useEffect, useState, type FC } from 'react';
 
 interface ProfileAvatarProps {
   clickable?: boolean;
@@ -13,10 +13,30 @@ export const ProfileAvatar: FC<ProfileAvatarProps> = ({ clickable = true, size =
   const { user } = useAppState().auth;
   const { palette } = useTheme();
 
-  const [hover, setHover] = useState(false);
+  const badgeAnimationControl = useAnimation();
 
-  const handleMouseOver = () => setHover(true);
-  const handleMouseOut = () => setHover(false);
+  const [hover, setHover] = useState(false);
+  const [id, setId] = useState(user?.preferredID);
+
+  const handleMouseOver = () => {
+    badgeAnimationControl.start({ marginTop: 8, marginLeft: 8 });
+    setHover(true);
+  };
+  const handleMouseOut = () => {
+    badgeAnimationControl.start({ marginTop: 0, marginLeft: 0 });
+    setHover(false);
+  };
+
+  useEffect(() => {
+    if (clickable && user?.preferredID !== id) {
+      badgeAnimationControl.start({
+        scale: 3,
+        rotate: 90,
+        transition: { duration: 0.7, repeat: 1, repeatType: 'mirror' },
+      });
+      setId(user?.preferredID);
+    }
+  }, [user?.preferredID]);
 
   const profileVariants = {
     initial: { scale: 0 },
@@ -27,11 +47,6 @@ export const ProfileAvatar: FC<ProfileAvatarProps> = ({ clickable = true, size =
   const avatarVariant = {
     default: { boxShadow: `${palette.primary.main} 0px 0px 0px 0px` },
     hover: { boxShadow: `${palette.primary.main} 0px 0px 3px 1px` },
-  };
-
-  const badgeVariant = {
-    default: { marginTop: 0, marginLeft: 0 },
-    hover: { marginTop: 8, marginLeft: 8 },
   };
 
   return (
@@ -53,18 +68,18 @@ export const ProfileAvatar: FC<ProfileAvatarProps> = ({ clickable = true, size =
               borderRadius="50%"
               width={size / 2}
               height={size / 2}
-              variants={badgeVariant}
-              animate={hover && clickable ? 'hover' : 'default'}
+              animate={badgeAnimationControl}
               sx={{ cursor: clickable ? 'pointer' : 'default' }}
             >
               <Icon
-                component={getIcon(user?.preferredID)}
+                component={getIcon(user.preferredID)}
                 sx={{
                   width: size / 2,
                   height: size / 2,
                   borderRadius: '50%',
                   border: `1px solid ${palette.background.paper}`,
                   backgroundColor: palette.background.paper,
+                  cursor: clickable ? 'pointer' : 'default',
                 }}
               />
             </Box>

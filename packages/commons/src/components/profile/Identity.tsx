@@ -1,36 +1,47 @@
-import FingerprintIcon from '@mui/icons-material/Fingerprint';
+import AddLinkIcon from '@mui/icons-material/AddLink';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckIcon from '@mui/icons-material/Check';
 import {
   Icon,
   IconButton,
+  List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
-  ListItemSecondaryAction,
   ListItemText,
-  Stack,
 } from '@mui/material';
 import { getIcon } from '@src/assets/icons';
 import { StyledToolTip } from '@src/components';
+import { supportedIdentityProviders } from '@src/config';
+import { useAnalytics } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { BroadcastChannel } from 'broadcast-channel';
-import React, { type FC } from 'react';
+import chroma from 'chroma-js';
+import React, { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type SubMenu } from './';
 
-export const Identity: FC = () => {
+export const Identity = ({ onBack, onClose }: SubMenu) => {
   const { user } = useAppState().auth;
-  const { setPreferredId: changePreferredID, getLinkedAccounts, linkAccount } = useActions().auth;
-  const { supportedProviders } = useAppState().providers;
+  const { setPreferredId, getLinkedAccounts, linkAccount } = useActions().auth;
+  const { supportedProviders, storageProviders } = useAppState().providers;
+
+  const { setPrefStorageProvider } = useActions().storage;
   const { notifyViaSnackbar } = useActions().ui;
+
   const { t } = useTranslation('profile');
+  const { analytics } = useAnalytics();
 
-  const handleIdClick = async (provider: string) => {
-    if (supportedProviders.length === 1) return;
+  const handleSelect = async (event: MouseEvent, id: string) => {
+    event.stopPropagation();
+    if (!user || user?.preferredID === id) return;
 
-    if (!user || user?.preferredID === provider) return;
-    user.identities.get(provider) ? changePreferredID(provider) : await connectAccount(provider);
+    setPreferredId(id);
+    onClose();
   };
 
-  const connectAccount = async (provider: string) => {
-    const linkAccountUrl = await linkAccount(provider);
+  const handleConnectAccount = async (id: string) => {
+    const linkAccountUrl = await linkAccount(id);
     if (!linkAccountUrl) return;
 
     const channel = new BroadcastChannel('Leaf-Writer-Link-Accounts');
@@ -43,6 +54,15 @@ export const Identity: FC = () => {
       }
 
       await getLinkedAccounts();
+
+      if (
+        !user?.prefStorageProvider &&
+        storageProviders.some((provider) => provider.providerId === id)
+      ) {
+        setPrefStorageProvider(id);
+        if (analytics) analytics.track('storage', { storage: id });
+      }
+
       notifyViaSnackbar('Account Linked');
     };
 
@@ -50,55 +70,56 @@ export const Identity: FC = () => {
   };
 
   return (
-    <ListItem dense>
-      <ListItemIcon sx={{ minWidth: 40 }}>
-        <FingerprintIcon fontSize="small" />
-      </ListItemIcon>
-      <ListItemText
-        id="identity"
-        primary={t('commons:identity')}
-        sx={{ textTransform: 'capitalize' }}
-      />
-      <ListItemSecondaryAction>
-        <Stack direction="row" gap={1.5} mr={1}>
-          {supportedProviders.map(({ providerId }) => (
-            <StyledToolTip
-              key={providerId}
-              title={
-                !user?.identities.get(providerId)
-                  ? t('commons:link_your_account', { provider: providerId })
-                  : providerId === user?.preferredID
-                  ? providerId
-                  : t('commons:switch_accounts', { provider: providerId })
-              }
+    <List dense disablePadding sx={{ width: 300 }}>
+      <ListItem sx={{ px: 1.75 }}>
+        <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
+          <ArrowBackIcon fontSize="small" />
+        </IconButton>
+        <ListItemText primary={t('commons:identity')} sx={{ textTransform: 'capitalize' }} />
+      </ListItem>
+      {supportedProviders
+        .filter((provider) => supportedIdentityProviders.includes(provider.providerId))
+        .map(({ providerId: id, service }) => (
+          <ListItem
+            key={id}
+            color="primary"
+            secondaryAction={
+              !service && (
+                <StyledToolTip arrow title={t('commons:link_your_account', { provider: id })}>
+                  <IconButton onClick={() => handleConnectAccount(id)} size="small">
+                    <AddLinkIcon color="primary" fontSize="small" />
+                  </IconButton>
+                </StyledToolTip>
+              )
+            }
+            sx={{ px: 0.5 }}
+          >
+            <ListItemButton
+              disabled={!service}
+              onClick={(event) => handleSelect(event, id)}
+              selected={id === user?.preferredID}
+              sx={{
+                borderRadius: 1,
+                '&.Mui-selected': {
+                  bgcolor: ({ palette }) =>
+                    user?.preferredID === id
+                      ? chroma(palette.primary.main).alpha(0.15).css()
+                      : 'inherit',
+                },
+              }}
             >
-              <span>
-                <IconButton
-                  onClick={() => handleIdClick(providerId)}
-                  size="small"
-                  sx={{
-                    height: 22,
-                    width: 22,
-                    color: ({ palette }) =>
-                      user?.preferredID === providerId ? palette.primary.main : 'inherit',
-                    border: ({ palette }) =>
-                      user?.preferredID === providerId ? `2px solid ${palette.primary.light}` : 0,
-                  }}
-                >
-                  <Icon
-                    component={getIcon(providerId)}
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      opacity: user?.identities.has(providerId) ? 1 : 0.7,
-                    }}
-                  />
-                </IconButton>
-              </span>
-            </StyledToolTip>
-          ))}
-        </Stack>
-      </ListItemSecondaryAction>
-    </ListItem>
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <Icon
+                  color={user?.preferredID === id ? 'primary' : 'inherit'}
+                  component={getIcon(id)}
+                  fontSize="small"
+                />
+              </ListItemIcon>
+              <ListItemText primary={id} sx={{ textTransform: 'capitalize' }} />
+              {user?.preferredID === id && <CheckIcon color="primary" fontSize="small" />}
+            </ListItemButton>
+          </ListItem>
+        ))}
+    </List>
   );
 };
