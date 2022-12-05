@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.6.0
+
+### Minor Changes
+
+- Redesign the profile menu [2a42285e21d092cd5a268ebee015752397458979]
+
+Move options to submenus creating more concistency in the design. It also decouple storage provider from identity provider.
+
 ## 2.5.0
 
 ### New Feature
