@@ -8,6 +8,17 @@
 
 Move options to submenus creating more concistency in the design. It also decouple storage provider from identity provider.
 
+### Patch
+
+- Capitalize "We use Cookies" [0e3ae2f587471efdc8552e80d78064d0818a62e4]
+- Replace icon for user management account for a gear [ab67bf494e2a4e81b13699ae057878f5f8e4c8fd]
+- Correct user profile card background color [2365a56c73eb261d489807da7c69bbb24bcabbc0]
+- Move cloud disable message to a hook [a91a09dca672bfc697d35e97f045b0abd42316f5]
+- Home storage tooltip: fix width [5ab76611d91f1fe5d2ef53f51b43b34f00cba0a8]
+- Add disable cloud storage message to main menu [9105c4cf5a074ab1c608e556d459526ed012587b]
+
+
+
 ## 2.5.0
 
 ### New Feature
