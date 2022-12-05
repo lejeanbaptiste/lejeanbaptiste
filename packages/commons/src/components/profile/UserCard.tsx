@@ -54,7 +54,12 @@ export const UserCard: FC = () => {
       </Stack>
 
       {page !== 'edit' && (
-        <IconButton onClick={handleManageAccontClick} size="small" sx={{ mt: '4px !important' }}>
+        <IconButton
+          color="primary"
+          onClick={handleManageAccontClick}
+          size="small"
+          sx={{ mt: '4px !important' }}
+        >
           <StyledToolTip title={t('profile:manage_your_lincs_account')}>
             <SettingsIcon fontSize="inherit" />
           </StyledToolTip>

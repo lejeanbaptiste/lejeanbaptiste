@@ -1,4 +1,4 @@
-import { SupportedStorageProviders } from '@src/config';
+import { supportedStorageProviders, supportedIdentityProviders } from '@src/config';
 import type { SupportedProvider } from '@src/services';
 import { derived } from 'overmind';
 
@@ -14,10 +14,12 @@ export const state: State = {
     supportedProviders.filter((supported) => !supported.linkOnly)
   ),
   identityProviders: derived(({ supportedProviders }: State) =>
-    supportedProviders.filter((supported) => supported.service)
+    supportedProviders.filter((provider) =>
+      supportedIdentityProviders.includes(provider.providerId)
+    )
   ),
   supportedProviders: [],
   storageProviders: derived(({ supportedProviders }: State) =>
-    supportedProviders.filter((provider) => SupportedStorageProviders.includes(provider.providerId))
+    supportedProviders.filter((provider) => supportedStorageProviders.includes(provider.providerId))
   ),
 };
