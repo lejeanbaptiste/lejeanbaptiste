@@ -97,12 +97,33 @@ export const setUserProfile = async (
     ? (state.auth.user.preferredID = preferredID)
     : actions.auth.setPreferredId(identityProvider);
 
-  //get preferred storage if available
-  const prefStorageProvider = effects.storage.api.getFromLocalStorage('prefStorageProvider');
-  if (prefStorageProvider) actions.storage.setPrefStorageProvider(prefStorageProvider);
-
   //use avatar from preffed ID
   state.auth.user.avatar_url = user.identities.get(user.preferredID)?.avatar_url ?? undefined;
+
+  //* Prefer Storage
+
+  const { storageProviders } = state.providers;
+
+  //get preferred storage if available
+  let prefStorageProvider = effects.storage.api.getFromLocalStorage('prefStorageProvider');
+
+  //If no prefStorageProvider use preferId to define prefStorage
+  if (!prefStorageProvider) {
+    if (storageProviders.some((provider) => provider.providerId === preferredID)) {
+      prefStorageProvider = preferredID;
+    } else {
+      //If preferId is not a storage provider, use the first one available
+      const firstAvailableStorageSupported = storageProviders.find(
+        (provider) => !!provider.service
+      );
+      if (firstAvailableStorageSupported) {
+        prefStorageProvider = firstAvailableStorageSupported.providerId;
+      }
+    }
+  }
+
+  //
+  if (prefStorageProvider) actions.storage.setPrefStorageProvider(prefStorageProvider);
 };
 
 export const linkAccount = async ({ actions, effects }: Context, identity_provider: string) => {
