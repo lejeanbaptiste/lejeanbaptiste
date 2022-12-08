@@ -2,12 +2,12 @@ import { SvgIcon } from '@mui/material';
 import React, { type FC } from 'react';
 import './tea.css';
 
-interface IProps {
+interface IconProps {
   color?: string;
   size?: number;
 }
 
-export const TeaIcon: FC<IProps> = ({ color = '#33406f', size = 1 }) => {
+export const TeaIcon: FC<IconProps> = ({ color = '#33406f', size = 1 }) => {
   return (
     <SvgIcon
       className="tea"

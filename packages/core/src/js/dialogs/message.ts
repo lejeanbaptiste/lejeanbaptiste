@@ -1,8 +1,8 @@
 import $ from 'jquery';
 import Writer from '../Writer';
-import type { ILWDialog, ILWDialogConfigParams } from './types';
+import type { LWDialogProps, LWDialogConfigProps } from './types';
 
-interface IConfig {
+interface ConfigProps {
   callback?: Function;
   dialogType: string;
   height?: number;
@@ -16,12 +16,12 @@ interface IConfig {
   yesText?: string;
 }
 
-class Message implements ILWDialog {
+class Message implements LWDialogProps {
   readonly writer: Writer;
   readonly $parentEl: JQuery<HTMLElement>;
   openDialogs: JQuery<HTMLElement>[];
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
     this.$parentEl = parentEl;
     this.openDialogs = []; // track the open dialogs
@@ -36,7 +36,7 @@ class Message implements ILWDialog {
     title,
     type,
     width = 300,
-  }: IConfig) {
+  }: ConfigProps) {
     const $message = $(`
       <div>
         <p>
@@ -89,7 +89,7 @@ class Message implements ILWDialog {
     return $message;
   }
 
-  show(config: IConfig) {
+  show(config: ConfigProps) {
     config.dialogType = 'message';
     const $message = this.createMessageDialog(config);
 
@@ -107,7 +107,7 @@ class Message implements ILWDialog {
     $message.dialog('open');
   }
 
-  confirm(config: IConfig) {
+  confirm(config: ConfigProps) {
     const { callback, noText = 'No', showConfirmKey, yesText = 'Yes' } = config;
 
     if (showConfirmKey) {

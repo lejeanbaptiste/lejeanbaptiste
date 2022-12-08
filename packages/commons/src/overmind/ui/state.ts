@@ -1,13 +1,13 @@
-import type { IDialogBar } from '@src/dialogs';
-import type { INotification, Language, PaletteMode } from '@src/types';
+import type { DialogBarProps } from '@src/dialogs';
+import type { NotificationProps, Language, PaletteMode } from '@src/types';
 import { supportedLanguages } from '@src/utilities';
 
 type State = {
   cookieConsent: string[];
   darkMode: boolean;
-  dialogBar: IDialogBar[];
+  dialogBar: DialogBarProps[];
   language: Language;
-  notifications: INotification[];
+  notifications: NotificationProps[];
   page: string;
   themeAppearance: PaletteMode;
 };

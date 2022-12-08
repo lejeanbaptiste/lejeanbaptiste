@@ -14,7 +14,7 @@ import LoadingIndicator from './loadingIndicator/loadingIndicator';
 import Message from './message';
 import Popup from './popup';
 import Translation from './translation';
-import type { ILWDialog } from './types';
+import type { LWDialogProps } from './types';
 import Writer from '../Writer';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
@@ -141,12 +141,12 @@ const restorePreviousDialogListeners = () => {
   });
 };
 
-interface IDefaultDialogConfig {
+interface DefaultDialogConfig {
   dialogClass: any;
   type?: string;
 }
 
-const defaultDialogs: Map<string, IDefaultDialogConfig> = new Map([
+const defaultDialogs: Map<string, DefaultDialogConfig> = new Map([
   ['attributesEditor', { dialogClass: AttributesEditor }],
   ['copyPaste', { dialogClass: CopyPaste }],
   ['loadingindicator', { dialogClass: LoadingIndicator }],
@@ -162,7 +162,7 @@ const defaultDialogs: Map<string, IDefaultDialogConfig> = new Map([
 class DialogManager {
   readonly writer: Writer;
   readonly $cwrcDialogWrapper: JQuery<HTMLElement>;
-  readonly dialogs: Map<string, ILWDialog> = new Map();
+  readonly dialogs: Map<string, LWDialogProps> = new Map();
   readonly schemaDialogs: Map<string, SchemaDialog> = new Map();
 
   // schema dialogs name, class map
@@ -198,7 +198,7 @@ class DialogManager {
     this.writer.event('schemaLoaded').subscribe(loadSchemaDialogs);
   }
 
-  addDialog(name: string, { dialogClass, type }: IDefaultDialogConfig) {
+  addDialog(name: string, { dialogClass, type }: DefaultDialogConfig) {
     const dialog = new dialogClass({
       writer: this.writer,
       parentEl: this.$cwrcDialogWrapper,

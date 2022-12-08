@@ -17,7 +17,7 @@ import i18next from './i18n';
 import { config } from './overmind';
 import type { EditorStateType } from './overmind/editor/state';
 import Providers from './Providers';
-import type { ILeafWriterOptions, LWDocument, ScreenshotParams } from './types';
+import type { LeafWriterOptions, LWDocument, ScreenshotParams } from './types';
 import './utilities/log';
 
 export * as Types from './types';
@@ -39,7 +39,7 @@ export class Leafwriter {
   private _onClose: Subject<boolean>;
   private _onEditorStateChange: Subject<EditorStateType>;
 
-  private options?: ILeafWriterOptions;
+  private options?: LeafWriterOptions;
 
   constructor(domElement?: HTMLElement) {
     this.domElement = domElement;
@@ -79,7 +79,7 @@ export class Leafwriter {
     });
   }
 
-  init(options: ILeafWriterOptions) {
+  init(options: LeafWriterOptions) {
     this.options = options;
     this.render();
   }

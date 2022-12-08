@@ -4,7 +4,7 @@ import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
 import type { SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
-import type { ILWDialogConfigParams } from '../types';
+import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 
 class LinkDialog implements SchemaDialog {
@@ -18,7 +18,7 @@ class LinkDialog implements SchemaDialog {
   selectedText?: string;
   type: EntityTypes = 'link';
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
     const mappingID = writer.schemaManager.mapper.currentMappingsId;
     if (!mappingID) throw Error('Schema Mappings not found');

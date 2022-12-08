@@ -2,7 +2,7 @@ import type { Resource } from '@cwrc/leafwriter-storage-service';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { isValidXml } from '@src/utilities';
-import React, { Suspense, type FC } from 'react';
+import React, { Suspense, useMemo, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
 import { LoadingMask } from './LoadingMask';
@@ -11,6 +11,7 @@ const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'
 
 export const Storage: FC = () => {
   const { user } = useAppState().auth;
+  const { storageProviders } = useAppState().providers;
   const { storageDialogState } = useAppState().storage;
 
   const { setResource } = useActions().editor;
@@ -24,6 +25,8 @@ export const Storage: FC = () => {
   const { setPermalink } = usePermalink();
 
   const { open, source, type } = storageDialogState;
+
+  const providers = useMemo(() => getStorageProvidersAuth(), [storageProviders]);
 
   const handleOnChange = (resource?: Resource) => {
     if (location.pathname !== '/') return;
@@ -69,6 +72,17 @@ export const Storage: FC = () => {
       : { valid: false, error: t('storage:error.xml_not_well-formed_message') };
   };
 
+  const preferProvider = useMemo(() => {
+    if (!user) return providers[0].name;
+    if (user.prefStorageProvider) return user.prefStorageProvider;
+
+    const prefIdIsStorageProvider = providers.some(
+      (provider) => provider.name === user.preferredID
+    );
+
+    return prefIdIsStorageProvider ? user.preferredID : providers[0]?.name;
+  }, [user?.preferredID]);
+
   return (
     <>
       {open && (
@@ -77,8 +91,8 @@ export const Storage: FC = () => {
             config={{
               allowedMimeTypes: ['application/xml'],
               defaultCommitMessage: 'Updated via LEAF-Writer',
-              providers: getStorageProvidersAuth(),
-              preferProvider: user?.prefStorageProvider,
+              providers,
+              preferProvider,
               validate: validXML,
             }}
             onBackdropClick={type === 'load' ? clickAway : undefined}

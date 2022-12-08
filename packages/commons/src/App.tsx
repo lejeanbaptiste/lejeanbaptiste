@@ -12,6 +12,8 @@ import { theme } from './theme';
 
 export const App: FC = () => {
   const { cookieConsent, darkMode, language, themeAppearance } = useAppState().ui;
+  const { storageDialogState } = useAppState().storage;
+
   const { setDarkMode, switchLanguage } = useActions().ui;
 
   const location = useLocation();
@@ -53,7 +55,7 @@ export const App: FC = () => {
       <ModalProvider>
         <SnackbarProvider>
           <CssBaseline enableColorScheme />
-          <Storage />
+          {storageDialogState.open && <Storage />}
           {routing}
         </SnackbarProvider>
       </ModalProvider>

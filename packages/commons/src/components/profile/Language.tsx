@@ -1,19 +1,15 @@
-import TranslateIcon from '@mui/icons-material/Translate';
-import {
-  ListItem,
-  ListItemIcon,
-  ListItemSecondaryAction,
-  ListItemText,
-  ToggleButton,
-} from '@mui/material';
-import { StyledToggleButtonGroup } from '@src/components';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckIcon from '@mui/icons-material/Check';
+import { IconButton, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
 import { useAnalytics, useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities';
-import React, { MouseEvent, type FC } from 'react';
+import chroma from 'chroma-js';
+import React, { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type SubMenu } from './';
 
-export const Language: FC = () => {
+export const Language = ({ onBack, onClose }: SubMenu) => {
   const { language } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
 
@@ -23,35 +19,44 @@ export const Language: FC = () => {
   const { switchLanguage: switchLanguageConsent } = useCookieConsent();
 
   const changeLanguage = (event: MouseEvent<HTMLElement>, code: string) => {
+    event.stopPropagation();
     if (!code) code = language.code;
     switchLanguage(code);
     switchLanguageConsent(code);
     i18n.changeLanguage(code);
 
     if (analytics) analytics.track('language', { language: code });
+    onClose();
   };
 
   return (
-    <ListItem>
-      <ListItemIcon sx={{ minWidth: 40 }}>
-        <TranslateIcon fontSize="small" />
-      </ListItemIcon>
-      <ListItemText id="language" primary={t('language')} sx={{ textTransform: 'capitalize' }} />
-      <ListItemSecondaryAction>
-        <StyledToggleButtonGroup exclusive onChange={changeLanguage} value={language.code}>
-          {Array.from(supportedLanguages).map(([, { code, shortName }]) => (
-            <ToggleButton
-              key={code}
-              aria-label={shortName}
-              size="small"
-              sx={{ height: 28 }}
-              value={code}
-            >
-              {shortName}
-            </ToggleButton>
-          ))}
-        </StyledToggleButtonGroup>
-      </ListItemSecondaryAction>
-    </ListItem>
+    <List dense disablePadding sx={{ width: 300 }}>
+      <ListItem sx={{ px: 1.75 }}>
+        <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
+          <ArrowBackIcon fontSize="small" />
+        </IconButton>
+        <ListItemText primary={t('commons:language')} sx={{ textTransform: 'capitalize' }} />
+      </ListItem>
+      {Array.from(supportedLanguages).map(([, { code, name }]) => (
+        <ListItem key={code} color="primary" sx={{ px: 0.5 }}>
+          <ListItemButton
+            onClick={(event) => changeLanguage(event, code)}
+            selected={code === language.code}
+            sx={{
+              borderRadius: 1,
+              '&.Mui-selected': {
+                bgcolor: ({ palette }) =>
+                  code === language.code
+                    ? chroma(palette.primary.main).alpha(0.15).css()
+                    : 'inherit',
+              },
+            }}
+          >
+            <ListItemText primary={name} sx={{ textTransform: 'capitalize' }} />
+            {code === language.code && <CheckIcon color="primary" fontSize="small" />}
+          </ListItemButton>
+        </ListItem>
+      ))}
+    </List>
   );
 };

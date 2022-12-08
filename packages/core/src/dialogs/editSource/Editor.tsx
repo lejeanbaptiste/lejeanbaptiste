@@ -12,12 +12,12 @@ import React, { useEffect, useRef, type FC } from 'react';
 //   },
 // };
 
-interface IEditor {
+interface EditorProps {
   content: string;
   updateContent: (value: string) => void;
 }
 
-const Editor: FC<IEditor> = ({ content, updateContent }) => {
+const Editor: FC<EditorProps> = ({ content, updateContent }) => {
   const { palette } = useTheme();
   const divEl = useRef<HTMLDivElement>(null);
   let editor: monaco.editor.IStandaloneCodeEditor;

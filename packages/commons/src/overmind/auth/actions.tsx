@@ -1,8 +1,8 @@
 import { log } from '@src//utilities';
-import type { IAnnotationUserProfile, User } from '@src/types';
+import type { AnnotationUserProfileProps, User } from '@src/types';
 import Cookies from 'js-cookie';
 import { Context } from '../index';
-import type { ILinkedAccount } from './effects';
+import type { LinkedAccountProps } from './effects';
 
 //* INIITIALIZE
 export const onInitializeOvermind = async ({ actions, effects }: Context, overmind: any) => {
@@ -53,11 +53,7 @@ export const setupMainIdentityProvider = async ({ actions, effects }: Context, t
 
   const IDPTokens = await effects.auth.api.getExternalIDPTokens(identity_provider, token);
 
-  if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) {
-    const { message } = IDPTokens.error;
-    actions.ui.emitNotification({ message });
-    return;
-  }
+  if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) return 'none';
 
   if (!IDPTokens) return log.warn('No identity_provider tokens');
 
@@ -82,14 +78,20 @@ export const setUserProfile = async (
   const user = keyCloakProfile as User;
   state.auth.user = user;
 
-  if (state.providers.identityProviders.length === 0) return;
-
   //augment user profile
   state.auth.user.identities = new Map();
-  await actions.auth.getLinkedAccounts();
+  const linkedAccounts = await actions.auth.getLinkedAccounts();
+
+  //in case the user have unloked the main provider from its account.
+  if (identityProvider === 'none' && linkedAccounts) {
+    identityProvider = linkedAccounts[0].identityProvider;
+  }
+
+  if (!identityProvider) return;
 
   //preferredID
-  const preferredID = effects.storage.api.getFromLocalStorage<string>('prefIdProvider');
+  const preferredID = effects.storage.api.getFromLocalStorage('prefIdProvider');
+
   //if not preferredID, use the first identityProviders linked Account
   preferredID
     ? (state.auth.user.preferredID = preferredID)
@@ -97,6 +99,31 @@ export const setUserProfile = async (
 
   //use avatar from preffed ID
   state.auth.user.avatar_url = user.identities.get(user.preferredID)?.avatar_url ?? undefined;
+
+  //* Prefer Storage
+
+  const { storageProviders } = state.providers;
+
+  //get preferred storage if available
+  let prefStorageProvider = effects.storage.api.getFromLocalStorage('prefStorageProvider');
+
+  //If no prefStorageProvider use preferId to define prefStorage
+  if (!prefStorageProvider) {
+    if (storageProviders.some((provider) => provider.providerId === preferredID)) {
+      prefStorageProvider = preferredID;
+    } else {
+      //If preferId is not a storage provider, use the first one available
+      const firstAvailableStorageSupported = storageProviders.find(
+        (provider) => !!provider.service
+      );
+      if (firstAvailableStorageSupported) {
+        prefStorageProvider = firstAvailableStorageSupported.providerId;
+      }
+    }
+  }
+
+  //
+  if (prefStorageProvider) actions.storage.setPrefStorageProvider(prefStorageProvider);
 };
 
 export const linkAccount = async ({ actions, effects }: Context, identity_provider: string) => {
@@ -147,7 +174,7 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
 
 export const getUserDetails = async (
   { state }: Context,
-  { identityProvider: providerName, userId }: ILinkedAccount
+  { identityProvider: providerName, userId }: LinkedAccountProps
 ) => {
   const { supportedProviders } = state.providers;
 
@@ -163,7 +190,7 @@ export const getUserDetails = async (
 
 export const setupLinkedAccountProvider = async (
   { actions, effects }: Context,
-  { identityProvider: providerName, userId, userName }: ILinkedAccount
+  { identityProvider: providerName, userId, userName }: LinkedAccountProps
 ) => {
   const token = await effects.auth.api.getToken();
   if (!token) return log.warn('No Authentication token');
@@ -202,7 +229,7 @@ export const getUserProfile = ({ state }: Context) => {
   const avatar_url = user.avatar_url;
   const email = user.email;
 
-  const annotationUserProfile: IAnnotationUserProfile = {
+  const annotationUserProfile: AnnotationUserProfileProps = {
     name,
     url,
     avatar_url,
@@ -230,15 +257,13 @@ export const signOut = async ({ effects }: Context) => {
   await effects.auth.api.logout();
 };
 
-export const setPreferredId = ({ state, actions }: Context, providerId: string) => {
+export const setPreferredId = ({ state }: Context, providerId: string) => {
   if (!state.auth.user) return;
+
   state.auth.user.preferredID = providerId;
   localStorage.setItem('prefIdProvider', providerId);
 
   state.auth.user.avatar_url = state.auth.user.identities.get(providerId)?.avatar_url ?? undefined;
-
-  //preferred storage
-  actions.storage.changePrefStorageProvider(providerId);
 
   return providerId;
 };

@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import Entity, { type IannotationRange } from '../entities/Entity';
+import Entity, { type AnnotationRange } from '../entities/Entity';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 
@@ -312,7 +312,7 @@ class CWRC2XML {
     // then remove the associated nodes
     $(overlappingEntIds).each((index, id) => {
       const entry = this.writer.entitiesManager.getEntity(id);
-      entry.setRange(_this.getRangesForEntity(id) as IannotationRange);
+      entry.setRange(_this.getRangesForEntity(id) as AnnotationRange);
       $(`[name="${id}"]`, body).each((index, element) => {
         $(element).contents().unwrap();
       });

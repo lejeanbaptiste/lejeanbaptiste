@@ -20,7 +20,7 @@ type DialogType =
   | 'note'
   | 'rs';
 
-interface IDialogFormConfig {
+interface DialogFormConfig {
   writer: Writer;
   $el: JQuery<HTMLElement>;
   title: string;
@@ -30,12 +30,12 @@ interface IDialogFormConfig {
   type: DialogType;
 }
 
-interface IDialogFormShowConfig {
+interface DialogFormShowConfig {
   [x: string]: any;
   entry?: Entity;
 }
 
-interface IcurrentData {
+interface CurrentDataProps {
   attributes: any;
   properties: any;
   customValues: any;
@@ -47,7 +47,7 @@ class DialogForm {
 
   readonly writer: Writer;
   readonly $el: JQuery<HTMLElement>;
-  showConfig?: IDialogFormShowConfig; // the config object sent to the dialog's "show" method
+  showConfig?: DialogFormShowConfig; // the config object sent to the dialog's "show" method
 
   cwrcWriter?: any; // reference to the cwrcWriter if this is a note form
 
@@ -58,7 +58,7 @@ class DialogForm {
 
   currentId: string | null = null; // ADD or EDIT
 
-  currentData: IcurrentData = {
+  currentData: CurrentDataProps = {
     attributes: {},
     properties: {},
     customValues: {},
@@ -196,7 +196,7 @@ class DialogForm {
       });
   }
 
-  constructor(config: IDialogFormConfig) {
+  constructor(config: DialogFormConfig) {
     this.writer = config.writer;
     this.$el = config.$el;
 
@@ -284,7 +284,7 @@ class DialogForm {
       });
   }
 
-  private initAttributeWidget(dialogInstance: DialogForm, config: IDialogFormShowConfig) {
+  private initAttributeWidget(dialogInstance: DialogForm, config: DialogFormShowConfig) {
     const tag = config.entry
       ? config.entry.tag
       : dialogInstance.writer.schemaManager.mapper.getParentTag(dialogInstance.type);
@@ -294,7 +294,7 @@ class DialogForm {
     dialogInstance.attWidgetInit = true;
   }
 
-  show(config: IDialogFormShowConfig = {}) {
+  show(config: DialogFormShowConfig = {}) {
     this.showConfig = config;
     this.mode = config.entry ? DialogForm.EDIT : DialogForm.ADD;
 

@@ -7,11 +7,11 @@ import { Grid, IconButton, Paper, Stack, ToggleButton, Typography } from '@mui/m
 import React, { useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
-import { IAuthorityService, NamedEntityType } from '../../entityLookups';
+import { AuthorityService, NamedEntityType } from '../../entityLookups';
 import NamedEntityOption from './NamedEntityOption';
 
 interface AuthoritySource {
-  authorityService: IAuthorityService;
+  authorityService: AuthorityService;
 }
 
 const AuthoritySource: FC<AuthoritySource> = ({

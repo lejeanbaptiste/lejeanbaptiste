@@ -3,15 +3,15 @@ import { Bookmark } from 'tinymce';
 import type { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
-import Entity, { type IEntityConfig } from './Entity';
+import Entity, { type EntityConfig } from './Entity';
 
-interface Iinfo {
+interface InfoProps {
   attributes: { [x: string]: any }; //Key/value pairs of attributes
   properties?: { [x: string]: any }; //Key/value pairs of Entity properties
   customValues?: { [x: string]: any }; //Any additional custom values
 }
 
-interface IEntities {
+interface EntitiesProps {
   [x: string]: Entity;
 }
 
@@ -25,7 +25,7 @@ class EntitiesManager {
   readonly writer: Writer;
 
   currentEntity: string | null = null;
-  entities: IEntities = {};
+  entities: EntitiesProps = {};
 
   constructor(writer: Writer) {
     this.writer = writer;
@@ -58,7 +58,7 @@ class EntitiesManager {
    * @param {Range} [range] If a range is provided, the actual tag is also added
    * @returns {Entity} The newly created Entity
    */
-  addEntity(config: IEntityConfig | Entity, range?: Range) {
+  addEntity(config: EntityConfig | Entity, range?: Range) {
     let entity: Entity;
 
     if (config instanceof Entity) {
@@ -102,7 +102,7 @@ class EntitiesManager {
    * @param {Object} info.customValues Any additional custom values
    * @returns {Entity} The edited Entity
    */
-  editEntity(entity: Entity, info: Iinfo) {
+  editEntity(entity: Entity, info: InfoProps) {
     if (info?.properties?.type !== entity.getType()) {
       // changing type, remove old requiredAttributes
       const requiredAttributes = this.writer.schemaManager.mapper.getRequiredAttributes(

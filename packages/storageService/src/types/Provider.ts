@@ -5,7 +5,7 @@ import type {
   PublicRepository,
   Repository,
 } from '.';
-import type { IError } from '../types';
+import type { Error } from '../types';
 
 export type ProviderAuth = {
   access_token: string;
@@ -64,7 +64,7 @@ export interface GetLatestCommitParams {
   repoName?: string;
 }
 
-export interface ILatestCommit {
+export interface LatestCommit {
   authorEmail?: string;
   authorName?: string;
   date?: string;
@@ -114,7 +114,7 @@ export interface GetOrganization {
   orgName?: string;
 }
 
-export interface ISaveDocument {
+export interface SaveDocument {
   branch: string;
   content: string;
   hash?: string;
@@ -125,14 +125,14 @@ export interface ISaveDocument {
   repoName?: string;
 }
 
-export interface ICreateFork {
+export interface CreateFork {
   orgName?: string;
   ownerUsername: string;
   repoId: string;
   repoName: string;
 }
 
-export interface ICreateBranch {
+export interface CreateBranch {
   branchOrigin: string;
   branchTarget: string;
   ownerUsername?: string;
@@ -140,14 +140,14 @@ export interface ICreateBranch {
   repoName?: string;
 }
 
-export interface IGetBranch {
+export interface GetBranch {
   branch: string;
   ownerUsername?: string;
   repoId?: string;
   repoName?: string;
 }
 
-export interface ICreatePrParams {
+export interface CreatePrParams {
   branchOrigin: string;
   branchHead: string;
   origin: Repository;
@@ -155,13 +155,13 @@ export interface ICreatePrParams {
   title: string;
 }
 
-export interface ICreatePrFromForkParams {
+export interface CreatePrFromForkProps {
   fork: Repository;
   origin: Repository;
   title: string;
 }
 
-export interface IProviderError extends IError {
+export interface ProviderError extends Error {
   status: number;
 }
 
@@ -172,20 +172,20 @@ export default interface Provider {
   userId: string;
   username: string;
 
-  checkForBranch: (params: IGetBranch) => Promise<boolean>;
+  checkForBranch: (params: GetBranch) => Promise<boolean>;
   checkOrgMemberWritenPermission: (params: CheckOrgMemberWrittenPermission) => Promise<boolean>;
   checkRepoUserWritenPermission: (params: CheckRepoUserWrittenPermission) => Promise<boolean>;
-  createBranch: (params: ICreateBranch) => Promise<any>;
-  createFolder: (params: ISaveDocument) => Promise<any>;
-  createFork: (params: ICreateFork) => Promise<Repository>;
-  createPullRequest: (params: ICreatePrParams) => Promise<CreatePrResponse>;
-  createPullRequestFromFork: (params: ICreatePrFromForkParams) => Promise<CreatePrResponse>;
+  createBranch: (params: CreateBranch) => Promise<any>;
+  createFolder: (params: SaveDocument) => Promise<any>;
+  createFork: (params: CreateFork) => Promise<Repository>;
+  createPullRequest: (params: CreatePrParams) => Promise<CreatePrResponse>;
+  createPullRequestFromFork: (params: CreatePrFromForkProps) => Promise<CreatePrResponse>;
   createRepo: (params: CreateRepoParams) => Promise<Repository | null>;
   createRepoInOrg: (params: CreateRepoParams) => Promise<Repository | null>;
   getAuthenticatedUser(): Promise<any>;
-  getBranch: (params: IGetBranch) => Promise<any>;
+  getBranch: (params: GetBranch) => Promise<any>;
   getDetailsForUser(params: UserDetailParams): Promise<any>;
-  getLatestCommit: (params: GetLatestCommitParams) => Promise<ILatestCommit | null>;
+  getLatestCommit: (params: GetLatestCommitParams) => Promise<LatestCommit | null>;
   getDocument: (params: RepoContentParams) => Promise<DocumentDetails | null>;
   getOrganization?: (params: GetOrganization) => Promise<Organization | null>;
   getOrganizationsForAuthenticatedUser(params: PaginatorParams): Promise<{
@@ -208,7 +208,7 @@ export default interface Provider {
     collection: Repository[];
     nextPage: string | null;
   } | null>;
-  saveDocument: (params: ISaveDocument) => Promise<null | IProviderError | { [key: string]: any }>;
+  saveDocument: (params: SaveDocument) => Promise<null | ProviderError | { [key: string]: any }>;
   searchBlobs: (params: SearchBlobsParams) => Promise<any[]>;
   searchUsers: (query: string) => Promise<PublicRepository[]>;
 }

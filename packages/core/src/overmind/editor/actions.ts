@@ -3,19 +3,19 @@ import Cookies from 'js-cookie';
 import { Context } from '../';
 import type {
   Authority,
-  IAuthorityService,
-  ILookups,
-  ILookupsConfig,
+  AuthorityService,
+  LookupsProps,
+  LookupsConfig,
   NamedEntityType,
 } from '../../dialogs/entityLookups/types';
-import type { ILeafWriterOptionsSettings, Schema } from '../../types';
+import type { LeafWriterOptionsSettings, Schema } from '../../types';
 import { log } from './../../utilities';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
 export const writerInitSettings = (
   { state: { editor }, actions }: Context,
-  settings: ILeafWriterOptionsSettings
+  settings: LeafWriterOptionsSettings
 ) => {
   const { baseUrl, schemas } = settings;
 
@@ -41,7 +41,7 @@ export const initiateLookupServices = async ({ state, actions, effects }: Contex
 
 export const initiateLookupSources = async (
   { state, actions, effects }: Context,
-  config?: ILookupsConfig
+  config?: LookupsConfig
 ) => {
   const { lookups } = state.editor;
 
@@ -376,7 +376,7 @@ export const toggleLookupEntity = (
 
 export const reorderLookupPriority = (
   { state: { editor }, effects }: Context,
-  authorities: IAuthorityService[]
+  authorities: AuthorityService[]
 ) => {
   if (!editor.lookups.authorities) return;
 
@@ -389,7 +389,7 @@ export const reorderLookupPriority = (
 };
 
 export const retrieveLookupAutoritiesConfig = ({ effects }: Context) => {
-  const prefs: ILookups = effects.editor.api.getFromLocalStorage('lookup_preferences');
+  const prefs: LookupsProps = effects.editor.api.getFromLocalStorage('lookup_preferences');
   return prefs;
 };
 

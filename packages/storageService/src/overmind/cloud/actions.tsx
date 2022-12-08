@@ -10,8 +10,8 @@ import type {
   Content,
   DocumentDetails,
   FetchDocumentParams,
-  IError,
-  IGetFileLatestHashParams,
+  Error,
+  GetFileLatestHashParams,
   NavigateToPathParams,
   Organization,
   Owner,
@@ -27,7 +27,7 @@ import type {
 import type {
   CreatePrResponse,
   CreateRepoParams,
-  ICreateFork,
+  CreateFork,
   ProviderAuth,
 } from '../../types/Provider';
 import { getIcon, isErrorMessage, log } from '../../utilities';
@@ -102,12 +102,12 @@ export const changeProvider = async (
 
 //---------------
 
-export interface IInitializeParams {
+export interface InitializeProps {
   resource?: Resource | string;
   source?: string;
 }
 
-export const initialize = async ({ state, actions }: Context, initialValues: IInitializeParams) => {
+export const initialize = async ({ state, actions }: Context, initialValues: InitializeProps) => {
   const { resource, source } = initialValues;
 
   if (typeof resource === 'string') {
@@ -586,12 +586,12 @@ export const createRepo = async (
 export const forkRepo = async ({
   state,
   actions,
-}: Context): Promise<Repository | IError | null> => {
+}: Context): Promise<Repository | Error | null> => {
   const provider = actions.cloud.getProvider();
   const { owner, repository } = state.cloud;
   if (!provider || !owner || !repository) return null;
 
-  const forkParams: ICreateFork = {
+  const forkParams: CreateFork = {
     ownerUsername: owner.username,
     repoId: repository.id,
     repoName: repository.name,
@@ -868,16 +868,9 @@ const splitPathFilename = (path: string): [string, string] => {
   return [path, filename];
 };
 
-// interface IGetFileLatestHashParams {
-//   filename: string;
-//   path: string[];
-//   repository: Repository;
-//   owner: Owner;
-// }
-
 export const getFileLatestHash = async (
   { actions }: Context,
-  { filename, path, repository, owner }: IGetFileLatestHashParams
+  { filename, path, repository, owner }: GetFileLatestHashParams
 ) => {
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
@@ -1110,7 +1103,7 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
 export const pullRequest = async ({
   state,
   actions,
-}: Context): Promise<CreatePrResponse | IError | null> => {
+}: Context): Promise<CreatePrResponse | Error | null> => {
   const { repository, owner } = state.cloud;
   const provider = actions.cloud.getProvider();
   if (!provider || !owner || !repository) return null;
@@ -1136,7 +1129,7 @@ export const pullRequest = async ({
 export const pullRequestFromFork = async ({
   state,
   actions,
-}: Context): Promise<CreatePrResponse | IError | null> => {
+}: Context): Promise<CreatePrResponse | Error | null> => {
   const { repository, owner } = state.cloud;
   const { resource } = state.common;
   const provider = actions.cloud.getProvider();
@@ -1165,7 +1158,7 @@ export const pullRequestFromFork = async ({
   return pullRequestResponse;
 };
 
-export const branchFile = async ({ state, actions }: Context): Promise<string | IError | null> => {
+export const branchFile = async ({ state, actions }: Context): Promise<string | Error | null> => {
   const { common, cloud } = state;
   const { repository, repositoryContent, owner } = cloud;
   const { resource } = common;
@@ -1226,7 +1219,7 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
 export const forkFile = async ({
   state,
   actions,
-}: Context): Promise<Repository | IError | null> => {
+}: Context): Promise<Repository | Error | null> => {
   const { common, cloud } = state;
   const { repository, repositoryContent, owner } = cloud;
   const { resource } = common;
@@ -1293,7 +1286,7 @@ export const forkFile = async ({
   return fork;
 };
 
-export const fork = async ({ state, actions }: Context): Promise<Repository | IError | null> => {
+export const fork = async ({ state, actions }: Context): Promise<Repository | Error | null> => {
   const { collectionSource, owner, repository } = state.cloud;
   const provider = actions.cloud.getProvider();
   if (!provider || !owner || !repository) return null;
@@ -1322,7 +1315,7 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | IE
   }, 5_000);
 
   //create new fork
-  const fork: Repository | IError = await provider
+  const fork: Repository | Error = await provider
     .createFork({
       ownerUsername: owner.username,
       repoName: repository.name,

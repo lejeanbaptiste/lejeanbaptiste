@@ -19,7 +19,7 @@ import * as yup from 'yup';
 import { TextEmphasis } from '../components';
 import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
-import { type IEditSchemaDialog } from './type';
+import { type EditSchemaDialogProps } from './type';
 
 interface SchemaForm {
   name: string;
@@ -32,7 +32,7 @@ const defaultValue: SchemaForm = { name: '', mapping: 'tei', rng: '', css: '' };
 
 const regexHttps = /^(https)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\/\S*)?$/;
 
-export const EditSchemaDialog: FC<IEditSchemaDialog> = ({
+export const EditSchemaDialog: FC<EditSchemaDialogProps> = ({
   actionType = 'add',
   docSchema,
   id,

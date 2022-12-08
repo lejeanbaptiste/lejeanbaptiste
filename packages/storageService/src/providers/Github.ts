@@ -13,14 +13,8 @@ import { isErrorMessage } from '../utilities';
 
 // ------------- Internal types --------------
 
-// interface IGetLatestFileSHA {
-//   owner: string;
-//   repo: string;
-//   branch: string;
-//   path: string;
-// }
 
-interface ICheckForPullRequest {
+interface CheckForPullRequest {
   branch: string;
   ownerUsername: string;
   repoName: string;
@@ -430,7 +424,7 @@ export default class Github implements Provider {
     const latest = response.data[0];
     const commit = latest.commit;
 
-    const latestCommit: Types.ILatestCommit = {
+    const latestCommit: Types.LatestCommit = {
       authorEmail: commit.author?.email,
       authorName: commit.author?.name,
       date: commit.author?.date,
@@ -600,7 +594,7 @@ export default class Github implements Provider {
     ownerUsername: owner,
     path,
     repoName: repo,
-  }: Types.ISaveDocument) {
+  }: Types.SaveDocument) {
     if (!repo || !owner) return null;
 
     const filename = '.gitkeep';
@@ -630,7 +624,7 @@ export default class Github implements Provider {
    * @param {String} [sha] The SHA
    * @returns {Promise}
    */
-  async saveDocument(params: Types.ISaveDocument) {
+  async saveDocument(params: Types.SaveDocument) {
     const { branch, content, message, ownerUsername: owner, path, repoName: repo, hash } = params;
 
     if (!repo || !owner) return null;
@@ -647,7 +641,7 @@ export default class Github implements Provider {
       })
       .catch((error) => {
         if (error.message.includes('does not match')) {
-          return { type: 'warning', status: 409, message: 'conflict' } as Types.IProviderError;
+          return { type: 'warning', status: 409, message: 'conflict' } as Types.ProviderError;
         }
         return null;
       });
@@ -698,7 +692,7 @@ export default class Github implements Provider {
    * @param {String} orgName The organization name
    * @returns {Promise}
    */
-  async createFork({ ownerUsername, repoName, orgName }: Types.ICreateFork) {
+  async createFork({ ownerUsername, repoName, orgName }: Types.CreateFork) {
     if (!ownerUsername || !repoName) throw new Error('owner and repository are missing'); //return null;
 
     const response = await this.octokit.repos
@@ -719,7 +713,7 @@ export default class Github implements Provider {
    * @param {String} repoName The repository
    * @returns {Promise}
    */
-  async getBranch({ branch, ownerUsername, repoName }: Types.IGetBranch) {
+  async getBranch({ branch, ownerUsername, repoName }: Types.GetBranch) {
     if (!ownerUsername || !repoName) return null;
     const response = await this.octokit.rest.repos
       .getBranch({ owner: ownerUsername, repo: repoName, branch })
@@ -736,7 +730,7 @@ export default class Github implements Provider {
    * @param {String} repoName The repository
    * @returns {Promise<boolean>}
    */
-  async checkForBranch({ branch, ownerUsername, repoName }: Types.IGetBranch) {
+  async checkForBranch({ branch, ownerUsername, repoName }: Types.GetBranch) {
     const response = await this.getBranch({ branch, ownerUsername, repoName });
     if (!response) return false;
     return true;
@@ -751,7 +745,7 @@ export default class Github implements Provider {
    * @param {String} ownerUsername The owner username
    * @returns {Promise}
    */
-  async createBranch({ ownerUsername, repoName, branchOrigin, branchTarget }: Types.ICreateBranch) {
+  async createBranch({ ownerUsername, repoName, branchOrigin, branchTarget }: Types.CreateBranch) {
     if (!repoName || !ownerUsername) return null;
 
     const originBranch = await this.getBranch({
@@ -785,7 +779,7 @@ export default class Github implements Provider {
    * @param {String} title The title of the pull request
    * @returns {Promise}
    */
-  private async checkForPullRequest({ ownerUsername, repoName, title }: ICheckForPullRequest) {
+  private async checkForPullRequest({ ownerUsername, repoName, title }: CheckForPullRequest) {
     const query = `state:open type:pr repo:${ownerUsername}/${repoName} ${title} in:title`;
 
     const result = await this.octokit.rest.search.issuesAndPullRequests({ q: query });
@@ -808,7 +802,7 @@ export default class Github implements Provider {
     ownerUsername,
     origin,
     title,
-  }: Types.ICreatePrParams) {
+  }: Types.CreatePrParams) {
     // there can be only one PR per branch */
     const doesPullRequestExist = await this.checkForPullRequest({
       branch: branchHead,
@@ -842,7 +836,7 @@ export default class Github implements Provider {
    * @param {String} title The title of the pull request
    * @returns {Promise<Types.CreatePrResponse>}
    */
-  async createPullRequestFromFork({ fork, origin, title }: Types.ICreatePrFromForkParams) {
+  async createPullRequestFromFork({ fork, origin, title }: Types.CreatePrFromForkProps) {
     const base = origin.default_branch;
     const head = `${fork.owner.username}:${fork.default_branch}`;
 

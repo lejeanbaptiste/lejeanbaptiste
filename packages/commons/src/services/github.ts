@@ -6,6 +6,9 @@ import type { AuthenticateProp, ProviderService } from './types';
 let octokit: Octokit;
 const name = 'github';
 
+const isIdentityProvider = true;
+const isStorageProvider = true;
+
 let _access_token: string;
 const getAccessToken = () => _access_token;
 
@@ -40,7 +43,7 @@ const authenticate = ({ access_token, IDPTokens, userId, userName }: Authenticat
   _userId = userId ?? '';
   _userName = userName ?? '';
 
-  octokit = new Octokit({ auth: access_token, userAgent: 'Leaf-Writer' });
+  octokit = new Octokit({ auth: access_token, userAgent: 'LEAF-Writer' });
 };
 
 /**
@@ -59,6 +62,8 @@ const getAuthenticatedUser = async (): Promise<GetAuthenticatedResponseDataType>
 
 export const provider: ProviderService = {
   name,
+  isIdentityProvider,
+  isStorageProvider,
   getAccessToken,
   getUserId,
   getUserName,

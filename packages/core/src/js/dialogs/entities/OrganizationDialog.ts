@@ -6,7 +6,7 @@ import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
 import type { SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
-import type { ILWDialogConfigParams } from '../types';
+import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import { getSourceNameFromUrl } from './util';
 
@@ -46,7 +46,7 @@ class OrgDialog implements SchemaDialog {
   selectedText?: string;
   type: EntityTypes = 'organization';
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
     const mappingID = writer.schemaManager.mapper.currentMappingsId;
     if (!mappingID) throw Error('Schema Mappings not found');

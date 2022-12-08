@@ -1,15 +1,12 @@
-import { Box, Button, Divider, List, Popover, Typography } from '@mui/material';
-import { useCookieConsent } from '@src/hooks';
-import { useActions, useAppState } from '@src/overmind';
-import React, { type FC } from 'react';
-import { useTranslation } from 'react-i18next';
-import { EditorSettings } from './EditorSettings';
-import { Footer } from './Footer';
+import { Box, Divider, Popover, Stack } from '@mui/material';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useState, type FC } from 'react';
+import { ReactNode } from 'react-markdown';
+import { Appearance } from './Appearance';
 import { Identity } from './Identity';
 import { Language } from './Language';
-import { PrivacySettings } from './PrivacySettings';
-// import { Storage } from './Storage';
-import { ThemeAppearance } from './ThemeAppearance';
+import { Main } from './Main';
+import { Storage } from './Storage';
 import { UserCard } from './UserCard';
 
 interface ProfileProps {
@@ -17,48 +14,37 @@ interface ProfileProps {
   onClose: () => void;
 }
 
+export interface SubMenu {
+  onBack: () => void;
+  onClose: () => void;
+  width?: number;
+}
+
+export type ViewType = 'main' | 'appearance' | 'language' | 'identity' | 'storage';
+
+const WIDTH = 300;
+
 export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
-  const { isDirty, libLoaded } = useAppState().editor;
-  const { supportedProviders } = useAppState().providers;
-
-  const { signOut } = useActions().auth;
-  const { openDialog } = useActions().ui;
-
-  const { t } = useTranslation('commons');
-  const { clearCookieConsent } = useCookieConsent();
+  const [stackViews, setStackedViews] = useState<ViewType[]>(['main']);
 
   const open = Boolean(anchor);
 
-  const handleSignOut = async () => {
-    if (!isDirty) return doSignOut();
-
-    openDialog({
-      props: {
-        severity: 'warning',
-        title: `${t('commons:unsaved_changes')}`,
-        Message: () => <Typography>{t('storage:you_will_lose_any_unsaved_changes')}.</Typography>,
-        actions: [
-          { action: 'cancel', label: `${t('commons:cancel')}` },
-          { action: 'signout', label: `${t('commons:sign_out')}`, variant: 'outlined' },
-        ],
-        //@ts-ignore
-        onClose: async (action: string) => {
-          if (action === 'cancel') return onClose();
-          doSignOut();
-        },
-      },
-    });
-  };
-
-  const doSignOut = async () => {
-    clearCookieConsent();
-    await signOut();
-    onClose();
-  };
-
-  const handleClose = async (event: MouseEvent, reason?: string) => {
+  const handleClose = (event: MouseEvent, reason?: string) => {
     event.stopPropagation();
     onClose();
+  };
+
+  const handleChangeView = async (view?: ViewType) => {
+    const stack = view ? [...stackViews, view] : stackViews.slice(0, -1);
+    setStackedViews(stack);
+  };
+
+  const viewComponent: Record<ViewType, ReactNode> = {
+    main: <Main onClose={onClose} onChangeView={handleChangeView} />,
+    appearance: <Appearance onBack={handleChangeView} onClose={onClose} />,
+    language: <Language onBack={handleChangeView} onClose={onClose} />,
+    identity: <Identity onBack={handleChangeView} onClose={onClose} />,
+    storage: <Storage onBack={handleChangeView} onClose={onClose} />,
   };
 
   return (
@@ -71,38 +57,27 @@ export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
       transformOrigin={{ vertical: 'top', horizontal: 'right' }}
     >
       <UserCard />
-
       <Divider />
-
-      <List sx={{ width: 280 }}>
-        {supportedProviders.length > 1 && <Identity />}
-        {/* {supportedProviders.length > 1 && <Storage />} */}
-        <ThemeAppearance />
-        <Language />
-      </List>
-
-      <Divider />
-
-      <List dense>
-        <PrivacySettings onClick={onClose} />
-        {libLoaded && <EditorSettings onClick={onClose} />}
-      </List>
-
-      <Divider />
-
-      <Box display="flex" justifyContent="center" mt={2} mb={2}>
-        <Button
-          onClick={handleSignOut}
-          size="small"
-          sx={{ ':first-letter': { textTransform: 'uppercase' } }}
-          variant="outlined"
-        >
-          {t('sign_out')}
-        </Button>
-      </Box>
-
-      <Divider />
-      <Footer onClick={onClose} />
+      <AnimatePresence mode="wait">
+        <Box overflow="hidden" width={WIDTH}>
+          <Stack direction="row">
+            {stackViews.map((view) => (
+              <Box
+                key={view}
+                component={motion.div}
+                animate={{
+                  width: view !== stackViews[stackViews.length - 1] ? 0 : WIDTH,
+                  height: view !== stackViews[stackViews.length - 1] ? 1 : '100%',
+                }}
+                overflow="hidden"
+                width={WIDTH}
+              >
+                {viewComponent[view]}
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+      </AnimatePresence>
     </Popover>
   );
 };

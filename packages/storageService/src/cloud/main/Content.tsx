@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { formatDistance } from 'date-fns';
 import React, { FC, useState } from 'react';
-import type { ILatestCommit } from '../../types/Provider';
+import type { LatestCommit } from '../../types/Provider';
 import type { Content as ContentType } from '../../types';
 import { useActions, useAppState } from '../../overmind';
 import ContentDetails from './ContentDetails';
@@ -25,7 +25,7 @@ const Content: FC<ContentProps> = ({ content }) => {
   const { getLatestCommit, fetchDocument, navigateTo } = useActions().cloud;
   const { load, setFilename, setSelectedItem } = useActions().common;
 
-  const [latestCommit, setLatestCommig] = useState<ILatestCommit | null>(null);
+  const [latestCommit, setLatestCommig] = useState<LatestCommit | null>(null);
 
   const { name, path, type } = content;
 

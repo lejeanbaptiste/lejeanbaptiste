@@ -9,7 +9,7 @@ import Writer from '../Writer';
 // * The following line is need for VSC extension i18n ally  work
 // useTranslation('leafwriter');
 
-export interface IProcessSchemaParams {
+export interface ProcessSchemaProps {
   doc: XMLDocument;
   docSchema?: { rng?: string; css?: string };
   rootIsSupported?: boolean;
@@ -24,7 +24,7 @@ export interface IProcessSchemaParams {
 
 const { t } = i18next;
 
-export const openProcessIssueDialog = (params: IProcessSchemaParams, action?: string) => {
+export const openProcessIssueDialog = (params: ProcessSchemaProps, action?: string) => {
   if (action === 'selectSchema') return promptSelectSchema(params);
   if (action === 'addSchema') return promptAddSchema(params);
 
@@ -36,7 +36,7 @@ export const openProcessIssueDialog = (params: IProcessSchemaParams, action?: st
   if (!schemaLoaded) return promptSchemaNotLoaded(params);
 };
 
-export const promptRootNotSupported = ({ rootName, writer }: IProcessSchemaParams) => {
+export const promptRootNotSupported = ({ rootName, writer }: ProcessSchemaProps) => {
   writer.overmindActions.ui.openDialog({
     type: 'simple',
     props: {
@@ -58,7 +58,7 @@ export const promptRootNotSupported = ({ rootName, writer }: IProcessSchemaParam
   });
 };
 
-export const promptSchemaNotFound = (params: IProcessSchemaParams) => {
+export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
   const { writer } = params;
 
   writer.overmindActions.ui.openDialog({
@@ -85,7 +85,7 @@ export const promptSchemaNotFound = (params: IProcessSchemaParams) => {
   });
 };
 
-export const promptSchemaNotSupported = (params: IProcessSchemaParams) => {
+export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
   const { writer } = params;
 
   writer.overmindActions.ui.openDialog({
@@ -119,7 +119,7 @@ export const promptSchemaNotSupported = (params: IProcessSchemaParams) => {
   });
 };
 
-export const promptSchemaNotLoaded = (params: IProcessSchemaParams) => {
+export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
   const { docSchema, selectedSchema, writer } = params;
 
   writer.overmindActions.ui.openDialog({
@@ -153,7 +153,7 @@ export const promptSchemaNotLoaded = (params: IProcessSchemaParams) => {
   });
 };
 
-export const promptSelectSchema = (params: IProcessSchemaParams) => {
+export const promptSelectSchema = (params: ProcessSchemaProps) => {
   const { doc, rootName, writer } = params;
   const { schemaManager } = writer;
 
@@ -180,7 +180,7 @@ export const promptSelectSchema = (params: IProcessSchemaParams) => {
   });
 };
 
-export const promptAddSchema = (params: IProcessSchemaParams) => {
+export const promptAddSchema = (params: ProcessSchemaProps) => {
   const { doc, docSchema, rootName, writer } = params;
   const { converter, overmindActions, schemaManager } = writer;
 

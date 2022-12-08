@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## 2.3.1
+
+### Patch
+
+- User props: remove avatar_url & nick. Add uri. [7b9e9c69587e125b46f829689ab7e3421ae2967d]
+- Rename types [a6affdbdc116b3682ffe4202f0a5e0d00d43f8e1]
+- Update dependencies [91b130e51a7d4fde5fa86e987115f088d120d344]:
+  - core:
+    - update: axios@1.2.0
+    - bump up:
+      - @fortawesome/fontawesome-free@6.2.1
+      - @mui/icons-material@5.10.16
+      - @mui/lab@5.0.0-alpha.110
+      - @mui/material@5.10.16
+      - framer-motion@7.6.18
+      - i18next@22.0.6
+      - luxon@3.1.1
+      - react-intersection-observer@9.4.1
+      - react-router-dom@6.4.4
+  - dev:
+    - upgrade: @types/uuid@9.0.0
+    - update:
+      - @typescript-eslint/eslint-plugin@5.45.0
+      - @typescript-eslint/parser@5.45.0
+      - mini-css-extract-plugin@2.7.1
+    - bump up:
+      - @types/node@18.11.10
+      - @types/react-dom@18.0.9
+      - eslint-plugin-react@7.21.11
+
+- Updated dependencies
+  - @cwrc/leafwriter-validator@1.2.1
+
 ## 2.3.0
 
 ### Minor Changes
@@ -48,7 +81,7 @@
       - @types/node@18.11.9
       - @types/react-dom@18.0.8
       - husky@8.0.2
-  
+
 ## 2.2.0
 
 ### New Features

@@ -1,13 +1,13 @@
-import type { ILeafWriterOptionsSettings, Schema } from '../types';
+import type { LeafWriterOptionsSettings, Schema } from '../types';
 import { SchemaMappings } from '../types';
 import { isValidHttpURL } from '../utilities';
 import { schemas as defaultSchemas } from './schemas';
 
-export const createConfig = ({ baseUrl, schemas: configSchemas }: ILeafWriterOptionsSettings) => {
+export const createConfig = ({ baseUrl, schemas: configSchemas }: LeafWriterOptionsSettings) => {
   const supportedSchemas = configSchemas ? [...configSchemas, ...defaultSchemas] : defaultSchemas;
   const schemas = setupSchemas(supportedSchemas);
 
-  const config: ILeafWriterOptionsSettings = {
+  const config: LeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
     baseUrl: baseUrl ?? '.',
     schemas,

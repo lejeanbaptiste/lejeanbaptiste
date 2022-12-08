@@ -6,14 +6,14 @@ import queryString from 'query-string';
 
 //* Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
 
-export interface IHTTPRequestError {
+export interface HTTPRequestError {
   error: {
     status?: number;
     message: string;
   };
 }
 
-export interface ILinkedAccount {
+export interface LinkedAccountProps {
   identityProvider: string;
   userId?: string;
   userName?: string;
@@ -210,25 +210,21 @@ export class Api {
    * @returns The access token for the external IDP.
    */
   async getExternalIDPTokens(provider_alias: string, keycloakAccessCode: string): Promise<any> {
-    const response = await axios
-      .get(`${this.KEYCLOACK_BASE_URL}/realms/${this.realm}/broker/${provider_alias}/token`, {
+    try {
+      const url = `${this.KEYCLOACK_BASE_URL}/realms/${this.realm}/broker/${provider_alias}/token`;
+      const { data } = await axios.get(url, {
         headers: { Authorization: `Bearer ${keycloakAccessCode}` },
-      })
-      .catch((error: AxiosError) => {
-        if (error.response) return error.response;
-
-        const errorJson = error.toJSON();
-        log.error(errorJson);
-
-        throw new Error(error.message);
       });
-
-    const { status, data } = response;
-    if (status >= 400) {
-      return { error: { status, message: `getExternalIDPTokens: ${data.error}` } };
+      return data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        handleAxiosError(error);
+        return { error: { message: error.message } };
+      } else {
+        handleUnexpectedError(error);
+        return { error: { message: 'error' } };
+      }
     }
-
-    return data;
   }
 
   /**
@@ -239,9 +235,9 @@ export class Api {
   async getLinkedAccounts(
     keycloakAccessCode: string,
     username: string
-  ): Promise<ILinkedAccount[] | IHTTPRequestError> {
-    if (!this.NSSI_BASE_URL) {
-      return { error: { message: 'NSSI BASE URL is unedefined' } };
+  ): Promise<LinkedAccountProps[] | HTTPRequestError> {
+    if (!this.AUTH_API_URL) {
+      return { error: { message: 'AUTH API BASE URL is unedefined' } };
     }
 
     const url = queryString.stringifyUrl({
@@ -278,7 +274,7 @@ export class Api {
   async getLinkAccountUrl(
     identity_provider: string,
     keycloakAccessCode: string
-  ): Promise<string | IHTTPRequestError> {
+  ): Promise<string | HTTPRequestError> {
     if (!this.AUTH_API_URL) {
       return { error: { message: 'AUTH API URL is unedefined' } };
     }
@@ -310,7 +306,7 @@ export class Api {
     return data;
   }
 
-  async getProviders(): Promise<Provider[] | IHTTPRequestError> {
+  async getProviders(): Promise<Provider[] | HTTPRequestError> {
     if (!this.AUTH_API_URL) {
       return { error: { message: 'AUTH API URL is unedefined' } };
     }

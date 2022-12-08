@@ -1,9 +1,9 @@
 import $ from 'jquery';
 import { getTagAndDefaultAttributes } from '../mapper';
-import type { IEntityMapping, ISchemaMapping } from '../types';
+import type { EntityMappingProps, SchemaMappingProps } from '../types';
 import { handleGraphics } from './utitlities';
 
-const person: IEntityMapping = {
+const person: EntityMappingProps = {
   label: 'Person',
   mapping: {
     lemma: '@STANDARD',
@@ -16,7 +16,7 @@ const person: IEntityMapping = {
   },
 };
 
-const place: IEntityMapping = {
+const place: EntityMappingProps = {
   label: 'Place',
   mapping: {
     customValues: {
@@ -39,7 +39,7 @@ const place: IEntityMapping = {
   },
 };
 
-const organization: IEntityMapping = {
+const organization: EntityMappingProps = {
   label: 'Organization',
   mapping: {
     lemma: '@STANDARD',
@@ -52,7 +52,7 @@ const organization: IEntityMapping = {
   },
 };
 
-const title: IEntityMapping = {
+const title: EntityMappingProps = {
   label: 'Title',
   mapping: {
     lemma: '@REG',
@@ -84,7 +84,7 @@ const title: IEntityMapping = {
   },
 };
 
-const citation: IEntityMapping = {
+const citation: EntityMappingProps = {
   isNote: true,
   label: 'Citation',
   mapping: {
@@ -102,7 +102,7 @@ const citation: IEntityMapping = {
   },
 };
 
-const note: IEntityMapping = {
+const note: EntityMappingProps = {
   isNote: true,
   label: 'Note',
   mapping: {
@@ -117,7 +117,7 @@ const note: IEntityMapping = {
   },
 };
 
-const date: IEntityMapping = {
+const date: EntityMappingProps = {
   label: 'Date',
   mapping: {
     tag: 'local-name(.)',
@@ -167,7 +167,7 @@ const date: IEntityMapping = {
   },
 };
 
-const correction: IEntityMapping = {
+const correction: EntityMappingProps = {
   label: 'Correction',
   parentTag: 'SIC',
   types: ['cnt:ContentAsText'],
@@ -191,7 +191,7 @@ const correction: IEntityMapping = {
   },
 };
 
-const keyword: IEntityMapping = {
+const keyword: EntityMappingProps = {
   isNote: true,
   label: 'Keyword',
   parentTag: 'KEYWORDCLASS',
@@ -220,7 +220,7 @@ const keyword: IEntityMapping = {
   },
 };
 
-const link: IEntityMapping = {
+const link: EntityMappingProps = {
   label: 'Link',
   parentTag: 'XREF',
   types: ['cnt:ContentAsText'],
@@ -229,7 +229,7 @@ const link: IEntityMapping = {
   },
 };
 
-export const orlando: ISchemaMapping = {
+export const orlando: SchemaMappingProps = {
   blockElements: [
     'DIV0',
     'DIV1',

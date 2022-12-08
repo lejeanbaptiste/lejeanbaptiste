@@ -10,12 +10,12 @@ import pck from '../../../package.json';
 import type { EntityTypes } from '../schema/types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
-import Entity, { type IannotationRange, type IEntityConfig } from './Entity';
+import Entity, { type AnnotationRange, type EntityConfig } from './Entity';
 import type {
-  IAnnotation,
-  IAnnotationContributor,
-  IAnnotationCreator,
-  IAnnotationFormat,
+  AnnotationProps,
+  AnnotationContributor,
+  AnnotationCreator,
+  AnnotationFormat,
 } from './types';
 
 const leafWriterVersion = pck.version;
@@ -152,7 +152,7 @@ class AnnotationsManager {
     const hasMutated = this.checkAnnotationChanges({ docId, entity, originalData });
 
     // Check if annotation mutated.
-    if (originalData && !hasMutated) return originalData as IAnnotation;
+    if (originalData && !hasMutated) return originalData as AnnotationProps;
 
     if (!motivations) motivations = 'oa:identifying';
 
@@ -175,16 +175,16 @@ class AnnotationsManager {
 
     const annotationId = `${docId}?${this.getAnnotationURIForEntity(entity)}`;
 
-    const creator: IAnnotationCreator = entity.creator
+    const creator: AnnotationCreator = entity.creator
       ? entity.creator
       : {
           '@id': userInfo.id,
           '@type': ['cwrc:NaturalPerson', 'schema:Person'],
           'cwrc:hasName': userInfo.name,
-          'foaf:nick': userInfo.nick,
+          // 'foaf:nick': userInfo.nick,
         };
 
-    const annotation: IAnnotation = {
+    const annotation: AnnotationProps = {
       '@context': {
         'dcterms:created': {
           '@type': 'xsd:dateTime',
@@ -253,12 +253,12 @@ class AnnotationsManager {
       }
 
       if (userIsCreator === false && userIsContributor === false) {
-        const contributor: IAnnotationContributor = {
+        const contributor: AnnotationContributor = {
           'dcterms:contributor': {
             '@id': userInfo.id,
             '@type': ['cwrc:NaturalPerson', 'schema:Person'],
             'cwrc:hasName': userInfo.name,
-            'foaf:nick': userInfo.nick,
+            // 'foaf:nick': userInfo.nick,
           },
         };
 
@@ -329,7 +329,7 @@ class AnnotationsManager {
    * @param {String} format The annotation format ('xml' or 'json).
    * @returns {String} The RDF string.
    */
-  async getAnnotations(entities: Entity[], format: IAnnotationFormat = 'json') {
+  async getAnnotations(entities: Entity[], format: AnnotationFormat = 'json') {
     const rdfStringArray = await Promise.all(
       entities.map((entity) => this.getAnnotationString(entity, format))
     );
@@ -378,7 +378,7 @@ class AnnotationsManager {
     // }
   }
 
-  async getAnnotationString(entity: Entity, format: IAnnotationFormat) {
+  async getAnnotationString(entity: Entity, format: AnnotationFormat) {
     let rdfString = '';
 
     const annotation = this.getAnnotation(entity);
@@ -418,7 +418,7 @@ class AnnotationsManager {
    * @param {Function} callback
    * @returns {Promise}
    */
-  convertJSONAnnotationToXML(annotation: IAnnotation): string | any {
+  convertJSONAnnotationToXML(annotation: AnnotationProps): string | any {
     const _this = this;
 
     const docId = this.writer.getDocumentURI();
@@ -480,7 +480,7 @@ class AnnotationsManager {
     const annotation = JSON.parse(rdf.text());
     if (!annotation) return null;
 
-    const entityConfig: Partial<IEntityConfig> = {};
+    const entityConfig: Partial<EntityConfig> = {};
 
     //store original data
     entityConfig.originalData = annotation;
@@ -529,7 +529,7 @@ class AnnotationsManager {
     const json = JSON.parse(rdf.text());
     if (!json) return null;
 
-    const entityConfig: Partial<IEntityConfig> = {};
+    const entityConfig: Partial<EntityConfig> = {};
 
     // entity type
     let entityType: string | undefined = undefined;
@@ -547,7 +547,7 @@ class AnnotationsManager {
     entityConfig.type = entityType as EntityTypes;
 
     // range
-    let rangeObj: IannotationRange | undefined = undefined;
+    let rangeObj: AnnotationRange | undefined = undefined;
     const selector = json.hasTarget.hasSelector;
 
     if (selector['@type'] == 'oa:TextPositionSelector') {
@@ -614,13 +614,13 @@ class AnnotationsManager {
       log.warn("can't determine type for", xml);
       return null;
     }
-    const entityConfig: Partial<IEntityConfig> = {};
+    const entityConfig: Partial<EntityConfig> = {};
 
     const entityType = this.getEntityTypeForAnnotationLegacy(typeUri) as EntityTypes;
     if (entityType) entityConfig.type = entityType;
 
     // range
-    let rangeObj: IannotationRange = {};
+    let rangeObj: AnnotationRange = {};
 
     // matching element
     const selectorUri = target.find('oa\\:hasSelector, hasSelector').attr('rdf:resource');
@@ -720,7 +720,7 @@ class AnnotationsManager {
    */
   private getRangeObject(xpointerStart: string, xpointerEnd?: string) {
     const xpathStart = this.parseXPointer(xpointerStart);
-    const rangeObj: IannotationRange = {
+    const rangeObj: AnnotationRange = {
       startXPath: xpathStart.xpath,
     };
 

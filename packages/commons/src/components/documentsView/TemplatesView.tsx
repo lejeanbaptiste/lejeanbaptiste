@@ -99,12 +99,12 @@ export const TemplatesView: FC<TemplatesView> = ({
 
 ////***** CATEGORIES */
 
-interface ICategory {
+interface CategoryProps {
   children: React.ReactNode;
   title: string;
 }
 
-export const Category: FC<ICategory> = ({ children, title }) => {
+export const Category: FC<CategoryProps> = ({ children, title }) => {
   return (
     <Stack spacing={0.5} px={1} py={0.5}>
       <Typography
