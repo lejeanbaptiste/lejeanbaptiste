@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ProviderAuth } from './Provider';
 
 export interface StorageDialogProps {
@@ -24,7 +23,7 @@ export interface StorageDialogConfig {
   providers?: ProviderAuth[];
   preferProvider?: string;
   showInvisibleFiles?: boolean;
-  validate?: IValidate;
+  validate?: Validate;
 }
 
 export type AllowedMimeType =
@@ -35,14 +34,14 @@ export type AllowedMimeType =
   | 'text/html'
   | 'text/plain';
 
-export interface ISelectedItem {
+export interface SelectedItem {
   organization?: Organization;
   path?: string;
   repository?: Repository;
   type?: 'file' | 'folder' | 'repo' | 'org';
 }
 
-export type IValidate = (content: string) => { valid: boolean; error?: string };
+export type Validate = (content: string) => { valid: boolean; error?: string };
 
 export type SuportedProviders = 'github' | 'gitlab';
 
@@ -58,7 +57,7 @@ export interface Resource {
   url?: string;
 }
 
-export interface ISourcePanelOption {
+export interface SourcePanelOption {
   icon: string;
   label: string;
   value: StorageSource | SuportedProviders;
@@ -66,7 +65,7 @@ export interface ISourcePanelOption {
 
 export type ErrorType = 'info' | 'warning' | 'error';
 
-export interface IError {
+export interface Error {
   type: ErrorType;
   message: string;
 }
@@ -206,7 +205,7 @@ export interface FetchDocumentParams {
   repo?: Repository;
 }
 
-export interface IGetFileLatestHashParams {
+export interface GetFileLatestHashParams {
   filename: string;
   path: string[];
   repository: Repository;

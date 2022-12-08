@@ -1,10 +1,10 @@
-import type { IDialogBar } from '../../dialogs';
+import type { DialogBarProps } from '../../dialogs';
 import type { Language } from '../../types';
 import { supportedLanguages } from '../../utilities';
 
 type State = {
   darkMode: boolean;
-  dialogBar: IDialogBar[];
+  dialogBar: DialogBarProps[];
   language: Language;
   publicRepositoriesLimit: Readonly<number>;
 };

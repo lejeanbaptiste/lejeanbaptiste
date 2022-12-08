@@ -13,6 +13,8 @@ export type AuthenticateProp = {
 
 export interface ProviderService {
   name: string;
+  isIdentityProvider: boolean;
+  isStorageProvider: boolean;
   authenticate(params: Omit<AuthenticateProp, 'providerName'>): void;
   getAccessToken: () => string;
   getAuthenticatedUser(userId?: string): any;

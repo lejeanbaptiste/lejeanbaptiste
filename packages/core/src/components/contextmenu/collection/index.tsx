@@ -2,7 +2,7 @@ import { Box, Collapse, Divider } from '@mui/material';
 import React, { type FC } from 'react';
 import { TransitionGroup } from 'react-transition-group';
 import { v4 as uuidv4 } from 'uuid';
-import type { IItem } from './Item';
+import type { ItemProps } from './Item';
 import Item from './Item';
 import ItemsSkeleton from './ItemsSkeleton';
 import Search from './Search';
@@ -12,7 +12,7 @@ interface CollectionProps {
   fullLength?: number;
   handleQuery: (query: string) => void;
   isLoading?: boolean;
-  list?: IItem[];
+  list?: ItemProps[];
   minWidth?: number;
 }
 

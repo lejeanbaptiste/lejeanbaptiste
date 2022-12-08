@@ -1,10 +1,10 @@
 import { Box, Icon, MenuItem, MenuItemProps, Stack, Typography } from '@mui/material';
-import { StyledToolTip } from '@src/components';
 import { getIcon } from '@src/assets/icons';
+import { StyledToolTip } from '@src/components';
 import React, { useCallback, useContext } from 'react';
 import { CascadingContext } from '.';
 import type { ItemType } from './useMenu';
-export interface IItem extends MenuItemProps {
+export interface ItemProps extends MenuItemProps {
   data?: { [key: string]: any };
   disabled?: boolean;
   hide?: boolean;
@@ -13,7 +13,7 @@ export interface IItem extends MenuItemProps {
   onTrigger?: (data?: any) => void;
   shortcut?: string;
   type?: ItemType;
-  tootipText?: string;
+  tootipText?: string | React.ReactNode;
 }
 
 export const Item = ({
@@ -27,7 +27,7 @@ export const Item = ({
   type = 'menuItem',
   tootipText,
   ...props
-}: IItem) => {
+}: ItemProps) => {
   const { rootPopupState } = useContext(CascadingContext);
   if (!rootPopupState) throw new Error('must be used inside a CascadingMenu');
 
@@ -43,7 +43,7 @@ export const Item = ({
   );
 
   return (
-    <StyledToolTip placement="right" title={disabled && tootipText ? tootipText : ''}>
+    <StyledToolTip arrow placement="right" title={disabled && tootipText ? tootipText : ''}>
       <span>
         <MenuItem
           {...props}

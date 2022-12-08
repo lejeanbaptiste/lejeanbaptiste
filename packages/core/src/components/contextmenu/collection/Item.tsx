@@ -10,8 +10,8 @@ import NestedMenu from './NestedMenu';
 
 export type Type = 'tag' | 'entity' | 'divider' | 'search';
 
-export interface IItem {
-  childrenItems?: IItem[] | (() => Promise<IItem[]>);
+export interface ItemProps {
+  childrenItems?: ItemProps[] | (() => Promise<ItemProps[]>);
   collectionType?: string;
   description?: string;
   disabled?: boolean;
@@ -23,7 +23,7 @@ export interface IItem {
   type?: Type;
 }
 
-const Item = forwardRef<any, IItem>(
+const Item = forwardRef<any, ItemProps>(
   (
     {
       childrenItems,
@@ -43,7 +43,7 @@ const Item = forwardRef<any, IItem>(
     const { getIcon } = useUI();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [showChildren, setShowChildren] = useState(false);
-    const [children, setChildren] = useState<IItem[]>([]);
+    const [children, setChildren] = useState<ItemProps[]>([]);
     const [isLoadingChildren, setIsLoadingChildren] = useState(false);
 
     useEffect(() => {

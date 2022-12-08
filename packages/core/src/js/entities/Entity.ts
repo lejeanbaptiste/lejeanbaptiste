@@ -1,7 +1,7 @@
 import type { EntityTypes } from '../schema/types';
-import type { IAnnotationCreator } from './types';
+import type { AnnotationCreator } from './types';
 
-export interface IannotationRange {
+export interface AnnotationRange {
   startXPath?: string;
   startOffset?: number;
   endXPath?: string;
@@ -9,7 +9,7 @@ export interface IannotationRange {
 }
 
 // ? This should be really be called annotations?
-export interface IEntityConfig {
+export interface EntityConfig {
   attributes?: { [x: string]: any }; //? should we defiine them? Or take from the schema? ! TRY TO MAKE SCHEMA DEPENDENT
   certainty?: string;
   content?: string;
@@ -24,7 +24,7 @@ export interface IEntityConfig {
   noteContent?: string;
   originalData?: { [x: string]: any };
   precision?: string;
-  range?: IannotationRange;
+  range?: AnnotationRange;
   source?: string; //? should we defiined them? Or take from the schema? // PREDEFINE USING AUTHORITIES and 'CUSTOM';
   tag: string;
   type: EntityTypes; // | string;
@@ -55,7 +55,7 @@ const getSourceNameFromUrl = (url: string) => {
  */
 class Entity {
   /** Values used to identify the text range of the entity. Mainly set by converter when loading a document. */
-  annotationRange: IannotationRange = {};
+  annotationRange: AnnotationRange = {};
 
   /** Values that can be directly mapped onto the entity's tag.  */
   attributes: any = {};
@@ -96,7 +96,7 @@ class Entity {
   // NAMED ENTITY PROPERTIES
 
   /** The creator of the entity annotation. */
-  creator?: IAnnotationCreator;
+  creator?: AnnotationCreator;
 
   /** The certainty of the entity annotation. */
   certainty?: string;
@@ -121,7 +121,7 @@ class Entity {
   /** Store original data loaded from XML. */
   _originalData?: any;
 
-  constructor(config: IEntityConfig) {
+  constructor(config: EntityConfig) {
     // SET VALUES FROM CONFIG
 
     this.id = config.id;
@@ -355,14 +355,14 @@ class Entity {
   getRange() {
     return this.annotationRange;
   }
-  setRange(rangeObj: IannotationRange) {
+  setRange(rangeObj: AnnotationRange) {
     this.annotationRange = rangeObj;
   }
 
   getCreator() {
     return this.creator;
   }
-  setCreator(creator: IAnnotationCreator) {
+  setCreator(creator: AnnotationCreator) {
     this.creator = creator;
   }
 

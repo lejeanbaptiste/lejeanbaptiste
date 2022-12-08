@@ -5,25 +5,25 @@ import Entity from '../entities/Entity';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 
-interface IPredicateList {
+interface PredicateList {
   person: string[];
   place: string[];
 }
 
-interface IComponent {
+interface ComponentProps {
   external: boolean;
   name?: string;
   text: string;
   uri?: string;
 }
 
-export interface ITriple {
-  subject: IComponent;
-  predicate: IComponent;
-  object: IComponent;
+export interface TripleProps {
+  subject: ComponentProps;
+  predicate: ComponentProps;
+  object: ComponentProps;
 }
 
-const predicateList: IPredicateList = {
+const predicateList: PredicateList = {
   person: ['is a child of', 'is a parent of', 'is related to', 'was born on', 'died on'],
   place: ['is located within', 'contains'],
 };
@@ -124,7 +124,7 @@ class Triple {
           return;
         }
 
-        const triple: ITriple = {
+        const triple: TripleProps = {
           subject,
           predicate: {
             text: predicate.text,
@@ -182,7 +182,7 @@ class Triple {
   private getComponents() {
     const _this = this;
     //@ts-ignore
-    const components: IComponent[] = [null, null, null];
+    const components: ComponentProps[] = [null, null, null];
 
     $('ul', this.$triple).each(function (index) {
       const s = $(this).find('.selected');

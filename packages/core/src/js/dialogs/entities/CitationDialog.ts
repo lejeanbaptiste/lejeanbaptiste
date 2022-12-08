@@ -4,7 +4,7 @@ import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
 import DialogForm from '../dialogForm/dialogForm';
-import type { ILWDialogConfigParams } from '../types';
+import type { LWDialogConfigProps } from '../types';
 import { SchemaDialog } from './types';
 import { getSourceNameFromUrl } from './util';
 
@@ -16,7 +16,7 @@ class CitationDialog implements SchemaDialog {
   selectedText?: string;
   type: EntityTypes = 'citation';
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
     const id = writer.getUniqueId('citationForm_');
     const mappingID = writer.schemaManager.mapper.currentMappingsId;

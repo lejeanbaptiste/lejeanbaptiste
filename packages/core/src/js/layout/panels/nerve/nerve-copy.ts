@@ -19,21 +19,21 @@ interface MergedEntities {
   uri?: string;
 }
 
-interface INerveToCWRCMappings {
+interface NerveToCWRCMappings {
   PERSON: string;
   LOCATION: string;
   ORGANIZATION: string;
   TITLE: string;
 }
 
-const NerveToCWRCMappings: INerveToCWRCMappings = {
+const NerveToCWRCMappings: NerveToCWRCMappings = {
   PERSON: 'person',
   LOCATION: 'place',
   ORGANIZATION: 'org',
   TITLE: 'title',
 };
 
-interface Itag {
+interface TagProps {
   name?: string;
   lemmaAttribute?: string;
   linkAttribute?: string;
@@ -47,10 +47,10 @@ interface Itag {
 }
 
 type Itags = {
-  [x: string]: Itag;
+  [x: string]: TagProps;
 };
 
-interface IContext {
+interface ContextProps {
   name: string;
   tags: Itags;
 }
@@ -345,7 +345,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       return;
     }
 
-    const context: IContext = JSON.parse(results.context);
+    const context: ContextProps = JSON.parse(results.context);
     const entities = processNerveResponse(doc, context);
 
     li.setText('Processing Response');
@@ -420,7 +420,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
   const buildContext = function () {
     const sm = writer.schemaManager;
 
-    const context: IContext = {
+    const context: ContextProps = {
       name: sm.getCurrentSchema().id,
       tags: {},
     };
@@ -444,7 +444,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
     // }
 
     Object.entries(NerveToCWRCMappings).forEach(([nerveTypeName, entityType]: [string, string]) => {
-      const tag: Itag = {
+      const tag: TagProps = {
         name: sm.mapper.getParentTag(entityType),
         lemmaAttribute: sm.mapper.getMappingForProperty(entityType, 'lemma').replace('@', ''),
         linkAttribute: sm.mapper.getMappingForProperty(entityType, 'uri').replace('@', ''),
@@ -465,7 +465,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
     return context;
   };
 
-  const processNerveResponse = (document: XMLDocument, context: IContext) => {
+  const processNerveResponse = (document: XMLDocument, context: ContextProps) => {
     const sm = writer.schemaManager;
 
     const entities: any[] = [];

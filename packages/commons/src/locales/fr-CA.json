@@ -18,6 +18,7 @@
     "more_information": "Plus d'informations",
     "name": "nom",
     "new": "nouveau",
+    "none": "rien",
     "not_found": "non trouvé",
     "open": "ouvrir",
     "open_recent": "Ouvrir le récent",
@@ -37,7 +38,6 @@
     "sign_in": "connexion",
     "sign_out": "se déconnecter",
     "storage": "stockage",
-    "switch_accounts": "changer de compte",
     "template": "modèle",
     "templates": "modèles",
     "unsaved_changes": "modifications non sauvegardées",
@@ -49,7 +49,7 @@
       "line1": "Nous et des tiers sélectionnés utilisons des cookies ou des technologies similaires à des fins techniques et, avec votre consentement, à des fins de mesure. Le refus d'accorder votre consentement peut rendre les fonctions connexes indisponibles.",
       "line2": "Vous pouvez librement donner, refuser ou retirer votre consentement à tout moment.",
       "line3": "Utilisez le bouton 'Accepter' pour consentir à l'utilisation de ces technologies. Utilisez le bouton 'Rejeter' ou fermez cet avis pour continuer sans accepter.",
-      "we_use_cookies": "nous utilisons des cookies"
+      "we_use_cookies": "Nous utilisons des cookies"
     },
     "privacy_settings": "paramètres de confidentialité",
     "remove_consent": "supprimer le consentement",
@@ -94,8 +94,10 @@
   },
   "messages": {
     "annotation_need_space": "Annoter des documents nécessite plus d'espace.",
+    "link_to_storage_provider_instructions": "Vous pouvez le faire en cliquant sur l'icône de l'utilisateur dans le coin supérieur droit de l'écran, puis en sélectionnant une option dans la liste des fournisseurs de stockage.",
     "rotate_phone": "Veuillez faire pivoter votre téléphone ou ouvrir LEAF-Writer sur un grand écran.",
-    "you_must_sign_in_to_use_this_feature": "Vous devez vous connecter pour utiliser cette fonction"
+    "you_must_sign_in_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter pour ouvrir et enregistrer des documents depuis le cloud",
+    "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter avec un fournisseur de stockage pour ouvrir et enregistrer un document à partir du cloud"
   },
   "profile": {
     "manage_your_lincs_account": "gérer votre compte LINCS"
@@ -128,6 +130,9 @@
     "appearance": "apparence",
     "auto": "auto",
     "dark": "noir",
-    "light": "light"
+    "dark_theme": "Thème sombre",
+    "device_theme": "Thème de l'appareil",
+    "light": "light",
+    "light_theme": "Thème lumière"
   }
 }

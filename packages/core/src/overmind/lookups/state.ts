@@ -3,7 +3,7 @@ import { Context } from '..';
 import type {
   Authority,
   EntryLink,
-  IResult,
+  LookUpResult,
   NamedEntityType,
 } from '../../dialogs/entityLookups/types';
 import type { EntityTypes } from '../../js/schema/types';
@@ -12,7 +12,7 @@ type State = {
   isUriValid: boolean;
   manualInput: string;
   query: string;
-  results?: Map<Authority, IResult[]>;
+  results?: Map<Authority, LookUpResult[]>;
   selected?: EntryLink;
   typeEntity: EntityTypes;
   typeLookup: NamedEntityType;

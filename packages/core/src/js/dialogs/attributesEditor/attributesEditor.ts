@@ -1,17 +1,17 @@
 import $ from 'jquery';
 import Writer from '../../Writer';
 import AttributeWidget from '../attributeWidget/attributeWidget';
-import type { ILWDialog, ILWDialogConfigParams } from '../types';
+import type { LWDialogProps, LWDialogConfigProps } from '../types';
 import { log } from './../../../utilities';
 
-class AttributesEditor implements ILWDialog {
+class AttributesEditor implements LWDialogProps {
   readonly writer: Writer;
   readonly $schemaDialog: JQuery<HTMLElement>;
   readonly attributesWidget: AttributeWidget;
 
   currentCallback: Function | null = null;
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
 
     this.$schemaDialog = $(`

@@ -1,6 +1,6 @@
-import type { ISchemaMapping } from '../types';
+import type { SchemaMappingProps } from '../types';
 
-export const empty: ISchemaMapping = {
+export const empty: SchemaMappingProps = {
   blockElements: [],
   header: '',
   id: '',

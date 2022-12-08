@@ -3,7 +3,7 @@ import React, { useEffect, useState, type FC } from 'react';
 import Writer from '../../js/Writer';
 import { useActions, useAppState } from '../../overmind';
 import Collection from './collection';
-import type { IItem } from './collection/Item';
+import type { ItemProps } from './collection/Item';
 import Header from './Header';
 import { useContextmenu } from './hooks/useContextmenu';
 
@@ -21,10 +21,10 @@ export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
     useContextmenu(writer, ui.contextMenu);
 
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>();
-  const [options, setOptions] = useState<IItem[]>([]);
+  const [options, setOptions] = useState<ItemProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [show, setShow] = useState(false);
-  const [visibleList, setVisibleList] = useState<IItem[]>(options);
+  const [visibleList, setVisibleList] = useState<ItemProps[]>(options);
 
   useEffect(() => {
     if (!ui.contextMenu.show) return;

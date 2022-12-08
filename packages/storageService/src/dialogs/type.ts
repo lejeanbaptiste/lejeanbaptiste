@@ -4,7 +4,7 @@ import React from 'react';
 export declare type ModalComponentProps<P> = Omit<P, 'open'>;
 
 export type SeverityType = 'error' | 'info' | 'success' | 'warning';
-export interface IDialogAction {
+export interface DialogActionProps {
   action: string;
   label?: string;
   variant?: 'contained' | 'outlined' | 'text';
@@ -12,7 +12,7 @@ export interface IDialogAction {
 
 //@ts-ignore
 export interface IDialog extends Partial<MuiDialogProps> {
-  actions?: IDialogAction[];
+  actions?: DialogActionProps[];
   onBeforeClose?: (action?: string) => Promise<boolean>;
   onClose?: <T>(action?: string, data?: T) => void;
   preventEscape?: boolean;
@@ -22,24 +22,19 @@ export interface IDialog extends Partial<MuiDialogProps> {
 
 export type DialogType = 'simple';
 
-interface ISimpleDialogMessage {
-  data?: {[key: string]: any},
-  onChangeData?: (data: {[key: string]: any}) => void;
-}
-
-interface ISimpleDialogMessage {
+interface SimpleDialogMessageProps {
   onClose?: <T>(action?: string, data?: T) => void;
   data?: {[key: string]: any},
   onChangeData?: (data: {[key: string]: any}) => void;
 }
 
-export interface ISimpleDialog extends IDialog {
-  Message?: React.FC<ISimpleDialogMessage> | string;
+export interface SimpleDialogProps extends IDialog {
+  Message?: React.FC<SimpleDialogMessageProps> | string;
 }
 
-export type DialogProps = IDialog & ISimpleDialog;
+export type DialogProps = IDialog & SimpleDialogProps;
 
-export interface IDialogBar {
+export interface DialogBarProps {
   dismissed?: boolean;
   displayId?: string;
   options?: ModalProviderOptions;

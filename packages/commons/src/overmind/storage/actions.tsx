@@ -3,24 +3,21 @@ import type { Resource, StorageDialogState } from '@src/types';
 import { saveAs } from 'file-saver';
 import { Context } from '../index';
 
-export const changePrefStorageProvider = ({ state, effects }: Context, providerId: string) => {
+export const setPrefStorageProvider = ({ state, effects }: Context, providerId: string) => {
   if (!state.auth.user) return;
 
-  const providerHasStorage = !!state.providers.supportedProviders.find(
-    (provider) => provider.providerId === providerId && provider.storeToken === true
+  const prefIsStorageProvider = state.providers.storageProviders.some(
+    (provider) => provider.providerId === providerId && !!provider.service
   );
 
-  if (!providerHasStorage) {
-    const provider = state.providers.supportedProviders.find((provider) => provider.storeToken);
-    if (!provider) {
-      effects.storage.api.removeFromLocalStorage('prefStorageProvider');
-      return;
-    }
-    providerId = provider.providerId;
+  if (!prefIsStorageProvider) {
+    effects.storage.api.removeFromLocalStorage('prefStorageProvider');
+    return;
   }
 
   state.auth.user.prefStorageProvider = providerId;
   effects.storage.api.saveToLocalStorage('prefStorageProvider', providerId);
+
   return providerId;
 };
 

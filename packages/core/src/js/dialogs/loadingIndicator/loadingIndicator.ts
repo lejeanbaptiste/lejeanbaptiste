@@ -1,14 +1,14 @@
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/progressbar';
-import type { ILWDialog, ILWDialogConfigParams } from '../types';
+import type { LWDialogProps, LWDialogConfigProps } from '../types';
 
-class LoadingIndicator implements ILWDialog {
+class LoadingIndicator implements LWDialogProps {
   readonly $loadingIndicator: JQuery<HTMLElement>;
   readonly $progressBar: JQuery<HTMLElement>;
   readonly $progressLabel: JQuery<HTMLElement>;
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.$loadingIndicator = $(
       `<div class="loadingIndicatorDialog">
         <div class="progressBar">

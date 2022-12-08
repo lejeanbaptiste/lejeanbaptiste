@@ -2,17 +2,17 @@ import { Box, Stack, Typography } from '@mui/material';
 import { log } from '@src/utilities';
 import React, { useEffect, useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TeamProfile, type IProfile } from './TeamProfile';
+import { TeamProfile, type ProfileProps } from './TeamProfile';
 
 export const Team: FC = () => {
   const { t } = useTranslation();
 
-  const [team, setTeam] = useState<IProfile[]>();
+  const [team, setTeam] = useState<ProfileProps[]>();
 
   useEffect(() => {
     fetch('./content/team.json')
       .then((res) => res.json())
-      .then((res: IProfile[]) => setTeam(res))
+      .then((res: ProfileProps[]) => setTeam(res))
       .catch((err) => log.error(err));
   }, []);
 

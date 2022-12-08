@@ -2,13 +2,13 @@ import Writer from '../Writer';
 
 export type DialogLookupType = 'citation' | 'organization' | 'person' | 'place' | 'rs' | 'title';
 
-export interface ILWDialogConfigParams {
+export interface LWDialogConfigProps {
   parentEl: JQuery<HTMLElement>;
   type?: DialogLookupType;
   writer: Writer;
 }
 
-export interface ILWDialog {
+export interface LWDialogProps {
   show: (config?: any) => void;
   destroy: () => void;
 

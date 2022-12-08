@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
-import type { IResult } from '../../../dialogs/entityLookups/types';
+import type { LookUpResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
-import ILookupServiceApi, { type IFindParams } from './type';
+import LookupServiceApi, { type LookUpFindProps } from './type';
 
 interface Geoname {
   [x: string]: any;
@@ -12,12 +12,12 @@ interface Geoname {
   toponymName: string;
 }
 
-interface IGeonamesResults {
+interface GeonamesResults {
   geonames: Geoname[];
   totalResultsCount: number;
 }
 
-export default class Geonames implements ILookupServiceApi {
+export default class Geonames implements LookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
   private readonly baseURL = 'https://secure.geonames.org';
   private readonly MAX_HITS = 25; // default: 100;
@@ -34,7 +34,7 @@ export default class Geonames implements ILookupServiceApi {
     this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
   }
 
-  async find({ query }: IFindParams) {
+  async find({ query }: LookUpFindProps) {
     return await this.callGeonames(query);
   }
 
@@ -66,10 +66,10 @@ export default class Geonames implements ILookupServiceApi {
       return [];
     }
 
-    const data: IGeonamesResults = response.data;
+    const data: GeonamesResults = response.data;
     if (!data) return [];
 
-    const results: IResult[] = data.geonames.map(
+    const results: LookUpResult[] = data.geonames.map(
       ({ toponymName, adminName1, countryName, geonameId, fcodeName }) => {
         const state = adminName1 ?? '';
         const description = fcodeName ?? '';

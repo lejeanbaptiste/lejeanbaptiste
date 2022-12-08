@@ -6,16 +6,16 @@ import Writer from '../../../js/Writer';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import DialogForm from '../dialogForm/dialogForm';
-import type { ILWDialogConfigParams } from '../types';
+import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import { getSourceNameFromUrl } from './util';
 
-interface IRole {
+interface Role {
   code: string;
   title: string;
 }
 
-const marcRoles: IRole[] = [
+const marcRoles: Role[] = [
   { code: '', title: '(none)' },
   { code: 'abr', title: 'Abridger' },
   { code: 'acp', title: 'Art copyist' },
@@ -292,7 +292,7 @@ class PersonDialog implements SchemaDialog {
   selectedText?: string;
   type: EntityTypes = 'person';
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
     const mappingID = writer.schemaManager.mapper.currentMappingsId;
     if (!mappingID) throw Error('Schema Mappings not found');

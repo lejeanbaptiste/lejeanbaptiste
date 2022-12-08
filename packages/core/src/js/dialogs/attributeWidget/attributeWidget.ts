@@ -6,7 +6,7 @@ import { capitalizeFirstLetter } from '../../utilities';
 import Writer from '../../Writer';
 import { log } from './../../../utilities';
 
-interface IAttributeWidgetConfig {
+interface AttributeWidgetConfig {
   writer: Writer;
   $el: JQuery<HTMLElement>;
   $parent?: JQuery<HTMLElement>;
@@ -26,7 +26,7 @@ class AttributeWidget {
 
   isDirty: boolean = false;
 
-  constructor({ writer, $el, $parent, showSchemaHelp = false }: IAttributeWidgetConfig) {
+  constructor({ writer, $el, $parent, showSchemaHelp = false }: AttributeWidgetConfig) {
     this.writer = writer;
     this.$el = $el;
     this.$parent = $parent;

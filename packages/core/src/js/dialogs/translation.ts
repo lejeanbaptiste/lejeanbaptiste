@@ -3,9 +3,9 @@ import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 import Writer from '../Writer';
 import AttributeWidget from './attributeWidget/attributeWidget';
-import type { ILWDialog, ILWDialogConfigParams } from './types';
+import type { LWDialogProps, LWDialogConfigProps } from './types';
 
-class Translation implements ILWDialog {
+class Translation implements LWDialogProps {
   readonly writer: Writer;
   readonly $el: JQuery<HTMLElement>;
   readonly id: string;
@@ -17,7 +17,7 @@ class Translation implements ILWDialog {
   readonly langAttribute: string = 'xml:lang';
   readonly respAttribute: string = 'resp';
 
-  constructor({ writer, parentEl }: ILWDialogConfigParams) {
+  constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
     this.id = writer.getUniqueId('translation_');
 
@@ -116,7 +116,7 @@ class Translation implements ILWDialog {
     $(`#${this.id}_resp`).on('change', (event) => {
       //@ts-ignore
       event.target.checked
-        ? this.attributesWidget.setAttribute(this.respAttribute, this.writer.getUserInfo().nick)
+        ? this.attributesWidget.setAttribute(this.respAttribute, this.writer.getUserInfo().name)
         : this.attributesWidget.setAttribute(this.respAttribute, undefined);
     });
   }

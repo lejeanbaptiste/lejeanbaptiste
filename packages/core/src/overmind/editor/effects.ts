@@ -1,13 +1,13 @@
-import type { ILookups } from '../../dialogs/entityLookups';
+import type { LookupsProps } from '../../dialogs/entityLookups';
 
 export const api = (() => {
-  let lookupsDefaults: ILookups | undefined;
+  let lookupsDefaults: LookupsProps | undefined;
 
   return {
     getLookupsDefaults: () => {
       return lookupsDefaults;
     },
-    setLookupsDefaults: (value: ILookups) => {
+    setLookupsDefaults: (value: LookupsProps) => {
       lookupsDefaults = value;
     },
     saveToLocalStorage: (key: string, value: unknown) => {

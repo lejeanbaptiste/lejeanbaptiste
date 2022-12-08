@@ -1,6 +1,6 @@
 import type { Leafwriter } from '@cwrc/leafwriter';
 import type { Resource } from '@src/types';
-import { TimerService, type ITimerService } from './timerService';
+import { TimerService, type TimerServiceProps } from './timerService';
 
 type State = {
   autosave: boolean;
@@ -11,7 +11,7 @@ type State = {
   libLoaded: boolean;
   resource?: Resource;
   saveDelayed: boolean;
-  timerService: ITimerService;
+  timerService: TimerServiceProps;
 };
 
 export const state: State = {

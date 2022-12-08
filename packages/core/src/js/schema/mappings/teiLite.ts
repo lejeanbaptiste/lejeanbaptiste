@@ -1,10 +1,10 @@
 import $ from 'jquery';
-import type { IAnnotationHasBody } from '../../entities/types';
+import type { AnnotationHasBody } from '../../entities/types';
 import { getAttributeString, getTagAndDefaultAttributes } from '../mapper';
-import type { IEntityMapping, ISchemaMapping } from '../types';
+import type { EntityMappingProps, SchemaMappingProps } from '../types';
 import { handleGraphics } from './utitlities';
 
-const person: IEntityMapping = {
+const person: EntityMappingProps = {
   label: 'Person',
   mapping: {
     certainty: '@cert',
@@ -18,7 +18,7 @@ const person: IEntityMapping = {
   },
 };
 
-const place: IEntityMapping = {
+const place: EntityMappingProps = {
   label: 'Place',
   mapping: {
     certainty: '@cert',
@@ -32,7 +32,7 @@ const place: IEntityMapping = {
   },
 };
 
-const organization: IEntityMapping = {
+const organization: EntityMappingProps = {
   label: 'Organization',
   mapping: {
     certainty: '@cert',
@@ -46,7 +46,7 @@ const organization: IEntityMapping = {
   },
 };
 
-const title: IEntityMapping = {
+const title: EntityMappingProps = {
   label: 'Title',
   mapping: {
     certainty: '@cert',
@@ -60,7 +60,7 @@ const title: IEntityMapping = {
   },
 };
 
-const rs: IEntityMapping = {
+const rs: EntityMappingProps = {
   label: 'Referencing String',
   mapping: {
     certainty: '@cert',
@@ -77,7 +77,7 @@ const rs: IEntityMapping = {
   },
 };
 
-const citation: IEntityMapping = {
+const citation: EntityMappingProps = {
   isNote: true,
   label: 'Citation',
   mapping: {
@@ -101,7 +101,7 @@ const citation: IEntityMapping = {
     const anno = annotationsManager.commonAnnotation(entity, 'cito:Citation', 'cwrc:citing');
     if (entity.getURI()) {
       //add citation body
-      const hasBodyCitation: IAnnotationHasBody = {
+      const hasBodyCitation: AnnotationHasBody = {
         '@id': `${anno['id']}#Cites`,
         '@type': 'cito:Citation',
         'cito:hasCitingEntity': anno['id'],
@@ -121,7 +121,7 @@ const citation: IEntityMapping = {
 
 // TODO add resp for note type entities
 
-const note: IEntityMapping = {
+const note: EntityMappingProps = {
   isNote: true,
   label: 'Note',
   parentTag: 'note',
@@ -150,7 +150,7 @@ const note: IEntityMapping = {
   },
 };
 
-const date: IEntityMapping = {
+const date: EntityMappingProps = {
   label: 'Date',
   parentTag: 'date',
   types: ['xsd:date'],
@@ -163,7 +163,7 @@ const date: IEntityMapping = {
   },
 };
 
-const correction: IEntityMapping = {
+const correction: EntityMappingProps = {
   label: 'Correction',
   mapping: {
     customValues: {
@@ -206,7 +206,7 @@ const correction: IEntityMapping = {
   },
 };
 
-const keyword: IEntityMapping = {
+const keyword: EntityMappingProps = {
   isNote: true,
   label: 'Keyword',
   mapping: {
@@ -275,7 +275,7 @@ const keyword: IEntityMapping = {
   },
 };
 
-const link: IEntityMapping = {
+const link: EntityMappingProps = {
   label: 'Link',
   parentTag: 'ref',
   types: ['cnt:ContentAsText'],
@@ -289,7 +289,7 @@ const link: IEntityMapping = {
   },
 };
 
-export const teiLite: ISchemaMapping = {
+export const teiLite: SchemaMappingProps = {
   blockElements: [
     'argument',
     'back',

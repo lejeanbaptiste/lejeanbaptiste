@@ -12,11 +12,11 @@ import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
 import { IDialog } from '../type';
 const Editor = React.lazy(() => import('./Editor'));
-export interface IEditSourceDialogProps extends IDialog {
+export interface EditSourceDialogProps extends IDialog {
   content?: string;
 }
 
-export const EditSourceDialog: FC<IEditSourceDialogProps> = ({ content = '', id, onClose, open }) => {
+export const EditSourceDialog: FC<EditSourceDialogProps> = ({ content = '', id, onClose, open }) => {
   const { settings } = useAppState().editor;
   const { processEditSource } = useActions().ui;
 

@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
 import useEditorReaction from '../hooks/useEditorReaction';
 
-interface IMenu {
+interface MenuProps {
   anchorEl?: HTMLElement;
   handleClose: () => void;
 }
 
-export const Menu: FC<IMenu> = ({ anchorEl, handleClose }) => {
+export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
   const { annotationMode, annotationModes } = useAppState().editor;
   const { closeNotificationSnackbar, notifyViaSnackbar } = useActions().ui;
   const { changeAnnotationMode } = useEditorReaction();

@@ -6,12 +6,12 @@ import { SeverityType } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';
 import { TextEmphasis } from '../../TextEmphasis';
 
-export interface IActionParams {
+export interface ActionParams {
   value: string;
   isUndo?: boolean;
 }
 
-export interface IMessageResponse {
+export interface MessageResponseProps {
   severity?: SeverityType;
   text: React.ReactNode;
 }
@@ -24,7 +24,7 @@ const useEditorReaction = () => {
   const { t } = useTranslation(['leafwriter']);
 
   return {
-    editorModeShouldChange: (editorMode: string): [boolean, null | IMessageResponse] => {
+    editorModeShouldChange: (editorMode: string): [boolean, null | MessageResponseProps] => {
       const writer = window.writer;
 
       let doChange = false;
@@ -129,7 +129,7 @@ const useEditorReaction = () => {
       return [true, null];
     },
 
-    changeEditorMode: ({ value, isUndo }: IActionParams) => {
+    changeEditorMode: ({ value, isUndo }: ActionParams) => {
       const editorMode = editor.setEditorMode(value);
 
       let message = isUndo ? t('Editor Mode restored') : t('Editor Mode has changed');
@@ -147,7 +147,7 @@ const useEditorReaction = () => {
       return message;
     },
 
-    schemaShouldChange: async (schemaId: string): Promise<[boolean, null | IMessageResponse]> => {
+    schemaShouldChange: async (schemaId: string): Promise<[boolean, null | MessageResponseProps]> => {
       const { schemaManager, utilities } = window.writer;
 
       const currRootName = utilities.getRootTag().attr('_tag');
@@ -217,7 +217,7 @@ const useEditorReaction = () => {
       return [true, null];
     },
 
-    changeSchema: ({ value, isUndo }: IActionParams) => {
+    changeSchema: ({ value, isUndo }: ActionParams) => {
       const schema = document.setSchema(value);
 
       let message = isUndo ? t('Schema restored') : t('Schema has changed');

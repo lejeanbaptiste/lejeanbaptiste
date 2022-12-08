@@ -5,14 +5,14 @@ import type { Schema, SchemaMappingType } from '../types';
 export declare type ModalComponentProps<P> = Omit<P, 'open'>;
 
 export type SeverityType = 'error' | 'info' | 'success' | 'warning';
-export interface IDialogAction {
+export interface DialogActionProps {
   action: string;
   label?: string;
   variant?: 'contained' | 'outlined' | 'text';
 }
 
 export interface IDialog extends Partial<MuiDialogProps> {
-  actions?: IDialogAction[];
+  actions?: DialogActionProps[];
   id?: string;
   onBeforeClose?: (action?: string) => Promise<boolean>;
   onClose?: <T>(action?: string, data?: T) => void;
@@ -29,16 +29,16 @@ export type DialogType =
   | 'simple'
   | 'settings';
 
-interface ISimpleDialogMessage {
+interface SimpleDialogMessageProps {
   data?: { [key: string]: any };
   onChangeData?: (data: { [key: string]: any }) => void;
 }
 
-export interface ISimpleDialog extends IDialog {
-  Message?: React.FC<ISimpleDialogMessage> | string;
+export interface SimpleDialogProps extends IDialog {
+  Message?: React.FC<SimpleDialogMessageProps> | string;
 }
 
-export interface IEditSchemaDialog extends IDialog {
+export interface EditSchemaDialogProps extends IDialog {
   actionType?: 'add' | 'update';
   docSchema?: { rng?: string; css?: string };
   mappingIds?: SchemaMappingType[];
@@ -47,9 +47,9 @@ export interface IEditSchemaDialog extends IDialog {
   schemaId?: string;
 }
 
-export type DialogProps = IDialog & ISimpleDialog & IEditSchemaDialog;
+export type DialogProps = IDialog & SimpleDialogProps & EditSchemaDialogProps;
 
-export interface IDialogBar {
+export interface DialogBarProps {
   dismissed?: boolean;
   displayId?: string;
   options?: ModalProviderOptions;

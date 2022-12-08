@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
-import type { IResult } from '../../../dialogs/entityLookups/types';
+import type { LookUpResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
-import ILookupServiceApi, { type IFindParams } from './type';
+import LookupServiceApi, { type LookUpFindProps } from './type';
 
 type NamedEntityType = 'person' | 'place';
 
@@ -13,11 +13,11 @@ interface Person {
   notAfter: string;
 }
 
-interface ILGPNResults {
+interface LGPNResults {
   persons: Person[];
 }
 
-export default class Lgpn implements ILookupServiceApi {
+export default class Lgpn implements LookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
   private readonly baseURL = 'https://lookup.services.cwrc.ca/lgpn2/cgi-bin';
   private readonly FORMAT = 'json';
@@ -27,7 +27,7 @@ export default class Lgpn implements ILookupServiceApi {
     this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
   }
 
-  async find({ query, type }: IFindParams) {
+  async find({ query, type }: LookUpFindProps) {
     if (type === 'person') return await this.callLGPN(query, 'person');
     if (type === 'place') return await this.callLGPN(query, 'place');
 
@@ -66,11 +66,11 @@ export default class Lgpn implements ILookupServiceApi {
     const start = data.indexOf('{');
     const end = data.lastIndexOf(');');
     const substr = data.substring(start, end);
-    const dataObj: ILGPNResults = JSON.parse(substr);
+    const dataObj: LGPNResults = JSON.parse(substr);
 
     if (dataObj.persons.length === 0) return [];
 
-    const results: IResult[] = dataObj.persons.map(({ id, name, place, notBefore, notAfter }) => {
+    const results: LookUpResult[] = dataObj.persons.map(({ id, name, place, notBefore, notAfter }) => {
       const description = `Place: ${place}<br/>Floruit: ${notBefore} to ${notAfter}`;
       return {
         description,

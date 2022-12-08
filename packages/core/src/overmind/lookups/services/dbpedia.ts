@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
-import type { IResult } from '../../../dialogs/entityLookups/types';
+import type { LookUpResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
-import ILookupServiceApi, { type IFindParams } from './type';
+import LookupServiceApi, { type LookUpFindProps } from './type';
 
 type NamedEntityType = 'person' | 'place' | 'organisation' | 'work' | 'thing';
 
@@ -12,11 +12,11 @@ interface Doc {
   resource: string[];
 }
 
-interface IDBPedidaResults {
+interface DBPedidaResults {
   docs: Doc[];
 }
 
-export default class Dbpedia implements ILookupServiceApi {
+export default class Dbpedia implements LookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
   private readonly baseURL = 'https://lookup.dbpedia.org/api/search';
   private readonly FORMAT = 'json';
@@ -27,7 +27,7 @@ export default class Dbpedia implements ILookupServiceApi {
     this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
   }
 
-  async find({ query, type }: IFindParams) {
+  async find({ query, type }: LookUpFindProps) {
     if (type === 'person') return await this.callDBPedia(query, 'person');
     if (type === 'place') return await this.callDBPedia(query, 'place');
     if (type === 'organization') return await this.callDBPedia(query, 'organisation');
@@ -66,11 +66,11 @@ export default class Dbpedia implements ILookupServiceApi {
       return [];
     }
 
-    const data: IDBPedidaResults = response.data;
+    const data: DBPedidaResults = response.data;
     if (!data) return [];
 
     // const mapResponse = responseJson.docs.map(
-    const results: IResult[] = data.docs.map(({ comment, label, resource }) => {
+    const results: LookUpResult[] = data.docs.map(({ comment, label, resource }) => {
       //? assuming first instance of description, name and uri;
       const description = comment?.[0] ?? 'No description available';
       const name = label[0].replace(/(<([^>]+)>)/gi, '');
