@@ -6,14 +6,13 @@
 
 #### Add support to orcid
 
-[06414acc052432ac622dbbade04f95c701ec4276]
-Users can now choose link to their ORCID acount as an identity provider.
+- Users can now link to their ORCID account as an identity provider. [06414acc052432ac622dbbade04f95c701ec4276]
 
 #### Redesign the profile menu
 
-- Move options to submenus creating more concistency in the design. It also decouple storage provider from identity provider. [2a42285e21d092cd5a268ebee015752397458979]
-- The user profile show user Id instead of user email. The ID is cliackable and link to the user URI. [0a3079cfea286bee593e112472bdd9af4fb76def]
-- When editing a document, profile menu hides the option to switch identity providers. This is to prevent the user to change their identity while editing a document. [0a3079cfea286bee593e112472bdd9af4fb76def]
+- Move options to submenus, creating more consistency in the design. It also decouples the storage provider from the identity provider. [2a42285e21d092cd5a268ebee015752397458979]
+- The user profile shows the user Id instead of the email. The ID is clickable and links to the user URI. [0a3079cfea286bee593e112472bdd9af4fb76def]
+- When editing a document, the profile menu hides the option to switch identity providers. This is to prevent the user from changing their identity while editing a document. [0a3079cfea286bee593e112472bdd9af4fb76def]
 
 ### Patch
 
