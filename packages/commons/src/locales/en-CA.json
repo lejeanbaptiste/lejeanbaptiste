@@ -27,6 +27,7 @@
     "please": "please",
     "privacy": "privacy",
     "privacy_policy": "Privacy Policy",
+    "privacy_settings": "Privacy Settings",
     "recent": "recent",
     "reject_all": "reject all",
     "sample_document": "sample document",
@@ -56,7 +57,7 @@
     "settings_modal": {
       "AUTH_SESSION_description": "Stores user login and session data.",
       "_ga_description": "Used by Google Analytics to collect data on the number of times a user has visited the website as well as dates for the first and most recent visit.",
-      "basic_interactions_description": "These trackers are used for LEAF-Writer basic functionalities, which include the correct identification of web annotation authors and access to git repositories where the user can load and save files. LEAF-Writer can only provide limited functionalities without these cookies.",
+      "basic_interactions_description": "These trackers are used for LEAF-Writer basic functionalities, which include inserting a user's identifier (e.g., Github account name or ORCID) in any Web Annotations that are created, and supporting loading, saving, and sharing files through a user's Git repositories. LEAF-Writer can only provide limited functionalities without these cookies.",
       "cc_cookie_description": "Stores cookies consent preferences.",
       "consent_preferences": "Consent Preferences",
       "cookie_expiration_time": "{{value}} {{period}}",
