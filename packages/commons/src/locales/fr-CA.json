@@ -57,7 +57,7 @@
     "settings_modal": {
       "AUTH_SESSION_description": "Stocke les données de connexion et de session des utilisateurs.",
       "_ga_description": "Utilisé par Google Analytics pour collecter des données sur le nombre de fois qu'un utilisateur a visité le site web ainsi que les dates de la première et de la plus récente visite.",
-      "basic_interactions_description": "Ces traceurs sont utilisés pour les fonctionnalités de base de LEAF-Writer, qui comprennent l'identification correcte des auteurs d'annotations web et l'accès aux dépôts git où l'utilisateur peut charger et enregistrer des fichiers. LEAF-Writer ne peut fournir que des fonctionnalités limitées sans ces cookies.",
+      "basic_interactions_description": "Ces traceurs sont utilisés pour les fonctionnalités de base de LEAF-Writer, qui incluent l'insertion de l'identifiant d'un utilisateur (par exemple, le nom du compte Github ou ORCID) dans toutes les annotations Web créées, et la prise en charge du chargement, de l'enregistrement et du partage de fichiers via les référentiels Git d'un utilisateur. LEAF-Writer ne peut fournir que des fonctionnalités limitées sans ces cookies.",
       "cc_cookie_description": "Stocke les préférences de consentement aux cookies.",
       "consent_preferences": "Préférences de consentement",
       "cookie_expiration_time": "{{value}} {{period}}",
