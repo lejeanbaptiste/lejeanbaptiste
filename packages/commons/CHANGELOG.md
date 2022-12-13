@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## 2.5.1
+
+### Patch Changes
+
+- Let storage service dialog open if no provider is set (guest user) [ca37f2d9d5a0a8f2b311fbef5bc74bd3188d574d]
+- Profile menu: rename option 'privacy' to 'privacy settings' [082005be54d14becb6f789e457733ee2bc81b75b]
+- Privacy. Update description of basic usage [17f1ec9bb2ad20ee8ee93d1dd65e818e1b1c6fc1]
+- Update dependencies [937555e895081d83d0043b6b252d9f3f77e1e6c6]
+  - core:
+    - upgrade: material-ui-popup-state@5.0.3
+    - fixed version: query-string@7.1.3
+    - update:
+      - @mui/icons-material@5.11.0
+      - @mui/material@5.11.0
+      - framer-motion@7.8.0
+      - i18next@22.4.5
+      - react-i18next@12.1.1
+      - zod@3.20.2
+    - bump up:
+    - @mui/lab@5.0.0-alpha.112
+    - keycloak-js@20.0.2
+    - react-router-dom@6.4.5
+  - dev:
+    - update:
+      - @typescript-eslint/eslint-plugin@5.46.1
+      - @typescript-eslint/parser@5.46.1
+      - eslint@8.29.0
+    - bump up:
+      - @types/node@18.11.14
+      - mini-css-extract-plugin@2.7.2
+      - prettier@2.8.1
+      - typescript@4.9.4
+
 ## 2.5.0
 
 ### New Feature
