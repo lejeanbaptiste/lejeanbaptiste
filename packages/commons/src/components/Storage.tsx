@@ -73,7 +73,7 @@ export const Storage: FC = () => {
   };
 
   const preferProvider = useMemo(() => {
-    if (!user) return providers[0].name;
+    if (!user) return providers[0]?.name;
     if (user.prefStorageProvider) return user.prefStorageProvider;
 
     const prefIdIsStorageProvider = providers.some(
