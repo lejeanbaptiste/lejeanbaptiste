@@ -92,7 +92,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
     },
     {
       id: 'privacy',
-      label: t('privacy'),
+      label: t('privacy_settings'),
       icon: 'PrivacyTip',
       action: () => showSettings(),
     },
