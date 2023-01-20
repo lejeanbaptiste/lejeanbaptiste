@@ -9,3 +9,6 @@ readinessProbe:
   path: "/favicon-32x32.png"
   initialDelaySeconds: 10
   timeoutSeconds: 10
+ingress:
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
