@@ -176,7 +176,7 @@ class DialogManager {
       throw Error('HTML container is missiong');
     }
 
-    this.$cwrcDialogWrapper = $('<div class="cwrc cwrcDialogWrapper"></div>').appendTo(container);
+    this.$cwrcDialogWrapper = $('<div class="cwrc cwrcDialogWrapper" style="color-scheme: light"></div>').appendTo(container);
 
     setDialogListeners(this.$cwrcDialogWrapper);
 
