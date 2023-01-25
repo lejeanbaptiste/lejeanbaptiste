@@ -62,7 +62,6 @@ export const SimpleDialog: FC<SimpleDialogProps> = ({
       <DialogTitle
         id="alert-dialog-title"
         sx={{ display: 'flex', alignItems: 'center', gap: 1, textTransform: 'capitalize' }}
-        // variant="h5"
       >
         {severity === 'error' && <ErrorOutlineIcon color="error" />}
         {severity === 'warning' && <WarningAmberIcon color="warning" />}

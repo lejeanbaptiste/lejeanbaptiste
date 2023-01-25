@@ -11,10 +11,7 @@ interface CandidateListProps {
 }
 
 const CandidateList: FC<CandidateListProps> = ({ authority, candidates, setAuthorityInView }) => {
-  const { ref, inView, entry } = useInView({
-    /* Optional options */
-    threshold: 0,
-  });
+  const { ref, inView, entry } = useInView({ threshold: 0 });
 
   useEffect(() => {
     if (entry) setAuthorityInView({ id: entry.target.id, inView });
@@ -24,7 +21,6 @@ const CandidateList: FC<CandidateListProps> = ({ authority, candidates, setAutho
     <Box ref={ref} id={authority} sx={{ maxWidth: '90%' }}>
       <ListSubheader
         id={authority}
-        className="authority-lookup-list"
         sx={{
           borderBottomWidth: 1,
           borderBottomStyle: 'solid',

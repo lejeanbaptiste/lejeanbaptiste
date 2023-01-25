@@ -93,8 +93,8 @@ class NoteDialog implements SchemaDialog {
 
       //other type
       const typeValue = optionsTypeElement.val();
-      const showOtherTypeTextFiel = !this.typeAtt?.choices && typeValue === 'other' ? true : false;
-      this.toggleOtherTypeTextField(showOtherTypeTextFiel);
+      const showOtherTypeTextField = !this.typeAtt?.choices && typeValue === 'other' ? true : false;
+      this.toggleOtherTypeTextField(showOtherTypeTextField);
     });
 
     this.dialog.$el.on('beforeSave', (event: JQuery.Event, dialog: DialogForm) => {
@@ -115,10 +115,10 @@ class NoteDialog implements SchemaDialog {
       //replace other type option for custom defined value
       if (!this.typeAtt?.choices && optionsTypeElement.val() === 'other') {
         const otherTypeFieldValue = dialog.$el.find(`#${this.id}_noteOtherType`).val();
-        const typeCutstomOption = `
+        const typeCustomOption = `
           <option value="${otherTypeFieldValue}" selected>${otherTypeFieldValue}</option>
         `;
-        optionsTypeElement.html(typeCutstomOption);
+        optionsTypeElement.html(typeCustomOption);
       }
     });
 
@@ -156,23 +156,6 @@ class NoteDialog implements SchemaDialog {
     });
   }
 
-  private selectedTextField(id: string) {
-    const fieldTitle = 'Selected Text';
-
-    return `
-      <div id="${id}_selectedText" class="attribute">
-        <p class="fieldLabel">${fieldTitle}</p>
-        <p class="selectedText">${this.selectedText}</p>
-      </div>
-    `;
-  }
-
-  private updateTextField(value: string) {
-    const fontSize = value.length > 30 ? 1 : 1.2;
-    $('.selectedText').css('font-size', `${fontSize}em`);
-    $('.selectedText').text(value);
-  }
-
   private generateTypeOptions(choices: Option[]) {
     let html = '<option value="" disabled selected hidden>Please Choose...</option>';
 
@@ -190,8 +173,14 @@ class NoteDialog implements SchemaDialog {
       const selected = defaultChoice ? 'selected' : '';
 
       html += `
-        <option value="${value}" data-default="${defaultChoice}" ${selected}>${label}</option>
-        `;
+        <option
+          value="${value}"
+          data-default="${defaultChoice}"
+          ${selected}
+        >
+        ${label}
+        </option>
+      `;
     });
 
     return html;
