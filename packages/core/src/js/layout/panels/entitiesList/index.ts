@@ -311,6 +311,9 @@ class EntitiesList {
       .next('span')
       .hide();
     this.update();
+
+    //* Resume Auto-save
+    this.writer.overmindActions.editor.setSuspendAutosave(false);
   }
 
   // CONVERSION END
@@ -485,7 +488,20 @@ class EntitiesList {
   }
 
   convertEntities() {
-    const typesToFind = ['person', 'place', 'date', 'org', 'organization', 'title', 'link', 'rs'];
+    const typesToFind = new Set([
+      'person',
+      'place',
+      'date',
+      'org',
+      'organization',
+      'title',
+      'link',
+      'rs',
+    ]);
+
+    //* Prevent Auto-save
+    this.writer.overmindActions.editor.setSuspendAutosave(true);
+
     const potentialEntitiesByType = this.writer.schemaManager.mapper.findEntities(typesToFind);
     let potentialEntities: HTMLElement[] = [];
     for (const type in potentialEntitiesByType) {

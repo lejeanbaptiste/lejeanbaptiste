@@ -3,7 +3,6 @@ import type { LookupsProps } from '../../dialogs/entityLookups';
 import type { Schema, SchemaMappingType } from '../../types';
 
 export type EditorStateType = {
-  autosave?: boolean;
   advancedSettings: boolean;
   allowOverlap: boolean;
   annotationMode: number;
@@ -13,6 +12,8 @@ export type EditorStateType = {
     label: string;
     disabled?: boolean;
   }[];
+  autosave?: boolean;
+  autoSuspended: boolean;
   baseUrl?: string;
   currentFontSize: number;
   editorMode: string;
@@ -56,6 +57,7 @@ export const state: EditorStateType = {
     if (!annotatonMode) return '';
     return annotatonMode.label;
   }),
+  autoSuspended: false,
   baseUrl: '.',
   currentFontSize: 11,
   editorMode: 'xmlrdf',

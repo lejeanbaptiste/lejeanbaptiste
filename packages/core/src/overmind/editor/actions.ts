@@ -4,8 +4,8 @@ import { Context } from '../';
 import type {
   Authority,
   AuthorityService,
-  LookupsProps,
   LookupsConfig,
+  LookupsProps,
   NamedEntityType,
 } from '../../dialogs/entityLookups/types';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
@@ -146,6 +146,10 @@ export const getNssiToken = async ({ state }: Context) => {
 
 export const setAutosave = ({ state }: Context, value?: boolean) => {
   state.editor.autosave = value;
+};
+
+export const setSuspendAutosave = ({ state }: Context, value: boolean) => {
+  state.editor.autoSuspended = value;
 };
 
 export const setFontSize = ({ state }: Context, value: number) => {

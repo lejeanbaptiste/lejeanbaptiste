@@ -9,7 +9,7 @@ export const Autosave: FC = () => {
   const actions = useActions();
   const { editor } = useAppState();
 
-  const handleChangeShowEntities = () => {
+  const handleChange = () => {
     actions.editor.setAutosave(!editor.autosave);
   };
 
@@ -21,7 +21,7 @@ export const Autosave: FC = () => {
 
       <ToggleButton
         color="primary"
-        onChange={handleChangeShowEntities}
+        onChange={handleChange}
         selected={editor.autosave}
         size="small"
         sx={{ border: 0 }}
