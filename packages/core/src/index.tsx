@@ -69,7 +69,7 @@ export class Leafwriter {
       if (mutation.path === 'editor.latestEvent') {
         if (overmind.state.editor.latestEvent === 'close') {
           this._onClose.next(true);
-          this._onClose.complete()
+          this._onClose.complete();
         }
       }
 
@@ -137,7 +137,7 @@ export class Leafwriter {
   }
 
   get autosave() {
-    return overmind.state.editor.autosave;
+    return overmind.state.editor.autosave && !overmind.state.editor.autoSuspended;
   }
 
   set autosave(value: boolean) {
