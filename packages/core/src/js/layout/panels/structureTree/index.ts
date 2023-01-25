@@ -100,6 +100,9 @@ class StructureTree {
         tagId = selectedIds;
       }
 
+      // *prevent context menu on TEIHeader
+      if (tagId === 'teiHeader') return;
+
       //select as if it was a left-click;
       const selectContents = this.isSelectedContents($target);
       const multiselect = this.isMultiselect(event);
