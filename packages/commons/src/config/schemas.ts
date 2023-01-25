@@ -13,8 +13,8 @@ export const schemas: Types.Schema[] = isLocalDev
           'https://raw.githubusercontent.com/cwrc/CWRC-Schema/master/schemas/orlando_event.rng',
         ],
         css: [
-          'https://cwrc.ca/templates/css/orlando_v2_cwrc-writer.css',
-          'https://raw.githubusercontent.com/cwrc/CWRC-Schema/master/templates/css/orlando_v2_cwrc-writer.css',
+          'https://cwrc.ca/templates/css/orlando.css',
+          'https://raw.githubusercontent.com/cwrc/CWRC-Schema/master/templates/css/orlando.css',
         ],
       },
       {
