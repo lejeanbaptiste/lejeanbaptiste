@@ -123,7 +123,7 @@ class NoteDialog implements SchemaDialog {
     });
 
     //toggle other type text field
-    optionsTypeElement.change((event: any) => {
+    optionsTypeElement.on('change', (event: any) => {
       if (this.typeAtt?.choices) return;
       const target = $(event.target);
       const otherTypeSelected = target.val() === 'other' ? true : false;
@@ -148,7 +148,7 @@ class NoteDialog implements SchemaDialog {
             Are you trying to add multiple values for this attribute?
             If not, remove the "space" you've just added
           `,
-          height: 200,
+          height: 250,
           type: 'info',
           showConfirmKey: 'confirm-space-in-xml-values',
         });
