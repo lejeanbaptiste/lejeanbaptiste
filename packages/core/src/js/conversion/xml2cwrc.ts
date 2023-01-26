@@ -122,17 +122,20 @@ class XML2CWRC {
     const parseData = (nodeData: string) => {
       const attributes = Object.assign(
         {},
-        ...nodeData
-          .replaceAll('"', '')
-          .split(' ')
-          .map((s) => s.split('='))
-          .map(([k, v]) => ({ [k]: v }))
+        ...nodeData // treat as an array of key/value pairs
+          .replaceAll(/(\r\n|\n|\r)/g, '') // remove page breaks
+          .replaceAll(/"|'/g, '') // remove quotes
+          .split(' ') // split the variables
+          .map((s) => s.split('=')) // split keys from values
+          .map(([k, v]) => ({ [k]: v })) // create an objects
       );
 
-      if ('href' in attributes) {
-        const url: string = attributes.href;
-        if (isValidHttpURL(url)) return url;
-      }
+      if (!('href' in attributes)) return;
+
+      const url: string = attributes.href;
+      if (!isValidHttpURL(url)) return;
+
+      return url;
     };
 
     doc.childNodes.forEach((node) => {
