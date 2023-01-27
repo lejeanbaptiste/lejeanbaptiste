@@ -10,38 +10,22 @@ import { useLeafWriter } from './useLeafWriter';
 
 export const EditView: FC = () => {
   const { userState, user } = useAppState().auth;
-  const { autosave, libLoaded, resource } = useAppState().editor;
+  const { isDirty, libLoaded, resource } = useAppState().editor;
 
   const { getKeycloakAuthToken } = useActions().auth;
-  const {
-    close,
-    getGeonameUsername,
-    loadLeafWriter,
-    setAutosave,
-    setIsDirty,
-    subscribeToTimerService,
-    unsubscribeFromTimerService,
-  } = useActions().editor;
-
+  const { close, getGeonameUsername, loadLeafWriter } = useActions().editor;
   const { setPage } = useActions().ui;
 
   const navigate = useNavigate();
 
   const { analytics } = useAnalytics();
 
-  const {
-    disposeLeafWriter,
-    leafWriter,
-    loadDocumentFromPermalink,
-    setCurrentLeafWriter,
-    tapDocument,
-  } = useLeafWriter();
+  const { leafWriter, loadFromPermalink, setEditorEvents, setCurrentLeafWriter } = useLeafWriter();
   const { onKeydownHandle } = useMenu();
 
   const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // if (divEl.current && !leafWriter) loadLib();
     setPage('edit');
     window.addEventListener('keydown', onKeydownHandle);
     return () => {
@@ -52,7 +36,7 @@ export const EditView: FC = () => {
 
   useEffect(() => {
     if (userState === 'AUTHENTICATED') {
-      if (!resource) loadDocumentFromPermalink();
+      if (!resource) loadFromPermalink();
       loadLib();
       return;
     }
@@ -78,6 +62,7 @@ export const EditView: FC = () => {
 
   const handleResource = async () => {
     if (!resource) return;
+    if (!resource.owner) return;
     if (resource.content) initLeafWriter();
   };
 
@@ -89,6 +74,7 @@ export const EditView: FC = () => {
 
   const initLeafWriter = async () => {
     if (!leafWriter || !resource?.content) return;
+    if (isDirty) return;
 
     const geonamesUsername = await getGeonameUsername();
 
@@ -110,26 +96,7 @@ export const EditView: FC = () => {
       user: author,
     });
 
-    leafWriter.isDirty.subscribe((value) => {
-      setIsDirty(value);
-    });
-
-    leafWriter.onLoad.subscribe(({ schemaName }) => {
-      leafWriter.autosave = autosave;
-      tapDocument(resource, schemaName);
-      subscribeToTimerService(leafWriter);
-    });
-
-    leafWriter.onClose.subscribe(() => {
-      unsubscribeFromTimerService();
-      disposeLeafWriter();
-    });
-
-    leafWriter.onEditorStateChange.subscribe((editorState) => {
-      if (editorState.autosave !== undefined && editorState.autosave !== autosave) {
-        setAutosave(editorState.autosave);
-      }
-    });
+    setEditorEvents();
 
     if (analytics) {
       analytics.track('editor', { opened: true });

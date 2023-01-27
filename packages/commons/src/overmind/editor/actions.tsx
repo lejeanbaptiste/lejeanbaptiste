@@ -19,6 +19,7 @@ export const loadLeafWriter = async ({ state }: Context, container: HTMLElement)
 };
 
 export const setResource = async ({ state }: Context, resource?: Resource) => {
+  state.editor.isDirty = false;
   state.editor.resource = resource ? { ...resource } : undefined;
 };
 
