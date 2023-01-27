@@ -12,7 +12,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './i18n';
 import { config } from './overmind';
-import './utilities/devToolsConsole';
+import './utilities/devtoolsLog';
 import './utilities/log';
 
 const overmind = createOvermind(config, {
