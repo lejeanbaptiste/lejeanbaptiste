@@ -134,12 +134,12 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
     });
   }
 
-  if (!resource.provider) {
+  if (resource.provider) state.cloud.name = resource.provider as SuportedProviders;
+
+  if (!state.cloud.name) {
     log.warn('no provider');
     return null;
-  }
-
-  state.cloud.name = resource.provider as SuportedProviders;
+  };
 
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
