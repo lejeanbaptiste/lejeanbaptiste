@@ -578,26 +578,16 @@ class Mapper {
    * @returns {Object} A map of the entities, organized by type
    */
   findEntities(
-    typesToFind: string[] = ['person', 'place', 'date', 'org', 'organization', 'title', 'link']
+    typesToFind: Set<string> = new Set([
+      'person',
+      'place',
+      'date',
+      'org',
+      'organization',
+      'title',
+      'link',
+    ])
   ) {
-    // const allTypes = [
-    //   'person',
-    //   'place',
-    //   'date',
-    //   'org',
-    //   'citation',
-    //   'note',
-    //   'title',
-    //   'correction',
-    //   'keyword',
-    //   'link',
-    // ];
-
-    // const namedEntities = ['person', 'place', 'org', 'title'];
-
-    // const nonNoteTypes = ['person', 'place', 'date', 'org', 'title', 'link'];
-    // typesToFind = !typesToFind ? nonNoteTypes : typesToFind;
-
     const candidateEntities: { [x: string]: HTMLElement[] } = {};
     const headerTag = this.getHeaderTag();
 
@@ -606,42 +596,46 @@ class Mapper {
 
     const entityMappings = this.getMappings().entities;
 
-
     for (const [type, entity] of entityMappings.entries()) {
-      if (typesToFind.length !== 0 || typesToFind.indexOf(type) !== -1) {
-        let entityTagNames: string[] = [];
+      if (!typesToFind.has(type)) continue;
 
-        let parentTag = entity.parentTag;
-        if (Array.isArray(parentTag)) entityTagNames = [...entityTagNames, ...parentTag];
-        if (Array.isArray(parentTag)) {
-          parentTag = parentTag[0];
-          if (parentTag !== '') entityTagNames.push(parentTag);
-        }
+      let entityTagNames: string[] = [];
+
+      let parentTag = entity.parentTag;
+      if (Array.isArray(parentTag)) entityTagNames = [...entityTagNames, ...parentTag];
+      if (Array.isArray(parentTag)) {
+        parentTag = parentTag[0];
         if (parentTag !== '') entityTagNames.push(parentTag);
-
-        entityTagNames = entityTagNames.map((name) => `[_tag="${name}"]`);
-
-        const matches = $(entityTagNames.join(','), this.writer.editor?.getBody()).filter(
-          (index, element) => {
-            if (element.getAttribute('_entity') === 'true') return false;
-            if ($(element).parents(`[_tag="${headerTag}"]`).length !== 0) return false;
-
-            // double check entity type using element instead of string, which forces xpath evaluation, which we want for tei note entities
-            const entityType = this.getEntityTypeForTag(element);
-            if (!entityType) return false;
-
-            const entry = this.getMappings().entities.get(entityType);
-            // if the mapping has a uri, check to make sure it exists
-            if (entry?.mapping?.uri) {
-              const result = this.writer.utilities.evaluateXPath(element, entry.mapping.uri);
-              if (result) return true;
-            }
-
-            return false;
-          }
-        );
-        candidateEntities[type] = $.makeArray(matches);
       }
+      if (parentTag !== '') entityTagNames.push(parentTag);
+
+      entityTagNames = entityTagNames.map((name) => `[_tag="${name}"]`);
+
+      const matches = $(entityTagNames.join(','), this.writer.editor?.getBody()).filter(
+        (index, element) => {
+          if (element.getAttribute('_entity') === 'true') return false;
+          
+          if ($(element).parents(`[_tag="${headerTag}"]`).length !== 0) return false;
+          
+          // double check entity type using element instead of string, which forces xpath evaluation, which we want for tei note entities
+          const entityType = this.getEntityTypeForTag(element);
+          if (!entityType) return false;
+         
+          const entry = this.getMappings().entities.get(entityType);
+          
+          // if the mapping has a uri, check to make sure it exists
+          if (entry?.mapping?.uri) {
+            const result = this.writer.utilities.evaluateXPath(element, entry.mapping.uri);
+            if (result) return true;
+          } else {
+            return true;
+          }
+
+          return false;
+        }
+      );
+
+      candidateEntities[type] = $.makeArray(matches);
     }
 
     return candidateEntities;
