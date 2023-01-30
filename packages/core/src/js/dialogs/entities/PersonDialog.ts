@@ -1,284 +1,21 @@
-import type { SchemaMappingType } from '../../../types';
+import $ from 'jquery';
+import 'jquery-ui/ui/widgets/button';
+import { defaultRoles } from '../../../config/personRole';
 import type { EntityLink } from '../../../dialogs/entityLookups/types';
 import Entity from '../../../js/entities/Entity';
 import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
-import $ from 'jquery';
-import 'jquery-ui/ui/widgets/button';
+import type { SchemaMappingType } from '../../../types';
+import { capitalizeFirstLetter } from '../../utilities';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import { getSourceNameFromUrl } from './util';
 
 interface Role {
-  code: string;
-  title: string;
+  label: string;
+  value: string;
 }
-
-const marcRoles: Role[] = [
-  { code: '', title: '(none)' },
-  { code: 'abr', title: 'Abridger' },
-  { code: 'acp', title: 'Art copyist' },
-  { code: 'act', title: 'Actor' },
-  { code: 'adi', title: 'Art director' },
-  { code: 'adp', title: 'Adapter' },
-  { code: 'aft', title: 'Author of afterword, colophon, etc.' },
-  { code: 'anl', title: 'Analyst' },
-  { code: 'anm', title: 'Animator' },
-  { code: 'ann', title: 'Annotator' },
-  { code: 'ant', title: 'Bibliographic antecedent' },
-  { code: 'ape', title: 'Appellee' },
-  { code: 'apl', title: 'Appellant' },
-  { code: 'app', title: 'Applicant' },
-  { code: 'aqt', title: 'Author in quotations or text abstracts' },
-  { code: 'arc', title: 'Architect' },
-  { code: 'ard', title: 'Artistic director' },
-  { code: 'arr', title: 'Arranger' },
-  { code: 'art', title: 'Artist' },
-  { code: 'asg', title: 'Assignee' },
-  { code: 'asn', title: 'Associated name' },
-  { code: 'ato', title: 'Autographer' },
-  { code: 'att', title: 'Attributed name' },
-  { code: 'auc', title: 'Auctioneer' },
-  { code: 'aud', title: 'Author of dialog' },
-  { code: 'aui', title: 'Author of introduction, etc.' },
-  { code: 'aus', title: 'Screenwriter' },
-  { code: 'aut', title: 'Author' },
-  { code: 'bdd', title: 'Binding designer' },
-  { code: 'bjd', title: 'Bookjacket designer' },
-  { code: 'bkd', title: 'Book designer' },
-  { code: 'bkp', title: 'Book producer' },
-  { code: 'blw', title: 'Blurb writer' },
-  { code: 'bnd', title: 'Binder' },
-  { code: 'bpd', title: 'Bookplate designer' },
-  { code: 'brd', title: 'Broadcaster' },
-  { code: 'brl', title: 'Braille embosser' },
-  { code: 'bsl', title: 'Bookseller' },
-  { code: 'cas', title: 'Caster' },
-  { code: 'ccp', title: 'Conceptor' },
-  { code: 'chr', title: 'Choreographer' },
-  { code: 'cli', title: 'Client' },
-  { code: 'cll', title: 'Calligrapher' },
-  { code: 'clr', title: 'Colorist' },
-  { code: 'clt', title: 'Collotyper' },
-  { code: 'cmm', title: 'Commentator' },
-  { code: 'cmp', title: 'Composer' },
-  { code: 'cmt', title: 'Compositor' },
-  { code: 'cnd', title: 'Conductor' },
-  { code: 'cng', title: 'Cinematographer' },
-  { code: 'cns', title: 'Censor' },
-  { code: 'coe', title: 'Contestant-appellee' },
-  { code: 'col', title: 'Collector' },
-  { code: 'com', title: 'Compiler' },
-  { code: 'con', title: 'Conservator' },
-  { code: 'cor', title: 'Collection registrar' },
-  { code: 'cos', title: 'Contestant' },
-  { code: 'cot', title: 'Contestant-appellant' },
-  { code: 'cou', title: 'Court governed' },
-  { code: 'cov', title: 'Cover designer' },
-  { code: 'cpc', title: 'Copyright claimant' },
-  { code: 'cpe', title: 'Complainant-appellee' },
-  { code: 'cph', title: 'Copyright holder' },
-  { code: 'cpl', title: 'Complainant' },
-  { code: 'cpt', title: 'Complainant-appellant' },
-  { code: 'cre', title: 'Creator' },
-  { code: 'crp', title: 'Correspondent' },
-  { code: 'crr', title: 'Corrector' },
-  { code: 'crt', title: 'Court reporter' },
-  { code: 'csl', title: 'Consultant' },
-  { code: 'csp', title: 'Consultant to a project' },
-  { code: 'cst', title: 'Costume designer' },
-  { code: 'ctb', title: 'Contributor' },
-  { code: 'cte', title: 'Contestee-appellee' },
-  { code: 'ctg', title: 'Cartographer' },
-  { code: 'ctr', title: 'Contractor' },
-  { code: 'cts', title: 'Contestee' },
-  { code: 'ctt', title: 'Contestee-appellant' },
-  { code: 'cur', title: 'Curator' },
-  { code: 'cwt', title: 'Commentator for written text' },
-  { code: 'dbp', title: 'Distribution place' },
-  { code: 'dfd', title: 'Defendant' },
-  { code: 'dfe', title: 'Defendant-appellee' },
-  { code: 'dft', title: 'Defendant-appellant' },
-  { code: 'dgg', title: 'Degree granting institution' },
-  { code: 'dis', title: 'Dissertant' },
-  { code: 'dln', title: 'Delineator' },
-  { code: 'dnc', title: 'Dancer' },
-  { code: 'dnr', title: 'Donor' },
-  { code: 'dpc', title: 'Depicted' },
-  { code: 'dpt', title: 'Depositor' },
-  { code: 'drm', title: 'Draftsman' },
-  { code: 'drt', title: 'Director' },
-  { code: 'dsr', title: 'Designer' },
-  { code: 'dst', title: 'Distributor' },
-  { code: 'dtc', title: 'Data contributor' },
-  { code: 'dte', title: 'Dedicatee' },
-  { code: 'dtm', title: 'Data manager' },
-  { code: 'dto', title: 'Dedicator' },
-  { code: 'dub', title: 'Dubious author' },
-  { code: 'edc', title: 'Editor of compilation' },
-  { code: 'edm', title: 'Editor of moving image work' },
-  { code: 'edt', title: 'Editor' },
-  { code: 'egr', title: 'Engraver' },
-  { code: 'elg', title: 'Electrician' },
-  { code: 'elt', title: 'Electrotyper' },
-  { code: 'eng', title: 'Engineer' },
-  { code: 'enj', title: 'Enacting jurisdiction' },
-  { code: 'etr', title: 'Etcher' },
-  { code: 'evp', title: 'Event place' },
-  { code: 'exp', title: 'Expert' },
-  { code: 'fac', title: 'Facsimilist' },
-  { code: 'fds', title: 'Film distributor' },
-  { code: 'fld', title: 'Field director' },
-  { code: 'flm', title: 'Film editor' },
-  { code: 'fmd', title: 'Film director' },
-  { code: 'fmk', title: 'Filmmaker' },
-  { code: 'fmo', title: 'Former owner' },
-  { code: 'fmp', title: 'Film producer' },
-  { code: 'fnd', title: 'Funder' },
-  { code: 'fpy', title: 'First party' },
-  { code: 'frg', title: 'Forger' },
-  { code: 'gis', title: 'Geographic information specialist' },
-  { code: 'his', title: 'Host institution' },
-  { code: 'hnr', title: 'Honoree' },
-  { code: 'hst', title: 'Host' },
-  { code: 'ill', title: 'Illustrator' },
-  { code: 'ilu', title: 'Illuminator' },
-  { code: 'ins', title: 'Inscriber' },
-  { code: 'itr', title: 'Instrumentalist' },
-  { code: 'ive', title: 'Interviewee' },
-  { code: 'ivr', title: 'Interviewer' },
-  { code: 'inv', title: 'Inventor' },
-  { code: 'isb', title: 'Issuing body' },
-  { code: 'jud', title: 'Judge' },
-  { code: 'jug', title: 'Jurisdiction governed' },
-  { code: 'lbr', title: 'Laboratory' },
-  { code: 'lbt', title: 'Librettist' },
-  { code: 'ldr', title: 'Laboratory director' },
-  { code: 'led', title: 'Lead' },
-  { code: 'lee', title: 'Libelee-appellee' },
-  { code: 'lel', title: 'Libelee' },
-  { code: 'len', title: 'Lender' },
-  { code: 'let', title: 'Libelee-appellant' },
-  { code: 'lgd', title: 'Lighting designer' },
-  { code: 'lie', title: 'Libelant-appellee' },
-  { code: 'lil', title: 'Libelant' },
-  { code: 'lit', title: 'Libelant-appellant' },
-  { code: 'lsa', title: 'Landscape architect' },
-  { code: 'lse', title: 'Licensee' },
-  { code: 'lso', title: 'Licensor' },
-  { code: 'ltg', title: 'Lithographer' },
-  { code: 'lyr', title: 'Lyricist' },
-  { code: 'mcp', title: 'Music copyist' },
-  { code: 'mdc', title: 'Metadata contact' },
-  { code: 'mfp', title: 'Manufacture place' },
-  { code: 'mfr', title: 'Manufacturer' },
-  { code: 'mod', title: 'Moderator' },
-  { code: 'mon', title: 'Monitor' },
-  { code: 'mrb', title: 'Marbler' },
-  { code: 'mrk', title: 'Markup editor' },
-  { code: 'msd', title: 'Musical director' },
-  { code: 'mte', title: 'Metal-engraver' },
-  { code: 'mus', title: 'Musician' },
-  { code: 'nrt', title: 'Narrator' },
-  { code: 'opn', title: 'Opponent' },
-  { code: 'org', title: 'Originator' },
-  { code: 'orm', title: 'Organizer of meeting' },
-  { code: 'osp', title: 'Onscreen presenter' },
-  { code: 'oth', title: 'Other' },
-  { code: 'own', title: 'Owner' },
-  { code: 'pan', title: 'Panelist' },
-  { code: 'pat', title: 'Patron' },
-  { code: 'pbd', title: 'Publishing director' },
-  { code: 'pbl', title: 'Publisher' },
-  { code: 'pdr', title: 'Project director' },
-  { code: 'pfr', title: 'Proofreader' },
-  { code: 'pht', title: 'Photographer' },
-  { code: 'plt', title: 'Platemaker' },
-  { code: 'pma', title: 'Permitting agency' },
-  { code: 'pmn', title: 'Production manager' },
-  { code: 'pop', title: 'Printer of plates' },
-  { code: 'ppm', title: 'Papermaker' },
-  { code: 'ppt', title: 'Puppeteer' },
-  { code: 'pra', title: 'Praeses' },
-  { code: 'prc', title: 'Process contact' },
-  { code: 'prd', title: 'Production personnel' },
-  { code: 'pre', title: 'Presenter' },
-  { code: 'prf', title: 'Performer' },
-  { code: 'prg', title: 'Programmer' },
-  { code: 'prm', title: 'Printmaker' },
-  { code: 'prn', title: 'Production company' },
-  { code: 'pro', title: 'Producer' },
-  { code: 'prp', title: 'Production place' },
-  { code: 'prs', title: 'Production designer' },
-  { code: 'prt', title: 'Printer' },
-  { code: 'prv', title: 'Provider' },
-  { code: 'pta', title: 'Patent applicant' },
-  { code: 'pte', title: 'Plaintiff-appellee' },
-  { code: 'ptf', title: 'Plaintiff' },
-  { code: 'pth', title: 'Patent holder' },
-  { code: 'ptt', title: 'Plaintiff-appellant' },
-  { code: 'pup', title: 'Publication place' },
-  { code: 'rbr', title: 'Rubricator' },
-  { code: 'rce', title: 'Recording engineer' },
-  { code: 'rcd', title: 'Recordist' },
-  { code: 'rcp', title: 'Addressee' },
-  { code: 'rdd', title: 'Radio director' },
-  { code: 'red', title: 'Redaktor' },
-  { code: 'ren', title: 'Renderer' },
-  { code: 'res', title: 'Researcher' },
-  { code: 'rev', title: 'Reviewer' },
-  { code: 'rpc', title: 'Radio producer' },
-  { code: 'rps', title: 'Repository' },
-  { code: 'rpt', title: 'Reporter' },
-  { code: 'rpy', title: 'Responsible party' },
-  { code: 'rse', title: 'Respondent-appellee' },
-  { code: 'rsg', title: 'Restager' },
-  { code: 'rsp', title: 'Respondent' },
-  { code: 'rsr', title: 'Restorationist' },
-  { code: 'rst', title: 'Respondent-appellant' },
-  { code: 'rth', title: 'Research team head' },
-  { code: 'rtm', title: 'Research team member' },
-  { code: 'sad', title: 'Scientific advisor' },
-  { code: 'sce', title: 'Scenarist' },
-  { code: 'scl', title: 'Sculptor' },
-  { code: 'scr', title: 'Scribe' },
-  { code: 'sds', title: 'Sound designer' },
-  { code: 'sec', title: 'Secretary' },
-  { code: 'sgd', title: 'Stage director' },
-  { code: 'sgn', title: 'Signer' },
-  { code: 'sht', title: 'Supporting host' },
-  { code: 'sll', title: 'Seller' },
-  { code: 'sng', title: 'Singer' },
-  { code: 'spk', title: 'Speaker' },
-  { code: 'spn', title: 'Sponsor' },
-  { code: 'spy', title: 'Second party' },
-  { code: 'std', title: 'Set designer' },
-  { code: 'stg', title: 'Setting' },
-  { code: 'stl', title: 'Storyteller' },
-  { code: 'stm', title: 'Stage manager' },
-  { code: 'stn', title: 'Standards body' },
-  { code: 'str', title: 'Stereotyper' },
-  { code: 'srv', title: 'Surveyor' },
-  { code: 'tcd', title: 'Technical director' },
-  { code: 'tch', title: 'Teacher' },
-  { code: 'ths', title: 'Thesis advisor' },
-  { code: 'tld', title: 'Television director' },
-  { code: 'tlp', title: 'Television producer' },
-  { code: 'trc', title: 'Transcriber' },
-  { code: 'trl', title: 'Translator' },
-  { code: 'tyd', title: 'Type designer' },
-  { code: 'tyg', title: 'Typographer' },
-  { code: 'uvp', title: 'University place' },
-  { code: 'vdg', title: 'Videographer' },
-  { code: 'wac', title: 'Writer of added commentary' },
-  { code: 'wal', title: 'Writer of added lyrics' },
-  { code: 'wam', title: 'Writer of accompanying material' },
-  { code: 'wat', title: 'Writer of added text' },
-  { code: 'wdc', title: 'Woodcutter' },
-  { code: 'wde', title: 'Wood engraver' },
-  { code: 'wit', title: 'Witness' },
-];
 
 const personTypeOptions = ['real', 'fictional', 'both'];
 const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
@@ -286,47 +23,54 @@ const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
 class PersonDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
+
+  readonly id: string;
   readonly mappingID: SchemaMappingType;
+  readonly roleAtt: any;
 
   entry?: Entity;
   selectedText?: string;
   type: EntityTypes = 'person';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
-    this.writer = writer;
     const mappingID = writer.schemaManager.mapper.currentMappingsId;
     if (!mappingID) throw Error('Schema Mappings not found');
 
+    this.writer = writer;
     this.mappingID = mappingID;
+
+    const typeParentTag = writer.schemaManager.mapper.getParentTag('person');
+    const atts = writer.schemaManager.getAttributesForTag(typeParentTag);
+    this.roleAtt = atts.find(({ name }) => name === 'role');
 
     const idPrefix =
       this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
         ? 'noteForm_' //orlando and cwrcEntry
         : 'personForm_'; //tei & teiLite
 
-    const id = writer.getUniqueId(idPrefix);
+    this.id = writer.getUniqueId(idPrefix);
 
     const entityAttributesSection = `
       <div class="entityAttributes">
-        ${this.selectedTextField(id)}
-        ${this.tagAsField(id)}
-        ${this.mappingID === 'tei' || this.mappingID === 'teiLite' ? this.certaintyField(id) : ''}
-        ${this.mappingID === 'tei' ? this.personTypeField(id) : ''}
-        ${this.mappingID === 'tei' || this.mappingID === 'teiLite' ? this.personRoleField(id) : ''}
+        ${this.selectedTextField(this.id)}
+        ${this.tagAsField(this.id)}
+        ${['tei', 'teiLite'].includes(this.mappingID) ? this.certaintyField(this.id) : ''}
+        ${this.mappingID === 'tei' ? this.personTypeField(this.id) : ''}
+        ${['tei', 'teiLite'].includes(this.mappingID) ? this.personRoleField(this.id) : ''}
+        ${['tei', 'teiLite'].includes(this.mappingID) ? this.otherTypeField(this.id) : ''}
       </div>
     `;
 
-    const $el = $(
-      `<div class="annotationDialog">
+    const html = `
+      <div class="annotationDialog">
         <div class="content">
-
           <div class="main">
             ${entityAttributesSection}
 
             <hr style="width: 100%; border: none; border-bottom: 1px solid #ccc;">
             
             <div
-              id="${id}_attParent"
+              id="${this.id}_attParent"
               class="attributes"
               data-type="attributes"
               data-mapping="attributes"
@@ -337,14 +81,14 @@ class PersonDialog implements SchemaDialog {
             <h3 style="border-bottom: 1px solid #ddd; padding-bottom: 4px;">Markups</h3>
             <ul></ul>
           </div>
-
         </div>
       </div>
-    `
-    ).appendTo(parentEl);
+    `;
+
+    const $el = $(html).appendTo(parentEl);
 
     //@ts-ignore
-    const $relinkButton = $(`#${id}_tagAs .relink-bt`, $el).button();
+    const $relinkButton = $(`#${this.id}_tagAs .relink-bt`, $el).button();
     $relinkButton.on('click', () => {
       parentEl.css('display', 'none');
 
@@ -368,7 +112,102 @@ class PersonDialog implements SchemaDialog {
     });
 
     this.dialog = new DialogForm({ writer, $el, type: 'person', title: 'Tag Person' });
+
+    const optionsRoleElement = this.dialog.$el.find(`#${this.id}_role`);
+    const personOtherRoleElement = this.dialog.$el.find(`#${this.id}_personOtherRole`);
+
+    this.dialog.$el.on(
+      'buildDynamicFields',
+      (event: JQuery.Event, config: any, dialog: DialogForm) => {
+        const roleChoices = this.roleAtt?.choices ? this.roleAtt.choices : defaultRoles;
+        const choiceOptions = this.generateRoleOptions(roleChoices);
+        optionsRoleElement.html(choiceOptions);
+      }
+    );
+
+    this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any, dialog: DialogForm) => {
+      //Roles
+      const typeValue = optionsRoleElement.val();
+      const showOtherTypeTextField = !this.roleAtt?.choices && typeValue === 'other' ? true : false;
+      this.toggleOtherTypeTextField(showOtherTypeTextField);
+    });
+
+    this.dialog.$el.on('beforeSave', (event: JQuery.Event, dialog: DialogForm) => {
+      //replace other type option for custom defined value
+      if (!this.roleAtt?.choices && optionsRoleElement.val() === 'other') {
+        const otherRoleFieldValue = dialog.$el.find(`#${this.id}_personOtherRole`).val();
+        const typeCustomOption = `
+          <option value="${otherRoleFieldValue}" selected>${otherRoleFieldValue}</option>
+        `;
+        optionsRoleElement.html(typeCustomOption);
+      }
+    });
+
+    optionsRoleElement.on('change', (event: any) => {
+      if (this.roleAtt?.choices) return;
+      const target = $(event.target);
+      const otherRoleSelected = target.val() === 'other' ? true : false;
+      this.toggleOtherTypeTextField(otherRoleSelected);
+    });
+
+    //transfer value from 'other type 'textfied to 'other' option value on selectbox
+    this.dialog.$el.find(`#${this.id}_personOtherRole`).on('change', () => {
+      let val = this.dialog.$el.find(`#${this.id}_personOtherRole`).val();
+      if (!val) return;
+      if (Array.isArray(val)) val = val[0];
+      if (typeof val === 'number') val = val.toString();
+
+      this.dialog.$el.find(`#${this.id}_other`).attr('value', val);
+    });
+
+    personOtherRoleElement.on('keyup', (event: JQuery.KeyUpEvent) => {
+      if (event.code === 'Space') {
+        writer.dialogManager.confirm({
+          title: 'Warning',
+          msg: `
+            Are you trying to add multiple values for this attribute?
+            If not, remove the "space" you have just added
+          `,
+          height: 250,
+          type: 'info',
+          showConfirmKey: 'confirm-space-in-xml-values',
+        });
+      }
+    });
   }
+
+  private generateRoleOptions(choices: Role[]) {
+    let html = '<option value="" disabled selected hidden>Please Choose...</option>';
+
+    //empty choice
+    html += '<option value=""></option>';
+
+    //choices
+    choices.forEach((choice) => {
+      const value = typeof choice === 'string' ? choice : choice.value;
+      const label = typeof choice === 'string' ? choice : choice.label;
+
+      const defaultChoice = this.roleAtt?.defaultValue === value ? true : false;
+      const selected = defaultChoice ? 'selected' : '';
+
+      html += `
+        <option
+          value="${value}"
+          data-default="${defaultChoice}"
+          ${selected}
+        >
+        ${label}
+        </option>
+      `;
+    });
+
+    return html;
+  }
+
+  private toggleOtherTypeTextField = (show: boolean) => {
+    this.dialog.$el.find(`#${this.id}_personOtherRoleSlot`).toggle(show);
+    if (!show) this.dialog.$el.find(`#${this.id}_personOtherRole`).val('');
+  };
 
   private updateLink(lemma: string, uri: string) {
     if (this.entry) {
@@ -513,27 +352,32 @@ class PersonDialog implements SchemaDialog {
   private personRoleField(id: string) {
     const fieldTitle = 'Role (optional)';
 
+    const documentText = capitalizeFirstLetter(this.roleAtt.documentation);
+
     const html = `
-      <div id="${id}_role" class="attribute">
+      <div class="attribute" style="display: flex; flex-direction: column; gap: 4px;">
         <div>
           <p class="fieldLabel">${fieldTitle}</p>
         </div>
-        <select data-type="select" data-mapping="role" style="width: 100%;">
-          ${marcRoles
-            .sort((a, b) => {
-              const nameA = a.title.toUpperCase(); // ignore upper and lowercase
-              const nameB = b.title.toUpperCase(); // ignore upper and lowercase
-              if (nameA < nameB) return -1;
-              if (nameA > nameB) return 1;
-              return 0;
-            })
-            .map((role) => `<option value="${role.code}">${role.title}</option>`)
-            .join('\n')}
-        </select>
+        <select id="${id}_role" name="role" data-type="select" data-mapping="role"></select>
+        ${documentText ? `<span style="font-size: 0.7rem; color: #666">${documentText}</span>` : ''}
       </div>
     `;
 
     return html;
+  }
+
+  private otherTypeField(id: string) {
+    const fieldTitle = 'Define Role';
+
+    return `
+      <div id="${id}_personOtherRoleSlot" class="attribute">
+        <div>
+          <p class="fieldLabel">${fieldTitle}</p>
+        </div>
+        <input type="text" id="${id}_personOtherRole" data-type="textbox" data-mapping="otherRole" />
+      </div>
+    `;
   }
 
   show(config: { [x: string]: any; entry: Entity; query: string }) {
