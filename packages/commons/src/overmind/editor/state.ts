@@ -5,9 +5,10 @@ import { TimerService, type TimerServiceProps } from './timerService';
 type State = {
   autosave: boolean;
   contentLastSaved?: string;
+  contentToBeSaved?: string;
   isDirty: boolean;
   isSaving: boolean;
-  leafWriter?: Leafwriter;
+  // leafWriter?: Leafwriter;
   libLoaded: boolean;
   resource?: Resource;
   saveDelayed: boolean;

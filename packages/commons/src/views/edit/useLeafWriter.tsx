@@ -23,6 +23,7 @@ export const useLeafWriter = () => {
     saveAs,
     setAutosave,
     setContentLastSaved,
+    setContentToBeSaved,
     setIsDirty,
     setResource,
     subscribeToTimerService,
@@ -48,8 +49,19 @@ export const useLeafWriter = () => {
 
     if (leafWriter.onLoad.observed) removeSubscribers;
 
-    const dirtyEvent = leafWriter.isDirty.subscribe((value) => {
-      setIsDirty(value);
+    const dirtyEvent = leafWriter.isDirty.subscribe(async (value) => {
+      if (!leafWriter) return;
+      if (isDirty !== value) setIsDirty(value);
+
+      if (value === false) {
+        timerService.stop();
+        return;
+      }
+
+      const content = await leafWriter.getContent();
+      setContentToBeSaved(content);
+
+      if (autosave && resource?.provider) timerService.start();
     });
     leafWriterEvents.push(dirtyEvent);
 
