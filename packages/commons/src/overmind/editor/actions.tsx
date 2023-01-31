@@ -35,6 +35,10 @@ export const isContentSameAsLastSaved = ({ state }: Context, content: string) =>
   return state.editor.contentLastSaved === content;
 };
 
+export const setContentToBeSaved = ({ state }: Context, content: string) => {
+  state.editor.contentToBeSaved = content;
+};
+
 export const save = async (
   { state, actions }: Context,
   {
@@ -107,6 +111,7 @@ export const save = async (
   actions.editor.afterSave();
 
   state.editor.contentLastSaved = content;
+  state.editor.contentLastSaved = undefined;
 
   return { success: true };
 };
@@ -156,21 +161,14 @@ export const saveAs = async (
 };
 
 export const setIsDirty = async ({ state }: Context, value: boolean) => {
-  if (state.editor.isDirty !== value) state.editor.isDirty = value;
-
-  if (value === false) {
-    state.editor.timerService.stop();
-    return;
-  }
-
-  if (state.editor.autosave && state.editor.resource?.provider) state.editor.timerService.start();
+  state.editor.isDirty = value;
 };
 
 export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
-  state.editor.timerService.onTimer.subscribe(async (value) => {
-    const content = await editor.getContent();
+  state.editor.timerService.onTimer.subscribe(async () => {
+    if (!state.editor.contentToBeSaved) return;
     const screenshot = await editor.getDocumentScreenshot();
-    await actions.editor.save({ content, screenshot });
+    await actions.editor.save({ content: state.editor.contentToBeSaved, screenshot });
   });
 };
 
