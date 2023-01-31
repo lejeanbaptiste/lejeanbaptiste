@@ -312,8 +312,8 @@ class EntitiesList {
       .hide();
     this.update();
 
-    //* Resume Auto-save
-    this.writer.overmindActions.editor.setSuspendAutosave(false);
+    //* Resume LW change Event
+    this.writer.overmindActions.editor.suspendLWChangeEvent(false);
   }
 
   // CONVERSION END
@@ -497,10 +497,11 @@ class EntitiesList {
       'title',
       'link',
       'rs',
+      'note'
     ]);
 
-    //* Prevent Auto-save
-    this.writer.overmindActions.editor.setSuspendAutosave(true);
+    //* Prevent Trigger LW change event
+    this.writer.overmindActions.editor.suspendLWChangeEvent(true);
 
     const potentialEntitiesByType = this.writer.schemaManager.mapper.findEntities(typesToFind);
     let potentialEntities: HTMLElement[] = [];

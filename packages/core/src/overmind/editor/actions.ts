@@ -148,8 +148,8 @@ export const setAutosave = ({ state }: Context, value?: boolean) => {
   state.editor.autosave = value;
 };
 
-export const setSuspendAutosave = ({ state }: Context, value: boolean) => {
-  state.editor.autoSuspended = value;
+export const suspendLWChangeEvent = ({ state }: Context, value: boolean) => {
+  state.editor.LWChangeEventSuspended = value;
 };
 
 export const setFontSize = ({ state }: Context, value: number) => {

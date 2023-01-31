@@ -13,7 +13,7 @@ export type EditorStateType = {
     disabled?: boolean;
   }[];
   autosave?: boolean;
-  autoSuspended: boolean;
+  LWChangeEventSuspended: boolean;
   baseUrl?: string;
   currentFontSize: number;
   editorMode: string;
@@ -57,7 +57,7 @@ export const state: EditorStateType = {
     if (!annotatonMode) return '';
     return annotatonMode.label;
   }),
-  autoSuspended: false,
+  LWChangeEventSuspended: false,
   baseUrl: '.',
   currentFontSize: 11,
   editorMode: 'xmlrdf',

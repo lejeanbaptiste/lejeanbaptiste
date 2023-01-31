@@ -56,7 +56,13 @@ export class Leafwriter {
 
     overmind.addMutationListener((mutation) => {
       if (mutation.path === 'editor.isEditorDirty' && mutation.hasChangedValue) {
+        if (overmind.state.editor.LWChangeEventSuspended) return;
         this._isDirty.next(overmind.state.editor.isEditorDirty);
+      }
+
+      if (mutation.path === 'editor.LWChangeEventSuspended' && mutation.hasChangedValue) {
+        if (overmind.state.editor.LWChangeEventSuspended) return;
+        this._isDirty.next(true);
       }
 
       if (mutation.path === 'document.loaded') {
@@ -136,7 +142,7 @@ export class Leafwriter {
   }
 
   get autosave() {
-    return overmind.state.editor.autosave && !overmind.state.editor.autoSuspended;
+    return overmind.state.editor.autosave;
   }
 
   set autosave(value: boolean) {
