@@ -491,13 +491,16 @@ class EntitiesList {
     const typesToFind = new Set([
       'person',
       'place',
-      'date',
       'org',
       'organization',
       'title',
-      'link',
       'rs',
-      'note'
+      'citation',
+      'note',
+      'date',
+      'correction',
+      'keyword',
+      'link', 
     ]);
 
     //* Prevent Trigger LW change event
