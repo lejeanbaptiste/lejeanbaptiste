@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import Cookies from 'js-cookie';
 import { Context } from '../';
+import { db } from '../../db';
 import type {
   Authority,
   AuthorityService,
@@ -148,8 +149,17 @@ export const setAutosave = ({ state }: Context, value?: boolean) => {
   state.editor.autosave = value;
 };
 
-export const suspendLWChangeEvent = ({ state }: Context, value: boolean) => {
+export const suspendLWChangeEvent = async ({ state, actions }: Context, value: boolean) => {
   state.editor.LWChangeEventSuspended = value;
+
+  if (value) {
+    const content = await window.writer.getContent();
+    await db.suspendedDocument.add({content});
+
+  } else {
+    await db.suspendedDocument.clear();
+  }
+
 };
 
 export const setFontSize = ({ state }: Context, value: number) => {
@@ -398,6 +408,12 @@ export const retrieveLookupAutoritiesConfig = ({ effects }: Context) => {
 };
 
 export const getContent = async ({ state }: Context) => {
+  if (state.editor.LWChangeEventSuspended) {
+    const suspended = db.suspendedDocument.toCollection();
+    const document = await suspended.last();
+
+    return document.content;
+  }
   return await window.writer.getContent();
 };
 

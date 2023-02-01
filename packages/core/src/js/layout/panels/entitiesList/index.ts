@@ -135,7 +135,12 @@ class EntitiesList {
       .find('button.convert')
       //@ts-ignore
       .button()
-      .click(() => this.convertEntities());
+      .click(() => {
+        //* Prevent Trigger LW change event
+        this.writer.overmindActions.editor.suspendLWChangeEvent(true);
+
+        this.convertEntities();
+      });
 
     this.$entities
       .find('button.accept')
@@ -162,6 +167,9 @@ class EntitiesList {
       .click(() => {
         if (this.getCandidates().length <= 0) {
           this.handleDone();
+
+          //* Resume LW change Event
+          this.writer.overmindActions.editor.suspendLWChangeEvent(false);
           return;
         }
 
@@ -177,6 +185,9 @@ class EntitiesList {
             if (doIt) {
               this.rejectAll();
               this.handleDone();
+
+              //* Resume LW change Event
+              this.writer.overmindActions.editor.suspendLWChangeEvent(false);
             }
           },
         });
@@ -311,9 +322,6 @@ class EntitiesList {
       .next('span')
       .hide();
     this.update();
-
-    //* Resume LW change Event
-    this.writer.overmindActions.editor.suspendLWChangeEvent(false);
   }
 
   // CONVERSION END
@@ -500,11 +508,8 @@ class EntitiesList {
       'date',
       'correction',
       'keyword',
-      'link', 
+      'link',
     ]);
-
-    //* Prevent Trigger LW change event
-    this.writer.overmindActions.editor.suspendLWChangeEvent(true);
 
     const potentialEntitiesByType = this.writer.schemaManager.mapper.findEntities(typesToFind);
     let potentialEntities: HTMLElement[] = [];
