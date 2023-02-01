@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 1.2.2
+
+### Patch Changes
+
+- rebuild jsdom [v.21.1.0] (browserify)
+- update dependencies [3142f5d6d223f2cdd4443931dd8dee476f81d803]
+  - core: update: comlink@4.4.0
+  - dev:
+    - upgrade: jsdom@21.1.0
+    - update:
+      - @types/jest@29.4.0
+      - @typescript-eslint/eslint-plugin@5.50.0
+      - @typescript-eslint/parser@5.50.0
+      - commitizen@4.3.0
+      - esbuild-loader@2.21.0
+      - eslint-config-prettier@8.6.0
+      - jest@29.4.1
+      - jest-environment-jsdom@29.4.1
+    - bump up:
+      - husky@8.0.3
+      - prettier@2.8.3
+      - ts-jest@29.0.5
+      - typedoc@0.23.24
+      - typescript@4.9.5
+      - webpack-cli@5.0.1
+  - peerDependencies: comlink@4.4.0
+
 ## 1.2.1
 
 ### Patch
