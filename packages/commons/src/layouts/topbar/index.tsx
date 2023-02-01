@@ -7,6 +7,7 @@ import { DarkMode } from './DarkMode';
 import { LanguageMenu } from './LanguageMenu';
 import { Privacy } from './Privacy';
 import { ProfileAnchor } from './ProfileAnchor';
+import { Settings } from './Settings';
 
 interface TopBarProps {
   Left?: React.ReactNode;
@@ -53,6 +54,7 @@ export const TopBar: FC<TopBarProps> = ({ Left, Meta, title = 'LEAF-Writer' }) =
             ) : userState === 'UNAUTHENTICATED' ? (
               <>
                 <Privacy />
+                <Settings />
                 <DarkMode />
                 <LanguageMenu />
                 {page !== 'home' && <SigninButton />}
