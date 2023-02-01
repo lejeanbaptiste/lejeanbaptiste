@@ -212,17 +212,13 @@ export class Leafwriter {
     return overmind.actions.ui.switchLanguage(value);
   }
 
-  getPossibleFontSizes() {
-    return overmind.state.editor.fontSizeOptions;
-  }
-
   getFontSize() {
-    return overmind.state.editor.currentFontSize;
+    return overmind.state.editor.fontSize;
   }
 
   setFontSize(value: number) {
     overmind.actions.editor.setFontSize(value);
-    return overmind.state.editor.currentFontSize;
+    return overmind.state.editor.fontSize;
   }
 
   getShowTags() {

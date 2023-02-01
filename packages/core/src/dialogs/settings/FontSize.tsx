@@ -4,18 +4,20 @@ import { Box, Button, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import React, { MouseEvent, useState, type FC } from 'react';
 import { useActions, useAppState } from '../../overmind';
 
-const FontSize: FC = () => {
-  const actions = useActions();
-  const { editor } = useAppState();
+const options = [8, 9, 10, 11, 12, 13, 14, 16, 18];
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+const FontSize: FC = () => {
+  const { fontSize: currentFontSize } = useAppState().editor;
+  const { setFontSize } = useActions().editor;
+
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
   const handleSelect = (value: number) => {
-    actions.editor.setFontSize(value);
+    setFontSize(value);
     setAnchorEl(null);
   };
 
@@ -28,35 +30,33 @@ const FontSize: FC = () => {
       <FormatSizeIcon sx={{ mx: 1, height: 18, width: 18 }} />
       <Typography>Font Size</Typography>
       <Box flexGrow={1} />
-
-
-        <Button
-          aria-controls={open ? 'ont-size-menu' : undefined}
-          aria-expanded={open ? 'true' : undefined}
-          aria-haspopup="true"
-          color="inherit"
-          endIcon={<KeyboardArrowDownIcon />}
-          id="font-size-button"
-          onClick={handleClick}
-          size="small"
-          sx={{ textTransform: 'lowercase' }}
-          variant="text"
-        >
-          {editor.currentFontSize}pt
-        </Button>
-        <Menu
-          anchorEl={anchorEl}
-          id="ont-size-menu"
-          MenuListProps={{ 'aria-labelledby': 'font-size-button' }}
-          onClose={handleClose}
-          open={open}
-        >
-          {editor.fontSizeOptions.map((size) => (
-            <MenuItem key={size} dense disableRipple onClick={() => handleSelect(size)}>
-              {size}pt
-            </MenuItem>
-          ))}
-        </Menu>
+      <Button
+        aria-controls={open ? 'ont-size-menu' : undefined}
+        aria-expanded={open ? 'true' : undefined}
+        aria-haspopup="true"
+        color="inherit"
+        endIcon={<KeyboardArrowDownIcon />}
+        id="font-size-button"
+        onClick={handleClick}
+        size="small"
+        sx={{ textTransform: 'lowercase' }}
+        variant="text"
+      >
+        {currentFontSize}pt
+      </Button>
+      <Menu
+        anchorEl={anchorEl}
+        id="ont-size-menu"
+        MenuListProps={{ 'aria-labelledby': 'font-size-button' }}
+        onClose={handleClose}
+        open={open}
+      >
+        {options.map((size) => (
+          <MenuItem key={size} dense disableRipple onClick={() => handleSelect(size)}>
+            {size}pt
+          </MenuItem>
+        ))}
+      </Menu>
     </Stack>
   );
 };

@@ -119,7 +119,7 @@ export const initiateLookupSources = async (
 export const applyInitialSettings = ({ state, actions }: Context) => {
   if (!window.writer?.editor) return;
 
-  actions.editor.setFontSize(state.editor.currentFontSize);
+  actions.editor.setFontSize(state.editor.fontSize);
   const body = window.writer.editor.getBody();
   if (state.editor.showEntities) $(body).addClass('showEntities');
   if (state.editor.showTags) $(body).addClass('showTags');
@@ -157,7 +157,7 @@ export const setFontSize = ({ state }: Context, value: number) => {
 
   const styles = { fontSize: `${value}pt` };
   window.writer.editor.dom.setStyles(window.writer.editor.dom.getRoot(), styles);
-  state.editor.currentFontSize = value;
+  state.editor.fontSize = value;
 };
 
 export const toggleShowTags = ({ state }: Context, value?: boolean) => {
@@ -317,7 +317,7 @@ export const resetDialogWarnings = ({ actions }: Context) => {
 };
 
 export const resetPreferences = ({ state, actions, effects }: Context) => {
-  if (state.editor.currentFontSize !== 11) actions.editor.setFontSize(11);
+  if (state.editor.fontSize !== 11) actions.editor.setFontSize(11);
   if (state.editor.showTags !== false) actions.editor.toggleShowTags(false);
   if (state.editor.showEntities !== true) actions.editor.showEntities(true);
   if (state.editor.editorMode !== 'xmlrdfoverlap') actions.editor.setEditorMode('xmlrdf');
@@ -334,7 +334,7 @@ export const resetPreferences = ({ state, actions, effects }: Context) => {
 export const getSettings = ({ state }: Context, config?: string) => {
   return {
     isAdvanced: true,
-    fontSize: state.editor.currentFontSize,
+    fontSize: state.editor.fontSize,
     showEntities: state.editor.showEntities,
     showTags: state.editor.showTags,
     mode: state.editor.mode,
@@ -413,7 +413,7 @@ export const clear = ({ state }: Context) => {
   state.editor.advancedSettings = true;
   state.editor.allowOverlap = false;
   state.editor.annotationMode = 3;
-  state.editor.currentFontSize = 11;
+  state.editor.fontSize = 11;
   state.editor.editorMode = 'xmlrdf';
   state.editor.isAnnotator = false;
   state.editor.isReadonly = false;
