@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## 1.3.6
+
+### Patch Changes
+
+- fallback cloud provider when resource without storage provider is loaded [f964fafd175f22806cd5c60d085c91220b90f278]
+- update dependencies [36b447243b5ea3a5fd57ff50a9d7017f239c943c]:
+  - core:
+    - upgrade: framer-motion@9.0.0
+    - update:
+      - @mui/icons-material@5.11.0
+      - @mui/material@5.11.7
+      - axios@1.3.0
+      - i18next@22.4.9
+      - mui-modal-provider@2.2.0
+      - react-i18next@12.1.4
+    - bump up:
+      - @mui/base@5.0.0-alpha.116
+      - @mui/lab@5.0.0-alpha.118
+      - @octokit/rest@19.0.7
+  - dev:
+    - update:
+      - @types/jest@29.4.0
+      - @typescript-eslint/eslint-plugin@5.50.0
+      - @typescript-eslint/parser@5.50.0
+      - esbuild-loader@2.21.0
+      - eslint-config-prettier@8.6.0
+      - eslint-plugin-react@7.32.2
+      - jest-environment-jsdom@29.4.1
+    - bump up:
+      - mini-css-extract-plugin@2.7.2
+      - ts-jest@29.0.5
+
 ## 1.3.5
 
 ### Patch
