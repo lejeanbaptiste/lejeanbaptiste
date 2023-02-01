@@ -10,10 +10,16 @@
   direction: rtl !important;
 }
 
+/* This CSS gets applied to the tinymce editor */
+/* entity colours */
 .showEntities .entity,
 .ui-dialog-content .entity {
-  border-width: 1px;
-  border-bottom-style: dotted;
+  // border-width: 1px;
+  // border-bottom-style: dotted;
+
+  padding: 2px 4px 4px 4px;
+  color: white !important;
+  border-radius: 4px
 }
 
 .showEntities .entityHighlight > .entity {
@@ -36,9 +42,9 @@
   background-color: fade(@entity-rs, 20%);
 }
 
-// .entityHighlight.org {
-//   background-color: fade(@entity-org, 20%);
-// }
+.entityHighlight.org {
+  background-color: fade(@entity-organization, 20%);
+}
 
 .entityHighlight.organization {
   background-color: fade(@entity-organization, 20%);
@@ -58,22 +64,28 @@
 
 .showEntities .person,
 .ui-dialog-content .person {
-  border-color: mix(desaturate(@entity-person, 30%), #fff, 50%);
+  // border-color: mix(desaturate(@entity-person, 30%), #fff, 50%);
+
+  border-color: @person;
+  background-color: @person;
 }
 
 .showEntities .date,
 .ui-dialog-content .date {
   border-color: @entity-date;
+  background-color: @entity-date;
 }
 
 .showEntities .place,
 .ui-dialog-content .place {
   border-color: @entity-place;
+  background-color: @entity-place;
 }
 
 .showEntities .rs,
 .ui-dialog-content .rs {
   border-color: @entity-rs;
+  background-color: @entity-rs;
 }
 
 // .showEntities .org,
@@ -84,21 +96,25 @@
 .showEntities .organization,
 .ui-dialog-content .organization {
   border-color: @entity-organization;
+  background-color: @entity-organization;
 }
 
 .showEntities .title,
 .ui-dialog-content .title {
   border-color: @entity-title;
+  background-color: @entity-title;
 }
 
 .showEntities .correction,
 .ui-dialog-content .correction {
   border-color: @entity-correction;
+  background-color: @entity-correction;
 }
 
 .showEntities .link,
 .ui-dialog-content .link {
   border-color: @entity-link;
+  background-color: @entity-link;
 }
 
 .entity[_candidate] {
@@ -156,20 +172,69 @@
 //   margin-right: 2px;
 // }
 
-.noteWrapper.citation::before {
+/* .noteWrapper.citation::before {
   content: url(../images/citation_inline_large.png);
+} */
+
+.noteWrapper.citation::before {
+  content: url(../images/citation.svg);
+  /* background-color: rgb(205, 0, 116); */
+  background-color: var(--citation);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 2px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
 }
+
+/* .noteWrapper.keyword::before {
+  content: url(../images/keyword_inline_large.png);
+} */
 
 .noteWrapper.keyword::before {
-  content: url(../images/keyword_inline_large.png);
+  content: url(../images/key_inline.svg);
+  background-color: rgb(0, 128, 64);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 2px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
 }
+
+/* .noteWrapper.note.entityHighlight::before {
+  content: url(../images/note_inline_large_highlight.png);
+} */
 
 .noteWrapper.note.entityHighlight::before {
-  content: url(../images/note_inline_large_highlight.png);
+  content: url(../images/sticky-note-inline.svg);
+  background-color: rgb(224, 190, 0);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 6px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
 }
 
-.noteWrapper.citation.entityHighlight::before {
+/* .noteWrapper.citation.entityHighlight::before {
   content: url(../images/citation_inline_large_highlight.png);
+} */
+
+.noteWrapper.citation.entityHighlight::before {
+  content: url(../images/citation.svg);
+  background-color: var(--citation);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 6px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
 }
 
 .noteWrapper.keyword.entityHighlight::before {
