@@ -15,7 +15,7 @@ export type EditorStateType = {
   autosave?: boolean;
   LWChangeEventSuspended: boolean;
   baseUrl?: string;
-  currentFontSize: number;
+  fontSize: number;
   editorMode: string;
   editorModeLabel: string;
   editorModes: {
@@ -24,7 +24,6 @@ export type EditorStateType = {
     label: string;
     disabled?: boolean;
   }[];
-  fontSizeOptions: number[];
   isAnnotator: boolean;
   isEditorDirty: boolean;
   isReadonly: boolean;
@@ -59,7 +58,6 @@ export const state: EditorStateType = {
   }),
   LWChangeEventSuspended: false,
   baseUrl: '.',
-  currentFontSize: 11,
   editorMode: 'xmlrdf',
   editorModeLabel: derived((state: EditorStateType) => {
     const editMode = state.editorModes.find((mode) => mode.value === state.editorMode);
@@ -72,7 +70,7 @@ export const state: EditorStateType = {
     { key: 0, value: 'xmlrdfoverlap', label: 'Markup & Linking with overlap' },
     { key: 2, value: 'rdf', label: 'Linking Only', disabled: true },
   ],
-  fontSizeOptions: [8, 9, 10, 11, 12, 13, 14, 16, 18],
+  fontSize: 11,
   isEditorDirty: false,
   isAnnotator: false,
   isReadonly: false,
@@ -82,7 +80,6 @@ export const state: EditorStateType = {
   schemas: {},
   schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),
   schemaMappings: ['cwrcEntry', 'orlando', 'tei', 'teiLite'],
-
   lookups: {
     authorities: {
       viaf: {
