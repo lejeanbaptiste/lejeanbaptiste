@@ -581,10 +581,15 @@ class Mapper {
     typesToFind: Set<string> = new Set([
       'person',
       'place',
-      'date',
       'org',
       'organization',
       'title',
+      'rs',
+      'citation',
+      'note',
+      'date',
+      'correction',
+      'keyword',
       'link',
     ])
   ) {
