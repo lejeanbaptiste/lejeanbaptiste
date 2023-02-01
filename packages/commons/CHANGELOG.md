@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## 2.5.2
+
+### Patch Changes
+
+- Schema: update orlando schema / css [179a7d70740a78581eb07f9fc9b70596019d762e]
+- Prevent editor from refresh when saveas dialog opens (#101) [fb2183bfdbb0d64e6caefdb5527c43ca96d6f2d5]
+- autosave: save lastedits instead of the current state of the documents (#105) [fb2183bfdbb0d64e6caefdb5527c43ca96d6f2d5]
+- update dependencies [548baff796c99927631221b24010bd8e579b0323]
+  - core:
+    - upgrade: framer-motion@9.0.0
+    - update:
+      - axios@1.3.0
+      - broadcast-channel@4.20.2
+      - mui-modal-provider@2.2.0
+      - react-router-dom@6.8.0
+    - bump up:
+      - @mui/lab@5.0.0-alpha.118
+      - @mui/material@5.11.7
+      - @octokit/rest@19.0.7
+      - i18next@22.4.9
+      - keycloak-js@20.0.3
+      - material-ui-popup-state@5.0.4
+      - react-i18next@12.1.4
+      - react-responsive-masonry@2.1.7
+  - dev:
+    - update:
+      - @typescript-eslint/eslint-plugin@ 5.50.0
+      - @typescript-eslint/parser@5.50.0
+      - esbuild-loader@2.21.0
+      - eslint@8.33.0
+      - eslint-plugin-react@7.32.2
+      - tslib@2.5.0
+    - bump up:
+      - @types/express@4.17.16
+      - @types/node@18.11.18
+      - css-loader@6.7.3
+      - prettier@2.8.3
+      - typescript@4.9.5
+
+- Updated dependencies
+  - @cwrc/leafwriter@2.4.0
+  - @cwrc/leafwriter-storage-service@1.3.6
+
 ## 2.5.1
 
 ### Patch Changes
