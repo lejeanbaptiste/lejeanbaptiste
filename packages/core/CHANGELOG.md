@@ -1,5 +1,87 @@
 # CHANGELOG
 
+## 2.4.0
+
+### Feature
+
+#### Role in named-entity Person (#99)
+
+- Tag edit: get person roles from schema and allow custom value via input [c76d2c821f4213f36416ec8d413590a3767594df]
+
+The attribute roles in the Person entity only shows up if the schema defines it. Accodingly, the if the schema define the possible values, the list will populate the dripdown menu where users can pick the value they desire. If the schema does not provide the list, we use a hardcoded list with ~250 itms.
+
+Future versions should consider remove the harcoded list and have a lookup service to get the list from specific sauthorities, sucha as CWRC.
+
+#### Suspend "onChange" event when scraping tags (#105)
+
+- Add state to suspend autosave in specific circunstances, like when using entity scraping [805c64a8db7ac12a153211ad7b8f77fb1fc4ea4c]
+- autosave: prevent LW to send hasContentChange events when doing some operations [2b1f94066798e2ef9e7162d878442980d6abf7f8]
+- use indexDB to save a suspeded state of the document [d467095cc8cd89e7a6e65cde8fb792ea9102bc4d]
+
+Some tasks in LEAF-Writer requires the manipualtion of the document as a way to make things visible for user. When scraping entities from tags, LW momentaneously introduce attributes to these tags to allow user to accept / reject theses tags as entities. Theses changes would normally be broadcast to LW host, which would use as a sign that the document has change and thus triggering actions such as "autosave". This would cause the document to save the changes and add all the tags as entities without the user awareness. To prevent this to happen, critical tasks like "scrape" should suspend the document changes broadcast until the user finish the task. To make things even safer, before suspending the changes broadcast event, LW caches the document's current state on the browser indexedDB. If there is content request during the suspension (for saving, for instance), LW will hand the cached version. Once the the task is completed, the cache is emptied.
+
+### Patch
+
+- Schema: update orlando schema / css [16c8ad2470d34ed2c8d71b2774f6384270a773d5]
+- Parser to get schema/css uri from xml document. Allows for values with single and double quotes [3cf2f24d028afe402e8a8ec582cecf810a5dad7f]
+- Prevent open context menu from teiHeader [dae8728e122196988104dd3003f2733b9651a2ee]
+- Dialogs: fix color-scheme when theme is dark [ca4d23e2b8b50e65b0626652837d2d33ec4f9132]
+- entity color: fix citation color [85230b283306da8afa617906856ef06bd9381623]
+- Dark-theme on PB tag [a7fd0bce4398d763944843a80139c30b9f29558d]
+- jquery event [0f816a7eb72d785da8686b932b035caaacb686ca]
+- onLoad event should keep sending updates when other files gets loaded in the same session [d459f07da9a46737b4fffa28a27f6db9676f9ba5]
+- schema mapper: consider entry withut uri (non-named entity) [6367bdc813edc0f68d6e0f8a63dee97b1baf518f]
+- Add non-named entity to entity scraper (#103) [fe8eeb4f01bc5c0ee063aa6bbecdda99f74ee89c]
+- Settings: allows anonymous user to access the settings panel (#102) [d5fac7724a91ad394bd1006dda45cea27bfb607d]
+- rename fontSize variable [600d8ee0bec46963377c876f1d4b7c9c0636453c]
+- update dependencies [de1ae1d31a9c7b0a35629ac68819b928b0734ed2] [6e9db30ee0d2bcfa81fde98be9ff65cee2251134]
+  - core:
+    - add:
+      - dexie@3.2.3
+      - dexie-react-hooks@1.1.1
+    - upgrade:
+      - framer-motion@9.0.0
+      - openseadragon@4.0.0
+      - update:
+        - @mui/icons-material@5.11.0
+        - @mui/material@5.11.7
+        - axios@1.3.0
+        - comlink@4.4.0
+        - i18next@22.4.9
+        - luxon@3.2.1
+        - mui-modal-provider@2.2.0
+        - react-i18next@12.1.4
+        - react-router-dom@6.8.4
+        - rxjs@7.8.0
+      - bump up:
+        - @dnd-kit/core@6.0.7
+        - @dnd-kit/modifiers@6.0.1
+        - @dnd-kit/sortable@7.0.2
+        - @mui/lab@5.0.0-alpha.118
+        - jquery@3.6.3
+        - jstree@3.3.14
+        - rdflib@2.2.25
+        - wikidata-sdk@8.1.1
+    - dev:
+      - update:
+        - @types/luxon@3.2.0
+        - @typescript-eslint/eslint-plugin@5.50.0
+        - @typescript-eslint/parser@5.50.0
+        - esbuild-loader@2.21.0
+        - eslint-config-prettier@8.6.0
+        - eslint-plugin-react@7.32.2
+      - bump up:
+        - @types/jquery@3.5.16
+        - @types/node@18.11.18
+        - @types/react-dom@18.0.10
+        - husky@8.0.3
+        - mini-css-extract-plugin@2.7.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter-validator@1.2.2
+
 ## 2.3.1
 
 ### Patch
@@ -7,6 +89,7 @@
 - User props: remove avatar_url & nick. Add uri. [7b9e9c69587e125b46f829689ab7e3421ae2967d]
 - Rename types [a6affdbdc116b3682ffe4202f0a5e0d00d43f8e1]
 - Update dependencies [91b130e51a7d4fde5fa86e987115f088d120d344]:
+
   - core:
     - update: axios@1.2.0
     - bump up:
