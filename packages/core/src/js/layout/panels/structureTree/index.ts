@@ -100,9 +100,6 @@ class StructureTree {
         tagId = selectedIds;
       }
 
-      // *prevent context menu on TEIHeader
-      if (tagId === 'teiHeader') return;
-
       //select as if it was a left-click;
       const selectContents = this.isSelectedContents($target);
       const multiselect = this.isMultiselect(event);
@@ -300,6 +297,7 @@ class StructureTree {
     $('#cwrc_tree_root', this.$tree)
       .find('li.jstree-open')
       .each(function () {
+        //@ts-ignore
         const id = $(this).attr('name');
         openNodes.push(_this.id);
       });
@@ -537,14 +535,8 @@ class StructureTree {
     }
 
     if (!external) {
-      const $editorNode = $(`#${id}`, this.writer.editor.getBody());
-      const isEntity = $editorNode.attr('_entity') === 'true';
-      if (!isEntity && $editorNode.attr('_tag') === this.writer.schemaManager.getHeader()) {
-        // this.writer.dialogManager.show('header');
-      } else {
-        this.ignoreSelect = true; // set to true so tree.highlightNode code isn't run by editor's onNodeChange handler
-        this.writer.utilities.selectElementById(this.currentlySelectedNodes, selectContents);
-      }
+      this.ignoreSelect = true; // set to true so tree.highlightNode code isn't run by editor's onNodeChange handler
+      this.writer.utilities.selectElementById(this.currentlySelectedNodes, selectContents);
     }
   };
 

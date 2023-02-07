@@ -157,12 +157,6 @@ class Tagger {
     tagName: string;
   }) {
     if (!this.writer.editor) return;
-    if (tagName === this.writer.schemaManager.getHeader()) {
-      //? prevent showing haeader dialog
-      //! deprecated
-      // this.writer.dialogManager.show('header');
-      return;
-    }
 
     const tagId = this.writer.editor?.currentBookmark?.tagId; // set by structureTree
     if (!tagId) {
@@ -250,11 +244,6 @@ class Tagger {
       }
     } else {
       const tagName = tag.attr('_tag');
-      if (tagName === this.writer.schemaManager.getHeader()) {
-        // this.writer.dialogManager.show('header');
-        return;
-      }
-
       const tagPath = this.writer.utilities.getElementXPath(tag[0]);
       const attributes = this.getAttributesForTag(tag[0]);
 

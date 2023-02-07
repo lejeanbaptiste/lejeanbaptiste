@@ -5,24 +5,34 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
+  DialogTitle
 } from '@mui/material';
 import React, { Suspense, useEffect, useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
 import { IDialog } from '../type';
+
 const Editor = React.lazy(() => import('./Editor'));
 export interface EditSourceDialogProps extends IDialog {
   content?: string;
+  type?: 'content' | 'header';
 }
 
-export const EditSourceDialog: FC<EditSourceDialogProps> = ({ content = '', id, onClose, open }) => {
+export const EditSourceDialog: FC<EditSourceDialogProps> = ({
+  content = '',
+  id,
+  onClose,
+  open,
+  type = 'content',
+}) => {
   const { settings } = useAppState().editor;
-  const { processEditSource } = useActions().ui;
+  const { loadDocumentXML: updateXMLContent, updateXMLHeader } = useActions().document;
 
   const { t } = useTranslation(['leafwriter']);
 
   const [currentContent, setCurrentContent] = useState('');
+
+  const title = type === 'header' ? t('edit header') : t('edit source');
 
   useEffect(() => {
     setCurrentContent(content);
@@ -35,7 +45,10 @@ export const EditSourceDialog: FC<EditSourceDialogProps> = ({ content = '', id, 
   const handleChange = () => {
     if (currentContent === content) return onClose(id);
 
-    processEditSource(currentContent);
+    console.log(type);
+    if (type === 'content') updateXMLContent(currentContent);
+    if (type === 'header') updateXMLHeader(currentContent);
+
     onClose(id);
   };
 
@@ -58,7 +71,7 @@ export const EditSourceDialog: FC<EditSourceDialogProps> = ({ content = '', id, 
         p={0}
         sx={{ textAlign: 'center', fontSize: '1rem', textTransform: 'capitalize' }}
       >
-        {t('edit source')}
+        {title}
       </DialogTitle>
       <DialogContent sx={{ minHeight: 600, padding: 0 }}>
         <Suspense fallback={<Progress />}>

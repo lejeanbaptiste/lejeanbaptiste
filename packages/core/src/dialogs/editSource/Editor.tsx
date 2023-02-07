@@ -35,7 +35,7 @@ const Editor: FC<EditorProps> = ({ content, updateContent }) => {
         wrappingIndent: 'indent',
       });
 
-      editor.getModel()?.onDidChangeContent(() => {
+      editor.getModel().onDidChangeContent(() => {
         const content = editor.getValue();
         updateContent(content);
       });
