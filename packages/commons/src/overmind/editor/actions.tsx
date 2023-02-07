@@ -19,7 +19,7 @@ export const loadLeafWriter = async ({ state }: Context, container: HTMLElement)
 };
 
 export const setResource = async ({ state }: Context, resource?: Resource) => {
-  state.editor.isDirty = false;
+  state.editor.contentHasChanged = false;
   state.editor.resource = resource ? { ...resource } : undefined;
 };
 
@@ -33,10 +33,6 @@ export const setAutosave = ({ state }: Context, value: boolean) => {
 
 export const isContentSameAsLastSaved = ({ state }: Context, content: string) => {
   return state.editor.contentLastSaved === content;
-};
-
-export const setContentToBeSaved = ({ state }: Context, content: string) => {
-  state.editor.contentToBeSaved = content;
 };
 
 export const save = async (
@@ -107,18 +103,15 @@ export const save = async (
 
   // Finalize
   actions.editor.setResource(updatedResource);
-
   actions.editor.afterSave();
-
   state.editor.contentLastSaved = content;
-  state.editor.contentLastSaved = undefined;
 
   return { success: true };
 };
 
 export const afterSave = async ({ state, actions }: Context) => {
   actions.storage.updateRecentDocument();
-  actions.editor.setIsDirty(false);
+  actions.editor.setContentHasChanged(false);
 
   state.editor.saveDelayed = false;
   state.editor.isSaving = false;
@@ -154,21 +147,19 @@ export const saveAs = async (
     type: 'save',
   });
 
-  // actions.storage.updateRecentDocument();
-  // actions.editor.setIsDirty(false);
-
   return { success: true };
 };
 
-export const setIsDirty = async ({ state }: Context, value: boolean) => {
-  state.editor.isDirty = value;
+export const setContentHasChanged = async ({ state }: Context, value: boolean) => {
+  state.editor.contentHasChanged = value;
 };
 
 export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
   state.editor.timerService.onTimer.subscribe(async () => {
-    if (!state.editor.contentToBeSaved) return;
+
+    const content = await editor.getContent();
     const screenshot = await editor.getDocumentScreenshot();
-    await actions.editor.save({ content: state.editor.contentToBeSaved, screenshot });
+    await actions.editor.save({ content, screenshot });
   });
 };
 
@@ -179,5 +170,5 @@ export const unsubscribeFromTimerService = ({ state }: Context) => {
 export const close = async ({ state, actions }: Context) => {
   actions.editor.setResource();
   state.editor.libLoaded = false;
-  state.editor.isDirty = false;
+  state.editor.contentHasChanged = false;
 };

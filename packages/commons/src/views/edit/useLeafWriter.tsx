@@ -15,7 +15,7 @@ let tapDocumentTimer: NodeJS.Timeout;
 let leafWriterEvents: any[] = [];
 
 export const useLeafWriter = () => {
-  const { autosave, isDirty, resource, timerService } = useAppState().editor;
+  const { autosave, contentHasChanged: isDirty, resource, timerService } = useAppState().editor;
 
   const {
     close,
@@ -23,8 +23,7 @@ export const useLeafWriter = () => {
     saveAs,
     setAutosave,
     setContentLastSaved,
-    setContentToBeSaved,
-    setIsDirty,
+    setContentHasChanged,
     setResource,
     subscribeToTimerService,
     unsubscribeFromTimerService,
@@ -39,7 +38,7 @@ export const useLeafWriter = () => {
   const { getResourceFromPermalink } = usePermalink();
 
   useEffect(() => {
-    leafWriter?.setIsEditorDirty(isDirty);
+    leafWriter?.setContentHasChanged(isDirty);
   }, [isDirty]);
 
   const setCurrentLeafWriter = (lw: Leafwriter | null) => (leafWriter = lw);
@@ -49,17 +48,14 @@ export const useLeafWriter = () => {
 
     if (leafWriter.onLoad.observed) removeSubscribers;
 
-    const dirtyEvent = leafWriter.isDirty.subscribe(async (value) => {
+    const dirtyEvent = leafWriter.onContentHasChanged.subscribe(async (value) => {
       if (!leafWriter) return;
-      if (isDirty !== value) setIsDirty(value);
+      setContentHasChanged(value);
 
       if (value === false) {
         timerService.stop();
         return;
       }
-
-      const content = await leafWriter.getContent();
-      setContentToBeSaved(content);
 
       if (autosave && resource?.provider) timerService.start();
     });
@@ -163,7 +159,7 @@ export const useLeafWriter = () => {
       ? t('storage:document_saved')
       : `${t('error:something_went_wrong')}. ${t('storage:document_not_saved')}!`;
 
-    if (saved.success) leafWriter.setIsEditorDirty(false);
+    if (saved.success) leafWriter.setContentHasChanged(false);
 
     notifyViaSnackbar({ message, options: { variant: type } });
   };
@@ -177,7 +173,7 @@ export const useLeafWriter = () => {
     notifyViaSnackbar({ message, options: { variant: type } });
 
     if (!leafWriter) return;
-    if (saved) leafWriter.setIsEditorDirty(false);
+    if (saved) leafWriter.setContentHasChanged(false);
   };
 
   const handleCloseDocument = () => {
