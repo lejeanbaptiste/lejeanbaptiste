@@ -52,7 +52,7 @@ export const useCookieConsent = () => {
                   <Typography component="span">will sign you out.</Typography>
                 </Trans>
               </Typography>
-              {ui.page === 'edit' && editor.isDirty && (
+              {ui.page === 'edit' && editor.contentHasChanged && (
                 <Typography>{t('storage:you_will_lose_any_unsaved_changes')}.</Typography>
               )}
             </>

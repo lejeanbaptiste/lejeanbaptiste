@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 export const SigninButton: FC = () => {
   const { cookieConsent } = useAppState().ui;
-  const { isDirty } = useAppState().editor;
+  const { contentHasChanged: isDirty } = useAppState().editor;
 
   const { openDialog } = useActions().ui;
 

@@ -10,7 +10,7 @@ import { useLeafWriter } from './useLeafWriter';
 
 export const EditView: FC = () => {
   const { userState, user } = useAppState().auth;
-  const { isDirty, libLoaded, resource } = useAppState().editor;
+  const { contentHasChanged: isDirty, libLoaded, resource } = useAppState().editor;
 
   const { getKeycloakAuthToken } = useActions().auth;
   const { close, getGeonameUsername, loadLeafWriter } = useActions().editor;

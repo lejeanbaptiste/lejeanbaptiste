@@ -24,7 +24,7 @@ interface MainProps {
 
 export const Main = ({ onChangeView, onClose }: MainProps) => {
   const { user } = useAppState().auth;
-  const { isDirty } = useAppState().editor;
+  const { contentHasChanged: isDirty } = useAppState().editor;
   const { language, page, themeAppearance } = useAppState().ui;
 
   const { signOut } = useActions().auth;

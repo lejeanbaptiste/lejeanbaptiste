@@ -14,7 +14,7 @@ const MIN_WIDTH = 250;
 
 export const useMenu = () => {
   const { userState } = useAppState().auth;
-  const { isDirty, resource } = useAppState().editor;
+  const { contentHasChanged: isDirty, resource } = useAppState().editor;
   const { storageProviders } = useAppState().providers;
   const { recentDocuments } = useAppState().storage;
 

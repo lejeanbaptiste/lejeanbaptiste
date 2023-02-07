@@ -15,7 +15,7 @@ const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
 }));
 
 export const Cloud: FC = () => {
-  const { isDirty, isSaving, resource, saveDelayed } = useAppState().editor;
+  const { contentHasChanged: isDirty, isSaving, resource, saveDelayed } = useAppState().editor;
 
   const { t } = useTranslation('storage');
 
