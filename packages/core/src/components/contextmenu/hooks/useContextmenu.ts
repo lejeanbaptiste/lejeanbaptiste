@@ -3,6 +3,7 @@ import type {
   GetValidTagsAtParameters,
   GetValidTagsAtParametersSelection,
 } from '@cwrc/leafwriter-validator';
+import $ from 'jquery';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { EntityTypes } from '../../../js/schema/types';
@@ -356,7 +357,19 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
             id: uuidv4(),
             displayName: 'Edit Header',
             icon: 'edit',
-            onClick: () => writer.dialogManager.show('header'),
+            onClick: () => {
+              //get header content
+              const headerEl = writer.editor
+                .getBody()
+                .querySelector(`[_tag="${writer.schemaManager.getHeader()}"]`);
+
+              const content = writer.converter.buildXMLString(headerEl);
+
+              writer.overmindActions.ui.openDialog({
+                type: 'editSource',
+                props: { content, type: 'header' },
+              });
+            },
           },
         ];
         return items;
