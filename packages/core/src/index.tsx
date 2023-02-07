@@ -34,7 +34,7 @@ export class Leafwriter {
 
   private reactReact: Root;
 
-  private _isDirty: Subject<boolean>;
+  private onContentHasChanged: Subject<boolean>;
   private _onLoad: Subject<{ schemaName: string }>;
   private _onClose: Subject<boolean>;
   private _onEditorStateChange: Subject<EditorStateType>;
@@ -43,7 +43,7 @@ export class Leafwriter {
 
   constructor(domElement?: HTMLElement) {
     this.domElement = domElement;
-    this._isDirty = new Subject();
+    this.onContentHasChanged = new Subject();
     this._onLoad = new Subject();
     this._onClose = new Subject();
     this._onEditorStateChange = new Subject();
@@ -55,15 +55,17 @@ export class Leafwriter {
     if (!this.reactReact) this.reactReact = createRoot(this.domElement);
 
     overmind.addMutationListener((mutation) => {
-      if (mutation.path === 'editor.isEditorDirty' && mutation.hasChangedValue) {
+      if (mutation.path === 'editor.contentHasChanged' && mutation.hasChangedValue) {
         if (overmind.state.editor.LWChangeEventSuspended) return;
-        this._isDirty.next(overmind.state.editor.isEditorDirty);
+        
+        console.log(overmind.state.editor.contentHasChanged);
+        this.onContentHasChanged.next(overmind.state.editor.contentHasChanged);
       }
 
-      if (mutation.path === 'editor.LWChangeEventSuspended' && mutation.hasChangedValue) {
-        if (overmind.state.editor.LWChangeEventSuspended) return;
-        this._isDirty.next(true);
-      }
+      // if (mutation.path === 'editor.LWChangeEventSuspended' && mutation.hasChangedValue) {
+      //   if (overmind.state.editor.LWChangeEventSuspended) return;
+      //   this.onContentHasChanged.next(true);
+      // }
 
       if (mutation.path === 'document.loaded') {
         if (overmind.state.document.loaded === true) {
@@ -97,10 +99,6 @@ export class Leafwriter {
         </I18nextProvider>
       </Provider>
     );
-  }
-
-  get isDirty() {
-    return this._isDirty;
   }
 
   get onLoad() {
@@ -237,13 +235,13 @@ export class Leafwriter {
     overmind.actions.editor.showEntities(value);
   }
 
-  getIsEditorDirty() {
-    overmind.state.editor.isEditorDirty;
+  getContentHasChanged() {
+    overmind.state.editor.contentHasChanged;
   }
 
-  setIsEditorDirty(value: boolean) {
-    if (overmind.state.editor.isEditorDirty === value) return;
-    overmind.actions.editor.setIsEditorDirty(value);
+  setContentHasChanged(value: boolean) {
+    if (overmind.state.editor.contentHasChanged === value) return;
+    overmind.actions.editor.setContentHasChanged(value);
   }
 
   setDocumentTouched(value: boolean) {
@@ -285,7 +283,7 @@ export class Leafwriter {
 
   dispose() {
     //todo
-    this._isDirty.complete();
+    this.onContentHasChanged.complete();
     overmind.actions.document.clear();
     window.writer?.destroy();
     window.writer = null;

@@ -343,7 +343,7 @@ class Writer extends EventManager {
 
   handleUnload(event: BeforeUnloadEvent) {
     if (this.isReadOnly) return;
-    if (!this.overmindState.editor.isEditorDirty) return;
+    if (!this.overmindState.editor.contentHasChanged) return;
     if (window.location.hostname === 'localhost') return;
 
     event.preventDefault();

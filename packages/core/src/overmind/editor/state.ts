@@ -13,8 +13,8 @@ export type EditorStateType = {
     disabled?: boolean;
   }[];
   autosave?: boolean;
-  LWChangeEventSuspended: boolean;
   baseUrl?: string;
+  contentHasChanged: boolean;
   fontSize: number;
   editorMode: string;
   editorModeLabel: string;
@@ -25,8 +25,8 @@ export type EditorStateType = {
     disabled?: boolean;
   }[];
   isAnnotator: boolean;
-  isEditorDirty: boolean;
   isReadonly: boolean;
+  LWChangeEventSuspended: boolean;
   mode: number;
   nssiToken?: string | (() => Promise<string | undefined>);
   schemas: { [key: string]: Schema };
@@ -56,8 +56,8 @@ export const state: EditorStateType = {
     if (!annotatonMode) return '';
     return annotatonMode.label;
   }),
-  LWChangeEventSuspended: false,
   baseUrl: '.',
+  contentHasChanged: false,
   editorMode: 'xmlrdf',
   editorModeLabel: derived((state: EditorStateType) => {
     const editMode = state.editorModes.find((mode) => mode.value === state.editorMode);
@@ -71,9 +71,9 @@ export const state: EditorStateType = {
     { key: 2, value: 'rdf', label: 'Linking Only', disabled: true },
   ],
   fontSize: 11,
-  isEditorDirty: false,
   isAnnotator: false,
   isReadonly: false,
+  LWChangeEventSuspended: false,
   mode: 0,
   showEntities: true,
   showTags: false,

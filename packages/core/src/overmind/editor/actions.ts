@@ -28,6 +28,7 @@ export const writerInitSettings = (
 
   editor.schemas = schemaObjs;
 
+  actions.editor.setReadonly(settings.readonly);
   actions.validator.loadValidator();
 };
 
@@ -154,12 +155,11 @@ export const suspendLWChangeEvent = async ({ state, actions }: Context, value: b
 
   if (value) {
     const content = await window.writer.getContent();
-    await db.suspendedDocument.add({content});
-
+    await db.suspendedDocument.add({ content });
   } else {
     await db.suspendedDocument.clear();
+    state.editor.contentHasChanged = true;
   }
-
 };
 
 export const setFontSize = ({ state }: Context, value: number) => {
@@ -189,7 +189,7 @@ export const toggleAdvancedSettings = ({ state }: Context, value: boolean) => {
   state.editor.advancedSettings = value;
 };
 
-export const setReadonly = ({ state }: Context, value: boolean) => {
+export const setReadonly = ({ state }: Context, value: boolean = false) => {
   state.editor.isReadonly = value;
 };
 
@@ -417,9 +417,9 @@ export const getContent = async ({ state }: Context) => {
   return await window.writer.getContent();
 };
 
-export const setIsEditorDirty = ({ state }: Context, value: boolean) => {
-  state.editor.isEditorDirty = value;
-};
+export const setContentHasChanged = ({ state }: Context, value: boolean) => {
+
+}
 
 export const closeEditor = ({ state }: Context) => {
   state.editor.latestEvent = 'close';
