@@ -3,7 +3,6 @@ import Writer from '../../Writer';
 import AttributeWidget from '../attributeWidget/attributeWidget';
 import type { LWDialogProps, LWDialogConfigProps } from '../types';
 import { log } from './../../../utilities';
-
 class AttributesEditor implements LWDialogProps {
   readonly writer: Writer;
   readonly $schemaDialog: JQuery<HTMLElement>;

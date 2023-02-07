@@ -283,7 +283,7 @@ export const tinymceWrapperInit = function ({
     writer.event('writerKeydown').publish(event);
   };
 
-  function onKeyUpHandler(event: KeyboardEvent) {
+  const onKeyUpHandler = (event: KeyboardEvent) => {
     // nav keys and backspace check
     switch (event.code) {
       case 'Home':
@@ -366,7 +366,7 @@ export const tinymceWrapperInit = function ({
 
           //? commented out, seems a bit drastic
           // remove all text
-          // $(writer.editor?.currentNode).contents().filter(() => {
+          // $(writer.editor?.currentNode).contents().filter(function() {
           //     return this.nodeType === 3;
           // }).remove();
         }

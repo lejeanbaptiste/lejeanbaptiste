@@ -37,7 +37,9 @@ const Language: FC = () => {
   return (
     <Stack direction="row" alignItems="center">
       <TranslateIcon sx={{ mx: 1, height: 18, width: 18 }} />
-      <Typography>{t('language')}</Typography>
+      <Typography sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
+        {t('language')}
+      </Typography>
       <Box flexGrow={1} />
       <Stack direction="row">
         <StyledToggleButtonGroup
