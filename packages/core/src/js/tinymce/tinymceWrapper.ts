@@ -209,7 +209,7 @@ export const tinymceWrapperInit = function ({
     
     if (!overmindState.document.touched) {
       overmindActions.document.setDocumentTouched(true);
-      overmindActions.editor.setIsEditorDirty(false);
+      overmindActions.editor.setContentHasChanged(false);
     }
 
     // need to explicitly set focus
@@ -219,22 +219,22 @@ export const tinymceWrapperInit = function ({
 
   writer.event('documentSaved').subscribe(() => {
     if (!writer.editor) return;
-    writer.overmindActions.editor.setIsEditorDirty(false);
+    writer.overmindActions.editor.setContentHasChanged(false);
     return (writer.editor.isNotDirty = true);
   });
   writer.event('entityAdded').subscribe(() => {
     if (!writer.editor) return;
-    writer.overmindActions.editor.setIsEditorDirty(true);
+    writer.overmindActions.editor.setContentHasChanged(true);
     return (writer.editor.isNotDirty = false);
   });
   writer.event('entityRemoved').subscribe(() => {
     if (!writer.editor) return;
-    writer.overmindActions.editor.setIsEditorDirty(true);
+    writer.overmindActions.editor.setContentHasChanged(true);
     return (writer.editor.isNotDirty = false);
   });
   writer.event('entityEdited').subscribe(() => {
     if (!writer.editor) return;
-    writer.overmindActions.editor.setIsEditorDirty(true);
+    writer.overmindActions.editor.setContentHasChanged(true);
     return (writer.editor.isNotDirty = false);
   });
 
@@ -277,7 +277,7 @@ export const tinymceWrapperInit = function ({
       return;
     }
 
-    writer.overmindActions.editor.setIsEditorDirty(true);
+    writer.overmindActions.editor.setContentHasChanged(true);
     writer.editor.isNotDirty = false;
 
     writer.event('writerKeydown').publish(event);
