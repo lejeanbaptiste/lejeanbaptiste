@@ -271,8 +271,10 @@ export const tinymceWrapperInit = function ({
 
     writer.editor.lastKeyPress = event.code; // store the last key press
 
-    if ((tinymce.isMac ? event.metaKey : event.ctrlKey) && event.code === 'f') {
-      // allow search
+    if ((tinymce.isMac ? event.metaKey : event.ctrlKey)) return;
+
+    //allow select all
+    if ((tinymce.isMac ? event.metaKey : event.ctrlKey) && event.code === 'KeyA') {
       event.preventDefault();
       return;
     }
@@ -346,7 +348,9 @@ export const tinymceWrapperInit = function ({
 
       // check if text is allowed in this node
       if (writer.editor?.currentNode.getAttribute('_textallowed') === 'false') {
-        if (tinymce.isMac ? event.metaKey : event.ctrlKey) {
+        if (event.key === 'Meta' || event.ctrlKey) {
+          // if the Meta // command // crtl key -> do nothing
+        } else if (tinymce.isMac ? event.metaKey : event.ctrlKey) {
           // don't show message if we got here through undo/redo
           const node = $('[_textallowed="true"]', writer.editor?.getBody()).first();
           let rng = writer.editor?.selection.getRng(true);
