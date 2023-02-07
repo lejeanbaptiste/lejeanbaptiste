@@ -60,7 +60,9 @@ const ThemeAppearance: FC = () => {
   return (
     <Stack direction="row" alignItems="center">
       <SettingsBrightnessIcon sx={{ mx: 1, height: 18, width: 18 }} />
-      <Typography>{t('appearance')}</Typography>
+      <Typography sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
+        {t('appearance')}
+      </Typography>
       <Box flexGrow={1} />
       <Stack direction="row">
         <StyledToggleButtonGroup

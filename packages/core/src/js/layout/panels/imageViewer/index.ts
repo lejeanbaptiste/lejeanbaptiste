@@ -32,7 +32,7 @@ class ImageViewer {
     const _this = this;
 
     $(`#${parentId}`).append(`
-      <div id="${this.id}" class="imageViewer" style="background-color: #f5f5f5">
+      <div id="${this.id}" class="imageViewer" style="background-color: #f5f5f5; color-scheme: light">
         <div class="toolbar">
           <div class="navigation">
             <span id="${this.id}_prev" class="lw-button">

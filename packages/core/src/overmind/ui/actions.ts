@@ -48,11 +48,6 @@ export const resetPreferences = () => {
   localStorage.removeItem('paletteMode');
 };
 
-export const processEditSource = ({ state, actions }: Context, newContent: string) => {
-  state.ui.editSourceProps = { open: false };
-  actions.document.loadDocumentXML(newContent);
-};
-
 export const openEntityLookupsDialog = (
   { state }: Context,
   props: Omit<EntityLookupDialogProps, 'open'>

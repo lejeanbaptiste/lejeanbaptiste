@@ -6,6 +6,7 @@ import type { EntityLink } from '../../dialogs/entityLookups/types';
 import '../../lib/jquery/jquery.popup';
 // import Triple from './dialogs/triple.js';
 import { log } from '../../utilities';
+import Writer from '../Writer';
 import AttributesEditor from './attributesEditor/attributesEditor';
 import CopyPaste from './copyPaste';
 import EntitiesDialogs from './entities';
@@ -15,7 +16,6 @@ import Message from './message';
 import Popup from './popup';
 import Translation from './translation';
 import type { LWDialogProps } from './types';
-import Writer from '../Writer';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
@@ -176,7 +176,9 @@ class DialogManager {
       throw Error('HTML container is missiong');
     }
 
-    this.$cwrcDialogWrapper = $('<div class="cwrc cwrcDialogWrapper" style="color-scheme: light"></div>').appendTo(container);
+    this.$cwrcDialogWrapper = $(
+      '<div class="cwrc cwrcDialogWrapper" style="color-scheme: light"></div>'
+    ).appendTo(container);
 
     setDialogListeners(this.$cwrcDialogWrapper);
 
