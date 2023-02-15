@@ -4,19 +4,21 @@ import { useAnalytics } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useRef, type FC } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { MainMenu, Meta, useMenu } from './topbar';
 import { useLeafWriter } from './useLeafWriter';
+import queryString from 'query-string';
 
 export const EditView: FC = () => {
   const { userState, user } = useAppState().auth;
-  const { contentHasChanged: isDirty, libLoaded, resource } = useAppState().editor;
+  const { contentHasChanged, libLoaded, readonly, resource } = useAppState().editor;
 
   const { getKeycloakAuthToken } = useActions().auth;
-  const { close, getGeonameUsername, loadLeafWriter } = useActions().editor;
+  const { close, getGeonameUsername, loadLeafWriter, setReadonly  } = useActions().editor;
   const { setPage } = useActions().ui;
 
   const navigate = useNavigate();
+  const location = useLocation()
 
   const { analytics } = useAnalytics();
 
@@ -28,6 +30,8 @@ export const EditView: FC = () => {
   useEffect(() => {
     setPage('edit');
     window.addEventListener('keydown', onKeydownHandle);
+    const { readonly } = queryString.parse(location.search);
+    if (readonly) setReadonly(readonly === 'true' ? true : false);
     return () => {
       window.removeEventListener('keydown', onKeydownHandle);
       setCurrentLeafWriter(null);
@@ -74,7 +78,7 @@ export const EditView: FC = () => {
 
   const initLeafWriter = async () => {
     if (!leafWriter || !resource?.content) return;
-    if (isDirty) return;
+    if (contentHasChanged) return;
 
     const geonamesUsername = await getGeonameUsername();
 
@@ -91,6 +95,7 @@ export const EditView: FC = () => {
       settings: {
         credentials: { nssiToken: userState === 'AUTHENTICATED' ? getKeycloakAuthToken : '' },
         lookups: { authorities: [['geonames', { config: { username: geonamesUsername } }]] },
+        readonly,
         schemas,
       },
       user: author,

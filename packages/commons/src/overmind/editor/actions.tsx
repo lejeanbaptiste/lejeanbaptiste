@@ -150,13 +150,12 @@ export const saveAs = async (
   return { success: true };
 };
 
-export const setContentHasChanged = async ({ state }: Context, value: boolean) => {
+export const setContentHasChanged = ({ state }: Context, value: boolean) => {
   state.editor.contentHasChanged = value;
 };
 
 export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
   state.editor.timerService.onTimer.subscribe(async () => {
-
     const content = await editor.getContent();
     const screenshot = await editor.getDocumentScreenshot();
     await actions.editor.save({ content, screenshot });
@@ -171,4 +170,8 @@ export const close = async ({ state, actions }: Context) => {
   actions.editor.setResource();
   state.editor.libLoaded = false;
   state.editor.contentHasChanged = false;
+};
+
+export const setReadonly = ({ state }: Context, value: boolean) => {
+  state.editor.readonly = value;
 };
