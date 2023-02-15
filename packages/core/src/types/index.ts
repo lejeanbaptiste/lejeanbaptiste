@@ -48,7 +48,7 @@ export interface LeafWriterOptionsSettings {
   schemas?: Schema[];
   schemasId?: SupportedSchemasId[];
 
-  modules?: Object;
+  modules?: ISettingsModules;
   services?: any;
 
   readonly?: boolean;
@@ -69,6 +69,19 @@ export type SupportedSchemasId =
   | 'teiMs'
   | 'teiLite'
   | 'reed';
+
+interface ISettingsModules {
+  west: ISettingsModulesPanel[],
+  east: ISettingsModulesPanel[],
+}
+
+interface ISettingsModulesPanel {
+  id: ISettingsModuleName,
+  title: string | string[] ;
+}
+
+type ISettingsModuleName = 'structure' | 'entities' |  'nerve' | 'selection' | 'imageViewer' | 'validation';
+
 
 export type SupportedEntityLookups =
   | 'dbpedia'
