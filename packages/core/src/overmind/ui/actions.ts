@@ -32,6 +32,15 @@ export const setDarkMode = ({ state }: Context, value: boolean) => {
   state.ui.darkMode = value;
 };
 
+export const setFullscreen = ({ state }: Context, value: boolean) => {
+  state.ui.fullscreen = value;
+};
+
+export const toggleFullscreen = ({ state }: Context) => {
+  const isFullscreen = window.writer.layoutManager.toggleFullScreen();
+  state.ui.fullscreen = isFullscreen;
+};
+
 export const closeContextMenu = ({ state }: Context) => {
   state.ui.contextMenu = { show: false };
 };

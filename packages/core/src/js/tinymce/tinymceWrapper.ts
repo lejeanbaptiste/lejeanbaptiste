@@ -6,14 +6,12 @@ import 'tinymce/themes/silver';
 import tinymce, { type TinyMCE } from 'tinymce/tinymce';
 import type { LeafWriterEditor } from '../../types';
 import { log } from '../../utilities';
-import { addIconPack } from './iconPack';
-import { configureToolbar, toolbarOptions } from './toolbar';
 import './plugins/prevent_delete';
 //TODO: Reassess plugins on tinymce 5.0
 // import './tinymce_plugins/cwrc_path';
 import fscreen from 'fscreen';
-import './plugins/treepaste';
 import Writer from '../Writer';
+import './plugins/treepaste';
 
 declare global {
   interface Window {
@@ -27,20 +25,18 @@ interface TinymceWrapperConfig {
   writer: Writer;
   editorId: string;
   layoutContainerId: string;
-  buttons1: string[];
-  buttons2?: string[];
-  buttons3?: string[];
 }
 
 export const tinymceWrapperInit = function ({
   writer,
   editorId,
   layoutContainerId,
-  buttons1,
-  buttons2,
-  buttons3,
 }: TinymceWrapperConfig) {
-  tinymce.baseURL = `${writer.baseUrl}/js`; // need for skin
+  tinymce.baseURL = `${writer.baseUrl}/js`;
+
+  const toolbar = document.querySelector('#editor-toolbar');
+  const toolbarHeight = toolbar.getBoundingClientRect().height;
+
   tinymce.init({
     selector: `#${editorId}`,
     ui_container: `#${layoutContainerId}`,
@@ -48,7 +44,7 @@ export const tinymceWrapperInit = function ({
       ? `${writer.baseUrl}/css/tinymce/skins/ui/oxide-dark`
       : `${writer.baseUrl}/css/tinymce/skins/ui/oxide`,
 
-    height: '100%',
+    height: `calc(100% - ${toolbarHeight}px)`,
     width: '100%',
     content_css: window.matchMedia('(prefers-color-scheme: dark)').matches
       ? [
@@ -84,14 +80,10 @@ export const tinymceWrapperInit = function ({
     plugins: [
       // 'cwrcpath',  //!This was broken before the upgrade
       'preventdelete', //TODO: need to be tested
-      'paste', //TODO: need to be tested
+      'paste', //TODO: need to be tested,
     ],
 
-    toolbar1: buttons1.length > 0 ? buttons1.join(' ') : toolbarOptions.join(' '),
-    toolbar2: buttons2 === undefined ? 'cwrcpath' : buttons2.join(' '),
-    toolbar3: buttons3 === undefined ? '' : buttons3.join(' '),
-    
-    toolbar_mode: 'sliding',
+    toolbar1: '',
 
     menubar: false,
     elementpath: true,
@@ -188,9 +180,6 @@ export const tinymceWrapperInit = function ({
           });
         });
       });
-
-      addIconPack(editor);
-      configureToolbar(writer, editor);
     },
   });
 

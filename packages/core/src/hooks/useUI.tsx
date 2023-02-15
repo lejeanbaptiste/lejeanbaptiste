@@ -14,14 +14,14 @@ import ReportRoundedIcon from '@mui/icons-material/ReportRounded';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 
-import BookIcon from '../icons/custom/Book';
+import { BookIcon } from '../icons/custom/Book';
 import BoxOpenIcon from '../icons/custom/BoxOpen';
 import CitationCardIcon from '../icons/custom/CitationCard';
 import OrganizationIcon from '../icons/custom/Organization';
 import PersonIcon from '../icons/custom/Person';
 
-import type { SvgIconTypeMap } from '@mui/material/SvgIcon';
 import type { OverridableComponent } from '@mui/material/OverridableComponent';
+import type { SvgIconTypeMap } from '@mui/material/SvgIcon';
 
 const icons: Map<
   string,
