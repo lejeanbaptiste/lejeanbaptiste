@@ -15,6 +15,7 @@ interface Entities {
   title: Entity;
   referencing_string: Entity;
   rs: Entity;
+  thing: Entity;
   citation: Entity;
   note: Entity;
   date: Entity;
@@ -82,6 +83,10 @@ const theme = (darkMode: boolean) =>
       rs: {
         color: { main: chroma.rgb(131, 149, 167).hex() },
         icon: 'referencing_string',
+      },
+      thing: {
+        color: { main: chroma.rgb(131, 149, 167).hex() },
+        icon: 'thing',
       },
       citation: {
         color: { main: chroma.rgb(0, 128, 64).hex() },
