@@ -55,9 +55,7 @@ export const tinymceWrapperInit = function ({
           `${writer.baseUrl}/css/tinymce/skins/content/writer/content.min.css`,
           `${writer.baseUrl}/css/editor.css`,
         ],
-
-    doctype:
-      '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
+    doctype: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">`,
     element_format: 'xhtml',
 
     forced_root_block: writer.schemaManager.getBlockTag(),
@@ -190,11 +188,11 @@ export const tinymceWrapperInit = function ({
 
   writer.event('documentLoaded').subscribe(() => {
     if (!writer.editor) return;
-    const {overmindState, overmindActions} = writer;
-   
+    const { overmindState, overmindActions } = writer;
+
     writer.editor.undoManager.clear();
     writer.editor.isNotDirty = true;
-    
+
     if (!overmindState.document.touched) {
       overmindActions.document.setDocumentTouched(true);
       overmindActions.editor.setContentHasChanged(false);
@@ -240,7 +238,6 @@ export const tinymceWrapperInit = function ({
 
   const onMouseUpHandler = (event: MouseEvent) => {
     doHighlightCheck(event);
-    // doHighlightCheck(writer.editor, event);
     writer.event('selectionChanged').publish();
   };
 
@@ -260,7 +257,7 @@ export const tinymceWrapperInit = function ({
 
     writer.editor.lastKeyPress = event.code; // store the last key press
 
-    if ((tinymce.isMac ? event.metaKey : event.ctrlKey)) return;
+    if (tinymce.isMac ? event.metaKey : event.ctrlKey) return;
 
     //allow select all
     if ((tinymce.isMac ? event.metaKey : event.ctrlKey) && event.code === 'KeyA') {
@@ -289,7 +286,6 @@ export const tinymceWrapperInit = function ({
       case 'ArrowLeft':
       case 'Backspace': {
         doHighlightCheck(event);
-        // doHighlightCheck(writer.editor, event);
       }
     }
 
@@ -394,7 +390,7 @@ export const tinymceWrapperInit = function ({
     }
 
     writer.event('writerKeyup').publish(event);
-  }
+  };
 
   const onChangeHandler = (event: any) => {
     $('br', writer.editor?.getBody()).remove(); // remove br tags that get added by shift+enter
@@ -475,7 +471,7 @@ export const tinymceWrapperInit = function ({
     writer.event('contentCopied').publish();
   };
 
-  const doHighlightCheck = (event: any, _ev?: any) => {
+  const doHighlightCheck = (event: any) => {
     if (!writer.editor) return;
     // let range = writer.editor?.selection.getRng(true);
     let range = writer.editor.selection.getRng();
