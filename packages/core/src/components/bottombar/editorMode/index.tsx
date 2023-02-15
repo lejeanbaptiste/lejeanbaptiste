@@ -5,7 +5,7 @@ import { useAppState } from '../../../overmind';
 import { Menu } from './Menu';
 
 const EditorMode: FC = () => {
-  const { editor } = useAppState();
+  const { editorModeLabel } = useAppState().editor;
   const { t } = useTranslation(['leafwriter']);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -21,13 +21,12 @@ const EditorMode: FC = () => {
           aria-controls="editor-mode-menu"
           aria-expanded={openMenu ? 'true' : undefined}
           aria-haspopup="true"
-          disabled={editor.isReadonly}
           id="editor-mode-select"
           onClick={handleButtonClick}
           size="small"
           sx={{ color: 'text.primary' }}
         >
-          {editor.editorModeLabel}
+          {editorModeLabel}
         </Button>
       </Tooltip>
       <Menu anchorEl={anchorEl} handleClose={handleMenuClose} />

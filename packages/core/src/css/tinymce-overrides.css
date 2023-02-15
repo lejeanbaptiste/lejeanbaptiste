@@ -72,6 +72,6 @@ div.mce-cwrc div.mce-menu-item-sep, div.mce-cwrc div.mce-menu-item-sep:hover {
 
 .tox-edit-area {
   box-shadow: 0 0 4px #d1d1d1 !important;
-  margin: 4px !important;
+  margin-block: 4px !important;
   border-radius: 4px;
 }

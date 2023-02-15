@@ -67,7 +67,7 @@ class StructureTree {
         animation: true,
         themes: { icons: false, responsive: false, url: false },
         data: {
-          li_attr: { id: 'cwrc_tree_root' },
+          li_attr: { id: 'lw_tree_root' },
           state: { opened: true },
           text: 'Tags',
         },
@@ -294,7 +294,7 @@ class StructureTree {
 
     // store open nodes to re-open after updating
     const openNodes: string[] = [];
-    $('#cwrc_tree_root', this.$tree)
+    $('#lw_tree_root', this.$tree)
       .find('li.jstree-open')
       .each(function () {
         //@ts-ignore
@@ -317,7 +317,7 @@ class StructureTree {
 
     if (rootData !== null) {
       //@ts-ignore
-      rootData.li_attr.id = 'cwrc_tree_root';
+      rootData.li_attr.id = 'lw_tree_root';
       this.doUpdate(rootNode.children(), rootData, 0, rootData);
 
       if (this.writer.isReadOnly) {
@@ -341,7 +341,7 @@ class StructureTree {
 
   clear() {
     const treeRef = $.jstree?.reference(`#${this.id}`);
-    treeRef?.delete_node('#cwrc_tree_root');
+    treeRef?.delete_node('#lw_tree_root');
   }
 
   enable(forceUpdate: boolean) {
