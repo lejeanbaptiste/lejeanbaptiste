@@ -114,8 +114,7 @@ export const tinymceWrapperInit = function ({
 
       editor.on('init', (event) => {
         if (writer.isReadOnly === true) {
-          writer.layoutManager.hideToolbar();
-          editor.setMode('readonly');
+          editor.mode.set('readonly');
         }
 
         // modify isBlock method to check _tag attributes
@@ -257,6 +256,7 @@ export const tinymceWrapperInit = function ({
 
   const onKeyDownHandler = (event: KeyboardEvent) => {
     if (!writer.editor) return;
+    // if (writer.isReadOnly === true) return
 
     writer.editor.lastKeyPress = event.code; // store the last key press
 
@@ -267,6 +267,8 @@ export const tinymceWrapperInit = function ({
       event.preventDefault();
       return;
     }
+
+    if (writer.isReadOnly === true) return;
 
     writer.overmindActions.editor.setContentHasChanged(true);
     writer.editor.isNotDirty = false;
@@ -290,6 +292,8 @@ export const tinymceWrapperInit = function ({
         // doHighlightCheck(writer.editor, event);
       }
     }
+
+    if (writer.isReadOnly === true) return;
 
     // update current entity
     const entityId = writer.entitiesManager.getCurrentEntity();

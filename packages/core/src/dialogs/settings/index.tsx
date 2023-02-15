@@ -15,7 +15,7 @@ import ShowEntities from './ShowEntities';
 import ThemeAppearance from './ThemeAppearance';
 
 export const SettingsDialog: FC<IDialog> = ({ id, onClose, open }) => {
-  const { autosave, settings } = useAppState().editor;
+  const { autosave, isReadonly, settings } = useAppState().editor;
 
   const { t } = useTranslation(['leafwriter']);
 
@@ -57,14 +57,18 @@ export const SettingsDialog: FC<IDialog> = ({ id, onClose, open }) => {
           <Section title="Editor">
             <FontSize />
             <ShowEntities />
-            {autosave !== undefined && <Autosave />}
+            {autosave !== undefined && !isReadonly && <Autosave />}
           </Section>
-          <Section title="Authorities">
-            <AutoritiesPanel />
-          </Section>
-          <Section title="Resets">
-            <Resets />
-          </Section>
+          {!isReadonly && (
+            <>
+              <Section title="Authorities">
+                <AutoritiesPanel />
+              </Section>
+              <Section title="Resets">
+                <Resets />
+              </Section>
+            </>
+          )}
         </Stack>
       </DialogContent>
     </Dialog>

@@ -5,7 +5,7 @@ import { useAppState } from '../../../overmind';
 import { Menu } from './Menu';
 
 const AnnotationMode: FC = () => {
-  const { annotationModeLabel, isReadonly } = useAppState().editor;
+  const { annotationModeLabel } = useAppState().editor;
   const { t } = useTranslation(['leafwriter']);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -25,7 +25,6 @@ const AnnotationMode: FC = () => {
           aria-controls="annotation-mode-menu"
           aria-expanded={openMenu ? 'true' : undefined}
           aria-haspopup="true"
-          // disabled={isReadonly}
           disableRipple
           onClick={handleButtonClick}
           size="small"

@@ -43,6 +43,13 @@ const App: FC<LeafWriterOptions> = ({ document, settings, user }) => {
       window.document.removeEventListener('fullscreenchange', fullscreenchanged);
     };
   }, []);
+
+  useEffect(() => {
+    actions.ui.updateReadonly();
+  }, [state.editor.isReadonly]);
+
+  const fullscreenchanged = () => actions.ui.setFullscreen(!!window.document.fullscreenElement);
+
   const setup = async () => {
     const config = createConfig(settings);
     const { credentials } = settings;
