@@ -4,9 +4,9 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import { Box, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
 import React, { type FC, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StyledToolTip } from '../../components';
 import { useActions, useAppState } from '../../overmind';
 import type { PaletteMode } from '../../types';
 
@@ -32,17 +32,6 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
     '&:first-of-type': {
       borderRadius: theme.shape.borderRadius,
     },
-  },
-}));
-
-const StyledToolTip = styled(({ className, ...props }: TooltipProps) => (
-  <Tooltip {...props} classes={{ popper: className }} />
-))(({ theme }) => ({
-  [`& .${tooltipClasses.tooltip}`]: {
-    textTransform: 'capitalize !important',
-  },
-  [`& .${tooltipClasses.tooltipPlacementBottom}`]: {
-    marginTop: '10px !important',
   },
 }));
 
