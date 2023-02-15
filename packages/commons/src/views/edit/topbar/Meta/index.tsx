@@ -24,24 +24,26 @@ export const Meta: FC = () => {
   return (
     <AnimatePresence mode="wait">
       {resource && (
-        <Stack
-          alignItems="center"
-          justifyContent="center"
-          onMouseOver={handleMouseOverTitle}
-          onMouseOut={handleMouseOutTitle}
-          height={48}
-          component={motion.div}
-          variants={extraInfoVariant}
-          animate="visible"
-          exit="hidden"
-        >
-          {resource.provider && <FullPath show={hover} />}
-          <Stack direction="row" alignItems="center">
-            <Typography component="h2" ml={1} sx={{ cursor: 'default' }} variant="subtitle1">
-              {resource.filename ?? 'untitled.xml'}
-            </Typography>
-            {leafWriter && resource.provider && <Cloud />}
+        <Stack direction="row">
+          <Stack
+            alignItems="center"
+            justifyContent="center"
+            onMouseOver={handleMouseOverTitle}
+            onMouseOut={handleMouseOutTitle}
+            height={48}
+            component={motion.div}
+            variants={extraInfoVariant}
+            animate="visible"
+            exit="hidden"
+          >
+            {resource.provider && <FullPath show={hover} />}
+            <Stack direction="row" alignItems="center">
+              <Typography component="h2" ml={1} sx={{ cursor: 'default' }} variant="subtitle1">
+                {resource.filename ?? 'untitled.xml'}
+              </Typography>
+            </Stack>
           </Stack>
+          {leafWriter && resource.provider && <Cloud />}
         </Stack>
       )}
     </AnimatePresence>

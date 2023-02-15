@@ -40,8 +40,6 @@ const getAuthenticatedUser = async (userId?: string) => {
 
   // const { data } = response;
 
-  // console.log(data)
-
   // const user = {
   //   ...data,
   //   name: `${data.name['given-names'].value} ${data.name['family-name'].value}`,

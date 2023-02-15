@@ -1,5 +1,5 @@
 import { AppBar, Box, Stack, Toolbar, useTheme } from '@mui/material';
-import { ProfileAvatar, SigninButton } from '@src/components';
+import { EditorModeSelector, ProfileAvatar, SigninButton } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence } from 'framer-motion';
 import React, { FC } from 'react';
@@ -48,9 +48,12 @@ export const TopBar: FC<TopBarProps> = ({ Left, Meta, title = 'LEAF-Writer' }) =
         >
           <AnimatePresence mode="wait">
             {userState === 'AUTHENTICATED' ? (
-              <ProfileAnchor>
-                <ProfileAvatar />
-              </ProfileAnchor>
+              <>
+                {page !== 'home' && <EditorModeSelector />}
+                <ProfileAnchor>
+                  <ProfileAvatar />
+                </ProfileAnchor>
+              </>
             ) : userState === 'UNAUTHENTICATED' ? (
               <>
                 <Privacy />

@@ -80,12 +80,17 @@ export const MainMenu = () => {
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         {...bindMenu(popupState)}
       >
-        {mainMenuOptions.map((item, index) => {
-          if (item === 'divider') return <Divider key={index} />;
-          if (item?.hide === true) return '';
-          if ('popupId' in item) return <SubMenu key={index} {...(item as SubMenuProps)} />;
-          return <Item key={index} {...(item as ItemProps)} />;
-        })}
+        {mainMenuOptions
+          .filter((item) => {
+            if (typeof item === 'string') return item;
+            if (!item.hide) return item;
+          })
+          .map((item, index, arr) => {
+            if (item === 'divider' && arr[index - 1] === 'divider') return null; // Do not duplicate dividers
+            if (item === 'divider') return <Divider key={index} />;
+            if ('popupId' in item) return <SubMenu key={index} {...(item as SubMenuProps)} />;
+            return <Item key={index} {...(item as ItemProps)} />;
+          })}
       </CascadingMenu>
     </Box>
   );

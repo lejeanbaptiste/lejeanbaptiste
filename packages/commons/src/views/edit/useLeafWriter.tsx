@@ -15,7 +15,7 @@ let tapDocumentTimer: NodeJS.Timeout;
 let leafWriterEvents: any[] = [];
 
 export const useLeafWriter = () => {
-  const { autosave, contentHasChanged: isDirty, resource, timerService } = useAppState().editor;
+  const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
 
   const {
     close,
@@ -38,8 +38,12 @@ export const useLeafWriter = () => {
   const { getResourceFromPermalink } = usePermalink();
 
   useEffect(() => {
-    leafWriter?.setContentHasChanged(isDirty);
-  }, [isDirty]);
+    leafWriter?.setContentHasChanged(contentHasChanged);
+  }, [contentHasChanged]);
+
+  useEffect(() => {
+    leafWriter?.setReadonly(readonly);
+  }, [readonly]);
 
   const setCurrentLeafWriter = (lw: Leafwriter | null) => (leafWriter = lw);
 
@@ -177,7 +181,7 @@ export const useLeafWriter = () => {
   };
 
   const handleCloseDocument = () => {
-    if (!isDirty) return disposeLeafWriter();
+    if (!contentHasChanged) return disposeLeafWriter();
 
     openDialog({
       props: {

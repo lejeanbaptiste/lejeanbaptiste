@@ -8,6 +8,7 @@ type State = {
   isSaving: boolean;
   libLoaded: boolean;
   resource?: Resource;
+  readonly: boolean;
   saveDelayed: boolean;
   timerService: TimerServiceProps;
 };
@@ -17,6 +18,7 @@ export const state: State = {
   contentHasChanged: false,
   isSaving: false,
   libLoaded: false,
+  readonly: false,
   saveDelayed: false,
   timerService: TimerService,
 };
