@@ -92,6 +92,7 @@
     "name": "name",
     "no": "no",
     "not supported": "not supported",
+    "not_supported": "Not Supported",
     "note": "note",
     "ok": "ok",
     "only": "only",
@@ -104,5 +105,6 @@
     "use": "use",
     "use supported schema": "use supported schema",
     "yes": "yes"
-  }
+  },
+  "not_supported": "Not supoprted"
 }
