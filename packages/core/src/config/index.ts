@@ -3,21 +3,24 @@ import { SchemaMappings } from '../types';
 import { isValidHttpURL } from '../utilities';
 import { schemas as defaultSchemas } from './schemas';
 
-export const createConfig = ({ baseUrl, schemas: configSchemas }: LeafWriterOptionsSettings) => {
+export const createConfig = (settings: LeafWriterOptionsSettings) => {
+
+  const { baseUrl, readonly, schemas: configSchemas } = settings
   const supportedSchemas = configSchemas ? [...configSchemas, ...defaultSchemas] : defaultSchemas;
   const schemas = setupSchemas(supportedSchemas);
 
   const config: LeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
     baseUrl: baseUrl ?? '.',
+    readonly,
     schemas,
     modules: {
       west: [
-        { id: 'structure', title: 'Markup' },
+        { id: 'structure', title: ['Markup', 'Table of Contents'] },
         { id: 'entities', title: 'Entities' },
       ],
       east: [
-        { id: 'selection', title: 'Selection' },
+        { id: 'selection', title: 'Raw XML' },
         { id: 'imageViewer', title: 'Image Viewer' },
         { id: 'validation', title: 'Validation' },
       ],
