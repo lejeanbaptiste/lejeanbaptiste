@@ -1,7 +1,7 @@
 import path from 'path';
 
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
-import { ESBuildMinifyPlugin } from 'esbuild-loader';
+import { EsbuildPlugin } from 'esbuild-loader';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import webpack, { EntryObject } from 'webpack';
 import WebpackBar from 'webpackbar';
@@ -31,7 +31,7 @@ const optimization = {
   minimize: isDev ? false : true,
   minimizer: isDev
     ? []
-    : [new ESBuildMinifyPlugin({ target: 'es2020', css: true, include: /\.min\.js$/ })],
+    : [new EsbuildPlugin({ target: 'es2020', css: true, include: /\.min\.js$/ })],
   sideEffects: isDev ? false : true,
   usedExports: isDev ? false : true,
 };
@@ -59,9 +59,9 @@ const webpackConfig: webpack.Configuration = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.[jt]sx?$/,
         loader: 'esbuild-loader',
-        options: { loader: 'tsx', target: 'es2020' },
+        options: { tsconfig: './tsconfig.json', target: 'es2020' },
       },
       {
         test: /\.css$/,
