@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import React, { useEffect, useState, type FC } from 'react';
-import { BottomBar, ContextMenu } from './components';
+import { createPortal } from 'react-dom';
+import { BottomBar, ContextMenu, EditorToolbar } from './components';
 import { createConfig } from './config';
 import { EntityLookupDialog } from './dialogs';
 import { useDialog, useNotifier } from './hooks';
@@ -23,6 +24,8 @@ const App: FC<LeafWriterOptions> = ({ document, settings, user }) => {
   useDialog();
   useNotifier();
 
+  const [editorToobarContainer, setEditorToobarContainer] = useState(null);
+
   useEffect(() => {
     if (document.url === undefined || state.document.url !== document.url) {
       // if (writer) writer.destroy();
@@ -34,6 +37,12 @@ const App: FC<LeafWriterOptions> = ({ document, settings, user }) => {
     }
   }, [document]);
 
+  useEffect(() => {
+    window.document.addEventListener('fullscreenchange', fullscreenchanged);
+    return () => {
+      window.document.removeEventListener('fullscreenchange', fullscreenchanged);
+    };
+  }, []);
   const setup = async () => {
     const config = createConfig(settings);
     const { credentials } = settings;
@@ -66,6 +75,10 @@ const App: FC<LeafWriterOptions> = ({ document, settings, user }) => {
       _writer.setDocument(document.xml);
 
       setWriter(window.writer);
+
+      const toolbarContainer = window.document.querySelector('#editor-toolbar');
+      setEditorToobarContainer(toolbarContainer);
+      setTimeout(() => _writer.layoutManager.resizeEditor(), 50);
     });
 
     _writer.event('documentLoaded').subscribe((success: boolean) => {
@@ -78,6 +91,9 @@ const App: FC<LeafWriterOptions> = ({ document, settings, user }) => {
       <Box id={CONTAINER} sx={{ height: 'calc(100% - 32px)', width: '100%' }}>
         {writer && <ContextMenu writer={writer} />}
         <EntityLookupDialog />
+        <div>
+          {editorToobarContainer !== null && createPortal(<EditorToolbar />, editorToobarContainer)}
+        </div>
       </Box>
       <BottomBar />
     </>

@@ -34,9 +34,6 @@ import Utilities from './utilities';
 //  * @param {Boolean} [config.annotator]
 //  * @param {String} [config.mode]
 //  * @param {Boolean} [config.allowOverlap]
-//  * @param {String} [config.buttons1]
-//  * @param {String} [config.buttons2]
-//  * @param {String} [config.buttons3]
 //  */
 
 class Writer extends EventManager {
@@ -196,15 +193,12 @@ class Writer extends EventManager {
     this.converter = new Converter(this);
     this.annotationsManager = new AnnotationsManager(this);
 
-    this.layoutContainerId = this.layoutManager.getContainer()?.attr('id') ?? '';
+    this.layoutContainerId = this.layoutManager.getContainer().attr('id');
 
     tinymceWrapperInit({
       writer: this,
       editorId: this.editorId,
       layoutContainerId: this.layoutContainerId,
-      buttons1: config.buttons1 ?? [],
-      buttons2: config.buttons2,
-      buttons3: config.buttons3,
     });
   }
 

@@ -116,8 +116,11 @@ class LayoutManager {
 
     //CENTRAL
     html += `
-      <div class="ui-layout-center ui-widget ui-widget-content">
-        <textarea id="${this.editorId}" name="editor" class="tinymce"></textarea>
+      <div class="ui-layout-center ui-widget ui-widget-content" style="background-color: #f6f6f6">
+        <div id="editor-toolbar" />
+
+          <textarea id="${this.editorId}" name="editor" class="tinymce"></textarea>
+  
       </div>
     `;
 
@@ -134,15 +137,6 @@ class LayoutManager {
     this.$container.append(html);
 
     this.$loadingMask = this.$container.find('.cwrcLoadingMask').first();
-    this.$headerButtons = this.$container.find('.headerButtons').first();
-
-    if (this.writer.isReadOnly || this.writer.isAnnotator) {
-      const $fullscreenButton = $('<div class="fullscreenLink out">Fullscreen</div>').appendTo(
-        this.$headerButtons
-      );
-
-      $fullscreenButton.on('click', () => this.toggleFullScreen());
-    }
 
     const outerLayoutConfig = {
       defaults: {
@@ -203,12 +197,7 @@ class LayoutManager {
       center: {
         //@ts-ignore
         onresize_end: (region, pane, state, options) => {
-          // // ! DEPRECATED resizeEditor might not be necessary anymore.
-          // log.info(
-          //   '%c"resizeEditor" DEPRECATED: might not be necessary anymore.',
-          //   'color: gray;'
-          // );
-          // this.resizeEditor();
+          this.resizeEditor();
         },
       },
     };
@@ -254,36 +243,19 @@ class LayoutManager {
         },
       });
     });
-
-    // ?show/hide entity buttons based on the presence of a custom schema
-    // this.writer.event('documentLoaded').subscribe((success: boolean) => {
-    // /  !success || this.writer.schemaManager.isSchemaCustom()
-    //     ? this.doHandleEntityButtons(true)
-    //     : this.doHandleEntityButtons();
-    // });
   }
 
-  // resizeEditor() {
-  //   if (!this.writer.editor) return;
+  resizeEditor() {
+    if (!this.writer.editor) return;
 
-  //   const pane = $(this.writer.editor.getContainer().parentElement);
-  //   const containerHeight = pane.height() ?? 0;
+    const toolbar = document.querySelector('#editor-toolbar');
+    const tox: HTMLElement = document.querySelector('.tox');
+    if (!toolbar || !tox) return;
 
-  //   const toolbars = pane[0].querySelectorAll('.mce-toolbar, .mce-statusbar, .mce-menubar');
-  //   const toolbarsLength: Number = toolbars.length;
+    const toolbarHeight = toolbar.getBoundingClientRect().height;
 
-  //   let barsHeight = 0;
-
-  //   for (const toolbar of toolbars) {
-  //     if (!toolbar.classList.contains('mce-sidebar-toolbar')) {
-  //       const barHeight = $(toolbar).height() ?? 0;
-  //       barsHeight += barHeight;
-  //     }
-  //   }
-
-  //   const newHeight = containerHeight - barsHeight - 8;
-  //   this.writer.editor.theme.resizeTo('100%', newHeight);
-  // };
+    tox.style.height = `calc(100% - ${toolbarHeight}px)`;
+  }
 
   showModule(moduleId: string) {
     this.modulesLayout.forEach((modules, region) => {
@@ -361,24 +333,18 @@ class LayoutManager {
     }
   }
 
-  showToolbar() {
-    $('.mce-toolbar-grp', this.writer.editor?.getContainer()).first().show();
-  }
-
-  hideToolbar() {
-    $('.mce-toolbar-grp', this.writer.editor?.getContainer()).first().hide();
-  }
-
   toggleFullScreen() {
-    if (!fscreen.fullscreenEnabled) return;
+    if (!fscreen.fullscreenEnabled) return fscreen.fullscreenEnabled;
 
     if (fscreen.fullscreenElement) {
       fscreen.exitFullscreen();
-      return;
+      return false;
     }
 
     const container = this.getContainer().parent();
-    if (container) fscreen.requestFullscreen(container[0]);
+    fscreen.requestFullscreen(container[0]);
+
+    return true;
   }
 
   isFullScreen() {

@@ -55,9 +55,6 @@ export interface LeafWriterOptionsSettings {
   annotator?: boolean;
   mode?: string;
   allowOverlap?: boolean;
-  buttons1?: string[];
-  buttons2?: string[];
-  buttons3?: string[];
 }
 
 export type SupportedSchemasId =

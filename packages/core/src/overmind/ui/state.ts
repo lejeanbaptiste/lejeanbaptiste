@@ -1,6 +1,9 @@
-import type { PopupProps } from '../../dialogs';
-import type { DialogBarProps } from '../../dialogs';
-import type { EditSourceDialogProps, EntityLookupDialogProps } from '../../dialogs';
+import type {
+  DialogBarProps,
+  EditSourceDialogProps,
+  EntityLookupDialogProps,
+  PopupProps,
+} from '../../dialogs';
 import type { ContextMenuState, Language, NotificationProps } from '../../types';
 
 type State = {
@@ -9,6 +12,7 @@ type State = {
   dialogBar: DialogBarProps[];
   editSourceProps: EditSourceDialogProps;
   entityLookupDialogProps: EntityLookupDialogProps;
+  fullscreen: boolean;
   notifications: NotificationProps[];
   language: Language;
   popupProps: PopupProps;
@@ -23,6 +27,7 @@ export const state: State = {
   dialogBar: [],
   editSourceProps: { open: false },
   entityLookupDialogProps: { open: false },
+  fullscreen: false,
   language: { code: 'en-CA', name: 'english', shortName: 'en' },
   notifications: [],
   popupProps: { open: false },
