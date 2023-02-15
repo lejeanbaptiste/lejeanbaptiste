@@ -184,7 +184,7 @@ export class Leafwriter {
     return overmind.state.editor.isReadonly;
   }
 
-  setIsReadonly(value: boolean) {
+  setReadonly(value: boolean) {
     return overmind.actions.editor.setReadonly(value);
   }
 

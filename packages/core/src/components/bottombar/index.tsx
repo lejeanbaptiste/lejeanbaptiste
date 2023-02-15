@@ -9,6 +9,7 @@ import Schema from './schema';
 import { ValdidationErrors } from './ValdidationErrors';
 
 export const BottomBar: FC = () => {
+  const { isReadonly } = useAppState().editor;
   const { validationErrors } = useAppState().validator;
   const { t } = useTranslation();
   const version = pck.version;
@@ -23,11 +24,15 @@ export const BottomBar: FC = () => {
       }}
     >
       <Stack direction="row" alignItems="center" spacing={2} px={2}>
-        <EditorMode />
-        <AnnotationMode />
-        <Schema />
+        {!isReadonly && (
+          <>
+            <EditorMode />
+            <AnnotationMode />
+            <Schema />
+          </>
+        )}
 
-        {validationErrors > 0 && <ValdidationErrors />}
+        {validationErrors > 0 && !isReadonly && <ValdidationErrors />}
 
         <Box flexGrow={1} />
 

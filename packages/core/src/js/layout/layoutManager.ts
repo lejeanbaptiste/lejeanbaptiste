@@ -25,11 +25,11 @@ type LayoutLocation = 'east' | 'west' | 'north' | 'south';
 interface ModuleConfig {
   id: string;
   config?: any;
-  title?: string;
+  title?: string | string[];
 }
 
 // track modules which cannot appear in readonly mode
-const WRITE_ONLY_MODULES = ['nerve'];
+const WRITE_ONLY_MODULES = ['nerve', 'validation', 'selection'];
 
 class LayoutManager {
   readonly writer: Writer;
@@ -366,6 +366,28 @@ class LayoutManager {
     return this.$headerButtons;
   }
 
+  toggleReadonly(readonly: boolean) {
+    //change to imageViewer
+    this.showModule('imageViewer');
+
+    //Change tabs
+    [...this.modulesLayout.entries()].forEach(([region, modules]) => {
+      if (!Array.isArray(modules)) modules = [modules];
+
+      modules.forEach(({ id, title }) => {
+        const tab: HTMLElement = document.querySelector(`.ui-layout-${region} > ul > li#${id}`);
+
+        if (WRITE_ONLY_MODULES.includes(id)) {
+          tab.style.display = readonly ? 'none' : '';
+        }
+
+        if (Array.isArray(title)) {
+          tab.querySelector('a').innerText = readonly ? title[1] : title[0];
+        }
+      });
+    });
+  }
+
   destroy() {
     this.modules.forEach((module) => {
       module.destroy
@@ -403,14 +425,19 @@ class LayoutManager {
       <div class="cwrc tabs ui-layout-${panelRegion}">
         <ul>
           ${panelConfig
+            .filter((module) => this.isModuleAllowed(module))
             .map(({ id, title }) => {
-              if (!title) title = id.charAt(0).toUpperCase() + id.slice(1);
-              return `<li><a href="#${this.editorId}-${id}">${title}</a></li>`;
+              if (Array.isArray(title)) title = this.writer.isReadOnly ? title[1] : title[0];
+              return `
+                <li id=${id}>
+                  <a href="#${this.editorId}-${id}">${title}</a>
+                </li>
+              `;
             })
-            .join('')}
+            .join('\n')}
         </ul>
         <div class="ui-layout-content">
-          ${panelConfig.map(({ id }) => `<div id="${this.editorId}-${id}"/>`).join('')}
+          ${panelConfig.map(({ id }) => `<div id="${this.editorId}-${id}"/>`).join('\n')}
         </div>
       </div>
     `;

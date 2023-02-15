@@ -153,3 +153,14 @@ export const doNotDisplayDialog = ({ effects }: Context, value: string) => {
 export const resetDoNotDisplayDialogs = ({ effects }: Context) => {
   effects.editor.api.removeFromLocalStorage('doNotDisplayDialogs');
 };
+
+export const updateReadonly = ({ state, actions }: Context) => {
+  const { isReadonly } = state.editor;
+
+  window.writer.isReadOnly = isReadonly;
+  window.writer.editor.mode.set(isReadonly ? 'readonly' : 'design');
+  window.writer.layoutManager.toggleReadonly(isReadonly);
+  window.writer.entitiesList.toggleReadonly(isReadonly);
+  window.writer.tree.toggleReadonly(isReadonly);
+  window.writer.layoutManager.resizeEditor();
+};

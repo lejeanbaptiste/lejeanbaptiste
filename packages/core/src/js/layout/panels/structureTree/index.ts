@@ -490,6 +490,10 @@ class StructureTree {
     this.doSelectNode(treeNode, selectContents, false, true);
   }
 
+  toggleReadonly(readonly: boolean) {
+    this.update();
+  }
+
   /**
    * Performs actual selection of a tree node
    * @param {Element} $node A jquery node (LI) in the tree

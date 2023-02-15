@@ -14,12 +14,18 @@ interface ContextMenuProps {
 }
 
 export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
-  const { editor, ui } = useAppState();
+  const { isReadonly, settings } = useAppState().editor;
+  const { contextMenu } = useAppState().ui;
+
   const { closeContextMenu } = useActions().ui;
 
   const { collectionType, getItems, initialize, MIN_WIDTH, query, tagName, xpath, tagMeta } =
-    useContextmenu(writer, ui.contextMenu);
+    useContextmenu(writer, contextMenu);
 
+  const [anchorReference, setAnchorReference] = useState<'anchorPosition' | 'anchorEl'>(
+    'anchorPosition'
+  );
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>();
   const [options, setOptions] = useState<ItemProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,8 +33,8 @@ export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
   const [visibleList, setVisibleList] = useState<ItemProps[]>(options);
 
   useEffect(() => {
-    if (!ui.contextMenu.show) return;
-    if (editor.isReadonly) return;
+    if (!contextMenu.show) return;
+    if (isReadonly) return;
 
     setShow(true);
 
@@ -48,9 +54,13 @@ export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
 
     loadItems();
 
+    const { element } = contextMenu;
+    setAnchorReference(element ? 'anchorEl' : 'anchorPosition');
+    setAnchorEl(element);
+
     setMenuPosition({
-      top: ui.contextMenu.position?.posY ?? 0,
-      left: ui.contextMenu.position?.posX ?? 0,
+      top: contextMenu.position?.posY ?? 0,
+      left: contextMenu.position?.posX ?? 0,
     });
 
     return () => {
@@ -60,7 +70,7 @@ export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
       setVisibleList([]);
       setShow(false);
     };
-  }, [ui.contextMenu]);
+  }, [contextMenu]);
 
   const handleQuery = (searchQuery: string) => {
     const result = query(options, searchQuery);
@@ -74,28 +84,31 @@ export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
   return (
     <>
       {show && (
-        <Menu
-          anchorPosition={menuPosition}
-          anchorReference="anchorPosition"
-          id="contextmenu"
-          container={document.getElementById(`${editor.settings.container}`)}
-          keepMounted
-          MenuListProps={{ sx: { minWidth: MIN_WIDTH, py: 0.5, borderRadius: 1 } }}
-          onClose={handleClose}
-          open={show}
-          PaperProps={{ elevation: 4 }}
-          variant="menu"
-        >
-          <Header tagName={tagName} xpath={xpath} tagMeta={tagMeta} />
-          <Collection
-            handleQuery={handleQuery}
-            collectionType={collectionType}
-            fullLength={options.length}
-            isLoading={isLoading}
-            list={visibleList}
-            minWidth={MIN_WIDTH}
-          />
-        </Menu>
+        <React.StrictMode>
+          <Menu
+            anchorEl={anchorEl}
+            anchorPosition={menuPosition}
+            anchorReference={anchorReference}
+            id="contextmenu"
+            container={document.getElementById(`${settings.container}`)}
+            keepMounted
+            MenuListProps={{ sx: { minWidth: MIN_WIDTH, py: 0.5, borderRadius: 1 } }}
+            onClose={handleClose}
+            open={show}
+            PaperProps={{ elevation: 4 }}
+            variant="menu"
+          >
+            <Header tagName={tagName} xpath={xpath} tagMeta={tagMeta} />
+            <Collection
+              handleQuery={handleQuery}
+              collectionType={collectionType}
+              fullLength={options.length}
+              isLoading={isLoading}
+              list={visibleList}
+              minWidth={MIN_WIDTH}
+            />
+          </Menu>
+        </React.StrictMode>
       )}
     </>
   );

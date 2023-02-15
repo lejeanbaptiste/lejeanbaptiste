@@ -418,7 +418,7 @@ export const getContent = async ({ state }: Context) => {
 };
 
 export const setContentHasChanged = ({ state }: Context, value: boolean) => {
-
+  state.editor.contentHasChanged = value;
 }
 
 export const closeEditor = ({ state }: Context) => {

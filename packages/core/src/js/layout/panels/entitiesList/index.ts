@@ -650,6 +650,13 @@ class EntitiesList {
     }
   }
 
+  toggleReadonly(readonly: boolean) {
+    this.update();
+    readonly
+      ? this.$entities.find('.moduleFooter').hide()
+      : this.$entities.find('.moduleFooter').show();
+  }
+
   enable(forceUpdate: boolean) {
     this.enabled = true;
     if (forceUpdate || this.updatePending) {
