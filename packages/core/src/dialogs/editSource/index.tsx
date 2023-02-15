@@ -44,8 +44,7 @@ export const EditSourceDialog: FC<EditSourceDialogProps> = ({
 
   const handleChange = () => {
     if (currentContent === content) return onClose(id);
-
-    console.log(type);
+    
     if (type === 'content') updateXMLContent(currentContent);
     if (type === 'header') updateXMLHeader(currentContent);
 

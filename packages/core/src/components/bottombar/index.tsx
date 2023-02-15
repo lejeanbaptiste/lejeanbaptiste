@@ -19,8 +19,7 @@ export const BottomBar: FC = () => {
       square
       sx={{
         width: '100%',
-        backgroundColor: ({ palette }) =>
-          palette.mode === 'dark' ? palette.background.paper : '#f5f5f5',
+        bgcolor: ({ palette }) => (palette.mode === 'dark' ? palette.background.paper : '#f5f5f5'),
       }}
     >
       <Stack direction="row" alignItems="center" spacing={2} px={2}>

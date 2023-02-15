@@ -57,8 +57,6 @@ export class Leafwriter {
     overmind.addMutationListener((mutation) => {
       if (mutation.path === 'editor.contentHasChanged' && mutation.hasChangedValue) {
         if (overmind.state.editor.LWChangeEventSuspended) return;
-        
-        console.log(overmind.state.editor.contentHasChanged);
         this.onContentHasChanged.next(overmind.state.editor.contentHasChanged);
       }
 
