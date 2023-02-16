@@ -149,8 +149,8 @@ The settings object has three main properties used to set up and customize LEAF-
 | - | - | - | - |
 | baseUrl | string | `.` | **Important**: By default, LEAF-Writer will load its dependencies (web workers, on-demand modules, extra CSS files) from the root folder. If these files are not on the root, you should define the path to these dependencies here. For instance, set this property to `/path/to/project/addons/` if you put LEAF-Writer dependencies in this folder. |
 | lookups  | `LookupsProps` |  | An object containing to configure the entity lookups. See [Authorities](#authorities) |
+| readonly  | bollean | false | Set LEAF-Writer readonly (prevent editing functionalities) |
 | schemas  | `Schema[]` |  | An array of schemas to be included as supported by default. See more about Schemas [here](#schemas).  |
-
 
 #### lookups
 
@@ -275,6 +275,7 @@ editor.init({
         ]
       ],
     },
+    readonly: false,
     schemas: [{
       id: 'cwrcTeiLite',
       name: 'CWRC TEI Lite',
