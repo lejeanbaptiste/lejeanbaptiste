@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 1.2.3
+
+### Patch Changes
+
+- webpack update esbuild configurations [11420bfb4a67abde43bdd808488ecbb15dc8e40d]
+- update dependencies [4d992313a67fdb88ac333ecf9902c628e1c43dc8]
+  - core:
+    - bump up: comlink@4.4.1
+  - dev:
+    - upgrade:
+      - @types/jsdom@21.1.0
+      - esbuild@3.0.1
+    - update:
+      - @typescript-eslint/eslint-plugin@5.52.0
+      - @typescript-eslint/parser@5.52.0
+      - eslint@8.34.0
+    - bump up:
+      - jest@29.4.3
+      - jest-environment-jsdom@29.4.3
+      - typedoc@0.23.25
+    - peerDependencies:
+      - bump up: comlink@4.4.1
+
 ## 1.2.2
 
 ### Patch Changes
