@@ -1,5 +1,49 @@
 # CHANGELOG
 
+## 2.6.0
+
+## Features
+
+### Readonly Mode
+
+Add the ability to switch LEAF-Wrirter `readonly` mode on and off.
+
+- Via URL: passing the attribute `readonly=true` in the URL will cause LEAF-Writer to open in readonly mode.
+- Via UI: the selector button at the topbar allow users to switch between editing/viweing mode.
+
+## Minor Patches
+
+- rename `isDirty` to `contentHasChanged` [0af820b89760cc6a5de4743e33dc8d21b3dd5e4f] 
+- webpack update esbuild configurations [e456cb2b4428d5459078114f85b89e4522e433d7]
+- update dependencies [c3e99cb34839c3c752edfd0094948020329d90d1]
+  - core:
+    - bump up:
+      - @mui/icons-material@5.11.9
+      - @mui/lab@5.0.0-alpha.120
+      - @mui/material@5.11.9
+      - axios@1.3.3
+      - react-i18next@12.1.5
+      - react-router-dom@6.8.1
+      - zod@3.20.6
+    - dev:
+      - upgrade: esbuild@3.0.1
+      - update:
+        - @types/node@18.13.0
+        - @typescript-eslint/eslint-plugin@5.52.0
+        - @typescript-eslint/parser@5.52.0
+        - eslint@8.34.0
+        - webpack-bundle-analyzer@4.8.0
+      - bump up:
+        - @types/chroma-js@2.1.5
+        - @types/express@4.17.17
+        - prettier@2.8.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter@2.5.0
+  - @cwrc/leafwriter-storage-service@1.3.7
+
 ## 2.5.2
 
 ### Patch Changes
@@ -8,6 +52,7 @@
 - Prevent editor from refresh when saveas dialog opens (#101) [fb2183bfdbb0d64e6caefdb5527c43ca96d6f2d5]
 - autosave: save lastedits instead of the current state of the documents (#105) [fb2183bfdbb0d64e6caefdb5527c43ca96d6f2d5]
 - update dependencies [548baff796c99927631221b24010bd8e579b0323]
+
   - core:
     - upgrade: framer-motion@9.0.0
     - update:
