@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## 1.3.7
+
+### Patch Changes
+
+- webpack update esbuild configurations [0328c61a031157df29b09ab28c5c2d5f85d4e865]
+- update dependencies [a625b9eb8fad4f88e45b4d529d7566f511e77134]
+  - core:
+    - bump up:
+      - @mui/base@5.0.0-alpha.118
+      - @mui/icons-material@5.11.9
+      - @mui/lab@5.0.0-alpha.120
+      - @mui/material@5.11.9
+      - axios@1.3.3
+      - framer-motion@9.0.3
+      - react-i18next@12.1.5
+    - dev:
+      - upgrade: esbuild@3.0.1
+      - update: 
+        - @typescript-eslint/eslint-plugin@5.52.0
+        - @typescript-eslint/parser@5.52.0
+        - jest-environment-jsdom@29.4.3
+
 ## 1.3.6
 
 ### Patch Changes
