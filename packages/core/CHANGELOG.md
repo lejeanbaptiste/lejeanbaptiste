@@ -1,5 +1,89 @@
 # CHANGELOG
 
+## 2.5.0
+
+## Features
+
+### Edit header
+
+Bring back the ability to edit header. Right click on `teiHeader` from the `Mark up` panel to open a xml editor with only the elements in the document header. [1ce5e5d011ca9212a9b24f60f34416ac736e062d]
+
+### New Ribbon
+
+TinyMCE standard toolbar was limitting our ability to control how the ribbon show up and which buttons show it display.
+We have now a new custom toolbar build with React that we can customize in several ways (including using color coding to match entities)
+[f3f2f8ba7ed228d66549d2fec014acb6d993f1a6]
+
+### Readonly Mode
+
+We are bringing back the readonly mode. In this mode a number of funcitonalites are blocked or hidden to prevent changes in the document. [ef5add578623a93154a8ee7dcbf9320e4e7a4529].
+
+Notably changes are:
+
+- Editor: prevent typing or editing
+- Ribbon: Hide all buttons related to insertion of tags/entities. Only show UI options.
+- Settings: Only show UI options
+- Bottom Bar: Hide editor optons (edito mode, annotatopn mode, schema)
+- Panels: Hide `Validation` and `Raw XML Viewer` Panels. The `Mark Up` panel doubles as `Table of Contents`, showing only the document heading.
+
+To make LEAF-Write readonly, pass the property `readonly: true` when initiating the editor. Example:
+
+```js
+leafWriter.init({
+  document: {
+   ...
+  },
+  settings: {
+    ...
+    readonly: true,
+  },
+  user: ...,
+});
+```
+
+
+## Minor Pathces
+
+- Rename `selection panel` to `raw xml` [ecd40aa576066b8121be7c287228f44d57e10abd]
+- Add the 'thing' entity to the theme [65517eecd244e74a22adbb772873722452ce9f94]
+- Add Styled Tooltip component as an idenpendent component [9d337e5c7c472971f56e184f46aa22ae834c4e65]
+- Prevent change content when pressing meta keys (cmd, ctrl, alt, etc) [87736230ca6d529cc58e7734afd2b3d7199d1019]
+- rename property `isDirty` to `contentHasChanged` [020a3230d86f1c12fee6888da69cc0ca72db8ed7]
+- webpack update esbuild configurations [a8c8e8f09307c9911bd73dba15d1baa90e4b89ab]
+- update dependencies [dd45e21657479cd5ff576953da523c937bcf1287]
+  - core:
+    - remove: react-router-dom
+    - upgrade: yup@1.0.0
+    - update:
+      - @fortawesome/fontawesome-free@6.3.0
+      - monaco-editor@0.35.0
+    - bump up:
+      - @mui/icons-material@5.11.9
+      - @mui/lab@5.0.0-alpha.120
+      - @mui/material@5.11.9
+      - axios@1.3.3
+      - comlink@4.4.1
+      - framer-motion@9.0.3
+      - rdflib@2.2.26
+      - react-i18next@12.1.5
+      - react-intersection-observer@9.4.2
+    - dev:
+      - add: @types/tinymce@4.6.5
+      - upgrade: esbuild-loader"@3.0.1
+      - update:
+        - @types/node@18.13.0
+        - @typescript-eslint/eslint-plugin@5.52.0
+        - @typescript-eslint/parser@5.52.0
+      - bump up:
+        - @types/chroma-js@2.1.5
+        - @types/openseadragon@3.0.5
+        - @types/react-dom@18.0.11
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter-validator@1.2.3
+
 ## 2.4.0
 
 ### Feature
