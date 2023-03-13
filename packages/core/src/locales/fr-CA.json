@@ -1,6 +1,12 @@
 {
+  "Allow Tag Merge": "",
+  "Allow drag and drop": "",
+  "Allow multiselection": "",
+  "Authorities": "",
   "Confirmation dialog preferences have been reset": "Les préférences de la boîte de dialogue de confirmation ont été réinitialisées",
   "Documentation": "Documentation",
+  "Drag authorities to reorder priority": "",
+  "Entities Lookup Sources": "",
   "Only XML tags": {
     " No RDF": {
       "Semantic Web annotations will be created": "Uniquement les balises XML. \nAucune annotation RDF/Web sémantique ne sera créée"
@@ -8,12 +14,26 @@
   },
   "Reset Dialog Warnings": "Réinitialiser les avertissements de la boîte de dialogue",
   "Reset Settings": "Réinitialiser les options",
+  "Settings": "",
   "Settings preferences have been reset to default": "Les préférences de paramètres ont été réinitialisées par défaut",
+  "Show Entities": "",
+  "Show Text Nodes": "",
+  "Show Text Nodes Content": "",
+  "Structure Panel": "",
+  "Text Nodes must be displayed for better accuracy": "",
   "XML tags and RDF": {
     "Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": "Des balises XML et des annotations RDF/Web sémantique équivalentes aux balises XML seront créées, conformément à la hiérarchie du schéma XML, de sorte que les annotations ne seront pas autorisées à se chevaucher"
   },
   "You have unsaved changes": "Vous avez des changements non enregistrés",
   "You must provide a username to make requests": "Vous devez fournir un nom d'utilisateur pour faire des demandes {{authorityService}}",
+  "authorities": "",
+  "autosave": "",
+  "commons": {
+    "multiple": ""
+  },
+  "editor": "",
+  "experimental": "",
+  "interface": "",
   "leafwriter": {
     "Annotation": "Annotation",
     "Annotation Mode": "Mode d'annotation",
@@ -106,5 +126,8 @@
     "use supported schema": "utiliser le schéma pris en charge",
     "yes": "oui"
   },
-  "not_supported": ""
+  "multiple tags": "",
+  "not_supported": "",
+  "reset": "",
+  "structure panel": ""
 }
