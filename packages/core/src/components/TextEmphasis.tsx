@@ -29,7 +29,7 @@ export const TextEmphasis = ({
     <Typography
       component="span"
       sx={{
-        backgroundColor: variation === 'filled' ? accentColor : 'inherent',
+        bgcolor: variation === 'filled' ? accentColor : 'inherent',
         borderWidth: variation === 'outlined' ? 1 : 0,
         borderStyle: variation === 'outlined' ? 'solid' : 'none',
         color: textColor,
