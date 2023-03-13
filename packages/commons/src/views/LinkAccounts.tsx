@@ -1,8 +1,8 @@
 import { Page } from '@src/layouts';
 import { BroadcastChannel } from 'broadcast-channel';
-import React, { useEffect, type FC } from 'react';
+import React, { useEffect } from 'react';
 
-export const LinkAccounts: FC = () => {
+export const LinkAccounts = () => {
   const query = new URLSearchParams(location.search);
   const error = query.get('error');
 

@@ -1,9 +1,9 @@
 import { Box } from '@mui/material';
 import { useDialog, useNotifier } from '@src/hooks';
-import React, { type FC } from 'react';
+import React from 'react';
 import { Outlet } from 'react-router-dom';
 
-export const BasicLayout: FC = () => {
+export const BasicLayout = () => {
   useDialog();
   useNotifier();
 

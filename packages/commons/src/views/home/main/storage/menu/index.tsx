@@ -3,7 +3,7 @@ import { useMessage } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { ViewProps } from '@src/types';
 import { AnimatePresence } from 'framer-motion';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MenuButton, type MenuButtonProps } from './MenuButton';
 import { PasteOption } from './PasteOption';
@@ -13,7 +13,7 @@ interface MainMenuProps {
   selectedMenu?: string | undefined;
 }
 
-export const Menu: FC<MainMenuProps> = ({ onSelect, selectedMenu }) => {
+export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
   const { userState } = useAppState().auth;
   const { storageProviders } = useAppState().providers;
   const { recentDocuments } = useAppState().storage;

@@ -1,12 +1,12 @@
 import { Stack, Typography } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import { AnimatePresence, motion } from 'framer-motion';
-import React, { useState, type FC } from 'react';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import React, { useState } from 'react';
 import { useLeafWriter } from '../../useLeafWriter';
 import { Cloud } from './Cloud';
 import { FullPath } from './FullPath';
 
-export const Meta: FC = () => {
+export const Meta = () => {
   const { resource } = useAppState().editor;
 
   const { leafWriter } = useLeafWriter();
@@ -16,7 +16,7 @@ export const Meta: FC = () => {
   const handleMouseOverTitle = () => setHover(true);
   const handleMouseOutTitle = () => setHover(false);
 
-  const extraInfoVariant = {
+  const extraInfoVariant: Variants = {
     visible: { height: 'auto', opacity: 1 },
     hidden: { height: 0, opacity: 0 },
   };

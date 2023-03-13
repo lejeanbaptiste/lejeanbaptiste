@@ -2,7 +2,7 @@ import { Stack } from '@mui/material';
 import { useAppState } from '@src/overmind';
 import type { ViewProps } from '@src/types';
 import { motion, useAnimation } from 'framer-motion';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWindowSize } from 'react-use';
 import { Container } from './components/Container';
@@ -22,7 +22,7 @@ interface DocumentViewProps {
 const MIN_WIDTH = 290; // Use to show the login panel // 1 column grid
 const MIN_HEIGHT = 333;
 
-export const DocumentView: FC<DocumentViewProps> = ({ view }) => {
+export const DocumentView = ({ view }: DocumentViewProps) => {
   const { userState } = useAppState().auth;
   const { language } = useAppState().ui;
 

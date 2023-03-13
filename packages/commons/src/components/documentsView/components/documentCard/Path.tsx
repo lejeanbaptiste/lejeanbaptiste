@@ -1,6 +1,6 @@
 import { Icon, Stack, Typography } from '@mui/material';
 import { getIcon } from '@src/assets/icons';
-import React, { type FC } from 'react';
+import React from 'react';
 
 interface PathProps {
   owner: string;
@@ -9,7 +9,7 @@ interface PathProps {
   repo: string;
 }
 
-export const Path: FC<PathProps> = ({ owner, path, provider, repo }) => {
+export const Path = ({ owner, path, provider, repo }: PathProps) => {
   let fullPath = `${owner}: ${repo}`;
   fullPath = path ? `${fullPath}/${path}` : fullPath;
 

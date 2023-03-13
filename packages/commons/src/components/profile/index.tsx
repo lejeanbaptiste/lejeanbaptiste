@@ -24,7 +24,7 @@ export type ViewType = 'main' | 'appearance' | 'language' | 'identity' | 'storag
 
 const WIDTH = 300;
 
-export const Profile: FC<ProfileProps> = ({ anchor, onClose }) => {
+export const Profile = ({ anchor, onClose }: ProfileProps) => {
   const [stackViews, setStackedViews] = useState<ViewType[]>(['main']);
 
   const open = Boolean(anchor);

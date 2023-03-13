@@ -1,11 +1,11 @@
 import { Container, Stack, useMediaQuery, useTheme } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { Header } from './Header';
 import { SmallScreenMessage } from './SmallScreenMessage';
 import { StatusBar } from './StatusBar';
 import { Storage } from './storage';
 
-export const Main: FC = () => {
+export const Main = () => {
   const { breakpoints } = useTheme();
   const isMobile = useMediaQuery(breakpoints.down('sm'));
   return (

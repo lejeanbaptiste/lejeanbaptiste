@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { AnimationControls, motion } from 'framer-motion';
+import { AnimationControls, motion, type Variants } from 'framer-motion';
 import React, { type FC, type MouseEvent } from 'react';
 import { DisplayLayout } from '..';
 
@@ -38,14 +38,12 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
   },
 }));
 
-// const SMALL_WIDTH = 400;
-
-export const TopBar: FC<TopBarProps> = ({
+export const TopBar = ({
   animationControl,
   displayLayout = 'list',
   onChangeDisplayLayout,
   title,
-}) => {
+}: TopBarProps) => {
   const changeDisplayLayout = (_event: MouseEvent<HTMLElement>, value: DisplayLayout) => {
     if (!value) return;
     onChangeDisplayLayout(value);
@@ -53,7 +51,7 @@ export const TopBar: FC<TopBarProps> = ({
 
   const isLoading = !title;
 
-  const titleVariants = {
+  const titleVariants: Variants = {
     show: { y: 0, opacity: 1 },
     hide: { y: 28, opacity: 0 },
   };

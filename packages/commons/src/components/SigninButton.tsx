@@ -1,9 +1,9 @@
 import { Button, Tooltip, Typography } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-export const SigninButton: FC = () => {
+export const SigninButton = () => {
   const { cookieConsent } = useAppState().ui;
   const { contentHasChanged: isDirty } = useAppState().editor;
 

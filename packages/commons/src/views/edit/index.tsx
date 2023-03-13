@@ -3,22 +3,22 @@ import { schemas } from '@src/config/schemas';
 import { useAnalytics } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
-import React, { useEffect, useRef, type FC } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+import queryString from 'query-string';
+import React, { useEffect, useRef } from 'react';
 import { MainMenu, Meta, useMenu } from './topbar';
 import { useLeafWriter } from './useLeafWriter';
-import queryString from 'query-string';
 
-export const EditView: FC = () => {
+export const EditView = () => {
   const { userState, user } = useAppState().auth;
   const { contentHasChanged, libLoaded, readonly, resource } = useAppState().editor;
 
   const { getKeycloakAuthToken } = useActions().auth;
-  const { close, getGeonameUsername, loadLeafWriter, setReadonly  } = useActions().editor;
+  const { close, getGeonameUsername, loadLeafWriter, setReadonly } = useActions().editor;
   const { setPage } = useActions().ui;
 
   const navigate = useNavigate();
-  const location = useLocation()
+  const location = useLocation();
 
   const { analytics } = useAnalytics();
 
