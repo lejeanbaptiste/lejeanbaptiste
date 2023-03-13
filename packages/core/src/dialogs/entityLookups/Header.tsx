@@ -1,9 +1,9 @@
 import { Box, Typography, useTheme } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useAppState } from '../../overmind';
 import { useUI } from '../../hooks';
 
-const Header: FC = () => {
+const Header = () => {
   const theme = useTheme();
   const { typeLookup } = useAppState().lookups;
   const { getIcon } = useUI();

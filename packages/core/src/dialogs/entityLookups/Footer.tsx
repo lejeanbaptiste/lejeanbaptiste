@@ -1,9 +1,9 @@
 import { Button, DialogActions } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useActions, useAppState } from '../../overmind';
 import type { EntityLink } from './types';
 
-const Footer: FC = () => {
+const Footer = () => {
   const { type } = useAppState().ui.entityLookupDialogProps;
   const { closeEntityLookupsDialog } = useActions().ui;
   const { isUriValid, query, selected, manualInput } = useAppState().lookups;

@@ -1,7 +1,7 @@
 import { useTheme } from '@mui/material';
 // import * as monaco from 'monaco-editor';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import React, { useEffect, useRef, type FC } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 // * Intellisense for XML: https://mono.software/2017/04/11/custom-intellisense-with-monaco-editor/
 
@@ -17,7 +17,7 @@ interface EditorProps {
   updateContent: (value: string) => void;
 }
 
-const Editor: FC<EditorProps> = ({ content, updateContent }) => {
+const Editor = ({ content, updateContent }: EditorProps) => {
   const { palette } = useTheme();
   const divEl = useRef<HTMLDivElement>(null);
   let editor: monaco.editor.IStandaloneCodeEditor;

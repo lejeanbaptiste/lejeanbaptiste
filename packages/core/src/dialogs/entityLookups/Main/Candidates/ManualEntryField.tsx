@@ -9,7 +9,7 @@ import {
   InputLabel,
   Typography,
 } from '@mui/material';
-import React, { useEffect, type ChangeEvent, type FC } from 'react';
+import React, { useEffect, type ChangeEvent } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useActions, useAppState } from '../../../../overmind';
 
@@ -17,7 +17,7 @@ interface ManualEntryFieldProps {
   setAuthorityInView: (view: { id: string; inView: boolean }) => void;
 }
 
-const ManualEntryField: FC<ManualEntryFieldProps> = ({ setAuthorityInView }) => {
+const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) => {
   const { isUriValid, manualInput } = useAppState().lookups;
   const { setManualInput, setSelected } = useActions().lookups;
 

@@ -5,9 +5,9 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle
+  DialogTitle,
 } from '@mui/material';
-import React, { Suspense, useEffect, useState, type FC } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
 import { IDialog } from '../type';
@@ -18,13 +18,13 @@ export interface EditSourceDialogProps extends IDialog {
   type?: 'content' | 'header';
 }
 
-export const EditSourceDialog: FC<EditSourceDialogProps> = ({
+export const EditSourceDialog = ({
   content = '',
   id,
   onClose,
   open,
   type = 'content',
-}) => {
+}: EditSourceDialogProps) => {
   const { settings } = useAppState().editor;
   const { loadDocumentXML: updateXMLContent, updateXMLHeader } = useActions().document;
 
@@ -44,7 +44,7 @@ export const EditSourceDialog: FC<EditSourceDialogProps> = ({
 
   const handleChange = () => {
     if (currentContent === content) return onClose(id);
-    
+
     if (type === 'content') updateXMLContent(currentContent);
     if (type === 'header') updateXMLHeader(currentContent);
 

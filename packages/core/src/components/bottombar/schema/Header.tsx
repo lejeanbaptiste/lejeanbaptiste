@@ -1,13 +1,13 @@
 import AddIcon from '@mui/icons-material/Add';
 import { Box, IconButton, Typography } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
   onClickAdd: (action: 'add') => void;
 }
 
-export const Header: FC<HeaderProps> = ({ onClickAdd }) => {
+export const Header = ({ onClickAdd }: HeaderProps) => {
   const { t } = useTranslation(['leafwriter']);
 
   return (

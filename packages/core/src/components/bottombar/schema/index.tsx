@@ -1,11 +1,11 @@
 import { Box, Button, Grow, Tooltip } from '@mui/material';
-import React, { MouseEvent, useState, type FC } from 'react';
+import React, { MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../../overmind';
 import { Schema } from '../../../types';
 import { Menu } from './Menu';
 
-const Schema: FC = () => {
+const Schema = () => {
   const { schemaId, schemaName } = useAppState().document;
   const { t } = useTranslation(['leafwriter']);
 

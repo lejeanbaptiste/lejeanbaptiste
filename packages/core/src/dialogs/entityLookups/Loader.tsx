@@ -1,7 +1,7 @@
 import { Box, Skeleton, Stack, Typography } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 
-const Loader: FC = () => (
+const Loader = () => (
   <Box p={4}>
     <Stack direction="row" justifyContent="space-between">
       <Stack spacing={1} gap={1}>

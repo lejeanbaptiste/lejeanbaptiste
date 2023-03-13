@@ -1,11 +1,11 @@
 import { Box } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 
 interface BadgeProps {
   count?: number;
 }
 
-const Badge: FC<BadgeProps> = ({ count }) => {
+const Badge = ({ count }: BadgeProps) => {
   return (
     <Box
       sx={{
@@ -16,7 +16,6 @@ const Badge: FC<BadgeProps> = ({ count }) => {
         paddingLeft: 0.25,
         paddingRight: 0.25,
         borderRadius: 0.5,
-        // backgroundColor: ({ palette }) => alpha(palette.common.black, 0.05),
         lineHeight: '1.2rem',
       }}
     >

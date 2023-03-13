@@ -1,5 +1,5 @@
 import { Box, Link, Paper, Stack } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import pck from '../../../package.json';
 import { useAppState } from '../../overmind';
@@ -8,7 +8,7 @@ import EditorMode from './editorMode';
 import Schema from './schema';
 import { ValdidationErrors } from './ValdidationErrors';
 
-export const BottomBar: FC = () => {
+export const BottomBar = () => {
   const { isReadonly } = useAppState().editor;
   const { validationErrors } = useAppState().validator;
   const { t } = useTranslation();

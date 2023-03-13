@@ -2,6 +2,7 @@ import { Typography } from '@mui/material';
 import React, { FC } from 'react';
 import { Trans } from 'react-i18next';
 import { TextEmphasis } from '../../components';
+import { SimpleDialogMessageProps } from '../../dialogs';
 import i18next from '../../i18n';
 import { Schema } from '../../types';
 import Writer from '../Writer';
@@ -210,7 +211,7 @@ export const openEditorModeDialog = (writer: Writer) => {
   const dialogTitle = 'Editor Mode';
   if (!overmindActions.ui.shouldDisplayDialog(dialogTitle)) return;
 
-  let Message: FC;
+  let Message: FC<SimpleDialogMessageProps>;
 
   if (mode === writer.XML) {
     Message = () => (

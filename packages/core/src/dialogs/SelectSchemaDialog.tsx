@@ -12,7 +12,7 @@ import {
   Typography,
   type SelectChangeEvent,
 } from '@mui/material';
-import React, { useState, type FC } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
@@ -23,7 +23,7 @@ export interface SelectSchemaDialogProps extends IDialog {
   onSchemaSelect?: (schema: Schema) => void;
 }
 
-export const SelectSchemaDialog: FC<SelectSchemaDialogProps> = ({
+export const SelectSchemaDialog = ({
   id,
   maxWidth = 'xs',
   mappingIds = [],
@@ -31,7 +31,7 @@ export const SelectSchemaDialog: FC<SelectSchemaDialogProps> = ({
   onSchemaSelect,
   open,
   preventEscape = true,
-}) => {
+}: SelectSchemaDialogProps) => {
   const { closeDialog } = useActions().ui;
   const { t } = useTranslation(['leafwriter']);
 

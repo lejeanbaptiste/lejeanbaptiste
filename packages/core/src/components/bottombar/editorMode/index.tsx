@@ -1,10 +1,10 @@
 import { Box, Button, Tooltip } from '@mui/material';
-import React, { MouseEvent, useState, type FC } from 'react';
+import React, { MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../../overmind';
 import { Menu } from './Menu';
 
-const EditorMode: FC = () => {
+const EditorMode = () => {
   const { editorModeLabel } = useAppState().editor;
   const { t } = useTranslation(['leafwriter']);
 

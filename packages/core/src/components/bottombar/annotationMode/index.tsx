@@ -1,10 +1,10 @@
 import { Box, Button, Tooltip } from '@mui/material';
-import React, { useState, type FC, type MouseEvent } from 'react';
+import React, { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../../overmind';
 import { Menu } from './Menu';
 
-const AnnotationMode: FC = () => {
+const AnnotationMode = () => {
   const { annotationModeLabel } = useAppState().editor;
   const { t } = useTranslation(['leafwriter']);
 

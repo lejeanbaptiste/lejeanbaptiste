@@ -1,9 +1,9 @@
 import SearchIcon from '@mui/icons-material/Search';
 import { Box, IconButton, InputAdornment, OutlinedInput } from '@mui/material';
-import React, { type ChangeEvent, type FC, type KeyboardEvent, type MouseEvent } from 'react';
+import React, { type ChangeEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import { useActions, useAppState } from '../../overmind';
 
-const QueryField: FC = () => {
+const QueryField = () => {
   const { query } = useAppState().lookups;
   const { search, setQuery } = useActions().lookups;
 

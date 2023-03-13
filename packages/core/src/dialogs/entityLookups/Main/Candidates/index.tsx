@@ -1,5 +1,5 @@
 import { Box, ListSubheader } from '@mui/material';
-import React, { useEffect, type FC } from 'react';
+import React, { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import type { Authority, LookUpResult } from '../../types';
 import Candidate from './Candidate';
@@ -10,7 +10,7 @@ interface CandidateListProps {
   setAuthorityInView: (view: { id: string; inView: boolean }) => void;
 }
 
-const CandidateList: FC<CandidateListProps> = ({ authority, candidates, setAuthorityInView }) => {
+const CandidateList = ({ authority, candidates, setAuthorityInView }: CandidateListProps) => {
   const { ref, inView, entry } = useInView({ threshold: 0 });
 
   useEffect(() => {

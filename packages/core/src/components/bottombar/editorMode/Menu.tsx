@@ -1,6 +1,6 @@
 import { Box, Button, Menu as MuiMenu, MenuItem, Typography } from '@mui/material';
 import { SnackbarKey } from 'notistack';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SeverityType } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';
@@ -11,7 +11,7 @@ interface MenuProps {
   handleClose: () => void;
 }
 
-export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
+export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { editorMode, editorModes } = useAppState().editor;
   const { closeNotificationSnackbar, openDialog, notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation(['leafwriter']);
