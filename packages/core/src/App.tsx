@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BottomBar, ContextMenu, EditorToolbar } from './components';
 import { createConfig } from './config';
@@ -17,7 +17,7 @@ declare global {
 
 const CONTAINER = 'lw-layout-container';
 
-const App: FC<LeafWriterOptions> = ({ document, settings, user }) => {
+const App = ({ document, settings, user }: LeafWriterOptions) => {
   const actions = useActions();
   const state = useAppState();
   const [writer, setWriter] = useState<Writer | null>(null);

@@ -1,6 +1,6 @@
 import { Box, Button, Menu as MuiMenu, MenuItem, Typography } from '@mui/material';
 import { SnackbarKey } from 'notistack';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
 import useEditorReaction from '../hooks/useEditorReaction';
@@ -10,7 +10,7 @@ interface MenuProps {
   handleClose: () => void;
 }
 
-export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
+export const Menu = ({ anchorEl, handleClose }) => {
   const { annotationMode, annotationModes } = useAppState().editor;
   const { closeNotificationSnackbar, notifyViaSnackbar } = useActions().ui;
   const { changeAnnotationMode } = useEditorReaction();

@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useActions } from '../overmind';
 import { type SimpleDialogProps } from './type';
 
-export const SimpleDialog: FC<SimpleDialogProps> = ({
+export const SimpleDialog = ({
   actions = [{ action: 'close', label: 'close' }],
   id,
   maxWidth = 'sm',
@@ -18,7 +18,7 @@ export const SimpleDialog: FC<SimpleDialogProps> = ({
   severity,
   title,
   children,
-}) => {
+}: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
   const { t } = useTranslation(['leafwriter']);
 

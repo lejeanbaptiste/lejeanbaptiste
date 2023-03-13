@@ -13,7 +13,7 @@ import {
 import { Stack } from '@mui/system';
 import { Formik } from 'formik';
 import { useModal } from 'mui-modal-provider';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 import { TextEmphasis } from '../components';
@@ -32,7 +32,7 @@ const defaultValue: SchemaForm = { name: '', mapping: 'tei', rng: '', css: '' };
 
 const regexHttps = /^(https)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\/\S*)?$/;
 
-export const EditSchemaDialog: FC<EditSchemaDialogProps> = ({
+export const EditSchemaDialog = ({
   actionType = 'add',
   docSchema,
   id,
@@ -43,7 +43,7 @@ export const EditSchemaDialog: FC<EditSchemaDialogProps> = ({
   onDelete,
   open,
   schemaId,
-}) => {
+}: EditSchemaDialogProps) => {
   const { schemaId: documentSchemaId } = useAppState().document;
   const { schemas } = useAppState().editor;
 

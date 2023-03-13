@@ -1,5 +1,5 @@
-import { Typography, useTheme, TypographyProps } from '@mui/material';
-import React, { type FC } from 'react';
+import { Typography, TypographyProps, useTheme } from '@mui/material';
+import React from 'react';
 
 interface TextEmphasis extends TypographyProps {
   color?: 'primary' | 'secondary' | 'info' | 'warning' | 'error' | 'inherit';
@@ -7,13 +7,13 @@ interface TextEmphasis extends TypographyProps {
   variation?: 'filled' | 'outlined' | 'text';
 }
 
-export const TextEmphasis: FC<TextEmphasis> = ({
+export const TextEmphasis = ({
   color = 'inherit',
   children,
   disablePadding = false,
   variation = 'text',
   ...props
-}) => {
+}: TextEmphasis) => {
   const { palette } = useTheme();
 
   const accentColor =

@@ -1,5 +1,5 @@
 import { Link, Popover, Typography } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useAppState } from '../../overmind';
 import { IDialog } from '../type';
 
@@ -14,7 +14,7 @@ export interface PopupProps extends IDialog {
   };
 }
 
-export const Popup: FC<PopupProps> = ({ content, id, isLink, onClose, open, position }) => {
+export const Popup = ({ content, id, isLink, onClose, open, position }: PopupProps) => {
   const { settings } = useAppState().editor;
   // const { popupProps } = useAppState().ui;
 
