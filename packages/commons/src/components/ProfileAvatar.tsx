@@ -78,7 +78,7 @@ export const ProfileAvatar = ({ clickable = true, size = 32 }: ProfileAvatarProp
                   height: size / 2,
                   borderRadius: '50%',
                   border: `1px solid ${palette.background.paper}`,
-                  backgroundColor: palette.background.paper,
+                  bgcolor: palette.background.paper,
                   cursor: clickable ? 'pointer' : 'default',
                 }}
               />

@@ -32,7 +32,7 @@ const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
     borderWidth: theme.palette.mode === 'dark' ? 1 : 0,
     borderStyle: 'solid',
     borderColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300],
-    backgroundColor: theme.palette.background.paper,
+    bgcolor: theme.palette.background.paper,
     color: theme.palette.text.secondary,
     boxShadow: theme.palette.mode === 'dark' ? 0 : `0 0 2px ${theme.palette.grey[400]}`,
   },

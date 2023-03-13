@@ -20,9 +20,7 @@ export const CoverImage = ({ hover, image, width = 250 }: SampleCardProps) => {
     <Stack
       width={width}
       alignItems="center"
-      sx={{
-        backgroundColor: palette.mode === 'dark' ? palette.grey[800] : palette.grey[100],
-      }}
+      sx={{ bgcolor: palette.mode === 'dark' ? palette.grey[800] : palette.grey[100] }}
       component={motion.div}
       overflow="hidden"
       initial={{ height: 0 }}
