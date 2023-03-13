@@ -5,7 +5,7 @@ import 'jquery-ui/ui/widgets/selectmenu';
 import 'jquery-ui/ui/widgets/tooltip';
 import Entity from '../../../../js/entities/Entity';
 import { log } from '../../../../utilities';
-import { getSvg } from '../../../../utilities/icons';
+import { getSvg } from '../../../../icons';
 import type { SortingTypes } from '../../../entities/entitiesManager';
 import { RESERVED_ATTRIBUTES } from '../../../schema/mapper';
 import Writer from '../../../Writer';

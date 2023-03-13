@@ -1,12 +1,11 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import React from 'react';
+import { getIcon } from '../../icons';
 import { useAppState } from '../../overmind';
-import { useUI } from '../../hooks';
 
 const Header = () => {
   const theme = useTheme();
   const { typeLookup } = useAppState().lookups;
-  const { getIcon } = useUI();
 
   const getEntityIcon = () => {
     if (typeLookup && Object.keys(theme.entity).includes(typeLookup)) {

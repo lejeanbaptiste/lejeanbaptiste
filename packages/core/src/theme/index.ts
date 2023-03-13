@@ -1,10 +1,11 @@
 import { createTheme } from '@mui/material';
 import { SimplePaletteColorOptions } from '@mui/material/styles';
 import chroma from 'chroma-js';
+import { IconLeafWriter } from '../icons';
 
 interface Entity {
   color: SimplePaletteColorOptions;
-  icon: string;
+  icon: IconLeafWriter;
 }
 
 interface Entities {
