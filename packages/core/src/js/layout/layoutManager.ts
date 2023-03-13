@@ -9,7 +9,6 @@ import { log } from './../../utilities';
 import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
 import Selection from './panels/selection';
-import StructureTree from './panels/structureTree';
 import Validation from './panels/validation';
 
 interface InitConfigProps {
@@ -24,7 +23,7 @@ type LayoutLocation = 'east' | 'west' | 'north' | 'south';
 interface ModuleConfig {
   id: ISettingsModuleName;
   config?: any;
-  title?: string | string[];
+  title?: string;
 }
 
 // track modules which cannot appear in readonly mode
@@ -419,14 +418,14 @@ class LayoutManager {
         <ul>
           ${panelConfig
             .filter((module) => this.isModuleAllowed(module))
-            .map(({ id, title }) => {
-              if (Array.isArray(title)) title = this.writer.isReadOnly ? title[1] : title[0];
-              return `
+            .map(
+              ({ id, title }) =>
+                `
                 <li id=${id}>
                   <a href="#${this.editorId}-${id}">${title}</a>
                 </li>
-              `;
-            })
+              `
+            )
             .join('\n')}
         </ul>
         <div class="ui-layout-content">
@@ -443,7 +442,6 @@ class LayoutManager {
     config.writer = this.writer;
     config.parentId = `${this.editorId}-${module.id}`;
 
-    if (module.id === 'structure') return new StructureTree(config);
     if (module.id === 'entities') return new EntitiesList(config);
     if (module.id === 'validation') return new Validation(config);
     if (module.id === 'selection') return new Selection(config);

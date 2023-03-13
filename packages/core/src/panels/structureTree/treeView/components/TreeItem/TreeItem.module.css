@@ -1,0 +1,38 @@
+.Wrapper {
+  &.clone {
+    pointer-events: none;
+    padding-left: 8px;
+
+    .TreeItem {
+      padding-block: 10px;
+      box-shadow: 0px 15px 15px 0 rgba(34, 33, 81, 0.2);
+    }
+  }
+
+  &.ghost {
+    &.indicator {
+      opacity: 1;
+      position: relative;
+      z-index: 1;
+
+      .TreeItem {
+        height: 20px;
+        background-color: var(--indicator-bgcolor);
+        > * {
+          /* Items are hidden using height and opacity to retain focus */
+          opacity: 0;
+          height: 0;
+        }
+      }
+    }
+
+    &:not(.indicator) {
+      opacity: 0.5;
+    }
+
+    .TreeItem > * {
+      box-shadow: none;
+      background-color: transparent;
+    }
+  }
+}

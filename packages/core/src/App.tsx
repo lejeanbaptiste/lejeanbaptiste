@@ -7,6 +7,9 @@ import { EntityLookupDialog } from './dialogs';
 import { useDialog, useNotifier } from './hooks';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
+import {
+  StructureTree,
+} from './panels';
 import type { LeafWriterOptions } from './types';
 
 declare global {
@@ -25,6 +28,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   useNotifier();
 
   const [editorToobarContainer, setEditorToobarContainer] = useState(null);
+  const [structureTreePanelContainer, setStructureTreePanelContainer] = useState(null);
+
 
   useEffect(() => {
     if (document.url === undefined || state.document.url !== document.url) {
@@ -84,7 +89,12 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       setWriter(window.writer);
 
       const toolbarContainer = window.document.querySelector('#editor-toolbar');
+      const _structureTreePanelContainer = window.document.querySelector(
+        `#${_writer.editorId}-structure`
+      );
+
       setEditorToobarContainer(toolbarContainer);
+      setStructureTreePanelContainer(_structureTreePanelContainer);
       setTimeout(() => _writer.layoutManager.resizeEditor(), 50);
     });
 
@@ -99,7 +109,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
         {writer && <ContextMenu writer={writer} />}
         <EntityLookupDialog />
         <div>
-          {editorToobarContainer !== null && createPortal(<EditorToolbar />, editorToobarContainer)}
+          {editorToobarContainer && createPortal(<EditorToolbar />, editorToobarContainer)}
         </div>
       </Box>
       <BottomBar />

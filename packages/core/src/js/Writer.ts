@@ -14,7 +14,6 @@ import EventManager from './eventManager';
 import LayoutManager from './layout/layoutManager';
 import EntitiesList from './layout/panels/entitiesList';
 import Selection from './layout/panels/selection';
-import StructureTree from './layout/panels/structureTree';
 import Validation from './layout/panels/validation';
 import SchemaManager from './schema/schemaManager';
 import Tagger from './tagger';
@@ -87,7 +86,6 @@ class Writer extends EventManager {
   entitiesList?: EntitiesList;
   selection?: Selection;
   validation?: Validation;
-  tree?: StructureTree;
 
   constructor(config: LeafWriterOptionsSettings) {
     super();

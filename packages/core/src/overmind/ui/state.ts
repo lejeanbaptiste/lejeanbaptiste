@@ -17,6 +17,12 @@ type State = {
   language: Language;
   popupProps: PopupProps;
   settingsDialogOpen: boolean;
+  structurePanel: {
+    allowDragAndDrop: boolean;
+    allowMultiselection: boolean;
+    showTextNodes: boolean;
+    showTextNodesContent: boolean;
+  };
   themeAppearance: 'light' | 'auto' | 'dark';
   title: string;
 };
@@ -32,6 +38,12 @@ export const state: State = {
   notifications: [],
   popupProps: { open: false },
   settingsDialogOpen: false,
+  structurePanel: {
+    allowDragAndDrop: false,
+    allowMultiselection: true,
+    showTextNodes: false,
+    showTextNodesContent: false,
+  },
   themeAppearance: 'auto',
   title: 'LEAF-Writer',
 };

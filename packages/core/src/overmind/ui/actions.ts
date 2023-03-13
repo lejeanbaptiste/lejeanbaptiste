@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
-import type { PopupProps } from '../../dialogs';
 import type { DialogBarProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
 import { ContextMenuState, NotificationProps, PaletteMode } from '../../types';
@@ -161,6 +160,38 @@ export const updateReadonly = ({ state, actions }: Context) => {
   window.writer.editor.mode.set(isReadonly ? 'readonly' : 'design');
   window.writer.layoutManager.toggleReadonly(isReadonly);
   window.writer.entitiesList.toggleReadonly(isReadonly);
-  window.writer.tree.toggleReadonly(isReadonly);
   window.writer.layoutManager.resizeEditor();
+};
+
+export const allowTagDragAndDrop = ({ state }: Context, value: boolean) => {
+  state.ui.structurePanel = {
+    ...state.ui.structurePanel,
+    allowDragAndDrop: value,
+  };
+};
+
+export const allowStructurePanelMultiselection = ({ state }: Context, value: boolean) => {
+  state.ui.structurePanel = {
+    ...state.ui.structurePanel,
+    allowMultiselection: value,
+  };
+};
+
+export const showTextNodes = ({ state, actions }: Context, value?: boolean) => {
+  if (!value) value = !state.ui.structurePanel.showTextNodes;
+
+  state.ui.structurePanel = {
+    ...state.ui.structurePanel,
+    showTextNodes: value,
+  };
+
+  actions.ui.allowTagDragAndDrop(value);
+  if (value === false) actions.ui.showTextNodesContent(false);
+};
+
+export const showTextNodesContent = ({ state }: Context, value: boolean) => {
+  state.ui.structurePanel = {
+    ...state.ui.structurePanel,
+    showTextNodesContent: value,
+  };
 };

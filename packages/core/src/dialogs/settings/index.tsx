@@ -48,6 +48,9 @@ export const SettingsDialog = ({ id, onClose, open }: IDialog) => {
                 <Section id="authorities" title={t('authorities')}>
                   <Authorities />
                 </Section>
+                <Section id="structure-panel" title={t('structure panel')}>
+                  <StructurePanel />
+                </Section>
                 <Section id="reset" title={t('reset')}>
                   <Reset />
                 </Section>

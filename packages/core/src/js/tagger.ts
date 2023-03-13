@@ -1,6 +1,7 @@
 // //@ts-nocheck
 import $ from 'jquery';
 import type { Bookmark } from 'tinymce';
+import { isElement } from '../utilities';
 import { log } from './../utilities';
 import Entity from './entities/Entity';
 import { RESERVED_ATTRIBUTES } from './schema/mapper';
@@ -406,6 +407,7 @@ class Tagger {
     }
   }
 
+  //! deprecated: This funcions is not called from anywhere
   /**
    * A general removal function for entities and structure tags
    * @param {String} [id] The id of the tag to remove
@@ -509,24 +511,61 @@ class Tagger {
   }
 
   /**
-   * Merge the contents of multiple tags into the first tag.
-   * @param {Array} tags An array of tags (Element or jQuery) to merge
+   * It takes an array of tag ids, finds the first tag in the array, and merges all the tags in the
+   * array into the first tag
+   * @param {string[]} tagIds - The array of tag ids to merge.
    */
-  mergeTags(tags: JQuery<HTMLElement>) {
-    let newHtml = '';
-    const nodesToRemove: string[] = [];
+  mergeTags(tagIds: string[]) {
+    const anchor = this.writer?.editor?.getBody().querySelector(`#${tagIds[0]}`);
+    const parent = anchor?.parentNode;
 
-    for (let i = 0; i < tags.length; i++) {
-      const $tag = $(tags[i]);
-      newHtml += $tag.html();
-      if (i > 0) nodesToRemove.push(`#${$tag.attr('id')}`);
+    if (!anchor || !parent?.hasChildNodes) return;
+
+    const anchorIndex = this.getNodeIndexByid(parent, anchor.id);
+
+    let tagsIdsToAdd = [...tagIds];
+    const nodeIndexesToRemove: number[] = [];
+
+    let newContent = '';
+
+    for (let index: number = 0; index < parent.childNodes.length; index++) {
+      if (index < anchorIndex) continue;
+
+      const child = parent.childNodes.item(index);
+
+      if (isElement(child)) {
+        if (tagsIdsToAdd.includes(child.id)) {
+          newContent += child.innerHTML;
+          tagsIdsToAdd = tagsIdsToAdd.filter((tagId) => tagId !== (child as Element).id);
+        }
+      } else {
+        newContent += child.textContent;
+      }
+
+      if (index !== anchorIndex) nodeIndexesToRemove.push(index);
+      if (tagsIdsToAdd.length === 0) break;
     }
 
-    $(tags[0]).html(newHtml);
-    $(nodesToRemove.join(','), this.writer.editor?.getBody()).remove();
+    //NEW MERGED CONTENT
+    anchor.innerHTML = newContent;
+
+    //REMOVED MERGED TAGS
+    nodeIndexesToRemove.reverse().forEach((index) => parent.childNodes.item(index).remove());
 
     this.writer.editor?.undoManager.add();
     this.writer.event('contentChanged').publish();
+  }
+
+  getNodeIndexByid(node: Node, id: string) {
+    let index: number | null = null;
+    for (let i = 0; i < node.childNodes.length; i++) {
+      let child = node.childNodes[i];
+      if (isElement(child) && child.id === id) {
+        index = i;
+        break;
+      }
+    }
+    return index;
   }
 
   /**

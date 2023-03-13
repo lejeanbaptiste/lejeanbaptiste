@@ -54,12 +54,6 @@ class EventManager {
     this.event('tinymceInitialized');
 
     /**
-     * The StructureTree has been initialized
-     * @event Writer#structureTreeInitialized
-     * @param {Object} structureTree The StructureTree
-     */
-    this.event('structureTreeInitialized');
-    /**
      * The EntitiesList has been initialized
      * @event Writer#entitiesListInitialized
      * @param {Object} entitiesList The EntitiesList
