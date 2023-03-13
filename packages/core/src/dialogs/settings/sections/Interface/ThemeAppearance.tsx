@@ -2,13 +2,12 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
-import { Box, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import React, { type FC, type MouseEvent } from 'react';
+import { Box, ListItem, Stack, ToggleButton, Typography } from '@mui/material';
+import React, { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyledToolTip } from '../../components';
-import { useActions, useAppState } from '../../overmind';
-import type { PaletteMode } from '../../types';
+import { StyledToolTip, ToggleButtonGroup } from '../../../../components';
+import { useActions, useAppState } from '../../../../overmind';
+import type { PaletteMode } from '../../../../types';
 
 type Option = {
   name: PaletteMode;
@@ -21,21 +20,7 @@ const options: Option[] = [
   { name: 'dark', Icon: DarkModeIcon },
 ];
 
-const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
-  '& .MuiToggleButtonGroup-grouped': {
-    margin: theme.spacing(0.5),
-    border: 0,
-    '&.Mui-disabled': { border: 0 },
-    '&:not(:first-of-type)': {
-      borderRadius: theme.shape.borderRadius,
-    },
-    '&:first-of-type': {
-      borderRadius: theme.shape.borderRadius,
-    },
-  },
-}));
-
-const ThemeAppearance: FC = () => {
+export const ThemeAppearance = () => {
   const { t } = useTranslation(['leafwriter']);
 
   const { setThemeAppearance } = useActions().ui;
@@ -47,14 +32,14 @@ const ThemeAppearance: FC = () => {
   };
 
   return (
-    <Stack direction="row" alignItems="center">
+    <ListItem dense disableGutters>
       <SettingsBrightnessIcon sx={{ mx: 1, height: 18, width: 18 }} />
-      <Typography sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
+      <Typography sx={{ textTransform: 'capitalize' }} variant="body2">
         {t('appearance')}
       </Typography>
       <Box flexGrow={1} />
       <Stack direction="row">
-        <StyledToggleButtonGroup
+        <ToggleButtonGroup
           aria-label="appearance"
           exclusive
           size="small"
@@ -64,8 +49,8 @@ const ThemeAppearance: FC = () => {
           {options.map(({ name, Icon }) => (
             <ToggleButton
               key={name}
-              color="primary"
               aria-label={name}
+              color="primary"
               size="small"
               value={t(`ui:${name}`)}
             >
@@ -74,10 +59,8 @@ const ThemeAppearance: FC = () => {
               </StyledToolTip>
             </ToggleButton>
           ))}
-        </StyledToggleButtonGroup>
+        </ToggleButtonGroup>
       </Stack>
-    </Stack>
+    </ListItem>
   );
 };
-
-export default ThemeAppearance;

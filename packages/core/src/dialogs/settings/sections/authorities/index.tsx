@@ -4,15 +4,19 @@ import { restrictToFirstScrollableAncestor, restrictToVerticalAxis } from '@dnd-
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import FilterTiltShiftIcon from '@mui/icons-material/FilterTiltShift';
 import { Stack, Typography } from '@mui/material';
-import React, { useEffect, useState, type FC } from 'react';
-import { useActions, useAppState } from '../../../overmind';
-import { AuthorityService } from '../../entityLookups';
-import AuthoritySource from './AuthoritySource';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '../../../../overmind';
+import { AuthorityService } from '../../../entityLookups';
+import { Authority } from './Authority';
 
-const AutoritiesPanel: FC = () => {
+export const Authorities = () => {
+  const { t } = useTranslation();
   const { authorities } = useAppState().editor.lookups;
   const { reorderLookupPriority } = useActions().editor;
+
   const sensors = useSensors(useSensor(PointerSensor));
+
   const [items, setItems] = useState<AuthorityService[]>([]);
 
   useEffect(() => {
@@ -37,32 +41,31 @@ const AutoritiesPanel: FC = () => {
   };
 
   return (
-    <Stack width="100%" py={1}>
+    <Stack width="100%" py={1} spacing={2}>
       <Stack direction="row">
-        <FilterTiltShiftIcon sx={{ mx: 1, height: 18, width: 18 }} />
-        <Typography>Entities Lookup Sources</Typography>
+        <FilterTiltShiftIcon sx={{ mx: 1, height: 18, width: 18, mt: 0.25 }} />
+        <Stack>
+          <Typography variant="body2">{t('Entities Lookup Sources')}</Typography>
+          <Typography color="text.secondary" variant="caption">
+            {t('Drag authorities to reorder priority')}
+          </Typography>
+        </Stack>
       </Stack>
-      <Typography ml={4.5} variant="caption">
-        Drag to reorder the priority
-      </Typography>
+
       <Stack mt={1} spacing={1}>
-        {items && (
-          <DndContext
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            modifiers={[restrictToVerticalAxis, restrictToFirstScrollableAncestor]}
-            sensors={sensors}
-          >
-            <SortableContext items={items} strategy={verticalListSortingStrategy}>
-              {items.map((authority) => (
-                <AuthoritySource key={authority.id} authorityService={authority} />
-              ))}
-            </SortableContext>
-          </DndContext>
-        )}
+        <DndContext
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis, restrictToFirstScrollableAncestor]}
+          sensors={sensors}
+        >
+          <SortableContext items={items} strategy={verticalListSortingStrategy}>
+            {items.map((authority) => (
+              <Authority key={authority.id} authorityService={authority} />
+            ))}
+          </SortableContext>
+        </DndContext>
       </Stack>
     </Stack>
   );
 };
-
-export default AutoritiesPanel;

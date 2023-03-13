@@ -1,28 +1,12 @@
 import TranslateIcon from '@mui/icons-material/Translate';
-import { Box, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import React, { type FC, type MouseEvent } from 'react';
+import { Box, ListItem, Stack, ToggleButton, Typography } from '@mui/material';
+import React, { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useActions, useAppState } from '../../overmind';
-import { supportedLanguages } from '../../utilities';
+import { ToggleButtonGroup } from '../../../../components';
+import { useActions, useAppState } from '../../../../overmind';
+import { supportedLanguages } from '../../../../utilities';
 
-const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
-  '& .MuiToggleButtonGroup-grouped': {
-    margin: theme.spacing(0.5),
-    border: 0,
-    '&.Mui-disabled': {
-      border: 0,
-    },
-    '&:not(:first-of-type)': {
-      borderRadius: theme.shape.borderRadius,
-    },
-    '&:first-of-type': {
-      borderRadius: theme.shape.borderRadius,
-    },
-  },
-}));
-
-const Language: FC = () => {
+export const Language = () => {
   const { t, i18n } = useTranslation(['leafwriter']);
 
   const { language } = useAppState().ui;
@@ -35,14 +19,14 @@ const Language: FC = () => {
   };
 
   return (
-    <Stack direction="row" alignItems="center">
+    <ListItem dense disableGutters>
       <TranslateIcon sx={{ mx: 1, height: 18, width: 18 }} />
-      <Typography sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
+      <Typography sx={{ textTransform: 'capitalize' }} variant="body2">
         {t('language')}
       </Typography>
       <Box flexGrow={1} />
       <Stack direction="row">
-        <StyledToggleButtonGroup
+        <ToggleButtonGroup
           aria-label="language"
           exclusive
           onChange={changeLanguage}
@@ -60,10 +44,8 @@ const Language: FC = () => {
               {shortName}
             </ToggleButton>
           ))}
-        </StyledToggleButtonGroup>
+        </ToggleButtonGroup>
       </Stack>
-    </Stack>
+    </ListItem>
   );
 };
-
-export default Language;
