@@ -248,6 +248,7 @@ export const orlando: SchemaMappingProps = {
     'CHRONSTRUCT',
   ],
   header: 'ORLANDOHEADER',
+  headings: ['HEADING'],
   id: 'xml:id',
   responsibility: 'RESP',
   rdfParentSelector: '/*/ORLANDOHEADER/FILEDESC/following-sibling::XENODATA',

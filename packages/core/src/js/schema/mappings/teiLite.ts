@@ -382,6 +382,7 @@ export const teiLite: SchemaMappingProps = {
     'docTitle',
   ],
   header: 'teiHeader',
+  headings: ['head'],
   id: 'xml:id',
   namespace: 'http://www.tei-c.org/ns/1.0',
   responsibility: 'resp',
