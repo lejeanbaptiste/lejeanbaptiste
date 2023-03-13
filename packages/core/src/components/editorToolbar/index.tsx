@@ -1,4 +1,5 @@
 import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
+import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { EntityTypes } from '../../js/schema/types';
@@ -237,13 +238,34 @@ export const EditorToolbar = () => {
         width: '100%',
         bgcolor: ({ palette }) => (palette.mode === 'dark' ? palette.background.paper : '#f5f5f5'),
       }}
+      component={motion.div}
+      layout="size"
     >
-      <Stack direction="row" flexWrap="wrap" gap={0.25} px={0.5} py={0.25}>
-        {items
-          .filter((item) => !item.hide)
-          .map((item) => (
-            <ItemComponent key={item.title ?? uuidv4()} {...item} />
-          ))}
+      <Stack
+        direction="row"
+        flexWrap="wrap"
+        gap={0.25}
+        px={0.5}
+        py={0.25}
+        component={motion.div}
+        layout
+      >
+        <AnimatePresence mode="popLayout">
+          {items
+            .filter((item) => !item.hide)
+            .map((item) => (
+              <Box
+                layout
+                key={item.title ?? uuidv4()}
+                component={motion.div}
+                initial={{ scale: 0, opacity: 0 }}
+                exit={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+              >
+                <ItemComponent key={item.title ?? uuidv4()} {...item} />
+              </Box>
+            ))}
+        </AnimatePresence>
       </Stack>
     </Paper>
   );
