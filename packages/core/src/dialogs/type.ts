@@ -29,7 +29,7 @@ export type DialogType =
   | 'simple'
   | 'settings';
 
-interface SimpleDialogMessageProps {
+export interface SimpleDialogMessageProps {
   data?: { [key: string]: any };
   onChangeData?: (data: { [key: string]: any }) => void;
 }
