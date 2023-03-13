@@ -1,5 +1,96 @@
 # CHANGELOG
 
+## 2.6.0
+
+
+## New Features
+
+### New Markup Panel
+
+Redesign and reimplement the Structure Tree [04ae91440652f56556d62171123346ca7d4fe549]
+Implemented React. Dark theme included. Uses `Jotai` for internal context state.
+Features:
+
+- Expand / collapse the tree
+- Show / hide text nodes.
+- Select the whole tag or content only.
+- Context Menu
+- Multi-selection
+  - Constraints: adjacent tags from the same parent container
+  - Allows for merging tags with the same tag name.
+  - Allows adding a tag around selected tags.
+- Drag and drop (experimental)
+  - Reorder and reorganize the document by moving tags around.
+- Hidden when LEAF-Writer is in read-only mode.
+
+### New Table of Content panel
+
+A tree-like panel showing only the document's heading [99274ef1aa8ac409626817a2fe3d1a2248dbc322]
+Derived from the new Structure Tree. It is the default panel in the left sidebar now.
+
+### redesign Settings Dialog
+
+Due to the increase of options in this dialog, a menu was introduced. The idea is to accommodate more options in the future and avoid occlusion. [e79ff7f2ff3b448299221a1d0201cbdd7fc9d72b]
+
+### Headings in Schema Mapptins
+
+Add the `headings` property to schema mappings as a way to identify headings tags [dc3d551fcf79f4b50a847afbc992fc3591293007]
+Replace a hardcoded identifier for the headings when creating a table of contents,
+
+### Patch Changes
+
+- Add a rudimentary test to check if LW commonJS lib is loading [6ee0f58dd1e0c405edc95c4e171f2091ec8e52f6]
+- Add / remove types [1bad6fe21528c84500cd7b869a3b304410d0705a] [fb6a89281b921060b6532d39f1fd84cc46137af0] [e3336623365ea9f0921b58420d0b4a98e7293102]
+- Simplify css properties in mui components [a02ecf799352fc8fc5986e17ffa24df0e39224e0] [98d7592e7b269f0976b3c10c297a4f41fb28630b]
+- Get component (Stack from @mui/material) from the right lib [88ce110dab424e27062b32c107546aecd3c20462]
+- Dialogs: export type SimpleDialogMessageProps [9f2c36fded24ea260eecd5325bb63aa03868f54b]
+- Types: Add a check to narrow NODE by type (ELEMENT | NODE) [b52127935867e11a7dac57c2049291d14f630887]
+- Formatting and removing commented code / styles [72386c49d3be411fb8682dc55c704b5e990edfd7] [05110e03112904a39eab808b7eee6d2fba4ecd10]
+- Isolate and coalesce ToggleButtonGroup component [f880a18691ec71f5b9757f2c09137a464a55de7b]
+- Ribbon: add transition [d09fcdf449ec62b41bc4f2f7b19b30f11a743e28]
+- Coalesce icons into a centralized place with a single getIcon API. The list of icons is a Record now, which means that it is typed and easy to select an icon when using getIcon [9879d7f48029239d0b5483dd1fadc149ddb623f4]
+- Entities: getTitleFromEntity: trimEnd optional. Remove added ellipsis [573556112ad9c3bb5a6658fc36955c529e01890a]
+- Tagger: remove global ignore types. add types and keep ignore types for legacy code [201f0a579edb4a8d2935a475b3a8e5a35dca834f]
+- Utilities: add smooth scroll in select elements out of view in the editor [9b093ece107c568d4f3e5de74e26eb50a3c6a136]
+- UI: Rename function `showEntities` -> `setShowEntities` [a9f8158d98a92de30b685a5cfe1905ea3fc0fd87]
+- ContextMenu: reorganize files, replace animation, add types, use new icon API. Drop `react-transition-group` in favour of `framer-motion`, which is used elsewhere in the project [659c1f22c7ff825ec2b818129d85e808755e06cb]
+- Add localization [92b94ebfb3b8647f7dea7d0bfaf5ab0daf010765]
+- WIP: Redesign layout panels. Not available yet. [ddc9d52767a6b06b501026b9358b78a0795d882c]
+- Update dependencies [1da6aeb2e1e78a460356b4ffaa5acfa9d824d19e]:
+  - core:
+    - remove unused: @mui/lab
+    - upgrade: framer-motion@10.2.4
+    - update:
+      - luxon@3.3.0
+      - monaco-editor@0.36.1
+      - react-i18next@12.2.0
+    - bump up:
+      - @dnd-kit/core@6.0.8
+      - @emotion/react@11.10.6
+      - @emotion/styled@11.10.6
+      - @mui/icons-material@5.11.11
+      - @mui/material@5.11.12
+      - axios@1.3.4
+      - dexie-react-hooks@1.1.3
+      - i18next@22.4.11
+      - jquery@3.6.4
+      - rdflib@2.2.30
+      - react-intersection-observer@9.4.3
+      - yup@1.0.2
+  - dev
+    - update:
+      - @types/chroma-js@2.4.0
+      - @types/js-cookie@3.0.3
+      - @types/node@18.15.0
+      - @typescript-eslint/eslint-plugin@5.54.1
+      - @typescript-eslint/parser@5.54.1
+      - eslint-config-prettier@8.7.0
+      - webpack@5.76.1
+    - bump up:
+      - @types/js-cookie@3.0.3
+      - @types/uuid@9.0.1
+      - mini-css-extract-plugin@2.7.3
+
 ## 2.5.0
 
 ## Features
@@ -40,7 +131,6 @@ leafWriter.init({
   user: ...,
 });
 ```
-
 
 ## Minor Pathces
 
