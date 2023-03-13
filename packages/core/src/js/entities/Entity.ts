@@ -31,10 +31,15 @@ export interface EntityConfig {
   uri?: string;
 }
 
-const getTitleFromContent = (content: string) => {
+/**
+ * @param content
+ * @returns {String}
+ */
+const getTitleFromContent = (content: string, trim: number = 0) => {
   content = content.trim().replace(/\s+/g, ' ');
-  if (content.length <= 34) return content;
-  const title = content.substring(0, 34) + '&#8230;';
+  if (trim === 0) return content;
+  if (content.length <= trim) return content;
+  const title = content.slice(0, trim) + '...';
   return title;
 };
 
@@ -237,7 +242,7 @@ class Entity {
 
   setContent(content: string) {
     this.content = content;
-    this.title = getTitleFromContent(this.content);
+    this.title = getTitleFromContent(this.content, 34);
   }
 
   getTitle() {
