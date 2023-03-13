@@ -1,4 +1,4 @@
-//@ts-nocheck
+// //@ts-nocheck
 import $ from 'jquery';
 import type { Bookmark } from 'tinymce';
 import { log } from './../utilities';
@@ -158,6 +158,7 @@ class Tagger {
   }) {
     if (!this.writer.editor) return;
 
+    //@ts-ignore
     const tagId = this.writer.editor?.currentBookmark?.tagId; // set by structureTree
     if (!tagId) {
       this.writer.editor.selection.moveToBookmark(this.writer.editor.currentBookmark);
@@ -189,6 +190,7 @@ class Tagger {
       let parentTag;
 
       if (!parentTagId) {
+        //@ts-ignore
         const selectionParent = this.writer.editor.currentBookmark.rng.commonAncestorContainer;
         parentTag =
           selectionParent.nodeType === Node.TEXT_NODE
@@ -211,6 +213,7 @@ class Tagger {
             const bookmark = this.writer.editor?.currentBookmark;
             this.addStructureTag({ action, attributes, bookmark, tagName });
           }
+          //@ts-ignore
           delete this.writer.editor.currentBookmark.tagId;
         },
         tagFullname,
@@ -351,6 +354,7 @@ class Tagger {
     if (result === this.VALID) {
       const childName = tag ? tag : this.writer.schemaManager.mapper.getParentTag(type);
 
+      //@ts-ignore
       let parentTag = this.writer.editor.currentBookmark.rng.commonAncestorContainer;
       while (parentTag.nodeType !== Node.ELEMENT_NODE) {
         parentTag = parentTag.parentNode;
@@ -447,6 +451,7 @@ class Tagger {
    * Split a tag in two based on the current text selection.
    */
   splitTag() {
+    //@ts-ignore
     const range: Range = this.writer.editor?.selection.getRng(true);
 
     if (range.startContainer.nodeType !== Node.TEXT_NODE) {
@@ -477,6 +482,7 @@ class Tagger {
     wrapString += `></${parent.nodeName.toLowerCase()}>`;
 
     parent.normalize();
+    //@ts-ignore
     textNode.splitText(range.startOffset);
 
     let lastChild;
@@ -489,10 +495,12 @@ class Tagger {
 
     $(parent)
       .contents()
+      //@ts-ignore
       .each((index, element) => element.setAttribute('id', this.writer.getUniqueId('dom_')))
       .unwrap();
 
     if (lastChild) {
+      //@ts-ignore
       this.writer.editor?.selection.setCursorLocation(lastChild[0]); // TODO doesn't work with spans on Chrome (at least)
     }
 
@@ -555,7 +563,11 @@ class Tagger {
               const tag = currNodeElement.getAttribute('_tag');
               const type = currNodeElement.getAttribute('_type');
               if (tag && type) {
-                this.writer.entitiesManager.addEntity({ id: newId, tag, type });
+                this.writer.entitiesManager.addEntity({
+                  id: newId,
+                  tag,
+                  type: type as EntityTypes,
+                });
               }
             }
           }
@@ -609,8 +621,8 @@ class Tagger {
   finalizeEntity(type: string, info: any) {
     if (!this.writer.editor) return;
 
-    const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type);
-    const tagName = this.writer.schemaManager.mapper.getParentTag(type);
+    const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type as EntityTypes);
+    const tagName = this.writer.schemaManager.mapper.getParentTag(type as EntityTypes);
 
     if (type === 'note') delete info.attributes.otherType; //remove otherType attribute;
 
@@ -621,7 +633,7 @@ class Tagger {
       const config = {
         id: this.writer.getUniqueId('dom_'),
         type,
-        isNote: this.writer.schemaManager.mapper.isEntityTypeNote(type),
+        isNote: this.writer.schemaManager.mapper.isEntityTypeNote(type as EntityTypes),
         isNamedEntity,
         tag: tagName,
         attributes: info.attributes,
@@ -639,6 +651,7 @@ class Tagger {
       this.writer.editor.selection.moveToBookmark(this.writer.editor.currentBookmark);
       const range: Range = this.writer.editor.selection.getRng();
 
+      //@ts-ignore
       this.writer.entitiesManager.addEntity(config, range);
     } else {
       this.addStructureTag({
@@ -676,8 +689,11 @@ class Tagger {
     }
 
     // named entity check
-    const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type);
-    const uriAttribute = this.writer.schemaManager.mapper.getAttributeForProperty(type, 'uri');
+    const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type as EntityTypes);
+    const uriAttribute = this.writer.schemaManager.mapper.getAttributeForProperty(
+      type as EntityTypes,
+      'uri'
+    );
     const removeEntity =
       isNamedEntity && (uriAttribute && info.attributes[uriAttribute]) === undefined;
 
@@ -741,6 +757,7 @@ class Tagger {
     if (!tagName) return;
 
     const attributes = this.getAttributesForTag($tag[0]);
+    //@ts-ignore
     const hasSelection = this.writer.editor.selection.getRng(true).collapsed === false;
 
     if (entity.isNote()) this.removeNoteWrapper($tag);
@@ -753,6 +770,7 @@ class Tagger {
     this.writer.entitiesManager.removeEntity(entityId);
 
     // bookmark temp selection
+    //@ts-ignore
     const rng: Range = this.writer.editor.selection.getRng(true);
     rng.selectNodeContents($temp[0]);
     this.writer.editor.currentBookmark = this.writer.editor.selection.getBookmark(1);
@@ -831,6 +849,7 @@ class Tagger {
       if (tinymce.isWebKit) sel.setRng(range);
 
       sel.collapse(false);
+      //@ts-ignore
       range = sel.getRng(true);
       range.insertNode(tag);
 
@@ -846,6 +865,7 @@ class Tagger {
         const startRange = range.cloneRange();
 
         //? range.startContainer.length -> range.range.startOffset?
+        //@ts-ignore
         startRange.setEnd(range.startContainer, range.startContainer.length);
 
         const start: Element = this.writer.editor?.dom.create(
@@ -968,6 +988,7 @@ class Tagger {
         : $(`#${bookmark.tagId}`, this.writer.editor?.getBody());
     } else {
       // this is meant for user text selections
+      //@ts-ignore
       let node = bookmark.rng.commonAncestorContainer;
       while (
         node.nodeType == Node.TEXT_NODE ||
@@ -1037,6 +1058,7 @@ class Tagger {
 
       default:
         // default action = add
+        //@ts-ignore
         this.writer.editor?.selection.moveToBookmark(bookmark);
 
         selection = this.writer.editor?.selection.getContent();
@@ -1044,6 +1066,7 @@ class Tagger {
 
         content = `${open_tag}${selection}${close_tag}`;
 
+        //@ts-ignore
         const range: Range = this.writer.editor?.selection.getRng(true);
         const tempNode = $('<span data-mce-bogus="1">', this.writer.editor?.getDoc());
         range.surroundContents(tempNode[0]);
@@ -1060,6 +1083,7 @@ class Tagger {
       this.writer.utilities.selectElementById(id, true);
     } else if (action == undefined) {
       // place the cursor at the end of the tag's contents
+      //@ts-ignore
       const rng: Range = this.writer.editor?.selection.getRng(true);
       rng.selectNodeContents($(`#${id}`, this.writer.editor?.getBody())[0]);
       rng.collapse(false);
@@ -1104,21 +1128,9 @@ class Tagger {
    * @param {String} [id] The tag id
    * @param {Boolean} [removeContents] True to remove tag contents as well
    */
-  removeStructureTag(id: string | string[], removeContents?: boolean) {
+  removeStructureTag(id: string | string[], removeContents: boolean = false) {
     //? what to do if id is multiple
     if (Array.isArray(id)) id = id[0];
-
-    if (removeContents === undefined) {
-      if (
-        this.writer.tree &&
-        this.writer.tree.currentlySelectedNodes.length > 0 &&
-        this.writer.tree.selectionType != null
-      ) {
-        removeContents = true;
-      } else {
-        removeContents = false;
-      }
-    }
 
     const doRemove = () => {
       if (removeContents) {
@@ -1132,6 +1144,7 @@ class Tagger {
       } else {
         this.processRemovedContent(tag[0], false);
 
+        //@ts-ignore
         const hasSelection = this.writer.editor?.selection.getRng(true).collapsed === false;
 
         const parent = tag.parent();
@@ -1189,6 +1202,7 @@ class Tagger {
     const doRemove = () => {
       tag
         .contents()
+        //@ts-ignore
         .each((i, el) => this.processRemovedContent(el))
         .remove();
 
@@ -1304,6 +1318,7 @@ class Tagger {
 
     const sel = this.writer.editor?.selection;
     sel.collapse();
+    //@ts-ignore
     const rng: Range = sel.getRng(true);
     rng.insertNode(element);
 
@@ -1339,7 +1354,9 @@ class Tagger {
    * @param {jQuery} contents A selection of nodes
    */
   private doReselect(contents: any[] | JQuery<any>) {
+    //@ts-ignore
     const rng: Range = this.writer.editor?.selection.getRng(true);
+    //@ts-ignore
     contents = contents.toArray().filter((element) => {
       return element.parentNode !== null; // if the node doesn't have a parent then we can't select it
     });
@@ -1373,6 +1390,7 @@ class Tagger {
     // disallow empty entities
     if (!isStructTag && sel.isCollapsed()) return this.NO_SELECTION;
 
+    //@ts-ignore
     const range: Range = sel.getRng(true);
     range.commonAncestorContainer.normalize(); // normalize/collapse separate text nodes
 
@@ -1415,6 +1433,7 @@ class Tagger {
         const endTextNode = findTextNode(range.endContainer, 'back');
         if (!endTextNode) return this.NO_COMMON_PARENT;
 
+        //@ts-ignore
         range.setEnd(endTextNode, end.length);
       }
       const start = findTextNode(range.startContainer, 'forward');
@@ -1425,6 +1444,7 @@ class Tagger {
 
     if (range.endContainer.nodeType === Node.ELEMENT_NODE) {
       // don't need to check nodeType here since we've already ensured startContainer is text
+      //@ts-ignore
       range.setEnd(range.startContainer, range.startContainer.length);
     }
 
@@ -1443,10 +1463,12 @@ class Tagger {
 
       function shiftRangeForward(range: Range, count: number, reps: number) {
         if (count > 0 && reps < 20) {
+          //@ts-ignore
           if (range.startOffset < range.startContainer.length) {
             range.setStart(range.startContainer, range.startOffset + 1);
             count--;
           }
+          //@ts-ignore
           if (range.startOffset === range.startContainer.length) {
             const nextTextNode = findTextNode(range.startContainer, 'forward');
             if (nextTextNode) range.setStart(nextTextNode, 0);
@@ -1463,6 +1485,7 @@ class Tagger {
           }
           if (range.endOffset == 0) {
             const prevTextNode = findTextNode(range.endContainer, 'back');
+            //@ts-ignore
             if (prevTextNode) range.setEnd(prevTextNode, prevTextNode.length);
           }
           shiftRangeBackward(range, count, reps++);
@@ -1481,9 +1504,11 @@ class Tagger {
     if (range.startContainer.parentNode != range.endContainer.parentNode) {
       if (
         range.endOffset === 0 &&
+        //@ts-ignore
         range.endContainer.previousSibling === range.startContainer.parentNode
       ) {
         // fix for when the user double-clicks a word that's already been tagged
+        //@ts-ignore
         range.setEnd(range.startContainer, range.startContainer.length);
       } else {
         return isStructTag ? this.NO_COMMON_PARENT : this.OVERLAP;
@@ -1549,6 +1574,7 @@ class Tagger {
 
     const nodes: Node[] = [];
 
+    //@ts-ignore
     while (walker.currentNode.getAttribute('name') === nodeId) {
       const result = boundaryType === 'start' ? walker.previousNode() : walker.nextNode();
       if (!result) break;
