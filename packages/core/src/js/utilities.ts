@@ -241,10 +241,14 @@ class Utilities {
       } else {
         nodeTop = node.position().top;
       }
-      const newScrollTop =
-        //@ts-ignore
-        nodeTop - $(this.writer.editor.getContentAreaContainer()).height() * 0.25;
-      $(this.writer.editor.getDoc())?.scrollTop(newScrollTop);
+
+      //? Magic Number
+      const containerHeight =
+        this.writer.editor.getContentAreaContainer().getBoundingClientRect().height * 0.25;
+
+      const newScrollTop = nodeTop - containerHeight;
+
+      node[0].ownerDocument.scrollingElement?.scrollTo({ top: newScrollTop, behavior: 'smooth' });
 
       // using setRng triggers nodeChange event so no need to call it manually
       //            _fireNodeChange(nodeEl);
