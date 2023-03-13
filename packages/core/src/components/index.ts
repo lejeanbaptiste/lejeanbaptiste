@@ -1,5 +1,6 @@
 export * from './bottombar';
 export * from './contextmenu';
-export { EditorToolbar } from './editorToolbar';
-export { StyledToolTip } from './StyledToolTip';
-export { TextEmphasis } from './TextEmphasis';
+export * from './editorToolbar';
+export * from './StyledToolTip';
+export * from './TextEmphasis';
+export * from './ToggleButtonGroup';
