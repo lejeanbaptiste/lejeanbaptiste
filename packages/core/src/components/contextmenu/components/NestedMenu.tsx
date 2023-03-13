@@ -1,27 +1,23 @@
 import { Menu } from '@mui/material';
-import React, { useEffect, useState, type FC } from 'react';
-import Collection from '.';
-import { useContextmenu } from '../';
+import React, { useEffect, useState } from 'react';
+import { useContextmenu } from '../../';
 import { useWindowSize } from '../../../hooks';
+import { Collection, type CollectionType } from './';
 import type { ItemProps } from './Item';
 
 interface NestedMenuProps {
   anchorEl: null | HTMLElement;
   childrenItems?: ItemProps[];
-  collectionType?: string;
-  handleClose: () => void;
-  handleMouseEnter: () => void;
+  collectionType?: CollectionType;
   isLoading?: boolean;
 }
 
-const NestedMenu: FC<NestedMenuProps> = ({
+export const NestedMenu = ({
+  anchorEl,
   childrenItems = [],
   collectionType,
-  anchorEl: anchorEl,
-  handleClose,
-  handleMouseEnter,
   isLoading = false,
-}) => {
+}: NestedMenuProps) => {
   const { MIN_WIDTH, query } = useContextmenu();
   const [visibleList, setVisibleList] = useState<ItemProps[]>(childrenItems);
   const isOpen = Boolean(Boolean(anchorEl));
@@ -51,26 +47,20 @@ const NestedMenu: FC<NestedMenuProps> = ({
         anchorEl={anchorEl}
         anchorOrigin={{ vertical: 'top', horizontal: hasSpaceToTheRight() ? 'right' : 'left' }}
         MenuListProps={{ sx: { minWidth: MIN_WIDTH, py: 0.5, borderRadius: 1 } }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleClose}
         open={isOpen}
         PaperProps={{ elevation: 4 }}
-        // "pointerEvents: none" to prevent invisible Popover wrapper div to capture mouse events
-        style={{ pointerEvents: 'none' }}
+        style={{ pointerEvents: 'none' }} // "pointerEvents: none" to prevent invisible Popover wrapper div to capture mouse events
         transitionDuration={0}
         transformOrigin={{ vertical: 'top', horizontal: hasSpaceToTheRight() ? 'left' : 'right' }}
       >
         <Collection
-          handleQuery={handleQuery}
           collectionType={collectionType}
           fullLength={childrenItems.length}
+          handleQuery={handleQuery}
           isLoading={isLoading}
           list={visibleList}
-          minWidth={MIN_WIDTH}
         />
       </Menu>
     </>
   );
 };
-
-export default NestedMenu;

@@ -1,19 +1,17 @@
 import { Menu } from '@mui/material';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import Writer from '../../js/Writer';
 import { useActions, useAppState } from '../../overmind';
-import Collection from './collection';
-import type { ItemProps } from './collection/Item';
-import Header from './Header';
-import { useContextmenu } from './hooks/useContextmenu';
+import { Collection, Header, type ItemProps } from './components';
+import { useContextmenu } from './hooks';
 
-export { useContextmenu } from './hooks/useContextmenu';
+export { useContextmenu } from './hooks';
 
 interface ContextMenuProps {
   writer: Writer;
 }
 
-export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
+export const ContextMenu = ({ writer }: ContextMenuProps) => {
   const { isReadonly, settings } = useAppState().editor;
   const { contextMenu } = useAppState().ui;
 
@@ -84,31 +82,28 @@ export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
   return (
     <>
       {show && (
-        <React.StrictMode>
-          <Menu
-            anchorEl={anchorEl}
-            anchorPosition={menuPosition}
-            anchorReference={anchorReference}
-            id="contextmenu"
-            container={document.getElementById(`${settings.container}`)}
-            keepMounted
-            MenuListProps={{ sx: { minWidth: MIN_WIDTH, py: 0.5, borderRadius: 1 } }}
-            onClose={handleClose}
-            open={show}
-            PaperProps={{ elevation: 4 }}
-            variant="menu"
-          >
-            <Header tagName={tagName} xpath={xpath} tagMeta={tagMeta} />
-            <Collection
-              handleQuery={handleQuery}
-              collectionType={collectionType}
-              fullLength={options.length}
-              isLoading={isLoading}
-              list={visibleList}
-              minWidth={MIN_WIDTH}
-            />
-          </Menu>
-        </React.StrictMode>
+        <Menu
+          anchorEl={anchorEl}
+          anchorPosition={menuPosition}
+          anchorReference={anchorReference}
+          id="contextmenu"
+          container={document.getElementById(`${settings.container}`)}
+          keepMounted
+          MenuListProps={{ sx: { minWidth: MIN_WIDTH, py: 0.5, borderRadius: 1 } }}
+          onClose={handleClose}
+          open={show}
+          PaperProps={{ elevation: 4 }}
+          variant="menu"
+        >
+          <Header count={contextMenu.count} tagName={tagName} tagMeta={tagMeta} xpath={xpath} />
+          <Collection
+            handleQuery={handleQuery}
+            collectionType={collectionType}
+            fullLength={options.length}
+            isLoading={isLoading}
+            list={visibleList}
+          />
+        </Menu>
       )}
     </>
   );

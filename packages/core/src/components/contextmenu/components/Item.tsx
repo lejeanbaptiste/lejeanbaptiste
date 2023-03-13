@@ -1,31 +1,37 @@
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import BlockIcon from '@mui/icons-material/Block';
-import { Box, CircularProgress, MenuItem, Typography, useTheme } from '@mui/material';
+import { CircularProgress, Icon, MenuItem, Stack, Typography, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import React, { forwardRef, useEffect, useState, type MouseEvent } from 'react';
+import React, { forwardRef, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { getIcon, type IconLeafWriter } from '../../../icons';
 import { useActions } from '../../../overmind';
 import { EntityType } from '../../../types';
-import { useUI } from '../../../hooks';
-import NestedMenu from './NestedMenu';
+import type { CollectionType } from './';
+import { NestedMenu } from './NestedMenu';
 
 export type Type = 'tag' | 'entity' | 'divider' | 'search';
 
 export interface ItemProps {
+  active?: boolean;
   childrenItems?: ItemProps[] | (() => Promise<ItemProps[]>);
-  collectionType?: string;
+  collectionType?: CollectionType;
   description?: string;
   disabled?: boolean;
   displayName?: string;
-  icon?: string;
+  icon?: IconLeafWriter;
   id: string;
   name?: EntityType | string;
   onClick?: () => void;
+  onMouseEnter?: (id: string) => void;
+  onMouseLeave?: () => void;
   type?: Type;
 }
 
-const Item = forwardRef<any, ItemProps>(
+export const Item = forwardRef<any, ItemProps>(
   (
     {
+      active,
+      id,
       childrenItems,
       collectionType,
       description,
@@ -34,13 +40,14 @@ const Item = forwardRef<any, ItemProps>(
       icon,
       name,
       onClick,
+      onMouseEnter,
+      onMouseLeave,
       type,
     },
     ref
   ) => {
     const theme = useTheme();
     const { ui } = useActions();
-    const { getIcon } = useUI();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [showChildren, setShowChildren] = useState(false);
     const [children, setChildren] = useState<ItemProps[]>([]);
@@ -60,46 +67,34 @@ const Item = forwardRef<any, ItemProps>(
       return () => {};
     }, []);
 
+    useEffect(() => {
+      setShowChildren(active);
+    }, [active]);
+
     const hasChildrenItems = childrenItems ?? false;
 
     const getEntityIcon = () => {
       if (Object.values(EntityType).includes(name as EntityType)) {
-        return getIcon(theme.entity[name as EntityType].icon);
+        return getIcon(theme.entity[name as EntityType].icon as IconLeafWriter);
       }
       return getIcon(icon);
     };
 
-    const Icon = type === 'entity' ? getEntityIcon() : getIcon(icon);
-
-    const color = () => {
+    const color = useMemo(() => {
       if (!name) return 'inherent';
       if (Object.values(EntityType).includes(name as EntityType)) {
         return theme.entity[name as EntityType].color.main;
       }
       return 'inherent';
-    };
+    }, [name]);
 
     const handleMouseEnter = (event: MouseEvent<HTMLElement, globalThis.MouseEvent>) => {
       setAnchorEl(event.currentTarget);
-      setShowChildren(true);
-    };
-
-    const handleClose = () => {
-      setShowChildren(false);
-    };
-
-    const handleMouseEnterMenu = () => {
-      setShowChildren(true);
-    };
-
-    const handleCloseMenu = () => {
-      setAnchorEl(null);
-      setShowChildren(false);
+      onMouseEnter && onMouseEnter(id);
     };
 
     const handleClick = () => {
       if (!onClick) return;
-      handleCloseMenu();
       ui.closeContextMenu();
       onClick();
     };
@@ -111,40 +106,43 @@ const Item = forwardRef<any, ItemProps>(
           disabled={disabled}
           onClick={handleClick}
           onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleClose}
           sx={{
             mx: 0.5,
             px: 0.75,
             borderRadius: 1,
             '&:hover': {
-              color: color(),
-              backgroundColor: ({ palette }) =>
-                color() === 'inherent' ? 'inherent' : alpha(color(), palette.action.hoverOpacity),
+              color,
+              bgcolor: ({ palette }) =>
+                color === 'inherent' ? 'inherent' : alpha(color, palette.action.hoverOpacity),
             },
           }}
+          selected={active}
           ref={ref}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-              columnGap: 1,
-            }}
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            width="100%"
+            columnGap={1}
           >
             {/* LEFT ICON */}
-            {Icon && <Icon sx={{ height: 18, width: 18, color: color() }} />}
+            {icon && (
+              <Icon
+                component={type === 'entity' ? getEntityIcon() : getIcon(icon)}
+                sx={{ height: 18, width: 18, color }}
+              />
+            )}
 
             {/* LABEL */}
-            <Box sx={{ flexGrow: 1 }}>
+            <Stack sx={{ flexGrow: 1 }}>
               <Typography variant="body2">{displayName}</Typography>
               {description && (
                 <Typography color="text.secondary" variant="caption">
                   {description}
                 </Typography>
               )}
-            </Box>
+            </Stack>
 
             {/* RIGHT ICON: PROGRESS / NONE / ARROW  */}
             {hasChildrenItems &&
@@ -155,23 +153,22 @@ const Item = forwardRef<any, ItemProps>(
               ) : (
                 <ArrowForwardIosIcon sx={{ fontSize: 12 }} />
               ))}
-          </Box>
+          </Stack>
         </MenuItem>
 
         {/* CHILDREN */}
-        {hasChildrenItems && (children.length > 0 || isLoadingChildren) && showChildren && (
-          <NestedMenu
-            anchorEl={anchorEl}
-            handleClose={handleCloseMenu}
-            handleMouseEnter={handleMouseEnterMenu}
-            childrenItems={children}
-            collectionType={collectionType}
-            isLoading={isLoadingChildren}
-          />
-        )}
+        {
+          // hasChildrenItems &&
+          (children.length > 0 || isLoadingChildren) && showChildren && (
+            <NestedMenu
+              anchorEl={anchorEl}
+              childrenItems={children}
+              collectionType={collectionType}
+              isLoading={isLoadingChildren}
+            />
+          )
+        }
       </>
     );
   }
 );
-
-export default Item;
