@@ -25,7 +25,7 @@ const CandidateList = ({ authority, candidates, setAuthorityInView }: CandidateL
           borderBottomWidth: 1,
           borderBottomStyle: 'solid',
           borderBottomColor: ({ palette }) => palette.grey[500],
-          backgroundColor: ({ palette }) => {
+          bgcolor: ({ palette }) => {
             return palette.mode === 'dark' ? palette.grey[800] : palette.background.paper;
           },
           lineHeight: 2.5,
