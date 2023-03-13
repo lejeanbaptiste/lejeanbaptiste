@@ -230,7 +230,7 @@ export class Leafwriter {
   }
 
   setShowEntities(value: boolean) {
-    overmind.actions.editor.showEntities(value);
+    overmind.actions.editor.setShowEntities(value);
   }
 
   getContentHasChanged() {

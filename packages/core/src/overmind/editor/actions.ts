@@ -178,7 +178,7 @@ export const toggleShowTags = ({ state }: Context, value?: boolean) => {
   state.editor.showTags = value;
 };
 
-export const showEntities = ({ state }: Context, value: boolean) => {
+export const setShowEntities = ({ state }: Context, value: boolean) => {
   if (!window.writer?.editor) return;
 
   $('body', window.writer.editor.getDoc()).toggleClass('showEntities');
@@ -329,7 +329,7 @@ export const resetDialogWarnings = ({ actions }: Context) => {
 export const resetPreferences = ({ state, actions, effects }: Context) => {
   if (state.editor.fontSize !== 11) actions.editor.setFontSize(11);
   if (state.editor.showTags !== false) actions.editor.toggleShowTags(false);
-  if (state.editor.showEntities !== true) actions.editor.showEntities(true);
+  if (state.editor.showEntities !== true) actions.editor.setShowEntities(true);
   if (state.editor.editorMode !== 'xmlrdfoverlap') actions.editor.setEditorMode('xmlrdf');
   if (state.editor.annotationMode !== 3) actions.editor.setAnnotationrMode(3);
 
