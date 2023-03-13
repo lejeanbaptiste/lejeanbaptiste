@@ -85,6 +85,7 @@
     "react-dropzone": "^14.2.3",
     "react-i18next": "^12.1.5",
     "react-use": "^17.4.0"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.5",
