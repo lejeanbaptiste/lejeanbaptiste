@@ -14,9 +14,9 @@ import {
   useTheme,
 } from '@mui/material';
 import { AnimatePresence } from 'framer-motion';
-import React, { FC, useState } from 'react';
-import type { Content, SearchResultsBlobs } from '../../../../types';
+import React, { useState } from 'react';
 import { useActions, useAppState } from '../../../../overmind';
+import type { Content, SearchResultsBlobs } from '../../../../types';
 import ContentMatch from './ContentMatch';
 
 interface ItemProps {
@@ -25,7 +25,7 @@ interface ItemProps {
   onSecondaryAction: (item: Content | SearchResultsBlobs) => void;
 }
 
-const Item: FC<ItemProps> = ({ item, onPrimaryAction, onSecondaryAction }) => {
+const Item = ({ item, onPrimaryAction, onSecondaryAction }: ItemProps) => {
   const { allowAllFileTypes, allowedFileTypes } = useAppState().common;
   const { repository: currentRepo, owner: currentOnwer } = useAppState().cloud;
   const { fetchDocument, navigateTo } = useActions().cloud;

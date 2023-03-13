@@ -1,6 +1,6 @@
 import { LoadingButton } from '@mui/lab';
 import { Button, DialogActions } from '@mui/material';
-import React, { FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 
@@ -8,7 +8,7 @@ export interface FooterProps {
   onCancel: () => void;
 }
 
-export const FooterLoad: FC<FooterProps> = ({ onCancel }) => {
+export const FooterLoad = ({ onCancel }: FooterProps) => {
   const { selectedItem, source } = useAppState().common;
   const { isLoading } = useAppState().cloud;
   const { load } = useActions().common;

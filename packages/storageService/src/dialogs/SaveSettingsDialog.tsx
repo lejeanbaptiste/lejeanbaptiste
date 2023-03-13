@@ -8,7 +8,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { ChangeEvent, FC, FocusEvent, useState } from 'react';
+import React, { ChangeEvent, FocusEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 
@@ -18,7 +18,7 @@ interface SaveSettingsDialogProps {
   open: boolean;
 }
 
-export const SaveSettingsDialog: FC<SaveSettingsDialogProps> = ({ anchor, onDone, open }) => {
+export const SaveSettingsDialog = ({ anchor, onDone, open }: SaveSettingsDialogProps) => {
   const { t } = useTranslation();
   const { commitMessage } = useAppState().cloud;
   const { setCommitMessage } = useActions().cloud;

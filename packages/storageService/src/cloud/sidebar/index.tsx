@@ -1,11 +1,11 @@
 import { Stack, useMediaQuery, useTheme } from '@mui/material';
-import React, { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppState } from '../../overmind';
 import MainMenu from './MainMenu';
 import MobileMenu from './MobileMenu';
 import PublicRepositories from './publicRepository';
 
-const Sidebar: FC = () => {
+const Sidebar = () => {
   const { cloud } = useAppState();
   const { owner, user } = cloud;
 

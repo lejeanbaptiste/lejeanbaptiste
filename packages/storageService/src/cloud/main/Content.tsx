@@ -10,17 +10,17 @@ import {
   Typography,
 } from '@mui/material';
 import { formatDistance } from 'date-fns';
-import React, { FC, useState } from 'react';
-import type { LatestCommit } from '../../types/Provider';
-import type { Content as ContentType } from '../../types';
+import React, { useState } from 'react';
 import { useActions, useAppState } from '../../overmind';
+import type { Content as ContentType } from '../../types';
+import type { LatestCommit } from '../../types/Provider';
 import ContentDetails from './ContentDetails';
 
 interface ContentProps {
   content: ContentType;
 }
 
-const Content: FC<ContentProps> = ({ content }) => {
+const Content = ({ content }: ContentProps) => {
   const { allowAllFileTypes, allowedFileTypes, dialogType, selectedItem } = useAppState().common;
   const { getLatestCommit, fetchDocument, navigateTo } = useActions().cloud;
   const { load, setFilename, setSelectedItem } = useActions().common;

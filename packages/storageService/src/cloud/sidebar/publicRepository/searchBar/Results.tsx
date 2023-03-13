@@ -1,6 +1,6 @@
 import { Box, MenuList } from '@mui/material';
-import { motion } from 'framer-motion';
-import React, { FC } from 'react';
+import { motion, type Variants } from 'framer-motion';
+import React from 'react';
 import type { Owner } from '../../../../types';
 import Item from './Item';
 
@@ -10,8 +10,8 @@ interface ResultsProps {
   onSelect?: (onwer: Owner) => void;
 }
 
-const Results: FC<ResultsProps> = ({ listBoxProps, options, onSelect }) => {
-  const variants = {
+const Results = ({ listBoxProps, options, onSelect }: ResultsProps) => {
+  const variants: Variants = {
     initial: { height: 0 },
     visible: { height: 'auto' },
     exit: { height: 0, transition: { duration: 0.02 } },

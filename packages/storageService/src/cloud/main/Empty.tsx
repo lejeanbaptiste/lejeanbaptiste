@@ -1,10 +1,10 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import React, { FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-const Empty: FC = () => {
+const Empty = () => {
   const { t } = useTranslation();
   return (
     <Stack data-testid="list-empty" justifyContent="center" height={200}>

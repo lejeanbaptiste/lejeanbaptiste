@@ -1,12 +1,12 @@
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CreateNewFolderOutlinedIcon from '@mui/icons-material/CreateNewFolderOutlined';
 import { Box, Button, Divider, IconButton, Stack, useMediaQuery, useTheme } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
-import React, { FC, useEffect, useState } from 'react';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
-import type { SearchResults } from '../../../types';
 import { useActions, useAppState } from '../../../overmind';
+import type { SearchResults } from '../../../types';
 import Breadcrumbs from './Breadcrumbs';
 import Filename from './Filename';
 import SearchBar from './searchBar';
@@ -16,7 +16,7 @@ interface TopbarProps {
   onOpenCreateDialog: (type: 'repo' | 'folder') => void;
 }
 
-const Topbar: FC<TopbarProps> = ({ onOpenCreateDialog, onChangeSize }) => {
+const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
   const { t } = useTranslation();
   const { dialogType } = useAppState().common;
   const { collectionSource, collectionType, name, repository, owner } = useAppState().cloud;
@@ -41,7 +41,7 @@ const Topbar: FC<TopbarProps> = ({ onOpenCreateDialog, onChangeSize }) => {
     if (dialogType === 'save') checkPermissions();
   }, [collectionSource, collectionType, owner]);
 
-  const variants = {
+  const variants: Variants = {
     initial: { scale: 0 },
     visible: { scale: 1 },
     exit: { scale: 0 },

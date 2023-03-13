@@ -1,9 +1,9 @@
 import { Box, TextField, useMediaQuery, useTheme } from '@mui/material';
-import React, { ChangeEvent, FC, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 
-export const PastePanel: FC = () => {
+export const PastePanel = () => {
   const { t } = useTranslation();
   const { setResource } = useActions().local;
   const { resource } = useAppState().common;
