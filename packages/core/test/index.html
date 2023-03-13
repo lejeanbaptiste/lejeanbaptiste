@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- <script defer src="index.js"></script> -->
+    <link href="css/index.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <script src="index.js"></script>
+    <!-- Display a message if JS has been disabled on the browser. -->
+    <noscript>
+      If you're seeing this message, that means
+      <strong>JavaScript has been disabled on your browser</strong>, please<strong
+        >enable JS</strong
+      >
+      to make this app work.</noscript
+    >
+
+    <!-- The app hooks into this div -->
+    <div id="app"></div>
+    <script defer>
+      const editor = new Leafwriter.Leafwriter(document.querySelector('#app'));
+      editor.init({
+        document: {
+          url: '',
+          xml: '',
+        },
+        settings: {
+          baseUrl: '.',
+          credentials: { nssiToken: '123' },
+          lookups: {
+            authorities: [['geonames', { config: { username: 'cwrcgeonames' } }]],
+          },
+        },
+        readonly: false,
+        user: {
+          name: 'test',
+          uri: 'test',
+        },
+      });
+    </script>
+   
+  </body>
+</html>
