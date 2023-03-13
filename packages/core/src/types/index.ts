@@ -71,8 +71,8 @@ export type SupportedSchemasId =
   | 'reed';
 
 interface ISettingsModules {
-  west: ISettingsModulesPanel[],
-  east: ISettingsModulesPanel[],
+  west: ISettingsModulesPanel[];
+  east: ISettingsModulesPanel[];
 }
 
 interface ISettingsModulesPanel {
@@ -80,8 +80,14 @@ interface ISettingsModulesPanel {
   title: string | string[] ;
 }
 
-type ISettingsModuleName = 'structure' | 'entities' |  'nerve' | 'selection' | 'imageViewer' | 'validation';
-
+export type ISettingsModuleName =
+  | 'toc'
+  | 'structure'
+  | 'entities'
+  | 'nerve'
+  | 'selection'
+  | 'imageViewer'
+  | 'validation';
 
 export type SupportedEntityLookups =
   | 'dbpedia'
