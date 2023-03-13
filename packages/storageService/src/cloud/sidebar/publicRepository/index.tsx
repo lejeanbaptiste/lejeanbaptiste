@@ -1,7 +1,7 @@
 import SearchIcon from '@mui/icons-material/Search';
 import { Box, IconButton, Stack, Typography } from '@mui/material';
 import { AnimatePresence } from 'framer-motion';
-import React, { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
 import type { Owner } from '../../../types';
@@ -16,7 +16,7 @@ interface PublicRepositoriesProps {
 
 const searcbarCollapsible = false;
 
-const PublicRepositories: FC<PublicRepositoriesProps> = ({ onSelect, selectedMenu }) => {
+const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositoriesProps) => {
   const { t } = useTranslation();
   const {
     addPublicRepository,

@@ -1,6 +1,6 @@
 import { Box, MenuList } from '@mui/material';
-import { motion } from 'framer-motion';
-import React, { FC } from 'react';
+import { motion, type Variants } from 'framer-motion';
+import React from 'react';
 import type { Content, SearchResults, SearchResultsBlobs } from '../../../../types';
 import Results from './Results';
 
@@ -11,13 +11,13 @@ interface ResultsCollectionProps {
   onSecondaryAction: (item: Content | SearchResultsBlobs) => void;
 }
 
-const ResultsCollection: FC<ResultsCollectionProps> = ({
+const ResultsCollection = ({
   listBoxProps,
   options,
   onPrimaryAction,
   onSecondaryAction,
-}) => {
-  const variants = {
+}: ResultsCollectionProps) => {
+  const variants: Variants = {
     initial: { height: 0 },
     visible: { height: 'auto' },
     exit: { height: 0, transition: { duration: 0.02 } },

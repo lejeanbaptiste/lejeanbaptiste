@@ -1,9 +1,9 @@
 import { Box, Grid, Typography } from '@mui/material';
-import React, { FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../overmind';
 
-const Header: FC = () => {
+const Header = () => {
   const { name: providerName } = useAppState().cloud;
   const { dialogType, source } = useAppState().common;
   const { t } = useTranslation();

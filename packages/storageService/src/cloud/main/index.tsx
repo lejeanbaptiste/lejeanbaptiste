@@ -1,11 +1,11 @@
 import { Stack, useMediaQuery, useTheme } from '@mui/material';
-import React, { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useWindowSize } from 'react-use';
 import { CreateFolderDialog, CreateRepoDialog } from '../../dialogs';
 import Collection from './Collection';
 import Topbar from './topbar';
 
-const Main: FC = () => {
+const Main = () => {
   const theme = useTheme();
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
   const isMD = useMediaQuery(theme.breakpoints.down('md'));

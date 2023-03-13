@@ -1,14 +1,14 @@
 import FolderSpecialOutlinedIcon from '@mui/icons-material/FolderSpecialOutlined';
 import { Avatar, Chip, Grid, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
-import React, { FC } from 'react';
-import type { Repository } from '../../types';
+import React from 'react';
 import { useActions, useAppState } from '../../overmind';
+import type { Repository } from '../../types';
 
 interface RepoProps {
   repo: Repository;
 }
 
-const Repo: FC<RepoProps> = ({ repo }) => {
+const Repo = ({ repo }: RepoProps) => {
   const { selectedItem } = useAppState().common;
   const { collectionSource } = useAppState().cloud;
   const { setSelectedItem } = useActions().common;

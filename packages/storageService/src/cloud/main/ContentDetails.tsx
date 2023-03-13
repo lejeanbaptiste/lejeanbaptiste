@@ -1,12 +1,12 @@
 import { Box, Link, Typography } from '@mui/material';
-import React, { FC } from 'react';
+import React from 'react';
 import type { LatestCommit } from '../../types/Provider';
 
 interface ContentDetailsProps {
   latestCommit: LatestCommit;
 }
 
-const ContentDetails: FC<ContentDetailsProps> = ({ latestCommit }) => {
+const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
   return (
     <Box data-testid="content-details" pt={0.25}>
       <Typography component="p" variant="caption">

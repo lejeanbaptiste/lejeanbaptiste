@@ -10,7 +10,7 @@ import {
   Paper,
   Popper,
 } from '@mui/material';
-import React, { FC, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../overmind';
 
@@ -26,7 +26,7 @@ export interface Props {
   onSelect: (value: string) => void;
 }
 
-const SaveOptions: FC<Props> = ({ enabled, onSelect }) => {
+const SaveOptions = ({ enabled, onSelect }: Props) => {
   const { t } = useTranslation();
   const { resource } = useAppState().common;
   const { isSaving } = useAppState().cloud;

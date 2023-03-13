@@ -7,9 +7,9 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
-  useTheme,
+  useTheme
 } from '@mui/material';
-import React, { FC, MouseEvent, useEffect, useRef, useState } from 'react';
+import React, { MouseEvent, useEffect, useRef, useState } from 'react';
 import { SettingsDialog } from '../dialogs';
 import { useActions, useAppState } from '../overmind';
 import type { StorageSource, SuportedProviders } from '../types';
@@ -17,7 +17,7 @@ import { getIcon } from '../utilities';
 
 type Source = StorageSource | SuportedProviders;
 
-const SidePanel: FC = () => {
+const SidePanel = () => {
   const theme = useTheme();
   const { name: providerName, providers } = useAppState().cloud;
   const { source, sources } = useAppState().common;

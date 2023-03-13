@@ -1,8 +1,8 @@
 import { Box, Button, Divider, ListSubheader, Stack } from '@mui/material';
-import React, { FC, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Content, SearchResultsBlobs } from '../../../../types';
 import { useAppState } from '../../../../overmind';
+import type { Content, SearchResultsBlobs } from '../../../../types';
 import Item from './Item';
 
 const LIST_SIZE = 5;
@@ -14,7 +14,7 @@ interface ResultsProps {
   type: string;
 }
 
-const Results: FC<ResultsProps> = ({ list, onPrimaryAction, onSecondaryAction, type }) => {
+const Results = ({ list, onPrimaryAction, onSecondaryAction, type }: ResultsProps) => {
   const { t } = useTranslation();
   const { owner, repository, name } = useAppState().cloud;
   const [limit, setLimit] = useState(LIST_SIZE);
