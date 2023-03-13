@@ -68,7 +68,7 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
       pr={2}
       py={2}
       sx={{
-        backgroundColor: palette.mode === 'dark' ? palette.grey[900] : palette.grey[50],
+        bgcolor: palette.mode === 'dark' ? palette.grey[900] : palette.grey[50],
         borderTopLeftRadius: 1,
         borderBottomLeftRadius: 1,
       }}

@@ -76,7 +76,7 @@ export const DocumentCard = ({
       onMouseOver={() => setHover(true)}
       onMouseOut={() => setHover(false)}
       sx={{
-        backgroundColor:
+        bgcolor:
           selected?.url === url
             ? palette.primary[palette.mode]
             : hover

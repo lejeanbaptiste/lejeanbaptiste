@@ -17,9 +17,7 @@ export const Path = ({ owner, path, provider, repo }: PathProps) => {
     <Stack
       justifyContent="space-between"
       px={1}
-      sx={{
-        backgroundColor: ({ palette }) => palette.action.hover,
-      }}
+      sx={{ bgcolor: ({ palette }) => palette.action.hover }}
     >
       <Stack direction="row" alignItems="center" gap={0.5} sx={{ height: 22, overflow: 'hidden' }}>
         <Icon component={getIcon(provider)} sx={{ width: 14, height: 14 }} />
