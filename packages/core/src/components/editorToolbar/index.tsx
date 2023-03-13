@@ -1,5 +1,5 @@
-import { Divider, Paper, useTheme } from '@mui/material';
-import { Stack } from '@mui/system';
+import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
+import React, { useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { EntityTypes } from '../../js/schema/types';
 import { useActions, useAppState } from '../../overmind';
@@ -248,7 +248,3 @@ export const EditorToolbar = () => {
     </Paper>
   );
 };
-
-{
-  /* <div key={item.title}>{ItemComponent[item.type](item)}</div> */
-}
