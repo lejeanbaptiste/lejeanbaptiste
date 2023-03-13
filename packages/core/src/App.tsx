@@ -7,9 +7,7 @@ import { EntityLookupDialog } from './dialogs';
 import { useDialog, useNotifier } from './hooks';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
-import {
-  StructureTree,
-} from './panels';
+import { StructureTree, Toc } from './panels';
 import type { LeafWriterOptions } from './types';
 
 declare global {
@@ -28,8 +26,11 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   useNotifier();
 
   const [editorToobarContainer, setEditorToobarContainer] = useState(null);
+  const [tocPanelContainer, setTocPanelContainer] = useState(null);
   const [structureTreePanelContainer, setStructureTreePanelContainer] = useState(null);
 
+  const [initialized, setInitialized] = useState(false);
+  const [docLoaded, setDocLoaded] = useState(false);
 
   useEffect(() => {
     if (document.url === undefined || state.document.url !== document.url) {
@@ -89,17 +90,23 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       setWriter(window.writer);
 
       const toolbarContainer = window.document.querySelector('#editor-toolbar');
+      const _tocPanelContainer = window.document.querySelector(`#${_writer.editorId}-toc`);
       const _structureTreePanelContainer = window.document.querySelector(
         `#${_writer.editorId}-structure`
       );
 
       setEditorToobarContainer(toolbarContainer);
+      setTocPanelContainer(_tocPanelContainer);
       setStructureTreePanelContainer(_structureTreePanelContainer);
+      setTocPanelContainer;
+
       setTimeout(() => _writer.layoutManager.resizeEditor(), 50);
     });
 
     _writer.event('documentLoaded').subscribe((success: boolean) => {
       actions.document.setLoaded(true);
+      setInitialized(true);
+      setDocLoaded(true);
     });
   };
 
@@ -110,6 +117,9 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
         <EntityLookupDialog />
         <div>
           {editorToobarContainer && createPortal(<EditorToolbar />, editorToobarContainer)}
+          {tocPanelContainer && createPortal(<Toc />, tocPanelContainer)}
+          {structureTreePanelContainer &&
+            createPortal(<StructureTree />, structureTreePanelContainer)}
         </div>
       </Box>
       <BottomBar />
