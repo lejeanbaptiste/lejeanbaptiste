@@ -9,6 +9,7 @@ import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import { StructureTree, Toc } from './panels';
 import type { LeafWriterOptions } from './types';
+// import { Layout } from './layout';
 
 declare global {
   interface Window {
@@ -122,6 +123,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
             createPortal(<StructureTree />, structureTreePanelContainer)}
         </div>
       </Box>
+      {/* //* WIP {docLoaded && <Layout />} */}
       <BottomBar />
     </>
   );

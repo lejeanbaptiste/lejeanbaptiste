@@ -4,7 +4,8 @@ import type {
   EntityLookupDialogProps,
   PopupProps,
 } from '../../dialogs';
-import type { ContextMenuState, Language, NotificationProps } from '../../types';
+import { panel } from '../../layout/Utilities';
+import type { ContextMenuState, Language, LayoutProps, NotificationProps } from '../../types';
 
 type State = {
   contextMenu: ContextMenuState;
@@ -15,6 +16,7 @@ type State = {
   fullscreen: boolean;
   notifications: NotificationProps[];
   language: Language;
+  layout: LayoutProps;
   popupProps: PopupProps;
   settingsDialogOpen: boolean;
   structurePanel: {
@@ -35,6 +37,20 @@ export const state: State = {
   entityLookupDialogProps: { open: false },
   fullscreen: false,
   language: { code: 'en-CA', name: 'english', shortName: 'en' },
+  layout: {
+    outerLeft: { id: 'left', items: [panel.toc, panel.structure, panel.entities] },
+    left: { activePanel: 'structure', id: 'left', panels: ['toc', 'structure', 'entities'] },
+    right: {
+      activePanel: 'imageViewer',
+      collapsed: true,
+      id: 'right',
+      panels: ['imageViewer', 'xmlViewer', 'validate'],
+    },
+    outerRight: {
+      id: 'right',
+      items: [panel.imageViewer, panel.xmlViewer, panel.validate],
+    },
+  },
   notifications: [],
   popupProps: { open: false },
   settingsDialogOpen: false,
