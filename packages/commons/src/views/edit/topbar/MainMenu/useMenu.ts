@@ -3,7 +3,7 @@ import { useMessage, usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { Resource } from '@src/types';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { useLeafWriter } from '../../useLeafWriter';
 import type { ItemProps } from './Item';
 import type { SubMenuProps } from './SubMenu';

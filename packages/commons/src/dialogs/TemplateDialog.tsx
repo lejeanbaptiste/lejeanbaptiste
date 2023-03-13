@@ -4,7 +4,7 @@ import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from './type';
 

@@ -4,7 +4,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { isValidXml } from '@src/utilities';
 import React, { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LoadingMask } from './LoadingMask';
 
 const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
