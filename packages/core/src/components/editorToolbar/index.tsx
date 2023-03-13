@@ -1,6 +1,5 @@
 import { Divider, Paper, useTheme } from '@mui/material';
 import { Stack } from '@mui/system';
-import React, { useCallback, useRef, type FC } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { EntityTypes } from '../../js/schema/types';
 import { useActions, useAppState } from '../../overmind';
@@ -22,7 +21,7 @@ export interface MenuItem {
   type: ItemType;
 }
 
-export const EditorToolbar: FC = () => {
+export const EditorToolbar = () => {
   const { schemaId } = useAppState().document;
   const { isReadonly, showTags } = useAppState().editor;
   const { fullscreen } = useAppState().ui;
