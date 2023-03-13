@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 1.3.8
+
+### Patch Changes
+
+- Update @mui/base components [1519cdba0d884cf6ecc4b03731a3386ca04cd0a2]
+- Add / remove types [3e66a0ac99d3bf439aabecf15734ec4d326e89df]
+- Tighten test threshold [e637910f5fa8f826aa1d4d216e7e0e0f6890c3b1]
+- Add missing dependency: uuid@9.0.0 [0a1455d54a73db80f770994bfc98cf2ffa0d68aa]
+- Update dependencies [d427322c0eab43b6d24c53d4471c448689d4ce2e]
+  - core:
+    - upgrade: framer-motion@10.2.4
+    - update: react-i18next@12.2.0
+    - bump up:
+      - @emotion/react@11.10.6
+      - @emotion/styled@11.10.6
+      - @mui/icons-material@5.11.11
+      - @mui/lab@5.0.0-alpha.122
+      - @mui/material@5.11.12
+      - axios@1.3.4
+      - i18next@22.4.11
+  - dev:
+    - upgrade: @testing-library/react@14.0.0
+    - update:
+      - @typescript-eslint/eslint-plugin@5.54.1
+      - @typescript-eslint/parser@5.54.1
+      - eslint-config-prettier@8.7.0
+      - jest-environment-jsdom@29.5.0
+      - mini-css-extract-plugin@2.7.3
+      - webpack@5.76.1
+
 ## 1.3.7
 
 ### Patch Changes
@@ -17,7 +47,7 @@
       - react-i18next@12.1.5
     - dev:
       - upgrade: esbuild@3.0.1
-      - update: 
+      - update:
         - @typescript-eslint/eslint-plugin@5.52.0
         - @typescript-eslint/parser@5.52.0
         - jest-environment-jsdom@29.4.3
