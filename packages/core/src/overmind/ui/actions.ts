@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
 import type { DialogBarProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
-import { ContextMenuState, NotificationProps, PaletteMode } from '../../types';
+import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 import { supportedLanguages } from '../../utilities';
 
 export const onInitializeOvermind = ({ actions }: Context, overmind: any) => {
@@ -194,4 +194,11 @@ export const showTextNodesContent = ({ state }: Context, value: boolean) => {
     ...state.ui.structurePanel,
     showTextNodesContent: value,
   };
+};
+
+export const changePanel = (
+  { state }: Context,
+  { side, panelId }: { side: Uncapitalize<Side>; panelId: PanelId }
+) => {
+  state.ui.layout[side].activePanel = panelId;
 };
