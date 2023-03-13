@@ -1,7 +1,6 @@
 import { Box, Divider, Popover, Stack } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, type FC } from 'react';
-import { ReactNode } from 'react-markdown';
 import { Appearance } from './Appearance';
 import { Identity } from './Identity';
 import { Language } from './Language';
@@ -39,7 +38,7 @@ export const Profile = ({ anchor, onClose }: ProfileProps) => {
     setStackedViews(stack);
   };
 
-  const viewComponent: Record<ViewType, ReactNode> = {
+  const viewComponent: Record<ViewType, React.ReactNode> = {
     main: <Main onClose={onClose} onChangeView={handleChangeView} />,
     appearance: <Appearance onBack={handleChangeView} onClose={onClose} />,
     language: <Language onBack={handleChangeView} onClose={onClose} />,
