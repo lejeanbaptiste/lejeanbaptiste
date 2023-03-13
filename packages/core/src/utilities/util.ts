@@ -9,6 +9,10 @@ export function isErrorMessage(param: any): param is Error {
   return (param as Error).message !== undefined;
 }
 
+export const isElement = (param: unknown): param is Element => {
+  return (param as Element).getAttribute !== undefined;
+};
+
 export const isValidHttpURL = (value: string) => {
   const res = value.match(/^http(s)?\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\/\S*)?$/);
   return res !== null;
