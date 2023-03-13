@@ -1,10 +1,10 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { log } from '@src/utilities';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TeamProfile, type ProfileProps } from './TeamProfile';
 
-export const Team: FC = () => {
+export const Team = () => {
   const { t } = useTranslation();
 
   const [team, setTeam] = useState<ProfileProps[]>();

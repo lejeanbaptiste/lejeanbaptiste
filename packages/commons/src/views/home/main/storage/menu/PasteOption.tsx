@@ -8,7 +8,7 @@ interface PasteOptionProps {
   disabled?: boolean;
 }
 
-export const PasteOption: FC<PasteOptionProps> = ({ disabled }) => {
+export const PasteOption = ({ disabled }: PasteOptionProps) => {
   const { openStorageDialog } = useActions().storage;
 
   const { t } = useTranslation('storage');

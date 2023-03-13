@@ -1,15 +1,15 @@
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 import { IconButton } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
-import { motion } from 'framer-motion';
-import React, { type FC } from 'react';
+import { motion, type Variants } from 'framer-motion';
+import React from 'react';
 
-export const Privacy: FC = () => {
+export const Privacy = () => {
   const { showSettings } = useCookieConsent();
 
   const handleClick = () => showSettings();
 
-  const optionVariants = {
+  const optionVariants: Variants = {
     initial: { y: -100 },
     visible: { y: 0 },
     exit: { y: -100 },

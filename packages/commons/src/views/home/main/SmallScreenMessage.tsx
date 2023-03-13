@@ -1,10 +1,10 @@
 import ScreenRotationOutlinedIcon from '@mui/icons-material/ScreenRotationOutlined';
 import ScreenshotMonitorOutlinedIcon from '@mui/icons-material/ScreenshotMonitorOutlined';
 import { Stack, Typography } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-export const SmallScreenMessage: FC = () => {
+export const SmallScreenMessage = () => {
   const { t } = useTranslation('messages');
   return (
     <Stack alignItems="center" gap={2} mt={1}>

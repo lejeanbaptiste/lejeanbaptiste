@@ -5,18 +5,18 @@ import {
   DialogContent,
   DialogTitle,
   Link,
-  Typography,
+  Typography
 } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
 import { useAppState } from '@src/overmind';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import { v4 as uuidv4 } from 'uuid';
 import { useActions } from '../overmind';
 import type { IDialog } from './type';
 
-export const PrivacyDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
+export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { language } = useAppState().ui;
   const { closeDialog } = useActions().ui;
 

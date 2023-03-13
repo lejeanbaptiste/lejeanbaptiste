@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import type { ViewProps } from '@src/types';
-import { motion, type AnimationControls } from 'framer-motion';
-import React, { type FC } from 'react';
+import { motion, type AnimationControls, type Variants } from 'framer-motion';
+import React from 'react';
 import { DisplayLayout } from '..';
 import { RecentView } from '../RecentView';
 import { SamplesView } from '../SamplesView';
@@ -16,14 +16,14 @@ interface ContainerProps {
   width: number;
 }
 
-export const Container: FC<ContainerProps> = ({
+export const Container = ({
   animationControl,
   displayLayout,
   height = 250,
   type = undefined,
   width,
-}) => {
-  const collectionVariants = {
+}: ContainerProps) => {
+  const collectionVariants: Variants = {
     show: { x: 0, opacity: 1 },
     hide: { x: -width, opacity: 0 },
   };

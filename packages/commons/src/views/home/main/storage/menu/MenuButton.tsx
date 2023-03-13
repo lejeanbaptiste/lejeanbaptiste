@@ -5,13 +5,13 @@ import {
   ListItem,
   ListItemButton,
   ListItemIcon,
-  ListItemText,
+  ListItemText
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
 import { getIcon } from '@src/assets/icons';
 import { motion } from 'framer-motion';
-import React, { type FC } from 'react';
+import React from 'react';
 
 export interface MenuButtonProps {
   active?: boolean;
@@ -38,7 +38,7 @@ const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
   },
 }));
 
-export const MenuButton: FC<MenuButtonProps> = ({
+export const MenuButton = ({
   active = false,
   disabled,
   disabledTooltipText,
@@ -46,7 +46,7 @@ export const MenuButton: FC<MenuButtonProps> = ({
   label,
   onClick,
   value,
-}) => {
+}: MenuButtonProps) => {
   const Icon = icon ? getIcon(icon) : undefined;
 
   const handleClick = () => (onClick ? onClick(value, label) : undefined);

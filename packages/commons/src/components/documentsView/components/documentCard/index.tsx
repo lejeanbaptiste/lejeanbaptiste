@@ -3,8 +3,8 @@ import { Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/materi
 import { getIcon } from '@src/assets/icons';
 import type { Resource } from '@src/types';
 import { formatDistanceToNow } from 'date-fns';
-import { AnimatePresence, motion } from 'framer-motion';
-import React, { useState, type FC, type MouseEvent } from 'react';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import React, { useState, type MouseEvent } from 'react';
 import type { DisplayLayout } from '../..';
 import { CoverImage } from './CoverImage';
 import { Path } from './Path';
@@ -24,7 +24,7 @@ export const CARD_WIDTH = 250;
 
 const ENABLE_SNAPSHOT = true;
 
-export const DocumentCard: FC<DocumentCardProps> = ({
+export const DocumentCard = ({
   displayLayout,
   deletable = false,
   onClick,
@@ -33,7 +33,7 @@ export const DocumentCard: FC<DocumentCardProps> = ({
   selected,
   resource,
   width = CARD_WIDTH,
-}) => {
+}: DocumentCardProps) => {
   const { palette } = useTheme();
 
   const [hover, setHover] = useState(false);
@@ -63,7 +63,7 @@ export const DocumentCard: FC<DocumentCardProps> = ({
     onRemove(url);
   };
 
-  const cardVariant = {
+  const cardVariant: Variants = {
     list: { width: '100%' },
     grid: { width },
   };

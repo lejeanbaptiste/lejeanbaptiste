@@ -1,17 +1,17 @@
 import SettingsIcon from '@mui/icons-material/Settings';
 import { IconButton } from '@mui/material';
 import { useLeafWriter } from '@src/views/edit/useLeafWriter';
-import { motion } from 'framer-motion';
-import React, { type FC } from 'react';
+import { motion, type Variants } from 'framer-motion';
+import React from 'react';
 
-export const Settings: FC = () => {
+export const Settings = () => {
   const { leafWriter } = useLeafWriter();
 
   const handleClick = () => {
     leafWriter?.showSettingsDialog();
   };
 
-  const optionVariants = {
+  const optionVariants: Variants = {
     initial: { y: -100 },
     visible: { y: 0 },
     exit: { y: -100 },

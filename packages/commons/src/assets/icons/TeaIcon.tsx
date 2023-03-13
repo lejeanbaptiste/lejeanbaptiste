@@ -1,5 +1,5 @@
 import { SvgIcon } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import './tea.css';
 
 interface IconProps {
@@ -7,7 +7,7 @@ interface IconProps {
   size?: number;
 }
 
-export const TeaIcon: FC<IconProps> = ({ color = '#33406f', size = 1 }) => {
+export const TeaIcon = ({ color = '#33406f', size = 1 }: IconProps) => {
   return (
     <SvgIcon
       className="tea"

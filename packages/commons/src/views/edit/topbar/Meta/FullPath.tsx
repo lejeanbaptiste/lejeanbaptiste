@@ -1,14 +1,14 @@
 import { Icon, Stack, Typography } from '@mui/material';
 import { getIcon } from '@src/assets/icons';
 import { useAppState } from '@src/overmind';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import React, { useMemo, type FC } from 'react';
 
 interface FullPathProps {
   show: boolean;
 }
 
-export const FullPath: FC<FullPathProps> = ({ show }) => {
+export const FullPath = ({ show }: FullPathProps) => {
   const { resource } = useAppState().editor;
 
   const getFullPath = useMemo(() => {
@@ -19,7 +19,7 @@ export const FullPath: FC<FullPathProps> = ({ show }) => {
     return `${owner}: ${repo}/${path && `${path}/`}`;
   }, [resource]);
 
-  const extraInfoVariant = {
+  const extraInfoVariant: Variants = {
     visible: { height: 'auto', opacity: 1 },
     hidden: { height: 0, opacity: 0 },
   };

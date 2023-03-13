@@ -1,9 +1,9 @@
 import { Link, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-export const About: FC = () => {
+export const About = () => {
   const { language } = useAppState().ui;
 
   const { breakpoints } = useTheme();

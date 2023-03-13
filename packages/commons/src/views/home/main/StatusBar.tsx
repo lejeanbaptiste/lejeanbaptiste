@@ -1,8 +1,8 @@
 import { Chip, Stack, useMediaQuery, useTheme } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-export const StatusBar: FC = () => {
+export const StatusBar = () => {
   const { t } = useTranslation();
 
   const { breakpoints } = useTheme();
