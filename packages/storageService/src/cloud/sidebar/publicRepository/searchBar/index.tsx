@@ -1,4 +1,4 @@
-import { useAutocomplete } from '@mui/base/AutocompleteUnstyled';
+import useAutocomplete from '@mui/base/useAutocomplete';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import {
