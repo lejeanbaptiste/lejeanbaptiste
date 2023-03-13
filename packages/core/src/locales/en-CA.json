@@ -1,6 +1,12 @@
 {
+  "Allow Tag Merge": "Allow Tag Merge",
+  "Allow drag and drop": "Allow drag and drop",
+  "Allow multiselection": "Allow multiselection",
+  "Authorities": "Authorities",
   "Confirmation dialog preferences have been reset": "Confirmation dialog preferences have been reset",
   "Documentation": "Documentation",
+  "Drag authorities to reorder priority": "Drag authorities to reorder priority",
+  "Entities Lookup Sources": "Entities Lookup Sources",
   "Only XML tags": {
     " No RDF": {
       "Semantic Web annotations will be created": "Only XML tags. No RDF/Semantic Web annotations will be created"
@@ -8,12 +14,26 @@
   },
   "Reset Dialog Warnings": "Reset Dialog Warnings",
   "Reset Settings": "Reset Settings",
+  "Settings": "settings",
   "Settings preferences have been reset to default": "Settings preferences have been reset to default",
+  "Show Entities": "Show Entities",
+  "Show Text Nodes": "Show Text Nodes",
+  "Show Text Nodes Content": "Show Text Nodes Content",
+  "Structure Panel": "Structure Panel",
+  "Text Nodes must be displayed for better accuracy": "Text Nodes must be displayed for better accuracy",
   "XML tags and RDF": {
     "Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": "XML tags and RDF/Semantic Web annotations equivalent to the XML tags will be created, consistent with the hierarchy of the XML schema, so annotations will not be allowed to overlap"
   },
   "You have unsaved changes": "You have unsaved changes",
   "You must provide a username to make requests": "You must provide a username to make requests {{authorityService}}",
+  "authorities": "authorities",
+  "autosave": "autosave",
+  "commons": {
+    "multiple": "multiple"
+  },
+  "editor": "editor",
+  "experimental": "experimental",
+  "interface": "interface",
   "leafwriter": {
     "Annotation": "Annotation",
     "Annotation Mode": "Annotation Mode",
@@ -106,5 +126,8 @@
     "use supported schema": "use supported schema",
     "yes": "yes"
   },
-  "not_supported": "Not supoprted"
+  "multiple tags": "multiple tags",
+  "not_supported": "Not supoprted",
+  "reset": "reset",
+  "structure panel": "structure panel"
 }
