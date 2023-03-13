@@ -3,9 +3,9 @@ import { schemas } from '@src/config/schemas';
 import { useAnalytics } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
-import { useLocation, useNavigate } from 'react-router';
 import queryString from 'query-string';
 import React, { useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { MainMenu, Meta, useMenu } from './topbar';
 import { useLeafWriter } from './useLeafWriter';
 

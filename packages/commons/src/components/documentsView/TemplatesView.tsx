@@ -4,7 +4,7 @@ import type { Resource } from '@src/types';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Masonry from 'react-responsive-masonry';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import type { DisplayLayout } from '.';
 import { CARD_WIDTH, DocumentCard } from './components';
 
