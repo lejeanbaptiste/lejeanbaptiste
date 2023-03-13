@@ -4,8 +4,7 @@ import { isValidHttpURL } from '../utilities';
 import { schemas as defaultSchemas } from './schemas';
 
 export const createConfig = (settings: LeafWriterOptionsSettings) => {
-
-  const { baseUrl, readonly, schemas: configSchemas } = settings
+  const { baseUrl, readonly, schemas: configSchemas } = settings;
   const supportedSchemas = configSchemas ? [...configSchemas, ...defaultSchemas] : defaultSchemas;
   const schemas = setupSchemas(supportedSchemas);
 
@@ -16,7 +15,7 @@ export const createConfig = (settings: LeafWriterOptionsSettings) => {
     schemas,
     modules: {
       west: [
-        { id: 'structure', title: ['Markup', 'Table of Contents'] },
+        { id: 'structure', title: 'Markup' },
         { id: 'entities', title: 'Entities' },
       ],
       east: [

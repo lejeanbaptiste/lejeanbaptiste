@@ -76,8 +76,8 @@ interface ISettingsModules {
 }
 
 interface ISettingsModulesPanel {
-  id: ISettingsModuleName,
-  title: string | string[] ;
+  id: ISettingsModuleName;
+  title: string;
 }
 
 export type ISettingsModuleName =
@@ -106,7 +106,7 @@ export interface User {
 }
 
 export const SchemaMappings = ['cwrcEntry', 'orlando', 'tei', 'teiLite'] as const;
-export type SchemaMappingType = typeof SchemaMappings[number];
+export type SchemaMappingType = (typeof SchemaMappings)[number];
 
 export interface Schema {
   id: string;
@@ -115,7 +115,7 @@ export interface Schema {
   rng: string[];
   css: string[];
   editable?: boolean;
-};
+}
 
 export interface Language {
   code: string;
@@ -154,22 +154,21 @@ export type PaletteMode = 'light' | 'auto' | 'dark';
 
 export interface ContextMenuState {
   show: boolean;
-  position?: {
-    posX: number;
-    posY: number;
-  };
-  eventSource?: string;
-  tagId?: string | string[];
-  useSelection?: boolean;
+  allowsMerge?: boolean;
   allowsTagAround?: boolean;
+  count?: number;
   element?: HTMLElement | null;
+  eventSource?: string;
   hasContentSelection?: boolean;
   isEntity?: boolean;
   isHeader?: boolean;
-  isRoot?: boolean;
   isMultiple?: boolean;
+  isRoot?: boolean;
+  position?: { posX: number; posY: number };
   rng?: Range;
+  tagId?: string | string[];
   tagName?: string | null;
+  useSelection?: boolean;
 }
 
 //---------
@@ -199,3 +198,44 @@ export interface ScreenshotParams {
   windowWidth?: number;
   windowHeight?: number;
 }
+
+export type Side = 'left' | 'right';
+
+export type PanelId =
+  | 'toc'
+  | 'structure'
+  | 'entities'
+  | 'nerve'
+  | 'validate'
+  | 'xmlViewer'
+  | 'imageViewer';
+
+export type PanelProp = {
+  id: PanelId;
+  label: string;
+};
+
+export interface SideItem extends PanelProp {
+  hide?: boolean;
+}
+
+export type SideProp = {
+  hide?: boolean;
+  id: Side;
+  items: SideItem[];
+};
+
+export type SectionProp = {
+  activePanel: PanelId | null;
+  collapsed?: boolean;
+  hide?: boolean;
+  id: Side;
+  panels: PanelId[];
+};
+
+export type LayoutProps = {
+  outerLeft?: SideProp;
+  left: SectionProp;
+  right?: SectionProp;
+  outerRight?: SideProp;
+};

@@ -427,8 +427,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
             disabled: !context.allowsMerge,
             onClick: () => {
               if (!Array.isArray(context.tagId)) return;
-              const tags = $(`'#${context.tagId.join(',#')}`, writer.editor?.getBody());
-              writer.tagger.mergeTags(tags);
+              writer.tagger.mergeTags(context.tagId);
             },
           });
         }
@@ -635,6 +634,17 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
         icon: 'remove',
         onClick: () => context.tagId && writer.tagger.removeStructureTag(context.tagId, true),
       });
+
+      if (context.eventSource === 'structureTree') {
+        items.push({ id: uuidv4(), type: 'divider' });
+
+        items.push({
+          id: uuidv4(),
+          displayName: 'Show Text Nodes',
+          icon: ui.structurePanel.showTextNodes ? 'checkIcon' : undefined,
+          onClick: () => actions.ui.showTextNodes(),
+        });
+      }
 
       return items;
     },

@@ -101,17 +101,6 @@ class Utilities {
     $(document.head).append(`<link type="text/css" rel="stylesheet" href="${fullHref}" />`);
   }
 
-  /**
-   * @param content
-   * @returns {String}
-   */
-  getTitleFromContent(content: string) {
-    content = content.trim();
-    if (content.length <= 34) return content;
-    const title = content.substring(0, 34) + '&#8230;';
-    return title;
-  }
-
   getCamelCase(str: string) {
     return str.replace(/(?:^|\s)\w/g, (match) => match.toUpperCase());
   }
