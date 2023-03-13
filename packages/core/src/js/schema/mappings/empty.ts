@@ -3,6 +3,7 @@ import type { SchemaMappingProps } from '../types';
 export const empty: SchemaMappingProps = {
   blockElements: [],
   header: '',
+  headings: [],
   id: '',
   listeners: {
     tagAdded: (tag) => {},

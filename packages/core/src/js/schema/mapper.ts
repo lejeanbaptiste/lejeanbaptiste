@@ -702,6 +702,14 @@ class Mapper {
     return this.getMappings().header;
   }
 
+    /**
+   * Returns the names of the headings tags for the current schema.
+   * @returns {String}
+   */
+    getHeadingTags() {
+      return this.getMappings().headings;
+    }
+
   /**
    * Returns the namespace for the current schema.
    * @returns {String}

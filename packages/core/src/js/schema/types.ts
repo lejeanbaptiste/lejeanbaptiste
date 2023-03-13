@@ -6,6 +6,7 @@ export interface SchemaMappingProps {
   blockElements: string[]; // Additional block level elements that should be added to TinyMCE
   entities: Map<EntityTypes, EntityMappingProps>; //Entity mappings
   header: string; // The name of the header tag
+  headings: string[]; // The name of the heading tags
   id: string; // The name of the ID attribute
   // Listeners to Leaf-Writer events can go here and will subscribe upon mappings load
   listeners: {
