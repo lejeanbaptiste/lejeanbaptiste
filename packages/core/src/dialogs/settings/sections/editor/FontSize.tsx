@@ -1,12 +1,12 @@
 import FormatSizeIcon from '@mui/icons-material/FormatSize';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import { Box, Button, Menu, MenuItem, Stack, Typography } from '@mui/material';
-import React, { MouseEvent, useState, type FC } from 'react';
-import { useActions, useAppState } from '../../overmind';
+import { Box, Button, ListItem, Menu, MenuItem, Typography } from '@mui/material';
+import React, { MouseEvent, useState } from 'react';
+import { useActions, useAppState } from '../../../../overmind';
 
 const options = [8, 9, 10, 11, 12, 13, 14, 16, 18];
 
-const FontSize: FC = () => {
+export const FontSize = () => {
   const { fontSize: currentFontSize } = useAppState().editor;
   const { setFontSize } = useActions().editor;
 
@@ -26,12 +26,12 @@ const FontSize: FC = () => {
   };
 
   return (
-    <Stack direction="row" alignItems="center">
+    <ListItem dense disableGutters>
       <FormatSizeIcon sx={{ mx: 1, height: 18, width: 18 }} />
-      <Typography>Font Size</Typography>
+      <Typography variant="body2">Font Size</Typography>
       <Box flexGrow={1} />
       <Button
-        aria-controls={open ? 'ont-size-menu' : undefined}
+        aria-controls={open ? 'font-size-menu' : undefined}
         aria-expanded={open ? 'true' : undefined}
         aria-haspopup="true"
         color="inherit"
@@ -42,7 +42,7 @@ const FontSize: FC = () => {
         sx={{ textTransform: 'lowercase' }}
         variant="text"
       >
-        {currentFontSize}pt
+        {`${currentFontSize} pt`}
       </Button>
       <Menu
         anchorEl={anchorEl}
@@ -53,12 +53,10 @@ const FontSize: FC = () => {
       >
         {options.map((size) => (
           <MenuItem key={size} dense disableRipple onClick={() => handleSelect(size)}>
-            {size}pt
+            {`${size} pt`}
           </MenuItem>
         ))}
       </Menu>
-    </Stack>
+    </ListItem>
   );
 };
-
-export default FontSize;
