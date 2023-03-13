@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## 2.6.1
+
+### Patch Changes
+
+- Add / remove types [778aa1b49207c9d64bf45d75222a92f0b28925c7]
+- Limit react-route to `react-route-dom` [3e5cb24d96e5fe0ef229dbc6c07d4275f11928e9]
+- Use `REACT.NODE` from `REACT` instead of markdown [c2d10f0fc988aa887b83a51367a6c89b0e25e68f]
+- Simplify css properties in mui components [a98d5bf7d760f8d1b085cf2c06ec3c681c010ea5]
+- Update dependencies [b993ce85428a4b41ad9153782315f9a4d85040c4]:
+  - core:
+  - remove unnecessary: @mui/lab
+  - add missing: rxjs@7.8.0
+  - upgrade:
+    - framer-motion@10.2.4
+    - keycloak-js@21.0.1
+    - query-string@8.1.0
+    - react-markdown@8.0.5
+  - update:
+    - react-i18next@12.2.0
+    - react-router-dom@6.9.0
+    - zod@3.21.4
+  - bump up:
+    - @emotion/react@11.10.6
+    - @emotion/styled@11.0.6
+    - @mui/icons-material@5.11.11
+    - @mui/material@5.11.12
+    - axios@1.3.4
+    - body-parser@1.20.2
+    - i18next@22.4.11
+  - dev:
+    - add missing: @octokit/types@9.0.0
+    - update:
+      - @types/chroma-js@2.4.0
+      - @types/node@18.5.0
+      - @typescript-eslint/eslint-plugin@5.54.1
+      - @typescript-eslint/parser@5.54.1
+      - eslint@3.36.0
+      - webpack@5.76.1
+    - bump up:
+      - mini-css-extract-plugin@2.7.3
+      - nodemon@2.0.21
+
 ## 2.6.0
 
 ## Features
@@ -13,7 +55,7 @@ Add the ability to switch LEAF-Wrirter `readonly` mode on and off.
 
 ## Minor Patches
 
-- rename `isDirty` to `contentHasChanged` [0af820b89760cc6a5de4743e33dc8d21b3dd5e4f] 
+- rename `isDirty` to `contentHasChanged` [0af820b89760cc6a5de4743e33dc8d21b3dd5e4f]
 - webpack update esbuild configurations [e456cb2b4428d5459078114f85b89e4522e433d7]
 - update dependencies [c3e99cb34839c3c752edfd0094948020329d90d1]
   - core:
