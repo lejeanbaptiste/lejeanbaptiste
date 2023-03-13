@@ -3,7 +3,6 @@ import type {
   GetValidTagsAtParameters,
   GetValidTagsAtParametersSelection,
 } from '@cwrc/leafwriter-validator';
-import $ from 'jquery';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { IconLeafWriter } from '../../../icons';
@@ -13,19 +12,19 @@ import Writer from '../../../js/Writer';
 import { useActions, useAppState } from '../../../overmind';
 import type { ContextMenuState } from '../../../types';
 import { log } from '../../../utilities';
-import type { ItemProps } from '../collection/Item';
+import type { CollectionType, ItemProps } from '../components';
 
 export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuState) => {
   const actions = useActions();
   const { editor, ui } = useAppState();
-  const [collectionType, setCollectionType] = useState<string>();
+  const [collectionType, setCollectionType] = useState<CollectionType | undefined>();
   const [xpath, setXpath] = useState<string>();
   const [tagName, setTagName] = useState<string>();
   const [tagMeta, setTagMeta] = useState<ElementDetail | undefined>();
 
   useEffect(() => {
     return () => {
-      setCollectionType('');
+      setCollectionType(undefined);
       setXpath('');
       setTagName('');
       setTagMeta(undefined);
@@ -282,8 +281,6 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
     initialize: async () => {
       if (!writer || !context) return false;
 
-      // writer.editor.currentBookmark = writer.editor.selection.getBookmark(1);
-
       if (typeof context.tagId === 'string' && context.tagId === writer.schemaManager.getHeader()) {
         context.isHeader = true;
         setTagName(context.tagId);
@@ -350,10 +347,10 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
     },
 
     getItems: async () => {
-      if (!writer || !context) return false;
+      if (!writer || !context) return;
 
       if (context.isHeader) {
-        const items = [
+        const items: ItemProps[] = [
           {
             id: uuidv4(),
             displayName: 'Edit Header',
@@ -377,7 +374,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
       }
 
       if (context.isRoot) {
-        const items = [
+        const items: ItemProps[] = [
           {
             id: uuidv4(),
             displayName: 'Edit',
@@ -405,7 +402,6 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
 
       const items: ItemProps[] = [];
 
-      // if (this.virtualEditorExists && this.isMultiple) {
       if (context.isMultiple) {
         items.push({
           id: uuidv4(),
@@ -428,6 +424,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
             id: uuidv4(),
             displayName: 'Merge Tags',
             icon: 'merge',
+            disabled: !context.allowsMerge,
             onClick: () => {
               if (!Array.isArray(context.tagId)) return;
               const tags = $(`'#${context.tagId.join(',#')}`, writer.editor?.getBody());
@@ -435,9 +432,10 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
             },
           });
         }
+
+        return items;
       }
 
-      // if (this.virtualEditorExists && this.useSelection && this.allowsTagAround) {
       if (context.useSelection && context.allowsTagAround) {
         items.push({
           id: uuidv4(),
@@ -548,11 +546,6 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           });
         }
       }
-
-      // / if (
-      //   (this.virtualEditorExists && !this.useSelection) ||
-      //   (this.useSelection && !this.hasContentSelection)
-      // ) {
 
       if (!context.useSelection || (context.useSelection && !context.hasContentSelection)) {
         items.push({
