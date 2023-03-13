@@ -3,6 +3,7 @@ import $ from 'jquery';
 import 'jquery-ui/ui/widgets/tabs';
 // import 'layout-jquery3';
 import '../../lib/jquery/jquery.layout_and_plugins.js';
+import { ISettingsModuleName } from '../../types/index.js';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import EntitiesList from './panels/entitiesList';
@@ -21,13 +22,13 @@ interface InitConfigProps {
 type LayoutLocation = 'east' | 'west' | 'north' | 'south';
 
 interface ModuleConfig {
-  id: string;
+  id: ISettingsModuleName;
   config?: any;
   title?: string | string[];
 }
 
 // track modules which cannot appear in readonly mode
-const WRITE_ONLY_MODULES = ['nerve', 'validation', 'selection'];
+const WRITE_ONLY_MODULES: ISettingsModuleName[] = ['structure', 'validation', 'selection'];
 
 class LayoutManager {
   readonly writer: Writer;
@@ -253,7 +254,7 @@ class LayoutManager {
     tox.style.height = `calc(100% - ${toolbarHeight}px)`;
   }
 
-  showModule(moduleId: string) {
+  showModule(moduleId: ISettingsModuleName) {
     this.modulesLayout.forEach((modules, region) => {
       if (!Array.isArray(modules)) {
         if (modules.id === moduleId) this.showRegion(region);
@@ -369,7 +370,7 @@ class LayoutManager {
       modules.forEach(({ id, title }) => {
         const tab: HTMLElement = document.querySelector(`.ui-layout-${region} > ul > li#${id}`);
 
-        if (WRITE_ONLY_MODULES.includes(id)) {
+        if (WRITE_ONLY_MODULES.includes(id as ISettingsModuleName)) {
           tab.style.display = readonly ? 'none' : '';
         }
 
@@ -398,7 +399,7 @@ class LayoutManager {
     );
   }
 
-  private addPanel(panelRegion: string, panelConfig: ModuleConfig | ModuleConfig[]) {
+  private addPanel(panelRegion: LayoutLocation, panelConfig: ModuleConfig | ModuleConfig[]) {
     if (!panelConfig) return '';
 
     //single module
