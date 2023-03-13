@@ -1,134 +1,243 @@
+import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import FingerprintIcon from '@mui/icons-material/Fingerprint';
-import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
-import FullscreenExitRoundedIcon from '@mui/icons-material/FullscreenExitRounded';
-import HelpCenterIcon from '@mui/icons-material/HelpCenter';
-import LabelRoundedIcon from '@mui/icons-material/LabelRounded';
-import PanoramaFishEyeIcon from '@mui/icons-material/PanoramaFishEye';
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
-import PersonIcon from '@mui/icons-material/Person';
-import PlaceIcon from '@mui/icons-material/Place';
-import QuizRoundedIcon from '@mui/icons-material/QuizRounded';
-import { DotsCircle, LabelVariantOutline, OrderAlphabeticalAscending } from 'mdi-material-ui';
-import { BookIcon, BookOutlinedIcon } from './custom/Book';
-import { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
-
-import { TagPlus } from 'mdi-material-ui';
-
+import BlockIcon from '@mui/icons-material/Block';
+import CallSplitIcon from '@mui/icons-material/CallSplit';
+import CheckIcon from '@mui/icons-material/Check';
 import ClearIcon from '@mui/icons-material/Clear';
 import CloseIcon from '@mui/icons-material/Close';
+import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import CodeRoundedIcon from '@mui/icons-material/CodeRounded';
+import ComputerIcon from '@mui/icons-material/Computer';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+import FingerprintIcon from '@mui/icons-material/Fingerprint';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatQuoteOutlinedIcon from '@mui/icons-material/FormatQuoteOutlined';
+import FullscreenExitRoundedIcon from '@mui/icons-material/FullscreenExitRounded';
 import FullscreenRoundedIcon from '@mui/icons-material/FullscreenRounded';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import HelpCenterIcon from '@mui/icons-material/HelpCenter';
 import LabelImportantRoundedIcon from '@mui/icons-material/LabelImportantRounded';
+import LabelRoundedIcon from '@mui/icons-material/LabelRounded';
 import LinkRoundedIcon from '@mui/icons-material/LinkRounded';
+import MergeRoundedIcon from '@mui/icons-material/MergeRounded';
+import PanoramaFishEyeIcon from '@mui/icons-material/PanoramaFishEye';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
+import PersonIcon from '@mui/icons-material/Person';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import PhotoLibraryRoundedIcon from '@mui/icons-material/PhotoLibraryRounded';
+import PlaceIcon from '@mui/icons-material/Place';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
+import QuizRoundedIcon from '@mui/icons-material/QuizRounded';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
+import StreamIcon from '@mui/icons-material/Stream';
+import StyleOutlinedIcon from '@mui/icons-material/StyleOutlined';
+import TagRoundedIcon from '@mui/icons-material/TagRounded';
 import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
-import { PlaylistCheck } from 'mdi-material-ui';
-
-import CheckIcon from '@mui/icons-material/Check';
+import { SvgIconTypeMap } from '@mui/material';
+import { OverridableComponent } from '@mui/material/OverridableComponent';
+import {
+  CloudSyncOutline,
+  DotsCircle,
+  Gitlab,
+  LabelMultipleOutline,
+  LabelVariantOutline,
+  OrderAlphabeticalAscending,
+  PlaylistCheck,
+  ShuffleVariant,
+  TagPlus,
+} from 'mdi-material-ui';
+import { BookIcon, BookOutlinedIcon } from './custom/Book';
+import BoxOpenIcon, { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
+import titleIcon from './svg/book-solid.svg';
+import rsIcon from './svg/box-open-solid.svg';
+import iconCitation from './svg/citation.svg';
+import validateIcon from './svg/clipboard-check-solid.svg';
+import codeIcon from './svg/code-solid.svg';
+import editIcon from './svg/edit-solid.svg';
+import EventIconSVG from './svg/event.svg';
+import markupFileIcon from './svg/file-code-solid.svg';
+import loadIcon from './svg/folder-open-solid.svg';
+import KeyIcon from './svg/key.svg';
+import LabelIcon from './svg/label.svg';
+import LinkIcon from './svg/link.svg';
+import iconPerson from './svg/person.svg';
+import PlaceIconSVG from './svg/place.svg';
+import relationIcon from './svg/project-diagram-solid.svg';
+import saveIcon from './svg/save-solid.svg';
+import signOutIcon from './svg/sign-out-alt-solid.svg';
+import NoteIcon from './svg/sticky-note.svg';
+import tagEditIcon from './svg/tag-edit-solid.svg';
+import tagRemoveIcon from './svg/tag-remove-solid.svg';
+import TranslationIcon from './svg/translate.svg';
+import triangleExclamationIcon from './svg/triangle-exclamation-solid.svg';
+import iconOrg from './svg/users-solid.svg';
+import ShortTextIcon from '@mui/icons-material/ShortText';
 
 export { BookIcon, BookOutlinedIcon } from './custom/Book';
 export { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 
-const icons = new Map([
-  ['ArrowDownwardIcon', ArrowDownwardIcon],
-  ['BookIcon', BookIcon],
-  ['BookOutlinedIcon', BookOutlinedIcon],
-  ['BoxIcon', BoxIcon],
-  ['BoxOutlinedIcon', BoxOutlinedIcon],
-  ['CheckIcon', CheckIcon],
-  ['ClearIcon', ClearIcon],
-  ['CloseIcon', CloseIcon],
-  ['CodeRoundedIcon', CodeRoundedIcon],
-  ['DotsCircle', DotsCircle],
-  ['EventIcon', EventIcon],
-  ['FormatQuoteIcon', FormatQuoteIcon],
-  ['FormatQuoteOutlinedIcon', FormatQuoteOutlinedIcon],
-  ['FullscreenExitRoundedIcon', FullscreenExitRoundedIcon],
-  ['FullscreenRoundedIcon', FullscreenRoundedIcon],
-  ['HelpCenterIcon', HelpCenterIcon],
-  ['LabelImportantRoundedIcon', LabelImportantRoundedIcon],
-  ['LabelRoundedIcon', LabelRoundedIcon],
-  ['LabelVariantOutline', LabelVariantOutline],
-  ['LinkRoundedIcon', LinkRoundedIcon],
-  ['OrderAlphabeticalAscending', OrderAlphabeticalAscending],
-  ['PanoramaFishEyeIcon', PanoramaFishEyeIcon],
-  ['PlaceIcon', PlaceIcon],
-  ['PlaceOutlinedIcon', PlaceOutlinedIcon],
-  ['PlaylistCheck', PlaylistCheck],
-  ['PeopleAltIcon', PeopleAltIcon],
-  ['PeopleOutlineOutlinedIcon', PeopleOutlineOutlinedIcon],
-  ['PersonIcon', PersonIcon],
-  ['PersonOutlineOutlinedIcon', PersonOutlineOutlinedIcon],
-  ['QuizRoundedIcon', QuizRoundedIcon],
-  ['ReplayIcon', ReplayIcon],
-  ['SettingsRoundedIcon', SettingsRoundedIcon],
-  ['StickyNote2Icon', StickyNote2Icon],
-  ['TranslateRoundedIcon', TranslateRoundedIcon],
-  ['TagPlus', TagPlus],
-  ['VpnKeyRoundedIcon', VpnKeyRoundedIcon],
-  ['WarningRoundedIcon', WarningRoundedIcon],
-]);
-
-const iconsAlias = new Map([
-  ['accept', 'CheckIcon'],
-  ['draft', 'DotsCircle'],
-  ['change', 'ReplayIcon'],
-  ['close', 'CloseIcon'],
-  ['citation', 'FormatQuoteIcon'],
-  ['citationDraft', 'FormatQuoteOutlinedIcon'],
-  ['code', 'CodeRoundedIcon'],
-  ['correction', 'WarningRoundedIcon'],
-  ['date', 'EventIcon'],
-  ['delete', 'ClearIcon'],
-  ['fullscreen', 'FullscreenRoundedIcon'],
-  ['fullscreenExit', 'FullscreenExitRoundedIcon'],
-  ['documentation', 'QuizRoundedIcon'],
-  ['keyword', 'VpnKeyRoundedIcon'],
-  ['insertTag', 'TagPlus'],
-  ['link', 'LinkRoundedIcon'],
-  ['note', 'StickyNote2Icon'],
-  ['organization', 'PeopleAltIcon'],
-  ['organizationDraft', 'PeopleOutlineOutlinedIcon'],
-  ['person', 'PersonIcon'],
-  ['personDraft', 'PersonOutlineOutlinedIcon'],
-  ['place', 'PlaceIcon'],
-  ['placeDraft', 'PlaceOutlinedIcon'],
-  ['sortAlphabetically', 'OrderAlphabeticalAscending'],
-  ['reject', 'ClearIcon'],
-  ['settings', 'SettingsRoundedIcon'],
-  ['showTagsOn', 'LabelImportantRoundedIcon'],
-  ['showTagsOff', 'LabelVariantOutline'],
-  ['sortLinear', 'ArrowDownwardIcon'],
-  ['sortType', 'LabelRoundedIcon'],
-  ['title', 'BookIcon'],
-  ['titleDraft', 'BookOutlinedIcon'],
-  ['thing', 'BoxIcon'],
-  ['thingDraft', 'BoxOutlinedIcon'],
-  ['translate', 'TranslateRoundedIcon'],
-  ['unknown', 'HelpCenterIcon'],
-  ['validate', 'PlaylistCheck'],
-  ['vetted', 'PanoramaFishEyeIcon'],
-]);
-
-export const getIcon = (name: string) => {
-  const iconName = iconsAlias.get(name) ?? name;
-  const icon = icons.get(iconName);
-  if (!icon) return FingerprintIcon;
-  return icon;
+const icons = {
+  accept: CheckIcon,
+  add: AddCircleOutlineIcon,
+  ArrowDownwardIcon: ArrowDownwardIcon,
+  block: BlockIcon,
+  BookIcon: BookIcon,
+  BookOutlinedIcon: BookOutlinedIcon,
+  BoxIcon: BoxIcon,
+  BoxOutlinedIcon: BoxOutlinedIcon,
+  change: ReplayIcon,
+  checkIcon: CheckIcon,
+  citation: FormatQuoteIcon,
+  citationDraft: FormatQuoteOutlinedIcon,
+  ClearIcon: ClearIcon,
+  close: CloseIcon,
+  CloseIcon: CloseIcon,
+  cloud: CloudQueueIcon,
+  cloudSync: CloudSyncOutline,
+  code: CodeRoundedIcon,
+  CodeRoundedIcon: CodeRoundedIcon,
+  computer: ComputerIcon,
+  copy: ContentCopyIcon,
+  correction: WarningRoundedIcon,
+  date: EventIcon,
+  delete: ClearIcon,
+  documentation: QuizRoundedIcon,
+  DotsCircle: DotsCircle,
+  draft: DotsCircle,
+  dragAndDrop: ShuffleVariant,
+  edit: EditIcon,
+  entities: StreamIcon,
+  entitiesTag: StyleOutlinedIcon,
+  EventIcon: EventIcon,
+  fingerprint: FingerprintIcon,
+  FormatQuoteIcon: FormatQuoteIcon,
+  FormatQuoteOutlinedIcon: FormatQuoteOutlinedIcon,
+  fullscreen: FullscreenRoundedIcon,
+  fullscreenExit: FullscreenExitRoundedIcon,
+  FullscreenExitRoundedIcon: FullscreenExitRoundedIcon,
+  FullscreenRoundedIcon: FullscreenRoundedIcon,
+  github: GitHubIcon,
+  gitlab: Gitlab,
+  HelpCenterIcon: HelpCenterIcon,
+  imageViewer: PhotoLibraryRoundedIcon,
+  insertTag: TagPlus,
+  keyword: VpnKeyRoundedIcon,
+  LabelImportantRoundedIcon: LabelImportantRoundedIcon,
+  LabelRoundedIcon: LabelRoundedIcon,
+  LabelVariantOutline: LabelVariantOutline,
+  link: LinkRoundedIcon,
+  LinkRoundedIcon: LinkRoundedIcon,
+  merge: MergeRoundedIcon,
+  MergeRoundedIcon: MergeRoundedIcon,
+  note: StickyNote2Icon,
+  OrderAlphabeticalAscending: OrderAlphabeticalAscending,
+  organization: PeopleAltIcon,
+  organizationDraft: PeopleOutlineOutlinedIcon,
+  PanoramaFishEyeIcon: PanoramaFishEyeIcon,
+  paste: ContentPasteIcon,
+  PeopleAltIcon: PeopleAltIcon,
+  PeopleOutlineOutlinedIcon: PeopleOutlineOutlinedIcon,
+  person: PersonIcon,
+  personDraft: PersonOutlineOutlinedIcon,
+  PersonIcon: PersonIcon,
+  PersonOutlineOutlinedIcon: PersonOutlineOutlinedIcon,
+  place: PlaceIcon,
+  placeDraft: PlaceOutlinedIcon,
+  PlaceIcon: PlaceIcon,
+  PlaceOutlinedIcon: PlaceOutlinedIcon,
+  PlaylistCheck: PlaylistCheck,
+  QuizRoundedIcon: QuizRoundedIcon,
+  referencing_string: BoxOpenIcon,
+  reject: ClearIcon,
+  remove: RemoveCircleOutlineIcon,
+  ReplayIcon: ReplayIcon,
+  reset: RestartAltIcon,
+  settings: SettingsRoundedIcon,
+  SettingsRoundedIcon: SettingsRoundedIcon,
+  shortText: ShortTextIcon,
+  showTagsOff: LabelVariantOutline,
+  showTagsOn: LabelImportantRoundedIcon,
+  ShuffleVariant: ShuffleVariant,
+  sortAlphabetically: OrderAlphabeticalAscending,
+  sortLinear: ArrowDownwardIcon,
+  sortType: LabelRoundedIcon,
+  split: CallSplitIcon,
+  StickyNote2Icon: StickyNote2Icon,
+  structure: AccountTreeRoundedIcon,
+  tagMultiSelection: LabelMultipleOutline,
+  TagPlus: TagPlus,
+  TagRoundedIcon: TagRoundedIcon,
+  tags: LabelRoundedIcon,
+  textNode: TagRoundedIcon,
+  thing: BoxIcon,
+  thingDraft: BoxOutlinedIcon,
+  title: BookIcon,
+  titleDraft: BookOutlinedIcon,
+  toc: FormatListBulletedIcon,
+  translate: TranslateRoundedIcon,
+  TranslateRoundedIcon: TranslateRoundedIcon,
+  unknown: HelpCenterIcon,
+  validate: PlaylistCheck,
+  vetted: PanoramaFishEyeIcon,
+  VpnKeyRoundedIcon: VpnKeyRoundedIcon,
+  WarningRoundedIcon: WarningRoundedIcon,
+  xmlViewer: CodeRoundedIcon,
+  
 };
 
-// export const getSvg = (name: string) => {
-//   const icon = svgs.get(name);
-//   if (!icon) return LabelIcon;
-//   return icon;
-// };
+export type IconLeafWriter = typeof icons extends Record<
+  infer I,
+  OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & {
+    muiName: string;
+  }
+>
+  ? I
+  : never;
+
+export const getIcon = (name: IconLeafWriter) => {
+  return icons[name];
+};
+
+const svgs = new Map([
+  ['tags', LabelIcon],
+  ['person', iconPerson],
+  ['place', PlaceIconSVG],
+  ['title', titleIcon],
+  ['date', EventIconSVG],
+  ['organization', iconOrg],
+  ['citation', iconCitation],
+  ['note', NoteIcon],
+  ['correction', triangleExclamationIcon],
+  ['keyword', KeyIcon],
+  ['link', LinkIcon],
+  ['rs', rsIcon],
+  ['translation', TranslationIcon],
+  ['relation', relationIcon],
+  ['tag-edit', tagEditIcon],
+  ['tag-remove', tagRemoveIcon],
+  ['code', codeIcon],
+  ['markup-file', markupFileIcon],
+  ['edit', editIcon],
+  ['validate', validateIcon],
+  ['save', saveIcon],
+  ['load', loadIcon],
+  ['sign-out', signOutIcon],
+]);
+
+export const getSvg = (name: string) => {
+  const icon = svgs.get(name);
+  if (!icon) return LabelIcon;
+  return icon;
+};

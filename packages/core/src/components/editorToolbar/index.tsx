@@ -2,6 +2,7 @@ import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import type { IconLeafWriter } from '../../icons';
 import { EntityTypes } from '../../js/schema/types';
 import { useActions, useAppState } from '../../overmind';
 import { Button } from './Button';
@@ -13,7 +14,7 @@ type ItemType = 'button' | 'divider' | 'iconButton' | 'toggle';
 export interface MenuItem {
   color?: string;
   disabled?: boolean;
-  icon?: string;
+  icon?: IconLeafWriter;
   hide?: boolean;
   onClick?: () => void;
   selected?: boolean;

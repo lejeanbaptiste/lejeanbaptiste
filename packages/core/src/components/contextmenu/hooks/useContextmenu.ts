@@ -6,6 +6,7 @@ import type {
 import $ from 'jquery';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { IconLeafWriter } from '../../../icons';
 import { EntityTypes } from '../../../js/schema/types';
 import type { Action } from '../../../js/tagger';
 import Writer from '../../../js/Writer';
@@ -81,7 +82,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           type,
           name: key,
           displayName,
-          icon: key,
+          icon: key as IconLeafWriter,
           onClick: () => writer.tagger.addEntityDialog(key),
         };
         return item;
@@ -380,7 +381,6 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
           {
             id: uuidv4(),
             displayName: 'Edit',
-            icon: 'edit',
             onClick: () => context.tagId && writer.tagger.editTagDialog(context.tagId),
           },
         ];
