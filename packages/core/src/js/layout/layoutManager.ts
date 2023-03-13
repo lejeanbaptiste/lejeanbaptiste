@@ -359,7 +359,7 @@ class LayoutManager {
   }
 
   toggleReadonly(readonly: boolean) {
-    //change to imageViewer
+    this.showModule('toc');
     this.showModule('imageViewer');
 
     //Change tabs
