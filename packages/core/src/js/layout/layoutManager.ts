@@ -7,8 +7,6 @@ import Writer from '../Writer';
 import { log } from './../../utilities';
 import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
-import Nerve from './panels/nerve';
-import Relations from './panels/relations';
 import Selection from './panels/selection';
 import StructureTree from './panels/structureTree';
 import Validation from './panels/validation';
@@ -118,9 +116,7 @@ class LayoutManager {
     html += `
       <div class="ui-layout-center ui-widget ui-widget-content" style="background-color: #f6f6f6">
         <div id="editor-toolbar" />
-
           <textarea id="${this.editorId}" name="editor" class="tinymce"></textarea>
-  
       </div>
     `;
 
@@ -362,10 +358,6 @@ class LayoutManager {
     return this.$container;
   }
 
-  getHeaderButtonsParent() {
-    return this.$headerButtons;
-  }
-
   toggleReadonly(readonly: boolean) {
     //change to imageViewer
     this.showModule('imageViewer');
@@ -452,12 +444,9 @@ class LayoutManager {
 
     if (module.id === 'structure') return new StructureTree(config);
     if (module.id === 'entities') return new EntitiesList(config);
-    if (module.id === 'relations') return new Relations(config);
     if (module.id === 'validation') return new Validation(config);
     if (module.id === 'selection') return new Selection(config);
     if (module.id === 'imageViewer') return new ImageViewer(config);
-
-    // if (module.id === 'nerve') return new Nerve(config);
 
     return null;
   }
