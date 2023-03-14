@@ -1,12 +1,12 @@
 import { Dialog, DialogContent, Stack } from '@mui/material';
 import { motion } from 'framer-motion';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
 import type { IDialog } from '../type';
 import { Section } from './components';
 import { Header } from './Header';
-import { Authorities, Editor, Interface, Reset, StructurePanel } from './sections';
+import { Authorities, Editor, Interface, Reset, MarkupPanel } from './sections';
 import { SideMenu, type MenuItemProps } from './SideMenu';
 
 export const SettingsDialog = ({ id, onClose, open }: IDialog) => {
@@ -17,7 +17,7 @@ export const SettingsDialog = ({ id, onClose, open }: IDialog) => {
     { id: 'interface', label: t('interface') },
     { id: 'editor', label: t('editor') },
     { id: 'authorities', label: t('authorities'), hide: isReadonly },
-    { id: 'structure-panel', label: t('structure panel'), hide: isReadonly },
+    { id: 'markup-panel', label: t('markup panel'), hide: isReadonly },
     { id: 'reset', label: t('reset'), hide: isReadonly },
   ];
 
@@ -36,7 +36,7 @@ export const SettingsDialog = ({ id, onClose, open }: IDialog) => {
       <Stack direction="row" overflow="hidden" px={1.5}>
         <SideMenu items={menuItems} />
         <DialogContent>
-          <Stack component={motion.div} layout spacing={3} sx={{ pt: 2.5 }}>
+          <Stack component={motion.div} layout spacing={3}>
             <Section id="interface" title={t('interface')}>
               <Interface />
             </Section>
@@ -48,8 +48,8 @@ export const SettingsDialog = ({ id, onClose, open }: IDialog) => {
                 <Section id="authorities" title={t('authorities')}>
                   <Authorities />
                 </Section>
-                <Section id="structure-panel" title={t('structure panel')}>
-                  <StructurePanel />
+                <Section id="markup-panel" title={t('markup panel')}>
+                  <MarkupPanel />
                 </Section>
                 <Section id="reset" title={t('reset')}>
                   <Reset />

@@ -641,7 +641,7 @@ export const useContextmenu = (writer?: Writer, contextMenuState?: ContextMenuSt
         items.push({
           id: uuidv4(),
           displayName: 'Show Text Nodes',
-          icon: ui.structurePanel.showTextNodes ? 'checkIcon' : undefined,
+          icon: ui.markupPanel.showTextNodes ? 'checkIcon' : undefined,
           onClick: () => actions.ui.showTextNodes(),
         });
       }

@@ -1,4 +1,4 @@
-import { Box, Button, ButtonGroup } from '@mui/material';
+import { Box, MenuItem, MenuList } from '@mui/material';
 import React, { useRef } from 'react';
 
 export type MenuItemProps = {
@@ -21,29 +21,25 @@ export const SideMenu = ({ items }: SideMenuProps) => {
   };
 
   return (
-    <Box ref={refElemennt} minWidth={120} mt={2}>
-      <ButtonGroup
-        aria-label="Side menu"
-        orientation="vertical"
-        size="small"
-        sx={{ alignItems: 'flex-start', gap: 0.5 }}
-      >
+    <Box ref={refElemennt} aria-label="Side menu" minWidth={120} mt={2} gap={0.5} ml={-1.5}>
+      <MenuList>
         {items
           .filter(({ hide }) => !hide)
           .map(({ id, label }) => (
-            <Button
+            <MenuItem
               key={id}
-              fullWidth
+              dense
               onClick={() => handleClick(id)}
-              sx={{ justifyContent: 'flex-start' }}
-              variant="text"
+              sx={{
+                borderTopRightRadius: 4,
+                borderBottomRightRadius: 4,
+                textTransform: 'capitalize',
+              }}
             >
               {label}
-            </Button>
+            </MenuItem>
           ))}
-      </ButtonGroup>
+      </MenuList>
     </Box>
   );
 };
-
-export default SideMenu;
