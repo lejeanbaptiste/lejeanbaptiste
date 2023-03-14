@@ -10,7 +10,7 @@ import {
 } from './store';
 
 export const TreeView = () => {
-  const { structurePanel } = useAppState().ui;
+  const { markupPanel } = useAppState().ui;
 
   const allowDND = useSetAtom(allowDNDAtom);
   const allowMultiselection = useSetAtom(allowMultiselectionAtom);
@@ -18,15 +18,15 @@ export const TreeView = () => {
   const displayTextNodeContent = useSetAtom(displayTextNodeContentAtom);
 
   useEffect(() => {
-    allowDND(structurePanel.allowDragAndDrop);
-    allowMultiselection(structurePanel.allowMultiselection);
-    displayTextNodes(structurePanel.showTextNodes);
-    displayTextNodeContent(structurePanel.showTextNodesContent);
+    allowDND(markupPanel.allowDragAndDrop);
+    allowMultiselection(markupPanel.allowMultiselection);
+    displayTextNodes(markupPanel.showTextNodes);
+    displayTextNodeContent(markupPanel.showTextNodesContent);
   }, [
-    structurePanel.allowDragAndDrop,
-    structurePanel.allowMultiselection,
-    structurePanel.showTextNodes,
-    structurePanel.showTextNodesContent,
+    markupPanel.allowDragAndDrop,
+    markupPanel.allowMultiselection,
+    markupPanel.showTextNodes,
+    markupPanel.showTextNodesContent,
   ]);
 
   return <SortableTree />;

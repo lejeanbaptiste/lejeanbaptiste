@@ -164,24 +164,24 @@ export const updateReadonly = ({ state, actions }: Context) => {
 };
 
 export const allowTagDragAndDrop = ({ state }: Context, value: boolean) => {
-  state.ui.structurePanel = {
-    ...state.ui.structurePanel,
+  state.ui.markupPanel = {
+    ...state.ui.markupPanel,
     allowDragAndDrop: value,
   };
 };
 
 export const allowStructurePanelMultiselection = ({ state }: Context, value: boolean) => {
-  state.ui.structurePanel = {
-    ...state.ui.structurePanel,
+  state.ui.markupPanel = {
+    ...state.ui.markupPanel,
     allowMultiselection: value,
   };
 };
 
 export const showTextNodes = ({ state, actions }: Context, value?: boolean) => {
-  if (!value) value = !state.ui.structurePanel.showTextNodes;
+  if (!value) value = !state.ui.markupPanel.showTextNodes;
 
-  state.ui.structurePanel = {
-    ...state.ui.structurePanel,
+  state.ui.markupPanel = {
+    ...state.ui.markupPanel,
     showTextNodes: value,
   };
 
@@ -190,8 +190,8 @@ export const showTextNodes = ({ state, actions }: Context, value?: boolean) => {
 };
 
 export const showTextNodesContent = ({ state }: Context, value: boolean) => {
-  state.ui.structurePanel = {
-    ...state.ui.structurePanel,
+  state.ui.markupPanel = {
+    ...state.ui.markupPanel,
     showTextNodesContent: value,
   };
 };

@@ -14,17 +14,17 @@ type State = {
   editSourceProps: EditSourceDialogProps;
   entityLookupDialogProps: EntityLookupDialogProps;
   fullscreen: boolean;
-  notifications: NotificationProps[];
   language: Language;
   layout: LayoutProps;
-  popupProps: PopupProps;
-  settingsDialogOpen: boolean;
-  structurePanel: {
+  markupPanel: {
     allowDragAndDrop: boolean;
     allowMultiselection: boolean;
     showTextNodes: boolean;
     showTextNodesContent: boolean;
   };
+  notifications: NotificationProps[];
+  popupProps: PopupProps;
+  settingsDialogOpen: boolean;
   themeAppearance: 'light' | 'auto' | 'dark';
   title: string;
 };
@@ -51,15 +51,15 @@ export const state: State = {
       items: [panel.imageViewer, panel.xmlViewer, panel.validate],
     },
   },
-  notifications: [],
-  popupProps: { open: false },
-  settingsDialogOpen: false,
-  structurePanel: {
+  markupPanel: {
     allowDragAndDrop: false,
     allowMultiselection: true,
     showTextNodes: false,
     showTextNodesContent: false,
   },
+  notifications: [],
+  popupProps: { open: false },
+  settingsDialogOpen: false,
   themeAppearance: 'auto',
   title: 'LEAF-Writer',
 };

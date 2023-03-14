@@ -33,6 +33,7 @@
   },
   "editor": "",
   "experimental": "",
+  "font-size": "",
   "interface": "",
   "leafwriter": {
     "Annotation": "Annotation",
@@ -126,6 +127,7 @@
     "use supported schema": "utiliser le schéma pris en charge",
     "yes": "oui"
   },
+  "markup panel": "",
   "multiple tags": "",
   "not_supported": "",
   "reset": "",

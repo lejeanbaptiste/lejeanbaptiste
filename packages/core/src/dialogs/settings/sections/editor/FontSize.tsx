@@ -2,6 +2,7 @@ import FormatSizeIcon from '@mui/icons-material/FormatSize';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Box, Button, ListItem, Menu, MenuItem, Typography } from '@mui/material';
 import React, { MouseEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../overmind';
 
 const options = [8, 9, 10, 11, 12, 13, 14, 16, 18];
@@ -9,6 +10,8 @@ const options = [8, 9, 10, 11, 12, 13, 14, 16, 18];
 export const FontSize = () => {
   const { fontSize: currentFontSize } = useAppState().editor;
   const { setFontSize } = useActions().editor;
+
+  const { t } = useTranslation();
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -28,7 +31,9 @@ export const FontSize = () => {
   return (
     <ListItem dense disableGutters>
       <FormatSizeIcon sx={{ mx: 1, height: 18, width: 18 }} />
-      <Typography variant="body2">Font Size</Typography>
+      <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
+        {t('font-size')}
+      </Typography>
       <Box flexGrow={1} />
       <Button
         aria-controls={open ? 'font-size-menu' : undefined}

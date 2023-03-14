@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
 import { Toggler } from '../components';
 
-export const StructurePanel = () => {
-  const { structurePanel } = useAppState().ui;
+export const MarkupPanel = () => {
+  const { markupPanel: structurePanel } = useAppState().ui;
   const {
     allowStructurePanelMultiselection,
     allowTagDragAndDrop,
