@@ -84,7 +84,7 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
       if (hover) {
         timer = setTimeout(() => {
           if (hover) setShowFullName(true);
-        }, 2000);
+        }, 1200);
       } else {
         setShowFullName(false);
         clearTimeout(timer);
