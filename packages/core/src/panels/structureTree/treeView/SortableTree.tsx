@@ -68,16 +68,14 @@ export const SortableTree = () => {
 
   const _flattenTree = useMemo(() => flattenTree(items), [items]);
 
-  const flattenedItems = useMemo(() => {
-    const flattenedTree = [..._flattenTree];
-
+  const visibleTree = useMemo(() => {
     let cloneExpandedItems = [...expandedItems];
 
     if (!cloneExpandedItems.includes(items[0]?.id)) {
       cloneExpandedItems.unshift(items[0]?.id);
     }
 
-    const visibleTree = flattenedTree.filter(({ id, parentId, children }) => {
+    const visible = _flattenTree.filter(({ id, parentId, children }) => {
       const shouldShow = cloneExpandedItems.includes(id);
       if (!shouldShow) {
         const childrenId = children.map((child) => child.id);
@@ -89,18 +87,18 @@ export const SortableTree = () => {
       return shouldShow;
     });
 
-    return visibleTree;
+    return visible;
   }, [activeId, expandedItems, _flattenTree]);
 
   const projected =
     activeId && overId
-      ? getProjection(flattenedItems, activeId, overId, offsetLeft, INDENTATION_WIDTH)
+      ? getProjection(visibleTree, activeId, overId, offsetLeft, INDENTATION_WIDTH)
       : null;
 
   const virtuoso = useRef<VirtuosoHandle>(null);
 
   const sensorContext: SensorContext = useRef({
-    items: flattenedItems,
+    items: visibleTree,
     offset: offsetLeft,
     selectedItems: selectedItems,
   });
@@ -114,8 +112,8 @@ export const SortableTree = () => {
     })
   );
 
-  const sortedIds = useMemo(() => flattenedItems.map(({ id }) => id), [flattenedItems]);
-  const activeItem = activeId ? flattenedItems.find(({ id }) => id === activeId) : null;
+  const sortedIds = useMemo(() => visibleTree.map(({ id }) => id), [visibleTree]);
+  const activeItem = activeId ? visibleTree.find(({ id }) => id === activeId) : null;
 
   useEffect(() => {
     writer.event('documentLoaded').subscribe(initialize);
@@ -151,10 +149,10 @@ export const SortableTree = () => {
 
   useEffect(() => {
     sensorContext.current = {
-      items: flattenedItems,
+      items: visibleTree,
       offset: offsetLeft,
     };
-  }, [flattenedItems, offsetLeft, items, selectedItems]);
+  }, [visibleTree, offsetLeft, items, selectedItems]);
 
   useEffect(() => {
     if (updatePending) {
@@ -186,7 +184,7 @@ export const SortableTree = () => {
   useEffect(() => {
     setTimeout(() => {
       if (selectedItems === null || selectedItems.length === 0) setSelectedItemsAnchor(null);
-      const selectedItemIndex = flattenedItems.findIndex(({ id }) => id === selectedItems[0]);
+      const selectedItemIndex = visibleTree.findIndex(({ id }) => id === selectedItems[0]);
 
       if (selectedItemIndex) {
         virtuoso?.current?.scrollIntoView({
@@ -271,8 +269,8 @@ export const SortableTree = () => {
     //* expand selection from first to last
     if (!canAddToMultiselection(id)) return;
 
-    const target = flattenedItems.find((item) => item.id === id);
-    const anchor = flattenedItems.find((item) => item.id === selectedItemsAnchor);
+    const target = visibleTree.find((item) => item.id === id);
+    const anchor = visibleTree.find((item) => item.id === selectedItemsAnchor);
 
     const expandedSelection: UniqueIdentifier[] = [];
 
@@ -280,7 +278,7 @@ export const SortableTree = () => {
     let lastIndex = Math.max(anchor.index, target.index);
 
     for (let i = firstIndex; i <= lastIndex; i++) {
-      const item = flattenedItems.find(
+      const item = visibleTree.find(
         ({ depth, index, parentId }) =>
           depth === anchor.depth && parentId === anchor.parentId && index === i
       );
@@ -295,8 +293,8 @@ export const SortableTree = () => {
     if (selectedItems.includes(id)) return true;
     if (selectedItems.length === 0) return true;
 
-    const target = flattenedItems.find((item) => item.id === id);
-    const anchor = flattenedItems.find((item) => item.id === selectedItemsAnchor);
+    const target = visibleTree.find((item) => item.id === id);
+    const anchor = visibleTree.find((item) => item.id === selectedItemsAnchor);
 
     if (anchor.parentId !== target.parentId) return false;
 
@@ -317,9 +315,9 @@ export const SortableTree = () => {
 
     const allowsMerge = () => {
       if (!Array.isArray(tagIds)) return false;
-      const anchor = flattenedItems.find(({ id }) => id === selectedItemsAnchor);
+      const anchor = visibleTree.find(({ id }) => id === selectedItemsAnchor);
       return tagIds.every(
-        (tagId) => flattenedItems.find(({ id }) => id === tagId)?.label === anchor?.label
+        (tagId) => visibleTree.find(({ id }) => id === tagId)?.label === anchor?.label
       );
     };
 
@@ -336,8 +334,8 @@ export const SortableTree = () => {
 
   const sortByIndex = (tags: UniqueIdentifier[]) => {
     const list = tags.sort((a, b) => {
-      const tagA = flattenedItems.find((item) => item.id === a);
-      const tagB = flattenedItems.find((item) => item.id === b);
+      const tagA = visibleTree.find((item) => item.id === a);
+      const tagB = visibleTree.find((item) => item.id === b);
       if (tagA.index < tagB.index) return -1;
       if (tagA.index > tagB.index) return 1;
       return 0;
@@ -364,8 +362,8 @@ export const SortableTree = () => {
 
   const handleDragMove = ({ delta, over }: DragMoveEvent) => {
     if (over) {
-      const overIndex = flattenedItems.findIndex(({ id }) => id === over.id);
-      const overItem = flattenedItems[overIndex];
+      const overIndex = visibleTree.findIndex(({ id }) => id === over.id);
+      const overItem = visibleTree[overIndex];
       if (overItem.type === 'node') return;
     }
 
@@ -382,12 +380,12 @@ export const SortableTree = () => {
     if (projected && over) {
       const { depth, parentId } = projected;
 
-      const parentIndex = flattenedItems.findIndex(({ id }) => id === parentId);
-      if (flattenedItems[parentIndex].type === 'node') return;
+      const parentIndex = visibleTree.findIndex(({ id }) => id === parentId);
+      if (visibleTree[parentIndex].type === 'node') return;
 
       // const overIndex = flattenedItems.findIndex(({ id }) => id === over.id);
-      const activeIndex = flattenedItems.findIndex(({ id }) => id === active.id);
-      const overIndexParent = flattenedItems[parentIndex].children.findIndex(
+      const activeIndex = visibleTree.findIndex(({ id }) => id === active.id);
+      const overIndexParent = visibleTree[parentIndex].children.findIndex(
         ({ id }) => id === over.id
       );
       // const activeTreeItem = flattenedItems[activeIndex];
@@ -427,7 +425,7 @@ export const SortableTree = () => {
         <Virtuoso
           ref={virtuoso}
           overscan={1000}
-          data={flattenedItems}
+          data={visibleTree}
           itemContent={(index, { id, children, isEntity, depth, label, type }) => {
             return (
               <SortableTreeItem
