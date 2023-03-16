@@ -19,7 +19,6 @@ const entry: EntryObject = {
 
 const output = {
   path: path.resolve(__dirname, 'dist'),
-  // publicPath: '/',
   pathinfo: isDev ? true : false,
   library: {
     name: 'Leafwriter',
@@ -31,9 +30,7 @@ const output = {
 const optimization = {
   emitOnErrors: isDev ? true : false,
   minimize: isDev ? false : true,
-  minimizer: isDev
-    ? []
-    : [new EsbuildPlugin({ target: 'es2020', css: true, include: /\.min\.js$/ })],
+  minimizer: isDev ? [] : [new EsbuildPlugin({ css: true, include: /\.min\.js$/ })],
   sideEffects: isDev ? false : true,
   usedExports: isDev ? false : true,
 };
