@@ -4,3 +4,4 @@ export const allowDNDAtom = atom(false);
 export const allowMultiselectionAtom = atom(true);
 export const displayTextNodesAtom = atom(false);
 export const displayTextNodeContentAtom = atom(false);
+export const preventDragAtom = atom(false);
