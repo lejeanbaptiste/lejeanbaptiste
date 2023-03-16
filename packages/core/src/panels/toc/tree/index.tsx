@@ -1,40 +1,36 @@
 import { UniqueIdentifier } from '@dnd-kit/core';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
+import { log } from '../../../utilities';
 import { Item } from './Item';
-import { useTree, type TreeItem } from './useTree';
+import { useTree, type FlattenedItem } from './useTree';
 
 const INDENTATION_WIDTH = 16;
-const INTIATE_EXPANDED_UP_TO_LEVEL = 4;
+const INTIATE_EXPANDED_UP_TO_LEVEL = 2;
 
 export const Tree = () => {
   const virtuoso = useRef<VirtuosoHandle>(null);
   const { writer } = window;
 
-  const { getEditorTreeModel, flattenTree, getParents } = useTree();
+  const { getEditorTreeModel, getParents } = useTree();
 
   const [initialized, setInitialized] = useState(false);
-  const [enabled, setEnabled] = useState(false);
   const [updatePending, setUpdatePending] = useState(false);
 
-  const [selectedItems, setSelectedItems] = useState<UniqueIdentifier[]>([]);
+  const [flattenTree, setFlattenTree] = useState<FlattenedItem[]>([]);
+
+  const [selectedItem, setSelectedItem] = useState<UniqueIdentifier>(null);
   const [expandedItems, setExpandedItems] = useState<UniqueIdentifier[]>([]);
   const [nodeChanged, setNodeChanged] = useState<UniqueIdentifier>(null);
 
-  const [items, setItems] = useState<TreeItem[]>([]);
-
-  const _flattenTree = useMemo(() => flattenTree(items), [items]);
-
-  const flattenedItems = useMemo(() => {
-    const flattenedTree = [..._flattenTree];
-
+  const visibleTree = useMemo(() => {
     let cloneExpandedItems = [...expandedItems];
 
-    if (!cloneExpandedItems.includes(items[0]?.id)) {
-      cloneExpandedItems.unshift(items[0]?.id);
+    if (!cloneExpandedItems.includes(flattenTree[0]?.id)) {
+      cloneExpandedItems.unshift(flattenTree[0]?.id);
     }
 
-    let visibleTree = flattenedTree.filter(({ id, parentId, children }) => {
+    let visible = flattenTree.filter(({ id, parentId, children }) => {
       const shouldShow = cloneExpandedItems.includes(id);
       if (!shouldShow) {
         const childrenId = children.map((child) => child.id);
@@ -46,10 +42,11 @@ export const Tree = () => {
       return shouldShow;
     });
 
-    visibleTree = visibleTree.slice(1, visibleTree.length);
+    //remove root
+    visible = visible.slice(1, visible.length);
 
-    return visibleTree;
-  }, [expandedItems, _flattenTree]);
+    return visible;
+  }, [expandedItems, flattenTree]);
 
   useEffect(() => {
     writer.event('documentLoaded').subscribe(initialize);
@@ -59,39 +56,36 @@ export const Tree = () => {
       writer.event('documentLoaded').unsubscribe(initialize);
       writer.event('nodeChanged').unsubscribe(nodeChange);
     };
-  }, [initialized, enabled, updatePending]);
+  }, [initialized, updatePending]);
 
   useEffect(() => {
     if (initialized) {
       let treeModel = getEditorTreeModel();
       expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
-      setItems(treeModel);
+      setFlattenTree(treeModel);
     }
   }, [initialized]);
 
   useEffect(() => {
     if (updatePending) {
       const treeModel = getEditorTreeModel();
-      setItems(treeModel);
+      setFlattenTree(treeModel);
       setUpdatePending(false);
     }
   }, [updatePending]);
 
   useEffect(() => {
     if (!!nodeChanged) {
-      if (selectedItems.includes(nodeChanged)) return;
-
-      const flatten = _flattenTree.length > 0 ? _flattenTree : flattenTree(items);
-      const parents = getParents(flatten, nodeChanged);
-
+      if (selectedItem === nodeChanged) return;
+      const parents = getParents(flattenTree, nodeChanged);
       setExpandedItems((prev) => [...new Set([...prev, ...parents, nodeChanged])]);
-      setSelectedItems([nodeChanged]);
+      setSelectedItem(nodeChanged);
     }
   }, [nodeChanged]);
 
   useEffect(() => {
     setTimeout(() => {
-      const selectedItemIndex = flattenedItems.findIndex(({ id }) => id === selectedItems[0]);
+      const selectedItemIndex = visibleTree.findIndex(({ id }) => id === selectedItem[0]);
       if (selectedItemIndex) {
         virtuoso?.current?.scrollIntoView({
           index: selectedItemIndex,
@@ -100,12 +94,9 @@ export const Tree = () => {
         });
       }
     }, 1);
-  }, [selectedItems[0]]);
+  }, [selectedItem]);
 
-  const initialize = () => {
-    setInitialized(true);
-    setEnabled(true);
-  };
+  const initialize = () => setInitialized(true);
 
   const nodeChange = (node?: Element) => {
     if (!initialized) {
@@ -115,21 +106,20 @@ export const Tree = () => {
 
     const id = node.id;
     if (!id) {
-      console.warn(`Structure Tree: Attribute 'id' missing from node ${node}`);
+      log.info(`TOC: attribute 'id' missing from node ${node}`);
       return;
     }
 
     setNodeChanged(id);
   };
 
-  const expandUpTo = (treeModel: TreeItem[], depth: number = Infinity) => {
-    const flatten = _flattenTree.length > 0 ? _flattenTree : flattenTree(treeModel);
-    const itemsToExpand = flatten.filter((item) => item.depth < depth).map((item) => item.id);
+  const expandUpTo = (treeModel: FlattenedItem[], depth: number = Infinity) => {
+    const itemsToExpand = treeModel.filter((item) => item.depth < depth).map((item) => item.id);
     setExpandedItems(itemsToExpand);
   };
 
   const handSelectItem = (id: string) => {
-    setSelectedItems([id]);
+    setSelectedItem(id);
     writer.utilities.selectElementById(id, true);
   };
 
@@ -152,7 +142,7 @@ export const Tree = () => {
     <Virtuoso
       ref={virtuoso}
       overscan={1000}
-      data={flattenedItems}
+      data={visibleTree}
       itemContent={(index, { id, children, depth, label, content }) => {
         return (
           <Item
@@ -168,7 +158,7 @@ export const Tree = () => {
               children.length ? () => handleExpand(id, !expandedItems.includes(id)) : undefined
             }
             onSelectItem={handSelectItem}
-            selected={selectedItems.includes(id)}
+            selected={selectedItem === id}
           />
         );
       }}

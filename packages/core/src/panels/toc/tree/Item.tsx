@@ -1,5 +1,6 @@
-import { ListItem, ListItemButton, PaletteMode, Typography, useTheme } from '@mui/material';
-import React, { useMemo, type HTMLAttributes } from 'react';
+import { Box, ListItem, ListItemButton, PaletteMode, Typography, useTheme } from '@mui/material';
+import React, { useMemo, type HTMLAttributes, type MouseEvent } from 'react';
+import { ExpandButton } from './ExpandButton';
 
 interface Props extends Omit<HTMLAttributes<HTMLLIElement>, 'id'> {
   childCount?: number;
@@ -46,6 +47,13 @@ export const Item = ({
 
   const hanldeSelectItem = () => onSelectItem(nodeId);
 
+  const handleExpand = (event: MouseEvent<HTMLElement, globalThis.MouseEvent>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (expandDisabled) return;
+    onExpand && onExpand();
+  };
+
   return (
     <ListItem
       ref={wrapperRef}
@@ -55,7 +63,20 @@ export const Item = ({
       dense
       sx={{ mb: '1px', pl: `${indentationWidth * depth}px` }}
     >
-      <ListItemButton selected={selected} onClick={hanldeSelectItem} sx={{ borderRadius: 1 }}>
+      <ListItemButton
+        selected={selected}
+        onClick={hanldeSelectItem}
+        sx={{ borderRadius: 1, px: 1, gap: 0.5 }}
+      >
+        {onExpand ? (
+          <ExpandButton
+            disabled={expandDisabled}
+            onClick={handleExpand}
+            {...{ expanded, selected }}
+          />
+        ) : (
+          <Box width={18} height={18} />
+        )}
         <Typography
           color={selected ? palette.primary[inverseThemeMode] : 'inherit'}
           fontWeight={selected ? 700 : 500}
