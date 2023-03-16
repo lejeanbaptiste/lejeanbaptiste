@@ -29,9 +29,7 @@ const output = {
 const optimization = {
   emitOnErrors: isDev ? true : false,
   minimize: isDev ? false : true,
-  minimizer: isDev
-    ? []
-    : [new EsbuildPlugin({ target: 'es2020', css: true, include: /\.min\.js$/ })],
+  minimizer: isDev ? [] : [new EsbuildPlugin({ css: true, include: /\.min\.js$/ })],
   sideEffects: isDev ? false : true,
   usedExports: isDev ? false : true,
 };
@@ -39,12 +37,10 @@ const optimization = {
 const plugins = [
   new CleanWebpackPlugin({ cleanStaleWebpackAssets: false }),
   new MiniCssExtractPlugin(),
-  // new webpack.ProvidePlugin({ process: 'process/browser' }),
   new WebpackBar({ color: isDev ? '#7e57c2' : '#9ccc65' }),
 ];
 
 const resolve = {
-  // alias: { '@src': path.resolve(__dirname, 'src/') },
   extensions: ['.tsx', '.ts', '.js', '.json'],
 };
 
