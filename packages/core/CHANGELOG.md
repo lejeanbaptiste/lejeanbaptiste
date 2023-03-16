@@ -1,7 +1,30 @@
 # CHANGELOG
 
-## 2.6.0
+## 2.6.1
 
+### Patch Changes
+
+- TOC: heading identation and expansion [e68ee1428ebdd7f740053778964670d236468440]
+- Improve logging [e97e225c1925652e2087caab1d9d9ab5d79ebaaa]
+- Markup Panel:
+  - Reduce initial open level [cf4bd71c7b3596ba363dc909d7f925eb8cf94aa8]
+  - Reduce tooltip delay to 1200 ms [9afbba8fc0f69cdabfb537e664a6285badae1c98]
+  - Allow drag only of selecting whole tag [5b5ab5c190543be650ccc4c972bcab147dd342c2]
+- Clean, rename var, remove comments [1944d8a8445d4b67ac6f0fc2bd2b95bc93ad8589]
+- Tests change lib url [32738d54791006181ff1bd2ce34f664921af700c]
+- Fix EsbuildPlugin minify config [498eeb5e029761ad0a395fb0674966a9a88adae3]
+- Update dependencies [62b87f77a1b62a535fee0d03f7cb8c726158f004]
+  - core:
+    - update: framer-motion@10.3.2
+    - bump up: @mui/material@5.11.13
+  - dev:
+    - bump up:
+      - @types/node@18.15.3
+      - webpack@5.76.2
+- Updated dependencies
+- @cwrc/leafwriter-validator@1.2.4
+
+## 2.6.0
 
 ## New Features
 
