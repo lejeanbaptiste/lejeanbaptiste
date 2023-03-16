@@ -1,13 +1,16 @@
 import { type UniqueIdentifier } from '@dnd-kit/core';
+import { log } from '../../../utilities';
 
 export interface TreeItem {
   id: UniqueIdentifier;
   label: string;
-  content?: string;
+  content: string;
   children: TreeItem[];
+  level?: number;
+  isHeading: boolean;
 }
 
-interface FlattenedItem extends TreeItem {
+export interface FlattenedItem extends TreeItem {
   parentId: UniqueIdentifier | null;
   depth: number;
   index: number;
@@ -16,121 +19,142 @@ interface FlattenedItem extends TreeItem {
 export const useTree = () => {
   const getEditorTreeModel = () => {
     if (!window.writer) return null;
-
     const { editor, schemaManager } = window.writer;
-
-    let treeModel: TreeItem;
 
     const documentRootNode =
       editor.getBody().querySelector(`[_tag="${schemaManager.getRoot()}"]`) ??
       editor.getBody().querySelector('[_tag]');
 
-    const rootItem = processElement(documentRootNode);
+    const rootItem = getHeading(documentRootNode);
     if (!rootItem) return;
 
-    treeModel = getElements({ element: documentRootNode });
+    const headings: TreeItem[] = [];
 
-    return [treeModel];
+    traverseTree({ element: documentRootNode, headings });
+
+    const parsedHeading = parseHeading(headings);
+
+    return parsedHeading;
   };
 
-  type GetNodesParams = {
+  const parseHeading = (headings: TreeItem[]) => {
+    //dedup and sort levels
+    const levels = [...new Set(headings.map((heading) => heading.level))].sort();
+
+    //map levels into depth
+    const depthLevelMapping: Map<number, number> = new Map();
+    levels.forEach((level) => {
+      if (depthLevelMapping.has(level)) return;
+      depthLevelMapping.set(level, depthLevelMapping.size);
+    });
+
+    //Assign depth based on level for each heading
+    let parsedHeadings = headings.map((heading, index) => {
+      const depth = depthLevelMapping.get(heading.level);
+      const item: FlattenedItem = {
+        ...heading,
+        depth,
+        parentId: null,
+        index,
+      };
+      return item;
+    });
+
+    //establish parent/children relationship
+    parsedHeadings = parsedHeadings.map((heading, index) => {
+      const parent = getHeadingParent(parsedHeadings, index, heading.depth);
+      const parentId = parent?.id ?? null;
+      if (parent) parent.children.push(heading);
+
+      return {
+        ...heading,
+        parentId,
+      };
+    });
+
+    return parsedHeadings;
+  };
+
+  const getHeadingParent = (headings: FlattenedItem[], fromIndex: number, depth: number) => {
+    const headingsClone = [...headings].slice(0, fromIndex).reverse();
+    for (const heading of headingsClone) {
+      if (heading.depth < depth) return heading;
+    }
+    return null;
+  };
+
+  type TraverseTreeParams = {
     element: Element;
+    headings: TreeItem[];
     level?: number;
-    parent?: TreeItem;
   };
 
   /**
-   * It takes a DOM element and returns a tree item
-   * @param {GetItemsParams}  - an object with the following properties:
-   * - `element` - the element to process
-   * - `level` - the tree level
-   * - `parent` - the tree item parent
-   *
-   * @returns A TreeItem with children.
+   * It takes an element, and recursively traverses its children, collecting headings and their levels
+   * @param {TraverseTreeParams}  - TraverseTreeParams
+   * @returns a TreeItem
    */
-  const getElements = ({ element, level = 0, parent }: GetNodesParams): TreeItem => {
+  const traverseTree = ({
+    element,
+    headings,
+    level = 0,
+  }: {
+    element: Element;
+    headings: TreeItem[];
+    level?: number;
+  }): TreeItem => {
     const { schemaManager } = window.writer;
-
-    const item = processElement(element);
 
     //Bypass document Header. Avoid children on 'edit' and completely on 'readonly'
     if (element.getAttribute('_tag') === schemaManager.getHeader()) return;
 
-    let treeChildren: TreeItem[] = [];
-
-    const elementChildren = Array.from(element.children);
-
-    if (item && parent) {
-      parent.children = [...parent.children, item];
+    //collect heading
+    const item = getHeading(element);
+    if (item) {
+      item.level = level;
+      headings.push(item);
     }
 
-    elementChildren.forEach((child) => {
-      const childItem = getElements({ element: child, level: level + 1, parent: item ?? parent });
-      if (childItem) treeChildren.push(childItem);
+    Array.from(element.children).forEach((child) => {
+      traverseTree({ element: child, headings, level: level + 1 });
     });
-
-    //store children
-    if (treeChildren.length > 0) {
-      if (item) {
-        item.children = treeChildren;
-      } else {
-        //flat into parent if item is undefined
-        parent.children = [...parent.children, ...treeChildren];
-        parent.children = [...new Set([...parent.children])]; // deduplicate
-      }
-    }
 
     return item;
   };
 
   /**
-   * It takes a element and returns a treeItem object
+   * It takes a element and returns a treeItem object if the tag is a 'heading'
    * @param {Element} element - the element to process
    * @returns A treeItem object
    */
-  const processElement = (element: Element) => {
+  const getHeading = (element: Element) => {
     const { schemaManager, utilities } = window.writer;
 
     const id = element.getAttribute('id') ?? element.getAttribute('name');
     const tag = element.getAttribute('_tag');
 
     if (!id) {
-      console.warn('TOC: no id for', tag);
+      log.info('TOC: no id for', tag);
       return;
     }
 
-    if (tag !== schemaManager.getRoot() && !schemaManager.mapper.getHeadingTags().includes(tag)) {
-      return;
-    }
+    const isHeading = schemaManager.mapper.getHeadingTags().includes(tag);
+
+    if (tag !== schemaManager.getRoot() && !isHeading) return;
 
     const constent =
-      tag === schemaManager.getRoot() ? tag : element.textContent.trim();
+      tag === schemaManager.getRoot() || !isHeading ? tag : element.textContent.trim();
 
     const item: TreeItem = {
       id,
       label: tag,
       content: constent,
       children: [],
+      isHeading,
     };
 
     return item;
   };
-
-  function flatten(
-    items: TreeItem[],
-    parentId: UniqueIdentifier | null = null,
-    depth = 0
-  ): FlattenedItem[] {
-    return items.reduce<FlattenedItem[]>((acc, item, index) => {
-      return [
-        ...acc,
-        { ...item, parentId, depth, index },
-        ...flatten(item?.children, item.id, depth + 1),
-      ];
-    }, []);
-  }
-
-  const flattenTree = (items: TreeItem[]): FlattenedItem[] => flatten(items);
 
   const getParents = (flatten: FlattenedItem[], id: UniqueIdentifier) => {
     const parents: UniqueIdentifier[] = [];
@@ -147,7 +171,6 @@ export const useTree = () => {
   };
 
   return {
-    flattenTree,
     getParents,
     getEditorTreeModel,
   };
