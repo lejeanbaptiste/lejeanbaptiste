@@ -17,6 +17,7 @@ import React, { useEffect, useMemo, useRef, useState, type MouseEvent } from 're
 import { createPortal } from 'react-dom';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { useActions } from '../../../overmind';
+import { log } from '../../../utilities';
 import { SortableTreeItem } from './components';
 import {
   allowDNDAtom,
@@ -221,7 +222,7 @@ export const SortableTree = () => {
 
     const id = node.id;
     if (!id) {
-      console.warn(`Structure Tree: Attribute 'id' missing from node ${node}`);
+      log.info(`markup panel: attribute 'id' missing from node ${node}`);
       return;
     }
 
