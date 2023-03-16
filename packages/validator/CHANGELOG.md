@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 1.2.4
+
+### Patch Changes
+
+- Fix EsbuildPlugin minify config [ac63c0591ddc12901a535bbc50ade4689ae87af5]
+- Update dependencies
+  - dev:
+    - update:
+      - @typescript-eslint/eslint-plugin@5.54.1 [7c448766cb72c355e47528e73b57ffe3b875c592]
+      - @typescript-eslint/parser@5.54.1 [7c448766cb72c355e47528e73b57ffe3b875c592]
+      - eslint@8.36.0 [7c448766cb72c355e47528e73b57ffe3b875c592]
+      - eslint-config-prettier@8.7.0 [7c448766cb72c355e47528e73b57ffe3b875c592]
+      - jest@29.5.0 [7c448766cb72c355e47528e73b57ffe3b875c592]
+      - jest-environment-jsdom@29.5.0 [7c448766cb72c355e47528e73b57ffe3b875c592]
+      - webpack@5.76.2 [81e6fcdc645926e22870b8fe540bf8e4ac59bb88]
+    - bump up:
+      - @types/jest@29.4.4 [81e6fcdc645926e22870b8fe540bf8e4ac59bb88]
+      - prettier@2.8.4 [7c448766cb72c355e47528e73b57ffe3b875c592]
+      - typedoc@0.23.26 [7c448766cb72c355e47528e73b57ffe3b875c592]
+
 ## 1.2.3
 
 ### Patch Changes
