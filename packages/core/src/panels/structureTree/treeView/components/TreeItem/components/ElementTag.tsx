@@ -1,7 +1,7 @@
 import { ListItemButton, Stack, useTheme } from '@mui/material';
 import chroma from 'chroma-js';
 import classNames from 'classnames';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import React, {
   forwardRef,
   useEffect,
@@ -10,7 +10,7 @@ import React, {
   type MouseEvent,
 } from 'react';
 import { ElementIcon, ExpandButton, Label, SelectionBadge } from '.';
-import { allowMultiselectionAtom } from '../../../store';
+import { allowMultiselectionAtom, preventDragAtom } from '../../../store';
 import { useItem } from '../useItem';
 
 export interface ElementTagProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'id'> {
@@ -61,6 +61,7 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
     ref
   ) => {
     const allowMultiselection = useAtomValue(allowMultiselectionAtom);
+    const setPreventDrag = useSetAtom(preventDragAtom);
 
     const { palette } = useTheme();
 
@@ -91,6 +92,10 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
       }
       return () => clearTimeout(timer);
     }, [hover]);
+
+    useEffect(() => {
+      setPreventDrag(selectContentOnly);
+    }, [selectContentOnly]);
 
     const hanldeSelectItem = (event: MouseEvent<HTMLElement, Event>) => {
       if (allowMultiselection && event.shiftKey) {

@@ -24,6 +24,7 @@ import {
   allowMultiselectionAtom,
   displayTextNodeContentAtom,
   displayTextNodesAtom,
+  preventDragAtom,
 } from './store';
 import type { SensorContext, TreeItems } from './types';
 import { useTree } from './useTree';
@@ -47,6 +48,7 @@ export const SortableTree = () => {
   const allowMultiselection = useAtomValue(allowMultiselectionAtom);
   const showTextNodes = useAtomValue(displayTextNodesAtom);
   const displayTextNodeContent = useAtomValue(displayTextNodeContentAtom);
+  const preventDrag = useAtomValue(preventDragAtom);
 
   const { getEditorTreeModel, moveNode } = useTree();
 
@@ -107,7 +109,7 @@ export const SortableTree = () => {
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 10,
-        tolerance: !allowDND ? 0 : undefined,
+        tolerance: !allowDND || preventDrag ? 0 : undefined,
       },
     })
   );
