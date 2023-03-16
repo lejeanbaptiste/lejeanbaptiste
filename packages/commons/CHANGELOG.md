@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2.6.2
+
+### Patch Changes
+
+- Fix EsbuildPlugin minify config [00d1b753915e8acf2557cf0f1ab0b913a336f586]
+- Update dependencies [bb2064f17c06f9a46caf17c7f4d8a3aafc3b28af]
+  - core:
+    - update: framer-motion@10.3.2
+    - bump up: @mui/material@5.11.13
+  - dev:
+    - bump up:
+      - @types/node@18.15.3
+      - webpack@5.76.2
+
 ## 2.6.1
 
 ### Patch Changes
