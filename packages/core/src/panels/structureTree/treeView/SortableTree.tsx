@@ -37,7 +37,7 @@ import {
 } from './utilities';
 
 const INDENTATION_WIDTH = 16;
-const INTIATE_EXPANDED_UP_TO_LEVEL = 4;
+const INTIATE_EXPANDED_UP_TO_LEVEL = 2;
 
 export const SortableTree = () => {
   const { showContextMenu } = useActions().ui;
