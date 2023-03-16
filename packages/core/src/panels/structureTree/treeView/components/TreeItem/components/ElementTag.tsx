@@ -67,18 +67,14 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
 
     const { color, icon } = useItem(nodeId, isEntity);
 
-    const { writer } = window;
+    const { schemaManager } = window.writer;
 
     const [hover, setHover] = useState(false);
     const [showFullName, setShowFullName] = useState(false);
-    const [selectContentsOnly, setSelectContentsOnly] = useState(true);
+    const [selectContentOnly, setSelectContentOnly] = useState(true);
     const [multiselectable, setMultiselectable] = useState(true);
 
-    const fullName = writer.schemaManager.getFullNameForTag(label);
-
-    useEffect(() => {
-      if (!selected) setSelectContentsOnly(true);
-    }, [selected]);
+    const fullName = schemaManager.getFullNameForTag(label);
 
     useEffect(() => {
       let timer: NodeJS.Timeout;
@@ -92,6 +88,10 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
       }
       return () => clearTimeout(timer);
     }, [hover]);
+
+    useEffect(() => {
+      if (!selected) setSelectContentOnly(true);
+    }, [selected]);
 
     useEffect(() => {
       setPreventDrag(selectContentOnly);
@@ -110,14 +110,11 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
       }
 
       if (selected) {
-        if (
-          label === writer.schemaManager.getRoot() ||
-          label === writer.schemaManager.getHeader()
-        ) {
+        if ([schemaManager.getRoot(), schemaManager.getHeader()].includes(label)) {
           return;
         }
 
-        setSelectContentsOnly((prevValue) => {
+        setSelectContentOnly((prevValue) => {
           const newValue = !prevValue;
           onSelectItem(event, { id: nodeId, contentOnly: newValue });
           return newValue;
@@ -126,7 +123,7 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
         return;
       }
 
-      onSelectItem(event, { id: nodeId, contentOnly: selectContentsOnly });
+      onSelectItem(event, { id: nodeId, contentOnly: selectContentOnly });
     };
 
     const handleExpand = (event: MouseEvent<HTMLElement, globalThis.MouseEvent>) => {
@@ -140,7 +137,7 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
       event.preventDefault();
       event.stopPropagation();
 
-      setSelectContentsOnly(true);
+      setSelectContentOnly(true);
 
       onContextMenuOpen(event, nodeId);
     };
@@ -209,7 +206,7 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
           <Label fullName={fullName} selected={selected} showFullName={showFullName}>
             {children}
           </Label>
-          {selected && !multipleSelection && <SelectionBadge contentsOnly={selectContentsOnly} />}
+          {selected && !multipleSelection && <SelectionBadge contentsOnly={selectContentOnly} />}
         </Stack>
       </ListItemButton>
     );

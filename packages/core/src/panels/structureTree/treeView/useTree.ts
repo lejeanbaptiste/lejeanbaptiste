@@ -14,8 +14,6 @@ export const useTree = () => {
 
     const { editor, schemaManager } = window.writer;
 
-    let treeModel: TreeItem;
-
     const documentRootNode =
       editor.getBody().querySelector(`[_tag="${schemaManager.getRoot()}"]`) ??
       editor.getBody().querySelector('[_tag]');
@@ -23,7 +21,7 @@ export const useTree = () => {
     const rootItem = processNode(documentRootNode);
     if (!rootItem) return;
 
-    treeModel = getNodes({ node: documentRootNode });
+    const treeModel = getNodes({ node: documentRootNode });
 
     return [treeModel];
   };
