@@ -1,7 +1,7 @@
 import { type UniqueIdentifier } from '@dnd-kit/core';
 import { useAtomValue } from 'jotai';
 import { v4 as uuidv4 } from 'uuid';
-import { isElement } from '../../../utilities';
+import { isElement, log } from '../../../utilities';
 import { displayTextNodeContentAtom, displayTextNodesAtom } from './store';
 import type { TreeItem } from './types';
 
@@ -115,7 +115,7 @@ export const useTree = () => {
     let tag = node.getAttribute('_tag');
 
     if (!id) {
-      console.warn('structureTree: no id for', tag);
+      log.info('markup panel: no id for', tag);
       return;
     }
 
