@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 1.3.9
+
+### Patch Changes
+
+- Fix EsbuildPlugin minify config [fa93406fa8f2e2a45ca9faa8782b3e5ef3f997d5]
+- Update dependencies [5561796d145ead66dce292cd17625618bafdad87]
+  - core:
+    - update: framer-motion@10.3.2
+    - bump up:
+      - @mui/base@5.0.0-alpha.121
+      - @mui/lab@5.0.0-alpha.123
+      - @mui/material@5.11.13
+  - dev:
+    - bump up:
+      - @types/jest@29.4.4
+      - webpack@7.76.2
+
 ## 1.3.8
 
 ### Patch Changes
