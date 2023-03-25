@@ -60,17 +60,17 @@ export const EditSchemaDialog = ({
 
   const httpsUrl = yup
     .string()
-    .url(t('Must be a valid URL'))
-    .matches(regexHttps, t('Must be a valid HTTP URL'));
+    .url(t('Must be a valid URL').toString())
+    .matches(regexHttps, t('Must be a valid HTTP URL').toString());
 
   const formValidation = yup.object().shape({
     name: yup
       .string()
-      .required(t('Every schema needs a name'))
-      .min(3, t('Must be at least characters', { min: 3 }))
-      .max(20, t('Cannot have more than characters', { max: 20 })),
+      .required(t('Every schema needs a name').toString())
+      .min(3, t('Must be at least characters', { min: 3 }).toString())
+      .max(20, t('Cannot have more than characters', { max: 20 }).toString()),
     mapping: yup.string().required(),
-    rng: httpsUrl.required(t('Schema URL is required')),
+    rng: httpsUrl.required(t('Schema URL is required').toString()),
     css: httpsUrl,
   });
 
@@ -111,7 +111,7 @@ export const EditSchemaDialog = ({
       type: 'simple',
       props: {
         maxWidth: 'xs',
-        title: t('deleteSchema'),
+        title: t('deleteSchema').toString(),
         preventEscape: true,
         Message: () => (
           <Trans i18nKey="messages.deleteConfirmationMessage" values={{ name }}>
@@ -121,8 +121,8 @@ export const EditSchemaDialog = ({
           </Trans>
         ),
         actions: [
-          { action: 'cancel', label: t('cancel') },
-          { action: 'delete', label: t('delete'), variant: 'outlined' },
+          { action: 'cancel', label: t('commons:cancel').toString() },
+          { action: 'delete', label: t('commons:delete').toString(), variant: 'outlined' },
         ],
         onClose: async (action: string) => {
           if (action !== 'delete') return;
@@ -197,7 +197,7 @@ export const EditSchemaDialog = ({
                   error={Boolean(touched.name && errors.name)}
                   fullWidth
                   helperText={touched.name && errors.name ? errors.name : ' '}
-                  label={t('Name')}
+                  label={t('commons:Name')}
                   margin="dense"
                   name="name"
                   onBlur={handleBlur}
@@ -276,7 +276,7 @@ export const EditSchemaDialog = ({
             </DialogContent>
 
             <DialogActions sx={{ justifyContent: 'space-between' }}>
-              <Button onClick={handleCancel}>{t('cancel')}</Button>
+              <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
 
               {schemaId && (
                 <Tooltip
@@ -293,14 +293,14 @@ export const EditSchemaDialog = ({
                       disabled={schemaId === documentSchemaId}
                       onClick={handleDelete}
                     >
-                      {t('delete')}
+                      {t('commons:delete')}
                     </Button>
                   </span>
                 </Tooltip>
               )}
 
               <Button color="primary" disabled={!dirty} type="submit" variant="outlined">
-                {schemaId ? t('update') : t('add')}
+                {schemaId ? t('commons:update') : t('commons:add')}
               </Button>
             </DialogActions>
           </form>

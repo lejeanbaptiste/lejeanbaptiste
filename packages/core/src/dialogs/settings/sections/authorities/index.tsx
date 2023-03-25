@@ -11,7 +11,7 @@ import { AuthorityService } from '../../../entityLookups';
 import { Authority } from './Authority';
 
 export const Authorities = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('leafwriter');
   const { authorities } = useAppState().editor.lookups;
   const { reorderLookupPriority } = useActions().editor;
 

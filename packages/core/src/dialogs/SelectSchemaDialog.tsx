@@ -90,7 +90,7 @@ export const SelectSchemaDialog = ({
         <Stack mt={2}>
           <FormControl fullWidth>
             <InputLabel id="select-schema-label" sx={{ textTransform: 'capitalize' }}>
-              {t('schema')}
+              {t('commons:schema')}
             </InputLabel>
             <Select
               fullWidth
@@ -98,7 +98,7 @@ export const SelectSchemaDialog = ({
               labelId="select-schema-label"
               onChange={handleSchemaSelect}
               size="small"
-              value={schema.id}
+              value={schema?.id}
             >
               {schemasList
                 .filter((schema) => mappingIds.includes(schema.mapping))
@@ -124,9 +124,9 @@ export const SelectSchemaDialog = ({
       </DialogContent>
 
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleCancel}>{t('cancel')}</Button>
+        <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
         <Button color="primary" onClick={handleSelect} variant="outlined">
-          {t('select')}
+          {t('commons:select')}
         </Button>
       </DialogActions>
     </Dialog>

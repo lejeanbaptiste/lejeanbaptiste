@@ -21,7 +21,7 @@ export const Authority = ({
   const { toggleLookupAuthority, toggleLookupEntity } = useActions().editor;
   const { notifyViaSnackbar } = useActions().ui;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('leafwriter');
 
   const [hover, setHover] = useState(false);
   const [isDragging, setIsDragging] = useState(false);

@@ -3,7 +3,8 @@ import React, { FC } from 'react';
 import { Trans } from 'react-i18next';
 import { TextEmphasis } from '../../components';
 import { SimpleDialogMessageProps } from '../../dialogs';
-import i18next from '../../i18n';
+// import i18next from '../../i18n';
+import i18next from 'i18next';
 import { Schema } from '../../types';
 import Writer from '../Writer';
 
@@ -74,7 +75,7 @@ export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
         </Typography>
       ),
       actions: [
-        { action: 'cancel', label: t('cancel') },
+        { action: 'cancel', label: t('commons:cancel') },
         { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
         { action: 'selectSchema', label: t('select supported schema'), variant: 'outlined' },
       ],
@@ -108,9 +109,9 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
         </Trans>
       ),
       actions: [
-        { action: 'cancel', label: t('cancel') },
-        { action: 'selectSchema', label: t('select supported schema'), variant: 'outlined' },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
+        { action: 'cancel', label: t('commons:cancel') },
+        { action: 'selectSchema', label: t('leafwriter:select supported schema'), variant: 'outlined' },
+        { action: 'addSchema', label: t('leafwriter:add schema'), variant: 'outlined' },
       ],
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
@@ -142,7 +143,7 @@ export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
         </Trans>
       ),
       actions: [
-        { action: 'cancel', label: t('cancel') },
+        { action: 'cancel', label: t('commons:cancel') },
         { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
         { action: 'selectSchema', label: t('select supported schema'), variant: 'outlined' },
       ],
@@ -216,13 +217,13 @@ export const openEditorModeDialog = (writer: Writer) => {
   if (mode === writer.XML) {
     Message = () => (
       <>
-        <TextEmphasis color="info">{`Markup ${t('only')}`}</TextEmphasis>
+        <TextEmphasis color="info">{`Markup ${t('commons:only')}`}</TextEmphasis>
         <Typography>{`${t(
-          'Only XML tags. No RDF/Semantic Web annotations will be created'
+          'leafwriter:Only XML tags No RDF Semantic Web annotations will be created'
         )}.`}</Typography>
         <Typography paragraph mt={3} variant="caption">
-          <b>{`${t('hint')}: `}</b>
-          {`${t('You can change the editor mode anytime in the status bar')}.`}
+          <b>{`${t('commons:hint')}: `}</b>
+          {`${t('You can change the editor mode anytime in the status bar')}`}
         </Typography>
       </>
     );
@@ -233,8 +234,8 @@ export const openEditorModeDialog = (writer: Writer) => {
           <TextEmphasis color="info">{`Markup & Linking with overlap`}</TextEmphasis>
           <Typography>
             {`${t(
-              'XML tags and RDF Semantic Web annotations equivalent to the XML tags will be created to the extent that the hierarchy of the XML schema allows'
-            )}. ${t(
+              'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap'
+            )} ${t(
               'Annotations that overlap will be created in RDF only with no equivalent XML tags'
             )}.`}
           </Typography>
@@ -250,8 +251,8 @@ export const openEditorModeDialog = (writer: Writer) => {
           <TextEmphasis color="info">{`Markup & Linking`}</TextEmphasis>
           <Typography>
             {`${t(
-              'XML tags and RDF/Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap'
-            )}.`}
+              'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap'
+            )}`}
           </Typography>
           <Typography paragraph mt={3} variant="caption">
             <b>{`${t('hint')}: `}</b>
@@ -269,7 +270,7 @@ export const openEditorModeDialog = (writer: Writer) => {
       Message,
       actions: [
         { action: 'notShowAgain', label: t('dont show again') },
-        { action: 'ok', label: t('ok') },
+        { action: 'ok', label: t('commons:ok') },
       ],
       onClose: (action: string) => {
         if (action === 'notShowAgain') overmindActions.ui.doNotDisplayDialog('Editor Mode');

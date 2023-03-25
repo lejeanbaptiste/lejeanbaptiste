@@ -45,8 +45,11 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         title: `${t('Change Editor Mode')}?`,
         Message: () => <>{text}</>,
         actions: [
-          { action: 'cance', label: t('cancel'), variant: 'outlined' },
-          { action: 'change', label: severity === 'warning' ? t('change anyway') : t('change') },
+          { action: 'cancel', label: t('commons:cancel').toString(), variant: 'outlined' },
+          {
+            action: 'change',
+            label: severity === 'warning' ? t('change anyway').toString() : t('commons:change').toString(),
+          },
         ],
         onClose: async (action: string) => {
           if (action !== 'change') return;
@@ -65,7 +68,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('undo')}
+            {t('commons:undo')}
           </Button>
         ),
       },

@@ -11,7 +11,7 @@ import { ValdidationErrors } from './ValdidationErrors';
 export const BottomBar = () => {
   const { isReadonly } = useAppState().editor;
   const { validationErrors } = useAppState().validator;
-  const { t } = useTranslation();
+  const { t } = useTranslation('leafwriter');
   const version = pck.version;
 
   return (
@@ -61,7 +61,7 @@ export const BottomBar = () => {
           href="https://www.tiny.cloud"
           target="_blank"
           rel="noopener"
-          title={t('Powered by')}
+          title={t('Powered by').toString()}
         >
           {t('Powered by')} Tiny
         </Link>

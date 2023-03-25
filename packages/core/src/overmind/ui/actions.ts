@@ -1,15 +1,27 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
+import { supportedLanguages } from '../../config';
 import type { DialogBarProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
 import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
-import { supportedLanguages } from '../../utilities';
+import i18n from 'i18next';
 
 export const onInitializeOvermind = ({ actions }: Context, overmind: any) => {
   //DARK MODE
   const prefPaletteMode: PaletteMode =
     (localStorage.getItem('themeAppearance') as PaletteMode) ?? 'auto';
   actions.ui.setThemeAppearance(prefPaletteMode);
+
+  //LANGUAGE
+  const prefLanguageCode = effects.editor.api.getFromLocalStorage('i18nextLng');
+  if (prefLanguageCode) {
+    const prefLanguage = supportedLanguages.get(prefLanguageCode);
+
+    const language = prefLanguage ?? { code: 'en-CA', name: 'english', shortName: 'en' };
+
+    state.ui.language = language;
+    i18n.changeLanguage(language.shortName);
+  }
 };
 
 export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
