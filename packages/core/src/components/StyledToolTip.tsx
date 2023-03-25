@@ -3,11 +3,12 @@ import Tooltip, { tooltipClasses, type TooltipProps } from '@mui/material/Toolti
 import React from 'react';
 
 export const StyledToolTip = styled(({ className, ...props }: TooltipProps) => (
-  <Tooltip {...props} classes={{ popper: className }} />
+  <Tooltip
+    {...props}
+    classes={{ popper: className }}
+    componentsProps={{ tooltip: { sx: { 'first-letter': { textTransform: 'uppercase' } } } }}
+  />
 ))(({ theme }) => ({
-  [`& .${tooltipClasses.tooltip}`]: {
-    'first-letter': { textTransform: 'uppercase !important' },
-  },
   [`& .${tooltipClasses.tooltipPlacementBottom}`]: {
     marginTop: '10px !important',
   },
