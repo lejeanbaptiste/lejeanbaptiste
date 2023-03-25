@@ -132,22 +132,18 @@ export interface Error {
   message: string;
 }
 
-//ENTITY
-export enum EntityType {
-  PERSON = 'person',
-  PLACE = 'place',
-  ORGANIZATION = 'organization',
-  ORG = 'org',
-  REFERENCING_STRING = 'referencing_string',
-  RS = 'rs',
-  TITLE = 'title',
-  CITATION = 'citation',
-  NOTE = 'note',
-  DATE = 'date',
-  CORRECTION = 'correction',
-  KEYWORD = 'keyword',
-  LINK = 'link',
-}
+export type EntityType =
+  | 'citation'
+  | 'correction'
+  | 'date'
+  | 'keyword'
+  | 'link'
+  | 'note'
+  | 'organization'
+  | 'place'
+  | 'person'
+  | 'rs'
+  | 'title';
 
 //UI
 export type PaletteMode = 'light' | 'auto' | 'dark';

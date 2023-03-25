@@ -3,9 +3,8 @@ import 'jquery-ui/ui/widgets/button';
 import { defaultRoles } from '../../../config/personRole';
 import type { EntityLink } from '../../../dialogs/entityLookups/types';
 import Entity from '../../../js/entities/Entity';
-import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
-import type { SchemaMappingType } from '../../../types';
+import type { EntityType, SchemaMappingType } from '../../../types';
 import { capitalizeFirstLetter } from '../../utilities';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
@@ -30,7 +29,7 @@ class PersonDialog implements SchemaDialog {
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityTypes = 'person';
+  type: EntityType = 'person';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     const mappingID = writer.schemaManager.mapper.currentMappingsId;

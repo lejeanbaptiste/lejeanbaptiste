@@ -1,8 +1,7 @@
 import $ from 'jquery';
 import Entity from '../../../js/entities/Entity';
-import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
-import type { SchemaMappingType } from '../../../types';
+import type { EntityType, SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
@@ -14,7 +13,7 @@ class DateDialog implements SchemaDialog {
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityTypes = 'correction';
+  type: EntityType = 'correction';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;

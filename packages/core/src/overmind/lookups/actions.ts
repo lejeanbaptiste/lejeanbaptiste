@@ -1,12 +1,8 @@
 import { Context } from '..';
-import type {
-  EntityLink,
-  EntryLink,
-  NamedEntityType,
-} from '../../dialogs/entityLookups/types';
+import type { EntityLink, EntryLink, NamedEntityType } from '../../dialogs/entityLookups/types';
 import type { DialogLookupType } from '../../js/dialogs/types';
 import Entity from '../../js/entities/Entity';
-import type { EntityTypes } from '../../js/schema/types';
+import { EntityType } from '../../types';
 
 export const initiate = (
   { state: { lookups }, actions }: Context,
@@ -31,7 +27,7 @@ export const initiate = (
   actions.lookups.search(lookups.query);
 };
 
-export const setType = ({ state: { lookups } }: Context, type: EntityTypes) => {
+export const setType = ({ state: { lookups } }: Context, type: EntityType) => {
   lookups.typeEntity = type;
   lookups.typeLookup = type === 'citation' ? 'title' : (type as NamedEntityType);
 };

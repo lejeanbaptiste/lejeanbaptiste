@@ -6,7 +6,7 @@ import type {
   LookUpResult,
   NamedEntityType,
 } from '../../dialogs/entityLookups/types';
-import type { EntityTypes } from '../../js/schema/types';
+import { EntityType } from '../../types';
 
 type State = {
   isUriValid: boolean;
@@ -14,7 +14,7 @@ type State = {
   query: string;
   results?: Map<Authority, LookUpResult[]>;
   selected?: EntryLink;
-  typeEntity: EntityTypes;
+  typeEntity: EntityType;
   typeLookup: NamedEntityType;
 };
 

@@ -1,10 +1,11 @@
+import { EntityType } from '../../types';
 import AnnotationsManager from '../entities/annotationsManager';
 import Entity from '../entities/Entity';
 import type { AnnotationProps, AnnotationFormat } from '../entities/types';
 
 export interface SchemaMappingProps {
   blockElements: string[]; // Additional block level elements that should be added to TinyMCE
-  entities: Map<EntityTypes, EntityMappingProps>; //Entity mappings
+  entities: Map<EntityType, EntityMappingProps>; //Entity mappings
   header: string; // The name of the header tag
   headings: string[]; // The name of the heading tags
   id: string; // The name of the ID attribute
@@ -22,19 +23,6 @@ export interface SchemaMappingProps {
   root: string[]; // The name(s) of the root tag(s)
   urlAttributes: string[]; // Attributes that should be treated as URLs by the various Leaf-Writer modules
 }
-
-export type EntityTypes =
-  | 'citation'
-  | 'correction'
-  | 'date'
-  | 'keyword'
-  | 'link'
-  | 'note'
-  | 'organization'
-  | 'place'
-  | 'person'
-  | 'rs' // ? ORLANDO MIGHT HAVE THIS IN THE NEAR FUTURE
-  | 'title';
 
 export interface EntityMappingProps {
   // a function which accepts the AnnotationsManager, an Entity, and a format string (either 'xml' or 'json').

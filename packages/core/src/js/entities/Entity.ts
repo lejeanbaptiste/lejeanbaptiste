@@ -1,4 +1,4 @@
-import type { EntityTypes } from '../schema/types';
+import { EntityType } from '../../types';
 import type { AnnotationCreator } from './types';
 
 export interface AnnotationRange {
@@ -27,7 +27,7 @@ export interface EntityConfig {
   range?: AnnotationRange;
   source?: string; //? should we defiined them? Or take from the schema? // PREDEFINE USING AUTHORITIES and 'CUSTOM';
   tag: string;
-  type: EntityTypes; // | string;
+  type: EntityType; // | string;
   uri?: string;
 }
 
@@ -96,7 +96,7 @@ class Entity {
   title?: string;
 
   /** The type of the entity, e.g. person, place, date. */
-  type: EntityTypes;
+  type: EntityType;
 
   // NAMED ENTITY PROPERTIES
 
@@ -130,7 +130,7 @@ class Entity {
     // SET VALUES FROM CONFIG
 
     this.id = config.id;
-    this.type = config.type as EntityTypes;
+    this.type = config.type as EntityType;
     this.tag = config.tag;
 
     // DATE CREATED

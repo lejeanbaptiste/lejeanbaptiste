@@ -7,7 +7,7 @@ import {
   sym as RDFsym,
 } from 'rdflib';
 import pck from '../../../package.json';
-import type { EntityTypes } from '../schema/types';
+import { EntityType } from '../../types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import Entity, { type AnnotationRange, type EntityConfig } from './Entity';
@@ -544,7 +544,7 @@ class AnnotationsManager {
       if (entityType !== null) break;
     }
 
-    entityConfig.type = entityType as EntityTypes;
+    entityConfig.type = entityType as EntityType;
 
     // range
     let rangeObj: AnnotationRange | undefined = undefined;
@@ -616,7 +616,7 @@ class AnnotationsManager {
     }
     const entityConfig: Partial<EntityConfig> = {};
 
-    const entityType = this.getEntityTypeForAnnotationLegacy(typeUri) as EntityTypes;
+    const entityType = this.getEntityTypeForAnnotationLegacy(typeUri) as EntityType;
     if (entityType) entityConfig.type = entityType;
 
     // range
@@ -693,7 +693,7 @@ class AnnotationsManager {
   /**
    * Returns the entity type, using a annotation type string.
    * @param {string | string[]} annotationTypes The annotation string, e.g. 'cwrc:NaturalPerson'
-   * @returns {string} EntityTypes
+   * @returns {string} EntityType
    */
   private getEntityTypeForAnnotation(annotationTypes: string | string[]) {
     if (!Array.isArray(annotationTypes)) annotationTypes = [annotationTypes];

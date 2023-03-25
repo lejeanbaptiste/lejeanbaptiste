@@ -1,9 +1,8 @@
 import $ from 'jquery';
 import type { EntityLink } from '../../../dialogs/entityLookups/types';
 import Entity from '../../../js/entities/Entity';
-import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
-import type { SchemaMappingType } from '../../../types';
+import type { EntityType, SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
@@ -53,7 +52,7 @@ class TitleDialog implements SchemaDialog {
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityTypes = 'title';
+  type: EntityType = 'title';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
