@@ -30,7 +30,7 @@ export const initialize = async (
 ) => {
   const { manifest } = cachedSchema ? JSON.parse(cachedSchema) : { manifest: null };
 
-  const convertedSchema = await convertSchema(url, createManifest);
+  const convertedSchema = await convertSchema(new URL(url), createManifest);
 
   const newVersion =
     convertedSchema.manifest?.[0]?.filePath === manifest?.filePath &&
@@ -47,7 +47,7 @@ export const initialize = async (
   return response;
 };
 
-const convertSchema = async (url: string, createManifest = false) => {
+const convertSchema = async (url: URL, createManifest = false) => {
   //@ts-ignore
   return await convertRNGToPattern(url, { createManifest, manifestHashAlgorithm: 'SHA-1' });
 };
