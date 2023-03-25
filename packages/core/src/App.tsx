@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { BottomBar, ContextMenu, EditorToolbar } from './components';
 import { createConfig } from './config';
 import { EntityLookupDialog } from './dialogs';

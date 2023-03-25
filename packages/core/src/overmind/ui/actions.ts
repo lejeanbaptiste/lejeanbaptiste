@@ -6,7 +6,7 @@ import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLo
 import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 import i18n from 'i18next';
 
-export const onInitializeOvermind = ({ actions }: Context, overmind: any) => {
+export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
   //DARK MODE
   const prefPaletteMode: PaletteMode =
     (localStorage.getItem('themeAppearance') as PaletteMode) ?? 'auto';

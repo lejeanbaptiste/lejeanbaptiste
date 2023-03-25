@@ -15,7 +15,14 @@ export const api = (() => {
     },
     getFromLocalStorage: (key: string) => {
       const value = localStorage.getItem(key);
-      return value ? JSON.parse(value) : null;
+      if (!value) return;
+
+      try {
+        const object = JSON.parse(value);
+        return object;
+      } catch (error) {
+        return value;
+      }
     },
     removeFromLocalStorage: (key: string) => {
       localStorage.removeItem(key);
