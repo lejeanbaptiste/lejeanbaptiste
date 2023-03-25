@@ -339,7 +339,7 @@ class Writer extends EventManager {
     if (window.location.hostname === 'localhost') return;
 
     event.preventDefault();
-    const msg = i18n.t('You have unsaved changes');
+    const msg = i18n.t('leafwriter:You have unsaved changes');
     (event || window.event).returnValue = msg;
     return msg;
   }

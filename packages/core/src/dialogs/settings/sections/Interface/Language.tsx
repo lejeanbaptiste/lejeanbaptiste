@@ -3,8 +3,8 @@ import { Box, ListItem, Stack, ToggleButton, Typography } from '@mui/material';
 import React, { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToggleButtonGroup } from '../../../../components';
+import { supportedLanguages } from '../../../../config';
 import { useActions, useAppState } from '../../../../overmind';
-import { supportedLanguages } from '../../../../utilities';
 
 export const Language = () => {
   const { t, i18n } = useTranslation(['leafwriter']);

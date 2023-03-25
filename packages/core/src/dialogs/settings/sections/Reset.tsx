@@ -7,7 +7,7 @@ import { Button } from '../components';
 export const Reset = () => {
   const { resetDialogWarnings, resetPreferences } = useActions().editor;
   const { notifyViaSnackbar } = useActions().ui;
-  const { t } = useTranslation();
+  const { t } = useTranslation('leafwriter');
 
   return (
     <Stack direction="row">
@@ -15,7 +15,7 @@ export const Reset = () => {
         icon="reset"
         onClick={() => {
           resetDialogWarnings();
-          notifyViaSnackbar(t('Confirmation dialog preferences have been reset'));
+          notifyViaSnackbar(t('Confirmation dialog preferences have been reset').toString());
         }}
       >
         {t('Reset Dialog Warnings')}
@@ -24,7 +24,7 @@ export const Reset = () => {
         icon="reset"
         onClick={() => {
           resetPreferences();
-          notifyViaSnackbar(t('Settings preferences have been reset to default'));
+          notifyViaSnackbar(t('Settings preferences have been reset to default').toString());
         }}
       >
         {t('Reset Settings')}

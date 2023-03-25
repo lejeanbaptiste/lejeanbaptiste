@@ -58,10 +58,10 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         Message: () => <>{text}</>,
         actions:
           severity === 'error'
-            ? [{ action: 'close', label: t('close') }]
+            ? [{ action: 'close', label: t('commons:close').toString() }]
             : [
-                { action: 'cancel', label: t('cancel'), variant: 'outlined' },
-                { action: 'change', label: t('change anyway') },
+                { action: 'cancel', label: t('commons:cancel').toString(), variant: 'outlined' },
+                { action: 'change', label: t('change anyway').toString() },
               ],
         onClose: async (action: string) => {
           if (action !== 'change') return;
@@ -80,7 +80,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('undo')}
+            {t('commons:undo')}
           </Button>
         ),
       },

@@ -19,6 +19,7 @@ export const MarkupPanel = () => {
     hidden: { height: 0, opacity: 0 },
     show: { height: 'auto', opacity: 1 },
   };
+  const { t } = useTranslation('leafwriter');
 
   return (
     <Box component={motion.div} layout="position">

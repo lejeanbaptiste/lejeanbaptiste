@@ -79,10 +79,10 @@ export const EditSourceDialog = ({
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button autoFocus onClick={handleClose}>
-          {t('cancel')}
+          {t('commons:cancel')}
         </Button>
         <Button onClick={handleChange} variant="outlined">
-          {t('change')}
+          {t('commons:change')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -14,11 +14,11 @@ export const SettingsDialog = ({ id, onClose, open }: IDialog) => {
   const { t } = useTranslation();
 
   const menuItems: MenuItemProps[] = [
-    { id: 'interface', label: t('interface') },
-    { id: 'editor', label: t('editor') },
-    { id: 'authorities', label: t('authorities'), hide: isReadonly },
+    { id: 'interface', label: t('commons:interface') },
+    { id: 'editor', label: t('commons:editor') },
+    { id: 'authorities', label: t('commons:authorities'), hide: isReadonly },
     { id: 'markup-panel', label: t('markup panel'), hide: isReadonly },
-    { id: 'reset', label: t('reset'), hide: isReadonly },
+    { id: 'reset', label: t('commons:reset'), hide: isReadonly },
   ];
 
   const handleClose = () => onClose(id);
@@ -37,21 +37,21 @@ export const SettingsDialog = ({ id, onClose, open }: IDialog) => {
         <SideMenu items={menuItems} />
         <DialogContent>
           <Stack component={motion.div} layout spacing={3}>
-            <Section id="interface" title={t('interface')}>
+            <Section id="interface" title={t('commons:interface')}>
               <Interface />
             </Section>
-            <Section id="editor" title={t('editor')}>
+            <Section id="editor" title={t('commons:editor')}>
               <Editor />
             </Section>
             {!isReadonly && (
               <>
-                <Section id="authorities" title={t('authorities')}>
+                <Section id="authorities" title={t('commons:authorities')}>
                   <Authorities />
                 </Section>
                 <Section id="markup-panel" title={t('markup panel')}>
                   <MarkupPanel />
                 </Section>
-                <Section id="reset" title={t('reset')}>
+                <Section id="reset" title={t('commons:reset')}>
                   <Reset />
                 </Section>
               </>

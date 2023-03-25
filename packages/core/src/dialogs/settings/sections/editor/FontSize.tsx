@@ -11,7 +11,7 @@ export const FontSize = () => {
   const { fontSize: currentFontSize } = useAppState().editor;
   const { setFontSize } = useActions().editor;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('leafwriter');
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -32,7 +32,7 @@ export const FontSize = () => {
     <ListItem dense disableGutters>
       <FormatSizeIcon sx={{ mx: 1, height: 18, width: 18 }} />
       <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
-        {t('font-size')}
+        {t('font size')}
       </Typography>
       <Box flexGrow={1} />
       <Button

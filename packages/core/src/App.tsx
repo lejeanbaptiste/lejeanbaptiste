@@ -23,6 +23,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const actions = useActions();
   const state = useAppState();
   const [writer, setWriter] = useState<Writer | null>(null);
+  const { i18n } = useTranslation();
+
   useDialog();
   useNotifier();
 
@@ -32,6 +34,10 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
   const [initialized, setInitialized] = useState(false);
   const [docLoaded, setDocLoaded] = useState(false);
+
+  useEffect(() => {
+    i18n.changeLanguage(state.ui.language.code);
+  }, [state.ui.language]);
 
   useEffect(() => {
     if (document.url === undefined || state.document.url !== document.url) {

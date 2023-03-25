@@ -7,7 +7,7 @@ import { FontSize } from './FontSize';
 export const Editor = () => {
   const { autosave, isReadonly, showEntities } = useAppState().editor;
   const { setAutosave, setShowEntities } = useActions().editor;
-  const { t } = useTranslation();
+  const { t } = useTranslation('leafwriter');
 
   return (
     <>
@@ -16,7 +16,7 @@ export const Editor = () => {
         <Toggler
           icon="cloudSync"
           onChange={setAutosave}
-          title={t('autosave')}
+          title={t('commons:autosave')}
           type="toggle"
           value={autosave}
         />

@@ -15,7 +15,7 @@ export const Menu = ({ anchorEl, handleClose }) => {
   const { closeNotificationSnackbar, notifyViaSnackbar } = useActions().ui;
   const { changeAnnotationMode } = useEditorReaction();
 
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation(['commons']);
 
   const openMenu = Boolean(anchorEl);
 
@@ -63,7 +63,7 @@ export const Menu = ({ anchorEl, handleClose }) => {
         sx={{ cursor: 'default', bgcolor: ({ palette }) => palette.action.hover }}
       >
         <Typography sx={{ cursor: 'default' }} variant="caption">
-          {t('Annotation')}
+          {t('annotation')}
         </Typography>
       </Box>
       {annotationModes.map(({ disabled, label, value }) => (

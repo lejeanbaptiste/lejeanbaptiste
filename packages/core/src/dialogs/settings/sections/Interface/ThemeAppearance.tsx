@@ -21,7 +21,7 @@ const options: Option[] = [
 ];
 
 export const ThemeAppearance = () => {
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation(['commons']);
 
   const { setThemeAppearance } = useActions().ui;
   const { themeAppearance } = useAppState().ui;
@@ -52,7 +52,7 @@ export const ThemeAppearance = () => {
               aria-label={name}
               color="primary"
               size="small"
-              value={t(`ui:${name}`)}
+              value={t(`ui:${name}`).toString()}
             >
               <StyledToolTip enterDelay={1000} title={t(`ui:${name}`) ?? name}>
                 <Icon sx={{ height: 16, width: 16 }} />
