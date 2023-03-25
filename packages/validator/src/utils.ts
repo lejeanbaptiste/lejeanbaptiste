@@ -11,12 +11,6 @@ const XPathResult = {
   FIRST_ORDERED_NODE_TYPE: 9,
 };
 
-export const parseXMLString = (content: string) => {
-  const parser = new window.DOMParser();
-  const xml = parser.parseFromString(content, 'text/xml');
-  return xml;
-};
-
 export const evaluateXPath = (xpath: string, docXML: Document): Node | null => {
   const evalResult = window.document.evaluate(xpath, docXML, null, XPathResult.ANY_TYPE, null);
 
