@@ -1,17 +1,9 @@
-export type SelectionType = 'after' | 'around' | 'before' | 'change' | 'inside' | 'span';
-
 export type EventName =
   | 'attributeName'
   | 'attributeValue'
   | 'endTag'
   | 'enterStartTag'
   | 'leaveStartTag'
-  | 'text';
-
-export type NodeType =
-  | 'attribute'
-  | 'attributeValue'
-  | 'tag'
   | 'text';
 
 export interface NodeDetail {
@@ -21,8 +13,27 @@ export interface NodeDetail {
   invalid?: boolean;
   name: string;
   ns?: string;
-  type: NodeType
+  type: NodeType;
   value?: string | RegExp;
+}
+
+export type NodeType = 'attribute' | 'attributeValue' | 'tag' | 'text';
+
+export interface PossibleNodesAt {
+  nodes: NodeDetail[];
+  target: Target;
+}
+
+export interface PossibleNodesAtOptions {
+  speculativeValidate?: boolean;
+}
+
+export type SelectionType = 'after' | 'around' | 'before' | 'change' | 'inside' | 'span';
+
+export interface Target {
+  index: number;
+  selection?: TargetSelection;
+  xpath: string;
 }
 
 export interface TargetSelection {
@@ -34,19 +45,4 @@ export interface TargetSelection {
   skip?: string;
   type: SelectionType;
   xpath?: string;
-}
-
-export interface Target {
-  index: number;
-  selection?: TargetSelection;
-  xpath: string;
-}
-
-export interface PossibleNodesAt {
-  nodes: NodeDetail[];
-  target: Target;
-}
-
-export interface PossibleNodesAtOptions {
-  speculativeValidate?: boolean;
 }
