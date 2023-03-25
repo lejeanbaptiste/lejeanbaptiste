@@ -1,20 +1,20 @@
-import { InitializeOptions } from './conversion';
-import { GetValidTagsAtParameters } from './possible';
-import { ValidationResponse } from './validate';
+import type { InitializeOptions } from './conversion';
+import type { PossibleNodesAtOptions, Target } from './types';
+import type { ValidationResponse } from './validate';
 import { virtualEditor } from './virtualEditor';
 
 const Validator = {
   async initialize(options: InitializeOptions) {
     return await virtualEditor.initialize(options);
   },
-  validate(documentString: string, callback: (value: ValidationResponse) => void) {
+  validate(documentString: string, callback?: (value: ValidationResponse) => void) {
     return virtualEditor.validate(documentString, callback);
   },
   async getTagAt(tagName: string, parentXpath: string, index?: number) {
     return await virtualEditor.getTagAt(tagName, parentXpath, index);
   },
-  async getElementsForTagAt(xpath: string, index?: number) {
-    return await virtualEditor.getElementsForTagAt(xpath, index);
+  async getNodesForTagAt(xpath: string, index?: number) {
+    return await virtualEditor.getNodesForTagAt(xpath, index);
   },
   async getAttributesForTagAt(xpath: string, index?: number) {
     return await virtualEditor.getAttributesForTagAt(xpath, index);
@@ -25,8 +25,11 @@ const Validator = {
   async getValuesForTagAttributeAt(xpath: string) {
     return await virtualEditor.getValuesForTagAttributeAt(xpath);
   },
-  async getValidTagsAt(parameters: GetValidTagsAtParameters) {
-    return await virtualEditor.getValidTagsAt(parameters);
+  async getPossibleNodesAt(parameters: Target, options?: PossibleNodesAtOptions) {
+    return await virtualEditor.getPossibleNodesAt(parameters, options);
+  },
+  async getValidNodesAt(parameters: Target) {
+    return await virtualEditor.getValidNodesAt(parameters);
   },
   async hasValidator() {
     return virtualEditor.hasValidator();

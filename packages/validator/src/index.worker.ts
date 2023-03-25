@@ -7,11 +7,14 @@ import Validator from './Validator';
 
 export type { InitializeOptions, InitializeResponse } from './conversion';
 export type {
-  GetValidTagsAtParameters,
-  GetValidTagsAtParametersSelection,
-  GetValidTagsAtResponse,
-} from './possible';
-export type { ElementDetail, ElementType } from './sharedTypes';
+  EventName,
+  NodeDetail,
+  NodeType,
+  PossibleNodesAt,
+  PossibleNodesAtOptions,
+  Target,
+  TargetSelection,
+} from './types';
 export type {
   ErrorNames,
   ValidationError,
