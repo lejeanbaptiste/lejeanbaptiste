@@ -223,6 +223,31 @@ export const tinymceWrapperInit = function ({
     writer.overmindActions.editor.setContentHasChanged(true);
     return (writer.editor.isNotDirty = false);
   });
+  writer.event('tagAdded').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
+  writer.event('tagEdited').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
+  writer.event('tagRemoved').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
+  writer.event('tagContentsRemoved').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
+  writer.event('contentPasted').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
 
   // tinymce handlers
 
