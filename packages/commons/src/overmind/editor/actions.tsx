@@ -157,7 +157,8 @@ export const setContentHasChanged = ({ state }: Context, value: boolean) => {
 export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
   state.editor.timerService.onTimer.subscribe(async () => {
     const content = await editor.getContent();
-    const screenshot = await editor.getDocumentScreenshot();
+    if (typeof content !== 'string') return;
+    const screenshot = await editor.getDocumentScreenshot()
     await actions.editor.save({ content, screenshot });
   });
 };
