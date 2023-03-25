@@ -111,11 +111,11 @@ const parseErrors = (
   vEditor: VirtualEditor,
   { error, index, node }: ErrorData
 ): ValidationError => {
-  if (!vEditor.document || !vEditor.validator)
+  if (!vEditor.document || !vEditor.validator) {
     throw new Error('vEditor: Document or Validator not set');
+  }
 
   const type = ERROR_TYPES.get(error.msg) ?? ERROR_TYPES.get('ValidationError');
-
   const msg = error.msg;
 
   const target: ValidationErrorTarget = {
@@ -144,7 +144,7 @@ const parseErrors = (
       : node;
 
   element.name = elementNode.nodeName;
-  element.documentation = vEditor.getDocumentation(element.name);
+  element.documentation = element.name ? vEditor.getDocumentation(element.name) : '';
   element.fullName = getFullNameFromDocumentation(element.documentation);
   element.xpath = getXPathForElement(elementNode, vEditor.document);
 
