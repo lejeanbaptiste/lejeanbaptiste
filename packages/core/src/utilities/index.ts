@@ -1,2 +1,3 @@
+export * from './DOM';
 export * from './log';
-export * from './util';
+export * from './string';
