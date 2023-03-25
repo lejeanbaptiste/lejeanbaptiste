@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## 2.0.0
+
+### What's new?
+
+#### Improved speculative validation
+
+Fix a bug preventing speculative validation on different intended actions (add before, add after, add around, add inside, add a tag, change a tag). This caused the list of possible tags to include some elements that would invalidate the document as valid. With this fix, you will see more strict behaviour.
+
+#### Return all possible tags with a flag indicating if they are invalid
+
+Instead of having either the possible or valid tags, the validator returns all the possible tags and flags them as either valid or invalid. This feature makes it easier to filter invalid tags based on user intention. Previously, LEAF-Writer only used valid tags as suggestions for a given context. Now it shows all the possible tags, visually flagging the invalid ones and letting the user show/hide them. To provide a concrete example, the tags `biblFull` and `biblStruct` never showed up as an option to add a tag before a `p`. Even though they are possible in `p`, they have specific requirements (e.g. `biblFull` requires `biblStruct` as a child). Now, LEAF-Writer shows all possible tags and allows users to add and, consequently, invalidate their document, which they would subsequently be warned by the validator and have a chance to fix the problem or save it as is.
+
+### The `textNode` is also available
+
+Previous behaviour filtered `textNode` out of the possible tags (since it is not a tag). Now, the `textNode` returns as possible (and speculatively validated) together with the other tags. The `textNode` is identified with the type `text`.
+
+## API changed
+
+Because of these improvements, this version contains changes to some API calls and their response. Check the readme file to see more.
+
+### Major Changes
+
+- Change API to coalesce results, allows for textNode validation, and fix bugs [ed8a5959c0aed5fcd803fb566072e5c6d71adc2d]
+  - When speculativelly valdiating, possible tags have an extra property 'invalid' (boolean) intead of a second array listing speculative validated tags. This also fix a bug that prevent validation on different modes of speculations (before, after, ...). Another change is the addition of textNodes as possible "tags" events .
+- [TEST] Refactor tests [bb16b3542f14ffa514f7a8ad3a377d22b5929309]
+- [DOCS] Update new API documentation [ac22867462a05ce202c5a271e615365e4f818f65]
+
+
+### Patch Changes
+
+- Add more strict types [e6c2bde00805a24c2a00234a6914fa7dd9e5ef11]
+- Update jsdom to 21.1.1 [4bf920b881ab4a2b253f9494398ad5a1f95bff8d]
+- Updage dependencies [bc76b6ce00d8a1fbcc00671475228225714e6d20]
+  - dev:
+    - upgrade: typescript@5.0.2
+    - update:
+      - @types/jest@29.5.0
+      - @typescript-eslint/eslint-plugin@5.56.0
+      - @typescript-eslint/parser@5.56.0
+      - eslint-config-prettier8.8.0
+    - bump up:
+      - prettier@2.8.7
+      - typedoc@0.23.28
+      - webpack@5.76.3
+  
+
 ## 1.2.4
 
 ### Patch Changes
