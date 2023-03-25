@@ -25,13 +25,13 @@ export default class Geonames implements LookupServiceApi {
   private readonly username: string;
 
   constructor({ username }: { username: string }) {
+    this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
     if (!username || username === '') {
-      // throw new Error('You must define a username to be able to make requests to Geonames');
-      log.warn('GEONAME: You must define a username to be able to make requests to Geonames');
+      throw new Error('GEONAME: You must define a username to be able to make requests to Geonames');
+      // log.warn('GEONAME: You must define a username to be able to make requests to Geonames');
       return;
     }
     this.username = username;
-    this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
   }
 
   async find({ query }: LookUpFindProps) {
