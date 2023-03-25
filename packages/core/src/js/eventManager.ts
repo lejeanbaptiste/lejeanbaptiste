@@ -283,8 +283,8 @@ class EventManager {
       const callbacks = $.Callbacks();
       event = {
         publish: function () {
-          if (_this.doDebug) {
-            log.debug(`Leaf-Writer "${this.event}": ${arguments}`);
+          if (_this.debug) {
+            log.debug(`[LW Event: ${this.event}]: ${[...arguments]}`);
           }
           //@ts-ignore
           callbacks.fire.apply(this, arguments);
@@ -312,13 +312,6 @@ class EventManager {
     // TODO empty callbacks
   }
 
-  /**
-   * Whether to output events to the console.
-   * @param {Boolean} doIt
-   */
-  debug(doIt: boolean) {
-    this.doDebug = doIt;
-  }
 }
 
 export default EventManager;
