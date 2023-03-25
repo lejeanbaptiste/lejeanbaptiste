@@ -1,6 +1,7 @@
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import BlockIcon from '@mui/icons-material/Block';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
 import CheckIcon from '@mui/icons-material/Check';
@@ -38,12 +39,14 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+import ShortTextIcon from '@mui/icons-material/ShortText';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
 import StreamIcon from '@mui/icons-material/Stream';
 import StyleOutlinedIcon from '@mui/icons-material/StyleOutlined';
 import TagRoundedIcon from '@mui/icons-material/TagRounded';
 import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import { SvgIconTypeMap } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
@@ -83,7 +86,6 @@ import tagRemoveIcon from './svg/tag-remove-solid.svg';
 import TranslationIcon from './svg/translate.svg';
 import triangleExclamationIcon from './svg/triangle-exclamation-solid.svg';
 import iconOrg from './svg/users-solid.svg';
-import ShortTextIcon from '@mui/icons-material/ShortText';
 
 export { BookIcon, BookOutlinedIcon } from './custom/Book';
 export { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
@@ -91,7 +93,8 @@ export { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 const icons = {
   accept: CheckIcon,
   add: AddCircleOutlineIcon,
-  ArrowDownwardIcon: ArrowDownwardIcon,
+  arrowDownwardIcon: ArrowDownwardIcon,
+  arrowForwardIosIcon: ArrowForwardIosIcon,
   block: BlockIcon,
   BookIcon: BookIcon,
   BookOutlinedIcon: BookOutlinedIcon,
@@ -133,6 +136,7 @@ const icons = {
   HelpCenterIcon: HelpCenterIcon,
   imageViewer: PhotoLibraryRoundedIcon,
   insertTag: TagPlus,
+  invalid: WarningAmberRoundedIcon,
   keyword: VpnKeyRoundedIcon,
   LabelImportantRoundedIcon: LabelImportantRoundedIcon,
   LabelRoundedIcon: LabelRoundedIcon,
@@ -162,6 +166,7 @@ const icons = {
   referencing_string: BoxOpenIcon,
   reject: ClearIcon,
   remove: RemoveCircleOutlineIcon,
+  rs: BoxOpenIcon,
   ReplayIcon: ReplayIcon,
   reset: RestartAltIcon,
   settings: SettingsRoundedIcon,
@@ -194,7 +199,6 @@ const icons = {
   VpnKeyRoundedIcon: VpnKeyRoundedIcon,
   WarningRoundedIcon: WarningRoundedIcon,
   xmlViewer: CodeRoundedIcon,
-  
 };
 
 export type IconLeafWriter = typeof icons extends Record<
