@@ -21,6 +21,12 @@ import Providers from './Providers';
 import type { LeafWriterOptions, LWDocument, ScreenshotParams } from './types';
 import './utilities/log';
 
+declare global {
+  interface Window {
+    writer: Writer;
+  }
+}
+
 export * as Types from './types';
 
 const overmind = createOvermind(config, {

@@ -12,12 +12,6 @@ import { StructureTree } from './panels';
 import type { LeafWriterOptions } from './types';
 // import { Layout } from './layout';
 
-declare global {
-  interface Window {
-    writer: Writer | null;
-  }
-}
-
 const CONTAINER = 'lw-layout-container';
 
 const App = ({ document, settings, user }: LeafWriterOptions) => {
