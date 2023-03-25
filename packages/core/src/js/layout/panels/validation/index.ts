@@ -1,5 +1,5 @@
 import type {
-  ElementDetail,
+  NodeDetail,
   ErrorNames,
   ValidationError,
   ValidationErrorElement,
@@ -402,7 +402,7 @@ class Validation {
 
     $details.append(html);
 
-    let possibilities: ElementDetail[];
+    let possibilities: NodeDetail[];
     if ($item.data().data.possibilities) {
       possibilities = $item.data().data.possibilities;
     } else {
@@ -437,10 +437,10 @@ class Validation {
     type: ErrorNames;
     target: ValidationErrorTarget;
     element: ValidationErrorElement;
-  }): Promise<ElementDetail[]> {
+  }): Promise<NodeDetail[]> {
     switch (type) {
       case 'ElementNameError':
-        return this.writer.overmindActions.validator.getElementsForTagAt({
+        return this.writer.overmindActions.validator.getNodesForTagAt({
           xpath: element.xpath,
           index: target.index,
         });
