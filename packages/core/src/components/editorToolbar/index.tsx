@@ -10,17 +10,23 @@ import { IconButton } from './IconButton';
 import { Toggle } from './Toggle';
 
 type ItemType = 'button' | 'divider' | 'iconButton' | 'toggle';
+type ItemGroup = 'action' | 'ui' | 'panel' | 'general';
 
-export interface MenuItem {
-  color?: string;
+export interface Item {
   disabled?: boolean;
-  icon?: IconLeafWriter;
   hide?: boolean;
+  type: ItemType;
+  group: ItemGroup;
+}
+
+export interface MenuItem extends Item {
+  color?: string;
+  group: ItemGroup;
+  icon: IconLeafWriter;
   onClick?: () => void;
   selected?: boolean;
   title?: string;
   tooltip?: string;
-  type: ItemType;
 }
 
 export const EditorToolbar = () => {
@@ -31,7 +37,7 @@ export const EditorToolbar = () => {
   const { toggleShowTags } = useActions().editor;
   const { openDialog, showContextMenu, toggleFullscreen } = useActions().ui;
 
-  const { entity } = useTheme();
+  const { entity, spacing } = useTheme();
 
   const container = useRef<HTMLDivElement>(null);
 
@@ -40,8 +46,9 @@ export const EditorToolbar = () => {
     [schemaId]
   );
 
-  const items: MenuItem[] = [
+  const items: (MenuItem | Item)[] = [
     {
+      group: 'action',
       hide: isReadonly,
       icon: 'insertTag',
       onClick: () => {
@@ -52,7 +59,7 @@ export const EditorToolbar = () => {
         const posY = rect.top + 34;
 
         showContextMenu({
-          show: true,
+          // anchorEl: container.current,
           eventSource: 'ribbon',
           position: { posX, posY },
           useSelection: true,
@@ -62,9 +69,10 @@ export const EditorToolbar = () => {
       tooltip: 'Add Tag',
       type: 'button',
     },
-    { type: 'divider', hide: isReadonly },
+    { group: 'action', type: 'divider', hide: isReadonly },
     {
       color: entity.person.color.main,
+      group: 'action',
       disabled: !isSupported('person'),
       hide: isReadonly,
       icon: entity.person.icon,
@@ -74,6 +82,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.place.color.main,
+      group: 'action',
       disabled: !isSupported('place'),
       hide: isReadonly,
       icon: entity.place.icon,
@@ -83,6 +92,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.organization.color.main,
+      group: 'action',
       disabled: !isSupported('organization'),
       hide: isReadonly,
       icon: entity.organization.icon,
@@ -92,6 +102,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.title.color.main,
+      group: 'action',
       disabled: !isSupported('title'),
       hide: isReadonly,
       icon: entity.title.icon,
@@ -101,6 +112,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.thing.color.main,
+      group: 'action',
       disabled: !isSupported('rs'),
       hide: isReadonly,
       icon: entity.thing.icon,
@@ -110,6 +122,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.citation.color.main,
+      group: 'action',
       disabled: !isSupported('citation'),
       hide: isReadonly,
       icon: entity.citation.icon,
@@ -119,6 +132,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.note.color.main,
+      group: 'action',
       disabled: !isSupported('note'),
       hide: isReadonly,
       icon: entity.note.icon,
@@ -128,6 +142,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.date.color.main,
+      group: 'action',
       disabled: !isSupported('date'),
       hide: isReadonly,
       icon: entity.date.icon,
@@ -137,6 +152,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.correction.color.main,
+      group: 'action',
       disabled: !isSupported('correction'),
       hide: isReadonly,
       icon: entity.correction.icon,
@@ -146,6 +162,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.keyword.color.main,
+      group: 'action',
       disabled: !isSupported('keyword'),
       hide: isReadonly,
       icon: entity.keyword.icon,
@@ -155,6 +172,7 @@ export const EditorToolbar = () => {
     },
     {
       color: entity.link.color.main,
+      group: 'action',
       disabled: !isSupported('link'),
       hide: isReadonly,
       icon: entity.link.icon,
@@ -162,15 +180,18 @@ export const EditorToolbar = () => {
       title: 'Tag Link',
       type: 'iconButton',
     },
+    { group: 'action', type: 'divider', hide: isReadonly },
     {
       icon: 'translate',
+      group: 'action',
       hide: isReadonly,
       onClick: () => window.writer.dialogManager.show('translation'),
       title: 'Add Translation',
       type: 'iconButton',
     },
-    { type: 'divider', hide: isReadonly },
+    { group: 'action', type: 'divider', hide: isReadonly },
     {
+      group: 'ui',
       icon: showTags ? 'showTagsOn' : 'showTagsOff',
       onClick: () => toggleShowTags(),
       selected: showTags,
@@ -178,21 +199,24 @@ export const EditorToolbar = () => {
       type: 'toggle',
     },
     {
+      group: 'ui',
       icon: fullscreen ? 'fullscreenExit' : 'fullscreen',
       onClick: () => toggleFullscreen(),
       selected: fullscreen,
       title: 'Toggle Fullscreen',
       type: 'toggle',
     },
-    { type: 'divider', hide: isReadonly },
+    { group: 'ui', type: 'divider', hide: isReadonly },
     {
+      group: 'ui',
       hide: isReadonly,
       icon: 'code',
-      onClick: () => window.writer.selection.showSelection(),
+      onClick: () => window.writer.selection?.showSelection(),
       title: 'Show Raw XML',
       type: 'iconButton',
     },
     {
+      group: 'ui',
       hide: isReadonly,
       icon: 'validate',
       onClick: () => {
@@ -202,8 +226,9 @@ export const EditorToolbar = () => {
       title: 'Validate',
       type: 'iconButton',
     },
-    { type: 'divider', hide: isReadonly },
+    { group: 'ui', type: 'divider', hide: isReadonly },
     {
+      group: 'ui',
       icon: 'settings',
       onClick: () => openDialog({ type: 'settings' }),
       title: 'Settings',
@@ -211,6 +236,7 @@ export const EditorToolbar = () => {
     },
 
     {
+      group: 'ui',
       icon: 'documentation',
       onClick: () => {
         window.open('https://www.leaf-vre.org/docs/documentation/leaf-writer-documentation');
@@ -220,15 +246,19 @@ export const EditorToolbar = () => {
     },
   ];
 
-  const ItemComponent = (item: MenuItem) => {
+  const ItemComponent = (item: MenuItem | Item) => {
     const BUTTON_TYPES: Record<ItemType, React.ReactNode> = {
-      button: <Button {...item} />,
-      iconButton: <IconButton {...item} />,
-      toggle: <Toggle {...item} />,
-      divider: <Divider orientation="vertical" variant="middle" flexItem />,
+      button: <Button {...(item as MenuItem)} />,
+      iconButton: <IconButton {...(item as MenuItem)} />,
+      toggle: <Toggle {...(item as MenuItem)} />,
+      divider: (
+        <Divider orientation="vertical" variant="middle" flexItem sx={{ width: spacing(2) }} />
+      ),
     };
     return <>{BUTTON_TYPES[item.type]}</>;
   };
+
+  const groups: ItemGroup[] = ['action', 'ui'];
 
   return (
     <Paper
@@ -250,22 +280,28 @@ export const EditorToolbar = () => {
         py={0.25}
         component={motion.div}
         layout
+        justifyContent="space-between"
       >
         <AnimatePresence mode="popLayout">
-          {items
-            .filter((item) => !item.hide)
-            .map((item) => (
-              <Box
-                layout
-                key={item.title ?? uuidv4()}
-                component={motion.div}
-                initial={{ scale: 0, opacity: 0 }}
-                exit={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-              >
-                <ItemComponent key={item.title ?? uuidv4()} {...item} />
-              </Box>
-            ))}
+          {groups.map((group) => (
+            <Stack key={group} direction="row" flexWrap="wrap">
+              {items
+                .filter((item) => !item.hide)
+                .filter((item) => item.group === group)
+                .map((item) => (
+                  <Box
+                    layout
+                    key={'title' in item ? item.title : uuidv4()}
+                    component={motion.div}
+                    initial={{ scale: 0, opacity: 0 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                  >
+                    <ItemComponent {...item} />
+                  </Box>
+                ))}
+            </Stack>
+          ))}
         </AnimatePresence>
       </Stack>
     </Paper>
