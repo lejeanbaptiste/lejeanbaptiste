@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { Bookmark } from 'tinymce';
-import type { EntityTypes } from '../schema/types';
+import { EntityType } from '../../types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import Entity, { type EntityConfig } from './Entity';
@@ -67,14 +67,15 @@ class EntitiesManager {
       if (!config.id) config.id = this.writer.getUniqueId('dom_');
 
       if (!config.tag) {
-        config.tag = this.writer.schemaManager.mapper.getParentTag(config.type as EntityTypes);
+        //@ts-ignore
+        config.tag = this.writer.schemaManager.mapper.getParentTag(config.type as EntityType);
       }
 
       entity = new Entity(config);
     }
 
     const requiredAttributes = this.writer.schemaManager.mapper.getRequiredAttributes(
-      config.type as EntityTypes
+      config.type as EntityType
     );
     for (const attName in requiredAttributes) {
       entity.setAttribute(attName, requiredAttributes[attName]);

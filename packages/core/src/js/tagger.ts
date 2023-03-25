@@ -1,11 +1,11 @@
 // //@ts-nocheck
 import $ from 'jquery';
 import type { Bookmark } from 'tinymce';
+import type { EntityType } from '../types';
 import { isElement } from '../utilities';
 import { log } from './../utilities';
 import Entity from './entities/Entity';
 import { RESERVED_ATTRIBUTES } from './schema/mapper';
-import type { EntityTypes } from './schema/types';
 import Writer from './Writer';
 
 export type Action = 'add' | 'before' | 'after' | 'around' | 'inside' | 'change';
@@ -332,7 +332,7 @@ class Tagger {
    * @param {String} type The entity type
    * @param {String} [tag] The element name
    */
-  addEntityDialog(type: EntityTypes, tag?: string) {
+  addEntityDialog(type: EntityType, tag?: string) {
     if (!this.writer.editor) return;
 
     const requiresSelection = this.writer.schemaManager.mapper.doesEntityRequireSelection(type);
@@ -605,7 +605,7 @@ class Tagger {
                 this.writer.entitiesManager.addEntity({
                   id: newId,
                   tag,
-                  type: type as EntityTypes,
+                  type: type as EntityType,
                 });
               }
             }
@@ -660,8 +660,8 @@ class Tagger {
   finalizeEntity(type: string, info: any) {
     if (!this.writer.editor) return;
 
-    const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type as EntityTypes);
-    const tagName = this.writer.schemaManager.mapper.getParentTag(type as EntityTypes);
+    const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type as EntityType);
+    const tagName = this.writer.schemaManager.mapper.getParentTag(type as EntityType);
 
     if (type === 'note') delete info.attributes.otherType; //remove otherType attribute;
 
@@ -672,7 +672,7 @@ class Tagger {
       const config = {
         id: this.writer.getUniqueId('dom_'),
         type,
-        isNote: this.writer.schemaManager.mapper.isEntityTypeNote(type as EntityTypes),
+        isNote: this.writer.schemaManager.mapper.isEntityTypeNote(type as EntityType),
         isNamedEntity,
         tag: tagName,
         attributes: info.attributes,
@@ -728,9 +728,9 @@ class Tagger {
     }
 
     // named entity check
-    const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type as EntityTypes);
+    const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type as EntityType);
     const uriAttribute = this.writer.schemaManager.mapper.getAttributeForProperty(
-      type as EntityTypes,
+      type as EntityType,
       'uri'
     );
     const removeEntity =

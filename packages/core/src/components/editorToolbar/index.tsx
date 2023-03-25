@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { IconLeafWriter } from '../../icons';
-import { EntityTypes } from '../../js/schema/types';
 import { useActions, useAppState } from '../../overmind';
+import { EntityType } from '../../types';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { Toggle } from './Toggle';
@@ -36,7 +36,7 @@ export const EditorToolbar = () => {
   const container = useRef<HTMLDivElement>(null);
 
   const isSupported = useCallback(
-    (name: EntityTypes) => window.writer.schemaManager.mapper.getEntitiesMapping().has(name),
+    (name: EntityType) => window.writer.schemaManager.mapper.getEntitiesMapping().has(name),
     [schemaId]
   );
 

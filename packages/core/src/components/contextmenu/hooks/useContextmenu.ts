@@ -6,7 +6,6 @@ import type {
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { IconLeafWriter } from '../../../icons';
-import { EntityTypes } from '../../../js/schema/types';
 import type { Action } from '../../../js/tagger';
 import Writer from '../../../js/Writer';
 import { useActions, useAppState } from '../../../overmind';

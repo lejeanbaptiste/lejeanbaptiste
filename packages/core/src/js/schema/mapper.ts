@@ -1,10 +1,10 @@
 import $ from 'jquery';
-import { SchemaMappingType } from '../../types';
+import { EntityType, SchemaMappingType } from '../../types';
 import { log } from '../../utilities';
 import Entity from '../entities/Entity';
 import Writer from '../Writer';
 import { cwrcEntry, empty, orlando, tei, teiLite } from './mappings';
-import type { EntityTypes, EntityMappingProps } from './types';
+import type { EntityMappingProps } from './types';
 
 // a list of reserved attribute names that are used by the editor
 export const RESERVED_ATTRIBUTES = new Set([
@@ -354,7 +354,7 @@ class Mapper {
 
     // put xpath mappings at beginning
     const mappings = this.getMappings();
-    let sortedMappings: Map<EntityTypes, EntityMappingProps> = new Map();
+    let sortedMappings: Map<EntityType, EntityMappingProps> = new Map();
 
     mappings.entities.forEach((mapping, type) => {
       if (mapping.xpathSelector) {
@@ -369,11 +369,11 @@ class Mapper {
       // prioritize xpath
       if (mapping.xpathSelector && isElement && typeof element !== 'string') {
         const result = this.writer.utilities.evaluateXPath(element, mapping.xpathSelector);
-        if (result) return type as EntityTypes;
+        if (result) return type as EntityType;
       } else {
         const parentTag = mapping.parentTag;
         if ((Array.isArray(parentTag) && parentTag.indexOf(tag) !== -1) || parentTag === tag) {
-          return type as EntityTypes;
+          return type as EntityType;
         }
       }
     }
@@ -387,7 +387,7 @@ class Mapper {
    * @param {String} property The property name
    * @returns {String|undefined} The mapping
    */
-  getMappingForProperty(type: EntityTypes, property: string) {
+  getMappingForProperty(type: EntityType, property: string) {
     // const entry = this.getMappings().entities[type];
     // if (entry.mapping && entry.mapping[property]) {
     //   return entry.mapping[property];
@@ -411,7 +411,7 @@ class Mapper {
    * @param {String} property The property name
    * @returns {String|undefined} The mapping
    */
-  getAttributeForProperty(type: EntityTypes, property: string) {
+  getAttributeForProperty(type: EntityType, property: string) {
     const mappingString = this.getMappingForProperty(type, property);
     if (mappingString && /^@\w+$/.test(mappingString)) {
       // if it looks like an attribute, remove the @ and return the attribute name
@@ -425,7 +425,7 @@ class Mapper {
    * @param {String} type The entity type
    * @returns {Array}
    */
-  getMappedProperties(type: EntityTypes) {
+  getMappedProperties(type: EntityType) {
     const entry = this.getMappings().entities.get(type);
     if (!entry) return;
 
@@ -479,7 +479,7 @@ class Mapper {
    * @param {String} type The entity type
    * @returns {Boolean}
    */
-  isEntityTypeNote(type?: EntityTypes) {
+  isEntityTypeNote(type?: EntityType) {
     if (!type) return false;
 
     const isNote = this.getMappings().entities.get(type)?.isNote;
@@ -491,7 +491,7 @@ class Mapper {
    * @param {String} type The entity type
    * @returns {Boolean}
    */
-  isNamedEntity(type?: EntityTypes) {
+  isNamedEntity(type?: EntityType) {
     if (!type) return false;
 
     const entry = this.getMappings().entities.get(type);
@@ -503,7 +503,7 @@ class Mapper {
    * @param {String} type The entity type
    * @returns {Boolean}
    */
-  doesEntityRequireSelection(type: EntityTypes) {
+  doesEntityRequireSelection(type: EntityType) {
     if (!type) return false;
 
     const requiresSelection = this.getMappings().entities.get(type)?.requiresSelection;
@@ -619,15 +619,15 @@ class Mapper {
       const matches = $(entityTagNames.join(','), this.writer.editor?.getBody()).filter(
         (index, element) => {
           if (element.getAttribute('_entity') === 'true') return false;
-          
+
           if ($(element).parents(`[_tag="${headerTag}"]`).length !== 0) return false;
-          
+
           // double check entity type using element instead of string, which forces xpath evaluation, which we want for tei note entities
           const entityType = this.getEntityTypeForTag(element);
           if (!entityType) return false;
-         
+
           const entry = this.getMappings().entities.get(entityType);
-          
+
           // if the mapping has a uri, check to make sure it exists
           if (entry?.mapping?.uri) {
             const result = this.writer.utilities.evaluateXPath(element, entry.mapping.uri);
@@ -651,7 +651,7 @@ class Mapper {
    * @param {String} type The entity type.
    * @returns {String}
    */
-  getParentTag(type: EntityTypes) {
+  getParentTag(type: EntityType) {
     const tag = this.getMappings().entities.get(type)?.parentTag;
     if (!tag) return '';
     if (Array.isArray(tag)) return tag[0];
@@ -663,7 +663,7 @@ class Mapper {
    * @param {String} type The entity type.
    * @returns {String}
    */
-  getTextTag(type: EntityTypes) {
+  getTextTag(type: EntityType) {
     return this.getMappings().entities.get(type)?.textTag;
   }
 
@@ -672,7 +672,7 @@ class Mapper {
    * @param {String} type The entity type.
    * @returns {Object}
    */
-  getRequiredAttributes(type: EntityTypes) {
+  getRequiredAttributes(type: EntityType) {
     const requiredAttributes = this.getMappings().entities.get(type)?.requiredAttributes;
     return requiredAttributes === undefined ? {} : requiredAttributes;
   }
