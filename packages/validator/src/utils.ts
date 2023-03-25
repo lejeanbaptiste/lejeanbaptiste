@@ -11,10 +11,10 @@ const XPathResult = {
   FIRST_ORDERED_NODE_TYPE: 9,
 };
 
-export const evaluateXPath = (xpath: string, docXML: Document): Node | null => {
+export const evaluateXPath = (xpath: string, docXML: Document) => {
   const evalResult = window.document.evaluate(xpath, docXML, null, XPathResult.ANY_TYPE, null);
 
-  let result: any;
+  let result: number | string | boolean | Node | null | undefined;
 
   switch (evalResult.resultType) {
     case XPathResult.NUMBER_TYPE:
@@ -34,6 +34,15 @@ export const evaluateXPath = (xpath: string, docXML: Document): Node | null => {
     case XPathResult.FIRST_ORDERED_NODE_TYPE:
       result = evalResult.singleNodeValue;
       break;
+  }
+
+  if (
+    typeof result === 'boolean' ||
+    typeof result === 'number' ||
+    typeof result === 'string' ||
+    result === null
+  ) {
+    return;
   }
 
   return result;
