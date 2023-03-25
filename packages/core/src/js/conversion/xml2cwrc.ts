@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { log } from '../../utilities';
-import { isValidHttpURL } from '../../utilities/util';
+import { isValidHttpURL } from '../../utilities/string';
 import { EntityConfig } from '../entities/Entity';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
 import Writer from '../Writer';
