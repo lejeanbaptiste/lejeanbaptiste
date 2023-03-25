@@ -2,10 +2,10 @@ import { Paper } from '@mui/material';
 import React from 'react';
 import { Tree } from './tree';
 
-export const Toc = () => {
+export const TocPanel = () => {
   return (
     <Paper
-      id="toc"
+      id="toc-panel"
       elevation={5}
       square
       sx={{

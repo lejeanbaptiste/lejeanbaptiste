@@ -7,7 +7,8 @@ import { EntityLookupDialog } from './dialogs';
 import { useDialog, useNotifier } from './hooks';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
-import { StructureTree, Toc } from './panels';
+import { TocPanel } from './panels';
+import { StructureTree } from './panels';
 import type { LeafWriterOptions } from './types';
 // import { Layout } from './layout';
 
@@ -124,7 +125,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
         <EntityLookupDialog />
         <div>
           {editorToobarContainer && createPortal(<EditorToolbar />, editorToobarContainer)}
-          {tocPanelContainer && createPortal(<Toc />, tocPanelContainer)}
+          {tocPanelContainer && createPortal(<TocPanel />, tocPanelContainer)}
           {structureTreePanelContainer &&
             createPortal(<StructureTree />, structureTreePanelContainer)}
         </div>
