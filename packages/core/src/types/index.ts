@@ -149,22 +149,16 @@ export type EntityType =
 export type PaletteMode = 'light' | 'auto' | 'dark';
 
 export interface ContextMenuState {
-  show: boolean;
   allowsMerge?: boolean;
-  allowsTagAround?: boolean;
+  anchorEl?: Element;
   count?: number;
-  element?: HTMLElement | null;
-  eventSource?: string;
-  hasContentSelection?: boolean;
-  isEntity?: boolean;
-  isHeader?: boolean;
-  isMultiple?: boolean;
-  isRoot?: boolean;
+  eventSource?: 'editor' | 'ribbon' | 'markupPanel';
+  nodeType?: 'tag' | 'text';
   position?: { posX: number; posY: number };
-  rng?: Range;
+  show: boolean;
   tagId?: string | string[];
-  tagName?: string | null;
   useSelection?: boolean;
+  xpath?: string;
 }
 
 //---------

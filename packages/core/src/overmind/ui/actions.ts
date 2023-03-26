@@ -56,8 +56,8 @@ export const closeContextMenu = ({ state }: Context) => {
   state.ui.contextMenu = { show: false };
 };
 
-export const showContextMenu = ({ state }: Context, value: ContextMenuState) => {
-  state.ui.contextMenu = value;
+export const showContextMenu = ({ state }: Context, value: Omit<ContextMenuState, 'show'>) => {
+  state.ui.contextMenu = { ...value, show: true };
 };
 
 export const updateTitle = ({ state }: Context, title: string) => {
@@ -103,14 +103,14 @@ export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
 export const closeDialog = ({ state }: Context, id: string) => {
   state.ui.dialogBar = [
     ...state.ui.dialogBar.map((dialogBar) => {
-      if (dialogBar.props.id === id) dialogBar.dismissed = true;
+      if (dialogBar.props?.id === id) dialogBar.dismissed = true;
       return dialogBar;
     }),
   ];
 };
 
 export const removeDialog = ({ state }: Context, id: string) => {
-  state.ui.dialogBar = state.ui.dialogBar.filter((dialogBar) => dialogBar.props.id !== id);
+  state.ui.dialogBar = state.ui.dialogBar.filter((dialogBar) => dialogBar.props?.id !== id);
 };
 
 export const setDialogDisplayId = (
@@ -119,7 +119,7 @@ export const setDialogDisplayId = (
 ) => {
   state.ui.dialogBar = [
     ...state.ui.dialogBar.map((dialogBar) => {
-      if (dialogBar.props.id === id) dialogBar.displayId = displayId;
+      if (dialogBar.props?.id === id) dialogBar.displayId = displayId;
       return dialogBar;
     }),
   ];
@@ -198,14 +198,6 @@ export const showTextNodes = ({ state, actions }: Context, value?: boolean) => {
   };
 
   actions.ui.allowTagDragAndDrop(value);
-  if (value === false) actions.ui.showTextNodesContent(false);
-};
-
-export const showTextNodesContent = ({ state }: Context, value: boolean) => {
-  state.ui.markupPanel = {
-    ...state.ui.markupPanel,
-    showTextNodesContent: value,
-  };
 };
 
 export const changePanel = (

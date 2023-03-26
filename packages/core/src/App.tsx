@@ -118,7 +118,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   return (
     <>
       <Box id={CONTAINER} sx={{ height: 'calc(100% - 32px)', width: '100%' }}>
-        {writer && <ContextMenu writer={writer} />}
+        {writer && <ContextMenu />}
         <EntityLookupDialog />
         <div>
           {editorToobarContainer && createPortal(<EditorToolbar />, editorToobarContainer)}
