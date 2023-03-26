@@ -2,42 +2,23 @@ import { ListItemButton, Stack, Tooltip, useTheme } from '@mui/material';
 import chroma from 'chroma-js';
 import classNames from 'classnames';
 import React, {
-  PointerEvent,
   forwardRef,
   useEffect,
   useMemo,
   useState,
   type HTMLAttributes,
   type MouseEvent,
+  type PointerEvent,
 } from 'react';
 import { useItem } from '../useItem';
-import { ExpandButton, Icon, Label, SelectionBadge } from './';
+import { ExpandButton, Icon, ItemProps, Label, SelectionBadge } from './';
 
-export interface TagProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'id'> {
-  canAddToMultiselection?: (id: string) => boolean;
+export interface TagProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'id'>, ItemProps {
   children: React.ReactNode;
-  classnames?: (string | undefined)[];
-  content?: string;
   expanded?: boolean;
   expandDisabled?: boolean;
-  handleProps?: any;
   isEntity?: boolean;
-  isOver?: boolean;
-  label: string;
   multipleSelection?: boolean;
-  nodeId: string;
-  onContextMenuOpen?: (
-    event: MouseEvent<HTMLElement, Event>,
-    id: string,
-    contentOnly?: boolean
-  ) => void;
-  onExpand?: () => void;
-  onSelectItem?: (
-    event: MouseEvent<HTMLElement, Event>,
-    { id, contentOnly }: { id: string; contentOnly?: boolean }
-  ) => void;
-
-  selected?: boolean;
 }
 
 export const Tag = forwardRef<HTMLDivElement, TagProps>(
@@ -120,9 +101,11 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
       event.preventDefault();
       event.stopPropagation();
 
+      if ([schemaManager.getRoot()].includes(label)) return;
+
       setSelectContentOnly(true);
 
-      onContextMenuOpen && onContextMenuOpen(event, nodeId);
+      onContextMenuOpen && onContextMenuOpen(event, { id: nodeId });
     };
 
     const handleMouseOver = (event: MouseEvent<HTMLAnchorElement, globalThis.MouseEvent>) => {
