@@ -1,23 +1,24 @@
-import { ListItemButton, Stack, useTheme } from '@mui/material';
+import { ListItemButton, Stack, Tooltip, useTheme } from '@mui/material';
 import chroma from 'chroma-js';
 import classNames from 'classnames';
-import { useAtomValue, useSetAtom } from 'jotai';
 import React, {
+  PointerEvent,
   forwardRef,
   useEffect,
+  useMemo,
   useState,
   type HTMLAttributes,
   type MouseEvent,
 } from 'react';
-import { ElementIcon, ExpandButton, Label, SelectionBadge } from '.';
-import { allowMultiselectionAtom, preventDragAtom } from '../../../store';
 import { useItem } from '../useItem';
+import { ExpandButton, Icon, Label, SelectionBadge } from './';
 
-export interface ElementTagProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'id'> {
-  classnames?: string[];
-  children: React.ReactNode;
-  expanded?: boolean;
+export interface TagProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'id'> {
   canAddToMultiselection?: (id: string) => boolean;
+  children: React.ReactNode;
+  classnames?: (string | undefined)[];
+  content?: string;
+  expanded?: boolean;
   expandDisabled?: boolean;
   handleProps?: any;
   isEntity?: boolean;
@@ -25,25 +26,27 @@ export interface ElementTagProps extends Omit<HTMLAttributes<HTMLButtonElement>,
   label: string;
   multipleSelection?: boolean;
   nodeId: string;
-  onExpand?(): void;
-  onSelectItem?: (
-    event: MouseEvent<HTMLElement, Event>,
-    { id, contentOnly }: { id: string; contentOnly?: boolean }
-  ) => void;
   onContextMenuOpen?: (
     event: MouseEvent<HTMLElement, Event>,
     id: string,
     contentOnly?: boolean
   ) => void;
+  onExpand?: () => void;
+  onSelectItem?: (
+    event: MouseEvent<HTMLElement, Event>,
+    { id, contentOnly }: { id: string; contentOnly?: boolean }
+  ) => void;
+
   selected?: boolean;
 }
 
-export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
+export const Tag = forwardRef<HTMLDivElement, TagProps>(
   (
     {
+      canAddToMultiselection,
       classnames,
       children,
-      canAddToMultiselection,
+      content,
       expanded,
       expandDisabled,
       handleProps,
@@ -52,60 +55,40 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
       multipleSelection,
       label,
       nodeId,
+      onContextMenuOpen,
       onExpand,
       onSelectItem,
-      onContextMenuOpen,
       selected,
       style,
     },
     ref
   ) => {
-    const allowMultiselection = useAtomValue(allowMultiselectionAtom);
-    const setPreventDrag = useSetAtom(preventDragAtom);
-
     const { palette } = useTheme();
 
-    const { color, icon } = useItem(nodeId, isEntity);
+    const { onPointerDown, ...handlePropsRest } = handleProps;
 
     const { schemaManager } = window.writer;
 
-    const [hover, setHover] = useState(false);
-    const [showFullName, setShowFullName] = useState(false);
-    const [selectContentOnly, setSelectContentOnly] = useState(true);
+    const { color, icon, setHover, details } = useItem({ content, id: nodeId, isEntity, selected });
+
     const [multiselectable, setMultiselectable] = useState(true);
+    const [selectContentOnly, setSelectContentOnly] = useState(true);
 
-    const fullName = schemaManager.getFullNameForTag(label);
-
-    useEffect(() => {
-      let timer: NodeJS.Timeout;
-      if (hover) {
-        timer = setTimeout(() => {
-          if (hover) setShowFullName(true);
-        }, 1200);
-      } else {
-        setShowFullName(false);
-        clearTimeout(timer);
-      }
-      return () => clearTimeout(timer);
-    }, [hover]);
+    const fullName = useMemo(() => schemaManager.getFullNameForTag(label), [label]);
 
     useEffect(() => {
       if (!selected) setSelectContentOnly(true);
     }, [selected]);
 
-    useEffect(() => {
-      setPreventDrag(selectContentOnly);
-    }, [selectContentOnly]);
-
     const hanldeSelectItem = (event: MouseEvent<HTMLElement, Event>) => {
-      if (allowMultiselection && event.shiftKey) {
+      if (event.shiftKey) {
         if (!multiselectable) {
           event.preventDefault();
           event.stopPropagation();
           return;
         }
 
-        onSelectItem(event, { id: nodeId });
+        onSelectItem && onSelectItem(event, { id: nodeId });
         return;
       }
 
@@ -116,14 +99,14 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
 
         setSelectContentOnly((prevValue) => {
           const newValue = !prevValue;
-          onSelectItem(event, { id: nodeId, contentOnly: newValue });
+          onSelectItem && onSelectItem(event, { id: nodeId, contentOnly: newValue });
           return newValue;
         });
 
         return;
       }
 
-      onSelectItem(event, { id: nodeId, contentOnly: selectContentOnly });
+      onSelectItem && onSelectItem(event, { id: nodeId, contentOnly: selectContentOnly });
     };
 
     const handleExpand = (event: MouseEvent<HTMLElement, globalThis.MouseEvent>) => {
@@ -139,17 +122,24 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
 
       setSelectContentOnly(true);
 
-      onContextMenuOpen(event, nodeId);
+      onContextMenuOpen && onContextMenuOpen(event, nodeId);
     };
 
     const handleMouseOver = (event: MouseEvent<HTMLAnchorElement, globalThis.MouseEvent>) => {
       setHover(true);
-      if (allowMultiselection && event.shiftKey) setMultiselectable(canAddToMultiselection(nodeId));
+      if (event.shiftKey && canAddToMultiselection) {
+        setMultiselectable(canAddToMultiselection(nodeId));
+      }
     };
 
     const handleMouseOut = () => {
       setHover(false);
       setMultiselectable(true);
+    };
+
+    const handleOnPointerDown = (event: PointerEvent<HTMLAnchorElement>) => {
+      if (selectContentOnly) return;
+      onPointerDown && onPointerDown(event);
     };
 
     return (
@@ -161,7 +151,8 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
         onContextMenu={handleContextMenu}
         onMouseOver={handleMouseOver}
         onMouseOut={handleMouseOut}
-        {...handleProps}
+        {...handlePropsRest}
+        onPointerDown={handleOnPointerDown}
         style={style}
         sx={{
           py: 0.25,
@@ -169,7 +160,6 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
           gap: 0.5,
           borderRadius: 1,
           cursor: !multiselectable ? 'not-allowed' : 'pointer',
-          // border: isOver ? `1px dashed ${palette.primary[palette.mode]}` : 'inherit',
           '&.Mui-selected': {
             bgcolor: isEntity
               ? chroma(color).alpha(palette.action.selectedOpacity).css()
@@ -193,21 +183,32 @@ export const ElementTag = forwardRef<HTMLDivElement, ElementTagProps>(
             {...{ expanded, selected }}
           />
         ) : (
-          <ElementIcon {...{ color, icon, isEntity, selected }} />
+          <Icon {...{ color, icon, isEntity, selected }} />
         )}
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          width="100%"
-          gap={1}
-          overflow="hidden"
+        <Tooltip
+          componentsProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
+          enterDelay={1000}
+          placement="right"
+          title={fullName}
         >
-          <Label fullName={fullName} selected={selected} showFullName={showFullName}>
-            {children}
-          </Label>
-          {selected && !multipleSelection && <SelectionBadge contentsOnly={selectContentOnly} />}
-        </Stack>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            width="100%"
+            gap={1}
+            overflow="hidden"
+          >
+            <Label
+              details={details}
+              detailsSx={{ textTransform: 'capitalize' }}
+              selected={selected}
+            >
+              {children}
+            </Label>
+            {selected && !multipleSelection && <SelectionBadge contentsOnly={selectContentOnly} />}
+          </Stack>
+        </Tooltip>
       </ListItemButton>
     );
   }

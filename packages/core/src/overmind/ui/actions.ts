@@ -204,5 +204,7 @@ export const changePanel = (
   { state }: Context,
   { side, panelId }: { side: Uncapitalize<Side>; panelId: PanelId }
 ) => {
-  state.ui.layout[side].activePanel = panelId;
+  const sidePanel = state.ui.layout[side];
+  if (!sidePanel) return;
+  sidePanel.activePanel = panelId;
 };

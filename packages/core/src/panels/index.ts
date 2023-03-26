@@ -1,3 +1,2 @@
-export * from './structureTree';
+export * from './markup';
 export * from './toc';
-

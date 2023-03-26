@@ -1,12 +1,12 @@
 import { Paper } from '@mui/material';
 import { Provider } from 'jotai';
 import React from 'react';
-import { TreeView } from './treeView';
+import { Tree } from './tree';
 
-export const StructureTree = () => {
+export const MarkupPanel = () => {
   return (
     <Paper
-      id="structure-view"
+      id="markup-panel"
       elevation={5}
       square
       sx={{
@@ -17,7 +17,7 @@ export const StructureTree = () => {
       }}
     >
       <Provider>
-        <TreeView />
+        <Tree />
       </Provider>
     </Paper>
   );

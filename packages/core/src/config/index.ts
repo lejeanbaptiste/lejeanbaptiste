@@ -18,7 +18,7 @@ export const createConfig = (settings: LeafWriterOptionsSettings = {}) => {
     modules: {
       west: [
         { id: 'toc', title: 'Table of Contents' },
-        { id: 'structure', title: 'Markup' },
+        { id: 'markup', title: 'Markup' },
         { id: 'entities', title: 'Entities' },
       ],
       east: [

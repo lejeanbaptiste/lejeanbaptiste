@@ -38,8 +38,8 @@ export const state: State = {
   fullscreen: false,
   language: { code: 'en-CA', name: 'english', shortName: 'en' },
   layout: {
-    outerLeft: { id: 'left', items: [panel.toc, panel.structure, panel.entities] },
-    left: { activePanel: 'structure', id: 'left', panels: ['toc', 'structure', 'entities'] },
+    outerLeft: { id: 'left', items: [Panel.toc, Panel.markup, Panel.entities] },
+    left: { activePanel: 'markup', id: 'left', panels: ['toc', 'markup', 'entities'] },
     right: {
       activePanel: 'imageViewer',
       collapsed: true,
@@ -48,7 +48,7 @@ export const state: State = {
     },
     outerRight: {
       id: 'right',
-      items: [panel.imageViewer, panel.xmlViewer, panel.validate],
+      items: [Panel.imageViewer, Panel.xmlViewer, Panel.validate],
     },
   },
   markupPanel: {
