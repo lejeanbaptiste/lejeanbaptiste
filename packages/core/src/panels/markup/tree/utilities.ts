@@ -160,8 +160,6 @@ type GetNodesParams = {
  * @returns A TreeItem with children.
  */
 export const getNodes = ({ index = 0, level = 0, node, parent, treeType }: GetNodesParams) => {
-  // console.group(isElement(node) ? node.getAttribute('_tag') : '#text');
-
   const { schemaManager } = window.writer;
 
   const item = isElement(node)
@@ -172,7 +170,6 @@ export const getNodes = ({ index = 0, level = 0, node, parent, treeType }: GetNo
 
   //Bypass document Header.
   if (isElement(node) && node.getAttribute('_tag') === schemaManager.getHeader()) {
-    // console.groupEnd();
     return item;
   }
 
@@ -186,7 +183,6 @@ export const getNodes = ({ index = 0, level = 0, node, parent, treeType }: GetNo
     if (childItem) item.children.push(childItem);
   });
 
-  // console.groupEnd();
   return item;
 };
 

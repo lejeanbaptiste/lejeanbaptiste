@@ -221,20 +221,16 @@ export const SortableTree = () => {
   };
 
   const handleContextMenu = (event: MouseEvent<HTMLElement, Event>, id: string) => {
-    console.group('handleContextMenu');
     const position = { posX: event.clientX, posY: event.clientY };
     selectedItems.includes(id) && selectedItems.length > 1
       ? openContextMenuForMultipleItem(position)
       : openContextMenuForSingleItem(id, position);
-    console.groupEnd();
   };
 
   const openContextMenuForSingleItem = (
     id: UniqueIdentifier,
     position: { posX: number; posY: number }
   ) => {
-    console.group('SINGLE');
-
     if (!selectedItems.includes(id)) selectItem(id);
     const selectedItem = visibleTree.find((item) => item.id === id);
 
@@ -245,12 +241,9 @@ export const SortableTree = () => {
       tagId: id as string,
       xpath: selectedItem?.xpath,
     });
-
-    console.groupEnd();
   };
 
   const openContextMenuForMultipleItem = (position: { posX: number; posY: number }) => {
-    console.group('MULTIPLE');
     const tagIds = [...(selectedItems as string[])].sort((a, b) => {
       const tagA = visibleTree.find((item) => item.id === a);
       const tagB = visibleTree.find((item) => item.id === b);
@@ -276,8 +269,6 @@ export const SortableTree = () => {
       tagId: tagIds,
       useSelection: false,
     });
-
-    console.groupEnd();
   };
 
   const shouldBeDraggable = (label: string) => {
