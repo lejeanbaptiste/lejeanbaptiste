@@ -15,6 +15,7 @@ import { Subject } from 'rxjs';
 import type { Authority, NamedEntityType } from './dialogs/entityLookups';
 // import i18next from './i18n';
 import './i18n';
+import Writer from './js/Writer';
 import { config } from './overmind';
 import type { EditorStateType } from './overmind/editor/state';
 import Providers from './Providers';
@@ -39,16 +40,16 @@ const DEFAULT_HEIGHT = '700px';
 export class Leafwriter {
   private readonly domElement: HTMLElement;
 
-  private reactReact: Root;
+  private reactReact: Root | undefined;
 
-  private onContentHasChanged: Subject<boolean>;
+  onContentHasChanged: Subject<boolean>;
   private _onLoad: Subject<{ schemaName: string }>;
   private _onClose: Subject<boolean>;
   private _onEditorStateChange: Subject<EditorStateType>;
 
   private options?: LeafWriterOptions;
 
-  constructor(domElement?: HTMLElement) {
+  constructor(domElement: HTMLElement) {
     this.domElement = domElement;
     this.onContentHasChanged = new Subject();
     this._onLoad = new Subject();
@@ -97,6 +98,8 @@ export class Leafwriter {
   }
 
   private render() {
+    if (!this.reactReact || !this.options) return;
+
     this.reactReact.render(
       <Provider value={overmind}>
         {/* <I18nextProvider i18n={i18next}> */}
@@ -125,7 +128,7 @@ export class Leafwriter {
   async getDocumentScreenshot(
     params: ScreenshotParams = { width: 800, height: 480, windowWidth: 800, windowHeight: 1000 }
   ) {
-    const page = window.writer.editor.getBody();
+    const page = window.writer.editor?.getBody();
     if (!page) return;
 
     const canvas: HTMLCanvasElement | null = await html2canvas(page, {
@@ -133,7 +136,7 @@ export class Leafwriter {
       ...params,
     }).catch(() => null);
 
-    if (!canvas) return null;
+    if (!canvas) return;
 
     const screenshot = canvas.toDataURL('image/png', 1.0);
 
@@ -145,7 +148,7 @@ export class Leafwriter {
   }
 
   get autosave() {
-    return overmind.state.editor.autosave;
+    return overmind.state.editor.autosave ?? false;
   }
 
   set autosave(value: boolean) {
@@ -291,7 +294,7 @@ export class Leafwriter {
     this.onContentHasChanged.complete();
     overmind.actions.document.clear();
     window.writer?.destroy();
-    window.writer = null;
+    // window.writer = null;
   }
 }
 

@@ -7,21 +7,21 @@ export interface PopupProps extends IDialog {
   content?: string;
   id?: string;
   isLink?: boolean;
-  open: boolean;
+  open?: boolean;
   position?: {
     left: number;
     top: number;
   };
 }
 
-export const Popup = ({ content, id, isLink, onClose, open, position }: PopupProps) => {
+export const Popup = ({ content, id, isLink, onClose, open = false, position }: PopupProps) => {
   const { settings } = useAppState().editor;
   // const { popupProps } = useAppState().ui;
 
   // const { content, id, isLink, open, position } = popupProps;
   const { left, top } = position ?? { left: 0, top: 0 };
 
-  const handlePopoverClose = () => onClose(id);
+  const handlePopoverClose = () => onClose && onClose(id);
 
   return (
     <Popover

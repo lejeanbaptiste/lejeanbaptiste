@@ -94,6 +94,7 @@ class Relations {
     let relationsString = '';
 
     for (let i = 0; i < this.writer.triples.length; i++) {
+      //@ts-ignore
       const { subject, predicate, object } = this.writer.triples[i];
       //@ts-ignore
       relationsString += `<li> ${subject.text} ${predicate.text} ${object.text}</li>`;

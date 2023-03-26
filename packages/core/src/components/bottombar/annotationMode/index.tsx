@@ -8,7 +8,7 @@ const AnnotationMode = () => {
   const { annotationModeLabel } = useAppState().editor;
   const { t } = useTranslation(['leafwriter']);
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>();
   const openMenu = Boolean(anchorEl);
 
   const handleButtonClick = (event: MouseEvent<HTMLElement>) => {

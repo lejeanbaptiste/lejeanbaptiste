@@ -169,9 +169,9 @@ export const updateReadonly = ({ state, actions }: Context) => {
   const { isReadonly } = state.editor;
 
   window.writer.isReadOnly = isReadonly;
-  window.writer.editor.mode.set(isReadonly ? 'readonly' : 'design');
+  window.writer.editor?.mode.set(isReadonly ? 'readonly' : 'design');
   window.writer.layoutManager.toggleReadonly(isReadonly);
-  window.writer.entitiesList.toggleReadonly(isReadonly);
+  window.writer.entitiesList?.toggleReadonly(isReadonly);
   window.writer.layoutManager.resizeEditor();
 };
 

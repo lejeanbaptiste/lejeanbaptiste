@@ -6,11 +6,11 @@ import { useActions, useAppState } from '../../../overmind';
 import useEditorReaction from '../hooks/useEditorReaction';
 
 interface MenuProps {
-  anchorEl?: HTMLElement;
+  anchorEl?: HTMLElement | null;
   handleClose: () => void;
 }
 
-export const Menu = ({ anchorEl, handleClose }) => {
+export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { annotationMode, annotationModes } = useAppState().editor;
   const { closeNotificationSnackbar, notifyViaSnackbar } = useActions().ui;
   const { changeAnnotationMode } = useEditorReaction();

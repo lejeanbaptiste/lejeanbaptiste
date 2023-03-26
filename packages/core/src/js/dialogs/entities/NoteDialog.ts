@@ -132,10 +132,10 @@ class NoteDialog implements SchemaDialog {
     //transfer value from 'other type 'textfied to 'other' option value on radiobox
     this.dialog.$el.find(`#${this.id}_noteOtherType`).on('change', () => {
       let val = this.dialog.$el.find(`#${this.id}_noteOtherType`).val();
-      if (!val) return;
       if (Array.isArray(val)) val = val[0];
       if (typeof val === 'number') val = val.toString();
-
+      if (!val) return;
+      
       this.dialog.$el.find(`#${this.id}_other`).attr('value', val);
     });
 

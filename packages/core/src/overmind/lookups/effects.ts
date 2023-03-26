@@ -6,7 +6,7 @@ type Sources = { [key: string]: LookupServiceApi };
 
 class Api {
   private readonly services: Sources = {};
-  private currentState: { [key: string]: AuthorityService };
+  private currentState: { [key: string]: AuthorityService } = {};
 
   private nssi: LookupServiceApi | undefined;
 
@@ -43,8 +43,8 @@ class Api {
         if (!enabled) return;
         if (!entities[type]) return;
         results.set(id, []); //* guarantee the order
-        const response = await this.services[id].find({ query, type });
-        results.set(id, response);
+        const response = await this.services[id]?.find({ query, type });
+        if (response) results.set(id, response);
       })
     );
 

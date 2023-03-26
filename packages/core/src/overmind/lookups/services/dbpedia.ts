@@ -73,10 +73,10 @@ export default class Dbpedia implements LookupServiceApi {
     const results: LookUpResult[] = data.docs.map(({ comment, label, resource }) => {
       //? assuming first instance of description, name and uri;
       const description = comment?.[0] ?? 'No description available';
-      const name = label[0].replace(/(<([^>]+)>)/gi, '');
+      const name = label[0]?.replace(/(<([^>]+)>)/gi, '') ?? '';
       const uri = resource[0];
 
-      return { description, id: uri, name, repository: 'dbpedia', query, type, uri };
+      return { description, id: uri ?? '', name, repository: 'dbpedia', query, type, uri: uri ?? '' };
     });
 
     return results;

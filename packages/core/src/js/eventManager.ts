@@ -21,7 +21,7 @@ interface EventProps {
  * @param {Writer} writer
  */
 class EventManager {
-  doDebug = false;
+  debug: boolean = false;
   events: Events = {};
 
   constructor() {
@@ -36,20 +36,20 @@ class EventManager {
      */
 
     /**
-     * CWRCWriter events
+     * LEAF-Writer events
      */
 
     /**
      * The writer has been initialized
      * @event Writer#writerInitialized
-     * @param {Object} writer The CWRCWriter
+     * @param {Object} writer The LEAF-Writer
      */
     this.event('writerInitialized');
 
     /**
      * The editor has been initialized
      * @event Writer#tinymceInitialized
-     * @param {Object} writer The CWRCWriter
+     * @param {Object} writer The LEAF-Writer
      */
     this.event('tinymceInitialized');
 
@@ -277,7 +277,7 @@ class EventManager {
 
   event(id: string) {
     const _this = this;
-    let event: EventProps = this.events[id];
+    let event = this.events[id];
 
     if (!event) {
       const callbacks = $.Callbacks();

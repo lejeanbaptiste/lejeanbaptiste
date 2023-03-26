@@ -7,7 +7,7 @@ import { useActions, useAppState } from '../../../overmind';
 import useEditorReaction from '../hooks/useEditorReaction';
 
 interface MenuProps {
-  anchorEl?: HTMLElement;
+  anchorEl?: HTMLElement | null;
   handleClose: () => void;
 }
 
@@ -51,7 +51,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
             label: severity === 'warning' ? t('change anyway').toString() : t('commons:change').toString(),
           },
         ],
-        onClose: async (action: string) => {
+        onClose: async (action) => {
           if (action !== 'change') return;
           applyChanges(value);
         },

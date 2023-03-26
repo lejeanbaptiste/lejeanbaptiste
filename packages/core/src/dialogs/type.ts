@@ -11,14 +11,15 @@ export interface DialogActionProps {
   variant?: 'contained' | 'outlined' | 'text';
 }
 
-export interface IDialog extends Partial<MuiDialogProps> {
+export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   actions?: DialogActionProps[];
   id?: string;
   onBeforeClose?: (action?: string) => Promise<boolean>;
-  onClose?: <T>(action?: string, data?: T) => void;
+  onClose?: <T>(action?: string | undefined, data?: T) => Promise<void> | void;
   preventEscape?: boolean;
   severity?: SeverityType;
   title?: string;
+  content?: string;
 }
 
 export type DialogType =

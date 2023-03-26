@@ -100,11 +100,11 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
         <Trans
           i18nKey="messages.schema not supported"
           shouldUnescape={true}
-          values={{ rng: params.docSchema.rng }}
+          values={{ rng: params.docSchema?.rng }}
         >
           <Typography>LEAF-Writer does not support the schema attached to the document:</Typography>
           <TextEmphasis disablePadding color="warning">
-            {params.docSchema.rng}
+            {params.docSchema?.rng}
           </TextEmphasis>
         </Trans>
       ),
@@ -134,7 +134,7 @@ export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
         <Trans
           i18nKey="messages.schema not loaded"
           shouldUnescape={true}
-          values={{ rng: docSchema.rng }}
+          values={{ rng: docSchema?.rng }}
         >
           <Typography>LEAF-Writer could not load the schema</Typography>
           <TextEmphasis disablePadding color="warning">
@@ -158,6 +158,8 @@ export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
 export const promptSelectSchema = (params: ProcessSchemaProps) => {
   const { doc, rootName, writer } = params;
   const { schemaManager } = writer;
+
+  if (!rootName) return;
 
   const mappingIds = schemaManager.getMappingIdsFromRoot(rootName);
 
@@ -185,6 +187,8 @@ export const promptSelectSchema = (params: ProcessSchemaProps) => {
 export const promptAddSchema = (params: ProcessSchemaProps) => {
   const { doc, docSchema, rootName, writer } = params;
   const { converter, overmindActions, schemaManager } = writer;
+
+  if (!rootName) return;
 
   const mappingIds = schemaManager.getMappingIdsFromRoot(rootName);
 

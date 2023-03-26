@@ -42,7 +42,7 @@ export const Authority = ({
   const getNamedEntity = (name: NamedEntityType) => {
     if (entities[name] === undefined) return null;
 
-    const entityEnabled = entities[name];
+    const entityEnabled = !!entities[name];
     return (
       <EntityType
         available={enabled}
@@ -55,7 +55,7 @@ export const Authority = ({
 
   const handleAuthorityToogle = () => {
     const authorityService = authorities[id];
-    if (authorityService.requireAuth && !authorityService.config?.username) {
+    if (authorityService?.requireAuth && !authorityService.config?.username) {
       notifyViaSnackbar({
         message: `${t('You must provide a username to make requests', { authorityService })}.`,
         options: { variant: 'error' },

@@ -30,14 +30,16 @@ export const useDialog = () => {
 
   useEffect(() => {
     dialogBar.forEach(({ dismissed = false, displayId, options, props, type }) => {
-      if (dismissed) {
+      if (!props?.id) return;
+
+      if (dismissed && displayId) {
         destroyModal(displayId);
         // removeDisplayed(displayId);
         // removeDialog(props.id);
         return;
       }
 
-      if (displayed.includes(displayId)) return;
+      if (displayId && displayed.includes(displayId)) return;
 
       const component = getComponent(type);
       if (!component) return;
@@ -49,15 +51,15 @@ export const useDialog = () => {
           ...props,
           onClose: (action, data) => {
             if (props.onClose) props.onClose(action, data);
-            removeDisplayed(displayId);
-            removeDialog(props.id);
+            if (displayId) removeDisplayed(displayId);
+            if (props.id) removeDialog(props.id);
           },
         },
         options
       );
 
       storeDisplayed(id);
-      setDialogDisplayId({ id: props.id, displayId: id });
+      setDialogDisplayId({ id: props?.id, displayId: id });
     });
   }, [dialogBar]);
 

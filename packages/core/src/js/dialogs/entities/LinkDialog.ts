@@ -81,7 +81,7 @@ class LinkDialog implements SchemaDialog {
       if (Array.isArray(src)) src = src[0]; //grab the first on the list.
       if (typeof src === 'number') src = src.toString();
 
-      if (src !== '') {
+      if (src && src !== '') {
         if (src.match(/^https?:\/\//) == null) src = `https://${src}`;
         try {
           window.open(src);

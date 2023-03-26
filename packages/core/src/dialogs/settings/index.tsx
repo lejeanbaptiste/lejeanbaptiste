@@ -9,9 +9,9 @@ import { Header } from './Header';
 import { Authorities, Editor, Interface, Reset, MarkupPanel } from './sections';
 import { SideMenu, type MenuItemProps } from './SideMenu';
 
-export const SettingsDialog = ({ id, onClose, open }: IDialog) => {
+export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
   const { isReadonly, settings } = useAppState().editor;
-  const { t } = useTranslation();
+  const { t } = useTranslation('leafwriter');
 
   const menuItems: MenuItemProps[] = [
     { id: 'interface', label: t('commons:interface') },
@@ -21,7 +21,7 @@ export const SettingsDialog = ({ id, onClose, open }: IDialog) => {
     { id: 'reset', label: t('commons:reset'), hide: isReadonly },
   ];
 
-  const handleClose = () => onClose(id);
+  const handleClose = () => onClose && onClose(id);
 
   return (
     <Dialog

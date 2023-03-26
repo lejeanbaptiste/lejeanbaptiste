@@ -2,19 +2,25 @@ import { type UniqueIdentifier } from '@dnd-kit/core';
 import { log } from '../../../utilities';
 
 export interface TreeItem {
-  id: UniqueIdentifier;
-  label: string;
   content: string;
   children: TreeItem[];
-  level?: number;
+  id: UniqueIdentifier;
   isHeading: boolean;
+  label: string;
+  level: number;
 }
 
 export interface FlattenedItem extends TreeItem {
-  parentId: UniqueIdentifier | null;
   depth: number;
   index: number;
+  parentId: UniqueIdentifier | null;
 }
+
+type TraverseTreeParams = {
+  element: Element;
+  headings: TreeItem[];
+  level?: number;
+};
 
 export const useTree = () => {
   const getEditorTreeModel = () => {
@@ -22,8 +28,9 @@ export const useTree = () => {
     const { editor, schemaManager } = window.writer;
 
     const documentRootNode =
-      editor.getBody().querySelector(`[_tag="${schemaManager.getRoot()}"]`) ??
-      editor.getBody().querySelector('[_tag]');
+      editor?.getBody().querySelector(`[_tag="${schemaManager.getRoot()}"]`) ??
+      editor?.getBody().querySelector('[_tag]');
+    if (!documentRootNode) return;
 
     const rootItem = getHeading(documentRootNode);
     if (!rootItem) return;
@@ -50,7 +57,7 @@ export const useTree = () => {
 
     //Assign depth based on level for each heading
     let parsedHeadings = headings.map((heading, index) => {
-      const depth = depthLevelMapping.get(heading.level);
+      const depth = depthLevelMapping.get(heading.level) ?? 0;
       const item: FlattenedItem = {
         ...heading,
         depth,
@@ -83,26 +90,12 @@ export const useTree = () => {
     return null;
   };
 
-  type TraverseTreeParams = {
-    element: Element;
-    headings: TreeItem[];
-    level?: number;
-  };
-
   /**
    * It takes an element, and recursively traverses its children, collecting headings and their levels
    * @param {TraverseTreeParams}  - TraverseTreeParams
    * @returns a TreeItem
    */
-  const traverseTree = ({
-    element,
-    headings,
-    level = 0,
-  }: {
-    element: Element;
-    headings: TreeItem[];
-    level?: number;
-  }): TreeItem => {
+  const traverseTree = ({ element, headings, level = 0 }: TraverseTreeParams) => {
     const { schemaManager } = window.writer;
 
     //Bypass document Header. Avoid children on 'edit' and completely on 'readonly'
@@ -112,7 +105,7 @@ export const useTree = () => {
     const item = getHeading(element);
     if (item) {
       item.level = level;
-      headings.push(item);
+      headings.push(item as TreeItem);
     }
 
     Array.from(element.children).forEach((child) => {
@@ -128,12 +121,12 @@ export const useTree = () => {
    * @returns A treeItem object
    */
   const getHeading = (element: Element) => {
-    const { schemaManager, utilities } = window.writer;
+    const { schemaManager } = window.writer;
 
     const id = element.getAttribute('id') ?? element.getAttribute('name');
     const tag = element.getAttribute('_tag');
 
-    if (!id) {
+    if (!id || !tag) {
       log.info('TOC: no id for', tag);
       return;
     }
@@ -143,14 +136,14 @@ export const useTree = () => {
     if (tag !== schemaManager.getRoot() && !isHeading) return;
 
     const constent =
-      tag === schemaManager.getRoot() || !isHeading ? tag : element.textContent.trim();
+      tag === schemaManager.getRoot() || !isHeading ? tag : element.textContent?.trim();
 
-    const item: TreeItem = {
-      id,
-      label: tag,
-      content: constent,
+    const item: Partial<TreeItem> = {
+      content: constent ?? '',
       children: [],
+      id,
       isHeading,
+      label: tag,
     };
 
     return item;

@@ -144,7 +144,9 @@ const useEditorReaction = () => {
       return message;
     },
 
-    schemaShouldChange: async (schemaId: string): Promise<[boolean, null | MessageResponseProps]> => {
+    schemaShouldChange: async (
+      schemaId: string
+    ): Promise<[boolean, null | MessageResponseProps]> => {
       const { schemaManager, utilities } = window.writer;
 
       const currRootName = utilities.getRootTag().attr('_tag');
