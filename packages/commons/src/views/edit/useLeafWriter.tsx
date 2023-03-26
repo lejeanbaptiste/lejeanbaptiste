@@ -140,6 +140,7 @@ export const useLeafWriter = () => {
   const handleDownload = async () => {
     if (!leafWriter) return;
     const content = await leafWriter.getContent();
+    if (!content) return;
     download(content);
   };
 
@@ -147,6 +148,7 @@ export const useLeafWriter = () => {
     if (!leafWriter) return;
 
     const content = await leafWriter.getContent();
+    if (!content) return;
     const screenshot = await leafWriter.getDocumentScreenshot();
 
     if (action === 'saveAs') {
@@ -207,6 +209,7 @@ export const useLeafWriter = () => {
       if (!leafWriter || !resource) return;
 
       const content = await leafWriter.getContent();
+      if (!content) return;
       const screenshot = await leafWriter.getDocumentScreenshot();
 
       setContentLastSaved(content);
