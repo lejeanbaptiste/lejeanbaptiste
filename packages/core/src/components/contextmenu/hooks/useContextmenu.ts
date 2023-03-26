@@ -1,5 +1,4 @@
 import { useSetAtom } from 'jotai';
-import { useEffect } from 'react';
 import { getIcon } from '../../../icons';
 import { useActions, useAppState } from '../../../overmind';
 import { isElement, isEntityType } from '../../../utilities';
@@ -37,14 +36,6 @@ export const useContextmenu = () => {
 
   const { getItems } = useItems(ctx);
 
-  useEffect(() => {
-    return () => {
-      setXpath(null);
-      setTagName(null);
-      setTagMeta(null);
-    };
-  }, []);
-
   const selectionOverlapNodes = (rng: Range) => {
     const { startContainer, endContainer } = rng;
 
@@ -63,12 +54,6 @@ export const useContextmenu = () => {
   const initialize = async () => {
     if (!writer || !ctx) return false;
 
-    if (typeof ctx.tagId === 'string' && ctx.tagId === writer.schemaManager.getHeader()) {
-      ctx.isHeader = true;
-      setTagName(ctx.tagId);
-      return true;
-    }
-
     const bookmark = writer.editor?.currentBookmark;
     if (!bookmark) return null;
 
@@ -84,6 +69,8 @@ export const useContextmenu = () => {
 
     const tagName = ctx.element.getAttribute('_tag');
     if (!tagName) return null;
+
+    if (tagName === writer.schemaManager.getHeader()) ctx.isHeader = true;
 
     if (typeof ctx.tagId === 'string' && tagName === writer.schemaManager.getRoot()) {
       ctx.isRoot = true;
@@ -116,18 +103,15 @@ export const useContextmenu = () => {
     const parentXpath = writer.utilities.getElementXPath(ctx.element.parentElement);
     if (!parentXpath) return false;
 
-    const tag = await getTagAt({
-      tagName: tagName,
-      parentXpath,
-      index: 0,
+    //This is an async function that fetch tag metadata, such as the full name.
+    // The context menu does not need to "await" for it to complete to initialize
+    getTagAt({ tagName, parentXpath, index: 0 }).then((tag) => {
+      if (!tag) return null;
+      setTagMeta(tag);
     });
-
-    if (!tag) return null;
 
     setXpath(ctx.nodeType === 'text' && ctx.xpath ? ctx.xpath : elementXpath);
     setTagName(tagName);
-
-    setTagMeta(tag);
 
     return true;
   };
