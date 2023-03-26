@@ -18,20 +18,25 @@ export const Section = ({ side, ...props }: SectionProps) => {
   const ref = useRef<ImperativePanelHandle>(null);
 
   useEffect(() => {
-    if (ref?.current && layout[side].collapsed) ref.current.collapse();
+    if (ref?.current && layout[side]?.collapsed) ref.current.collapse();
   }, []);
 
   useEffect(() => {
     if (ref?.current?.getCollapsed()) ref.current.expand();
-  }, [layout[side].activePanel]);
+  }, [layout[side]?.activePanel]);
 
   useEffect(() => {
-    ref.current.getCollapsed() ? ref.current.expand() : ref.current.collapse();
+    ref.current?.getCollapsed() ? ref.current.expand() : ref.current?.collapse();
   }, [ref?.current?.getCollapsed()]);
 
   return (
     <PanelSection ref={ref} id={side} {...props}>
-      {PanelComponent[layout[side].activePanel]}
+      {
+        PanelComponent[
+          //@ts-ignore
+          layout[side].activePanel
+        ]
+      }
     </PanelSection>
   );
 };

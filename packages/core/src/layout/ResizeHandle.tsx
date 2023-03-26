@@ -1,4 +1,3 @@
-import PanoramaVerticalSelectIcon from '@mui/icons-material/PanoramaVerticalSelect';
 import { Box } from '@mui/material';
 import React from 'react';
 import { PanelResizeHandle } from 'react-resizable-panels';
@@ -23,7 +22,6 @@ export const ResizeHandle = () => (
         bgcolor: 'red',
         transition: 'background-color 0.2s linear',
       }}
-    >
-    </Box>
+    ></Box>
   </PanelResizeHandle>
 );
