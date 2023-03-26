@@ -1,21 +1,21 @@
 import HorizontalRuleRoundedIcon from '@mui/icons-material/HorizontalRuleRounded';
-import { Box, Icon, SvgIconTypeMap, useTheme, type PaletteMode } from '@mui/material';
+import { Box, Icon as MuiIcon, SvgIconTypeMap, useTheme, type PaletteMode } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import React, { useMemo } from 'react';
 
-type ElementIconProps = {
+type IconProps = {
   color?: string;
   icon?: OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & { muiName: string };
   isEntity?: boolean;
   selected?: boolean;
 };
 
-export const ElementIcon = ({
+export const Icon = ({
   color = 'inherit',
   icon,
   isEntity = false,
   selected = false,
-}: ElementIconProps) => {
+}: IconProps) => {
   const { palette } = useTheme();
 
   const inverseThemeMode: PaletteMode = useMemo(
@@ -25,7 +25,7 @@ export const ElementIcon = ({
 
   return (
     <Box display="flex" alignItems="center" justifyContent="center" width={18} height={18} px={0.5}>
-      <Icon
+      <MuiIcon
         component={icon ? icon : HorizontalRuleRoundedIcon}
         sx={{
           height: 12,

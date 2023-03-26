@@ -2,7 +2,7 @@ import { alpha, ListItem, useTheme } from '@mui/material';
 import classNames from 'classnames';
 import React, { forwardRef, type HTMLAttributes, type MouseEvent } from 'react';
 import type { TreeItemType } from '../../types';
-import { ElementTag, TextNode } from './components';
+import { Tag, Text } from './components';
 import styles from './TreeItem.module.css';
 
 export interface Props extends Omit<HTMLAttributes<HTMLLIElement>, 'id'> {
@@ -11,6 +11,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLLIElement>, 'id'> {
   canAddToMultiselection?: (id: string) => boolean;
   childCount?: number;
   clone?: boolean;
+  content?: string;
   disableInteraction?: boolean;
   disableSelection?: boolean;
   expandDisabled?: boolean;
@@ -41,11 +42,12 @@ export const TreeItem = forwardRef<HTMLDivElement, Props>(
   (
     {
       canAddToMultiselection,
-      depth,
+      content,
       childCount,
       clone,
       disableInteraction,
       disableSelection,
+      depth,
       expanded,
       expandDisabled,
       ghost,
@@ -56,27 +58,51 @@ export const TreeItem = forwardRef<HTMLDivElement, Props>(
       label,
       multipleSelection,
       nodeId,
+      onContextMenuOpen,
       onExpand,
       onSelectItem,
-      onContextMenuOpen,
       selected,
       style,
-      wrapperRef,
       type,
+      wrapperRef,
       ...props
     },
     ref
   ) => {
     const { palette } = useTheme();
 
+    const itemProps = {
+      canAddToMultiselection,
+      //@ts-ignore
+      classnames: [styles.TreeItem],
+      content,
+      expanded,
+      expandDisabled,
+      handleProps,
+      isEntity,
+      isOver,
+      label,
+      multipleSelection,
+      nodeId,
+      onContextMenuOpen,
+      onExpand,
+      onSelectItem,
+      selected,
+      style,
+    };
+
     return (
       <ListItem
         ref={wrapperRef}
         className={classNames(
+          //@ts-ignore
           styles.Wrapper,
+          //@ts-ignore
           styles.indicator,
+          //@ts-ignore
           clone && styles.clone,
-          ghost && styles.ghost,
+          //@ts-ignores
+          ghost && styles.ghost
         )}
         {...props}
         sx={{
@@ -92,31 +118,14 @@ export const TreeItem = forwardRef<HTMLDivElement, Props>(
           pointerEvents: disableInteraction ? 'none' : 'auto',
         }}
       >
-        {type === 'node' ? (
-          <TextNode style={style}>{label}</TextNode>
-        ) : (
-          <ElementTag
-            ref={ref}
-            {...{
-              classnames: [styles.TreeItem],
-              canAddToMultiselection,
-              expanded,
-              expandDisabled,
-              handleProps,
-              isEntity,
-              isOver,
-              label,
-              multipleSelection,
-              nodeId,
-              onExpand,
-              onSelectItem,
-              onContextMenuOpen,
-              selected,
-              style,
-            }}
-          >
+        {type === 'text' ? (
+          <Text ref={ref} {...itemProps}>
             {label}
-          </ElementTag>
+          </Text>
+        ) : (
+          <Tag ref={ref} {...itemProps}>
+            {label}
+          </Tag>
         )}
       </ListItem>
     );

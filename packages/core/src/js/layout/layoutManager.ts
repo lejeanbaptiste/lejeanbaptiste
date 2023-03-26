@@ -27,7 +27,7 @@ interface ModuleConfig {
 }
 
 // track modules which cannot appear in readonly mode
-const WRITE_ONLY_MODULES: ISettingsModuleName[] = ['structure', 'validation', 'selection'];
+const WRITE_ONLY_MODULES: ISettingsModuleName[] = ['markup', 'validation', 'selection'];
 
 class LayoutManager {
   readonly writer: Writer;
@@ -46,7 +46,7 @@ class LayoutManager {
   readonly PANEL_MIN_WIDTH = 320;
 
   modulesLayout = new Map<LayoutLocation, ModuleConfig | ModuleConfig[]>([
-    ['west', [{ id: 'structure' }, { id: 'entities' }]],
+    ['west', [{ id: 'markup' }, { id: 'entities' }]],
     ['east', [{ id: 'selection' }]],
   ]);
 
@@ -359,7 +359,7 @@ class LayoutManager {
   }
 
   toggleReadonly(readonly: boolean) {
-    this.showModule('toc');
+    this.showModule('markup');
     this.showModule('imageViewer');
 
     //Change tabs

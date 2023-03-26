@@ -82,7 +82,7 @@ interface ISettingsModulesPanel {
 
 export type ISettingsModuleName =
   | 'toc'
-  | 'structure'
+  | 'markup'
   | 'entities'
   | 'nerve'
   | 'selection'
@@ -193,7 +193,7 @@ export type Side = 'left' | 'right';
 
 export type PanelId =
   | 'toc'
-  | 'structure'
+  | 'markup'
   | 'entities'
   | 'nerve'
   | 'validate'

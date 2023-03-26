@@ -1,19 +1,28 @@
-import { Stack, Typography, useTheme, type PaletteMode } from '@mui/material';
+import {
+  Stack,
+  SxProps,
+  Theme,
+  Typography,
+  TypographyProps,
+  useTheme,
+  type PaletteMode,
+} from '@mui/material';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import React, { useMemo } from 'react';
 
-type LabelProps = {
+interface LabelProps extends TypographyProps {
   children: React.ReactNode;
-  fullName?: string;
+  details?: string;
+  detailsSx?: SxProps<Theme>;
   selected?: boolean;
-  showFullName?: boolean;
-};
+}
 
 export const Label = ({
   children,
-  fullName,
+  details,
+  detailsSx = {},
   selected = false,
-  showFullName = true,
+  ...props
 }: LabelProps) => {
   const { palette } = useTheme();
 
@@ -22,7 +31,7 @@ export const Label = ({
     [palette.mode]
   );
 
-  const fullNameVariant: Variants = {
+  const detailsVariant: Variants = {
     show: { x: 0, width: '100%', opacity: 0.4 },
     hide: { x: 10, width: 0, opacity: 0 },
   };
@@ -34,27 +43,29 @@ export const Label = ({
         fontWeight={selected ? 700 : 500}
         variant="caption"
         sx={{ flexGrow: 1 }}
+        {...props}
       >
         {children}
       </Typography>
 
       <AnimatePresence>
-        {fullName && showFullName && (
+        {details && (
           <Typography
             component={motion.span}
-            variants={fullNameVariant}
+            variants={detailsVariant}
             initial="hide"
             exit="hide"
             animate="show"
+            overflow="hidden"
             sx={{
-              textTransform: 'capitalize',
               whiteSpace: 'nowrap',
               textOverflow: 'ellipsis',
               overflow: 'hidden',
+              ...detailsSx,
             }}
             variant="caption"
           >
-            {` ${fullName}`}
+            {` ${details}`}
           </Typography>
         )}
       </AnimatePresence>
