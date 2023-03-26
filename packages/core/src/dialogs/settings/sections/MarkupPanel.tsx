@@ -1,5 +1,3 @@
-import { Box } from '@mui/material';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
@@ -7,22 +5,11 @@ import { Toggler } from '../components';
 
 export const MarkupPanel = () => {
   const { markupPanel: structurePanel } = useAppState().ui;
-  const {
-    allowStructurePanelMultiselection,
-    allowTagDragAndDrop,
-    showTextNodes,
-    showTextNodesContent,
-  } = useActions().ui;
-  const { t } = useTranslation();
-
-  const itemVariants: Variants = {
-    hidden: { height: 0, opacity: 0 },
-    show: { height: 'auto', opacity: 1 },
-  };
+  const { allowTagDragAndDrop, showTextNodes } = useActions().ui;
   const { t } = useTranslation('leafwriter');
 
   return (
-    <Box component={motion.div} layout="position">
+    <>
       <Toggler
         description={`${t('Text Nodes must be displayed for better accuracy').toString()} (${t(
           'experimental'
@@ -34,39 +21,15 @@ export const MarkupPanel = () => {
         value={structurePanel.allowDragAndDrop}
       />
       <Toggler
-        icon="tagMultiSelection"
-        onChange={allowStructurePanelMultiselection}
-        title={t('Allow multiselection')}
-        value={structurePanel.allowMultiselection}
-      />
-      <Toggler
+        description={`(${t('beta')}) ${t('Some features are not fully implemented')} ${t(
+          'It can produce unexpected results or make LEAF-Writer crash'
+        )} ${t('Use with caution')}`}
         icon="textNode"
         onChange={showTextNodes}
         title={t('Show Text Nodes')}
         type="toggle"
         value={structurePanel.showTextNodes}
       />
-      <AnimatePresence>
-        {structurePanel.showTextNodes && (
-          <Box
-            component={motion.div}
-            variants={itemVariants}
-            initial="hidden"
-            animate="show"
-            exit="hidden"
-            overflow="hidden"
-          >
-            <Toggler
-              disabled={!structurePanel.showTextNodes}
-              icon="shortText"
-              onChange={showTextNodesContent}
-              title={t('Show Text Nodes Content')}
-              type="toggle"
-              value={structurePanel.showTextNodesContent}
-            />
-          </Box>
-        )}
-      </AnimatePresence>
-    </Box>
+    </>
   );
 };

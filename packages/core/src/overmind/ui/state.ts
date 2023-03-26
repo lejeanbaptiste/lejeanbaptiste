@@ -18,9 +18,7 @@ type State = {
   layout: LayoutProps;
   markupPanel: {
     allowDragAndDrop: boolean;
-    allowMultiselection: boolean;
     showTextNodes: boolean;
-    showTextNodesContent: boolean;
   };
   notifications: NotificationProps[];
   popupProps: PopupProps;
@@ -53,9 +51,7 @@ export const state: State = {
   },
   markupPanel: {
     allowDragAndDrop: false,
-    allowMultiselection: true,
     showTextNodes: false,
-    showTextNodesContent: false,
   },
   notifications: [],
   popupProps: { open: false },
