@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 2.6.3
+
+### Patch Changes
+
+- Autosave:
+  - Prevent trigger save if the the editor return no content after the timer is up [2376e9b69c8c0d16d9a958889d207a16cb39ac3d] [eaf201d2f8fae806c7f06167702560295364ac1b]
+- Update dependencies [ccae62554a51f86befa4b2bd864ffb4f642621cc]:
+  - core:
+    - upgrade: broadcast-channel@5.0.3
+    - update:
+      - @cwrc/leafwriter to 2.7.0 [eaf201d2f8fae806c7f06167702560295364ac1b]
+      - framer-motion@10.9.1
+    - bump up:
+      - @mui/material@5.11.14
+      - i18next@22.4.13
+      - material-ui-popup-state@5.0.8
+      - react-markdown@8.0.6
+  - dev:
+    - upgrade: typescript@5.0.2
+    - update:
+      - @typescript-eslint/eslint-plugin@5.56.0
+      - @typescript-eslint/parser@5.56.0
+      - eslint-config-prettier@8.8.0
+    - bump up:
+      - @types/node@18.15.10 [eaf201d2f8fae806c7f06167702560295364ac1b]
+      - mini-css-extract-plugin@2.7.5
+      - nodemon@2.0.22
+      - webpack@5.76.3
+      - webpack-dev-middleware@6.0.2
+
 ## 2.6.2
 
 ### Patch Changes
