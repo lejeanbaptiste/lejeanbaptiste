@@ -220,7 +220,10 @@ export const SortableTree = () => {
     ]);
   };
 
-  const handleContextMenu = (event: MouseEvent<HTMLElement, Event>, id: string) => {
+  const handleContextMenu = (
+    event: MouseEvent<HTMLElement, Event>,
+    { id }: { id: string; contentOnly?: boolean }
+  ) => {
     const position = { posX: event.clientX, posY: event.clientY };
     selectedItems.includes(id) && selectedItems.length > 1
       ? openContextMenuForMultipleItem(position)

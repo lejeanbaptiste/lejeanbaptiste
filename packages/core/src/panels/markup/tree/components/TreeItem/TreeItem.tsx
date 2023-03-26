@@ -1,44 +1,26 @@
 import { alpha, ListItem, useTheme } from '@mui/material';
 import classNames from 'classnames';
-import React, { forwardRef, type HTMLAttributes, type MouseEvent } from 'react';
+import React, { forwardRef, type HTMLAttributes } from 'react';
 import type { TreeItemType } from '../../types';
-import { Tag, Text } from './components';
+import { Tag, Text, type ItemProps } from './components';
 import styles from './TreeItem.module.css';
 
-export interface Props extends Omit<HTMLAttributes<HTMLLIElement>, 'id'> {
+export interface TreeItemProps extends Omit<HTMLAttributes<HTMLLIElement>, 'id'>, ItemProps {
   expanded?: boolean;
   depth: number;
-  canAddToMultiselection?: (id: string) => boolean;
   childCount?: number;
   clone?: boolean;
-  content?: string;
   disableInteraction?: boolean;
   disableSelection?: boolean;
-  expandDisabled?: boolean;
   ghost?: boolean;
-  handleProps?: any;
   indentationWidth: number;
   isEntity?: boolean;
-  isOver?: boolean;
-  label: string;
   multipleSelection?: boolean;
-  nodeId: string;
-  onExpand?(): void;
-  onSelectItem?: (
-    event: MouseEvent<HTMLElement, Event>,
-    { id, contentOnly }: { id: string; contentOnly?: boolean }
-  ) => void;
-  onContextMenuOpen?: (
-    event: MouseEvent<HTMLElement, Event>,
-    id: string,
-    contentOnly?: boolean
-  ) => void;
-  selected?: boolean;
   type?: TreeItemType;
   wrapperRef?(node: HTMLLIElement): void;
 }
 
-export const TreeItem = forwardRef<HTMLDivElement, Props>(
+export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
   (
     {
       canAddToMultiselection,
@@ -73,7 +55,6 @@ export const TreeItem = forwardRef<HTMLDivElement, Props>(
 
     const itemProps = {
       canAddToMultiselection,
-      //@ts-ignore
       classnames: [styles.TreeItem],
       content,
       expanded,
@@ -95,13 +76,9 @@ export const TreeItem = forwardRef<HTMLDivElement, Props>(
       <ListItem
         ref={wrapperRef}
         className={classNames(
-          //@ts-ignore
           styles.Wrapper,
-          //@ts-ignore
           styles.indicator,
-          //@ts-ignore
           clone && styles.clone,
-          //@ts-ignores
           ghost && styles.ghost
         )}
         {...props}

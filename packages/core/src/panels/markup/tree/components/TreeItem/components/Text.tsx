@@ -4,25 +4,9 @@ import chroma from 'chroma-js';
 import classNames from 'classnames';
 import React, { HTMLAttributes, MouseEvent, forwardRef, useMemo, useState } from 'react';
 import { useItem } from '../useItem';
-import { Icon, Label } from './';
+import { Icon, ItemProps, Label } from './';
 
-export interface TextProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'id'> {
-  canAddToMultiselection?: (id: string) => boolean;
-  children: React.ReactNode;
-  classnames?: (string | undefined)[];
-  content?: string;
-  expanded?: boolean;
-  handleProps?: any;
-  isEntity?: boolean;
-  isOver?: boolean;
-  label: string;
-  multipleSelection?: boolean;
-  nodeId: string;
-  onContextMenuOpen?: (event: MouseEvent<HTMLElement, Event>, id: string) => void;
-  onSelectItem?: (event: MouseEvent<HTMLElement, Event>, { id }: { id: string }) => void;
-
-  selected?: boolean;
-}
+export interface TextProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'id'>, ItemProps {}
 
 export const Text = forwardRef<HTMLDivElement, TextProps>(
   (
@@ -68,7 +52,7 @@ export const Text = forwardRef<HTMLDivElement, TextProps>(
       event.preventDefault();
       event.stopPropagation();
 
-      onContextMenuOpen && onContextMenuOpen(event, nodeId);
+      onContextMenuOpen && onContextMenuOpen(event, { id: nodeId });
     };
 
     const handleMouseOver = (event: MouseEvent<HTMLAnchorElement, globalThis.MouseEvent>) => {
