@@ -1,36 +1,15 @@
 import axios, { type AxiosInstance } from 'axios';
-//@ts-ignore
-import wdk from 'wikidata-sdk';
+import { WBK, type SearchResponse } from 'wikibase-sdk';
 import type { LookUpResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
 import LookupServiceApi, { type LookUpFindProps } from './type';
 
 type NamedEntityType = 'person' | 'place' | 'org' | 'title' | 'rs';
 
-interface Record {
-  id: string;
-  title: string;
-  pageid: number;
-  repository: string;
-  url: string;
-  concepturi: string;
-  label: string;
-  description: string;
-  match: {
-    type: string;
-    language: string;
-    text: string;
-  };
-}
-
-interface WikidataResults {
-  searchinfo: {
-    search: string;
-  };
-  search: Record[];
-  'search-continue': string;
-  success: string;
-}
+const wdk = WBK({
+  instance: 'https://www.wikidata.org',
+  sparqlEndpoint: 'https://query.wikidata.org/sparql',
+});
 
 export default class Wikidata implements LookupServiceApi {
   private readonly axiosInstance: AxiosInstance;
@@ -56,9 +35,9 @@ export default class Wikidata implements LookupServiceApi {
 
   private async callWikidata(query: string, type: NamedEntityType) {
     const url = wdk.searchEntities({
-      search: query,
       format: this.FORMAT,
       language: this.LANGUAGE,
+      search: query,
       // limit: MAX_HITS,
     });
 
@@ -79,7 +58,7 @@ export default class Wikidata implements LookupServiceApi {
       return [];
     }
 
-    const data: WikidataResults = response.data;
+    const data: SearchResponse = response.data;
     if (!data) return [];
 
     const results: LookUpResult[] = data.search.map(({ concepturi, label, description }) => {
