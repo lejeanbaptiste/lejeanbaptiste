@@ -182,13 +182,6 @@ export const allowTagDragAndDrop = ({ state }: Context, value: boolean) => {
   };
 };
 
-export const allowStructurePanelMultiselection = ({ state }: Context, value: boolean) => {
-  state.ui.markupPanel = {
-    ...state.ui.markupPanel,
-    allowMultiselection: value,
-  };
-};
-
 export const showTextNodes = ({ state, actions }: Context, value?: boolean) => {
   if (!value) value = !state.ui.markupPanel.showTextNodes;
 
