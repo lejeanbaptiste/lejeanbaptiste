@@ -21,7 +21,7 @@ export const LateralBar = ({ side }: LateralBarProps) => {
 
   return (
     <>
-      {!layout[`outer${side}`].hide && (
+      {!layout[`outer${side}`]?.hide && (
         <Stack width={40}>
           <Paper
             elevation={5}
@@ -36,9 +36,9 @@ export const LateralBar = ({ side }: LateralBarProps) => {
               exclusive
               onChange={handleChange}
               orientation="vertical"
-              value={layout[_side].activePanel}
+              value={layout[_side]?.activePanel}
             >
-              {layout[`outer${side}`].items.map(({ id, label }) => (
+              {layout[`outer${side}`]?.items.map(({ id, label }) => (
                 <ToggleButton key={id} size="small" value={id}>
                   <Tooltip placement={side === 'Left' ? 'right' : 'left'} title={label}>
                     <Icon component={getIcon(id as IconLeafWriter)} fontSize="inherit" />
