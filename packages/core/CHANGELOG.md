@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2.7.1
+
+### Patch Changes
+
+- Markup panel:
+  - Block context menu on root and restrict on the header [cb09a97361a6cab76dadf4178ae3640fd552fca9]
+  - Improve types [009eeabe006df410941dd613fffe5d2cb163075b]
+- Clean logs [bbf3544af6a2c45c26bb4c09cfcd67c0409d0df0]
+
 ## 2.7.0
 
 ### What's new?
@@ -50,7 +59,7 @@ We improve support for textNodes. TextNodes are now clickable, which means they 
       - Note: some textNode actions still need to be completely implemented (add a tag before, after, and around).
 - Markup Panel
   - Improve support for textNodes: [987611e5d719d4fadd478a0662c0f615ff25d480]
-    - allow selection, multi-selection, drag and drop, access contextMenu 
+    - allow selection, multi-selection, drag and drop, access contextMenu
     - This change also rename the component from 'strucutreTree' to 'markup'
     - Note: these features are still in beta. Use with caution.
 
@@ -102,7 +111,6 @@ We improve support for textNodes. TextNodes are now clickable, which means they 
       - @types/node@18.15.10 [4e620d6e7baea69c992a16d6c1194599b1e48ca7]
       - mini-css-extract-plugin@2.7.5
       - webpack@5.76.3
-
 
 ## 2.6.1
 
