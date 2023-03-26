@@ -1,5 +1,109 @@
 # CHANGELOG
 
+## 2.7.0
+
+### What's new?
+
+#### Validation
+
+leafwriter-validator 2.0 introduced new features and fixed some bugs.
+
+##### Improved speculative validation
+
+Fix a bug preventing speculative validation on different intended actions (add before, add after, add around, add inside, add a tag, change a tag). This caused the list of possible tags to include some elements that would invalidate the document as valid. With this fix, you will see more strict behaviour.
+
+##### Return all possible tags with a flag indicating if they are invalid
+
+Instead of having either the possible or valid tags, the validator returns all the possible tags and flags them as either valid or invalid. This feature makes it easier to filter invalid tags based on user intention. Previously, LEAF-Writer only used valid tags as suggestions for a given context. Now it shows all the possible tags, visually flagging the invalid ones and letting the user show/hide them. To provide a concrete example, the tags `biblFull` and `biblStruct` never showed up as an option to add a tag before a `p`. Even though they are possible in `p`, they have specific requirements (e.g. `biblFull` requires `biblStruct` as a child). Now, LEAF-Writer shows all possible tags and allows users to add and, consequently, invalidate their document, which they would subsequently be warned by the validator and have a chance to fix the problem or save it as is.
+
+#### The `textNode` is also available
+
+Previous behaviour filtered `textNode` out of the possible tags (since it is not a tag). Now, the `textNode` returns as possible (and speculatively validated) together with the other tags. The `textNode` is identified with the type `text`.
+
+#### Context Menu
+
+The Context Menu was revamped to use the new features introduced by leafwriter-validator 2.0.
+
+The context menu will now show all the possible tags for context, including both valid and invalid. There is a visual distinction using icons and gray-out colours. There is a toggle to show/hide invalid tags. Note that the new list of possible tags includes the textNode. However, there has yet to be any support to add them to the document. Use this feature with caution.
+
+There is support to access a textNode context menu in the markup panel. There are options to copy the content of a textNode, paste content into it, remove the content, or remove the textNode altogether. Note: some textNode actions are not fully implemented, notably adding a tag before, after, and around. Use this feature with caution.
+
+This version also fixed a few bug fixes, including one related to the nested menus.
+
+#### Markup Panel
+
+We improve support for textNodes. TextNodes are now clickable, which means they can be used for navigation and highlighting. It is also possible to access additional functionalities in the context menu. Some actions (like multi-selection and drag and drop) still need to be fully implemented. By default, textNodes are not hidden. You can show/hide textNodes in the contextMenu or the settings panel.
+
+### Minor Changes
+
+- Events:
+  - Add new event listeners to set the editor as 'dirty' [a8c0b57c7c7c6b5d1bd7cb0dfed2cc596704d6e5]
+    - New events: 'tagAdded', 'tagEdited', 'tagRemoved', 'tagContentsRemoved', and 'contentPasted'
+- ContextMenu:
+  - Revamp context menu: use new validator API, allow for textNode, toggle invalid, fix bugs [a11fa6bbe4f18c5c3687525701162d6f215e8f07]
+    - Complete Refactoring:
+      - Use new validator API to show possible tags (valid and invalid).
+      - Add toggle to show/hide invalid tags. Add an option to show textNodes in the markup panel.
+      - Add support for textNode context.
+      - Add copy, paste, and remove actions for textNode.
+      - Fix nested menus.
+      - Note: some textNode actions still need to be completely implemented (add a tag before, after, and around).
+- Markup Panel
+  - Improve support for textNodes: [987611e5d719d4fadd478a0662c0f615ff25d480]
+    - allow selection, multi-selection, drag and drop, access contextMenu 
+    - This change also rename the component from 'strucutreTree' to 'markup'
+    - Note: these features are still in beta. Use with caution.
+
+### Patch Changes
+
+- Localization:
+  - Give better support for translation [090023a9f4c9c8a64e90a90b3943af12a94608d2]
+    - This is a partial fix. i18next config needs to be improved for better support in LW Commons
+- Icons
+  - Adjust the size (book) [897b36be9cc48b1aba44410e524982080d41389d]
+  - Add two new icons [107d55bd87702186555fad4715f8b0279a354396]
+- Toc: Rename component as TocPanel [94ac61158287e37f3f109e7128297795ea7c5b11]
+- Utilities: Split functions into specialized modules (string, dom, etc...) [674f06a4068df337698e313f8d718cb046b4c4f1]
+- Types:
+  - Coalesce the 'entitytype' type in a single place [9f3878f8a24b0fe2ac0ec845bb7d1b1b1169cf14]
+  - Move 'writer' declaration to the root [ed453cd2fdbafce0d963a4c309164d0e39c6adcc]
+  - Use Typescript strict mode [ceec3203985657d2bcd96ddad7d014ca48ebd61a]
+- LocalStorage: Handle error when transforming string into json [3fdc407ac3dd3ce7e2e8f1cd5473b51fc94eb395]
+- LookUps: Better error handling for geonames when three is no username [479d5b7b26eee63a950b776939a1f6a0f1c514b1]
+- Ribbon: Allocate buttons into groups [0f9936aabeee69ac3f5c35e27652619170101677]
+- StyledTooltip: fix title capitalization [766ff7e77efcf70a115ebe37f0eb952bd9913be0]
+- Schemas: add 'label' to the empty schema object [d63d75b65bbbdcfafba5c23d99ddd20348689ebf]
+- Validator: Update @cwrc/leafwriter-validator@2.0.0 and make changes to the API calls [9a63b84d9828d7ba8a30244ad17ec9c477ca258f]
+- Settings:
+  - Remove the toggle for multi-selection in the markup panel. This feature is now always on. [93f503640ad3b84216c271ed0d27871f59049ec6]
+    - Add a note to textNode (in beta)
+- Update dependencies [6dabde7e3ab22a2c261a569f5c10300c14c93c4d]
+  - core:
+    - remove:
+      - prismjs [a7211bce3742028ce1a80cea86acff9fde9c1b87]
+      - prims-themes [a7211bce3742028ce1a80cea86acff9fde9c1b87]
+      - wikidata-sdk [c4bf63ce95b9879a451fcee0f74c8eaee8ee4d21]
+    - add: wikibase-sdk [c4bf63ce95b9879a451fcee0f74c8eaee8ee4d21]
+    - upgrade: @cwrc/leafwriter-validator@2.0.0 [9a63b84d9828d7ba8a30244ad17ec9c477ca258f]
+    - update: framer-motion@10.9.1
+    - bump up:
+      - @mui/material@5.11.14
+      - i18next@22.4.13
+      - rdflib@2.2.31
+      - react-resizable-panels@0.0.37
+  - dev:
+    - remove: @types/prismjs [a7211bce3742028ce1a80cea86acff9fde9c1b87]
+    - upgrade: typescript-plugin-css-modules@5.0.0
+    - update:
+      - @typescript-eslint/eslint-plugin@5.56.0
+      - @typescript-eslint/parser@5.56.0
+      - eslint-config-prettier@8.8.0
+    - bump up:
+      - @types/node@18.15.10 [4e620d6e7baea69c992a16d6c1194599b1e48ca7]
+      - mini-css-extract-plugin@2.7.5
+      - webpack@5.76.3
+
+
 ## 2.6.1
 
 ### Patch Changes
