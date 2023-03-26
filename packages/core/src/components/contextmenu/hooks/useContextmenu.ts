@@ -104,7 +104,7 @@ export const useContextmenu = () => {
     } else {
       ctx.isMultiple = false;
       ctx.isEntity = ctx.element.getAttribute('_entity') !== null;
-      ctx.useSelection = ctx.useSelection ? ctx.useSelection : false;
+      ctx.useSelection = ctx.useSelection ?? false;
     }
 
     if (ctx.nodeType === 'text') ctx.useSelection = false;
