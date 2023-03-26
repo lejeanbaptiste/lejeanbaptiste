@@ -315,6 +315,7 @@ class DateDialog implements SchemaDialog {
         if (Array.isArray(dateString)) dateString = dateString[0];
         if (typeof dateString === 'number') dateString = dateString.toString();
 
+        //@ts-ignore
         const dateLuxon = DateTime.fromISO(dateString);
 
         if (dateLuxon.isValid) {
@@ -338,7 +339,9 @@ class DateDialog implements SchemaDialog {
         if (typeof startString === 'number') startString = startString.toString();
         if (typeof endString === 'number') endString = endString.toString();
 
+        //@ts-ignore
         const startLuxon = DateTime.fromISO(startString);
+        //@ts-ignore
         const endLuxon = DateTime.fromISO(endString);
 
         if (startLuxon.isValid) {

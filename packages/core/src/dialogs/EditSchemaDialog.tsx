@@ -15,6 +15,7 @@ import { Formik } from 'formik';
 import { useModal } from 'mui-modal-provider';
 import React, { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
 import { TextEmphasis } from '../components';
 import { useActions, useAppState } from '../overmind';
@@ -35,13 +36,13 @@ const regexHttps = /^(https)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\/\S*)?$/;
 export const EditSchemaDialog = ({
   actionType = 'add',
   docSchema,
-  id,
+  id = uuidv4(),
   mappingIds = [],
   maxWidth = 'md',
   onAcceptChanges,
   onClose,
   onDelete,
-  open,
+  open = false,
   schemaId,
 }: EditSchemaDialogProps) => {
   const { schemaId: documentSchemaId } = useAppState().document;
@@ -76,7 +77,12 @@ export const EditSchemaDialog = ({
 
   useEffect(() => {
     if (schemaId) {
-      const { name, mapping, rng, css } = schemas[schemaId];
+      const schema = schemas[schemaId];
+      if (!schema) return;
+
+      const { name, mapping, rng, css } = schema;
+      if (!rng[0] || !css[0]) return;
+
       setInitialValues({ name, mapping, rng: rng[0], css: css[0] });
       return;
     }
@@ -106,7 +112,9 @@ export const EditSchemaDialog = ({
   };
 
   const handleDelete = async () => {
-    const { name } = schemas[schemaId];
+    if (!schemaId) return;
+    const name = schemas[schemaId]?.name;
+    if (!name) return;
     openDialog({
       type: 'simple',
       props: {
@@ -124,7 +132,7 @@ export const EditSchemaDialog = ({
           { action: 'cancel', label: t('commons:cancel').toString() },
           { action: 'delete', label: t('commons:delete').toString(), variant: 'outlined' },
         ],
-        onClose: async (action: string) => {
+        onClose: async (action) => {
           if (action !== 'delete') return;
 
           destroyModal(id);
@@ -151,9 +159,12 @@ export const EditSchemaDialog = ({
       editable: true,
     };
 
-    const schema = schemaId ? updateSchema(schemaToSubmit) : addSchema(schemaToSubmit);
+    if (!schemaToSubmit) return;
 
-    if (!schemaId) schema.id = schemaId;
+    const schema = schemaId ? updateSchema(schemaToSubmit as Schema) : addSchema(schemaToSubmit);
+    if (!schema) return;
+
+    if (schemaId) schema.id = schemaId;
 
     handleBeforeClose();
     onAcceptChanges && (await onAcceptChanges(schema));

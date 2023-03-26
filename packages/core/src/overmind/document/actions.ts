@@ -64,7 +64,7 @@ export const updateXMLHeader = ({ state }: Context, content: string) => {
 
   const _header = $(
     `[_tag="${window.writer.schemaManager.getHeader()}"]`,
-    window.writer.editor.getBody()
+    window.writer.editor?.getBody()
   );
 
   _header.html(newHeaderString);

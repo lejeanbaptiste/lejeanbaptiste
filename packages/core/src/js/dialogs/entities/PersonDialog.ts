@@ -38,7 +38,7 @@ class PersonDialog implements SchemaDialog {
     this.writer = writer;
     this.mappingID = mappingID;
 
-    const typeParentTag = writer.schemaManager.mapper.getParentTag('person');
+    const typeParentTag = writer.schemaManager.mapper.getParentTag('person') ?? '';
     const atts = writer.schemaManager.getAttributesForTag(typeParentTag);
     this.roleAtt = atts.find(({ name }) => name === 'role');
 
@@ -152,10 +152,10 @@ class PersonDialog implements SchemaDialog {
     //transfer value from 'other type 'textfied to 'other' option value on selectbox
     this.dialog.$el.find(`#${this.id}_personOtherRole`).on('change', () => {
       let val = this.dialog.$el.find(`#${this.id}_personOtherRole`).val();
-      if (!val) return;
       if (Array.isArray(val)) val = val[0];
       if (typeof val === 'number') val = val.toString();
-
+      if (!val) return;
+      
       this.dialog.$el.find(`#${this.id}_other`).attr('value', val);
     });
 

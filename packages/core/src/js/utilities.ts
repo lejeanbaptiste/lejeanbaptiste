@@ -1,11 +1,19 @@
 import $ from 'jquery';
 import ObjTree from '../lib/objtree/ObjTree';
-import { log } from './../utilities';
+import * as DOMUtilities from '../utilities/DOM';
+import { isElement, log } from './../utilities';
 import Writer from './Writer';
 
 export const capitalizeFirstLetter = (string: string) => {
   if (typeof string !== 'string') return string;
   return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
+};
+
+type SelectNodeParams = {
+  id?: string;
+  nodeIndex?: number;
+  parentId?: string;
+  xpath?: string;
 };
 
 /**
@@ -79,6 +87,7 @@ class Utilities {
     let newText = text;
     if (newText.match(/&.+?;/gim)) {
       // match all entities
+      //@ts-ignore
       this.$entitiesConverter[0].innerHTML = newText;
 
       //@ts-ignore
@@ -183,81 +192,197 @@ class Utilities {
   }
 
   /**
+   * It selects a node in the editor
+   * @param {SelectNodeParams} selectedNode - a SelectNodeParams which includes
+   * - id?: string;
+   * - nodeIndex?: number;
+   * - parentId?: string;
+   * - xpath?: string;
+   * @param {boolean} [selectContentsOnly=false] - boolean = false
+   * @returns The node that is being returned is the node that is being selected.
+   */
+  selectNode(selectedNode: SelectNodeParams, selectContentsOnly: boolean = false) {
+    if (!this.writer.editor) return;
+
+    const { editor, entitiesManager } = this.writer;
+    entitiesManager.removeHighlights();
+
+    //* Get node
+    const node = this.getNode(selectedNode);
+    if (!node) return;
+
+    //* Handle Note: show the element if it's inside a note
+    if (isElement(node)) {
+      DOMUtilities.getParents(node, '.noteWrapper').forEach((parent) => {
+        if (isElement(parent)) parent.classList.remove('hide');
+      });
+    }
+
+    //* Create Selection
+    const rng = editor.dom.createRng();
+    if (isElement(node)) {
+      if (selectContentsOnly) {
+        //@ts-ignore
+        if (tinymce?.isWebKit && node.firstChild == null) node.append('\uFEFF');
+        rng.selectNodeContents(node);
+      } else {
+        if (isElement(node.parentNode)) node.parentNode.classList.remove('[data-mce-bogus]');
+        rng.selectNode(node);
+      }
+    } else {
+      rng.selectNode(node);
+    }
+
+    //* Apply Selection
+    this.writer.editor.selection.setRng(rng);
+    this.writer.editor.currentBookmark = editor.selection.getBookmark(1);
+
+    //* Scroll Node into view
+    const startScrollElement = isElement(node) ? node : node.parentElement;
+    if (startScrollElement) this.scrollIntoView(startScrollElement);
+
+    //* Focus and public Event
+    // need focus to happen after timeout, otherwise it doesn't always work (in FF)
+    window.setTimeout(() => {
+      this.writer.editor?.focus();
+      this.writer.event('tagSelected').publish(selectedNode);
+    }, 0);
+  }
+
+  /**
+   * It selects a range of nodes in the editor
+   * @param {[SelectNodeParams, SelectNodeParams]} [selectedNode, selectedNode]
+   * - A Tuple of SelectNodeParams which includes:
+   * - id?: string;
+   * - nodeIndex?: number;
+   * - parentId?: string;
+   * - xpath?: string;
+   */
+  selectAdjacentNodes([startNode, endNode]: [SelectNodeParams, SelectNodeParams]) {
+    if (!this.writer.editor) return;
+    const { editor, entitiesManager } = this.writer;
+    entitiesManager.removeHighlights();
+
+    //* Get first and last node
+    const firstElement = this.getNode(startNode);
+    const lastElement = this.getNode(endNode);
+    if (!firstElement || !lastElement) return;
+
+    //* Create Selection
+    const rng = editor.dom.createRng();
+    rng.setStartBefore(firstElement);
+    rng.setEndAfter(lastElement);
+
+    //* Apply Selection
+    this.writer.editor.selection.setRng(rng);
+    this.writer.editor.currentBookmark = editor.selection.getBookmark(1);
+
+    //* Scroll Node into view
+    const startScrollElement = isElement(firstElement) ? firstElement : firstElement.parentElement;
+    if (startScrollElement) this.scrollIntoView(startScrollElement);
+
+    //* Focus and public Event
+    // need focus to happen after timeout, otherwise it doesn't always work (in FF)
+    window.setTimeout(() => {
+      this.writer.editor?.focus();
+      this.writer.event('tagSelected').publish([startNode, endNode]);
+    }, 0);
+  }
+
+  /**
    * Selects an element in the editor
    * @param id The id of the element to select
    * @param selectContentsOnly Whether to select only the contents of the element (defaults to false)
    */
-  selectElementById = (id: string | string[], selectContentsOnly = false) => {
-    this.writer.entitiesManager.removeHighlights();
+  selectElementById(id: string, selectContentsOnly = false) {
+    if (!this.writer.editor) return;
+    const { editor, entitiesManager } = this.writer;
+    entitiesManager.removeHighlights();
 
-    if (Array.isArray(id)) {
-      // TODO add handling for multiple ids
-      id = id[id.length - 1];
+    //* Get node
+    const element = editor.getBody().querySelector(`#${id}`);
+    if (!element) return;
+
+    //* Handle Note: show the element if it's inside a note
+    DOMUtilities.getParents(element, '.noteWrapper').forEach((parent) => {
+      if (isElement(parent)) parent.classList.remove('hide');
+    });
+
+    //* Create Selection
+    const rng = editor.dom.createRng();
+    if (selectContentsOnly) {
+      //@ts-ignore
+      if (tinymce.isWebKit && element.firstChild == null) element.append('\uFEFF');
+      rng.selectNodeContents(element);
+    } else {
+      if (isElement(element.parentNode)) element.parentNode.classList.remove('[data-mce-bogus]');
+      rng.selectNode(element);
     }
 
-    const node = $(`#${id}`, this.writer.editor?.getBody());
-    const nodeEl = node[0];
-    if (!nodeEl) return;
-    if (nodeEl) {
-      // show the element if it's inside a note
-      node.parents('.noteWrapper').removeClass('hide');
+    //* Apply Selection
+    this.writer.editor.selection.setRng(rng);
+    this.writer.editor.currentBookmark = editor.selection.getBookmark(1);
 
-      const rng = this.writer.editor?.dom.createRng();
-      if (selectContentsOnly) {
-        //@ts-ignore
-        if (tinymce.isWebKit) {
-          if (nodeEl.firstChild == null) node.append('\uFEFF');
-          rng.selectNodeContents(nodeEl);
-        } else {
-          rng.selectNodeContents(nodeEl);
-        }
-      } else {
-        $('[data-mce-bogus]', node.parent()).remove();
-        // log.info(nodeEl);
-        rng.selectNode(nodeEl);
-      }
+    //* Scroll Node into view
+    this.scrollIntoView(element);
 
-      this.writer.editor?.selection.setRng(rng);
-
-      this.writer.editor.currentBookmark = this.writer.editor?.selection.getBookmark(1);
-
-      // scroll node into view
-      let nodeTop = 0;
-      if (node.is(':hidden')) {
-        node.show();
-        nodeTop = node.position().top;
-        node.hide();
-      } else {
-        nodeTop = node.position().top;
-      }
-
-      //? Magic Number
-      const containerHeight =
-        this.writer.editor.getContentAreaContainer().getBoundingClientRect().height * 0.25;
-
-      const newScrollTop = nodeTop - containerHeight;
-
-      node[0].ownerDocument.scrollingElement?.scrollTo({ top: newScrollTop, behavior: 'smooth' });
-
-      // using setRng triggers nodeChange event so no need to call it manually
-      //            _fireNodeChange(nodeEl);
-
-      // need focus to happen after timeout, otherwise it doesn't always work (in FF)
-      window.setTimeout(() => {
-        this.writer.editor?.focus();
-        this.writer.event('tagSelected').publish(id, selectContentsOnly);
-      }, 0);
-    }
-  };
+    //* Focus and public Event
+    // need focus to happen after timeout, otherwise it doesn't always work (in FF)
+    window.setTimeout(() => {
+      this.writer.editor?.focus();
+      this.writer.event('tagSelected').publish(id, selectContentsOnly);
+    }, 0);
+  }
 
   getRootTag = () => {
     return $('[_tag]:first', this.writer.editor?.getBody());
   };
 
   /**
-   * Get the XPath for an element, using the nodeName or cwrc _tag attribute as appropriate.
+   * It returns the xpath of a node by going up the tree and counting the number of siblings with the
+   * same name
+   * @param {Node} node - The node to get the xpath for.
+   * @returns The xpath of the node
+   */
+  getNodeXpath(node: Node) {
+    if (!this.writer.editor) return;
+
+    const getNodeIndex = (_node: Node, nodeName: string) => {
+      let index = 1;
+      for (let sibling = _node.previousSibling; sibling; sibling = sibling.previousSibling) {
+        if (sibling.nodeType === Node.DOCUMENT_TYPE_NODE) continue; // Ignore document type declaration.
+        const siblingName = isElement(sibling) ? sibling.getAttribute('_tag') : sibling.nodeName;
+        if (nodeName === siblingName) ++index;
+      }
+      return index;
+    };
+
+    let xpath: string[] = [];
+
+    // * go down the tree
+    let _node: Node | null = node;
+    for (; _node; _node = _node.parentNode) {
+      //Stop when reach the document root
+      if (_node === this.writer.editor.getBody()) break;
+
+      // * skip if the node is not a TAG (ELEMENT that is not part of the document - i.e. do not has attr '_tag')
+      if (isElement(_node) && !_node.getAttribute('_tag')) continue;
+
+      const nodeName = isElement(_node) ? _node.getAttribute('_tag') ?? '' : _node.nodeName;
+      const pathName = _node.nodeType === Node.TEXT_NODE ? 'text()' : nodeName;
+
+      const index = getNodeIndex(_node, nodeName);
+      const pathIndex = _node.nodeType === Node.TEXT_NODE || index > 1 ? `[${index}]` : '';
+      xpath = [`${pathName}${pathIndex}`, ...xpath];
+    }
+
+    return xpath.join('/');
+  }
+
+  /**
+   * Get the XPath for an element, using the nodeName or lw _tag attribute as appropriate.
    * Adapted from the firebug source.
-   * @param {Element} element The (cwrc) element to get the XPath for
+   * @param {Element} element The (lw) element to get the XPath for
    * @param {String} [tagAttribute] The name of the attribute to use as the tag
    * @returns {String|null}
    */
@@ -281,7 +406,7 @@ class Utilities {
 
       for (let sibling = element.previousSibling; sibling; sibling = sibling.previousSibling) {
         // Ignore document type declaration.
-        if (sibling.nodeType == Node.DOCUMENT_TYPE_NODE) continue;
+        if (sibling.nodeType === Node.DOCUMENT_TYPE_NODE) continue;
 
         //@ts-ignore
         if (tagAtt && sibling.getAttribute !== undefined) {
@@ -384,8 +509,8 @@ class Utilities {
           // it's an attribute and therefore doesn't need a default namespace
           (p2 !== undefined && (p2.indexOf('attribute') === 0 || p2.indexOf('@') === 0)) ||
           // it's a function not an element name
-          p4.indexOf(/\(.*?\)/) !== -1
-          // p4.match(/\(.*?\)/) !== null
+          // p4.indexOf(/\(.*?\)/) !== -1
+          p4.match(/\(.*?\)/) !== null
         ) {
           return [p1, p2, p3, p4, p5].join('');
         } else {
@@ -396,14 +521,13 @@ class Utilities {
 
     let evalResult: XPathResult;
     try {
-      //@ts-ignore
       evalResult = doc.evaluate(xpath, contextNode, nsResolver, XPathResult.ANY_TYPE, null);
     } catch (error) {
       log.warn(`utilities.evaluateXPath: there was an error evaluating the xpath ${error}`);
       return null;
     }
 
-    let result: number | string | boolean | Node = null;
+    let result: number | string | boolean | Node | null = null;
 
     switch (evalResult.resultType) {
       case XPathResult.NUMBER_TYPE:
@@ -496,6 +620,7 @@ class Utilities {
     if (!$parent) return position;
 
     let offP = $el.offsetParent();
+    //@ts-ignore
     while ($parent.find(offP[0]).length === 1) {
       const pos = offP.position();
       position.top += pos.top;
@@ -527,6 +652,62 @@ class Utilities {
 
   destroy() {
     if (this.$entitiesConverter) this.$entitiesConverter.remove();
+  }
+
+  private scrollIntoView(element: Element) {
+    if (!this.writer.editor) return;
+    // scroll node into view
+    let elementTop = DOMUtilities.getElementPosition(element).top;
+
+    //! It is not clear why this is here and it is not working.
+    // if (node.matches(':hidden')) {
+    //   node.style.display = '';
+    //   nodeTop = getElementPosition(node).top;
+    //   node.style.display = 'none';
+    // }
+
+    const editorContentAreaContainer = this.writer.editor.getContentAreaContainer();
+    const containerHeight = editorContentAreaContainer.getBoundingClientRect().height * 0.25; //? Magic Number
+    const newScrollTop = elementTop - containerHeight;
+
+    element.ownerDocument.scrollingElement?.scrollTo({ top: newScrollTop, behavior: 'smooth' });
+  }
+
+  private getNode({ id, parentId, nodeIndex, xpath }: SelectNodeParams) {
+    if (id) {
+      const element = this.getElementById(id);
+      if (element) return element;
+    }
+    if (xpath) {
+      const Node = this.getNodeByXpath(xpath);
+      if (Node) return Node;
+    }
+    if (parentId) {
+      const Node = this.getNodeByParentChildIndex(parentId, nodeIndex);
+      if (Node) return Node;
+    }
+  }
+
+  private getElementById(id: string) {
+    if (!this.writer.editor) return;
+    const selector = `#${id}`;
+    if (!DOMUtilities.isValidCSSSelector(selector)) return;
+    return this.writer.editor.getBody().querySelector(selector);
+  }
+
+  private getNodeByXpath(xpath: string) {
+    if (!this.writer.editor) return;
+    const node = this.evaluateXPath(this.writer.editor.getBody(), xpath);
+    if (typeof node === 'string' || typeof node === 'number' || typeof node === 'boolean') {
+      return;
+    }
+    return node;
+  }
+
+  private getNodeByParentChildIndex(parentId: string, nodeIndex: number = 0) {
+    if (!this.writer.editor) return;
+    const parent = this.writer.editor.getBody().querySelector(`#${parentId}`);
+    return parent?.childNodes.item(nodeIndex);
   }
 }
 

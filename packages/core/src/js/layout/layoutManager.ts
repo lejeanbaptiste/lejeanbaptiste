@@ -245,7 +245,7 @@ class LayoutManager {
     if (!this.writer.editor) return;
 
     const toolbar = document.querySelector('#editor-toolbar');
-    const tox: HTMLElement = document.querySelector('.tox');
+    const tox = document.querySelector('.tox') as HTMLElement;
     if (!toolbar || !tox) return;
 
     const toolbarHeight = toolbar.getBoundingClientRect().height;
@@ -337,8 +337,8 @@ class LayoutManager {
       return false;
     }
 
-    const container = this.getContainer().parent();
-    fscreen.requestFullscreen(container[0]);
+    const container = this.getContainer()?.parent();
+    if (container?.[0]) fscreen.requestFullscreen(container[0]);
 
     return true;
   }
@@ -367,14 +367,15 @@ class LayoutManager {
       if (!Array.isArray(modules)) modules = [modules];
 
       modules.forEach(({ id, title }) => {
-        const tab: HTMLElement = document.querySelector(`.ui-layout-${region} > ul > li#${id}`);
+        const tab = document.querySelector(`.ui-layout-${region} > ul > li#${id}`) as HTMLElement;
 
         if (WRITE_ONLY_MODULES.includes(id as ISettingsModuleName)) {
           tab.style.display = readonly ? 'none' : '';
         }
 
         if (Array.isArray(title)) {
-          tab.querySelector('a').innerText = readonly ? title[1] : title[0];
+          const a = tab.querySelector('a');
+          if (a) a.innerText = readonly ? title[1] : title[0];
         }
       });
     });

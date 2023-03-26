@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance } from 'axios';
+//@ts-ignore
 import wdk from 'wikidata-sdk';
 import type { LookUpResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';

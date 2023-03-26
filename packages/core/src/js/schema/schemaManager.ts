@@ -1,12 +1,12 @@
 import axios from 'axios';
 import CSS from 'css';
 import $ from 'jquery';
+import { v4 as uuidv4 } from 'uuid';
 import type { Schema, SchemaMappingType } from '../../types';
 import { log } from '../../utilities';
 import Writer from '../Writer';
 import Mapper from './mapper';
 import * as schemaNavigator from './schemaNavigator';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * @class SchemaManager
@@ -177,7 +177,7 @@ class SchemaManager {
    */
   getSchemaIdFromUrl(url: string) {
     // remove the protocol in order to disregard http/https for improved chances of matching below
-    const urlNoProtocol = url.split(/^.*?\/\//)[1];
+    const urlNoProtocol = url.split(/^.*?\/\//)[1] ?? '';
 
     // search the known schemas, if the url matches it must be the same one
     const schema = this.schemas.find((schema) => {
@@ -285,7 +285,9 @@ class SchemaManager {
         if (!defHits[name]) {
           //@ts-ignore
           defHits[name] = true;
+          //@ts-ignore
           const def = $('define[name="' + name + '"]', this.schemaXML);
+          //@ts-ignore
           return checkForText(def, defHits, level + 1, status);
         }
       });
@@ -296,11 +298,12 @@ class SchemaManager {
       let localData = localStorage[`cwrc.${tag}.text`];
       if (localData) return localData === 'true';
     }
-
+    //@ts-ignore
     const element = $(`element[name="${tag}"]`, this.schemaXML);
     const defHits = {};
     const level = 0;
     const status = { canContainText: false }; // needs to be an object so change is visible outside of checkForText
+    //@ts-ignore
     checkForText(element, defHits, level, status);
 
     if (useLocalStorage) localStorage[`cwrc.${tag}.text`] = status.canContainText;
@@ -323,12 +326,14 @@ class SchemaManager {
   }
 
   getDocumentationForTag(tag: string) {
+    //@ts-ignore
     const element = $(`element[name="${tag}"]`, this.schemaXML);
     const doc = $('a\\:documentation, documentation', element).first().text();
     return doc;
   }
 
   getFullNameForTag(tag: string) {
+    //@ts-ignore
     const element = $(`element[name="${tag}"]`, this.schemaXML);
     const doc = $('a\\:documentation, documentation', element).first().text();
     // if the tag name is an abbreviation, we expect the full name to be at the beginning of the doc, in parentheses
@@ -437,7 +442,7 @@ class SchemaManager {
         for (let i = 0; i < parentEl.children.length; i++) {
           const child = contextNode.children[i];
 
-          if (child !== contextNode) {
+          if (child && child !== contextNode) {
             const childTag = child.getAttribute('_tag');
             if (childTag === contextTag) {
               hasRequiredSibling = true;
@@ -454,7 +459,7 @@ class SchemaManager {
 
         for (let i = 0; i < contextNode.children.length; i++) {
           const child = contextNode.children[i];
-          const childTag = child.getAttribute('_tag');
+          const childTag = child?.getAttribute('_tag');
           const childIsValid = validChildren.find((vc) => {
             return vc.name === childTag;
           });
@@ -540,6 +545,7 @@ class SchemaManager {
    */
   async getPossibleRootsForSchema(schemaId: string) {
     if (this.mapper.mappings.has(schemaId)) {
+      //@ts-ignore
       return this.mapper.mappings.get(schemaId).root;
     }
 
@@ -672,6 +678,7 @@ class SchemaManager {
     let schemaTags = '';
     const elements: string[] = [];
 
+    //@ts-ignore
     $('element', this.schemaXML).each((index, el) => {
       const tag = $(el).attr('name');
       if (tag && !elements.includes(tag)) {
@@ -726,6 +733,7 @@ class SchemaManager {
     schemaNavigator.setSchemaElements(this.schema.elements);
 
     // remove any child tags in the element/attribute documentation, as they are not handled properly during xmlToJSON
+    //@ts-ignore
     $('a\\:documentation *', this.schemaXML).each((index, el) => {
       if (el.parentElement) {
         el.parentElement.innerHTML = this.writer.utilities.escapeHTMLString(
@@ -734,6 +742,7 @@ class SchemaManager {
       }
     });
 
+    //@ts-ignore
     const schemaGrammar = $('grammar', this.schemaXML)[0];
     this.schemaJSON = this.writer.utilities.xmlToJSON(schemaGrammar);
 
@@ -809,6 +818,7 @@ class SchemaManager {
     const blockElements = this.writer.editor?.schema.getBlockElements();
     if (blockElements) {
       for (let i = 0; i < additionalBlockElements.length; i++) {
+        //@ts-ignore
         blockElements[additionalBlockElements[i]] = {};
       }
     }
@@ -841,7 +851,7 @@ class SchemaManager {
 
     const schemaEntry = this.schemas.find((schema) => schema.id === this.schemaId);
 
-    if (!schemaEntry.css || schemaEntry.css.length === 0) {
+    if (!schemaEntry?.css || schemaEntry.css.length === 0) {
       // this.writer.dialogManager.show('message', {
       //   title: 'Error',
       //   msg: `Error loading schema css. No entry found for: ${this.schemaId}`,
@@ -873,7 +883,7 @@ class SchemaManager {
         const rule = rules[i];
         const popupRule = Object.assign({}, rule);
 
-        if (rule.type === 'rule') {
+        if (rule?.type === 'rule') {
           const convertedSelectors = [];
           const convertedPopupSelectors = [];
 

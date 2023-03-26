@@ -566,6 +566,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       context.tags[nerveTypeName] = tag;
 
       Object.assign(
+        //@ts-ignore
         context.tags[nerveTypeName].defaults,
         sm.mapper.getRequiredAttributes(entityType)
       );
@@ -937,10 +938,12 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
 
     let filterType = 'type';
 
-    if (filter.indexOf('_') !== -1) {
-      const details = filter.split('_');
-      filterType = details[0];
-      filter = details[1];
+    if (filter?.indexOf('_') !== -1) {
+      const details = filter?.split('_');
+      if (details) {
+        filterType = details[0] ?? '';
+        filter = details[1];
+      }
     }
 
     $parent.find('ul.entitiesList > li').each(function (index, el) {

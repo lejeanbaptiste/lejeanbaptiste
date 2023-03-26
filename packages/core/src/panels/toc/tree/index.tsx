@@ -19,14 +19,14 @@ export const Tree = () => {
 
   const [flattenTree, setFlattenTree] = useState<FlattenedItem[]>([]);
 
-  const [selectedItem, setSelectedItem] = useState<UniqueIdentifier>(null);
+  const [selectedItem, setSelectedItem] = useState<UniqueIdentifier | null>(null);
   const [expandedItems, setExpandedItems] = useState<UniqueIdentifier[]>([]);
-  const [nodeChanged, setNodeChanged] = useState<UniqueIdentifier>(null);
+  const [nodeChanged, setNodeChanged] = useState<UniqueIdentifier | null>(null);
 
   const visibleTree = useMemo(() => {
     let cloneExpandedItems = [...expandedItems];
 
-    if (!cloneExpandedItems.includes(flattenTree[0]?.id)) {
+    if (flattenTree[0]?.id && !cloneExpandedItems.includes(flattenTree[0]?.id)) {
       cloneExpandedItems.unshift(flattenTree[0]?.id);
     }
 
@@ -37,7 +37,7 @@ export const Tree = () => {
         childrenId.forEach(
           (id) => (cloneExpandedItems = cloneExpandedItems.filter((exp) => exp !== id))
         );
-        return cloneExpandedItems.includes(parentId);
+        return parentId && cloneExpandedItems.includes(parentId);
       }
       return shouldShow;
     });
@@ -60,7 +60,9 @@ export const Tree = () => {
 
   useEffect(() => {
     if (initialized) {
-      let treeModel = getEditorTreeModel();
+      const treeModel = getEditorTreeModel();
+      if (!treeModel) return;
+
       expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
       setFlattenTree(treeModel);
     }
@@ -69,6 +71,8 @@ export const Tree = () => {
   useEffect(() => {
     if (updatePending) {
       const treeModel = getEditorTreeModel();
+      if (!treeModel) return;
+
       setFlattenTree(treeModel);
       setUpdatePending(false);
     }
@@ -85,7 +89,7 @@ export const Tree = () => {
 
   useEffect(() => {
     setTimeout(() => {
-      const selectedItemIndex = visibleTree.findIndex(({ id }) => id === selectedItem[0]);
+      const selectedItemIndex = visibleTree.findIndex(({ id }) => id === selectedItem);
       if (selectedItemIndex) {
         virtuoso?.current?.scrollIntoView({
           index: selectedItemIndex,
@@ -104,7 +108,7 @@ export const Tree = () => {
       return;
     }
 
-    const id = node.id;
+    const id = node?.id;
     if (!id) {
       log.info(`TOC: attribute 'id' missing from node ${node}`);
       return;

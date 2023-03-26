@@ -18,8 +18,9 @@ export const EntityType = ({ available, enabled, onClick, name }: EntityTypeProp
   const IconComponent = useMemo(() => {
     if (name && Object.keys(entity).includes(name)) {
       const entityType = Object.entries(entity).find(([type]) => type === name);
-      return getIcon(entityType?.[1].icon);
+      if (entityType) return getIcon(entityType[1].icon ?? 'unknown');
     }
+    return getIcon('unknown');
   }, [name]);
 
   const handleClick = () => onClick(name);

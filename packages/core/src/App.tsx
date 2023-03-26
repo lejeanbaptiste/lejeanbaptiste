@@ -40,7 +40,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       // if (writer) writer.destroy();
       actions.document.setDocumentTouched(false);
       actions.document.setLoaded(false);
-      window.writer = null;
+      // window.writer = null;
       setWriter(null);
       setup();
     }
@@ -61,7 +61,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
   const setup = async () => {
     const config = createConfig(settings);
-    const { credentials } = settings;
 
     config.container = CONTAINER;
 
@@ -70,9 +69,11 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
     actions.editor.writerInitSettings(config);
 
-    if (credentials?.nssiToken) actions.editor.setNssiToken(credentials.nssiToken);
+    if (settings?.credentials?.nssiToken) {
+      actions.editor.setNssiToken(settings.credentials.nssiToken);
+    }
 
-    actions.editor.initiateLookupSources(settings.lookups);
+    actions.editor.initiateLookupSources(settings?.lookups);
 
     actions.user.setUser(user);
 
@@ -86,6 +87,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
     //@ts-ignore
     _writer.event('writerInitialized').subscribe(() => {
+      if (!document.url) return;
       actions.document.setDocumentUrl(document.url);
 
       _writer.setDocument(document.xml);

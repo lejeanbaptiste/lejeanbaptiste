@@ -2,9 +2,9 @@ import type {
   DialogBarProps,
   EditSourceDialogProps,
   EntityLookupDialogProps,
-  PopupProps,
+  PopupProps
 } from '../../dialogs';
-import { panel } from '../../layout/Utilities';
+import { Panel } from '../../layout/Utilities';
 import type { ContextMenuState, Language, LayoutProps, NotificationProps } from '../../types';
 
 type State = {

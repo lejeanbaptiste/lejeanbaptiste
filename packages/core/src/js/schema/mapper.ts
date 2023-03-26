@@ -240,7 +240,9 @@ class Mapper {
       let innerXPath: RegExpExecArray | string | null = /^local-name\((.*)\)$/.exec(xpath); // try to get the inside of the name function
 
       if (innerXPath) {
+        //@ts-ignore
         innerXPath = innerXPath[1];
+        //@ts-ignore
         const innerResult = this.getValueFromXPath.call(this, contextEl, innerXPath);
 
         // hack: if innerResult return undefined, result is also undefined
@@ -609,9 +611,12 @@ class Mapper {
       let parentTag = entity.parentTag;
       if (Array.isArray(parentTag)) entityTagNames = [...entityTagNames, ...parentTag];
       if (Array.isArray(parentTag)) {
+        //@ts-ignore
         parentTag = parentTag[0];
+        //@ts-ignore
         if (parentTag !== '') entityTagNames.push(parentTag);
       }
+      //@ts-ignore
       if (parentTag !== '') entityTagNames.push(parentTag);
 
       entityTagNames = entityTagNames.map((name) => `[_tag="${name}"]`);
@@ -702,13 +707,13 @@ class Mapper {
     return this.getMappings().header;
   }
 
-    /**
+  /**
    * Returns the names of the headings tags for the current schema.
    * @returns {String}
    */
-    getHeadingTags() {
-      return this.getMappings().headings;
-    }
+  getHeadingTags() {
+    return this.getMappings().headings;
+  }
 
   /**
    * Returns the namespace for the current schema.

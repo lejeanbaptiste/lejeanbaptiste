@@ -97,7 +97,7 @@ class DateDialog implements SchemaDialog {
         if (!entityId) return;
 
         $(`#${entityId}`, writer.editor.getBody()).text(corrText);
-        writer.entitiesManager.getEntity(entityId).setContent(corrText);
+        writer.entitiesManager.getEntity(entityId)?.setContent(corrText);
 
         return;
       }
@@ -111,11 +111,11 @@ class DateDialog implements SchemaDialog {
       const range = writer.editor.selection.getRng();
 
       // insert temp span at the current range
-      range.surroundContents($temp[0]);
+      if ($temp[0]) range.surroundContents($temp[0]);
 
       // add the text content
       $temp.html(corrText);
-      const textNode = $temp[0].firstChild;
+      const textNode = $temp[0]?.firstChild;
 
       if (!textNode) return;
 

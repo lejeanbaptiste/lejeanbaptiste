@@ -16,7 +16,7 @@ import useEditorReaction from '../hooks/useEditorReaction';
 import { Header } from './Header';
 
 interface MenuProps {
-  anchorEl?: HTMLElement;
+  anchorEl?: HTMLElement | null;
   handleClose: () => void;
 }
 
@@ -63,7 +63,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
                 { action: 'cancel', label: t('commons:cancel').toString(), variant: 'outlined' },
                 { action: 'change', label: t('change anyway').toString() },
               ],
-        onClose: async (action: string) => {
+        onClose: async (action) => {
           if (action !== 'change') return;
           applyNewSchema(schemaId);
         },
@@ -88,7 +88,9 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   };
 
   const handleOpenEditSchemaDialog = (action: 'add' | 'update', id?: string) => {
-    const mappingIds = window.writer.schemaManager.getMappingIdsFromRoot(document.rootName);
+    const mappingIds = document.rootName
+      ? window.writer.schemaManager.getMappingIdsFromRoot(document.rootName)
+      : undefined;
     openDialog({
       type: 'editSchema',
       props: { actionType: action, mappingIds, schemaId: id },

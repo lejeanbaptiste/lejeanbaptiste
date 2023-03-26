@@ -22,7 +22,7 @@ export const EditSourceDialog = ({
   content = '',
   id,
   onClose,
-  open,
+  open = false,
   type = 'content',
 }: EditSourceDialogProps) => {
   const { settings } = useAppState().editor;
@@ -40,15 +40,15 @@ export const EditSourceDialog = ({
 
   const handleUpdateContent = (value: string) => setCurrentContent(value);
 
-  const handleClose = () => onClose(id);
+  const handleClose = () => onClose && onClose(id);
 
   const handleChange = () => {
-    if (currentContent === content) return onClose(id);
+    if (currentContent === content) return onClose && onClose(id);
 
     if (type === 'content') updateXMLContent(currentContent);
     if (type === 'header') updateXMLHeader(currentContent);
 
-    onClose(id);
+    onClose && onClose(id);
   };
 
   const Progress = () => (

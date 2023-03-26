@@ -252,8 +252,8 @@ class EntitiesList {
 
   private acceptEntity(entityId: string) {
     const entity = this.writer.entitiesManager.getEntity(entityId);
-    entity.removeAttribute('_candidate');
-    $(`#${entity.id}`, this.writer.editor?.getBody()).removeAttr('_candidate');
+    entity?.removeAttribute('_candidate');
+    $(`#${entity?.id}`, this.writer.editor?.getBody()).removeAttr('_candidate');
   }
 
   private setFilter(value: string) {
@@ -339,11 +339,11 @@ class EntitiesList {
     const match = this.writer.entitiesManager.getEntity(entityId);
 
     this.writer.entitiesManager.eachEntity((index: number, entity: Entity) => {
-      if (entity.getId() !== match.getId()) {
+      if (entity.getId() !== match?.getId()) {
         if (
-          JSON.stringify(entity.getAttributes()) === JSON.stringify(match.getAttributes()) &&
-          JSON.stringify(entity.getCustomValues()) === JSON.stringify(match.getCustomValues()) &&
-          entity.getContent() === match.getContent()
+          JSON.stringify(entity.getAttributes()) === JSON.stringify(match?.getAttributes()) &&
+          JSON.stringify(entity.getCustomValues()) === JSON.stringify(match?.getCustomValues()) &&
+          entity.getContent() === match?.getContent()
         ) {
           matches.push(entity.getId());
         }
@@ -514,6 +514,7 @@ class EntitiesList {
     const potentialEntitiesByType = this.writer.schemaManager.mapper.findEntities(typesToFind);
     let potentialEntities: HTMLElement[] = [];
     for (const type in potentialEntitiesByType) {
+      //@ts-ignore
       potentialEntities = [...potentialEntities, ...potentialEntitiesByType[type]];
     }
 

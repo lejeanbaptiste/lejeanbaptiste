@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { v4 as uuidv4 } from 'uuid';
 import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
 import { type IDialog } from './type';
@@ -24,12 +25,12 @@ export interface SelectSchemaDialogProps extends IDialog {
 }
 
 export const SelectSchemaDialog = ({
-  id,
+  id = uuidv4(),
   maxWidth = 'xs',
   mappingIds = [],
   onClose,
   onSchemaSelect,
-  open,
+  open = false,
   preventEscape = true,
 }: SelectSchemaDialogProps) => {
   const { closeDialog } = useActions().ui;
@@ -43,7 +44,7 @@ export const SelectSchemaDialog = ({
     ? possibleSchemas.find((schema) => schema.id === 'teiAll')
     : possibleSchemas[0];
 
-  const [schema, setSchema] = useState<Schema>(defaultSchema);
+  const [schema, setSchema] = useState<Schema | undefined>(defaultSchema);
 
   const handleSchemaSelect = (event: SelectChangeEvent) => {
     const schemaId = event.target.value;
@@ -68,7 +69,7 @@ export const SelectSchemaDialog = ({
 
   const handleSelect = () => {
     closeDialog(id);
-    onSchemaSelect && onSchemaSelect(schema);
+    onSchemaSelect && schema && onSchemaSelect(schema);
     onClose && onClose<Schema>('select', schema);
   };
 

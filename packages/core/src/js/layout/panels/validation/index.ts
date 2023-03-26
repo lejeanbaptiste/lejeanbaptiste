@@ -24,6 +24,7 @@ class Validation {
 
   readonly AUTO_VALIDATE_ONCHANGE_TIMER = 10000;
   autoValidateTimerActive = false;
+  //@ts-ignore
   autoValidateTimer: ReturnType<typeof setTimeout>;
 
   progressBar?: Circle; //typeof ProgressBar | null = null;
@@ -130,8 +131,9 @@ class Validation {
 
     this.writer.tagger.removeNoteWrappersForEntities();
 
-    errors.forEach((error) => {
+    errors?.forEach((error) => {
       // convert xpath to jquery selector
+      //@ts-ignore
       const path = this.getElementPathOnEditor(error.target.xpath ?? error.element.xpath);
       const docEl = $(path, this.writer.editor?.getBody());
       const id = docEl.attr('id') ?? null;
@@ -163,7 +165,7 @@ class Validation {
     <div id="stats-container">
       <div id="info" title="Rerun validator">
         <i class="fas fa-exclamation-circle"></i>
-        ${errors.length}
+        ${errors?.length}
       </div>
      </div>
     `);
@@ -261,6 +263,7 @@ class Validation {
         if (index === null) {
           index = 0;
         } else {
+          //@ts-ignore
           index = parseInt(index[1]);
           index--; // xpath is 1-based and "eq()" is 0-based
         }
@@ -276,6 +279,7 @@ class Validation {
   }
 
   private createErrorMessage({ type, msg, target, element }: ValidationError) {
+    if (!element) return '';
     switch (type) {
       case 'ElementNameError':
         msg = `Tag
@@ -377,6 +381,7 @@ class Validation {
 
   private async createDocumentationComponent($item: JQuery<HTMLElement>) {
     const { target, element }: ValidationError = $item.data().data;
+    if (!element) return;
 
     $($item).show();
     const $details = $item.find('#details');
@@ -457,7 +462,7 @@ class Validation {
         });
 
       default:
-        return;
+        return [];
     }
   }
 

@@ -45,7 +45,7 @@ export const Item = ({
     [palette.mode]
   );
 
-  const hanldeSelectItem = () => onSelectItem(nodeId);
+  const hanldeSelectItem = () => onSelectItem && onSelectItem(nodeId);
 
   const handleExpand = (event: MouseEvent<HTMLElement, globalThis.MouseEvent>) => {
     event.preventDefault();

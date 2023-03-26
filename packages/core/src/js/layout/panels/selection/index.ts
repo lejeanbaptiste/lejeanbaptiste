@@ -40,9 +40,11 @@ class Selection {
     const resizeObserver = new ResizeObserver((entries) => {
       const editorContainer = $('#monac');
       if (editorContainer) {
+        //@ts-ignore
         editorContainer.height(entries[0].contentRect.height - 20);
       }
     });
+    //@ts-ignore
     resizeObserver.observe($(`#${parentId}`)[0]);
 
     $(`#${parentId}`).append(`
@@ -143,7 +145,7 @@ class Selection {
       const range = this.writer.editor?.selection.getRng();
       const contents = range?.cloneContents();
       if (contents) this.$selectionContents.html(contents);
-
+      //@ts-ignore
       const xmlString = this.writer.converter.buildXMLString(this.$selectionContents[0]);
 
       this.editor.setValue(xmlString);

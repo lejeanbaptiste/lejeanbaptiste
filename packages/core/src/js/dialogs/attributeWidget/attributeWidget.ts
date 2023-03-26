@@ -59,7 +59,7 @@ class AttributeWidget {
                 'change',
                 $.proxy(
                   function (mapping: any, event: any) {
-                    const dataObj = {};
+                    const dataObj: { [key: string]: any } = {};
                     dataObj[mapping] = $(event.target).val();
                     this.setData(dataObj);
                   },
@@ -242,7 +242,7 @@ class AttributeWidget {
             })
             .join(' ')
         : capitalizeFirstLetter(documentation)
-      : undefined;
+      : '';
 
     let htmlPart = `
       <div data-name="form_${attributeName}" class="attribute" style="display:${displayCSS};">
@@ -294,7 +294,7 @@ class AttributeWidget {
    * @param {Object} data A map of attribute name / value pairs
    * @returns {Boolean} True if data was set
    */
-  setData(data: object) {
+  setData(data: { [key: string]: any }) {
     let wasDataSet = false;
     for (const key in data) {
       const val = data[key];
@@ -338,7 +338,7 @@ class AttributeWidget {
    * @returns {Object|undefined} Returns undefined if invalid
    */
   getData() {
-    const attributes: object = {};
+    const attributes: { [key: string]: any } = {};
 
     $('.attributeSelector li.selected', this.$parent).each((index, el) => {
       const name = $(el).data('name');

@@ -1,4 +1,3 @@
-// //@ts-nocheck
 import $ from 'jquery';
 import type { Bookmark } from 'tinymce';
 import type { EntityType } from '../types';
@@ -41,7 +40,8 @@ class Tagger {
    * @returns {jQuery<any>}
    */
   getCurrentTag(id?: string) {
-    if (!id) return $(this.writer.editor?.selection.getNode());
+    if (!this.writer.editor) return;
+    if (!id) return $(this.writer.editor.selection.getNode());
 
     let tag = $(`#${id}`, this.writer.editor?.getBody());
     if (tag.length === 0) {
@@ -77,6 +77,7 @@ class Tagger {
     const currAttributes = tag.attributes;
     for (let i = currAttributes.length - 1; i >= 0; i--) {
       const attr = currAttributes[i];
+      if (!attr) continue;
       // if (Mapper.reservedAttributes[attr.name] !== true) {
       // tag.removeAttribute(attr.name);
       // }
@@ -91,7 +92,7 @@ class Tagger {
       //   continue;
       // }
       if (!RESERVED_ATTRIBUTES.has(attName)) continue;
-
+      //@ts-ignore
       tag.setAttribute(attName, attributes[attName]);
     }
 
@@ -116,6 +117,7 @@ class Tagger {
       if (!RESERVED_ATTRIBUTES.has(attName)) continue;
 
       const attValue = attributes[attName];
+      //@ts-ignore
       tag.setAttribute(attName, attValue);
       currAttrs[attName] = attValue;
     }
@@ -162,8 +164,9 @@ class Tagger {
     //@ts-ignore
     const tagId = this.writer.editor?.currentBookmark?.tagId; // set by structureTree
     if (!tagId) {
-      this.writer.editor.selection.moveToBookmark(this.writer.editor.currentBookmark);
-
+      if (this.writer.editor.currentBookmark) {
+        this.writer.editor.selection.moveToBookmark(this.writer.editor.currentBookmark);
+      }
       const cleanRange = action === this.ADD;
       const valid = this.isSelectionValid({ isStructTag: true, cleanRange });
 
@@ -212,6 +215,7 @@ class Tagger {
         callback: (attributes: any) => {
           if (attributes) {
             const bookmark = this.writer.editor?.currentBookmark;
+            if (!bookmark) return;
             this.addStructureTag({ action, attributes, bookmark, tagName });
           }
           //@ts-ignore
@@ -231,7 +235,7 @@ class Tagger {
   editTagDialog(id: string | string[]) {
     if (!this.writer.editor) return;
     //? what to do if id is multiple
-    if (Array.isArray(id)) id = id[0];
+    if (Array.isArray(id)) id = id[0] as string;
 
     const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
 
@@ -248,7 +252,9 @@ class Tagger {
       }
     } else {
       const tagName = tag.attr('_tag');
+      //@ts-ignore
       const tagPath = this.writer.utilities.getElementXPath(tag[0]);
+      //@ts-ignore
       const attributes = this.getAttributesForTag(tag[0]);
 
       const attributesEditor = this.writer.dialogManager.getDialog('attributesEditor');
@@ -310,8 +316,10 @@ class Tagger {
       return;
     }
 
+    //@ts-ignore
     let tagPath = this.writer.utilities.getElementXPath(tag.parent()[0]);
     tagPath += `/${tagName}`;
+    //@ts-ignore
     const attributes = this.getAttributesForTag(tag[0]);
 
     const attributesEditor = this.writer.dialogManager.getDialog('attributesEditor');
@@ -362,6 +370,7 @@ class Tagger {
       }
 
       const parentName = parentTag.getAttribute('_tag');
+      //@ts-ignore
       const isValid = this.writer.schemaManager.isTagValidChildOfParent(childName, parentName);
 
       if (!isValid) {
@@ -407,7 +416,7 @@ class Tagger {
     }
   }
 
-  //! deprecated: This funcions is not called from anywhere
+  //! deprecated: This funcion is not called from anywhere
   /**
    * A general removal function for entities and structure tags
    * @param {String} [id] The id of the tag to remove
@@ -424,7 +433,7 @@ class Tagger {
     if (!this.writer.editor) return;
 
     //? what to do if id is multiple
-    if (Array.isArray(id)) id = id[0];
+    if (Array.isArray(id)) id = id[0] as string;
     const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
 
     if (tag.attr('_entity')) {
@@ -432,8 +441,10 @@ class Tagger {
       this.writer.editor.copiedEntity = clone[0];
     } else {
       const clone = tag.clone();
-      this.writer.editor.copiedElement.element = clone[0];
-      this.writer.editor.copiedElement.selectionType = 0; // tag & contents copied
+      this.writer.editor.copiedElement = {
+        element: clone[0],
+        selectionType: 0, // tag & contents copied
+      };
     }
   }
 
@@ -477,6 +488,7 @@ class Tagger {
     let wrapString = `<${parent.nodeName.toLowerCase()}`;
     for (let i = 0; i < parent.attributes.length; i++) {
       const attr = parent.attributes[i];
+      if (!attr) continue;
       if (attr.name !== 'id') {
         wrapString += ` ${attr.name}="${attr.value}"`;
       }
@@ -490,6 +502,7 @@ class Tagger {
     let lastChild;
     for (let i = 0; i < parent.childNodes.length; i++) {
       const child = parent.childNodes[i];
+      if (!child) continue;
       if (child.nodeType === Node.TEXT_NODE) {
         lastChild = $(child).wrap(wrapString);
       }
@@ -521,7 +534,7 @@ class Tagger {
 
     if (!anchor || !parent?.hasChildNodes) return;
 
-    const anchorIndex = this.getNodeIndexByid(parent, anchor.id);
+    const anchorIndex = this.getNodeIndexByid(parent, anchor.id) ?? 0;
 
     let tagsIdsToAdd = [...tagIds];
     const nodeIndexesToRemove: number[] = [];
@@ -619,6 +632,7 @@ class Tagger {
 
       if (direction === 'down') {
         for (let i = 0; i < currNode.childNodes.length; i++) {
+          //@ts-ignore
           processNewNodes(currNode.childNodes[i], direction);
         }
       }
@@ -686,7 +700,7 @@ class Tagger {
       }
 
       $.extend(config, info.properties);
-
+      //@ts-ignore
       this.writer.editor.selection.moveToBookmark(this.writer.editor.currentBookmark);
       const range: Range = this.writer.editor.selection.getRng();
 
@@ -696,12 +710,15 @@ class Tagger {
       this.addStructureTag({
         action: this.ADD,
         attributes: info.attributes,
+        //@ts-ignore
         bookmark: this.writer.editor.currentBookmark,
+        //@ts-ignore
         tagName,
       });
     }
 
     // TODO is this necessary?
+    //@ts-ignore
     this.writer.editor.currentBookmark = null;
     this.writer.editor.focus();
   }
@@ -720,6 +737,7 @@ class Tagger {
     this.sanitizeObject({ obj: info.customValues, isAttributes: false });
 
     const entity = this.writer.entitiesManager.getEntity(id);
+    if (!entity) return;
     const $tag = $(`[name=${id}]`, this.writer.editor?.getBody());
 
     const type: string = info.properties.type || entity.getType();
@@ -736,7 +754,7 @@ class Tagger {
     const removeEntity =
       isNamedEntity && (uriAttribute && info.attributes[uriAttribute]) === undefined;
 
-    if (removeEntity) {
+    if (removeEntity && $tag[0]) {
       this.setAttributesForTag($tag[0], info.attributes);
       //  tagger.removeEntity(id);
       return;
@@ -744,7 +762,7 @@ class Tagger {
 
     this.writer.entitiesManager.editEntity(entity, info);
 
-    this.setAttributesForTag($tag[0], entity.getAttributes());
+    if ($tag[0]) this.setAttributesForTag($tag[0], entity.getAttributes());
 
     $tag.attr('_tag', entity.getTag());
     $tag.attr('_type', entity.getType());
@@ -791,6 +809,7 @@ class Tagger {
 
     const entity = this.writer.entitiesManager.getEntity(entityId);
     const $tag = $(`#${entityId}`, this.writer.editor.getBody());
+    if (!entity || !$tag || !$tag[0]) return;
 
     const tagName = $tag.attr('_tag');
     if (!tagName) return;
@@ -811,7 +830,7 @@ class Tagger {
     // bookmark temp selection
     //@ts-ignore
     const rng: Range = this.writer.editor.selection.getRng(true);
-    rng.selectNodeContents($temp[0]);
+    if ($temp[0]) rng.selectNodeContents($temp[0]);
     this.writer.editor.currentBookmark = this.writer.editor.selection.getBookmark(1);
 
     const newTag = this.addStructureTag({
@@ -865,7 +884,7 @@ class Tagger {
       //   noteContent = `<span id="${textTagId}" _tag="${textTag}">${noteContent}</span>`;
       // }
 
-      const tag: Element = this.writer.editor?.dom.create(
+      const tag = this.writer.editor?.dom.create(
         'span',
         $.extend(tagAttributes, {
           _entity: true,
@@ -880,14 +899,16 @@ class Tagger {
         noteContent
       );
 
+      if (!tag) return;
+
       const sel = this.writer.editor?.selection;
-      sel.setRng(range);
+      sel?.setRng(range);
 
       // chrome seems to mess up the range slightly if not set again
       //@ts-ignore
       if (tinymce.isWebKit) sel.setRng(range);
 
-      sel.collapse(false);
+      sel?.collapse(false);
       //@ts-ignore
       range = sel.getRng(true);
       range.insertNode(tag);
@@ -907,7 +928,7 @@ class Tagger {
         //@ts-ignore
         startRange.setEnd(range.startContainer, range.startContainer.length);
 
-        const start: Element = this.writer.editor?.dom.create(
+        const start = this.writer.editor?.dom.create(
           'span',
           {
             _entity: true,
@@ -918,7 +939,7 @@ class Tagger {
           },
           ''
         );
-        startRange.surroundContents(start);
+        if (start) startRange.surroundContents(start);
 
         $.each(nodes, (index, node) => {
           $(node).wrap(`
@@ -929,7 +950,7 @@ class Tagger {
         const endRange = range.cloneRange();
         endRange.setStart(range.endContainer, 0);
 
-        const end: Element = this.writer.editor?.dom.create(
+        const end = this.writer.editor?.dom.create(
           'span',
           {
             _entity: true,
@@ -939,9 +960,9 @@ class Tagger {
           },
           ''
         );
-        endRange.surroundContents(end);
+        if (end) endRange.surroundContents(end);
       } else {
-        const start: Element = this.writer.editor?.dom.create(
+        const start = this.writer.editor?.dom.create(
           'span',
           $.extend(tagAttributes, {
             _entity: true,
@@ -954,7 +975,7 @@ class Tagger {
           }),
           ''
         );
-        range.surroundContents(start);
+        if (start) range.surroundContents(start);
       }
     }
 
@@ -976,6 +997,7 @@ class Tagger {
     this.writer.entitiesManager.eachEntity((id: string, entity: Entity) => {
       if (entity.isNote()) {
         const note = $(`#${id}`, this.writer.editor?.getBody());
+        //@ts-ignore
         this.addNoteWrapper(note[0], entity.getType());
       }
     });
@@ -1100,7 +1122,7 @@ class Tagger {
         //@ts-ignore
         this.writer.editor?.selection.moveToBookmark(bookmark);
 
-        selection = this.writer.editor?.selection.getContent();
+        selection = this.writer.editor?.selection.getContent() ?? '';
         if (selection === '') selection = '\uFEFF';
 
         content = `${open_tag}${selection}${close_tag}`;
@@ -1108,6 +1130,7 @@ class Tagger {
         //@ts-ignore
         const range: Range = this.writer.editor?.selection.getRng(true);
         const tempNode = $('<span data-mce-bogus="1">', this.writer.editor?.getDoc());
+        //@ts-ignore
         range.surroundContents(tempNode[0]);
         tempNode.replaceWith(content);
         break;
@@ -1124,6 +1147,7 @@ class Tagger {
       // place the cursor at the end of the tag's contents
       //@ts-ignore
       const rng: Range = this.writer.editor?.selection.getRng(true);
+      //@ts-ignore
       rng.selectNodeContents($(`#${id}`, this.writer.editor?.getBody())[0]);
       rng.collapse(false);
       this.writer.editor?.selection.setRng(rng);
@@ -1169,18 +1193,21 @@ class Tagger {
    */
   removeStructureTag(id: string | string[], removeContents: boolean = false) {
     //? what to do if id is multiple
-    if (Array.isArray(id)) id = id[0];
+    if (Array.isArray(id)) id = id[0] as string;
 
     const doRemove = () => {
       if (removeContents) {
         if (entry && entry.isNote()) {
+          //@ts-ignore
           this.processRemovedContent(tag.parent('.noteWrapper')[0]);
           tag.parent('.noteWrapper').remove();
         } else {
+          //@ts-ignore
           this.processRemovedContent(tag[0]);
           tag.remove();
         }
       } else {
+        //@ts-ignore
         this.processRemovedContent(tag[0], false);
 
         //@ts-ignore
@@ -1192,6 +1219,7 @@ class Tagger {
         contents.length > 0 ? contents.unwrap() : tag.remove();
 
         if (entry && entry.isNote()) {
+          //@ts-ignore
           this.processRemovedContent(parent[0], false);
           contents = parent.contents();
 
@@ -1200,7 +1228,7 @@ class Tagger {
 
         if (hasSelection) this.doReselect(contents);
 
-        parent[0].normalize();
+        parent[0]?.normalize();
       }
 
       this.writer.editor?.undoManager.add();
@@ -1212,12 +1240,13 @@ class Tagger {
     // id = tag.attr('id') ?? id;
 
     const invalidDelete = this.writer.schemaManager.wouldDeleteInvalidate({
+      //@ts-ignore
       contextNode: tag[0],
       removeContext: true,
       removeContents,
     });
 
-    if (invalidDelete) {
+    if (invalidDelete && tag[0]) {
       this.showInvalidDeleteConfirm(tag[0], false, (confirmed: boolean) => {
         if (confirmed) doRemove();
       });
@@ -1234,7 +1263,7 @@ class Tagger {
    */
   removeStructureTagContents(id: string | string[]) {
     //? what to do if id is multiple
-    if (Array.isArray(id)) id = id[0];
+    if (Array.isArray(id)) id = id[0] as string;
 
     const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
 
@@ -1245,19 +1274,20 @@ class Tagger {
         .each((i, el) => this.processRemovedContent(el))
         .remove();
 
-      tag[0].textContent = '\uFEFF'; // insert zero-width non-breaking space so that empty tag isn't cleaned up by tinymce
+      if (tag[0]) tag[0].textContent = '\uFEFF'; // insert zero-width non-breaking space so that empty tag isn't cleaned up by tinymce
 
       this.writer.editor?.undoManager.add();
       this.writer.event('tagContentsRemoved').publish(id);
     };
 
     const invalidDelete = this.writer.schemaManager.wouldDeleteInvalidate({
+      //@ts-ignore
       contextNode: tag[0],
       removeContext: false,
       removeContents: true,
     });
 
-    if (invalidDelete) {
+    if (invalidDelete && tag[0]) {
       this.showInvalidDeleteConfirm(tag[0], true, (confirmed: boolean) => {
         if (confirmed) doRemove();
       });
@@ -1297,8 +1327,8 @@ class Tagger {
               if (!id) return;
 
               const entity = this.writer.entitiesManager.getEntity(id);
-              entity.setNoteContent($el.html());
-              entity.setContent($el.text());
+              entity?.setNoteContent($el.html());
+              entity?.setContent($el.text());
               this.writer.event('entityEdited').publish(id);
             });
           }, 0);
@@ -1307,6 +1337,7 @@ class Tagger {
 
       if (processChildren) {
         for (let i = 0; i < currNode.childNodes.length; i++) {
+          //@ts-ignore
           processRemovedNodes(currNode.childNodes[i]);
         }
       }
@@ -1353,10 +1384,11 @@ class Tagger {
   private doPaste(element: Element) {
     if (!element) return;
 
+    //@ts-ignore
     this.writer.editor?.selection.moveToBookmark(this.writer.editor?.currentBookmark);
 
     const sel = this.writer.editor?.selection;
-    sel.collapse();
+    sel?.collapse();
     //@ts-ignore
     const rng: Range = sel.getRng(true);
     rng.insertNode(element);
@@ -1427,7 +1459,7 @@ class Tagger {
     const sel = this.writer.editor?.selection;
 
     // disallow empty entities
-    if (!isStructTag && sel.isCollapsed()) return this.NO_SELECTION;
+    if (!isStructTag && sel?.isCollapsed()) return this.NO_SELECTION;
 
     //@ts-ignore
     const range: Range = sel.getRng(true);
@@ -1436,7 +1468,9 @@ class Tagger {
     // fix for select all and root node select
     if (range.commonAncestorContainer.nodeName.toLowerCase() === 'body') {
       const root = this.writer.editor?.dom.select('body > *')[0];
+      //@ts-ignore
       range.setStartBefore(root.firstChild);
+      //@ts-ignore
       range.setEndAfter(root.lastChild);
     }
 
@@ -1534,7 +1568,7 @@ class Tagger {
       shiftRangeForward(range, leadingSpaces, 0);
       shiftRangeBackward(range, trailingSpaces, 0);
 
-      sel.setRng(range);
+      sel?.setRng(range);
     }
 
     if (cleanRange) fixRange(range);

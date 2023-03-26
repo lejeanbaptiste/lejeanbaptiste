@@ -1,19 +1,20 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
-import React, { useState, type FC } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { v4 as uuidv4 } from 'uuid';
 import { useActions } from '../overmind';
 import { type SimpleDialogProps } from './type';
 
 export const SimpleDialog = ({
   actions = [{ action: 'close', label: 'close' }],
-  id,
+  id = uuidv4(),
   maxWidth = 'sm',
   Message,
   onBeforeClose,
   onClose,
-  open,
+  open = false,
   preventEscape = false,
   severity,
   title,
@@ -69,13 +70,11 @@ export const SimpleDialog = ({
       </DialogTitle>
       {(children || Message) && (
         <DialogContent sx={{ pt: 0.5 }}>
-          {children ? (
-            children
-          ) : typeof Message === 'string' ? (
-            Message
-          ) : (
-            <Message data={data} onChangeData={setData} />
-          )}
+          {children
+            ? children
+            : typeof Message === 'string'
+            ? Message
+            : Message && <Message data={data} onChangeData={setData} />}
         </DialogContent>
       )}
       <DialogActions

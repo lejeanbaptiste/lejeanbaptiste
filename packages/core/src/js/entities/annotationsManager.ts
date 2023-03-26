@@ -12,10 +12,10 @@ import Writer from '../Writer';
 import { log } from './../../utilities';
 import Entity, { type AnnotationRange, type EntityConfig } from './Entity';
 import type {
-  AnnotationProps,
   AnnotationContributor,
   AnnotationCreator,
   AnnotationFormat,
+  AnnotationProps,
 } from './types';
 
 const leafWriterVersion = pck.version;
@@ -275,6 +275,7 @@ class AnnotationsManager {
 
     // !should add just namespaces used on this particualar annotation
     namespaces.forEach((uri, namespace) => {
+      //@ts-ignore
       annotation['@context'][namespace] = uri;
     });
 
@@ -285,7 +286,7 @@ class AnnotationsManager {
       }
     } else if (entity.isNote()) {
       const noteEl = $(`#${entity.getId()}`, this.writer.editor?.getBody());
-      const noteContent = noteEl[0].textContent ?? undefined;
+      const noteContent = noteEl[0]?.textContent ?? undefined;
       if (!Array.isArray(annotation['oa:hasBody'])) {
         annotation['oa:hasBody']['dc:format'] = 'text/plain';
         annotation['oa:hasBody']['rdf:value'] = noteContent;
