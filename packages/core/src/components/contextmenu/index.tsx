@@ -1,80 +1,54 @@
 import { Menu } from '@mui/material';
+import { Provider } from 'jotai';
 import React, { useEffect, useState } from 'react';
-import Writer from '../../js/Writer';
 import { useActions, useAppState } from '../../overmind';
 import { Collection, Header, type ItemProps } from './components';
 import { useContextmenu } from './hooks';
 
-export { useContextmenu } from './hooks';
+export const MIN_WIDTH = 250;
 
-interface ContextMenuProps {
-  writer: Writer;
-}
-
-export const ContextMenu = ({ writer }: ContextMenuProps) => {
+export const ContextMenu = () => {
   const { isReadonly, settings } = useAppState().editor;
   const { contextMenu } = useAppState().ui;
 
   const { closeContextMenu } = useActions().ui;
 
-  const { collectionType, getItems, initialize, MIN_WIDTH, query, tagName, xpath, tagMeta } =
-    useContextmenu(writer, contextMenu);
+  const { getItems, initialize } = useContextmenu();
 
-  const [anchorReference, setAnchorReference] = useState<'anchorPosition' | 'anchorEl'>(
-    'anchorPosition'
-  );
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>();
+  const [anchorRef, setAnchorRef] = useState<'anchorPosition' | 'anchorEl'>('anchorPosition');
+  const [anchorEl, setAnchorEl] = useState<Element | null>(null);
   const [options, setOptions] = useState<ItemProps[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [show, setShow] = useState(false);
-  const [visibleList, setVisibleList] = useState<ItemProps[]>(options);
 
   useEffect(() => {
     if (!contextMenu.show) return;
     if (isReadonly) return;
 
-    setShow(true);
-
     const initialzed = initialize();
     if (!initialzed) return;
 
-    const loadItems = async () => {
-      setIsLoading(true);
-      const options = await getItems();
-      setIsLoading(false);
-
-      if (!options) return;
-
-      setOptions(options);
-      setVisibleList(options);
-    };
-
-    loadItems();
-
-    const { element } = contextMenu;
-    setAnchorReference(element ? 'anchorEl' : 'anchorPosition');
-    setAnchorEl(element);
-
-    setMenuPosition({
+    setAnchorRef(contextMenu.anchorEl ? 'anchorEl' : 'anchorPosition');
+    setAnchorEl(contextMenu.anchorEl ?? null);
+    setPosition({
       top: contextMenu.position?.posY ?? 0,
       left: contextMenu.position?.posX ?? 0,
     });
 
+    setShow(true);
+    loadItems();
+
     return () => {
-      setMenuPosition(undefined);
+      setPosition({ top: 0, left: 0 });
       setOptions([]);
-      setIsLoading(false);
-      setVisibleList([]);
       setShow(false);
     };
-  }, [contextMenu]);
+  }, [contextMenu.show]);
 
-  const handleQuery = (searchQuery: string) => {
-    const result = query(options, searchQuery);
-    if (!result) return setVisibleList(options);
-
-    setVisibleList(result);
+  const loadItems = async () => {
+    const options = await getItems();
+    if (!options) return;
+    setOptions(options);
   };
 
   const handleClose = () => closeContextMenu();
@@ -84,8 +58,8 @@ export const ContextMenu = ({ writer }: ContextMenuProps) => {
       {show && (
         <Menu
           anchorEl={anchorEl}
-          anchorPosition={menuPosition}
-          anchorReference={anchorReference}
+          anchorPosition={position}
+          anchorReference={anchorRef}
           id="contextmenu"
           container={document.getElementById(`${settings.container}`)}
           keepMounted
@@ -95,14 +69,10 @@ export const ContextMenu = ({ writer }: ContextMenuProps) => {
           PaperProps={{ elevation: 4 }}
           variant="menu"
         >
-          <Header count={contextMenu.count} tagName={tagName} tagMeta={tagMeta} xpath={xpath} />
-          <Collection
-            handleQuery={handleQuery}
-            collectionType={collectionType}
-            fullLength={options.length}
-            isLoading={isLoading}
-            list={visibleList}
-          />
+          <Header count={contextMenu.count} nodeType={contextMenu.nodeType} />
+          <Provider>
+            <Collection list={options} searchable={contextMenu.eventSource === 'ribbon'} />
+          </Provider>
         </Menu>
       )}
     </>

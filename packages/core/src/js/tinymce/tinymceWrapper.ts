@@ -173,7 +173,7 @@ export const tinymceWrapperInit = function ({
           if (!fscreen.fullscreenElement) posY = posY - 78;
 
           writer.overmindActions.ui.showContextMenu({
-            show: true,
+            eventSource: 'editor',
             position: { posX, posY },
             useSelection: true,
           });

@@ -1297,6 +1297,25 @@ class Tagger {
     doRemove();
   }
 
+  removeNodeTextContent(xpath: string) {
+    if (!this.writer.editor) return;
+
+    const node = this.writer.utilities.evaluateXPath(this.writer.editor.getBody(), xpath);
+    if (node === null || typeof node !== 'object') return;
+
+    //Add empty Unicode Character 'ZERO WIDTH NO-BREAK SPACE' to hold the node in place
+    if (node.nodeType === Node.TEXT_NODE) node.textContent = '\uFEFF';
+  }
+
+  removeNodeText(xpath: string) {
+    if (!this.writer.editor) return;
+
+    const node = this.writer.utilities.evaluateXPath(this.writer.editor.getBody(), xpath);
+    if (node === null || typeof node !== 'object') return;
+
+    node.parentNode?.removeChild(node);
+  }
+
   /**
    * Look for removed entities
    * @param {Element|Range} domContent
