@@ -1,15 +1,20 @@
 import { Menu } from '@mui/material';
-import { Provider } from 'jotai';
+import { Provider, useSetAtom } from 'jotai';
 import React, { useEffect, useState } from 'react';
 import { useActions, useAppState } from '../../overmind';
 import { Collection, Header, type ItemProps } from './components';
 import { useContextmenu } from './hooks';
+import { tagMetaAtom, tagNameAtom, xpathAtom } from './store';
 
 export const MIN_WIDTH = 250;
 
 export const ContextMenu = () => {
   const { isReadonly, settings } = useAppState().editor;
   const { contextMenu } = useAppState().ui;
+
+  const setTagMeta = useSetAtom(tagMetaAtom);
+  const setTagName = useSetAtom(tagNameAtom);
+  const setXpath = useSetAtom(xpathAtom);
 
   const { closeContextMenu } = useActions().ui;
 
@@ -42,6 +47,10 @@ export const ContextMenu = () => {
       setPosition({ top: 0, left: 0 });
       setOptions([]);
       setShow(false);
+
+      setXpath(null);
+      setTagName(null);
+      setTagMeta(null);
     };
   }, [contextMenu.show]);
 
