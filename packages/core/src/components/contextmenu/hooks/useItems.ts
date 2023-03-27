@@ -560,14 +560,14 @@ export const useItems = (ctx: State) => {
     }
 
     if (ctx.eventSource === 'markupPanel') {
-      items.push({ type: 'divider', name: 'divider' });
-
-      items.push({
-        type: 'action',
-        name: 'Show Text Nodes',
-        icon: markupPanel.showTextNodes ? 'checkIcon' : undefined,
-        onClick: () => showTextNodes(),
-      });
+      //? Not until we develp better support for textNodes
+      // items.push({ type: 'divider', name: 'divider' });
+      // items.push({
+      //   type: 'action',
+      //   name: t('Show Text Nodes'),
+      //   icon: markupPanel.showTextNodes ? 'checkIcon' : undefined,
+      //   onClick: () => showTextNodes(),
+      // });
     }
 
     return items;
