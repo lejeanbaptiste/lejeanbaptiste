@@ -15,7 +15,7 @@ import type { EditSourceDialogProps } from '../type';
 const Editor = React.lazy(() => import('./Editor'));
 
 export const EditSourceDialog = ({
-  content,
+  content = '',
   id,
   onClose,
   open = false,
