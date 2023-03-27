@@ -1,5 +1,4 @@
-import { ListItemButton, Stack, Tooltip, useTheme } from '@mui/material';
-import chroma from 'chroma-js';
+import { ListItemButton, Stack, Tooltip, alpha, useTheme } from '@mui/material';
 import classNames from 'classnames';
 import React, {
   forwardRef,
@@ -145,16 +144,15 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
           cursor: !multiselectable ? 'not-allowed' : 'pointer',
           '&.Mui-selected': {
             bgcolor: isEntity
-              ? chroma(color).alpha(palette.action.selectedOpacity).css()
-              : chroma(palette.primary[palette.mode]).alpha(palette.action.selectedOpacity).css(),
+              ? alpha(color, palette.action.selectedOpacity)
+              : alpha(palette.primary[palette.mode], palette.action.selectedOpacity),
             '&:hover': {
               bgcolor: isEntity
-                ? chroma(color)
-                    .alpha(palette.action.hoverOpacity + palette.action.selectedOpacity)
-                    .css()
-                : chroma(palette.primary[palette.mode])
-                    .alpha(palette.action.hoverOpacity + palette.action.selectedOpacity)
-                    .css(),
+                ? alpha(color, palette.action.hoverOpacity + palette.action.selectedOpacity)
+                : alpha(
+                    palette.primary[palette.mode],
+                    palette.action.hoverOpacity + palette.action.selectedOpacity
+                  ),
             },
           },
         }}
