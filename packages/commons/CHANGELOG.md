@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.6.5
+
+### Patch Changes
+
+- Updated dependencies
+  - bump up: @cwrc/leafwriter@2.7.2
+
 ## 2.6.4
 
 ### Patch Changes
