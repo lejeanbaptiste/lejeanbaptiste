@@ -48,7 +48,15 @@ export interface EditSchemaDialogProps extends IDialog {
   schemaId?: string;
 }
 
-export type DialogProps = IDialog & SimpleDialogProps & EditSchemaDialogProps;
+export interface EditSourceDialogProps extends IDialog {
+  content: string;
+  type?: 'content' | 'header';
+}
+
+export type DialogProps = IDialog &
+  SimpleDialogProps &
+  EditSchemaDialogProps &
+  EditSourceDialogProps;
 
 export interface DialogBarProps {
   dismissed?: boolean;

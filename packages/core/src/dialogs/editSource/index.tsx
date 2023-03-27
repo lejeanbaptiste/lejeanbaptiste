@@ -10,16 +10,12 @@ import {
 import React, { Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
-import { IDialog } from '../type';
+import type { EditSourceDialogProps } from '../type';
 
 const Editor = React.lazy(() => import('./Editor'));
-export interface EditSourceDialogProps extends IDialog {
-  content?: string;
-  type?: 'content' | 'header';
-}
 
 export const EditSourceDialog = ({
-  content = '',
+  content,
   id,
   onClose,
   open = false,
