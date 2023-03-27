@@ -456,7 +456,7 @@ export const useItems = (ctx: State) => {
     } else {
       items.push({
         type: 'action',
-        name: ctx.isEntity ? 'Copy Entity' : 'Copy Tag and Contents',
+        name: ctx.isEntity ? t('Copy Entity') : t('Copy Tag and Contents'),
         icon: 'copy',
         onClick: () => ctx.tagId && writer.tagger.copyTag(ctx.tagId),
       });
