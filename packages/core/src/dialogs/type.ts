@@ -49,7 +49,7 @@ export interface EditSchemaDialogProps extends IDialog {
 }
 
 export interface EditSourceDialogProps extends IDialog {
-  content: string;
+  content?: string;
   type?: 'content' | 'header';
 }
 
