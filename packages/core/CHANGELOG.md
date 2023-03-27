@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 2.7.2
+
+### Patch Changes
+
+- Layout manager:
+  - Handle hide panels (null) when opened in readonly mode [8b084d51e1266ef7bc4929b31fe08fae828744e4]
+  - Make TOC the default panel on the left sidebar [b012c6df8e86f242769e97920e8552ae8d1b13b3]
+- Markup Panel:
+  - Replace 'inherit' with the palette primary color when entities are not found [c08331e3dcb43def034c0467715a5f35d1fb8cff]
+- Context Menu:
+  - Prevent displaying textNodes as sugestions until we have better support [2b66d7dc2fc9fc6eca19357aedf33c6230562247]
+  - Hidde the options to show textNodes until we have better support [384cebeefdc46f9e3bbf23c53f1dedd7f332988c]
+Edit Source Dialog:
+  - Accept the property type header to update just this section of the document [8c629a0ec7ce00dad76c9750ae5d5d1ead1f1c4a] [2ea6417f8943bb0b1d1b1b890373f8a9957996d9]
+
 ## 2.7.1
 
 ### Patch Changes
