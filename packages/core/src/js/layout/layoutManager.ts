@@ -367,10 +367,11 @@ class LayoutManager {
       if (!Array.isArray(modules)) modules = [modules];
 
       modules.forEach(({ id, title }) => {
-        const tab = document.querySelector(`.ui-layout-${region} > ul > li#${id}`) as HTMLElement;
+        const tab = document.querySelector(`.ui-layout-${region} > ul > li#${id}`);
+        if (!tab) return;
 
         if (WRITE_ONLY_MODULES.includes(id as ISettingsModuleName)) {
-          tab.style.display = readonly ? 'none' : '';
+          (tab as HTMLElement).style.display = readonly ? 'none' : '';
         }
 
         if (Array.isArray(title)) {
