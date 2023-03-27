@@ -216,7 +216,10 @@ export const getPossibleNodesAt = async ({ state }: Context, params: PossibleNod
   const workerValidator = window.leafwriterValidator;
 
   const response = await workerValidator.getPossibleNodesAt(params, { speculativeValidate: true });
-  return response?.nodes;
+
+  //? filter text nodes until we have a beter support for it
+  const nodes = response?.nodes.filter((node) => node.type !== 'text');
+  return nodes;
 };
 
 export const clear = ({ state }: Context) => {
