@@ -25,8 +25,7 @@ export const useItem = ({ content = '', id, isEntity = false, selected = false }
   const [details, setDetails] = useState<string | undefined>(undefined);
 
   const entityType = isEntity ? entitiesManager.getEntity(id)?.getType() : null;
-
-  const color = useMemo(() => (entityType ? entity[entityType].color.main : 'inherent'), [id]);
+  const color = entityType ? entity[entityType].color.main : palette.primary[palette.mode];
 
   const icon = useMemo(
     () =>
