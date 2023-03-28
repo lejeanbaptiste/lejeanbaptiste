@@ -1,28 +1,28 @@
 .cwrc .ui-widget.ui-widget-content {
-	border: 0px solid #c5c5c5 !important;
+  border: 0px solid #c5c5c5 !important;
 }
 
 .cwrc .ui-widget-content {
-	/* border: 0px solid #dddddd !important; */
+  /* border: 0px solid #dddddd !important; */
 }
 
 .cwrc .ui-widget-header {
-	border: 0px solid #dddddd !important;
-	background: #f5f5f5 !important;
+  border: 0px solid #dddddd !important;
+  background: #f5f5f5 !important;
 }
 
 .cwrc .ui-tabs .ui-tabs-nav li {
-	border-bottom-width: 1px !important;
-	border-radius: 4px !important;
+  border-bottom-width: 1px !important;
+  border-radius: 4px !important;
 }
 
 .cwrc .ui-tabs .ui-tabs-nav li.ui-tabs-active {
-	margin-bottom: 0px !important;
-	padding-bottom: 0px !important;
+  margin-bottom: 0px !important;
+  padding-bottom: 0px !important;
 }
 
 .cwrc .annotationDialog .ui-datepicker-trigger {
-	width: 20px;
-	margin-left: 8px;
-	cursor: pointer;
+  width: 20px;
+  margin-left: 8px;
+  cursor: pointer;
 }

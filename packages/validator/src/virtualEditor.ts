@@ -1,27 +1,25 @@
 import { safeParse, Validator } from '@cwrc/salve-dom-leafwriter';
-import {
-  AttributeNameEvent,
-  EndTagEvent,
-  EnterStartTagEvent,
-  EventSet,
-  Grammar /* , GrammarWalker, NameResolver */,
-  Name,
-  TextEvent,
-} from '@cwrc/salve-leafwriter';
+import { EventSet, Grammar /* , GrammarWalker, NameResolver */ } from '@cwrc/salve-leafwriter';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/unionBy';
 import { initialize } from './conversion';
 import { logEnabledFor } from './log';
-import { GetValidTagsAtParameters, GetValidTagsAtResponse, speculateAt } from './possible';
-import { ElementDetail } from './sharedTypes';
+import { speculateAt } from './speculate';
+import type {
+  EventName,
+  NodeDetail,
+  PossibleNodesAt,
+  PossibleNodesAtOptions,
+  Target,
+} from './types';
 import { evaluateXPath, getFullNameFromDocumentation } from './utils';
 import { validate, ValidationResponse } from './validate';
 
 export interface InitializeOptions {
-  id: string;
-  url: string;
   cachedSchema?: string;
   createManifest?: boolean;
+  id: string;
+  url: string;
 }
 
 class VirtualEditor {
@@ -98,22 +96,12 @@ class VirtualEditor {
     const container = this.evaluateXPath(parentXpath);
     if (!container) return;
 
-    const possibleAt = this.validator.possibleAt(container, index);
+    const possibleEventsAt = this.validator.possibleAt(container, index);
+    const nodes = this.parseValidatorEvents(possibleEventsAt, {
+      only: ['enterStartTag'],
+    });
 
-    const event = Array.from(possibleAt).find((event) => {
-      return (
-        event.name === 'enterStartTag' &&
-        'name' in event.namePattern &&
-        event.namePattern.name === tagName
-      );
-    }) as EnterStartTagEvent;
-
-    if (!event) return;
-
-    const { documentation, name, ns } = event.namePattern as Name;
-    const fullName = getFullNameFromDocumentation(documentation);
-
-    const tag: ElementDetail = { type: 'tag', name, documentation, fullName, ns };
+    const tag = nodes.find((attr) => attr.name === tagName);
 
     if (logEnabledFor('DEBUG')) {
       console.timeEnd('Timer');
@@ -122,55 +110,31 @@ class VirtualEditor {
 
     return tag;
   }
-  async getElementsForTagAt(xpath: string, index: number = 0) {
+
+  async getNodesForTagAt(xpath: string, index: number = 0) {
     if (!this.document || !this.validator) {
       throw new Error('vEditor: Document or Validator not set');
     }
 
     if (logEnabledFor('DEBUG')) {
-      console.groupCollapsed(`getElementsForTagAt: ${xpath}:${index}`);
-      console.time('Get elements for Tag');
+      console.groupCollapsed(`getNodesForTagAt: ${xpath}:${index}`);
+      console.time('Get nodes for Tag');
     }
 
     const container = this.evaluateXPath(xpath);
     if (!container) return;
 
-    const possibleAt: EventSet = this.validator.possibleAt(container, index, false);
-
-    //Pepare to store possible events
-    let elements: ElementDetail[] = [];
-
-    Array.from(possibleAt).forEach((event) => {
-      const SKIP_EVENTS = new Set(['leaveStartTag']);
-      if (SKIP_EVENTS.has(event.name)) return;
-
-      //get events for text or endtags, since they have less information
-      if (event.name === 'text' || event.name === 'endTag') {
-        const ev: EndTagEvent | TextEvent = event as EndTagEvent | TextEvent;
-        elements.push({ type: 'node', name: ev.name });
-        return;
-      }
-
-      if ('namePattern' in event && 'name' in event.namePattern) {
-        const { name, documentation, ns } = event.namePattern;
-        const fullName = getFullNameFromDocumentation(documentation);
-        elements.push({ type: 'tag', name, fullName, documentation, ns });
-        return;
-      }
+    const possibleEventsAt: EventSet = this.validator.possibleAt(container, index, false);
+    const nodes = this.parseValidatorEvents(possibleEventsAt, {
+      only: ['text', 'enterStartTag'],
     });
 
-    //remove duplicates and sort alphabetacally;
-    if (elements.length > 0) {
-      elements = uniqBy(elements, 'name');
-      elements = sortBy(elements, ['name']);
-    }
-
     if (logEnabledFor('DEBUG')) {
-      console.timeEnd('Get elements for Tag');
+      console.timeEnd('Get nodes for Tag');
       console.groupEnd();
     }
 
-    return elements;
+    return nodes;
   }
 
   async getAttributesForTagAt(xpath: string, index: number = 1) {
@@ -186,22 +150,10 @@ class VirtualEditor {
     const container = this.evaluateXPath(xpath);
     if (!container) return;
 
-    const possibleAt: EventSet = this.validator.possibleAt(container, index, true);
-
-    let atttibutes: ElementDetail[] = [];
-
-    Array.from(possibleAt).forEach((event) => {
-      if ('namePattern' in event && 'name' in event.namePattern) {
-        const { name, ns, documentation } = event.namePattern;
-        const fullName = getFullNameFromDocumentation(documentation);
-        atttibutes.push({ type: 'attribute', name, ns, fullName, documentation });
-      }
+    const possibleEventsAt: EventSet = this.validator.possibleAt(container, index, true);
+    const atttibutes = this.parseValidatorEvents(possibleEventsAt, {
+      only: ['attributeName'],
     });
-
-    if (atttibutes.length > 0) {
-      atttibutes = uniqBy(atttibutes, 'name');
-      atttibutes = sortBy(atttibutes, ['name']);
-    }
 
     if (logEnabledFor('DEBUG')) {
       console.timeEnd('Timer');
@@ -210,6 +162,7 @@ class VirtualEditor {
 
     return atttibutes;
   }
+
   async getTagAttributeAt(attributeName: string, parentXpath: string) {
     if (!this.document || !this.validator) {
       throw new Error('vEditor: Document or Validator not set');
@@ -223,22 +176,12 @@ class VirtualEditor {
     const container = this.evaluateXPath(parentXpath);
     if (!container) return;
 
-    const possibleAt: EventSet = this.validator.possibleAt(container, 1, true);
+    const possibleEventsAt: EventSet = this.validator.possibleAt(container, 1, true);
+    const attributes = this.parseValidatorEvents(possibleEventsAt, {
+      only: ['attributeName'],
+    });
 
-    const event = Array.from(possibleAt).find((event) => {
-      return (
-        event.name === 'attributeName' &&
-        'name' in event.namePattern &&
-        event.namePattern.name === attributeName
-      );
-    }) as AttributeNameEvent;
-
-    if (!event) return;
-
-    const { documentation, name, ns } = event.namePattern as Name;
-    const fullName = getFullNameFromDocumentation(documentation);
-
-    const attribute: ElementDetail = { type: 'attribute', name, documentation, fullName, ns };
+    const attribute = attributes.find((attr) => attr.name === attributeName);
 
     if (logEnabledFor('DEBUG')) {
       console.timeEnd('Timer');
@@ -247,6 +190,7 @@ class VirtualEditor {
 
     return attribute;
   }
+
   async getValuesForTagAttributeAt(xpath: string) {
     if (!this.document || !this.validator) {
       throw new Error('vEditor: Document or Validator not set');
@@ -257,84 +201,66 @@ class VirtualEditor {
     const container = this.evaluateXPath(xpath);
     if (!container) return;
 
-    const possibleAt: EventSet = this.validator.possibleAt(container, 1, false);
-
-    const attrValues: ElementDetail[] = [];
-
-    Array.from(possibleAt).forEach((event) => {
-      if (event.name === 'attributeValue') {
-        const name = event.value as string;
-        attrValues.push({ type: 'attributeValue', name });
-      }
+    const possibleEventsAt = this.validator.possibleAt(container, 1, false);
+    const attributeValues = this.parseValidatorEvents(possibleEventsAt, {
+      only: ['attributeValue'],
     });
 
     if (logEnabledFor('DEBUG')) console.timeEnd('Get Value for Tag Attribute');
 
-    return attrValues;
+    return attributeValues;
   }
 
-  async getValidTagsAt({ index, xpath, selection, speculate = true }: GetValidTagsAtParameters) {
+  async getPossibleNodesAt(
+    target: Target,
+    options: PossibleNodesAtOptions = { speculativeValidate: true }
+  ) {
     if (!this.document || !this.validator) {
       throw new Error('vEditor: Document or Validator not set');
     }
 
+    const { index, xpath, selection } = target;
+    const { speculativeValidate } = options;
+
     const _type = selection ? ` - ${selection.type}` : '';
     if (logEnabledFor('DEBUG')) {
-      console.groupCollapsed(`ValidAt: ${xpath}${_type}`);
-      console.time('Timer');
+      console.groupCollapsed(`PosssibleAt: ${xpath}${_type}`);
+      console.time(`PosssibleAt: ${xpath}${_type}`);
     }
 
     const container = this.evaluateXPath(xpath);
     if (!container) return;
 
-    const possibleAt: EventSet = this.validator.possibleAt(container, index);
-    const possibleTags = this.storePossibleTags(possibleAt);
+    const possibleEventsAt = this.validator.possibleAt(container, index);
+    let possibleNodes = this.parseValidatorEvents(possibleEventsAt, {
+      skip: ['leaveStartTag', 'endTag'],
+    });
 
-    const result: GetValidTagsAtResponse = { index, possible: possibleTags, xpath };
-
-    if (speculate) {
-      const speculativeTags = speculateAt(this, { container, index, possibleTags, selection });
-      result.speculative = speculativeTags;
+    if (speculativeValidate) {
+      const speculativeNode = speculateAt(
+        { document: this.document, validator: this.validator },
+        { container, index, possibleNodes, selection }
+      );
+      possibleNodes = speculativeNode;
     }
 
     if (logEnabledFor('DEBUG')) {
-      console.timeEnd('Timer');
+      console.timeEnd(`PosssibleAt: ${xpath}${_type}`);
       console.groupEnd();
     }
 
+    const result: PossibleNodesAt = { target, nodes: possibleNodes };
     return result;
   }
 
-  private storePossibleTags(possibleAt: EventSet) {
-    const skipEvent = new Set(['leaveStartTag', 'endTag', 'text']);
-    let possibleTags: ElementDetail[] = [];
-
-    Array.from(possibleAt).forEach((event) => {
-      if (skipEvent.has(event.name)) return;
-
-      if ('namePattern' in event && 'name' in event.namePattern) {
-        const { name, documentation } = event.namePattern;
-        const fullName = getFullNameFromDocumentation(documentation);
-        possibleTags.push({ type: 'tag', name, fullName });
-      }
-    });
-
-    possibleTags = uniqBy(possibleTags, 'name');
-    possibleTags = sortBy(possibleTags, ['name']);
-
-    return possibleTags;
+  async getValidNodesAt(target: Target) {
+    const possibleNodes = await this.getPossibleNodesAt(target, { speculativeValidate: true });
+    if (!possibleNodes) return;
+    possibleNodes.nodes = possibleNodes.nodes.filter((node) => !node.invalid);
+    return possibleNodes;
   }
 
-  private evaluateXPath(xpath: string) {
-    if (!this.document || !this.validator)
-      throw new Error('vEditor: Document or Validator not set');
-
-    return evaluateXPath(xpath, this.document);
-  }
-
-  getDocumentation(tagName: string = '') {
-    if (tagName === '') return;
-
+  getDocumentation(tagName: string): string {
     if (!this.schema) throw new Error('schema is not set');
 
     //@ts-ignore
@@ -357,6 +283,71 @@ class VirtualEditor {
     this.validator = undefined;
 
     return this;
+  }
+
+  private parseValidatorEvents(
+    events: EventSet,
+    options: { only?: EventName[]; skip?: EventName[] }
+  ) {
+    let nodes: NodeDetail[] = [];
+
+    const { only, skip } = options;
+    const skipEvents = new Set([...(skip ?? [])]);
+    const onlyEvents = new Set([...(only ?? [])]);
+
+    Array.from(events).forEach((event) => {
+      if (skipEvents.has(event.name) && !onlyEvents.has(event.name)) return;
+
+      if (event.name === 'text') {
+        const { name, value } = event;
+        nodes.push({ eventType: name, fullName: '#text', name, type: name, value });
+        return;
+      }
+
+      if (event.name === 'enterStartTag' || event.name === 'attributeName') {
+        if (event.namePattern.kind !== 'Name') return;
+
+        const { documentation, name, ns } = event.namePattern;
+        const fullName = getFullNameFromDocumentation(documentation);
+        const type = event.isAttributeEvent ? 'attribute' : 'tag';
+
+        nodes.push({ documentation, eventType: event.name, fullName, name, ns, type });
+        return;
+      }
+
+      if (event.name === 'attributeValue') {
+        const { documentation, name, value } = event;
+        const fullName = getFullNameFromDocumentation(documentation);
+        nodes.push({
+          documentation,
+          eventType: name,
+          fullName,
+          name: value as string,
+          type: name,
+          value: value,
+        });
+        return;
+      }
+
+      if (event.name === 'leaveStartTag' || event.name === 'endTag') {
+        const { name } = event;
+        nodes.push({ eventType: name, name, type: 'tag' });
+        return;
+      }
+    });
+
+    nodes = uniqBy(nodes, 'name');
+    nodes = sortBy(nodes, ['type', 'name']);
+
+    return nodes;
+  }
+
+  private evaluateXPath(xpath: string) {
+    if (!this.document || !this.validator) {
+      throw new Error('vEditor: Document or Validator not set');
+    }
+
+    return evaluateXPath(xpath, this.document);
   }
 }
 

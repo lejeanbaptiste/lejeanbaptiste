@@ -5,6 +5,7 @@ import {
   SignInDialog,
   SimpleDialog,
   TemplateDialog,
+  type DialogProps,
   type DialogType,
 } from '../dialogs';
 import { useActions, useAppState } from '../overmind';
@@ -42,7 +43,7 @@ export const useDialog = () => {
       if (!component) return;
 
       // display dialog
-      const { id } = showModal(
+      const { id } = showModal<DialogProps>(
         component,
         {
           ...props,

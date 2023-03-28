@@ -13,7 +13,6 @@ i18next
     // debug: true,
     defaultNS: 'commons',
     fallbackLng: 'en-CA',
-    returnEmptyString: false,
     ns: [
       'commons',
       'cookie_consent',
@@ -25,4 +24,5 @@ i18next
       'templates',
     ],
     resources,
+    returnEmptyString: false,
   });

@@ -1,5 +1,5 @@
 import { Box, Button, ButtonGroup } from '@mui/material';
-import React, { useRef, type FC } from 'react';
+import React, { useRef } from 'react';
 import { useAppState } from '../../../../overmind';
 import type { Authority } from '../../types';
 import Badge from './Badge';
@@ -8,7 +8,7 @@ interface SideMenuProps {
   authorityInView: string[];
 }
 
-const SideMenu: FC<SideMenuProps> = ({ authorityInView }) => {
+const SideMenu = ({ authorityInView }: SideMenuProps) => {
   const { results } = useAppState().lookups;
   const refElemennt = useRef<HTMLDivElement>();
 

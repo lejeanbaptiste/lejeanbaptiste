@@ -1,5 +1,5 @@
 import type {
-  GetValidTagsAtParameters,
+  Target as PossibleNodesAtTarget,
   ValidationResponse,
   Validator,
 } from '@cwrc/leafwriter-validator';
@@ -84,7 +84,7 @@ export const validate = async ({ state, actions }: Context) => {
       return;
     }
 
-    const totalError = valid ? 0 : errors.length;
+    const totalError = valid ? 0 : errors?.length ?? 0;
     actions.validator.updateValidationError(totalError);
 
     writer.event('documentValidated').publish(valid, { valid, errors }, documentString);
@@ -98,10 +98,10 @@ export const updateValidationError = async ({ state }: Context, value: number) =
 };
 
 type GetAtAction =
-  | 'TagAt'
-  | 'ElementsForTagAt'
-  | 'AttributesForTagAt'
   | 'AttributeAt'
+  | 'AttributesForTagAt'
+  | 'NodesForTagAt'
+  | 'TagAt'
   | 'ValuesForTagAttributeAt';
 
 export const getAt = async (
@@ -124,7 +124,7 @@ export const getAt = async (
 ) => {
   const {
     getTagAt,
-    getElementsForTagAt,
+    getNodesForTagAt,
     getAttributesForTagAt,
     getTagAttributeAt,
     getValuesForTagAttributeAt,
@@ -135,9 +135,9 @@ export const getAt = async (
       if (!tagName || !parentXpath) return;
       return await getTagAt({ tagName, parentXpath, index });
 
-    case 'ElementsForTagAt':
+    case 'NodesForTagAt':
       if (!xpath) return;
-      return await getElementsForTagAt({ xpath, index });
+      return await getNodesForTagAt({ xpath, index });
 
     case 'AttributesForTagAt':
       if (!xpath) return;
@@ -167,14 +167,14 @@ export const getTagAt = async (
   return tag;
 };
 
-export const getElementsForTagAt = async (
+export const getNodesForTagAt = async (
   { state }: Context,
   { xpath, index }: { xpath: string; index?: number }
 ) => {
   if (!state.validator.hasWorkerValidator) return;
   const workerValidator = window.leafwriterValidator;
 
-  const tags = await workerValidator.getElementsForTagAt(xpath, index);
+  const tags = await workerValidator.getNodesForTagAt(xpath, index);
   return tags;
 };
 
@@ -211,13 +211,15 @@ export const getValuesForTagAttributeAt = async (
   return values;
 };
 
-export const getValidTagsAt = async ({ state }: Context, params: GetValidTagsAtParameters) => {
+export const getPossibleNodesAt = async ({ state }: Context, params: PossibleNodesAtTarget) => {
   if (!state.validator.hasWorkerValidator) return;
   const workerValidator = window.leafwriterValidator;
 
-  const response = await workerValidator.getValidTagsAt(params);
-  const tags = response.speculative || response.possible;
-  return tags;
+  const response = await workerValidator.getPossibleNodesAt(params, { speculativeValidate: true });
+
+  //? filter text nodes until we have a beter support for it
+  const nodes = response?.nodes.filter((node) => node.type !== 'text');
+  return nodes;
 };
 
 export const clear = ({ state }: Context) => {

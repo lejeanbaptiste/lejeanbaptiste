@@ -156,6 +156,7 @@ const getEntryForPath = (path: string) => {
 
   for (let i = 0; i < tags.length; i++) {
     let tag = tags[i];
+    if (!tag) return;
     if (tag !== '') {
       tag = tag.replace(/\[\d+\]$/, ''); // remove any indexing
       queryDown(

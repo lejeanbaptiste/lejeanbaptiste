@@ -221,6 +221,7 @@ const link: EntityMappingProps = {
 export const cwrcEntry: SchemaMappingProps = {
   blockElements: [],
   header: 'CWRCHEADER',
+  headings: ['HEADING'],
   id: 'xml:id',
   responsibility: 'RESP',
   rdfParentSelector: '/CWRC/CWRCHEADER',

@@ -1,19 +1,16 @@
-//@ts-nocheck
 import $ from 'jquery';
 import 'tinymce/icons/default';
 import 'tinymce/plugins/paste';
 import 'tinymce/themes/silver';
 import tinymce, { type TinyMCE } from 'tinymce/tinymce';
 import type { LeafWriterEditor } from '../../types';
-import { log } from '../../utilities';
-import { addIconPack } from './iconPack';
-import { configureToolbar, toolbarOptions } from './toolbar';
+import { isElement, log } from '../../utilities';
 import './plugins/prevent_delete';
 //TODO: Reassess plugins on tinymce 5.0
 // import './tinymce_plugins/cwrc_path';
 import fscreen from 'fscreen';
-import './plugins/treepaste';
 import Writer from '../Writer';
+import './plugins/treepaste';
 
 declare global {
   interface Window {
@@ -27,20 +24,18 @@ interface TinymceWrapperConfig {
   writer: Writer;
   editorId: string;
   layoutContainerId: string;
-  buttons1: string[];
-  buttons2?: string[];
-  buttons3?: string[];
 }
 
 export const tinymceWrapperInit = function ({
   writer,
   editorId,
   layoutContainerId,
-  buttons1,
-  buttons2,
-  buttons3,
 }: TinymceWrapperConfig) {
-  tinymce.baseURL = `${writer.baseUrl}/js`; // need for skin
+  tinymce.baseURL = `${writer.baseUrl}/js`;
+
+  const toolbar = document.querySelector('#editor-toolbar');
+  const toolbarHeight = toolbar?.getBoundingClientRect().height ?? 0;
+
   tinymce.init({
     selector: `#${editorId}`,
     ui_container: `#${layoutContainerId}`,
@@ -48,7 +43,7 @@ export const tinymceWrapperInit = function ({
       ? `${writer.baseUrl}/css/tinymce/skins/ui/oxide-dark`
       : `${writer.baseUrl}/css/tinymce/skins/ui/oxide`,
 
-    height: '100%',
+    height: `calc(100% - ${toolbarHeight}px)`,
     width: '100%',
     content_css: window.matchMedia('(prefers-color-scheme: dark)').matches
       ? [
@@ -59,9 +54,7 @@ export const tinymceWrapperInit = function ({
           `${writer.baseUrl}/css/tinymce/skins/content/writer/content.min.css`,
           `${writer.baseUrl}/css/editor.css`,
         ],
-
-    doctype:
-      '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
+    doctype: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">`,
     element_format: 'xhtml',
 
     forced_root_block: writer.schemaManager.getBlockTag(),
@@ -84,14 +77,10 @@ export const tinymceWrapperInit = function ({
     plugins: [
       // 'cwrcpath',  //!This was broken before the upgrade
       'preventdelete', //TODO: need to be tested
-      'paste', //TODO: need to be tested
+      'paste', //TODO: need to be tested,
     ],
 
-    toolbar1: buttons1.length > 0 ? buttons1.join(' ') : toolbarOptions.join(' '),
-    toolbar2: buttons2 === undefined ? 'cwrcpath' : buttons2.join(' '),
-    toolbar3: buttons3 === undefined ? '' : buttons3.join(' '),
-    
-    toolbar_mode: 'sliding',
+    toolbar1: '',
 
     menubar: false,
     elementpath: true,
@@ -122,8 +111,7 @@ export const tinymceWrapperInit = function ({
 
       editor.on('init', (event) => {
         if (writer.isReadOnly === true) {
-          writer.layoutManager.hideToolbar();
-          editor.setMode('readonly');
+          editor.mode.set('readonly');
         }
 
         // modify isBlock method to check _tag attributes
@@ -132,8 +120,8 @@ export const tinymceWrapperInit = function ({
 
           // If it's a node then check the type and use the nodeName
           if (typeof node !== 'string') {
-            if (node.nodeType === 1) {
-              const element = node as Element;
+            if (isElement(node)) {
+              const element = node;
               const tag = element.getAttribute('_tag') || element.nodeName;
               return !!editor.schema.getBlockElements()[tag];
             }
@@ -164,7 +152,10 @@ export const tinymceWrapperInit = function ({
         editor.on('BeforeAddUndo', () => {
           /*log.info('before add undo'); */
         });
-        editor.on('NodeChange', onNodeChangeHandler);
+        // editor.on();
+        editor.on('NodeChange', (event) => {
+          onNodeChangeHandler(event.element);
+        });
         editor.on('copy', onCopyHandler);
 
         editor.on('contextmenu', (event) => {
@@ -182,15 +173,12 @@ export const tinymceWrapperInit = function ({
           if (!fscreen.fullscreenElement) posY = posY - 78;
 
           writer.overmindActions.ui.showContextMenu({
-            show: true,
+            eventSource: 'editor',
             position: { posX, posY },
             useSelection: true,
           });
         });
       });
-
-      addIconPack(editor);
-      configureToolbar(writer, editor);
     },
   });
 
@@ -202,14 +190,14 @@ export const tinymceWrapperInit = function ({
 
   writer.event('documentLoaded').subscribe(() => {
     if (!writer.editor) return;
-    const {overmindState, overmindActions} = writer;
-   
+    const { overmindState, overmindActions } = writer;
+
     writer.editor.undoManager.clear();
     writer.editor.isNotDirty = true;
-    
+
     if (!overmindState.document.touched) {
       overmindActions.document.setDocumentTouched(true);
-      overmindActions.editor.setIsEditorDirty(false);
+      overmindActions.editor.setContentHasChanged(false);
     }
 
     // need to explicitly set focus
@@ -219,22 +207,47 @@ export const tinymceWrapperInit = function ({
 
   writer.event('documentSaved').subscribe(() => {
     if (!writer.editor) return;
-    writer.overmindActions.editor.setIsEditorDirty(false);
+    writer.overmindActions.editor.setContentHasChanged(false);
     return (writer.editor.isNotDirty = true);
   });
   writer.event('entityAdded').subscribe(() => {
     if (!writer.editor) return;
-    writer.overmindActions.editor.setIsEditorDirty(true);
+    writer.overmindActions.editor.setContentHasChanged(true);
     return (writer.editor.isNotDirty = false);
   });
   writer.event('entityRemoved').subscribe(() => {
     if (!writer.editor) return;
-    writer.overmindActions.editor.setIsEditorDirty(true);
+    writer.overmindActions.editor.setContentHasChanged(true);
     return (writer.editor.isNotDirty = false);
   });
   writer.event('entityEdited').subscribe(() => {
     if (!writer.editor) return;
-    writer.overmindActions.editor.setIsEditorDirty(true);
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
+  writer.event('tagAdded').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
+  writer.event('tagEdited').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
+  writer.event('tagRemoved').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
+  writer.event('tagContentsRemoved').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
+    return (writer.editor.isNotDirty = false);
+  });
+  writer.event('contentPasted').subscribe(() => {
+    if (!writer.editor) return;
+    writer.overmindActions.editor.setContentHasChanged(true);
     return (writer.editor.isNotDirty = false);
   });
 
@@ -251,8 +264,9 @@ export const tinymceWrapperInit = function ({
   };
 
   const onMouseUpHandler = (event: MouseEvent) => {
+    if (!writer.editor) return;
     doHighlightCheck(event);
-    // doHighlightCheck(writer.editor, event);
+
     writer.event('selectionChanged').publish();
   };
 
@@ -268,22 +282,27 @@ export const tinymceWrapperInit = function ({
 
   const onKeyDownHandler = (event: KeyboardEvent) => {
     if (!writer.editor) return;
+    // if (writer.isReadOnly === true) return
 
     writer.editor.lastKeyPress = event.code; // store the last key press
 
-    if ((tinymce.isMac ? event.metaKey : event.ctrlKey) && event.code === 'f') {
-      // allow search
+    if (tinymce.isMac ? event.metaKey : event.ctrlKey) return;
+
+    //allow select all
+    if ((tinymce.isMac ? event.metaKey : event.ctrlKey) && event.code === 'KeyA') {
       event.preventDefault();
       return;
     }
 
-    writer.overmindActions.editor.setIsEditorDirty(true);
+    if (writer.isReadOnly === true) return;
+
+    writer.overmindActions.editor.setContentHasChanged(true);
     writer.editor.isNotDirty = false;
 
     writer.event('writerKeydown').publish(event);
   };
 
-  function onKeyUpHandler(event: KeyboardEvent) {
+  const onKeyUpHandler = (event: KeyboardEvent) => {
     // nav keys and backspace check
     switch (event.code) {
       case 'Home':
@@ -296,79 +315,87 @@ export const tinymceWrapperInit = function ({
       case 'ArrowLeft':
       case 'Backspace': {
         doHighlightCheck(event);
-        // doHighlightCheck(writer.editor, event);
       }
     }
+
+    if (writer.isReadOnly === true) return;
 
     // update current entity
     const entityId = writer.entitiesManager.getCurrentEntity();
     if (entityId !== null) {
       const content = $('.entityHighlight', writer.editor?.getBody()).text();
       const entity = writer.entitiesManager.getEntity(entityId);
-      if (entity.isNote()) {
+      if (entity?.isNote()) {
         entity.setNoteContent($(`#${entityId}`, writer.editor?.getBody()).html());
       }
-      entity.setContent(content);
+      entity?.setContent(content);
       writer.event('entityEdited').publish(entityId);
     }
 
     if (writer.editor?.currentNode) {
       // check if the node still exists in the document
       if (writer.editor?.currentNode.parentNode === null) {
-        let rng = writer.editor?.selection.getRng(true);
+        let rng = writer.editor?.selection.getRng();
         const parent = rng.commonAncestorContainer.parentNode;
-        // trying to type inside a bogus node?
-        // (this can happen on webkit when typing "over" a selected structure tag)
-        if (parent.getAttribute('data-mce-bogus') !== null) {
-          const $parent = $(parent);
-          let collapseToStart = true;
+        if (isElement(parent)) {
+          // trying to type inside a bogus node?
+          // (this can happen on webkit when typing "over" a selected structure tag)
+          if (parent.getAttribute('data-mce-bogus') !== null) {
+            const $parent = $(parent);
+            let collapseToStart = true;
 
-          let newCurrentNode = $parent.nextAll('[_tag]')[0];
-          if (newCurrentNode === null) {
-            newCurrentNode = $parent.parent().nextAll('[_tag]')[0];
+            let newCurrentNode = $parent.nextAll('[_tag]')[0];
             if (newCurrentNode === null) {
-              collapseToStart = false;
-              newCurrentNode = $parent.prevAll('[_tag]')[0];
+              newCurrentNode = $parent.parent().nextAll('[_tag]')[0];
+              if (newCurrentNode === null) {
+                collapseToStart = false;
+                newCurrentNode = $parent.prevAll('[_tag]')[0];
+              }
             }
-          }
 
-          if (newCurrentNode !== null) {
-            rng.selectNodeContents(newCurrentNode);
-            rng.collapse(collapseToStart);
-            writer.editor?.selection.setRng(rng);
+            if (newCurrentNode) {
+              rng.selectNodeContents(newCurrentNode);
+              rng.collapse(collapseToStart);
+              writer.editor?.selection.setRng(rng);
 
-            window.setTimeout(() => {
-              fireNodeChange(newCurrentNode);
-            }, 0);
+              window.setTimeout(() => {
+                if (newCurrentNode) fireNodeChange(newCurrentNode);
+              }, 0);
+            }
           }
         }
       }
 
       // check if text is allowed in this node
-      if (writer.editor?.currentNode.getAttribute('_textallowed') === 'false') {
-        if (tinymce.isMac ? event.metaKey : event.ctrlKey) {
-          // don't show message if we got here through undo/redo
-          const node = $('[_textallowed="true"]', writer.editor?.getBody()).first();
-          let rng = writer.editor?.selection.getRng(true);
-          rng.selectNodeContents(node[0]);
-          rng.collapse(true);
-          writer.editor?.selection.setRng(rng);
-        } else {
-          if (writer.editor?.currentNode.getAttribute('_entity') !== 'true') {
-            // exception for entities since the entity parent tag can actually encapsulate several tags
-            const currentTag = writer.editor?.currentNode.getAttribute('_tag');
-            writer.dialogManager.show('message', {
-              title: 'No Text Allowed',
-              msg: `Text is not allowed in the current tag: ${currentTag}.`,
-              type: 'error',
-            });
-          }
+      const currentNode = writer.editor?.currentNode;
+      if (isElement(currentNode)) {
+        if (currentNode.getAttribute('_textallowed') === 'false') {
+          if (event.key === 'Meta' || event.ctrlKey) {
+            // if the Meta // command // crtl key -> do nothing
+          } else if (tinymce.isMac ? event.metaKey : event.ctrlKey) {
+            // don't show message if we got here through undo/redo
+            const node = $('[_textallowed="true"]', writer.editor?.getBody()).first();
+            let rng = writer.editor?.selection.getRng();
+            if (node[0]) rng.selectNodeContents(node[0]);
+            rng.collapse(true);
+            writer.editor?.selection.setRng(rng);
+          } else {
+            if (currentNode.getAttribute('_entity') !== 'true') {
+              // exception for entities since the entity parent tag can actually encapsulate several tags
+              const currentTag = currentNode.getAttribute('_tag');
+              writer.dialogManager.show('message', {
+                title: 'No Text Allowed',
+                msg: `Text is not allowed in the current tag: ${currentTag}.`,
+                type: 'error',
+              });
+            }
 
-          //? commented out, seems a bit drastic
-          // remove all text
-          // $(writer.editor?.currentNode).contents().filter(() => {
-          //     return this.nodeType === 3;
-          // }).remove();
+            //? commented out, seems a bit drastic
+            // remove all text
+            // $(writer.editor?.currentNode).contents().filter(function() {
+            //     return this.nodeType === 3;
+            // }).remove();
+          }
         }
       }
     }
@@ -388,8 +415,7 @@ export const tinymceWrapperInit = function ({
           // insert zero-width non-breaking space so empty tag takes up space
           const $node = $(node);
           if ($node.text() === '') $node.text('\uFEFF');
-          writer.tagger.processNewContent(node);
-
+          if (isElement(node)) writer.tagger.processNewContent(node);
           writer.editor?.undoManager.add();
           writer.event('contentChanged').publish();
         }
@@ -397,18 +423,16 @@ export const tinymceWrapperInit = function ({
     }
 
     writer.event('writerKeyup').publish(event);
-  }
+  };
 
   const onChangeHandler = (event: any) => {
     $('br', writer.editor?.getBody()).remove(); // remove br tags that get added by shift+enter
     writer.event('contentChanged').publish();
   };
 
-  const onNodeChangeHandler = (event: any) => {
+  const onNodeChangeHandler = (element: Element) => {
     if (!writer.editor) return;
-
-    let element = event.element;
-    if (element.nodeType !== 1) {
+    if (!isElement(element)) {
       writer.editor.currentNode = writer.utilities.getRootTag()[0];
     } else {
       if (element.getAttribute('id') === 'mcepastebin') return;
@@ -450,7 +474,7 @@ export const tinymceWrapperInit = function ({
           element = sibling !== null ? sibling : element.parentNode;
         } else if (element === writer.editor.getBody()) {
           return;
-        } else {
+        } else if (isElement(element.parentNode)) {
           element = element.parentNode;
         }
 
@@ -478,14 +502,14 @@ export const tinymceWrapperInit = function ({
     writer.event('contentCopied').publish();
   };
 
-  const doHighlightCheck = (event: any, _ev?: any) => {
+  const doHighlightCheck = (event: any) => {
     if (!writer.editor) return;
     // let range = writer.editor?.selection.getRng(true);
     let range = writer.editor.selection.getRng();
 
     // check if inside boundary tag
     const parent = range.commonAncestorContainer;
-    if (parent.nodeType === Node.ELEMENT_NODE && parent.hasAttribute('_entity')) {
+    if (isElement(parent) && parent.hasAttribute('_entity')) {
       writer.entitiesManager.highlightEntity(); // remove highlight
       if (
         (writer.editor?.dom.hasClass(parent, 'start') && event.code === 'ArrowLeft') ||
@@ -493,7 +517,9 @@ export const tinymceWrapperInit = function ({
       ) {
         const prevNode = writer.utilities.getPreviousTextNode(parent);
         if (prevNode) {
+          //@ts-ignore
           range.setStart(prevNode, prevNode.length);
+          //@ts-ignore
           range.setEnd(prevNode, prevNode.length);
         }
       } else {

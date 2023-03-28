@@ -3,47 +3,35 @@ import { schemas } from '@src/config/schemas';
 import { useAnalytics } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
-import React, { useEffect, useRef, type FC } from 'react';
-import { useNavigate } from 'react-router';
+import queryString from 'query-string';
+import React, { useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { MainMenu, Meta, useMenu } from './topbar';
 import { useLeafWriter } from './useLeafWriter';
 
-export const EditView: FC = () => {
+export const EditView = () => {
   const { userState, user } = useAppState().auth;
-  const { autosave, libLoaded, resource } = useAppState().editor;
+  const { contentHasChanged, libLoaded, readonly, resource } = useAppState().editor;
 
   const { getKeycloakAuthToken } = useActions().auth;
-  const {
-    close,
-    getGeonameUsername,
-    loadLeafWriter,
-    setAutosave,
-    setIsDirty,
-    subscribeToTimerService,
-    unsubscribeFromTimerService,
-  } = useActions().editor;
-
+  const { close, getGeonameUsername, loadLeafWriter, setReadonly } = useActions().editor;
   const { setPage } = useActions().ui;
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { analytics } = useAnalytics();
 
-  const {
-    disposeLeafWriter,
-    leafWriter,
-    loadDocumentFromPermalink,
-    setCurrentLeafWriter,
-    tapDocument,
-  } = useLeafWriter();
+  const { leafWriter, loadFromPermalink, setEditorEvents, setCurrentLeafWriter } = useLeafWriter();
   const { onKeydownHandle } = useMenu();
 
   const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // if (divEl.current && !leafWriter) loadLib();
     setPage('edit');
     window.addEventListener('keydown', onKeydownHandle);
+    const { readonly } = queryString.parse(location.search);
+    if (readonly) setReadonly(readonly === 'true' ? true : false);
     return () => {
       window.removeEventListener('keydown', onKeydownHandle);
       setCurrentLeafWriter(null);
@@ -52,7 +40,7 @@ export const EditView: FC = () => {
 
   useEffect(() => {
     if (userState === 'AUTHENTICATED') {
-      if (!resource) loadDocumentFromPermalink();
+      if (!resource) loadFromPermalink();
       loadLib();
       return;
     }
@@ -78,6 +66,7 @@ export const EditView: FC = () => {
 
   const handleResource = async () => {
     if (!resource) return;
+    if (!resource.owner) return;
     if (resource.content) initLeafWriter();
   };
 
@@ -89,6 +78,7 @@ export const EditView: FC = () => {
 
   const initLeafWriter = async () => {
     if (!leafWriter || !resource?.content) return;
+    if (contentHasChanged) return;
 
     const geonamesUsername = await getGeonameUsername();
 
@@ -105,31 +95,13 @@ export const EditView: FC = () => {
       settings: {
         credentials: { nssiToken: userState === 'AUTHENTICATED' ? getKeycloakAuthToken : '' },
         lookups: { authorities: [['geonames', { config: { username: geonamesUsername } }]] },
+        readonly,
         schemas,
       },
       user: author,
     });
 
-    leafWriter.isDirty.subscribe((value) => {
-      setIsDirty(value);
-    });
-
-    leafWriter.onLoad.subscribe(({ schemaName }) => {
-      leafWriter.autosave = autosave;
-      tapDocument(resource, schemaName);
-      subscribeToTimerService(leafWriter);
-    });
-
-    leafWriter.onClose.subscribe(() => {
-      unsubscribeFromTimerService();
-      disposeLeafWriter();
-    });
-
-    leafWriter.onEditorStateChange.subscribe((editorState) => {
-      if (editorState.autosave !== undefined && editorState.autosave !== autosave) {
-        setAutosave(editorState.autosave);
-      }
-    });
+    setEditorEvents();
 
     if (analytics) {
       analytics.track('editor', { opened: true });

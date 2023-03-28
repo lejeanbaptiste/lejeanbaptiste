@@ -48,16 +48,13 @@ export interface LeafWriterOptionsSettings {
   schemas?: Schema[];
   schemasId?: SupportedSchemasId[];
 
-  modules?: Object;
+  modules?: ISettingsModules;
   services?: any;
 
   readonly?: boolean;
   annotator?: boolean;
   mode?: string;
   allowOverlap?: boolean;
-  buttons1?: string[];
-  buttons2?: string[];
-  buttons3?: string[];
 }
 
 export type SupportedSchemasId =
@@ -72,6 +69,25 @@ export type SupportedSchemasId =
   | 'teiMs'
   | 'teiLite'
   | 'reed';
+
+interface ISettingsModules {
+  west: ISettingsModulesPanel[];
+  east: ISettingsModulesPanel[];
+}
+
+interface ISettingsModulesPanel {
+  id: ISettingsModuleName;
+  title: string;
+}
+
+export type ISettingsModuleName =
+  | 'toc'
+  | 'markup'
+  | 'entities'
+  | 'nerve'
+  | 'selection'
+  | 'imageViewer'
+  | 'validation';
 
 export type SupportedEntityLookups =
   | 'dbpedia'
@@ -90,7 +106,7 @@ export interface User {
 }
 
 export const SchemaMappings = ['cwrcEntry', 'orlando', 'tei', 'teiLite'] as const;
-export type SchemaMappingType = typeof SchemaMappings[number];
+export type SchemaMappingType = (typeof SchemaMappings)[number];
 
 export interface Schema {
   id: string;
@@ -99,7 +115,7 @@ export interface Schema {
   rng: string[];
   css: string[];
   editable?: boolean;
-};
+}
 
 export interface Language {
   code: string;
@@ -116,44 +132,33 @@ export interface Error {
   message: string;
 }
 
-//ENTITY
-export enum EntityType {
-  PERSON = 'person',
-  PLACE = 'place',
-  ORGANIZATION = 'organization',
-  ORG = 'org',
-  REFERENCING_STRING = 'referencing_string',
-  RS = 'rs',
-  TITLE = 'title',
-  CITATION = 'citation',
-  NOTE = 'note',
-  DATE = 'date',
-  CORRECTION = 'correction',
-  KEYWORD = 'keyword',
-  LINK = 'link',
-}
+export type EntityType =
+  | 'citation'
+  | 'correction'
+  | 'date'
+  | 'keyword'
+  | 'link'
+  | 'note'
+  | 'organization'
+  | 'place'
+  | 'person'
+  | 'rs'
+  | 'title';
 
 //UI
 export type PaletteMode = 'light' | 'auto' | 'dark';
 
 export interface ContextMenuState {
+  allowsMerge?: boolean;
+  anchorEl?: Element;
+  count?: number;
+  eventSource?: 'editor' | 'ribbon' | 'markupPanel';
+  nodeType?: 'tag' | 'text';
+  position?: { posX: number; posY: number };
   show: boolean;
-  position?: {
-    posX: number;
-    posY: number;
-  };
-  eventSource?: string;
   tagId?: string | string[];
   useSelection?: boolean;
-  allowsTagAround?: boolean;
-  element?: HTMLElement | null;
-  hasContentSelection?: boolean;
-  isEntity?: boolean;
-  isHeader?: boolean;
-  isRoot?: boolean;
-  isMultiple?: boolean;
-  rng?: Range;
-  tagName?: string | null;
+  xpath?: string;
 }
 
 //---------
@@ -183,3 +188,44 @@ export interface ScreenshotParams {
   windowWidth?: number;
   windowHeight?: number;
 }
+
+export type Side = 'left' | 'right';
+
+export type PanelId =
+  | 'toc'
+  | 'markup'
+  | 'entities'
+  | 'nerve'
+  | 'validate'
+  | 'xmlViewer'
+  | 'imageViewer';
+
+export type PanelProp = {
+  id: PanelId;
+  label: string;
+};
+
+export interface SideItem extends PanelProp {
+  hide?: boolean;
+}
+
+export type SideProp = {
+  hide?: boolean;
+  id: Side;
+  items: SideItem[];
+};
+
+export type SectionProp = {
+  activePanel: PanelId | null;
+  collapsed?: boolean;
+  hide?: boolean;
+  id: Side;
+  panels: PanelId[];
+};
+
+export type LayoutProps = {
+  outerLeft?: SideProp;
+  left: SectionProp;
+  right?: SectionProp;
+  outerRight?: SideProp;
+};

@@ -1,5 +1,5 @@
 import { Dialog } from '@mui/material';
-import React, { useEffect, type FC } from 'react';
+import React, { useEffect } from 'react';
 import { useActions, useAppState } from '../../overmind';
 import Footer from './Footer';
 import Header from './Header';
@@ -9,7 +9,7 @@ import QueryField from './QueryField';
 
 export * from './types';
 
-export const EntityLookupDialog: FC = () => {
+export const EntityLookupDialog = () => {
   const { entry, open, type } = useAppState().ui.entityLookupDialogProps;
   const { results } = useAppState().lookups;
   const { initiate, reset } = useActions().lookups;

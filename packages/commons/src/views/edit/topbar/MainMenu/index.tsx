@@ -2,7 +2,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { Box, Divider, IconButton, Stack } from '@mui/material';
 import { Logo } from '@src/components';
 import { useAppState } from '@src/overmind';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { bindFocus, bindMenu, bindTrigger, usePopupState } from 'material-ui-popup-state/hooks';
 import React, { createContext } from 'react';
 import { CascadingMenu } from './CascadingMenu';
@@ -27,12 +27,12 @@ export const MainMenu = () => {
     variant: 'popover',
   });
 
-  const logoVariants = {
+  const logoVariants: Variants = {
     visible: { height: 'auto', opacity: 1 },
     hidden: { height: 0, opacity: 0 },
   };
 
-  const menuButtonVariants = {
+  const menuButtonVariants: Variants = {
     visible: { width: 'auto', opacity: 1 },
     hidden: { width: 0, opacity: 0 },
   };
@@ -80,12 +80,17 @@ export const MainMenu = () => {
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         {...bindMenu(popupState)}
       >
-        {mainMenuOptions.map((item, index) => {
-          if (item === 'divider') return <Divider key={index} />;
-          if (item?.hide === true) return '';
-          if ('popupId' in item) return <SubMenu key={index} {...(item as SubMenuProps)} />;
-          return <Item key={index} {...(item as ItemProps)} />;
-        })}
+        {mainMenuOptions
+          .filter((item) => {
+            if (typeof item === 'string') return item;
+            if (!item.hide) return item;
+          })
+          .map((item, index, arr) => {
+            if (item === 'divider' && arr[index - 1] === 'divider') return null; // Do not duplicate dividers
+            if (item === 'divider') return <Divider key={index} />;
+            if ('popupId' in item) return <SubMenu key={index} {...(item as SubMenuProps)} />;
+            return <Item key={index} {...(item as ItemProps)} />;
+          })}
       </CascadingMenu>
     </Box>
   );

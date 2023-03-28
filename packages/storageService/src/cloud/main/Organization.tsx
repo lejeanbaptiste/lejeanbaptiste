@@ -1,13 +1,13 @@
 import { Avatar, Grid, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
-import React, { FC } from 'react';
-import type { Organization } from '../../types';
+import React from 'react';
 import { useActions, useAppState } from '../../overmind';
+import type { Organization } from '../../types';
 
 interface OrgProps {
   org: Organization;
 }
 
-const Org: FC<OrgProps> = ({ org }) => {
+const Org = ({ org }: OrgProps) => {
   const { selectedItem } = useAppState().common;
   const { setSelectedItem } = useActions().common;
   const { navigateTo } = useActions().cloud;

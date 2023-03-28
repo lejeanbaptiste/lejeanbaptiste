@@ -7,15 +7,15 @@ import {
   sym as RDFsym,
 } from 'rdflib';
 import pck from '../../../package.json';
-import type { EntityTypes } from '../schema/types';
+import { EntityType } from '../../types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import Entity, { type AnnotationRange, type EntityConfig } from './Entity';
 import type {
-  AnnotationProps,
   AnnotationContributor,
   AnnotationCreator,
   AnnotationFormat,
+  AnnotationProps,
 } from './types';
 
 const leafWriterVersion = pck.version;
@@ -275,6 +275,7 @@ class AnnotationsManager {
 
     // !should add just namespaces used on this particualar annotation
     namespaces.forEach((uri, namespace) => {
+      //@ts-ignore
       annotation['@context'][namespace] = uri;
     });
 
@@ -285,7 +286,7 @@ class AnnotationsManager {
       }
     } else if (entity.isNote()) {
       const noteEl = $(`#${entity.getId()}`, this.writer.editor?.getBody());
-      const noteContent = noteEl[0].textContent ?? undefined;
+      const noteContent = noteEl[0]?.textContent ?? undefined;
       if (!Array.isArray(annotation['oa:hasBody'])) {
         annotation['oa:hasBody']['dc:format'] = 'text/plain';
         annotation['oa:hasBody']['rdf:value'] = noteContent;
@@ -544,7 +545,7 @@ class AnnotationsManager {
       if (entityType !== null) break;
     }
 
-    entityConfig.type = entityType as EntityTypes;
+    entityConfig.type = entityType as EntityType;
 
     // range
     let rangeObj: AnnotationRange | undefined = undefined;
@@ -616,7 +617,7 @@ class AnnotationsManager {
     }
     const entityConfig: Partial<EntityConfig> = {};
 
-    const entityType = this.getEntityTypeForAnnotationLegacy(typeUri) as EntityTypes;
+    const entityType = this.getEntityTypeForAnnotationLegacy(typeUri) as EntityType;
     if (entityType) entityConfig.type = entityType;
 
     // range
@@ -693,7 +694,7 @@ class AnnotationsManager {
   /**
    * Returns the entity type, using a annotation type string.
    * @param {string | string[]} annotationTypes The annotation string, e.g. 'cwrc:NaturalPerson'
-   * @returns {string} EntityTypes
+   * @returns {string} EntityType
    */
   private getEntityTypeForAnnotation(annotationTypes: string | string[]) {
     if (!Array.isArray(annotationTypes)) annotationTypes = [annotationTypes];

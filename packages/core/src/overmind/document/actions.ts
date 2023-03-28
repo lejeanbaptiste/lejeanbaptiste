@@ -1,3 +1,4 @@
+import $ from 'jquery';
 import { Context } from '../';
 import Writer from '../../js/Writer';
 
@@ -33,6 +34,42 @@ export const setDocumentUrl = ({ state }: Context, url: string) => {
 export const updateContent = ({ state }: Context, content: string) => {
   if (!state.document.xml) return;
   state.document.xml = content;
+};
+
+export const updateXMLHeader = ({ state }: Context, content: string) => {
+  const parser = new DOMParser();
+
+  let xml: XMLDocument;
+
+  xml = parser.parseFromString(content, 'application/xml');
+  const errorNode = xml.querySelector('parsererror');
+
+  if (errorNode) {
+    window.writer.dialogManager.show('message', {
+      title: 'Invalid XML',
+      msg: 'There was an error parsing the XML.',
+      type: 'error',
+    });
+    return false;
+  }
+
+  let newHeaderString = '';
+
+  $(xml)
+    .find(window.writer.schemaManager.getHeader())
+    .children()
+    .each((index, element) => {
+      newHeaderString += window.writer.converter.buildEditorString(element);
+    });
+
+  const _header = $(
+    `[_tag="${window.writer.schemaManager.getHeader()}"]`,
+    window.writer.editor?.getBody()
+  );
+
+  _header.html(newHeaderString);
+
+  state.editor.contentHasChanged = true;
 };
 
 export const clear = ({ state }: Context) => {

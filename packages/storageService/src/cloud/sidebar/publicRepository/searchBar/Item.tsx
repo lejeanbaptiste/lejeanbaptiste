@@ -1,7 +1,7 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import GroupWorkIcon from '@mui/icons-material/GroupWork';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import React, { FC } from 'react';
+import React from 'react';
 import type { Owner } from '../../../../types';
 
 interface ItemProps {
@@ -9,7 +9,7 @@ interface ItemProps {
   onSelect?: (owner: Owner) => void;
 }
 
-const Item: FC<ItemProps> = ({ item, onSelect }) => {
+const Item = ({ item, onSelect }: ItemProps) => {
   const { name, type, username } = item;
 
   const handleSelect = (owner: Owner) => {

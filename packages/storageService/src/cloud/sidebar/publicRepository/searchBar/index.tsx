@@ -1,4 +1,4 @@
-import { useAutocomplete } from '@mui/base/AutocompleteUnstyled';
+import useAutocomplete from '@mui/base/useAutocomplete';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -13,9 +13,9 @@ import {
   useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import debounce from 'lodash/debounce';
-import React, { FC, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
 import type { Owner } from '../../../../types';
@@ -28,7 +28,7 @@ interface SearchBarProps {
   onSelect?: (owner: Owner) => void;
 }
 
-const SearchBar: FC<SearchBarProps> = ({ collapsible = true, onClear, onChange, onSelect }) => {
+const SearchBar = ({ collapsible = true, onClear, onChange, onSelect }: SearchBarProps) => {
   const { t } = useTranslation();
   const [options, setOptions] = useState<Owner[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +39,7 @@ const SearchBar: FC<SearchBarProps> = ({ collapsible = true, onClear, onChange, 
   const theme = useTheme();
   const isMD = useMediaQuery(theme.breakpoints.down('md'));
 
-  const variants = {
+  const variants: Variants = {
     initial: { height: 0 },
     visible: { height: 'auto' },
     exit: { height: 0, transition: { duration: 0.02 } },

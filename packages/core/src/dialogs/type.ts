@@ -11,14 +11,15 @@ export interface DialogActionProps {
   variant?: 'contained' | 'outlined' | 'text';
 }
 
-export interface IDialog extends Partial<MuiDialogProps> {
+export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   actions?: DialogActionProps[];
   id?: string;
   onBeforeClose?: (action?: string) => Promise<boolean>;
-  onClose?: <T>(action?: string, data?: T) => void;
+  onClose?: <T>(action?: string | undefined, data?: T) => Promise<void> | void;
   preventEscape?: boolean;
   severity?: SeverityType;
   title?: string;
+  content?: string;
 }
 
 export type DialogType =
@@ -29,7 +30,7 @@ export type DialogType =
   | 'simple'
   | 'settings';
 
-interface SimpleDialogMessageProps {
+export interface SimpleDialogMessageProps {
   data?: { [key: string]: any };
   onChangeData?: (data: { [key: string]: any }) => void;
 }
@@ -47,7 +48,15 @@ export interface EditSchemaDialogProps extends IDialog {
   schemaId?: string;
 }
 
-export type DialogProps = IDialog & SimpleDialogProps & EditSchemaDialogProps;
+export interface EditSourceDialogProps extends IDialog {
+  content?: string;
+  type?: 'content' | 'header';
+}
+
+export type DialogProps = IDialog &
+  SimpleDialogProps &
+  EditSchemaDialogProps &
+  EditSourceDialogProps;
 
 export interface DialogBarProps {
   dismissed?: boolean;

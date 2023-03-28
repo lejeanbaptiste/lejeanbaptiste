@@ -1,25 +1,27 @@
-import CloseIcon from '@mui/icons-material/Close';
-import TuneIcon from '@mui/icons-material/Tune';
-import { Dialog, DialogContent, IconButton, Stack, Typography } from '@mui/material';
-import React, { type FC } from 'react';
+import { Dialog, DialogContent, Stack } from '@mui/material';
+import { motion } from 'framer-motion';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
 import type { IDialog } from '../type';
-import AutoritiesPanel from './AuthoritySource';
-import { Autosave } from './Autosave';
-import FontSize from './FontSize';
-import Language from './Language';
-import Resets from './Resets';
-import Section from './Section';
-import ShowEntities from './ShowEntities';
-import ThemeAppearance from './ThemeAppearance';
+import { Section } from './components';
+import { Header } from './Header';
+import { Authorities, Editor, Interface, Reset, MarkupPanel } from './sections';
+import { SideMenu, type MenuItemProps } from './SideMenu';
 
-export const SettingsDialog: FC<IDialog> = ({ id, onClose, open }) => {
-  const { autosave, settings } = useAppState().editor;
+export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
+  const { isReadonly, settings } = useAppState().editor;
+  const { t } = useTranslation('leafwriter');
 
-  const { t } = useTranslation(['leafwriter']);
+  const menuItems: MenuItemProps[] = [
+    { id: 'interface', label: t('commons:interface') },
+    { id: 'editor', label: t('commons:editor') },
+    { id: 'authorities', label: t('commons:authorities'), hide: isReadonly },
+    { id: 'markup-panel', label: t('markup panel'), hide: isReadonly },
+    { id: 'reset', label: t('commons:reset'), hide: isReadonly },
+  ];
 
-  const handleClose = () => onClose(id);
+  const handleClose = () => onClose && onClose(id);
 
   return (
     <Dialog
@@ -30,43 +32,33 @@ export const SettingsDialog: FC<IDialog> = ({ id, onClose, open }) => {
       onClose={handleClose}
       open={open}
     >
-      <Stack direction="row" justifyContent="center" alignItems="center" py={2} spacing={2}>
-        <TuneIcon sx={{ height: 24, width: 24 }} />
-        <Typography sx={{ textTransform: 'capitalize' }} variant="h5">
-          {t('Settings')}
-        </Typography>
-        <IconButton
-          aria-label="close"
-          onClick={handleClose}
-          sx={{
-            position: 'absolute',
-            right: 8,
-            top: 12,
-            color: (theme) => theme.palette.grey[500],
-          }}
-        >
-          <CloseIcon fontSize="inherit" />
-        </IconButton>
+      <Header onClose={handleClose} />
+      <Stack direction="row" overflow="hidden" px={1.5}>
+        <SideMenu items={menuItems} />
+        <DialogContent>
+          <Stack component={motion.div} layout spacing={3}>
+            <Section id="interface" title={t('commons:interface')}>
+              <Interface />
+            </Section>
+            <Section id="editor" title={t('commons:editor')}>
+              <Editor />
+            </Section>
+            {!isReadonly && (
+              <>
+                <Section id="authorities" title={t('commons:authorities')}>
+                  <Authorities />
+                </Section>
+                <Section id="markup-panel" title={t('markup panel')}>
+                  <MarkupPanel />
+                </Section>
+                <Section id="reset" title={t('commons:reset')}>
+                  <Reset />
+                </Section>
+              </>
+            )}
+          </Stack>
+        </DialogContent>
       </Stack>
-      <DialogContent sx={{ width: 500 }}>
-        <Stack spacing={3} sx={{ pt: 2.5 }}>
-          <Section title="Interface">
-            <ThemeAppearance />
-            <Language />
-          </Section>
-          <Section title="Editor">
-            <FontSize />
-            <ShowEntities />
-            {autosave !== undefined && <Autosave />}
-          </Section>
-          <Section title="Authorities">
-            <AutoritiesPanel />
-          </Section>
-          <Section title="Resets">
-            <Resets />
-          </Section>
-        </Stack>
-      </DialogContent>
     </Dialog>
   );
 };

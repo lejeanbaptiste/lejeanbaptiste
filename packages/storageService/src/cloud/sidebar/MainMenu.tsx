@@ -1,8 +1,8 @@
 import { Stack } from '@mui/material';
-import React, { FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CollectionSource } from '../../types';
 import { useActions } from '../../overmind';
+import { CollectionSource } from '../../types';
 import SideButton from './SideButton';
 
 interface MainMenuProps {
@@ -15,7 +15,7 @@ interface MenuOption {
   value: CollectionSource;
 }
 
-const MainMenu: FC<MainMenuProps> = ({ onSelect, selectedMenu }) => {
+const MainMenu = ({ onSelect, selectedMenu }: MainMenuProps) => {
   const { t } = useTranslation();
   const { setCollectionSource } = useActions().cloud;
 

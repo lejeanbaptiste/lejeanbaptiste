@@ -1,17 +1,17 @@
 import { Box, Button, Menu as MuiMenu, MenuItem, Typography } from '@mui/material';
 import { SnackbarKey } from 'notistack';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SeverityType } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';
 import useEditorReaction from '../hooks/useEditorReaction';
 
 interface MenuProps {
-  anchorEl?: HTMLElement;
+  anchorEl?: HTMLElement | null;
   handleClose: () => void;
 }
 
-export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
+export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { editorMode, editorModes } = useAppState().editor;
   const { closeNotificationSnackbar, openDialog, notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation(['leafwriter']);
@@ -45,10 +45,13 @@ export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
         title: `${t('Change Editor Mode')}?`,
         Message: () => <>{text}</>,
         actions: [
-          { action: 'cance', label: t('cancel'), variant: 'outlined' },
-          { action: 'change', label: severity === 'warning' ? t('change anyway') : t('change') },
+          { action: 'cancel', label: t('commons:cancel').toString(), variant: 'outlined' },
+          {
+            action: 'change',
+            label: severity === 'warning' ? t('change anyway').toString() : t('commons:change').toString(),
+          },
         ],
-        onClose: async (action: string) => {
+        onClose: async (action) => {
           if (action !== 'change') return;
           applyChanges(value);
         },
@@ -65,7 +68,7 @@ export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('undo')}
+            {t('commons:undo')}
           </Button>
         ),
       },
@@ -95,7 +98,7 @@ export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
         justifyContent="center"
         mt={-0.5}
         mb={0.5}
-        sx={{ cursor: 'default', backgroundColor: ({ palette }) => palette.action.hover }}
+        sx={{ cursor: 'default', bgcolor: ({ palette }) => palette.action.hover }}
       >
         <Typography sx={{ cursor: 'default' }} variant="caption">
           {t('Editor Mode')}

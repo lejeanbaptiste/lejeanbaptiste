@@ -1,7 +1,11 @@
-import type { PopupProps } from '../../dialogs';
-import type { DialogBarProps } from '../../dialogs';
-import type { EditSourceDialogProps, EntityLookupDialogProps } from '../../dialogs';
-import type { ContextMenuState, Language, NotificationProps } from '../../types';
+import type {
+  DialogBarProps,
+  EditSourceDialogProps,
+  EntityLookupDialogProps,
+  PopupProps
+} from '../../dialogs';
+import { Panel } from '../../layout/Utilities';
+import type { ContextMenuState, Language, LayoutProps, NotificationProps } from '../../types';
 
 type State = {
   contextMenu: ContextMenuState;
@@ -9,8 +13,14 @@ type State = {
   dialogBar: DialogBarProps[];
   editSourceProps: EditSourceDialogProps;
   entityLookupDialogProps: EntityLookupDialogProps;
-  notifications: NotificationProps[];
+  fullscreen: boolean;
   language: Language;
+  layout: LayoutProps;
+  markupPanel: {
+    allowDragAndDrop: boolean;
+    showTextNodes: boolean;
+  };
+  notifications: NotificationProps[];
   popupProps: PopupProps;
   settingsDialogOpen: boolean;
   themeAppearance: 'light' | 'auto' | 'dark';
@@ -23,7 +33,26 @@ export const state: State = {
   dialogBar: [],
   editSourceProps: { open: false },
   entityLookupDialogProps: { open: false },
+  fullscreen: false,
   language: { code: 'en-CA', name: 'english', shortName: 'en' },
+  layout: {
+    outerLeft: { id: 'left', items: [Panel.toc, Panel.markup, Panel.entities] },
+    left: { activePanel: 'markup', id: 'left', panels: ['toc', 'markup', 'entities'] },
+    right: {
+      activePanel: 'imageViewer',
+      collapsed: true,
+      id: 'right',
+      panels: ['imageViewer', 'xmlViewer', 'validate'],
+    },
+    outerRight: {
+      id: 'right',
+      items: [Panel.imageViewer, Panel.xmlViewer, Panel.validate],
+    },
+  },
+  markupPanel: {
+    allowDragAndDrop: false,
+    showTextNodes: false,
+  },
   notifications: [],
   popupProps: { open: false },
   settingsDialogOpen: false,

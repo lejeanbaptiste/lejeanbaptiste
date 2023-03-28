@@ -1,8 +1,8 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import parse from 'autosuggest-highlight/parse';
-import { motion } from 'framer-motion';
-import React, { FC } from 'react';
+import { motion, type Variants } from 'framer-motion';
+import React from 'react';
 
 export interface ResultItem {
   excerpt?: string;
@@ -21,8 +21,8 @@ interface ContentMatchProps {
   text_matches: any[];
 }
 
-const ContentMatch: FC<ContentMatchProps> = ({ text_matches }) => {
-  const variants = {
+const ContentMatch = ({ text_matches }: ContentMatchProps) => {
+  const variants: Variants = {
     initial: { height: 0 },
     visible: { height: 'auto' },
     exit: { height: 0, transition: { duration: 0.02 } },

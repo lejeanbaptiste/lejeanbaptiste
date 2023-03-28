@@ -19,6 +19,7 @@ export const loadLeafWriter = async ({ state }: Context, container: HTMLElement)
 };
 
 export const setResource = async ({ state }: Context, resource?: Resource) => {
+  state.editor.contentHasChanged = false;
   state.editor.resource = resource ? { ...resource } : undefined;
 };
 
@@ -102,9 +103,7 @@ export const save = async (
 
   // Finalize
   actions.editor.setResource(updatedResource);
-
   actions.editor.afterSave();
-
   state.editor.contentLastSaved = content;
 
   return { success: true };
@@ -112,7 +111,7 @@ export const save = async (
 
 export const afterSave = async ({ state, actions }: Context) => {
   actions.storage.updateRecentDocument();
-  actions.editor.setIsDirty(false);
+  actions.editor.setContentHasChanged(false);
 
   state.editor.saveDelayed = false;
   state.editor.isSaving = false;
@@ -148,27 +147,18 @@ export const saveAs = async (
     type: 'save',
   });
 
-  // actions.storage.updateRecentDocument();
-  // actions.editor.setIsDirty(false);
-
   return { success: true };
 };
 
-export const setIsDirty = async ({ state }: Context, value: boolean) => {
-  if (state.editor.isDirty !== value) state.editor.isDirty = value;
-
-  if (value === false) {
-    state.editor.timerService.stop();
-    return;
-  }
-
-  if (state.editor.autosave && state.editor.resource?.provider) state.editor.timerService.start();
+export const setContentHasChanged = ({ state }: Context, value: boolean) => {
+  state.editor.contentHasChanged = value;
 };
 
 export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
-  state.editor.timerService.onTimer.subscribe(async (value) => {
+  state.editor.timerService.onTimer.subscribe(async () => {
     const content = await editor.getContent();
-    const screenshot = await editor.getDocumentScreenshot();
+    if (typeof content !== 'string') return;
+    const screenshot = await editor.getDocumentScreenshot()
     await actions.editor.save({ content, screenshot });
   });
 };
@@ -180,5 +170,9 @@ export const unsubscribeFromTimerService = ({ state }: Context) => {
 export const close = async ({ state, actions }: Context) => {
   actions.editor.setResource();
   state.editor.libLoaded = false;
-  state.editor.isDirty = false;
+  state.editor.contentHasChanged = false;
+};
+
+export const setReadonly = ({ state }: Context, value: boolean) => {
+  state.editor.readonly = value;
 };

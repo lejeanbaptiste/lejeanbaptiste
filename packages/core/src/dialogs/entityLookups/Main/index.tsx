@@ -1,11 +1,11 @@
 import { DialogContent, List, Stack } from '@mui/material';
-import React, { useState, type FC } from 'react';
+import React, { useState } from 'react';
 import { useAppState } from '../../../overmind';
 import CandidateList from './Candidates';
 import ManualEntryField from './Candidates/ManualEntryField';
 import SideMenu from './SideMenu';
 
-const Main: FC = () => {
+const Main = () => {
   const [authorityInView, setAuthorityInView] = useState<string[]>([]);
   const { results } = useAppState().lookups;
 

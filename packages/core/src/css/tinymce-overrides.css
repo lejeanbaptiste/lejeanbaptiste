@@ -6,40 +6,6 @@
   font-size: 14px;
 }
 
-/* tinymce toolbar button override */
-/* .mce-toolbar-grp .mce-btn .mce-txt {
-    line-height: 14px;
-} */
-
-/* tinymce menu overrides */
-/* .mce-cwrc .mce-menu-item {
-    padding: 4px 2px;
-}
-
-.mce-cwrc .mce-menu-item span, .mce-cwrc .mce-btn span {
-    font-size: 1em;
-}
-
-.mce-cwrc .mce-btn {
-    padding: 4px 6px;
-}
-
-.mce-cwrc .mce-btn button {
-    font-size: 1em;
-    line-height: 14px;
-    padding: 0px;
-}
-
-div.mce-cwrc div.mce-menu-item-sep, div.mce-cwrc div.mce-menu-item-sep:hover {
-    margin: 1px;
-}
-
-.mce-cwrc input.mce-textbox {
-    font-size: 1em;
-    height: 26px;
-} */
-
-
 /* tinymce overrides */
 .mce-tinymce.mce-container {
   overflow: hidden;
@@ -72,6 +38,7 @@ div.mce-cwrc div.mce-menu-item-sep, div.mce-cwrc div.mce-menu-item-sep:hover {
 
 .tox-edit-area {
   box-shadow: 0 0 4px #d1d1d1 !important;
-  margin: 4px !important;
+  margin-block: 4px !important;
+  margin-inline: 2px !important;
   border-radius: 4px;
 }

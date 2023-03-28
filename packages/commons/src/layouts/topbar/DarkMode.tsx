@@ -2,10 +2,10 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { IconButton } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
-import { motion } from 'framer-motion';
-import React, { type FC } from 'react';
+import { motion, type Variants } from 'framer-motion';
+import React from 'react';
 
-export const DarkMode: FC = () => {
+export const DarkMode = () => {
   const { darkMode } = useAppState().ui;
   const { setDarkMode } = useActions().ui;
 
@@ -14,7 +14,7 @@ export const DarkMode: FC = () => {
     setDarkMode(value);
   };
 
-  const optionVariants = {
+  const optionVariants: Variants = {
     initial: { y: -100 },
     visible: { y: 0 },
     exit: { y: -100 },

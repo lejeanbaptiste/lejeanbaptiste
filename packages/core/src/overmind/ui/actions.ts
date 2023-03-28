@@ -1,16 +1,27 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
-import type { PopupProps } from '../../dialogs';
+import { supportedLanguages } from '../../config';
 import type { DialogBarProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
-import { ContextMenuState, NotificationProps, PaletteMode } from '../../types';
-import { supportedLanguages } from '../../utilities';
+import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
+import i18n from 'i18next';
 
-export const onInitializeOvermind = ({ actions }: Context, overmind: any) => {
+export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
   //DARK MODE
   const prefPaletteMode: PaletteMode =
     (localStorage.getItem('themeAppearance') as PaletteMode) ?? 'auto';
   actions.ui.setThemeAppearance(prefPaletteMode);
+
+  //LANGUAGE
+  const prefLanguageCode = effects.editor.api.getFromLocalStorage('i18nextLng');
+  if (prefLanguageCode) {
+    const prefLanguage = supportedLanguages.get(prefLanguageCode);
+
+    const language = prefLanguage ?? { code: 'en-CA', name: 'english', shortName: 'en' };
+
+    state.ui.language = language;
+    i18n.changeLanguage(language.shortName);
+  }
 };
 
 export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
@@ -32,12 +43,21 @@ export const setDarkMode = ({ state }: Context, value: boolean) => {
   state.ui.darkMode = value;
 };
 
+export const setFullscreen = ({ state }: Context, value: boolean) => {
+  state.ui.fullscreen = value;
+};
+
+export const toggleFullscreen = ({ state }: Context) => {
+  const isFullscreen = window.writer.layoutManager.toggleFullScreen();
+  state.ui.fullscreen = isFullscreen;
+};
+
 export const closeContextMenu = ({ state }: Context) => {
   state.ui.contextMenu = { show: false };
 };
 
-export const showContextMenu = ({ state }: Context, value: ContextMenuState) => {
-  state.ui.contextMenu = value;
+export const showContextMenu = ({ state }: Context, value: Omit<ContextMenuState, 'show'>) => {
+  state.ui.contextMenu = { ...value, show: true };
 };
 
 export const updateTitle = ({ state }: Context, title: string) => {
@@ -46,11 +66,6 @@ export const updateTitle = ({ state }: Context, title: string) => {
 
 export const resetPreferences = () => {
   localStorage.removeItem('paletteMode');
-};
-
-export const processEditSource = ({ state, actions }: Context, newContent: string) => {
-  state.ui.editSourceProps = { open: false };
-  actions.document.loadDocumentXML(newContent);
 };
 
 export const openEntityLookupsDialog = (
@@ -88,14 +103,14 @@ export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
 export const closeDialog = ({ state }: Context, id: string) => {
   state.ui.dialogBar = [
     ...state.ui.dialogBar.map((dialogBar) => {
-      if (dialogBar.props.id === id) dialogBar.dismissed = true;
+      if (dialogBar.props?.id === id) dialogBar.dismissed = true;
       return dialogBar;
     }),
   ];
 };
 
 export const removeDialog = ({ state }: Context, id: string) => {
-  state.ui.dialogBar = state.ui.dialogBar.filter((dialogBar) => dialogBar.props.id !== id);
+  state.ui.dialogBar = state.ui.dialogBar.filter((dialogBar) => dialogBar.props?.id !== id);
 };
 
 export const setDialogDisplayId = (
@@ -104,7 +119,7 @@ export const setDialogDisplayId = (
 ) => {
   state.ui.dialogBar = [
     ...state.ui.dialogBar.map((dialogBar) => {
-      if (dialogBar.props.id === id) dialogBar.displayId = displayId;
+      if (dialogBar.props?.id === id) dialogBar.displayId = displayId;
       return dialogBar;
     }),
   ];
@@ -148,4 +163,41 @@ export const doNotDisplayDialog = ({ effects }: Context, value: string) => {
 
 export const resetDoNotDisplayDialogs = ({ effects }: Context) => {
   effects.editor.api.removeFromLocalStorage('doNotDisplayDialogs');
+};
+
+export const updateReadonly = ({ state, actions }: Context) => {
+  const { isReadonly } = state.editor;
+
+  window.writer.isReadOnly = isReadonly;
+  window.writer.editor?.mode.set(isReadonly ? 'readonly' : 'design');
+  window.writer.layoutManager.toggleReadonly(isReadonly);
+  window.writer.entitiesList?.toggleReadonly(isReadonly);
+  window.writer.layoutManager.resizeEditor();
+};
+
+export const allowTagDragAndDrop = ({ state }: Context, value: boolean) => {
+  state.ui.markupPanel = {
+    ...state.ui.markupPanel,
+    allowDragAndDrop: value,
+  };
+};
+
+export const showTextNodes = ({ state, actions }: Context, value?: boolean) => {
+  if (!value) value = !state.ui.markupPanel.showTextNodes;
+
+  state.ui.markupPanel = {
+    ...state.ui.markupPanel,
+    showTextNodes: value,
+  };
+
+  actions.ui.allowTagDragAndDrop(value);
+};
+
+export const changePanel = (
+  { state }: Context,
+  { side, panelId }: { side: Uncapitalize<Side>; panelId: PanelId }
+) => {
+  const sidePanel = state.ui.layout[side];
+  if (!sidePanel) return;
+  sidePanel.activePanel = panelId;
 };

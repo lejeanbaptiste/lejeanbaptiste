@@ -1,5 +1,5 @@
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, Switch } from '@mui/material';
-import React, { FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 
@@ -9,7 +9,7 @@ interface SettingsDialogProps {
   open: boolean;
 }
 
-export const SettingsDialog: FC<SettingsDialogProps> = ({ anchor, onDone, open }) => {
+export const SettingsDialog = ({ anchor, onDone, open }: SettingsDialogProps) => {
   const { t } = useTranslation();
   const { allowAllFileTypes } = useAppState().common;
   const { setAllowedAllFileTypes } = useActions().common;

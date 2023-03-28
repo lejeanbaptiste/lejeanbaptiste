@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/checkboxradio';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import Writer from '../../../Writer';
@@ -10,6 +11,7 @@ interface ConfigProps {
 
 //include RDF button label
 const RDFButtonLabel = 'LOD Annotation'; //'Include RDF';
+const editRawLabel = 'Edit Raw XML'; //'Include RDF';
 
 class Selection {
   readonly id: string;
@@ -38,9 +40,11 @@ class Selection {
     const resizeObserver = new ResizeObserver((entries) => {
       const editorContainer = $('#monac');
       if (editorContainer) {
+        //@ts-ignore
         editorContainer.height(entries[0].contentRect.height - 20);
       }
     });
+    //@ts-ignore
     resizeObserver.observe($(`#${parentId}`)[0]);
 
     $(`#${parentId}`).append(`
@@ -58,9 +62,9 @@ class Selection {
       />
       <div id="${this.id}-footer" class="moduleFooter" style="border-top: 0px;">
           <label>
-            ${RDFButtonLabel}
             <input type="checkbox" name="includeRdf" />
           </label>
+          <button name="edit-xml">${editRawLabel}</button>
       </div>
       <div id="${this.id}_selectionContents" style="display: none;" />
     </div>
@@ -70,8 +74,31 @@ class Selection {
     this.$selectionContents = $(`#${this.id}_selectionContents`);
 
     //@ts-ignore
-    this.$includeRdf = $(`#${this.id}-footer [name="includeRdf"]`).checkboxradio({ icon: false });
-    this.$includeRdf.on('click', (event: JQuery.Event) => this.updateView(true));
+    this.$includeRdf = $(`#${this.id}-footer [name="includeRdf"]`).checkboxradio({
+      icon: false,
+      label: `Show ${RDFButtonLabel}`,
+      state: false,
+    });
+    
+    this.$includeRdf.on('click', () => {
+      //@ts-ignore
+      const newState = !this.$includeRdf.checkboxradio('option', 'state');
+      const label = newState ? `Hide ${RDFButtonLabel}` : `Show ${RDFButtonLabel}`;
+
+      //@ts-ignore
+      this.$includeRdf.checkboxradio('option', { label, state: newState });
+
+      this.updateView(true);
+    });
+
+    //edit XML button
+    $(`#${this.id}-footer [name="edit-xml"]`)
+      //@ts-ignore
+      .button()
+      .on('click', async () => {
+        const docText = await writer.converter.getDocumentContent(true);
+        writer.overmindActions.ui.openDialog({ type: 'editSource', props: { content: docText } });
+      });
 
     this.writer.event('loadingDocument').subscribe(() => this.clearView());
     this.writer.event('selectionChanged').subscribe(() => {
@@ -118,7 +145,7 @@ class Selection {
       const range = this.writer.editor?.selection.getRng();
       const contents = range?.cloneContents();
       if (contents) this.$selectionContents.html(contents);
-
+      //@ts-ignore
       const xmlString = this.writer.converter.buildXMLString(this.$selectionContents[0]);
 
       this.editor.setValue(xmlString);

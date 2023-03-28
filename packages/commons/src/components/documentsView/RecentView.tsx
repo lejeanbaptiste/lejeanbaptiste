@@ -3,9 +3,9 @@ import { useTheme } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import type { Resource } from '@src/types';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import Masonry from 'react-responsive-masonry';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import type { DisplayLayout } from '.';
 import { CARD_WIDTH, DocumentCard } from './components';
 
@@ -14,7 +14,7 @@ interface RecentViewProps {
   width: number;
 }
 
-export const RecentView: FC<RecentViewProps> = ({ displayLayout, width }) => {
+export const RecentView = ({ displayLayout, width }: RecentViewProps) => {
   const { recentDocuments } = useAppState().storage;
   const { setResource } = useActions().editor;
   const { getStorageProviderAuth } = useActions().providers;

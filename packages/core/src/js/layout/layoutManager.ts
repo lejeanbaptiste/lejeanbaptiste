@@ -3,14 +3,12 @@ import $ from 'jquery';
 import 'jquery-ui/ui/widgets/tabs';
 // import 'layout-jquery3';
 import '../../lib/jquery/jquery.layout_and_plugins.js';
+import { ISettingsModuleName } from '../../types/index.js';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
-import Nerve from './panels/nerve';
-import Relations from './panels/relations';
 import Selection from './panels/selection';
-import StructureTree from './panels/structureTree';
 import Validation from './panels/validation';
 
 interface InitConfigProps {
@@ -23,13 +21,13 @@ interface InitConfigProps {
 type LayoutLocation = 'east' | 'west' | 'north' | 'south';
 
 interface ModuleConfig {
-  id: string;
+  id: ISettingsModuleName;
   config?: any;
   title?: string;
 }
 
 // track modules which cannot appear in readonly mode
-const WRITE_ONLY_MODULES = ['nerve'];
+const WRITE_ONLY_MODULES: ISettingsModuleName[] = ['markup', 'validation', 'selection'];
 
 class LayoutManager {
   readonly writer: Writer;
@@ -48,7 +46,7 @@ class LayoutManager {
   readonly PANEL_MIN_WIDTH = 320;
 
   modulesLayout = new Map<LayoutLocation, ModuleConfig | ModuleConfig[]>([
-    ['west', [{ id: 'structure' }, { id: 'entities' }]],
+    ['west', [{ id: 'markup' }, { id: 'entities' }]],
     ['east', [{ id: 'selection' }]],
   ]);
 
@@ -116,8 +114,9 @@ class LayoutManager {
 
     //CENTRAL
     html += `
-      <div class="ui-layout-center ui-widget ui-widget-content">
-        <textarea id="${this.editorId}" name="editor" class="tinymce"></textarea>
+      <div class="ui-layout-center ui-widget ui-widget-content" style="background-color: #f6f6f6">
+        <div id="editor-toolbar" />
+          <textarea id="${this.editorId}" name="editor" class="tinymce"></textarea>
       </div>
     `;
 
@@ -134,15 +133,6 @@ class LayoutManager {
     this.$container.append(html);
 
     this.$loadingMask = this.$container.find('.cwrcLoadingMask').first();
-    this.$headerButtons = this.$container.find('.headerButtons').first();
-
-    if (this.writer.isReadOnly || this.writer.isAnnotator) {
-      const $fullscreenButton = $('<div class="fullscreenLink out">Fullscreen</div>').appendTo(
-        this.$headerButtons
-      );
-
-      $fullscreenButton.on('click', () => this.toggleFullScreen());
-    }
 
     const outerLayoutConfig = {
       defaults: {
@@ -203,12 +193,7 @@ class LayoutManager {
       center: {
         //@ts-ignore
         onresize_end: (region, pane, state, options) => {
-          // // ! DEPRECATED resizeEditor might not be necessary anymore.
-          // log.info(
-          //   '%c"resizeEditor" DEPRECATED: might not be necessary anymore.',
-          //   'color: gray;'
-          // );
-          // this.resizeEditor();
+          this.resizeEditor();
         },
       },
     };
@@ -254,38 +239,21 @@ class LayoutManager {
         },
       });
     });
-
-    // ?show/hide entity buttons based on the presence of a custom schema
-    // this.writer.event('documentLoaded').subscribe((success: boolean) => {
-    // /  !success || this.writer.schemaManager.isSchemaCustom()
-    //     ? this.doHandleEntityButtons(true)
-    //     : this.doHandleEntityButtons();
-    // });
   }
 
-  // resizeEditor() {
-  //   if (!this.writer.editor) return;
+  resizeEditor() {
+    if (!this.writer.editor) return;
 
-  //   const pane = $(this.writer.editor.getContainer().parentElement);
-  //   const containerHeight = pane.height() ?? 0;
+    const toolbar = document.querySelector('#editor-toolbar');
+    const tox = document.querySelector('.tox') as HTMLElement;
+    if (!toolbar || !tox) return;
 
-  //   const toolbars = pane[0].querySelectorAll('.mce-toolbar, .mce-statusbar, .mce-menubar');
-  //   const toolbarsLength: Number = toolbars.length;
+    const toolbarHeight = toolbar.getBoundingClientRect().height;
 
-  //   let barsHeight = 0;
+    tox.style.height = `calc(100% - ${toolbarHeight}px)`;
+  }
 
-  //   for (const toolbar of toolbars) {
-  //     if (!toolbar.classList.contains('mce-sidebar-toolbar')) {
-  //       const barHeight = $(toolbar).height() ?? 0;
-  //       barsHeight += barHeight;
-  //     }
-  //   }
-
-  //   const newHeight = containerHeight - barsHeight - 8;
-  //   this.writer.editor.theme.resizeTo('100%', newHeight);
-  // };
-
-  showModule(moduleId: string) {
+  showModule(moduleId: ISettingsModuleName) {
     this.modulesLayout.forEach((modules, region) => {
       if (!Array.isArray(modules)) {
         if (modules.id === moduleId) this.showRegion(region);
@@ -361,24 +329,18 @@ class LayoutManager {
     }
   }
 
-  showToolbar() {
-    $('.mce-toolbar-grp', this.writer.editor?.getContainer()).first().show();
-  }
-
-  hideToolbar() {
-    $('.mce-toolbar-grp', this.writer.editor?.getContainer()).first().hide();
-  }
-
   toggleFullScreen() {
-    if (!fscreen.fullscreenEnabled) return;
+    if (!fscreen.fullscreenEnabled) return fscreen.fullscreenEnabled;
 
     if (fscreen.fullscreenElement) {
       fscreen.exitFullscreen();
-      return;
+      return false;
     }
 
-    const container = this.getContainer().parent();
-    if (container) fscreen.requestFullscreen(container[0]);
+    const container = this.getContainer()?.parent();
+    if (container?.[0]) fscreen.requestFullscreen(container[0]);
+
+    return true;
   }
 
   isFullScreen() {
@@ -396,8 +358,28 @@ class LayoutManager {
     return this.$container;
   }
 
-  getHeaderButtonsParent() {
-    return this.$headerButtons;
+  toggleReadonly(readonly: boolean) {
+    this.showModule('toc');
+    this.showModule('imageViewer');
+
+    //Change tabs
+    [...this.modulesLayout.entries()].forEach(([region, modules]) => {
+      if (!Array.isArray(modules)) modules = [modules];
+
+      modules.forEach(({ id, title }) => {
+        const tab = document.querySelector(`.ui-layout-${region} > ul > li#${id}`);
+        if (!tab) return;
+
+        if (WRITE_ONLY_MODULES.includes(id as ISettingsModuleName)) {
+          (tab as HTMLElement).style.display = readonly ? 'none' : '';
+        }
+
+        if (Array.isArray(title)) {
+          const a = tab.querySelector('a');
+          if (a) a.innerText = readonly ? title[1] : title[0];
+        }
+      });
+    });
   }
 
   destroy() {
@@ -418,7 +400,7 @@ class LayoutManager {
     );
   }
 
-  private addPanel(panelRegion: string, panelConfig: ModuleConfig | ModuleConfig[]) {
+  private addPanel(panelRegion: LayoutLocation, panelConfig: ModuleConfig | ModuleConfig[]) {
     if (!panelConfig) return '';
 
     //single module
@@ -437,14 +419,19 @@ class LayoutManager {
       <div class="cwrc tabs ui-layout-${panelRegion}">
         <ul>
           ${panelConfig
-            .map(({ id, title }) => {
-              if (!title) title = id.charAt(0).toUpperCase() + id.slice(1);
-              return `<li><a href="#${this.editorId}-${id}">${title}</a></li>`;
-            })
-            .join('')}
+            .filter((module) => this.isModuleAllowed(module))
+            .map(
+              ({ id, title }) =>
+                `
+                <li id=${id}>
+                  <a href="#${this.editorId}-${id}">${title}</a>
+                </li>
+              `
+            )
+            .join('\n')}
         </ul>
         <div class="ui-layout-content">
-          ${panelConfig.map(({ id }) => `<div id="${this.editorId}-${id}"/>`).join('')}
+          ${panelConfig.map(({ id }) => `<div id="${this.editorId}-${id}"/>`).join('\n')}
         </div>
       </div>
     `;
@@ -457,14 +444,10 @@ class LayoutManager {
     config.writer = this.writer;
     config.parentId = `${this.editorId}-${module.id}`;
 
-    if (module.id === 'structure') return new StructureTree(config);
     if (module.id === 'entities') return new EntitiesList(config);
-    if (module.id === 'relations') return new Relations(config);
     if (module.id === 'validation') return new Validation(config);
     if (module.id === 'selection') return new Selection(config);
     if (module.id === 'imageViewer') return new ImageViewer(config);
-
-    // if (module.id === 'nerve') return new Nerve(config);
 
     return null;
   }

@@ -1,11 +1,12 @@
 import $ from 'jquery';
 import Cookies from 'js-cookie';
 import { Context } from '../';
+import { db } from '../../db';
 import type {
   Authority,
   AuthorityService,
-  LookupsProps,
   LookupsConfig,
+  LookupsProps,
   NamedEntityType,
 } from '../../dialogs/entityLookups/types';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
@@ -22,11 +23,12 @@ export const writerInitSettings = (
   editor.baseUrl = baseUrl;
   editor.settings = settings;
 
-  const schemaObjs = {};
-  schemas.forEach((element) => (schemaObjs[element.id] = element));
+  const schemaObjs: { [key: string]: Schema } = {};
+  schemas?.forEach((element) => (schemaObjs[element.id] = element));
 
   editor.schemas = schemaObjs;
 
+  actions.editor.setReadonly(settings.readonly);
   actions.validator.loadValidator();
 };
 
@@ -63,14 +65,14 @@ export const initiateLookupSources = async (
     const [authorityId, configAuthorityService] =
       typeof confgAuthority === 'string' ? [confgAuthority] : confgAuthority;
 
-    if (authorityId !== state.editor.lookups.authorities[authorityId].id) {
+    if (authorityId !== state.editor.lookups.authorities[authorityId]?.id) {
       // implement new lookup
       return;
     }
 
     //required authentication?
     if (
-      state.editor.lookups.authorities[authorityId].requireAuth &&
+      state.editor.lookups.authorities[authorityId]?.requireAuth &&
       configAuthorityService?.config?.username === ''
     ) {
       log.warn(`Lookups: You must define a username to make requests to ${authorityId}`);
@@ -79,30 +81,34 @@ export const initiateLookupSources = async (
 
     //* No config, enabled and use default
     if (!configAuthorityService) {
-      if (!state.editor.lookups.authorities[authorityId].enabled) {
+      if (!state.editor.lookups.authorities[authorityId]?.enabled) {
         actions.editor.toggleLookupAuthority(authorityId);
       }
       return;
     }
 
-    //config
-    if (configAuthorityService.config) {
-      state.editor.lookups.authorities[authorityId].config = configAuthorityService.config;
-      state.editor.lookups.authorities[authorityId].enabled = true;
+    const authority = state.editor.lookups.authorities[authorityId];
+    if (authority) {
+      //config
+      if (configAuthorityService.config) {
+        authority.config = configAuthorityService.config;
+        authority.enabled = true;
+      }
+
+      //enabled
+      if (configAuthorityService.enabled) {
+        authority.enabled = configAuthorityService.enabled;
+      }
+
+      //if not entities, use default
+      if (!configAuthorityService.entities || !Array.isArray(configAuthorityService.entities))
+        return;
+
+      //entity types
+      configAuthorityService.entities.forEach(([entityName, enabled]) => {
+        authority.entities[entityName] = enabled;
+      });
     }
-
-    //enabled
-    if (configAuthorityService.enabled) {
-      state.editor.lookups.authorities[authorityId].enabled = configAuthorityService.enabled;
-    }
-
-    //if not entities, use default
-    if (!configAuthorityService.entities || !Array.isArray(configAuthorityService.entities)) return;
-
-    //entity types
-    configAuthorityService.entities.forEach(([entityName, enabled]) => {
-      state.editor.lookups.authorities[authorityId].entities[entityName] = enabled;
-    });
   });
 
   // * Setup default
@@ -119,7 +125,7 @@ export const initiateLookupSources = async (
 export const applyInitialSettings = ({ state, actions }: Context) => {
   if (!window.writer?.editor) return;
 
-  actions.editor.setFontSize(state.editor.currentFontSize);
+  actions.editor.setFontSize(state.editor.fontSize);
   const body = window.writer.editor.getBody();
   if (state.editor.showEntities) $(body).addClass('showEntities');
   if (state.editor.showTags) $(body).addClass('showTags');
@@ -148,12 +154,25 @@ export const setAutosave = ({ state }: Context, value?: boolean) => {
   state.editor.autosave = value;
 };
 
+export const suspendLWChangeEvent = async ({ state, actions }: Context, value: boolean) => {
+  state.editor.LWChangeEventSuspended = value;
+
+  if (value) {
+    const content = await window.writer.getContent();
+    if (typeof content !== 'string') return;
+    await db.suspendedDocument.add({ content });
+  } else {
+    await db.suspendedDocument.clear();
+    state.editor.contentHasChanged = true;
+  }
+};
+
 export const setFontSize = ({ state }: Context, value: number) => {
   if (!window.writer?.editor) return;
 
   const styles = { fontSize: `${value}pt` };
   window.writer.editor.dom.setStyles(window.writer.editor.dom.getRoot(), styles);
-  state.editor.currentFontSize = value;
+  state.editor.fontSize = value;
 };
 
 export const toggleShowTags = ({ state }: Context, value?: boolean) => {
@@ -164,7 +183,7 @@ export const toggleShowTags = ({ state }: Context, value?: boolean) => {
   state.editor.showTags = value;
 };
 
-export const showEntities = ({ state }: Context, value: boolean) => {
+export const setShowEntities = ({ state }: Context, value: boolean) => {
   if (!window.writer?.editor) return;
 
   $('body', window.writer.editor.getDoc()).toggleClass('showEntities');
@@ -175,7 +194,7 @@ export const toggleAdvancedSettings = ({ state }: Context, value: boolean) => {
   state.editor.advancedSettings = value;
 };
 
-export const setReadonly = ({ state }: Context, value: boolean) => {
+export const setReadonly = ({ state }: Context, value: boolean = false) => {
   state.editor.isReadonly = value;
 };
 
@@ -290,7 +309,7 @@ export const deleteSchema = ({ state, effects }: Context, schemaId: string) => {
 
   const updatedSchemaList = state.editor.schemasList.filter((schema) => schema.id !== schemaId);
 
-  const schemaObjs = {};
+  const schemaObjs: { [key: string]: Schema } = {};
   updatedSchemaList.forEach((element) => (schemaObjs[element.id] = element));
 
   state.editor.schemas = schemaObjs;
@@ -313,9 +332,9 @@ export const resetDialogWarnings = ({ actions }: Context) => {
 };
 
 export const resetPreferences = ({ state, actions, effects }: Context) => {
-  if (state.editor.currentFontSize !== 11) actions.editor.setFontSize(11);
+  if (state.editor.fontSize !== 11) actions.editor.setFontSize(11);
   if (state.editor.showTags !== false) actions.editor.toggleShowTags(false);
-  if (state.editor.showEntities !== true) actions.editor.showEntities(true);
+  if (state.editor.showEntities !== true) actions.editor.setShowEntities(true);
   if (state.editor.editorMode !== 'xmlrdfoverlap') actions.editor.setEditorMode('xmlrdf');
   if (state.editor.annotationMode !== 3) actions.editor.setAnnotationrMode(3);
 
@@ -330,7 +349,7 @@ export const resetPreferences = ({ state, actions, effects }: Context) => {
 export const getSettings = ({ state }: Context, config?: string) => {
   return {
     isAdvanced: true,
-    fontSize: state.editor.currentFontSize,
+    fontSize: state.editor.fontSize,
     showEntities: state.editor.showEntities,
     showTags: state.editor.showTags,
     mode: state.editor.mode,
@@ -366,7 +385,7 @@ export const toggleLookupEntity = (
   { authorityId, entityName }: { authorityId: Authority; entityName: NamedEntityType }
 ) => {
   const authorityService = editor.lookups.authorities[authorityId];
-  if (authorityService.entities[entityName] === undefined) return;
+  if (authorityService?.entities[entityName] === undefined) return;
 
   const entityEnabled = authorityService.entities[entityName];
   authorityService.entities[entityName] = !entityEnabled;
@@ -382,7 +401,8 @@ export const reorderLookupPriority = (
 
   authorities.forEach((authority, index) => {
     if (!editor.lookups.authorities) return;
-    editor.lookups.authorities[authority.id].priority = index;
+    const AuthorityService = editor.lookups.authorities[authority.id];
+    if (AuthorityService) AuthorityService.priority = index;
   });
 
   effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
@@ -394,11 +414,17 @@ export const retrieveLookupAutoritiesConfig = ({ effects }: Context) => {
 };
 
 export const getContent = async ({ state }: Context) => {
+  if (state.editor.LWChangeEventSuspended) {
+    const suspended = db.suspendedDocument.toCollection();
+    const document = await suspended.last();
+
+    return document?.content;
+  }
   return await window.writer.getContent();
 };
 
-export const setIsEditorDirty = ({ state }: Context, value: boolean) => {
-  state.editor.isEditorDirty = value;
+export const setContentHasChanged = ({ state }: Context, value: boolean) => {
+  state.editor.contentHasChanged = value;
 };
 
 export const closeEditor = ({ state }: Context) => {
@@ -409,7 +435,7 @@ export const clear = ({ state }: Context) => {
   state.editor.advancedSettings = true;
   state.editor.allowOverlap = false;
   state.editor.annotationMode = 3;
-  state.editor.currentFontSize = 11;
+  state.editor.fontSize = 11;
   state.editor.editorMode = 'xmlrdf';
   state.editor.isAnnotator = false;
   state.editor.isReadonly = false;

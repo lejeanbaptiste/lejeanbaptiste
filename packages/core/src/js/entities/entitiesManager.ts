@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { Bookmark } from 'tinymce';
-import type { EntityTypes } from '../schema/types';
+import { EntityType } from '../../types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import Entity, { type EntityConfig } from './Entity';
@@ -67,16 +67,18 @@ class EntitiesManager {
       if (!config.id) config.id = this.writer.getUniqueId('dom_');
 
       if (!config.tag) {
-        config.tag = this.writer.schemaManager.mapper.getParentTag(config.type as EntityTypes);
+        //@ts-ignore
+        config.tag = this.writer.schemaManager.mapper.getParentTag(config.type as EntityType);
       }
 
       entity = new Entity(config);
     }
 
     const requiredAttributes = this.writer.schemaManager.mapper.getRequiredAttributes(
-      config.type as EntityTypes
+      config.type as EntityType
     );
     for (const attName in requiredAttributes) {
+      //@ts-ignore
       entity.setAttribute(attName, requiredAttributes[attName]);
     }
 
@@ -130,6 +132,7 @@ class EntitiesManager {
       entity.getType()
     );
     for (const attName in requiredAttributes) {
+      //@ts-ignore
       entity.setAttribute(attName, requiredAttributes[attName]);
     }
 
@@ -184,7 +187,7 @@ class EntitiesManager {
    * @returns {Entity}
    */
   cloneEntity(id: string) {
-    const clone: Entity = this.entities[id].clone();
+    const clone: Entity = this.entities[id]?.clone();
     clone.id = this.writer.getUniqueId('dom_');
 
     // TODO get new URIs
@@ -217,13 +220,15 @@ class EntitiesManager {
         if (!type) return;
 
         if (!categories[type]) categories[type] = [];
-        categories[type].push(entry);
+        categories[type]?.push(entry);
       });
 
       for (const type in categories) {
         const category = categories[type];
-        for (const entry of category) {
-          sortedEntities.push(entry);
+        if (category) {
+          for (const entry of category) {
+            sortedEntities.push(entry);
+          }
         }
       }
 
@@ -242,7 +247,7 @@ class EntitiesManager {
       return sortedEntities;
     }
 
-    const entityTags = $('[_entity][class~=start]', this.writer.editor.getBody()); // sequential ordering
+    const entityTags = $('[_entity][class~=start]', this.writer.editor?.getBody()); // sequential ordering
     entityTags.each((index: number, element: Element) => {
       const entry = this.getEntity($(element).attr('name') ?? '');
       if (entry) sortedEntities.push(entry);
@@ -282,7 +287,7 @@ class EntitiesManager {
    */
   getTextContentForEntity(entityId: string) {
     let entityTextContent = '';
-    $(`[name=${entityId}]`, this.writer.editor.getBody()).each(
+    $(`[name=${entityId}]`, this.writer.editor?.getBody()).each(
       (index: number, element: Element) => {
         entityTextContent += element.textContent;
       }
@@ -298,13 +303,14 @@ class EntitiesManager {
    */
   setURIForEntity(entityId: string, uri: string) {
     const entity = this.getEntity(entityId);
-    entity.setURI(uri);
+    entity?.setURI(uri);
 
     const uriMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
-      entity.getType(),
+      //@ts-ignore
+      entity?.getType(),
       'uri'
     );
-    if (uriMapping) entity.setAttribute(uriMapping, uri);
+    if (uriMapping) entity?.setAttribute(uriMapping, uri);
   }
 
   /**
@@ -314,14 +320,15 @@ class EntitiesManager {
    */
   setLemmaForEntity(entityId: string, lemma: string) {
     const entity = this.getEntity(entityId);
-    entity.setLemma(lemma);
+    entity?.setLemma(lemma);
 
     const lemmaMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
+      //@ts-ignore
       entity.getType(),
       'lemma'
     );
 
-    if (lemmaMapping) entity.setAttribute(lemmaMapping, lemma);
+    if (lemmaMapping) entity?.setAttribute(lemmaMapping, lemma);
   }
 
   /**
@@ -331,14 +338,15 @@ class EntitiesManager {
    */
   setCertaintyForEntity(entityId: string, certainty: string) {
     const entity = this.getEntity(entityId);
-    entity.setCertainty(certainty);
+    entity?.setCertainty(certainty);
 
     const certaintyMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
+      //@ts-ignore
       entity.getType(),
       'certainty'
     );
 
-    if (certaintyMapping) entity.setAttribute(certaintyMapping, certainty);
+    if (certaintyMapping) entity?.setAttribute(certaintyMapping, certainty);
   }
 
   /**
@@ -348,14 +356,15 @@ class EntitiesManager {
    */
   setPrecisionForEntity(entityId: string, precision: string) {
     const entity = this.getEntity(entityId);
-    entity.setPrecision(precision);
+    entity?.setPrecision(precision);
 
     const precisionyMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
+      //@ts-ignore
       entity.getType(),
       'precision'
     );
 
-    if (precisionyMapping) entity.setAttribute(precisionyMapping, precision);
+    if (precisionyMapping) entity?.setAttribute(precisionyMapping, precision);
   }
 
   removeHighlights() {
@@ -372,7 +381,7 @@ class EntitiesManager {
         const parent = $p.parent()[0];
         $p.contents().length !== 0 ? $p.contents().unwrap() : $p.remove();
 
-        parent.normalize();
+        parent?.normalize();
       });
     }
 
@@ -398,37 +407,43 @@ class EntitiesManager {
     if (!id) return;
 
     this.currentEntity = id;
-    const entityTags = $(`[name="${id}"]`, this.writer.editor.getBody());
+    const entityTags = $(`[name="${id}"]`, this.writer.editor?.getBody());
 
     if (entityTags.length <= 0) return;
 
     const entity = this.getEntity(id);
-    const type = entity.getType();
+    const type = entity?.getType();
 
     // clear selection
-    let rng = this.writer.editor.dom.createRng();
+    let rng = this.writer.editor?.dom.createRng();
+
+    //@ts-ignore
     this.writer.editor.selection.setRng(rng);
 
-    if (entity.isNote()) {
+    if (entity?.isNote()) {
       entityTags.parent('.noteWrapper').removeClass('hide').addClass('entityHighlight');
     } else {
-      entityTags.wrap(`<span class="entityHighlight ${type}"/>`);
+      // entityTags.wrap(`<span class="entityHighlight ${type}"/>`); //! Deprecated: Must find a better way to do highlights in the editor
       entityTags.parents('.noteWrapper').removeClass('hide'); // if the entity is inside a note, make sure that it's shown
     }
 
     if (bm) {
       // maintain the original caret position
-      this.writer.editor.selection.moveToBookmark(bm);
+      this.writer.editor?.selection.moveToBookmark(bm);
     } else {
       // move inside entity
-      rng = this.writer.editor.dom.createRng();
+      rng = this.writer.editor?.dom.createRng();
+      //@ts-ignore
       rng.setStart(entityTags[0], 0);
+      //@ts-ignore
       rng.collapse(true);
+      //@ts-ignore
       this.writer.editor.selection.setRng(rng);
     }
 
     if (doScroll) {
       const val = entityTags.offset()?.top ?? 0;
+      //@ts-ignore
       $(this.writer.editor.getDoc().documentElement).scrollTop(val);
     }
 
@@ -445,13 +460,14 @@ class EntitiesManager {
 
     let overlap = false;
 
-    this.eachEntity((id: string, entity: Entity) => {
+    this.eachEntity((id: string) => {
+      if (!this.writer.editor) return;
       const markers = this.writer.editor.dom.select(`[name="${id}"]`);
 
       if (markers.length > 1) {
         const start = markers[0];
         const end = markers[markers.length - 1];
-        if (start.parentNode !== end.parentNode) {
+        if (start?.parentNode !== end?.parentNode) {
           overlap = true;
           return false; // stop looping through entities
         }
@@ -467,12 +483,13 @@ class EntitiesManager {
   removeOverlappingEntities() {
     this.highlightEntity();
 
-    this.eachEntity((id: string, entity: Entity) => {
+    this.eachEntity((id: string) => {
+      if (!this.writer.editor) return;
       const markers = this.writer.editor.dom.select(`[name="${id}"]`);
       if (markers.length > 1) {
         const start = markers[0];
         const end = markers[markers.length - 1];
-        if (start.parentNode !== end.parentNode) {
+        if (start?.parentNode !== end?.parentNode) {
           this.writer.tagger.removeEntity(id);
         }
       }
@@ -485,13 +502,14 @@ class EntitiesManager {
    */
   convertBoundaryEntitiesToTags() {
     this.eachEntity((id: string, entity: Entity) => {
+      if (!this.writer.editor) return;
       const markers = this.writer.editor.dom.select(`[name="${id}"]`);
 
       if (markers.length > 1) {
         let canConvert = true;
-        const parent = markers[0].parentNode;
+        const parent = markers[0]?.parentNode;
         for (let i = 0; i < markers.length; i++) {
-          if (markers[i].parentNode !== parent) {
+          if (markers[i]?.parentNode !== parent) {
             canConvert = false;
             break;
           }
@@ -499,10 +517,13 @@ class EntitiesManager {
 
         if (canConvert) {
           const $tag = $(this.writer.editor.dom.create('span', {}, ''));
-          const atts = markers[0].attributes;
-          for (let i = 0; i < atts.length; i++) {
-            const att = atts[i];
-            $tag.attr(att.name, att.value);
+          const atts = markers[0]?.attributes;
+          if (atts) {
+            for (let i = 0; i < atts.length; i++) {
+              const att = atts[i];
+              //@ts-ignore
+              $tag.attr(att.name, att.value);
+            }
           }
 
           $tag.addClass('end');

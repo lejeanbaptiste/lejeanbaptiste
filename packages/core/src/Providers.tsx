@@ -1,13 +1,13 @@
 import { ThemeProvider, useMediaQuery } from '@mui/material';
 import ModalProvider from 'mui-modal-provider';
 import { SnackbarProvider } from 'notistack';
-import React, { useEffect, type FC } from 'react';
+import React, { useEffect } from 'react';
 import App from './App';
 import { useActions, useAppState } from './overmind';
 import theme from './theme';
 import type { LeafWriterOptions } from './types';
 
-const Providers: FC<LeafWriterOptions> = (props) => {
+const Providers = (props: LeafWriterOptions) => {
   const { setDarkMode } = useActions().ui;
   const { darkMode, themeAppearance } = useAppState().ui;
 

@@ -210,7 +210,7 @@ class Popup implements LWDialogProps {
     this.$popupEl.parent().on('mouseover', () => this.doMouseOver());
     this.$popupEl.parent().on('mouseout', () => this.doMouseOut());
 
-    const currentTagRect = this.$currentTag?.[0].getBoundingClientRect();
+    const currentTagRect = this.$currentTag?.[0]?.getBoundingClientRect();
     const editorRect = editor?.editorContainer.getBoundingClientRect();
 
     const mceToolbarHeight = $('.tox-toolbar-overlord').height() ?? 0;
@@ -294,14 +294,14 @@ class Popup implements LWDialogProps {
     const hasTextContent = target.textContent.match(/\S+/) !== null;
 
     if (!hasTextContent) {
-      if (entry.getType() === 'citation') {
+      if (entry?.getType() === 'citation') {
         const url = entry.getURI();
         if (url) this.showLink(url);
       }
       return;
     }
 
-    const content = entry.getNoteContent() ?? entry.getContent();
+    const content = entry?.getNoteContent() ?? entry?.getContent();
     if (!content) return;
 
     this.doPopup(content, 'note');

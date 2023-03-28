@@ -25,6 +25,8 @@ class CWRC2XML {
     // remove highlights
     this.writer.entitiesManager.highlightEntity();
 
+    if (!this.writer.editor) return;
+
     const $body = $(this.writer.editor.getBody()).clone(false);
 
     this.prepareText($body);
@@ -40,6 +42,7 @@ class CWRC2XML {
     }
 
     // remove previous namespaces
+    //@ts-ignore
     const rootAttributes = this.writer.tagger.getAttributesForTag($rootEl[0]);
     for (const attributeName in rootAttributes) {
       if (attributeName.indexOf('xmlns') === 0) {
@@ -52,6 +55,7 @@ class CWRC2XML {
     if (schemaNamespace) rootAttributes['xmlns'] = schemaNamespace;
     if (includeRDF) rootAttributes['xmlns:rdf'] = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 
+    //@ts-ignore
     this.writer.tagger.setAttributesForTag($rootEl[0], rootAttributes);
 
     let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -105,20 +109,23 @@ class CWRC2XML {
       if (tag === '') continue;
 
       if (tag.indexOf('::') === -1) {
-        if ($currNode[0].nodeName === tag) continue;
+        if ($currNode[0]?.nodeName === tag) continue;
 
         const $nextNode = $currNode.children(tag).first();
         if ($nextNode.length === 1) {
           $currNode = $nextNode;
         } else {
           // node doesn't exist so add it
-          let namespace = $currNode[0].namespaceURI;
+          let namespace = $currNode[0]?.namespaceURI;
+          //@ts-ignore
           let node = xmlDoc.createElementNS(namespace, tag);
-          const child = $currNode[0].firstElementChild;
+          const child = $currNode[0]?.firstElementChild;
 
           $currNode = child
-            ? $($currNode[0].insertBefore(node, child))
-            : $($currNode[0].appendChild(node));
+            ? //@ts-ignore
+              $($currNode[0].insertBefore(node, child))
+            : //@ts-ignore
+              $($currNode[0].appendChild(node));
         }
       } else {
         // axis handling
@@ -133,21 +140,26 @@ class CWRC2XML {
 
         switch (axis) {
           case 'preceding-sibling':
-            parent = $currNode[0].parentNode;
+            parent = $currNode[0]?.parentNode;
             if (!parent) break;
 
+            //@ts-ignore
             namespace = parent.namespaceURI;
+            //@ts-ignore
             node = xmlDoc.createElementNS(namespace, tag_part1);
+            //@ts-ignore
             $currNode = $(parent.insertBefore(node, $currNode[0]));
             break;
 
           case 'following-sibling':
-            parent = $currNode[0].parentNode;
+            parent = $currNode[0]?.parentNode;
             if (!parent) break;
 
+            //@ts-ignore
             namespace = parent.namespaceURI;
+            //@ts-ignore
             node = xmlDoc.createElementNS(namespace, tag_part1);
-            sibling = $currNode[0].nextElementSibling;
+            sibling = $currNode[0]?.nextElementSibling;
 
             $currNode = sibling
               ? $(parent.insertBefore(node, sibling))
@@ -204,9 +216,11 @@ class CWRC2XML {
           if (identifyEntities) {
             // add temp id so we can target it later in setEntityRanges
             if (array[0] !== '') {
-              array[0] = array[0].replace(/([\s>])/, ` cwrcTempId="${id}"$&`);
+              //@ts-ignore
+              array[0] = array[0]?.replace(/([\s>])/, ` cwrcTempId="${id}"$&`);
             } else {
-              array[1] = array[1].replace(/([\s>])/, ` cwrcTempId="${id}"$&`);
+              //@ts-ignore
+              array[1] = array[1]?.replace(/([\s>])/, ` cwrcTempId="${id}"$&`);
             }
           }
         } else {
@@ -268,13 +282,14 @@ class CWRC2XML {
    * For debug
    */
   getEntityOffsets() {
+    if (!this.writer.editor) return;
     const body = $(this.writer.editor.getBody());
     const offsets = this.getNodeOffsetsFromParent(body);
     const ents = [];
 
     for (let i = 0; i < offsets.length; i++) {
       const o = offsets[i];
-      if (o.entity) ents.push(o);
+      if (o?.entity) ents.push(o);
     }
     return ents;
   }
@@ -312,7 +327,7 @@ class CWRC2XML {
     // then remove the associated nodes
     $(overlappingEntIds).each((index, id) => {
       const entry = this.writer.entitiesManager.getEntity(id);
-      entry.setRange(_this.getRangesForEntity(id) as AnnotationRange);
+      entry?.setRange(_this.getRangesForEntity(id) as AnnotationRange);
       $(`[name="${id}"]`, body).each((index, element) => {
         $(element).contents().unwrap();
       });
@@ -328,6 +343,7 @@ class CWRC2XML {
     this.writer.entitiesManager.eachEntity((entityId: string, entry: Entity) => {
       const $entity = $(`[cwrcTempId="${entityId}"]`, doc);
       if ($entity.length === 1) {
+        //@ts-ignore
         const startXPath = this.writer.utilities.getElementXPath($entity[0]);
         if (startXPath) entry.setRange({ startXPath });
       }
@@ -407,13 +423,14 @@ class CWRC2XML {
 
     const doRangeGet = ($element: JQuery<HTMLElement>, isEnd: boolean) => {
       const parent = $element.parents('[_tag]').first();
+      //@ts-ignore
       const xpath = this.writer.utilities.getElementXPath(parent[0]);
       const offset = getOffsetFromParentForEntity(entityId, parent, isEnd);
 
       return { xpath, offset };
     };
 
-    const entitySpans = $(`[name="${entityId}"]`, this.writer.editor.getBody());
+    const entitySpans = $(`[name="${entityId}"]`, this.writer.editor?.getBody());
     const entityStart = entitySpans.first();
     const entityEnd = entitySpans.last();
 
@@ -472,6 +489,7 @@ class CWRC2XML {
           const id = $el.attr('name');
           if (!id) return;
 
+          //@ts-ignore
           const entityContentLength = _this.writer.entitiesManager
             .getEntity(id)
             .getContent()?.length;
@@ -524,13 +542,13 @@ class CWRC2XML {
         const span2 = o2.offset + o2.length;
 
         if (o1.offset < o2.offset && span1 > span2) {
-          r.contains.push(o2.id);
+          r?.contains.push(o2.id);
         } else if (o1.offset < o2.offset && span1 > o2.offset && span1 < span2) {
-          r.overlaps.push(o2.id);
+          r?.overlaps.push(o2.id);
         } else if (o1.offset > o2.offset && span1 > span2 && span2 > o1.offset) {
-          r.overlaps.push(o2.id);
+          r?.overlaps.push(o2.id);
         } else if (o1.offset < o2.offset && span1 < span2 && span1 > o2.offset) {
-          r.overlaps.push(o2.id);
+          r?.overlaps.push(o2.id);
         }
       }
     }

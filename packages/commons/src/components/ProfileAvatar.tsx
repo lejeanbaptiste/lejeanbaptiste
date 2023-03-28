@@ -1,15 +1,15 @@
 import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
 import { getIcon } from '@src/assets/icons';
 import { useAppState } from '@src/overmind';
-import { motion, useAnimation } from 'framer-motion';
-import React, { useEffect, useState, type FC } from 'react';
+import { motion, useAnimation, type Variants } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
 
 interface ProfileAvatarProps {
   clickable?: boolean;
   size?: number;
 }
 
-export const ProfileAvatar: FC<ProfileAvatarProps> = ({ clickable = true, size = 32 }) => {
+export const ProfileAvatar = ({ clickable = true, size = 32 }: ProfileAvatarProps) => {
   const { user } = useAppState().auth;
   const { palette } = useTheme();
 
@@ -38,13 +38,13 @@ export const ProfileAvatar: FC<ProfileAvatarProps> = ({ clickable = true, size =
     }
   }, [user?.preferredID]);
 
-  const profileVariants = {
+  const profileVariants: Variants = {
     initial: { scale: 0 },
     visible: { scale: 1 },
     exit: { scale: 0 },
   };
 
-  const avatarVariant = {
+  const avatarVariant: Variants = {
     default: { boxShadow: `${palette.primary.main} 0px 0px 0px 0px` },
     hover: { boxShadow: `${palette.primary.main} 0px 0px 3px 1px` },
   };
@@ -78,7 +78,7 @@ export const ProfileAvatar: FC<ProfileAvatarProps> = ({ clickable = true, size =
                   height: size / 2,
                   borderRadius: '50%',
                   border: `1px solid ${palette.background.paper}`,
-                  backgroundColor: palette.background.paper,
+                  bgcolor: palette.background.paper,
                   cursor: clickable ? 'pointer' : 'default',
                 }}
               />

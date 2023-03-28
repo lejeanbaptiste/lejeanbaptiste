@@ -21,7 +21,7 @@ interface EventProps {
  * @param {Writer} writer
  */
 class EventManager {
-  doDebug = false;
+  debug: boolean = false;
   events: Events = {};
 
   constructor() {
@@ -36,29 +36,23 @@ class EventManager {
      */
 
     /**
-     * CWRCWriter events
+     * LEAF-Writer events
      */
 
     /**
      * The writer has been initialized
      * @event Writer#writerInitialized
-     * @param {Object} writer The CWRCWriter
+     * @param {Object} writer The LEAF-Writer
      */
     this.event('writerInitialized');
 
     /**
      * The editor has been initialized
      * @event Writer#tinymceInitialized
-     * @param {Object} writer The CWRCWriter
+     * @param {Object} writer The LEAF-Writer
      */
     this.event('tinymceInitialized');
 
-    /**
-     * The StructureTree has been initialized
-     * @event Writer#structureTreeInitialized
-     * @param {Object} structureTree The StructureTree
-     */
-    this.event('structureTreeInitialized');
     /**
      * The EntitiesList has been initialized
      * @event Writer#entitiesListInitialized
@@ -283,14 +277,14 @@ class EventManager {
 
   event(id: string) {
     const _this = this;
-    let event: EventProps = this.events[id];
+    let event = this.events[id];
 
     if (!event) {
       const callbacks = $.Callbacks();
       event = {
         publish: function () {
-          if (_this.doDebug) {
-            log.debug(`Leaf-Writer "${this.event}": ${arguments}`);
+          if (_this.debug) {
+            log.debug(`[LW Event: ${this.event}]: ${[...arguments]}`);
           }
           //@ts-ignore
           callbacks.fire.apply(this, arguments);
@@ -318,13 +312,6 @@ class EventManager {
     // TODO empty callbacks
   }
 
-  /**
-   * Whether to output events to the console.
-   * @param {Boolean} doIt
-   */
-  debug(doIt: boolean) {
-    this.doDebug = doIt;
-  }
 }
 
 export default EventManager;

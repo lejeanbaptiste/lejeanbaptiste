@@ -9,7 +9,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { forwardRef, useEffect, useState, type FC } from 'react';
+import React, { forwardRef, useEffect, useState } from 'react';
 import CloudDialog from '../cloud';
 import { FooterLoad, FooterSave } from '../footer';
 import Header from '../header';
@@ -25,7 +25,7 @@ const Transition = forwardRef((props: SlideProps, ref) => (
   <Slide direction="down" ref={ref} {...props} />
 ));
 
-const Main: FC<StorageDialogProps> = ({
+const Main = ({
   config,
   onBackdropClick,
   onCancel,
@@ -36,7 +36,7 @@ const Main: FC<StorageDialogProps> = ({
   resource: originResource,
   source: originSource,
   type = 'load',
-}) => {
+}: StorageDialogProps) => {
   const { cloud } = useAppState();
   const { resource, submit, source } = useAppState().common;
   const { initialize } = useActions().cloud;

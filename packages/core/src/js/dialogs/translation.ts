@@ -3,7 +3,7 @@ import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 import Writer from '../Writer';
 import AttributeWidget from './attributeWidget/attributeWidget';
-import type { LWDialogProps, LWDialogConfigProps } from './types';
+import type { LWDialogConfigProps, LWDialogProps } from './types';
 
 class Translation implements LWDialogProps {
   readonly writer: Writer;
@@ -175,12 +175,13 @@ class Translation implements LWDialogProps {
 
   private formResult() {
     let translation = $(`#${this.id}_trans`).val();
-    if (!translation) return;
     if (Array.isArray(translation)) translation = translation[0];
     if (typeof translation === 'number') translation = translation.toString();
+    if (!translation) return;
 
     const attributes = this.attributesWidget.getData();
 
+    //@ts-ignore
     const currTagId = this.writer.tagger.getCurrentTag().attr('id');
 
     const newTag = this.writer.tagger.addStructureTag({
@@ -193,14 +194,17 @@ class Translation implements LWDialogProps {
     const textTag = this.writer.tagger.addStructureTag({
       action: this.writer.tagger.INSIDE,
       attributes: {},
-      bookmark: { tagId: newTag.id },
+      bookmark: { tagId: newTag?.id },
       tagName: this.textParentTagName,
     });
+
+    if (!textTag) return;
 
     $(textTag).html(translation);
   }
 
   show() {
+    //@ts-ignore
     const currTag = this.writer.tagger.getCurrentTag().attr('_tag');
     if (currTag !== this.tagName) {
       this.writer.dialogManager.show('message', {
@@ -221,9 +225,10 @@ class Translation implements LWDialogProps {
     $resp.prop('checked', false);
 
     let firstLang = $(`#${this.id}_lang > option:eq(0)`).val();
-    if (!firstLang) return;
+
     if (Array.isArray(firstLang)) firstLang = firstLang[0];
     if (typeof firstLang === 'number') firstLang = firstLang.toString();
+    if (!firstLang) return;
 
     $(`#${this.id}_lang`).val(firstLang);
     $(`#${this.id}_trans`).val('');

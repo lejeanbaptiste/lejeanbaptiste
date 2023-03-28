@@ -1,4 +1,4 @@
-import { useAutocomplete } from '@mui/base/AutocompleteUnstyled';
+import useAutocomplete from '@mui/base/useAutocomplete';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -10,12 +10,12 @@ import {
   InputBase,
   Paper,
   useMediaQuery,
-  useTheme,
+  useTheme
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import debounce from 'lodash/debounce';
-import React, { FC, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
 import type { Content, SearchResults, SearchResultsBlobs } from '../../../../types';
@@ -29,13 +29,13 @@ interface SearchBarProps {
   onSecondaryAction?: (value: Content | SearchResultsBlobs) => void;
 }
 
-const SearchBar: FC<SearchBarProps> = ({
+const SearchBar = ({
   onChange,
   onClear,
   onClickAway,
   onPrimaryAction,
   onSecondaryAction,
-}) => {
+}: SearchBarProps) => {
   const { t } = useTranslation();
   const [options, setOptions] = useState<SearchResults[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +47,7 @@ const SearchBar: FC<SearchBarProps> = ({
   const theme = useTheme();
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const variants = {
+  const variants: Variants = {
     initial: { height: 0 },
     visible: { height: 40 },
     exit: { height: 0, transition: { duration: 0.02 } },

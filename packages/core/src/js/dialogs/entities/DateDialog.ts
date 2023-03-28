@@ -3,8 +3,7 @@ import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/datepicker';
 import { DateTime } from 'luxon';
 import Entity from '../../../js/entities/Entity';
-import type { EntityTypes } from '../../../js/schema/types';
-import type { SchemaMappingType } from '../../../types';
+import type { EntityType, SchemaMappingType } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
@@ -56,7 +55,7 @@ class DateDialog implements SchemaDialog {
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityTypes = 'date';
+  type: EntityType = 'date';
 
   dateRange: any;
 
@@ -316,6 +315,7 @@ class DateDialog implements SchemaDialog {
         if (Array.isArray(dateString)) dateString = dateString[0];
         if (typeof dateString === 'number') dateString = dateString.toString();
 
+        //@ts-ignore
         const dateLuxon = DateTime.fromISO(dateString);
 
         if (dateLuxon.isValid) {
@@ -339,7 +339,9 @@ class DateDialog implements SchemaDialog {
         if (typeof startString === 'number') startString = startString.toString();
         if (typeof endString === 'number') endString = endString.toString();
 
+        //@ts-ignore
         const startLuxon = DateTime.fromISO(startString);
+        //@ts-ignore
         const endLuxon = DateTime.fromISO(endString);
 
         if (startLuxon.isValid) {

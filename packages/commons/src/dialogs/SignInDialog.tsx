@@ -1,12 +1,12 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from '@mui/material';
 import { ProviderButton } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from './type';
 
-export const SignInDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
+export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { authProviders } = useAppState().providers;
   const { closeDialog } = useActions().ui;
 

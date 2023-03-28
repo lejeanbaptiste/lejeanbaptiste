@@ -2,14 +2,14 @@ import { Button, Tooltip } from '@mui/material';
 import { getIcon } from '@src/assets/icons';
 import { useActions, useAppState } from '@src/overmind';
 import { motion } from 'framer-motion';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ProviderButtonProps {
   name: string;
 }
 
-export const ProviderButton: FC<ProviderButtonProps> = ({ name: provider }) => {
+export const ProviderButton = ({ name: provider }: ProviderButtonProps) => {
   const { cookieConsent } = useAppState().ui;
   const { signIn } = useActions().auth;
 

@@ -1,5 +1,106 @@
 # CHANGELOG
 
+## 1.3.9
+
+### Patch Changes
+
+- Fix EsbuildPlugin minify config [fa93406fa8f2e2a45ca9faa8782b3e5ef3f997d5]
+- Update dependencies [5561796d145ead66dce292cd17625618bafdad87]
+  - core:
+    - update: framer-motion@10.3.2
+    - bump up:
+      - @mui/base@5.0.0-alpha.121
+      - @mui/lab@5.0.0-alpha.123
+      - @mui/material@5.11.13
+  - dev:
+    - bump up:
+      - @types/jest@29.4.4
+      - webpack@7.76.2
+
+## 1.3.8
+
+### Patch Changes
+
+- Update @mui/base components [1519cdba0d884cf6ecc4b03731a3386ca04cd0a2]
+- Add / remove types [3e66a0ac99d3bf439aabecf15734ec4d326e89df]
+- Tighten test threshold [e637910f5fa8f826aa1d4d216e7e0e0f6890c3b1]
+- Add missing dependency: uuid@9.0.0 [0a1455d54a73db80f770994bfc98cf2ffa0d68aa]
+- Update dependencies [d427322c0eab43b6d24c53d4471c448689d4ce2e]
+  - core:
+    - upgrade: framer-motion@10.2.4
+    - update: react-i18next@12.2.0
+    - bump up:
+      - @emotion/react@11.10.6
+      - @emotion/styled@11.10.6
+      - @mui/icons-material@5.11.11
+      - @mui/lab@5.0.0-alpha.122
+      - @mui/material@5.11.12
+      - axios@1.3.4
+      - i18next@22.4.11
+  - dev:
+    - upgrade: @testing-library/react@14.0.0
+    - update:
+      - @typescript-eslint/eslint-plugin@5.54.1
+      - @typescript-eslint/parser@5.54.1
+      - eslint-config-prettier@8.7.0
+      - jest-environment-jsdom@29.5.0
+      - mini-css-extract-plugin@2.7.3
+      - webpack@5.76.1
+
+## 1.3.7
+
+### Patch Changes
+
+- webpack update esbuild configurations [0328c61a031157df29b09ab28c5c2d5f85d4e865]
+- update dependencies [a625b9eb8fad4f88e45b4d529d7566f511e77134]
+  - core:
+    - bump up:
+      - @mui/base@5.0.0-alpha.118
+      - @mui/icons-material@5.11.9
+      - @mui/lab@5.0.0-alpha.120
+      - @mui/material@5.11.9
+      - axios@1.3.3
+      - framer-motion@9.0.3
+      - react-i18next@12.1.5
+    - dev:
+      - upgrade: esbuild@3.0.1
+      - update:
+        - @typescript-eslint/eslint-plugin@5.52.0
+        - @typescript-eslint/parser@5.52.0
+        - jest-environment-jsdom@29.4.3
+
+## 1.3.6
+
+### Patch Changes
+
+- fallback cloud provider when resource without storage provider is loaded [f964fafd175f22806cd5c60d085c91220b90f278]
+- update dependencies [36b447243b5ea3a5fd57ff50a9d7017f239c943c]:
+  - core:
+    - upgrade: framer-motion@9.0.0
+    - update:
+      - @mui/icons-material@5.11.0
+      - @mui/material@5.11.7
+      - axios@1.3.0
+      - i18next@22.4.9
+      - mui-modal-provider@2.2.0
+      - react-i18next@12.1.4
+    - bump up:
+      - @mui/base@5.0.0-alpha.116
+      - @mui/lab@5.0.0-alpha.118
+      - @octokit/rest@19.0.7
+  - dev:
+    - update:
+      - @types/jest@29.4.0
+      - @typescript-eslint/eslint-plugin@5.50.0
+      - @typescript-eslint/parser@5.50.0
+      - esbuild-loader@2.21.0
+      - eslint-config-prettier@8.6.0
+      - eslint-plugin-react@7.32.2
+      - jest-environment-jsdom@29.4.1
+    - bump up:
+      - mini-css-extract-plugin@2.7.2
+      - ts-jest@29.0.5
+
 ## 1.3.5
 
 ### Patch

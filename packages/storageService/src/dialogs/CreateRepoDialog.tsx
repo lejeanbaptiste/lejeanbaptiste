@@ -10,7 +10,7 @@ import {
   Switch,
   TextField,
 } from '@mui/material';
-import React, { ChangeEvent, FC, useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions } from '../overmind';
 
@@ -20,7 +20,7 @@ interface CreateRepoDialogProps {
   open: boolean;
 }
 
-export const CreateRepoDialog: FC<CreateRepoDialogProps> = ({ onCancel, onCreate, open }) => {
+export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogProps) => {
   const { t } = useTranslation();
   const { createRepo } = useActions().cloud;
   const { openDialog } = useActions().ui;

@@ -8,9 +8,9 @@ import {
   ListItemIcon,
   ListItemText,
   useMediaQuery,
-  useTheme,
+  useTheme
 } from '@mui/material';
-import React, { FC, useState } from 'react';
+import React, { useState } from 'react';
 import type { UserType } from '../../types';
 
 interface SideButtonProps {
@@ -22,14 +22,7 @@ interface SideButtonProps {
   value: string;
 }
 
-const SideButton: FC<SideButtonProps> = ({
-  active = false,
-  label,
-  onClick,
-  onDelete,
-  type,
-  value,
-}) => {
+const SideButton = ({ active = false, label, onClick, onDelete, type, value }: SideButtonProps) => {
   const [hover, setHover] = useState(false);
   const handleClick = () => (onClick ? onClick(value) : undefined);
   const handleDelete = () => (onDelete ? onDelete(value) : undefined);

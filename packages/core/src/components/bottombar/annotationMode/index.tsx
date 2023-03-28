@@ -1,14 +1,14 @@
 import { Box, Button, Tooltip } from '@mui/material';
-import React, { useState, type FC, type MouseEvent } from 'react';
+import React, { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../../overmind';
 import { Menu } from './Menu';
 
-const AnnotationMode: FC = () => {
-  const { annotationModeLabel, isReadonly } = useAppState().editor;
+const AnnotationMode = () => {
+  const { annotationModeLabel } = useAppState().editor;
   const { t } = useTranslation(['leafwriter']);
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>();
   const openMenu = Boolean(anchorEl);
 
   const handleButtonClick = (event: MouseEvent<HTMLElement>) => {
@@ -25,7 +25,6 @@ const AnnotationMode: FC = () => {
           aria-controls="annotation-mode-menu"
           aria-expanded={openMenu ? 'true' : undefined}
           aria-haspopup="true"
-          // disabled={isReadonly}
           disableRipple
           onClick={handleButtonClick}
           size="small"

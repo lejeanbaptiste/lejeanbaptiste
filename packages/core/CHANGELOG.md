@@ -1,5 +1,411 @@
 # CHANGELOG
 
+## 2.7.2
+
+### Patch Changes
+
+- Layout manager:
+  - Handle hide panels (null) when opened in readonly mode [8b084d51e1266ef7bc4929b31fe08fae828744e4]
+  - Make TOC the default panel on the left sidebar [b012c6df8e86f242769e97920e8552ae8d1b13b3]
+- Markup Panel:
+  - Replace 'inherit' with the palette primary color when entities are not found [c08331e3dcb43def034c0467715a5f35d1fb8cff]
+- Context Menu:
+  - Prevent displaying textNodes as sugestions until we have better support [2b66d7dc2fc9fc6eca19357aedf33c6230562247]
+  - Hidde the options to show textNodes until we have better support [384cebeefdc46f9e3bbf23c53f1dedd7f332988c]
+Edit Source Dialog:
+  - Accept the property type header to update just this section of the document [8c629a0ec7ce00dad76c9750ae5d5d1ead1f1c4a] [2ea6417f8943bb0b1d1b1b890373f8a9957996d9]
+
+## 2.7.1
+
+### Patch Changes
+
+- Markup panel:
+  - Block context menu on root and restrict on the header [cb09a97361a6cab76dadf4178ae3640fd552fca9]
+  - Improve types [009eeabe006df410941dd613fffe5d2cb163075b]
+- Clean logs [bbf3544af6a2c45c26bb4c09cfcd67c0409d0df0]
+
+## 2.7.0
+
+### What's new?
+
+#### Validation
+
+leafwriter-validator 2.0 introduced new features and fixed some bugs.
+
+##### Improved speculative validation
+
+Fix a bug preventing speculative validation on different intended actions (add before, add after, add around, add inside, add a tag, change a tag). This caused the list of possible tags to include some elements that would invalidate the document as valid. With this fix, you will see more strict behaviour.
+
+##### Return all possible tags with a flag indicating if they are invalid
+
+Instead of having either the possible or valid tags, the validator returns all the possible tags and flags them as either valid or invalid. This feature makes it easier to filter invalid tags based on user intention. Previously, LEAF-Writer only used valid tags as suggestions for a given context. Now it shows all the possible tags, visually flagging the invalid ones and letting the user show/hide them. To provide a concrete example, the tags `biblFull` and `biblStruct` never showed up as an option to add a tag before a `p`. Even though they are possible in `p`, they have specific requirements (e.g. `biblFull` requires `biblStruct` as a child). Now, LEAF-Writer shows all possible tags and allows users to add and, consequently, invalidate their document, which they would subsequently be warned by the validator and have a chance to fix the problem or save it as is.
+
+#### The `textNode` is also available
+
+Previous behaviour filtered `textNode` out of the possible tags (since it is not a tag). Now, the `textNode` returns as possible (and speculatively validated) together with the other tags. The `textNode` is identified with the type `text`.
+
+#### Context Menu
+
+The Context Menu was revamped to use the new features introduced by leafwriter-validator 2.0.
+
+The context menu will now show all the possible tags for context, including both valid and invalid. There is a visual distinction using icons and gray-out colours. There is a toggle to show/hide invalid tags. Note that the new list of possible tags includes the textNode. However, there has yet to be any support to add them to the document. Use this feature with caution.
+
+There is support to access a textNode context menu in the markup panel. There are options to copy the content of a textNode, paste content into it, remove the content, or remove the textNode altogether. Note: some textNode actions are not fully implemented, notably adding a tag before, after, and around. Use this feature with caution.
+
+This version also fixed a few bug fixes, including one related to the nested menus.
+
+#### Markup Panel
+
+We improve support for textNodes. TextNodes are now clickable, which means they can be used for navigation and highlighting. It is also possible to access additional functionalities in the context menu. Some actions (like multi-selection and drag and drop) still need to be fully implemented. By default, textNodes are not hidden. You can show/hide textNodes in the contextMenu or the settings panel.
+
+### Minor Changes
+
+- Events:
+  - Add new event listeners to set the editor as 'dirty' [a8c0b57c7c7c6b5d1bd7cb0dfed2cc596704d6e5]
+    - New events: 'tagAdded', 'tagEdited', 'tagRemoved', 'tagContentsRemoved', and 'contentPasted'
+- ContextMenu:
+  - Revamp context menu: use new validator API, allow for textNode, toggle invalid, fix bugs [a11fa6bbe4f18c5c3687525701162d6f215e8f07]
+    - Complete Refactoring:
+      - Use new validator API to show possible tags (valid and invalid).
+      - Add toggle to show/hide invalid tags. Add an option to show textNodes in the markup panel.
+      - Add support for textNode context.
+      - Add copy, paste, and remove actions for textNode.
+      - Fix nested menus.
+      - Note: some textNode actions still need to be completely implemented (add a tag before, after, and around).
+- Markup Panel
+  - Improve support for textNodes: [987611e5d719d4fadd478a0662c0f615ff25d480]
+    - allow selection, multi-selection, drag and drop, access contextMenu
+    - This change also rename the component from 'strucutreTree' to 'markup'
+    - Note: these features are still in beta. Use with caution.
+
+### Patch Changes
+
+- Localization:
+  - Give better support for translation [090023a9f4c9c8a64e90a90b3943af12a94608d2]
+    - This is a partial fix. i18next config needs to be improved for better support in LW Commons
+- Icons
+  - Adjust the size (book) [897b36be9cc48b1aba44410e524982080d41389d]
+  - Add two new icons [107d55bd87702186555fad4715f8b0279a354396]
+- Toc: Rename component as TocPanel [94ac61158287e37f3f109e7128297795ea7c5b11]
+- Utilities: Split functions into specialized modules (string, dom, etc...) [674f06a4068df337698e313f8d718cb046b4c4f1]
+- Types:
+  - Coalesce the 'entitytype' type in a single place [9f3878f8a24b0fe2ac0ec845bb7d1b1b1169cf14]
+  - Move 'writer' declaration to the root [ed453cd2fdbafce0d963a4c309164d0e39c6adcc]
+  - Use Typescript strict mode [ceec3203985657d2bcd96ddad7d014ca48ebd61a]
+- LocalStorage: Handle error when transforming string into json [3fdc407ac3dd3ce7e2e8f1cd5473b51fc94eb395]
+- LookUps: Better error handling for geonames when three is no username [479d5b7b26eee63a950b776939a1f6a0f1c514b1]
+- Ribbon: Allocate buttons into groups [0f9936aabeee69ac3f5c35e27652619170101677]
+- StyledTooltip: fix title capitalization [766ff7e77efcf70a115ebe37f0eb952bd9913be0]
+- Schemas: add 'label' to the empty schema object [d63d75b65bbbdcfafba5c23d99ddd20348689ebf]
+- Validator: Update @cwrc/leafwriter-validator@2.0.0 and make changes to the API calls [9a63b84d9828d7ba8a30244ad17ec9c477ca258f]
+- Settings:
+  - Remove the toggle for multi-selection in the markup panel. This feature is now always on. [93f503640ad3b84216c271ed0d27871f59049ec6]
+    - Add a note to textNode (in beta)
+- Update dependencies [6dabde7e3ab22a2c261a569f5c10300c14c93c4d]
+  - core:
+    - remove:
+      - prismjs [a7211bce3742028ce1a80cea86acff9fde9c1b87]
+      - prims-themes [a7211bce3742028ce1a80cea86acff9fde9c1b87]
+      - wikidata-sdk [c4bf63ce95b9879a451fcee0f74c8eaee8ee4d21]
+    - add: wikibase-sdk [c4bf63ce95b9879a451fcee0f74c8eaee8ee4d21]
+    - upgrade: @cwrc/leafwriter-validator@2.0.0 [9a63b84d9828d7ba8a30244ad17ec9c477ca258f]
+    - update: framer-motion@10.9.1
+    - bump up:
+      - @mui/material@5.11.14
+      - i18next@22.4.13
+      - rdflib@2.2.31
+      - react-resizable-panels@0.0.37
+  - dev:
+    - remove: @types/prismjs [a7211bce3742028ce1a80cea86acff9fde9c1b87]
+    - upgrade: typescript-plugin-css-modules@5.0.0
+    - update:
+      - @typescript-eslint/eslint-plugin@5.56.0
+      - @typescript-eslint/parser@5.56.0
+      - eslint-config-prettier@8.8.0
+    - bump up:
+      - @types/node@18.15.10 [4e620d6e7baea69c992a16d6c1194599b1e48ca7]
+      - mini-css-extract-plugin@2.7.5
+      - webpack@5.76.3
+
+## 2.6.1
+
+### Patch Changes
+
+- TOC: heading identation and expansion [e68ee1428ebdd7f740053778964670d236468440]
+- Improve logging [e97e225c1925652e2087caab1d9d9ab5d79ebaaa]
+- Markup Panel:
+  - Reduce initial open level [cf4bd71c7b3596ba363dc909d7f925eb8cf94aa8]
+  - Reduce tooltip delay to 1200 ms [9afbba8fc0f69cdabfb537e664a6285badae1c98]
+  - Allow drag only of selecting whole tag [5b5ab5c190543be650ccc4c972bcab147dd342c2]
+- Clean, rename var, remove comments [1944d8a8445d4b67ac6f0fc2bd2b95bc93ad8589]
+- Tests change lib url [32738d54791006181ff1bd2ce34f664921af700c]
+- Fix EsbuildPlugin minify config [498eeb5e029761ad0a395fb0674966a9a88adae3]
+- Update dependencies [62b87f77a1b62a535fee0d03f7cb8c726158f004]
+  - core:
+    - update: framer-motion@10.3.2
+    - bump up: @mui/material@5.11.13
+  - dev:
+    - bump up:
+      - @types/node@18.15.3
+      - webpack@5.76.2
+- Updated dependencies
+- @cwrc/leafwriter-validator@1.2.4
+
+## 2.6.0
+
+## New Features
+
+### New Markup Panel
+
+Redesign and reimplement the Structure Tree [04ae91440652f56556d62171123346ca7d4fe549]
+Implemented React. Dark theme included. Uses `Jotai` for internal context state.
+Features:
+
+- Expand / collapse the tree
+- Show / hide text nodes.
+- Select the whole tag or content only.
+- Context Menu
+- Multi-selection
+  - Constraints: adjacent tags from the same parent container
+  - Allows for merging tags with the same tag name.
+  - Allows adding a tag around selected tags.
+- Drag and drop (experimental)
+  - Reorder and reorganize the document by moving tags around.
+- Hidden when LEAF-Writer is in read-only mode.
+
+### New Table of Content panel
+
+A tree-like panel showing only the document's heading [99274ef1aa8ac409626817a2fe3d1a2248dbc322]
+Derived from the new Structure Tree. It is the default panel in the left sidebar now.
+
+### redesign Settings Dialog
+
+Due to the increase of options in this dialog, a menu was introduced. The idea is to accommodate more options in the future and avoid occlusion. [e79ff7f2ff3b448299221a1d0201cbdd7fc9d72b]
+
+### Headings in Schema Mapptins
+
+Add the `headings` property to schema mappings as a way to identify headings tags [dc3d551fcf79f4b50a847afbc992fc3591293007]
+Replace a hardcoded identifier for the headings when creating a table of contents,
+
+### Patch Changes
+
+- Add a rudimentary test to check if LW commonJS lib is loading [6ee0f58dd1e0c405edc95c4e171f2091ec8e52f6]
+- Add / remove types [1bad6fe21528c84500cd7b869a3b304410d0705a] [fb6a89281b921060b6532d39f1fd84cc46137af0] [e3336623365ea9f0921b58420d0b4a98e7293102]
+- Simplify css properties in mui components [a02ecf799352fc8fc5986e17ffa24df0e39224e0] [98d7592e7b269f0976b3c10c297a4f41fb28630b]
+- Get component (Stack from @mui/material) from the right lib [88ce110dab424e27062b32c107546aecd3c20462]
+- Dialogs: export type SimpleDialogMessageProps [9f2c36fded24ea260eecd5325bb63aa03868f54b]
+- Types: Add a check to narrow NODE by type (ELEMENT | NODE) [b52127935867e11a7dac57c2049291d14f630887]
+- Formatting and removing commented code / styles [72386c49d3be411fb8682dc55c704b5e990edfd7] [05110e03112904a39eab808b7eee6d2fba4ecd10]
+- Isolate and coalesce ToggleButtonGroup component [f880a18691ec71f5b9757f2c09137a464a55de7b]
+- Ribbon: add transition [d09fcdf449ec62b41bc4f2f7b19b30f11a743e28]
+- Coalesce icons into a centralized place with a single getIcon API. The list of icons is a Record now, which means that it is typed and easy to select an icon when using getIcon [9879d7f48029239d0b5483dd1fadc149ddb623f4]
+- Entities: getTitleFromEntity: trimEnd optional. Remove added ellipsis [573556112ad9c3bb5a6658fc36955c529e01890a]
+- Tagger: remove global ignore types. add types and keep ignore types for legacy code [201f0a579edb4a8d2935a475b3a8e5a35dca834f]
+- Utilities: add smooth scroll in select elements out of view in the editor [9b093ece107c568d4f3e5de74e26eb50a3c6a136]
+- UI: Rename function `showEntities` -> `setShowEntities` [a9f8158d98a92de30b685a5cfe1905ea3fc0fd87]
+- ContextMenu: reorganize files, replace animation, add types, use new icon API. Drop `react-transition-group` in favour of `framer-motion`, which is used elsewhere in the project [659c1f22c7ff825ec2b818129d85e808755e06cb]
+- Add localization [92b94ebfb3b8647f7dea7d0bfaf5ab0daf010765]
+- WIP: Redesign layout panels. Not available yet. [ddc9d52767a6b06b501026b9358b78a0795d882c]
+- Update dependencies [1da6aeb2e1e78a460356b4ffaa5acfa9d824d19e]:
+  - core:
+    - remove unused: @mui/lab
+    - upgrade: framer-motion@10.2.4
+    - update:
+      - luxon@3.3.0
+      - monaco-editor@0.36.1
+      - react-i18next@12.2.0
+    - bump up:
+      - @dnd-kit/core@6.0.8
+      - @emotion/react@11.10.6
+      - @emotion/styled@11.10.6
+      - @mui/icons-material@5.11.11
+      - @mui/material@5.11.12
+      - axios@1.3.4
+      - dexie-react-hooks@1.1.3
+      - i18next@22.4.11
+      - jquery@3.6.4
+      - rdflib@2.2.30
+      - react-intersection-observer@9.4.3
+      - yup@1.0.2
+  - dev
+    - update:
+      - @types/chroma-js@2.4.0
+      - @types/js-cookie@3.0.3
+      - @types/node@18.15.0
+      - @typescript-eslint/eslint-plugin@5.54.1
+      - @typescript-eslint/parser@5.54.1
+      - eslint-config-prettier@8.7.0
+      - webpack@5.76.1
+    - bump up:
+      - @types/js-cookie@3.0.3
+      - @types/uuid@9.0.1
+      - mini-css-extract-plugin@2.7.3
+
+## 2.5.0
+
+## Features
+
+### Edit header
+
+Bring back the ability to edit header. Right click on `teiHeader` from the `Mark up` panel to open a xml editor with only the elements in the document header. [1ce5e5d011ca9212a9b24f60f34416ac736e062d]
+
+### New Ribbon
+
+TinyMCE standard toolbar was limitting our ability to control how the ribbon show up and which buttons show it display.
+We have now a new custom toolbar build with React that we can customize in several ways (including using color coding to match entities)
+[f3f2f8ba7ed228d66549d2fec014acb6d993f1a6]
+
+### Readonly Mode
+
+We are bringing back the readonly mode. In this mode a number of funcitonalites are blocked or hidden to prevent changes in the document. [ef5add578623a93154a8ee7dcbf9320e4e7a4529].
+
+Notably changes are:
+
+- Editor: prevent typing or editing
+- Ribbon: Hide all buttons related to insertion of tags/entities. Only show UI options.
+- Settings: Only show UI options
+- Bottom Bar: Hide editor optons (edito mode, annotatopn mode, schema)
+- Panels: Hide `Validation` and `Raw XML Viewer` Panels. The `Mark Up` panel doubles as `Table of Contents`, showing only the document heading.
+
+To make LEAF-Write readonly, pass the property `readonly: true` when initiating the editor. Example:
+
+```js
+leafWriter.init({
+  document: {
+   ...
+  },
+  settings: {
+    ...
+    readonly: true,
+  },
+  user: ...,
+});
+```
+
+## Minor Pathces
+
+- Rename `selection panel` to `raw xml` [ecd40aa576066b8121be7c287228f44d57e10abd]
+- Add the 'thing' entity to the theme [65517eecd244e74a22adbb772873722452ce9f94]
+- Add Styled Tooltip component as an idenpendent component [9d337e5c7c472971f56e184f46aa22ae834c4e65]
+- Prevent change content when pressing meta keys (cmd, ctrl, alt, etc) [87736230ca6d529cc58e7734afd2b3d7199d1019]
+- rename property `isDirty` to `contentHasChanged` [020a3230d86f1c12fee6888da69cc0ca72db8ed7]
+- webpack update esbuild configurations [a8c8e8f09307c9911bd73dba15d1baa90e4b89ab]
+- update dependencies [dd45e21657479cd5ff576953da523c937bcf1287]
+  - core:
+    - remove: react-router-dom
+    - upgrade: yup@1.0.0
+    - update:
+      - @fortawesome/fontawesome-free@6.3.0
+      - monaco-editor@0.35.0
+    - bump up:
+      - @mui/icons-material@5.11.9
+      - @mui/lab@5.0.0-alpha.120
+      - @mui/material@5.11.9
+      - axios@1.3.3
+      - comlink@4.4.1
+      - framer-motion@9.0.3
+      - rdflib@2.2.26
+      - react-i18next@12.1.5
+      - react-intersection-observer@9.4.2
+    - dev:
+      - add: @types/tinymce@4.6.5
+      - upgrade: esbuild-loader"@3.0.1
+      - update:
+        - @types/node@18.13.0
+        - @typescript-eslint/eslint-plugin@5.52.0
+        - @typescript-eslint/parser@5.52.0
+      - bump up:
+        - @types/chroma-js@2.1.5
+        - @types/openseadragon@3.0.5
+        - @types/react-dom@18.0.11
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter-validator@1.2.3
+
+## 2.4.0
+
+### Feature
+
+#### Role in named-entity Person (#99)
+
+- Tag edit: get person roles from schema and allow custom value via input [c76d2c821f4213f36416ec8d413590a3767594df]
+
+The attribute roles in the Person entity only shows up if the schema defines it. Accodingly, the if the schema define the possible values, the list will populate the dripdown menu where users can pick the value they desire. If the schema does not provide the list, we use a hardcoded list with ~250 itms.
+
+Future versions should consider remove the harcoded list and have a lookup service to get the list from specific sauthorities, sucha as CWRC.
+
+#### Suspend "onChange" event when scraping tags (#105)
+
+- Add state to suspend autosave in specific circunstances, like when using entity scraping [805c64a8db7ac12a153211ad7b8f77fb1fc4ea4c]
+- autosave: prevent LW to send hasContentChange events when doing some operations [2b1f94066798e2ef9e7162d878442980d6abf7f8]
+- use indexDB to save a suspeded state of the document [d467095cc8cd89e7a6e65cde8fb792ea9102bc4d]
+
+Some tasks in LEAF-Writer requires the manipualtion of the document as a way to make things visible for user. When scraping entities from tags, LW momentaneously introduce attributes to these tags to allow user to accept / reject theses tags as entities. Theses changes would normally be broadcast to LW host, which would use as a sign that the document has change and thus triggering actions such as "autosave". This would cause the document to save the changes and add all the tags as entities without the user awareness. To prevent this to happen, critical tasks like "scrape" should suspend the document changes broadcast until the user finish the task. To make things even safer, before suspending the changes broadcast event, LW caches the document's current state on the browser indexedDB. If there is content request during the suspension (for saving, for instance), LW will hand the cached version. Once the the task is completed, the cache is emptied.
+
+### Patch
+
+- Schema: update orlando schema / css [16c8ad2470d34ed2c8d71b2774f6384270a773d5]
+- Parser to get schema/css uri from xml document. Allows for values with single and double quotes [3cf2f24d028afe402e8a8ec582cecf810a5dad7f]
+- Prevent open context menu from teiHeader [dae8728e122196988104dd3003f2733b9651a2ee]
+- Dialogs: fix color-scheme when theme is dark [ca4d23e2b8b50e65b0626652837d2d33ec4f9132]
+- entity color: fix citation color [85230b283306da8afa617906856ef06bd9381623]
+- Dark-theme on PB tag [a7fd0bce4398d763944843a80139c30b9f29558d]
+- jquery event [0f816a7eb72d785da8686b932b035caaacb686ca]
+- onLoad event should keep sending updates when other files gets loaded in the same session [d459f07da9a46737b4fffa28a27f6db9676f9ba5]
+- schema mapper: consider entry withut uri (non-named entity) [6367bdc813edc0f68d6e0f8a63dee97b1baf518f]
+- Add non-named entity to entity scraper (#103) [fe8eeb4f01bc5c0ee063aa6bbecdda99f74ee89c]
+- Settings: allows anonymous user to access the settings panel (#102) [d5fac7724a91ad394bd1006dda45cea27bfb607d]
+- rename fontSize variable [600d8ee0bec46963377c876f1d4b7c9c0636453c]
+- update dependencies [de1ae1d31a9c7b0a35629ac68819b928b0734ed2] [6e9db30ee0d2bcfa81fde98be9ff65cee2251134]
+  - core:
+    - add:
+      - dexie@3.2.3
+      - dexie-react-hooks@1.1.1
+    - upgrade:
+      - framer-motion@9.0.0
+      - openseadragon@4.0.0
+      - update:
+        - @mui/icons-material@5.11.0
+        - @mui/material@5.11.7
+        - axios@1.3.0
+        - comlink@4.4.0
+        - i18next@22.4.9
+        - luxon@3.2.1
+        - mui-modal-provider@2.2.0
+        - react-i18next@12.1.4
+        - react-router-dom@6.8.4
+        - rxjs@7.8.0
+      - bump up:
+        - @dnd-kit/core@6.0.7
+        - @dnd-kit/modifiers@6.0.1
+        - @dnd-kit/sortable@7.0.2
+        - @mui/lab@5.0.0-alpha.118
+        - jquery@3.6.3
+        - jstree@3.3.14
+        - rdflib@2.2.25
+        - wikidata-sdk@8.1.1
+    - dev:
+      - update:
+        - @types/luxon@3.2.0
+        - @typescript-eslint/eslint-plugin@5.50.0
+        - @typescript-eslint/parser@5.50.0
+        - esbuild-loader@2.21.0
+        - eslint-config-prettier@8.6.0
+        - eslint-plugin-react@7.32.2
+      - bump up:
+        - @types/jquery@3.5.16
+        - @types/node@18.11.18
+        - @types/react-dom@18.0.10
+        - husky@8.0.3
+        - mini-css-extract-plugin@2.7.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter-validator@1.2.2
+
 ## 2.3.1
 
 ### Patch
@@ -7,6 +413,7 @@
 - User props: remove avatar_url & nick. Add uri. [7b9e9c69587e125b46f829689ab7e3421ae2967d]
 - Rename types [a6affdbdc116b3682ffe4202f0a5e0d00d43f8e1]
 - Update dependencies [91b130e51a7d4fde5fa86e987115f088d120d344]:
+
   - core:
     - update: axios@1.2.0
     - bump up:

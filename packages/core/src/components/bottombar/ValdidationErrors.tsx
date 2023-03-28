@@ -1,14 +1,12 @@
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, Tooltip } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useAppState } from '../../overmind';
 
-export const ValdidationErrors: FC = () => {
+export const ValdidationErrors = () => {
   const { validationErrors } = useAppState().validator;
 
-  const handleClick = () => {
-    window.writer.validate();
-  };
+  const handleClick = () => window.writer.validate();
 
   return (
     <Tooltip title="Annotation Mode">

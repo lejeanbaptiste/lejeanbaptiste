@@ -19,6 +19,7 @@ export interface ItemProps extends MenuItemProps {
 export const Item = ({
   data,
   disabled = false,
+  hide = false,
   icon,
   label,
   onClick,

@@ -4,9 +4,9 @@ import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import Badge, { type BadgeProps } from '@mui/material/Badge';
 import { styled } from '@mui/material/styles';
 import { useAppState } from '@src/overmind';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { CloudSyncOutline } from 'mdi-material-ui';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLeafWriter } from '../../useLeafWriter';
 
@@ -14,8 +14,8 @@ const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
   '& .MuiBadge-badge': { top: -5, left: 11, minWidth: 4, height: 4 },
 }));
 
-export const Cloud: FC = () => {
-  const { isDirty, isSaving, resource, saveDelayed } = useAppState().editor;
+export const Cloud = () => {
+  const { contentHasChanged: isDirty, isSaving, resource, saveDelayed } = useAppState().editor;
 
   const { t } = useTranslation('storage');
 
@@ -26,7 +26,7 @@ export const Cloud: FC = () => {
     handleSave();
   };
 
-  const animationProps = {
+  const animationProps: Variants = {
     visible: { width: 'auto', opacity: 1 },
     hidden: { width: 0, opacity: 0 },
   };
