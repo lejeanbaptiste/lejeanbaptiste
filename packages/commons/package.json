@@ -1,6 +1,6 @@
 {
 	"name": "@cwrc/leafwriter-commons",
-	"version": "2.6.5",
+	"version": "2.6.6",
 	"private": true,
 	"description": "xml editing and rdf annotation using github as document store",
 	"keywords": [
