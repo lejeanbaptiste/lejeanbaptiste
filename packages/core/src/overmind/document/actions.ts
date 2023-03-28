@@ -27,7 +27,7 @@ export const setSchema = ({ state }: Context, id: string) => {
   return state.editor.schemasList.find((schema) => schema.id === id);
 };
 
-export const setDocumentUrl = ({ state }: Context, url: string) => {
+export const setDocumentUrl = ({ state }: Context, url?: string) => {
   state.document.url = url;
 };
 
