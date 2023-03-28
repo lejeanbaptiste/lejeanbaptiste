@@ -8,7 +8,7 @@ LEAF-Writer Validator is a web worker able to validate XML documents stored in D
 
 Given an XML document and its Relax NG schema, LEAF-Writer Validator can perform validation, retrieve information about errors (including documentation, if available), get information about elements defined in the schema (tags, attributes values), list possible attributes and children elements for a tag, and speculatively validated insertion of tags in a specific context (before, after, inside, or around a tag) to assist the user in editing the document.
 
-As a web worker, LEAF-Writer Validator is fast and non-blocking. Validation will occur in parallel to the browser’s main thread. However, depending on the schema's complexity and the document's length, the validation processes (including all the features listed above) might take some time to respond. When simply validating the document, the web worker emits events as it goes through the document. These events can be used to keep the UI updated. Other features, such as speculatively validated insertion of a tag in a specific context, are asynchronous, and they will only return at the end of the process.
+As a web worker, LEAF-Writer Validator is fast and non-blocking. Validation will occur in parallel to the browser’s main thread. However, depending on the schema’s complexity and the document’s length, the validation processes (including all the features listed above) might take some time to respond. When simply validating the document, the web worker emits events as it goes through the document. These events can be used to keep the UI updated. Other features, such as speculatively validated tag insertion in a specific context, are asynchronous and will only return at the end of the process.
 
 - [Install](#install)
 - [Load as a web worker](#load-as-a-web-worker)
@@ -17,11 +17,12 @@ As a web worker, LEAF-Writer Validator is fast and non-blocking. Validation will
   - [Validate](#validate)
 - [Get information from Schema](#get-information-from-schema)
   - [Get Tag at](#get-tag-at)
-  - [Get Elements for a Tag at](#get-elements-for-a-tag-at)
+  - [Get nodes for a Tag at](#get-nodes-for-a-tag-at)
   - [Get Attributes for a Tag at](#get-attributes-for-a-tag-at)
   - [Get Tag Attribute at](#get-tag-attribute-at)
-  - [Get Tag Attribute value at](#get-tag-attribute-value-at)
-- [Get Valid Tags At](#get-valid-tags-at)
+  - [Get Values for a Tag Attribute at](#get-values-for-a-tag-attribute-at)
+- [Get Possible Nodes At](#get-possible-nodes-at)
+  - [Get Valid Nodes At](#get-valid-nodes-at)
 - [Reset](#reset)
 - [Types](#types)
 - [Development](#development)
@@ -122,7 +123,7 @@ With the schema loaded, we can now send the document into LEAF-Writer Validator,
 **Parameters**
 
 | Name | Type | Description |
-|--|--|--|
+| - | - | - |
 | XML document* | string | The XML document |
 | callback | func | A function to receive event updates and the final results.<br/> Signature: `(workingStateData: WorkingStateData) => void`. See more about [WorkingStateData](#workingstatedata). |
 
@@ -202,12 +203,12 @@ We can use the validator to get detailed information about a tag or an attribute
 
 ### Get Tag at
 
-Get the element definition using xpath. Call `getTagAt` passing `tagName`, `parentXpath` and `index` . The validator will look for the `tagName` at the possible elemens on the tags's `parentXpath` and `index`. It return an object [ElementDetail](#elementdetail) with the element type (`tag`), the tag `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
+Get the element definition using xpath. Call `getTagAt` passing `tagName`, `parentXpath` and `index` . The validator will look for the `tagName` at the possible elements on the tags's `parentXpath` and `index`. It return an object [NodeDetail](#nodedetail) with the element type (`tag`), the tag `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
 
 **Parameters**
 
-| Name | Type | Description |
-|--|--|--|
+| Name | Type   | Description |
+| - | - | - |
 | tagName* | string | The tag name |
 | parentXpath* | string | The tag's parent Xpath |
 | index | number | The index position relative to its parent. Default is `0` |
@@ -225,20 +226,21 @@ console.log(tag);
   ns: 'http://www.tei-c.org/ns/1.0',
   documentation: '(paragraph) marks paragraphs in prose. [3.1. 7.2.5. ]',
   fullName: 'Paragraph',
+  eventType: 'enterStartTag',
 }
 */
 ```
 
-### Get Elements for a Tag at
+### Get Nodes for a Tag at
 
-Get a list of element for a tag using xpath. Call `getElementsForTagAt` passing `xpath` and `index` . The validator return an array of objects [ElementDetail](#elementdetail) with the element type (`tag`), the tag `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
+Get a list of element for a tag using xpath. Call `getElementsForTagAt` passing `xpath` and `index` . The validator return an array of objects [NodeDetail](#nodedetail) with the element type (`tag`), the tag `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
 
 **Parameters**
 
 | Name | Type | Description |
-|--|--|--|
+| - | - | - |
 | xpath* | string | The tag's Xpath |
-| index | number | The index position relative to its parent. Default is `0` |
+| index  | number | The index position relative to its parent. Default is `0` |
 
 Example:
 
@@ -254,6 +256,7 @@ console.log(tags);
     ns: 'http://www.tei-c.org/ns/1.0',
     documentation: '(paragraph) marks paragraphs in prose. [3.1. 7.2.5. ]',
     fullName: 'Paragraph',
+    eventType: 'enterStartTag',
   }
   ...
 ]
@@ -262,14 +265,14 @@ console.log(tags);
 
 ### Get Attributes for a Tag at
 
-Get a list of attributes for a tag using xpath. Call `getAttributesForTagAt` passing `xpath` and `index` . The validator return an array of objects [ElementDetail](#elementdetail) with the element type (`attribute`), the attribute `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
+Get a list of attributes for a tag using xpath. Call `getAttributesForTagAt` passing `xpath` and `index` . The validator return an array of objects [NodeDetail](#nodedetail) with the element type (`attribute`), the attribute `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
 
 **Parameters**
 
 | Name | Type | Description |
-|--|--|--|
+| - | - | - |
 | xpath* | string | The tag's Xpath |
-| index | number | The index position relative to its parent. Default is `1` |
+| index  | number | The index position relative to its parent. Default is `1` |
 
 Example:
 
@@ -285,6 +288,7 @@ console.log(attributes);
     fullName: 'arbitrary segment',
     documentation: `(arbitrary segment) represents any segmentation of text below the chunk level. [16.3.  6.2.  7.2.5. ]`,
     ns: 'http://www.tei-c.org/ns/1.0',
+    eventType: 'attributeName',
   }
   ...
 ]
@@ -293,14 +297,14 @@ console.log(attributes);
 
 ### Get Tag Attribute at
 
-Get attribute's details for a tag using xpath. Call `getTagAttributeAt` passing `attributeName` and `parentXpath` . The validator return an object [ElementDetail](#elementdetail) with the element type (`attribute`), the attribute `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
+Get attribute's details for a tag using xpath. Call `getTagAttributeAt` passing `attributeName` and `parentXpath` . The validator return an object [NodeDetail](#nodedetail) with the element type (`attribute`), the attribute `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
 
 **Parameters**
 
 | Name | Type | Description |
-|--|--|--|
+| - | - | - |
 | attributeName* | string | The attribute's name |
-| parentXpath* | string | The attribute's parent Xpath (i.e., the tag's xpath) |
+| parentXpath*   | string | The attribute's parent Xpath (*i.e.*, the tag's xpath) |
 
 Example:
 
@@ -315,18 +319,19 @@ console.log(attribute);
   fullName: 'arbitrary segment',
   documentation: `(arbitrary segment) represents any segmentation of text below the chunk level. [16.3.  6.2.  7.2.5. ]`,
   ns: 'http://www.tei-c.org/ns/1.0',
+  eventType: 'attributeName',
 }
 */
 ```
 
-### Get Tag Attribute value at
+### Get Values for a Tag Attribute at
 
-Get a list of possible values for tag's attribute using xpath. Call `getValuesForTagAttributeAt` passing `xpath`. The validator return an array of objects [ElementDetail](#elementdetail) with the element type (`value`), and the value `name`.
+Get a list of possible values for tag's attribute using xpath. Call `getValuesForTagAttributeAt` passing `xpath`. The validator return an array of objects [NodeDetail](#nodedetail) with the element type (`value`), and the value `name`.
 
 **Parameters**
 
 | Name | Type | Description |
-|--|--|--|
+| - | - | - |
 | xpath* | string | The attribute's Xpath. The last part of the Xpath must start with a `@` sign to define it as an attribute |
 
 Example:
@@ -337,25 +342,148 @@ const attributeValue = await validator.getValuesForTagAttributeAt('/TEI/text/bod
 console.log(attributeValue);
 /*
 [
-  { type: 'value', name: 'high' },
-  { type: 'value', name: 'medium' },
-  { type: 'value', name: 'low' },
+  { type: 'value', name: 'high', value: 'high', eventType: 'attributeValue', type: 'attributeValue'},
+  { type: 'value', name: 'medium', value: 'medium', eventType: 'attributeValue', type: 'attributeValue'},
+  { type: 'value', name: 'low', value: 'low', eventType: 'attributeValue', type: 'attributeValue'},
 ]
 */
 ```
 
-## Get Valid Tags At
+## Get Possible Nodes At
 
-We can use the validator to get valid children tags for context. For instance, let's say we want to insert a tag inside an empty `<p>`.
+We can use the validator to get valid children tags and nodes for context. For instance, let's say we want to insert a tag inside an empty `<p>`.
 
-Call the method `getValidTagsAt` passing an object [GetValidTagsAtParameters](#getvalidtagsatparameters). This method will first get all the possible children tags for `<p>` at the exact position on the document (context) and then **virtually** loop through the list, inserting each child inside `<p>` and (speculatively) validates according to the tag context but respecting schema. If the insertion produces an invalid structure, the tag is discarded. The remaining tags are considered validated suggestions.
+Call the method `getPossibleNodesAt` passing an object [Target](#target) and an optional object [PossibleNodesAtOptions](#possiblenodesatoptions). The target should contain the tag's `xpath` and `index` and optionally a [selection](#targetselection) object. The selection tell the validator the context of your action and which type of action you want to make. The second and optional obejct has only one property - `speculativeValidate` (boolean) that tells the validator to speculativelly valides the intended action. The `speculativeValidate` property is `true` by default.
 
-The method returns the object [GetValidTagsAtResponse](#getvalidtagsatresponse), which inclide the list of possile tags and the list of validated tags.
+This method first get all the possible children tags for `<p>` at the exact position on the document (context). If the optional `speculativeValidate` is not present or false, the validor return the lisf of posivle tags in the context.
+
+It the optional `speculativeValidate` is true, then the validator **virtually** loop through the list of possible tags, inserting each one inside `<p>` and (speculatively) validates according to the tag context but respecting the schema. If the insertion produces an invalid structure, the tag is marked as invalid. The remaining tags are considered validated suggestions.
+
+The method returns the object [PossibleNodesAt](#possiblenodesat), which includes the original target object and a list of possile tags with a boolean property `invalid` attached to each one.
+
+**Parameters**
+
+| Name | Type | Description |
+| - | - | - |
+| target* | [Target](#target) | The target xpath and index and optionally a [selection](#targetselection) objects |
+| options | [PossibleNodesAtOptions](#possiblenodesatoptions) | The options for this request,most notably `speculativeValidate` |
+
+Example:
+
+1. With speculative validation
+
+```ts
+const results = await validator.getPossibleNodesAt({
+  xpath: 'TEI/text/body/div/p',
+  index: 0,
+  selection: {
+    endContainerIndex: 0
+    endOffset: 20
+    startContainerIndex: 0
+    startOffset: 14
+    type: "span"
+  }
+}, {speculativeValidate: true}); // this can be omitted since it is the default
+
+console.log(results);
+/*
+{
+  target: {
+    index: 0,
+    xpath: 'TEI/text/body/div/p',
+    selection: {...}
+  }
+  nodes: [
+    {
+      type: 'tag',
+      name:'p',
+      ns: 'http://www.tei-c.org/ns/1.0',
+      documentation: '(paragraph) marks paragraphs in prose. [3.1. 7.2.5. ]',
+      fullName: 'Paragraph',
+      eventType: 'enterStartTag',
+      invalid: true,
+    },
+    {
+      type: 'tag',
+      name:'pb',
+      ns: 'http://www.tei-c.org/ns/1.0',
+      documentation: '(page break) marks the start of a new page in a paginated document. [3.10.3. ]',
+      fullName: 'Page Break',
+      eventType: 'enterStartTag',
+      invalid: false,
+    },
+    ...
+  ]
+}
+*/
+```
+
+2. Without speculative validation
+
+```ts
+const results = await validator.getPossibleNodesAt({
+  xpath: 'TEI/text/body/div/p',
+  index: 0,
+  selection: {
+    endContainerIndex: 0
+    endOffset: 20
+    startContainerIndex: 0
+    startOffset: 14
+    type: "span"
+  }
+}, {speculativeValidate: false});
+
+console.log(results);
+/*
+{
+  target: {
+    index: 0,
+    xpath: 'TEI/text/body/div/p',
+    selection: {...}
+  }
+  nodes: [
+    {
+      type: 'tag',
+      name:'p',
+      ns: 'http://www.tei-c.org/ns/1.0',
+      documentation: '(paragraph) marks paragraphs in prose. [3.1. 7.2.5. ]',
+      fullName: 'Paragraph',
+      eventType: 'enterStartTag',
+    },
+    {
+      type: 'tag',
+      name:'pb',
+      ns: 'http://www.tei-c.org/ns/1.0',
+      documentation: '(page break) marks the start of a new page in a paginated document. [3.10.3. ]',
+      fullName: 'Page Break',
+      eventType: 'enterStartTag',
+    },
+    ...
+  ]
+}
+*/
+```
+
+## Get Valid Nodes At
+
+A convinent method to get valid nodes. This is similar to [Get Possible Nodes At](#get-possible-nodes-at), except that it will return only that nodes considered valid.
+
+Call the method `getPossgetValidNodesAtibleNodesAt` passing an object [Target](#target) . The target should contain the tag's `xpath` and `index` and optionally a [selection](#targetselection) object. The selection tell the validator the context of your action and which type of action you want to make.
+
+This method first get all the possible children tags for `<p>` at the exact position on the document (context). Then the validator **virtually** loop through the list of possible tags, inserting each one inside `<p>` and (speculatively) validates according to the tag context but respecting the schema.If the insertion produces an invalid structure, the tag is discarded. The remaining tags are considered validated suggestions.
+
+The method returns the object [PossibleNodesAt](#possiblenodesat), which includes the original target object and a list of speculative valid tags.
+
+**Parameter**
+
+| Name | Type | Description |
+| - | - | - |
+| target* | [Target](#target) | The target xpath and index and optionally a [selection](#targetselection) objects |
 
 Example:
 
 ```ts
-const results = await validator.getValidTagsAt({
+const results = await validator.getValidNodesAt({
   xpath: 'TEI/text/body/div/p',
   index: 0,
   selection: {
@@ -370,15 +498,32 @@ const results = await validator.getValidTagsAt({
 console.log(results);
 /*
 {
-  index: 0,
-  xpath: 'TEI/text/body/div/p',
-  possible: [...],
-  speculative: [...]
+  target: {
+    index: 0,
+    xpath: 'TEI/text/body/div/p',
+    selection: {...}
+  }
+  nodes: [
+    {
+      type: 'tag',
+      name:'p',
+      ns: 'http://www.tei-c.org/ns/1.0',
+      documentation: '(paragraph) marks paragraphs in prose. [3.1. 7.2.5. ]',
+      fullName: 'Paragraph',
+      eventType: 'enterStartTag',
+    },
+    {
+      type: 'tag',
+      name:'pb',
+      ns: 'http://www.tei-c.org/ns/1.0',
+      documentation: '(page break) marks the start of a new page in a paginated document. [3.10.3. ]',
+      fullName: 'Page Break',
+      eventType: 'enterStartTag',
+    },
+    ...
+  ]
 }
 */
-
-console.log(results.possible.length) // 97
-console.log(results.speculative.length) // 75
 ```
 
 ## Reset
@@ -394,101 +539,109 @@ validator.reset()
 ## Types
 
 We use **TypeDoc** to autogenerate documentation from the code.
-Run `npm run build-documentation` to get a nice page with all the types.
+Run `npm run build-documentation` to get a nice page with all the types.                                                                     |
 
-### ElementDetail
-
-| Name | Type| Description |
-|--|--|--|
-| type* | `node` \| `tag` \| `attribute` \| `attributeValue` | The type of the element.<br/><br/> `node` is all the possibilites that are not a `tag` , an `attribue` or an `attribute value`. For instance, `end of tag`, and `text` node. |
-| name* | string | That name of the element (tag name, attribute name, or atribute value). |
-| documentation | string | Documentation (if available). |
-| fullName | string | Full name extracted from documentation (if available). || ns | string | The namespace. |
-
-### GetValidTagsAtParameters
-
-| Name | Type | Description |
-|--|--|--|
-| xpath* | string | The tag Xpath in the document. |
-| index* | number | The index position relative to its parent. |
-| selection | [GetValidTagsAtParametersSelection](#getvalidtagsatparametersselection) | Omit to consider the exact caret position. Otherwise, pass a `getvalidtagsatparametersselection` object giving more specificity to the request. |
-| speculate* | boolean | Enabled/disabled speculatively validation. Default is `true` |
-
-### GetValidTagsAtResponse
-
-| Name | Type | Description |
-|--|--|--|
-| xpath* | string | The tag xpath in the document. |
-| index* | number | The index position relative to its parent. |
-| possible* | [ElementDetail](#elementdetail)[] | An array of possible tags. |
-| speculative* | [ElementDetail](#elementdetail)[] | An array of speculatively valided tags. |
-
-### GetValidTagsAtParametersSelection
-
-| Name | Type | Description |
-|--|--|--|
-| type* | `'span'` \| `'inside'` \| `'around'` \| `'before'` \| `'after'` \| `'change'` | `span`: Use when to add a portion of the document inside a new tag. We must also provide `startContainerIndex`, `startOffset`, `endContainerIndex`, and `endOffset`. <br/><br/> `inside`: Similar to `span`. Use to add a new tag containing all the content of the target tag into the parent tag, as if we would have made a text selection with everything inside the target tag. We must also provide `startContainerIndex`, `endContainerIndex`, and `xpath`. <br/><br/> `around`: Similar to `inside`. Use to add a new tag containing all the content of the target tag (and including the target tag itself) into the parent tag. We must also provide `xpath`. <br/><br/> `before`: Add a new tag before a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `after`: Similar to `before`. Use to add a new tag after a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `change`: Similar to `inside`. Use to change the target tag, preserving the content inside. We must also provide `startContainerIndex`, `endContainerIndex`, `xpath`, and `skip`.|
-| startContainerIndex | number | The container index relative to its parent where the selection starts. Used with `span`, `inside`, and `change` |
-| startOffset | string | The index position relative to `startContainerIndex` where selection starts. This is where the selection caret starting point. Used with `span` |
-| endContainerIndex | string | The container index relative to its parent where the selection ends. Used with `span`, `inside`, and `change` |
-| endOffset | number | The index position relative to `endContainerIndex` where selection ends. This is where the selection caret endpoint. Used with `span` |
-| skip | string | The name of the tag to skip. Used with `change` to avoid suggesting changing a tag for itself. |
-| xpath| string | The tag Xpath in the document. Used with `inside`, `around`, `change`, `before`, and `after` |
-| containerIndex | number | The container index relative to the target parent. Used with `before` and `after` |
 
 ### InitializeOptions
 
-| Name | Type | Description |
-|--|--|--|
-| id* | string | Schema identifier |
-| url | string | The schema url. Required if `cachedSchema` is omitted |
-| cachedSchema | string | A stringfied object. <br/> Signature: `{ json: string; manifest: { filePath: string, hash: string }}` |
-| createManifest | boolean | Whether or note to create a manifest. Default is true. |
+| Name           | Type    | Description                                                                                         |
+| -------------- | ------- | --------------------------------------------------------------------------------------------------- |
+| id*            | string  | Schema identifier                                                                                    |
+| url            | string  | The schema url. Required if `cachedSchema` is omitted                                               |
+| cachedSchema   | string  | A stringfied object. <br/> Signature: `{ json: string; manifest: { filePath: string, hash: string }}` |
+| createManifest | boolean | Whether or note to create a manifest. Default is true.                                              |
 
 ### InitializeResponse
 
 | Name | Type | Description |
-|--|--|--|
+| - | - | - |
 | status* | string | The way loader load the schema. One of the following: 'Loaded from file' \| 'Loaded from cache' \| 'Already loaded' |
 | parsedSchema | string | A stringfied object. <br/> Signature: `{ json: string; manifest: { filePath: string, hash: string }}` |
+
+### NodeDetail
+
+| Name | Type | Description |
+| - | - | - |
+| type* | `attribute` \| `attributeValue` \| `tag` \| `text` |  A simplfication on the internal validator events. Note: `tag` includes all tag events `endTag` \| `enterStartTag` \| `leaveStartTag`.
+| name* | string | That name of the node (tag name, attribute name, or atribute value). |
+| eventType* | `attributeName` \| `attributeValue` \| `endTag` \| `enterStartTag` \| `leaveStartTag` \| `text` | Intetnal validator events. Useful for debug.
+| documentation | string | Documentation (if available). |
+| fullName | string | Full name extracted from documentation (if available). |
+| ns | string | The namespace. |
+| invalid | boolean | If speculative validated, it means that the node will produce invalid structure according to the context. |
+|  value | string | The value a node can hold. Only available for `attributeValue` (the value of the attribute itself) or for `text`, whicj can take a form of a regular expression `RegExp` |
+
+### PossibleNodesAt
+
+| Name         | Type                        | Description                                |
+| ------------ | --------------------------- | ------------------------------------------ |
+| target*      | [target](#target)           | The target in the document.                |
+| nodes*       | [NodeDetail](#nodedetail)[] | An array of possible tags.                 |
+
+### PossibleNodesAtOptions
+
+| Name | Type | Description |
+| - | - | - |
+| speculativeValidate | boolean | The tag Xpath in the document. |nabled/disabled speculatively validation. Default is `true`  
+
+### Target
+
+| Name | Type | Description |
+| - | - | - |
+| xpath* | string | The tag Xpath in the document. |
+| index* | number | The index position relative to its parent. |
+| selection  | [TargetSelection](#targetselection) | Give more specificity to the request. Omit to consider the caret exact position. |
+
+### TargetSelection
+
+| Name | Type | Description|
+| - | - | - |
+| type* | `'span'` \| `'inside'` \| `'around'` \| `'before'` \| `'after'` \| `'change'` | `span`: Use when to add a portion of the document inside a new tag. We must also provide `startContainerIndex`, `startOffset`, `endContainerIndex`, and `endOffset`. <br/><br/> `inside`: Similar to `span`. Use to add a new tag containing all the content of the target tag into the parent tag, as if we would have made a text selection with everything inside the target tag. We must also provide `startContainerIndex`, `endContainerIndex`, and `xpath`. <br/><br/> `around`: Similar to `inside`. Use to add a new tag containing all the content of the target tag (and including the target tag itself) into the parent tag. We must also provide `xpath`. <br/><br/> `before`: Add a new tag before a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `after`: Similar to `before`. Use to add a new tag after a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `change`: Similar to `inside`. Use to change the target tag, preserving the content inside. We must also provide `startContainerIndex`, `endContainerIndex`, `xpath`, and `skip`. |
+| startContainerIndex | number | The container index relative to its parent where the selection starts. Used with `span`, `inside`, and `change` |
+| startOffset | string | The index position relative to `startContainerIndex` where selection starts. This is where the selection caret starting point. Used with `span` |
+| endContainerIndex   | string | The container index relative to its parent where the selection ends. Used with `span`, `inside`, and `change` |
+| endOffset | number | The index position relative to `endContainerIndex` where selection ends. This is where the selection caret endpoint. Used with `span` |
+| skip | string | The name of the tag to skip. Used with `change` to avoid suggesting changing a tag for itself. |
+| xpath | string | The tag Xpath in the document. Used with `inside`, `around`, `change`, `before`, and `after` |
+| containerIndex | number | The container index relative to the target parent. Used with `before` and `after`|
 
 ### ValidationError
 
 | Name | Type | Description |
-|--|--|--|
-| type* | `'AttributeNameError'` \| `'AttributeValueError'` \| `'ElementNameError'` \| `'ChoiceError'` \| `'ValidationError'` | The error type.|
+| - | - | - |
+| type* | `'AttributeNameError'` \| `'AttributeValueError'` \| `'ElementNameError'` \| `'ChoiceError'` \| `'ValidationError'` | The error type. |
 | msg* | string | An explanatory message about the error, indicating for instance that an attribute doesn't belong to a tag or a tag cannot be a child of its parent |
-| target* | [ValidationErrorTarget](#validationerrortarget) | The invalid element. see bellow |
-| element* | [ValidationErrorElement](#validationerrorelement) | The specific parent tag where the error was found. the see bellow |
+| target*  | [ValidationErrorTarget](#validationerrortarget) | The invalid element.  |
+| element* | [ValidationErrorElement] | The specific parent tag where the error was found. |
 
 ### ValidationErrorElement
 
 | Name | Type | Description |
-|--|--|--|
+| - | - | - |
 | xpath* | string | The target Xpath in the document. It can be useful to locate and navigate to the exact error position quickly. |
-| name | string | The name of the element (tag or attribute), if defined in the schema. |
+| name  | string | The name of the element (tag or attribute), if defined in the schema. |
 | documentation | string | If available in the schema. It can help users understand the context where the error occurred. |
 | fullname | string | The full name of the element (tag or attribute), if defined in the document schema. |
 | parentElementXpath | string | Expose the parent element Xpath. It gets handy if the error is an attribute. |
 | parentElementIndex | number | Expose the parent element index relative to its parent. It gets handy if the error is an attribute. |
-| parentElementName | string | Expose the parent element name. It gets handy if the error is an attribute. |
+| parentElementName  | string | Expose the parent element name. It gets handy if the error is an attribute. |
 
 ### ValidationErrorTarget
 
 | Name | Type | Description |
-|--|--|--|
+| - | - | - |
 | xpath* | string | The target’s Xpath in the document. Useful to locate and navigate to the exact error position quickly. |
 | index* | number | The index position relative to its parent. |
 | isAttr* | boolean | If the error is an attribute. Default is `false`. |
 | ns | string | The namespace. |
 | name | string | The name of the element (tag or attribute), if defined in the schema. |
-| documentation | string | If available in the schema. It can help users understand the context where the error occurred. |
-| fullname | string | The full name of the element (tag or attribute), if defined in the document schema. |
+| documentation | string  | If available in the schema. It can help users understand the context where the error occurred. |
+| fullname | string  | The full name of the element (tag or attribute), if defined in the document schema. |
 
 ### WorkingStateData
 
 | Name | Type | Description |
-|--|--|--|
+| - | - | - |
 | state* | `1` [INCOMPLETE] \| `2` [WORKING] \| `3` [INVALID] \| `4` [VALID] | The state of the validation process. |
 | partDone* | number | The percentage of the document validated (0-1). |
 | valid | boolean | Of the document is valid or not. Only available on state `3` and `4`. |
@@ -554,23 +707,6 @@ If the file needs to be updated or regenerated, follow these steps:
 
 2. Browserify jsdom
 `npm run browserify-jsdom` (check package.json for the details)
-
-3. Fixes (Since v20.0.0 maybe not neeed anymore)
-3.1 fix *AsyncIteratorPrototype*
-AsyncIteratorPrototype is throwing an error when running on workers. We return it as an empty object since we don't use this method.
-
-- Open /src/web workers/lib/jsdom/jsdon-browserified.js`
-- locate the line where AsyncIteratorPrototype is defined.
-- replace this line: `const AsyncIteratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf(async function* () {}).prototype);`
-- for this one: `const AsyncIteratorPrototype = {};`
-
-3.2 fix *SharedArrayBuffer*
-SharedArrayBuffer is throwing an error when running on workers. We return it as an empty object since we don't use this method.
-
-- Open /src/web workers/lib/jsdom/jsdon-browserified.js`
-- locate the line where sabByteLengthGetter is defined.
-- replace this line: `const sabByteLengthGetter = Object.getOwnPropertyDescriptor(SharedArrayBuffer.prototype, "byteLength").get;`
-- for this one: `const sabByteLengthGetter = {}`;
 
 ### Unit tests
 

@@ -7,15 +7,27 @@ import { Resource } from '@src/types';
 import { isErrorMessage } from '@src/utilities';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 
 let leafWriter: Leafwriter | null = null;
 let tapDocumentTimer: NodeJS.Timeout;
 
-export const useLeafWriter = () => {
-  const { isDirty, timerService } = useAppState().editor;
+let leafWriterEvents: any[] = [];
 
-  const { close, save, saveAs, setContentLastSaved, setResource } = useActions().editor;
+export const useLeafWriter = () => {
+  const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
+
+  const {
+    close,
+    save,
+    saveAs,
+    setAutosave,
+    setContentLastSaved,
+    setContentHasChanged,
+    setResource,
+    subscribeToTimerService,
+    unsubscribeFromTimerService,
+  } = useActions().editor;
   const { getStorageProviderAuth } = useActions().providers;
   const { addToRecentDocument, download, loadSample } = useActions().storage;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
@@ -26,12 +38,62 @@ export const useLeafWriter = () => {
   const { getResourceFromPermalink } = usePermalink();
 
   useEffect(() => {
-    leafWriter?.setIsEditorDirty(isDirty);
-  }, [isDirty]);
+    leafWriter?.setContentHasChanged(contentHasChanged);
+  }, [contentHasChanged]);
+
+  useEffect(() => {
+    leafWriter?.setReadonly(readonly);
+  }, [readonly]);
 
   const setCurrentLeafWriter = (lw: Leafwriter | null) => (leafWriter = lw);
 
-  const loadDocumentFromPermalink = async () => {
+  const setEditorEvents = () => {
+    if (!leafWriter) return;
+
+    if (leafWriter.onLoad.observed) removeSubscribers;
+
+    const dirtyEvent = leafWriter.onContentHasChanged.subscribe(async (value) => {
+      if (!leafWriter) return;
+      setContentHasChanged(value);
+
+      if (value === false) {
+        timerService.stop();
+        return;
+      }
+
+      if (autosave && resource?.provider) timerService.start();
+    });
+    leafWriterEvents.push(dirtyEvent);
+
+    const onLoadEvent = leafWriter.onLoad.subscribe(({ schemaName }) => {
+      if (!leafWriter || !resource) return;
+
+      leafWriter.autosave = autosave;
+      tapDocument(resource, schemaName);
+      subscribeToTimerService(leafWriter);
+    });
+    leafWriterEvents.push(onLoadEvent);
+
+    const onCloseEvent = leafWriter.onClose.subscribe(() => {
+      unsubscribeFromTimerService();
+      disposeLeafWriter();
+    });
+    leafWriterEvents.push(onCloseEvent);
+
+    const onStateChangeEvent = leafWriter.onEditorStateChange.subscribe((editorState) => {
+      if (editorState.autosave !== undefined && editorState.autosave !== autosave) {
+        setAutosave(editorState.autosave);
+      }
+    });
+    leafWriterEvents.push(onStateChangeEvent);
+  };
+
+  const removeSubscribers = () => {
+    leafWriterEvents.forEach((subs) => subs.unsubscribe());
+    leafWriterEvents = [];
+  };
+
+  const loadFromPermalink = async () => {
     const resource = await getResourceFromPermalink();
 
     if (!resource) return showErrorMessage(t('storage:warning.check_URL_structure'));
@@ -78,6 +140,7 @@ export const useLeafWriter = () => {
   const handleDownload = async () => {
     if (!leafWriter) return;
     const content = await leafWriter.getContent();
+    if (!content) return;
     download(content);
   };
 
@@ -85,6 +148,7 @@ export const useLeafWriter = () => {
     if (!leafWriter) return;
 
     const content = await leafWriter.getContent();
+    if (!content) return;
     const screenshot = await leafWriter.getDocumentScreenshot();
 
     if (action === 'saveAs') {
@@ -101,7 +165,7 @@ export const useLeafWriter = () => {
       ? t('storage:document_saved')
       : `${t('error:something_went_wrong')}. ${t('storage:document_not_saved')}!`;
 
-    if (saved.success) leafWriter.setIsEditorDirty(false);
+    if (saved.success) leafWriter.setContentHasChanged(false);
 
     notifyViaSnackbar({ message, options: { variant: type } });
   };
@@ -115,11 +179,11 @@ export const useLeafWriter = () => {
     notifyViaSnackbar({ message, options: { variant: type } });
 
     if (!leafWriter) return;
-    if (saved) leafWriter.setIsEditorDirty(false);
+    if (saved) leafWriter.setContentHasChanged(false);
   };
 
   const handleCloseDocument = () => {
-    if (!isDirty) return disposeLeafWriter();
+    if (!contentHasChanged) return disposeLeafWriter();
 
     openDialog({
       props: {
@@ -145,6 +209,7 @@ export const useLeafWriter = () => {
       if (!leafWriter || !resource) return;
 
       const content = await leafWriter.getContent();
+      if (!content) return;
       const screenshot = await leafWriter.getDocumentScreenshot();
 
       setContentLastSaved(content);
@@ -154,7 +219,7 @@ export const useLeafWriter = () => {
 
   const disposeLeafWriter = () => {
     timerService.stop();
-    clearInterval(tapDocumentTimer);
+    clearTimeout(tapDocumentTimer);
 
     leafWriter?.dispose();
     leafWriter = null;
@@ -165,13 +230,14 @@ export const useLeafWriter = () => {
   };
 
   return {
+    leafWriter,
     disposeLeafWriter,
     handleCloseDocument,
     handleDownload,
     handleSave,
-    leafWriter,
-    loadDocumentFromPermalink,
+    loadFromPermalink,
     saveFeedback,
+    setEditorEvents,
     setCurrentLeafWriter,
     tapDocument,
   };

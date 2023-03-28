@@ -2,13 +2,13 @@ import { Button, Dialog, DialogActions, DialogTitle } from '@mui/material';
 import { TemplatesView, TopBar, type DisplayLayout } from '@src/components';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
-import React, { useState, type FC } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from './type';
 
-export const TemplateDialog: FC<IDialog> = ({ id = uuidv4(), open = true }) => {
+export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { setResource } = useActions().editor;
   const { loadSample } = useActions().storage;
   const { closeDialog } = useActions().ui;

@@ -5,10 +5,10 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  Menu as MenuMui
+  Menu as MenuMui,
 } from '@mui/material';
 import { SnackbarKey } from 'notistack';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SeverityType } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';
@@ -16,11 +16,11 @@ import useEditorReaction from '../hooks/useEditorReaction';
 import { Header } from './Header';
 
 interface MenuProps {
-  anchorEl?: HTMLElement;
+  anchorEl?: HTMLElement | null;
   handleClose: () => void;
 }
 
-export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
+export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { document, editor } = useAppState();
   const { closeNotificationSnackbar, openDialog, notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation(['leafwriter']);
@@ -58,12 +58,12 @@ export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
         Message: () => <>{text}</>,
         actions:
           severity === 'error'
-            ? [{ action: 'close', label: t('close') }]
+            ? [{ action: 'close', label: t('commons:close').toString() }]
             : [
-                { action: 'cancel', label: t('cancel'), variant: 'outlined' },
-                { action: 'change', label: t('change anyway') },
+                { action: 'cancel', label: t('commons:cancel').toString(), variant: 'outlined' },
+                { action: 'change', label: t('change anyway').toString() },
               ],
-        onClose: async (action: string) => {
+        onClose: async (action) => {
           if (action !== 'change') return;
           applyNewSchema(schemaId);
         },
@@ -80,7 +80,7 @@ export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('undo')}
+            {t('commons:undo')}
           </Button>
         ),
       },
@@ -88,7 +88,9 @@ export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
   };
 
   const handleOpenEditSchemaDialog = (action: 'add' | 'update', id?: string) => {
-    const mappingIds = window.writer.schemaManager.getMappingIdsFromRoot(document.rootName);
+    const mappingIds = document.rootName
+      ? window.writer.schemaManager.getMappingIdsFromRoot(document.rootName)
+      : undefined;
     openDialog({
       type: 'editSchema',
       props: { actionType: action, mappingIds, schemaId: id },

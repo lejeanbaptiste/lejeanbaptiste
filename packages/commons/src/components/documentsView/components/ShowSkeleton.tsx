@@ -9,7 +9,7 @@ interface ShowSkeletonProps {
   width?: number;
 }
 
-export const ShowSkeleton: FC<ShowSkeletonProps> = ({ displayLayout = 'list', items = 2, width = 250 }) => {
+export const ShowSkeleton = ({ displayLayout = 'list', items = 2, width = 250 }: ShowSkeletonProps) => {
   const _width = displayLayout === 'grid' ? 250 : width - 32;
   const _height = displayLayout === 'grid' ? 180 : 32;
 

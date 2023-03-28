@@ -2,12 +2,12 @@ import { Paper, Stack, useTheme } from '@mui/material';
 import { DocumentView } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
 import type { ViewProps } from '@src/types';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Menu } from './menu';
 import { Sidebar } from './Sidebar';
 
-export const Storage: FC = () => {
+export const Storage = () => {
   const { userState } = useAppState().auth;
   const { recentDocuments } = useAppState().storage;
 

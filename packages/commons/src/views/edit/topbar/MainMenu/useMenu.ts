@@ -3,7 +3,7 @@ import { useMessage, usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { Resource } from '@src/types';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { useLeafWriter } from '../../useLeafWriter';
 import type { ItemProps } from './Item';
 import type { SubMenuProps } from './SubMenu';
@@ -14,7 +14,7 @@ const MIN_WIDTH = 250;
 
 export const useMenu = () => {
   const { userState } = useAppState().auth;
-  const { isDirty, resource } = useAppState().editor;
+  const { contentHasChanged, readonly, resource } = useAppState().editor;
   const { storageProviders } = useAppState().providers;
   const { recentDocuments } = useAppState().storage;
 
@@ -60,6 +60,7 @@ export const useMenu = () => {
       disabled:
         userState !== 'AUTHENTICATED' ||
         !storageProviders.some((provider) => provider.service?.isStorageProvider),
+      hide: readonly,
       icon: 'save',
       label: t('save'),
       onTrigger: () => (!resource?.provider ? handleSave('saveAs') : handleSave()),
@@ -70,6 +71,7 @@ export const useMenu = () => {
       disabled:
         userState !== 'AUTHENTICATED' ||
         !storageProviders.some((provider) => provider.service?.isStorageProvider),
+      hide: readonly,
       icon: 'saveAs',
       label: `${t('save_as')}...`,
       onTrigger: () => handleSave('saveAs'),
@@ -77,6 +79,7 @@ export const useMenu = () => {
       tootipText: cloudDisabledMessage,
     },
     {
+      hide: readonly,
       icon: 'download',
       label: t('download'),
       onTrigger: () => handleDownload(),
@@ -98,8 +101,7 @@ export const useMenu = () => {
         data: document,
         label: document.filename ?? '',
         onTrigger: () => {
-          if (!isDirty) return handleLoadRecentDocument(document);
-
+          if (!contentHasChanged) return handleLoadRecentDocument(document);
           openDialog({
             props: {
               maxWidth: 'xs',

@@ -7,22 +7,28 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material';
-import React, { Suspense, useEffect, useState, type FC } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
-import { IDialog } from '../type';
-const Editor = React.lazy(() => import('./Editor'));
-export interface EditSourceDialogProps extends IDialog {
-  content?: string;
-}
+import type { EditSourceDialogProps } from '../type';
 
-export const EditSourceDialog: FC<EditSourceDialogProps> = ({ content = '', id, onClose, open }) => {
+const Editor = React.lazy(() => import('./Editor'));
+
+export const EditSourceDialog = ({
+  content = '',
+  id,
+  onClose,
+  open = false,
+  type = 'content',
+}: EditSourceDialogProps) => {
   const { settings } = useAppState().editor;
-  const { processEditSource } = useActions().ui;
+  const { loadDocumentXML: updateXMLContent, updateXMLHeader } = useActions().document;
 
   const { t } = useTranslation(['leafwriter']);
 
   const [currentContent, setCurrentContent] = useState('');
+
+  const title = type === 'header' ? t('edit header') : t('edit source');
 
   useEffect(() => {
     setCurrentContent(content);
@@ -30,13 +36,15 @@ export const EditSourceDialog: FC<EditSourceDialogProps> = ({ content = '', id, 
 
   const handleUpdateContent = (value: string) => setCurrentContent(value);
 
-  const handleClose = () => onClose(id);
+  const handleClose = () => onClose && onClose(id);
 
   const handleChange = () => {
-    if (currentContent === content) return onClose(id);
+    if (currentContent === content) return onClose && onClose(id);
 
-    processEditSource(currentContent);
-    onClose(id);
+    if (type === 'content') updateXMLContent(currentContent);
+    if (type === 'header') updateXMLHeader(currentContent);
+
+    onClose && onClose(id);
   };
 
   const Progress = () => (
@@ -58,7 +66,7 @@ export const EditSourceDialog: FC<EditSourceDialogProps> = ({ content = '', id, 
         p={0}
         sx={{ textAlign: 'center', fontSize: '1rem', textTransform: 'capitalize' }}
       >
-        {t('edit source')}
+        {title}
       </DialogTitle>
       <DialogContent sx={{ minHeight: 600, padding: 0 }}>
         <Suspense fallback={<Progress />}>
@@ -67,10 +75,10 @@ export const EditSourceDialog: FC<EditSourceDialogProps> = ({ content = '', id, 
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button autoFocus onClick={handleClose}>
-          {t('cancel')}
+          {t('commons:cancel')}
         </Button>
         <Button onClick={handleChange} variant="outlined">
-          {t('change')}
+          {t('commons:change')}
         </Button>
       </DialogActions>
     </Dialog>

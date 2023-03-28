@@ -1,11 +1,13 @@
+import { EntityType } from '../../types';
 import AnnotationsManager from '../entities/annotationsManager';
 import Entity from '../entities/Entity';
-import type { AnnotationProps, AnnotationFormat } from '../entities/types';
+import type { AnnotationFormat, AnnotationProps } from '../entities/types';
 
 export interface SchemaMappingProps {
   blockElements: string[]; // Additional block level elements that should be added to TinyMCE
-  entities: Map<EntityTypes, EntityMappingProps>; //Entity mappings
+  entities: Map<EntityType, EntityMappingProps>; //Entity mappings
   header: string; // The name of the header tag
+  headings: string[]; // The name of the heading tags
   id: string; // The name of the ID attribute
   // Listeners to Leaf-Writer events can go here and will subscribe upon mappings load
   listeners: {
@@ -22,19 +24,6 @@ export interface SchemaMappingProps {
   urlAttributes: string[]; // Attributes that should be treated as URLs by the various Leaf-Writer modules
 }
 
-export type EntityTypes =
-  | 'citation'
-  | 'correction'
-  | 'date'
-  | 'keyword'
-  | 'link'
-  | 'note'
-  | 'organization'
-  | 'place'
-  | 'person'
-  | 'rs' // ? ORLANDO MIGHT HAVE THIS IN THE NEAR FUTURE
-  | 'title';
-
 export interface EntityMappingProps {
   // a function which accepts the AnnotationsManager, an Entity, and a format string (either 'xml' or 'json').
   // It should return an annotation in the specified format (see AnnotationsManager.commonAnnotation)
@@ -44,7 +33,7 @@ export interface EntityMappingProps {
     format?: AnnotationFormat
   ) => AnnotationProps | void;
   isNote?: boolean; //indicates if the entity is a "note type" (default is false)
-  label?: string; // the entity's name
+  label: string; // the entity's name
   mapping?: MappingProps; // a map of Entity config properties to XPaths
   mappingFunction?: (entity: Entity) => string[]; // a function which accepts an Entity and returns an array of start and end XML strings to be displayed in the Writer (see Mapper.getDefaultMapping)
   parentTag: string | string[]; // the XML tag(s) that encapsulates the entity, also used to determine if an XML tag is associated with an entity

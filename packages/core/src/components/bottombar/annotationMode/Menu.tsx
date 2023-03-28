@@ -1,21 +1,21 @@
 import { Box, Button, Menu as MuiMenu, MenuItem, Typography } from '@mui/material';
 import { SnackbarKey } from 'notistack';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
 import useEditorReaction from '../hooks/useEditorReaction';
 
 interface MenuProps {
-  anchorEl?: HTMLElement;
+  anchorEl?: HTMLElement | null;
   handleClose: () => void;
 }
 
-export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
+export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { annotationMode, annotationModes } = useAppState().editor;
   const { closeNotificationSnackbar, notifyViaSnackbar } = useActions().ui;
   const { changeAnnotationMode } = useEditorReaction();
 
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation(['commons']);
 
   const openMenu = Boolean(anchorEl);
 
@@ -60,10 +60,10 @@ export const Menu: FC<MenuProps> = ({ anchorEl, handleClose }) => {
         justifyContent="center"
         mt={-0.5}
         mb={0.5}
-        sx={{ cursor: 'default', backgroundColor: ({ palette }) => palette.action.hover }}
+        sx={{ cursor: 'default', bgcolor: ({ palette }) => palette.action.hover }}
       >
         <Typography sx={{ cursor: 'default' }} variant="caption">
-          {t('Annotation')}
+          {t('annotation')}
         </Typography>
       </Box>
       {annotationModes.map(({ disabled, label, value }) => (

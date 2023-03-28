@@ -1,5 +1,5 @@
 import { Box, Button, Typography } from '@mui/material';
-import React, { FC } from 'react';
+import React from 'react';
 
 interface CrumbProps {
   color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
@@ -10,14 +10,14 @@ interface CrumbProps {
   onClick: (level?: number) => void;
 }
 
-const Crumb: FC<CrumbProps> = ({
+const Crumb = ({
   color = 'inherit',
   disabled = false,
   label,
   level,
   name,
   onClick,
-}) => {
+}: CrumbProps) => {
   const handleClick = () => onClick(level);
 
   return (

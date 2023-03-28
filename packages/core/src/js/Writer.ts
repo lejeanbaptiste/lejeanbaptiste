@@ -3,7 +3,7 @@ import $ from 'jquery';
 import tinymce from 'tinymce';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
-import type { LeafWriterOptionsSettings, LeafWriterEditor } from '../types';
+import type { LeafWriterEditor, LeafWriterOptionsSettings } from '../types';
 import { log } from './../utilities';
 import Converter from './conversion/converter';
 import DialogManager from './dialogs/dialogManager';
@@ -14,7 +14,6 @@ import EventManager from './eventManager';
 import LayoutManager from './layout/layoutManager';
 import EntitiesList from './layout/panels/entitiesList';
 import Selection from './layout/panels/selection';
-import StructureTree from './layout/panels/structureTree';
 import Validation from './layout/panels/validation';
 import SchemaManager from './schema/schemaManager';
 import Tagger from './tagger';
@@ -34,9 +33,6 @@ import Utilities from './utilities';
 //  * @param {Boolean} [config.annotator]
 //  * @param {String} [config.mode]
 //  * @param {Boolean} [config.allowOverlap]
-//  * @param {String} [config.buttons1]
-//  * @param {String} [config.buttons2]
-//  * @param {String} [config.buttons3]
 //  */
 
 class Writer extends EventManager {
@@ -85,12 +81,11 @@ class Writer extends EventManager {
   annotationsManager: AnnotationsManager;
 
   readonly editorId: string;
-  readonly layoutContainerId: string;
+  readonly layoutContainerId: string | undefined;
 
   entitiesList?: EntitiesList;
   selection?: Selection;
   validation?: Validation;
-  tree?: StructureTree;
 
   constructor(config: LeafWriterOptionsSettings) {
     super();
@@ -189,22 +184,21 @@ class Writer extends EventManager {
       container: $(`#${this.containerId}`),
     });
 
-    this.schemaManager = new SchemaManager(this, config.schemas);
+    this.schemaManager = new SchemaManager(this, config.schemas ?? []);
     this.entitiesManager = new EntitiesManager(this);
     this.dialogManager = new DialogManager(this); // needs to load before SettingsDialog
     this.tagger = new Tagger(this);
     this.converter = new Converter(this);
     this.annotationsManager = new AnnotationsManager(this);
 
-    this.layoutContainerId = this.layoutManager.getContainer()?.attr('id') ?? '';
+    const containerId = this.layoutManager.getContainer()?.attr('id');
+    if (!containerId) return;
+    this.layoutContainerId = containerId;
 
     tinymceWrapperInit({
       writer: this,
       editorId: this.editorId,
       layoutContainerId: this.layoutContainerId,
-      buttons1: config.buttons1 ?? [],
-      buttons2: config.buttons2,
-      buttons3: config.buttons3,
     });
   }
 
@@ -281,7 +275,8 @@ class Writer extends EventManager {
    * @param {Function} callback Callback is called with a string representation of the document
    */
   async getDocumentString(callback?: Function) {
-    return await this.converter.getDocument(true, callback);
+    const document = await this.converter.getDocument(true, callback);
+    return typeof document === 'string' ? document : undefined;
   }
 
   /**
@@ -343,11 +338,11 @@ class Writer extends EventManager {
 
   handleUnload(event: BeforeUnloadEvent) {
     if (this.isReadOnly) return;
-    if (!this.overmindState.editor.isEditorDirty) return;
+    if (!this.overmindState.editor.contentHasChanged) return;
     if (window.location.hostname === 'localhost') return;
 
     event.preventDefault();
-    const msg = i18n.t('You have unsaved changes');
+    const msg = i18n.t('leafwriter:You have unsaved changes');
     (event || window.event).returnValue = msg;
     return msg;
   }

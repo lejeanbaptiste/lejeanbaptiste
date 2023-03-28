@@ -1,12 +1,13 @@
 import { AppBar, Box, Stack, Toolbar, useTheme } from '@mui/material';
-import { ProfileAvatar, SigninButton } from '@src/components';
+import { EditorModeSelector, ProfileAvatar, SigninButton } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence } from 'framer-motion';
-import React, { FC } from 'react';
+import React from 'react';
 import { DarkMode } from './DarkMode';
 import { LanguageMenu } from './LanguageMenu';
 import { Privacy } from './Privacy';
 import { ProfileAnchor } from './ProfileAnchor';
+import { Settings } from './Settings';
 
 interface TopBarProps {
   Left?: React.ReactNode;
@@ -14,7 +15,7 @@ interface TopBarProps {
   title?: string;
 }
 
-export const TopBar: FC<TopBarProps> = ({ Left, Meta, title = 'LEAF-Writer' }) => {
+export const TopBar = ({ Left, Meta, title = 'LEAF-Writer' }: TopBarProps) => {
   const { userState } = useAppState().auth;
   const { resource } = useAppState().editor;
   const { page } = useAppState().ui;
@@ -47,12 +48,16 @@ export const TopBar: FC<TopBarProps> = ({ Left, Meta, title = 'LEAF-Writer' }) =
         >
           <AnimatePresence mode="wait">
             {userState === 'AUTHENTICATED' ? (
-              <ProfileAnchor>
-                <ProfileAvatar />
-              </ProfileAnchor>
+              <>
+                {page !== 'home' && <EditorModeSelector />}
+                <ProfileAnchor>
+                  <ProfileAvatar />
+                </ProfileAnchor>
+              </>
             ) : userState === 'UNAUTHENTICATED' ? (
               <>
                 <Privacy />
+                <Settings />
                 <DarkMode />
                 <LanguageMenu />
                 {page !== 'home' && <SigninButton />}

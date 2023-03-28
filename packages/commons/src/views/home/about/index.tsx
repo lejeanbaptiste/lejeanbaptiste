@@ -1,13 +1,13 @@
 import { Box, Container, Grid, rgbToHex, useTheme } from '@mui/material';
 import chroma from 'chroma-js';
-import React, { useMemo, type FC } from 'react';
+import React, { useMemo } from 'react';
 import { About } from './About';
 import { Team } from './Team';
 
-export const AboutSection: FC = () => {
+export const AboutSection = () => {
   const { mode, primary } = useTheme().palette;
 
-  const backgroundColor = useMemo(
+  const bgcolor = useMemo(
     () =>
       chroma
         .hex(rgbToHex(primary.main))
@@ -17,7 +17,7 @@ export const AboutSection: FC = () => {
   );
 
   return (
-    <Box py={10} px={2} sx={{ backgroundColor }}>
+    <Box py={10} px={2} sx={{ bgcolor }}>
       <Container maxWidth="lg">
         <Grid container columnSpacing={12} rowSpacing={4} mb={5}>
           <Grid item xs={12} sm={7} md={8}>

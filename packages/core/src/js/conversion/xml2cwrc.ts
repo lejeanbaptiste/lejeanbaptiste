@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import { log } from '../../utilities';
-import { isValidHttpURL } from '../../utilities/util';
+import { isValidHttpURL } from '../../utilities/string';
 import { EntityConfig } from '../entities/Entity';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
 import Writer from '../Writer';
@@ -22,6 +22,7 @@ class XML2CWRC {
 
   private async clearDocument() {
     return new Promise((resolve) => {
+      if (!this.writer.editor) return;
       $(this.writer.editor.getBody()).empty();
       setTimeout(resolve, 0);
     });
@@ -38,11 +39,11 @@ class XML2CWRC {
     await this.clearDocument();
 
     const { overmindActions, schemaManager } = this.writer;
-    let schemaProcess: ProcessSchemaProps = { doc, writer: this.writer };
+    const schemaProcess: ProcessSchemaProps = { doc, writer: this.writer };
 
     // * IS ROOT ELEMENT SUPPORTED?
-    schemaProcess.rootName = doc.firstElementChild.nodeName;
-    schemaProcess.rootIsSupported = schemaManager.isRootSupported(schemaProcess.rootName);
+    schemaProcess.rootName = doc.firstElementChild?.nodeName;
+    schemaProcess.rootIsSupported = schemaManager.isRootSupported(schemaProcess.rootName ?? '');
     if (!schemaProcess.rootIsSupported) return openProcessIssueDialog(schemaProcess);
 
     overmindActions.document.setRootname(schemaProcess.rootName);
@@ -50,7 +51,8 @@ class XML2CWRC {
     // * HAS SCHEMA?
     schemaProcess.docSchema = this.getSchemaUrls(doc);
     schemaProcess.schemaFound = !!schemaProcess.docSchema.rng;
-    if (!schemaProcess.schemaFound) return openProcessIssueDialog(schemaProcess);
+    if (!schemaProcess.schemaFound || !schemaProcess.docSchema.rng)
+      return openProcessIssueDialog(schemaProcess);
 
     // * IS SCHEMA SUPPORTED?
     schemaProcess.schemaId = schemaManager.getSchemaIdFromUrl(schemaProcess.docSchema.rng);
@@ -62,6 +64,8 @@ class XML2CWRC {
 
     if (schemaProcess.schemaId !== schemaManager.schemaId) {
       const { schemaId, docSchema } = schemaProcess;
+      if (!schemaId) return openProcessIssueDialog(schemaProcess);
+
       schemaProcess.schemaLoaded = await schemaManager.loadSchema(schemaId, docSchema.css);
 
       // * IS SCHEMA LOADED
@@ -77,7 +81,7 @@ class XML2CWRC {
     const { docSchema } = schemaProcess;
     if (docSchema.css && docSchema.css !== schemaManager.getCss()) {
       const currentSchema = schemaManager.getCurrentSchema();
-      const matchCsss = currentSchema.css.some((url: string) => url === docSchema.css);
+      const matchCsss = currentSchema?.css.some((url: string) => url === docSchema.css);
       if (!matchCsss) await schemaManager.loadSchemaCSS(docSchema.css);
     }
 
@@ -115,24 +119,28 @@ class XML2CWRC {
    * @param {Document} doc
    * @returns {Object} urls
    */
-  private getSchemaUrls(doc: Document): { rng?: string; css?: string } {
-    let rng: string;
-    let css: string;
+  private getSchemaUrls(doc: Document) {
+    let rng: string | undefined;
+    let css: string | undefined;
 
     const parseData = (nodeData: string) => {
       const attributes = Object.assign(
         {},
-        ...nodeData
-          .replaceAll('"', '')
-          .split(' ')
-          .map((s) => s.split('='))
-          .map(([k, v]) => ({ [k]: v }))
+        ...nodeData // treat as an array of key/value pairs
+          .replaceAll(/(\r\n|\n|\r)/g, '') // remove page breaks
+          .replaceAll(/"|'/g, '') // remove quotes
+          .split(' ') // split the variables
+          .map((s) => s.split('=')) // split keys from values
+          //@ts-ignore
+          .map(([k, v]) => ({ [k]: v })) // create an objects
       );
 
-      if ('href' in attributes) {
-        const url: string = attributes.href;
-        if (isValidHttpURL(url)) return url;
-      }
+      if (!('href' in attributes)) return;
+
+      const url: string = attributes.href;
+      if (!isValidHttpURL(url)) return;
+
+      return url;
     };
 
     doc.childNodes.forEach((node) => {
@@ -174,9 +182,9 @@ class XML2CWRC {
     $(doc).find('rdf\\:RDF, RDF').remove();
     const root = doc.documentElement;
     const editorString = this.buildEditorString(root, !this.writer.isReadOnly);
-    this.writer.editor.setContent(editorString, { format: 'raw' });
+    this.writer.editor?.setContent(editorString, { format: 'raw' });
 
-    this.writer.event('documentLoaded').publish(false, this.writer.editor.getBody());
+    this.writer.event('documentLoaded').publish(false, this.writer.editor?.getBody());
   }
 
   doProcessing(doc: Document) {
@@ -188,7 +196,7 @@ class XML2CWRC {
 
     this.buildDocumentAndInsertEntities(doc).then(() => {
       // we need loading indicator to close before showing another modal dialog, so publish event before showMessage
-      this.writer.event('documentLoaded').publish(true, this.writer.editor.getBody());
+      this.writer.event('documentLoaded').publish(true, this.writer.editor?.getBody());
 
       if (this.writer.isReadOnly) return;
       openEditorModeDialog(this.writer);
@@ -249,15 +257,19 @@ class XML2CWRC {
         // replace annotationId with xpath
         const entityEl = this.writer.utilities.evaluateXPath(
           doc,
+          //@ts-ignore
           entityConfig.range.startXPath
         ) as Element;
+        //@ts-ignore
         entityConfig.range.startXPath = this.writer.utilities.getElementXPath(entityEl);
 
         if (isOverlapping) {
           const entityElEnd = this.writer.utilities.evaluateXPath(
             doc,
+            //@ts-ignore
             entityConfig.range.endXPath
           ) as Element;
+          //@ts-ignore
           entityConfig.range.endXPath = this.writer.utilities.getElementXPath(entityElEnd);
         }
       }
@@ -282,7 +294,7 @@ class XML2CWRC {
         : null;
 
     if (rdfParent?.length === 1) {
-      let currNode = rdfParent[0].nodeName;
+      let currNode = rdfParent[0]?.nodeName;
       while (
         currNode !== this.writer.schemaManager.getHeader() &&
         currNode !== this.writer.schemaManager.getRoot()
@@ -293,7 +305,7 @@ class XML2CWRC {
           break;
         }
         rdfParent.children(currNode).remove();
-        currNode = rdfParent[0].nodeName;
+        currNode = rdfParent[0]?.nodeName;
       }
     } else {
       log.warn("xml2cwrc: couldn't find the rdfParent");
@@ -359,19 +371,21 @@ class XML2CWRC {
         const attrs = node.attributes;
 
         for (let i = 0; i < attrs.length; i++) {
-          const attName = attrs[i].name;
-          const attValue = attrs[i].value;
+          const attName = attrs[i]?.name;
+          const attValue = attrs[i]?.value;
 
           if ((this._isLegacyDocument && attName === 'annotationId') || attName === 'offsetId') {
             continue;
           }
 
+          //@ts-ignore
           jsonAttrs[attName] = attValue;
 
           // if (Mapper.reservedAttributes[attName] === true) {
           //   continue;
           // }
 
+          //@ts-ignore
           if (RESERVED_ATTRIBUTES.has(attName)) continue;
 
           openingTagString += ` ${attName}="${attValue}"`;
@@ -439,6 +453,7 @@ class XML2CWRC {
             editorString += stackEntry.string;
             if (closingStack.length > 0) {
               // peek at next
+              //@ts-ignore
               const nextDepth = closingStack[closingStack.length - 1].depth;
               if (nextDepth <= prevDepth && nextDepth >= depth) {
                 stackEntry = closingStack.pop();
@@ -453,6 +468,7 @@ class XML2CWRC {
       }
 
       editorString += openingTagString;
+      //@ts-ignore
       closingStack.push(closingTag);
 
       return depth;
@@ -500,7 +516,7 @@ class XML2CWRC {
 
     this.buildEditorStringDeferred(doc.documentElement)
       .then((editorString: string) => {
-        this.writer.editor.setContent(editorString, { format: 'raw' }); // format is raw to prevent html parser and serializer from messing up whitespace
+        this.writer.editor?.setContent(editorString, { format: 'raw' }); // format is raw to prevent html parser and serializer from messing up whitespace
 
         return this.insertEntities();
       })
@@ -520,6 +536,8 @@ class XML2CWRC {
   }
 
   private insertEntities() {
+    if (!this.writer.editor) return;
+
     const entObj = this.writer.entitiesManager.getEntities();
     const entities = Object.keys(entObj).map((key) => entObj[key]);
 
@@ -534,12 +552,14 @@ class XML2CWRC {
     li?.setText?.('Inserting Entities');
 
     // editor needs focus in order for entities to be properly inserted
-    this.writer.editor.focus();
+    this.writer.editor?.focus();
 
     const docRoot = $(
       `[_tag="${this.writer.schemaManager.getRoot()}"]`,
-      this.writer.editor.getBody()
+      this.writer.editor?.getBody()
     )[0];
+
+    if (!docRoot) return;
 
     // insert entities
     const insertEntity = (entry: any) => {
@@ -562,8 +582,11 @@ class XML2CWRC {
         endOffset = result.offset;
 
         try {
+          //@ts-ignore
           const selRange = this.writer.editor.selection.getRng();
+          //@ts-ignore
           selRange.setStart(startNode, startOffset);
+          //@ts-ignore
           selRange.setEnd(endNode, endOffset);
           this.writer.tagger.addEntityTag(entry, selRange);
 

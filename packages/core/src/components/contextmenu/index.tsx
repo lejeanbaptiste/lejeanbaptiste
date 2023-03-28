@@ -1,72 +1,63 @@
 import { Menu } from '@mui/material';
-import React, { useEffect, useState, type FC } from 'react';
-import Writer from '../../js/Writer';
+import { Provider, useSetAtom } from 'jotai';
+import React, { useEffect, useState } from 'react';
 import { useActions, useAppState } from '../../overmind';
-import Collection from './collection';
-import type { ItemProps } from './collection/Item';
-import Header from './Header';
-import { useContextmenu } from './hooks/useContextmenu';
+import { Collection, Header, type ItemProps } from './components';
+import { useContextmenu } from './hooks';
+import { tagMetaAtom, tagNameAtom, xpathAtom } from './store';
 
-export { useContextmenu } from './hooks/useContextmenu';
+export const MIN_WIDTH = 250;
 
-interface ContextMenuProps {
-  writer: Writer;
-}
+export const ContextMenu = () => {
+  const { isReadonly, settings } = useAppState().editor;
+  const { contextMenu } = useAppState().ui;
 
-export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
-  const { editor, ui } = useAppState();
+  const setTagMeta = useSetAtom(tagMetaAtom);
+  const setTagName = useSetAtom(tagNameAtom);
+  const setXpath = useSetAtom(xpathAtom);
+
   const { closeContextMenu } = useActions().ui;
 
-  const { collectionType, getItems, initialize, MIN_WIDTH, query, tagName, xpath, tagMeta } =
-    useContextmenu(writer, ui.contextMenu);
+  const { getItems, initialize } = useContextmenu();
 
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>();
+  const [anchorRef, setAnchorRef] = useState<'anchorPosition' | 'anchorEl'>('anchorPosition');
+  const [anchorEl, setAnchorEl] = useState<Element | null>(null);
   const [options, setOptions] = useState<ItemProps[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [show, setShow] = useState(false);
-  const [visibleList, setVisibleList] = useState<ItemProps[]>(options);
 
   useEffect(() => {
-    if (!ui.contextMenu.show) return;
-    if (editor.isReadonly) return;
-
-    setShow(true);
+    if (!contextMenu.show) return;
+    if (isReadonly) return;
 
     const initialzed = initialize();
     if (!initialzed) return;
 
-    const loadItems = async () => {
-      setIsLoading(true);
-      const options = await getItems();
-      setIsLoading(false);
-
-      if (!options) return;
-
-      setOptions(options);
-      setVisibleList(options);
-    };
-
-    loadItems();
-
-    setMenuPosition({
-      top: ui.contextMenu.position?.posY ?? 0,
-      left: ui.contextMenu.position?.posX ?? 0,
+    setAnchorRef(contextMenu.anchorEl ? 'anchorEl' : 'anchorPosition');
+    setAnchorEl(contextMenu.anchorEl ?? null);
+    setPosition({
+      top: contextMenu.position?.posY ?? 0,
+      left: contextMenu.position?.posX ?? 0,
     });
 
+    setShow(true);
+    loadItems();
+
     return () => {
-      setMenuPosition(undefined);
+      setPosition({ top: 0, left: 0 });
       setOptions([]);
-      setIsLoading(false);
-      setVisibleList([]);
       setShow(false);
+
+      setXpath(null);
+      setTagName(null);
+      setTagMeta(null);
     };
-  }, [ui.contextMenu]);
+  }, [contextMenu.show]);
 
-  const handleQuery = (searchQuery: string) => {
-    const result = query(options, searchQuery);
-    if (!result) return setVisibleList(options);
-
-    setVisibleList(result);
+  const loadItems = async () => {
+    const options = await getItems();
+    if (!options) return;
+    setOptions(options);
   };
 
   const handleClose = () => closeContextMenu();
@@ -75,10 +66,11 @@ export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
     <>
       {show && (
         <Menu
-          anchorPosition={menuPosition}
-          anchorReference="anchorPosition"
+          anchorEl={anchorEl}
+          anchorPosition={position}
+          anchorReference={anchorRef}
           id="contextmenu"
-          container={document.getElementById(`${editor.settings.container}`)}
+          container={document.getElementById(`${settings.container}`)}
           keepMounted
           MenuListProps={{ sx: { minWidth: MIN_WIDTH, py: 0.5, borderRadius: 1 } }}
           onClose={handleClose}
@@ -86,15 +78,10 @@ export const ContextMenu: FC<ContextMenuProps> = ({ writer }) => {
           PaperProps={{ elevation: 4 }}
           variant="menu"
         >
-          <Header tagName={tagName} xpath={xpath} tagMeta={tagMeta} />
-          <Collection
-            handleQuery={handleQuery}
-            collectionType={collectionType}
-            fullLength={options.length}
-            isLoading={isLoading}
-            list={visibleList}
-            minWidth={MIN_WIDTH}
-          />
+          <Header count={contextMenu.count} nodeType={contextMenu.nodeType} />
+          <Provider>
+            <Collection list={options} searchable={contextMenu.eventSource === 'ribbon'} />
+          </Provider>
         </Menu>
       )}
     </>

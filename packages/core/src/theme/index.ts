@@ -1,10 +1,11 @@
 import { createTheme } from '@mui/material';
 import { SimplePaletteColorOptions } from '@mui/material/styles';
 import chroma from 'chroma-js';
+import { IconLeafWriter } from '../icons';
 
 interface Entity {
   color: SimplePaletteColorOptions;
-  icon: string;
+  icon: IconLeafWriter;
 }
 
 interface Entities {
@@ -15,6 +16,7 @@ interface Entities {
   title: Entity;
   referencing_string: Entity;
   rs: Entity;
+  thing: Entity;
   citation: Entity;
   note: Entity;
   date: Entity;
@@ -82,6 +84,10 @@ const theme = (darkMode: boolean) =>
       rs: {
         color: { main: chroma.rgb(131, 149, 167).hex() },
         icon: 'referencing_string',
+      },
+      thing: {
+        color: { main: chroma.rgb(131, 149, 167).hex() },
+        icon: 'thing',
       },
       citation: {
         color: { main: chroma.rgb(0, 128, 64).hex() },

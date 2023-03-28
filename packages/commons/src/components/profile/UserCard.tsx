@@ -2,11 +2,11 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Button, IconButton, Link, Stack, Typography } from '@mui/material';
 import { StyledToolTip } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
-import React, { useMemo, type FC } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ProfileAvatar } from '../ProfileAvatar';
 
-export const UserCard: FC = () => {
+export const UserCard = () => {
   const { user } = useAppState().auth;
   const { page } = useAppState().ui;
 

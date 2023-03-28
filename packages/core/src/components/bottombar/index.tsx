@@ -1,5 +1,5 @@
 import { Box, Link, Paper, Stack } from '@mui/material';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import pck from '../../../package.json';
 import { useAppState } from '../../overmind';
@@ -8,9 +8,10 @@ import EditorMode from './editorMode';
 import Schema from './schema';
 import { ValdidationErrors } from './ValdidationErrors';
 
-export const BottomBar: FC = () => {
+export const BottomBar = () => {
+  const { isReadonly } = useAppState().editor;
   const { validationErrors } = useAppState().validator;
-  const { t } = useTranslation();
+  const { t } = useTranslation('leafwriter');
   const version = pck.version;
 
   return (
@@ -19,16 +20,19 @@ export const BottomBar: FC = () => {
       square
       sx={{
         width: '100%',
-        backgroundColor: ({ palette }) =>
-          palette.mode === 'dark' ? palette.background.paper : '#f5f5f5',
+        bgcolor: ({ palette }) => (palette.mode === 'dark' ? palette.background.paper : '#f5f5f5'),
       }}
     >
       <Stack direction="row" alignItems="center" spacing={2} px={2}>
-        <EditorMode />
-        <AnnotationMode />
-        <Schema />
+        {!isReadonly && (
+          <>
+            <EditorMode />
+            <AnnotationMode />
+            <Schema />
+          </>
+        )}
 
-        {validationErrors > 0 && <ValdidationErrors />}
+        {validationErrors > 0 && !isReadonly && <ValdidationErrors />}
 
         <Box flexGrow={1} />
 
@@ -57,7 +61,7 @@ export const BottomBar: FC = () => {
           href="https://www.tiny.cloud"
           target="_blank"
           rel="noopener"
-          title={t('Powered by')}
+          title={t('Powered by').toString()}
         >
           {t('Powered by')} Tiny
         </Link>

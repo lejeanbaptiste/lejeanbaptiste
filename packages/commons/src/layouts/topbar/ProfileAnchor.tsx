@@ -1,12 +1,12 @@
 import { Box } from '@mui/material';
 import { Profile } from '@src/components';
-import React, { useRef, useState, type FC } from 'react';
+import React, { useRef, useState } from 'react';
 
 interface ProfileAnchorProps {
   children?: React.ReactNode;
 }
 
-export const ProfileAnchor: FC<ProfileAnchorProps> = ({ children }) => {
+export const ProfileAnchor = ({ children }: ProfileAnchorProps) => {
   const [anchorProfileEl, setAnchorProfileEl] = useState<HTMLDivElement | null>(null);
   const ref = useRef(null);
 

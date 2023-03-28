@@ -1,4 +1,5 @@
 export * from './documentsView';
+export { EditorModeSelector } from './EditorModeSelector';
 export { LoadingMask } from './LoadingMask';
 export { Logo } from './Logo';
 export { Profile } from './profile';

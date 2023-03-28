@@ -169,11 +169,9 @@ class Triple {
     let name = '';
     for (let i = 0; i < strs.length; i++) {
       if (i == 0) {
-        name += strs[i].toLowerCase();
+        name += strs[i]?.toLowerCase();
       } else {
-        name += strs[i].replace(/^./, function (s) {
-          return s.toUpperCase();
-        });
+        name += strs[i]?.replace(/^./, (s) => s.toUpperCase());
       }
     }
     return name;
@@ -226,7 +224,7 @@ class Triple {
       if (c === null) {
         enable = false;
       } else {
-        str += c.text;
+        str += c?.text;
         str += i < 2 ? ' ' : '.';
       }
     }
@@ -279,7 +277,7 @@ class Triple {
           if ($(this).hasClass('selected')) {
             const attributeName = $(this).attr('name');
             if (attributeName) {
-              const type = _this.writer.entitiesManager.getEntity(attributeName).getType();
+              const type = _this.writer.entitiesManager.getEntity(attributeName)?.getType();
               if (type === 'person' || type === 'place') _this.loadPredicates(type);
             }
           } else {

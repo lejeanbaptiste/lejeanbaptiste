@@ -10,19 +10,18 @@ import {
   useTheme,
 } from '@mui/material';
 import React, {
-  type ChangeEvent,
-  type FC,
-  type FocusEvent,
-  type KeyboardEvent,
   useEffect,
   useRef,
   useState,
+  type ChangeEvent,
+  type FocusEvent,
+  type KeyboardEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SaveSettingsDialog } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';
 
-const Filename: FC = () => {
+const Filename = () => {
   const { t } = useTranslation();
   const { allowAllFileTypes, allowedFileTypes, resource } = useAppState().common;
   const { setFilename } = useActions().common;

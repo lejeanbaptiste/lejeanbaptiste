@@ -1,19 +1,19 @@
 import { Box, CircularProgress, List, Skeleton, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
 import { useScrollSpy } from '../hooks/useScrollSpy';
 import Content from './Content';
 import Empty from './Empty';
 import Org from './Organization';
 import Repository from './Repository';
-import { useTranslation } from 'react-i18next';
 
 interface Collection {
   height: number | string;
 }
 
-const Collection: FC<Collection> = ({ height = '100%' }) => {
+const Collection = ({ height = '100%' }: Collection) => {
   const { collectionType, isFetching, organizations, repositories, repositoryContent } =
     useAppState().cloud;
   const { loadMoreRepos } = useActions().cloud;
@@ -21,7 +21,7 @@ const Collection: FC<Collection> = ({ height = '100%' }) => {
   const { t } = useTranslation();
 
   const refContainer = useRef<HTMLElement | null>(null);
-  const refTarget = useRef<HTMLElement | null>(null);
+  const refTarget = useRef<HTMLDivElement | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { reachBottom } = useScrollSpy({ container: refContainer, target: refTarget, offset: -70 });
 

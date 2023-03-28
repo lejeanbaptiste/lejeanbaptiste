@@ -1,8 +1,7 @@
 import $ from 'jquery';
 import Entity from '../../../js/entities/Entity';
-import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
-import type { SchemaMappingType } from '../../../types';
+import type { EntityType, SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
@@ -14,7 +13,7 @@ class DateDialog implements SchemaDialog {
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityTypes = 'correction';
+  type: EntityType = 'correction';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
@@ -98,7 +97,7 @@ class DateDialog implements SchemaDialog {
         if (!entityId) return;
 
         $(`#${entityId}`, writer.editor.getBody()).text(corrText);
-        writer.entitiesManager.getEntity(entityId).setContent(corrText);
+        writer.entitiesManager.getEntity(entityId)?.setContent(corrText);
 
         return;
       }
@@ -112,11 +111,11 @@ class DateDialog implements SchemaDialog {
       const range = writer.editor.selection.getRng();
 
       // insert temp span at the current range
-      range.surroundContents($temp[0]);
+      if ($temp[0]) range.surroundContents($temp[0]);
 
       // add the text content
       $temp.html(corrText);
-      const textNode = $temp[0].firstChild;
+      const textNode = $temp[0]?.firstChild;
 
       if (!textNode) return;
 

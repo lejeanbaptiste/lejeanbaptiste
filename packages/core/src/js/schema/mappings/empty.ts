@@ -3,6 +3,7 @@ import type { SchemaMappingProps } from '../types';
 export const empty: SchemaMappingProps = {
   blockElements: [],
   header: '',
+  headings: [],
   id: '',
   listeners: {
     tagAdded: (tag) => {},
@@ -19,6 +20,7 @@ export const empty: SchemaMappingProps = {
     [
       'person',
       {
+        label: 'Person',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],
@@ -28,6 +30,7 @@ export const empty: SchemaMappingProps = {
     [
       'place',
       {
+        label: 'Place',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],
@@ -37,6 +40,7 @@ export const empty: SchemaMappingProps = {
     [
       'organization',
       {
+        label: 'Organization',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],
@@ -46,6 +50,7 @@ export const empty: SchemaMappingProps = {
     [
       'title',
       {
+        label: 'Title',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],
@@ -55,6 +60,7 @@ export const empty: SchemaMappingProps = {
     [
       'rs',
       {
+        label: 'Referencing String',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],
@@ -65,6 +71,7 @@ export const empty: SchemaMappingProps = {
     [
       'citation',
       {
+        label: 'Citation',
         mapping: {},
         parentTag: '',
         textTag: '',
@@ -75,6 +82,7 @@ export const empty: SchemaMappingProps = {
     [
       'note',
       {
+        label: 'Note',
         isNote: true,
         mapping: {},
         parentTag: '',
@@ -86,6 +94,7 @@ export const empty: SchemaMappingProps = {
     [
       'date',
       {
+        label: 'Date',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],
@@ -95,6 +104,7 @@ export const empty: SchemaMappingProps = {
     [
       'correction',
       {
+        label: 'Corretion',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],
@@ -104,6 +114,7 @@ export const empty: SchemaMappingProps = {
     [
       'keyword',
       {
+        label: 'Keyword',
         mapping: {},
         parentTag: '',
         textTag: '',
@@ -114,6 +125,7 @@ export const empty: SchemaMappingProps = {
     [
       'link',
       {
+        label: 'Link',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],

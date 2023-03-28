@@ -2,6 +2,7 @@ import { WorkingState } from '@cwrc/salve-dom-leafwriter';
 import { beforeAll, describe, expect, jest, test } from '@jest/globals';
 import fetchMock from 'jest-fetch-mock';
 import { log, logEnabledFor } from '../src/log';
+import { NodeDetail } from '../src/types';
 import Validator from '../src/Validator';
 import cwrcTeiLite from './mocks/cwtcTeiLite';
 
@@ -161,19 +162,20 @@ describe('Validator', () => {
     });
   });
 
-  describe('Element', () => {
+  describe('Node', () => {
     describe('getTagAt', () => {
       test('p at /TEI/text/body/div', async () => {
         expect.assertions(1);
         const tag = await Validator.getTagAt('p', '/TEI/text/body/div', 0);
 
         expect(tag).toEqual({
-          type: 'tag',
-          name: 'p',
           documentation: '(paragraph) marks paragraphs in prose. [3.1.  7.2.5. ]',
+          eventType: 'enterStartTag',
           fullName: 'paragraph',
+          name: 'p',
           ns: 'http://www.tei-c.org/ns/1.0',
-        });
+          type: 'tag',
+        } satisfies NodeDetail);
       });
 
       test('Invalid xpath', async () => {
@@ -189,25 +191,26 @@ describe('Validator', () => {
       });
     });
 
-    describe('getElementsForTagAt', () => {
+    describe('getNodesForTagAt', () => {
       test('/TEI/text/body/div/p', async () => {
         expect.assertions(2);
-        const elements = await Validator.getElementsForTagAt('/TEI/text/body/div/p', 0);
+        const elements = await Validator.getNodesForTagAt('/TEI/text/body/div/p', 0);
 
         expect(elements).toHaveLength(99);
 
         expect(elements).toContainEqual({
-          type: 'tag',
-          name: 'seg',
-          fullName: 'arbitrary segment',
           documentation: `(arbitrary segment) represents any segmentation of text below the chunk level. [16.3.  6.2.  7.2.5. ]`,
+          eventType: 'enterStartTag',
+          fullName: 'arbitrary segment',
+          name: 'seg',
           ns: 'http://www.tei-c.org/ns/1.0',
-        });
+          type: 'tag',
+        } satisfies NodeDetail);
       });
 
       test('Invalid xpath', async () => {
         expect.assertions(1);
-        const tag = await Validator.getElementsForTagAt('/TEI/text/body/divv/p', 0);
+        const tag = await Validator.getNodesForTagAt('/TEI/text/body/divv/p', 0);
         expect(tag).toBeUndefined();
       });
     });
@@ -216,15 +219,16 @@ describe('Validator', () => {
       test('/TEI/text/body/div/p', async () => {
         expect.assertions(2);
         const attributes = await Validator.getAttributesForTagAt('/TEI/text/body/div/p', 1);
-        expect(attributes).toHaveLength(55);
+        expect(attributes).toHaveLength(56);
 
         expect(attributes).toContainEqual({
-          type: 'attribute',
+          documentation: `(responsible party) indicates the agency responsible for the intervention or interpretation, for example an editor or transcriber.`,
+          eventType: 'attributeName',
+          fullName: 'responsible party',
           name: 'resp',
           ns: '',
-          fullName: 'responsible party',
-          documentation: `(responsible party) indicates the agency responsible for the intervention or interpretation, for example an editor or transcriber.`,
-        });
+          type: 'attribute',
+        } satisfies NodeDetail);
       });
 
       test('Invalid xpath', async () => {
@@ -240,12 +244,13 @@ describe('Validator', () => {
         const attribute = await Validator.getTagAttributeAt('rend', '/TEI/text/body/div/p');
 
         expect(attribute).toEqual({
-          type: 'attribute',
-          name: 'rend',
           documentation: `(rendition) indicates how the element in question was rendered or presented in the source text.`,
+          eventType: 'attributeName',
           fullName: 'rendition',
+          name: 'rend',
           ns: '',
-        });
+          type: 'attribute',
+        } satisfies NodeDetail);
       });
 
       test('Invalid xpath', async () => {
@@ -268,7 +273,14 @@ describe('Validator', () => {
           '/TEI/text/body/div/closer/signed/persName/persName/@cert'
         );
         expect(attributeValues).toHaveLength(4);
-        expect(attributeValues).toContainEqual({ type: 'attributeValue', name: 'high' });
+        expect(attributeValues).toContainEqual({
+          documentation: undefined,
+          eventType: 'attributeValue',
+          fullName: undefined,
+          name: 'high',
+          type: 'attributeValue',
+          value: 'high',
+        } satisfies NodeDetail);
       });
 
       test('Invalid xpath', async () => {
@@ -281,163 +293,220 @@ describe('Validator', () => {
     });
   });
 
-  describe('Possible Tags', () => {
+  describe('Possible Nodes', () => {
     test('At', async () => {
       expect.hasAssertions();
-      const results = await Validator.getValidTagsAt({
-        xpath: '/TEI/text[1]/body[1]/div[1]/P[1]',
-        index: 0,
-      });
+      const results = await Validator.getPossibleNodesAt(
+        {
+          xpath: '/TEI/text[1]/body[1]/div[1]/P[1]',
+          index: 0,
+        },
+        { speculativeValidate: true }
+      );
 
-      expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results?.possible.length).toBeGreaterThan(0);
-      results?.possible.forEach((tag) => {
+      expect(results).toHaveProperty('nodes', expect.any(Array));
+      expect(results?.nodes.length).toBeGreaterThan(0);
+      results?.nodes.forEach((tag) => {
+        expect(tag).toHaveProperty('eventType', expect.any(String));
+        expect(tag).toHaveProperty('invalid', expect.any(Boolean));
         expect(tag).toHaveProperty('name', expect.any(String));
-      });
-
-      expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results?.speculative?.length).toBeGreaterThan(0);
-      results?.speculative?.forEach((tag) => {
-        expect(tag).toHaveProperty('name', expect.any(String));
+        expect(tag).toHaveProperty('type', expect.any(String));
       });
     });
 
     test('AROUND selection SPAN', async () => {
       expect.hasAssertions();
-      const results = await Validator.getValidTagsAt({
-        xpath: 'TEI/text/body/div/p[2]',
-        index: 2,
-        selection: {
-          endContainerIndex: 2,
-          endOffset: 35,
-          startContainerIndex: 2,
-          startOffset: 31,
-          type: 'span',
+      const results = await Validator.getPossibleNodesAt(
+        {
+          xpath: 'TEI/text/body/div/p[2]',
+          index: 2,
+          selection: {
+            endContainerIndex: 2,
+            endOffset: 35,
+            startContainerIndex: 2,
+            startOffset: 31,
+            type: 'span',
+          },
         },
-      });
+        { speculativeValidate: true }
+      );
 
-      expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results?.possible.length).toBeGreaterThan(0);
-      results?.possible.forEach((tag) => {
+      expect(results).toHaveProperty('nodes', expect.any(Array));
+      expect(results?.nodes.length).toBeGreaterThan(0);
+      results?.nodes.forEach((tag) => {
+        expect(tag).toHaveProperty('eventType', expect.any(String));
+        expect(tag).toHaveProperty('invalid', expect.any(Boolean));
         expect(tag).toHaveProperty('name', expect.any(String));
+        expect(tag).toHaveProperty('type', expect.any(String));
       });
+    });
 
-      expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results?.speculative?.length).toBeGreaterThan(0);
-      results?.speculative?.forEach((tag) => {
+    test('AROUND selection SPAN ALTERNATIVE', async () => {
+      expect.hasAssertions();
+      const results = await Validator.getPossibleNodesAt(
+        {
+          xpath: 'TEI/text/body/div/p[2]',
+          index: 3,
+          selection: {
+            endContainerIndex: 4,
+            endOffset: 35,
+            startContainerIndex: 2,
+            startOffset: 31,
+            type: 'span',
+          },
+        },
+        { speculativeValidate: true }
+      );
+
+      expect(results).toHaveProperty('nodes', expect.any(Array));
+      expect(results?.nodes.length).toBeGreaterThan(0);
+      results?.nodes.forEach((tag) => {
+        expect(tag).toHaveProperty('eventType', expect.any(String));
+        expect(tag).toHaveProperty('invalid', expect.any(Boolean));
         expect(tag).toHaveProperty('name', expect.any(String));
+        expect(tag).toHaveProperty('type', expect.any(String));
       });
     });
 
     test('BEFORE', async () => {
       expect.hasAssertions();
-      const results = await Validator.getValidTagsAt({
-        xpath: 'TEI/text/body/div',
-        index: 0,
-        selection: {
-          containerIndex: 3,
-          type: 'before',
+      const results = await Validator.getPossibleNodesAt(
+        {
           xpath: 'TEI/text/body/div',
+          index: 0,
+          selection: {
+            containerIndex: 3,
+            type: 'before',
+            xpath: 'TEI/text/body/div',
+          },
         },
-      });
+        { speculativeValidate: true }
+      );
 
-      expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results?.possible.length).toBeGreaterThan(0);
-      results?.possible.forEach((tag) => {
+      expect(results).toHaveProperty('nodes', expect.any(Array));
+      expect(results?.nodes.length).toBeGreaterThan(0);
+      results?.nodes.forEach((tag) => {
+        expect(tag).toHaveProperty('eventType', expect.any(String));
+        expect(tag).toHaveProperty('invalid', expect.any(Boolean));
         expect(tag).toHaveProperty('name', expect.any(String));
-      });
-
-      expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results?.speculative?.length).toBeGreaterThan(0);
-      results?.speculative?.forEach((tag) => {
-        expect(tag).toHaveProperty('name', expect.any(String));
+        expect(tag).toHaveProperty('type', expect.any(String));
       });
     });
 
     test('AFTER', async () => {
       expect.hasAssertions();
-      const results = await Validator.getValidTagsAt({
-        xpath: 'TEI/text/body/div',
-        index: 5,
-        selection: {
-          containerIndex: 5,
-          type: 'after',
+      const results = await Validator.getPossibleNodesAt(
+        {
           xpath: 'TEI/text/body/div',
+          index: 5,
+          selection: {
+            containerIndex: 5,
+            type: 'after',
+            xpath: 'TEI/text/body/div',
+          },
         },
-      });
+        { speculativeValidate: true }
+      );
 
-      expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results?.possible.length).toBeGreaterThan(0);
-      results?.possible.forEach((tag) => {
+      expect(results).toHaveProperty('nodes', expect.any(Array));
+      expect(results?.nodes.length).toBeGreaterThan(0);
+      results?.nodes.forEach((tag) => {
+        expect(tag).toHaveProperty('eventType', expect.any(String));
+        expect(tag).toHaveProperty('invalid', expect.any(Boolean));
         expect(tag).toHaveProperty('name', expect.any(String));
-      });
-
-      expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results?.speculative?.length).toBeGreaterThan(0);
-      results?.speculative?.forEach((tag) => {
-        expect(tag).toHaveProperty('name', expect.any(String));
+        expect(tag).toHaveProperty('type', expect.any(String));
       });
     });
 
     test('AROUND', async () => {
       expect.hasAssertions();
-      const results = await Validator.getValidTagsAt({
-        xpath: 'TEI/text/body/div/p',
-        index: 4,
-        selection: {
-          type: 'around',
+      const results = await Validator.getPossibleNodesAt(
+        {
           xpath: 'TEI/text/body/div/p',
+          index: 4,
+          selection: {
+            type: 'around',
+            xpath: 'TEI/text/body/div/p',
+          },
         },
-      });
+        { speculativeValidate: true }
+      );
 
-      expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results?.possible.length).toBeGreaterThan(0);
-      results?.possible.forEach((tag) => {
+      expect(results).toHaveProperty('nodes', expect.any(Array));
+      expect(results?.nodes.length).toBeGreaterThan(0);
+      results?.nodes.forEach((tag) => {
+        expect(tag).toHaveProperty('eventType', expect.any(String));
         expect(tag).toHaveProperty('name', expect.any(String));
+        expect(tag).toHaveProperty('type', expect.any(String));
       });
     });
 
     test('INSIDE', async () => {
       expect.hasAssertions();
-      const results = await Validator.getValidTagsAt({
-        xpath: 'TEI/text/body/div/p',
-        index: 0,
-        selection: {
-          type: 'inside',
+      const results = await Validator.getPossibleNodesAt(
+        {
           xpath: 'TEI/text/body/div/p',
+          index: 0,
+          selection: {
+            type: 'inside',
+            xpath: 'TEI/text/body/div/p',
+            endContainerIndex: 2,
+            startContainerIndex: 0,
+          },
         },
-      });
+        { speculativeValidate: true }
+      );
 
-      expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results?.possible.length).toBeGreaterThan(0);
-      results?.possible.forEach((tag) => {
+      expect(results).toHaveProperty('nodes', expect.any(Array));
+      expect(results?.nodes.length).toBeGreaterThan(0);
+      results?.nodes.forEach((tag) => {
+        expect(tag).toHaveProperty('eventType', expect.any(String));
         expect(tag).toHaveProperty('name', expect.any(String));
+        expect(tag).toHaveProperty('type', expect.any(String));
       });
     });
 
     test('for CHANGE at', async () => {
-      const results = await Validator.getValidTagsAt({
-        xpath: 'TEI/text/body/div',
-        index: 4,
-        selection: {
-          endContainerIndex: 16,
-          skip: 'p',
-          startContainerIndex: 0,
-          type: 'change',
-          xpath: 'TEI/text/body/div/p',
+      const results = await Validator.getPossibleNodesAt(
+        {
+          xpath: 'TEI/text/body/div',
+          index: 4,
+          selection: {
+            endContainerIndex: 16,
+            skip: 'p',
+            startContainerIndex: 0,
+            type: 'change',
+            xpath: 'TEI/text/body/div/p',
+          },
         },
+        { speculativeValidate: true }
+      );
+
+      expect(results).toHaveProperty('nodes', expect.any(Array));
+      expect(results?.nodes.length).toBeGreaterThan(0);
+      results?.nodes.forEach((tag) => {
+        expect(tag).toHaveProperty('eventType', expect.any(String));
+        expect(tag).toHaveProperty('name', expect.any(String));
+        expect(tag).toHaveProperty('type', expect.any(String));
+      });
+    });
+  });
+
+  describe('Valid Nodes', () => {
+    test('At', async () => {
+      expect.hasAssertions();
+      const results = await Validator.getValidNodesAt({
+        xpath: '/TEI/text[1]/body[1]/div[1]/P[1]',
+        index: 0,
       });
 
-      expect(results).toHaveProperty('possible', expect.any(Array));
-      expect(results?.possible.length).toBeGreaterThan(0);
-      results?.possible.forEach((tag) => {
+      expect(results).toHaveProperty('nodes', expect.any(Array));
+      expect(results?.nodes.length).toBeGreaterThan(0);
+      results?.nodes.forEach((tag) => {
+        expect(tag).toHaveProperty('eventType', expect.any(String));
+        expect(tag).toHaveProperty('invalid', expect.any(Boolean));
         expect(tag).toHaveProperty('name', expect.any(String));
-      });
-
-      expect(results).toHaveProperty('speculative', expect.any(Array));
-      expect(results?.speculative?.length).toBeGreaterThan(0);
-      results?.speculative?.forEach((tag) => {
-        expect(tag).toHaveProperty('name', expect.any(String));
+        expect(tag).toHaveProperty('type', expect.any(String));
       });
     });
   });
@@ -459,7 +528,7 @@ describe('Validator', () => {
     test('getElementsForTagAt - throw error', async () => {
       expect.assertions(1);
       expect(async () => {
-        await Validator.getElementsForTagAt('/TEI/text/body/div/p', 0);
+        await Validator.getNodesForTagAt('/TEI/text/body/div/p', 0);
       }).rejects.toThrow();
     });
 
@@ -489,7 +558,7 @@ describe('Validator', () => {
     test('getValidTagsAt - throw error', async () => {
       expect.assertions(1);
       expect(async () => {
-        await Validator.getValidTagsAt({
+        await Validator.getPossibleNodesAt({
           xpath: '/TEI/text[1]/body[1]/div[1]/P[1]',
           index: 0,
         });

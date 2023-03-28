@@ -3,13 +3,13 @@ import { usePermalink } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import { isErrorMessage } from '@src/utilities';
-import React, { useEffect, type FC } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AboutSection } from './about';
 import { Footer } from './Footer';
 import { Main } from './main';
 
-export const HomeView: FC = () => {
+export const HomeView = () => {
   const { userState } = useAppState().auth;
 
   const { openStorageDialog } = useActions().storage;

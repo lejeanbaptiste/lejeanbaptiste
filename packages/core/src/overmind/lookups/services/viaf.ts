@@ -99,10 +99,10 @@ export default class Viaf implements LookupServiceApi {
 
       //? Assumes the first instance of mainHeading
       const name = Array.isArray(mainHeadings.data)
-        ? mainHeadings.data[0].text
+        ? mainHeadings.data[0]?.text
         : mainHeadings.data.text;
 
-      return { id: uri, name, repository: 'viaf', query, type: nameType, uri };
+      return { id: uri, name: name ?? '', repository: 'viaf', query, type: nameType, uri };
     });
 
     return results;

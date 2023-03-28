@@ -2,12 +2,12 @@ import { Box, Divider, Stack, Typography } from '@mui/material';
 import { ProviderButton } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 const MAX_WIDTH = 170;
 
-export const Sidebar: FC = () => {
+export const Sidebar = () => {
   const { authProviders } = useAppState().providers;
   const { t } = useTranslation('storage');
 

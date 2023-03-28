@@ -259,7 +259,7 @@
 
 .noteWrapper.citation.entityHighlight::before {
   content: url(../images/citation.svg);
-  background-color: rgb(205, 0, 116);
+  background-color: var(--citation);
   border-radius: 2px;
   padding: 2px 3px 0px 3px;
   color: white;
@@ -371,4 +371,10 @@ span[data-mce-bogus] {
   padding-right: 16px !important;
   box-shadow: unset !important;
   text-indent: unset !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  *[_tag="pb"] {
+    color: black !important;
+  }
 }

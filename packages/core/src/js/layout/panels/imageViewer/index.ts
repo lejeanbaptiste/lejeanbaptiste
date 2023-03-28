@@ -32,7 +32,7 @@ class ImageViewer {
     const _this = this;
 
     $(`#${parentId}`).append(`
-      <div id="${this.id}" class="imageViewer" style="background-color: #f5f5f5">
+      <div id="${this.id}" class="imageViewer" style="background-color: #f5f5f5; color-scheme: light">
         <div class="toolbar">
           <div class="navigation">
             <span id="${this.id}_prev" class="lw-button">
@@ -87,12 +87,13 @@ class ImageViewer {
     });
 
     this.writer.event('contentChanged').subscribe(() => {
-      const document = this.writer.editor.getDoc();
+      const document = this.writer.editor?.getDoc();
       //@ts-ignore
       this.processDocument(document, false);
     });
 
     this.writer.event('writerInitialized').subscribe(() => {
+      if (!this.writer.editor) return;
       $(this.writer.editor.getDoc()).on('scroll', () => this.handleScroll());
     });
 
@@ -131,6 +132,7 @@ class ImageViewer {
 
   // ensure page break tags are display block
   private cssHack() {
+    if (!this.writer.editor) return;
     const rules = $(this.writer.editor.getDoc()).find('#schemaRules')[0];
     !rules
       ? setTimeout(this.cssHack, 50)
@@ -203,11 +205,11 @@ class ImageViewer {
   }
 
   private handleScroll() {
-    if (!this.ignoreScroll) {
+    if (!this.ignoreScroll && this.writer.editor) {
       const ifr = $('iframe', this.writer.editor.getContainer());
-      const scrollHeight = ifr.height();
+      const scrollHeight = ifr.height() ?? 0;
       const el = this.writer.editor.getDoc().scrollingElement;
-      const scrollTop = el.scrollTop;
+      const scrollTop = el?.scrollTop ?? 0;
       const scrollBottom = scrollTop + scrollHeight;
       let index = -1;
 

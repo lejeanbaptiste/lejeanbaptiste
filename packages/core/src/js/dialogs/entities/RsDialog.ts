@@ -2,8 +2,8 @@ import $ from 'jquery';
 import 'jquery-ui/ui/widgets/selectmenu';
 import type { EntityLink } from '../../../dialogs/entityLookups/types';
 import Entity from '../../../js/entities/Entity';
-import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
+import { EntityType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
@@ -45,7 +45,7 @@ class RsDialog implements SchemaDialog {
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityTypes = 'rs';
+  type: EntityType = 'rs';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;

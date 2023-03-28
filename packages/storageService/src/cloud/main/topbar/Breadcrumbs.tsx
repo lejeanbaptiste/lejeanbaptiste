@@ -7,12 +7,12 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
 import Crumb from './Crumb';
 
-const Breadcrumbs: FC = () => {
+const Breadcrumbs = () => {
   const { t } = useTranslation();
   const { collectionSource, collectionType, repositoryContent, owner, repository } =
     useAppState().cloud;

@@ -1,9 +1,9 @@
 import { Link, Stack } from '@mui/material';
 import { useActions } from '@src/overmind';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-export const Footer: FC = () => {
+export const Footer = () => {
   const { openDialog } = useActions().ui;
   const { t } = useTranslation('commons');
 

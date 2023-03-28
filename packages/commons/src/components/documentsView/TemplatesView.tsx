@@ -1,10 +1,10 @@
 import { Divider, Stack, Typography, useTheme } from '@mui/material';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
-import React, { useEffect, useState, type FC } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Masonry from 'react-responsive-masonry';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import type { DisplayLayout } from '.';
 import { CARD_WIDTH, DocumentCard } from './components';
 
@@ -16,14 +16,14 @@ interface TemplatesView {
   type?: 'singleClick' | 'doubleClick';
   width: number;
 }
-export const TemplatesView: FC<TemplatesView> = ({
+export const TemplatesView = ({
   displayLayout = 'list',
   onClose,
   onSelect,
   selected,
   type = 'singleClick',
   width = 400,
-}) => {
+}: TemplatesView) => {
   const { setResource } = useActions().editor;
   const { getTemplates, loadSample } = useActions().storage;
 
@@ -104,7 +104,7 @@ interface CategoryProps {
   title: string;
 }
 
-export const Category: FC<CategoryProps> = ({ children, title }) => {
+export const Category = ({ children, title }: CategoryProps) => {
   return (
     <Stack spacing={0.5} px={1} py={0.5}>
       <Typography

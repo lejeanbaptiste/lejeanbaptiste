@@ -457,6 +457,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       context.tags[nerveTypeName] = tag;
 
       Object.assign(
+        //@ts-ignore
         context.tags[nerveTypeName].defaults,
         sm.mapper.getRequiredAttributes(entityType)
       );
@@ -828,10 +829,12 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
 
     let filterType = 'type';
 
-    if (filter.indexOf('_') !== -1) {
-      const details = filter.split('_');
-      filterType = details[0];
-      filter = details[1];
+    if (filter?.indexOf('_') !== -1) {
+      const details = filter?.split('_');
+      if (details) {
+        filterType = details[0] ?? '';
+        filter = details[1];
+      }
     }
 
     $parent.find('ul.entitiesList > li').each(function (index, el) {
@@ -1367,7 +1370,7 @@ const NerveEditDialog = (writer: any, parentEl: HTMLElement) => {
       const type = dialog.$el.find('select').val();
       //@ts-ignore
       const entity = dialog.showConfig.entry;
-      const query = entity.content.trim().replace(/\s+/g, ' ');
+      const query = entity?.content?.trim().replace(/\s+/g, ' ');
       // doLookup(writer, query, type, ({ name, uri }: { name: string; uri: string }) => {
       //   dialog.$el.find('input[data-mapping="prop.lemma"]').val(name);
       //   dialog.$el.find('input[data-mapping="prop.uri"]').val(uri);

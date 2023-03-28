@@ -1,7 +1,7 @@
 import DownloadIcon from '@mui/icons-material/Download';
 import { LoadingButton } from '@mui/lab';
 import { Box, Button, DialogActions, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import React, { FC, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 import SaveOptions from './SaveOptions';
@@ -10,7 +10,7 @@ export interface Props {
   onCancel: () => void;
 }
 
-export const FooterSave: FC<Props> = ({ onCancel }) => {
+export const FooterSave = ({ onCancel }: Props) => {
   const { t } = useTranslation();
   const { resource } = useAppState().common;
   const { isSaving, owner, repository } = useAppState().cloud;

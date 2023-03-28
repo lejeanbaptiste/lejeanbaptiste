@@ -1,8 +1,7 @@
 import $ from 'jquery';
 import Entity from '../../../js/entities/Entity';
-import type { EntityTypes } from '../../../js/schema/types';
 import Writer from '../../../js/Writer';
-import type { SchemaMappingType } from '../../../types';
+import type { EntityType, SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
@@ -16,7 +15,7 @@ class LinkDialog implements SchemaDialog {
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityTypes = 'link';
+  type: EntityType = 'link';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
@@ -82,7 +81,7 @@ class LinkDialog implements SchemaDialog {
       if (Array.isArray(src)) src = src[0]; //grab the first on the list.
       if (typeof src === 'number') src = src.toString();
 
-      if (src !== '') {
+      if (src && src !== '') {
         if (src.match(/^https?:\/\//) == null) src = `https://${src}`;
         try {
           window.open(src);

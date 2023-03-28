@@ -3,18 +3,18 @@ import { Box, Button, Menu, MenuItem } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities';
-import { motion } from 'framer-motion';
-import React, { useState, type FC, type MouseEvent } from 'react';
+import { motion, type Variants } from 'framer-motion';
+import React, { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export const LanguageMenu: FC = () => {
+export const LanguageMenu = () => {
   const { language } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
   const { t } = useTranslation('language');
 
   const { switchLanguage: switchLanguageConsent } = useCookieConsent();
 
-  const optionVariants = {
+  const optionVariants: Variants = {
     initial: { y: -100 },
     visible: { y: 0 },
     exit: { y: -100 },

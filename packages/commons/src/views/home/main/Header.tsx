@@ -1,12 +1,12 @@
 import { Box, Container, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { Logo } from '@src/components';
-import React, { type FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-export const Header: FC = () => {
+export const Header = () => {
   const { t } = useTranslation();
   const theme = useTheme();
-  
+
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (

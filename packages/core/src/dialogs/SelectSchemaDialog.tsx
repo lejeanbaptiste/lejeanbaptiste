@@ -12,8 +12,9 @@ import {
   Typography,
   type SelectChangeEvent,
 } from '@mui/material';
-import React, { useState, type FC } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { v4 as uuidv4 } from 'uuid';
 import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
 import { type IDialog } from './type';
@@ -23,15 +24,15 @@ export interface SelectSchemaDialogProps extends IDialog {
   onSchemaSelect?: (schema: Schema) => void;
 }
 
-export const SelectSchemaDialog: FC<SelectSchemaDialogProps> = ({
-  id,
+export const SelectSchemaDialog = ({
+  id = uuidv4(),
   maxWidth = 'xs',
   mappingIds = [],
   onClose,
   onSchemaSelect,
-  open,
+  open = false,
   preventEscape = true,
-}) => {
+}: SelectSchemaDialogProps) => {
   const { closeDialog } = useActions().ui;
   const { t } = useTranslation(['leafwriter']);
 
@@ -43,7 +44,7 @@ export const SelectSchemaDialog: FC<SelectSchemaDialogProps> = ({
     ? possibleSchemas.find((schema) => schema.id === 'teiAll')
     : possibleSchemas[0];
 
-  const [schema, setSchema] = useState<Schema>(defaultSchema);
+  const [schema, setSchema] = useState<Schema | undefined>(defaultSchema);
 
   const handleSchemaSelect = (event: SelectChangeEvent) => {
     const schemaId = event.target.value;
@@ -68,7 +69,7 @@ export const SelectSchemaDialog: FC<SelectSchemaDialogProps> = ({
 
   const handleSelect = () => {
     closeDialog(id);
-    onSchemaSelect && onSchemaSelect(schema);
+    onSchemaSelect && schema && onSchemaSelect(schema);
     onClose && onClose<Schema>('select', schema);
   };
 
@@ -90,7 +91,7 @@ export const SelectSchemaDialog: FC<SelectSchemaDialogProps> = ({
         <Stack mt={2}>
           <FormControl fullWidth>
             <InputLabel id="select-schema-label" sx={{ textTransform: 'capitalize' }}>
-              {t('schema')}
+              {t('commons:schema')}
             </InputLabel>
             <Select
               fullWidth
@@ -98,7 +99,7 @@ export const SelectSchemaDialog: FC<SelectSchemaDialogProps> = ({
               labelId="select-schema-label"
               onChange={handleSchemaSelect}
               size="small"
-              value={schema.id}
+              value={schema?.id}
             >
               {schemasList
                 .filter((schema) => mappingIds.includes(schema.mapping))
@@ -124,9 +125,9 @@ export const SelectSchemaDialog: FC<SelectSchemaDialogProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleCancel}>{t('cancel')}</Button>
+        <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
         <Button color="primary" onClick={handleSelect} variant="outlined">
-          {t('select')}
+          {t('commons:select')}
         </Button>
       </DialogActions>
     </Dialog>

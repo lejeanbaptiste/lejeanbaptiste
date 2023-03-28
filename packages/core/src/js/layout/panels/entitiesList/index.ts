@@ -5,7 +5,7 @@ import 'jquery-ui/ui/widgets/selectmenu';
 import 'jquery-ui/ui/widgets/tooltip';
 import Entity from '../../../../js/entities/Entity';
 import { log } from '../../../../utilities';
-import { getSvg } from '../../../../utilities/icons';
+import { getSvg } from '../../../../icons';
 import type { SortingTypes } from '../../../entities/entitiesManager';
 import { RESERVED_ATTRIBUTES } from '../../../schema/mapper';
 import Writer from '../../../Writer';
@@ -135,7 +135,12 @@ class EntitiesList {
       .find('button.convert')
       //@ts-ignore
       .button()
-      .click(() => this.convertEntities());
+      .click(() => {
+        //* Prevent Trigger LW change event
+        this.writer.overmindActions.editor.suspendLWChangeEvent(true);
+
+        this.convertEntities();
+      });
 
     this.$entities
       .find('button.accept')
@@ -162,6 +167,9 @@ class EntitiesList {
       .click(() => {
         if (this.getCandidates().length <= 0) {
           this.handleDone();
+
+          //* Resume LW change Event
+          this.writer.overmindActions.editor.suspendLWChangeEvent(false);
           return;
         }
 
@@ -177,6 +185,9 @@ class EntitiesList {
             if (doIt) {
               this.rejectAll();
               this.handleDone();
+
+              //* Resume LW change Event
+              this.writer.overmindActions.editor.suspendLWChangeEvent(false);
             }
           },
         });
@@ -241,8 +252,8 @@ class EntitiesList {
 
   private acceptEntity(entityId: string) {
     const entity = this.writer.entitiesManager.getEntity(entityId);
-    entity.removeAttribute('_candidate');
-    $(`#${entity.id}`, this.writer.editor?.getBody()).removeAttr('_candidate');
+    entity?.removeAttribute('_candidate');
+    $(`#${entity?.id}`, this.writer.editor?.getBody()).removeAttr('_candidate');
   }
 
   private setFilter(value: string) {
@@ -328,11 +339,11 @@ class EntitiesList {
     const match = this.writer.entitiesManager.getEntity(entityId);
 
     this.writer.entitiesManager.eachEntity((index: number, entity: Entity) => {
-      if (entity.getId() !== match.getId()) {
+      if (entity.getId() !== match?.getId()) {
         if (
-          JSON.stringify(entity.getAttributes()) === JSON.stringify(match.getAttributes()) &&
-          JSON.stringify(entity.getCustomValues()) === JSON.stringify(match.getCustomValues()) &&
-          entity.getContent() === match.getContent()
+          JSON.stringify(entity.getAttributes()) === JSON.stringify(match?.getAttributes()) &&
+          JSON.stringify(entity.getCustomValues()) === JSON.stringify(match?.getCustomValues()) &&
+          entity.getContent() === match?.getContent()
         ) {
           matches.push(entity.getId());
         }
@@ -485,10 +496,25 @@ class EntitiesList {
   }
 
   convertEntities() {
-    const typesToFind = ['person', 'place', 'date', 'org', 'organization', 'title', 'link', 'rs'];
+    const typesToFind = new Set([
+      'person',
+      'place',
+      'org',
+      'organization',
+      'title',
+      'rs',
+      'citation',
+      'note',
+      'date',
+      'correction',
+      'keyword',
+      'link',
+    ]);
+
     const potentialEntitiesByType = this.writer.schemaManager.mapper.findEntities(typesToFind);
     let potentialEntities: HTMLElement[] = [];
     for (const type in potentialEntitiesByType) {
+      //@ts-ignore
       potentialEntities = [...potentialEntities, ...potentialEntitiesByType[type]];
     }
 
@@ -623,6 +649,13 @@ class EntitiesList {
         .find('div[class="info"]')
         .show();
     }
+  }
+
+  toggleReadonly(readonly: boolean) {
+    this.update();
+    readonly
+      ? this.$entities.find('.moduleFooter').hide()
+      : this.$entities.find('.moduleFooter').show();
   }
 
   enable(forceUpdate: boolean) {

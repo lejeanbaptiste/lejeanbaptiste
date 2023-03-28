@@ -1,10 +1,10 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IconButton, ListItem, ListItemButton, ListItemText } from '@mui/material';
-import React, { useState, type FC } from 'react';
+import React, { useState } from 'react';
 import { useActions, useAppState } from '../../../../overmind';
 import type { EntryLink, LookUpResult } from '../../types';
 
-const Candidate: FC<LookUpResult> = ({ description, id, name, repository, uri }) => {
+const Candidate = ({ description, id, name, repository, uri }: LookUpResult) => {
   const { closeEntityLookupsDialog } = useActions().ui;
   const { selected } = useAppState().lookups;
   const { setSelected, processSelected } = useActions().lookups;

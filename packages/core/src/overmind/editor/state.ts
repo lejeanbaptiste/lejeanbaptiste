@@ -3,7 +3,6 @@ import type { LookupsProps } from '../../dialogs/entityLookups';
 import type { Schema, SchemaMappingType } from '../../types';
 
 export type EditorStateType = {
-  autosave?: boolean;
   advancedSettings: boolean;
   allowOverlap: boolean;
   annotationMode: number;
@@ -13,8 +12,10 @@ export type EditorStateType = {
     label: string;
     disabled?: boolean;
   }[];
+  autosave?: boolean;
   baseUrl?: string;
-  currentFontSize: number;
+  contentHasChanged: boolean;
+  fontSize: number;
   editorMode: string;
   editorModeLabel: string;
   editorModes: {
@@ -23,10 +24,9 @@ export type EditorStateType = {
     label: string;
     disabled?: boolean;
   }[];
-  fontSizeOptions: number[];
   isAnnotator: boolean;
-  isEditorDirty: boolean;
   isReadonly: boolean;
+  LWChangeEventSuspended: boolean;
   mode: number;
   nssiToken?: string | (() => Promise<string | undefined>);
   schemas: { [key: string]: Schema };
@@ -57,7 +57,7 @@ export const state: EditorStateType = {
     return annotatonMode.label;
   }),
   baseUrl: '.',
-  currentFontSize: 11,
+  contentHasChanged: false,
   editorMode: 'xmlrdf',
   editorModeLabel: derived((state: EditorStateType) => {
     const editMode = state.editorModes.find((mode) => mode.value === state.editorMode);
@@ -70,17 +70,16 @@ export const state: EditorStateType = {
     { key: 0, value: 'xmlrdfoverlap', label: 'Markup & Linking with overlap' },
     { key: 2, value: 'rdf', label: 'Linking Only', disabled: true },
   ],
-  fontSizeOptions: [8, 9, 10, 11, 12, 13, 14, 16, 18],
-  isEditorDirty: false,
+  fontSize: 11,
   isAnnotator: false,
   isReadonly: false,
+  LWChangeEventSuspended: false,
   mode: 0,
   showEntities: true,
   showTags: false,
   schemas: {},
   schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),
   schemaMappings: ['cwrcEntry', 'orlando', 'tei', 'teiLite'],
-
   lookups: {
     authorities: {
       viaf: {

@@ -1,11 +1,11 @@
 import { Box, Button, Tooltip } from '@mui/material';
-import React, { MouseEvent, useState, type FC } from 'react';
+import React, { MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../../overmind';
 import { Menu } from './Menu';
 
-const EditorMode: FC = () => {
-  const { editor } = useAppState();
+const EditorMode = () => {
+  const { editorModeLabel } = useAppState().editor;
   const { t } = useTranslation(['leafwriter']);
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -21,13 +21,12 @@ const EditorMode: FC = () => {
           aria-controls="editor-mode-menu"
           aria-expanded={openMenu ? 'true' : undefined}
           aria-haspopup="true"
-          disabled={editor.isReadonly}
           id="editor-mode-select"
           onClick={handleButtonClick}
           size="small"
           sx={{ color: 'text.primary' }}
         >
-          {editor.editorModeLabel}
+          {editorModeLabel}
         </Button>
       </Tooltip>
       <Menu anchorEl={anchorEl} handleClose={handleMenuClose} />

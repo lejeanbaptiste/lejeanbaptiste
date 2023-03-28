@@ -42,7 +42,7 @@ function NerveEditDialog(writer: any, parentEl: HTMLElement) {
     const type = dialog.$el.find('select').val();
     //@ts-ignore
     const entity = dialog.showConfig.entry;
-    const query = entity.content.trim().replace(/\s+/g, ' ');
+    const query = entity?.content?.trim().replace(/\s+/g, ' ');
     // doLookup(writer, query, type, ({ name, uri }: { name: string; uri: string }) => {
     //   dialog.$el.find('input[data-mapping="prop.lemma"]').val(name);
     //   dialog.$el.find('input[data-mapping="prop.uri"]').val(uri);

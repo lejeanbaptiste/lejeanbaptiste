@@ -100,6 +100,8 @@
 .cwrc .moduleFooter {
     border-top: 1px solid #ddd;
     padding: 8px;
+    display: flex;
+    justify-content: space-between;
 }
 
 .cwrc .moduleHeader > div, .cwrc .moduleFooter > div {

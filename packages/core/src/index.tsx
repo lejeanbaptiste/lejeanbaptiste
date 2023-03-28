@@ -13,12 +13,20 @@ import { createRoot, Root } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
 import type { Authority, NamedEntityType } from './dialogs/entityLookups';
-import i18next from './i18n';
+// import i18next from './i18n';
+import './i18n';
+import Writer from './js/Writer';
 import { config } from './overmind';
 import type { EditorStateType } from './overmind/editor/state';
 import Providers from './Providers';
 import type { LeafWriterOptions, LWDocument, ScreenshotParams } from './types';
 import './utilities/log';
+
+declare global {
+  interface Window {
+    writer: Writer;
+  }
+}
 
 export * as Types from './types';
 
@@ -32,18 +40,18 @@ const DEFAULT_HEIGHT = '700px';
 export class Leafwriter {
   private readonly domElement: HTMLElement;
 
-  private reactReact: Root;
+  private reactReact: Root | undefined;
 
-  private _isDirty: Subject<boolean>;
+  onContentHasChanged: Subject<boolean>;
   private _onLoad: Subject<{ schemaName: string }>;
   private _onClose: Subject<boolean>;
   private _onEditorStateChange: Subject<EditorStateType>;
 
   private options?: LeafWriterOptions;
 
-  constructor(domElement?: HTMLElement) {
+  constructor(domElement: HTMLElement) {
     this.domElement = domElement;
-    this._isDirty = new Subject();
+    this.onContentHasChanged = new Subject();
     this._onLoad = new Subject();
     this._onClose = new Subject();
     this._onEditorStateChange = new Subject();
@@ -55,21 +63,26 @@ export class Leafwriter {
     if (!this.reactReact) this.reactReact = createRoot(this.domElement);
 
     overmind.addMutationListener((mutation) => {
-      if (mutation.path === 'editor.isEditorDirty' && mutation.hasChangedValue) {
-        this._isDirty.next(overmind.state.editor.isEditorDirty);
+      if (mutation.path === 'editor.contentHasChanged' && mutation.hasChangedValue) {
+        if (overmind.state.editor.LWChangeEventSuspended) return;
+        this.onContentHasChanged.next(overmind.state.editor.contentHasChanged);
       }
+
+      // if (mutation.path === 'editor.LWChangeEventSuspended' && mutation.hasChangedValue) {
+      //   if (overmind.state.editor.LWChangeEventSuspended) return;
+      //   this.onContentHasChanged.next(true);
+      // }
 
       if (mutation.path === 'document.loaded') {
         if (overmind.state.document.loaded === true) {
           this._onLoad.next({ schemaName: overmind.state.document.schemaName });
-          this._onLoad.complete();
         }
       }
 
       if (mutation.path === 'editor.latestEvent') {
         if (overmind.state.editor.latestEvent === 'close') {
           this._onClose.next(true);
-          this._onClose.complete()
+          this._onClose.complete();
         }
       }
 
@@ -85,17 +98,15 @@ export class Leafwriter {
   }
 
   private render() {
+    if (!this.reactReact || !this.options) return;
+
     this.reactReact.render(
       <Provider value={overmind}>
-        <I18nextProvider i18n={i18next}>
+        {/* <I18nextProvider i18n={i18next}> */}
           <Providers {...this.options} />
-        </I18nextProvider>
+        {/* </I18nextProvider> */}
       </Provider>
     );
-  }
-
-  get isDirty() {
-    return this._isDirty;
   }
 
   get onLoad() {
@@ -117,7 +128,7 @@ export class Leafwriter {
   async getDocumentScreenshot(
     params: ScreenshotParams = { width: 800, height: 480, windowWidth: 800, windowHeight: 1000 }
   ) {
-    const page = window.writer.editor.getBody();
+    const page = window.writer.editor?.getBody();
     if (!page) return;
 
     const canvas: HTMLCanvasElement | null = await html2canvas(page, {
@@ -125,7 +136,7 @@ export class Leafwriter {
       ...params,
     }).catch(() => null);
 
-    if (!canvas) return null;
+    if (!canvas) return;
 
     const screenshot = canvas.toDataURL('image/png', 1.0);
 
@@ -137,7 +148,7 @@ export class Leafwriter {
   }
 
   get autosave() {
-    return overmind.state.editor.autosave;
+    return overmind.state.editor.autosave ?? false;
   }
 
   set autosave(value: boolean) {
@@ -183,7 +194,7 @@ export class Leafwriter {
     return overmind.state.editor.isReadonly;
   }
 
-  setIsReadonly(value: boolean) {
+  setReadonly(value: boolean) {
     return overmind.actions.editor.setReadonly(value);
   }
 
@@ -207,17 +218,13 @@ export class Leafwriter {
     return overmind.actions.ui.switchLanguage(value);
   }
 
-  getPossibleFontSizes() {
-    return overmind.state.editor.fontSizeOptions;
-  }
-
   getFontSize() {
-    return overmind.state.editor.currentFontSize;
+    return overmind.state.editor.fontSize;
   }
 
   setFontSize(value: number) {
     overmind.actions.editor.setFontSize(value);
-    return overmind.state.editor.currentFontSize;
+    return overmind.state.editor.fontSize;
   }
 
   getShowTags() {
@@ -233,16 +240,16 @@ export class Leafwriter {
   }
 
   setShowEntities(value: boolean) {
-    overmind.actions.editor.showEntities(value);
+    overmind.actions.editor.setShowEntities(value);
   }
 
-  getIsEditorDirty() {
-    overmind.state.editor.isEditorDirty;
+  getContentHasChanged() {
+    overmind.state.editor.contentHasChanged;
   }
 
-  setIsEditorDirty(value: boolean) {
-    if (overmind.state.editor.isEditorDirty === value) return;
-    overmind.actions.editor.setIsEditorDirty(value);
+  setContentHasChanged(value: boolean) {
+    if (overmind.state.editor.contentHasChanged === value) return;
+    overmind.actions.editor.setContentHasChanged(value);
   }
 
   setDocumentTouched(value: boolean) {
@@ -284,10 +291,10 @@ export class Leafwriter {
 
   dispose() {
     //todo
-    this._isDirty.complete();
+    this.onContentHasChanged.complete();
     overmind.actions.document.clear();
     window.writer?.destroy();
-    window.writer = null;
+    // window.writer = null;
   }
 }
 

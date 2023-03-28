@@ -49,7 +49,7 @@ class DialogForm {
   readonly $el: JQuery<HTMLElement>;
   showConfig?: DialogFormShowConfig; // the config object sent to the dialog's "show" method
 
-  cwrcWriter?: any; // reference to the cwrcWriter if this is a note form
+  leafWriter?: any; // reference to the leafWriter if this is a note form
 
   // set to false to cancel saving
   isValid = true;
@@ -107,12 +107,14 @@ class DialogForm {
             switch (type) {
               case 'radio':
                 val = formEl.find('input:checked').val();
+                //@ts-ignore
                 data[dataKey][mapping] = val;
                 break;
               case 'textbox':
               case 'hidden':
               case 'select':
                 val = formEl.val();
+                //@ts-ignore
                 if (val !== null) data[dataKey][mapping] = val;
                 break;
             }
@@ -206,7 +208,7 @@ class DialogForm {
     const height = config.height || 650;
     const width = config.width || 575;
 
-    // this.cwrcWriterConfig = config.cwrcWriterConfig; // the config to use for the cwrcWriter
+    // this.cwrcWriterConfig = config.cwrcWriterConfig; // the config to use for the leafWriter
 
     //@ts-ignore
     this.$el.dialog({
@@ -288,6 +290,7 @@ class DialogForm {
     const tag = config.entry
       ? config.entry.tag
       : dialogInstance.writer.schemaManager.mapper.getParentTag(dialogInstance.type);
+    if (!tag) return;
 
     const atts = dialogInstance.writer.schemaManager.getAttributesForTag(tag);
     if (dialogInstance.attributesWidget) dialogInstance.attributesWidget.buildWidget(atts);
@@ -400,6 +403,7 @@ class DialogForm {
 
       // copy mapped properties to currentData
       mappedProps?.forEach((propName) => {
+        //@ts-ignore
         this.currentData.properties[propName] = config.entry?.[propName];
       });
     }
@@ -433,7 +437,7 @@ class DialogForm {
 
   destroy() {
     if (this.attributesWidget) this.attributesWidget.destroy();
-    if (this.cwrcWriter) this.cwrcWriter.destroy();
+    if (this.leafWriter) this.leafWriter.destroy();
 
     $('[data-transform]', this.$el).each((index, element) => {
       const formEl = $(element);

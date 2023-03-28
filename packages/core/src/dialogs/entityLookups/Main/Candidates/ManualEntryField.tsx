@@ -8,8 +8,9 @@ import {
   InputAdornment,
   InputLabel,
   Typography,
+  useTheme,
 } from '@mui/material';
-import React, { useEffect, type ChangeEvent, type FC } from 'react';
+import React, { useEffect, type ChangeEvent } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useActions, useAppState } from '../../../../overmind';
 
@@ -17,9 +18,11 @@ interface ManualEntryFieldProps {
   setAuthorityInView: (view: { id: string; inView: boolean }) => void;
 }
 
-const ManualEntryField: FC<ManualEntryFieldProps> = ({ setAuthorityInView }) => {
+const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) => {
   const { isUriValid, manualInput } = useAppState().lookups;
   const { setManualInput, setSelected } = useActions().lookups;
+
+  const { palette } = useTheme();
 
   const { ref, inView, entry } = useInView({
     /* Optional options */
@@ -46,15 +49,13 @@ const ManualEntryField: FC<ManualEntryFieldProps> = ({ setAuthorityInView }) => 
           px: 1,
           borderBottomWidth: 1,
           borderBottomStyle: 'solid',
-          borderBottomColor: ({ palette }) => palette.grey[700],
-          backgroundColor: ({ palette }) => {
-            return palette.mode === 'dark' ? palette.grey[800] : palette.background.paper;
-          },
+          borderBottomColor: palette.grey[700],
+          bgcolor: palette.mode === 'dark' ? palette.grey[800] : palette.background.paper,
         }}
       >
         <Typography
           sx={{
-            color: ({ palette }) => palette.text.secondary,
+            color: palette.text.secondary,
             fontSize: '0.875rem',
             lineHeight: 2.5,
             textTransform: 'uppercase',

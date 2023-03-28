@@ -2,7 +2,7 @@ import path from 'path';
 
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
-import { ESBuildMinifyPlugin } from 'esbuild-loader';
+import { EsbuildPlugin } from 'esbuild-loader';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
@@ -18,7 +18,6 @@ const entry: EntryObject = {
 const output = {
   path: path.resolve(__dirname, 'dist'),
   filename: 'js/[name].js',
-  // publicPath: '/',
   pathinfo: isDev ? true : false,
 };
 
@@ -93,14 +92,9 @@ const webpackConfig: webpack.Configuration = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.[jt]sx?$/,
         loader: 'esbuild-loader',
-        options: { loader: 'tsx', target: 'es2020' },
-      },
-      {
-        test: /\.jsx?$/,
-        loader: 'esbuild-loader',
-        options: { loader: 'jsx', target: 'es2020' },
+        options: { tsconfig: './tsconfig.json', target: 'es2020' },
       },
       {
         test: /\.(le|c)ss$/,
@@ -139,7 +133,7 @@ const webpackConfig: webpack.Configuration = {
   optimization: {
     emitOnErrors: isDev ? true : false,
     minimize: isDev ? false : true,
-    minimizer: isDev ? [] : [new ESBuildMinifyPlugin({ target: 'es2020', css: true })],
+    minimizer: isDev ? [] : [new EsbuildPlugin({ css: true })],
     sideEffects: isDev ? false : true,
     usedExports: isDev ? false : true,
   },

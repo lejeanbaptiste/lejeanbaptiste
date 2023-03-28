@@ -1,7 +1,6 @@
 import $ from 'jquery';
 import Entity from '../../../js/entities/Entity';
-import type { EntityTypes } from '../../../js/schema/types';
-import type { SchemaMappingType } from '../../../types';
+import type { EntityType, SchemaMappingType } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
@@ -23,7 +22,7 @@ class NoteDialog implements SchemaDialog {
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityTypes = 'note';
+  type: EntityType = 'note';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     const mappingID = writer.schemaManager.mapper.currentMappingsId;
@@ -93,8 +92,8 @@ class NoteDialog implements SchemaDialog {
 
       //other type
       const typeValue = optionsTypeElement.val();
-      const showOtherTypeTextFiel = !this.typeAtt?.choices && typeValue === 'other' ? true : false;
-      this.toggleOtherTypeTextField(showOtherTypeTextFiel);
+      const showOtherTypeTextField = !this.typeAtt?.choices && typeValue === 'other' ? true : false;
+      this.toggleOtherTypeTextField(showOtherTypeTextField);
     });
 
     this.dialog.$el.on('beforeSave', (event: JQuery.Event, dialog: DialogForm) => {
@@ -115,15 +114,15 @@ class NoteDialog implements SchemaDialog {
       //replace other type option for custom defined value
       if (!this.typeAtt?.choices && optionsTypeElement.val() === 'other') {
         const otherTypeFieldValue = dialog.$el.find(`#${this.id}_noteOtherType`).val();
-        const typeCutstomOption = `
+        const typeCustomOption = `
           <option value="${otherTypeFieldValue}" selected>${otherTypeFieldValue}</option>
         `;
-        optionsTypeElement.html(typeCutstomOption);
+        optionsTypeElement.html(typeCustomOption);
       }
     });
 
     //toggle other type text field
-    optionsTypeElement.change((event: any) => {
+    optionsTypeElement.on('change', (event: any) => {
       if (this.typeAtt?.choices) return;
       const target = $(event.target);
       const otherTypeSelected = target.val() === 'other' ? true : false;
@@ -133,10 +132,10 @@ class NoteDialog implements SchemaDialog {
     //transfer value from 'other type 'textfied to 'other' option value on radiobox
     this.dialog.$el.find(`#${this.id}_noteOtherType`).on('change', () => {
       let val = this.dialog.$el.find(`#${this.id}_noteOtherType`).val();
-      if (!val) return;
       if (Array.isArray(val)) val = val[0];
       if (typeof val === 'number') val = val.toString();
-
+      if (!val) return;
+      
       this.dialog.$el.find(`#${this.id}_other`).attr('value', val);
     });
 
@@ -148,29 +147,12 @@ class NoteDialog implements SchemaDialog {
             Are you trying to add multiple values for this attribute?
             If not, remove the "space" you've just added
           `,
-          height: 200,
+          height: 250,
           type: 'info',
           showConfirmKey: 'confirm-space-in-xml-values',
         });
       }
     });
-  }
-
-  private selectedTextField(id: string) {
-    const fieldTitle = 'Selected Text';
-
-    return `
-      <div id="${id}_selectedText" class="attribute">
-        <p class="fieldLabel">${fieldTitle}</p>
-        <p class="selectedText">${this.selectedText}</p>
-      </div>
-    `;
-  }
-
-  private updateTextField(value: string) {
-    const fontSize = value.length > 30 ? 1 : 1.2;
-    $('.selectedText').css('font-size', `${fontSize}em`);
-    $('.selectedText').text(value);
   }
 
   private generateTypeOptions(choices: Option[]) {
@@ -190,8 +172,14 @@ class NoteDialog implements SchemaDialog {
       const selected = defaultChoice ? 'selected' : '';
 
       html += `
-        <option value="${value}" data-default="${defaultChoice}" ${selected}>${label}</option>
-        `;
+        <option
+          value="${value}"
+          data-default="${defaultChoice}"
+          ${selected}
+        >
+        ${label}
+        </option>
+      `;
     });
 
     return html;

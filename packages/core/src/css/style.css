@@ -1,80 +1,82 @@
 .cwrc {
-    font-family: Lato,Arial,Helvetica,sans-serif;
-    font-size: 14px;
+  font-family: Lato, Arial, Helvetica, sans-serif;
+  font-size: 14px;
 }
 
 .cwrc .ui-dialog h1 {
-    font-size: 1.1em;
+  font-size: 1.1em;
 }
 
 .cwrc .ui-dialog h2 {
-    font-size: 1em;
-    line-height: 1.2em;
+  font-size: 1em;
+  line-height: 1.2em;
 }
 
 .cwrc .ui-dialog h3 {
-    font-size: 1em;
+  font-size: 1em;
 }
 
-.cwrc .ui-dialog h1, h2, h3 {
-    margin: 0;
+.cwrc .ui-dialog h1,
+h2,
+h3 {
+  margin: 0;
 }
 
 .cwrc .ui-dialog textarea {
-    overflow: auto;
-    resize: none;
+  overflow: auto;
+  resize: none;
 }
 
 .cwrc .ui-dialog label {
-    margin-right: 2px;
-    display: inline;
+  margin-right: 2px;
+  display: inline;
 }
 
 .ui-accordion-icons > div {
-    margin-bottom: 0px !important;
+  margin-bottom: 0px !important;
 }
 
 .unselectable {
-   -moz-user-select: none;
-   -khtml-user-select: none;
-   -webkit-user-select: none;
-   -o-user-select: none;
-   user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  user-select: none;
 }
 
 .cwrc .popup.ui-dialog .ui-widget-header {
-    display: none;
+  display: none;
 }
 
 .cwrc .popup.ui-dialog .ui-widget-content {
-    padding: .4em 1em;
+  padding: 0.4em 1em;
 }
 
 .cwrc .popup.link.ui-dialog .ui-widget-content {
-    text-decoration: underline;
-    cursor: pointer;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .cwrc .required {
-    color: red;
+  color: red;
 }
 
 .cwrc-tooltip {
-    max-width: 250px;
-    background-color: #fff;
+  max-width: 250px;
+  background-color: #fff;
 }
 
 .headerDialog div {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    bottom: 5px;
-    left: 5px;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  bottom: 5px;
+  left: 5px;
 }
 
 .headerDialog textarea {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }

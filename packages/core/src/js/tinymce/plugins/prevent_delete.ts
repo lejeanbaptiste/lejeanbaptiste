@@ -15,6 +15,8 @@ const keyRange = (val: number, min: number, max: number) => {
 const keyWillDelete = (event: EditorEvent<KeyboardEvent>) => {
   const keyCode = event.keyCode;
 
+  if ((tinymce.isMac ? event.metaKey : event.ctrlKey) && event.code === 'KeyA') return false;
+
   //ctrl+x or ctrl+back/del will all delete, but otherwise it probably won't
   if (event.ctrlKey) return event.key == 'x' || contains([8, 46], keyCode);
 

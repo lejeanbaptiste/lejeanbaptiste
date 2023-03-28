@@ -1,7 +1,6 @@
 import $ from 'jquery';
 import Entity from '../../../js/entities/Entity';
-import type { EntityTypes } from '../../../js/schema/types';
-import type { SchemaMappingType } from '../../../types';
+import type { EntityType, SchemaMappingType } from '../../../types';
 import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
@@ -16,7 +15,7 @@ class KeywordDialog implements SchemaDialog {
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityTypes = 'keyword';
+  type: EntityType = 'keyword';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;

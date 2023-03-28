@@ -80,7 +80,7 @@ class Converter {
     this.processDocument(xml);
   }
 
-  async getDocument(asString: boolean, callback?: Function): Promise<string|null> {
+  async getDocument(asString: boolean, callback?: Function) {
     const docString = await this.getDocumentContent(true);
     if (!docString) return null;
 
