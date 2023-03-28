@@ -37,6 +37,13 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   }, [state.ui.language]);
 
   useEffect(() => {
+    window.document.addEventListener('fullscreenchange', fullscreenchanged);
+    return () => {
+      window.document.removeEventListener('fullscreenchange', fullscreenchanged);
+    };
+  }, []);
+
+  useEffect(() => {
     if (document.url === undefined || state.document.url !== document.url) {
       // if (writer) writer.destroy();
       actions.document.setDocumentTouched(false);
@@ -46,13 +53,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       setup();
     }
   }, [document]);
-
-  useEffect(() => {
-    window.document.addEventListener('fullscreenchange', fullscreenchanged);
-    return () => {
-      window.document.removeEventListener('fullscreenchange', fullscreenchanged);
-    };
-  }, []);
 
   useEffect(() => {
     actions.ui.updateReadonly();
@@ -88,7 +88,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
     //@ts-ignore
     _writer.event('writerInitialized').subscribe(() => {
-      if (!document.url) return;
       actions.document.setDocumentUrl(document.url);
 
       _writer.setDocument(document.xml);
@@ -110,6 +109,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     });
 
     _writer.event('documentLoaded').subscribe((success: boolean) => {
+      if (!success) return;
       actions.document.setLoaded(true);
       setInitialized(true);
       setDocLoaded(true);

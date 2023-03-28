@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.7.3
+
+### Patch Changes
+
+- Document: Accept undefined URL properties (template, samples, uploaded documents) [ce7882cc126c2dac3878a2caa619101dc3046ede]
+
 ## 2.7.2
 
 ### Patch Changes
@@ -12,7 +18,7 @@
 - Context Menu:
   - Prevent displaying textNodes as sugestions until we have better support [2b66d7dc2fc9fc6eca19357aedf33c6230562247]
   - Hidde the options to show textNodes until we have better support [384cebeefdc46f9e3bbf23c53f1dedd7f332988c]
-Edit Source Dialog:
+    Edit Source Dialog:
   - Accept the property type header to update just this section of the document [8c629a0ec7ce00dad76c9750ae5d5d1ead1f1c4a] [2ea6417f8943bb0b1d1b1b890373f8a9957996d9]
 
 ## 2.7.1
