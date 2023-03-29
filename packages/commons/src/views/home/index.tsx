@@ -5,8 +5,8 @@ import { useActions, useAppState } from '@src/overmind';
 import { isErrorMessage } from '@src/utilities';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AboutSection } from './about';
 import { Footer } from './Footer';
+import { AboutSection } from './about';
 import { Main } from './main';
 
 export const HomeView = () => {
