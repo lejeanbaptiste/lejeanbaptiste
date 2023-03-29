@@ -13,7 +13,7 @@ export const onInitializeOvermind = async ({ actions, effects }: Context, overmi
   const providers = await effects.auth.api.getProviders();
 
   //populate supported providers
-  if (!('error' in providers)) actions.providers.setup(providers);
+  if (!(providers instanceof Error)) actions.providers.setup(providers);
 
   //Authenticate
   await actions.auth.authenticateUser();

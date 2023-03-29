@@ -95,7 +95,7 @@ export interface Resource {
 }
 
 export const ErrorTypes = ['info', 'warning', 'error'] as const;
-type ErrorType = typeof ErrorTypes[number];
+type ErrorType = (typeof ErrorTypes)[number];
 
 export interface Error {
   message: string;

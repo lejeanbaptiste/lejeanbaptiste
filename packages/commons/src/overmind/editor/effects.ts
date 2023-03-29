@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { handleAxiosError } from '../utilities';
 
 export const api = {
   /**
@@ -6,7 +7,11 @@ export const api = {
    * @returns The username for the geonames API
    */
   async getGeonameUsername() {
-    const { data } = await axios.get<string>('./api/geonames-username');
-    return data;
+    try {
+      const { data } = await axios.get<string>('./api/geonames-username');
+      return data;
+    } catch (error) {
+      return handleAxiosError(error);
+    }
   },
 };
