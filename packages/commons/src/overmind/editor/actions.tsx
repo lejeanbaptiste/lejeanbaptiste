@@ -8,7 +8,8 @@ import { Context } from '../';
 
 export const getGeonameUsername = async ({ effects }: Context) => {
   const response = await effects.editor.api.getGeonameUsername();
-  return response;
+  if (typeof response === 'string') return response
+  return;
 };
 
 export const loadLeafWriter = async ({ state }: Context, container: HTMLElement) => {
@@ -158,7 +159,7 @@ export const subscribeToTimerService = ({ state, actions }: Context, editor: Lea
   state.editor.timerService.onTimer.subscribe(async () => {
     const content = await editor.getContent();
     if (typeof content !== 'string') return;
-    const screenshot = await editor.getDocumentScreenshot()
+    const screenshot = await editor.getDocumentScreenshot();
     await actions.editor.save({ content, screenshot });
   });
 };

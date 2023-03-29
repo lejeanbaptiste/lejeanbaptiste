@@ -3,6 +3,7 @@ import { log } from '@src/utilities';
 import axios, { type AxiosError } from 'axios';
 import Keycloak, { type KeycloakTokenParsed } from 'keycloak-js';
 import queryString from 'query-string';
+import { handleAxiosError } from '../utilities';
 
 //* Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
 
@@ -209,7 +210,7 @@ export class Api {
    * when you authenticate with the external IDP.
    * @returns The access token for the external IDP.
    */
-  async getExternalIDPTokens(provider_alias: string, keycloakAccessCode: string): Promise<any> {
+  async getExternalIDPTokens(provider_alias: string, keycloakAccessCode: string): Promise<any | Error> {
     try {
       const url = `${this.KEYCLOACK_BASE_URL}/realms/${this.realm}/broker/${provider_alias}/token`;
       const { data } = await axios.get(url, {
@@ -217,13 +218,7 @@ export class Api {
       });
       return data;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        handleAxiosError(error);
-        return { error: { message: error.message } };
-      } else {
-        handleUnexpectedError(error);
-        return { error: { message: 'error' } };
-      }
+      return handleAxiosError(error);
     }
   }
 
@@ -306,47 +301,19 @@ export class Api {
     return data;
   }
 
-  async getProviders(): Promise<Provider[] | HTTPRequestError> {
+  async getProviders(): Promise<Provider[] | Error> {
     if (!this.AUTH_API_URL) {
-      return { error: { message: 'AUTH API URL is unedefined' } };
+      return new Error('AUTH API URL is unedefined')
+      // return { error: { message: 'AUTH API URL is unedefined' } };
     }
 
     try {
       const { data } = await axios.get<Provider[]>(`${this.AUTH_API_URL}/providers`);
-      return data;
+      return data as Provider[];
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        handleAxiosError(error);
-        return { error: { message: error.message } };
-      } else {
-        handleUnexpectedError(error);
-        return { error: { message: 'error' } };
-      }
+      return handleAxiosError(error);
     }
   }
 }
 
-const handleAxiosError = (error: AxiosError) => {
-  if (error.response) {
-    // The request was made and the server responded with a status code
-    // that falls out of the range of 2xx
-    log.error(error.response.data);
-    log.error(error.response.status);
-    log.error(error.response.headers);
-  } else if (error.request) {
-    // The request was made but no response was received
-    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-    // http.ClientRequest in node.js
-    log.error(error.request);
-  } else {
-    // Something happened in setting up the request that triggered an Error
-    log.error('Error', error.message);
-  }
-};
-
-const handleUnexpectedError = (error: any) => {
-  log.error(error);
-};
-
-//@ts-ignore
 export const api = new Api();
