@@ -1,23 +1,23 @@
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Box, Divider, Icon, MenuItem, Stack, Typography } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
+import { Box, Divider, MenuItem } from '@mui/material';
+import type { IconName } from '@src/icons';
+import { motion, type Variants } from 'framer-motion';
 import { bindFocus, bindHover, usePopupState } from 'material-ui-popup-state/hooks';
 import React, { useContext, useEffect, useState } from 'react';
-import { CascadingContext } from '.';
-import { CascadingMenu } from './CascadingMenu';
+import { CascadingContext } from '../';
+import { useMenu, type ItemType } from '../useMenu';
+import { CascadingMenu, type CascadingMenuProps } from './CascadingMenu';
+import { Content } from './Content';
 import { Item, type ItemProps } from './Item';
-import { useMenu, type ItemType } from './useMenu';
 
-export interface SubMenuProps {
+export interface SubMenuProps extends CascadingMenuProps {
   hide?: boolean;
-  icon?: string;
+  icon?: IconName;
+  label: string;
   popupId: string;
-  title?: string;
   type?: ItemType;
-  [key: string]: any;
 }
 
-export const SubMenu = ({ hide, icon, title, popupId, ...props }: SubMenuProps) => {
+export const SubMenu = ({ hide, icon, label, popupId, ...props }: SubMenuProps) => {
   const { parentPopupState } = useContext(CascadingContext);
   const popupState = usePopupState({
     popupId,
@@ -33,36 +33,28 @@ export const SubMenu = ({ hide, icon, title, popupId, ...props }: SubMenuProps) 
     if (popupId) setOptions(getOptions(popupId));
   }, []);
 
+  const variants: Variants = {
+    visible: { height: 'auto', opacity: 1 },
+    hidden: { height: 0, opacity: 0 },
+  };
+
   return (
-    <>
+    <Box
+      component={motion.div}
+      variants={variants}
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+      transition={{ type: 'tween' }}
+      overflow="hidden"
+    >
       <MenuItem
         dense
         {...bindHover(popupState)}
         {...bindFocus(popupState)}
-        sx={{ mx: 0.5, px: 0.75, borderRadius: 1 }}
+        sx={{ justifyContent: 'space-between', mx: 0.5, px: 0.75, gap: 1.5, borderRadius: 1 }}
       >
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          width="100%"
-          gap={1.5}
-          mx={0.5}
-          my={0.5}
-        >
-          {/* LEFT ICON */}
-          {icon && <Icon component={getIcon(icon)} fontSize="small" />}
-
-          {/* LABEL */}
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-              {title}
-            </Typography>
-          </Box>
-
-          {/* RIGHT */}
-          <ChevronRightIcon />
-        </Stack>
+        <Content {...{ icon, hasChildren: true }}>{label}</Content>
       </MenuItem>
       <CascadingMenu
         {...props}
@@ -77,6 +69,6 @@ export const SubMenu = ({ hide, icon, title, popupId, ...props }: SubMenuProps) 
           return <Item key={index} {...(item as ItemProps)} />;
         })}
       </CascadingMenu>
-    </>
+    </Box>
   );
 };

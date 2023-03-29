@@ -1,5 +1,6 @@
 import type { Resource } from '@src/types';
 import axios from 'axios';
+import { handleAxiosError } from '../utilities';
 
 export const api = {
   /**
@@ -51,5 +52,24 @@ export const api = {
    */
   removeFromLocalStorage(key: string) {
     localStorage.removeItem(key);
+  },
+  async convertXMLtoHTML(content: string): Promise<string | Error> {
+    //* MOCK UP
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        if (true) {
+          resolve('<html><head></head><body>text</body></html>');
+          return;
+        }
+        // resolve(handleAxiosError({ message: 'error 404' }));
+      }, 2000);
+    });
+
+    try {
+      const { data } = await axios.post<string>('URL', { document: content });
+      return data;
+    } catch (error) {
+      return handleAxiosError(error);
+    }
   },
 };

@@ -2,6 +2,11 @@ import { IconName } from '@src/icons';
 import type { OptionsObject, SnackbarMessage } from 'notistack';
 import React from 'react';
 
+export declare var webpackEnv: {
+  NODE_ENV: string;
+  WORKER_ENV: string;
+};
+
 export interface Language {
   code: string;
   name: string;

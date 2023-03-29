@@ -1,12 +1,11 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { useMessage, usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { Resource } from '@src/types';
+import { webpackEnv, type Resource } from '@src/types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useLeafWriter } from '../../useLeafWriter';
-import type { ItemProps } from './Item';
-import type { SubMenuProps } from './SubMenu';
+import type { ItemProps, SubMenuProps } from './components';
 
 export type ItemType = 'menuItem' | 'document';
 
@@ -27,7 +26,7 @@ export const useMenu = () => {
   const { t } = useTranslation('commons');
 
   const { setPermalink } = usePermalink();
-  const { handleCloseDocument, handleDownload, handleSave } = useLeafWriter();
+  const { handleCloseDocument, handleDownload, handleExportToHTML, handleSave } = useLeafWriter();
 
   const { cloudDisabledMessage } = useMessage();
 
@@ -81,9 +80,8 @@ export const useMenu = () => {
     {
       hide: readonly,
       icon: 'download',
-      label: t('download'),
-      onTrigger: () => handleDownload(),
-      shortcut: ' ⌘⇧D',
+      label: `${t('download')}`,
+      popupId: 'download',
     },
     'divider',
     {
@@ -93,36 +91,58 @@ export const useMenu = () => {
     },
   ];
 
-  const getOptions = (trigger?: string): (ItemProps | 'divider' | SubMenuProps)[] => {
-    if (trigger === 'recent') {
-      if (!recentDocuments) return [];
-
-      const options: ItemProps[] = recentDocuments.map((document) => ({
-        data: document,
-        label: document.filename ?? '',
-        onTrigger: () => {
-          if (!contentHasChanged) return handleLoadRecentDocument(document);
-          openDialog({
-            props: {
-              maxWidth: 'xs',
-              severity: 'warning',
-              title: `${t('unsaved_changes')}`,
-              actions: [
-                { action: 'cancel', label: `${t('cancel')}` },
-                { action: 'discard', label: `${t('discard_changes')}` },
-              ],
-              //@ts-ignore
-              onClose: async (action: string) => {
-                if (action === 'discard') handleLoadRecentDocument(document);
-              },
-            },
-          });
-        },
-        type: 'document',
-      }));
-      return options;
-    }
+  const getOptions = (id?: string) => {
+    if (id === 'download') return getDownloadOptions();
+    if (id === 'recent') return getRecentFiles();
     return [];
+  };
+
+  const getDownloadOptions = () => {
+    const options: ItemProps[] = [
+      {
+        label: 'XML Document (.xml)',
+        onTrigger: () => handleDownload(),
+        sx: { textTransform: 'initial' },
+      },
+      {
+        hide: webpackEnv.NODE_ENV !== 'development',
+        label: t('export_as_HTML'),
+        onTrigger: () => handleExportToHTML(),
+      },
+    ];
+
+    return options;
+  };
+
+  const getRecentFiles = () => {
+    if (!recentDocuments) return [];
+
+    const recent: ItemProps<Resource>[] = recentDocuments.map((document) => ({
+      data: document,
+      label: document.filename ?? '',
+      onTrigger: () => {
+        if (!contentHasChanged) return handleLoadRecentDocument(document);
+        openDialog({
+          props: {
+            maxWidth: 'xs',
+            severity: 'warning',
+            label: `${t('unsaved_changes')}`,
+            actions: [
+              { action: 'cancel', label: `${t('cancel')}` },
+              { action: 'discard', label: `${t('discard_changes')}` },
+            ],
+            //@ts-ignore
+            onClose: async (action: string) => {
+              if (action === 'discard') handleLoadRecentDocument(document);
+            },
+          },
+        });
+      },
+      sx: { textTransform: 'initial' },
+      type: 'document',
+    }));
+
+    return recent;
   };
 
   const handleLoadRecentDocument = async (resource: Resource) => {
