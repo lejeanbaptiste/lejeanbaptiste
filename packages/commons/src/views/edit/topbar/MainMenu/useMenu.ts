@@ -52,8 +52,8 @@ export const useMenu = () => {
       disabled: userState !== 'AUTHENTICATED',
       hide: !recentDocuments || recentDocuments.length === 0,
       icon: 'recent',
+      label: `${t('open_recent')}`,
       popupId: 'recent',
-      title: `${t('open_recent')}`,
     },
     'divider',
     {

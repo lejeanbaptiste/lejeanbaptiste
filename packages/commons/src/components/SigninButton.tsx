@@ -17,7 +17,7 @@ export const SigninButton = () => {
     openDialog({
       props: {
         severity: 'warning',
-        title: `${t('commons:unsaved_changes')}`,
+        label: `${t('commons:unsaved_changes')}`,
         Message: () => <Typography>{t('storage:you_will_lose_any_unsaved_changes')}.</Typography>,
         actions: [
           { action: 'cancel', label: `${t('commons:cancel')}` },

@@ -17,7 +17,7 @@ export interface IDialog extends Partial<MuiDialogProps> {
   onClose?: <T>(action?: string, data?: T) => void;
   preventEscape?: boolean;
   severity?: SeverityType;
-  title?: string;
+  label?: string;
 }
 
 export type DialogType = 'privacy' | 'signIn' | 'simple' | 'templates';
