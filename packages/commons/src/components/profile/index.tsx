@@ -1,6 +1,6 @@
 import { Box, Divider, Popover, Stack } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { useState, type FC } from 'react';
+import React, { useState } from 'react';
 import { Appearance } from './Appearance';
 import { Identity } from './Identity';
 import { Language } from './Language';
