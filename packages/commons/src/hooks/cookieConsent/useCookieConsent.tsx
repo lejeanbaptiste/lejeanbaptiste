@@ -40,7 +40,7 @@ export const useCookieConsent = () => {
       openDialog({
         props: {
           severity: 'warning',
-          title: `${t('privacy_settings')}`,
+          label: `${t('privacy_settings')}`,
           Message: () => (
             <>
               <Typography paragraph>

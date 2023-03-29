@@ -126,7 +126,7 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${t('storage:invalid_request')}`,
+        label: `${t('storage:invalid_request')}`,
         Message: () => (
           <Typography sx={{ ':first-letter': { textTransform: 'uppercase' } }}>
             {message}
@@ -190,7 +190,7 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        title: `${t('unsaved_changes')}`,
+        label: `${t('unsaved_changes')}`,
         actions: [
           { action: 'cancel', label: `${t('cancel')}` },
           { action: 'discard', label: `${t('discard_changes')}` },

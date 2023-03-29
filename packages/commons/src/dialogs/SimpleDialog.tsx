@@ -17,7 +17,7 @@ export const SimpleDialog = ({
   open = true,
   preventEscape = false,
   severity,
-  title,
+  label,
   children,
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
@@ -66,7 +66,7 @@ export const SimpleDialog = ({
       >
         {severity === 'error' && <ErrorOutlineIcon color="error" />}
         {severity === 'warning' && <WarningAmberIcon color="warning" />}
-        {title}
+        {label}
       </DialogTitle>
       {(children || Message) && (
         <DialogContent sx={{ pt: 0.5 }}>
