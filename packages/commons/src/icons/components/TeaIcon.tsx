@@ -1,6 +1,6 @@
 import { SvgIcon } from '@mui/material';
 import React from 'react';
-import './tea.css';
+import './css/tea.css';
 
 interface IconProps {
   color?: string;

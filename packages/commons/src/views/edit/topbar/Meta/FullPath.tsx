@@ -1,5 +1,5 @@
 import { Icon, Stack, Typography } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
+import { getIcon, type IconName } from '@src/icons';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import React, { useMemo, type FC } from 'react';
@@ -37,7 +37,7 @@ export const FullPath = ({ show }: FullPathProps) => {
         sx={{ mb: -0.5, overflow: 'hidden' }}
       >
         {resource?.provider && (
-          <Icon component={getIcon(resource.provider)} sx={{ width: 14, height: 14 }} />
+          <Icon component={getIcon(resource.provider as IconName)} sx={{ width: 14, height: 14 }} />
         )}
         <Typography sx={{ marginLeft: 1, cursor: 'default' }} variant="caption">
           {getFullPath}

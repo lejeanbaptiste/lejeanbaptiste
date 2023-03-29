@@ -7,7 +7,7 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
+import { getIcon } from '@src/icons';
 import { useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { useLeafWriter } from '@src/views/edit/useLeafWriter';
@@ -71,7 +71,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
         </>
       ),
       icon: 'fingerPrint',
-      secondaryIcon: 'ChevronRight',
+      secondaryIcon: 'chevronRight',
       action: () => onChangeView('identity'),
       hide: page === 'edit',
     },
@@ -87,13 +87,13 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       ),
 
       icon: user?.prefStorageProvider ? 'cloud' : 'cloudOffOutlined',
-      secondaryIcon: 'ChevronRight',
+      secondaryIcon: 'chevronRight',
       action: () => onChangeView('storage'),
     },
     {
       id: 'privacy',
       label: t('privacy_settings'),
-      icon: 'PrivacyTip',
+      icon: 'privacyTip',
       action: () => showSettings(),
     },
     {
@@ -125,7 +125,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
           : themeAppearance === 'dark'
           ? 'darkModeIcon'
           : 'brightness7',
-      secondaryIcon: 'ChevronRight',
+      secondaryIcon: 'chevronRight',
       action: () => onChangeView('appearance'),
     },
     {
@@ -136,7 +136,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
         </>
       ),
       icon: 'translate',
-      secondaryIcon: 'ChevronRight',
+      secondaryIcon: 'chevronRight',
       action: () => onChangeView('language'),
     },
   ];
