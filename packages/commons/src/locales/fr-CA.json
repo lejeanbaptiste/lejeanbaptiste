@@ -1,5 +1,6 @@
 {
   "commons": {
+    "Conversion to HTML failed": "La conversion en HTML a échoué",
     "accept_all": "accepter tout",
     "and": "et",
     "basic_interactions": "interactions de base",
@@ -11,6 +12,7 @@
     "discard_changes": "rejeter les modifications",
     "dismiss": "rejeter",
     "download": "télécharger",
+    "export_as_HTML": "exporter au format HTML",
     "functionalities": "fonctionnalités",
     "identity": "identité",
     "language": "langue",

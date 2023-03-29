@@ -1,5 +1,6 @@
 {
   "commons": {
+    "Conversion to HTML failed": "Conversion to HTML failed",
     "accept_all": "accept all",
     "and": "and",
     "basic_interactions": "basic interactions",
@@ -11,6 +12,7 @@
     "discard_changes": "discard changes",
     "dismiss": "dismiss",
     "download": "download",
+    "export_as_HTML": "export as HTML",
     "functionalities": "functionalities",
     "identity": "identity",
     "language": "language",

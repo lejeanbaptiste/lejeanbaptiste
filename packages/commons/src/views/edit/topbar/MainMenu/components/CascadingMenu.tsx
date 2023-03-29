@@ -1,11 +1,15 @@
-import { bindMenu } from 'material-ui-popup-state/hooks';
+import { MenuProps } from '@mui/material';
 import HoverMenu from 'material-ui-popup-state/HoverMenu';
+import { bindMenu, usePopupState } from 'material-ui-popup-state/hooks';
 import React, { useContext, useMemo } from 'react';
-import { CascadingContext } from '.';
-import { useMenu } from './useMenu';
+import { CascadingContext } from '../';
+import { useMenu } from '../useMenu';
 
-//@ts-ignore
-export const CascadingMenu = ({ popupState, ...props }) => {
+export interface CascadingMenuProps extends Omit<MenuProps, 'open'> {
+  popupState: ReturnType<typeof usePopupState>;
+}
+
+export const CascadingMenu = ({ popupState, ...props }: CascadingMenuProps) => {
   const { MIN_WIDTH } = useMenu();
 
   const { rootPopupState } = useContext(CascadingContext);
@@ -15,7 +19,7 @@ export const CascadingMenu = ({ popupState, ...props }) => {
       rootPopupState: rootPopupState || popupState,
       parentPopupState: popupState,
     }),
-    [rootPopupState, popupState]
+    [rootPopupState?.anchorEl, popupState.anchorEl]
   );
 
   return (

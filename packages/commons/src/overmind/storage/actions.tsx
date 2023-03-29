@@ -127,15 +127,13 @@ export const loadSample = async ({ effects }: Context, url: string) => {
   return documentString;
 };
 
-export const download = ({ state }: Context, content: string) => {
-  const { resource } = state.editor;
-  if (!resource) return;
-
-  const { filename } = resource;
-  if (!content || !filename) return;
-
+export const download = ({ state }: Context, {content, filename}: {content: string; filename: string;}) => {
   const blob = new Blob([content]); //, { type: 'text/plain;charset=utf-8' });
   saveAs(blob, filename);
-
   return true;
+};
+
+export const convertXMLtoHTML = async ({ effects }: Context, value: string) => {
+  const data = await effects.storage.api.convertXMLtoHTML(value);
+  return data;
 };

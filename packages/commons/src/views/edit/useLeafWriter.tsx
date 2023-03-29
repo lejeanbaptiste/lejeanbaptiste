@@ -29,7 +29,7 @@ export const useLeafWriter = () => {
     unsubscribeFromTimerService,
   } = useActions().editor;
   const { getStorageProviderAuth } = useActions().providers;
-  const { addToRecentDocument, download, loadSample } = useActions().storage;
+  const { addToRecentDocument, convertXMLtoHTML, download, loadSample } = useActions().storage;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
 
   const navigate = useNavigate();
@@ -138,10 +138,34 @@ export const useLeafWriter = () => {
   };
 
   const handleDownload = async () => {
-    if (!leafWriter) return;
+    if (!leafWriter || !resource) return;
     const content = await leafWriter.getContent();
     if (!content) return;
-    download(content);
+
+    const filename = resource.filename ?? 'untitled.xml';
+
+    download({ content, filename });
+  };
+
+  const handleExportToHTML = async () => {
+    if (!leafWriter || !resource) return;
+    const content = await leafWriter.getContent();
+    if (!content) return;
+
+    let filename = resource.filename ?? 'untitled';
+    filename = filename.slice(0, -3); // remove xml extension
+    filename = `${filename}.html`;
+
+    const response = await convertXMLtoHTML(content);
+    if (response instanceof Error) {
+      notifyViaSnackbar({
+        message: `${t('Conversion to HTML failed').toString()}. ${response.message}`,
+        options: { variant: 'error' },
+      });
+      return;
+    }
+
+    download({ content: response, filename });
   };
 
   const handleSave = async (action: 'save' | 'saveAs' = 'save') => {
@@ -234,6 +258,7 @@ export const useLeafWriter = () => {
     disposeLeafWriter,
     handleCloseDocument,
     handleDownload,
+    handleExportToHTML,
     handleSave,
     loadFromPermalink,
     saveFeedback,
