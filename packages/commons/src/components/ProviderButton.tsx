@@ -1,5 +1,5 @@
 import { Button, Tooltip } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
+import { getIcon, type IconName } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import { motion } from 'framer-motion';
 import React from 'react';
@@ -15,7 +15,7 @@ export const ProviderButton = ({ name: provider }: ProviderButtonProps) => {
 
   const { t } = useTranslation('storage');
 
-  const Icon = getIcon(provider);
+  const Icon = getIcon(provider as IconName);
 
   const singInClick = () => signIn({ idpHint: provider });
 

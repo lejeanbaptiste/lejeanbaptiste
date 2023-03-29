@@ -1,5 +1,5 @@
 import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
+import { getIcon, type IconName } from '@src/icons';
 import { useAppState } from '@src/overmind';
 import { motion, useAnimation, type Variants } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
@@ -72,7 +72,7 @@ export const ProfileAvatar = ({ clickable = true, size = 32 }: ProfileAvatarProp
               sx={{ cursor: clickable ? 'pointer' : 'default' }}
             >
               <Icon
-                component={getIcon(user.preferredID)}
+                component={getIcon(user.preferredID as IconName)}
                 sx={{
                   width: size / 2,
                   height: size / 2,

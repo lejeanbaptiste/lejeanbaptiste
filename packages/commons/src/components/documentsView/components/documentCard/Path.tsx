@@ -1,5 +1,5 @@
 import { Icon, Stack, Typography } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
+import { getIcon, type IconName } from '@src/icons';
 import React from 'react';
 
 interface PathProps {
@@ -20,7 +20,7 @@ export const Path = ({ owner, path, provider, repo }: PathProps) => {
       sx={{ bgcolor: ({ palette }) => palette.action.hover }}
     >
       <Stack direction="row" alignItems="center" gap={0.5} sx={{ height: 22, overflow: 'hidden' }}>
-        <Icon component={getIcon(provider)} sx={{ width: 14, height: 14 }} />
+        <Icon component={getIcon(provider as IconName)} sx={{ width: 14, height: 14 }} />
         <Typography variant="caption">{fullPath}</Typography>
       </Stack>
     </Stack>

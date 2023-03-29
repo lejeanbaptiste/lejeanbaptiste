@@ -1,3 +1,4 @@
+import { IconName } from '@src/icons';
 import type { OptionsObject, SnackbarMessage } from 'notistack';
 import React from 'react';
 
@@ -90,7 +91,7 @@ export interface Resource {
 
   title?: string;
   category?: string;
-  icon?: string;
+  icon?: IconName;
 }
 
 export const ErrorTypes = ['info', 'warning', 'error'] as const;

@@ -9,7 +9,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
+import { getIcon } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import type { PaletteMode } from '@src/types';
 import chroma from 'chroma-js';

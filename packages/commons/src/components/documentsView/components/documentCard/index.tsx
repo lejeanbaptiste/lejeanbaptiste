@@ -1,6 +1,6 @@
 import ClearIcon from '@mui/icons-material/Clear';
 import { Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
+import { getIcon } from '@src/icons';
 import type { Resource } from '@src/types';
 import { formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
@@ -86,7 +86,6 @@ export const DocumentCard = ({
         cursor: 'pointer',
       }}
       component={motion.div}
-      // layout
       variants={cardVariant}
       animate={displayLayout}
       initial={displayLayout}

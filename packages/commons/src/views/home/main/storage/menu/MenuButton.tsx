@@ -1,15 +1,16 @@
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
   Box,
+  Icon,
   IconButton,
   ListItem,
   ListItemButton,
   ListItemIcon,
-  ListItemText
+  ListItemText,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
-import { getIcon } from '@src/assets/icons';
+import { getIcon, type IconName } from '@src/icons';
 import { motion } from 'framer-motion';
 import React from 'react';
 
@@ -18,7 +19,7 @@ export interface MenuButtonProps {
   disabled?: boolean;
   disabledTooltipText?: string | React.ReactNode;
   hide?: boolean;
-  icon?: string;
+  icon?: IconName;
   label: string;
   onClick?: (value: string, title?: string) => void;
   value: string;
@@ -47,8 +48,6 @@ export const MenuButton = ({
   onClick,
   value,
 }: MenuButtonProps) => {
-  const Icon = icon ? getIcon(icon) : undefined;
-
   const handleClick = () => (onClick ? onClick(value, label) : undefined);
 
   return (
@@ -83,9 +82,10 @@ export const MenuButton = ({
           selected={active}
           sx={{ py: 0.5, borderTopRightRadius: 8, borderBottomRightRadius: 8 }}
         >
-          {Icon && (
+          {icon && (
             <ListItemIcon sx={{ minWidth: 32 }}>
               <Icon
+                component={getIcon(icon)}
                 fontSize="small"
                 sx={{ color: active ? ({ palette }) => palette.primary.light : 'inherit' }}
               />

@@ -10,10 +10,10 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
 import { StyledToolTip } from '@src/components';
 import { supportedStorageProviders } from '@src/config';
 import { useAnalytics } from '@src/hooks';
+import { getIcon, type IconName } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import { BroadcastChannel } from 'broadcast-channel';
 import chroma from 'chroma-js';
@@ -111,7 +111,7 @@ export const Storage = ({ onBack, onClose }: SubMenu) => {
               <ListItemIcon sx={{ minWidth: 32 }}>
                 <Icon
                   color={user?.prefStorageProvider === id ? 'primary' : 'inherit'}
-                  component={getIcon(id)}
+                  component={getIcon(id as IconName)}
                   fontSize="small"
                 />
               </ListItemIcon>
