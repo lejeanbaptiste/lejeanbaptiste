@@ -13,7 +13,6 @@ import { isErrorMessage } from '../utilities';
 
 // ------------- Internal types --------------
 
-
 interface CheckForPullRequest {
   branch: string;
   ownerUsername: string;
@@ -445,33 +444,32 @@ export default class Github implements Provider {
    * @returns {Promise}
    */
   async getDocument({
-    ownerUsername,
+    ownerUsername: owner,
     path = '',
     branch: ref,
     repoName: repo,
   }: Types.RepoContentParams) {
-    if (!ownerUsername || !repo) return null;
-    const result = await this.octokit.repos
-      .getContent({ owner: ownerUsername, path, ref, repo })
-      .catch(() => null);
+    if (!owner || !repo) return null;
 
-    if (!result) return null;
+    const result = await this.octokit.repos.getContent({ owner, path, ref, repo });
+    if (!('type' in result.data)) return null;
 
-    if (Array.isArray(result.data)) return null;
-    //@ts-ignore
-    if (result.data.type === 'dir') return null;
+    const { download_url, sha } = result.data;
 
-    //@ts-ignore
-    const { content, download_url, sha } = result.data;
+    // * When the file is > 1MB, the content returns empty.
+    // * So, to normalize the request, we fetch the content blob.
+    const blob = await this.octokit.rest.git.getBlob({ owner, repo, file_sha: sha });
+    if (!blob.data) return null;
+
+    const content = this.decodeContent(blob.data.content);
+    const url =
+      download_url ??
+      `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${encodeURIComponent(path)}`;
 
     return {
-      content: this.decodeContent(content),
+      content,
       hash: sha,
-      url:
-        download_url ??
-        `https://raw.githubusercontent.com/${ownerUsername}/${repo}/${ref}/${encodeURIComponent(
-          path
-        )}`,
+      url,
     };
   }
 
