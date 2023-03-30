@@ -2,7 +2,8 @@ import LeafWriter from '@cwrc/leafwriter';
 import { saveDocument } from '@cwrc/leafwriter-storage-service';
 import { AUTOSAVE_TIMEOUT_RETRY } from '@src/config';
 import type { Error, Resource } from '@src/types';
-import { isErrorMessage, log } from '@src/utilities';
+import { isErrorMessage } from '@src/types';
+import { log } from '@src/utilities';
 import i18next from 'i18next';
 import { Context } from '../';
 

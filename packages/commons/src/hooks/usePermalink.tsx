@@ -1,6 +1,6 @@
 import { useActions, useAppState } from '@src/overmind';
 import type { Error, Resource } from '@src/types';
-import { isErrorMessage } from '@src/utilities';
+import { isErrorMessage } from '@src/types';
 import Cookies from 'js-cookie';
 import queryString from 'query-string';
 import { useTranslation } from 'react-i18next';

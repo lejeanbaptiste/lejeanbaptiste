@@ -11,7 +11,7 @@ export interface DialogActionProps {
 }
 
 //@ts-ignore
-export interface IDialog extends Partial<MuiDialogProps> {
+export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   actions?: DialogActionProps[];
   onBeforeClose?: (action?: string) => Promise<boolean>;
   onClose?: <T>(action?: string, data?: T) => void;
@@ -23,7 +23,6 @@ export interface IDialog extends Partial<MuiDialogProps> {
 export type DialogType = 'privacy' | 'signIn' | 'simple' | 'templates';
 
 interface SimpleDialogMessageProps {
-  onClose?: <T>(action?: string, data?: T) => void;
   data?: { [key: string]: any };
   onChangeData?: (data: { [key: string]: any }) => void;
 }
