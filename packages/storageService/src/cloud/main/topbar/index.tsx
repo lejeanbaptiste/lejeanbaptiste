@@ -7,17 +7,14 @@ import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
 import { useActions, useAppState } from '../../../overmind';
 import type { SearchResults } from '../../../types';
-import Breadcrumbs from './Breadcrumbs';
-import Filename from './Filename';
-import SearchBar from './searchBar';
+import { Breadcrumbs, Filename, SearchBar } from './components';
 
 interface TopbarProps {
   onChangeSize?: (value: DOMRect) => void;
   onOpenCreateDialog: (type: 'repo' | 'folder') => void;
 }
 
-const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
-  const { t } = useTranslation();
+export const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
   const { dialogType } = useAppState().common;
   const { collectionSource, collectionType, name, repository, owner } = useAppState().cloud;
   const {
@@ -26,6 +23,8 @@ const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
     getProvider,
     searchGlobal,
   } = useActions().cloud;
+
+  const { t } = useTranslation();
 
   const theme = useTheme();
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
@@ -138,5 +137,3 @@ const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
     </Box>
   );
 };
-
-export default Topbar;

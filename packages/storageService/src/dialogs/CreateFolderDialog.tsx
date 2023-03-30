@@ -7,7 +7,7 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import React, { ChangeEvent, useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions } from '../overmind';
 
@@ -18,9 +18,10 @@ interface CreateRepoDialogProps {
 }
 
 export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialogProps) => {
-  const { t } = useTranslation();
   const { createFolder } = useActions().cloud;
   const { openDialog } = useActions().ui;
+
+  const { t } = useTranslation();
 
   const [name, setName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);

@@ -8,7 +8,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import React, { ChangeEvent, FocusEvent, useState } from 'react';
+import React, { useState, type ChangeEvent, type FocusEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 
@@ -19,12 +19,13 @@ interface SaveSettingsDialogProps {
 }
 
 export const SaveSettingsDialog = ({ anchor, onDone, open }: SaveSettingsDialogProps) => {
-  const { t } = useTranslation();
   const { commitMessage } = useAppState().cloud;
   const { setCommitMessage } = useActions().cloud;
 
-  const theme = useTheme();
-  const isSM = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useTranslation();
+
+  const { breakpoints } = useTheme();
+  const isSM = useMediaQuery(breakpoints.down('sm'));
 
   const [commitMessageLocal, setCommitMessageLocal] = useState(commitMessage);
 

@@ -5,12 +5,13 @@ import React from 'react';
 import { Context } from '..';
 import { TextEmphasis } from '../../components/TextEmphasis';
 import i18next from '../../i18n';
+import { getIcon, type IconName } from '../../icons';
 import type {
   CollectionSource,
   Content,
   DocumentDetails,
-  FetchDocumentParams,
   Error,
+  FetchDocumentParams,
   GetFileLatestHashParams,
   NavigateToPathParams,
   Organization,
@@ -24,13 +25,14 @@ import type {
   SuportedProviders,
   UserType,
 } from '../../types';
+import { isErrorMessage } from '../../types';
 import type {
+  CreateFork,
   CreatePrResponse,
   CreateRepoParams,
-  CreateFork,
   ProviderAuth,
 } from '../../types/Provider';
-import { getIcon, isErrorMessage, log } from '../../utilities';
+import { log } from '../../utilities';
 
 // useTranslation('leafwriter-storage-service');
 
@@ -139,7 +141,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   if (!state.cloud.name) {
     log.warn('no provider');
     return null;
-  };
+  }
 
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
@@ -166,7 +168,11 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         Message: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
-              <Icon component={getIcon(resource.provider)} fontSize="small" mb="-3px" />
+              <Icon
+                component={getIcon(resource.provider as IconName)}
+                fontSize="small"
+                sx={{ mb: '-3px' }}
+              />
             ) : (
               <TextEmphasis disablePadding>{resource.provider ?? ''} :</TextEmphasis>
             )}
@@ -211,7 +217,11 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         Message: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
-              <Icon component={getIcon(resource.provider)} fontSize="small" mb="-3px" />
+              <Icon
+                component={getIcon(resource.provider as IconName)}
+                fontSize="small"
+                sx={{ mb: '-3px' }}
+              />
             ) : (
               <TextEmphasis disablePadding>{resource.provider ?? ''} :</TextEmphasis>
             )}
@@ -246,7 +256,11 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         Message: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
-              <Icon component={getIcon(resource.provider)} fontSize="small" mb="-3px" />
+              <Icon
+                component={getIcon(resource.provider as IconName)}
+                fontSize="small"
+                sx={{ mb: '-3px' }}
+              />
             ) : (
               <TextEmphasis disablePadding>{resource.provider ?? ''} :</TextEmphasis>
             )}
@@ -583,10 +597,7 @@ export const createRepo = async (
   return repository;
 };
 
-export const forkRepo = async ({
-  state,
-  actions,
-}: Context): Promise<Repository | Error | null> => {
+export const forkRepo = async ({ state, actions }: Context): Promise<Repository | Error | null> => {
   const provider = actions.cloud.getProvider();
   const { owner, repository } = state.cloud;
   if (!provider || !owner || !repository) return null;
@@ -1216,10 +1227,7 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
   return branchHead;
 };
 
-export const forkFile = async ({
-  state,
-  actions,
-}: Context): Promise<Repository | Error | null> => {
+export const forkFile = async ({ state, actions }: Context): Promise<Repository | Error | null> => {
   const { common, cloud } = state;
   const { repository, repositoryContent, owner } = cloud;
   const { resource } = common;

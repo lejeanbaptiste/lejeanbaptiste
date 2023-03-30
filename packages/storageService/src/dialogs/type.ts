@@ -10,8 +10,8 @@ export interface DialogActionProps {
   variant?: 'contained' | 'outlined' | 'text';
 }
 
-//@ts-ignore
-export interface IDialog extends Partial<MuiDialogProps> {
+
+export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   actions?: DialogActionProps[];
   onBeforeClose?: (action?: string) => Promise<boolean>;
   onClose?: <T>(action?: string, data?: T) => void;

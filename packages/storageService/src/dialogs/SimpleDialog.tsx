@@ -21,6 +21,7 @@ export const SimpleDialog = ({
   children,
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
+
   const { t } = useTranslation(['leafwriter']);
 
   const [data, setData] = useState<{ [key: string]: any }>({});
@@ -53,7 +54,6 @@ export const SimpleDialog = ({
   return (
     <Dialog
       aria-labelledby="alert-dialog-title"
-      // disableAutoFocus
       fullWidth
       id={id}
       maxWidth={maxWidth}

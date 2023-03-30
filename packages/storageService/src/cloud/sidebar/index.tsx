@@ -1,16 +1,14 @@
 import { Stack, useMediaQuery, useTheme } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useAppState } from '../../overmind';
-import MainMenu from './MainMenu';
-import MobileMenu from './MobileMenu';
-import PublicRepositories from './publicRepository';
+import { MainMenu, MobileMenu, PublicRepositories } from './components';
 
-const Sidebar = () => {
+export const Sidebar = () => {
   const { cloud } = useAppState();
   const { owner, user } = cloud;
 
-  const theme = useTheme();
-  const isSM = useMediaQuery(theme.breakpoints.down('sm'));
+  const { breakpoints } = useTheme();
+  const isSM = useMediaQuery(breakpoints.down('sm'));
 
   const [selectedMenu, setSelectedMenu] = useState('owner');
 
@@ -38,5 +36,3 @@ const Sidebar = () => {
     </Stack>
   );
 };
-
-export default Sidebar;

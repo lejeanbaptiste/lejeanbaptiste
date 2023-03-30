@@ -2,10 +2,10 @@ import { Stack, useMediaQuery, useTheme } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useWindowSize } from 'react-use';
 import { CreateFolderDialog, CreateRepoDialog } from '../../dialogs';
-import Collection from './Collection';
-import Topbar from './topbar';
+import { Collection } from './collection';
+import { Topbar } from './topbar';
 
-const Main = () => {
+export const Main = () => {
   const theme = useTheme();
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
   const isMD = useMediaQuery(theme.breakpoints.down('md'));
@@ -58,5 +58,3 @@ const Main = () => {
     </Stack>
   );
 };
-
-export default Main;

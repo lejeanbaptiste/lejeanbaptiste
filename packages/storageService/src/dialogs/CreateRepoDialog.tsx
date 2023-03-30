@@ -10,7 +10,7 @@ import {
   Switch,
   TextField,
 } from '@mui/material';
-import React, { ChangeEvent, useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions } from '../overmind';
 
@@ -21,9 +21,10 @@ interface CreateRepoDialogProps {
 }
 
 export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogProps) => {
-  const { t } = useTranslation();
   const { createRepo } = useActions().cloud;
   const { openDialog } = useActions().ui;
+
+  const { t } = useTranslation();
 
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -111,12 +112,10 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
             control={
               <Switch checked={privateRepo} onChange={handleChangePrivateRepo} size="small" />
             }
-            // label={t('commons:private')}
-            label={'Private'}
+            label={t('commons:private')}
           />
         </Stack>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
         <LoadingButton

@@ -1,4 +1,7 @@
+import type { IconName } from '../icons';
 import type { ProviderAuth } from './Provider';
+
+export * from './assert';
 
 export interface StorageDialogProps {
   open: boolean;
@@ -58,7 +61,7 @@ export interface Resource {
 }
 
 export interface SourcePanelOption {
-  icon: string;
+  icon: IconName;
   label: string;
   value: StorageSource | SuportedProviders;
 }
