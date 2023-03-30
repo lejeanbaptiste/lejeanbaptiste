@@ -4,6 +4,7 @@ import type { LookupsConfig } from '../dialogs/entityLookups';
 import Writer from '../js/Writer';
 
 export type { Authority, LookupsProps } from '../dialogs/entityLookups';
+export * from './assert';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;

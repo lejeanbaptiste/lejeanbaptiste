@@ -1,8 +1,8 @@
 import { Icon, useTheme } from '@mui/material';
 import React, { useMemo } from 'react';
 import { ItemProps } from '../';
+import { isEntityType } from '../../../../../types';
 import { useContextmenu } from '../../../hooks';
-
 export interface IconLeftProps {
   entityType?: string;
   icon: Exclude<ItemProps['icon'], undefined>;
@@ -10,7 +10,7 @@ export interface IconLeftProps {
 
 export const IconLeft = ({ entityType, icon }: IconLeftProps) => {
   const { entity } = useTheme();
-  const { getIcon, isEntityType } = useContextmenu();
+  const { getIcon } = useContextmenu();
 
   const IconComponent = useMemo(() => getIcon(icon), [icon]);
   const color = entityType && isEntityType(entityType) ? entity[entityType].color.main : 'inherit';
