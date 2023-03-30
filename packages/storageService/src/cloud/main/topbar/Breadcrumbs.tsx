@@ -10,7 +10,7 @@ import {
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
-import Crumb from './Crumb';
+import { Crumb } from './Crumb';
 
 const Breadcrumbs = () => {
   const { t } = useTranslation();
@@ -27,6 +27,8 @@ const Breadcrumbs = () => {
   const handleClickRepo = () => navigateTo({ repo: repository });
   const handleDeepNavigation = (level: number) => navigateBack(level + 1);
   const handleClickBack = () => navigateBack(-1);
+
+  console.log(repository)
 
   return (
     <Stack direction="row" alignItems="flex-end" minHeight={39} pl={1}>
@@ -86,6 +88,7 @@ const Breadcrumbs = () => {
             level={0}
             name={repository?.name}
             onClick={handleClickRepo}
+            writePermission={repository?.writePermission}
           />
         )}
         {collectionType === 'content' && (

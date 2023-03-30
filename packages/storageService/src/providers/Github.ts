@@ -170,6 +170,7 @@ export default class Github implements Provider {
     //add username attr
     collection = collection.map((repo: any) => {
       repo.owner.username = repo.owner?.login;
+      repo.writePermission = repo.permissions.push; //* This is a shortcut to check if the user has write permission someone else's repo
       return repo;
     });
 
@@ -196,6 +197,7 @@ export default class Github implements Provider {
     const repo = response.data as unknown as T.Repository;
     repo.owner.username = repo.owner?.login;
     repo.owner.path = repo.name;
+    repo.writePermission = repo.permissions.push; //* This is a shortcut to check if the user has write permission someone else's repo
 
     return repo;
   }
@@ -291,6 +293,7 @@ export default class Github implements Provider {
     //add username attr
     const repositories = collection.map((repo: any) => {
       repo.owner.username = repo.owner?.login;
+      repo.writePermission = repo.permissions.push; //* This is a shortcut to check if the user has write permission someone else's repo
       return repo;
     });
 

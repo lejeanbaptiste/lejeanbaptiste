@@ -7,7 +7,7 @@ import { useScrollSpy } from '../hooks/useScrollSpy';
 import Content from './Content';
 import Empty from './Empty';
 import Org from './Organization';
-import Repository from './Repository';
+import { Repository } from './Repository';
 
 interface Collection {
   height: number | string;

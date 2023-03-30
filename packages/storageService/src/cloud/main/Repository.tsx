@@ -1,28 +1,31 @@
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import FolderSpecialOutlinedIcon from '@mui/icons-material/FolderSpecialOutlined';
-import { Avatar, Chip, Grid, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Chip, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
 import React from 'react';
 import { useActions, useAppState } from '../../overmind';
-import type { Repository } from '../../types';
+import type { Repository as RepositoryPros } from '../../types';
 
-interface RepoProps {
-  repo: Repository;
+interface Props {
+  repository: RepositoryPros;
 }
 
-const Repo = ({ repo }: RepoProps) => {
+export const Repository = ({ repository }: Props) => {
   const { selectedItem } = useAppState().common;
   const { collectionSource } = useAppState().cloud;
+
   const { setSelectedItem } = useActions().common;
   const { navigateTo } = useActions().cloud;
-  const { name, description, visibility } = repo;
+
+  const { description, id, name, owner, visibility, writePermission } = repository;
 
   const handleClick = () => {
     if (visibility === 'private') return;
-    setSelectedItem({ repository: repo, type: 'repo' });
+    setSelectedItem({ repository, type: 'repo' });
   };
 
   const handleDoubleClick = () => {
     if (visibility === 'private') return;
-    navigateTo({ repo });
+    navigateTo({ repo: repository });
   };
 
   return (
@@ -32,38 +35,34 @@ const Repo = ({ repo }: RepoProps) => {
         data-testid="primary-button"
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
-        selected={selectedItem?.repository?.id === repo.id}
+        selected={selectedItem?.repository?.id === id}
       >
-        <Grid container alignItems={description ? 'flex-start' : 'center'}>
-          <Grid item xs="auto" pr={2}>
-            <FolderSpecialOutlinedIcon sx={{ mt: 0.5 }} />
-          </Grid>
-          <Grid item xs>
-            <Stack alignItems="flex-start">
-              <Stack direction="row" alignItems="center" spacing={1}>
-                {collectionSource === 'collaborator' && (
-                  <Chip
-                    avatar={
-                      <Avatar
-                        alt={repo.owner?.name ?? repo.owner?.username}
-                        src={repo.owner?.avatar_url ?? ''}
-                      />
-                    }
-                    label={repo.owner?.name ?? repo.owner?.username}
-                    size="small"
-                    sx={{ maxWidth: 200, mt: description ? 1 : 0 }}
-                    variant="outlined"
-                  />
-                )}
-                <Typography>{name}</Typography>
-              </Stack>
-              {description && <Typography variant="caption">{description}</Typography>}
-            </Stack>
-          </Grid>
-        </Grid>
+        <Box mt={description ? 0 : 0.5} mr={2} py={0.125}>
+          <FolderSpecialOutlinedIcon />
+        </Box>
+        <Stack alignItems="flex-start" width="100%">
+          <Stack direction="row" alignItems="center" spacing={1}>
+            {collectionSource === 'collaborator' && (
+              <Chip
+                avatar={
+                  <Avatar alt={owner?.name ?? owner?.username} src={owner?.avatar_url ?? ''} />
+                }
+                label={owner?.name ?? owner?.username}
+                size="small"
+                sx={{ maxWidth: 200, mt: description ? 1 : 0 }}
+                variant="outlined"
+              />
+            )}
+            <Typography flexGrow={1}>{name}</Typography>
+          </Stack>
+          {description && <Typography variant="caption">{description}</Typography>}
+        </Stack>
+        {writePermission && (
+          <Box mt={1}>
+            <AdminPanelSettingsIcon fontSize="small" />
+          </Box>
+        )}
       </ListItemButton>
     </ListItem>
   );
 };
-
-export default Repo;

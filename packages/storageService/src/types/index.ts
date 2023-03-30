@@ -126,6 +126,7 @@ export interface Repository {
     [x: string]: any;
   };
   path: string;
+  writePermission?: boolean;
   [x: string]: any;
 }
 
