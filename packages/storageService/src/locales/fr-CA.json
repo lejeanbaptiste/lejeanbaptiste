@@ -1,4 +1,7 @@
 {
+  "Last_Modified": "Dernière modification",
+  "Message": "Message",
+  "by": "par",
   "cancel": "annuler",
   "cloud": {
     "breadcrumbs": {
@@ -127,5 +130,6 @@
   "path not found": "Chemin non trouvé",
   "settings": {
     "allow_all_files": "Autoriser tous les fichiers"
-  }
+  },
+  "view_source": "voir la source"
 }

@@ -1,6 +1,6 @@
 import type { Error, Repository, Resource } from './types';
+import { isErrorMessage } from './types';
 import Provider, { ProviderAuth } from './types/Provider';
-import { isErrorMessage } from './utilities';
 
 let provider: Provider | null;
 
@@ -10,7 +10,7 @@ interface GetFileLatestHashParams {
   owner: string;
 }
 
-export type { Resource, Error } from './types';
+export type { Error, Resource } from './types';
 
 export const loadDocument = async (providerAuth: ProviderAuth, resource: Resource) => {
   const { provider: providerName, owner, ownertype, repo, filename } = resource;

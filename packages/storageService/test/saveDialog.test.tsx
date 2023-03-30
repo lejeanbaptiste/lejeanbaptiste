@@ -373,7 +373,7 @@ describe('Save Dialog', () => {
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument());
 
-        const saveButton = getByTitle(footer, 'save');
+        const saveButton = getByTestId(footer, 'save');
         //* hack: some of the processes from previou stests are stuck.
         //* in this case 'isSaving' is set to true, which cause some actions to be disabled.
         saveButton.classList.remove('Mui-disabled');

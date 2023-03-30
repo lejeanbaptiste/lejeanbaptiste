@@ -10,9 +10,10 @@ interface SettingsDialogProps {
 }
 
 export const SettingsDialog = ({ anchor, onDone, open }: SettingsDialogProps) => {
-  const { t } = useTranslation();
   const { allowAllFileTypes } = useAppState().common;
   const { setAllowedAllFileTypes } = useActions().common;
+
+  const { t } = useTranslation();
 
   const handleToggleAllowAllFiles = () => {
     setAllowedAllFileTypes(!allowAllFileTypes);
@@ -31,7 +32,7 @@ export const SettingsDialog = ({ anchor, onDone, open }: SettingsDialogProps) =>
       transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
     >
       <ListItem disablePadding>
-        <ListItemButton role={undefined} onClick={handleToggleAllowAllFiles} dense>
+        <ListItemButton dense onClick={handleToggleAllowAllFiles} role={undefined}>
           <ListItemIcon>
             <Switch
               checked={allowAllFileTypes}

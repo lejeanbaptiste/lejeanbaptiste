@@ -9,22 +9,26 @@ import {
   Tooltip,
   useTheme
 } from '@mui/material';
-import React, { MouseEvent, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { SettingsDialog } from '../dialogs';
 import { useActions, useAppState } from '../overmind';
 import type { StorageSource, SuportedProviders } from '../types';
-import { getIcon } from '../utilities';
+import { getIcon } from '../icons';
 
 type Source = StorageSource | SuportedProviders;
 
-const SidePanel = () => {
-  const theme = useTheme();
+export const SourcePanel = () => {
   const { name: providerName, providers } = useAppState().cloud;
   const { source, sources } = useAppState().common;
+
   const { changeProvider } = useActions().cloud;
   const { setSource } = useActions().common;
+
+  const {spacing} = useTheme();
+
   const [active, setActive] = useState<Source>(source);
   const [openSettings, setOpenSettings] = useState(false);
+  
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,7 +64,7 @@ const SidePanel = () => {
           size="small"
           sx={{
             '& .MuiToggleButtonGroup-grouped': {
-              margin: theme.spacing(0.5),
+              margin: spacing(0.5),
               border: 0,
               '&.Mui-disabled': { border: 0 },
               '&:not(:first-of-type)': { borderRadius: 1 },
@@ -91,5 +95,3 @@ const SidePanel = () => {
     </Paper>
   );
 };
-
-export default SidePanel;

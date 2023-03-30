@@ -4,24 +4,27 @@ import { Box, Button, DialogActions, IconButton, useMediaQuery, useTheme } from 
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
-import SaveOptions from './SaveOptions';
+import { SaveOptions } from './components/SaveOptions';
 
 export interface Props {
   onCancel: () => void;
 }
 
 export const FooterSave = ({ onCancel }: Props) => {
-  const { t } = useTranslation();
   const { resource } = useAppState().common;
   const { isSaving, owner, repository } = useAppState().cloud;
+
   const { download } = useActions().common;
   const { checkRepoUserWritenPermission, getProvider, saveAspullRequest, saveDocument } =
     useActions().cloud;
+
+  const { t } = useTranslation();
+
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [hasPermission, setHasPermission] = useState(true);
 
-  const theme = useTheme();
-  const isSM = useMediaQuery(theme.breakpoints.down('sm'));
+  const { breakpoints } = useTheme();
+  const isSM = useMediaQuery(breakpoints.down('sm'));
 
   useEffect(() => {
     if (!repository) {
@@ -41,9 +44,7 @@ export const FooterSave = ({ onCancel }: Props) => {
     setHasPermission(_hasPermission);
   };
 
-  const handleClickSave = (value: string) => {
-    save(value);
-  };
+  const handleClickSave = (value: string) => save(value);
 
   const save = async (value: string) => {
     if (value === 'save') return saveDocument();

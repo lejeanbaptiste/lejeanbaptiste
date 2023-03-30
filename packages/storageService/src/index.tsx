@@ -4,7 +4,7 @@ import { Provider } from 'overmind-react';
 import React from 'react';
 import { I18nextProvider } from 'react-i18next';
 import i18next from './i18n';
-import Main from './main';
+import { Main } from './main';
 import { config } from './overmind';
 import type { StorageDialogProps } from './types';
 

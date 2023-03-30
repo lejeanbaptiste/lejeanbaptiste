@@ -3,15 +3,13 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../overmind';
 
-const Header = () => {
+export const Header = () => {
   const { name: providerName } = useAppState().cloud;
   const { dialogType, source } = useAppState().common;
+
   const { t } = useTranslation();
 
-  const title = () => {
-    if (source === 'cloud' && providerName) return providerName;
-    return source;
-  };
+  const title = source === 'cloud' && providerName ? providerName : source;
 
   return (
     <Grid container alignItems="center" px={2} py={1} minHeight={49}>
@@ -21,7 +19,7 @@ const Header = () => {
           sx={{ textTransform: 'capitalize' }}
           variant="subtitle1"
         >
-          {title()}
+          {title}
         </Typography>
       </Grid>
 
@@ -43,5 +41,3 @@ const Header = () => {
     </Grid>
   );
 };
-
-export default Header;

@@ -1,21 +1,24 @@
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { Box, Stack, Typography, useTheme } from '@mui/material';
 import React, { createRef, useEffect, useRef, useState } from 'react';
-import Dropzone, { DropzoneRef } from 'react-dropzone';
+import Dropzone, { type DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 
 export const UploadPanel = () => {
-  const { t } = useTranslation();
-  const { palette } = useTheme();
   const { allowedMimeTypes } = useAppState().common;
+
   const { setResource, uploadFile } = useActions().local;
   const { load } = useActions().common;
   const { openDialog } = useActions().ui;
 
-  const dropzoneRef = createRef<DropzoneRef>();
+  const { t } = useTranslation();
 
+  const { palette } = useTheme();
+
+  const dropzoneRef = createRef<DropzoneRef>();
   const container = useRef<HTMLDivElement>(null);
+
   const [containerHeight, setContainerHeight] = useState(150);
 
   useEffect(() => {
@@ -32,7 +35,7 @@ export const UploadPanel = () => {
     setContainerHeight(container.current?.getBoundingClientRect().height ?? 150);
   };
 
-  const onDrop = async (acceptedFiles: File[]) => {
+  const HandleDrop = async (acceptedFiles: File[]) => {
     const accepted = acceptedFiles.length > 0;
     if (accepted) handleSelectFile(acceptedFiles[0]);
   };
@@ -75,7 +78,7 @@ export const UploadPanel = () => {
         maxFiles={1}
         multiple={false}
         noDragEventsBubbling={true}
-        onDrop={onDrop}
+        onDrop={HandleDrop}
         ref={dropzoneRef}
       >
         {({ getRootProps, getInputProps, isDragAccept, isDragReject }) => (
@@ -99,7 +102,7 @@ export const UploadPanel = () => {
                   ? palette.success.light
                   : palette.grey[400],
                 color: palette.grey[400],
-                backgroundColor: palette.mode === 'light' ? palette.grey[50] : palette.grey[800],
+                bgcolor: palette.mode === 'light' ? palette.grey[50] : palette.grey[800],
               }}
             >
               <Typography>{t('local:drag_drop')}</Typography>
