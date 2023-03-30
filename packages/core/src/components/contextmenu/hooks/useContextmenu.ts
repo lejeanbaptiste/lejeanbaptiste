@@ -1,7 +1,7 @@
 import { useSetAtom } from 'jotai';
 import { getIcon } from '../../../icons';
 import { useActions, useAppState } from '../../../overmind';
-import { isElement, isEntityType } from '../../../utilities';
+import { isElement } from '../../../utilities';
 import { tagMetaAtom, tagNameAtom, xpathAtom } from '../store';
 import { useItems } from './useItems';
 
@@ -121,6 +121,5 @@ export const useContextmenu = () => {
     getIcon,
     getItems,
     initialize,
-    isEntityType,
   };
 };

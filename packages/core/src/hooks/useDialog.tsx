@@ -59,7 +59,7 @@ export const useDialog = () => {
       );
 
       storeDisplayed(id);
-      setDialogDisplayId({ id: props?.id, displayId: id });
+      setDialogDisplayId({ id: props.id, displayId: id });
     });
   }, [dialogBar]);
 
