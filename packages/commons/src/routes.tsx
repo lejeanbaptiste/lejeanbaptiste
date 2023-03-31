@@ -10,6 +10,7 @@ export const routes = [
       { path: '404', element: <NotFoundView /> },
       { path: '/link-accounts', element: <LinkAccounts /> },
       { path: '/edit', element: <EditView /> },
+      { path: '/view', element: <EditView /> },
       { index: true, element: <HomeView /> },
     ],
   },

@@ -3,7 +3,6 @@ import { schemas } from '@src/config/schemas';
 import { useAnalytics } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
-import queryString from 'query-string';
 import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MainMenu, Meta, useMenu } from './topbar';
@@ -28,10 +27,14 @@ export const EditView = () => {
   const divEl = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setPage('edit');
     window.addEventListener('keydown', onKeydownHandle);
-    const { readonly } = queryString.parse(location.search);
-    if (readonly) setReadonly(readonly === 'true' ? true : false);
+
+    const firstRoute = location.pathname.split('/')[1];
+    const readOnly = firstRoute === 'view' ? true : false;
+
+    setReadonly(readOnly);
+    setPage(firstRoute);
+
     return () => {
       window.removeEventListener('keydown', onKeydownHandle);
       setCurrentLeafWriter(null);
