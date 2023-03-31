@@ -214,7 +214,7 @@ export const EditSchemaDialog = ({
                   onBlur={handleBlur}
                   onChange={handleChange}
                   size="small"
-                  sx={{ ':first-letter': { textTransform: 'uppercase' } }}
+                  sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                   value={values.name}
                 />
                 {mappingIds.length > 1 && (
@@ -229,7 +229,7 @@ export const EditSchemaDialog = ({
                       onChange={handleChange}
                       size="small"
                       select
-                      sx={{ ':first-letter': { textTransform: 'uppercase' } }}
+                      sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                       value={values.mapping}
                     >
                       {mappingIds.map((id) => (
@@ -253,7 +253,7 @@ export const EditSchemaDialog = ({
                 onChange={handleChange}
                 placeholder="https://"
                 size="small"
-                sx={{ ':first-letter': { textTransform: 'uppercase' } }}
+                sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                 value={values.rng}
               />
               <TextField
@@ -268,7 +268,7 @@ export const EditSchemaDialog = ({
                 onChange={handleChange}
                 placeholder="https://"
                 size="small"
-                sx={{ ':first-letter': { textTransform: 'uppercase' } }}
+                sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                 value={values.css}
               />
               {actionType === 'add' && (
