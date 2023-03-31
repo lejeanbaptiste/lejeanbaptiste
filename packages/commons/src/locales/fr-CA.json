@@ -12,6 +12,7 @@
     "discard_changes": "rejeter les modifications",
     "dismiss": "rejeter",
     "download": "télécharger",
+    "editing": "montage",
     "export_as_HTML": "exporter au format HTML",
     "functionalities": "fonctionnalités",
     "identity": "identité",
@@ -44,6 +45,7 @@
     "template": "modèle",
     "templates": "modèles",
     "unsaved_changes": "modifications non sauvegardées",
+    "viewing": "visualisation",
     "with": "avec"
   },
   "cookie_consent": {

@@ -12,6 +12,7 @@
     "discard_changes": "discard changes",
     "dismiss": "dismiss",
     "download": "download",
+    "editing": "editing",
     "export_as_HTML": "export as HTML",
     "functionalities": "functionalities",
     "identity": "identity",
@@ -44,6 +45,7 @@
     "template": "template",
     "templates": "templates",
     "unsaved_changes": "unsaved changes",
+    "viewing": "viewing",
     "with": "with"
   },
   "cookie_consent": {
