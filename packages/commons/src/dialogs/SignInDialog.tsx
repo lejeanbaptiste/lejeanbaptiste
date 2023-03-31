@@ -17,7 +17,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
 
   return (
     <Dialog id={id} fullWidth maxWidth="xs" onClose={handleClose} open={open}>
-      <DialogTitle textAlign="center" sx={{ ':first-letter': { textTransform: 'uppercase' } }}>
+      <DialogTitle textAlign="center" sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
         {t('commons:sign_in')} {t('commons:with')}
       </DialogTitle>
       <DialogContent>

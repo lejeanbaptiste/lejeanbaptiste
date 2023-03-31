@@ -94,7 +94,7 @@ export const MenuButton = ({
           <ListItemText
             primary={label}
             sx={{
-              ':first-letter': { textTransform: 'uppercase' },
+              '::first-letter': { textTransform: 'uppercase' },
               span: { color: ({ palette }) => (active ? palette.primary.light : 'inherit') },
             }}
           />
