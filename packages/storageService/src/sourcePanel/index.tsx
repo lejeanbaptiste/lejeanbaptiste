@@ -7,13 +7,14 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
-  useTheme
+  useTheme,
 } from '@mui/material';
 import React, { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SettingsDialog } from '../dialogs';
+import { getIcon } from '../icons';
 import { useActions, useAppState } from '../overmind';
 import type { StorageSource, SuportedProviders } from '../types';
-import { getIcon } from '../icons';
 
 type Source = StorageSource | SuportedProviders;
 
@@ -24,11 +25,12 @@ export const SourcePanel = () => {
   const { changeProvider } = useActions().cloud;
   const { setSource } = useActions().common;
 
-  const {spacing} = useTheme();
+  const { t } = useTranslation();
+  const { spacing } = useTheme();
 
   const [active, setActive] = useState<Source>(source);
   const [openSettings, setOpenSettings] = useState(false);
-  
+
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,21 +77,32 @@ export const SourcePanel = () => {
         >
           {sources.map(({ value, label, icon }) => (
             <ToggleButton data-testid={`source_panel-${value}`} key={value} value={value}>
-              <Tooltip enterDelay={1000} placement="right" title={label}>
+              <Tooltip
+                componentsProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
+                enterDelay={1000}
+                placement="right"
+                title={label}
+              >
                 <Icon component={getIcon(icon)} />
               </Tooltip>
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
-        <IconButton
-          data-testid="source_panel-settings_button"
-          onClick={handleOpenSettings}
-          size="small"
-          sx={{ borderRadius: 1 }}
-          title="settings"
+        <Tooltip
+          componentsProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
+          enterDelay={1000}
+          placement="right"
+          title={t('commons:settings')}
         >
-          <SettingsIcon />
-        </IconButton>
+          <IconButton
+            data-testid="source_panel-settings_button"
+            onClick={handleOpenSettings}
+            size="small"
+            sx={{ borderRadius: 1 }}
+          >
+            <SettingsIcon />
+          </IconButton>
+        </Tooltip>
       </Stack>
       <SettingsDialog anchor={container.current} onDone={handleCloseSettings} open={openSettings} />
     </Paper>

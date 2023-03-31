@@ -34,8 +34,6 @@ import type {
 } from '../../types/Provider';
 import { log } from '../../utilities';
 
-// useTranslation('leafwriter-storage-service');
-
 //* INIITIALIZE
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
@@ -164,7 +162,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('user not found')}`,
+        title: `${i18next.t('cloud:user_not_found')}`,
         Message: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
@@ -213,7 +211,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('path not found')}`,
+        title: `${i18next.t('commons:path_not_found')}`,
         Message: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
@@ -252,7 +250,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('path not found')}`,
+        title: `${i18next.t('commons:path_not_found')}`,
         Message: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
@@ -931,11 +929,11 @@ export const saveDocument = async ({ state, actions }: Context) => {
         maxWidth: 'xs',
         severity: 'warning',
         preventEscape: true,
-        title: `${i18next.t('error:message:overwriteFileConfirmation')}`,
-        Message: `${i18next.t('Do you want to overwrite')}?`,
+        title: `${i18next.t('cloud:message:file_already_exists')}`,
+        Message: `${i18next.t('cloud:message:Do_you_want_to_overwrite')}?`,
         actions: [
-          { action: 'cancel', label: `${i18next.t('cancel')}`, variant: 'outlined' },
-          { action: 'overwrite', label: `${i18next.t('overwrite')}` },
+          { action: 'cancel', label: `${i18next.t('commons:cancel')}`, variant: 'outlined' },
+          { action: 'overwrite', label: `${i18next.t('commons:overwrite')}` },
         ],
         //@ts-ignore
         onClose: async (action: string) => {
@@ -1010,8 +1008,8 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('error')}`,
-        Message: `${i18next.t('error:unabled to save')}`,
+        title: `${i18next.t('commons:error')}`,
+        Message: `${i18next.t('cloud:message:unabled_to_save')}`,
         onClose: () => actions.cloud.setIsSaving(false),
       },
     });
@@ -1023,12 +1021,12 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     actions.ui.closeDialog('progress');
 
     const title =
-      response.message === 'conflict' ? i18next.t('error:conflict') : i18next.t('error');
+      response.message === 'conflict' ? i18next.t('commons:conflict') : i18next.t('commons:error');
 
     const message =
       response.message === 'conflict'
-        ? i18next.t('error:unable to overwrite file')
-        : `${i18next.t('error:unabled to save')}. ${response.message}`;
+        ? i18next.t('cloud:message:unable_to_overwrite_file')
+        : `${i18next.t('cloud:message:unabled_to_save')}. ${response.message}`;
 
     actions.ui.openDialog({
       props: {
@@ -1082,7 +1080,7 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
 
   if (!pullRequestResponse) {
     actions.cloud.setIsSaving(false);
-    return { type: 'error', message: i18next.t('error:message:unable_pull_reqest') };
+    return { type: 'error', message: i18next.t('cloud:message:unable_pull_reqest') };
   }
 
   if (isErrorMessage(pullRequestResponse)) {
@@ -1123,7 +1121,7 @@ export const pullRequest = async ({
   const branchHead = await actions.cloud.branchFile();
 
   if (!branchHead)
-    return { type: 'error', message: i18next.t('error:message:unable_create_branch') };
+    return { type: 'error', message: i18next.t('cloud:message:unable_create_branch') };
   if (isErrorMessage(branchHead)) return branchHead;
 
   const pullRequestResponse = await provider.createPullRequest({
@@ -1148,7 +1146,7 @@ export const pullRequestFromFork = async ({
 
   //------  Create version
   const fork = await actions.cloud.forkFile();
-  if (!fork) return { type: 'error', message: i18next.t('error:message:unable_fork_repo') };
+  if (!fork) return { type: 'error', message: i18next.t('cloud:message:unable_fork_repo') };
   if (isErrorMessage(fork)) return fork;
 
   actions.ui.openDialog({
@@ -1156,7 +1154,7 @@ export const pullRequestFromFork = async ({
       id: 'merge-progress',
       maxWidth: 'xs',
       severity: 'info',
-      title: `${i18next.t('cloud:messages:create_merge_request')}`,
+      title: `${i18next.t('cloud:message:create_merge_request')}`,
     },
   });
 
@@ -1188,7 +1186,7 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
 
   //------create branch
   const branch = await actions.cloud.createBranch();
-  if (!branch) return { type: 'error', message: i18next.t('error:message:unable_create_branch') };
+  if (!branch) return { type: 'error', message: i18next.t('cloud:message:unable_create_branch') };
 
   //------get document's hash from branch
   const branchHead = `branch-by-${provider.username}`;
@@ -1220,7 +1218,7 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
   if (!saveOnBranchResponse || saveOnBranchResponse.status === 409) {
     return {
       type: 'error',
-      message: i18next.t('error:message:unable_save_on_branch', { branch: branchHead }),
+      message: i18next.t('cloud:message:unable_save_on_branch', { branch: branchHead }),
     };
   }
 
@@ -1246,7 +1244,7 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
 
   //------create fork
   const fork = await actions.cloud.fork();
-  if (!fork) return { type: 'error', message: i18next.t('error:message:unable_fork_repo') };
+  if (!fork) return { type: 'error', message: i18next.t('cloud:message:unable_fork_repo') };
   if (isErrorMessage(fork)) return fork;
 
   //------get document's hash from frok
@@ -1259,7 +1257,7 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
       id: 'saving-document',
       maxWidth: 'xs',
       severity: 'info',
-      title: `${i18next.t('commons:messages:saving_document')}`,
+      title: `${i18next.t('messages:saving_document')}`,
     },
   });
 
@@ -1287,7 +1285,7 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
   if (!saveOnForkResponse || saveOnForkResponse.status === 409) {
     return {
       type: 'error',
-      message: i18next.t('error:message:unable_save_document_on_fork', { fork: fork.name }),
+      message: i18next.t('cloud:message:unable_save_document_on_fork', { fork: fork.name }),
     };
   }
 
@@ -1316,8 +1314,8 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | Er
         id: 'forking-repository',
         maxWidth: 'xs',
         severity: 'info',
-        title: `${i18next.t('forking')}`,
-        Message: `${i18next.t('cloud:messages:forking_can_take_minutes')}`,
+        title: `${i18next.t('cloud:forking')}`,
+        Message: `${i18next.t('cloud:message:forking_can_take_minutes')}. ${i18next.t('message:be_patient')}.}`,
       },
     });
   }, 5_000);

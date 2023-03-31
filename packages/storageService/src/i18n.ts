@@ -12,8 +12,8 @@ const i18n = i18next.createInstance(
   {
     lng: 'en-CA',
     fallbackLng: 'en-CA',
-    ns: ['leafwriter-storage-service'],
-    defaultNS: 'leafwriter-storage-service',
+    ns: ['commons'],
+    defaultNS: 'commons',
     react: { useSuspense: false },
     // interpolation: { escapeValue: false },
     // debug: true,

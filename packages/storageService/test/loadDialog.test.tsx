@@ -285,7 +285,7 @@ describe('Load Dialog', () => {
         expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
 
         const sidebar = getByTestId(storageDialog, 'sidebar');
-        const shared = getByTitle(sidebar, 'Shared with me');
+        const shared = getByTitle(sidebar, 'shared with me');
         await act(async () => user.click(getByTestId(shared, 'primary-button')));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument());

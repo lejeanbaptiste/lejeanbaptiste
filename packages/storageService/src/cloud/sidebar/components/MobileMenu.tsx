@@ -32,7 +32,7 @@ export const MobileMenu = ({ onSelect, selectedMenu }: MobileMenuProps) => {
 
   const menuOptions: MenuOption[] = [
     { label: `${t('cloud:mainMenu:my_repositories')}`, value: 'owner' },
-    { label: `${t('cloud:mainMenu:shared_with_me')}`, value: 'collaborator' },
+    { label: `${t('cloud:shared_with_me')}`, value: 'collaborator' },
     { label: `${t('cloud:mainMenu:organizations')}`, value: 'organization' },
   ];
 

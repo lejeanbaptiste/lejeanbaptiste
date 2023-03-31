@@ -44,7 +44,7 @@ export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialo
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: `${t('error:message:folder_creation_error')}`,
+          title: `${t('cloud:message:folder_creation_error')}`,
           onClose: () => setIsLoading(false),
         },
       });
