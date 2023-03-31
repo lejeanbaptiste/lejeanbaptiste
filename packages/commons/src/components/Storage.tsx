@@ -37,7 +37,9 @@ export const Storage = () => {
     setResource(res);
     const permalink = setPermalink(res);
     closeStorageDialog();
-    navigate(`/edit${permalink ?? ''}`, { replace: true });
+
+    const route = res.writePermission === false ? 'view' : 'edit'
+    navigate(`/${route}${permalink ?? ''}`, { replace: true });
 
     //? open on a new tab
     //! works fine with cloud document on the cloud.
