@@ -1,7 +1,17 @@
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import FolderSpecialOutlinedIcon from '@mui/icons-material/FolderSpecialOutlined';
-import { Avatar, Box, Chip, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
+import GppGoodRoundedIcon from '@mui/icons-material/GppGoodRounded';
+import {
+  Avatar,
+  Box,
+  Chip,
+  ListItem,
+  ListItemButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../overmind';
 import type { Repository as RepositoryPros } from '../../../../types';
 
@@ -15,6 +25,8 @@ export const Repository = ({ repository }: Props) => {
 
   const { setSelectedItem } = useActions().common;
   const { navigateTo } = useActions().cloud;
+
+  const { t } = useTranslation();
 
   const { description, id, name, owner, visibility, writePermission } = repository;
 
@@ -59,7 +71,14 @@ export const Repository = ({ repository }: Props) => {
         </Stack>
         {writePermission && (
           <Box mt={1}>
-            <AdminPanelSettingsIcon fontSize="small" />
+            <Tooltip
+              componentsProps={{
+                tooltip: { sx: { '&::first-letter': { textTransform: 'uppercase' } } },
+              }}
+              title={t('cloud:shared_with_me')}
+            >
+              <GppGoodRoundedIcon fontSize="small" />
+            </Tooltip>
           </Box>
         )}
       </ListItemButton>
