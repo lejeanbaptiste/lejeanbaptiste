@@ -64,7 +64,7 @@ export const useMenu = () => {
       label: t('save'),
       onTrigger: () => (!resource?.provider ? handleSave('saveAs') : handleSave()),
       shortcut: ' ⌘S',
-      tootipText: cloudDisabledMessage,
+      tooltipText: cloudDisabledMessage,
     },
     {
       disabled:
@@ -75,7 +75,7 @@ export const useMenu = () => {
       label: `${t('save_as')}...`,
       onTrigger: () => handleSave('saveAs'),
       shortcut: ' ⌘⌥⇧S',
-      tootipText: cloudDisabledMessage,
+      tooltipText: cloudDisabledMessage,
     },
     {
       hide: readonly,

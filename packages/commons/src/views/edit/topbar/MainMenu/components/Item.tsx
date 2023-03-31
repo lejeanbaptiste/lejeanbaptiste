@@ -15,7 +15,7 @@ export interface ItemProps<D = {}> extends MenuItemProps {
   onTrigger?: (data?: any) => void;
   shortcut?: string;
   type?: ItemType;
-  tootipText?: string | React.ReactNode;
+  tooltipText?: string | React.ReactNode;
 }
 
 export const Item = ({
@@ -28,7 +28,7 @@ export const Item = ({
   onTrigger,
   shortcut,
   type = 'menuItem',
-  tootipText,
+  tooltipText,
   sx,
   ...props
 }: ItemProps) => {
@@ -60,7 +60,7 @@ export const Item = ({
       transition={{ type: 'tween' }}
       overflow="hidden"
     >
-      <StyledToolTip arrow placement="right" title={disabled && tootipText ? tootipText : ''}>
+      <StyledToolTip arrow placement="right" title={disabled && tooltipText ? tooltipText : ''}>
         <span>
           <MenuItem
             {...props}
