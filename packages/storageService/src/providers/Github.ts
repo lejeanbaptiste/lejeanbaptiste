@@ -454,7 +454,11 @@ export default class Github implements Provider {
   }: Types.RepoContentParams) {
     if (!owner || !repo) return null;
 
-    const result = await this.octokit.repos.getContent({ owner, path, ref, repo });
+    const result = await this.octokit.repos
+      .getContent({ owner, path, ref, repo })
+      .catch(() => null);
+
+    if (!result) return null;
     if (!('type' in result.data)) return null;
 
     const { download_url, sha } = result.data;
