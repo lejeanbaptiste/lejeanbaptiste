@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { formatDistance } from 'date-fns';
+import { AnimatePresence } from 'framer-motion';
 import React, { useState } from 'react';
 import { useActions, useAppState } from '../../../../overmind';
 import type { Content as ContentProps } from '../../../../types';
@@ -63,13 +64,18 @@ export const Content = ({ content }: Props) => {
   };
 
   const handleSecondaryActionClick = async () => {
-    const latestCommit = await getLatestCommit(path);
-    if (latestCommit?.date) {
-      latestCommit.relativeDate = formatDistance(Date.parse(latestCommit.date), new Date(), {
+    if (latestCommit) {
+      setLatestCommig(null);
+      return;
+    }
+
+    const commit = await getLatestCommit(path);
+    if (commit?.date) {
+      commit.relativeDate = formatDistance(Date.parse(commit.date), new Date(), {
         addSuffix: true,
       });
     }
-    setLatestCommig(latestCommit);
+    setLatestCommig(commit);
   };
 
   return (
@@ -79,8 +85,7 @@ export const Content = ({ content }: Props) => {
       disableGutters
       divider
       secondaryAction={
-        selectedItem?.path === path &&
-        !latestCommit && (
+        selectedItem?.path === path && (
           <IconButton
             data-testid="secondary-button"
             edge="end"
@@ -114,7 +119,13 @@ export const Content = ({ content }: Props) => {
         <ListItemText
           disableTypography
           primary={<Typography>{name}</Typography>}
-          secondary={latestCommit && <ContentDetails latestCommit={latestCommit} />}
+          secondary={
+            latestCommit && (
+              <AnimatePresence mode="wait">
+                <ContentDetails latestCommit={latestCommit} />
+              </AnimatePresence>
+            )
+          }
         />
       </ListItemButton>
     </ListItem>
