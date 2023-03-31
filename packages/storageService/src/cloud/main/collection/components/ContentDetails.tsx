@@ -1,4 +1,5 @@
-import { Box, Link, Typography } from '@mui/material';
+import { Link, Stack, Typography } from '@mui/material';
+import { motion, type Variants } from 'framer-motion';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LatestCommit } from '../../../../types/Provider';
@@ -9,10 +10,23 @@ interface ContentDetailsProps {
 
 export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
   const { t } = useTranslation();
+
+  const variants: Variants = {
+    initial: { height: 0 },
+    visible: { height: 'auto' },
+  };
   return (
-    <Box data-testid="content-details" pt={0.25}>
-      <Typography paragraph variant="caption">
-        {t('Last_Modified')}:{' '}
+    <Stack
+      component={motion.div}
+      variants={variants}
+      initial="initial"
+      animate="visible"
+      exit="initial"
+      data-testid="content-details"
+      pt={0.25}
+    >
+      <Typography sx={{ '&::first-letter': { textTransform: 'uppercase' } }}>
+        <Typography variant="caption">{t('commons:last_modified').toString()}: </Typography>
         <Typography color="text.secondary" title={latestCommit.date} variant="caption">
           {latestCommit.relativeDate} {t('by')}{' '}
         </Typography>
@@ -46,6 +60,6 @@ export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
           {t('view_source')}
         </Typography>
       </Typography>
-    </Box>
+    </Stack>
   );
 };
