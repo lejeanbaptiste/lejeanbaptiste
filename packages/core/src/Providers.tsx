@@ -1,4 +1,4 @@
-import { ThemeProvider, useMediaQuery } from '@mui/material';
+import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
 import ModalProvider from 'mui-modal-provider';
 import { SnackbarProvider } from 'notistack';
 import React, { useEffect } from 'react';
@@ -19,6 +19,7 @@ const Providers = (props: LeafWriterOptions) => {
 
   return (
     <ThemeProvider theme={theme(darkMode)}>
+      <CssBaseline enableColorScheme />
       <ModalProvider>
         <SnackbarProvider>
           <App {...props} />
