@@ -1,6 +1,7 @@
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import GppGoodRoundedIcon from '@mui/icons-material/GppGoodRounded';
+import { Box, Button, Stack, Tooltip, Typography } from '@mui/material';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CrumbProps {
   color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
@@ -21,6 +22,8 @@ export const Crumb = ({
   onClick,
   writePermission,
 }: CrumbProps) => {
+  const { t } = useTranslation();
+
   const handleClick = () => onClick(level);
 
   return (
@@ -51,7 +54,16 @@ export const Crumb = ({
             {name}
           </Button>
         )}
-        {writePermission && <AdminPanelSettingsIcon sx={{ width: 16, height: 16, mb: 0.5 }} />}
+        {writePermission && (
+          <Tooltip
+            componentsProps={{
+              tooltip: { sx: { '&::first-letter': { textTransform: 'uppercase' } } },
+            }}
+            title={t('cloud:shared_with_me')}
+          >
+            <GppGoodRoundedIcon sx={{ width: 16, height: 16, mb: 0.5 }} />
+          </Tooltip>
+        )}
       </Stack>
     </Box>
   );
