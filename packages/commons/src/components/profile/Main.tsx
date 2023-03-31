@@ -172,7 +172,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
                   </ListItemIcon>
                   <ListItemText
                     primary={label}
-                    sx={{ ':first-letter': { textTransform: 'uppercase' } }}
+                    sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                   />
                   {secondaryIcon && <Icon component={getIcon(secondaryIcon)} fontSize="small" />}
                 </ListItemButton>

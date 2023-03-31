@@ -127,7 +127,7 @@ export const useLeafWriter = () => {
         severity: 'error',
         label: `${t('storage:invalid_request')}`,
         Message: () => (
-          <Typography sx={{ ':first-letter': { textTransform: 'uppercase' } }}>
+          <Typography sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
             {message}
           </Typography>
         ),
