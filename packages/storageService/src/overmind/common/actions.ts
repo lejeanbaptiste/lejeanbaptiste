@@ -167,6 +167,8 @@ export const setResource = (
   if (!filename) filename = common.resource?.filename;
   if (!hash) hash = common.resource?.hash;
 
+  const writePermission = provider ? cloud.repository?.writePermission : undefined;
+
   const updateResource: Resource = {
     provider,
     ownertype,
@@ -177,6 +179,7 @@ export const setResource = (
     content,
     hash,
     url,
+    writePermission,
   };
 
   state.common.resource = updateResource;

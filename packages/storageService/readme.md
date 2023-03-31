@@ -51,7 +51,7 @@ Extra features:
 
 ## Demo
 
-The [LEAF-Writer Commons](LINK) is running an instance of [LEAF-Writer](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/core) that uses the NPM package published from this repository.
+The [LEAF-Writer Commons](https://leaf-writer.leaf-vre.org/) is running an instance of [LEAF-Writer](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/core) that uses the NPM package published from this repository.
 
 ## Use
 
@@ -171,6 +171,7 @@ export const MyFStorageDialog = () => {
         ownertype: 'user',
         repo: 'repository_name_or_id',
         path: 'path/to/documents',
+        writePermission: true,
       }
       open={open}
       source="cloud"
@@ -351,28 +352,29 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 
 ### StorageDialogConfig
 
-| Name                 | Type                   | Default  | Description                                                                                                                                                                                                                                              |
-| -------------------- | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name                 | Type                   | Default  | Description                                                                                                                                                                                                       |
+| -------------------- | ---------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | allowedMimeTypes     | Array [`MIMEType`]     | []       | Restrict the file types  allowed. Empty array means no restriction.<br /> <br /> MIME type suported: `'application/json'`, `'application/pdf'`, `'application/xml'`, `'text/csv'`, `'text/html'`, `'text/plain'`. |
-| allowPaste           | boolean                | true     | `Load dialog`: Allows paste from clipboard.                                                                                                                                                                                                              |
-| defaultCommitMessage | string                 | 'update' | `Save Dialog`: Defines the default commit message.                                                                                                                                                                                                       |
-| providers            | Array [`ProviderAuth`] | []       | Setup Github / Gitlab providers.<br /> <br /> `ProviderAuth`: {<br />name: 'github' \| 'gitlab',<br /> access_token: 'string<br />}                                                                                                                      |
-| preferProvider       | string                 |          | The preferred git host provider: `'github'` \| `'gitlab'`                                                                                                                                                                                                |
-| showInvisibleFiles   | boolean                | false    | Show/hide invisible files (files starting with `'.'`)                                                                                                                                                                                                    |
-| validate             | function               |          | Function fired after the content is fetched but before passed to onLoad funcion.<br /> <br /> **Signature**: `function(content: string) => { valid: boolean; error?: string };`                                                                          |
+| allowPaste           | boolean                | true     | `Load dialog`: Allows paste from clipboard.                                                                                                                                                                       |
+| defaultCommitMessage | string                 | 'update' | `Save Dialog`: Defines the default commit message.                                                                                                                                                                |
+| providers            | Array [`ProviderAuth`] | []       | Setup Github / Gitlab providers.<br /> <br /> `ProviderAuth`: {<br />name: 'github' \| 'gitlab',<br /> access_token: 'string<br />}                                                                               |
+| preferProvider       | string                 |          | The preferred git host provider: `'github'` \| `'gitlab'`                                                                                                                                                         |
+| showInvisibleFiles   | boolean                | false    | Show/hide invisible files (files starting with `'.'`)                                                                                                                                                             |
+| validate             | function               |          | Function fired after the content is fetched but before passed to onLoad funcion.<br /> <br /> **Signature**: `function(content: string) => { valid: boolean; error?: string };`                                   |
 
 ### Resource
 
-| Name      | Type   | Default | Description                                                                                                                                                                       |
-| --------- | ------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| provider  | string |         | `'github'`, `'gitlab'`, or empty if not from the git repository.                                                                                                                      |
-| owner     | string |         | Github `username` or Gitlab: `user id`.                                                                                                                                           |
-| ownertype | string |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation.                                                                                                               |
-| repo      | string |         | Github `repository name`. Gitlab `repository id`.                                                                                                                                 |
-| path      | string |         | Folder structure. *e.g.*, `'path/to/file'`.                                                                                                                                       |
-| filename  | string |         | The file name.                                                                                                                                                                    |
-| content   | string |         | The document content.                                                                                                                                                             |
+| Name      | Type   | Default | Description                                                                                                                                                              |
+| --------- | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| provider  | string |         | `'github'`, `'gitlab'`, or empty if not from the git repository.                                                                                                         |
+| owner     | string |         | Github `username` or Gitlab: `user id`.                                                                                                                                  |
+| ownertype | string |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation.                                                                                                      |
+| repo      | string |         | Github `repository name`. Gitlab `repository id`.                                                                                                                        |
+| path      | string |         | Folder structure. *e.g.*, `'path/to/file'`.                                                                                                                              |
+| filename  | string |         | The file name.                                                                                                                                                           |
+| content   | string |         | The document content.                                                                                                                                                    |
 | hash      | string |         | The Commit hash. On **Github**, it is the SHA value. On **Gitlab**, it is the lastCommitId. If present, the dialog alerts the user that the content will be overwritten. |
+| writePermission      | boolean |         | Indicates if the loged user has write permission for the repository. Default: `undefined` for owned repositories. |
 
 ## Development
 

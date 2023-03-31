@@ -58,6 +58,7 @@ export interface Resource {
   content?: string;
   hash?: string;
   url?: string;
+  writePermission?: boolean;
 }
 
 export interface SourcePanelOption {
