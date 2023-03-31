@@ -1,6 +1,7 @@
 import SearchIcon from '@mui/icons-material/Search';
 import { Box, IconButton, Stack, Typography } from '@mui/material';
 import { AnimatePresence } from 'framer-motion';
+import { debounce } from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../overmind';
@@ -63,11 +64,19 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
     onSelect(username);
   }, [owner]);
 
+  const fetch = debounce(
+    (value: string) => {
+      const owner = getPublicRepository(value);
+      if (!owner) return log.warn('public repository not found');
+      onSelect(owner.username);
+      setOwner(owner);
+    },
+    500,
+    { leading: true, trailing: false }
+  );
+
   const handleClick = (value: string) => {
-    const owner = getPublicRepository(value);
-    if (!owner) return log.warn('public repository not found');
-    onSelect(owner.username);
-    setOwner(owner);
+    fetch(value);
   };
 
   const handleDelete = (value: string) => removePublicRepository(value);
