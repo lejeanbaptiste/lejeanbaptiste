@@ -4,11 +4,11 @@ import i18next from '../../i18n';
 import type {
   AllowedMimeType,
   DialogType,
-  SelectedItem,
-  Validate,
   Resource,
+  SelectedItem,
   StorageDialogConfig,
   StorageSource,
+  Validate,
 } from '../../types';
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
@@ -124,7 +124,7 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: error ?? `${i18next.t('error:message:document_not_valid')}`,
+          title: error ?? `${i18next.t('message:document_not_valid')}`,
         },
       });
       if (state.common.resource) state.common.resource.filename = undefined;

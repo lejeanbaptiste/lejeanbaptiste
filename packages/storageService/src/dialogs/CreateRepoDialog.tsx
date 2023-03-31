@@ -58,7 +58,7 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: `${t('error:message:repo_creation_error')}`,
+          title: `${t('cloud:message:repo_creation_error')}`,
           onClose: () => setIsLoading(false),
         },
       });

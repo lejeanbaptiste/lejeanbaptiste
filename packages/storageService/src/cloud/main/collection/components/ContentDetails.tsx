@@ -28,7 +28,7 @@ export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
       <Typography sx={{ '&::first-letter': { textTransform: 'uppercase' } }}>
         <Typography variant="caption">{t('commons:last_modified').toString()}: </Typography>
         <Typography color="text.secondary" title={latestCommit.date} variant="caption">
-          {latestCommit.relativeDate} {t('by')}{' '}
+          {latestCommit.relativeDate} {t('commons:by')}{' '}
         </Typography>
         <Typography
           color="text.secondary"
@@ -41,8 +41,8 @@ export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
           {latestCommit.authorName}
         </Typography>
       </Typography>
-      <Typography paragraph variant="caption">
-        {t('Message')}:{' '}
+      <Typography sx={{ '&::first-letter': { textTransform: 'uppercase' } }}>
+        <Typography variant="caption">{t('commons:message')}: </Typography>
         <Typography color="text.secondary" data-testid="message" variant="caption">
           {latestCommit.message}{' '}
         </Typography>
@@ -57,7 +57,7 @@ export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
           underline="hover"
           variant="caption"
         >
-          {t('view_source')}
+          {t('cloud:view_source')}
         </Typography>
       </Typography>
     </Stack>

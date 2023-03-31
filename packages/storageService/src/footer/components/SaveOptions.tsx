@@ -88,13 +88,7 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
           <ArrowDropDownIcon />
         </Button>
       </ButtonGroup>
-      <Popper
-        open={open}
-        anchorEl={anchor.current}
-        role={undefined}
-        transition
-        disablePortal
-      >
+      <Popper open={open} anchorEl={anchor.current} role={undefined} transition disablePortal>
         {({ TransitionProps, placement }) => (
           <Grow
             {...TransitionProps}
@@ -111,7 +105,7 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
                       onClick={() => handleSelect(index, value)}
                       selected={index === selectedIndex}
                       sx={{ textTransform: 'uppercase' }}
-                    >ƒ
+                    >
                       {label}
                     </MenuItem>
                   ))}

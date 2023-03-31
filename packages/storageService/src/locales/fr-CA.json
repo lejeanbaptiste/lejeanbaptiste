@@ -1,18 +1,11 @@
 {
-  "Last_Modified": "Dernière modification",
-  "Message": "Message",
-  "by": "par",
-  "cancel": "annuler",
   "cloud": {
     "breadcrumbs": {
       "branch": "Branche",
       "filename": "nom de fichier",
       "folder": "Dossier",
-      "groups": "groupes",
       "organizations": "organisations",
       "owner": "Propriétaire",
-      "project": "Projet",
-      "projects": "Projets",
       "repositories": "Dépôt",
       "repository": "Dépôts"
     },
@@ -24,17 +17,28 @@
     },
     "create_folder": "Créer un dossier",
     "folder_name": "Nom du dossier",
+    "forking": "bifurquer",
     "loading_more": "chargement plus",
     "mainMenu": {
-      "groups": "Groupes",
-      "my_projects": "Mes projets",
       "my_repositories": "Mes dépôts",
-      "organizations": "Organisations",
-      "shared_with_me": "Partagé avec moi"
+      "organizations": "Organisations"
+    },
+    "message": {
+      "Do_you_want_to_overwrite": "Voulez-vous écraser",
+      "create_merge_request": "Création d'une demande de fusion",
+      "file_already_exists": "Le fichier existe déjà",
+      "folder_creation_error": "Erreur de création de dossier",
+      "forking_can_take_minutes": "Forger un dépôt peut prendre plusieurs minutes",
+      "repo_creation_error": "Erreur de création du référentiel",
+      "unable_create_branch": "impossible de créer une nouvelle branche",
+      "unable_fork_repo": "dépôt de fourche impossible",
+      "unable_pull_reqest": "demande d'extraction impossible",
+      "unable_save_document_on_fork": "impossible d'enregistrer le document sur la fourche",
+      "unable_save_on_branch": "impossible d'enregistrer sur la branche",
+      "unable_to_overwrite_file": "impossible d'écraser le fichier",
+      "unabled_to_save": "impossible de sauvegarder"
     },
     "messages": {
-      "create_merge_request": "Création d'une demande de fusion",
-      "forking_can_take_minutes": "Forking d'un référentiel peut prendre plusieurs minutes. Soyez patient."
     },
     "publicRepositories": {
       "public_repositories": "Dépôts publics",
@@ -51,57 +55,40 @@
       "done": "Fait",
       "save_settings": "Enregistrer les paramètres",
       "update": "mettre à jour"
-    }
+    },
+    "shared_with_me": "partagé avec moi",
+    "user_not_found": "utilisateur non trouvé",
+    "view_source": "voir la source"
   },
   "commons": {
+    "by": "par",
     "cancel": "Annuler",
+    "conflict": "conflit",
     "create": "Créer",
     "empty": "vide",
+    "error": "erreur",
     "from_your_computer": "depuis votre ordinateur",
+    "last_modified": "dernière modification",
     "load": "Charger",
+    "message": "message",
     "messages": {
-      "saving_document": "Enregistrement du document"
     },
     "name": "nom",
-    "no": "non",
     "open": "ouvert",
+    "overwrite": "écraser",
+    "path_not_found": "chemin introuvable",
     "private": "Privé",
     "processing": "Traitement",
     "save": "Enregistrer",
-    "settings": "réglages",
+    "settings": "paramètres",
     "show_less": "Afficher moins",
-    "show_more": "Afficher plus",
-    "yes": "oui"
+    "show_more": "Afficher plus"
   },
   "error": {
-    "conflict": "conflit",
-    "loading error": "erreur de chargement",
     "message": {
-      "conflictFIle": "Conflit trouvé. Impossible d'écraser le fichier.",
-      "document_not_valid": "Document non valide",
-      "file_not_found": "Impossible de trouver la ressource demandée. Fichier '{{file}}' introuvable.",
-      "folder_creation_error": "Erreur de création de dossier",
-      "loading error": "Erreur de chargement",
-      "overwriteFileConfirmation": "Le fichier existe déjà. Voulez-vous l'écraser ?",
-      "path_not_found": "Impossible de trouver la ressource demandée. Le chemin de {{repository}} '{{path}}' n'a pas été trouvé",
-      "repo_creation_error": "Erreur de création du dépôt",
-      "repository_not_found": "Impossible de trouver la ressource demandée. Le référentiel de {{username}}' '{{repository}}' introuvable.",
-      "unableToSave": "Une erreur s'est produite. Enregistrement impossible.",
-      "unable_create_branch": "Impossible de créer une nouvelle branche",
-      "unable_fork_repo": "Impossible de forker le dépôt",
-      "unable_pull_reqest": "Impossible de créer une pull request",
-      "unable_save_document_on_fork": "Impossible d'enregistrer le document sur le fork {{fork}}",
-      "unable_save_on_branch": "Impossible d'enregistrer le document sur la branche {{branch}}",
-      "unable_to_upload_file": "{{filename}}.",
-      "user_not_found": "Impossible de télécharger le fichier '{{username}}' "
     },
-    "path not found": "Chemin non trouvé",
     "title": {
-      "error": "Erreur",
-      "warning": "Avertissement"
-    },
-    "unable to overwrite file": "impossible d'écraser le fichier",
-    "unabled to save": "impossible de sauvegarder"
+    }
   },
   "footer": {
     "download": "télécharger",
@@ -110,26 +97,22 @@
     "save_as_pull_request": "Enregistrer et Pull Request"
   },
   "leafwriter-storage-service": {
-    "Do you want to overwrite": "Voulez-vous écraser",
-    "Storage provider not defined": "Fournisseur de stockage non défini",
-    "cancel": "annuler",
-    "error": "Erreur",
-    "forking": "bifurquer",
-    "loading error": "erreur de chargement",
-    "overwrite": "écraser",
-    "path not found": "Chemin non trouvé",
-    "user not found": "Utilisateur non trouvé"
   },
-  "loading error": "Erreur de chargement",
   "local": {
     "drag_drop": "Cliquez ou faites glisser 'n' drop pour télécharger un fichier",
+    "message": {
+      "unable_to_upload_file": "incapable de télécharger le fichier"
+    },
     "paste_document_here": "Coller le document ici"
   },
-  "not found": "pas trouvé",
-  "overwrite": "écraser",
-  "path not found": "Chemin non trouvé",
+  "message": {
+    "be_patient": "être patient",
+    "document_not_valid": "document non valide"
+  },
+  "messages": {
+    "saving_document": "enregistrement du document"
+  },
   "settings": {
     "allow_all_files": "Autoriser tous les fichiers"
-  },
-  "view_source": "voir la source"
+  }
 }

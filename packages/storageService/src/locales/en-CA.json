@@ -1,18 +1,11 @@
 {
-  "Last_Modified": "Last Modified",
-  "Message": "Message",
-  "by": "by",
-  "cancel": "cancel",
   "cloud": {
     "breadcrumbs": {
       "branch": "Branch",
       "filename": "filename",
       "folder": "Folder",
-      "groups": "groups",
       "organizations": "organizations",
       "owner": "Owner",
-      "project": "Project",
-      "projects": "Projects",
       "repositories": "Repositories",
       "repository": "Repository"
     },
@@ -24,17 +17,26 @@
     },
     "create_folder": "Create Folder",
     "folder_name": "Folder name",
+    "forking": "forking",
     "loading_more": "loading more",
     "mainMenu": {
-      "groups": "Groups",
-      "my_projects": "My Projects",
       "my_repositories": "My Repositories",
-      "organizations": "Organizations",
-      "shared_with_me": "Shared with me"
+      "organizations": "Organizations"
     },
-    "messages": {
+    "message": {
+      "Do_you_want_to_overwrite": "Do you want to overwrite",
       "create_merge_request": "Creating Merge Resquest",
-      "forking_can_take_minutes": "Forking a repository can take several minutes. Be patient."
+      "file_already_exists": "File already exists",
+      "folder_creation_error": "Folder creation error",
+      "forking_can_take_minutes": "Forking a repository can take several minutes",
+      "repo_creation_error": "Repositoy creation error",
+      "unable_create_branch": "unable to create a new branch",
+      "unable_fork_repo": "unable fork repo",
+      "unable_pull_reqest": "unable pull reqest",
+      "unable_save_document_on_fork": "unable save document on fork",
+      "unable_save_on_branch": "unable save on branch",
+      "unable_to_overwrite_file": "unable to overwrite file",
+      "unabled_to_save": "unabled to save"
     },
     "publicRepositories": {
       "public_repositories": "Public Repositories",
@@ -51,57 +53,32 @@
       "done": "Done",
       "save_settings": "Save Settings",
       "update": "update"
-    }
+    },
+    "shared_with_me": "shared with me",
+    "user_not_found": "user not found",
+    "view_source": "view source"
   },
   "commons": {
+    "by": "by",
     "cancel": "Cancel",
+    "conflict": "conflict",
     "create": "Create",
     "empty": "Empty",
+    "error": "error",
     "from_your_computer": "from your computer",
+    "last_modified": "last modified",
     "load": "Load",
-    "messages": {
-      "saving_document": "Saving document"
-    },
+    "message": "message",
     "name": "Name",
-    "no": "no",
     "open": "open",
+    "overwrite": "overwrite",
+    "path_not_found": "path not found",
     "private": "Private",
     "processing": "Processing",
     "save": "Save",
     "settings": "settings",
     "show_less": "Show less",
-    "show_more": "Show more",
-    "yes": "yes"
-  },
-  "error": {
-    "conflict": "conflict",
-    "loading error": "loading error",
-    "message": {
-      "conflictFIle": "Conflict",
-      "document_not_valid": "Document not valid",
-      "file_not_found": "Could not found the requested resource. File '{{file}}' not found.",
-      "folder_creation_error": "Folder creation error",
-      "loading error": "Loading error",
-      "overwriteFileConfirmation": "File already exists",
-      "path_not_found": "Could not found the requested resource. {{repository}}'s path '{{path}}' not found.",
-      "repo_creation_error": "Repositoy creation error",
-      "repository_not_found": "<0>{{user}}'s</0><1> repository </1><2>{{repo}}</2><3> not found</3>",
-      "unableToSave": "Something went wrong. Unabled to save.",
-      "unable_create_branch": "Unable to create a new branch",
-      "unable_fork_repo": "Unable to fork the repository",
-      "unable_pull_reqest": "Unable to create a pull request",
-      "unable_save_document_on_fork": "Unable to save document on the fork {{fork}}",
-      "unable_save_on_branch": "Unable to save document on the branch {{branch}}",
-      "unable_to_upload_file": "Unable to upload the file {{filename}}.",
-      "user_not_found": "<0>Document's owner</0><1>{{user}}</1> <2>not found</2>"
-    },
-    "path not found": "Path not found",
-    "title": {
-      "error": "Error",
-      "warning": "Warning"
-    },
-    "unable to overwrite file": "unable to overwrite file",
-    "unabled to save": "unabled to save"
+    "show_more": "Show more"
   },
   "footer": {
     "download": "download",
@@ -109,27 +86,21 @@
     "pasteXml": "paste XML",
     "save_as_pull_request": "save as pull request"
   },
-  "leafwriter-storage-service": {
-    "Do you want to overwrite": "Do you want to overwrite",
-    "Storage provider not defined": "Storage provider not defined",
-    "cancel": "cancel",
-    "error": "error",
-    "forking": "forking",
-    "loading error": "loading error",
-    "overwrite": "overwrite",
-    "path not found": "Path not found",
-    "user not found": "User not found"
-  },
-  "loading error": "Loading Error",
   "local": {
     "drag_drop": "Click or Drag 'n' drop to upload a file",
+    "message": {
+      "unable_to_upload_file": "unable to upload file"
+    },
     "paste_document_here": "Paste document here"
   },
-  "not found": "not found",
-  "overwrite": "overwrite",
-  "path not found": "Path not found",
+  "message": {
+    "be_patient": "be patient",
+    "document_not_valid": "document not valid"
+  },
+  "messages": {
+    "saving_document": "saving document"
+  },
   "settings": {
     "allow_all_files": "Allow all files"
-  },
-  "view_source": "view source"
+  }
 }

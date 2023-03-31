@@ -84,6 +84,7 @@ export const SideButton = ({
             span: {
               color: active ? palette.primary.main : 'inherit',
               fontWeight: active ? 600 : 400,
+              '&::first-letter': { textTransform: 'uppercase' },
             },
           }}
         />

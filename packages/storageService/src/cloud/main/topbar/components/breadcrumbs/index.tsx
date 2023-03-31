@@ -46,7 +46,9 @@ export const Breadcrumbs = () => {
         sx={{ '& ol': { alignItems: 'flex-end' } }}
       >
         {collectionType === 'organizations' && (
-          <Typography mt={2}>{t('cloud:breadcrumbs:organizations')}</Typography>
+          <Typography mt={2} sx={{ textTransform: 'capitalize' }}>
+            {t('cloud:breadcrumbs:organizations')}
+          </Typography>
         )}
 
         {collectionType === 'repos' && collectionSource === 'organization' && (
@@ -67,7 +69,9 @@ export const Breadcrumbs = () => {
           />
         ) : (
           collectionType === 'repos' && (
-            <Typography mt={2}>{t('cloud:breadcrumbs:repositories')}</Typography>
+            <Typography mt={2} sx={{ textTransform: 'capitalize' }}>
+              {t('cloud:breadcrumbs:repositories')}
+            </Typography>
           )
         )}
 
