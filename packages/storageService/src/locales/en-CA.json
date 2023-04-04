@@ -1,4 +1,8 @@
 {
+  "clod": {
+    "message": {
+    }
+  },
   "cloud": {
     "breadcrumbs": {
       "branch": "Branch",
@@ -26,17 +30,28 @@
     "message": {
       "Do_you_want_to_overwrite": "Do you want to overwrite",
       "create_merge_request": "Creating Merge Resquest",
+      "document_filename_undefined": "Document's filename is undefined",
+      "document_has_no_content": "Document has no content",
+      "document_not_found": "Document no found",
+      "document_owner_type_undefined": "Document's owner type is undefined",
+      "document_owner_undefined": "Document's owner is undefined",
       "file_already_exists": "File already exists",
       "folder_creation_error": "Folder creation error",
       "forking_can_take_minutes": "Forking a repository can take several minutes",
       "repo_creation_error": "Repositoy creation error",
+      "repository_not_found": "Repository not found",
+      "repository_undefined": "Repository undefined",
+      "something_went_wrong": "Something went wrong",
+      "storage_provider_not_supported": "Storage provider not supported",
+      "storage_provider_undefined": "Storage provider undefined",
       "unable_create_branch": "unable to create a new branch",
       "unable_fork_repo": "unable fork repo",
       "unable_pull_reqest": "unable pull reqest",
       "unable_save_document_on_fork": "unable save document on fork",
       "unable_save_on_branch": "unable save on branch",
       "unable_to_overwrite_file": "unable to overwrite file",
-      "unabled_to_save": "unabled to save"
+      "unabled_to_save": "unabled to save",
+      "user_has_no_write_permission": "User has no permission to save a document in this repository"
     },
     "publicRepositories": {
       "public_repositories": "Public Repositories",
@@ -95,9 +110,7 @@
   },
   "message": {
     "be_patient": "be patient",
-    "document_not_valid": "document not valid"
-  },
-  "messages": {
+    "document_not_valid": "document not valid",
     "saving_document": "saving document"
   },
   "settings": {

@@ -13,7 +13,7 @@ const i18n = i18next.createInstance(
     lng: 'en-CA',
     fallbackLng: 'en-CA',
     ns: ['commons'],
-    defaultNS: 'commons',
+    defaultNS: 'cloud',
     react: { useSuspense: false },
     // interpolation: { escapeValue: false },
     // debug: true,

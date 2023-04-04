@@ -1,6 +1,8 @@
+import i18next from './i18n';
 import type { Error, Repository, Resource } from './types';
 import { isErrorMessage } from './types';
 import Provider, { ProviderAuth } from './types/Provider';
+import { updateTranslation } from './utilities';
 
 let provider: Provider | null;
 
@@ -13,24 +15,38 @@ interface GetFileLatestHashParams {
 export type { Error, Resource } from './types';
 
 export const loadDocument = async (providerAuth: ProviderAuth, resource: Resource) => {
+  updateTranslation();
+
   const { provider: providerName, owner, ownertype, repo, filename } = resource;
   let { path } = resource;
 
-  if (!providerName) return { error: 'Document provider undefined' };
-  if (!owner) return { error: "Document's owner undefined" };
-  if (!ownertype) return { error: "Document's ownertype undefined" };
-  if (!repo) return { error: "Document's repository undefined" };
+  if (!providerName) {
+    return { type: 'error', message: i18next.t('cloud:message:storage_provider_undefined') };
+  }
+  if (!owner) {
+    return { type: 'error', message: i18next.t('cloud:message:document_owner_undefined') };
+  }
+  if (!ownertype) {
+    return { type: 'error', message: i18next.t('cloud:message:document_owner_type_undefined') };
+  }
+  if (!repo) return { type: 'error', message: i18next.t('cloud:message:repository_undefined') };
   if (!path) path = '';
-  if (!filename) return { error: "Document's filename undefined" };
+  if (!filename) {
+    return { type: 'error', message: i18next.t('cloud:message:document_filename_undefined') };
+  }
 
   provider = await initializeProvider(providerAuth);
-  if (!provider) return { error: 'Provider not supported' };
+  if (!provider) {
+    return { type: 'error', message: i18next.t('cloud:message:storage_provider_not_supported') };
+  }
 
   const repository = await provider
     .getRepo({ username: owner, repoId: repo, repoName: repo })
     .catch(() => null);
 
-  if (!repository) return { error: "Document's repositoty not found" };
+  if (!repository) {
+    return { type: 'error', message: i18next.t('cloud:message:repository_not_found') };
+  }
 
   const filePath = path === '' ? filename : `${path}/${filename}`;
 
@@ -41,7 +57,7 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
     path: filePath,
     branch: repository.default_branch,
   });
-  if (!document) return { error: 'Document not found' };
+  if (!document) return { type: 'error', message: i18next.t('cloud:message:document_not_found') };
 
   const documentResource = {
     provider: providerName,
@@ -61,26 +77,41 @@ export const saveDocument = async (
   resource: Resource,
   overwrite = false
 ): Promise<Resource | Error> => {
+  updateTranslation();
+  
   const { provider: providerName, owner, ownertype, repo, filename, content, hash } = resource;
   let { path } = resource;
 
-  if (!providerName) return { type: 'error', message: 'Document provider not defined' };
-  if (!owner) return { type: 'error', message: "Document's owner not defined" };
-  if (!ownertype) return { type: 'error', message: "Document's ownertype not defined" };
-  if (!repo) return { type: 'error', message: "Document's repository not defined" };
+  if (!providerName) {
+    return { type: 'error', message: i18next.t('cloud:message:storage_provider_undefined') };
+  }
+  if (!owner) {
+    return { type: 'error', message: i18next.t('cloud:message:document_owner_undefined') };
+  }
+  if (!ownertype) {
+    return { type: 'error', message: i18next.t('cloud:message:document_owner_type_undefined') };
+  }
+  if (!repo) return { type: 'error', message: i18next.t('cloud:message:repository_undefined') };
 
   if (!path) path = '';
 
-  if (!filename) return { type: 'error', message: "Document's filename not defined" };
-  if (!content) return { type: 'error', message: 'Document has not content' };
+  if (!filename) {
+    return { type: 'error', message: i18next.t('cloud:message:document_filename_undefined') };
+  }
+  if (!content) {
+    return { type: 'error', message: i18next.t('cloud:message:document_has_no_content') };
+  }
 
   provider = await initializeProvider(providerAuth);
-  if (!provider) return { type: 'error', message: 'Provider not supported' };
+  if (!provider)
+    return { type: 'error', message: i18next.t('cloud:message:storage_provider_not_supported') };
 
   const repository = await provider
     .getRepo({ username: owner, repoId: repo, repoName: repo })
     .catch(() => null);
-  if (!repository) return { type: 'error', message: "Document's repositoty not found" };
+  if (!repository) {
+    return { type: 'error', message: i18next.t('cloud:message:repository_not_found') };
+  }
 
   const filePath = path === '' ? filename : `${path}/${filename}`;
 
@@ -96,14 +127,19 @@ export const saveDocument = async (
   if (!hasPermission) {
     return {
       type: 'error',
-      message: 'User has no permission to save a document in this repository',
+      message: i18next.t('cloud:message:user_has_no_write_permission'),
     };
   }
 
   //check file exist
   const fileLatestHash = await getFileLatestHash({ filePath, repository, owner });
   if (fileLatestHash === hash && !overwrite) {
-    return { type: 'error', message: 'File already exists. Unable to overwrite.' };
+    return {
+      type: 'error',
+      message: `${i18next.t('cloud:message:file_already_exists')}. ${i18next.t(
+        'cloud:message:unable_to_overwrite_file'
+      )}.`,
+    };
   }
 
   //save
@@ -118,7 +154,13 @@ export const saveDocument = async (
     hash: fileLatestHash ?? undefined,
   });
 
-  if (!response) return { type: 'error', message: 'Something went wrong. Unabled to save.' };
+  if (!response)
+    return {
+      type: 'error',
+      message: `${i18next.t('cloud:message:something_went_wrong')}. ${i18next.t(
+        'cloud:message:unabled_to_save'
+      )}.`,
+    };
   if (isErrorMessage(response)) return { type: response.type, message: response.message };
 
   const documentResource = {
