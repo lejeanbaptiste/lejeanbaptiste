@@ -1,8 +1,8 @@
 import Dexie, { Table } from 'dexie';
 
 export interface SuspendedDocument {
-  id?: number;
   content: string;
+  uuid: string;
 }
 
 export class DexieDB extends Dexie {
@@ -11,7 +11,7 @@ export class DexieDB extends Dexie {
   constructor() {
     super('LEAF-Writer');
     this.version(1).stores({
-      suspendedDocument: '++id', // Primary key and indexed props
+      suspendedDocument: 'uuid', // Primary key and indexed props
     });
   }
 }

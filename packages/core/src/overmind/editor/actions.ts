@@ -154,15 +154,18 @@ export const setAutosave = ({ state }: Context, value?: boolean) => {
   state.editor.autosave = value;
 };
 
-export const suspendLWChangeEvent = async ({ state, actions }: Context, value: boolean) => {
+export const suspendLWChangeEvent = async ({ state }: Context, value: boolean) => {
+  if (!window.writer?.editor) return;
+
+  const { uuid } = window.writer;
   state.editor.LWChangeEventSuspended = value;
 
   if (value) {
     const content = await window.writer.getContent();
     if (typeof content !== 'string') return;
-    await db.suspendedDocument.add({ content });
+    await db.suspendedDocument.put({ content, uuid }, uuid);
   } else {
-    await db.suspendedDocument.clear();
+    await db.suspendedDocument.delete(uuid);
     state.editor.contentHasChanged = true;
   }
 };
@@ -266,7 +269,7 @@ export const addSchema = ({ state, effects }: Context, newSchema: Omit<Schema, '
   state.editor.schemas[schema.id] = schema;
 
   //Add to localstorage
-  let customSchemas: Schema[] = effects.editor.api.getFromLocalStorage('custom_schemas');
+  let customSchemas = effects.editor.api.getFromLocalStorage<Schema[]>('custom_schemas');
   customSchemas = customSchemas ?? [];
 
   customSchemas.push(schema);
@@ -287,7 +290,7 @@ export const updateSchema = ({ state, effects }: Context, updatedSchema: Schema)
   state.editor.schemas[updatedSchema.id] = updatedSchema;
 
   //update localstorage
-  let customSchemas: Schema[] = effects.editor.api.getFromLocalStorage('custom_schemas');
+  let customSchemas = effects.editor.api.getFromLocalStorage<Schema[]>('custom_schemas');
   if (!customSchemas) return updatedSchema;
 
   customSchemas = customSchemas.map((schema) =>
@@ -315,7 +318,7 @@ export const deleteSchema = ({ state, effects }: Context, schemaId: string) => {
   state.editor.schemas = schemaObjs;
 
   //remove from localstorage
-  let customSchemas: Schema[] = effects.editor.api.getFromLocalStorage('custom_schemas');
+  let customSchemas = effects.editor.api.getFromLocalStorage<Schema[]>('custom_schemas');
   if (!customSchemas) return;
 
   customSchemas = customSchemas.filter((schema) => schema.id !== schemaId);
@@ -409,16 +412,19 @@ export const reorderLookupPriority = (
 };
 
 export const retrieveLookupAutoritiesConfig = ({ effects }: Context) => {
-  const prefs: LookupsProps = effects.editor.api.getFromLocalStorage('lookup_preferences');
+  const prefs = effects.editor.api.getFromLocalStorage<LookupsProps>('lookup_preferences');
   return prefs;
 };
 
 export const getContent = async ({ state }: Context) => {
   if (state.editor.LWChangeEventSuspended) {
-    const suspended = db.suspendedDocument.toCollection();
-    const document = await suspended.last();
+    if (!window.writer?.editor) return;
 
-    return document?.content;
+    const { uuid } = window.writer;
+    const suspended = await db.suspendedDocument.get(uuid);
+    if (!suspended) return;
+
+    return suspended.content;
   }
   return await window.writer.getContent();
 };
