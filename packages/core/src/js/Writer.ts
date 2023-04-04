@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import $ from 'jquery';
 import tinymce from 'tinymce';
+import { v4 as uuidv4 } from 'uuid';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
 import type { LeafWriterEditor, LeafWriterOptionsSettings } from '../types';
@@ -38,6 +39,8 @@ import Utilities from './utilities';
 class Writer extends EventManager {
   overmindState?: any;
   overmindActions?: any;
+
+  readonly uuid: string;
 
   readonly initialConfig: LeafWriterOptionsSettings;
   readonly containerId: string;
@@ -89,6 +92,8 @@ class Writer extends EventManager {
 
   constructor(config: LeafWriterOptionsSettings) {
     super();
+
+    this.uuid = uuidv4();
 
     this.initialConfig = config;
 
