@@ -24,7 +24,7 @@ export const onInitializeOvermind = async (
   actions.ui.setThemeAppearance(prefPaletteMode);
 
   //LANGUAGE
-  const prefLanguageCode = effects.storage.api.getFromLocalStorage<string>('i18nextLng');
+  const prefLanguageCode = effects.storage.api.getFromLocalStorage('i18nextLng');
   if (prefLanguageCode) {
     const prefLanguage = supportedLanguages.get(prefLanguageCode);
     state.ui.language = prefLanguage
@@ -52,7 +52,7 @@ export const setCookieConsent = ({ state }: Context, values?: string[]) => {
   state.ui.cookieConsent = values ?? [];
 };
 
-export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
+export const setThemeAppearance = ({ state, actions, effects }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
 
   const darkMode =
@@ -64,7 +64,7 @@ export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMo
 
   actions.ui.setDarkMode(darkMode);
 
-  localStorage.setItem('themeAppearance', value);
+  effects.storage.api.saveToLocalStorage('themeAppearance', value);
 };
 
 export const setDarkMode = ({ state }: Context, value: boolean) => {
