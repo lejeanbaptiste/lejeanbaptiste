@@ -1,3 +1,4 @@
+import ModalProvider from 'mui-modal-provider';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
 import React from 'react';
@@ -7,7 +8,7 @@ import { Main } from './main';
 import { config } from './overmind';
 import type { StorageDialogProps } from './types';
 
-export type { AllowedMimeType, Resource } from './types';
+export type { AllowedMimeType, Resource, Validate } from './types';
 export type { ProviderAuth } from './types/Provider';
 export type { LanguageCode } from './utilities';
 
@@ -19,7 +20,9 @@ const overmind = createOvermind(config, {
 const StorageDialog = (props: StorageDialogProps) => (
   <Provider value={overmind}>
     <I18nextProvider i18n={i18next}>
-      <Main {...props} />
+      <ModalProvider>
+        <Main {...props} />
+      </ModalProvider>
     </I18nextProvider>
   </Provider>
 );
