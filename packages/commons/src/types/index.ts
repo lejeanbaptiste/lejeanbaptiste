@@ -82,6 +82,8 @@ export interface StorageDialogState {
 }
 
 export interface Resource {
+  id?: string,
+
   provider?: string;
   owner?: string;
   ownertype?: string;

@@ -106,13 +106,61 @@ export const loadSample = async ({ effects }: Context, url: string) => {
   return documentString;
 };
 
-export const download = ({ state }: Context, {content, filename}: {content: string; filename: string;}) => {
+export const download = (
+  _context: Context,
+  { content, filename }: { content: string; filename: string }
+) => {
   const blob = new Blob([content]); //, { type: 'text/plain;charset=utf-8' });
   saveAs(blob, filename);
   return true;
 };
 
-export const convertXMLtoHTML = async ({ effects }: Context, value: string) => {
-  const data = await effects.storage.api.convertXMLtoHTML(value);
+export const convertXMLtoHTML = async ({ effects }: Context, content: string) => {
+  const data = await effects.storage.api.convertXMLtoHTML(content);
   return data;
+};
+
+export const checkDocumentFormat = (_context: Context, content: string) => {
+  const format = checkIsTranskibus(content);
+  return format;
+};
+
+const checkIsTranskibus = (content: string) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(content, 'application/xml');
+  if (!doc) return;
+  const header = doc.querySelector('teiHeader');
+  if (!header) return;
+  const publisher = header.querySelector('publisher');
+  if (publisher?.textContent !== 'tranScriptorium') return;
+
+  return 'traskribus-TEI';
+};
+
+export const convertTranskribusToTei = async ({ effects }: Context, resource: Resource) => {
+  if (!resource.content) {
+    return new Error('No content');
+  }
+
+  const convertedResource = await effects.storage.api.convertTranskribusToTei(resource.content);
+  if (convertedResource instanceof Error) return convertedResource;
+
+  //New file name
+  let newFilename = resource.filename;
+  if (newFilename) {
+    const extension = newFilename.slice(-4); // get extension
+    newFilename = newFilename.slice(0, -4); // remove xml extension
+    newFilename = `${newFilename} (copy)${extension}`;
+  }
+
+  //remove original hash and url
+  resource = {
+    ...resource,
+    content: convertedResource,
+    filename: newFilename,
+    hash: undefined,
+    url: undefined,
+  };
+
+  return resource;
 };
