@@ -2,7 +2,7 @@ import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { db } from '@src/db';
 import { useMessage, usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { webpackEnv, type Resource } from '@src/types';
+import { type Resource } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -108,7 +108,6 @@ export const useMenu = () => {
         sx: { textTransform: 'initial' },
       },
       {
-        hide: webpackEnv.NODE_ENV !== 'development',
         label: t('export_as_HTML'),
         onTrigger: () => handleExportToHTML(),
       },
