@@ -1,5 +1,6 @@
 {
   "commons": {
+    "Conversion failed": "Conversion failed",
     "Conversion to HTML failed": "Conversion to HTML failed",
     "accept_all": "accept all",
     "and": "and",
@@ -17,6 +18,7 @@
     "functionalities": "functionalities",
     "identity": "identity",
     "language": "language",
+    "learn_more": "Learn more",
     "link_your_account": "Link your {{provider}} account",
     "more_information": "More information",
     "name": "name",
@@ -46,6 +48,7 @@
     "templates": "templates",
     "unsaved_changes": "unsaved changes",
     "viewing": "viewing",
+    "what_would_you_like_to_do": "What would you like to do?",
     "with": "with"
   },
   "cookie_consent": {
@@ -92,6 +95,15 @@
     "requests": "requests",
     "subtitle": "The XML & RDF online editor of the Linked Editing Academic Framework",
     "team": "team"
+  },
+  "importExport": {
+    "Convert_Document": "Convert Document",
+    "convert_and_open": "Convert and Open",
+    "message": {
+      "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer needs to convert it to be able to use it.",
+      "intercept_load_file_format": "<0>This looks like a </0> <1>{{format}}</1> <2>document.</2>"
+    },
+    "try_to_open_it_without_converting": "Try to open it without converting"
   },
   "language": {
     "english": "English",

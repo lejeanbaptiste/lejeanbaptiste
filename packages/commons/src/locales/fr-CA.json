@@ -1,5 +1,6 @@
 {
   "commons": {
+    "Conversion failed": "Échec de la conversion",
     "Conversion to HTML failed": "La conversion en HTML a échoué",
     "accept_all": "accepter tout",
     "and": "et",
@@ -17,6 +18,7 @@
     "functionalities": "fonctionnalités",
     "identity": "identité",
     "language": "langue",
+    "learn_more": "",
     "link_your_account": "Reliez votre compte {{provider}}",
     "more_information": "Plus d'informations",
     "name": "nom",
@@ -46,6 +48,7 @@
     "templates": "modèles",
     "unsaved_changes": "modifications non sauvegardées",
     "viewing": "visualisation",
+    "what_would_you_like_to_do": "",
     "with": "avec"
   },
   "cookie_consent": {
@@ -92,6 +95,15 @@
     "requests": "demande",
     "subtitle": "L'éditeur en ligne XML & RDF du cadre académique de l'édition en ligne (Linked Editing Academic Framework)",
     "team": "Équipe"
+  },
+  "importExport": {
+    "Convert_Document": "",
+    "convert_and_open": "",
+    "message": {
+      "LEAF-Writer needs to convert it to be able to use it": "",
+      "intercept_load_file_format": ""
+    },
+    "try_to_open_it_without_converting": ""
   },
   "language": {
     "english": "Anglais",

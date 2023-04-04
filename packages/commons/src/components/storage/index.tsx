@@ -5,7 +5,8 @@ import { isValidXml } from '@src/utilities';
 import React, { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LoadingMask } from './LoadingMask';
+import { LoadingMask } from '../LoadingMask';
+import { InterceptFormatImportDialog } from './components';
 
 const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
 
@@ -16,7 +17,8 @@ export const Storage = () => {
 
   const { setResource } = useActions().editor;
   const { getStorageProvidersAuth } = useActions().providers;
-  const { closeStorageDialog } = useActions().storage;
+  const { checkDocumentFormat, convertTranskribusToTei, closeStorageDialog } = useActions().storage;
+  const { notifyViaSnackbar, openDialog } = useActions().ui;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,11 +36,64 @@ export const Storage = () => {
   };
 
   const handleLoad = (res: Resource) => {
+    if (!res.content) return;
+
+    const format = checkDocumentFormat(res.content);
+    if (!format)
+    
+    if (format) {
+      openDialog({
+        props: {
+          icon: 'importExportRoundedIcon',
+          preventEscape: true,
+          title: t('importExport:Convert_Document').toString(),
+          Body: () => <InterceptFormatImportDialog format={format} />,
+          actions: [
+            { action: 'cancel', label: `${t('commons:cancel')}` },
+            {
+              action: 'noConvertOpen',
+              label: `${t('importExport:try_to_open_it_without_converting')}`,
+            },
+            {
+              action: 'convertOpen',
+              label: `${t('importExport:convert_and_open')}`,
+              variant: 'outlined',
+            },
+          ],
+          onBeforeClose: async (action) => {
+            if (action !== 'convertOpen') return;
+            if (!res.content) return;
+
+            const response = await convertTranskribusToTei({ ...res });
+            if (response instanceof Error) {
+              notifyViaSnackbar({
+                message: `${t('commons:Conversion failed')}. ${response.message}`,
+                options: { variant: 'error' },
+              });
+              return false;
+            }
+
+            loadResource(response);
+          },
+          onClose: async (action) => {
+            if (action === 'cancel') return;
+            if (action === 'noConvertOpen') loadResource(res);
+
+            closeStorageDialog();
+          },
+        },
+      });
+      return;
+    }
+    loadResource(res);
+  };
+
+  const loadResource = (res: Resource) => {
     setResource(res);
     const permalink = setPermalink(res);
     closeStorageDialog();
 
-    const route = res.writePermission === false ? 'view' : 'edit'
+    const route = res.writePermission === false ? 'view' : 'edit';
     navigate(`/${route}${permalink ?? ''}`, { replace: true });
 
     //? open on a new tab

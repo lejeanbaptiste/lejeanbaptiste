@@ -1,12 +1,12 @@
-export * from './documentsView';
 export { EditorModeSelector } from './EditorModeSelector';
 export { LoadingMask } from './LoadingMask';
 export { Logo } from './Logo';
-export { Profile } from './profile';
 export { ProfileAvatar } from './ProfileAvatar';
 export { ProviderButton } from './ProviderButton';
 export { SigninButton } from './SigninButton';
-export { Storage } from './Storage';
 export { StyledToggleButtonGroup } from './StyledToggleButtonGroup';
 export { StyledToolTip } from './StyledToolTip';
 export { TextEmphasis } from './TextEmphasis';
+export * from './documentsView';
+export { Profile } from './profile';
+export { Storage } from './storage';

@@ -16,6 +16,7 @@ import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import FormatAlignLeftOutlinedIcon from '@mui/icons-material/FormatAlignLeftOutlined';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import ImportExportRoundedIcon from '@mui/icons-material/ImportExportRounded';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MailOutlinedIcon from '@mui/icons-material/MailOutlined';
@@ -27,6 +28,7 @@ import { SvgIconTypeMap } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { FileExportOutline, Gitlab } from 'mdi-material-ui';
 import { FeatherIcon, OrcidIcon } from './components';
+import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 
 export * from './components';
 
@@ -55,6 +57,8 @@ const icons = {
   formatAlignLeft: FormatAlignLeftOutlinedIcon,
   github: GitHubIcon,
   gitlab: Gitlab,
+  helpOutlineRoundedIcon: HelpOutlineRoundedIcon,
+  importExportRoundedIcon: ImportExportRoundedIcon,
   insertDriveFile: InsertDriveFileOutlinedIcon,
   letter: MailOutlinedIcon,
   logout: LogoutIcon,
