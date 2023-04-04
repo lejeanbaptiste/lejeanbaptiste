@@ -1,4 +1,5 @@
 import type { IconName } from '../icons';
+import { LanguageCode } from '../utilities';
 import type { ProviderAuth } from './Provider';
 
 export * from './assert';
@@ -23,8 +24,9 @@ export interface StorageDialogConfig {
   allowedMimeTypes?: AllowedMimeType[];
   allowPaste?: boolean;
   defaultCommitMessage?: string;
-  providers?: ProviderAuth[];
+  language?: LanguageCode;
   preferProvider?: string;
+  providers?: ProviderAuth[];
   showInvisibleFiles?: boolean;
   validate?: Validate;
 }
@@ -73,16 +75,6 @@ export interface Error {
   type: ErrorType;
   message: string;
 }
-
-export interface Language {
-  code: string;
-  name: string;
-  shortName: string;
-}
-
-export type Languages = {
-  [key: string]: Language;
-};
 
 export interface User {
   avatar_url?: string;

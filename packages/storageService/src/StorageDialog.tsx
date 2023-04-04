@@ -9,6 +9,7 @@ import type { StorageDialogProps } from './types';
 
 export type { AllowedMimeType, Resource } from './types';
 export type { ProviderAuth } from './types/Provider';
+export type { LanguageCode } from './utilities';
 
 const overmind = createOvermind(config, {
   name: 'StorageDialog',

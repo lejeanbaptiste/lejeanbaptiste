@@ -1,3 +1,4 @@
+import i18next from '../../i18n';
 import type {
   CollectionSource,
   CollectionType,
@@ -7,7 +8,6 @@ import type {
   Repository,
   SuportedProviders,
 } from '../../types';
-import i18next from '../../i18n';
 
 type State = {
   collectionSource: CollectionSource;
