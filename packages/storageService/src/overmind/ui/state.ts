@@ -6,12 +6,10 @@ type State = {
   darkMode: boolean;
   dialogBar: DialogBarProps[];
   language: Language;
-  publicRepositoriesLimit: Readonly<number>;
 };
 
 export const state: State = {
   darkMode: false,
   dialogBar: [],
   language: supportedLanguages['en-CA'],
-  publicRepositoriesLimit: 5,
 };

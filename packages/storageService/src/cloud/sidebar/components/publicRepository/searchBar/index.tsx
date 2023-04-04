@@ -18,20 +18,20 @@ import debounce from 'lodash/debounce';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
-import type { Owner } from '../../../../../types';
+import type { PublicRepository } from '../../../../../types';
 import { Results } from './components/Results';
 
 interface SearchBarProps {
   collapsible?: boolean;
   onClear?: () => void;
-  onChange?: (query: string) => Promise<any[] | null>;
-  onSelect?: (owner: Owner) => void;
+  onChange?: (query: string) => Promise<PublicRepository[] | null>;
+  onSelect?: (publicRepository: PublicRepository) => void;
 }
 
 export const SearchBar = ({ collapsible = true, onClear, onChange, onSelect }: SearchBarProps) => {
   const { t } = useTranslation();
 
-  const [options, setOptions] = useState<Owner[]>([]);
+  const [options, setOptions] = useState<PublicRepository[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -67,10 +67,10 @@ export const SearchBar = ({ collapsible = true, onClear, onChange, onSelect }: S
     setIsLoading(false);
   };
 
-  const handleSelectOption = (owner: Owner) => {
+  const handleSelectOption = (publicRepository: PublicRepository) => {
     setOptions([]);
     setSearchFocused(false);
-    if (onSelect) onSelect(owner);
+    if (onSelect) onSelect(publicRepository);
   };
 
   const handleClickAway = () => setSearchFocused(false);

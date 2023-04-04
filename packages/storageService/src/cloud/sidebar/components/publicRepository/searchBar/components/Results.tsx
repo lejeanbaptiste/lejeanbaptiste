@@ -1,13 +1,13 @@
 import { Box, MenuList } from '@mui/material';
 import { motion, type Variants } from 'framer-motion';
 import React from 'react';
-import type { Owner } from '../../../../../../types';
+import type { PublicRepository } from '../../../../../../types';
 import { Item } from './Item';
 
 interface ResultsProps {
   listBoxProps: any;
-  onSelect?: (onwer: Owner) => void;
-  options: Owner[];
+  onSelect?: (publicRepository: PublicRepository) => void;
+  options: PublicRepository[];
 }
 
 export const Results = ({ listBoxProps, onSelect, options }: ResultsProps) => {
@@ -17,8 +17,8 @@ export const Results = ({ listBoxProps, onSelect, options }: ResultsProps) => {
     exit: { height: 0, transition: { duration: 0.02 } },
   };
 
-  const handleSelectOption = (onwer: Owner) => {
-    onSelect && onSelect(onwer);
+  const handleSelectOption = (publicRepository: PublicRepository) => {
+    onSelect && onSelect(publicRepository);
   };
 
   return (
@@ -33,7 +33,7 @@ export const Results = ({ listBoxProps, onSelect, options }: ResultsProps) => {
     >
       <MenuList {...listBoxProps} sx={{ py: 0 }}>
         {options.map((option, index) => (
-          <Item key={index} owner={option} onSelect={handleSelectOption} />
+          <Item key={index} publicRepository={option} onSelect={handleSelectOption} />
         ))}
       </MenuList>
     </Box>

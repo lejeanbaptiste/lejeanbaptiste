@@ -20,6 +20,7 @@ interface SideButtonProps {
   onClick?: (value: string) => void;
   onDelete?: (value: string) => void;
   type?: UserType;
+  uuid?: string;
   value: string;
 }
 
@@ -29,11 +30,12 @@ export const SideButton = ({
   onClick,
   onDelete,
   type,
+  uuid,
   value,
 }: SideButtonProps) => {
   const [hover, setHover] = useState(false);
   const handleClick = () => (onClick ? onClick(value) : undefined);
-  const handleDelete = () => (onDelete ? onDelete(value) : undefined);
+  const handleDelete = () => (onDelete && uuid ? onDelete(uuid) : undefined);
 
   const { breakpoints, palette } = useTheme();
   const isSM = useMediaQuery(breakpoints.down('sm'));

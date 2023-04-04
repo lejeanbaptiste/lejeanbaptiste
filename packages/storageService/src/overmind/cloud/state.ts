@@ -4,7 +4,6 @@ import type {
   Content,
   Organization,
   Owner,
-  PublicRepository,
   Repository,
   SuportedProviders,
 } from '../../types';
@@ -26,7 +25,6 @@ type State = {
   };
   owner?: Owner | Organization;
   providers: SuportedProviders[];
-  publicRepositories?: PublicRepository;
   repositories?: {
     collection: Repository[];
     hasMore?: boolean;
