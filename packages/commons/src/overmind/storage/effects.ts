@@ -42,8 +42,13 @@ export const api = {
   getFromLocalStorage<T = string>(key: string): T | null {
     const value = localStorage.getItem(key);
     if (!value) return null;
-    const parsedValue = value.startsWith('{') || value.startsWith('[') ? JSON.parse(value) : value;
-    return parsedValue;
+
+    try {
+      const object = JSON.parse(value);
+      return object as T;
+    } catch (error) {
+      return value as T;
+    }
   },
 
   /**
@@ -53,6 +58,19 @@ export const api = {
   removeFromLocalStorage(key: string) {
     localStorage.removeItem(key);
   },
+
+   /**
+   * It deletes all keys from local storage
+   */
+   clearLocalStorage() {
+    localStorage.clear();
+  },
+  
+  /**
+   * It send the document to a external service to convert from XML to HTML
+   * @param {string} content - The stringify XML
+   * @returns The stringify HTML or an error
+   */
   async convertXMLtoHTML(content: string): Promise<string | Error> {
     //* MOCK UP
     return new Promise((resolve) => {
