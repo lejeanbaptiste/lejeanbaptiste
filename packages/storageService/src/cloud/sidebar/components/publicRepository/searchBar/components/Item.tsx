@@ -9,18 +9,18 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import type { Owner } from '../../../../../../types';
+import type { PublicRepository } from '../../../../../../types';
 
 interface ItemProps {
-  onSelect?: (owner: Owner) => void;
-  owner: Owner;
+  onSelect?: (publicRepository: PublicRepository) => void;
+  publicRepository: PublicRepository;
 }
 
-export const Item = ({ onSelect, owner }: ItemProps) => {
-  const { name, type, username } = owner;
+export const Item = ({ onSelect, publicRepository }: ItemProps) => {
+  const { name, type, username } = publicRepository;
 
   const handleSelect = () => {
-    onSelect && onSelect(owner);
+    onSelect && onSelect(publicRepository);
   };
 
   return (

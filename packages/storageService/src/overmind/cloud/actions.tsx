@@ -4,6 +4,7 @@ import parse from 'autosuggest-highlight/parse';
 import React from 'react';
 import { Context } from '..';
 import { TextEmphasis } from '../../components/TextEmphasis';
+import { db } from '../../db';
 import i18next from '../../i18n';
 import { getIcon, type IconName } from '../../icons';
 import type {
@@ -719,10 +720,7 @@ export const navigateBack = ({ state, actions }: Context, level?: number | strin
 
 //? SEARCH
 
-export const searchUsers = async (
-  { actions }: Context,
-  query: string
-): Promise<PublicRepository[] | null> => {
+export const searchUsers = async ({ actions }: Context, query: string) => {
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
 
@@ -1383,67 +1381,16 @@ export const createBranch = async ({ state, actions }: Context) => {
 
 //? PUBLIC RESPOSITORY
 
-export const addPublicRepository = ({ state, actions }: Context, owner: Owner) => {
-  const provider = actions.cloud.getProvider();
-  if (!provider) return;
-
-  const storageName = provider.name;
-  if (!storageName) return;
-
-  const publicRepos = state.cloud.publicRepositories ?? {};
-  if (!publicRepos[storageName]) publicRepos[storageName] = [];
-
-  const hasPublicRepository = publicRepos[storageName].some(
-    (_owner: Owner) => _owner.username === owner.username
-  );
-
-  if (hasPublicRepository) return;
-
-  publicRepos[storageName] = [owner, ...publicRepos[storageName]];
-
-  if (publicRepos[storageName].length > state.ui.publicRepositoriesLimit) {
-    publicRepos[storageName] = publicRepos[storageName].slice(0, state.ui.publicRepositoriesLimit);
-  }
-
-  state.cloud.publicRepositories = { ...publicRepos };
-  localStorage.setItem('publicRepositories', JSON.stringify({ ...publicRepos }));
+export const addPublicRepository = async (_: Context, publicRepository: PublicRepository) => {
+  await db.publicRepositories.add(publicRepository).catch(() => {
+    log.debug('Public Repository already added.', publicRepository);
+  });
 };
 
-export const getPublicRepository = (
-  { state, actions }: Context,
-  username: string
-): Owner | null => {
-  const provider = actions.cloud.getProvider();
-  if (!provider) return null;
-
-  const storageName = provider.name;
-  if (!storageName) return null;
-  if (!state.cloud.publicRepositories || !state.cloud.publicRepositories[storageName]) return null;
-
-  const owner = state.cloud.publicRepositories[storageName].find(
-    (_onwer: Owner) => _onwer.username === username
-  );
-  return owner ?? null;
+export const getPublicRepository = async (_: Context, uuid: string) => {
+  return await db.publicRepositories.get(uuid);
 };
 
-export const removePublicRepository = async ({ state, actions }: Context, username: string) => {
-  const provider = actions.cloud.getProvider();
-  if (!provider) return;
-
-  const storageName = provider.name;
-  if (
-    !storageName ||
-    !state.cloud.publicRepositories ||
-    !state.cloud.publicRepositories[storageName]
-  ) {
-    return;
-  }
-
-  const publicRepos = state.cloud.publicRepositories;
-  publicRepos[storageName] = publicRepos[storageName].filter(
-    (owner: Owner) => owner.username !== username
-  );
-
-  state.cloud.publicRepositories = { ...publicRepos };
-  localStorage.setItem('publicRepositories', JSON.stringify({ ...publicRepos }));
+export const removePublicRepository = async (_: Context, uuid: string) => {
+  await db.publicRepositories.delete(uuid);
 };

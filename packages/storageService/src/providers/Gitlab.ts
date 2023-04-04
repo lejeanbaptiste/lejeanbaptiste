@@ -313,13 +313,19 @@ export default class Gitlab implements Provider {
 
     const usersData = usersResponse.data ?? [];
 
-    const userCollection: any[] = usersData.map(({ avatar_url, id, name, username }: any) => ({
-      avatar_url,
-      id,
-      name,
-      type: 'user',
-      username,
-    }));
+    const userCollection: T.PublicRepository[] = usersData.map(
+      ({ avatar_url, id, name, username }: any) => {
+        return {
+          avatar_url,
+          id,
+          name,
+          type: 'user',
+          username,
+          provider: 'gitlab',
+          uuid: `gitlab-user-${id}`,
+        };
+      }
+    );
 
     let collection = userCollection ?? [];
 

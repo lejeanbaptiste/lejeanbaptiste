@@ -308,17 +308,22 @@ export default class Github implements Provider {
 
     const collection = response.data.items ?? [];
 
-    const userCollection: any[] = [];
+    const userCollection: T.PublicRepository[] = [];
 
     for (const item of collection) {
       const detail = await this.getDetailsForUser({ user: item.login });
-      const user: any = {
+      const type = item.type.toLowerCase() === 'organization' ? 'organization' : 'user';
+
+      const user: T.PublicRepository = {
         avatar_url: item.avatar_url,
-        id: item.id,
+        id: item.id.toString(),
         name: (detail?.name as string) ?? '',
-        type: item.type === 'organization' ? 'organization' : 'user',
+        type,
         username: item.login,
+        provider: 'github',
+        uuid: `github-${type}-${item.id}`,
       };
+      
       userCollection.push(user);
     }
 

@@ -98,6 +98,7 @@ export interface User {
 }
 
 export interface Owner {
+  avatar_url?: string;
   id: string;
   name?: string;
   type: UserType;
@@ -153,8 +154,9 @@ export interface Organization extends Owner {
   [x: string]: any;
 }
 
-export interface PublicRepository {
-  [storage: string]: Owner[];
+export interface PublicRepository extends Owner {
+  provider: string;
+  uuid: string;
 }
 
 export interface SearchResults {
