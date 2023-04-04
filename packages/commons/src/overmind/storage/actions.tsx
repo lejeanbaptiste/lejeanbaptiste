@@ -1,6 +1,7 @@
-import { RECENT_DOCUMENTS_LIMIT } from '@src/config';
+import { db } from '@src/db';
 import type { Resource, StorageDialogState } from '@src/types';
 import { saveAs } from 'file-saver';
+import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../index';
 
 export const setPrefStorageProvider = ({ state, effects }: Context, providerId: string) => {
@@ -32,42 +33,35 @@ export const closeStorageDialog = async ({ state }: Context) => {
   state.storage.storageDialogState = { open: false };
 };
 
-export const addToRecentDocument = ({ state, effects }: Context, document: Resource) => {
-  const { content, hash, ...recent } = document;
+export const addToRecentDocument = async (_context: Context, document: Resource) => {
+  const { content, hash, ...resource } = document;
 
   if (
-    recent.provider === undefined ||
-    recent.owner === undefined ||
-    recent.ownertype === undefined ||
-    recent.repo === undefined ||
-    recent.path === undefined ||
-    recent.filename === undefined
+    !resource.provider === undefined ||
+    resource.owner === undefined ||
+    resource.ownertype === undefined ||
+    resource.repo === undefined ||
+    resource.path === undefined ||
+    resource.filename === undefined ||
+    resource.url === undefined
   ) {
     return;
   }
 
-  if (!state.storage.recentDocuments) state.storage.recentDocuments = [];
+  if (!resource.id) {
+    const item = await db.recentDocuments.get({ url: resource.url });
+    resource.id = item?.id ?? uuidv4();
+  }
 
-  // if recent document already in the list, remove (and subsequently add in the first position)
-  const newRecents = state.storage.recentDocuments.filter(({ url }) => url !== recent.url);
+  resource.modifiedAt = new Date();
 
-  recent.modifiedAt = new Date();
-
-  //add
-  state.storage.recentDocuments = [recent, ...newRecents];
-
-  //limit
-  state.storage.recentDocuments = state.storage.recentDocuments.filter(
-    (_item, index) => index <= RECENT_DOCUMENTS_LIMIT
-  );
-
-  effects.storage.api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
+  await db.recentDocuments.put(resource, resource.id);
 };
 
 export const downloadImage = async ({ state }: Context, screenshot: string) => {
   const fakeLink = window.document.createElement('a');
-  //@ts-ignore
-  fakeLink.style = 'display:none;';
+
+  (fakeLink as HTMLElement).style.display = 'none';
   fakeLink.download = 'doc';
 
   fakeLink.href = screenshot;
@@ -79,37 +73,22 @@ export const downloadImage = async ({ state }: Context, screenshot: string) => {
   fakeLink.remove();
 };
 
-export const updateRecentDocument = ({ state, actions, effects }: Context) => {
-  if (!state.storage.recentDocuments) return;
+export const updateRecentDocument = async ({ state }: Context) => {
+  const { resource } = state.editor;
+  if (!resource || !resource.url) return;
 
-  state.storage.recentDocuments = state.storage.recentDocuments.map((document) => {
-    if (document.url === state.editor.resource?.url) {
-      document.modifiedAt = new Date();
-      if (state.editor.resource?.screenshot) document.screenshot = state.editor.resource.screenshot;
-    }
-    return document;
-  });
+  if (!resource.id) {
+    const item = await db.recentDocuments.get({ url: resource.url });
+    resource.id = item?.id ?? uuidv4();
+  }
 
-  effects.storage.api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
+  resource.modifiedAt = new Date();
+
+  await db.recentDocuments.put(resource, resource.id);
 };
 
-export const removeRecentDocument = ({ state, effects }: Context, url: string) => {
-  if (!state.storage.recentDocuments) return;
-
-  const { api } = effects.storage;
-
-  const recentDocuments = state.storage.recentDocuments.filter((document) => document.url !== url);
-
-  state.storage.recentDocuments = recentDocuments;
-  api.saveToLocalStorage('recentFiles', state.storage.recentDocuments);
-
-  if (recentDocuments.length === 0) api.removeFromLocalStorage('recentFiles');
-};
-
-export const loadRecentFiles = async ({ state, effects }: Context) => {
-  const recentFiles: Resource[] = effects.storage.api.getFromLocalStorage('recentFiles') ?? [];
-  state.storage.recentDocuments = recentFiles;
-  return recentFiles;
+export const removeRecentDocument = async (_context: Context, id: string) => {
+  await db.recentDocuments.delete(id);
 };
 
 export const getSampleDocuments = async ({ effects }: Context) => {

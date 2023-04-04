@@ -1,44 +1,44 @@
 import { Paper, Stack, useTheme } from '@mui/material';
 import { DocumentView } from '@src/components';
-import { useActions, useAppState } from '@src/overmind';
+import { db } from '@src/db';
+import { useAppState } from '@src/overmind';
 import type { ViewProps } from '@src/types';
+import { useLiveQuery } from 'dexie-react-hooks';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Menu } from './menu';
 import { Sidebar } from './Sidebar';
+import { Menu } from './menu';
+
+type ViewType = 'recent' | 'samples' | 'template';
 
 export const Storage = () => {
   const { userState } = useAppState().auth;
-  const { recentDocuments } = useAppState().storage;
-
-  const { loadRecentFiles } = useActions().storage;
 
   const { t } = useTranslation('commons');
   const { palette } = useTheme();
 
+  const countRecentDocs = useLiveQuery(() => db.recentDocuments.count(), [], 0);
+
   const [selectedView, setSelectedView] = useState<ViewProps | undefined>(undefined);
+
+  const view: Record<ViewType, ViewProps> = {
+    recent: { title: `${t('recent')}`, value: 'recent' },
+    samples: { title: `${t('samples')}`, value: 'samples' },
+    template: { title: `${t('templates')}`, value: 'templates' },
+  };
 
   useEffect(() => {
     if (userState !== 'AUTHENTICATING') setView();
-  }, [userState]);
-
-  useEffect(() => {
-    if (recentDocuments?.length === 0) {
-      setSelectedView({ title: `${t('templates')}`, value: 'templates' });
-    }
-  }, [recentDocuments]);
+  }, [userState, countRecentDocs]);
 
   const setView = async () => {
     if (userState === 'UNAUTHENTICATED') {
-      setSelectedView({ title: `${t('samples')}`, value: 'samples' });
+      setSelectedView(view.samples);
       return;
     }
 
     if (userState === 'AUTHENTICATED') {
-      const recent = await loadRecentFiles();
-      recent.length > 0
-        ? setSelectedView({ title: `${t('recent')}`, value: 'recent' })
-        : setSelectedView({ title: `${t('templates')}`, value: 'templates' });
+      countRecentDocs === 0 ? setSelectedView(view.template) : setSelectedView(view.recent);
       return;
     }
   };
