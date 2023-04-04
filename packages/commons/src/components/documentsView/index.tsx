@@ -45,7 +45,7 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
 
   useEffect(() => {
     switchView();
-  }, [view, language]);
+  }, [view?.value, language]);
 
   const changeViewSize = () => {
     setWidth(userState === 'AUTHENTICATED' ? getMaxWidth() : MIN_WIDTH);

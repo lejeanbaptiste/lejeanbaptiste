@@ -1,9 +1,9 @@
-import { Divider, Stack, Typography, useTheme } from '@mui/material';
+import Masonry from '@mui/lab/Masonry';
+import { Divider, Stack, Typography } from '@mui/material';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Masonry from 'react-responsive-masonry';
 import { useNavigate } from 'react-router-dom';
 import type { DisplayLayout } from '.';
 import { CARD_WIDTH, DocumentCard } from './components';
@@ -29,9 +29,9 @@ export const TemplatesView = ({
 
   const { t } = useTranslation('commons');
   const navigate = useNavigate();
-  const { spacing } = useTheme();
 
   const [templates, setTemplates] = useState<Resource[]>([]);
+  const [itemSelected, setItemSelected] = useState<string | null>(null);
 
   const categories = new Set([...templates.map((template) => template.category)]);
 
@@ -44,7 +44,12 @@ export const TemplatesView = ({
     setTemplates(documents);
   };
 
-  const handleSelect = (value: Resource) => onSelect && onSelect(value);
+  const handleSelect = (resource: Resource) => {
+    if (!resource.url) return setItemSelected(null);
+    setItemSelected(resource.url);
+    
+    onSelect && onSelect(resource);
+  };
 
   const handledSelectCreate = (value: Resource) => {
     onSelect && onSelect(value);
@@ -69,12 +74,12 @@ export const TemplatesView = ({
         return (
           <Category key={category} title={category ?? t('other')}>
             <Masonry
-              columnsCount={columns}
-              gutter={`${gap}px`}
-              style={{
-                marginInline: spacing(0.5),
-                paddingTop: spacing(1.5),
-                width: displayLayout === 'grid' ? widthMasonry : 'calc(100% - 24px)',
+              columns={columns}
+              spacing={1.5}
+              sx={{
+                width: displayLayout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
+                mx: 1.5,
+                pt: 1.5,
               }}
             >
               {templates
@@ -83,10 +88,11 @@ export const TemplatesView = ({
                   <DocumentCard
                     key={resource.url}
                     displayLayout={displayLayout}
-                    onClick={type === 'singleClick' ? load : handleSelect}
+                    // onClick={type === 'singleClick' ? load : handleSelect}
+                    onClick={handleSelect}
                     onDoubleClick={type === 'doubleClick' ? handledSelectCreate : undefined}
                     resource={resource}
-                    selected={selected}
+                    selected={itemSelected === resource.url}
                   />
                 ))}
             </Masonry>

@@ -1,13 +1,13 @@
 import ClearIcon from '@mui/icons-material/Clear';
-import { Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
-import { getIcon } from '@src/icons';
+import { alpha, Box, Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
+import { getIcon, IconName } from '@src/icons';
 import type { Resource } from '@src/types';
 import { formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import React, { useState, type MouseEvent } from 'react';
 import type { DisplayLayout } from '../..';
 import { CoverImage } from './CoverImage';
-import { Path } from './Path';
+import { Footer } from './Footer';
 
 interface DocumentCardProps {
   deletable?: boolean;
@@ -15,7 +15,7 @@ interface DocumentCardProps {
   onClick: (resource: Resource) => void;
   onDoubleClick?: (resource: Resource) => void;
   onRemove?: (url: string) => void;
-  selected?: Resource;
+  selected?: boolean;
   resource: Resource;
   width?: number;
 }
@@ -38,10 +38,8 @@ export const DocumentCard = ({
 
   const [hover, setHover] = useState(false);
 
-  const { filename, icon, modifiedAt, owner, path, provider, repo, screenshot, title, url } =
+  const { filename, icon, modifiedAt, owner, path, provider, repo, screenshot, title, id } =
     resource;
-
-  const isSample = !!owner;
 
   const lastDate = modifiedAt
     ? formatDistanceToNow(new Date(modifiedAt), {
@@ -55,34 +53,38 @@ export const DocumentCard = ({
   const handleDoubleClick = () => onDoubleClick && onDoubleClick(resource);
 
   const handleRemove = (event: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
-    if (!onRemove || !url) return;
+    if (!onRemove || !id) return;
     event.preventDefault();
     event.stopPropagation();
 
-    if (!url) return;
-    onRemove(url);
+    onRemove(id);
   };
 
+  let fullPath = `${owner}: ${repo}`;
+  fullPath = path ? `${fullPath}/${path}` : fullPath;
+
   const cardVariant: Variants = {
-    list: { width: '100%' },
+    list: { width: '100%', transition: { delay: 0.5 } },
     grid: { width },
   };
 
   return (
     <Card
-      elevation={isSample || displayLayout === 'grid' ? 1 : 0}
+      elevation={0}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onMouseOver={() => setHover(true)}
       onMouseOut={() => setHover(false)}
       sx={{
-        bgcolor:
-          selected?.url === url
-            ? palette.primary[palette.mode]
-            : hover
-            ? palette.action.hover
-            : 'inherit',
-        color: selected?.url === url ? palette.common.white : 'inherit',
+        bgcolor: selected
+          ? alpha(palette.primary[palette.mode], 0.15)
+          : hover
+          ? alpha(palette.primary[palette.mode], palette.action.selectedOpacity)
+          : alpha(palette.primary[palette.mode], palette.action.hoverOpacity),
+        borderStyle: 'solid',
+        borderColor: selected ? alpha(palette.primary.main, 0.5) : 'transparent',
+        borderWidth: 1,
+        boxShadow: selected ? `0 0 4px ${alpha(palette.primary.main, 0.5)}` : 'none',
         cursor: 'pointer',
       }}
       component={motion.div}
@@ -94,40 +96,62 @@ export const DocumentCard = ({
       <Stack>
         <AnimatePresence>
           {ENABLE_SNAPSHOT && displayLayout === 'grid' && screenshot && (
-            <CoverImage hover={hover} image={screenshot} width={width} />
+            <CoverImage expanded={hover || !!selected} image={screenshot} width={width} />
           )}
         </AnimatePresence>
 
-        <Stack direction="column" py={1} px={2}>
-          <Stack direction="row" alignItems="baseline" justifyContent="space-between">
+        <Stack direction="column" py={1} pl={2} pr={1}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems={displayLayout === 'list' ? 'center' : 'flex-start'}
+          >
             <Stack direction="row" alignItems="flex-start" gap={2}>
               {icon && (
                 <Icon
                   color={hover ? 'primary' : 'inherit'}
-                  component={getIcon(icon ?? 'blankPage')}
+                  component={getIcon(icon)}
                   fontSize="small"
                   sx={{ mt: 0.5 }}
                 />
               )}
-              <Typography color={hover ? 'primary' : 'inherit'} variant="subtitle1">
+              <Typography color={hover ? 'primary' : 'inherit'} fontWeight={700} variant="body2">
                 {title ?? filename}
               </Typography>
             </Stack>
 
             {deletable && (
-              <IconButton onClick={handleRemove} size="small">
-                <ClearIcon fontSize="inherit" />
-              </IconButton>
+              <Box width={26} height={26} mt={-0.5} mr={-0.5}>
+                <AnimatePresence>
+                  {(hover || selected) && (
+                    <IconButton
+                      component={motion.button}
+                      animate={{ scale: 1, transition: { delay: 0.2 } }}
+                      initial={{ scale: 0 }}
+                      exit={{ scale: 0 }}
+                      onClick={handleRemove}
+                      size="small"
+                    >
+                      <ClearIcon sx={{ width: 14, height: 14 }} />
+                    </IconButton>
+                  )}
+                </AnimatePresence>
+              </Box>
             )}
           </Stack>
-
-          {lastDate && (
+          {lastDate && displayLayout === 'grid' && (
             <Typography variant="caption" sx={{ opacity: 0.85 }}>
               {lastDate}
             </Typography>
           )}
         </Stack>
-        {provider && owner && repo && <Path {...{ owner, path, provider, repo }} />}
+        {provider && owner && repo && (
+          <Footer
+            icon={provider as IconName}
+            lastDate={displayLayout === 'list' ? lastDate : undefined}
+            path={fullPath}
+          />
+        )}
       </Stack>
     </Card>
   );
