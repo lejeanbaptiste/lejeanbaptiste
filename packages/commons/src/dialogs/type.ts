@@ -1,4 +1,5 @@
 import { DialogProps as MuiDialogProps } from '@mui/material/Dialog';
+import { IconName } from '@src/icons';
 import { Options as ModalProviderOptions } from 'mui-modal-provider';
 import React from 'react';
 export declare type ModalComponentProps<P> = Omit<P, 'open'>;
@@ -10,14 +11,14 @@ export interface DialogActionProps {
   variant?: 'contained' | 'outlined' | 'text';
 }
 
-//@ts-ignore
 export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   actions?: DialogActionProps[];
-  onBeforeClose?: (action?: string) => Promise<boolean>;
+  icon?: IconName;
+  onBeforeClose?: (action?: string) => Promise<boolean | void>;
   onClose?: <T>(action?: string, data?: T) => void;
   preventEscape?: boolean;
   severity?: SeverityType;
-  label?: string;
+  title?: string;
 }
 
 export type DialogType = 'privacy' | 'signIn' | 'simple' | 'templates';
@@ -28,7 +29,7 @@ interface SimpleDialogMessageProps {
 }
 
 export interface SimpleDialogProps extends IDialog {
-  Message?: React.FC<SimpleDialogMessageProps> | string;
+  Body?: React.FC<SimpleDialogMessageProps> | string;
 }
 
 export type DialogProps = SimpleDialogProps;

@@ -1,6 +1,7 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Icon } from '@mui/material';
+import { getIcon } from '@src/icons';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,23 +10,25 @@ import type { SimpleDialogProps } from './type';
 
 export const SimpleDialog = ({
   actions = [{ action: 'close', label: 'close' }],
+  Body,
   id = uuidv4(),
+  icon,
   maxWidth = 'sm',
-  Message,
   onBeforeClose,
   onClose,
   open = true,
   preventEscape = false,
   severity,
-  label,
+  title,
   children,
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
   const { t } = useTranslation(['leafwriter']);
 
   const [data, setData] = useState<{ [key: string]: any }>({});
+  const [actionsDisabled, setActionsDisabled] = useState(false);
 
-  const handleShouldCLose = async (action?: string) => {
+  const handleShouldClose = async (action?: string) => {
     if (!onBeforeClose) return true;
     return await onBeforeClose(action);
   };
@@ -35,16 +38,24 @@ export const SimpleDialog = ({
       return;
     }
 
-    const shouldClose = await handleShouldCLose();
-    if (!shouldClose) return;
+    setActionsDisabled(true);
+    const shouldClose = await handleShouldClose();
+    if (shouldClose === false) {
+      setActionsDisabled(false);
+      return;
+    }
 
     closeDialog(id);
     onClose && onClose(reason, data);
   };
 
   const handleAction = async (action: string) => {
-    const shouldClose = await handleShouldCLose(action);
-    if (!shouldClose) return;
+    setActionsDisabled(true);
+    const shouldClose = await handleShouldClose(action);
+    if (shouldClose === false) {
+      setActionsDisabled(false);
+      return;
+    }
 
     closeDialog(id);
     onClose && onClose(action, data);
@@ -53,7 +64,6 @@ export const SimpleDialog = ({
   return (
     <Dialog
       aria-labelledby="alert-dialog-title"
-      // disableAutoFocus
       fullWidth
       id={id}
       maxWidth={maxWidth}
@@ -62,23 +72,35 @@ export const SimpleDialog = ({
     >
       <DialogTitle
         id="alert-dialog-title"
-        sx={{ display: 'flex', alignItems: 'center', gap: 1, textTransform: 'capitalize' }}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        py={2.5}
+        gap={1}
+        textTransform="capitalize"
       >
-        {severity === 'error' && <ErrorOutlineIcon color="error" />}
-        {severity === 'warning' && <WarningAmberIcon color="warning" />}
-        {label}
+        {icon ? (
+          <Icon component={getIcon(icon)} />
+        ) : (
+          <>
+            {severity === 'error' && <ErrorOutlineIcon color="error" />}
+            {severity === 'warning' && <WarningAmberIcon color="warning" />}
+          </>
+        )}
+        {title}
       </DialogTitle>
-      {(children || Message) && (
+      {(children || Body) && (
         <DialogContent sx={{ pt: 0.5 }}>
           {children
             ? children
-            : typeof Message === 'string'
-            ? Message
-            : Message && <Message data={data} onChangeData={setData} />}
+            : typeof Body === 'string'
+            ? Body
+            : Body && <Body data={data} onChangeData={setData} />}
         </DialogContent>
       )}
       <DialogActions
         sx={{
+          mx: 1.5,
           justifyContent: actions.length > 1 ? 'space-between' : 'flex-end',
           '& :first-of-type': {
             marginRight: actions.length > 1 ? 'auto' : 0,
@@ -86,7 +108,12 @@ export const SimpleDialog = ({
         }}
       >
         {actions.map(({ action, label, variant }, index) => (
-          <Button key={index} onClick={() => handleAction(action)} variant={variant ?? 'text'}>
+          <Button
+            key={index}
+            disabled={actionsDisabled}
+            onClick={() => handleAction(action)}
+            variant={variant ?? 'text'}
+          >
             {t(`${label ?? action}`)}
           </Button>
         ))}

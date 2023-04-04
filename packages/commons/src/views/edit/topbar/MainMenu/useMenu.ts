@@ -133,13 +133,12 @@ export const useMenu = () => {
           props: {
             maxWidth: 'xs',
             severity: 'warning',
-            label: `${t('unsaved_changes')}`,
+            title: `${t('unsaved_changes')}`,
             actions: [
               { action: 'cancel', label: `${t('cancel')}` },
               { action: 'discard', label: `${t('discard_changes')}` },
             ],
-            //@ts-ignore
-            onClose: async (action: string) => {
+            onClose: async (action) => {
               if (action === 'discard') handleLoadRecentDocument(document);
             },
           },

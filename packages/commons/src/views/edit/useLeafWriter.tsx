@@ -125,8 +125,8 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        label: `${t('storage:invalid_request')}`,
-        Message: () => (
+        title: `${t('storage:invalid_request')}`,
+        Body: () => (
           <Typography sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
             {message}
           </Typography>
@@ -213,13 +213,12 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        label: `${t('unsaved_changes')}`,
+        title: `${t('unsaved_changes')}`,
         actions: [
           { action: 'cancel', label: `${t('cancel')}` },
           { action: 'discard', label: `${t('discard_changes')}` },
         ],
-        //@ts-ignore
-        onClose: async (action: string) => {
+        onClose: async (action) => {
           if (action !== 'discard') return;
           disposeLeafWriter();
         },
