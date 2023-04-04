@@ -108,7 +108,7 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
           </AnimatePresence>
         </Stack>
         {providerName && (
-          <Stack px={1} gap={0.5}>
+          <Stack height={250} px={1} gap={0.5} overflow="auto">
             <AnimatePresence>
               {publicRepositories
                 .filter((item) => item.provider === providerName)
