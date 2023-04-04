@@ -8,7 +8,7 @@ import i18next from 'i18next';
 import { Schema } from '../../types';
 import Writer from '../Writer';
 
-// * The following line is need for VSC extension i18n ally  work
+// * The following line is need for VSC extension i18n ally to work
 // useTranslation('leafwriter');
 
 export interface ProcessSchemaProps {
