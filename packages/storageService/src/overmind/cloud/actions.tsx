@@ -33,20 +33,13 @@ import type {
   CreateRepoParams,
   ProviderAuth,
 } from '../../types/Provider';
-import { log } from '../../utilities';
+import { getFromLocalStorage, log } from '../../utilities';
 
 //* INIITIALIZE
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
   //PREFERRED STORAGE PROVIDER
-  const prefprovider = localStorage.getItem('prefStorageProvider');
+  const prefprovider = getFromLocalStorage('prefStorageProvider');
   state.cloud.name = prefprovider as SuportedProviders;
-
-  //PUBLIC REPOSITORIES
-  const publicRepositories = localStorage.getItem('publicRepositories');
-  if (publicRepositories) {
-    state.cloud.publicRepositories = JSON.parse(publicRepositories);
-  }
 };
 
 export const setIsLoading = ({ state }: Context, value: boolean) => {
