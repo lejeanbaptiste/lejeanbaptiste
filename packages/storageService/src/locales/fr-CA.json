@@ -26,19 +26,28 @@
     "message": {
       "Do_you_want_to_overwrite": "Voulez-vous écraser",
       "create_merge_request": "Création d'une demande de fusion",
+      "document_filename_undefined": "Le nom de fichier du document n'est pas défini",
+      "document_has_no_content": "Le document n'a pas de contenu",
+      "document_not_found": "Document introuvable",
+      "document_owner_type_undefined": "Le type de propriétaire du document n'est pas défini",
+      "document_owner_undefined": "Le propriétaire du document n'est pas défini",
       "file_already_exists": "Le fichier existe déjà",
       "folder_creation_error": "Erreur de création de dossier",
       "forking_can_take_minutes": "Forger un dépôt peut prendre plusieurs minutes",
       "repo_creation_error": "Erreur de création du référentiel",
+      "repository_not_found": "Référentiel introuvable",
+      "repository_undefined": "Référentiel non défini",
+      "something_went_wrong": "Quelque chose s'est mal passé",
+      "storage_provider_not_supported": "Fournisseur de stockage non pris en charge",
+      "storage_provider_undefined": "Fournisseur de stockage non défini",
       "unable_create_branch": "impossible de créer une nouvelle branche",
       "unable_fork_repo": "dépôt de fourche impossible",
       "unable_pull_reqest": "demande d'extraction impossible",
       "unable_save_document_on_fork": "impossible d'enregistrer le document sur la fourche",
       "unable_save_on_branch": "impossible d'enregistrer sur la branche",
       "unable_to_overwrite_file": "impossible d'écraser le fichier",
-      "unabled_to_save": "impossible de sauvegarder"
-    },
-    "messages": {
+      "unabled_to_save": "impossible de sauvegarder",
+      "user_has_no_write_permission": "L'utilisateur n'est pas autorisé à enregistrer un document dans ce référentiel"
     },
     "publicRepositories": {
       "public_repositories": "Dépôts publics",
@@ -84,19 +93,11 @@
     "show_less": "Afficher moins",
     "show_more": "Afficher plus"
   },
-  "error": {
-    "message": {
-    },
-    "title": {
-    }
-  },
   "footer": {
     "download": "télécharger",
     "fork_and_pull_request": "Fork et Pull Request",
     "pasteXml": "coller XML",
     "save_as_pull_request": "Enregistrer et Pull Request"
-  },
-  "leafwriter-storage-service": {
   },
   "local": {
     "drag_drop": "Cliquez ou faites glisser 'n' drop pour télécharger un fichier",
@@ -107,9 +108,7 @@
   },
   "message": {
     "be_patient": "être patient",
-    "document_not_valid": "document non valide"
-  },
-  "messages": {
+    "document_not_valid": "document non valide",
     "saving_document": "enregistrement du document"
   },
   "settings": {

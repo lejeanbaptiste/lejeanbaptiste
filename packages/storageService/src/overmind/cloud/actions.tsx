@@ -1248,7 +1248,7 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
       id: 'saving-document',
       maxWidth: 'xs',
       severity: 'info',
-      title: `${i18next.t('messages:saving_document')}`,
+      title: `${i18next.t('message:saving_document')}`,
     },
   });
 
@@ -1306,7 +1306,9 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | Er
         maxWidth: 'xs',
         severity: 'info',
         title: `${i18next.t('cloud:forking')}`,
-        Message: `${i18next.t('cloud:message:forking_can_take_minutes')}. ${i18next.t('message:be_patient')}.}`,
+        Message: `${i18next.t('cloud:message:forking_can_take_minutes')}. ${i18next.t(
+          'message:be_patient'
+        )}.}`,
       },
     });
   }, 5_000);
