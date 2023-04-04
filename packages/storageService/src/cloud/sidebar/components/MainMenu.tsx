@@ -31,7 +31,7 @@ export const MainMenu = ({ onSelect, selectedMenu }: MainMenuProps) => {
   };
 
   return (
-    <Stack>
+    <Stack px={1} gap={0.5}>
       {menuOptions.map(({ label, value }) => (
         <SideButton
           key={value}

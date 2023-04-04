@@ -11,6 +11,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { motion, type Variants } from 'framer-motion';
 import React, { useState } from 'react';
 import type { UserType } from '../../../types';
 
@@ -40,8 +41,18 @@ export const SideButton = ({
   const { breakpoints, palette } = useTheme();
   const isSM = useMediaQuery(breakpoints.down('sm'));
 
+  const variation: Variants = {
+    show: { height: 'auto', opacity: 1 },
+    hide: { height: 0, opacity: 0 },
+  };
+
   return (
     <ListItem
+      component={motion.div}
+      variants={variation}
+      initial={false}
+      animate="show"
+      exit="hide"
       disablePadding
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -68,7 +79,7 @@ export const SideButton = ({
         autoFocus={active}
         onClick={handleClick}
         selected={active}
-        sx={{ py: 0.5, borderTopRightRadius: 8, borderBottomRightRadius: 8 }}
+        sx={{ py: 0.5, borderRadius: 1 }}
       >
         {type && (
           <ListItemIcon sx={{ minWidth: 28 }}>
