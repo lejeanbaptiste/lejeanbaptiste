@@ -40,8 +40,8 @@ export const useCookieConsent = () => {
       openDialog({
         props: {
           severity: 'warning',
-          label: `${t('privacy_settings')}`,
-          Message: () => (
+          title: `${t('privacy_settings')}`,
+          Body: () => (
             <>
               <Typography paragraph>
                 <Trans i18nKey="cookie_consent:warning.remove_consent_basic_interactions_message">
@@ -64,8 +64,7 @@ export const useCookieConsent = () => {
               label: `${t('remove_consent')} ${t('commons:and')} ${t('commons:sign_out')}`,
             },
           ],
-          //@ts-ignore
-          onClose: async (action: string) => {
+          onClose: async (action) => {
             if (action === 'cancel') {
               //restablish categories
               cookieConsent.accept([...cookie.categories, 'interaction']);
