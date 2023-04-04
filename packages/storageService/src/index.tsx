@@ -11,6 +11,7 @@ import type { StorageDialogProps } from './types';
 export { loadDocument, saveDocument } from './headless';
 export type { AllowedMimeType, Resource, Validate } from './types';
 export type { ProviderAuth } from './types/Provider';
+export type { LanguageCode } from './utilities';
 
 const overmind = createOvermind(config, {
   name: 'Storage Service',

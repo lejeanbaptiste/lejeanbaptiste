@@ -153,11 +153,12 @@ export const MyFStorageDialog = () => {
       config={{
         allowedMimeTypes: ['application/xml'],
         allowPaste: true,
+        language: 'en-CA',
+        preferProvider: 'github',
         providers: [
           { name: 'github', access_token: 'github_token' },
           { name: 'gitlab', access_token: 'github_token' }
         ],
-        preferProvider: 'github_or_gitlab',
         showInvisibleFiles: true,
         validate: handleValidation,
       }}
@@ -207,11 +208,12 @@ export const MyFStorageDialog = () => {
       config={{
         allowedMimeTypes: ['application/xml'],
         defaultCommitMessage: 'Updated via leaf-writer',
+        language: 'en-CA',
+        preferProvider: 'github_or_gitlab',
         providers: [
           { name: 'github', access_token: 'github_token' },
           { name: 'gitlab', access_token: 'github_token' }
         ],
-        preferProvider: 'github_or_gitlab',
         showInvisibleFiles: true,
       }}
       onCancel={close}
@@ -357,6 +359,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 | allowedMimeTypes     | Array [`MIMEType`]     | []       | Restrict the file types  allowed. Empty array means no restriction.<br /> <br /> MIME type suported: `'application/json'`, `'application/pdf'`, `'application/xml'`, `'text/csv'`, `'text/html'`, `'text/plain'`. |
 | allowPaste           | boolean                | true     | `Load dialog`: Allows paste from clipboard.                                                                                                                                                                       |
 | defaultCommitMessage | string                 | 'update' | `Save Dialog`: Defines the default commit message.                                                                                                                                                                |
+| language   | string                |     | Localize the UI and the messages. Must be valid and supported language code. E.g., `en-CA` 
 | providers            | Array [`ProviderAuth`] | []       | Setup Github / Gitlab providers.<br /> <br /> `ProviderAuth`: {<br />name: 'github' \| 'gitlab',<br /> access_token: 'string<br />}                                                                               |
 | preferProvider       | string                 |          | The preferred git host provider: `'github'` \| `'gitlab'`                                                                                                                                                         |
 | showInvisibleFiles   | boolean                | false    | Show/hide invisible files (files starting with `'.'`)                                                                                                                                                             |

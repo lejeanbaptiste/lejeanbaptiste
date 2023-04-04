@@ -10,21 +10,23 @@ import type {
   StorageSource,
   Validate,
 } from '../../types';
+import { updateTranslation } from '../../utilities';
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
-  actions.ui.updateTranslation();
-
-  const { common, cloud } = state;
-
   const {
     allowedMimeTypes,
-    defaultCommitMessage,
     allowPaste,
-    showInvisibleFiles,
+    defaultCommitMessage,
+    language,
     preferProvider,
     providers: providerAuth,
+    showInvisibleFiles,
     validate,
   } = config;
+
+  updateTranslation(language);
+
+  const { common, cloud } = state;
 
   common.allowPaste = allowPaste ?? true;
   common.showInvisibleFiles = showInvisibleFiles ?? false;
