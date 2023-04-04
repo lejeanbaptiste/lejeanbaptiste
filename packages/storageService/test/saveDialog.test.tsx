@@ -5,7 +5,7 @@ import { act, getByTestId, getByTitle, render, screen, waitFor } from '@testing-
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import StorageDialog from '../src';
-import type { StorageDialogProps } from '../src/@types/types';
+import type { StorageDialogProps } from '../src/types';
 import { spyProviderFunctions } from './mocks/provider';
 import * as mock from './mocks/resource';
 

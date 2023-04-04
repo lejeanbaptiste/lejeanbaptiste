@@ -7,10 +7,7 @@ export let overmind: IContext<typeof config>;
 export const resetOvermind = () => {
   overmind = createOvermindMock(config, (state) => {
     state.ui = {
-      darkMode: false,
       dialogBar: [],
-      language: supportedLanguages['en-CA'],
-      publicRepositoriesLimit: 5,
     };
 
     state.common = {
