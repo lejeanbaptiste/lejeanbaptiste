@@ -34,7 +34,7 @@ export const createConfig = (settings: LeafWriterOptionsSettings = {}) => {
 
 export const setupSchemas = (schemas: Array<Schema>) => {
   //add custom schemas stored on local storage
-  const customSchemasData = window.localStorage.getItem('custom_schemas');
+  const customSchemasData = localStorage.getItem('custom_schemas');
   if (customSchemasData) schemas = [...schemas, ...JSON.parse(customSchemasData)];
 
   let supportedSchemas: Schema[] = [];
