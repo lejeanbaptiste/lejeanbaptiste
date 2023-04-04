@@ -7,6 +7,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  useTheme,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
@@ -48,6 +49,8 @@ export const MenuButton = ({
   onClick,
   value,
 }: MenuButtonProps) => {
+  const { palette } = useTheme();
+
   const handleClick = () => (onClick ? onClick(value, label) : undefined);
 
   return (
@@ -68,7 +71,7 @@ export const MenuButton = ({
                 <IconButton aria-label="help" disabled edge="end" size="small">
                   <InfoOutlinedIcon
                     fontSize="small"
-                    sx={{ color: active ? ({ palette }) => palette.primary.light : 'inherit' }}
+                    sx={{ color: active ? palette.primary.light : 'inherit' }}
                   />
                 </IconButton>
               </span>
@@ -80,14 +83,14 @@ export const MenuButton = ({
           disabled={disabled}
           onClick={handleClick}
           selected={active}
-          sx={{ py: 0.5, borderTopRightRadius: 8, borderBottomRightRadius: 8 }}
+          sx={{ py: 0.5, borderRadius: 1 }}
         >
           {icon && (
             <ListItemIcon sx={{ minWidth: 32 }}>
               <Icon
                 component={getIcon(icon)}
                 fontSize="small"
-                sx={{ color: active ? ({ palette }) => palette.primary.light : 'inherit' }}
+                sx={{ color: active ? palette.primary.light : 'inherit' }}
               />
             </ListItemIcon>
           )}
@@ -95,7 +98,7 @@ export const MenuButton = ({
             primary={label}
             sx={{
               '::first-letter': { textTransform: 'uppercase' },
-              span: { color: ({ palette }) => (active ? palette.primary.light : 'inherit') },
+              span: { color: active ? palette.primary.light : 'inherit' },
             }}
           />
         </ListItemButton>
