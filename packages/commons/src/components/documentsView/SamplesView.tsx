@@ -1,8 +1,7 @@
-import { useTheme } from '@mui/material';
+import Masonry from '@mui/lab/Masonry';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useEffect, useState } from 'react';
-import Masonry from 'react-responsive-masonry';
 import { useNavigate } from 'react-router-dom';
 import type { DisplayLayout } from '.';
 import { CARD_WIDTH, DocumentCard } from './components';
@@ -17,20 +16,27 @@ export const SamplesView = ({ displayLayout, width }: SamplesViewProps) => {
   const { getSampleDocuments, loadSample } = useActions().storage;
 
   const navigate = useNavigate();
-  const { spacing } = useTheme();
 
   const [samples, setSamples] = useState<Resource[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
     loadSamples();
   }, []);
 
   const loadSamples = async () => {
+  
     const documents = await getSampleDocuments();
     setSamples(documents);
   };
 
-  const load = async ({ title, url }: Resource) => {
+  const handleClick = async (resource: Resource) => {
+    if (!resource.url) return setSelected(null);
+    if (selected === resource.url) return handleDoubleClick(resource);
+    setSelected(resource.url);
+  };
+
+  const handleDoubleClick = async ({ title, url }: Resource) => {
     if (!url) return;
     const content = await loadSample(url);
     setResource({ content, filename: `${title}.xml` });
@@ -43,20 +49,22 @@ export const SamplesView = ({ displayLayout, width }: SamplesViewProps) => {
 
   return (
     <Masonry
-      columnsCount={columns}
-      gutter={`${gap}px`}
-      style={{
-        marginInline: spacing(1.5),
-        paddingTop: spacing(1.5),
-        width: displayLayout === 'grid' ? widthMasonry : 'calc(100% - 24px)',
+      columns={columns}
+      spacing={1.5}
+      sx={{
+        width: displayLayout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
+        mx: 1.5,
+        pt: 1.5,
       }}
     >
       {samples.map((resource) => (
         <DocumentCard
           key={resource.url}
           displayLayout={displayLayout}
-          onClick={load}
+          onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
           resource={resource}
+          selected={resource.url === selected}
         />
       ))}
     </Masonry>
