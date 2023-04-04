@@ -1,7 +1,9 @@
 import { Divider, Stack, Typography, useTheme } from '@mui/material';
+import { db } from '@src/db';
 import { useMessage } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { ViewProps } from '@src/types';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { AnimatePresence } from 'framer-motion';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,12 +18,12 @@ interface MainMenuProps {
 export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
   const { userState } = useAppState().auth;
   const { storageProviders } = useAppState().providers;
-  const { recentDocuments } = useAppState().storage;
 
   const { openStorageDialog } = useActions().storage;
 
   const { t } = useTranslation('storage');
   const { palette } = useTheme();
+  const countRecentDocs = useLiveQuery(() => db.recentDocuments.count(), [], 0);
 
   const { cloudDisabledMessage } = useMessage();
 
@@ -47,7 +49,7 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
     'separator',
     {
       disabled: isLoading,
-      hide: !recentDocuments || recentDocuments.length === 0,
+      hide: userState !== 'AUTHENTICATED' || countRecentDocs === 0,
       icon: 'recent',
       label: t('commons:recent'),
       value: 'recent',
@@ -65,7 +67,7 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
   return (
     <Stack
       width={230}
-      pr={2}
+      px={1}
       py={2}
       sx={{
         bgcolor: palette.mode === 'dark' ? palette.grey[900] : palette.grey[50],

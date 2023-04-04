@@ -1,7 +1,9 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
+import { db } from '@src/db';
 import { useMessage, usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { webpackEnv, type Resource } from '@src/types';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useLeafWriter } from '../../useLeafWriter';
@@ -15,7 +17,8 @@ export const useMenu = () => {
   const { userState } = useAppState().auth;
   const { contentHasChanged, readonly, resource } = useAppState().editor;
   const { storageProviders } = useAppState().providers;
-  const { recentDocuments } = useAppState().storage;
+
+  const recentDocumentsCount = useLiveQuery(() => db.recentDocuments.count() ?? 0);
 
   const { setResource } = useActions().editor;
   const { getStorageProviderAuth } = useActions().providers;
@@ -49,7 +52,7 @@ export const useMenu = () => {
     },
     {
       disabled: userState !== 'AUTHENTICATED',
-      hide: !recentDocuments || recentDocuments.length === 0,
+      hide: recentDocumentsCount === 0,
       icon: 'recent',
       label: `${t('open_recent')}`,
       popupId: 'recent',
@@ -91,9 +94,9 @@ export const useMenu = () => {
     },
   ];
 
-  const getOptions = (id?: string) => {
+  const getOptions = async (id?: string) => {
     if (id === 'download') return getDownloadOptions();
-    if (id === 'recent') return getRecentFiles();
+    if (id === 'recent') return await getRecentFiles();
     return [];
   };
 
@@ -114,8 +117,12 @@ export const useMenu = () => {
     return options;
   };
 
-  const getRecentFiles = () => {
-    if (!recentDocuments) return [];
+  const getRecentFiles = async () => {
+    const recentDocuments = await db.recentDocuments
+      .toCollection()
+      .reverse()
+      .limit(10)
+      .sortBy('modifiedAt');
 
     const recent: ItemProps<Resource>[] = recentDocuments.map((document) => ({
       data: document,

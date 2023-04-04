@@ -91,6 +91,7 @@ export interface Resource {
   content?: string;
   hash?: string;
   url?: string;
+  writePermission?: boolean;
 
   schemaName?: string;
   modifiedAt?: Date;
