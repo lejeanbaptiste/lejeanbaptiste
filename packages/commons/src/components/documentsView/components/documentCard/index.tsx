@@ -5,18 +5,17 @@ import type { Resource } from '@src/types';
 import { formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import React, { useState, type MouseEvent } from 'react';
-import type { DisplayLayout } from '../..';
+import type { Layout } from '../..';
 import { CoverImage } from './CoverImage';
 import { Footer } from './Footer';
 
-interface DocumentCardProps {
+interface DocumentCardProps extends Resource {
   deletable?: boolean;
-  displayLayout?: DisplayLayout;
+  layout?: Layout;
   onClick: (resource: Resource) => void;
   onDoubleClick?: (resource: Resource) => void;
   onRemove?: (url: string) => void;
   selected?: boolean;
-  resource: Resource;
   width?: number;
 }
 
@@ -25,20 +24,20 @@ export const CARD_WIDTH = 250;
 const ENABLE_SNAPSHOT = true;
 
 export const DocumentCard = ({
-  displayLayout,
   deletable = false,
+  layout,
   onClick,
   onDoubleClick,
   onRemove,
   selected,
-  resource,
   width = CARD_WIDTH,
+  ...resource
 }: DocumentCardProps) => {
   const { palette } = useTheme();
 
   const [hover, setHover] = useState(false);
 
-  const { filename, icon, modifiedAt, owner, path, provider, repo, screenshot, title, id } =
+  const { filename, id, icon, modifiedAt, owner, path, provider, repo, screenshot, title } =
     resource;
 
   const lastDate = modifiedAt
@@ -89,13 +88,13 @@ export const DocumentCard = ({
       }}
       component={motion.div}
       variants={cardVariant}
-      animate={displayLayout}
-      initial={displayLayout}
+      animate={layout}
+      initial={layout}
       exit={{ scale: 0.8, opacity: 0 }}
     >
       <Stack>
         <AnimatePresence>
-          {ENABLE_SNAPSHOT && displayLayout === 'grid' && screenshot && (
+          {ENABLE_SNAPSHOT && layout === 'grid' && screenshot && (
             <CoverImage expanded={hover || !!selected} image={screenshot} width={width} />
           )}
         </AnimatePresence>
@@ -104,7 +103,7 @@ export const DocumentCard = ({
           <Stack
             direction="row"
             justifyContent="space-between"
-            alignItems={displayLayout === 'list' ? 'center' : 'flex-start'}
+            alignItems={layout === 'list' ? 'center' : 'flex-start'}
           >
             <Stack direction="row" alignItems="flex-start" gap={2}>
               {icon && (
@@ -119,7 +118,6 @@ export const DocumentCard = ({
                 {title ?? filename}
               </Typography>
             </Stack>
-
             {deletable && (
               <Box width={26} height={26} mt={-0.5} mr={-0.5}>
                 <AnimatePresence>
@@ -139,7 +137,7 @@ export const DocumentCard = ({
               </Box>
             )}
           </Stack>
-          {lastDate && displayLayout === 'grid' && (
+          {lastDate && layout === 'grid' && (
             <Typography variant="caption" sx={{ opacity: 0.85 }}>
               {lastDate}
             </Typography>
@@ -148,7 +146,7 @@ export const DocumentCard = ({
         {provider && owner && repo && (
           <Footer
             icon={provider as IconName}
-            lastDate={displayLayout === 'list' ? lastDate : undefined}
+            lastDate={layout === 'list' ? lastDate : undefined}
             path={fullPath}
           />
         )}

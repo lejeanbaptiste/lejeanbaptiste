@@ -1,5 +1,5 @@
 import { Button, Dialog, DialogActions, DialogTitle } from '@mui/material';
-import { TemplatesView, TopBar, type DisplayLayout } from '@src/components';
+import { TemplatesView, TopBar, type Layout } from '@src/components';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useState } from 'react';
@@ -16,10 +16,10 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const navigate = useNavigate();
   const { t } = useTranslation('commons');
 
-  const [displayLayout, setDisplayLayout] = useState<DisplayLayout>('list');
+  const [layout, setLayout] = useState<Layout>('list');
   const [selected, setSelected] = useState<Resource>();
 
-  const changeDisplayLayout = (value: DisplayLayout) => setDisplayLayout(value);
+  const changeLayout = (value: Layout) => setLayout(value);
 
   const handleClose = (_event: MouseEvent, reason: string) => closeDialog(id);
   const handleCancel = () => closeDialog(id);
@@ -42,18 +42,12 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
     <Dialog fullWidth id={id} maxWidth="sm" onClose={handleClose} open={open}>
       <DialogTitle>
         <TopBar
-          displayLayout={displayLayout}
-          onChangeDisplayLayout={changeDisplayLayout}
+          layout={layout}
+          onLayoutChange={changeLayout}
           title={`${t('templates:choose_a_template')}`}
         />
       </DialogTitle>
-      <TemplatesView
-        displayLayout={displayLayout}
-        onSelect={handleSelect}
-        selected={selected}
-        type="doubleClick"
-        width={600}
-      />
+      <TemplatesView layout={layout} onSelect={handleSelect} selected={selected} width={600} />
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button onClick={handleCancel}>{t('cancel')}</Button>
         <Button onClick={handleCreate} variant="outlined">

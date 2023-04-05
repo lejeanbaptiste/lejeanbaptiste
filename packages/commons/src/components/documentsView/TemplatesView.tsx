@@ -5,23 +5,21 @@ import type { Resource } from '@src/types';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import type { DisplayLayout } from '.';
+import type { Layout } from '.';
 import { CARD_WIDTH, DocumentCard } from './components';
 
 interface TemplatesView {
-  displayLayout?: DisplayLayout;
+  layout?: Layout;
   onClose?: () => void;
   onSelect?: (template: Resource) => void;
   selected?: Resource;
-  type?: 'singleClick' | 'doubleClick';
   width: number;
 }
 export const TemplatesView = ({
-  displayLayout = 'list',
+  layout = 'list',
   onClose,
   onSelect,
   selected,
-  type = 'singleClick',
   width = 400,
 }: TemplatesView) => {
   const { setResource } = useActions().editor;
@@ -45,16 +43,18 @@ export const TemplatesView = ({
   };
 
   const handleSelect = (resource: Resource) => {
-    if (!resource.url) return setItemSelected(null);
-    setItemSelected(resource.url);
-    
+    const { url } = resource;
+    if (!url) return setItemSelected(null);
+    if (itemSelected === url) return handledSelectCreate(resource);
+
+    setItemSelected(url);
     onSelect && onSelect(resource);
   };
 
-  const handledSelectCreate = (value: Resource) => {
-    onSelect && onSelect(value);
+  const handledSelectCreate = (resource: Resource) => {
+    onSelect && onSelect(resource);
     onClose && onClose();
-    load(value);
+    load(resource);
   };
 
   const load = async ({ title, url }: Resource) => {
@@ -65,7 +65,7 @@ export const TemplatesView = ({
   };
 
   const gap = 12;
-  const columns = displayLayout === 'grid' ? Math.floor((width - gap) / (CARD_WIDTH + gap)) : 1;
+  const columns = layout === 'grid' ? Math.floor((width - gap) / (CARD_WIDTH + gap)) : 1;
   const widthMasonry = columns * (CARD_WIDTH + gap);
 
   return (
@@ -77,7 +77,7 @@ export const TemplatesView = ({
               columns={columns}
               spacing={1.5}
               sx={{
-                width: displayLayout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
+                width: layout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
                 mx: 1.5,
                 pt: 1.5,
               }}
@@ -87,12 +87,11 @@ export const TemplatesView = ({
                 .map((resource) => (
                   <DocumentCard
                     key={resource.url}
-                    displayLayout={displayLayout}
-                    // onClick={type === 'singleClick' ? load : handleSelect}
+                    layout={layout}
                     onClick={handleSelect}
-                    onDoubleClick={type === 'doubleClick' ? handledSelectCreate : undefined}
-                    resource={resource}
+                    onDoubleClick={handledSelectCreate}
                     selected={itemSelected === resource.url}
+                    {...resource}
                   />
                 ))}
             </Masonry>
