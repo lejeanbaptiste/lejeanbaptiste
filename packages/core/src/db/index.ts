@@ -1,4 +1,5 @@
 import Dexie, { Table } from 'dexie';
+import { Schema } from '../types';
 
 export interface SuspendedDocument {
   content: string;
@@ -6,12 +7,14 @@ export interface SuspendedDocument {
 }
 
 export class DexieDB extends Dexie {
-  suspendedDocument!: Table<SuspendedDocument>;
+  schemas!: Table<Schema>;
+  suspendedDocuments!: Table<SuspendedDocument>;
 
   constructor() {
     super('LEAF-Writer');
     this.version(1).stores({
-      suspendedDocument: 'uuid', // Primary key and indexed props
+      schemas: 'id, mapping',
+      suspendedDocuments: 'uuid', // Primary key and indexed props
     });
   }
 }
