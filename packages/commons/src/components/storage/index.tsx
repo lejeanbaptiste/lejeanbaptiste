@@ -38,54 +38,50 @@ export const Storage = () => {
   const handleLoad = (res: Resource) => {
     if (!res.content) return;
 
-    const format = checkDocumentFormat(res.content);
-    if (!format)
-    
-    if (format) {
-      openDialog({
-        props: {
-          icon: 'importExportRoundedIcon',
-          preventEscape: true,
-          title: t('importExport:Convert_Document').toString(),
-          Body: () => <InterceptFormatImportDialog format={format} />,
-          actions: [
-            { action: 'cancel', label: `${t('commons:cancel')}` },
-            {
-              action: 'noConvertOpen',
-              label: `${t('importExport:try_to_open_it_without_converting')}`,
-            },
-            {
-              action: 'convertOpen',
-              label: `${t('importExport:convert_and_open')}`,
-              variant: 'outlined',
-            },
-          ],
-          onBeforeClose: async (action) => {
-            if (action !== 'convertOpen') return;
-            if (!res.content) return;
+    const specialFormat = checkDocumentFormat(res.content);
+    if (!specialFormat) return loadResource(res);
 
-            const response = await convertTranskribusToTei({ ...res });
-            if (response instanceof Error) {
-              notifyViaSnackbar({
-                message: `${t('commons:Conversion failed')}. ${response.message}`,
-                options: { variant: 'error' },
-              });
-              return false;
-            }
-
-            loadResource(response);
+    openDialog({
+      props: {
+        icon: 'importExportRoundedIcon',
+        preventEscape: true,
+        title: t('importExport:Convert_Document').toString(),
+        Body: () => <InterceptFormatImportDialog format={specialFormat} />,
+        actions: [
+          { action: 'cancel', label: `${t('commons:cancel')}` },
+          {
+            action: 'noConvertOpen',
+            label: `${t('importExport:try_to_open_it_without_converting')}`,
           },
-          onClose: async (action) => {
-            if (action === 'cancel') return;
-            if (action === 'noConvertOpen') loadResource(res);
-
-            closeStorageDialog();
+          {
+            action: 'convertOpen',
+            label: `${t('importExport:convert_and_open')}`,
+            variant: 'outlined',
           },
+        ],
+        onBeforeClose: async (action) => {
+          if (action !== 'convertOpen') return;
+          if (!res.content) return;
+
+          const response = await convertTranskribusToTei({ ...res });
+          if (response instanceof Error) {
+            notifyViaSnackbar({
+              message: `${t('commons:Conversion failed')}. ${response.message}`,
+              options: { variant: 'error' },
+            });
+            return false;
+          }
+
+          loadResource(response);
         },
-      });
-      return;
-    }
-    loadResource(res);
+        onClose: async (action) => {
+          if (action === 'cancel') return;
+          if (action === 'noConvertOpen') loadResource(res);
+
+          closeStorageDialog();
+        },
+      },
+    });
   };
 
   const loadResource = (res: Resource) => {
