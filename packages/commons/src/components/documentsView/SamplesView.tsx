@@ -3,15 +3,15 @@ import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { DisplayLayout } from '.';
+import type { Layout } from '.';
 import { CARD_WIDTH, DocumentCard } from './components';
 
 interface SamplesViewProps {
-  displayLayout?: DisplayLayout;
+  layout?: Layout;
   width: number;
 }
 
-export const SamplesView = ({ displayLayout, width }: SamplesViewProps) => {
+export const SamplesView = ({ layout, width }: SamplesViewProps) => {
   const { setResource } = useActions().editor;
   const { getSampleDocuments, loadSample } = useActions().storage;
 
@@ -25,15 +25,15 @@ export const SamplesView = ({ displayLayout, width }: SamplesViewProps) => {
   }, []);
 
   const loadSamples = async () => {
-  
     const documents = await getSampleDocuments();
     setSamples(documents);
   };
 
   const handleClick = async (resource: Resource) => {
-    if (!resource.url) return setSelected(null);
-    if (selected === resource.url) return handleDoubleClick(resource);
-    setSelected(resource.url);
+    const { url } = resource;
+    if (!url) return setSelected(null);
+    if (selected === url) return handleDoubleClick(resource);
+    setSelected(url);
   };
 
   const handleDoubleClick = async ({ title, url }: Resource) => {
@@ -44,7 +44,7 @@ export const SamplesView = ({ displayLayout, width }: SamplesViewProps) => {
   };
 
   const gap = 12;
-  const columns = displayLayout === 'grid' ? Math.floor((width - gap) / (CARD_WIDTH + gap)) : 1;
+  const columns = layout === 'grid' ? Math.floor((width - gap) / (CARD_WIDTH + gap)) : 1;
   const widthMasonry = columns * (CARD_WIDTH + gap);
 
   return (
@@ -52,7 +52,7 @@ export const SamplesView = ({ displayLayout, width }: SamplesViewProps) => {
       columns={columns}
       spacing={1.5}
       sx={{
-        width: displayLayout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
+        width: layout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
         mx: 1.5,
         pt: 1.5,
       }}
@@ -60,11 +60,11 @@ export const SamplesView = ({ displayLayout, width }: SamplesViewProps) => {
       {samples.map((resource) => (
         <DocumentCard
           key={resource.url}
-          displayLayout={displayLayout}
+          layout={layout}
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
-          resource={resource}
           selected={resource.url === selected}
+          {...resource}
         />
       ))}
     </Masonry>

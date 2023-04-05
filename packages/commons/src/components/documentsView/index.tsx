@@ -13,7 +13,7 @@ export { RecentView } from './RecentView';
 export { SamplesView } from './SamplesView';
 export { TemplatesView } from './TemplatesView';
 
-export type DisplayLayout = 'list' | 'grid';
+export type Layout = 'list' | 'grid';
 
 interface DocumentViewProps {
   view?: ViewProps;
@@ -32,7 +32,7 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
 
   const [width, setWidth] = useState(MIN_WIDTH);
   const [height, setHeight] = useState(MIN_HEIGHT);
-  const [displayLayout, setDisplayLayout] = useState<DisplayLayout>('list');
+  const [layout, setLayout] = useState<Layout>('list');
   const [type, setType] = useState<ViewProps>();
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
     await animationControl.start('show');
   };
 
-  const changeDisplayLayout = (value: DisplayLayout) => setDisplayLayout(value);
+  const changeLayout = (value: Layout) => setLayout(value);
 
   return (
     <Stack
@@ -95,14 +95,14 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
     >
       <TopBar
         animationControl={animationControl}
-        displayLayout={displayLayout}
+        layout={layout}
+        onLayoutChange={changeLayout}
         title={type?.title}
-        onChangeDisplayLayout={changeDisplayLayout}
       />
       <Container
         animationControl={animationControl}
         height={height}
-        displayLayout={displayLayout}
+        layout={layout}
         width={width}
         type={type}
       />

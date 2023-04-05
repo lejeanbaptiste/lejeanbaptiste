@@ -11,14 +11,14 @@ import {
 import { styled } from '@mui/material/styles';
 import { AnimationControls, motion, type Variants } from 'framer-motion';
 import React, { type MouseEvent } from 'react';
-import { DisplayLayout } from '..';
+import { Layout } from '..';
 
 const ENABLE_GRID = true;
 
 interface TopBarProps {
   animationControl?: AnimationControls;
-  displayLayout?: DisplayLayout;
-  onChangeDisplayLayout: (value: DisplayLayout) => void;
+  layout?: Layout;
+  onLayoutChange: (value: Layout) => void;
   title?: string;
 }
 
@@ -40,13 +40,13 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
 
 export const TopBar = ({
   animationControl,
-  displayLayout = 'list',
-  onChangeDisplayLayout,
+  layout = 'list',
+  onLayoutChange,
   title,
 }: TopBarProps) => {
-  const changeDisplayLayout = (_event: MouseEvent<HTMLElement>, value: DisplayLayout) => {
+  const changeLayout = (_event: MouseEvent<HTMLElement>, value: Layout) => {
     if (!value) return;
-    onChangeDisplayLayout(value);
+    onLayoutChange(value);
   };
 
   const isLoading = !title;
@@ -82,10 +82,10 @@ export const TopBar = ({
           <Stack direction="row">
             <StyledToggleButtonGroup
               exclusive
-              aria-label="display layout"
+              aria-label="layout"
               size="small"
-              onChange={changeDisplayLayout}
-              value={displayLayout}
+              onChange={changeLayout}
+              value={layout}
             >
               {options.map(({ icon, value }) => (
                 <ToggleButton key={value} aria-label={value} color="primary" value={value}>
