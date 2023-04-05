@@ -1,5 +1,95 @@
 # CHANGELOG
 
+## 1.4.0
+
+### New Features
+
+#### Github
+
+Load and save files large than 1MB
+
+#### Public Repositories
+
+Add a badge indicating the user has write permission. The badge only shows up when browsing someone else’s repository. You can see it while you browse another user or an organization repositories, and on the path (breadcrumbs) when navigating inside it.
+
+The storage output (resource) now contains a new property, `writePermission` (boolean), indicating if the user has permission to write on the repository to which the resource belongs.
+
+Change the way we store public repositories, from the `local storage` to `indexedDB`. IndexedDB has more storage space and it is more reliable for managing data.
+
+#### Language
+
+Add language as an optional property to settings. Now we can explicitly tell the storage service in which language it should operate. By default, it will first try to get the language on local storage (il18next) or fall back to en-CA. Supported languages so far: `en-CA` and `fr-CA`. Check the documentation for more details.
+
+### Minor Changes
+
+- Settings
+  - Add language as an optional setting. [af63bd90f401c52ad0d9024d66bfa97d12eb4dd0]
+    - These changes also refactor how to get language from the local storage
+- Github
+  - Load files large than 1mb [5f238d5b6588875b5f0c84acf1778e59f98a1a93] (closes #109)
+- Public Repositories:
+  - Add a badge indicating the user has written permission [41914a402f00cf2ab72fca6c735e33f6922b1c50] (closes #47)
+  - Add `writePermission` property for repositories owned by another user. [573ce4bceed860e794ddaea763bcdc17b55ba678]
+  - Move from the `local storage` to `indexedDB` [8f3f278351824deb4d715e189e0ce6df8f759edd]
+    - This change improves how we manage public repositories accessed by the user.
+    - It also makes some adjustments to the layout and UX.
+- Headless Functions
+  - Add localization [52e2d4ef142d602b1acdaa5509583b4103f2193b]
+    - Caution: This is a SOFT BREAKING CHANGE: 🧨 Error from headless function now returns an object with a type error and a message.
+
+### Patch Changes
+
+- Sidebar:
+  - Layout adjustments [7ce2ecd39d3727b817a217f593d312f32474737b]
+- Preferred Storage:
+  - Improve retrieve preferred storage from local storage [19ebd8b56eb94867e5950a0d4069a565cddffa7d]
+- Public Repositories:
+  - Change icons and add tooltip for repos shared with the logged user [f1548458a8442419f4cf12b8bd5949f3cfd5eadd]
+  - Debounce rapid clicks on the same user/org [d4a39ed8b55588fc5854f17d3e0ea6db23801735]
+  - Add scroll when the number of public repos overflows the space [d04daacc137360bb747839b2c78f24840ecd7910]
+- File Collection:
+  - Add ability to collapse details [6ecaf27afce386f6036d5f69eb591226e132b1c0]
+- Types:
+  - Add types. [819bbd13facd761ab304d58964e1a3537a785758]
+  - Export Validate function Type from StorageDialog [333163bcbf21bfcdeeb1a80306b475dc8452a9f3]
+- Localization
+  - Add localization [819bbd13facd761ab304d58964e1a3537a785758]
+  - Organize localization [bd4660e6e1c3af309ffa4358abd024f98e7b7981]
+- GitHub
+  - Regression:
+    - Fix save non-existing (create) files [24a1615fc9779572bb287daf72d954e895e041db]
+- Miscellaneous:
+  - Reorganize folder structure. [819bbd13facd761ab304d58964e1a3537a785758]
+- Update Dependencies:
+  - core: [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+    - update:
+      - framer-motion@10.10.0
+      - mdi-material-ui@7.7.0
+    - bump up:
+      - @mui/base@5.0.0-alpha.124
+      - @mui/icons-material@5.11.16
+      - @mui/lab@5.0.0-alpha.125
+      - @mui/material@5.11.16
+      - i18next@22.4.14
+  - dev:
+    - add misssing:n [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+      - @jest/globals@29.5.0
+      - eslint-plugin-prettier@4.2.1
+    - update:
+      - @types/jest@29.5.0 [3749999e007cca54a5dee54f9547a80bb0793671]
+      - @typescript-eslint/eslint-plugin@5.57.1 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+      - @typescript-eslint/parser@5.57.1 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+      - eslint-config-prettier@8.8.0 [3749999e007cca54a5dee54f9547a80bb0793671]
+      - ts-jest@29.1.0 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+      - webpack@5.77.0 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+    - bump up:
+      - mini-css-extract-plugin@2.7.5 webpack@5.76.3 [3749999e007cca54a5dee54f9547a80bb0793671]
+      - @types/lodash@4.14.192 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+
+  ### Tests
+
+  - Refactoring [767dfaeb8657620cf7fca0652c3c7b0977001128]
+
 ## 1.3.9
 
 ### Patch Changes
