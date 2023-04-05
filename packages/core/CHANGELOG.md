@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## 2.7.4
+### Patch Changes
+
+- ContextMenu:
+  - Add autofocus to search tags [46b68723e54aed8286eef99dd4aac42398d3e827]
+- Suspended documents
+  - Improve how suspended documents are stored [428c68faa3fb677ff9a74f61835570bf9941664b]
+- CSS:
+  - Fix first-letter selector [6b5c8f1b803ca0dd62256560cf6c8e72a1475f05]
+  - Add CssBaseline as a way to solve css clash with the underlying webpage [4d9715b432f14c49e9d430ae7a09878802d69449]
+  - date picker:
+    - Attempt to block overwrite from bellow [ef75de61afae681ff78661d90ec71186c5e0d6ed]
+  - Clean [4c2679663bd96216fa348b3178b333607a4ed8a0]
+- Types:
+  - Move type assertion to a dedicated module [df77eac53eae5c24c69554a18564c005a63f75a8]
+  - Improve localStorage API to receive generic Type [7004c303e65596b188caaa48f2122f4a23955410]
+- Localization
+  - Create an instance, instead of using the library directly [9b4c5ac224e13a40bbca40aaaf8514a5d588c0b6]
+- Update dependencies [5e8eb21604c9d84cf25a34f34f1d608ca7b1e038]:
+  - core:
+    - add missing: @dnd-kit/utilities@3.2.1
+    - upgrade: notistack@3.0.1
+    - update:
+      - @fortawesome/fontawesome-free@6.4.0
+      - framer-motion@10.10.0
+      - mdi-material-ui@7.7.0
+      - monaco-editor@0.37.0
+      - react-virtuoso@4.2.0
+    - bump up:
+      - @mui/icons-material@5.11.16
+      - @mui/material@5.11.16
+      - i18next@22.4.14 react-resizable-panels@0.0.39
+  - dev:
+    - add missing:
+      - copy-webpack-plugin@11.0.0
+      - eslint-plugin-prettier@4.2.1
+    - update:
+      - @types/luxon@3.3.0
+      - @typescript-eslint/eslint-plugin@5.57.1
+      - @typescript-eslint/parser@5.57.1
+      - webpack@5.77.0
+    - bump up: @types/node@18.15.11
+
 ## 2.7.3
 
 ### Patch Changes
