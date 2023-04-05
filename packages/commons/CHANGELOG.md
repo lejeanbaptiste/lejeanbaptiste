@@ -1,5 +1,100 @@
 # CHANGELOG
 
+## 2.7.0
+
+### New Features
+
+#### Import File
+
+We are implementing `import files` on LEAF-Writer Commons. We are planning for two methods: an `Implicit` and an `Explicit` flow.
+
+This version introduces the mechanics for the `Implicit flow` (in alpha).
+When opening a file, LEAF-Writer Commons checks for clues to see if it needs to convert the file (e.g., the presence of a specific tag). These changes add the necessary checks and UX for converting from the `Transkribus-TEI` Output. This feature is still pending the connection to an external API to make the conversion.
+
+#### Export File
+
+We are implementing `export files` on LEAF-Writer Commons.
+
+This version introduces the mechanics and UI for `export to HTML` (in alpha).
+From the main menu, the user can export and download the XML document as an HTML file. This feature is still pending the connection to an external API to make the conversion.
+
+#### Viewing Mode (Readonly)
+
+When opening a document the user does not have write permission, LEAF-Writer will open in `viewing mode`. Users can switch to `edit mode` if they want to edit, make a pull request or download the document.
+
+The route to the viewing mode changed slightly.
+
+Instead of using the URL search query `&readonly=true)`, we use the route path `/view`.
+Example:
+
+Before: `https://localhost/edit?provider=github&owner=lucaju&ownertype=user&repo=cwrc-writer-samples&filename=Sample%20TEI%20letter%20-%20Original.xml&readoly=true`
+
+After: `https://localhost/view?provider=github&owner=lucaju&ownertype=user&repo=cwrc-writer-samples&filename=Sample%20TEI%20letter%20-%20Original.xml`
+
+#### File Browser
+
+A slight change in the UX: one click selects the view. A subsequent click (or a double click) opens it.
+
+### Minor Changes
+
+- Import
+  - Introduce Import Implicit Flow: Transkribus (alpha) [53aaadc736d814d99865c12503d24c21bb9a6b33]
+- Export:
+  - Introduce the mechanics and UI for export to HTML (alpha) [4db458797ed0da4d24699cebef48d0ee77b31f7c]
+  - Available in production [9b54affefa216c85774b8b27c364f48fd0befe17]
+- ReadOnly:
+  - Open document in viewing mode (read-only) when a user does not have write permission [31da45affbbef2bac63dcb515f6c9896ceb6cbe2]
+- Recent documents:
+  - Move from local storage to indexedDB using Dexie
+
+### Patch Changes
+
+- File Browser (recent documents/sample/template):
+  - Minor design changes [129a0aabc9bf1868048c99267b1b8174cc591afc]
+- Routes
+  - Use route '/view' for read-only mode
+- HTTP Request error
+  - Move and improve error handling [6ac549580e28bee525f94c18f4f51f8500a2f85c]
+- Dialogs
+  - Rename `title` as `label` [7745d58276178ed223e3160d3591f4306e63fd51]
+  - Rename `Message` to `Body` [5f10bf0e0668e6997d4a711164b3ff23f976a092]
+- Icons
+  - Improve typing [be908627f0129e2eb0697202d87c9b2212a3acf0]
+- Utilities
+  - Move functions to dedicated modules [751d5c68d0e60f621f1b5b19db7d2f29ac0aab49]
+- CSS:
+  - Fix first-letter selector [088f89721506aa8de0ad3258e33447b71e0e7fc5]
+- Types
+  - Improve localStorage API to receive generic Type [438977a16d56706b681f0f5df71f4b02cb4830ef]
+  - Clean [54655f682683c942fadb6f8348e83204b8946848] [5451628239e9f20cdd478dac8c96f7e852dc011e]
+- Update Dependencies [61506d40cdee49f66743cb20c0d1e6c723a844a3]
+  - core:
+    - remove unused: body-parser cookie-parser
+    - added: @mui/lab@5.0.0-alpha.125
+    - upgrade: notistack@3.0.1
+    - update:
+      - @cwrc/leafwriter-storage-service@1.4.0 [efef759c1ed692cc695cf69238fb938f7705f287]
+      - framer-motion@10.10.0
+      - mdi-material-ui@7.7.0
+      - react-router-dom@6.10.0
+    - bump up:
+      - @cwrc/leafwriter@2.7.4 [efef759c1ed692cc695cf69238fb938f7705f287]
+      - @mui/icons-material@5.11.16
+      - @mui/material@5.11.16
+      - i18next@22.4.14
+      - keycloak-js@21.0.2
+  - dev:
+  - remove: @types/react-responsive-masonry
+  - upgrade: css-minimizer-webpack-plugin@5.0.0
+  - update:
+    - @typescript-eslint/eslint-plugin@5.57.1
+    - @typescript-eslint/parser5.71.1
+    - eslint@8.37.0 webpack@5.77.0
+  - bump up:
+    - @types/node@18.15.11
+    - @types/webpack@5.18.1
+    - typescript@5.0.3
+
 ## 2.6.6
 
 ### Patch Changes
