@@ -163,9 +163,9 @@ export const suspendLWChangeEvent = async ({ state }: Context, value: boolean) =
   if (value) {
     const content = await window.writer.getContent();
     if (typeof content !== 'string') return;
-    await db.suspendedDocument.put({ content, uuid }, uuid);
+    await db.suspendedDocuments.put({ content, uuid }, uuid);
   } else {
-    await db.suspendedDocument.delete(uuid);
+    await db.suspendedDocuments.delete(uuid);
     state.editor.contentHasChanged = true;
   }
 };
@@ -421,7 +421,7 @@ export const getContent = async ({ state }: Context) => {
     if (!window.writer?.editor) return;
 
     const { uuid } = window.writer;
-    const suspended = await db.suspendedDocument.get(uuid);
+    const suspended = await db.suspendedDocuments.get(uuid);
     if (!suspended) return;
 
     return suspended.content;
