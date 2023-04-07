@@ -10,22 +10,54 @@ Given an XML document and its Relax NG schema, LEAF-Writer Validator can perform
 
 As a web worker, LEAF-Writer Validator is fast and non-blocking. Validation will occur in parallel to the browser’s main thread. However, depending on the schema’s complexity and the document’s length, the validation processes (including all the features listed above) might take some time to respond. When simply validating the document, the web worker emits events as it goes through the document. These events can be used to keep the UI updated. Other features, such as speculatively validated tag insertion in a specific context, are asynchronous and will only return at the end of the process.
 
-- [Install](#install)
-- [Load as a web worker](#load-as-a-web-worker)
-- [Validation](#validation)
+- [LEAF-Writer Validator](#leaf-writer-validator)
+  - [Install](#install)
+  - [Load as a web worker](#load-as-a-web-worker)
+    - [Prebuilt](#prebuilt)
+    - [For development](#for-development)
   - [Initialize](#initialize)
   - [Validate](#validate)
-- [Get information from Schema](#get-information-from-schema)
-  - [Get Tag at](#get-tag-at)
-  - [Get nodes for a Tag at](#get-nodes-for-a-tag-at)
-  - [Get Attributes for a Tag at](#get-attributes-for-a-tag-at)
-  - [Get Tag Attribute at](#get-tag-attribute-at)
-  - [Get Values for a Tag Attribute at](#get-values-for-a-tag-attribute-at)
-- [Get Possible Nodes At](#get-possible-nodes-at)
+    - [On Demand vs. Auto-validation](#on-demand-vs-auto-validation)
+    - [Types of errors](#types-of-errors)
+      - [Element Name](#element-name)
+      - [Attribute Name](#attribute-name)
+      - [Attribute Value](#attribute-value)
+      - [Choice Error](#choice-error)
+      - [Validation Error](#validation-error)
+    - [Has validator](#has-validator)
+  - [Get information from Schema](#get-information-from-schema)
+    - [Get Tag at](#get-tag-at)
+    - [Get Nodes for a Tag at](#get-nodes-for-a-tag-at)
+    - [Get Attributes for a Tag at](#get-attributes-for-a-tag-at)
+    - [Get Tag Attribute at](#get-tag-attribute-at)
+    - [Get Values for a Tag Attribute at](#get-values-for-a-tag-attribute-at)
+  - [Get Possible Nodes At](#get-possible-nodes-at)
   - [Get Valid Nodes At](#get-valid-nodes-at)
-- [Reset](#reset)
-- [Types](#types)
-- [Development](#development)
+  - [Reset](#reset)
+  - [Clean Up](#clean-up)
+    - [Clear Cache](#clear-cache)
+    - [Delete Db](#delete-db)
+  - [Types](#types)
+    - [InitializeParameters](#initializeparameters)
+    - [InitializeResponse](#initializeresponse)
+    - [NodeDetail](#nodedetail)
+    - [PossibleNodesAt](#possiblenodesat)
+    - [PossibleNodesAtOptions](#possiblenodesatoptions)
+    - [Target](#target)
+    - [TargetSelection](#targetselection)
+    - [ValidationError](#validationerror)
+    - [ValidationErrorElement](#validationerrorelement)
+    - [ValidationErrorTarget](#validationerrortarget)
+    - [WorkingStateData](#workingstatedata)
+    - [CachedSchema](#cachedschema)
+  - [Development](#development)
+    - [Why a web worker?](#why-a-web-worker)
+      - [Changes to Salve and Salve-Dom to be able to work as a web worker](#changes-to-salve-and-salve-dom-to-be-able-to-work-as-a-web-worker)
+      - [JSDOM inside web worker](#jsdom-inside-web-worker)
+        - [Running JSDOM inside a web browser](#running-jsdom-inside-a-web-browser)
+        - [Discussion](#discussion)
+    - [How To use JSDOM on LEAF-Writer Validator Web Worker](#how-to-use-jsdom-on-leaf-writer-validator-web-worker)
+    - [Unit tests](#unit-tests)
 
 ## Install
 
@@ -70,62 +102,39 @@ const worker = await new Worker(new URL('@cwrc/leafwriter-validator', import.met
 const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
 ```
 
-## Validation
+## Initialize
 
-### Initialize
+To use the validator, we first need to initialize it with the schema. Call the the method `initialize` passing the [InitializeParameters](#initializeparameters)  with the schema's`id` and `URL` from which LEAF-Writer Validator can download a Relax NG schema. We use the id to identify the schema and avoid reloading the same schema if the method is called with the same parameters. Optionally, we can pass a third property `shouldCache` (default: `true`) to cache the schema.
 
-Once imported, the first thing we should do is initialize the validator by loading the schema into the validator. LEAF-Writer Validator can handle this in two ways: **load from URL** or **load from cache**.
+This is an asynchronous function because LEAF-Writer Validator has to download and convert the schema to salve's internal format (more about how Salve converts schemas [here](https://github.com/mangalam-research/salve#converting-schemas)). Besides converting the schema, Salve can export a JSON version to be cached and a manifest with a hash that can be used to check if the file got updated and should be reprocessed. For this reason, we cache and store the schemas by default.
 
-#### From URL
+The [cached schema](#cachedschema) is stored in the browser's IndexedDB. Besides the schema's id and url, ot contanis the stringfied version of salve's processed object, the date when the cache was created, any warning generated by salve, and a hash reresentation of the schema file.
 
-To load a schema from a URL, we should call the method `initialize` passing an object ([InitializeOptions](#initializeoptions)) with the `URL` from which LEAF-Writer Validator can download a Relax NG schema in XML and the `id` (string) to identify the schema. We use the id to avoid reloading the same schema if the method is called with the same parameters.
+Basically, everytime you invoke this method, LEAF-Writer first check if the validator was already initialized, then it check if there is cache for the requested schema. If there is no cache, we process the schema and store the cache. If there is cache, we check if the file has changed using the hash. If it did change, we reprocess the file and save a new cache, otherwise we use the cached version.
 
-This is an asynchronous function because LEAF-Writer Validator has to download and convert the schema to salve's internal format (more about how Salve converts schemas [here](https://github.com/mangalam-research/salve#converting-schemas)). Besides converting the schema, Salve can export a JSON version to be cached and a manifest with a hash that can be used to check if the file got updated and should be reprocessed. Because the JSON version can result in a very large object (+1.5MB), LEAF-Writer Validator goes one step further and uses [LZUTF8](https://github.com/rotemdan/lzutf8.js) to compress it.
-
-`initialize` returns an object ([InitializeResponse](#initializeresponse)) with two properties: `status` (a simple status message), and  `parsedSchema` (another object) containing the `manifest and` the compressed `json` version of the schema. We can store `parsedScheama` on the browser's local storage to speed up subsequent calls to this method.
+It returns an object ([InitializeResponse](#initializeresponse)) with a `success` (boolean) property. If there is any error, there is second property `error` with an error message.
 
 Example:
 
 ```ts
 const response = await validator.loadSchema({
-  id:'cwrcTeiLite',
+  id: 'cwrcTeiLite',
   url: 'https://cwrc.ca/schemas/cwrc_tei_lite.rng'
 });
 
-const { status, parsedSchema } = response;
-console.log(status); //'Loaded from file'
+console.log(response.success); // true
 ```
 
-#### From Cache
-
-Instead of loading from an URL, we can load the schema passing the parsed schema we have stored on the Local Storage. We should call the method `initialize` passing an object ([InitializeOptions](#initializeoptions)) with the `id` and `cachedSchema` with stringified `parsedSchema`. It returns an object ([InitializeResponse](#initializeresponse)) with just the `status` message.
-
-Example:
-
-```ts
-const parsedSchema  = localstorage.get('schema');
-
-const response = await validator.loadSchema({
-  id:'cwrcTeiLite',
-  cachedSchema: JSON.stringfy(parsedSchema)
-});
-
-const { status } = response;
-console.log(status); //'Loaded from cache'
-```
-
-Note: Communication between the main thread and web workers is made through message exchanging (strings). We should use `JSON.stringfy` and `JSON.parse` to send data to and from web workers. **Comlink** takes care of this task for us, making it easier to manage data transfers.
-
-### Validate
+## Validate
 
 With the schema loaded, we can now send the document into LEAF-Writer Validator, calling the method `validate`, passing the `XML document` as a string and a `callback`. We can call this method at any time after the schema is loaded. The validation process dispatches `state-update` events that trigger a callback function as the validator walks through the document. This callback will give us updates and let us know when the process is completed.
 
 **Parameters**
 
-| Name | Type | Description |
-| - | - | - |
-| XML document* | string | The XML document |
-| callback | func | A function to receive event updates and the final results.<br/> Signature: `(workingStateData: WorkingStateData) => void`. See more about [WorkingStateData](#workingstatedata). |
+| Name          | Type   | Description                                                                                                                                                                      |
+| ------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| XML document* | string | The XML document                                                                                                                                                                 |
+| callback      | func   | A function to receive event updates and the final results.<br/> Signature: `(workingStateData: WorkingStateData) => void`. See more about [WorkingStateData](#workingstatedata). |
 
 Example:
 
@@ -154,7 +163,7 @@ if the state returns **[3] INVALID** the [WorkingStateData](#workingstatedata) r
 
 if the state returns **[4] VALID** the [WorkingStateData](#workingstatedata) only returns `{ partDone, state, valid }`, where valid is **true**. This is the last time the callback will be triggered since the validator has completed the process.
 
-#### On Demand vs. Auto-validation
+### On Demand vs. Auto-validation
 
 We can call `validate` **on demand**, that is, every time a user clicks on a button, or **auto validate** every time the document changes (recommended). Auto-validation is helpful because the web worker is not synchronized with the XML in the DOM. Auto-validation is a valuable feature and keeps the document updated on the web worker.
 
@@ -162,38 +171,38 @@ We can call `validate` **on demand**, that is, every time a user clicks on a but
 
 Auto-validation does not prevent on-demand validation. We added a validate button to the LEAF-Writer interface to improve usability to allow users to trigger the actions themselves. We also trigger `validate` before saving the document to warn users of potential mistakes.
 
-#### Types of errors
+### Types of errors
 
 Salve can handle several different validation errors (See [here](https://github.com/mangalam-research/salve/blob/develop/lib/salve/errors.ts)). The most important in our context are `ElementNameError`, `AttributeNameError`, `AttributeValueError`, `ChoiceError`, `ValidationError`. On LEAF-Writer Validator, these errors are sent to the main thread as an array of objects ([ValidationError](#validationerror)) with derails about where the error occurs and documentation, if available.
 
-##### Element Name
+#### Element Name
 
 An Element Name Error occurs when a (parent) tag contains a child element that is not allowed or not defined in the schema. For instance, the document contains `<div><sunny>In the park</sunny></div>` but the tag `<div>` cannot have `<sunny>` as a child. In this case, `<sunny>` is the target, and `<div>` is the element.
 
 We can use `{error.element.xpath}` to inform, highlight, and navigate directly to the location where the error occurs in the document. If available, we can also display the element's documentation `{error.element.documentation}` and full name `{error.element.fullname}`. If the target is defined in the schema, so it might have some documentation `{error.target.documentation}` and a fullname `{error.target.fullname}` as well.
 
-##### Attribute Name
+#### Attribute Name
 
 An Attribute Name Error occurs when a tag contains any attribute not defined in the schema. For instance, the document contains `<closer day=“22">`, but the element `<closer>` on the schema does not contain the attribute `day`. In this case, `<closer>` is the `element`, and `day` is the `target`.
 
 We can use `{error.element.xpath}` to inform, highlight, and navigate directly to the location where the error occurs in the document. If available, we can also display the element's documentation `{error.element.documentation}` and full name `{error.element.fullname}`. If the target is defined in the schema, so it might have some documentation `{error.target.documentation}` and a fullname `{error.target.fullname}` as well.
 
-##### Attribute Value
+#### Attribute Value
 
 An Attribute Value Error occurs when a tag contains an attribute that has a value outside the range defined in the schema. For instance, the document contains `<persName cert="none">` but the attribute `cert` [certainty] of element `<persName>` [personal name] cannot have `none` as a value. In this case, `cert` is the target, and `<persName>` is the element.
 
 We can use `{error.element.xpath}` to inform, highlight, and navigate directly to the location where the error occurs in the document. If available, we can also display the element's documentation `{error.element.documentation}` and full name `{error.element.fullname}`. The same can be done to the attribute. If available, we can also display documentation `{error.target.documentation}` and full name `{error.target.fullname}`.
 
-##### Choice Error
+#### Choice Error
 
-##### Validation Error
+#### Validation Error
 
-#### Has validator
+### Has validator
 
 LEAF-Writer Validator has a handy function to check if the validator is initialized. The validator needs a schema and a document. So, calling `hasValidator` without one or the other will return `false`. Otherwise, this function returns `true`. Use this function before triggering any method to check if the task can be done.
 
 ```ts
-const hasValidator = await validator.hasValidator();
+const hasValidator = validator.hasValidator();
 console.log(status); // true or false
 ```
 
@@ -207,11 +216,11 @@ Get the element definition using xpath. Call `getTagAt` passing `tagName`, `pare
 
 **Parameters**
 
-| Name | Type   | Description |
-| - | - | - |
-| tagName* | string | The tag name |
-| parentXpath* | string | The tag's parent Xpath |
-| index | number | The index position relative to its parent. Default is `0` |
+| Name         | Type   | Description                                               |
+| ------------ | ------ | --------------------------------------------------------- |
+| tagName*     | string | The tag name                                              |
+| parentXpath* | string | The tag's parent Xpath                                    |
+| index        | number | The index position relative to its parent. Default is `0` |
 
 Example:
 
@@ -233,19 +242,19 @@ console.log(tag);
 
 ### Get Nodes for a Tag at
 
-Get a list of element for a tag using xpath. Call `getElementsForTagAt` passing `xpath` and `index` . The validator return an array of objects [NodeDetail](#nodedetail) with the element type (`tag`), the tag `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
+Get a list of element for a tag using xpath. Call `getNodesForTagAt` passing `xpath` and `index` . The validator return an array of objects [NodeDetail](#nodedetail) with the element type (`tag`), the tag `name`, `documentation` [if available], `fullName` [extracted from documentation, if available], and `ns` [namespace if available]
 
 **Parameters**
 
-| Name | Type | Description |
-| - | - | - |
-| xpath* | string | The tag's Xpath |
+| Name   | Type   | Description                                               |
+| ------ | ------ | --------------------------------------------------------- |
+| xpath* | string | The tag's Xpath                                           |
 | index  | number | The index position relative to its parent. Default is `0` |
 
 Example:
 
 ```ts
-const tags = await validator.getElementsForTagAt('TEI/text/body/div');
+const tags = await validator.getNodesForTagAt('TEI/text/body/div');
 
 console.log(tags);
 /*
@@ -269,9 +278,9 @@ Get a list of attributes for a tag using xpath. Call `getAttributesForTagAt` pas
 
 **Parameters**
 
-| Name | Type | Description |
-| - | - | - |
-| xpath* | string | The tag's Xpath |
+| Name   | Type   | Description                                               |
+| ------ | ------ | --------------------------------------------------------- |
+| xpath* | string | The tag's Xpath                                           |
 | index  | number | The index position relative to its parent. Default is `1` |
 
 Example:
@@ -301,9 +310,9 @@ Get attribute's details for a tag using xpath. Call `getTagAttributeAt` passing 
 
 **Parameters**
 
-| Name | Type | Description |
-| - | - | - |
-| attributeName* | string | The attribute's name |
+| Name           | Type   | Description                                            |
+| -------------- | ------ | ------------------------------------------------------ |
+| attributeName* | string | The attribute's name                                   |
 | parentXpath*   | string | The attribute's parent Xpath (*i.e.*, the tag's xpath) |
 
 Example:
@@ -330,8 +339,8 @@ Get a list of possible values for tag's attribute using xpath. Call `getValuesFo
 
 **Parameters**
 
-| Name | Type | Description |
-| - | - | - |
+| Name   | Type   | Description                                                                                               |
+| ------ | ------ | --------------------------------------------------------------------------------------------------------- |
 | xpath* | string | The attribute's Xpath. The last part of the Xpath must start with a `@` sign to define it as an attribute |
 
 Example:
@@ -363,10 +372,10 @@ The method returns the object [PossibleNodesAt](#possiblenodesat), which include
 
 **Parameters**
 
-| Name | Type | Description |
-| - | - | - |
-| target* | [Target](#target) | The target xpath and index and optionally a [selection](#targetselection) objects |
-| options | [PossibleNodesAtOptions](#possiblenodesatoptions) | The options for this request,most notably `speculativeValidate` |
+| Name    | Type                                              | Description                                                                       |
+| ------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| target* | [Target](#target)                                 | The target xpath and index and optionally a [selection](#targetselection) objects |
+| options | [PossibleNodesAtOptions](#possiblenodesatoptions) | The options for this request,most notably `speculativeValidate`                   |
 
 Example:
 
@@ -476,8 +485,8 @@ The method returns the object [PossibleNodesAt](#possiblenodesat), which include
 
 **Parameter**
 
-| Name | Type | Description |
-| - | - | - |
+| Name    | Type              | Description                                                                       |
+| ------- | ----------------- | --------------------------------------------------------------------------------- |
 | target* | [Target](#target) | The target xpath and index and optionally a [selection](#targetselection) objects |
 
 Example:
@@ -536,116 +545,153 @@ Example:
 validator.reset()
 ```
 
+## Clean Up
+
+LEAF-Writer Validator keeps schema chached in the browser's indexedDB for faster and optimized responsed. If you ever need to clear the cache or remove the DB completely, LEAF-Wrtier exposes two methods for clean up: `clear chache` and `delete db`. This can be important if you want to remove all personal data when the user log out, for instance.
+
+### Clear Cache
+
+Convinent funtion to delete all schemas cached by the LEAF-Writer Validator stored in the IndexedDB on the table `LEAF-Writer-Validator`.
+
+Example:
+
+```ts
+await validator.clearCache()
+```
+
+### Delete Db
+
+Convinent funtion to delete LEAF-Writer Validator IndexedDB.
+Different from `clearCache`, `deleteDb` is independente from the `Validator` object, ther must initialized. You can use it this to remove the database without importing or iniating the Validator.
+
+Example:
+
+```ts
+import { deleteDb } from '@cwrc/leafwriter-validator';
+await deleteDb()
+```
+
 ## Types
 
 We use **TypeDoc** to autogenerate documentation from the code.
-Run `npm run build-documentation` to get a nice page with all the types.                                                                     |
+Run `npm run build-documentation` to get a nice page with all the types.
 
+### InitializeParameters
 
-### InitializeOptions
-
-| Name           | Type    | Description                                                                                         |
-| -------------- | ------- | --------------------------------------------------------------------------------------------------- |
-| id*            | string  | Schema identifier                                                                                    |
-| url            | string  | The schema url. Required if `cachedSchema` is omitted                                               |
-| cachedSchema   | string  | A stringfied object. <br/> Signature: `{ json: string; manifest: { filePath: string, hash: string }}` |
-| createManifest | boolean | Whether or note to create a manifest. Default is true.                                              |
+| Name           | Type    | Description                                            |
+| -------------- | ------- | ------------------------------------------------------ |
+| id*            | string  | Schema identifier                                      |
+| url*           | string  | The schema url.                                        |
+| shouldCache    | boolean | Whether or not to cache the validator to this speciffic schema. Default is true. |
 
 ### InitializeResponse
 
-| Name | Type | Description |
+| Name| Type| Description|
 | - | - | - |
-| status* | string | The way loader load the schema. One of the following: 'Loaded from file' \| 'Loaded from cache' \| 'Already loaded' |
-| parsedSchema | string | A stringfied object. <br/> Signature: `{ json: string; manifest: { filePath: string, hash: string }}` |
+| success*| boolean | Indiates if the LEAF-Writer Validator was initiated with success. |
+| error | Error | An error object with a property `message` (string)  |
 
 ### NodeDetail
 
-| Name | Type | Description |
-| - | - | - |
-| type* | `attribute` \| `attributeValue` \| `tag` \| `text` |  A simplfication on the internal validator events. Note: `tag` includes all tag events `endTag` \| `enterStartTag` \| `leaveStartTag`.
-| name* | string | That name of the node (tag name, attribute name, or atribute value). |
-| eventType* | `attributeName` \| `attributeValue` \| `endTag` \| `enterStartTag` \| `leaveStartTag` \| `text` | Intetnal validator events. Useful for debug.
-| documentation | string | Documentation (if available). |
-| fullName | string | Full name extracted from documentation (if available). |
-| ns | string | The namespace. |
-| invalid | boolean | If speculative validated, it means that the node will produce invalid structure according to the context. |
-|  value | string | The value a node can hold. Only available for `attributeValue` (the value of the attribute itself) or for `text`, whicj can take a form of a regular expression `RegExp` |
+| Name          | Type                                                                                            | Description                                                                                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| type*         | `attribute` \| `attributeValue` \| `tag` \| `text`                                              | A simplfication on the internal validator events. Note: `tag` includes all tag events `endTag` \| `enterStartTag` \| `leaveStartTag`.                                    |
+| name*         | string                                                                                          | That name of the node (tag name, attribute name, or atribute value).                                                                                                     |
+| eventType*    | `attributeName` \| `attributeValue` \| `endTag` \| `enterStartTag` \| `leaveStartTag` \| `text` | Intetnal validator events. Useful for debug.                                                                                                                             |
+| documentation | string                                                                                          | Documentation (if available).                                                                                                                                            |
+| fullName      | string                                                                                          | Full name extracted from documentation (if available).                                                                                                                   |
+| ns            | string                                                                                          | The namespace.                                                                                                                                                           |
+| invalid       | boolean                                                                                         | If speculative validated, it means that the node will produce invalid structure according to the context.                                                                |
+| value         | string                                                                                          | The value a node can hold. Only available for `attributeValue` (the value of the attribute itself) or for `text`, whicj can take a form of a regular expression `RegExp` |
 
 ### PossibleNodesAt
 
-| Name         | Type                        | Description                                |
-| ------------ | --------------------------- | ------------------------------------------ |
-| target*      | [target](#target)           | The target in the document.                |
-| nodes*       | [NodeDetail](#nodedetail)[] | An array of possible tags.                 |
+| Name    | Type                        | Description                 |
+| ------- | --------------------------- | --------------------------- |
+| target* | [target](#target)           | The target in the document. |
+| nodes*  | [NodeDetail](#nodedetail)[] | An array of possible tags.  |
 
 ### PossibleNodesAtOptions
 
-| Name | Type | Description |
-| - | - | - |
-| speculativeValidate | boolean | The tag Xpath in the document. |nabled/disabled speculatively validation. Default is `true`  
+| Name                | Type    | Description                    |
+| ------------------- | ------- | ------------------------------ |
+| speculativeValidate | boolean | The tag Xpath in the document. | nabled/disabled speculatively validation. Default is `true` |
 
 ### Target
 
-| Name | Type | Description |
-| - | - | - |
-| xpath* | string | The tag Xpath in the document. |
-| index* | number | The index position relative to its parent. |
-| selection  | [TargetSelection](#targetselection) | Give more specificity to the request. Omit to consider the caret exact position. |
+| Name      | Type                                | Description                                                                      |
+| --------- | ----------------------------------- | -------------------------------------------------------------------------------- |
+| xpath*    | string                              | The tag Xpath in the document.                                                   |
+| index*    | number                              | The index position relative to its parent.                                       |
+| selection | [TargetSelection](#targetselection) | Give more specificity to the request. Omit to consider the caret exact position. |
 
 ### TargetSelection
 
-| Name | Type | Description|
-| - | - | - |
-| type* | `'span'` \| `'inside'` \| `'around'` \| `'before'` \| `'after'` \| `'change'` | `span`: Use when to add a portion of the document inside a new tag. We must also provide `startContainerIndex`, `startOffset`, `endContainerIndex`, and `endOffset`. <br/><br/> `inside`: Similar to `span`. Use to add a new tag containing all the content of the target tag into the parent tag, as if we would have made a text selection with everything inside the target tag. We must also provide `startContainerIndex`, `endContainerIndex`, and `xpath`. <br/><br/> `around`: Similar to `inside`. Use to add a new tag containing all the content of the target tag (and including the target tag itself) into the parent tag. We must also provide `xpath`. <br/><br/> `before`: Add a new tag before a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `after`: Similar to `before`. Use to add a new tag after a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `change`: Similar to `inside`. Use to change the target tag, preserving the content inside. We must also provide `startContainerIndex`, `endContainerIndex`, `xpath`, and `skip`. |
-| startContainerIndex | number | The container index relative to its parent where the selection starts. Used with `span`, `inside`, and `change` |
-| startOffset | string | The index position relative to `startContainerIndex` where selection starts. This is where the selection caret starting point. Used with `span` |
-| endContainerIndex   | string | The container index relative to its parent where the selection ends. Used with `span`, `inside`, and `change` |
-| endOffset | number | The index position relative to `endContainerIndex` where selection ends. This is where the selection caret endpoint. Used with `span` |
-| skip | string | The name of the tag to skip. Used with `change` to avoid suggesting changing a tag for itself. |
-| xpath | string | The tag Xpath in the document. Used with `inside`, `around`, `change`, `before`, and `after` |
-| containerIndex | number | The container index relative to the target parent. Used with `before` and `after`|
+| Name                | Type                                                                          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| type*               | `'span'` \| `'inside'` \| `'around'` \| `'before'` \| `'after'` \| `'change'` | `span`: Use when to add a portion of the document inside a new tag. We must also provide `startContainerIndex`, `startOffset`, `endContainerIndex`, and `endOffset`. <br/><br/> `inside`: Similar to `span`. Use to add a new tag containing all the content of the target tag into the parent tag, as if we would have made a text selection with everything inside the target tag. We must also provide `startContainerIndex`, `endContainerIndex`, and `xpath`. <br/><br/> `around`: Similar to `inside`. Use to add a new tag containing all the content of the target tag (and including the target tag itself) into the parent tag. We must also provide `xpath`. <br/><br/> `before`: Add a new tag before a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `after`: Similar to `before`. Use to add a new tag after a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `change`: Similar to `inside`. Use to change the target tag, preserving the content inside. We must also provide `startContainerIndex`, `endContainerIndex`, `xpath`, and `skip`. |
+| startContainerIndex | number                                                                        | The container index relative to its parent where the selection starts. Used with `span`, `inside`, and `change`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| startOffset         | string                                                                        | The index position relative to `startContainerIndex` where selection starts. This is where the selection caret starting point. Used with `span`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| endContainerIndex   | string                                                                        | The container index relative to its parent where the selection ends. Used with `span`, `inside`, and `change`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| endOffset           | number                                                                        | The index position relative to `endContainerIndex` where selection ends. This is where the selection caret endpoint. Used with `span`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| skip                | string                                                                        | The name of the tag to skip. Used with `change` to avoid suggesting changing a tag for itself.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| xpath               | string                                                                        | The tag Xpath in the document. Used with `inside`, `around`, `change`, `before`, and `after`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| containerIndex      | number                                                                        | The container index relative to the target parent. Used with `before` and `after`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 ### ValidationError
 
-| Name | Type | Description |
-| - | - | - |
-| type* | `'AttributeNameError'` \| `'AttributeValueError'` \| `'ElementNameError'` \| `'ChoiceError'` \| `'ValidationError'` | The error type. |
-| msg* | string | An explanatory message about the error, indicating for instance that an attribute doesn't belong to a tag or a tag cannot be a child of its parent |
-| target*  | [ValidationErrorTarget](#validationerrortarget) | The invalid element.  |
-| element* | [ValidationErrorElement] | The specific parent tag where the error was found. |
+| Name     | Type                                                                                                                | Description                                                                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type*    | `'AttributeNameError'` \| `'AttributeValueError'` \| `'ElementNameError'` \| `'ChoiceError'` \| `'ValidationError'` | The error type.                                                                                                                                    |
+| msg*     | string                                                                                                              | An explanatory message about the error, indicating for instance that an attribute doesn't belong to a tag or a tag cannot be a child of its parent |
+| target*  | [ValidationErrorTarget](#validationerrortarget)                                                                     | The invalid element.                                                                                                                               |
+| element* | [ValidationErrorElement]                                                                                            | The specific parent tag where the error was found.                                                                                                 |
 
 ### ValidationErrorElement
 
-| Name | Type | Description |
-| - | - | - |
-| xpath* | string | The target Xpath in the document. It can be useful to locate and navigate to the exact error position quickly. |
-| name  | string | The name of the element (tag or attribute), if defined in the schema. |
-| documentation | string | If available in the schema. It can help users understand the context where the error occurred. |
-| fullname | string | The full name of the element (tag or attribute), if defined in the document schema. |
-| parentElementXpath | string | Expose the parent element Xpath. It gets handy if the error is an attribute. |
-| parentElementIndex | number | Expose the parent element index relative to its parent. It gets handy if the error is an attribute. |
-| parentElementName  | string | Expose the parent element name. It gets handy if the error is an attribute. |
+| Name               | Type   | Description                                                                                                    |
+| ------------------ | ------ | -------------------------------------------------------------------------------------------------------------- |
+| xpath*             | string | The target Xpath in the document. It can be useful to locate and navigate to the exact error position quickly. |
+| name               | string | The name of the element (tag or attribute), if defined in the schema.                                          |
+| documentation      | string | If available in the schema. It can help users understand the context where the error occurred.                 |
+| fullname           | string | The full name of the element (tag or attribute), if defined in the document schema.                            |
+| parentElementXpath | string | Expose the parent element Xpath. It gets handy if the error is an attribute.                                   |
+| parentElementIndex | number | Expose the parent element index relative to its parent. It gets handy if the error is an attribute.            |
+| parentElementName  | string | Expose the parent element name. It gets handy if the error is an attribute.                                    |
 
 ### ValidationErrorTarget
 
-| Name | Type | Description |
-| - | - | - |
-| xpath* | string | The target’s Xpath in the document. Useful to locate and navigate to the exact error position quickly. |
-| index* | number | The index position relative to its parent. |
-| isAttr* | boolean | If the error is an attribute. Default is `false`. |
-| ns | string | The namespace. |
-| name | string | The name of the element (tag or attribute), if defined in the schema. |
-| documentation | string  | If available in the schema. It can help users understand the context where the error occurred. |
-| fullname | string  | The full name of the element (tag or attribute), if defined in the document schema. |
+| Name          | Type    | Description                                                                                            |
+| ------------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| xpath*        | string  | The target’s Xpath in the document. Useful to locate and navigate to the exact error position quickly. |
+| index*        | number  | The index position relative to its parent.                                                             |
+| isAttr*       | boolean | If the error is an attribute. Default is `false`.                                                      |
+| ns            | string  | The namespace.                                                                                         |
+| name          | string  | The name of the element (tag or attribute), if defined in the schema.                                  |
+| documentation | string  | If available in the schema. It can help users understand the context where the error occurred.         |
+| fullname      | string  | The full name of the element (tag or attribute), if defined in the document schema.                    |
 
 ### WorkingStateData
 
-| Name | Type | Description |
-| - | - | - |
-| state* | `1` [INCOMPLETE] \| `2` [WORKING] \| `3` [INVALID] \| `4` [VALID] | The state of the validation process. |
-| partDone* | number | The percentage of the document validated (0-1). |
-| valid | boolean | Of the document is valid or not. Only available on state `3` and `4`. |
-| errors | [ValidationError](#validationerror)[] | An array of errors. Only available on state `3`. |
+| Name      | Type                                                              | Description                                                           |
+| --------- | ----------------------------------------------------------------- | --------------------------------------------------------------------- |
+| state*    | `1` [INCOMPLETE] \| `2` [WORKING] \| `3` [INVALID] \| `4` [VALID] | The state of the validation process.                                  |
+| partDone* | number                                                            | The percentage of the document validated (0-1).                       |
+| valid     | boolean                                                           | Of the document is valid or not. Only available on state `3` and `4`. |
+| errors    | [ValidationError](#validationerror)[]                             | An array of errors. Only available on state `3`.                      |
+
+### CachedSchema
+
+*This is an internal type. It is only described here for completeness.*
+
+| Name           | Type    | Description                                            |
+| -------------- | ------- | ------------------------------------------------------ |
+| createdAt*     | Date    | The timestamp when the cache was created |
+| gramarJson*    | string  | Stringfied JSON repersentaiton of Salve processed schema |
+| hash*          | string  | The hash representation of the schema file. We use `sha-256`. |
+| id*            | string  | The schema ID |
+| url*           | string  | The schema URL |
+| warnings       | string[] | A list of warnings generated by Salve when the schema was processed |
 
 ## Development
 

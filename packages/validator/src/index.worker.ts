@@ -5,9 +5,11 @@ import jsdom from './lib/jsdom/jsdom-browserified';
 import { log, LOG_PREFIX } from './log';
 import Validator from './Validator';
 
-export type { InitializeOptions, InitializeResponse } from './conversion';
+export { deleteDb } from './db';
 export type {
   EventName,
+  InitializeParameters,
+  InitializeResponse,
   NodeDetail,
   NodeType,
   PossibleNodesAt,

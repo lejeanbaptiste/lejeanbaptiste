@@ -1,3 +1,13 @@
+export interface CachedSchema {
+  createdAt: Date;
+  gramarJson: string;
+  hash: string;
+  id: string;
+  simplified?: any;
+  url: string;
+  warnings?: string[];
+}
+
 export type EventName =
   | 'attributeName'
   | 'attributeValue'
@@ -5,6 +15,17 @@ export type EventName =
   | 'enterStartTag'
   | 'leaveStartTag'
   | 'text';
+
+export interface InitializeParameters {
+  id: string;
+  url: string;
+  shouldCache?: boolean;
+}
+
+export interface InitializeResponse {
+  error?: Error;
+  success: boolean;
+}
 
 export interface NodeDetail {
   documentation?: string;

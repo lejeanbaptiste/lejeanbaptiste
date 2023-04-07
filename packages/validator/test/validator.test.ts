@@ -1,20 +1,15 @@
 import { WorkingState } from '@cwrc/salve-dom-leafwriter';
 import { beforeAll, describe, expect, jest, test } from '@jest/globals';
 import fetchMock from 'jest-fetch-mock';
-import { log, logEnabledFor } from '../src/log';
-import { NodeDetail } from '../src/types';
 import Validator from '../src/Validator';
-import cwrcTeiLite from './mocks/cwtcTeiLite';
+import { deleteDb } from '../src/index.worker';
+import { log, logEnabledFor } from '../src/log';
+import type { NodeDetail } from '../src/types';
+import { cwrcTeiLite } from './mocks';
 
 beforeAll(() => {
   global.console = {
     ...console,
-    // uncomment to ignore a specific log level
-    // log: jest.fn(),
-    // debug: jest.fn(),
-    // info: jest.fn(),
-    // warn: jest.fn(),
-    // error: jest.fn(),
     time: jest.fn(),
     groupCollapsed: jest.fn(),
   };
@@ -42,46 +37,30 @@ describe('Validator', () => {
 
   describe('conversion', () => {
     test('load schema from url', async () => {
-      expect.assertions(2);
+      expect.assertions(1);
 
-      const { status, parsedSchema } = await Validator.initialize({
-        createManifest: false,
-        id: cwrcTeiLite.id,
-        url: cwrcTeiLite.url,
-      });
-      expect(status).toBe('Loaded from file');
-      expect(parsedSchema).toBeDefined();
+      const { success } = await Validator.initialize({ id: cwrcTeiLite.id, url: cwrcTeiLite.url });
+      expect(success).toBe(true);
     });
 
     test('load schema already loaded', async () => {
-      expect.assertions(2);
-      const { status, parsedSchema } = await Validator.initialize({
-        createManifest: false,
-        id: cwrcTeiLite.id,
-        url: cwrcTeiLite.url,
-      });
-      expect(status).toBe('Already loaded');
-      expect(parsedSchema).toBeUndefined();
+      expect.assertions(1);
+      const { success } = await Validator.initialize({ id: cwrcTeiLite.id, url: cwrcTeiLite.url });
+      expect(success).toBe(true);
     });
 
     test('load schema from cache', async () => {
-      expect.assertions(2);
+      expect.assertions(1);
       Validator.reset();
-      const { status, parsedSchema } = await Validator.initialize({
-        createManifest: false,
-        id: cwrcTeiLite.id,
-        cachedSchema: cwrcTeiLite.cached,
-        url: cwrcTeiLite.url,
-      });
-      expect(status).toBe('Loaded from cache');
-      expect(parsedSchema).toBeUndefined();
+      const { success } = await Validator.initialize({ id: cwrcTeiLite.id, url: cwrcTeiLite.url });
+      expect(success).toBe(true);
     });
   });
 
   describe('validate', () => {
     test('has no validator', async () => {
       expect.assertions(1);
-      expect(await Validator.hasValidator()).toBe(false);
+      expect(Validator.hasValidator()).toBe(false);
     });
 
     test('Document Valid', (done) => {
@@ -563,6 +542,22 @@ describe('Validator', () => {
           index: 0,
         });
       }).rejects.toThrow();
+    });
+  });
+
+  describe('clean up', () => {
+    test('clear cache', async () => {
+      expect.assertions(1);
+
+      const response = await Validator.clearCache();
+      expect(response).not.toBe(Error);
+    });
+
+    test('delete db', async () => {
+      expect.assertions(1);
+
+      const response = await deleteDb();
+      expect(response).not.toBe(Error);
     });
   });
 });
