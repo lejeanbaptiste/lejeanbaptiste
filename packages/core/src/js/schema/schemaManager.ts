@@ -752,7 +752,7 @@ class SchemaManager {
 
     schemaNavigator.setSchemaJSON(this.schemaJSON);
 
-    await this.writer.utilities.sendSchemaToworkerValidator();
+    await this.writer.utilities.sendSchemaToWorkerValidator();
   }
 
   /**
