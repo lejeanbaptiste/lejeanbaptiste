@@ -66,7 +66,7 @@ class Utilities {
   }
 
   //? Load schema using Salve
-  async sendSchemaToworkerValidator() {
+  async sendSchemaToWorkerValidator() {
     await this.writer.overmindActions.validator.initialize();
   }
 
