@@ -263,17 +263,13 @@ export const setAnnotationrMode = ({ state }: Context, value: number) => {
  * @param schema - Omit<Schema, 'id'>
  * @returns The new schema that was added.
  */
-export const addSchema = ({ state, effects }: Context, newSchema: Omit<Schema, 'id'>) => {
+export const addSchema = async ({ state }: Context, newSchema: Omit<Schema, 'id'>) => {
   if (!window.writer?.editor) return;
+
   const schema = window.writer.schemaManager.addSchema({ ...newSchema, editable: true });
   state.editor.schemas[schema.id] = schema;
 
-  //Add to localstorage
-  let customSchemas = effects.editor.api.getFromLocalStorage<Schema[]>('custom_schemas');
-  customSchemas = customSchemas ?? [];
-
-  customSchemas.push(schema);
-  effects.editor.api.saveToLocalStorage('custom_schemas', customSchemas);
+  await db.customSchemas.add(schema);
 
   return schema;
 };
@@ -284,19 +280,12 @@ export const addSchema = ({ state, effects }: Context, newSchema: Omit<Schema, '
  * update the schemas array.
  * @returns The updated schema.
  */
-export const updateSchema = ({ state, effects }: Context, updatedSchema: Schema) => {
+export const updateSchema = async ({ state }: Context, updatedSchema: Schema) => {
   if (!window.writer?.editor) return;
   window.writer.schemaManager.updateSchema(updatedSchema);
   state.editor.schemas[updatedSchema.id] = updatedSchema;
 
-  //update localstorage
-  let customSchemas = effects.editor.api.getFromLocalStorage<Schema[]>('custom_schemas');
-  if (!customSchemas) return updatedSchema;
-
-  customSchemas = customSchemas.map((schema) =>
-    schema.id === updatedSchema.id ? updatedSchema : schema
-  );
-  effects.editor.api.saveToLocalStorage('custom_schemas', customSchemas);
+  await db.customSchemas.put(updatedSchema);
 
   return updatedSchema;
 };
@@ -306,7 +295,7 @@ export const updateSchema = ({ state, effects }: Context, updatedSchema: Schema)
  * the matching id
  * @param {string} schemaId - The id of the schema to delete
  */
-export const deleteSchema = ({ state, effects }: Context, schemaId: string) => {
+export const deleteSchema = async ({ state }: Context, schemaId: string) => {
   if (!window.writer?.editor) return;
   window.writer.schemaManager.deleteSchema(schemaId);
 
@@ -317,12 +306,7 @@ export const deleteSchema = ({ state, effects }: Context, schemaId: string) => {
 
   state.editor.schemas = schemaObjs;
 
-  //remove from localstorage
-  let customSchemas = effects.editor.api.getFromLocalStorage<Schema[]>('custom_schemas');
-  if (!customSchemas) return;
-
-  customSchemas = customSchemas.filter((schema) => schema.id !== schemaId);
-  effects.editor.api.saveToLocalStorage('custom_schemas', customSchemas);
+  await db.customSchemas.delete(schemaId);
 };
 
 export const getSchemsByMappingId = ({ state }: Context, mappingId: string) => {
