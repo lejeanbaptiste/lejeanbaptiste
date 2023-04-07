@@ -14,7 +14,7 @@ const i18n = createInstance(
     defaultNS: 'leafwriter',
     fallbackLng: 'en-CA',
      // lng: 'en-CA',
-    ns: ['leafwriter', 'commons'],
+    ns: ['leafwriter'],
     returnEmptyString: false,
     react: { useSuspense: false },
     resources,
