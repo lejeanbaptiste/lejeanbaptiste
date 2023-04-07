@@ -1,15 +1,16 @@
+import i18n from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
 import { supportedLanguages } from '../../config';
 import type { DialogBarProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
 import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
-import i18n from 'i18next';
 
 export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
   //DARK MODE
   const prefPaletteMode: PaletteMode =
-    (localStorage.getItem('themeAppearance') as PaletteMode) ?? 'auto';
+    effects.editor.api.getFromLocalStorage<PaletteMode>('themeAppearance') ?? 'auto';
+
   actions.ui.setThemeAppearance(prefPaletteMode);
 
   //LANGUAGE
@@ -24,7 +25,7 @@ export const onInitializeOvermind = ({ state, actions, effects }: Context, overm
   }
 };
 
-export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
+export const setThemeAppearance = ({ state, actions, effects }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
 
   const darkMode =
@@ -36,7 +37,7 @@ export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMo
 
   actions.ui.setDarkMode(darkMode);
 
-  localStorage.setItem('themeAppearance', value);
+  effects.editor.api.saveToLocalStorage<PaletteMode>('themeAppearance', value);
 };
 
 export const setDarkMode = ({ state }: Context, value: boolean) => {
@@ -64,8 +65,8 @@ export const updateTitle = ({ state }: Context, title: string) => {
   state.ui.title = title;
 };
 
-export const resetPreferences = () => {
-  localStorage.removeItem('paletteMode');
+export const resetPreferences = ({ effects }: Context) => {
+  effects.editor.api.removeFromLocalStorage('themeAppearance');
 };
 
 export const openEntityLookupsDialog = (
@@ -165,7 +166,7 @@ export const resetDoNotDisplayDialogs = ({ effects }: Context) => {
   effects.editor.api.removeFromLocalStorage('doNotDisplayDialogs');
 };
 
-export const updateReadonly = ({ state, actions }: Context) => {
+export const updateReadonly = ({ state }: Context) => {
   const { isReadonly } = state.editor;
 
   window.writer.isReadOnly = isReadonly;
