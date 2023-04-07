@@ -12,7 +12,7 @@ export const UserCard = () => {
 
   const { accountManagement } = useActions().auth;
 
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation();
 
   const userDetail = useMemo(() => {
     if (!user) return;

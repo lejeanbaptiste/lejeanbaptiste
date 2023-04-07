@@ -30,7 +30,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
   const { signOut } = useActions().auth;
   const { openDialog } = useActions().ui;
 
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation();
   const { leafWriter } = useLeafWriter();
   const { clearCookieConsent, showSettings } = useCookieConsent();
 
@@ -65,8 +65,8 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'identity',
       label: (
         <>
-          {t('identity')}:{' '}
-          <span style={{ textTransform: 'capitalize' }}>{user?.preferredID ?? t('none')}</span>
+          {t('commons:identity')}:{' '}
+          <span style={{ textTransform: 'capitalize' }}>{user?.preferredID ?? t('commons:none')}</span>
         </>
       ),
       icon: 'fingerPrint',
@@ -80,7 +80,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
         <>
           {t('storage')}:{' '}
           <span style={{ textTransform: 'capitalize' }}>
-            {user?.prefStorageProvider ?? t('none')}
+            {user?.prefStorageProvider ?? t('commons:none')}
           </span>
         </>
       ),
@@ -91,13 +91,13 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
     },
     {
       id: 'privacy',
-      label: t('privacy_settings'),
+      label: t('commons:privacy_settings'),
       icon: 'privacyTip',
       action: () => showSettings(),
     },
     {
       id: 'logout',
-      label: t('sign_out'),
+      label: t('commons:sign_out'),
       icon: 'logout',
       action: () => handleSignOut(),
     },
@@ -143,7 +143,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
   const editorMenu: OptionProps[] = [
     {
       id: 'settings',
-      label: t('settings'),
+      label: t('commons:settings'),
       icon: 'settings',
       hide: page !== 'edit',
       action: (event) => {
