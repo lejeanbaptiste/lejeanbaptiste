@@ -32,7 +32,7 @@ const webpackConfig: webpack.Configuration = {
   module: {
     rules: [
       {
-        test: /\.[jt]sx?$/,
+        test: /\.[jt]s?$/,
         loader: 'esbuild-loader',
         options: { tsconfig: './tsconfig.json', target: 'es2020' },
       },
