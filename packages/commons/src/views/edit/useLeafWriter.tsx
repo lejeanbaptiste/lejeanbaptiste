@@ -32,7 +32,7 @@ export const useLeafWriter = () => {
   const { notifyViaSnackbar, openDialog } = useActions().ui;
 
   const navigate = useNavigate();
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation();
 
   const { getResourceFromPermalink } = usePermalink();
 
@@ -158,7 +158,7 @@ export const useLeafWriter = () => {
     const response = await convertXMLtoHTML(content);
     if (response instanceof Error) {
       notifyViaSnackbar({
-        message: `${t('Conversion to HTML failed').toString()}. ${response.message}`,
+        message: `${t('commons:Conversion to HTML failed').toString()}. ${response.message}`,
         options: { variant: 'error' },
       });
       return;
@@ -213,10 +213,10 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        title: `${t('unsaved_changes')}`,
+        title: `${t('commons:unsaved_changes')}`,
         actions: [
-          { action: 'cancel', label: `${t('cancel')}` },
-          { action: 'discard', label: `${t('discard_changes')}` },
+          { action: 'cancel', label: `${t('commons:cancel')}` },
+          { action: 'discard', label: `${t('commons:discard_changes')}` },
         ],
         onClose: async (action) => {
           if (action !== 'discard') return;

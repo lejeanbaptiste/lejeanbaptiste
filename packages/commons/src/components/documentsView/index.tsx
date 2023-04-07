@@ -26,7 +26,7 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
   const { userState } = useAppState().auth;
   const { language } = useAppState().ui;
 
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation();
   const animationControl = useAnimation();
   const { width: _windowWidth } = useWindowSize();
 

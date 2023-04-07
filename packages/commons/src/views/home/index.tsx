@@ -15,7 +15,7 @@ export const HomeView = () => {
   const { openStorageDialog } = useActions().storage;
   const { setPage } = useActions().ui;
 
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation();
   const { getResourceFromPermalink } = usePermalink();
 
   useEffect(() => {

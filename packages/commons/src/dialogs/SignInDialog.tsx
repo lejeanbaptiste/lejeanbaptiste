@@ -10,9 +10,9 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { authProviders } = useAppState().providers;
   const { closeDialog } = useActions().ui;
 
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation();
 
-  const handleClose = (_event: MouseEvent, reason: string) => closeDialog(id);
+  const handleClose = (_event: MouseEvent) => closeDialog(id);
   const handleCancel = () => closeDialog(id);
 
   return (
@@ -28,7 +28,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         </Stack>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center' }}>
-        <Button onClick={handleCancel}>{t('cancel')}</Button>
+        <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
       </DialogActions>
     </Dialog>
   );

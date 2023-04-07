@@ -22,7 +22,7 @@ export const usePermalink = () => {
   const { isStorageProviderSupported } = useActions().providers;
   const { getSampleDocuments, getTemplates } = useActions().storage;
 
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -82,7 +82,7 @@ export const usePermalink = () => {
       if (!document) {
         return {
           type: 'error',
-          message: `${t('template')} "${search.template}" ${t('not_found')}.`,
+          message: `${t('commons:template')} "${search.template}" ${t('commons:not_found')}.`,
         };
       }
 
@@ -95,7 +95,7 @@ export const usePermalink = () => {
       if (!document) {
         return {
           type: 'error',
-          message: `${t('sample_document')} "${search.sample}" ${t('not_found')}.`,
+          message: `${t('commons:sample_document')} "${search.sample}" ${t('commons:not_found')}.`,
         };
       }
 
