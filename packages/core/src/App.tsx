@@ -31,6 +31,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
   const [initialized, setInitialized] = useState(false);
   const [docLoaded, setDocLoaded] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     i18n.changeLanguage(state.ui.language.code);
@@ -55,13 +56,13 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   }, [document]);
 
   useEffect(() => {
-    actions.ui.updateReadonly();
-  }, [state.editor.isReadonly]);
+    if (ready) actions.ui.updateReadonly();
+  }, [ready, state.editor.isReadonly]);
 
   const fullscreenchanged = () => actions.ui.setFullscreen(!!window.document.fullscreenElement);
 
   const setup = async () => {
-    const config = createConfig(settings);
+    const config = await createConfig(settings);
 
     config.container = CONTAINER;
 
@@ -114,6 +115,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       setInitialized(true);
       setDocLoaded(true);
     });
+
+    setReady(true)
   };
 
   return (

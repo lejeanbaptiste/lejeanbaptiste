@@ -138,7 +138,7 @@ export const EditSchemaDialog = ({
           destroyModal(id);
           handleCancel();
 
-          deleteSchema(schemaId);
+          await deleteSchema(schemaId);
 
           handleBeforeClose();
           onDelete && (await onDelete(schemaId));
@@ -161,7 +161,9 @@ export const EditSchemaDialog = ({
 
     if (!schemaToSubmit) return;
 
-    const schema = schemaId ? updateSchema(schemaToSubmit as Schema) : addSchema(schemaToSubmit);
+    const schema = schemaId
+      ? await updateSchema(schemaToSubmit as Schema)
+      : await addSchema(schemaToSubmit);
     if (!schema) return;
 
     if (schemaId) schema.id = schemaId;

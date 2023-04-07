@@ -110,12 +110,12 @@ export const SchemaMappings = ['cwrcEntry', 'orlando', 'tei', 'teiLite'] as cons
 export type SchemaMappingType = (typeof SchemaMappings)[number];
 
 export interface Schema {
-  id: string;
-  name: string;
-  mapping: SchemaMappingType;
-  rng: string[];
   css: string[];
   editable?: boolean;
+  id: string;
+  mapping: SchemaMappingType;
+  name: string;
+  rng: string[];
 }
 
 export interface Language {
