@@ -1,14 +1,11 @@
 import { createOvermindMock, IContext } from 'overmind';
 import { config } from '../../src/overmind';
-import { supportedLanguages } from '../../src/utilities';
 
 export let overmind: IContext<typeof config>;
 
 export const resetOvermind = () => {
   overmind = createOvermindMock(config, (state) => {
-    state.ui = {
-      dialogBar: [],
-    };
+    state.ui = { dialogBar: [] };
 
     state.common = {
       alertDialog: { open: false },
