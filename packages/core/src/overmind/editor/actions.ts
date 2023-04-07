@@ -335,11 +335,11 @@ export const resetDialogWarnings = ({ actions }: Context) => {
 };
 
 export const resetPreferences = ({ state, actions, effects }: Context) => {
-  if (state.editor.fontSize !== 11) actions.editor.setFontSize(11);
-  if (state.editor.showTags !== false) actions.editor.toggleShowTags(false);
-  if (state.editor.showEntities !== true) actions.editor.setShowEntities(true);
-  if (state.editor.editorMode !== 'xmlrdfoverlap') actions.editor.setEditorMode('xmlrdf');
-  if (state.editor.annotationMode !== 3) actions.editor.setAnnotationrMode(3);
+  actions.editor.setFontSize(11);
+  actions.editor.toggleShowTags(false);
+  actions.editor.setShowEntities(true);
+  actions.editor.setEditorMode('xmlrdf');
+  actions.editor.setAnnotationrMode(3);
 
   effects.editor.api.removeFromLocalStorage('lookup_preferences');
 
