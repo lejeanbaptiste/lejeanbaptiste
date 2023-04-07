@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
 import { supportedLanguages } from '../../config';
+import { db } from '../../db';
 import type { DialogBarProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
 import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
@@ -150,20 +151,17 @@ export const removeNotificationSnackbar = ({ state }: Context, key: string | num
   );
 };
 
-export const shouldDisplayDialog = ({ effects }: Context, value: string) => {
-  const dialogs: string[] = effects.editor.api.getFromLocalStorage('doNotDisplayDialogs') ?? [];
-  if (dialogs.includes(value)) return false;
-  return true;
+export const shouldDisplayDialog = async (_context: Context, value: string) => {
+  const dialogId = await db.doNotDisplayDialogs.get({ id: value });
+  return !dialogId;
 };
 
-export const doNotDisplayDialog = ({ effects }: Context, value: string) => {
-  let dialogs: string[] = effects.editor.api.getFromLocalStorage('doNotDisplayDialogs') ?? [];
-  dialogs = [...dialogs, value];
-  effects.editor.api.saveToLocalStorage('doNotDisplayDialogs', dialogs);
+export const doNotDisplayDialog = async (_context: Context, value: string) => {
+  await db.doNotDisplayDialogs.put({ id: value });
 };
 
-export const resetDoNotDisplayDialogs = ({ effects }: Context) => {
-  effects.editor.api.removeFromLocalStorage('doNotDisplayDialogs');
+export const resetDoNotDisplayDialogs = async (_context: Context) => {
+  await db.doNotDisplayDialogs.clear();
 };
 
 export const updateReadonly = ({ state }: Context) => {

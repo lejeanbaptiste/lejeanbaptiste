@@ -210,11 +210,12 @@ export const promptAddSchema = (params: ProcessSchemaProps) => {
   });
 };
 
-export const openEditorModeDialog = (writer: Writer) => {
+export const openEditorModeDialog = async (writer: Writer) => {
   const { allowOverlap, mode, overmindActions } = writer;
 
   const dialogTitle = 'Editor Mode';
-  if (!overmindActions.ui.shouldDisplayDialog(dialogTitle)) return;
+  const shouldDisplayDialog = await overmindActions.ui.shouldDisplayDialog(dialogTitle)
+  if (!shouldDisplayDialog) return;
 
   let Message: FC<SimpleDialogMessageProps>;
 
@@ -276,8 +277,8 @@ export const openEditorModeDialog = (writer: Writer) => {
         { action: 'notShowAgain', label: t('dont show again') },
         { action: 'ok', label: t('commons:ok') },
       ],
-      onClose: (action: string) => {
-        if (action === 'notShowAgain') overmindActions.ui.doNotDisplayDialog('Editor Mode');
+      onClose: async (action: string) => {
+        if (action === 'notShowAgain') await overmindActions.ui.doNotDisplayDialog('Editor Mode');
       },
     },
   });

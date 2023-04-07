@@ -13,8 +13,8 @@ export const Reset = () => {
     <Stack direction="row">
       <Button
         icon="reset"
-        onClick={() => {
-          resetDialogWarnings();
+        onClick={async () => {
+          await resetDialogWarnings();
           notifyViaSnackbar(t('Confirmation dialog preferences have been reset').toString());
         }}
       >
@@ -22,8 +22,8 @@ export const Reset = () => {
       </Button>
       <Button
         icon="reset"
-        onClick={() => {
-          resetPreferences();
+        onClick={async () => {
+          await resetPreferences();
           notifyViaSnackbar(t('Settings preferences have been reset to default').toString());
         }}
       >
