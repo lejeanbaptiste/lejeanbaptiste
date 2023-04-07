@@ -39,7 +39,7 @@
     "test-watch": "jest --watchAll --verbose",
     "build-documentation": "typedoc --out docs src/index.worker.ts",
     "cm": "git-cz",
-    "prepublishOnly": "npm test && npm run build_es6"
+    "prepublishOnly": "npm test && npm run build_es6 && npm run build-documentation"
   },
   "dependencies": {
     "@cwrc/salve-dom-leafwriter": "^6.0.3",
