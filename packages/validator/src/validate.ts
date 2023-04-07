@@ -1,7 +1,9 @@
-import { ErrorData, WorkingState, WorkingStateData } from '@cwrc/salve-dom-leafwriter';
-import { Name } from '@cwrc/salve-leafwriter';
+import { WorkingState, type ErrorData, type WorkingStateData } from '@cwrc/salve-dom-leafwriter';
+import type { EventSet, Name } from '@cwrc/salve-leafwriter';
+import { sortBy, uniqBy } from 'lodash';
 import { logEnabledFor } from './log';
-import { getFullNameFromDocumentation, getXPathForElement } from './utils';
+import type { EventName, NodeDetail } from './types';
+import { getFullNameFromDocumentation, getXPathForElement } from './utilities';
 import VirtualEditor from './virtualEditor';
 
 export type ErrorNames =
@@ -167,4 +169,61 @@ const parseErrors = (
   }
 
   return { type, msg, target, element };
+};
+
+export const parseValidatorEvents = (
+  events: EventSet,
+  options: { only?: EventName[]; skip?: EventName[] }
+) => {
+  let nodes: NodeDetail[] = [];
+
+  const { only, skip } = options;
+  const skipEvents = new Set([...(skip ?? [])]);
+  const onlyEvents = new Set([...(only ?? [])]);
+
+  Array.from(events).forEach((event) => {
+    if (skipEvents.has(event.name) && !onlyEvents.has(event.name)) return;
+
+    if (event.name === 'text') {
+      const { name, value } = event;
+      nodes.push({ eventType: name, fullName: '#text', name, type: name, value });
+      return;
+    }
+
+    if (event.name === 'enterStartTag' || event.name === 'attributeName') {
+      if (event.namePattern.kind !== 'Name') return;
+
+      const { documentation, name, ns } = event.namePattern;
+      const fullName = getFullNameFromDocumentation(documentation);
+      const type = event.isAttributeEvent ? 'attribute' : 'tag';
+
+      nodes.push({ documentation, eventType: event.name, fullName, name, ns, type });
+      return;
+    }
+
+    if (event.name === 'attributeValue') {
+      const { documentation, name, value } = event;
+      const fullName = getFullNameFromDocumentation(documentation);
+      nodes.push({
+        documentation,
+        eventType: name,
+        fullName,
+        name: value as string,
+        type: name,
+        value: value,
+      });
+      return;
+    }
+
+    if (event.name === 'leaveStartTag' || event.name === 'endTag') {
+      const { name } = event;
+      nodes.push({ eventType: name, name, type: 'tag' });
+      return;
+    }
+  });
+
+  nodes = uniqBy(nodes, 'name');
+  nodes = sortBy(nodes, ['type', 'name']);
+
+  return nodes;
 };

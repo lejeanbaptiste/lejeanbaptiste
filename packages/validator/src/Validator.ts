@@ -1,41 +1,44 @@
-import type { InitializeOptions } from './conversion';
-import type { PossibleNodesAtOptions, Target } from './types';
+import { clearCache } from './db';
+import type { InitializeParameters, PossibleNodesAtOptions, Target } from './types';
 import type { ValidationResponse } from './validate';
 import { virtualEditor } from './virtualEditor';
 
 const Validator = {
-  async initialize(options: InitializeOptions) {
-    return await virtualEditor.initialize(options);
+  async initialize(params: InitializeParameters) {
+    return await virtualEditor.initialize(params);
   },
   validate(documentString: string, callback?: (value: ValidationResponse) => void) {
     return virtualEditor.validate(documentString, callback);
   },
-  async getTagAt(tagName: string, parentXpath: string, index?: number) {
-    return await virtualEditor.getTagAt(tagName, parentXpath, index);
-  },
-  async getNodesForTagAt(xpath: string, index?: number) {
-    return await virtualEditor.getNodesForTagAt(xpath, index);
+  hasValidator() {
+    return virtualEditor.hasValidator();
   },
   async getAttributesForTagAt(xpath: string, index?: number) {
     return await virtualEditor.getAttributesForTagAt(xpath, index);
   },
-  async getTagAttributeAt(attributeName: string, parentXpath: string) {
-    return await virtualEditor.getTagAttributeAt(attributeName, parentXpath);
-  },
-  async getValuesForTagAttributeAt(xpath: string) {
-    return await virtualEditor.getValuesForTagAttributeAt(xpath);
+  async getNodesForTagAt(xpath: string, index?: number) {
+    return await virtualEditor.getNodesForTagAt(xpath, index);
   },
   async getPossibleNodesAt(parameters: Target, options?: PossibleNodesAtOptions) {
     return await virtualEditor.getPossibleNodesAt(parameters, options);
   },
+  async getTagAt(tagName: string, parentXpath: string, index?: number) {
+    return await virtualEditor.getTagAt(tagName, parentXpath, index);
+  },
+  async getTagAttributeAt(attributeName: string, parentXpath: string) {
+    return await virtualEditor.getTagAttributeAt(attributeName, parentXpath);
+  },
   async getValidNodesAt(parameters: Target) {
     return await virtualEditor.getValidNodesAt(parameters);
   },
-  async hasValidator() {
-    return virtualEditor.hasValidator();
+  async getValuesForTagAttributeAt(xpath: string) {
+    return await virtualEditor.getValuesForTagAttributeAt(xpath);
   },
-  async reset() {
-    return virtualEditor.reset();
+  reset() {
+    virtualEditor.reset();
+  },
+  async clearCache() {
+    await clearCache();
   },
 };
 
