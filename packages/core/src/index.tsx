@@ -256,8 +256,8 @@ export class Leafwriter {
     overmind.actions.document.setDocumentTouched(value);
   }
 
-  resetSettings() {
-    overmind.actions.editor.resetDialogWarnings();
+  async resetSettings() {
+    await overmind.actions.editor.resetDialogWarnings();
     overmind.actions.editor.resetPreferences();
   }
 

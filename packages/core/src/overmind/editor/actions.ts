@@ -313,12 +313,12 @@ export const getSchemsByMappingId = ({ state }: Context, mappingId: string) => {
   return state.editor.schemasList.filter((schema) => schema.mapping === mappingId);
 };
 
-export const resetDialogWarnings = ({ actions }: Context) => {
+export const resetDialogWarnings = async ({ actions }: Context) => {
   Cookies.remove(DIALOG_PREFS_COOKIE_NAME, { path: '' });
-  actions.ui.resetDoNotDisplayDialogs();
+  await actions.ui.resetDoNotDisplayDialogs();
 };
 
-export const resetPreferences = ({ state, actions, effects }: Context) => {
+export const resetPreferences = async ({ state, actions, effects }: Context) => {
   actions.editor.setFontSize(11);
   actions.editor.toggleShowTags(false);
   actions.editor.setShowEntities(true);
@@ -329,6 +329,8 @@ export const resetPreferences = ({ state, actions, effects }: Context) => {
 
   const lookupsDefault = effects.editor.api.getLookupsDefaults();
   if (lookupsDefault) state.editor.lookups = lookupsDefault;
+
+  await actions.ui.resetDoNotDisplayDialogs();
 
   actions.ui.resetPreferences();
 };
