@@ -84,7 +84,12 @@ export const updateRecentDocument = async ({ state }: Context) => {
 
   resource.modifiedAt = new Date();
 
-  await db.recentDocuments.put(resource, resource.id);
+  try {
+    await db.recentDocuments.put(resource, resource.id);
+  } catch (error) {
+    console.log(error)
+  }
+ 
 };
 
 export const removeRecentDocument = async (_context: Context, id: string) => {
