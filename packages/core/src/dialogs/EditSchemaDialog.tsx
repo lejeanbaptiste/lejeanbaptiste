@@ -122,7 +122,7 @@ export const EditSchemaDialog = ({
         title: t('deleteSchema').toString(),
         preventEscape: true,
         Message: () => (
-          <Trans i18nKey="messages.deleteConfirmationMessage" values={{ name }}>
+          <Trans i18nKey="messages.delete confirmation message" values={{ name }}>
             <Typography component="span">Are you sure you want to delete{` `}</Typography>
             <TextEmphasis color="info">{name}</TextEmphasis>
             <Typography component="span"> schema?</Typography>

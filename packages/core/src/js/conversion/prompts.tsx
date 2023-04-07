@@ -3,8 +3,8 @@ import React, { FC } from 'react';
 import { Trans } from 'react-i18next';
 import { TextEmphasis } from '../../components';
 import { SimpleDialogMessageProps } from '../../dialogs';
-// import i18next from '../../i18n';
-import i18next from 'i18next';
+import i18next from '../../i18n';
+// import i18next from 'i18next';
 import { Schema } from '../../types';
 import Writer from '../Writer';
 
@@ -71,7 +71,7 @@ export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
       title: t('Schema not found'),
       Message: () => (
         <Typography>
-          {`${t(`messages.LEAF-Writer could not find the document schema declaration`)}`}
+          {`${t(`leafwriter.messages:LEAF-Writer could not find the document schema declaration`)}`}
         </Typography>
       ),
       actions: [

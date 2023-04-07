@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ onClickAdd }: HeaderProps) => {
-  const { t } = useTranslation(['commons']);
+  const { t } = useTranslation();
 
   return (
     <Box
@@ -22,9 +22,9 @@ export const Header = ({ onClickAdd }: HeaderProps) => {
     >
       <Box height={1.5} width={1.5} p="3px" />
       <Typography sx={{ cursor: 'default', textTransform: 'capitalize' }} variant="caption">
-        {t('schemas')}
+        {t('commons:schemas')}
       </Typography>
-      <IconButton aria-label={t('add').toString()} onClick={() => onClickAdd('add')} size="small">
+      <IconButton aria-label={t('commons:add').toString()} onClick={() => onClickAdd('add')} size="small">
         <AddIcon sx={{ height: 12, width: 12 }} />
       </IconButton>
     </Box>
