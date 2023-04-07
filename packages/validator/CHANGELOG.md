@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## 3.0.0
+
+## New Features
+
+### New caching and storage strategy
+
+Refactoring the conversion and caching process. LEAF-Writer Validator now saves cache on the browser indexedDB.
+
+This fixes a mistake where the hash of the file was not properly compared with the incoming file.
+The schema is now cached on the indexedDB, which there is much more space than the localStorage.
+As such, we do not need to compress Salve’s processed file. IndexedDB is available to web workers (local storage is not).
+Thus, the validator will not pass the processed schema back to LEAF-Writer. It will prepare, store, and retrieve the cached schema itself.
+
+BREAKING CHANGE: 🧨 Changes the `initialize` parameters and response.
+
+Initialize takes an object with two main properties: `id` and `url`. It returns another object with the property `success` (boolean).
+No need to exchange a stringified version or handle caching. The validator does it by itself.
+
+Check documentation for more info.
+
+## Major Changes
+
+- Refactoring conversion and caching. LW-Validator now saves cache on the brower indexedDB [a52f29d9f97f7861b23d546dd912f2a5a295b967]
+
+## Patch Changes
+
+- Build
+  - Build documentation when publishing new version [3658aac98c910b76e91073cf9dbae7c40e411f89]
+  - Lint: Remove mention to `plugin:react/recommended` on eslint [1f841c42854f1de23698d09a5adc10040cde6ac9]
+  - Webpack: no need to ingest `jsx` or `tsx` files [4c0acd8c5f8b84c065b4c9701965bba0abc66695]
+- Update dependencies
+  - dev:
+    - remove unused: ts-loader [f5f7f7937f9332283a99e5965972d4a697993869]
+    - add missing: @jest/globals [f5f7f7937f9332283a99e5965972d4a697993869]
+    - update:
+      - @typescript-eslint/eslint-plugin@5.57.1 [1023ac387925a73ea09d945b79f9f5f038b65806]
+      - @typescript-eslint/parser@5.57.1 [1023ac387925a73ea09d945b79f9f5f038b65806]
+      - eslint@8.37.0 ts-jest@29.1.0 [1023ac387925a73ea09d945b79f9f5f038b65806]
+      - webpack@5.78.0 [f5f7f7937f9332283a99e5965972d4a697993869]
+    - bump up: [f5f7f7937f9332283a99e5965972d4a697993869]
+      - @types/lodash@4.114.192
+      - typescript@5.0.4
+
 ## 2.0.0
 
 ### What's new?
@@ -27,7 +70,6 @@ Because of these improvements, this version contains changes to some API calls a
 - [TEST] Refactor tests [bb16b3542f14ffa514f7a8ad3a377d22b5929309]
 - [DOCS] Update new API documentation [ac22867462a05ce202c5a271e615365e4f818f65]
 
-
 ### Patch Changes
 
 - Add more strict types [e6c2bde00805a24c2a00234a6914fa7dd9e5ef11]
@@ -44,7 +86,6 @@ Because of these improvements, this version contains changes to some API calls a
       - prettier@2.8.7
       - typedoc@0.23.28
       - webpack@5.76.3
-  
 
 ## 1.2.4
 
