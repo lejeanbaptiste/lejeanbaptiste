@@ -55,8 +55,6 @@ export const initialize = async ({ state }: Context) => {
   if (!schemaId || !schemaURL) return;
 
   const schemaWorker = await workerValidator.initialize({ id: schemaId, url: schemaURL });
-  console.log(schemaWorker);
-
   if (schemaWorker.success) state.validator.hasSchema = true;
 
   window.writer?.event('workerValidatorLoaded').publish(schemaWorker);
