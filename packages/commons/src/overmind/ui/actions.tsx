@@ -65,6 +65,9 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
   actions.ui.setDarkMode(darkMode);
 
   effects.storage.api.saveToLocalStorage('themeAppearance', value);
+
+  // Propagate the changes to other modules that might be listening in the page
+  setTimeout(() => window.dispatchEvent(new Event('changeTheme')), 0);
 };
 
 export const setDarkMode = ({ state }: Context, value: boolean) => {
@@ -93,7 +96,13 @@ export const switchLanguage = ({ state }: Context, value: string) => {
     name: 'english',
     shortName: 'en',
   };
+
+  i18next.changeLanguage(language.code);
   state.ui.language = language;
+
+  // Propagate the changes to other modules that might be listening in the page
+  setTimeout(() => window.dispatchEvent(new Event('changeLanguage')), 0);
+
   return value;
 };
 
