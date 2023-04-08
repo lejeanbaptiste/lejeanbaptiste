@@ -41,6 +41,17 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
   effects.editor.api.saveToLocalStorage<PaletteMode>('themeAppearance', value);
 };
 
+export const listenChangeLanguage = ({ state, effects }: Context) => {
+  //* check language
+  const prefLanguageCode = effects.editor.api.getFromLocalStorage('i18nextLng');
+  if (prefLanguageCode && prefLanguageCode !== state.ui.language.code) {
+    const prefLanguage = supportedLanguages.get(prefLanguageCode);
+    if (prefLanguage) {
+      state.ui.language = prefLanguage;
+      i18n.changeLanguage(prefLanguage.code);
+    }
+  }
+};
 export const setDarkMode = ({ state }: Context, value: boolean) => {
   state.ui.darkMode = value;
 };

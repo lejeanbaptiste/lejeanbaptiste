@@ -75,10 +75,10 @@ export const EditSourceDialog = ({
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button autoFocus onClick={handleClose}>
-          {t('commons:cancel')}
+          {t('leafwriter:commons.cancel')}
         </Button>
         <Button onClick={handleChange} variant="outlined">
-          {t('commons:change')}
+          {t('leafwriter:commons.change')}
         </Button>
       </DialogActions>
     </Dialog>

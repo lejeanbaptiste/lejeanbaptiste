@@ -22,9 +22,9 @@ export const Header = ({ onClickAdd }: HeaderProps) => {
     >
       <Box height={1.5} width={1.5} p="3px" />
       <Typography sx={{ cursor: 'default', textTransform: 'capitalize' }} variant="caption">
-        {t('commons:schemas')}
+        {t('leafwriter:commons.schemas')}
       </Typography>
-      <IconButton aria-label={t('commons:add').toString()} onClick={() => onClickAdd('add')} size="small">
+      <IconButton aria-label={t('leafwriter:commons.add').toString()} onClick={() => onClickAdd('add')} size="small">
         <AddIcon sx={{ height: 12, width: 12 }} />
       </IconButton>
     </Box>

@@ -31,7 +31,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('commons:undo')}
+            {t('leafwriter:commons.undo')}
           </Button>
         ),
       },
@@ -63,7 +63,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         sx={{ cursor: 'default', bgcolor: ({ palette }) => palette.action.hover }}
       >
         <Typography sx={{ cursor: 'default' }} variant="caption">
-          {t('commons:annotation')}
+          {t('leafwriter:commons.annotation')}
         </Typography>
       </Box>
       {annotationModes.map(({ disabled, label, value }) => (

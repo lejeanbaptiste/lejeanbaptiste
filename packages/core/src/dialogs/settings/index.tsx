@@ -14,11 +14,11 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
   const { t } = useTranslation('leafwriter');
 
   const menuItems: MenuItemProps[] = [
-    { id: 'interface', label: t('commons:interface') },
-    { id: 'editor', label: t('commons:editor') },
-    { id: 'authorities', label: t('commons:authorities'), hide: isReadonly },
+    { id: 'interface', label: t('leafwriter:commons.interface') },
+    { id: 'editor', label: t('leafwriter:commons.editor') },
+    { id: 'authorities', label: t('leafwriter:commons.authorities'), hide: isReadonly },
     { id: 'markup-panel', label: t('markup panel'), hide: isReadonly },
-    { id: 'reset', label: t('commons:reset'), hide: isReadonly },
+    { id: 'reset', label: t('leafwriter:commons.reset'), hide: isReadonly },
   ];
 
   const handleClose = () => onClose && onClose(id);
@@ -37,21 +37,21 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
         <SideMenu items={menuItems} />
         <DialogContent>
           <Stack component={motion.div} layout spacing={3}>
-            <Section id="interface" title={t('commons:interface')}>
+            <Section id="interface" title={t('leafwriter:commons.interface')}>
               <Interface />
             </Section>
-            <Section id="editor" title={t('commons:editor')}>
+            <Section id="editor" title={t('leafwriter:commons.editor')}>
               <Editor />
             </Section>
             {!isReadonly && (
               <>
-                <Section id="authorities" title={t('commons:authorities')}>
+                <Section id="authorities" title={t('leafwriter:commons.authorities')}>
                   <Authorities />
                 </Section>
                 <Section id="markup-panel" title={t('markup panel')}>
                   <MarkupPanel />
                 </Section>
-                <Section id="reset" title={t('commons:reset')}>
+                <Section id="reset" title={t('leafwriter:commons.reset')}>
                   <Reset />
                 </Section>
               </>

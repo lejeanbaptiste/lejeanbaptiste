@@ -21,7 +21,7 @@ const Schema = () => {
   return (
     <Grow in={schemaId !== ''}>
       <Box>
-        <Tooltip title={t('commons:schemas')} sx={{ textTransform: 'capitalize' }}>
+        <Tooltip title={t('leafwriter:commons.schemas')} sx={{ textTransform: 'capitalize' }}>
           <Button
             aria-controls="schema-menu"
             aria-expanded={openMenu ? 'true' : undefined}
