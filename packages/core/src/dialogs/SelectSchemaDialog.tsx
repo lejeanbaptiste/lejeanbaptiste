@@ -91,7 +91,7 @@ export const SelectSchemaDialog = ({
         <Stack mt={2}>
           <FormControl fullWidth>
             <InputLabel id="select-schema-label" sx={{ textTransform: 'capitalize' }}>
-              {t('commons:schema')}
+              {t('leafwriter:commons.schema')}
             </InputLabel>
             <Select
               fullWidth
@@ -125,9 +125,9 @@ export const SelectSchemaDialog = ({
       </DialogContent>
 
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
+        <Button onClick={handleCancel}>{t('leafwriter:commons.cancel')}</Button>
         <Button color="primary" onClick={handleSelect} variant="outlined">
-          {t('commons:select')}
+          {t('leafwriter:commons.select')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -39,8 +39,10 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
   useEffect(() => {
     window.document.addEventListener('fullscreenchange', fullscreenchanged);
+    window.addEventListener('changeLanguage', actions.ui.listenChangeLanguage);
     return () => {
       window.document.removeEventListener('fullscreenchange', fullscreenchanged);
+      window.removeEventListener('changeLanguage', actions.ui.listenChangeLanguage);
     };
   }, []);
 
@@ -116,7 +118,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       setDocLoaded(true);
     });
 
-    setReady(true)
+    setReady(true);
   };
 
   return (

@@ -15,7 +15,7 @@ export const Header = ({ onClose }: HeaderProps) => {
     <Stack direction="row" justifyContent="center" alignItems="center" py={2} spacing={2}>
       <TuneIcon sx={{ height: 24, width: 24 }} />
       <Typography sx={{ textTransform: 'capitalize' }} variant="h5">
-        {t('commons:settings')}
+        {t('leafwriter:commons.settings')}
       </Typography>
       <IconButton
         aria-label="close"

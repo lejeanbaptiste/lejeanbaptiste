@@ -35,7 +35,7 @@ export const ThemeAppearance = () => {
     <ListItem dense disableGutters>
       <SettingsBrightnessIcon sx={{ mx: 1, height: 18, width: 18 }} />
       <Typography sx={{ textTransform: 'capitalize' }} variant="body2">
-        {t('commons:appearance')}
+        {t('leafwriter:commons.appearance')}
       </Typography>
       <Box flexGrow={1} />
       <Stack direction="row">

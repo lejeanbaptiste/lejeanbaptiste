@@ -192,7 +192,7 @@ const useEditorReaction = () => {
                     <ChevronRightIcon />
                   </Divider>
                   <Grid item xs={6} pl={2}>
-                    <Typography fontWeight={700}>{t('commons:change')}</Typography>
+                    <Typography fontWeight={700}>{t('leafwriter:commons.change')}</Typography>
                     <Typography variant="body2">
                       Schema:{' '}
                       <TextEmphasis color="warning">
