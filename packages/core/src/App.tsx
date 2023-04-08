@@ -40,9 +40,11 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   useEffect(() => {
     window.document.addEventListener('fullscreenchange', fullscreenchanged);
     window.addEventListener('changeLanguage', actions.ui.listenChangeLanguage);
+    window.addEventListener('changeTheme', actions.ui.listenChangeTheme);
     return () => {
       window.document.removeEventListener('fullscreenchange', fullscreenchanged);
       window.removeEventListener('changeLanguage', actions.ui.listenChangeLanguage);
+      window.addEventListener('changeTheme', actions.ui.listenChangeTheme);
     };
   }, []);
 

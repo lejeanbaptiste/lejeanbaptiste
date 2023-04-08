@@ -52,6 +52,14 @@ export const listenChangeLanguage = ({ state, effects }: Context) => {
     }
   }
 };
+
+export const listenChangeTheme = ({ state, actions, effects }: Context) => {
+  const prefPaletteMode = effects.editor.api.getFromLocalStorage<PaletteMode>('themeAppearance');
+  if (prefPaletteMode && prefPaletteMode !== state.ui.themeAppearance) {
+    if (prefPaletteMode) actions.ui.setThemeAppearance(prefPaletteMode);
+  }
+};
+
 export const setDarkMode = ({ state }: Context, value: boolean) => {
   state.ui.darkMode = value;
 };
