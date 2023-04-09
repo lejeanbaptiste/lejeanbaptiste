@@ -55,7 +55,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         maxWidth: severity === 'error' ? 'xs' : 'sm',
         severity,
         title: `${t('Change Schema')}?`,
-        Message: () => <>{text}</>,
+        Body: () => <>{text}</>,
         actions:
           severity === 'error'
             ? [{ action: 'close', label: t('commons.close').toString() }]

@@ -43,7 +43,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         maxWidth: 'xs',
         severity,
         title: `${t('Change Editor Mode')}?`,
-        Message: () => <>{text}</>,
+        Body: () => <>{text}</>,
         actions: [
           { action: 'cancel', label: t('commons.cancel').toString(), variant: 'outlined' },
           {
