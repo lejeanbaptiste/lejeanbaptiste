@@ -1,9 +1,9 @@
 import { OptionsObject, SnackbarMessage } from 'notistack';
 import type { Bookmark, Editor } from 'tinymce/tinymce';
-import type { LookupsConfig } from '../dialogs/entityLookups';
+import type { Authority, AuthorityServiceConfig } from '../dialogs/entityLookups';
 import Writer from '../js/Writer';
 
-export type { Authority, LookupsProps } from '../dialogs/entityLookups';
+export type { Authority } from '../dialogs/entityLookups';
 export * from './assert';
 
 export declare var webpackEnv: {
@@ -45,7 +45,7 @@ export interface LeafWriterOptionsSettings {
   colorScheme?: string;
   language?: string;
 
-  lookups?: LookupsConfig;
+  authorityServices?: (Authority | AuthorityServiceConfig)[];
   schemas?: Schema[];
   schemasId?: SupportedSchemasId[];
 
@@ -89,15 +89,6 @@ export type ISettingsModuleName =
   | 'selection'
   | 'imageViewer'
   | 'validation';
-
-export type SupportedEntityLookups =
-  | 'dbpedia'
-  | 'geonames'
-  | 'getty'
-  | 'lgpn'
-  | 'viaf'
-  | 'wikidata'
-  | 'cwrc';
 
 export const SupportedSchemas: Map<string, Schema> = new Map();
 

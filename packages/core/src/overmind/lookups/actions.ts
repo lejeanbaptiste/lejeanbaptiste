@@ -1,5 +1,10 @@
 import { Context } from '..';
-import type { EntityLink, EntryLink, NamedEntityType } from '../../dialogs/entityLookups/types';
+import type {
+  AuthorityLookupResult,
+  EntityLink,
+  EntryLink,
+  NamedEntityType,
+} from '../../dialogs/entityLookups/types';
 import type { DialogLookupType } from '../../js/dialogs/types';
 import Entity from '../../js/entities/Entity';
 import { EntityType } from '../../types';
@@ -32,13 +37,41 @@ export const setType = ({ state: { lookups } }: Context, type: EntityType) => {
   lookups.typeLookup = type === 'citation' ? 'title' : (type as NamedEntityType);
 };
 
-export const search = async ({ state: { lookups }, effects }: Context, query: string) => {
+// export const search = async ({ state: { lookups }, effects }: Context, query: string) => {
+//   if (query === '') return [];
+
+//   const response = await effects.lookups.api.find({ query, type: lookups.typeLookup });
+
+//   lookups.results = response;
+//   return response;
+// };
+
+export const search = async ({ state, effects }: Context, query: string) => {
   if (query === '') return [];
 
-  const response = await effects.lookups.api.find({ query, type: lookups.typeLookup });
+  const results: Map<string, AuthorityLookupResult[]> = new Map();
 
-  lookups.results = response;
-  return response;
+  const authorityServices = state.editor.authorityServices;
+
+  const listPriority = Object.values(authorityServices).sort(
+    (serviceA, serviceB) => serviceA.priority - serviceB.priority
+  );
+
+  await Promise.all(
+    listPriority.map(async ({ enabled, entities, find, id, settings }) => {
+      if (!find) return;
+      if (!enabled) return;
+      if (!entities[state.lookups.typeLookup]) return;
+      results.set(id, []); //* guarantee the order
+      const response = await find({ query, type: state.lookups.typeLookup }, settings);
+      if (response) results.set(id, response);
+    })
+  );
+
+  // const response = await effects.lookups.api.find({ query, type: state.lookups.typeLookup });
+
+  state.lookups.results = results;
+  return results;
 };
 
 export const processSelected = ({ state: { lookups } }: Context) => {

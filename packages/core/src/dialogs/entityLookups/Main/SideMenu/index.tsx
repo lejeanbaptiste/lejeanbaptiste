@@ -12,7 +12,7 @@ const SideMenu = ({ authorityInView }: SideMenuProps) => {
   const { results } = useAppState().lookups;
   const refElemennt = useRef<HTMLDivElement>();
 
-  const handleClick = (authority: Authority | 'other') => {
+  const handleClick = (authority: Authority | string) => {
     refElemennt.current?.parentElement
       ?.querySelector?.(`#${authority}`)
       ?.scrollIntoView({ behavior: 'smooth' });

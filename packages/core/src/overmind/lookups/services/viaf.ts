@@ -1,7 +1,7 @@
-import axios, { type AxiosInstance } from 'axios';
-import type { LookUpResult } from '../../../dialogs/entityLookups/types';
+import axios from 'axios';
+import type { AuthorityLookupResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
-import LookupServiceApi, { type LookUpFindProps } from './type';
+import { type AuthorityLookupParams } from './type';
 
 type NamedEntityType =
   | 'personalNames'
@@ -45,66 +45,64 @@ interface VIAFResults {
   };
 }
 
-export default class Viaf implements LookupServiceApi {
-  private readonly axiosInstance: AxiosInstance;
-  private readonly baseURL = 'https://viaf.org/viaf';
-  private readonly FORMAT = 'application/json';
-  // private readonly MAX_HITS = 10; //default: 10
-  private readonly timeout = 3_000;
+const baseURL = 'https://viaf.org/viaf';
+const FORMAT = 'application/json';
+const MAX_HITS = 10; //default: 10
+const timeout = 3_000;
 
-  constructor() {
-    this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
+const axiosInstance = axios.create({ baseURL, timeout });
+
+export const find = async ({ query, type }: AuthorityLookupParams) => {
+  if (type === 'person') return await callVIAF(query, 'personalNames');
+  if (type === 'place') return await callVIAF(query, 'geographicNames');
+  if (type === 'organization') return await callVIAF(query, 'corporateNames');
+  if (type === 'title') return await callVIAF(query, 'uniformTitleWorks');
+  if (type === 'rs') return await callVIAF(query, 'names');
+  if (type === 'thing') return await callVIAF(query, 'names');
+  if (type === 'concept') return await callVIAF(query, 'names');
+
+  log.warn(`VIAF: Entity type ${type} invalid`);
+};
+
+const callVIAF = async (query: string, methodName: NamedEntityType) => {
+  const encodedUri = encodeURIComponent(query);
+
+  let urlQuery = 'search?';
+  urlQuery += `query=local.${methodName}+all+%22${encodedUri}%22`;
+  urlQuery += `&httpAccept=${FORMAT}`;
+  // urlQuery += `&maximumRecords=${MAX_HITS}`;
+
+  const response = await axiosInstance.get<VIAFResults>(urlQuery).catch((error) => {
+    return {
+      status: 500,
+      statusText: `The request exeeded the timeout (${timeout})`,
+      data: undefined,
+    };
+  });
+
+  if (response.status >= 400) {
+    const errorMsg = `
+      Something wrong with the call to DBPedia, possibly a problem with the network or the server.
+      HTTP error: ${response.statusText}
+    `;
+    log.warn(errorMsg);
+    return [];
   }
+  const data = response.data;
+  if (!data) return [];
+  if (!data.searchRetrieveResponse.records) return [];
 
-  async find({ query, type }: LookUpFindProps) {
-    if (type === 'person') return await this.callVIAF(query, 'personalNames');
-    if (type === 'place') return await this.callVIAF(query, 'geographicNames');
-    if (type === 'organization') return await this.callVIAF(query, 'corporateNames');
-    if (type === 'title') return await this.callVIAF(query, 'uniformTitleWorks');
-    if (type === 'rs') return await this.callVIAF(query, 'names');
+  const results: AuthorityLookupResult[] = data.searchRetrieveResponse.records.map((entry) => {
+    const { nameType, Document, mainHeadings } = entry.record.recordData;
+    const uri = Document['@about'];
 
-    throw new Error('Entity type invalid');
-  }
+    //? Assumes the first instance of mainHeading
+    const name = Array.isArray(mainHeadings.data)
+      ? mainHeadings.data[0]?.text
+      : mainHeadings.data.text;
 
-  private async callVIAF(query: string, methodName: NamedEntityType) {
-    const encodedUri = encodeURIComponent(query);
+    return { id: uri, name: name ?? '', repository: 'viaf', query, type: nameType, uri };
+  });
 
-    let urlQuery = 'search?';
-    urlQuery += `query=local.${methodName}+all+%22${encodedUri}%22`;
-    urlQuery += `&httpAccept=${this.FORMAT}`;
-    // urlQuery += `&maximumRecords=${MAX_HITS}`;
-
-    const response = await this.axiosInstance.get(urlQuery).catch((error) => {
-      return {
-        status: 500,
-        statusText: `The request exeeded the timeout (${this.timeout})`,
-        data: undefined,
-      };
-    });
-
-    if (response.status >= 400) {
-      const errorMsg = `
-        Something wrong with the call to DBPedia, possibly a problem with the network or the server.
-        HTTP error: ${response.statusText}
-      `;
-      log.warn(errorMsg);
-      return [];
-    }
-    const data: VIAFResults = response.data;
-    if (!data.searchRetrieveResponse.records) return [];
-
-    const results: LookUpResult[] = data.searchRetrieveResponse.records.map((entry) => {
-      const { nameType, Document, mainHeadings } = entry.record.recordData;
-      const uri = Document['@about'];
-
-      //? Assumes the first instance of mainHeading
-      const name = Array.isArray(mainHeadings.data)
-        ? mainHeadings.data[0]?.text
-        : mainHeadings.data.text;
-
-      return { id: uri, name: name ?? '', repository: 'viaf', query, type: nameType, uri };
-    });
-
-    return results;
-  }
-}
+  return results;
+};

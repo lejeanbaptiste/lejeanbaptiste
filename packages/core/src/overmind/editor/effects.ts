@@ -1,13 +1,13 @@
-import type { LookupsProps } from '../../dialogs/entityLookups';
+import type { AuthorityServices } from '../../dialogs/entityLookups';
 
 export const api = (() => {
-  let lookupsDefaults: LookupsProps | undefined;
+  let lookupsDefaults: AuthorityServices;
 
   return {
-    getLookupsDefaults: () => {
+    getDefaultAuthorityServices: () => {
       return lookupsDefaults;
     },
-    setLookupsDefaults: (value: LookupsProps) => {
+    setDefaultAuthorityServices: (value: AuthorityServices) => {
       lookupsDefaults = value;
     },
 
