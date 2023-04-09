@@ -156,8 +156,8 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        Message: () => (
         title: `${i18next.t('LWStorageService:cloud.user_not_found')}`,
+        Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
               <Icon
@@ -205,8 +205,8 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        Message: () => (
         title: `${i18next.t('LWStorageService:commons.path_not_found')}`,
+        Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
               <Icon
@@ -244,8 +244,8 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        Message: () => (
         title: `${i18next.t('LWStorageService:commons.path_not_found')}`,
+        Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
               <Icon
@@ -920,8 +920,8 @@ export const saveDocument = async ({ state, actions }: Context) => {
         maxWidth: 'xs',
         severity: 'warning',
         preventEscape: true,
-        Message: `${i18next.t('cloud:message:Do_you_want_to_overwrite')}?`,
         title: `${i18next.t('LWStorageService:cloud.message.file_already_exists')}`,
+        Body: `${i18next.t('LWStorageService:cloud.message.Do_you_want_to_overwrite')}?`,
         actions: [
           { action: 'cancel', label: `${i18next.t('LWStorageService:commons.cancel')}`, variant: 'outlined' },
           { action: 'overwrite', label: `${i18next.t('LWStorageService:commons.overwrite')}` },
@@ -999,8 +999,8 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        Message: `${i18next.t('cloud:message:unabled_to_save')}`,
         title: `${i18next.t('LWStorageService:commons.error')}`,
+        Body: `${i18next.t('LWStorageService:cloud.message.unabled_to_save')}`,
         onClose: () => actions.cloud.setIsSaving(false),
       },
     });
@@ -1026,7 +1026,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
         preventEscape: true,
         severity: 'error',
         title: title,
-        Message: message,
+        Body: message,
         onClose: () => actions.cloud.setIsSaving(false),
       },
     });
@@ -1305,9 +1305,9 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | Er
         id: 'forking-repository',
         maxWidth: 'xs',
         severity: 'info',
-        Message: `${i18next.t('cloud:message:forking_can_take_minutes')}. ${i18next.t(
-          'message:be_patient'
         title: `${i18next.t('LWStorageService:cloud.forking')}`,
+        Body: `${i18next.t('LWStorageService:cloud.message.forking_can_take_minutes')}. ${i18next.t(
+          'LWStorageService:message.be_patient'
         )}.}`,
       },
     });

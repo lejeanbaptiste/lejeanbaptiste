@@ -29,7 +29,7 @@ interface SimpleDialogMessageProps {
 }
 
 export interface SimpleDialogProps extends IDialog {
-  Message?: React.FC<SimpleDialogMessageProps> | string;
+  Body?: React.FC<SimpleDialogMessageProps> | string;
 }
 
 export type DialogProps = IDialog & SimpleDialogProps;
