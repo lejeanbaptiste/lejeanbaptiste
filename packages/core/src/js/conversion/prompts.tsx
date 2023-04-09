@@ -71,11 +71,11 @@ export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
       title: t('Schema not found'),
       Message: () => (
         <Typography>
-          {`${t(`leafwriter.messages:LEAF-Writer could not find the document schema declaration`)}`}
+          {`${t(`messages.LEAF-Writer could not find the document schema declaration`)}`}
         </Typography>
       ),
       actions: [
-        { action: 'cancel', label: t('leafwriter:commons.cancel') },
+        { action: 'cancel', label: t('commons.cancel') },
         { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
         { action: 'selectSchema', label: t('select supported schema'), variant: 'outlined' },
       ],
@@ -109,9 +109,9 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
         </Trans>
       ),
       actions: [
-        { action: 'cancel', label: t('leafwriter:commons.cancel') },
-        { action: 'selectSchema', label: t('leafwriter:select supported schema'), variant: 'outlined' },
-        { action: 'addSchema', label: t('leafwriter:add schema'), variant: 'outlined' },
+        { action: 'cancel', label: t('commons.cancel') },
+        { action: 'selectSchema', label: t('select supported schema'), variant: 'outlined' },
+        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
       ],
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
@@ -143,7 +143,7 @@ export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
         </Trans>
       ),
       actions: [
-        { action: 'cancel', label: t('leafwriter:commons.cancel') },
+        { action: 'cancel', label: t('commons.cancel') },
         { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
         { action: 'selectSchema', label: t('select supported schema'), variant: 'outlined' },
       ],
@@ -222,12 +222,12 @@ export const openEditorModeDialog = async (writer: Writer) => {
   if (mode === writer.XML) {
     Message = () => (
       <>
-        <TextEmphasis color="info">{`Markup ${t('leafwriter:commons.only')}`}</TextEmphasis>
+        <TextEmphasis color="info">{`Markup ${t('commons.only')}`}</TextEmphasis>
         <Typography>{`${t(
-          'leafwriter:Only XML tags No RDF Semantic Web annotations will be created'
+          'Only XML tags No RDF Semantic Web annotations will be created'
         )}.`}</Typography>
         <Typography paragraph mt={3} variant="caption">
-          <b>{`${t('leafwriter:commons.hint')}: `}</b>
+          <b>{`${t('commons.hint')}: `}</b>
           {`${t('You can change the editor mode anytime in the status bar')}`}
         </Typography>
       </>
@@ -275,7 +275,7 @@ export const openEditorModeDialog = async (writer: Writer) => {
       Message,
       actions: [
         { action: 'notShowAgain', label: t('dont show again') },
-        { action: 'ok', label: t('leafwriter:commons.ok') },
+        { action: 'ok', label: t('commons.ok') },
       ],
       onClose: async (action: string) => {
         if (action === 'notShowAgain') await overmindActions.ui.doNotDisplayDialog('Editor Mode');

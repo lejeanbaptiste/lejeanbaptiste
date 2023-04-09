@@ -24,7 +24,7 @@ export const EditSourceDialog = ({
   const { settings } = useAppState().editor;
   const { loadDocumentXML: updateXMLContent, updateXMLHeader } = useActions().document;
 
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('leafwriter');
 
   const [currentContent, setCurrentContent] = useState('');
 
@@ -75,10 +75,10 @@ export const EditSourceDialog = ({
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button autoFocus onClick={handleClose}>
-          {t('leafwriter:commons.cancel')}
+          {t('commons.cancel')}
         </Button>
         <Button onClick={handleChange} variant="outlined">
-          {t('leafwriter:commons.change')}
+          {t('commons.change')}
         </Button>
       </DialogActions>
     </Dialog>

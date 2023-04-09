@@ -7,12 +7,12 @@ import { supportedLanguages } from '../../../../config';
 import { useActions, useAppState } from '../../../../overmind';
 
 export const Language = () => {
-  const { t, i18n } = useTranslation(['leafwriter']);
+  const { t, i18n } = useTranslation('leafwriter');
 
   const { language } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
 
-  const changeLanguage = (event: MouseEvent<HTMLElement>, code: string) => {
+  const changeLanguage = (_event: MouseEvent<HTMLElement>, code: string) => {
     if (!code) code = language.code;
     switchLanguage(code);
     i18n.changeLanguage(code);

@@ -6,7 +6,7 @@ import { Menu } from './Menu';
 
 const EditorMode = () => {
   const { editorModeLabel } = useAppState().editor;
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('leafwriter');
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openMenu = Boolean(anchorEl);

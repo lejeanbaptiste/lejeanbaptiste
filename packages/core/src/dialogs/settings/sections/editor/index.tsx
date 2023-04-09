@@ -16,7 +16,7 @@ export const Editor = () => {
         <Toggler
           icon="cloudSync"
           onChange={setAutosave}
-          title={t('leafwriter:commons.autosave')}
+          title={t('commons.autosave')}
           type="toggle"
           value={autosave}
         />

@@ -129,8 +129,8 @@ export const EditSchemaDialog = ({
           </Trans>
         ),
         actions: [
-          { action: 'cancel', label: t('leafwriter:commons.cancel').toString() },
-          { action: 'delete', label: t('leafwriter:commons.delete').toString(), variant: 'outlined' },
+          { action: 'cancel', label: t('commons.cancel').toString() },
+          { action: 'delete', label: t('commons.delete').toString(), variant: 'outlined' },
         ],
         onClose: async (action) => {
           if (action !== 'delete') return;
@@ -210,7 +210,7 @@ export const EditSchemaDialog = ({
                   error={Boolean(touched.name && errors.name)}
                   fullWidth
                   helperText={touched.name && errors.name ? errors.name : ' '}
-                  label={t('leafwriter:commons.Name')}
+                  label={t('commons.Name')}
                   margin="dense"
                   name="name"
                   onBlur={handleBlur}
@@ -289,7 +289,7 @@ export const EditSchemaDialog = ({
             </DialogContent>
 
             <DialogActions sx={{ justifyContent: 'space-between' }}>
-              <Button onClick={handleCancel}>{t('leafwriter:commons.cancel')}</Button>
+              <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
 
               {schemaId && (
                 <Tooltip
@@ -306,14 +306,14 @@ export const EditSchemaDialog = ({
                       disabled={schemaId === documentSchemaId}
                       onClick={handleDelete}
                     >
-                      {t('leafwriter:commons.delete')}
+                      {t('commons.delete')}
                     </Button>
                   </span>
                 </Tooltip>
               )}
 
               <Button color="primary" disabled={!dirty} type="submit" variant="outlined">
-                {schemaId ? t('leafwriter:commons.update') : t('leafwriter:commons.add')}
+                {schemaId ? t('commons.update') : t('commons.add')}
               </Button>
             </DialogActions>
           </form>
