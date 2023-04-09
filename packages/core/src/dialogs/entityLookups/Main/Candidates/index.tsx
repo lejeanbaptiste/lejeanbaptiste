@@ -1,12 +1,12 @@
 import { Box, ListSubheader } from '@mui/material';
 import React, { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
-import type { Authority, LookUpResult } from '../../types';
+import type { AuthorityLookupResult } from '../../types';
 import Candidate from './Candidate';
 
 interface CandidateListProps {
-  authority: Authority;
-  candidates: LookUpResult[];
+  authority: string;
+  candidates: AuthorityLookupResult[];
   setAuthorityInView: (view: { id: string; inView: boolean }) => void;
 }
 

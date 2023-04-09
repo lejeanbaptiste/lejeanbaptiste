@@ -1,10 +1,18 @@
-import type { LookUpResult, NamedEntityType } from '../../../dialogs/entityLookups/types';
+import type { AuthorityLookupResult, NamedEntityType } from '../../../dialogs/entityLookups/types';
 
-export interface LookUpFindProps {
+export interface AuthorityLookupParams {
   query: string;
   type: NamedEntityType;
 }
 
+export interface AuthorityLookupSettings {
+  [key: string]: any;
+  username?: string;
+}
+
 export default interface LookupServiceApi {
-  find: (params: LookUpFindProps) => Promise<LookUpResult[]>;
+  find: (
+    params: AuthorityLookupParams,
+    settings?: AuthorityLookupSettings
+  ) => Promise<AuthorityLookupResult[]>;
 }

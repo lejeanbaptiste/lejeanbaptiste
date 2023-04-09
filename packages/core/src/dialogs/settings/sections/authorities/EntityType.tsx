@@ -42,7 +42,7 @@ export const EntityType = ({ available, enabled, onClick, name }: EntityTypeProp
         fontSize="inherit"
         sx={{ opacity: enabled ? 1 : 0.2, color: hover ? palette.text.primary : 'inherit' }}
       />
-      {!enabled && (
+      {(!enabled || !available) && (
         <DoNotDisturbAltIcon
           fontSize="inherit"
           sx={{ position: 'absolute', top: 11, left: 17, width: 10 }}

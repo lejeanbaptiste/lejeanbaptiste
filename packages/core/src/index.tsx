@@ -12,7 +12,6 @@ import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
-import type { Authority, NamedEntityType } from './dialogs/entityLookups';
 import './i18n';
 import i18next from './i18n';
 import Writer from './js/Writer';
@@ -259,26 +258,6 @@ export class Leafwriter {
   async resetSettings() {
     await overmind.actions.editor.resetDialogWarnings();
     overmind.actions.editor.resetPreferences();
-  }
-
-  getLookups() {
-    overmind.state.editor.lookups;
-  }
-
-  setLookup({}: {
-    name: Authority;
-    enabled?: boolean;
-    prioity?: number;
-    entity?: {
-      name: NamedEntityType;
-      enabled?: string;
-    };
-    config?: {
-      [x: string]: any;
-      username?: string;
-    };
-  }) {
-    //todo
   }
 
   async validate() {

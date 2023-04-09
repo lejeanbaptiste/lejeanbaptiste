@@ -1,6 +1,14 @@
 import { derived } from 'overmind';
-import type { LookupsProps } from '../../dialogs/entityLookups';
+import type { AuthorityServices } from '../../dialogs/entityLookups';
 import type { Schema, SchemaMappingType } from '../../types';
+import {
+  dbpediaFind,
+  geonamesFind,
+  gettyFind,
+  lgpnFind,
+  viafFind,
+  wikidataFind,
+} from '../lookups/services';
 
 export type EditorStateType = {
   advancedSettings: boolean;
@@ -40,7 +48,7 @@ export type EditorStateType = {
 
   latestEvent?: string;
 
-  lookups: LookupsProps;
+  authorityServices: AuthorityServices;
 };
 
 export const state: EditorStateType = {
@@ -80,58 +88,61 @@ export const state: EditorStateType = {
   schemas: {},
   schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),
   schemaMappings: ['cwrcEntry', 'orlando', 'tei', 'teiLite'],
-  lookups: {
-    authorities: {
-      viaf: {
-        enabled: true,
-        entities: { person: true, place: true, organization: true, title: true, rs: true },
-        id: 'viaf',
-        name: 'VIAF',
-        priority: 0,
-      },
-
-      wikidata: {
-        enabled: true,
-        entities: { person: true, place: true, organization: true, title: true, rs: true },
-        id: 'wikidata',
-        name: 'Wikidata',
-        priority: 1,
-      },
-
-      dbpedia: {
-        enabled: true,
-        entities: { person: true, place: true, organization: true, title: true, rs: true },
-        id: 'dbpedia',
-        name: 'DBpedia',
-        priority: 2,
-      },
-
-      getty: {
-        enabled: true,
-        entities: { person: true, place: true },
-        id: 'getty',
-        name: 'Getty',
-        priority: 3,
-      },
-
-      geonames: {
-        enabled: false,
-        entities: { place: true },
-        id: 'geonames',
-        name: 'Geonames',
-        priority: 4,
-        requireAuth: true,
-      },
-
-      lgpn: {
-        enabled: false,
-        entities: { person: false },
-        id: 'lgpn',
-        name: 'LGPN',
-        priority: 5,
-      },
+  authorityServices: {
+    viaf: {
+      enabled: true,
+      entities: { person: true, place: true, organization: true, title: true, rs: true },
+      find: viafFind,
+      id: 'viaf',
+      name: 'VIAF',
+      priority: 0,
+      lookupService: 'internal',
     },
-
-    serviceType: 'custom',
+    wikidata: {
+      enabled: true,
+      entities: { person: true, place: true, organization: true, title: true, rs: true },
+      find: wikidataFind,
+      id: 'wikidata',
+      name: 'Wikidata',
+      priority: 1,
+      lookupService: 'internal',
+    },
+    dbpedia: {
+      enabled: true,
+      entities: { person: true, place: true, organization: true, title: true, rs: true },
+      find: dbpediaFind,
+      id: 'dbpedia',
+      name: 'DBpedia',
+      priority: 2,
+      lookupService: 'internal',
+    },
+    getty: {
+      enabled: true,
+      entities: { person: true, place: true },
+      find: gettyFind,
+      id: 'getty',
+      name: 'Getty',
+      priority: 3,
+      lookupService: 'internal',
+    },
+    geonames: {
+      enabled: false,
+      entities: { place: true },
+      find: geonamesFind,
+      id: 'geonames',
+      name: 'Geonames',
+      priority: 4,
+      requireAuth: true,
+      lookupService: 'internal',
+    },
+    lgpn: {
+      enabled: false,
+      entities: { person: true },
+      find: lgpnFind,
+      id: 'lgpn',
+      name: 'LGPN',
+      priority: 5,
+      lookupService: 'internal',
+    },
   },
 };

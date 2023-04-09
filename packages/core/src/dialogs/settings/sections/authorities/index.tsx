@@ -12,7 +12,7 @@ import { Authority } from './Authority';
 
 export const Authorities = () => {
   const { t } = useTranslation('leafwriter');
-  const { authorities } = useAppState().editor.lookups;
+  const { authorityServices } = useAppState().editor;
   const { reorderLookupPriority } = useActions().editor;
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -20,11 +20,12 @@ export const Authorities = () => {
   const [items, setItems] = useState<AuthorityService[]>([]);
 
   useEffect(() => {
-    if (!authorities) return;
-    const authtoriesList = [...Object.values(authorities)].sort((a, b) => a.priority - b.priority);
+    const authtoriesList = [...Object.values(authorityServices)].sort(
+      (a, b) => a.priority - b.priority
+    );
     setItems(authtoriesList);
     return () => {};
-  }, [authorities]);
+  }, [authorityServices]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;

@@ -1,9 +1,8 @@
 import { derived } from 'overmind';
 import { Context } from '..';
 import type {
-  Authority,
+  AuthorityLookupResult,
   EntryLink,
-  LookUpResult,
   NamedEntityType,
 } from '../../dialogs/entityLookups/types';
 import { EntityType } from '../../types';
@@ -12,7 +11,7 @@ type State = {
   isUriValid: boolean;
   manualInput: string;
   query: string;
-  results?: Map<Authority, LookUpResult[]>;
+  results?: Map<string, AuthorityLookupResult[]>;
   selected?: EntryLink;
   typeEntity: EntityType;
   typeLookup: NamedEntityType;

@@ -79,7 +79,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       actions.editor.setNssiToken(settings.credentials.nssiToken);
     }
 
-    actions.editor.initiateLookupSources(settings?.lookups);
+    await actions.editor.configureAuthorityServices(settings?.authorityServices);
 
     actions.user.setUser(user);
 

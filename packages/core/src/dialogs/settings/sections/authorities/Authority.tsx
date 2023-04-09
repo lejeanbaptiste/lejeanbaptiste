@@ -17,7 +17,7 @@ interface AuthorityProps {
 export const Authority = ({
   authorityService: { enabled, entities, id, name },
 }: AuthorityProps) => {
-  const { authorities } = useAppState().editor.lookups;
+  const { authorityServices } = useAppState().editor;
   const { toggleLookupAuthority, toggleLookupEntity } = useActions().editor;
   const { notifyViaSnackbar } = useActions().ui;
 
@@ -39,23 +39,9 @@ export const Authority = ({
   const handleHadleMouseDown = () => setIsDragging(true);
   const handleHadleMouseUp = () => setIsDragging(false);
 
-  const getNamedEntity = (name: NamedEntityType) => {
-    if (entities[name] === undefined) return null;
-
-    const entityEnabled = !!entities[name];
-    return (
-      <EntityType
-        available={enabled}
-        enabled={entityEnabled}
-        onClick={handleEntityToggle}
-        name={name}
-      />
-    );
-  };
-
   const handleAuthorityToogle = () => {
-    const authorityService = authorities[id];
-    if (authorityService?.requireAuth && !authorityService.config?.username) {
+    const authorityService = authorityServices[id];
+    if (authorityService?.requireAuth && !authorityService.settings?.username) {
       notifyViaSnackbar({
         message: `${t('You must provide a username to make requests', { authorityService })}.`,
         options: { variant: 'error' },
@@ -107,21 +93,16 @@ export const Authority = ({
               </Typography>
             </Stack>
           </Grid>
-          <Grid item sx={{ width: 28 }}>
-            {getNamedEntity('person')}
-          </Grid>
-          <Grid item sx={{ width: 28 }}>
-            {getNamedEntity('place')}
-          </Grid>
-          <Grid item sx={{ width: 28 }}>
-            {getNamedEntity('organization')}
-          </Grid>
-          <Grid item sx={{ width: 28 }}>
-            {getNamedEntity('title')}
-          </Grid>
-          <Grid item sx={{ width: 28, pr: 1 }}>
-            {getNamedEntity('rs')}
-          </Grid>
+          {Object.entries(entities).map(([id, entityEnabled]) => (
+            <Grid key={id} item sx={{ width: 28 }}>
+              <EntityType
+                available={enabled}
+                enabled={entityEnabled}
+                onClick={handleEntityToggle}
+                name={id as NamedEntityType}
+              />
+            </Grid>
+          ))}
         </Grid>
         <IconButton
           {...attributes}

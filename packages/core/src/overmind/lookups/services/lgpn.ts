@@ -1,7 +1,7 @@
-import axios, { type AxiosInstance } from 'axios';
-import type { LookUpResult } from '../../../dialogs/entityLookups/types';
+import axios from 'axios';
+import type { AuthorityLookupResult } from '../../../dialogs/entityLookups/types';
 import { log } from './../../../utilities';
-import LookupServiceApi, { type LookUpFindProps } from './type';
+import { type AuthorityLookupParams } from './type';
 
 type NamedEntityType = 'person' | 'place';
 
@@ -17,60 +17,56 @@ interface LGPNResults {
   persons: Person[];
 }
 
-export default class Lgpn implements LookupServiceApi {
-  private readonly axiosInstance: AxiosInstance;
-  private readonly baseURL = 'https://lookup.services.cwrc.ca/lgpn2/cgi-bin';
-  private readonly FORMAT = 'json';
-  private readonly timeout = 3_000;
+const baseURL = 'https://lookup.services.cwrc.ca/lgpn2/cgi-bin';
+const FORMAT = 'json';
+const timeout = 3_000;
 
-  constructor() {
-    this.axiosInstance = axios.create({ baseURL: this.baseURL, timeout: this.timeout });
+const axiosInstance = axios.create({ baseURL, timeout });
+
+export const find = async ({ query, type }: AuthorityLookupParams) => {
+  if (type === 'person') return await callLGPN(query, 'person');
+  if (type === 'place') return await callLGPN(query, 'place');
+
+  log.warn(`LGPN: Entity type ${type} invalid`);
+};
+
+const callLGPN = async (query: string, type: NamedEntityType) => {
+  const encodedQuery = encodeURIComponent(query);
+  
+  let urlQuery = `lgpn_search.cgi?`;
+  urlQuery += `name=${encodedQuery}`;
+  urlQuery += `;style=${FORMAT}`;
+
+  const response = await axiosInstance.get(urlQuery).catch((error) => {
+    return {
+      status: 500,
+      statusText: `The request exeeded the timeout (${timeout})`,
+      data: undefined,
+    };
+  });
+
+  if (response.status >= 400) {
+    const errorMsg = `
+      Something wrong with the call to LGPN, possibly a problem with the network or the server.
+      HTTP error: ${response.statusText}
+    `;
+    log.warn(errorMsg);
+    return [];
   }
 
-  async find({ query, type }: LookUpFindProps) {
-    if (type === 'person') return await this.callLGPN(query, 'person');
-    if (type === 'place') return await this.callLGPN(query, 'place');
+  const data = response.data;
+  if (!data) return [];
 
-    throw new Error('Entity type invalid');
-  }
+  //find the result object
+  const start = data.indexOf('{');
+  const end = data.lastIndexOf(');');
+  const substr = data.substring(start, end);
+  const dataObj: LGPNResults = JSON.parse(substr);
 
-  private async callLGPN(query: string, type: NamedEntityType) {
-    const encodedQuery = encodeURIComponent(query);
-    // const urlQuery = `lgpn_search.cgi?name=${encodedQuery};style=${FORMAT}`;
+  if (dataObj.persons.length === 0) return [];
 
-    let urlQuery = `lgpn_search.cgi?`;
-    urlQuery += `name=${encodedQuery}`;
-    urlQuery += `;style=${this.FORMAT}`;
-
-    const response = await this.axiosInstance.get(urlQuery).catch((error) => {
-      return {
-        status: 500,
-        statusText: `The request exeeded the timeout (${this.timeout})`,
-        data: undefined,
-      };
-    });
-
-    if (response.status >= 400) {
-      const errorMsg = `
-        Something wrong with the call to LGPN, possibly a problem with the network or the server.
-        HTTP error: ${response.statusText}
-      `;
-      log.warn(errorMsg);
-      return [];
-    }
-
-    const data = response.data;
-    if (!data) return [];
-
-    //find the result object
-    const start = data.indexOf('{');
-    const end = data.lastIndexOf(');');
-    const substr = data.substring(start, end);
-    const dataObj: LGPNResults = JSON.parse(substr);
-
-    if (dataObj.persons.length === 0) return [];
-
-    const results: LookUpResult[] = dataObj.persons.map(({ id, name, place, notBefore, notAfter }) => {
+  const results: AuthorityLookupResult[] = dataObj.persons.map(
+    ({ id, name, place, notBefore, notAfter }) => {
       const description = `Place: ${place}<br/>Floruit: ${notBefore} to ${notAfter}`;
       return {
         description,
@@ -81,8 +77,8 @@ export default class Lgpn implements LookupServiceApi {
         query,
         type,
       };
-    });
+    }
+  );
 
-    return results;
-  }
-}
+  return results;
+};
