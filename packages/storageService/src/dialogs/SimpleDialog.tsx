@@ -11,7 +11,7 @@ export const SimpleDialog = ({
   actions = [{ action: 'close', label: 'close' }],
   id = uuidv4(),
   maxWidth = 'sm',
-  Message,
+  Body,
   onBeforeClose,
   onClose,
   open = true,
@@ -68,13 +68,13 @@ export const SimpleDialog = ({
         {severity === 'warning' && <WarningAmberIcon color="warning" />}
         {title}
       </DialogTitle>
-      {(children || Message) && (
+      {(children || Body) && (
         <DialogContent sx={{ pt: 0.5 }}>
           {children
             ? children
-            : typeof Message === 'string'
-            ? Message
-            : Message && <Message data={data} onChangeData={setData} />}
+            : typeof Body === 'string'
+            ? Body
+            : Body && <Body data={data} onChangeData={setData} />}
         </DialogContent>
       )}
       <DialogActions
