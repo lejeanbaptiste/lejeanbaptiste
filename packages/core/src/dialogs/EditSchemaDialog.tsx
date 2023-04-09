@@ -121,7 +121,7 @@ export const EditSchemaDialog = ({
         maxWidth: 'xs',
         title: t('deleteSchema').toString(),
         preventEscape: true,
-        Message: () => (
+        Body: () => (
           <Trans i18nKey="messages.delete confirmation message" values={{ name }}>
             <Typography component="span">Are you sure you want to delete{` `}</Typography>
             <TextEmphasis color="info">{name}</TextEmphasis>
