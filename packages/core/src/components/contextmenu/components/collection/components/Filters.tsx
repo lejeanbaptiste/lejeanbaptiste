@@ -74,7 +74,7 @@ export const Filters = ({ onQuery }: FilterProps) => {
         autoFocus
         inputProps={{ 'aria-label': 'search' }}
         onChange={handleQueryChange}
-        placeholder={t('leafwriter:commons.search').toString()}
+        placeholder={t('commons.search').toString()}
         sx={{
           width: '100%',
           color: query === '' ? 'inherit' : palette.primary.main,

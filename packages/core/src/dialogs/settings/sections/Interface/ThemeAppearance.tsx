@@ -21,7 +21,7 @@ const options: Option[] = [
 ];
 
 export const ThemeAppearance = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('leafwriter');
 
   const { setThemeAppearance } = useActions().ui;
   const { themeAppearance } = useAppState().ui;
@@ -35,7 +35,7 @@ export const ThemeAppearance = () => {
     <ListItem dense disableGutters>
       <SettingsBrightnessIcon sx={{ mx: 1, height: 18, width: 18 }} />
       <Typography sx={{ textTransform: 'capitalize' }} variant="body2">
-        {t('leafwriter:commons.appearance')}
+        {t('commons.appearance')}
       </Typography>
       <Box flexGrow={1} />
       <Stack direction="row">

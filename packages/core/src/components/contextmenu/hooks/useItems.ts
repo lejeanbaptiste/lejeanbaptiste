@@ -246,7 +246,7 @@ export const useItems = (ctx: State) => {
       const items: ItemProps[] = [
         {
           id: uuidv4(),
-          name: t('leafwriter:commons.edit'),
+          name: t('commons.edit'),
           type: 'action',
           onClick: () => ctx.tagId && writer.tagger.editTagDialog(ctx.tagId),
         },

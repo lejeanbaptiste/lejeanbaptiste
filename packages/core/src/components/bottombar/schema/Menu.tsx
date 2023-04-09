@@ -23,7 +23,7 @@ interface MenuProps {
 export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { document, editor } = useAppState();
   const { closeNotificationSnackbar, openDialog, notifyViaSnackbar } = useActions().ui;
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('leafwriter');
 
   const { changeSchema, schemaShouldChange } = useEditorReaction();
 
@@ -58,9 +58,9 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         Message: () => <>{text}</>,
         actions:
           severity === 'error'
-            ? [{ action: 'close', label: t('leafwriter:commons.close').toString() }]
+            ? [{ action: 'close', label: t('commons.close').toString() }]
             : [
-                { action: 'cancel', label: t('leafwriter:commons.cancel').toString(), variant: 'outlined' },
+                { action: 'cancel', label: t('commons.cancel').toString(), variant: 'outlined' },
                 { action: 'change', label: t('change anyway').toString() },
               ],
         onClose: async (action) => {
@@ -80,7 +80,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('leafwriter:commons.undo')}
+            {t('commons.undo')}
           </Button>
         ),
       },

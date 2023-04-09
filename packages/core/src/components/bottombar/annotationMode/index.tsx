@@ -6,7 +6,7 @@ import { Menu } from './Menu';
 
 const AnnotationMode = () => {
   const { annotationModeLabel } = useAppState().editor;
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('leafwriter');
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>();
   const openMenu = Boolean(anchorEl);

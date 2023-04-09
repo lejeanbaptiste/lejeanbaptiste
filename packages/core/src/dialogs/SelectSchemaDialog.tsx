@@ -34,7 +34,7 @@ export const SelectSchemaDialog = ({
   preventEscape = true,
 }: SelectSchemaDialogProps) => {
   const { closeDialog } = useActions().ui;
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('leafwriter');
 
   const { schemasList } = useAppState().editor;
 
@@ -91,7 +91,7 @@ export const SelectSchemaDialog = ({
         <Stack mt={2}>
           <FormControl fullWidth>
             <InputLabel id="select-schema-label" sx={{ textTransform: 'capitalize' }}>
-              {t('leafwriter:commons.schema')}
+              {t('commons.schema')}
             </InputLabel>
             <Select
               fullWidth
@@ -125,9 +125,9 @@ export const SelectSchemaDialog = ({
       </DialogContent>
 
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleCancel}>{t('leafwriter:commons.cancel')}</Button>
+        <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
         <Button color="primary" onClick={handleSelect} variant="outlined">
-          {t('leafwriter:commons.select')}
+          {t('commons.select')}
         </Button>
       </DialogActions>
     </Dialog>
