@@ -37,7 +37,7 @@
     "clean": "shx rm -rf dist lib lib-esm",
     "test": "jest",
     "test-watch": "jest --watchAll --verbose",
-    "build-documentation": "typedoc --out docs src/index.worker.ts",
+    "build-documentation": "typedoc src/index.worker.ts",
     "cm": "git-cz",
     "prepublishOnly": "npm test && npm run build_es6 && npm run build-documentation"
   },
@@ -73,7 +73,7 @@
     "prettier": "^2.8.7",
     "shx": "^0.3.4",
     "ts-jest": "^29.1.0",
-    "typedoc": "^0.23.28",
+    "typedoc": "^0.24.0",
     "typescript": "^5.0.4",
     "webpack": "^5.78.0",
     "webpack-cli": "^5.0.1",
