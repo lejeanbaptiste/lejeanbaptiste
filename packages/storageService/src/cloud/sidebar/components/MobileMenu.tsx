@@ -26,7 +26,7 @@ export const MobileMenu = ({ onSelect, selectedMenu }: MobileMenuProps) => {
   const { name: providerName } = useAppState().cloud;
   const { searchUsers, setCollectionSource, setOwner } = useActions().cloud;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const { addPublicRepository, getPublicRepositoryByUsername } = usePublicRepository();
 
@@ -36,10 +36,10 @@ export const MobileMenu = ({ onSelect, selectedMenu }: MobileMenuProps) => {
   const [mainMenuSelection, setMainMenuSelection] = useState<CollectionSource | 'public'>('owner');
 
   const menuOptions: MenuOption[] = [
-    { label: `${t('cloud:mainMenu:my_repositories')}`, value: 'owner' },
-    { label: `${t('cloud:shared_with_me')}`, value: 'collaborator' },
-    { label: `${t('cloud:mainMenu:organizations')}`, value: 'organization' },
-    { label: `${t('cloud:publicRepositories:public_repositories')}`, value: 'public' },
+    { label: `${t('cloud.mainMenu.my_repositories')}`, value: 'owner' },
+    { label: `${t('cloud.shared_with_me')}`, value: 'collaborator' },
+    { label: `${t('cloud.mainMenu.organizations')}`, value: 'organization' },
+    { label: `${t('cloud.publicRepositories.public_repositories')}`, value: 'public' },
   ];
 
   useEffect(() => {

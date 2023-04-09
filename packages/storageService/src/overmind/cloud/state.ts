@@ -40,8 +40,8 @@ type State = {
 
 export const state: State = {
   collectionSource: 'owner',
-  commitMessage: i18next.t('cloud:settings:update'),
-  defaultCommitMessage: i18next.t('cloud:settings:update'),
+  commitMessage: i18next.t('LWStorageService:cloud.settings.update'),
+  defaultCommitMessage: i18next.t('LWStorageService:cloud.settings.update'),
   isFetching: false,
   isLoading: false,
   isSaving: false,

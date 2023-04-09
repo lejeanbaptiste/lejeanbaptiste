@@ -7,7 +7,7 @@ export const Header = () => {
   const { name: providerName } = useAppState().cloud;
   const { dialogType, source } = useAppState().common;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const title = source === 'cloud' && providerName ? providerName : source;
 
@@ -31,7 +31,7 @@ export const Header = () => {
           textAlign="center"
           variant="h6"
         >
-          {t(`commons:${dialogType}`)}
+          {t(`commons.${dialogType}`)}
         </Typography>
       </Grid>
 

@@ -26,7 +26,7 @@ export const Repository = ({ repository }: Props) => {
   const { setSelectedItem } = useActions().common;
   const { navigateTo } = useActions().cloud;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const { description, id, name, owner, visibility, writePermission } = repository;
 
@@ -75,7 +75,7 @@ export const Repository = ({ repository }: Props) => {
               componentsProps={{
                 tooltip: { sx: { '&::first-letter': { textTransform: 'uppercase' } } },
               }}
-              title={t('cloud:shared_with_me')}
+              title={t('cloud.shared_with_me')}
             >
               <GppGoodRoundedIcon fontSize="small" />
             </Tooltip>

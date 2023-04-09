@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const LoadMore = ({ isLoadingMore, loadMore, refTarget }: Props) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   return (
     <Stack ref={refTarget} alignItems="center">
@@ -23,7 +23,7 @@ export const LoadMore = ({ isLoadingMore, loadMore, refTarget }: Props) => {
         sx={{ bgcolor: ({ palette }) => alpha(palette.text.secondary, 0.05) }}
         onClick={loadMore}
       >
-        <Typography variant="overline">{t('cloud:loading_more')}</Typography>
+        <Typography variant="overline">{t('cloud.loading_more')}</Typography>
         {isLoadingMore && <CircularProgress size={16} />}
       </Stack>
     </Stack>

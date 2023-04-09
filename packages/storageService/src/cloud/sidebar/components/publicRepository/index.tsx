@@ -26,7 +26,7 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
   const { name: providerName, owner } = useAppState().cloud;
   const { searchUsers, setOwner } = useActions().cloud;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const { addPublicRepository, getPublicRepositoryByUsername, removePublicRepository } =
     usePublicRepository();
@@ -86,7 +86,7 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
           pr={1.5}
         >
           <Typography fontWeight={600}>
-            {t('cloud:publicRepositories:public_repositories')}
+            {t('cloud.publicRepositories.public_repositories')}
           </Typography>
           <AnimatePresence>
             {!showSearch ? (

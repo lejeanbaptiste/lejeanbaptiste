@@ -13,7 +13,7 @@ export const SettingsDialog = ({ anchor, onDone, open }: SettingsDialogProps) =>
   const { allowAllFileTypes } = useAppState().common;
   const { setAllowedAllFileTypes } = useActions().common;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const handleToggleAllowAllFiles = () => {
     setAllowedAllFileTypes(!allowAllFileTypes);
@@ -44,7 +44,7 @@ export const SettingsDialog = ({ anchor, onDone, open }: SettingsDialogProps) =>
             />
           </ListItemIcon>
           <ListItemText
-            primary={t('settings:allow_all_files')}
+            primary={t('settings.allow_all_files')}
             sx={{ textTransform: 'capitalize' }}
           />
         </ListItemButton>

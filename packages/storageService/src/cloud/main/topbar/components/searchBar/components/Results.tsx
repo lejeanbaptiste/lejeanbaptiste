@@ -18,22 +18,22 @@ export const Results = ({ list, onPrimaryAction, onSecondaryAction, type }: Resu
   const { owner, repository, name } = useAppState().cloud;
   const [limit, setLimit] = useState(LIST_SIZE);
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const showMoreButton = LIST_SIZE < list.length;
 
   const headerLabel = (value: string) => {
     let label = value;
     if (value === 'blobs' && name === 'github') {
-      label = t('cloud:search:content_across_username', {
+      label = t('cloud.search.content_across_username', {
         username: owner?.name ?? owner?.username,
       });
     }
     if (value === 'blobs' && name === 'gitlab') {
-      label = t('cloud:search:content_on_repository', { repository: repository?.name });
+      label = t('cloud.search.content_on_repository', { repository: repository?.name });
     }
     if (value === 'filename') {
-      label = t('cloud:search:files_on_repositoty', { repository: repository?.name });
+      label = t('cloud.search.files_on_repositoty', { repository: repository?.name });
     }
     return label;
   };
@@ -69,7 +69,7 @@ export const Results = ({ list, onPrimaryAction, onSecondaryAction, type }: Resu
                   size="small"
                   sx={{ px: 1, borderRadius: 3, lineHeight: 1.75, fontSize: '0.7125rem' }}
                 >
-                  {limit === LIST_SIZE ? t('commons:show_more') : t('commons:show_less')}
+                  {limit === LIST_SIZE ? t('commons.show_more') : t('commons.show_less')}
                 </Button>
               )}
             </Stack>

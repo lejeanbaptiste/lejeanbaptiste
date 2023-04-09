@@ -17,12 +17,12 @@ interface MenuOption {
 
 export const MainMenu = ({ onSelect, selectedMenu }: MainMenuProps) => {
   const { setCollectionSource } = useActions().cloud;
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const menuOptions: MenuOption[] = [
-    { label: `${t('cloud:mainMenu:my_repositories')}`, value: 'owner' },
-    { label: `${t('cloud:shared_with_me')}`, value: 'collaborator' },
-    { label: `${t('cloud:mainMenu:organizations')}`, value: 'organization' },
+    { label: `${t('cloud.mainMenu.my_repositories')}`, value: 'owner' },
+    { label: `${t('cloud.shared_with_me')}`, value: 'collaborator' },
+    { label: `${t('cloud.mainMenu.organizations')}`, value: 'organization' },
   ];
 
   const handleClick = (value: string) => {

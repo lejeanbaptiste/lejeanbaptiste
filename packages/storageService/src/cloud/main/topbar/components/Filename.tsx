@@ -27,7 +27,7 @@ export const Filename = () => {
   const { setFilename } = useActions().common;
   const { saveDocument } = useActions().cloud;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const [value, setValue] = useState<string>('');
   const [openSettings, setOpenSettings] = useState(false);
@@ -99,7 +99,7 @@ export const Filename = () => {
           onBlur={handleBlur}
           onChange={handleChange}
           onKeyPress={handleKeyPress}
-          placeholder={`${t('cloud:breadcrumbs:filename')}`}
+          placeholder={`${t('cloud.breadcrumbs.filename')}`}
           sx={{ px: 1.5, flex: 1 }}
           value={value}
         />

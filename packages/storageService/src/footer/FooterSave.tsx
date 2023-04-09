@@ -18,7 +18,7 @@ export const FooterSave = ({ onCancel }: Props) => {
   const { checkRepoUserWritenPermission, getProvider, saveAspullRequest, saveDocument } =
     useActions().cloud;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [hasPermission, setHasPermission] = useState(true);
@@ -58,7 +58,7 @@ export const FooterSave = ({ onCancel }: Props) => {
   return (
     <DialogActions data-testid="save:footer" sx={{ justifyContent: 'space-between' }}>
       <Button onClick={onCancel} title="cancel" variant="outlined">
-        {t('commons:cancel')}
+        {t('commons.cancel')}
       </Button>
       <Box flexGrow={1} />
       {isSM ? (
@@ -73,7 +73,7 @@ export const FooterSave = ({ onCancel }: Props) => {
           title="download"
           variant="outlined"
         >
-          {t('footer:download')}
+          {t('footer.download')}
         </Button>
       )}
       {repository && !hasPermission ? (
@@ -82,7 +82,7 @@ export const FooterSave = ({ onCancel }: Props) => {
           loading={isSaving}
           onClick={() => handleClickSave('forkPullRequest')}
         >
-          {t('footer:fork_and_pull_request')}
+          {t('footer.fork_and_pull_request')}
         </LoadingButton>
       ) : (
         <SaveOptions enabled={saveEnabled} onSelect={handleClickSave} />

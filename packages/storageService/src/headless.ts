@@ -21,23 +21,23 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
   let { path } = resource;
 
   if (!providerName) {
-    return { type: 'error', message: i18next.t('cloud:message:storage_provider_undefined') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.storage_provider_undefined') };
   }
   if (!owner) {
-    return { type: 'error', message: i18next.t('cloud:message:document_owner_undefined') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.document_owner_undefined') };
   }
   if (!ownertype) {
-    return { type: 'error', message: i18next.t('cloud:message:document_owner_type_undefined') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.document_owner_type_undefined') };
   }
-  if (!repo) return { type: 'error', message: i18next.t('cloud:message:repository_undefined') };
+  if (!repo) return { type: 'error', message: i18next.t('LWStorageService:cloud.message.repository_undefined') };
   if (!path) path = '';
   if (!filename) {
-    return { type: 'error', message: i18next.t('cloud:message:document_filename_undefined') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.document_filename_undefined') };
   }
 
   provider = await initializeProvider(providerAuth);
   if (!provider) {
-    return { type: 'error', message: i18next.t('cloud:message:storage_provider_not_supported') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.storage_provider_not_supported') };
   }
 
   const repository = await provider
@@ -45,7 +45,7 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
     .catch(() => null);
 
   if (!repository) {
-    return { type: 'error', message: i18next.t('cloud:message:repository_not_found') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.repository_not_found') };
   }
 
   const filePath = path === '' ? filename : `${path}/${filename}`;
@@ -57,7 +57,7 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
     path: filePath,
     branch: repository.default_branch,
   });
-  if (!document) return { type: 'error', message: i18next.t('cloud:message:document_not_found') };
+  if (!document) return { type: 'error', message: i18next.t('LWStorageService:cloud.message.document_not_found') };
 
   const documentResource = {
     provider: providerName,
@@ -83,34 +83,34 @@ export const saveDocument = async (
   let { path } = resource;
 
   if (!providerName) {
-    return { type: 'error', message: i18next.t('cloud:message:storage_provider_undefined') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.storage_provider_undefined') };
   }
   if (!owner) {
-    return { type: 'error', message: i18next.t('cloud:message:document_owner_undefined') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.document_owner_undefined') };
   }
   if (!ownertype) {
-    return { type: 'error', message: i18next.t('cloud:message:document_owner_type_undefined') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.document_owner_type_undefined') };
   }
-  if (!repo) return { type: 'error', message: i18next.t('cloud:message:repository_undefined') };
+  if (!repo) return { type: 'error', message: i18next.t('LWStorageService:cloud.message.repository_undefined') };
 
   if (!path) path = '';
 
   if (!filename) {
-    return { type: 'error', message: i18next.t('cloud:message:document_filename_undefined') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.document_filename_undefined') };
   }
   if (!content) {
-    return { type: 'error', message: i18next.t('cloud:message:document_has_no_content') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.document_has_no_content') };
   }
 
   provider = await initializeProvider(providerAuth);
   if (!provider)
-    return { type: 'error', message: i18next.t('cloud:message:storage_provider_not_supported') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.storage_provider_not_supported') };
 
   const repository = await provider
     .getRepo({ username: owner, repoId: repo, repoName: repo })
     .catch(() => null);
   if (!repository) {
-    return { type: 'error', message: i18next.t('cloud:message:repository_not_found') };
+    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.repository_not_found') };
   }
 
   const filePath = path === '' ? filename : `${path}/${filename}`;
@@ -127,7 +127,7 @@ export const saveDocument = async (
   if (!hasPermission) {
     return {
       type: 'error',
-      message: i18next.t('cloud:message:user_has_no_write_permission'),
+      message: i18next.t('LWStorageService:cloud.message.user_has_no_write_permission'),
     };
   }
 
@@ -136,8 +136,8 @@ export const saveDocument = async (
   if (fileLatestHash === hash && !overwrite) {
     return {
       type: 'error',
-      message: `${i18next.t('cloud:message:file_already_exists')}. ${i18next.t(
-        'cloud:message:unable_to_overwrite_file'
+      message: `${i18next.t('LWStorageService:cloud.message.file_already_exists')}. ${i18next.t(
+        'LWStorageService:cloud.message.unable_to_overwrite_file'
       )}.`,
     };
   }
@@ -157,8 +157,8 @@ export const saveDocument = async (
   if (!response)
     return {
       type: 'error',
-      message: `${i18next.t('cloud:message:something_went_wrong')}. ${i18next.t(
-        'cloud:message:unabled_to_save'
+      message: `${i18next.t('LWStorageService:cloud.message.something_went_wrong')}. ${i18next.t(
+        'LWStorageService:cloud.message.unabled_to_save'
       )}.`,
     };
   if (isErrorMessage(response)) return { type: response.type, message: response.message };
