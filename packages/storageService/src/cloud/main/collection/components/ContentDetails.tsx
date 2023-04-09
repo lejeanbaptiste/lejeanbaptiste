@@ -9,7 +9,7 @@ interface ContentDetailsProps {
 }
 
 export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const variants: Variants = {
     initial: { height: 0 },
@@ -26,9 +26,9 @@ export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
       pt={0.25}
     >
       <Typography sx={{ '&::first-letter': { textTransform: 'uppercase' } }}>
-        <Typography variant="caption">{t('commons:last_modified').toString()}: </Typography>
+        <Typography variant="caption">{t('commons.last_modified').toString()}: </Typography>
         <Typography color="text.secondary" title={latestCommit.date} variant="caption">
-          {latestCommit.relativeDate} {t('commons:by')}{' '}
+          {latestCommit.relativeDate} {t('commons.by')}{' '}
         </Typography>
         <Typography
           color="text.secondary"
@@ -42,7 +42,7 @@ export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
         </Typography>
       </Typography>
       <Typography sx={{ '&::first-letter': { textTransform: 'uppercase' } }}>
-        <Typography variant="caption">{t('commons:message')}: </Typography>
+        <Typography variant="caption">{t('commons.message')}: </Typography>
         <Typography color="text.secondary" data-testid="message" variant="caption">
           {latestCommit.message}{' '}
         </Typography>
@@ -57,7 +57,7 @@ export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
           underline="hover"
           variant="caption"
         >
-          {t('cloud:view_source')}
+          {t('cloud.view_source')}
         </Typography>
       </Typography>
     </Stack>

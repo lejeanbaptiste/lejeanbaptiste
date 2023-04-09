@@ -12,7 +12,7 @@ export const UploadPanel = () => {
   const { load } = useActions().common;
   const { openDialog } = useActions().ui;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const { palette } = useTheme();
 
@@ -48,7 +48,7 @@ export const UploadPanel = () => {
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: `${t('local:message:unable_to_upload_file', { filename: file.name })}`,
+          title: `${t('local.message.unable_to_upload_file', { filename: file.name })}`,
         },
       });
 
@@ -105,7 +105,7 @@ export const UploadPanel = () => {
                 bgcolor: palette.mode === 'light' ? palette.grey[50] : palette.grey[800],
               }}
             >
-              <Typography>{t('local:drag_drop')}</Typography>
+              <Typography>{t('local.drag_drop')}</Typography>
               <UploadFileIcon sx={{ height: '50%', width: '50%' }} />
             </Stack>
           </Box>

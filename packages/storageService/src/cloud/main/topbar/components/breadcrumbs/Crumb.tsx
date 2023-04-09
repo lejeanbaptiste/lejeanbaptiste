@@ -22,7 +22,7 @@ export const Crumb = ({
   onClick,
   writePermission,
 }: CrumbProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const handleClick = () => onClick(level);
 
@@ -59,7 +59,7 @@ export const Crumb = ({
             componentsProps={{
               tooltip: { sx: { '&::first-letter': { textTransform: 'uppercase' } } },
             }}
-            title={t('cloud:shared_with_me')}
+            title={t('cloud.shared_with_me')}
           >
             <GppGoodRoundedIcon sx={{ width: 16, height: 16, mb: 0.5 }} />
           </Tooltip>

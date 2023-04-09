@@ -36,7 +36,7 @@ export const SearchBar = ({
   onPrimaryAction,
   onSecondaryAction,
 }: SearchBarProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const [options, setOptions] = useState<SearchResults[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -150,7 +150,7 @@ export const SearchBar = ({
                 : { 'data-testid': 'search-file-input', id: 'search', value: inputValue }
             }
             onClick={() => setSearchFocused(true)}
-            placeholder={`${t('cloud:search:filename_or_content')}`}
+            placeholder={`${t('cloud.search.filename_or_content')}`}
             startAdornment={
               <InputAdornment position="start">
                 <SearchIcon fontSize="small" sx={{ opacity: 0.5 }} />

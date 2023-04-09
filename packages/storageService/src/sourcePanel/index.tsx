@@ -25,7 +25,7 @@ export const SourcePanel = () => {
   const { changeProvider } = useActions().cloud;
   const { setSource } = useActions().common;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
   const { spacing } = useTheme();
 
   const [active, setActive] = useState<Source>(source);
@@ -92,7 +92,7 @@ export const SourcePanel = () => {
           componentsProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
           enterDelay={1000}
           placement="right"
-          title={t('commons:settings')}
+          title={t('commons.settings')}
         >
           <IconButton
             data-testid="source_panel-settings_button"

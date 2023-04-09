@@ -24,7 +24,7 @@ export const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
     searchGlobal,
   } = useActions().cloud;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const theme = useTheme();
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
@@ -126,7 +126,7 @@ export const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
                   variant="outlined"
                   data-testid={`topbar:create-${repository ? 'folder' : 'repository'}`}
                 >
-                  {repository ? t('cloud:breadcrumbs:folder') : t('cloud:breadcrumbs:repository')}
+                  {repository ? t('cloud.breadcrumbs.folder') : t('cloud.breadcrumbs.repository')}
                 </Button>
               )}
             </AnimatePresence>

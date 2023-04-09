@@ -22,7 +22,7 @@ export const SaveSettingsDialog = ({ anchor, onDone, open }: SaveSettingsDialogP
   const { commitMessage } = useAppState().cloud;
   const { setCommitMessage } = useActions().cloud;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const { breakpoints } = useTheme();
   const isSM = useMediaQuery(breakpoints.down('sm'));
@@ -51,7 +51,7 @@ export const SaveSettingsDialog = ({ anchor, onDone, open }: SaveSettingsDialogP
       data-testid="save:settings-dialog"
     >
       <DialogTitle id="save-settings-title" sx={{ textAlign: 'center' }}>
-        {t('cloud:settings:save_settings')}
+        {t('cloud.settings.save_settings')}
       </DialogTitle>
       <DialogContent sx={{ width: isSM ? 300 : 400 }}>
         <TextField
@@ -60,7 +60,7 @@ export const SaveSettingsDialog = ({ anchor, onDone, open }: SaveSettingsDialogP
           fullWidth
           id="comit-message"
           inputProps={{ 'data-testid': 'save:settings:commit-input' }}
-          label={t('cloud:settings:comit_message')}
+          label={t('cloud.settings.comit_message')}
           onBlur={handleComitMessageBlur}
           onChange={handleComitMessageChange}
           placeholder={commitMessage}
@@ -71,7 +71,7 @@ export const SaveSettingsDialog = ({ anchor, onDone, open }: SaveSettingsDialogP
 
       <DialogActions>
         <Button onClick={handleDone} title="done">
-          {t('cloud:settings:done')}
+          {t('cloud.settings.done')}
         </Button>
       </DialogActions>
     </Popover>

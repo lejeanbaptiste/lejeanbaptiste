@@ -89,12 +89,12 @@ export const setSources = ({ state }: Context) => {
   if (dialogType === 'load') {
     sources.push({
       value: 'local',
-      label: i18next.t('commons:from_your_computer'),
+      label: i18next.t('LWStorageService:commons.from_your_computer'),
       icon: 'computer',
     });
 
     if (allowPaste) {
-      sources.push({ value: 'paste', label: i18next.t('footer:pasteXml'), icon: 'paste' });
+      sources.push({ value: 'paste', label: i18next.t('LWStorageService:footer.pasteXml'), icon: 'paste' });
     }
   }
 };
@@ -126,7 +126,7 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: error ?? `${i18next.t('message:document_not_valid')}`,
+          title: error ?? `${i18next.t('LWStorageService:message.document_not_valid')}`,
         },
       });
       if (state.common.resource) state.common.resource.filename = undefined;

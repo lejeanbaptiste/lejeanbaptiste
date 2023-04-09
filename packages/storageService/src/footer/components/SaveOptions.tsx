@@ -30,15 +30,15 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
   const { resource } = useAppState().common;
   const { isSaving } = useAppState().cloud;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const [open, setOpen] = useState(false);
   const anchor = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const saveOptions: SaveOption[] = [
-    { label: t('commons:save'), value: 'save' },
-    { label: t('footer:save_as_pull_request'), value: 'pullRequest' },
+    { label: t('LWStorageService:commons.save'), value: 'save' },
+    { label: t('LWStorageService:footer.save_as_pull_request'), value: 'pullRequest' },
   ];
 
   const handleToggle = () => setOpen((prevOpen) => !prevOpen);
@@ -71,7 +71,7 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
           disabled={!enabled || resource?.filename === ''}
           loading={isSaving}
           onClick={() => handleClick(saveOptions.at(selectedIndex)?.value)}
-          title={t('commons:save').toString()}
+          title={t('commons.save').toString()}
         >
           {saveOptions.at(selectedIndex)?.label}
         </LoadingButton>

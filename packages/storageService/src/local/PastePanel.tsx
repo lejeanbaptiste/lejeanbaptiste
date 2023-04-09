@@ -7,7 +7,7 @@ export const PastePanel = () => {
   const { setResource } = useActions().local;
   const { resource } = useAppState().common;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const { breakpoints } = useTheme();
   const mobile = useMediaQuery(breakpoints.down('sm'));
@@ -36,7 +36,7 @@ export const PastePanel = () => {
         inputProps={{ 'data-testid': 'paste_panel-input' }}
         multiline
         onChange={onChageOnPastePanel}
-        placeholder={`${t('local:paste_document_here')}`}
+        placeholder={`${t('local.paste_document_here')}`}
         rows={mobile ? 0 : 19}
         value={text}
       />

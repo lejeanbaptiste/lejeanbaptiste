@@ -29,7 +29,7 @@ interface SearchBarProps {
 }
 
 export const SearchBar = ({ collapsible = true, onClear, onChange, onSelect }: SearchBarProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const [options, setOptions] = useState<PublicRepository[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -114,7 +114,7 @@ export const SearchBar = ({ collapsible = true, onClear, onChange, onSelect }: S
             fullWidth
             inputProps={{ ...getInputProps(), 'data-testid': 'search-user-input' }}
             onFocus={() => setSearchFocused(true)}
-            placeholder={`${t('cloud:publicRepositories:user_or_organization')}`}
+            placeholder={`${t('cloud.publicRepositories.user_or_organization')}`}
             startAdornment={
               <InputAdornment position="start">
                 <SearchIcon fontSize="small" sx={{ opacity: 0.5 }} />

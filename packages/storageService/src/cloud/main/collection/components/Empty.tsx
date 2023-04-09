@@ -5,7 +5,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const Empty = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
   return (
     <Stack data-testid="list-empty" justifyContent="center" height={200}>
       <Stack
@@ -15,7 +15,7 @@ export const Empty = () => {
         sx={{ color: ({ palette }) => alpha(palette.text.secondary, 0.15) }}
       >
         <ErrorOutlineIcon sx={{ height: 56, width: 56 }} />
-        <Typography variant="h3">{t('commons:empty')}</Typography>
+        <Typography variant="h3">{t('commons.empty')}</Typography>
       </Stack>
     </Stack>
   );
