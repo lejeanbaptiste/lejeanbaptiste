@@ -26,6 +26,10 @@
     ".": {
       "import": "./src/index.worker",
       "require": "./dist/leafwriter-validator.worker.js"
+    },
+    "./db": {
+      "import": "./src/db.ts",
+      "require": "./dist/db.js"
     }
   },
   "types": "lib/index.worker.d.ts",
