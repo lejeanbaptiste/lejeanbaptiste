@@ -34,8 +34,13 @@ export const PasteOption = ({ disabled }: PasteOptionProps) => {
       onMouseOut={() => setPasteHover(false)}
     >
       <ContentPasteIcon
-        color={pasteHover ? 'primary' : 'inherit'}
-        sx={{ color: disabled ? palette.action.disabled : 'inheritƒ' }}
+        sx={{
+          color: disabled
+            ? palette.action.disabled
+            : pasteHover
+            ? palette.primary.light
+            : 'text.secondary',
+        }}
       />
       <TextField
         color="primary"
@@ -44,19 +49,14 @@ export const PasteOption = ({ disabled }: PasteOptionProps) => {
           sx: {
             fontSize: '0.8rem',
             fieldset: {
-              borderColor: ({ palette }) =>
-                palette.mode === 'dark' ? palette.grey[800] : palette.grey[300],
+              borderColor: palette.mode === 'dark' ? palette.grey[800] : palette.grey[300],
             },
           },
         }}
         onChange={onChageTextfield}
         placeholder={`${t('commons.or')} ${t('storage.paste_your_XML_here')}`}
         size="small"
-        sx={{
-          '& fieldset': {
-            borderColor: pasteHover ? palette.primary.main : 'inherit',
-          },
-        }}
+        sx={{ '& fieldset': { borderColor: pasteHover ? palette.primary.main : 'inherit' } }}
       />
     </Stack>
   );
