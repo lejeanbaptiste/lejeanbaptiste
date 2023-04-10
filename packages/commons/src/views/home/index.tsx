@@ -30,13 +30,7 @@ export const HomeView = () => {
     if ('category' in resource) return;
     if (isErrorMessage(resource)) return;
 
-    if (!resource.filename) {
-      openStorageDialog({
-        source: 'cloud',
-        type: 'load',
-        resource,
-      });
-    }
+    if (!resource.filename) openStorageDialog({ source: 'cloud', type: 'load', resource });
   };
 
   return (
