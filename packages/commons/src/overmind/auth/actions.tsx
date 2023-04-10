@@ -1,5 +1,5 @@
 import { log } from '@src//utilities';
-import { resetDatabase } from '@src/db';
+import { clearCache } from '@src/db';
 import type { AnnotationUserProfileProps, User } from '@src/types';
 import Cookies from 'js-cookie';
 import { Context } from '../index';
@@ -266,6 +266,10 @@ export const setPreferredId = ({ state, effects }: Context, providerId: string) 
 export const signOut = async ({ effects }: Context) => {
   effects.storage.api.clearLocalStorage();
   Cookies.remove('resource');
-  await resetDatabase()
+
+  //* Clear IndexedDB tabels.
+  // Including the ones created by LEAF-Writer and Leafwriter Storage Service
+  await clearCache();
+
   await effects.auth.api.logout();
 };
