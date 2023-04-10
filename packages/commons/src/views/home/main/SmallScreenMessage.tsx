@@ -5,7 +5,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const SmallScreenMessage = () => {
-  const { t } = useTranslation('messages');
+  const { t } = useTranslation('LWC');
   return (
     <Stack alignItems="center" gap={2} mt={1}>
       <Stack direction="row" gap={2}>
@@ -13,7 +13,7 @@ export const SmallScreenMessage = () => {
         <ScreenshotMonitorOutlinedIcon sx={{ width: 30, height: 30, opacity: 0.7 }} />
       </Stack>
       <Typography letterSpacing=".05rem" textAlign="center" variant="body2">
-        {`${t('annotation_need_space')} ${t('rotate_phone')}`}
+        {`${t('messages.annotation_need_space')} ${t('messages.rotate_phone')}`}
       </Typography>
     </Stack>
   );

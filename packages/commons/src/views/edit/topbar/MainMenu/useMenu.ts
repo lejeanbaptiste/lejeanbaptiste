@@ -26,7 +26,7 @@ export const useMenu = () => {
   const { openDialog } = useActions().ui;
 
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
 
   const { setPermalink } = usePermalink();
   const { handleCloseDocument, handleDownload, handleExportToHTML, handleSave } = useLeafWriter();
@@ -36,12 +36,12 @@ export const useMenu = () => {
   const mainMenuOptions: (ItemProps | 'divider' | SubMenuProps)[] = [
     {
       icon: 'template',
-      label: `${t('commons:new')}...`,
+      label: `${t('commons.new')}...`,
       onTrigger: () => openDialog({ type: 'templates' }),
     },
     {
       icon: 'folderOpen',
-      label: `${t('commons:open')}...`,
+      label: `${t('commons.open')}...`,
       onTrigger: () =>
         openStorageDialog({
           source: userState === 'AUTHENTICATED' ? 'cloud' : 'local',
@@ -54,7 +54,7 @@ export const useMenu = () => {
       disabled: userState !== 'AUTHENTICATED',
       hide: recentDocumentsCount === 0,
       icon: 'recent',
-      label: `${t('commons:open_recent')}`,
+      label: `${t('commons.open_recent')}`,
       popupId: 'recent',
     },
     'divider',
@@ -64,7 +64,7 @@ export const useMenu = () => {
         !storageProviders.some((provider) => provider.service?.isStorageProvider),
       hide: readonly,
       icon: 'save',
-      label: t('commons:save'),
+      label: t('commons.save'),
       onTrigger: () => (!resource?.provider ? handleSave('saveAs') : handleSave()),
       shortcut: ' ⌘S',
       tooltipText: cloudDisabledMessage,
@@ -75,7 +75,7 @@ export const useMenu = () => {
         !storageProviders.some((provider) => provider.service?.isStorageProvider),
       hide: readonly,
       icon: 'saveAs',
-      label: `${t('commons:save_as')}...`,
+      label: `${t('commons.save_as')}...`,
       onTrigger: () => handleSave('saveAs'),
       shortcut: ' ⌘⌥⇧S',
       tooltipText: cloudDisabledMessage,
@@ -83,12 +83,12 @@ export const useMenu = () => {
     {
       hide: readonly,
       icon: 'download',
-      label: `${t('commons:download')}`,
+      label: `${t('commons.download')}`,
       popupId: 'download',
     },
     'divider',
     {
-      label: t('commons:close'),
+      label: t('commons.close'),
       onTrigger: () => handleCloseDocument(),
       shortcut: ' ⌘W',
     },
@@ -103,12 +103,12 @@ export const useMenu = () => {
   const getDownloadOptions = () => {
     const options: ItemProps[] = [
       {
-        label: 'XML Document (.xml)',
+        label: `${t('commons.xml document')} (.xml)`,
         onTrigger: () => handleDownload(),
         sx: { textTransform: 'initial' },
       },
       {
-        label: t('commons:export_as_HTML'),
+        label: t('commons.export_as_HTML'),
         onTrigger: () => handleExportToHTML(),
       },
     ];
@@ -132,10 +132,10 @@ export const useMenu = () => {
           props: {
             maxWidth: 'xs',
             severity: 'warning',
-            title: `${t('commons:unsaved_changes')}`,
+            title: `${t('commons.unsaved_changes')}`,
             actions: [
-              { action: 'cancel', label: `${t('commons:cancel')}` },
-              { action: 'discard', label: `${t('commons:discard_changes')}` },
+              { action: 'cancel', label: `${t('commons.cancel')}` },
+              { action: 'discard', label: `${t('commons.discard_changes')}` },
             ],
             onClose: async (action) => {
               if (action === 'discard') handleLoadRecentDocument(document);

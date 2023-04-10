@@ -11,7 +11,7 @@ interface PasteOptionProps {
 export const PasteOption = ({ disabled }: PasteOptionProps) => {
   const { openStorageDialog } = useActions().storage;
 
-  const { t } = useTranslation('storage');
+  const { t } = useTranslation('LWC');
   const { palette } = useTheme();
 
   const [pasteHover, setPasteHover] = useState(false);
@@ -50,7 +50,7 @@ export const PasteOption = ({ disabled }: PasteOptionProps) => {
           },
         }}
         onChange={onChageTextfield}
-        placeholder={`${t('commons:or')} ${t('paste_your_XML_here')}`}
+        placeholder={`${t('commons.or')} ${t('storage.paste_your_XML_here')}`}
         size="small"
         sx={{
           '& fieldset': {

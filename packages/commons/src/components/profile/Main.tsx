@@ -30,7 +30,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
   const { signOut } = useActions().auth;
   const { openDialog } = useActions().ui;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
   const { leafWriter } = useLeafWriter();
   const { clearCookieConsent, showSettings } = useCookieConsent();
 
@@ -40,11 +40,11 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
     openDialog({
       props: {
         severity: 'warning',
-        title: `${t('commons:unsaved_changes')}`,
-        Body: () => <Typography>{t('storage:you_will_lose_any_unsaved_changes')}.</Typography>,
+        title: `${t('commons.unsaved_changes')}`,
+        Body: () => <Typography>{t('storage.you_will_lose_any_unsaved_changes')}.</Typography>,
         actions: [
-          { action: 'cancel', label: `${t('commons:cancel')}` },
-          { action: 'signout', label: `${t('commons:sign_out')}`, variant: 'outlined' },
+          { action: 'cancel', label: `${t('commons.cancel')}` },
+          { action: 'signout', label: `${t('commons.sign_out')}`, variant: 'outlined' },
         ],
         onClose: async (action) => {
           if (action === 'cancel') return onClose();
@@ -65,8 +65,8 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'identity',
       label: (
         <>
-          {t('commons:identity')}:{' '}
-          <span style={{ textTransform: 'capitalize' }}>{user?.preferredID ?? t('commons:none')}</span>
+          {t('commons.identity')}:{' '}
+          <span style={{ textTransform: 'capitalize' }}>{user?.preferredID ?? t('commons.none')}</span>
         </>
       ),
       icon: 'fingerPrint',
@@ -78,9 +78,9 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'storage',
       label: (
         <>
-          {t('storage')}:{' '}
+          {t('commons.storage')}:{' '}
           <span style={{ textTransform: 'capitalize' }}>
-            {user?.prefStorageProvider ?? t('commons:none')}
+            {user?.prefStorageProvider ?? t('commons.none')}
           </span>
         </>
       ),
@@ -91,13 +91,13 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
     },
     {
       id: 'privacy',
-      label: t('commons:privacy_settings'),
+      label: t('commons.privacy_settings'),
       icon: 'privacyTip',
       action: () => showSettings(),
     },
     {
       id: 'logout',
-      label: t('commons:sign_out'),
+      label: t('commons.sign_out'),
       icon: 'logout',
       action: () => handleSignOut(),
     },
@@ -108,13 +108,13 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'appearance',
       label: (
         <>
-          {t('ui:appearance')}:{' '}
+          {t('ui.appearance')}:{' '}
           <span style={{ textTransform: 'capitalize' }}>
             {themeAppearance === 'auto'
-              ? t('ui:device_theme')
+              ? t('ui.device_theme')
               : themeAppearance === 'dark'
-              ? t('ui:dark_theme')
-              : t('ui:light_theme')}
+              ? t('ui.dark_theme')
+              : t('ui.light_theme')}
           </span>
         </>
       ),
@@ -131,7 +131,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'language',
       label: (
         <>
-          {t('language')}: <span style={{ textTransform: 'capitalize' }}>{language.name}</span>
+          {t('commons.language')}: <span style={{ textTransform: 'capitalize' }}>{language.name}</span>
         </>
       ),
       icon: 'translate',
@@ -143,7 +143,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
   const editorMenu: OptionProps[] = [
     {
       id: 'settings',
-      label: t('commons:settings'),
+      label: t('commons.settings'),
       icon: 'settings',
       hide: page !== 'edit',
       action: (event) => {

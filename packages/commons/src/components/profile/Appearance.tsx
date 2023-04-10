@@ -22,7 +22,7 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
   const { themeAppearance } = useAppState().ui;
   const { setThemeAppearance } = useActions().ui;
 
-  const { t } = useTranslation('ui');
+  const { t } = useTranslation('LWC');
 
   const handleSelect = (event: MouseEvent, value: string) => {
     event.stopPropagation();
@@ -31,9 +31,9 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
   };
 
   const options: OptionProps[] = [
-    { id: 'auto', label: t('device_theme'), icon: 'brightness4' },
-    { id: 'dark', label: t('dark_theme'), icon: 'darkModeIcon' },
-    { id: 'light', label: t('light_theme'), icon: 'brightness7' },
+    { id: 'auto', label: t('ui.device_theme'), icon: 'brightness4' },
+    { id: 'dark', label: t('ui.dark_theme'), icon: 'darkModeIcon' },
+    { id: 'light', label: t('ui.light_theme'), icon: 'brightness7' },
   ];
 
   return (
@@ -42,7 +42,7 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
         <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <ListItemText primary={t('commons:identity')} sx={{ textTransform: 'capitalize' }} />
+        <ListItemText primary={t('commons.identity')} sx={{ textTransform: 'capitalize' }} />
       </ListItem>
       {options.map(({ id, icon, label }) => (
         <ListItem key={id} color="primary" sx={{ px: 0.5 }}>

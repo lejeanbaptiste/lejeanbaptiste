@@ -17,7 +17,7 @@ const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
 export const Cloud = () => {
   const { contentHasChanged: isDirty, isSaving, resource, saveDelayed } = useAppState().editor;
 
-  const { t } = useTranslation('storage');
+  const { t } = useTranslation('LWC');
 
   const { handleSave } = useLeafWriter();
 
@@ -34,7 +34,13 @@ export const Cloud = () => {
   return (
     <Stack direction="row">
       <Tooltip
-        title={isDirty ? t('click_to_save') : isSaving ? t('saving') : t('all_changes_salved')}
+        title={
+          isDirty
+            ? t('storage.click_to_save')
+            : isSaving
+            ? t('storage.saving')
+            : t('storage.all_changes_salved')
+        }
       >
         <IconButton
           aria-label="save"
@@ -70,7 +76,7 @@ export const Cloud = () => {
         animate={saveDelayed ? 'visible' : 'hidden'}
       >
         <Typography ml={0.5} textTransform="capitalize" variant="caption" whiteSpace="nowrap">
-          {t('waiting_for_resource', { provider: resource?.provider })}
+          {t('storage.waiting_for_resource', { provider: resource?.provider })}
         </Typography>
       </Box>
     </Stack>

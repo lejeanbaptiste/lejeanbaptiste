@@ -22,7 +22,7 @@ export const usePermalink = () => {
   const { isStorageProviderSupported } = useActions().providers;
   const { getSampleDocuments, getTemplates } = useActions().storage;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -82,7 +82,7 @@ export const usePermalink = () => {
       if (!document) {
         return {
           type: 'error',
-          message: `${t('commons:template')} "${search.template}" ${t('commons:not_found')}.`,
+          message: `${t('commons.template')} "${search.template}" ${t('commons.not_found')}.`,
         };
       }
 
@@ -95,7 +95,7 @@ export const usePermalink = () => {
       if (!document) {
         return {
           type: 'error',
-          message: `${t('commons:sample_document')} "${search.sample}" ${t('commons:not_found')}.`,
+          message: `${t('commons.sample_document')} "${search.sample}" ${t('commons.not_found')}.`,
         };
       }
 
@@ -103,15 +103,15 @@ export const usePermalink = () => {
     }
 
     if (!search.provider || Array.isArray(search.provider)) {
-      return { type: 'error', message: t('storage:warning.check_URL_structure') };
+      return { type: 'error', message: t('storage.warning.check_URL_structure') };
     }
 
     if (!isStorageProviderSupported(search.provider)) {
       return {
         type: 'error',
-        message: `${t('storage:warning.storage_provider_invalid', {
+        message: `${t('storage.warning.storage_provider_invalid', {
           provider: search.provider,
-        })}. ${t('storage:warning.check_URL_structure')}`,
+        })}. ${t('storage.warning.check_URL_structure')}`,
       };
     }
 
