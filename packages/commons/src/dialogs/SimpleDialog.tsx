@@ -23,7 +23,7 @@ export const SimpleDialog = ({
   children,
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('LWC');
 
   const [data, setData] = useState<{ [key: string]: any }>({});
   const [actionsDisabled, setActionsDisabled] = useState(false);

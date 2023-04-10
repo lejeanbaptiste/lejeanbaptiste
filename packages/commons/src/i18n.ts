@@ -11,18 +11,9 @@ i18next
   .use(initReactI18next)
   .init({
     // debug: true,
-    defaultNS: 'commons',
+    defaultNS: 'LWC',
     fallbackLng: 'en-CA',
-    ns: [
-      'commons',
-      'cookie_consent',
-      'error',
-      'home',
-      'language',
-      'profile',
-      'storage',
-      'templates',
-    ],
+    ns: ['LWC'],
     resources,
     returnEmptyString: false,
   });

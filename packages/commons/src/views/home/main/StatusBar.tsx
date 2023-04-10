@@ -3,7 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const StatusBar = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
 
   const { breakpoints } = useTheme();
   const isMobile = useMediaQuery(breakpoints.down('sm'));
@@ -17,7 +17,7 @@ export const StatusBar = () => {
   return (
     <Stack justifyContent="center" alignItems="center" px={2} mt={5}>
       <Chip
-        label={`${t('home:bugs')} / ${t('home:requests')}`}
+        label={`${t('home.bugs')} / ${t('home.requests')}`}
         onClick={handleClick}
         size="small"
         variant="outlined"

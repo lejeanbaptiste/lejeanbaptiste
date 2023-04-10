@@ -12,7 +12,7 @@ export const UserCard = () => {
 
   const { accountManagement } = useActions().auth;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
 
   const userDetail = useMemo(() => {
     if (!user) return;
@@ -60,7 +60,7 @@ export const UserCard = () => {
           size="small"
           sx={{ mt: '4px !important' }}
         >
-          <StyledToolTip title={t('profile:manage_your_lincs_account')}>
+          <StyledToolTip title={t('profile.manage_your_lincs_account')}>
             <SettingsIcon fontSize="inherit" />
           </StyledToolTip>
         </IconButton>

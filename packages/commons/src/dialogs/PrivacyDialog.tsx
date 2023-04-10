@@ -20,7 +20,7 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { language } = useAppState().ui;
   const { closeDialog } = useActions().ui;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
   const { showSettings } = useCookieConsent();
 
   const [content, setContent] = useState('');
@@ -66,9 +66,9 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         </ReactMarkdown>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleOpenSettings}>{t('cookie_consent:privacy_settings')}</Button>
+        <Button onClick={handleOpenSettings}>{t('cookie_consent.privacy_settings')}</Button>
         <Button onClick={handleCancel} variant="outlined">
-          {t('commons:close')}
+          {t('commons.close')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 export const LanguageMenu = () => {
   const { language } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
-  const { t } = useTranslation('language');
+  const { t } = useTranslation('LWC');
 
   const { switchLanguage: switchLanguageConsent } = useCookieConsent();
 

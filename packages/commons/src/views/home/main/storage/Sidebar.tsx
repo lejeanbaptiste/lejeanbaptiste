@@ -9,7 +9,7 @@ const MAX_WIDTH = 170;
 
 export const Sidebar = () => {
   const { authProviders } = useAppState().providers;
-  const { t } = useTranslation('storage');
+  const { t } = useTranslation('LWC');
 
   return (
     <AnimatePresence>
@@ -31,7 +31,7 @@ export const Sidebar = () => {
             textTransform="uppercase"
             variant="subtitle1"
           >
-            {t('commons:sign_in')} {t('commons:with')}
+            {t('commons.sign_in')} {t('commons.with')}
           </Typography>
         </Box>
 

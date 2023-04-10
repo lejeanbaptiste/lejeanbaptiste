@@ -4,7 +4,6 @@ import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import { isErrorMessage } from '@src/types';
 import React, { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Footer } from './Footer';
 import { AboutSection } from './about';
 import { Main } from './main';
@@ -15,7 +14,6 @@ export const HomeView = () => {
   const { openStorageDialog } = useActions().storage;
   const { setPage } = useActions().ui;
 
-  const { t } = useTranslation();
   const { getResourceFromPermalink } = usePermalink();
 
   useEffect(() => {

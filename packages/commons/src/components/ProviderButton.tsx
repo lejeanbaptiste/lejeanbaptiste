@@ -13,7 +13,7 @@ export const ProviderButton = ({ name: provider }: ProviderButtonProps) => {
   const { cookieConsent } = useAppState().ui;
   const { signIn } = useActions().auth;
 
-  const { t } = useTranslation('storage');
+  const { t } = useTranslation('LWC');
 
   const Icon = getIcon(provider as IconName);
 
@@ -23,7 +23,7 @@ export const ProviderButton = ({ name: provider }: ProviderButtonProps) => {
     <Tooltip
       title={
         !cookieConsent.includes('interaction')
-          ? t('cookie_consent:warning.must_accept_cookies_message')
+          ? t('cookie_consent.warning.must_accept_cookies_message')
           : ''
       }
     >

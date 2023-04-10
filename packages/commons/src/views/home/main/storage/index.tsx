@@ -14,7 +14,7 @@ type ViewType = 'recent' | 'samples' | 'template';
 export const Storage = () => {
   const { userState } = useAppState().auth;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
   const { palette } = useTheme();
 
   const countRecentDocs = useLiveQuery(() => db.recentDocuments.count(), [], 0);
@@ -22,9 +22,9 @@ export const Storage = () => {
   const [selectedView, setSelectedView] = useState<ViewProps | undefined>(undefined);
 
   const view: Record<ViewType, ViewProps> = {
-    recent: { title: `${t('commons:recent')}`, value: 'recent' },
-    samples: { title: `${t('commons:samples')}`, value: 'samples' },
-    template: { title: `${t('commons:templates')}`, value: 'templates' },
+    recent: { title: `${t('commons.recent')}`, value: 'recent' },
+    samples: { title: `${t('commons.samples')}`, value: 'samples' },
+    template: { title: `${t('commons.templates')}`, value: 'templates' },
   };
 
   useEffect(() => {

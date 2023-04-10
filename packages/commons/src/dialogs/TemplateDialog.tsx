@@ -14,7 +14,7 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { closeDialog } = useActions().ui;
 
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
 
   const [layout, setLayout] = useState<Layout>('list');
   const [selected, setSelected] = useState<Resource>();
@@ -44,14 +44,14 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         <TopBar
           layout={layout}
           onLayoutChange={changeLayout}
-          title={`${t('templates:choose_a_template')}`}
+          title={`${t('templates.choose_a_template')}`}
         />
       </DialogTitle>
       <TemplatesView layout={layout} onSelect={handleSelect} selected={selected} width={600} />
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
+        <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
         <Button onClick={handleCreate} variant="outlined">
-          {t('commons:create')}
+          {t('commons.create')}
         </Button>
       </DialogActions>
     </Dialog>

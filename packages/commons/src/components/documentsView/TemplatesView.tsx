@@ -25,7 +25,7 @@ export const TemplatesView = ({
   const { setResource } = useActions().editor;
   const { getTemplates, loadSample } = useActions().storage;
 
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
   const navigate = useNavigate();
 
   const [templates, setTemplates] = useState<Resource[]>([]);
@@ -72,7 +72,7 @@ export const TemplatesView = ({
     <Stack direction="column" pt={1} gap={1.5} width={width}>
       {[...categories.values()].map((category) => {
         return (
-          <Category key={category} title={category ?? t('commons:other')}>
+          <Category key={category} title={category ?? t('commons.other')}>
             <Masonry
               columns={columns}
               spacing={1.5}

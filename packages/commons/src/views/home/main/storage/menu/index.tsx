@@ -21,7 +21,7 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
 
   const { openStorageDialog } = useActions().storage;
 
-  const { t } = useTranslation('storage');
+  const { t } = useTranslation('LWC');
   const { palette } = useTheme();
   const countRecentDocs = useLiveQuery(() => db.recentDocuments.count(), [], 0);
 
@@ -37,13 +37,13 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
         !storageProviders.some((provider) => provider.service?.isStorageProvider),
       disabledTooltipText: cloudDisabledMessage,
       icon: 'cloud',
-      label: t('storage:from_the_cloud'),
+      label: t('storage.from_the_cloud'),
       value: 'cloud',
     },
     {
       disabled: isLoading,
       icon: 'computer',
-      label: t('storage:from_your_device'),
+      label: t('storage.from_your_device'),
       value: 'device',
     },
     'separator',
@@ -51,16 +51,17 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
       disabled: isLoading,
       hide: userState !== 'AUTHENTICATED' || countRecentDocs === 0,
       icon: 'recent',
-      label: t('commons:recent'),
+      label: t('commons.recent'),
       value: 'recent',
     },
-    { disabled: isLoading, icon: 'template', label: t('commons:templates'), value: 'templates' },
-    { disabled: isLoading, icon: 'sample', label: t('commons:samples'), value: 'samples' },
+    { disabled: isLoading, icon: 'template', label: t('commons.templates'), value: 'templates' },
+    { disabled: isLoading, icon: 'sample', label: t('commons.samples'), value: 'samples' },
   ];
 
   const handleClick = (value: string, title?: string) => {
     if (value === 'cloud') return openStorageDialog({ source: 'cloud', type: 'load' });
     if (value === 'device') return openStorageDialog({ source: 'local', type: 'load' });
+    if (value === 'import') return console.log('open dialog');
     onSelect({ title, value });
   };
 
@@ -82,7 +83,7 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
         textTransform="uppercase"
         variant="subtitle1"
       >
-        {t('commons:open')}
+        {t('commons.open')}
       </Typography>
       <AnimatePresence mode="popLayout">
         <Stack gap={1} pt={1}>
