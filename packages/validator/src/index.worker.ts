@@ -5,7 +5,6 @@ import jsdom from './lib/jsdom/jsdom-browserified';
 import { log, LOG_PREFIX } from './log';
 import Validator from './Validator';
 
-export { clearCache, deleteDb } from './db';
 export type {
   EventName,
   InitializeParameters,
