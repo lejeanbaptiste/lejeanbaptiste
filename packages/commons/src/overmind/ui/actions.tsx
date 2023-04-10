@@ -8,6 +8,10 @@ import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../index';
 
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('LWC')
+const { t } = i18next;
+
 //* INITIALIZE
 /**
  * Run during initialization
@@ -152,7 +156,7 @@ export const emitNotification = async (
     options: {
       action: (key) => (
         <Button color="inherit" onClick={() => actions.ui.closeNotificationSnackbar(key)}>
-          {`${i18next.t('commons:dismiss')}`}
+          {`${t('commons.dismiss', { ns: 'LWC' })}`}
         </Button>
       ),
       persist,

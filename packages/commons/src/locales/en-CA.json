@@ -8,9 +8,11 @@
       "cancel": "cancel",
       "close": "close",
       "contact_us": "contact us",
+      "conversion failed": "conversion failed",
       "create": "create",
       "description": "description",
       "discard_changes": "discard changes",
+      "dismiss": "dismiss",
       "download": "download",
       "editing": "editing",
       "export_as_HTML": "export as HTML",
@@ -40,6 +42,7 @@
       "save_as": "save as",
       "session": "session",
       "settings": "settings",
+      "sign in": "sign in",
       "sign_in": "sign in",
       "sign_out": "sign out",
       "storage": "storage",
@@ -88,20 +91,23 @@
     "error": {
       "message404": "You either tried some shady route, or you came here by mistake. Go back to the <1>main page.</1>",
       "page_not_Found": "Page not found",
+      "something went wrong": "something went wrong",
       "something_went_wrong": "Something went wrong"
     },
     "home": {
       "bugs": "bugs",
       "requests": "requests",
-      "subtitle": "The XML & RDF online editor of the Linked Editing Academic Framework"
+      "subtitle": "The XML & RDF online editor of the Linked Editing Academic Framework",
+      "team": "team"
     },
     "importExport": {
+      "convert and open": "convert and open",
+      "convert document": "convert document",
       "message": {
         "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer needs to convert it to be able to use it.",
         "intercept_load_file_format": "<0>This looks like a </0> <1>{{format}}</1> <2>document.</2>"
-      }
-    },
-    "language": {
+      },
+      "try to open it without converting": "try to open it without converting"
     },
     "messages": {
       "annotation_need_space": "Annotating documents requires more space.",
@@ -119,12 +125,14 @@
       "document_not_saved": "Document not saved",
       "document_saved": "Document saved",
       "error": {
+        "xml_not_well-formed_message": "The document you are trying to upload is not well-formed. Check that it has the XML extension and follows the correct XML grammar."
       },
       "from_the_cloud": "from the cloud",
       "from_your_device": "From your device",
       "import document": "import document",
       "invalid_request": "Invalid request",
       "paste_your_XML_here": "paste your XML here",
+      "provider not found": "provider not found",
       "provider_not_found": "provider not found",
       "saving": "saving",
       "waiting_for_resource": "waiting for resource",
@@ -143,56 +151,5 @@
       "device_theme": "Device theme",
       "light_theme": "Light theme"
     }
-  },
-  "commons": {
-    "Conversion failed": "Conversion failed",
-    "cancel": "cancel",
-    "dismiss": "dismiss",
-    "sign_in": "sign in",
-    "with": "with"
-  },
-  "cookie_consent": {
-    "consent_banner": {
-    },
-    "settings_modal": {
-    },
-    "warning": {
-    }
-  },
-  "error": {
-    "something_went_wrong": "Something went wrong"
-  },
-  "home": {
-    "team": "Team"
-  },
-  "importExport": {
-    "Convert_Document": "convert document",
-    "convert_and_open": "convert and open",
-    "message": {
-    },
-    "try_to_open_it_without_converting": "try to open in without converting"
-  },
-  "language": {
-    "english": "English",
-    "french": "French"
-  },
-  "messages": {
-  },
-  "profile": {
-  },
-  "storage": {
-    "error": {
-      "xml_not_well-formed_message": "The document you are trying to upload is not well-formed. Check that it has the XML extension and follows the correct XML grammar."
-    },
-    "provider_not_found": "storage provider not found",
-    "warning": {
-    }
-  },
-  "templates": {
-  },
-  "ui": {
-    "auto": "auto",
-    "dark": "dark",
-    "light": "light"
   }
 }
