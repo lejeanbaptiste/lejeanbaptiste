@@ -40,7 +40,7 @@ export const configureAuthorityServices = async (
 
   //* no config, use default
   if (!configAuthorityServices) {
-    effects.editor.api.setDefaultAuthorityServices(authorityServices);
+    effects.editor.api.setDefaultAuthorityServices(json(authorityServices));
     await actions.editor.applyUserPreferencesAuthrityServices();
     return;
   }
@@ -93,7 +93,7 @@ export const configureAuthorityServices = async (
   });
 
   // * Setup default
-  effects.editor.api.setDefaultAuthorityServices(authorityServices);
+  effects.editor.api.setDefaultAuthorityServices(json(authorityServices));
   await actions.editor.applyUserPreferencesAuthrityServices();
 };
 
@@ -390,31 +390,19 @@ export const resetPreferences = async ({ state, actions, effects }: Context) => 
   actions.editor.setEditorMode('xmlrdf');
   actions.editor.setAnnotationrMode(3);
 
-  effects.editor.api.removeFromLocalStorage('lookup_preferences');
-
+  //* Authority service
   const defaultAuthorityServices = effects.editor.api.getDefaultAuthorityServices();
-  if (defaultAuthorityServices) state.editor.authorityServices = defaultAuthorityServices;
-
-  db.authorityServices.clear();
+  if (defaultAuthorityServices) {
+    state.editor.authorityServices = defaultAuthorityServices;
+    const saninatizedPrefs = sanitazeAuthorityServices(Object.values(defaultAuthorityServices));
+    await db.authorityServices.bulkPut(saninatizedPrefs);
+  } else {
+    await db.authorityServices.clear();
+  }
 
   await actions.ui.resetDoNotDisplayDialogs();
 
   actions.ui.resetPreferences();
-};
-
-export const getSettings = ({ state }: Context, config?: string) => {
-  return {
-    isAdvanced: true,
-    fontSize: state.editor.fontSize,
-    showEntities: state.editor.showEntities,
-    showTags: state.editor.showTags,
-    mode: state.editor.mode,
-    editorMode: state.editor.editorMode,
-    annotationMode: state.editor.annotationMode,
-    allowOverlap: state.editor.allowOverlap,
-
-    schemaId: state.document.schemaId,
-  };
 };
 
 export const setIsAnnotator = ({ state }: Context, value: boolean) => {
