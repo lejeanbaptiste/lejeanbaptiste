@@ -15,8 +15,11 @@ export class DexieDB extends Dexie {
 
 export const db = new DexieDB();
 
-export const resetDatabase = async () => {
-  await db.transaction('rw', db.publicRepositories, async () => {
-    await Promise.all(db.tables.map((table) => table.clear()));
-  });
+
+export const clearCache = async () => {
+  return await db.publicRepositories.clear().catch(() => new Error('Something went wrong.'));
+};
+
+export const deleteDb = async () => {
+  return await db.delete().catch(() => new Error('Something went wrong.'));
 };
