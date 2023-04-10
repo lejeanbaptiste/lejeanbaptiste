@@ -96,8 +96,8 @@ export const EditView = () => {
         xml: resource.content ?? '',
       },
       settings: {
+        authorityServices: [{ id: 'geonames', settings: { username: geonamesUsername } }],
         credentials: { nssiToken: userState === 'AUTHENTICATED' ? getKeycloakAuthToken : '' },
-        lookups: { authorities: [['geonames', { config: { username: geonamesUsername } }]] },
         readonly,
         schemas,
       },
