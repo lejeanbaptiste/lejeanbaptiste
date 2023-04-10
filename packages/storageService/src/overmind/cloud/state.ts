@@ -9,6 +9,11 @@ import type {
   SuportedProviders,
 } from '../../types';
 
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('LWStorageService');
+
+const { t } = i18next;
+
 type State = {
   collectionSource: CollectionSource;
   collectionType?: CollectionType;
@@ -40,8 +45,8 @@ type State = {
 
 export const state: State = {
   collectionSource: 'owner',
-  commitMessage: i18next.t('LWStorageService:cloud.settings.update'),
-  defaultCommitMessage: i18next.t('LWStorageService:cloud.settings.update'),
+  commitMessage: t('cloud.settings.update', { ns: 'LWStorageService' }),
+  defaultCommitMessage: t('cloud.settings.update', { ns: 'LWStorageService' }),
   isFetching: false,
   isLoading: false,
   isSaving: false,
