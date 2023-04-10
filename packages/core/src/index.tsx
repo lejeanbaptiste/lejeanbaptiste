@@ -27,6 +27,7 @@ declare global {
   }
 }
 
+export { clearCache, deleteDb } from './db';
 export * as Types from './types';
 
 const overmind = createOvermind(config, {
