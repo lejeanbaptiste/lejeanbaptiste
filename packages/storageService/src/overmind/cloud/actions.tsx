@@ -35,6 +35,11 @@ import type {
 } from '../../types/Provider';
 import { getFromLocalStorage, log } from '../../utilities';
 
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('LWStorageService');
+
+const { t } = i18next;
+
 //* INIITIALIZE
 export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
   //PREFERRED STORAGE PROVIDER
@@ -156,7 +161,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('LWStorageService:cloud.user_not_found')}`,
+        title: `${t('cloud.user_not_found', { ns: 'LWStorageService' })}`,
         Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
@@ -205,7 +210,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('LWStorageService:commons.path_not_found')}`,
+        title: `${t('commons.path_not_found', { ns: 'LWStorageService' })}`,
         Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
@@ -244,7 +249,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('LWStorageService:commons.path_not_found')}`,
+        title: `${t('commons.path_not_found', { ns: 'LWStorageService' })}`,
         Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
@@ -920,11 +925,15 @@ export const saveDocument = async ({ state, actions }: Context) => {
         maxWidth: 'xs',
         severity: 'warning',
         preventEscape: true,
-        title: `${i18next.t('LWStorageService:cloud.message.file_already_exists')}`,
-        Body: `${i18next.t('LWStorageService:cloud.message.Do_you_want_to_overwrite')}?`,
+        title: `${t('cloud.message.file_already_exists', { ns: 'LWStorageService' })}`,
+        Body: `${t('cloud.message.Do_you_want_to_overwrite', { ns: 'LWStorageService' })}?`,
         actions: [
-          { action: 'cancel', label: `${i18next.t('LWStorageService:commons.cancel')}`, variant: 'outlined' },
-          { action: 'overwrite', label: `${i18next.t('LWStorageService:commons.overwrite')}` },
+          {
+            action: 'cancel',
+            label: `${t('commons.cancel', { ns: 'LWStorageService' })}`,
+            variant: 'outlined',
+          },
+          { action: 'overwrite', label: `${t('commons.overwrite', { ns: 'LWStorageService' })}` },
         ],
         //@ts-ignore
         onClose: async (action: string) => {
@@ -966,7 +975,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
       maxWidth: 'xs',
       preventEscape: true,
       severity: 'info',
-      title: `${i18next.t('LWStorageService:commons.processing')}...`,
+      title: `${t('commons.processing', { ns: 'LWStorageService' })}...`,
     },
   });
 
@@ -999,8 +1008,8 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('LWStorageService:commons.error')}`,
-        Body: `${i18next.t('LWStorageService:cloud.message.unabled_to_save')}`,
+        title: `${t('commons.error', { ns: 'LWStorageService' })}`,
+        Body: `${t('cloud.message.unabled_to_save', { ns: 'LWStorageService' })}`,
         onClose: () => actions.cloud.setIsSaving(false),
       },
     });
@@ -1012,12 +1021,14 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     actions.ui.closeDialog('progress');
 
     const title =
-      response.message === 'conflict' ? i18next.t('LWStorageService:commons.conflict') : i18next.t('LWStorageService:commons.error');
+      response.message === 'conflict'
+        ? t('commons.conflict', { ns: 'LWStorageService' })
+        : t('commons.error', { ns: 'LWStorageService' });
 
     const message =
       response.message === 'conflict'
-        ? i18next.t('LWStorageService:cloud.message.unable_to_overwrite_file')
-        : `${i18next.t('LWStorageService:cloud.message.unabled_to_save')}. ${response.message}`;
+        ? t('cloud.message.unable_to_overwrite_file', { ns: 'LWStorageService' })
+        : `${t('cloud.message.unabled_to_save', { ns: 'LWStorageService' })}. ${response.message}`;
 
     actions.ui.openDialog({
       props: {
@@ -1059,7 +1070,7 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
       maxWidth: 'xs',
       preventEscape: true,
       severity: 'info',
-      title: `${i18next.t('LWStorageService:commons.processing')}...`,
+      title: `${t('commons.processing', { ns: 'LWStorageService' })}...`,
     },
   });
 
@@ -1071,7 +1082,10 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
 
   if (!pullRequestResponse) {
     actions.cloud.setIsSaving(false);
-    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.unable_pull_reqest') };
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_pull_reqest', { ns: 'LWStorageService' }),
+    };
   }
 
   if (isErrorMessage(pullRequestResponse)) {
@@ -1112,7 +1126,10 @@ export const pullRequest = async ({
   const branchHead = await actions.cloud.branchFile();
 
   if (!branchHead)
-    return { type: 'error', message: i18next.t('LWStorageService:cloud.message.unable_create_branch') };
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_create_branch', { ns: 'LWStorageService' }),
+    };
   if (isErrorMessage(branchHead)) return branchHead;
 
   const pullRequestResponse = await provider.createPullRequest({
@@ -1137,7 +1154,11 @@ export const pullRequestFromFork = async ({
 
   //------  Create version
   const fork = await actions.cloud.forkFile();
-  if (!fork) return { type: 'error', message: i18next.t('LWStorageService:cloud.message.unable_fork_repo') };
+  if (!fork)
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_fork_repo', { ns: 'LWStorageService' }),
+    };
   if (isErrorMessage(fork)) return fork;
 
   actions.ui.openDialog({
@@ -1145,7 +1166,7 @@ export const pullRequestFromFork = async ({
       id: 'merge-progress',
       maxWidth: 'xs',
       severity: 'info',
-      title: `${i18next.t('LWStorageService:cloud.message.create_merge_request')}`,
+      title: `${t('cloud.message.create_merge_request', { ns: 'LWStorageService' })}`,
     },
   });
 
@@ -1177,7 +1198,11 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
 
   //------create branch
   const branch = await actions.cloud.createBranch();
-  if (!branch) return { type: 'error', message: i18next.t('LWStorageService:cloud.message.unable_create_branch') };
+  if (!branch)
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_create_branch', { ns: 'LWStorageService' }),
+    };
 
   //------get document's hash from branch
   const branchHead = `branch-by-${provider.username}`;
@@ -1209,7 +1234,10 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
   if (!saveOnBranchResponse || saveOnBranchResponse.status === 409) {
     return {
       type: 'error',
-      message: i18next.t('LWStorageService:cloud.message.unable_save_on_branch', { branch: branchHead }),
+      message: t('cloud.message.unable_save_on_branch', {
+        branch: branchHead,
+        ns: 'LWStorageService',
+      }),
     };
   }
 
@@ -1235,7 +1263,11 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
 
   //------create fork
   const fork = await actions.cloud.fork();
-  if (!fork) return { type: 'error', message: i18next.t('LWStorageService:cloud.message.unable_fork_repo') };
+  if (!fork)
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_fork_repo', { ns: 'LWStorageService' }),
+    };
   if (isErrorMessage(fork)) return fork;
 
   //------get document's hash from frok
@@ -1248,7 +1280,7 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
       id: 'saving-document',
       maxWidth: 'xs',
       severity: 'info',
-      title: `${i18next.t('LWStorageService:message.saving_document')}`,
+      title: `${t('message.saving_document', { ns: 'LWStorageService' })}`,
     },
   });
 
@@ -1276,7 +1308,10 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
   if (!saveOnForkResponse || saveOnForkResponse.status === 409) {
     return {
       type: 'error',
-      message: i18next.t('LWStorageService:cloud.message.unable_save_document_on_fork', { fork: fork.name }),
+      message: t('cloud.message.unable_save_document_on_fork', {
+        fork: fork.name,
+        ns: 'LWStorageService',
+      }),
     };
   }
 
@@ -1305,9 +1340,10 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | Er
         id: 'forking-repository',
         maxWidth: 'xs',
         severity: 'info',
-        title: `${i18next.t('LWStorageService:cloud.forking')}`,
-        Body: `${i18next.t('LWStorageService:cloud.message.forking_can_take_minutes')}. ${i18next.t(
-          'LWStorageService:message.be_patient'
+        title: `${t('cloud.forking', { ns: 'LWStorageService' })}`,
+        Body: `${t('cloud.message.forking_can_take_minutes', { ns: 'LWStorageService' })}. ${t(
+          'message.be_patient',
+          { ns: 'LWStorageService' }
         )}.}`,
       },
     });

@@ -12,6 +12,11 @@ import type {
 } from '../../types';
 import { updateTranslation } from '../../utilities';
 
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('LWStorageService');
+
+const { t } = i18next;
+
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
   const {
     allowedMimeTypes,
@@ -89,12 +94,16 @@ export const setSources = ({ state }: Context) => {
   if (dialogType === 'load') {
     sources.push({
       value: 'local',
-      label: i18next.t('LWStorageService:commons.from_your_computer'),
+      label: t('commons.from_your_computer', { ns: 'LWStorageService' }),
       icon: 'computer',
     });
 
     if (allowPaste) {
-      sources.push({ value: 'paste', label: i18next.t('LWStorageService:footer.pasteXml'), icon: 'paste' });
+      sources.push({
+        value: 'paste',
+        label: t('footer.pasteXml', { ns: 'LWStorageService' }),
+        icon: 'paste',
+      });
     }
   }
 };
@@ -126,7 +135,7 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: error ?? `${i18next.t('LWStorageService:message.document_not_valid')}`,
+          title: error ?? `${t('message.document_not_valid', { ns: 'LWStorageService' })}`,
         },
       });
       if (state.common.resource) state.common.resource.filename = undefined;

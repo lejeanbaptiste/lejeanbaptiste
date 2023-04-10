@@ -37,8 +37,8 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const saveOptions: SaveOption[] = [
-    { label: t('LWStorageService:commons.save'), value: 'save' },
-    { label: t('LWStorageService:footer.save_as_pull_request'), value: 'pullRequest' },
+    { label: t('commons.save'), value: 'save' },
+    { label: t('footer.save_as_pull_request'), value: 'pullRequest' },
   ];
 
   const handleToggle = () => setOpen((prevOpen) => !prevOpen);
