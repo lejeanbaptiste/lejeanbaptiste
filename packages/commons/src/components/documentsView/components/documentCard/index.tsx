@@ -105,13 +105,13 @@ export const DocumentCard = ({
             justifyContent="space-between"
             alignItems={layout === 'list' ? 'center' : 'flex-start'}
           >
-            <Stack direction="row" alignItems="flex-start" gap={2}>
+            <Stack direction="row" alignItems="center" gap={2}>
               {icon && (
                 <Icon
                   color={hover ? 'primary' : 'inherit'}
                   component={getIcon(icon)}
                   fontSize="small"
-                  sx={{ mt: 0.5 }}
+                  sx={{ my: 0.25 }}
                 />
               )}
               <Typography color={hover ? 'primary' : 'inherit'} fontWeight={700} variant="body2">
