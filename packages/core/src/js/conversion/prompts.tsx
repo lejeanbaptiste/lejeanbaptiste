@@ -4,7 +4,6 @@ import { Trans } from 'react-i18next';
 import { TextEmphasis } from '../../components';
 import { SimpleDialogMessageProps } from '../../dialogs';
 import i18next from '../../i18n';
-// import i18next from 'i18next';
 import { Schema } from '../../types';
 import Writer from '../Writer';
 
@@ -45,9 +44,9 @@ export const promptRootNotSupported = ({ rootName, writer }: ProcessSchemaProps)
       maxWidth: 'xs',
       preventEscape: true,
       severity: 'error',
-      title: t('Document not supported'),
+      title: t('Document not supported', { ns: 'leafwriter' }),
       Message: () => (
-        <Trans i18nKey="messages.root element invalid" values={{ rootName }}>
+        <Trans i18nKey="messages.root element invalid" ns="leafwriter" values={{ rootName }}>
           <Typography>LEAF-Writer cannot open this document.</Typography>
           <Typography>Root element</Typography>
           <TextEmphasis color="error">{rootName}</TextEmphasis>
@@ -71,13 +70,19 @@ export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
       title: t('Schema not found'),
       Message: () => (
         <Typography>
-          {`${t(`messages.LEAF-Writer could not find the document schema declaration`)}`}
+          {`${t(`messages.LEAF-Writer could not find the document schema declaration`, {
+            ns: 'leafwriter',
+          })}`}
         </Typography>
       ),
       actions: [
-        { action: 'cancel', label: t('commons.cancel') },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
-        { action: 'selectSchema', label: t('select supported schema'), variant: 'outlined' },
+        { action: 'cancel', label: t('commons.cancel', { ns: 'leafwriter' }) },
+        { action: 'addSchema', label: t('add schema', { ns: 'leafwriter' }), variant: 'outlined' },
+        {
+          action: 'selectSchema',
+          label: t('select supported schema', { ns: 'leafwriter' }),
+          variant: 'outlined',
+        },
       ],
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
@@ -95,10 +100,11 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
       maxWidth: 'sm',
       preventEscape: true,
       severity: 'warning',
-      title: t('Schema not supported'),
+      title: t('Schema not supported', { ns: 'leafwriter' }),
       Message: () => (
         <Trans
           i18nKey="messages.schema not supported"
+          ns="leafwriter"
           shouldUnescape={true}
           values={{ rng: params.docSchema?.rng }}
         >
@@ -109,9 +115,13 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
         </Trans>
       ),
       actions: [
-        { action: 'cancel', label: t('commons.cancel') },
-        { action: 'selectSchema', label: t('select supported schema'), variant: 'outlined' },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
+        { action: 'cancel', label: t('commons.cancel', { ns: 'leafwriter' }) },
+        {
+          action: 'selectSchema',
+          label: t('select supported schema', { ns: 'leafwriter' }),
+          variant: 'outlined',
+        },
+        { action: 'addSchema', label: t('add schema', { ns: 'leafwriter' }), variant: 'outlined' },
       ],
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
@@ -133,6 +143,7 @@ export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
       Message: () => (
         <Trans
           i18nKey="messages.schema not loaded"
+          ns="leafwriter"
           shouldUnescape={true}
           values={{ rng: docSchema?.rng }}
         >
@@ -143,9 +154,13 @@ export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
         </Trans>
       ),
       actions: [
-        { action: 'cancel', label: t('commons.cancel') },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
-        { action: 'selectSchema', label: t('select supported schema'), variant: 'outlined' },
+        { action: 'cancel', label: t('commons.cancel', { ns: 'leafwriter' }) },
+        { action: 'addSchema', label: t('add schema', { ns: 'leafwriter' }), variant: 'outlined' },
+        {
+          action: 'selectSchema',
+          label: t('select supported schema', { ns: 'leafwriter' }),
+          variant: 'outlined',
+        },
       ],
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
@@ -214,54 +229,63 @@ export const openEditorModeDialog = async (writer: Writer) => {
   const { allowOverlap, mode, overmindActions } = writer;
 
   const dialogTitle = 'Editor Mode';
-  const shouldDisplayDialog = await overmindActions.ui.shouldDisplayDialog(dialogTitle)
+  const shouldDisplayDialog = await overmindActions.ui.shouldDisplayDialog(dialogTitle);
   if (!shouldDisplayDialog) return;
 
-  let Message: FC<SimpleDialogMessageProps>;
+  let Body: FC<SimpleDialogMessageProps>;
 
   if (mode === writer.XML) {
-    Message = () => (
+    Body = () => (
       <>
-        <TextEmphasis color="info">{`Markup ${t('commons.only')}`}</TextEmphasis>
-        <Typography>{`${t(
-          'Only XML tags No RDF Semantic Web annotations will be created'
-        )}.`}</Typography>
+        <TextEmphasis color="info">{`Markup ${t('commons.only', {
+          ns: 'leafwriter',
+        })}`}</TextEmphasis>
+        <Typography>{`${t('Only XML tags No RDF Semantic Web annotations will be created', {
+          ns: 'leafwriter',
+        })}.`}</Typography>
         <Typography paragraph mt={3} variant="caption">
           <b>{`${t('commons.hint')}: `}</b>
-          {`${t('You can change the editor mode anytime in the status bar')}`}
+          {`${t('You can change the editor mode anytime in the status bar', { ns: 'leafwriter' })}`}
         </Typography>
       </>
     );
   } else {
     if (allowOverlap) {
-      Message = () => (
+      Body = () => (
         <>
           <TextEmphasis color="info">{`Markup & Linking with overlap`}</TextEmphasis>
           <Typography>
             {`${t(
-              'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap'
+              'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
+              { ns: 'leafwriter' }
             )} ${t(
-              'Annotations that overlap will be created in RDF only with no equivalent XML tags'
+              'Annotations that overlap will be created in RDF only with no equivalent XML tags',
+              { ns: 'leafwriter' }
             )}.`}
           </Typography>
           <Typography paragraph mt={3} variant="caption">
-            <b>{`${t('hint')}: `}</b>
-            {`${t('You can change the editor mode anytime in the status bar')}.`}
+            <b>{`${t('commons.hint', { ns: 'leafwriter' })}: `}</b>
+            {`${t('You can change the editor mode anytime in the status bar', {
+              ns: 'leafwriter',
+            })}.`}
           </Typography>
         </>
       );
     } else {
-      Message = () => (
+      Body = () => (
         <>
           <TextEmphasis color="info">{`Markup & Linking`}</TextEmphasis>
           <Typography>
             {`${t(
-              'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap'
+              'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
+              { ns: 'leafwriter' }
             )}`}
           </Typography>
           <Typography paragraph mt={3} variant="caption">
-            <b>{`${t('hint')}: `}</b>
-            {`${t('You can change the editor mode anytime in the status bar')}.`}
+            <b>{`${t('hint', { ns: 'leafwriter' })}: `}</b>
+            {`${t('You can change the editor mode anytime in the status bar', {
+              ns: 'leafwriter',
+            })}.`}
           </Typography>
         </>
       );
@@ -271,14 +295,14 @@ export const openEditorModeDialog = async (writer: Writer) => {
   overmindActions.ui.openDialog({
     props: {
       severity: 'info',
-      title: t('Editor Mode'),
-      Message,
+      title: t('Editor Mode', { ns: 'leafwriter' }),
+      Body,
       actions: [
-        { action: 'notShowAgain', label: t('dont show again') },
-        { action: 'ok', label: t('commons.ok') },
+        { action: 'notShowAgain', label: t('dont show again', { ns: 'leafwriter' }) },
+        { action: 'ok', label: t('commons.ok', { ns: 'leafwriter' }) },
       ],
       onClose: async (action: string) => {
-        if (action === 'notShowAgain') await overmindActions.ui.doNotDisplayDialog('Editor Mode');
+        if (action === 'notShowAgain') await overmindActions.ui.doNotDisplayDialog(dialogTitle);
       },
     },
   });
