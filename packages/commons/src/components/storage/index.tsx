@@ -22,7 +22,7 @@ export const Storage = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
 
   const { setPermalink } = usePermalink();
 
@@ -45,17 +45,17 @@ export const Storage = () => {
       props: {
         icon: 'importExportRoundedIcon',
         preventEscape: true,
-        title: t('importExport:Convert_Document').toString(),
+        title: t('importExport.convert document').toString(),
         Body: () => <InterceptFormatImportDialog format={specialFormat} />,
         actions: [
-          { action: 'cancel', label: `${t('commons:cancel')}` },
+          { action: 'cancel', label: `${t('commons.cancel')}` },
           {
             action: 'noConvertOpen',
-            label: `${t('importExport:try_to_open_it_without_converting')}`,
+            label: `${t('importExport.try to open it without converting')}`,
           },
           {
             action: 'convertOpen',
-            label: `${t('importExport:convert_and_open')}`,
+            label: `${t('importExport.convert and open')}`,
             variant: 'outlined',
           },
         ],
@@ -66,7 +66,7 @@ export const Storage = () => {
           const response = await convertTranskribusToTei({ ...res });
           if (response instanceof Error) {
             notifyViaSnackbar({
-              message: `${t('commons:Conversion failed')}. ${response.message}`,
+              message: `${t('commons.conversion failed')}. ${response.message}`,
               options: { variant: 'error' },
             });
             return false;
@@ -122,7 +122,7 @@ export const Storage = () => {
     const isContentValid = isValidXml(content);
     return isContentValid
       ? { valid: true }
-      : { valid: false, error: t('storage:error.xml_not_well-formed_message') };
+      : { valid: false, error: t('storage.error.xml_not_well-formed_message') };
   };
 
   const preferProvider = useMemo(() => {

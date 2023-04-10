@@ -186,7 +186,7 @@ export const useLeafWriter = () => {
     const type = saved.success ? 'success' : saved.error?.type ?? 'info';
     const message = saved.success
       ? t('storage.document_saved')
-      : `${t('error:something_went_wrong')}. ${t('storage.document_not_saved')}!`;
+      : `${t('error.something_went_wrong')}. ${t('storage.document_not_saved')}!`;
 
     if (saved.success) leafWriter.setContentHasChanged(false);
 
@@ -197,7 +197,7 @@ export const useLeafWriter = () => {
     const type = saved ? 'success' : 'error';
     const message = saved
       ? t('storage.document_saved')
-      : `${t('error:something_went_wrong')}. ${t('storage.document_not_saved')}!`;
+      : `${t('error.something went wrong')}. ${t('storage.document_not_saved')}!`;
 
     notifyViaSnackbar({ message, options: { variant: type } });
 

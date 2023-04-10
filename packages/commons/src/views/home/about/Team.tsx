@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { TeamProfile, type ProfileProps } from './TeamProfile';
 
 export const Team = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
 
   const [team, setTeam] = useState<ProfileProps[]>();
 
@@ -21,7 +21,7 @@ export const Team = () => {
       {team && (
         <>
           <Typography component="h3" variant="h5" sx={{ textTransform: 'capitalize' }}>
-            {t('home:team')}
+            {t('home.team')}
           </Typography>
           <Stack mt={4} rowGap={2.5}>
             {team.map((profile) => (

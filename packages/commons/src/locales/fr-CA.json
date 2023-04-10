@@ -8,9 +8,11 @@
       "cancel": "Annuler",
       "close": "fermer",
       "contact_us": "Contactez-nous",
+      "conversion failed": "la conversion a échoué",
       "create": "créer",
       "description": "description",
       "discard_changes": "annuler les modifications",
+      "dismiss": "rejeter",
       "download": "télécharger",
       "editing": "montage",
       "export_as_HTML": "exporter au format HTML",
@@ -40,6 +42,7 @@
       "save_as": "enregistrer sous",
       "session": "session",
       "settings": "paramètres",
+      "sign in": "s'identifier",
       "sign_in": "s'identifier",
       "sign_out": "se déconnecter",
       "storage": "stockage",
@@ -88,20 +91,23 @@
     "error": {
       "message404": "Soit vous avez essayé une route louche, soit vous êtes venu ici par erreur. \nRevenez à la <1>page principale.</1>",
       "page_not_Found": "Page non trouvée",
+      "something went wrong": "quelque chose s'est mal passé",
       "something_went_wrong": "Quelque chose s'est mal passé"
     },
     "home": {
       "bugs": "insectes",
       "requests": "demandes",
-      "subtitle": "Le XML"
+      "subtitle": "Le XML",
+      "team": "équipe"
     },
     "importExport": {
+      "convert and open": "convertir et ouvrir",
+      "convert document": "convertir un document",
       "message": {
         "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer doit le convertir pour pouvoir l'utiliser.",
         "intercept_load_file_format": "<0>Ceci ressemble à un </0> <1>{{format}}</1> <2>document.</2>"
-      }
-    },
-    "language": {
+      },
+      "try to open it without converting": "essayez de l'ouvrir sans convertir"
     },
     "messages": {
       "annotation_need_space": "Annoter des documents nécessite plus d'espace.",
@@ -119,12 +125,14 @@
       "document_not_saved": "Document non enregistré",
       "document_saved": "Document enregistré",
       "error": {
+        "xml_not_well-formed_message": "Le document que vous essayez de télécharger n'est pas bien formé. \nVérifiez qu'il a l'extension XML et suit la grammaire XML correcte."
       },
       "from_the_cloud": "du nuage",
       "from_your_device": "Depuis votre appareil",
-      "import document": "document d'importation",
+      "import document": "Importer un document",
       "invalid_request": "Requête invalide",
       "paste_your_XML_here": "collez votre XML ici",
+      "provider not found": "fournisseur introuvable",
       "provider_not_found": "fournisseur introuvable",
       "saving": "économie",
       "waiting_for_resource": "en attente de ressource",
@@ -143,56 +151,5 @@
       "device_theme": "Thème de l'appareil",
       "light_theme": "Thème lumière"
     }
-  },
-  "commons": {
-    "Conversion failed": "Échec de la conversion",
-    "cancel": "cancel",
-    "dismiss": "rejeter",
-    "sign_in": "connexion",
-    "with": "avec"
-  },
-  "cookie_consent": {
-    "consent_banner": {
-    },
-    "settings_modal": {
-    },
-    "warning": {
-    }
-  },
-  "error": {
-    "something_went_wrong": "Page non trouvée"
-  },
-  "home": {
-    "team": "Équipe"
-  },
-  "importExport": {
-    "Convert_Document": "convertir un document",
-    "convert_and_open": "convertir et ouvrir",
-    "message": {
-    },
-    "try_to_open_it_without_converting": "essayez d'ouvrir sans convertir"
-  },
-  "language": {
-    "english": "Anglais",
-    "french": "Français"
-  },
-  "messages": {
-  },
-  "profile": {
-  },
-  "storage": {
-    "error": {
-      "xml_not_well-formed_message": "Le document que vous essayez de télécharger n'est pas bien formé. Vérifiez qu'il possède l'extension XML et qu'il respecte la grammaire XML appropriée."
-    },
-    "provider_not_found": "fournisseur non trouvé",
-    "warning": {
-    }
-  },
-  "templates": {
-  },
-  "ui": {
-    "auto": "auto",
-    "dark": "noir",
-    "light": "lumière"
   }
 }
