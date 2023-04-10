@@ -1,3 +1,11 @@
+import {
+  clearCache as clearCacheLeafwriter,
+  deleteDb as deleteDbLeafwriter,
+} from '@cwrc/leafwriter';
+import {
+  clearCache as clearCacheStorageService,
+  deleteDb as deleteDbStorageService,
+} from '@cwrc/leafwriter-storage-service';
 import type { Resource } from '@src/types';
 import Dexie, { Table } from 'dexie';
 
@@ -7,15 +15,23 @@ export class DexieDB extends Dexie {
   constructor() {
     super('LEAF-Writer-Commons');
     this.version(1).stores({
-      recentDocuments: 'id, &url',
+      recentDocuments: 'id, &url', // '&' means 'unique'
     });
   }
 }
 
 export const db = new DexieDB();
 
-export const resetDatabase = async () => {
-  await db.transaction('rw', db.recentDocuments, async () => {
-    await Promise.all(db.tables.map((table) => table.clear()));
-  });
+export const clearCache = async () => {
+  await clearCacheLeafwriter();
+  await clearCacheStorageService();
+  await db.recentDocuments
+    .clear()
+    .catch(() => new Error('Clear `recentDocuments` table: Something went wrong.'));
+};
+
+export const deleteDb = async () => {
+  await deleteDbLeafwriter();
+  await deleteDbStorageService();
+  return await db.delete().catch(() => new Error('Something went wrong.'));
 };
