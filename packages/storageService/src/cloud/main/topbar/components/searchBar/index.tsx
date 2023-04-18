@@ -2,7 +2,6 @@ import useAutocomplete from '@mui/base/useAutocomplete';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import {
-  alpha,
   Box,
   CircularProgress,
   ClickAwayListener,
@@ -11,8 +10,8 @@ import {
   InputBase,
   Paper,
   useMediaQuery,
-  useTheme,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import debounce from 'lodash/debounce';
 import React, { useMemo, useState } from 'react';

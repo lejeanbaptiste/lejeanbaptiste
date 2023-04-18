@@ -5,8 +5,8 @@ import {
   Stack,
   Typography,
   useMediaQuery,
-  useTheme,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../../overmind';

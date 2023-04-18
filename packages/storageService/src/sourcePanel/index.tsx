@@ -7,8 +7,8 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
-  useTheme,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React, { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsDialog } from '../dialogs';
