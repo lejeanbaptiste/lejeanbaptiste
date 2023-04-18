@@ -3,7 +3,7 @@ import type { IconName } from '@src/icons';
 import { motion, type Variants } from 'framer-motion';
 import { bindFocus, bindHover, usePopupState } from 'material-ui-popup-state/hooks';
 import React, { useContext, useEffect, useState } from 'react';
-import { CascadingContext } from '../';
+import { CascadingContext } from '..';
 import { useMenu, type ItemType } from '../useMenu';
 import { CascadingMenu, type CascadingMenuProps } from './CascadingMenu';
 import { Content } from './Content';

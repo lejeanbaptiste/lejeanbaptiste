@@ -8,7 +8,7 @@ import { Footer } from './Footer';
 import { AboutSection } from './about';
 import { Main } from './main';
 
-export const HomeView = () => {
+export const HomePage = () => {
   const { userState } = useAppState().auth;
 
   const { openStorageDialog } = useActions().storage;

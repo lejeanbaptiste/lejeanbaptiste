@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom';
 import { Editor } from './Editor';
 import { MainMenu, Meta } from './topbar';
 
-export const EditView = () => {
+export const EditPage = () => {
   const { userState } = useAppState().auth;
   const { resource } = useAppState().editor;
 

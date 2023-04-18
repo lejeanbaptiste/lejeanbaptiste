@@ -1,17 +1,17 @@
 import React from 'react';
 import { BasicLayout } from './layouts';
-import { EditView, HomeView, LinkAccounts, NotFoundView } from './views';
+import { EditPage, HomePage, LinkAccountsPage, NotFoundPage } from './pages';
 
 export const routes = [
   {
     path: '/',
     element: <BasicLayout />,
     children: [
-      { path: '404', element: <NotFoundView /> },
-      { path: '/link-accounts', element: <LinkAccounts /> },
-      { path: '/edit', element: <EditView /> },
-      { path: '/view', element: <EditView /> },
-      { index: true, element: <HomeView /> },
+      { path: '404', element: <NotFoundPage /> },
+      { path: '/link-accounts', element: <LinkAccountsPage /> },
+      { path: '/edit', element: <EditPage /> },
+      { path: '/view', element: <EditPage /> },
+      { index: true, element: <HomePage /> },
     ],
   },
 ];

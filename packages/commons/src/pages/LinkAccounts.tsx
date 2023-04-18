@@ -2,7 +2,7 @@ import { Page } from '@src/layouts';
 import { BroadcastChannel } from 'broadcast-channel';
 import React, { useEffect } from 'react';
 
-export const LinkAccounts = () => {
+export const LinkAccountsPage = () => {
   const query = new URLSearchParams(location.search);
   const error = query.get('error');
 
