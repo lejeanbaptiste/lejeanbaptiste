@@ -37,7 +37,14 @@ export type AllowedMimeType =
   | 'application/xml'
   | 'text/csv'
   | 'text/html'
-  | 'text/plain';
+  | 'text/plain'
+  | 'text/xml';
+
+  export interface FileDetail {
+    content: string;
+    file: File;
+  }
+  
 
 export interface SelectedItem {
   organization?: Organization;
