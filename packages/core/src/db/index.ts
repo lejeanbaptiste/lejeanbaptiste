@@ -1,10 +1,11 @@
+// * Packege Exports is only available when TSconfig nodeModuleRosultuon is set to NODE16 or NODENEXT.
+// * But, this new configuration means different setup to load dependencies, which might break other things.
+// * We should way a little longer to adopt the new setup
+//@ts-ignore
+import * as ValidatorDB from '@cwrc/leafwriter-validator/db';
 import Dexie, { Table } from 'dexie';
 import { AuthorityService } from '../dialogs';
 import type { Schema } from '../types';
-import {
-  clearCache as clearCacheValidator,
-  deleteDb as deleteDbValidator,
-} from '@cwrc/leafwriter-validator/db';
 
 export interface SuspendedDocument {
   content: string;
@@ -35,7 +36,7 @@ export class DexieDB extends Dexie {
 export const db = new DexieDB();
 
 export const clearCache = async () => {
-  await clearCacheValidator();
+  await ValidatorDB.clearCache();
   await db.suspendedDocuments
     .clear()
     .catch(() => new Error('Clear `suspendedDocuments` table: Something went wrong.'));
@@ -51,6 +52,6 @@ export const clearCache = async () => {
 };
 
 export const deleteDb = async () => {
-  await deleteDbValidator();
+  await ValidatorDB.deleteDb();
   return await db.delete().catch(() => new Error('Something went wrong.'));
 };
