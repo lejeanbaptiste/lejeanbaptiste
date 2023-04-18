@@ -43,6 +43,7 @@ export const usePermalink = () => {
     if (permalink.resource?.isLocal) return permalink.resource;
 
     if (userState === 'UNAUTHENTICATED' && permalink.valid) {
+      if (permalink.isSample) return permalink.resource;
       Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
       signIn();
       return;
