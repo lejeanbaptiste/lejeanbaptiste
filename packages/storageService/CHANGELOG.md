@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2.1.0
+
+### Minor Changes
+
+- StorageFialog: Independently export StorageDialog (no default exports) [b8afe02caf76b79837f7c7a3049e0fad653d69a7]
+  BREAKING CHANGE: 🧨 import from the internal path `@cwrc/leafwriter-storage-service` results
+in an independent exported component (no default export)
+
+### Patch Changes
+
+- Export types [02dab01336b4b96726e4a0796a0b25c9cf68dc0c]
+- FixTests [aee5d9ffc95d7b6d681ace765ca3c6a82ca1f07c]
+
 ## 2.0.0
 
 ### Major Changes
