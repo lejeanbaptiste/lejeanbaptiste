@@ -1,5 +1,10 @@
 {
   "LWC": {
+    "LWC": {
+      "messages": {
+        "service not available at the moment": "Service non disponible pour le moment"
+      }
+    },
     "commons": {
       "Conversion to HTML failed": "La conversion en HTML a échoué",
       "accept_all": "accepter tout",
@@ -15,7 +20,7 @@
       "dismiss": "rejeter",
       "download": "télécharger",
       "editing": "montage",
-      "export_as_HTML": "exporter au format HTML",
+      "export as format": "exporter en {{format}}",
       "functionalities": "fonctionnalités",
       "identity": "identité",
       "language": "langue",
@@ -36,6 +41,7 @@
       "privacy_settings": "Paramètres de confidentialité",
       "recent": "récent",
       "reject_all": "tout rejeter",
+      "request expired": "demande expirée",
       "sample_document": "exemple de document",
       "samples": "échantillons",
       "save": "sauvegarder",
@@ -48,6 +54,7 @@
       "storage": "stockage",
       "template": "modèle",
       "templates": "modèles",
+      "unable to load document": "impossible de charger le document",
       "unsaved_changes": "modifications non enregistrées",
       "viewing": "visualisation",
       "what_would_you_like_to_do": "Qu'est-ce que tu aimerais faire?",
@@ -109,6 +116,9 @@
       },
       "try to open it without converting": "essayez de l'ouvrir sans convertir"
     },
+    "message": {
+      "unable to upload file": "Incapable de télécharger le fichier"
+    },
     "messages": {
       "annotation_need_space": "Annoter des documents nécessite plus d'espace.",
       "link_to_storage_provider_instructions": "Vous pouvez le faire en cliquant sur l'icône de l'utilisateur dans le coin supérieur droit de l'écran, puis en sélectionnant une option dans la liste des fournisseurs de stockage.",
@@ -119,16 +129,23 @@
     "profile": {
       "manage_your_lincs_account": "Gérer votre compte LINCS"
     },
+    "stoage": {
+    },
     "storage": {
       "all_changes_salved": "toutes les modifications enregistrées",
+      "click to upload": "cliquez pour télécharger",
       "click_to_save": "cliquez pour enregistrer",
       "document_not_saved": "Document non enregistré",
       "document_saved": "Document enregistré",
+      "drag the document here": "faites glisser le document ici",
       "error": {
         "xml_not_well-formed_message": "Le document que vous essayez de télécharger n'est pas bien formé. \nVérifiez qu'il a l'extension XML et suit la grammaire XML correcte."
       },
+      "export": "exporter",
+      "export document": "document d'exportation",
       "from_the_cloud": "du nuage",
       "from_your_device": "Depuis votre appareil",
+      "import": "importer",
       "import document": "Importer un document",
       "invalid_request": "Requête invalide",
       "paste_your_XML_here": "collez votre XML ici",

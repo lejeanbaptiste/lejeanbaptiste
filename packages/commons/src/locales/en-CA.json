@@ -1,5 +1,10 @@
 {
   "LWC": {
+    "LWC": {
+      "messages": {
+        "service not available at the moment": "Service not available at the moment"
+      }
+    },
     "commons": {
       "Conversion to HTML failed": "Conversion to HTML failed",
       "accept_all": "accept all",
@@ -8,14 +13,14 @@
       "cancel": "cancel",
       "close": "close",
       "contact_us": "contact us",
-      "conversion failed": "conversion failed",
+      "conversion failed": "Conversion failed",
       "create": "create",
       "description": "description",
       "discard_changes": "discard changes",
       "dismiss": "dismiss",
       "download": "download",
       "editing": "editing",
-      "export_as_HTML": "export as HTML",
+      "export as format": "export as {{format}}",
       "functionalities": "functionalities",
       "identity": "identity",
       "language": "language",
@@ -36,6 +41,7 @@
       "privacy_settings": "Privacy Settings",
       "recent": "recent",
       "reject_all": "reject all",
+      "request expired": "request expired",
       "sample_document": "sample document",
       "samples": "samples",
       "save": "save",
@@ -48,6 +54,7 @@
       "storage": "storage",
       "template": "template",
       "templates": "templates",
+      "unable to load document": "unable to load document",
       "unsaved_changes": "unsaved changes",
       "viewing": "viewing",
       "what_would_you_like_to_do": "What would you like to do?",
@@ -109,6 +116,9 @@
       },
       "try to open it without converting": "try to open it without converting"
     },
+    "message": {
+      "unable to upload file": "Unable to upload file"
+    },
     "messages": {
       "annotation_need_space": "Annotating documents requires more space.",
       "link_to_storage_provider_instructions": "You can do that by clicking on the user icon in the top-right corner of the screen and then selecting an option in the list of storage providers",
@@ -119,16 +129,23 @@
     "profile": {
       "manage_your_lincs_account": "Manage your LINCS account"
     },
+    "stoage": {
+    },
     "storage": {
       "all_changes_salved": "all changes saved",
+      "click to upload": "click to upload",
       "click_to_save": "click to save",
       "document_not_saved": "Document not saved",
       "document_saved": "Document saved",
+      "drag the document here": "drag the document here",
       "error": {
         "xml_not_well-formed_message": "The document you are trying to upload is not well-formed. Check that it has the XML extension and follows the correct XML grammar."
       },
+      "export": "export",
+      "export document": "export document",
       "from_the_cloud": "from the cloud",
       "from_your_device": "From your device",
+      "import": "import",
       "import document": "import document",
       "invalid_request": "Invalid request",
       "paste_your_XML_here": "paste your XML here",

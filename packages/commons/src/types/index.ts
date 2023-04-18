@@ -82,7 +82,7 @@ export interface StorageDialogState {
 }
 
 export interface Resource {
-  id?: string,
+  id?: string;
 
   provider?: string;
   owner?: string;
@@ -102,6 +102,9 @@ export interface Resource {
   title?: string;
   category?: string;
   icon?: IconName;
+
+  isLocal?: boolean;
+  blob?: Blob;
 }
 
 export const ErrorTypes = ['info', 'warning', 'error'] as const;
@@ -120,5 +123,17 @@ export interface ProviderAuthProps {
 
 export interface ViewProps {
   title?: string;
-  value: string;
+  value: ViewType;
+}
+
+export type ViewType = 'blank' | 'recent' | 'samples' | 'templates';
+
+export interface FileDetail {
+  content: string;
+  file: File;
+}
+
+export interface DocumentRequested extends Resource {
+  expires: Date;
+  id: string;
 }

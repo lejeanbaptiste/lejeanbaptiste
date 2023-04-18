@@ -7,10 +7,9 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
+import { useCookieConsent, useLeafWriter } from '@src/hooks';
 import { getIcon } from '@src/icons';
-import { useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { useLeafWriter } from '@src/views/edit/useLeafWriter';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ViewType } from './';
@@ -66,7 +65,9 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       label: (
         <>
           {t('commons.identity')}:{' '}
-          <span style={{ textTransform: 'capitalize' }}>{user?.preferredID ?? t('commons.none')}</span>
+          <span style={{ textTransform: 'capitalize' }}>
+            {user?.preferredID ?? t('commons.none')}
+          </span>
         </>
       ),
       icon: 'fingerPrint',
@@ -131,7 +132,8 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'language',
       label: (
         <>
-          {t('commons.language')}: <span style={{ textTransform: 'capitalize' }}>{language.name}</span>
+          {t('commons.language')}:{' '}
+          <span style={{ textTransform: 'capitalize' }}>{language.name}</span>
         </>
       ),
       icon: 'translate',

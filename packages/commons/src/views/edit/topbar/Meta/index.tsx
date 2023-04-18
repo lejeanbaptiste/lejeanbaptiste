@@ -1,51 +1,57 @@
-import { Stack, Typography } from '@mui/material';
+import { Stack, Typography, styled } from '@mui/material';
+import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
+import { useLeafWriter } from '@src/hooks';
 import { useAppState } from '@src/overmind';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
-import React, { useState } from 'react';
-import { useLeafWriter } from '../../useLeafWriter';
+import React, { useMemo } from 'react';
 import { Cloud } from './Cloud';
 import { FullPath } from './FullPath';
+
+export const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
+  <Tooltip {...props} classes={{ popper: className }} />
+))(({ theme }) => ({
+  [`& .${tooltipClasses.tooltip}`]: {
+    maxWidth: 800,
+    marginTop: `0px !important`,
+    boxShadow: theme.palette.mode === 'dark' ? 'none' : `0 0 2px ${theme.palette.grey[300]}`,
+    backgroundColor: theme.palette.background.paper,
+    color: theme.palette.text.secondary,
+  },
+}));
 
 export const Meta = () => {
   const { resource } = useAppState().editor;
 
   const { leafWriter } = useLeafWriter();
 
-  const [hover, setHover] = useState(false);
+  const fullPath = useMemo(() => {
+    if (!resource) return '';
+    if (!resource.filename) return '';
 
-  const handleMouseOverTitle = () => setHover(true);
-  const handleMouseOutTitle = () => setHover(false);
-
-  const extraInfoVariant: Variants = {
-    visible: { height: 'auto', opacity: 1 },
-    hidden: { height: 0, opacity: 0 },
-  };
+    const { filename, owner, path, repo } = resource;
+    return `${owner}: ${repo}/${path && `${path}/`}${filename}`;
+  }, [resource]);
 
   return (
-    <AnimatePresence mode="wait">
+    <>
       {resource && (
         <Stack direction="row">
-          <Stack
-            alignItems="center"
-            justifyContent="center"
-            onMouseOver={handleMouseOverTitle}
-            onMouseOut={handleMouseOutTitle}
-            height={48}
-            component={motion.div}
-            variants={extraInfoVariant}
-            animate="visible"
-            exit="hidden"
+          <StyledTooltip
+            enterDelay={1000}
+            title={
+              resource.provider && (
+                <FullPath provider={resource.provider} url={resource.url}>
+                  {fullPath}
+                </FullPath>
+              )
+            }
           >
-            {resource.provider && <FullPath show={hover} />}
-            <Stack direction="row" alignItems="center">
-              <Typography component="h2" ml={1} sx={{ cursor: 'default' }} variant="subtitle1">
-                {resource.filename ?? 'untitled.xml'}
-              </Typography>
-            </Stack>
-          </Stack>
+            <Typography component="h2" ml={1} sx={{ cursor: 'default' }} variant="subtitle1">
+              {resource.filename ?? 'untitled.xml'}
+            </Typography>
+          </StyledTooltip>
           {leafWriter && resource.provider && <Cloud />}
         </Stack>
       )}
-    </AnimatePresence>
+    </>
   );
 };

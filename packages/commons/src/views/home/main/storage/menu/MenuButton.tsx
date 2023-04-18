@@ -7,10 +7,11 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  styled,
   useTheme,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
+import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
+import { HtmlTooltip } from '@src/components';
 import { getIcon, type IconName } from '@src/icons';
 import { motion } from 'framer-motion';
 import React from 'react';
@@ -22,21 +23,18 @@ export interface MenuButtonProps {
   hide?: boolean;
   icon?: IconName;
   label: string;
-  onClick?: (value: string, title?: string) => void;
+  onClick: () => void;
   value: string;
 }
 
-const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
+export const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip {...props} classes={{ popper: className }} />
 ))(({ theme }) => ({
   [`& .${tooltipClasses.tooltip}`]: {
     maxWidth: 220,
-    borderWidth: theme.palette.mode === 'dark' ? 1 : 0,
-    borderStyle: 'solid',
-    borderColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300],
-    bgcolor: theme.palette.background.paper,
+    boxShadow: theme.palette.mode === 'dark' ? 'none' : `0 0 2px ${theme.palette.grey[300]}`,
+    backgroundColor: theme.palette.background.paper,
     color: theme.palette.text.secondary,
-    boxShadow: theme.palette.mode === 'dark' ? 0 : `0 0 2px ${theme.palette.grey[400]}`,
   },
 }));
 
@@ -47,11 +45,8 @@ export const MenuButton = ({
   icon,
   label,
   onClick,
-  value,
 }: MenuButtonProps) => {
   const { palette } = useTheme();
-
-  const handleClick = () => (onClick ? onClick(value, label) : undefined);
 
   return (
     <Box
@@ -66,7 +61,7 @@ export const MenuButton = ({
         secondaryAction={
           disabled &&
           disabledTooltipText && (
-            <HtmlTooltip title={disabled ? disabledTooltipText : ''}>
+            <StyledTooltip title={disabled ? disabledTooltipText : ''}>
               <span>
                 <IconButton aria-label="help" disabled edge="end" size="small">
                   <InfoOutlinedIcon
@@ -75,13 +70,13 @@ export const MenuButton = ({
                   />
                 </IconButton>
               </span>
-            </HtmlTooltip>
+            </StyledTooltip>
           )
         }
       >
         <ListItemButton
           disabled={disabled}
-          onClick={handleClick}
+          onClick={onClick}
           selected={active}
           sx={{ py: 0.5, borderRadius: 1 }}
         >

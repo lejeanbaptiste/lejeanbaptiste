@@ -41,6 +41,13 @@ export const MainMenu = () => {
     hidden: { width: 0, opacity: 0 },
   };
 
+  const handleMenuLogoClick = () => {
+    window.open(window.location.origin, '_blank');
+    handleMenuClick();
+  };
+
+  const handleMenuClick = () => popupState.close();
+
   return (
     <Box sx={{ mr: 1 }}>
       <Stack direction="row" alignItems="center">
@@ -80,11 +87,21 @@ export const MainMenu = () => {
       </Stack>
       <AnimatePresence>
         <CascadingMenu
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
           popupState={popupState}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           {...bindMenu(popupState)}
+          PaperProps={{ sx: { top: '8px !important', left: '18px !important' } }}
+          onClick={handleMenuClick}
         >
+          <Stack direction="row" mx={1} mt={2} mb={2} alignItems="center" justifyContent="center">
+            <Logo
+              height={24}
+              onClick={handleMenuLogoClick}
+              size="small"
+              sx={{ cursor: 'pointer' }}
+            />
+          </Stack>
           {mainMenuOptions
             .filter((item) => {
               if (typeof item === 'string') return item;

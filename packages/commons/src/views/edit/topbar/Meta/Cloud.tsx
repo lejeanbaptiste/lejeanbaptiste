@@ -3,12 +3,12 @@ import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import Badge, { type BadgeProps } from '@mui/material/Badge';
 import { styled } from '@mui/material/styles';
+import { useLeafWriter } from '@src/hooks';
 import { useAppState } from '@src/overmind';
 import { motion, type Variants } from 'framer-motion';
 import { CloudSyncOutline } from 'mdi-material-ui';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLeafWriter } from '../../useLeafWriter';
 
 const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
   '& .MuiBadge-badge': { top: -5, left: 11, minWidth: 4, height: 4 },

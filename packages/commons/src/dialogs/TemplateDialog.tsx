@@ -1,20 +1,18 @@
 import { Button, Dialog, DialogActions, DialogTitle } from '@mui/material';
 import { TemplatesView, TopBar, type Layout } from '@src/components';
+import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from './type';
 
 export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
-  const { setResource } = useActions().editor;
-  const { loadSample } = useActions().storage;
   const { closeDialog } = useActions().ui;
 
-  const navigate = useNavigate();
   const { t } = useTranslation('LWC');
+  const { openFromLibrary } = useOpenResource();
 
   const [layout, setLayout] = useState<Layout>('list');
   const [selected, setSelected] = useState<Resource>();
@@ -32,11 +30,11 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   };
 
   const load = async () => {
-    if (!selected || !selected.url) return;
-    const content = await loadSample(selected.url);
-    setResource({ content, filename: `${selected.title}.xml` });
-    navigate(`/edit?template=${selected.title}`, { replace: true });
+    if (!selected?.title) return;
+    openFromLibrary({ category: 'template', title: selected.title });
   };
+
+  const handleOnLoad = () => closeDialog(id);
 
   return (
     <Dialog fullWidth id={id} maxWidth="sm" onClose={handleClose} open={open}>
@@ -47,7 +45,13 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
           title={`${t('templates.choose_a_template')}`}
         />
       </DialogTitle>
-      <TemplatesView layout={layout} onSelect={handleSelect} selected={selected} width={600} />
+      <TemplatesView
+        layout={layout}
+        onLoad={handleOnLoad}
+        onSelect={handleSelect}
+        selected={selected}
+        width={600}
+      />
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
         <Button onClick={handleCreate} variant="outlined">

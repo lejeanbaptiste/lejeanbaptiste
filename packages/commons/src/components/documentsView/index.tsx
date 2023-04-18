@@ -1,6 +1,6 @@
 import { Stack } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import type { ViewProps } from '@src/types';
+import type { ViewProps, ViewType } from '@src/types';
 import { motion, useAnimation } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,21 +8,19 @@ import { useWindowSize } from 'react-use';
 import { Container } from './components/Container';
 import { TopBar } from './components/TopBar';
 
-export { TopBar } from './components/TopBar';
 export { RecentView } from './RecentView';
 export { SamplesView } from './SamplesView';
 export { TemplatesView } from './TemplatesView';
+export { TopBar } from './components/TopBar';
 
 export type Layout = 'list' | 'grid';
 
-interface DocumentViewProps {
-  view?: ViewProps;
-}
+interface DocumentViewProps extends ViewProps {}
 
 const MIN_WIDTH = 290; // Use to show the login panel // 1 column grid
 const MIN_HEIGHT = 333;
 
-export const DocumentView = ({ view }: DocumentViewProps) => {
+export const DocumentView = ({ title, value }: DocumentViewProps) => {
   const { userState } = useAppState().auth;
   const { language } = useAppState().ui;
 
@@ -33,7 +31,7 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
   const [width, setWidth] = useState(MIN_WIDTH);
   const [height, setHeight] = useState(MIN_HEIGHT);
   const [layout, setLayout] = useState<Layout>('list');
-  const [type, setType] = useState<ViewProps>();
+  const [type, setType] = useState<ViewType>('samples');
 
   useEffect(() => {
     changeViewSize();
@@ -45,7 +43,7 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
 
   useEffect(() => {
     switchView();
-  }, [view?.value, language]);
+  }, [language, value]);
 
   const changeViewSize = () => {
     setWidth(userState === 'AUTHENTICATED' ? getMaxWidth() : MIN_WIDTH);
@@ -53,11 +51,10 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
   };
 
   const getMaxHeight = () => {
-    //*  Screen width < 800px: 333px
     //*  Screen width < 1536px: 444px
     //*  Screen width > 1536px: 455px
 
-    return _windowWidth < 1100 ? 333 : _windowWidth < 1536 ? 444 : 555;
+    return _windowWidth < 1536 ? 444 : 555;
   };
 
   const getMaxWidth = () => {
@@ -66,19 +63,12 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
     //*  Screen width < 1536px: 3 column grid
     //*  Screen width > 1536px: 4 column grid
 
-    return _windowWidth < 800 ? 290 : _windowWidth < 1100 ? 545 : _windowWidth < 1536 ? 810 : 1072;
+    return _windowWidth < 800 ? 280 : _windowWidth < 1100 ? 535 : _windowWidth < 1536 ? 810 : 1062;
   };
 
   const switchView = async () => {
-    if (!view) return;
-
     await animationControl.start('hide');
-
-    const { title, value } = view;
-
-    const transTitle = value ? t(value) : title;
-    setType({ title: transTitle, value });
-
+    setType(value);
     await animationControl.start('show');
   };
 
@@ -97,7 +87,7 @@ export const DocumentView = ({ view }: DocumentViewProps) => {
         animationControl={animationControl}
         layout={layout}
         onLayoutChange={changeLayout}
-        title={type?.title}
+        title={title}
       />
       <Container
         animationControl={animationControl}

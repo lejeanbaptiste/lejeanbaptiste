@@ -2,14 +2,12 @@ import { Paper, Stack, useTheme } from '@mui/material';
 import { DocumentView } from '@src/components';
 import { db } from '@src/db';
 import { useAppState } from '@src/overmind';
-import type { ViewProps } from '@src/types';
+import type { ViewProps, ViewType } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sidebar } from './Sidebar';
 import { Menu } from './menu';
-
-type ViewType = 'recent' | 'samples' | 'template';
 
 export const Storage = () => {
   const { userState } = useAppState().auth;
@@ -19,12 +17,13 @@ export const Storage = () => {
 
   const countRecentDocs = useLiveQuery(() => db.recentDocuments.count(), [], 0);
 
-  const [selectedView, setSelectedView] = useState<ViewProps | undefined>(undefined);
+  const [selectedView, setSelectedView] = useState<ViewType>('blank');
 
   const view: Record<ViewType, ViewProps> = {
+    blank: { title: '', value: 'blank' },
     recent: { title: `${t('commons.recent')}`, value: 'recent' },
     samples: { title: `${t('commons.samples')}`, value: 'samples' },
-    template: { title: `${t('commons.templates')}`, value: 'templates' },
+    templates: { title: `${t('commons.templates')}`, value: 'templates' },
   };
 
   useEffect(() => {
@@ -33,19 +32,21 @@ export const Storage = () => {
 
   const setView = async () => {
     if (userState === 'UNAUTHENTICATED') {
-      setSelectedView(view.samples);
+      setSelectedView(view.samples.value);
       return;
     }
 
     if (userState === 'AUTHENTICATED') {
-      countRecentDocs === 0 ? setSelectedView(view.template) : setSelectedView(view.recent);
+      countRecentDocs === 0
+        ? setSelectedView(view.templates.value)
+        : setSelectedView(view.recent.value);
       return;
     }
   };
 
-  const handleSelect = (view: ViewProps) => {
-    if (selectedView?.value === view.value) return;
-    setSelectedView(view);
+  const handleSelect = (value: ViewType) => {
+    if (selectedView === value) return;
+    setSelectedView(value);
   };
 
   return (
@@ -53,8 +54,8 @@ export const Storage = () => {
       {userState === 'UNAUTHENTICATED' && <Sidebar />}
       <Paper elevation={palette.mode === 'dark' ? 6 : 1} sx={{ zIndex: 2 }}>
         <Stack direction="row" justifyContent="center">
-          <Menu onSelect={handleSelect} selectedMenu={selectedView?.value} />
-          <DocumentView view={selectedView} />
+          <Menu onSelect={handleSelect} selectedMenu={selectedView} />
+          <DocumentView {...view[selectedView]} />
         </Stack>
       </Paper>
     </Stack>

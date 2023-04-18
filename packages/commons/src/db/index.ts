@@ -6,13 +6,8 @@ import {
   clearCache as clearCacheStorageService,
   deleteDb as deleteDbStorageService,
 } from '@cwrc/leafwriter-storage-service';
-import type { Resource } from '@src/types';
+import type { DocumentRequested, Resource } from '@src/types';
 import Dexie, { Table } from 'dexie';
-
-export interface DocumentRequested extends Resource {
-  expires: Date;
-  id: string;
-}
 
 export class DexieDB extends Dexie {
   documentRequested!: Table<DocumentRequested, string>;

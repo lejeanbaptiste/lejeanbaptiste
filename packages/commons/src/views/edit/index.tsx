@@ -1,123 +1,39 @@
 import { LoadingMask } from '@src/components';
-import { schemas } from '@src/config/schemas';
-import { useAnalytics } from '@src/hooks';
+import { useLoadResource } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
-import React, { useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { MainMenu, Meta, useMenu } from './topbar';
-import { useLeafWriter } from './useLeafWriter';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Editor } from './Editor';
+import { MainMenu, Meta } from './topbar';
 
 export const EditView = () => {
-  const { userState, user } = useAppState().auth;
-  const { contentHasChanged, libLoaded, readonly, resource } = useAppState().editor;
+  const { userState } = useAppState().auth;
+  const { resource } = useAppState().editor;
 
-  const { getKeycloakAuthToken } = useActions().auth;
-  const { close, getGeonameUsername, loadLeafWriter, setReadonly } = useActions().editor;
+  const { setReadonly } = useActions().editor;
   const { setPage } = useActions().ui;
 
-  const navigate = useNavigate();
   const location = useLocation();
 
-  const { analytics } = useAnalytics();
-
-  const { leafWriter, loadFromPermalink, setEditorEvents, setCurrentLeafWriter } = useLeafWriter();
-  const { onKeydownHandle } = useMenu();
-
-  const divEl = useRef<HTMLDivElement>(null);
+  const { loadFromPermalink } = useLoadResource();
 
   useEffect(() => {
-    window.addEventListener('keydown', onKeydownHandle);
-
     const firstRoute = location.pathname.split('/')[1];
     const readOnly = firstRoute === 'view' ? true : false;
 
     setReadonly(readOnly);
     setPage(firstRoute);
-
-    return () => {
-      window.removeEventListener('keydown', onKeydownHandle);
-      setCurrentLeafWriter(null);
-    };
   }, []);
 
   useEffect(() => {
-    if (userState === 'AUTHENTICATED') {
-      if (!resource) loadFromPermalink();
-      loadLib();
-      return;
-    }
-
-    if (userState === 'UNAUTHENTICATED') {
-      if (!resource) {
-        close();
-        navigate('/', { replace: true });
-        return;
-      }
-
-      loadLib();
-    }
+    if (userState !== 'AUTHENTICATING') loadFromPermalink();
   }, [userState]);
-
-  useEffect(() => {
-    if (leafWriter) initLeafWriter();
-  }, [leafWriter]);
-
-  useEffect(() => {
-    handleResource();
-  }, [resource]);
-
-  const handleResource = async () => {
-    if (!resource) return;
-    if (!resource.owner) return;
-    if (resource.content) initLeafWriter();
-  };
-
-  const loadLib = async () => {
-    if (!divEl.current) return;
-    const lw = await loadLeafWriter(divEl.current);
-    setCurrentLeafWriter(lw);
-  };
-
-  const initLeafWriter = async () => {
-    if (!leafWriter || !resource?.content) return;
-    if (contentHasChanged) return;
-
-    const geonamesUsername = await getGeonameUsername();
-
-    const author = user && {
-      name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
-      uri: user?.identities.get(user.preferredID)?.uri ?? '',
-    };
-
-    leafWriter.init({
-      document: {
-        url: resource.url,
-        xml: resource.content ?? '',
-      },
-      settings: {
-        authorityServices: [{ id: 'geonames', settings: { username: geonamesUsername } }],
-        credentials: { nssiToken: userState === 'AUTHENTICATED' ? getKeycloakAuthToken : '' },
-        readonly,
-        schemas,
-      },
-      user: author,
-    });
-
-    setEditorEvents();
-
-    if (analytics) {
-      analytics.track('editor', { opened: true });
-      analytics.page();
-    }
-  };
 
   return (
     <Page>
       <TopBar Left={<MainMenu />} Meta={<Meta />} />
-      <div ref={divEl} id="leaf-writer-container" style={{ height: 'calc(100vh - 48px)' }}>
-        {(!libLoaded || !resource) && <LoadingMask />}
-      </div>
+      {!resource ? <LoadingMask /> : <Editor />}
     </Page>
   );
 };

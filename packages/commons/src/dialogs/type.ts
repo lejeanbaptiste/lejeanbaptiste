@@ -19,9 +19,10 @@ export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   preventEscape?: boolean;
   severity?: SeverityType;
   title?: string;
+  type?: DialogType;
 }
 
-export type DialogType = 'privacy' | 'signIn' | 'simple' | 'templates';
+export type DialogType = 'export' | 'import' | 'privacy' | 'signIn' | 'simple' | 'templates';
 
 interface SimpleDialogMessageProps {
   data?: { [key: string]: any };

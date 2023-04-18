@@ -1,12 +1,11 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import { db } from '@src/db';
-import { useMessage, usePermalink } from '@src/hooks';
+import { useLeafWriter, useMessage, useOpenResource } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
+import { listTransformations } from '@src/services/leafTe';
 import { type Resource } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import { useLeafWriter } from '../../useLeafWriter';
 import type { ItemProps, SubMenuProps } from './components';
 
 export type ItemType = 'menuItem' | 'document';
@@ -15,21 +14,19 @@ const MIN_WIDTH = 250;
 
 export const useMenu = () => {
   const { userState } = useAppState().auth;
-  const { contentHasChanged, readonly, resource } = useAppState().editor;
+  const { readonly, resource } = useAppState().editor;
   const { storageProviders } = useAppState().providers;
 
   const recentDocumentsCount = useLiveQuery(() => db.recentDocuments.count() ?? 0);
 
-  const { setResource } = useActions().editor;
   const { getStorageProviderAuth } = useActions().providers;
   const { openStorageDialog } = useActions().storage;
   const { openDialog } = useActions().ui;
 
-  const navigate = useNavigate();
   const { t } = useTranslation('LWC');
 
-  const { setPermalink } = usePermalink();
-  const { handleCloseDocument, handleDownload, handleExportToHTML, handleSave } = useLeafWriter();
+  const { handleCloseDocument, handleDownload, handleSave } = useLeafWriter();
+  const { openResource } = useOpenResource();
 
   const { cloudDisabledMessage } = useMessage();
 
@@ -56,6 +53,11 @@ export const useMenu = () => {
       icon: 'recent',
       label: `${t('commons.open_recent')}`,
       popupId: 'recent',
+    },
+    {
+      icon: 'importIcon',
+      label: t('storage.import document'),
+      onTrigger: () => openDialog({ type: 'import', props: { maxWidth: 'md' } }),
     },
     'divider',
     {
@@ -86,6 +88,11 @@ export const useMenu = () => {
       label: `${t('commons.download')}`,
       popupId: 'download',
     },
+    // {
+    //   icon: 'download',
+    //   label: t('storage.export document'),
+    //   onTrigger: () => openDialog({ type: 'export', props: { maxWidth: 'xs' } }),
+    // },
     'divider',
     {
       label: t('commons.close'),
@@ -100,18 +107,25 @@ export const useMenu = () => {
     return [];
   };
 
-  const getDownloadOptions = () => {
+  const getDownloadOptions = async () => {
     const options: ItemProps[] = [
       {
         label: `${t('commons.xml document')} (.xml)`,
-        onTrigger: () => handleDownload(),
+        onTrigger: () => handleDownload('xml'),
         sx: { textTransform: 'initial' },
       },
-      {
-        label: t('commons.export_as_HTML'),
-        onTrigger: () => handleExportToHTML(),
-      },
     ];
+
+    const conversionFormats = await listTransformations({ from: 'TEI' });
+    if (!conversionFormats) return options;
+
+    const conversionOptions: ItemProps[] = conversionFormats.map((format) => ({
+      label: `${t('commons.export as format', { format })} (.${format.toLowerCase()})`,
+      onTrigger: () => handleDownload(format),
+      sx: { textTransform: 'initial', '::first-letter': { textTransform: 'uppercase' } },
+    }));
+
+    options.push(...conversionOptions);
 
     return options;
   };
@@ -126,23 +140,7 @@ export const useMenu = () => {
     const recent: ItemProps<Resource>[] = recentDocuments.map((document) => ({
       data: document,
       label: document.filename ?? '',
-      onTrigger: () => {
-        if (!contentHasChanged) return handleLoadRecentDocument(document);
-        openDialog({
-          props: {
-            maxWidth: 'xs',
-            severity: 'warning',
-            title: `${t('commons.unsaved_changes')}`,
-            actions: [
-              { action: 'cancel', label: `${t('commons.cancel')}` },
-              { action: 'discard', label: `${t('commons.discard_changes')}` },
-            ],
-            onClose: async (action) => {
-              if (action === 'discard') handleLoadRecentDocument(document);
-            },
-          },
-        });
-      },
+      onTrigger: () => handleLoadRecentDocument(document),
       sx: { textTransform: 'initial' },
       type: 'document',
     }));
@@ -157,13 +155,12 @@ export const useMenu = () => {
     if (!providerAuth) return;
 
     const document = await loadDocument(providerAuth, resource);
+    if (document instanceof Error) return;
     if (!document || 'error' in document || !document.content || !document.url) {
       return;
     }
 
-    setResource(document);
-    const permalink = setPermalink(document);
-    navigate(`/edit${permalink}`, { replace: true });
+    await openResource({ resource });
   };
 
   const onKeydownHandle = async (event: KeyboardEvent) => {
@@ -187,7 +184,7 @@ export const useMenu = () => {
     }
 
     if (action === 'saveAs' || action === 'save') return handleSave(action);
-    if (action === 'download') return handleDownload();
+    if (action === 'download') return handleDownload('xml');
   };
 
   return {
