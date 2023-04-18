@@ -44,6 +44,17 @@ export const usePermalink = () => {
 
     if (userState === 'UNAUTHENTICATED' && permalink.valid) {
       if (permalink.isSample) return permalink.resource;
+
+      // Get RAW URL if user is not signed in.
+      if (!!permalink.resource) {
+        const {owner, repo, path, filename } = permalink.resource;
+        if (owner && repo && filename) {
+          const url = `https://raw.githubusercontent.com/${owner}/${repo}/master/${path ?? ''}${filename}`;
+          permalink.resource.url = encodeURI(url);
+          return permalink.resource;
+        } 
+      }
+
       //Redirect user to sign in.
       Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
       signIn();

@@ -4,6 +4,7 @@ import { db } from '@src/db';
 import { useLeafWriter, usePermalink } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import { isErrorMessage } from '@src/types';
+import { renameFileAsCopy } from '@src/utilities';
 //@ts-ignore
 import queryString from 'query-string';
 import React from 'react';
@@ -13,7 +14,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 export const useLoadResource = () => {
   const { setResource } = useActions().editor;
   const { getStorageProviderAuth } = useActions().providers;
-  const { loadSample } = useActions().storage;
+  const { loadSample, loadFromUrl } = useActions().storage;
   const { openDialog } = useActions().ui;
 
   const location = useLocation();
@@ -28,7 +29,6 @@ export const useLoadResource = () => {
   const loadFromPermalink = async () => {
     const resource = await getResourceFromPermalink();
     if (!resource) return showErrorMessage(t('storage.warning.check_URL_structure'));
-
     if (isErrorMessage(resource)) {
       showErrorMessage(resource.message);
       return;
@@ -37,7 +37,6 @@ export const useLoadResource = () => {
     if (resource.category && resource.url) {
       const content = await loadSample(resource.url);
       setResource({ content, filename: `${resource.title}.xml` });
-
       return;
     }
 
@@ -53,6 +52,14 @@ export const useLoadResource = () => {
     }
 
     if (!resource.provider) return showErrorMessage(t('storage.provider_not_found'));
+
+    //Load document from RAW if user is not signed in
+    if (resource.url?.includes('https://raw.githubusercontent')) {
+      const content = await loadFromUrl(resource.url);
+      const filename = resource.filename ? renameFileAsCopy(resource.filename) : undefined;
+      setResource({ content, filename });
+      return;
+    }
 
     const providerAuth = getStorageProviderAuth(resource.provider);
     if (!providerAuth) return showErrorMessage(t('storage.provider_not_found'));
