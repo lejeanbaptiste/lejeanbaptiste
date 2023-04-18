@@ -16,7 +16,8 @@ import { useModal } from 'mui-modal-provider';
 import React, { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
-import * as yup from 'yup';
+import { z } from 'zod';
+import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { TextEmphasis } from '../components';
 import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
@@ -30,8 +31,6 @@ interface SchemaForm {
 }
 
 const defaultValue: SchemaForm = { name: '', mapping: 'tei', rng: '', css: '' };
-
-const regexHttps = /^(https)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\/\S*)?$/;
 
 export const EditSchemaDialog = ({
   actionType = 'add',
@@ -59,21 +58,21 @@ export const EditSchemaDialog = ({
 
   const preventEscape = actionType === 'add';
 
-  const httpsUrl = yup
-    .string()
-    .url(t('Must be a valid URL').toString())
-    .matches(regexHttps, t('Must be a valid HTTP URL').toString());
+  const urlValidation = z
+    .string({ required_error: t('Schema URL is required').toString() })
+    .url({ message: t('Must be a valid URL').toString() });
 
-  const formValidation = yup.object().shape({
-    name: yup
-      .string()
-      .required(t('Every schema needs a name').toString())
-      .min(3, t('Must be at least characters', { min: 3 }).toString())
-      .max(20, t('Cannot have more than characters', { max: 20 }).toString()),
-    mapping: yup.string().required(),
-    rng: httpsUrl.required(t('Schema URL is required').toString()),
-    css: httpsUrl,
-  });
+  const formValidation = z
+    .object({
+      name: z
+        .string({ required_error: t('Every schema needs a name').toString() })
+        .min(3, { message: t('Must be at least characters', { min: 3 }).toString() })
+        .max(20, { message: t('Cannot have more than characters', { max: 20 }).toString() }),
+      mapping: z.string(),
+      rng: urlValidation,
+      css: urlValidation,
+    })
+    .partial({ css: true });
 
   useEffect(() => {
     if (schemaId) {
@@ -192,7 +191,8 @@ export const EditSchemaDialog = ({
         enableReinitialize={true}
         initialValues={initialValues}
         onSubmit={submit}
-        validationSchema={formValidation}
+        // validationSchema={formValidation}
+        validationSchema={toFormikValidationSchema(formValidation)}
       >
         {({ dirty, errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
           <form onSubmit={handleSubmit}>

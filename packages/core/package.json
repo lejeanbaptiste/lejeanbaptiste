@@ -106,7 +106,8 @@
     "tinymce": "5.10.5",
     "uuid": "^9.0.0",
     "wikibase-sdk": "^9.0.5",
-    "yup": "^1.0.2"
+    "zod": "^3.21.4",
+    "zod-formik-adapter": "^1.2.0"
   },
   "devDependencies": {
     "@types/chroma-js": "^2.4.0",
