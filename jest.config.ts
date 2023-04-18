@@ -8,10 +8,10 @@ const config: Config.InitialOptions = {
       branches: 70,
       functions: 60,
       lines: 70,
-      statements: 70,
+      statements: 70, 
     },
   },
-
+  workerThreads: true,
   // verbose: true,
   projects: [
     {
