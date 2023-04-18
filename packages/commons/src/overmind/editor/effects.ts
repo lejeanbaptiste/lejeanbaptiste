@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { handleAxiosError } from '../utilities';
+import { logHttpError } from '../../services/utilities';
 
 export const api = {
   /**
@@ -11,7 +11,11 @@ export const api = {
       const { data } = await axios.get<string>('./api/geonames-username');
       return data;
     } catch (error) {
-      return handleAxiosError(error);
+      logHttpError(error);
+      if (axios.isAxiosError(error)) {
+        return new Error(error.message);
+      }
+      return new Error('error');
     }
   },
 };
