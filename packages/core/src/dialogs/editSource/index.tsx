@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
 import type { EditSourceDialogProps } from '../type';
 
-const Editor = React.lazy(() => import('./Editor'));
+const Editor = React.lazy(() => import('./Editor').then((module) => ({ default: module.Editor })));
 
 export const EditSourceDialog = ({
   content = '',

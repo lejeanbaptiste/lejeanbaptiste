@@ -17,7 +17,7 @@ interface EditorProps {
   updateContent: (value: string) => void;
 }
 
-const Editor = ({ content, updateContent }: EditorProps) => {
+export const Editor = ({ content, updateContent }: EditorProps) => {
   const { palette } = useTheme();
   const divEl = useRef<HTMLDivElement>(null);
   let editor: monaco.editor.IStandaloneCodeEditor;
@@ -48,5 +48,3 @@ const Editor = ({ content, updateContent }: EditorProps) => {
 
   return <div className="Editor" style={{ minHeight: 600 }} ref={divEl} />;
 };
-
-export default Editor;
