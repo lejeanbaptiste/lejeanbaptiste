@@ -273,6 +273,8 @@ export class Leafwriter {
     //todo
     this.onContentHasChanged.complete();
     overmind.actions.document.clear();
+    overmind.actions.editor.clear();
+    overmind.actions.user.clear();
     window.writer?.destroy();
     // window.writer = null;
   }

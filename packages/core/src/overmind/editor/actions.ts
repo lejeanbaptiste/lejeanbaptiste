@@ -476,15 +476,17 @@ export const closeEditor = ({ state }: Context) => {
 };
 
 export const clear = ({ state }: Context) => {
+  state.editor.LWChangeEventSuspended = false;
   state.editor.advancedSettings = true;
   state.editor.allowOverlap = false;
   state.editor.annotationMode = 3;
-  state.editor.fontSize = 11;
+  state.editor.contentHasChanged = false;
   state.editor.editorMode = 'xmlrdf';
+  state.editor.fontSize = 11;
   state.editor.isAnnotator = false;
   state.editor.isReadonly = false;
   state.editor.mode = 0;
   state.editor.showEntities = true;
+  state.editor.showEntities = true;
   state.editor.showTags = false;
-  state.editor.schemas = {};
 };

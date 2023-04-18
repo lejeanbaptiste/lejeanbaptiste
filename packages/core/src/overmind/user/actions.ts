@@ -14,3 +14,10 @@ export const createAnonymoustUser = ({ state }: Context) => {
 
   return user;
 };
+
+export const clear = ({ state }: Context) => {
+  state.user = {
+    name: 'Anonymous',
+    uri: '#anonymous',
+  };
+}
