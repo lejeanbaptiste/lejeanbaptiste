@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 4.1.0
+
+### Minor Changes
+
+- Exports: narrow db exports [a30952af480f16d604ef6c052e1cd3903fb387d4]
+
 ## 4.0.0
 
 ### Major Changes
