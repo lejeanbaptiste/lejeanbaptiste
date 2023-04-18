@@ -16,21 +16,31 @@ import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import FormatAlignLeftOutlinedIcon from '@mui/icons-material/FormatAlignLeftOutlined';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 import ImportExportRoundedIcon from '@mui/icons-material/ImportExportRounded';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
-import LogoutIcon from '@mui/icons-material/Logout';
 import MailOutlinedIcon from '@mui/icons-material/MailOutlined';
-import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
+import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
+import ReportOutlinedIcon from '@mui/icons-material/ReportOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import TranslateIcon from '@mui/icons-material/Translate';
-import { SvgIconTypeMap } from '@mui/material';
+import { SvgIconTypeMap, createSvgIcon } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { FileExportOutline, Gitlab } from 'mdi-material-ui';
-import { FeatherIcon, OrcidIcon } from './components';
-import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
+import React from 'react';
+import type { IconBaseProps, IconType } from 'react-icons';
+import { BiArrowToTop, BiDownload } from 'react-icons/bi';
+import { FaFeather, FaOrcid } from 'react-icons/fa';
+import { FiExternalLink } from 'react-icons/fi';
+import { MdOutlineLogout } from 'react-icons/md';
+import { RxFileText } from 'react-icons/rx';
 
 export * from './components';
+
+const asMuiIcon = (ReactIcon: IconType, props?: IconBaseProps) => {
+  return createSvgIcon(<ReactIcon {...props} />, ReactIcon.name);
+};
 
 const icons = {
   article: ArticleOutlinedIcon,
@@ -48,9 +58,11 @@ const icons = {
   contentPaste: ContentPasteIcon,
   darkModeIcon: DarkModeIcon,
   description: DescriptionOutlinedIcon,
-  download: CloudDownloadOutlinedIcon,
-  feather: FeatherIcon,
+  download: asMuiIcon(BiDownload, { x: 1, y: 1 }),
+  externalLink: asMuiIcon(FiExternalLink, { x: 1, y: 1 }),
+  feather: asMuiIcon(FaFeather, { x: 1, y: 1 }),
   fileExportOutline: FileExportOutline,
+  fileText: asMuiIcon(RxFileText, { x: 1, y: 1 }),
   filterDrama: FilterDramaOutlinedIcon,
   fingerPrint: FingerprintIcon,
   folderOpen: FolderOpenIcon,
@@ -58,16 +70,18 @@ const icons = {
   github: GitHubIcon,
   gitlab: Gitlab,
   helpOutlineRoundedIcon: HelpOutlineRoundedIcon,
+  importIcon: asMuiIcon(BiArrowToTop, { x: 1, y: 1 }),
   importExportRoundedIcon: ImportExportRoundedIcon,
   insertDriveFile: InsertDriveFileOutlinedIcon,
   letter: MailOutlinedIcon,
-  logout: LogoutIcon,
+  logout: asMuiIcon(MdOutlineLogout),
   mail: MailOutlinedIcon,
-  orcid: OrcidIcon,
+  orcid: asMuiIcon(FaOrcid),
   paste: ContentPasteIcon,
-  privacyTip: PrivacyTipIcon,
+  privacyTip: PrivacyTipOutlinedIcon,
   prose: FormatAlignLeftOutlinedIcon,
   recent: DescriptionOutlinedIcon,
+  reportOutlinedIcon: ReportOutlinedIcon,
   sample: ArticleOutlinedIcon,
   save: CloudQueueIcon,
   saveAs: FilterDramaOutlinedIcon,
