@@ -88,11 +88,6 @@ export const useMenu = () => {
       label: `${t('commons.download')}`,
       popupId: 'download',
     },
-    // {
-    //   icon: 'download',
-    //   label: t('storage.export document'),
-    //   onTrigger: () => openDialog({ type: 'export', props: { maxWidth: 'xs' } }),
-    // },
     'divider',
     {
       label: t('commons.close'),

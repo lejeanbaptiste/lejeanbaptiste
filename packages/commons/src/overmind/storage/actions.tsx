@@ -151,8 +151,3 @@ export const uploadFile = async (_context: Context, file: File): Promise<string 
     reader.readAsText(file);
   });
 };
-
-export const convertXMLtoHTML = async ({ effects }: Context, content: string) => {
-  const data = await effects.storage.api.convertXMLtoHTML(content);
-  return data;
-};
