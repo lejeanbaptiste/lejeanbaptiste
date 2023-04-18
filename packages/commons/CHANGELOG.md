@@ -1,5 +1,99 @@
 # CHANGELOG
 
+## 3.0.0
+
+### Notable Changes
+
+#### Import and Export
+
+In an effort to make LEAF-Writer more accessible, we are implementing Import from and Export to different formats. We started by adding support to import from `Transkribus` and export to `HTML`.
+
+The conversion is made by an external service (`LEAF-TE`). LWC submit the document to LEAF-TE and receive back the converted document.
+
+The options for both Import and Export are dynamically gathered from `LEAF-TE`. When new formats become available, LWC will show them without the need to redeploy the code, unless a more complex setup is needed.
+
+##### Import
+
+A document can be imported in two different flows: `Implicit` or `Explicit`
+
+The `Implicit Flow` intercept the document a user is about to open. It checks for clues to see if it needs to convert the file (e.g., the presence of a specific tag). If LWC finds a signal that the document can be converted, it will prompt the user to select the appropriate action: open as is, or convert it.
+
+In the `Explicit Flow`, the user clicks on the Import button to open the Import dialog. Then, the user selects the document format and the document to import.
+
+##### Export
+
+A document can be exported from the Main Menu when the document is opened. LW lists the possible formats in the option `download`. The user selects the format and downloads the converted document.
+
+
+##### Open in a new tab
+
+LWC opens documents in a new tab if you have a document already opened. This fix is a well know bug that prevented users from opening and replacing documents when another document is opened.
+
+Now, any document opened from the home page opens in the same tab.
+Documents open from the `edit` or `view` page open in a new tab.
+
+It is still possible to close a document and open another in the same tab.
+
+#### UI
+
+There are some changes and improvements in the UI. Most notably the storage view (recent documents, samples, templates). The interaction changed slightly: now, one click selected the document. It needs a double click to open it.
+
+### Major Changes
+
+- Storage View:
+  - One-click Selects. Double click open the document [d56031c7b57c757de520c293d65b802b19a7b64c] [198af8c6b79820cea469590cf89b924f3e23a589]
+- Implicit import files
+  - Show prompt when detecting special formats [06956667d5535250d6091929ce53c9529dd4f477]
+- documentRequest
+  - Temporarilly stores documents in the documentRequest table (indexedDB) to allow LEAF-Writer to open it in another browser tab. [1b6c26f3343540096fdb0534a98038c2c5fe53aa]
+- Introduce import and export functionalities [043c8e7f5c4c8bffe89cc5e6ec08af6cc3a61fcf]
+  - Add import/export dialog.
+  - Redesign storage views.
+  - Redesign the main menu.
+  - Rework load resource logic.
+  - Open documents on a new tab when a document is already opened. Connect with LEAF-TE API for file conversion.
+
+
+### Minor Changes
+
+- LEAF-Writer: Adopt new settings [394cdadda0327537dbee9a4396e993d46a79a90f]
+- Sign out: Clear indexedDb [64e905fdc05eb1eef9a8f5afe1da19f30c2c75c5]
+- Icons: Add support for multiple icon libraries [0b7036f7183aa0d5b8e8eb376a90ba6811fca656]
+- Storage Service Dialog: use export instead of default [3086f039e2afe5de3fb135261d0a6157e399a650]
+
+### Patch Changes
+
+- Db:
+  - Clean code [5c0a8b7b59caf8b1594d96b5c6be5267e90a614e]
+  - Add try-catch block [027575484434e508c164875d655ac9217fff3663]
+- Localization tweaks [2e94d3e1dc509f15fa2b99d01dc010e5cf1daa37] [1a86d429f0e10ed58ce06feab8ff735bec0683b8] [f864db4c22ffb279e8644c3e553021d09600f4fb]
+- Events: Dispatch events when changing `language` or `theme` [d0007fe73e12aac9165b1b77bb47318d14173692]
+- HTTP: Improve HTTP error handling and logging [a69a7712b4638614e98b4522b5a184ae7339f612]
+- Clean code [40c2837166f43dec0bcdc15c0a237734a660603e] [f16e1dd10228a4f9b25ab83f52361d7aa22f1258]
+- tsconfig: Step up `moduleResolution` to `nodenext` [1132da660acc09642fe456dbce0e7c0045d5ddb3]
+- Update dependencies [05a6a18ab83e856c640b276c95ffbc147a283565]
+  - core:
+    - upgrade: [70044dc3ca38174e102cd18ed677023e1ab93b5b]
+      - @cwrc/leafwriter@3.0.0
+      - @cwrc/leafwriter-storage-service@2.1.0
+    - update:
+      - @mui/material@5.12.1
+      - framer-motion@10.12.4 [70044dc3ca38174e102cd18ed677023e1ab93b5b]
+      - helmet@6.1.5
+    - bump:
+      - @mui/lab@5.5.0-alpha.127
+      - axios@1.3.5
+  - dev:
+    - add @types/webpackbar@4.0.3 [70044dc3ca38174e102cd18ed677023e1ab93b5b]
+    - update:
+      - @typescript-eslint/eslint-plugin@5.59.0
+      - @typescript-eslint/parser@5.59.0
+      - eslint@8.38.0
+      - webpack@5.79.0
+    - bump
+      - html-webpack-plugin@5.5.1
+      - typescript@5.0.4
+
 ## 2.7.0
 
 ### New Features
