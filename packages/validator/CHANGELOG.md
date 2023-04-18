@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## 4.0.0
+
+### Major Changes
+
+Export `clearCache` and `deleteDb` functions independently from the webworker.
+
+BREAKING CHANGE: 🧨 These functions are no longer exported from index.worker. You should use the second-level path `/db` to access them.
+E.g.: `import { clearCache } from '@cwrc/leafwriter-validator/db`
+
+- Export clearCache and deleteDb independently from the webworker [3f1ba2d4e1d89aa2171ba230d9a47d3ad940e5e4]
+
+### Patch Changes
+
+- Update dependencies [09ddf67278c728ffe94e8371816fd18430647e0f]
+  - dev:
+    - update:
+      - @typescript-eslint/eslint-plugin@5.59.0
+      - @typescript-eslint/parser@5.59.0
+      - eslint@8.38.0 webpack@5.79.0
+    - bump:
+      - @types/lodash@4.14.194 typedoc@0.24.4
+
 ## 3.0.0
 
 ## New Features
