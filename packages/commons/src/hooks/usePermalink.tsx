@@ -44,9 +44,12 @@ export const usePermalink = () => {
 
     if (userState === 'UNAUTHENTICATED' && permalink.valid) {
       if (permalink.isSample) return permalink.resource;
+      //Redirect user to sign in.
       Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
       signIn();
-      return;
+
+      const error: Error = { type: 'warning', message: 'You must sign in to access this resource' };
+      return error;
     }
 
     if (userState === 'AUTHENTICATED') {
@@ -74,25 +77,31 @@ export const usePermalink = () => {
     return samples.find((sample) => sample.title === title);
   };
 
-  const parsePermalink = async (query?: string): Promise<Permalink | Error | null> => {
+  const parsePermalink = async (query?: string) => {
     if (!query && !location.search) return null;
 
     const search = queryString.parse(query || location.search);
-    const response = { valid: false, raw: location.search };
-
-    if (!search) response;
+    const permalinkQuery: Permalink = { valid: false, raw: location.search };
+    if (!search) return permalinkQuery;
 
     // * if it is a template
     if (typeof search.template === 'string') {
       const document = await getTemplateByTitle(search.template);
       if (!document) {
-        return {
+        const error: Error = {
           type: 'error',
           message: `${t('commons.template')} "${search.template}" ${t('commons.not_found')}.`,
         };
+        return error;
       }
 
-      return { ...response, isSample: true, resource: document, valid: true };
+      const permalink: Permalink = {
+        ...permalinkQuery,
+        isSample: true,
+        resource: document,
+        valid: true,
+      };
+      return permalink;
     }
 
     // * if it is a sample
@@ -100,51 +109,60 @@ export const usePermalink = () => {
       const document = await getSampleByTitle(search.sample);
 
       if (!document) {
-        return {
+        const error: Error = {
           type: 'error',
           message: `${t('commons.sample_document')} "${search.sample}" ${t('commons.not_found')}.`,
         };
+        return error;
       }
 
-      return { ...response, isSample: true, resource: document, valid: true };
+      const permalink: Permalink = {
+        ...permalinkQuery,
+        isSample: true,
+        resource: document,
+        valid: true,
+      };
+      return permalink;
     }
 
     // * if it was open from local device
     if (search.local === 'true' && typeof search.id === 'string') {
       const document = await db.documentRequested.get(search.id);
       if (!document) {
-        return {
+        const error: Error = {
           type: 'error',
           message: `${t('commons.unable to load document')}: ${search.filename}`,
         };
+        return error;
       }
 
       const { expires, id, ...resource } = document;
 
       if (!isBefore(new Date(), document.expires)) {
-        return {
-          type: 'error',
-          message: `${t('commons.request expired')}`,
-        };
+        const error: Error = { type: 'error', message: `${t('commons.request expired')}` };
+        return error;
       }
 
       resource.isLocal = true;
 
-      return { ...response, resource, valid: true };
+      const permalink: Permalink = { ...permalinkQuery, resource, valid: true };
+      return permalink;
     }
 
     // * if it is comes from a provider
     if (!search.provider || Array.isArray(search.provider)) {
-      return { type: 'error', message: t('storage.warning.check_URL_structure') };
+      const error: Error = { type: 'error', message: t('storage.warning.check_URL_structure') };
+      return error;
     }
 
     if (!isStorageProviderSupported(search.provider)) {
-      return {
+      const error: Error = {
         type: 'error',
         message: `${t('storage.warning.storage_provider_invalid', {
           provider: search.provider,
         })}. ${t('storage.warning.check_URL_structure')}`,
       };
+      return error;
     }
 
     const { provider, owner, ownertype, repo, path, filename } = search;
@@ -156,7 +174,8 @@ export const usePermalink = () => {
     if (typeof path === 'string') resource.path = path;
     if (typeof filename === 'string') resource.filename = filename;
 
-    return { ...response, valid: true, resource };
+    const permalink: Permalink = { ...permalinkQuery, valid: true, resource };
+    return permalink;
   };
 
   const setPermalink = (value?: string | Resource) => {
