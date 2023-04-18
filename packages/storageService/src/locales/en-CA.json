@@ -83,6 +83,7 @@
       "message": "message",
       "name": "Name",
       "open": "open",
+      "or": "or",
       "overwrite": "overwrite",
       "path_not_found": "path not found",
       "private": "Private",
@@ -96,10 +97,11 @@
       "download": "download",
       "fork_and_pull_request": "Fork and Pull Request",
       "pasteXml": "paste XML",
-      "save_as_pull_request": "save as pull request"
+      "pull_request": "Pull request"
     },
     "local": {
-      "drag_drop": "Click or Drag 'n' drop to upload a file",
+      "click to upload": "click to upload",
+      "drag the document here": "drag the document here",
       "message": {
         "unable_to_upload_file": "unable to upload file"
       },
