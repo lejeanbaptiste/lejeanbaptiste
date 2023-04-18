@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## 2.0.0
+
+### Major Changes
+
+- Headless: improve error handling [73c75ae66db24f53b58fbbf0e8f57c03bdff21e0]
+  - BREAKING CHANGE: 🧨 headless now returs an Error object when there is an error
+
+### Minor Changes
+
+- Database
+  - Export convient function to `clearCache` and `deleteDb` [c63e5f102bf8871814956a8f25dcf94be773941e]
+- Icons
+  - Support a vast collection of icons libraries [b5a93c73606dab39309c078b091573ea8deead7c]
+- UI
+  - Improve Header and Footer [39a24ed93c6f053e132c792f934a8ec15cee3ac8]
+
+### Patch Changes
+
+- State
+  - Fix State: partially reset state after release file [fb2fb331ea86b81113d01ab48ff4b98906bcc913]
+- Localization:
+  - Tweak settings [cb0aaf03ce5a284532380fc8df1248f451f51a5e] [43b1b44a8b1b20db0be1b78ff8134bf1abea3781]
+- Dialog:
+  - Rename 'Message' as 'Body' [5ccffc43d11fbfe109260c0df6277a0155951875]
+- Organization
+  - Split Upload panel into small components [594d65604767a285692269c44ad26b04fd6c8997]
+- Improve types [0cf1bb970015ce224142c3bd6e8350bfb36fe9d8]
+- Improve tests [42432586476f795c48ea1a86167f4c27fb959a77]
+- Improve import @mui dependencies [132abf208a5201930692b39fb7d9b2fcb88b7eff]
+- Update dependencies [e93abe44c9f046915c27acf055077868ad2d194a]
+  - core:
+    - add: react-icons@4.8.0
+    - update:
+      - @mui/material@5.12.1
+      - framer-motion@10.12.2
+    - bump:
+    - @mui/base@5.0.0-alpha.126
+    - @mui/lab@5.0.0-alpha.127
+    - axios@1.3.5
+  - dev
+    - update:
+      - @typescript-eslint/eslint-plugin@5.59.0
+      - @typescript-eslint/parser@5.59.0
+      - webpack@5.79.0
+    - bump @types/lodash@4.14.194
+
 ## 1.4.0
 
 ### New Features
@@ -61,6 +107,7 @@ Add language as an optional property to settings. Now we can explicitly tell the
 - Miscellaneous:
   - Reorganize folder structure. [819bbd13facd761ab304d58964e1a3537a785758]
 - Update Dependencies:
+
   - core: [c250d6e77f3857bb4d53945764c1aedbb52e97db]
     - update:
       - framer-motion@10.10.0
