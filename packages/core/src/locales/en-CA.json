@@ -36,7 +36,6 @@
     "It can produce unexpected results or make LEAF-Writer crash": "It can produce unexpected results or make LEAF-Writer crash.",
     "LEAF-Writer cannot guarantee that the document will work correctly with the selected schema": "LEAF-Writer cannot guarantee that the document will work correctly with the selected schema",
     "Merge Tags": "Merge Tags",
-    "Must be a valid HTTP URL": "Must be a valid HTTP URL",
     "Must be a valid URL": "Must be a valid URL",
     "Must be at least characters": "Must be at least {{min}} characters",
     "Only RDF will be created for entities that overlap existing XML structures": "Only RDF will be created for entities that overlap existing XML structures",
