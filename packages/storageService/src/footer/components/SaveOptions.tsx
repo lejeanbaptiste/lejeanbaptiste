@@ -38,7 +38,7 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
 
   const saveOptions: SaveOption[] = [
     { label: t('commons.save'), value: 'save' },
-    { label: t('footer.save_as_pull_request'), value: 'pullRequest' },
+    { label: t('footer.pull_request'), value: 'pullRequest' },
   ];
 
   const handleToggle = () => setOpen((prevOpen) => !prevOpen);
@@ -65,13 +65,15 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
 
   return (
     <>
-      <ButtonGroup variant="contained" ref={anchor} aria-label="split save button">
+      <ButtonGroup aria-label="split save button" ref={anchor} size="small" variant="outlined">
         <LoadingButton
           data-testid="save"
           disabled={!enabled || resource?.filename === ''}
           loading={isSaving}
           onClick={() => handleClick(saveOptions.at(selectedIndex)?.value)}
           title={t('commons.save').toString()}
+          size="small"
+          variant="outlined"
         >
           {saveOptions.at(selectedIndex)?.label}
         </LoadingButton>
@@ -104,7 +106,7 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
                       disabled={!enabled || resource?.filename === '' || isSaving}
                       onClick={() => handleSelect(index, value)}
                       selected={index === selectedIndex}
-                      sx={{ textTransform: 'uppercase' }}
+                      // sx={{ textTransform: 'uppercase' }}
                     >
                       {label}
                     </MenuItem>

@@ -1,20 +1,37 @@
 import { Box, Grid, Typography } from '@mui/material';
-import React from 'react';
+import { useAnimate } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../overmind';
 
 export const Header = () => {
   const { name: providerName } = useAppState().cloud;
   const { dialogType, source } = useAppState().common;
+  const [scope, animate] = useAnimate<HTMLSpanElement>();
 
   const { t } = useTranslation('LWStorageService');
 
-  const title = source === 'cloud' && providerName ? providerName : source;
+  const [title, setTitle] = useState('');
+
+  useEffect(() => {
+    if (scope.current) changeTitle();
+  }, [source]);
+
+  const changeTitle = async () => {
+    if (!scope.current) return;
+    await animate(scope.current!, { x: -100 });
+
+    setTitle(source === 'cloud' && providerName ? providerName : source);
+
+    if (!scope.current) return;
+    animate(scope.current!, { x: 0 });
+  };
 
   return (
-    <Grid container alignItems="center" px={2} py={1} minHeight={49}>
+    <Grid container alignItems="center" data-testid="header" px={2} py={1} minHeight={49}>
       <Grid item xs={4}>
         <Typography
+          ref={scope}
           data-testid="header-source"
           sx={{ textTransform: 'capitalize' }}
           variant="subtitle1"
