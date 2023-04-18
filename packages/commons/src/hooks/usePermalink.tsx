@@ -4,6 +4,7 @@ import type { Error, Resource } from '@src/types';
 import { isErrorMessage } from '@src/types';
 import { isBefore } from 'date-fns';
 import Cookies from 'js-cookie';
+//@ts-ignore
 import queryString from 'query-string';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';

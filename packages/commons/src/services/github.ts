@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import type { GetResponseDataTypeFromEndpointMethod } from '@octokit/types';
+//@ts-ignore
 import queryString from 'query-string';
 import type { AuthenticateProp, ProviderService } from './types';
 
