@@ -2,6 +2,7 @@ import { db } from '@src/db';
 import { useAppState } from '@src/overmind';
 import type { DocumentRequested, Resource } from '@src/types';
 import { add } from 'date-fns';
+//@ts-ignore
 import queryString from 'query-string';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';

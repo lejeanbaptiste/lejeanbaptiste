@@ -2,6 +2,7 @@ import { Provider } from '@src/services';
 import { log } from '@src/utilities';
 import axios, { type AxiosError } from 'axios';
 import Keycloak, { type KeycloakTokenParsed } from 'keycloak-js';
+//@ts-ignore
 import queryString from 'query-string';
 import { logHttpError } from '../../services/utilities';
 

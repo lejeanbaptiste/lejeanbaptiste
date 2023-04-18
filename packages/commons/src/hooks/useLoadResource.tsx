@@ -4,6 +4,7 @@ import { db } from '@src/db';
 import { useLeafWriter, usePermalink } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import { isErrorMessage } from '@src/types';
+//@ts-ignore
 import queryString from 'query-string';
 import React from 'react';
 import { useTranslation } from 'react-i18next';

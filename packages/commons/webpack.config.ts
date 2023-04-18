@@ -29,7 +29,6 @@ const plugins = [
       { from: path.resolve(__dirname, 'src', 'content'), to: 'content' },
       { from: 'src/silent-check-sso.html', to: '[name][ext]' },
       { from: 'src/manifest.json', to: '[name][ext]' },
-      //
       {
         //copy images from LEAF-Writer core
         from: isDev
