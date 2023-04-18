@@ -1,7 +1,6 @@
 import { Context } from '../';
 import { log } from '../../utilities';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const uploadFile = async (_context: Context, file: File): Promise<string | null> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

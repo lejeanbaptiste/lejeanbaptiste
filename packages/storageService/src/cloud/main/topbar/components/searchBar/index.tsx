@@ -24,7 +24,7 @@ import { ResultsCollection } from './components/ResultsCollection';
 interface SearchBarProps {
   onClear?: () => void;
   onClickAway?: () => void;
-  onChange?: (value: any) => Promise<SearchResults[] | null>;
+  onChange?: (value: string) => Promise<SearchResults[] | null>;
   onPrimaryAction?: (item: Content | SearchResultsBlobs) => void;
   onSecondaryAction?: (value: Content | SearchResultsBlobs) => void;
 }

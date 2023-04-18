@@ -10,15 +10,11 @@ import type { StorageDialogProps } from './types';
 
 export { clearCache, deleteDb } from './db';
 export { loadDocument, saveDocument } from './headless';
-
 export type { AllowedMimeType, Resource, Validate } from './types';
 export type { ProviderAuth } from './types/Provider';
 export type { LanguageCode } from './utilities';
 
-const overmind = createOvermind(config, {
-  name: 'Storage Service',
-  logProxies: true,
-});
+const overmind = createOvermind(config, { name: 'Storage Service' });
 
 const StorageDialog = (props: StorageDialogProps) => (
   <Provider value={overmind}>

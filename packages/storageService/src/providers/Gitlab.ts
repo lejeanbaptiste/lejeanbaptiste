@@ -86,11 +86,17 @@ export default class Gitlab implements Provider {
 
   async getAuthenticatedUser() {
     const response: AxiosResponse<any> | null = await this.axios.get('/user');
-    if (!response) return null;
+    if (!response) return undefined;
 
-    const user = response.data;
+    const user: Types.AuthenticatedUser = {
+      ...response.data,
+      username: response.data.username,
+      userId: response.data.id.toString(),
+      id: response.data.id.toString(),
+      type: 'user',
+    };
 
-    this.userId = user.id.toString();
+    this.userId = user.id;
     this.username = user.username;
 
     return user;

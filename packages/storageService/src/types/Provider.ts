@@ -4,6 +4,7 @@ import type {
   Organization,
   PublicRepository,
   Repository,
+  UserType,
 } from '.';
 import type { Error } from '../types';
 
@@ -167,6 +168,14 @@ export interface ProviderError extends Error {
 
 export type CreatePrResponse = 'created' | 'exists' | null;
 
+export interface AuthenticatedUser {
+  [key: string]: any;
+  id: string;
+  userId: string;
+  username: string;
+  type: UserType,
+}
+
 export default interface Provider {
   readonly name: string;
   userId: string;
@@ -182,7 +191,7 @@ export default interface Provider {
   createPullRequestFromFork: (params: CreatePrFromForkProps) => Promise<CreatePrResponse>;
   createRepo: (params: CreateRepoParams) => Promise<Repository | null>;
   createRepoInOrg: (params: CreateRepoParams) => Promise<Repository | null>;
-  getAuthenticatedUser(): Promise<any>;
+  getAuthenticatedUser(): Promise<AuthenticatedUser | undefined>;
   getBranch: (params: GetBranch) => Promise<any>;
   getDetailsForUser(params: UserDetailParams): Promise<any>;
   getLatestCommit: (params: GetLatestCommitParams) => Promise<LatestCommit | null>;

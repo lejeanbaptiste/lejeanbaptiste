@@ -77,12 +77,17 @@ export default class Github implements Provider {
    */
   async getAuthenticatedUser() {
     const response = await this.octokit.users.getAuthenticated();
-    if (!response) return null;
+    if (!response) return undefined;
 
-    const user = response.data as any;
-    user.username = user.login;
+    const user: Types.AuthenticatedUser = {
+      ...response.data,
+      username: response.data.login,
+      userId: response.data.id.toString(),
+      id: response.data.id.toString(),
+      type: 'user',
+    };
 
-    this.userId = user.id.toString();
+    this.userId = user.id;
     this.username = user.login;
 
     return user;
@@ -323,7 +328,7 @@ export default class Github implements Provider {
         provider: 'github',
         uuid: `github-${type}-${item.id}`,
       };
-      
+
       userCollection.push(user);
     }
 

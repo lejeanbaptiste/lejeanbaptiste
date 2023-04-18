@@ -93,7 +93,10 @@ export const changeProvider = async (
   const provider = actions.cloud.getProvider();
   if (!provider) return;
 
-  state.cloud.user = await provider.getAuthenticatedUser();
+  const authUser =  await provider.getAuthenticatedUser();
+  if (!authUser) return;
+
+  state.cloud.user = authUser;
 
   actions.cloud.resetRepos();
   actions.cloud.resetOwner();
