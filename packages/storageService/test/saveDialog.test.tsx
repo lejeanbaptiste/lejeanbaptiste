@@ -200,7 +200,7 @@ describe('Save Dialog', () => {
           type: 'save',
         });
 
-        expect.assertions(6);
+        expect.assertions(7);
 
         const storageDialog = screen.getByTestId('storage-dialog');
         const header = getByTestId(storageDialog, 'header');
@@ -228,7 +228,10 @@ describe('Save Dialog', () => {
           'save:create-folder:name-input'
         ) as HTMLInputElement;
 
-        await act(async () => user.type(inputName, 'folder-name', { delay: 50 }));
+        await act(async () => user.clear(inputName));
+        expect(inputName).toHaveValue('');
+
+        await act(async () => user.type(inputName, 'folder-name'));
         expect(inputName).toHaveValue('folder-name');
 
         // const createButton = getByTestId(createFolderDialog, 'save:create-folder:create-button');
@@ -269,7 +272,7 @@ describe('Save Dialog', () => {
         await act(async () => user.clear(input));
         expect(input).toHaveValue('');
 
-        await act(async () => user.type(input, 'new_file.xml', { delay: 500 }));
+        await act(async () => user.type(input, 'new_file.xml'));
         expect(input).toHaveValue('new_file.xml');
 
         await closeLoadDialog();
