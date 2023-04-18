@@ -24,16 +24,28 @@
   "author": "Luciano Frizzera <lucaju@gmail.com>",
   "exports": {
     ".": {
-      "import": "./src/index.worker",
-      "require": "./dist/leafwriter-validator.worker.js"
+      "import": [
+        "./src/index.worker",
+        "./lib/index.worker"
+      ],
+      "require": "./dist/leafwriter-validator.worker.js",
+      "types": "./lib/index.worker.d.ts"
     },
     "./db": {
-      "import": "./src/db.ts",
-      "require": "./dist/db.js"
+      "import": [
+        "./src/db/exports.ts",
+        "./lib/db/exports.js"
+      ],
+      "require": "./dist/leafwriter-validator.db.js",
+      "types": "./lib/db/exports.d.ts"
     }
   },
   "types": "lib/index.worker.d.ts",
   "module": "src/index.worker.ts",
+  "files": [
+    "dist",
+    "lib"
+  ],
   "scripts": {
     "browserify-jsdom": "browserify -r jsdom -s jsdom -o src/lib/jsdom/jsdom-browserified.js",
     "build": "npm run clean && tsc && webpack",
