@@ -29,7 +29,7 @@
   "scripts": {
     "cm": "git-cz",
     "prepare": "husky install",
-    "test": "jest --silent"
+    "test": "jest --silent --onlyChanged"
   },
   "devDependencies": {
     "@babel/core": "^7.21.4",
