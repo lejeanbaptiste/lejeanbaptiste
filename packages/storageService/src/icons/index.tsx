@@ -3,13 +3,23 @@ import ComputerIcon from '@mui/icons-material/Computer';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import { SvgIconTypeMap } from '@mui/material';
+import { SvgIconTypeMap, createSvgIcon } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { Gitlab } from 'mdi-material-ui';
+import React from 'react';
+import type { IconBaseProps, IconType } from 'react-icons';
+import { BiDownload } from 'react-icons/bi';
+import { RxFileText } from 'react-icons/rx';
+
+const asMuiIcon = (ReactIcon: IconType, props?: IconBaseProps) => {
+  return createSvgIcon(<ReactIcon {...props} />, ReactIcon.name);
+};
 
 const icons = {
   cloud: CloudQueueIcon,
   computer: ComputerIcon,
+  download: asMuiIcon(BiDownload, { x: 1, y: 1 }),
+  fileText: asMuiIcon(RxFileText),
   fingerprint: FingerprintIcon,
   github: GitHubIcon,
   gitlab: Gitlab,
