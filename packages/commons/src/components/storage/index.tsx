@@ -7,7 +7,11 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { LoadingMask } from '../LoadingMask';
 
-const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
+const StorageDialog = React.lazy(() =>
+  import('@cwrc/leafwriter-storage-service/Dialog').then((module) => ({
+    default: module.StorageDialog,
+  }))
+);
 
 export const Storage = () => {
   const { user } = useAppState().auth;
