@@ -10,7 +10,7 @@ import type { StorageDialogProps } from './types';
 
 export { clearCache, deleteDb } from './db';
 export { loadDocument, saveDocument } from './headless';
-export type { AllowedMimeType, Resource, Validate } from './types';
+export type { AllowedMimeType, Resource, StorageDialogProps, Validate } from './types';
 export type { ProviderAuth } from './types/Provider';
 export type { LanguageCode } from './utilities';
 
