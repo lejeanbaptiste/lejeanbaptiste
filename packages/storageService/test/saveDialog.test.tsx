@@ -1,7 +1,15 @@
 // @ts-nocheck
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import '@testing-library/jest-dom';
-import { act, getByTestId, getByTitle, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  getByTestId,
+  getByText,
+  getByTitle,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import StorageDialog from '../src';
@@ -51,10 +59,10 @@ describe('Save Dialog', () => {
       expect.assertions(4);
 
       const storageDialog = screen.getByTestId('storage-dialog');
+      const header = getByTestId(storageDialog, 'header');
 
-      await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
       expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-      expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+      await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
       await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(), {
         timeout: 500,
@@ -78,18 +86,18 @@ describe('Save Dialog', () => {
         expect.assertions(4);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
-        await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(), {
           timeout: 500,
         });
 
         await act(async () => await user.click(screen.getByTestId('save:open-settings-button')));
-        const saveSettingsDialong = screen.getByTestId('save:settings-dialog');
-        await waitFor(() => expect(saveSettingsDialong).toBeInTheDocument());
+        const saveSettingsDialog = screen.getByTestId('save:settings-dialog');
+        await waitFor(() => expect(saveSettingsDialog).toBeInTheDocument());
       });
 
       test('Change Commit Message', async () => {
@@ -104,21 +112,21 @@ describe('Save Dialog', () => {
         expect.assertions(5);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
-        await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(), {
           timeout: 500,
         });
 
         await act(async () => await user.click(screen.getByTestId('save:open-settings-button')));
-        const saveSettingsDialong = screen.getByTestId('save:settings-dialog');
-        await waitFor(() => expect(saveSettingsDialong).toBeInTheDocument());
+        const saveSettingsDialog = screen.getByTestId('save:settings-dialog');
+        await waitFor(() => expect(saveSettingsDialog).toBeInTheDocument());
 
         const input = getByTestId(
-          saveSettingsDialong,
+          saveSettingsDialog,
           'save:settings:commit-input'
         ) as HTMLInputElement;
 
@@ -145,10 +153,10 @@ describe('Save Dialog', () => {
         // expect.assertions(4);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
-        await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(), {
           timeout: 500,
@@ -178,12 +186,12 @@ describe('Save Dialog', () => {
         const createButton = getByTestId(createRepoDialog, 'save:create-repo:create-button');
         await act(async () => user.click(createButton));
 
-        // await closeLoadDialog();
+        await closeLoadDialog();
       });
 
       test.todo('Repository - Error');
 
-      test.skip('Folder', async () => {
+      test('Folder', async () => {
         const resource = mock.getResource({ provider: preferProvider, type: 'save' });
         await setup({
           config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
@@ -192,13 +200,13 @@ describe('Save Dialog', () => {
           type: 'save',
         });
 
-        // expect.assertions(4);
+        expect.assertions(6);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
-        await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -223,10 +231,10 @@ describe('Save Dialog', () => {
         await act(async () => user.type(inputName, 'folder-name', { delay: 50 }));
         expect(inputName).toHaveValue('folder-name');
 
-        const createButton = getByTestId(createFolderDialog, 'save:create-folder:create-button');
-        await act(async () => user.click(createButton));
+        // const createButton = getByTestId(createFolderDialog, 'save:create-folder:create-button');
+        // await act(async () => user.click(createButton));
 
-        // await closeLoadDialog();
+        await closeLoadDialog();
       });
 
       test.todo('Folder - Error');
@@ -242,13 +250,14 @@ describe('Save Dialog', () => {
           type: 'save',
         });
 
-        expect.assertions(5);
+        expect.assertions(6);
 
         const storageDialog = screen.getByTestId('storage-dialog');
 
-        await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
+        const header = getByTestId(storageDialog, 'header');
+
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(), {
           timeout: 500,
@@ -256,8 +265,11 @@ describe('Save Dialog', () => {
 
         const input = getByTestId(storageDialog, 'save:filename-input') as HTMLInputElement;
         expect(input).toHaveValue(resource.filename);
+
         await act(async () => user.clear(input));
-        await act(async () => user.type(input, 'new_file.xml', { delay: 50 }));
+        expect(input).toHaveValue('');
+
+        await act(async () => user.type(input, 'new_file.xml', { delay: 500 }));
         expect(input).toHaveValue('new_file.xml');
 
         await closeLoadDialog();
@@ -275,10 +287,10 @@ describe('Save Dialog', () => {
         expect.assertions(6);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
-        await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -313,13 +325,13 @@ describe('Save Dialog', () => {
         expect.assertions(6);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
         const footer = getByTestId(storageDialog, 'save:footer');
         const footerDownloadButton = getByTitle(footer, 'download');
 
-        await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -355,12 +367,12 @@ describe('Save Dialog', () => {
         expect.assertions(6);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
         const footer = getByTestId(storageDialog, 'save:footer');
 
-        await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -398,12 +410,12 @@ describe('Save Dialog', () => {
           expect.assertions(10);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
 
           const footer = getByTestId(storageDialog, 'save:footer');
 
-          await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -457,12 +469,12 @@ describe('Save Dialog', () => {
           expect.assertions(10);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
 
           const footer = getByTestId(storageDialog, 'save:footer');
 
-          await waitFor(() => getByTestId(storageDialog, 'header-dialog-title'));
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());

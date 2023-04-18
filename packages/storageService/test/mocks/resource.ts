@@ -7,7 +7,7 @@ import {
   Resource,
   User,
 } from '../../src/types';
-import type { ProviderAuth } from '../../src/types/Provider';
+import type { AuthenticatedUser, ProviderAuth } from '../../src/types/Provider';
 
 export const unsupportedProviderAuth: ProviderAuth = { name: 'google', access_token: '12345' };
 export const githubAuth: ProviderAuth = { name: 'github', access_token: 'gho_vtkG' };
@@ -77,18 +77,21 @@ export const getResource = ({
       provider,
       hash: '0b0bb91a0b70088815055f5987f04ecce4a00faf',
       content: '<?xml>content</xml>',
-      filename: 'invalid_filename.xml',
+      filename: 'document.xml',
     };
   }
 
   return;
 };
 
-export const authenticatedUser: User = {
+export const authenticatedUser: AuthenticatedUser = {
   username: 'lucaju',
   email: 'lucaju@gmail.com',
   prefferedID: 'github',
   identities: [''],
+  type: 'user',
+  id: 'lucaju',
+  userId: 'lucaju'
 };
 
 export const repository: Repository = {

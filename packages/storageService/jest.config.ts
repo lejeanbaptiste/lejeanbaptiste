@@ -134,12 +134,12 @@ export default {
 
   // The paths to modules that run some code to configure or set up the testing environment before each test
   setupFiles: [
-    // '<rootDir>//test/setup/index.ts',
-    "fake-indexeddb/auto"
+    // '<rootDir>/test/setup/index.ts',
+    'fake-indexeddb/auto',
   ],
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
-  // setupFilesAfterEnv: ['<rootDir>/test/setup/index.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/setup/index.ts', '@testing-library/jest-dom/extend-expect'],
 
   // The number of seconds after which a test is considered as slow and reported as such in the results.
   // slowTestThreshold: 5,
