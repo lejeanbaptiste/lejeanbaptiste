@@ -4,11 +4,11 @@ import { getIcon } from '@src/icons';
 import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
-type InterceptFormatImportDialogProps = {
+type InterceptImportDialogProps = {
   format: string;
 };
 
-export const InterceptFormatImportDialog = ({ format }: InterceptFormatImportDialogProps) => {
+export const InterceptImportDialog = ({ format }: InterceptImportDialogProps) => {
   const { t } = useTranslation('LWC');
   return (
     <Stack alignItems="flex-start">

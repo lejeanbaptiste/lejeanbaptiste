@@ -9,5 +9,4 @@ export * from './StyledToolTip';
 export * from './TextEmphasis';
 export * from './documentsView';
 export * from './profile';
-export * from './storage';
 export * from './uploadDropBox';

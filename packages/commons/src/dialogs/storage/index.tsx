@@ -1,11 +1,11 @@
 import type { Resource } from '@cwrc/leafwriter-storage-service';
+import { LoadingMask } from '@src/components';
 import { useFormatConversion, useOpenResource, usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { isValidXml } from '@src/utilities';
 import React, { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
-import { LoadingMask } from '../LoadingMask';
 
 const StorageDialog = React.lazy(() =>
   import('@cwrc/leafwriter-storage-service/Dialog').then((module) => ({
