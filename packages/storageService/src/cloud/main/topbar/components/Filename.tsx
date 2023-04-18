@@ -7,8 +7,8 @@ import {
   Paper,
   Stack,
   useMediaQuery,
-  useTheme,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React, {
   useEffect,
   useRef,

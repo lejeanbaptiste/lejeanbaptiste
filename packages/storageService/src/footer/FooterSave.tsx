@@ -6,8 +6,8 @@ import {
   Icon,
   IconButton,
   useMediaQuery,
-  useTheme,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getIcon } from '../icons';

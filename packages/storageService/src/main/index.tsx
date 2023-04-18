@@ -7,8 +7,8 @@ import {
   SlideProps,
   Stack,
   useMediaQuery,
-  useTheme,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { CloudDialog } from '../cloud';
 import { FooterLoad, FooterSave } from '../footer';

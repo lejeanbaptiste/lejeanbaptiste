@@ -1,4 +1,5 @@
-import { Box, TextField, useMediaQuery, useTheme } from '@mui/material';
+import { Box, TextField, useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';

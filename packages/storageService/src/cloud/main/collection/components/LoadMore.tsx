@@ -1,4 +1,5 @@
-import { CircularProgress, Stack, Typography, alpha } from '@mui/material';
+import { CircularProgress, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 

@@ -1,4 +1,5 @@
-import { Box, LinearProgress, Stack, useTheme } from '@mui/material';
+import { Box, LinearProgress, Stack } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
