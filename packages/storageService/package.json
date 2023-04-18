@@ -27,21 +27,24 @@
         "./src/index.tsx",
         "./lib/index.js"
       ],
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "types": "./lib/index.d.ts"
     },
     "./Dialog": {
       "import": [
         "./src/StorageDialog.tsx",
         "./lib/StorageDialog.js"
       ],
-      "require": "./dist/StorageDialog.js"
+      "require": "./dist/StorageDialog.js",
+      "types": "./lib/StorageDialog.d.ts"
     },
     "./headless": {
       "import": [
         "./src/headless.ts",
         "./lib/headless.js"
       ],
-      "require": "./dist/headless.js"
+      "require": "./dist/headless.js",
+      "types": "./lib/headless.d.ts"
     }
   },
   "types": "lib/index.d.ts",
