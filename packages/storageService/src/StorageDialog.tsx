@@ -8,13 +8,13 @@ import { Main } from './main';
 import { config } from './overmind';
 import type { StorageDialogProps } from './types';
 
-export type { AllowedMimeType, Resource, Validate } from './types';
+export type { AllowedMimeType, Resource, StorageDialogProps, Validate } from './types';
 export type { ProviderAuth } from './types/Provider';
 export type { LanguageCode } from './utilities';
 
 const overmind = createOvermind(config, { name: 'StorageDialog' });
 
-const StorageDialog = (props: StorageDialogProps) => (
+export const StorageDialog = (props: StorageDialogProps) => (
   <Provider value={overmind}>
     <I18nextProvider i18n={i18next}>
       <ModalProvider>
@@ -23,5 +23,3 @@ const StorageDialog = (props: StorageDialogProps) => (
     </I18nextProvider>
   </Provider>
 );
-
-export default StorageDialog;
