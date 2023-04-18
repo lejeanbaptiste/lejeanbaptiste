@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { CachedSchema } from './types';
+import type { CachedSchema } from '../types';
 
 export const DB_NAME = 'LEAF-Writer-Validator';
 
