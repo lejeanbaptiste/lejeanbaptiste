@@ -1,8 +1,8 @@
 import Masonry from '@mui/lab/Masonry';
+import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { Layout } from '.';
 import { CARD_WIDTH, DocumentCard } from './components';
 
@@ -12,10 +12,9 @@ interface SamplesViewProps {
 }
 
 export const SamplesView = ({ layout, width }: SamplesViewProps) => {
-  const { setResource } = useActions().editor;
-  const { getSampleDocuments, loadSample } = useActions().storage;
+  const { getSampleDocuments } = useActions().storage;
 
-  const navigate = useNavigate();
+  const { openFromLibrary } = useOpenResource();
 
   const [samples, setSamples] = useState<Resource[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -32,15 +31,13 @@ export const SamplesView = ({ layout, width }: SamplesViewProps) => {
   const handleClick = async (resource: Resource) => {
     const { url } = resource;
     if (!url) return setSelected(null);
-    if (selected === url) return handleDoubleClick(resource);
+    if (selected === url) return
     setSelected(url);
   };
 
-  const handleDoubleClick = async ({ title, url }: Resource) => {
-    if (!url) return;
-    const content = await loadSample(url);
-    setResource({ content, filename: `${title}.xml` });
-    navigate(`/edit?sample=${title}`, { replace: true });
+  const handleDoubleClick = async ({ title }: Resource) => {
+    if (!title) return;
+    openFromLibrary({ category: 'sample', title });
   };
 
   const gap = 12;

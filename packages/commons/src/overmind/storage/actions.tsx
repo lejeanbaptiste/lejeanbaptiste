@@ -1,8 +1,21 @@
 import { db } from '@src/db';
 import type { Resource, StorageDialogState } from '@src/types';
+import { log } from '@src/utilities';
 import { saveAs } from 'file-saver';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../index';
+
+//* INIITIALIZE
+export const onInitializeOvermind = async (_context: Context, overmind: any) => {
+  // Clean expired document requests
+  try {
+    const now = new Date();
+    const expiredDocResquests = await db.documentRequested.where('expires').below(now).toArray();
+    if (expiredDocResquests.length > 0) {
+      await db.documentRequested.bulkDelete(expiredDocResquests.map(({ id }) => id));
+    }
+  } catch {}
+};
 
 export const setPrefStorageProvider = ({ state, effects }: Context, providerId: string) => {
   if (!state.auth.user) return;
@@ -87,9 +100,8 @@ export const updateRecentDocument = async ({ state }: Context) => {
   try {
     await db.recentDocuments.put(resource, resource.id);
   } catch (error) {
-    console.log(error)
+    log.info(error);
   }
- 
 };
 
 export const removeRecentDocument = async (_context: Context, id: string) => {
@@ -120,52 +132,27 @@ export const download = (
   return true;
 };
 
+export const uploadFile = async (_context: Context, file: File): Promise<string | null> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      if (event.target?.result && typeof event.target.result === 'string') {
+        return resolve(event.target.result);
+      }
+      reject(null);
+    };
+
+    reader.onerror = (error) => {
+      log.warn(file, error);
+      reject(null);
+    };
+
+    reader.readAsText(file);
+  });
+};
+
 export const convertXMLtoHTML = async ({ effects }: Context, content: string) => {
   const data = await effects.storage.api.convertXMLtoHTML(content);
   return data;
-};
-
-export const checkDocumentFormat = (_context: Context, content: string) => {
-  const format = checkIsTranskibus(content);
-  return format;
-};
-
-const checkIsTranskibus = (content: string) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(content, 'application/xml');
-  if (!doc) return;
-  const header = doc.querySelector('teiHeader');
-  if (!header) return;
-  const publisher = header.querySelector('publisher');
-  if (publisher?.textContent !== 'tranScriptorium') return;
-
-  return 'traskribus-TEI';
-};
-
-export const convertTranskribusToTei = async ({ effects }: Context, resource: Resource) => {
-  if (!resource.content) {
-    return new Error('No content');
-  }
-
-  const convertedResource = await effects.storage.api.convertTranskribusToTei(resource.content);
-  if (convertedResource instanceof Error) return convertedResource;
-
-  //New file name
-  let newFilename = resource.filename;
-  if (newFilename) {
-    const extension = newFilename.slice(-4); // get extension
-    newFilename = newFilename.slice(0, -4); // remove xml extension
-    newFilename = `${newFilename} (copy)${extension}`;
-  }
-
-  //remove original hash and url
-  resource = {
-    ...resource,
-    content: convertedResource,
-    filename: newFilename,
-    hash: undefined,
-    url: undefined,
-  };
-
-  return resource;
 };

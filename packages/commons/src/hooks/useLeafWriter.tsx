@@ -1,17 +1,15 @@
 import type { Leafwriter } from '@cwrc/leafwriter';
-import { loadDocument } from '@cwrc/leafwriter-storage-service';
-import { Typography } from '@mui/material';
-import { usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { isErrorMessage, type Resource } from '@src/types';
-import React, { useEffect } from 'react';
+import { convertDocument } from '@src/services/leafTe';
+import type { Resource } from '@src/types';
+import { changeFileExtension } from '@src/utilities';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 let leafWriter: Leafwriter | null = null;
-let tapDocumentTimer: NodeJS.Timeout;
-
 let leafWriterEvents: any[] = [];
+let tapDocumentTimer: NodeJS.Timeout;
 
 export const useLeafWriter = () => {
   const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
@@ -23,18 +21,14 @@ export const useLeafWriter = () => {
     setAutosave,
     setContentLastSaved,
     setContentHasChanged,
-    setResource,
     subscribeToTimerService,
     unsubscribeFromTimerService,
   } = useActions().editor;
-  const { getStorageProviderAuth } = useActions().providers;
-  const { addToRecentDocument, convertXMLtoHTML, download, loadSample } = useActions().storage;
+  const { addToRecentDocument, download } = useActions().storage;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
 
-  const navigate = useNavigate();
   const { t } = useTranslation('LWC');
-
-  const { getResourceFromPermalink } = usePermalink();
+  const navigate = useNavigate();
 
   useEffect(() => {
     leafWriter?.setContentHasChanged(contentHasChanged);
@@ -51,7 +45,7 @@ export const useLeafWriter = () => {
 
     if (leafWriter.onLoad.observed) removeSubscribers;
 
-    const dirtyEvent = leafWriter.onContentHasChanged.subscribe(async (value) => {
+    const dirtyEvent = leafWriter.onContentHasChanged.subscribe((value) => {
       if (!leafWriter) return;
       setContentHasChanged(value);
 
@@ -76,6 +70,7 @@ export const useLeafWriter = () => {
     const onCloseEvent = leafWriter.onClose.subscribe(() => {
       unsubscribeFromTimerService();
       disposeLeafWriter();
+      navigate('/', { replace: true });
     });
     leafWriterEvents.push(onCloseEvent);
 
@@ -92,70 +87,23 @@ export const useLeafWriter = () => {
     leafWriterEvents = [];
   };
 
-  const loadFromPermalink = async () => {
-    const resource = await getResourceFromPermalink();
+  const handleDownload = async (format: string) => {
+    if (!leafWriter || !resource) return;
+    const content = await leafWriter.getContent();
+    if (!content) return;
 
-    if (!resource) return showErrorMessage(t('storage.warning.check_URL_structure'));
-
-    if (isErrorMessage(resource)) {
-      showErrorMessage(resource.message);
+    if (format === 'xml') {
+      const filename = resource.filename ?? 'untitled.xml';
+      download({ content, filename });
       return;
     }
 
-    if (resource.category && resource.url) {
-      const content = await loadSample(resource.url);
-      setResource({ content, filename: `${resource.title}.xml` });
-      return;
-    }
-
-    if (!resource.provider) return showErrorMessage(t('storage.provider_not_found'));
-
-    const providerAuth = getStorageProviderAuth(resource.provider);
-    if (!providerAuth) return showErrorMessage(t('storage.provider_not_found'));
-
-    const document = await loadDocument(providerAuth, resource);
-    if ('error' in document) return showErrorMessage(document.error);
-
-    setResource(document);
-  };
-
-  const showErrorMessage = (message: string) => {
-    openDialog({
-      props: {
-        maxWidth: 'xs',
-        preventEscape: true,
-        severity: 'error',
-        title: `${t('storage.invalid_request')}`,
-        Body: () => (
-          <Typography sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
-            {message}
-          </Typography>
-        ),
-        onClose: async () => disposeLeafWriter(),
-      },
+    const response = await convertDocument({
+      content,
+      fromType: 'TEI',
+      toType: format,
     });
-  };
 
-  const handleDownload = async () => {
-    if (!leafWriter || !resource) return;
-    const content = await leafWriter.getContent();
-    if (!content) return;
-
-    const filename = resource.filename ?? 'untitled.xml';
-
-    download({ content, filename });
-  };
-
-  const handleExportToHTML = async () => {
-    if (!leafWriter || !resource) return;
-    const content = await leafWriter.getContent();
-    if (!content) return;
-
-    let filename = resource.filename ?? 'untitled';
-    filename = filename.slice(0, -3); // remove xml extension
-    filename = `${filename}.html`;
-
-    const response = await convertXMLtoHTML(content);
     if (response instanceof Error) {
       notifyViaSnackbar({
         message: `${t('commons.Conversion to HTML failed').toString()}. ${response.message}`,
@@ -164,7 +112,14 @@ export const useLeafWriter = () => {
       return;
     }
 
+    const filename = changeFileExtension(resource.filename ?? 'untitle', format.toLowerCase());
+
     download({ content: response, filename });
+  };
+
+  const getContent = async () => {
+    if (!leafWriter || !resource) return;
+    return await leafWriter.getContent();
   };
 
   const handleSave = async (action: 'save' | 'saveAs' = 'save') => {
@@ -206,7 +161,11 @@ export const useLeafWriter = () => {
   };
 
   const handleCloseDocument = () => {
-    if (!contentHasChanged) return disposeLeafWriter();
+    if (!contentHasChanged) {
+      disposeLeafWriter();
+      navigate('/', { replace: true });
+      return;
+    }
 
     openDialog({
       props: {
@@ -221,6 +180,7 @@ export const useLeafWriter = () => {
         onClose: async (action) => {
           if (action !== 'discard') return;
           disposeLeafWriter();
+          navigate('/', { replace: true });
         },
       },
     });
@@ -246,19 +206,16 @@ export const useLeafWriter = () => {
     leafWriter?.dispose();
     leafWriter = null;
 
-    navigate('/', { replace: true });
-
     close();
   };
 
   return {
     leafWriter,
     disposeLeafWriter,
+    getContent,
     handleCloseDocument,
     handleDownload,
-    handleExportToHTML,
     handleSave,
-    loadFromPermalink,
     saveFeedback,
     setEditorEvents,
     setCurrentLeafWriter,

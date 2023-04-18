@@ -1,6 +1,8 @@
+import { db } from '@src/db';
 import { useActions, useAppState } from '@src/overmind';
 import type { Error, Resource } from '@src/types';
 import { isErrorMessage } from '@src/types';
+import { isBefore } from 'date-fns';
 import Cookies from 'js-cookie';
 import queryString from 'query-string';
 import { useTranslation } from 'react-i18next';
@@ -34,10 +36,12 @@ export const usePermalink = () => {
 
   const getResourceFromPermalink = async () => {
     let permalink = await parsePermalink();
-
+    if (!permalink) return;
     if (permalink && isErrorMessage(permalink)) return permalink;
 
-    if (userState === 'UNAUTHENTICATED' && permalink?.valid) {
+    if (permalink.resource?.isLocal) return permalink.resource;
+
+    if (userState === 'UNAUTHENTICATED' && permalink.valid) {
       Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
       signIn();
       return;
@@ -92,6 +96,7 @@ export const usePermalink = () => {
     // * if it is a sample
     if (typeof search.sample === 'string') {
       const document = await getSampleByTitle(search.sample);
+
       if (!document) {
         return {
           type: 'error',
@@ -102,6 +107,31 @@ export const usePermalink = () => {
       return { ...response, isSample: true, resource: document, valid: true };
     }
 
+    // * if it was open from local device
+    if (search.local === 'true' && typeof search.id === 'string') {
+      const document = await db.documentRequested.get(search.id);
+      if (!document) {
+        return {
+          type: 'error',
+          message: `${t('commons.unable to load document')}: ${search.filename}`,
+        };
+      }
+
+      const { expires, id, ...resource } = document;
+
+      if (!isBefore(new Date(), document.expires)) {
+        return {
+          type: 'error',
+          message: `${t('commons.request expired')}`,
+        };
+      }
+
+      resource.isLocal = true;
+
+      return { ...response, resource, valid: true };
+    }
+
+    // * if it is comes from a provider
     if (!search.provider || Array.isArray(search.provider)) {
       return { type: 'error', message: t('storage.warning.check_URL_structure') };
     }
@@ -167,5 +197,5 @@ export const usePermalink = () => {
     return params;
   };
 
-  return { getLanguage, getResourceFromPermalink, parsePermalink, setPermalink };
+  return { getLanguage, getResourceFromPermalink, parsePermalink, setPermalink, stringifyQuery };
 };

@@ -2,16 +2,16 @@ import { Divider, Stack, Typography, useTheme } from '@mui/material';
 import { db } from '@src/db';
 import { useMessage } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { ViewProps } from '@src/types';
+import { ViewType } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MenuButton, type MenuButtonProps } from './MenuButton';
 import { PasteOption } from './PasteOption';
 
 interface MainMenuProps {
-  onSelect: (value: ViewProps) => void;
+  onSelect: (value: ViewType) => void;
   selectedMenu?: string | undefined;
 }
 
@@ -20,6 +20,7 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
   const { storageProviders } = useAppState().providers;
 
   const { openStorageDialog } = useActions().storage;
+  const { openDialog } = useActions().ui;
 
   const { t } = useTranslation('LWC');
   const { palette } = useTheme();
@@ -38,13 +39,22 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
       disabledTooltipText: cloudDisabledMessage,
       icon: 'cloud',
       label: t('storage.from_the_cloud'),
+      onClick: () => openStorageDialog({ source: 'cloud', type: 'load' }),
       value: 'cloud',
     },
     {
       disabled: isLoading,
       icon: 'computer',
       label: t('storage.from_your_device'),
-      value: 'device',
+      onClick: () => openStorageDialog({ source: 'local', type: 'load' }),
+      value: 'local',
+    },
+    {
+      disabled: isLoading,
+      icon: 'importIcon',
+      label: t('storage.import document'),
+      onClick: () => openDialog({ type: 'import', props: { maxWidth: 'md' } }),
+      value: 'import',
     },
     'separator',
     {
@@ -52,22 +62,28 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
       hide: userState !== 'AUTHENTICATED' || countRecentDocs === 0,
       icon: 'recent',
       label: t('commons.recent'),
+      onClick: () => onSelect('recent'),
       value: 'recent',
     },
-    { disabled: isLoading, icon: 'template', label: t('commons.templates'), value: 'templates' },
-    { disabled: isLoading, icon: 'sample', label: t('commons.samples'), value: 'samples' },
+    {
+      disabled: isLoading,
+      icon: 'template',
+      label: t('commons.templates'),
+      onClick: () => onSelect('templates'),
+      value: 'templates',
+    },
+    {
+      disabled: isLoading,
+      icon: 'sample',
+      label: t('commons.samples'),
+      onClick: () => onSelect('samples'),
+      value: 'samples',
+    },
   ];
-
-  const handleClick = (value: string, title?: string) => {
-    if (value === 'cloud') return openStorageDialog({ source: 'cloud', type: 'load' });
-    if (value === 'device') return openStorageDialog({ source: 'local', type: 'load' });
-    if (value === 'import') return console.log('open dialog');
-    onSelect({ title, value });
-  };
 
   return (
     <Stack
-      width={230}
+      width={240}
       px={1}
       py={2}
       sx={{
@@ -86,19 +102,14 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
         {t('commons.open')}
       </Typography>
       <AnimatePresence mode="popLayout">
-        <Stack gap={1} pt={1}>
+        <Stack gap={1} pt={1} component={motion.div} layout="preserve-aspect">
           {menuOptions.map((option, index) =>
             option === 'separator' ? (
               <Divider key={index} sx={{ ml: 2 }} />
             ) : option.hide ? (
               ''
             ) : (
-              <MenuButton
-                key={option.value}
-                active={selectedMenu === option.label}
-                onClick={handleClick}
-                {...option}
-              />
+              <MenuButton key={option.label} active={selectedMenu === option.value} {...option} />
             )
           )}
           <Divider sx={{ ml: 2 }} />

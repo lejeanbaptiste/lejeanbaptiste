@@ -1,12 +1,11 @@
 import type { Resource } from '@cwrc/leafwriter-storage-service';
-import { usePermalink } from '@src/hooks';
+import { useFormatConversion, useOpenResource, usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { isValidXml } from '@src/utilities';
 import React, { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { LoadingMask } from '../LoadingMask';
-import { InterceptFormatImportDialog } from './components';
 
 const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service'));
 
@@ -17,14 +16,15 @@ export const Storage = () => {
 
   const { setResource } = useActions().editor;
   const { getStorageProvidersAuth } = useActions().providers;
-  const { checkDocumentFormat, convertTranskribusToTei, closeStorageDialog } = useActions().storage;
-  const { notifyViaSnackbar, openDialog } = useActions().ui;
+  const { closeStorageDialog } = useActions().storage;
 
-  const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation('LWC');
 
   const { setPermalink } = usePermalink();
+  const { openResource } = useOpenResource();
+
+  const { checkDocumentFormat, convertDocument } = useFormatConversion();
 
   const { open, source, type } = storageDialogState;
 
@@ -35,69 +35,28 @@ export const Storage = () => {
     setPermalink(resource);
   };
 
-  const handleLoad = (res: Resource) => {
-    if (!res.content) return;
+  const handleLoad = async (resource: Resource) => {
+    if (!resource.content) return;
 
-    const specialFormat = checkDocumentFormat(res.content);
-    if (!specialFormat) return loadResource(res);
+    const specialFormat = await checkDocumentFormat(resource.content);
+    if (!specialFormat) return loadResource(resource);
 
-    openDialog({
-      props: {
-        icon: 'importExportRoundedIcon',
-        preventEscape: true,
-        title: t('importExport.convert document').toString(),
-        Body: () => <InterceptFormatImportDialog format={specialFormat} />,
-        actions: [
-          { action: 'cancel', label: `${t('commons.cancel')}` },
-          {
-            action: 'noConvertOpen',
-            label: `${t('importExport.try to open it without converting')}`,
-          },
-          {
-            action: 'convertOpen',
-            label: `${t('importExport.convert and open')}`,
-            variant: 'outlined',
-          },
-        ],
-        onBeforeClose: async (action) => {
-          if (action !== 'convertOpen') return;
-          if (!res.content) return;
+    const convertedDocument = await convertDocument({ fromType: specialFormat, resource });
+    if (!convertedDocument) return;
 
-          const response = await convertTranskribusToTei({ ...res });
-          if (response instanceof Error) {
-            notifyViaSnackbar({
-              message: `${t('commons.conversion failed')}. ${response.message}`,
-              options: { variant: 'error' },
-            });
-            return false;
-          }
+    if (convertedDocument.isConverted) {
+      resource = {
+        content: convertedDocument.content,
+        filename: convertedDocument.newFilename,
+      };
+    }
 
-          loadResource(response);
-        },
-        onClose: async (action) => {
-          if (action === 'cancel') return;
-          if (action === 'noConvertOpen') loadResource(res);
-
-          closeStorageDialog();
-        },
-      },
-    });
+    loadResource(resource);
   };
 
-  const loadResource = (res: Resource) => {
-    setResource(res);
-    const permalink = setPermalink(res);
+  const loadResource = async (resource: Resource) => {
     closeStorageDialog();
-
-    const route = res.writePermission === false ? 'view' : 'edit';
-    navigate(`/${route}${permalink ?? ''}`, { replace: true });
-
-    //? open on a new tab
-    //! works fine with cloud document on the cloud.
-    //! The problem is how to pass local document to the new tab
-    // const permalink = parsePermalink();
-    // const newTabLocation = `${window.location.origin}/edit${window.location.search}`
-    // window.open(newTabLocation, 'test');
+    await openResource({ resource });
   };
 
   const handleSave = (res: Resource) => {

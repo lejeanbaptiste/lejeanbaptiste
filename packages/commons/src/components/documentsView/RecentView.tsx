@@ -1,13 +1,12 @@
 import { loadDocument } from '@cwrc/leafwriter-storage-service';
 import Masonry from '@mui/lab/Masonry';
 import { db } from '@src/db';
-import { usePermalink } from '@src/hooks';
+import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AnimatePresence } from 'framer-motion';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { Layout } from '.';
 import { CARD_WIDTH, DocumentCard } from './components';
 
@@ -17,22 +16,20 @@ interface RecentViewProps {
 }
 
 export const RecentView = ({ layout, width }: RecentViewProps) => {
-  const { setResource } = useActions().editor;
   const { getStorageProviderAuth } = useActions().providers;
   const { removeRecentDocument } = useActions().storage;
 
+  const { openResource } = useOpenResource();
+
   const recentDocs =
     useLiveQuery(() => db.recentDocuments.toCollection().reverse().sortBy('modifiedAt')) ?? [];
-
-  const navigate = useNavigate();
-  const { setPermalink } = usePermalink();
 
   const [selected, setSelected] = useState<string | null>(null);
 
   const handleClick = async (resource: Resource) => {
     const { id } = resource;
     if (!id) return setSelected(null);
-    if (selected === id) return handleDoubleClick(resource);
+    if (selected === id) return;
     setSelected(id);
   };
 
@@ -48,10 +45,7 @@ export const RecentView = ({ layout, width }: RecentViewProps) => {
       return;
     }
 
-    setResource(document);
-    const permalink = setPermalink(document);
-    const route = resource.writePermission === false ? 'view' : 'edit';
-    navigate(`/${route}${permalink ?? ''}`, { replace: true });
+    await openResource({resource: document});
   };
 
   const removeItem = (id: string) => removeRecentDocument(id);

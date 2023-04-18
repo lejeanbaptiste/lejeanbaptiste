@@ -177,6 +177,7 @@ export const close = async ({ state, actions }: Context) => {
   actions.editor.setResource();
   state.editor.libLoaded = false;
   state.editor.contentHasChanged = false;
+  state.editor.contentLastSaved = undefined;
 };
 
 export const setReadonly = ({ state }: Context, value: boolean) => {
