@@ -123,6 +123,11 @@ export const loadSample = async ({ effects }: Context, url: string) => {
   return documentString;
 };
 
+export const loadFromUrl = async ({ effects }: Context, url: string) => {
+  const documentString = await effects.storage.api.getDocumentFromUrl(url);
+  return documentString;
+};
+
 export const download = (
   _context: Context,
   { content, filename }: { content: string; filename: string }

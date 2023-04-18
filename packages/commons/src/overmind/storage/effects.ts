@@ -15,9 +15,19 @@ export const api = {
   /**
    * Get a sample document: either a template or a sample file
    * @param {string} url - The URL of the sample to load.
-   * @returns The data property of the response object.
+   * @returns The sample document.
    */
   async loadSample(url: string) {
+    const { data } = await axios.get<string>(url);
+    return data;
+  },
+
+  /**
+   * This function retrieves a document from a given URL .
+   * @param {string} url - The `url` parameter is a string that represents the URL of the document.
+   * @returns The document.
+   */
+  async getDocumentFromUrl(url: string) {
     const { data } = await axios.get<string>(url);
     return data;
   },
