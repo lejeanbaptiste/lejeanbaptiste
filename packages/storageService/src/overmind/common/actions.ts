@@ -45,7 +45,7 @@ export const configure = async ({ state, actions }: Context, config: StorageDial
     if (cloud.providers.length > 0 && preferProvider) {
       actions.cloud.setProvider(preferProvider);
       const provider = actions.cloud.getProvider();
-      state.cloud.user = await provider?.getAuthenticatedUser();
+      state.cloud.user = await provider?.getAuthenticatedUser() ?? undefined;
     }
   }
 

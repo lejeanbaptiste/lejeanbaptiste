@@ -16,7 +16,7 @@ export class Api {
     if (!module) return;
 
     const Provider = module.default;
-    const provider = new Provider(providerAuth);
+    const provider: Provider = new Provider(providerAuth);
     await provider.getAuthenticatedUser();
 
     this.providers[providerAuth.name] = provider;

@@ -12,10 +12,7 @@ export type { AllowedMimeType, Resource, Validate } from './types';
 export type { ProviderAuth } from './types/Provider';
 export type { LanguageCode } from './utilities';
 
-const overmind = createOvermind(config, {
-  name: 'StorageDialog',
-  logProxies: true,
-});
+const overmind = createOvermind(config, { name: 'StorageDialog' });
 
 const StorageDialog = (props: StorageDialogProps) => (
   <Provider value={overmind}>
