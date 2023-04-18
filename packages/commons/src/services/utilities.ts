@@ -1,17 +1,7 @@
 import { log } from '@src/utilities';
 import axios from 'axios';
 
-export const handleAxiosError = (error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    parseError(error);
-    return parseError(error);
-  }
-
-  log.error(error);
-  return new Error('error');
-};
-
-const parseError = (error: unknown) => {
+export const logHttpError = (error: unknown) => {
   if (axios.isAxiosError(error)) {
     if (error.response) {
       // The request was made and the server responded with a status code
@@ -28,9 +18,7 @@ const parseError = (error: unknown) => {
       // Something happened in setting up the request that triggered an Error
       log.error('Error', error.message);
     }
-    return new Error(error.message);
   } else {
     log.error(error);
-    return new Error('error');
   }
 };
