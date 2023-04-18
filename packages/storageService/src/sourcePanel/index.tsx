@@ -56,7 +56,7 @@ export const SourcePanel = () => {
   const handleCloseSettings = () => setOpenSettings(false);
 
   return (
-    <Paper data-testid="source_panel" elevation={2} ref={container} square>
+    <Paper data-testid="source_panel" elevation={2} ref={container} square sx={{ zIndex: 100 }}>
       <Stack alignItems="center" justifyContent="space-between" height="100%" pb={1}>
         <ToggleButtonGroup
           color="primary"

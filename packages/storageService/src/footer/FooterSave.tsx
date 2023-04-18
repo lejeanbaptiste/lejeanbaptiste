@@ -1,8 +1,16 @@
-import DownloadIcon from '@mui/icons-material/Download';
 import { LoadingButton } from '@mui/lab';
-import { Box, Button, DialogActions, IconButton, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Box,
+  Button,
+  DialogActions,
+  Icon,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getIcon } from '../icons';
 import { useActions, useAppState } from '../overmind';
 import { SaveOptions } from './components/SaveOptions';
 
@@ -57,21 +65,21 @@ export const FooterSave = ({ onCancel }: Props) => {
 
   return (
     <DialogActions data-testid="save:footer" sx={{ justifyContent: 'space-between' }}>
-      <Button onClick={onCancel} title="cancel" variant="outlined">
+      <Button onClick={onCancel} size="small" title="cancel">
         {t('commons.cancel')}
       </Button>
       <Box flexGrow={1} />
       {isSM ? (
-        <IconButton disabled={isSaving} onClick={handleDownload}>
-          <DownloadIcon />
+        <IconButton disabled={isSaving} onClick={handleDownload} size="small">
+          <Icon component={getIcon('download')} />
         </IconButton>
       ) : (
         <Button
           disabled={isSaving}
           onClick={handleDownload}
-          startIcon={<DownloadIcon />}
+          size="small"
+          startIcon={<Icon component={getIcon('download')} />}
           title="download"
-          variant="outlined"
         >
           {t('footer.download')}
         </Button>
@@ -81,6 +89,7 @@ export const FooterSave = ({ onCancel }: Props) => {
           disabled={!saveEnabled || resource?.filename === ''}
           loading={isSaving}
           onClick={() => handleClickSave('forkPullRequest')}
+          size="small"
         >
           {t('footer.fork_and_pull_request')}
         </LoadingButton>
