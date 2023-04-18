@@ -81,9 +81,9 @@
       "last_modified": "dernière modification",
       "load": "Charger",
       "message": "message",
-      "messages": {},
       "name": "nom",
       "open": "ouvert",
+      "or": "ou",
       "overwrite": "écraser",
       "path_not_found": "chemin introuvable",
       "private": "Privé",
@@ -97,10 +97,11 @@
       "download": "télécharger",
       "fork_and_pull_request": "Fork et Pull Request",
       "pasteXml": "coller XML",
-      "save_as_pull_request": "Enregistrer et Pull Request"
+      "pull_request": "Demande d'extraction"
     },
     "local": {
-      "drag_drop": "Cliquez ou faites glisser 'n' drop pour télécharger un fichier",
+      "click to upload": "cliquez pour télécharger",
+      "drag the document here": "faites glisser le document ici",
       "message": {
         "unable_to_upload_file": "incapable de télécharger le fichier"
       },
