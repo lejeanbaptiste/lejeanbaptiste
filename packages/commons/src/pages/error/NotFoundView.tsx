@@ -5,7 +5,7 @@ import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 
-export const NotFoundView = () => {
+export const NotFoundPage = () => {
   const { t } = useTranslation('LWC');
 
   return (

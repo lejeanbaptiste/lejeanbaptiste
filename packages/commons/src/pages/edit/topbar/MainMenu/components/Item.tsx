@@ -3,7 +3,7 @@ import { StyledToolTip } from '@src/components';
 import type { IconName } from '@src/icons';
 import { motion, type Variants } from 'framer-motion';
 import React, { MouseEvent, useCallback, useContext } from 'react';
-import { CascadingContext } from '../';
+import { CascadingContext } from '..';
 import type { ItemType } from '../useMenu';
 import { Content } from './Content';
 
