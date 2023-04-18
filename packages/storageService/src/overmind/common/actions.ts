@@ -146,7 +146,13 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
   }
 
   state.common.submit = { action: 'load', resource };
-  setTimeout(() => actions.common.resetAll(), 0);
+
+  setTimeout(() => {
+    if (state.common.resource?.content) {
+      actions.common.setResource({ ...state.common.resource, content: undefined, hash: undefined })
+      // state.common.resource = { ...state.common.resource, content: undefined, hash: undefined };
+    }
+  }, 100);
 };
 
 export const afterSave = async ({ state, actions }: Context, resource?: Resource) => {
