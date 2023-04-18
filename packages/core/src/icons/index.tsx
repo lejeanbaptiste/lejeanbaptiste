@@ -29,7 +29,6 @@ import MergeRoundedIcon from '@mui/icons-material/MergeRounded';
 import PanoramaFishEyeIcon from '@mui/icons-material/PanoramaFishEye';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
-import PersonIcon from '@mui/icons-material/Person';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import PhotoLibraryRoundedIcon from '@mui/icons-material/PhotoLibraryRounded';
 import PlaceIcon from '@mui/icons-material/Place';
@@ -48,7 +47,7 @@ import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
-import { SvgIconTypeMap } from '@mui/material';
+import { SvgIconTypeMap, createSvgIcon } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import {
   CloudSyncOutline,
@@ -61,7 +60,11 @@ import {
   ShuffleVariant,
   TagPlus,
 } from 'mdi-material-ui';
-import { BookIcon, BookOutlinedIcon } from './custom/Book';
+import React from 'react';
+import type { IconBaseProps, IconType } from 'react-icons';
+import { FaBoxOpen, FaUserAlt, FaUsers } from 'react-icons/fa';
+import { ImBook } from 'react-icons/im';
+import { BookOutlinedIcon } from './custom/Book';
 import BoxOpenIcon, { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 import titleIcon from './svg/book-solid.svg';
 import rsIcon from './svg/box-open-solid.svg';
@@ -90,15 +93,19 @@ import iconOrg from './svg/users-solid.svg';
 export { BookIcon, BookOutlinedIcon } from './custom/Book';
 export { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 
+const asMuiIcon = (ReactIcon: IconType, props?: IconBaseProps) => {
+  return createSvgIcon(<ReactIcon {...props} />, ReactIcon.name);
+};
+
 const icons = {
   accept: CheckIcon,
   add: AddCircleOutlineIcon,
   arrowDownwardIcon: ArrowDownwardIcon,
   arrowForwardIosIcon: ArrowForwardIosIcon,
   block: BlockIcon,
-  BookIcon: BookIcon,
+  BookIcon: asMuiIcon(ImBook),
   BookOutlinedIcon: BookOutlinedIcon,
-  BoxIcon: BoxIcon,
+  BoxIcon: asMuiIcon(FaBoxOpen),
   BoxOutlinedIcon: BoxOutlinedIcon,
   change: ReplayIcon,
   checkIcon: CheckIcon,
@@ -147,15 +154,15 @@ const icons = {
   MergeRoundedIcon: MergeRoundedIcon,
   note: StickyNote2Icon,
   OrderAlphabeticalAscending: OrderAlphabeticalAscending,
-  organization: PeopleAltIcon,
+  organization: asMuiIcon(FaUsers, {x: 1, y: 1}),
   organizationDraft: PeopleOutlineOutlinedIcon,
   PanoramaFishEyeIcon: PanoramaFishEyeIcon,
   paste: ContentPasteIcon,
   PeopleAltIcon: PeopleAltIcon,
   PeopleOutlineOutlinedIcon: PeopleOutlineOutlinedIcon,
-  person: PersonIcon,
+  person: asMuiIcon(FaUserAlt, {x: 1, y: 1}),
   personDraft: PersonOutlineOutlinedIcon,
-  PersonIcon: PersonIcon,
+  PersonIcon: asMuiIcon(FaUserAlt, {x: 1, y: 1}),
   PersonOutlineOutlinedIcon: PersonOutlineOutlinedIcon,
   place: PlaceIcon,
   placeDraft: PlaceOutlinedIcon,
@@ -166,7 +173,7 @@ const icons = {
   referencing_string: BoxOpenIcon,
   reject: ClearIcon,
   remove: RemoveCircleOutlineIcon,
-  rs: BoxOpenIcon,
+  rs: asMuiIcon(FaBoxOpen),
   ReplayIcon: ReplayIcon,
   reset: RestartAltIcon,
   settings: SettingsRoundedIcon,
@@ -188,7 +195,7 @@ const icons = {
   textNode: TagRoundedIcon,
   thing: BoxIcon,
   thingDraft: BoxOutlinedIcon,
-  title: BookIcon,
+  title: asMuiIcon(ImBook, {x: 1, y: 1}),
   titleDraft: BookOutlinedIcon,
   toc: FormatListBulletedIcon,
   translate: TranslateRoundedIcon,
