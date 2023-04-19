@@ -12,9 +12,8 @@ import { getIcon } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ViewType } from './';
+import type { OptionProps, ViewType } from '../types';
 import { Footer } from './Footer';
-import type { OptionProps } from './types';
 
 interface MainProps {
   onChangeView: (view?: ViewType) => void;

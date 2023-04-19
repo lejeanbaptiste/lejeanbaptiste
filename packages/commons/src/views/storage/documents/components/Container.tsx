@@ -3,9 +3,7 @@ import type { ViewType } from '@src/types';
 import { motion, type AnimationControls, type Variants } from 'framer-motion';
 import React from 'react';
 import { Layout } from '..';
-import { RecentView } from '../RecentView';
-import { SamplesView } from '../SamplesView';
-import { TemplatesView } from '../TemplatesView';
+import { RecentView, SamplesView, TemplatesView } from '../views';
 import { ShowSkeleton } from './ShowSkeleton';
 
 interface ContainerProps {

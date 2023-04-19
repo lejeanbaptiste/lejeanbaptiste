@@ -1,25 +1,13 @@
 import { Box, Divider, Popover, Stack } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState } from 'react';
-import { Appearance } from './Appearance';
-import { Identity } from './Identity';
-import { Language } from './Language';
-import { Main } from './Main';
-import { Storage } from './Storage';
-import { UserCard } from './UserCard';
+import { Appearance, Identity, Language, Main, Storage, UserCard } from './components';
+import { ViewType } from './types';
 
 interface ProfileProps {
   anchor: HTMLDivElement;
   onClose: () => void;
 }
-
-export interface SubMenu {
-  onBack: () => void;
-  onClose: () => void;
-  width?: number;
-}
-
-export type ViewType = 'main' | 'appearance' | 'language' | 'identity' | 'storage';
 
 const WIDTH = 300;
 

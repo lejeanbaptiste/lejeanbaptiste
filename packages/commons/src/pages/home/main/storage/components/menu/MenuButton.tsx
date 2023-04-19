@@ -11,7 +11,6 @@ import {
   useTheme,
 } from '@mui/material';
 import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
-import { HtmlTooltip } from '@src/components';
 import { getIcon, type IconName } from '@src/icons';
 import { motion } from 'framer-motion';
 import React from 'react';

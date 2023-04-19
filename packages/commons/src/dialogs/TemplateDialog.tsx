@@ -1,5 +1,5 @@
 import { Button, Dialog, DialogActions, DialogTitle } from '@mui/material';
-import { TemplatesView, TopBar, type Layout } from '@src/components';
+import { TemplatesView, TopBar, type Layout } from '@src/views/storage/documents';
 import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';

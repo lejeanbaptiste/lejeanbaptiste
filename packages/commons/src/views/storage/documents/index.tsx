@@ -3,28 +3,23 @@ import { useAppState } from '@src/overmind';
 import type { ViewProps, ViewType } from '@src/types';
 import { motion, useAnimation } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useWindowSize } from 'react-use';
-import { Container } from './components/Container';
-import { TopBar } from './components/TopBar';
-
-export { RecentView } from './RecentView';
-export { SamplesView } from './SamplesView';
-export { TemplatesView } from './TemplatesView';
-export { TopBar } from './components/TopBar';
+import { Container, TopBar } from './components';
 
 export type Layout = 'list' | 'grid';
 
-interface DocumentViewProps extends ViewProps {}
+export { TopBar } from './components';
+export { TemplatesView } from './views';
+
+interface DocumentViewsProps extends ViewProps {}
 
 const MIN_WIDTH = 290; // Use to show the login panel // 1 column grid
 const MIN_HEIGHT = 333;
 
-export const DocumentView = ({ title, value }: DocumentViewProps) => {
+export const DocumentViews = ({ title, value }: DocumentViewsProps) => {
   const { userState } = useAppState().auth;
   const { language } = useAppState().ui;
 
-  const { t } = useTranslation('LWC');
   const animationControl = useAnimation();
   const { width: _windowWidth } = useWindowSize();
 

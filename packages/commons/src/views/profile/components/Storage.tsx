@@ -11,7 +11,7 @@ import {
   ListItemText,
 } from '@mui/material';
 import { StyledToolTip } from '@src/components';
-import { supportedIdentityProviders } from '@src/config';
+import { supportedStorageProviders } from '@src/config';
 import { useAnalytics } from '@src/hooks';
 import { getIcon, type IconName } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
@@ -19,28 +19,31 @@ import { BroadcastChannel } from 'broadcast-channel';
 import chroma from 'chroma-js';
 import React, { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type SubMenu } from './';
+import type { SubMenu } from '../types';
 
-export const Identity = ({ onBack, onClose }: SubMenu) => {
+export const Storage = ({ onBack, onClose }: SubMenu) => {
   const { user } = useAppState().auth;
-  const { setPreferredId, getLinkedAccounts, linkAccount } = useActions().auth;
-  const { supportedProviders, storageProviders } = useAppState().providers;
+  const { supportedProviders } = useAppState().providers;
 
+  const { getLinkedAccounts, linkAccount } = useActions().auth;
   const { setPrefStorageProvider } = useActions().storage;
   const { notifyViaSnackbar } = useActions().ui;
 
   const { t } = useTranslation('LWC');
+
   const { analytics } = useAnalytics();
 
   const handleSelect = async (event: MouseEvent, id: string) => {
     event.stopPropagation();
-    if (!user || user?.preferredID === id) return;
 
-    setPreferredId(id);
+    if (user?.prefStorageProvider === id) return;
+    setPrefStorageProvider(id);
+
+    if (analytics) analytics.track('storage', { storage: id });
     onClose();
   };
 
-  const handleConnectAccount = async (id: string) => {
+  const handleLinkAccount = async (id: string) => {
     const linkAccountUrl = await linkAccount(id);
     if (!linkAccountUrl) return;
 
@@ -55,10 +58,7 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
 
       await getLinkedAccounts();
 
-      if (
-        !user?.prefStorageProvider &&
-        storageProviders.some((provider) => provider.providerId === id)
-      ) {
+      if (!user?.prefStorageProvider) {
         setPrefStorageProvider(id);
         if (analytics) analytics.track('storage', { storage: id });
       }
@@ -75,10 +75,10 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
         <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <ListItemText primary={t('commons.identity')} sx={{ textTransform: 'capitalize' }} />
+        <ListItemText primary={t('commons.storage')} sx={{ textTransform: 'capitalize' }} />
       </ListItem>
       {supportedProviders
-        .filter((provider) => supportedIdentityProviders.includes(provider.providerId))
+        .filter((provider) => supportedStorageProviders.includes(provider.providerId))
         .map(({ providerId: id, service }) => (
           <ListItem
             key={id}
@@ -86,7 +86,7 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
             secondaryAction={
               !service && (
                 <StyledToolTip arrow title={t('commons.link_your_account', { provider: id })}>
-                  <IconButton onClick={() => handleConnectAccount(id)} size="small">
+                  <IconButton onClick={() => handleLinkAccount(id)} size="small">
                     <AddLinkIcon color="primary" fontSize="small" />
                   </IconButton>
                 </StyledToolTip>
@@ -97,12 +97,12 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
             <ListItemButton
               disabled={!service}
               onClick={(event) => handleSelect(event, id)}
-              selected={id === user?.preferredID}
+              selected={user?.prefStorageProvider === id}
               sx={{
                 borderRadius: 1,
                 '&.Mui-selected': {
                   bgcolor: ({ palette }) =>
-                    user?.preferredID === id
+                    user?.prefStorageProvider === id
                       ? chroma(palette.primary.main).alpha(0.15).css()
                       : 'inherit',
                 },
@@ -110,13 +110,13 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
             >
               <ListItemIcon sx={{ minWidth: 32 }}>
                 <Icon
-                  color={user?.preferredID === id ? 'primary' : 'inherit'}
+                  color={user?.prefStorageProvider === id ? 'primary' : 'inherit'}
                   component={getIcon(id as IconName)}
                   fontSize="small"
                 />
               </ListItemIcon>
               <ListItemText primary={id} sx={{ textTransform: 'capitalize' }} />
-              {user?.preferredID === id && <CheckIcon color="primary" fontSize="small" />}
+              {user?.prefStorageProvider === id && <CheckIcon color="primary" fontSize="small" />}
             </ListItemButton>
           </ListItem>
         ))}

@@ -3,8 +3,8 @@ import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useEffect, useState } from 'react';
-import type { Layout } from '.';
-import { CARD_WIDTH, DocumentCard } from './components';
+import type { Layout } from '..';
+import { CARD_WIDTH, DocumentCard } from '../components';
 
 interface SamplesViewProps {
   layout?: Layout;
@@ -31,7 +31,7 @@ export const SamplesView = ({ layout, width }: SamplesViewProps) => {
   const handleClick = async (resource: Resource) => {
     const { url } = resource;
     if (!url) return setSelected(null);
-    if (selected === url) return
+    if (selected === url) return;
     setSelected(url);
   };
 

@@ -15,8 +15,7 @@ import type { PaletteMode } from '@src/types';
 import chroma from 'chroma-js';
 import React, { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type SubMenu } from '.';
-import type { OptionProps } from './types';
+import type { OptionProps, SubMenu } from '../types';
 
 export const Appearance = ({ onBack, onClose }: SubMenu) => {
   const { themeAppearance } = useAppState().ui;
