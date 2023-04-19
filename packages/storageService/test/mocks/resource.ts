@@ -1,6 +1,13 @@
-import type { ProviderAuth } from '../../src/types/Provider';
-import { DocumentDetails, Organization, Repository, Resource, User } from '../../src/types';
 import { SearchBlobsItem } from '../../src/providers/Gitlab';
+import {
+  DocumentDetails,
+  Organization,
+  PublicRepository,
+  Repository,
+  Resource,
+  User,
+} from '../../src/types';
+import type { AuthenticatedUser, ProviderAuth } from '../../src/types/Provider';
 
 export const unsupportedProviderAuth: ProviderAuth = { name: 'google', access_token: '12345' };
 export const githubAuth: ProviderAuth = { name: 'github', access_token: 'gho_vtkG' };
@@ -13,8 +20,8 @@ export const getProviderAuth = (provider = 'github'): ProviderAuth | undefined =
 };
 
 type GetResourceParams = {
-  type?: string;
   provider?: string;
+  type?: string;
 };
 
 export const getResource = ({
@@ -70,18 +77,21 @@ export const getResource = ({
       provider,
       hash: '0b0bb91a0b70088815055f5987f04ecce4a00faf',
       content: '<?xml>content</xml>',
-      filename: 'invalid_filename.xml',
+      filename: 'document.xml',
     };
   }
 
   return;
 };
 
-export const authenticatedUser: User = {
+export const authenticatedUser: AuthenticatedUser = {
   username: 'lucaju',
   email: 'lucaju@gmail.com',
   prefferedID: 'github',
   identities: [''],
+  type: 'user',
+  id: 'lucaju',
+  userId: 'lucaju'
 };
 
 export const repository: Repository = {
@@ -327,20 +337,24 @@ export const getRepoContentRecursivelyResults = [
   },
 ];
 
-export const searchUsersResult = [
+export const searchUsersResult: PublicRepository[] = [
   {
     avatar_url: 'https://avatars.githubusercontent.com/u/1643728?v=4',
-    id: 1643728,
+    id: '1643728',
     name: '',
     type: 'user',
     username: 'anto',
+    uuid: 'github-user-1643728',
+    provider: 'github',
   },
   {
     avatar_url: 'https://avatars.githubusercontent.com/u/4977112?v=4',
-    id: 4977112,
+    id: '4977112',
     name: 'Anto',
-    type: 'org',
+    type: 'organization',
     username: 'antograssiot',
+    provider: 'github',
+    uuid: 'github-org-4977112',
   },
 ];
 

@@ -1,15 +1,18 @@
+// import i18n from 'i18next';
+import i18n from '../../i18n';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
 import { supportedLanguages } from '../../config';
+import { db } from '../../db';
 import type { DialogBarProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
 import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
-import i18n from 'i18next';
 
 export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
   //DARK MODE
   const prefPaletteMode: PaletteMode =
-    (localStorage.getItem('themeAppearance') as PaletteMode) ?? 'auto';
+    effects.editor.api.getFromLocalStorage<PaletteMode>('themeAppearance') ?? 'auto';
+
   actions.ui.setThemeAppearance(prefPaletteMode);
 
   //LANGUAGE
@@ -24,7 +27,7 @@ export const onInitializeOvermind = ({ state, actions, effects }: Context, overm
   }
 };
 
-export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
+export const setThemeAppearance = ({ state, actions, effects }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
 
   const darkMode =
@@ -36,7 +39,26 @@ export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMo
 
   actions.ui.setDarkMode(darkMode);
 
-  localStorage.setItem('themeAppearance', value);
+  effects.editor.api.saveToLocalStorage<PaletteMode>('themeAppearance', value);
+};
+
+export const listenChangeLanguage = ({ state, effects }: Context) => {
+  //* check language
+  const prefLanguageCode = effects.editor.api.getFromLocalStorage('i18nextLng');
+  if (prefLanguageCode && prefLanguageCode !== state.ui.language.code) {
+    const prefLanguage = supportedLanguages.get(prefLanguageCode);
+    if (prefLanguage) {
+      state.ui.language = prefLanguage;
+      i18n.changeLanguage(prefLanguage.code);
+    }
+  }
+};
+
+export const listenChangeTheme = ({ state, actions, effects }: Context) => {
+  const prefPaletteMode = effects.editor.api.getFromLocalStorage<PaletteMode>('themeAppearance');
+  if (prefPaletteMode && prefPaletteMode !== state.ui.themeAppearance) {
+    if (prefPaletteMode) actions.ui.setThemeAppearance(prefPaletteMode);
+  }
 };
 
 export const setDarkMode = ({ state }: Context, value: boolean) => {
@@ -64,8 +86,8 @@ export const updateTitle = ({ state }: Context, title: string) => {
   state.ui.title = title;
 };
 
-export const resetPreferences = () => {
-  localStorage.removeItem('paletteMode');
+export const resetPreferences = ({ effects }: Context) => {
+  effects.editor.api.removeFromLocalStorage('themeAppearance');
 };
 
 export const openEntityLookupsDialog = (
@@ -149,23 +171,20 @@ export const removeNotificationSnackbar = ({ state }: Context, key: string | num
   );
 };
 
-export const shouldDisplayDialog = ({ effects }: Context, value: string) => {
-  const dialogs: string[] = effects.editor.api.getFromLocalStorage('doNotDisplayDialogs') ?? [];
-  if (dialogs.includes(value)) return false;
-  return true;
+export const shouldDisplayDialog = async (_context: Context, value: string) => {
+  const dialogId = await db.doNotDisplayDialogs.get({ id: value });
+  return !dialogId;
 };
 
-export const doNotDisplayDialog = ({ effects }: Context, value: string) => {
-  let dialogs: string[] = effects.editor.api.getFromLocalStorage('doNotDisplayDialogs') ?? [];
-  dialogs = [...dialogs, value];
-  effects.editor.api.saveToLocalStorage('doNotDisplayDialogs', dialogs);
+export const doNotDisplayDialog = async (_context: Context, value: string) => {
+  await db.doNotDisplayDialogs.put({ id: value });
 };
 
-export const resetDoNotDisplayDialogs = ({ effects }: Context) => {
-  effects.editor.api.removeFromLocalStorage('doNotDisplayDialogs');
+export const resetDoNotDisplayDialogs = async (_context: Context) => {
+  await db.doNotDisplayDialogs.clear();
 };
 
-export const updateReadonly = ({ state, actions }: Context) => {
+export const updateReadonly = ({ state }: Context) => {
   const { isReadonly } = state.editor;
 
   window.writer.isReadOnly = isReadonly;

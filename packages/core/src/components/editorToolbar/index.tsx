@@ -1,7 +1,6 @@
 import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useRef } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
 import { EntityType } from '../../types';
@@ -288,10 +287,10 @@ export const EditorToolbar = () => {
               {items
                 .filter((item) => !item.hide)
                 .filter((item) => item.group === group)
-                .map((item) => (
+                .map((item, index) => (
                   <Box
                     layout
-                    key={'title' in item ? item.title : uuidv4()}
+                    key={'title' in item ? item.title : index}
                     component={motion.div}
                     initial={{ scale: 0, opacity: 0 }}
                     exit={{ scale: 0, opacity: 0 }}

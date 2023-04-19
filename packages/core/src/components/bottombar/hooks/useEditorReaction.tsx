@@ -21,7 +21,7 @@ const useEditorReaction = () => {
   const { schemasList } = useAppState().editor;
   const { document, editor } = useActions();
 
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('leafwriter');
 
   return {
     editorModeShouldChange: (editorMode: string): [boolean, null | MessageResponseProps] => {
@@ -114,13 +114,7 @@ const useEditorReaction = () => {
 
       // TODO rdf message = Linking Only
       if (editorMode === 'rdf') {
-        return [
-          true,
-          {
-            severity: 'warning',
-            text: '',
-          },
-        ];
+        return [true, { severity: 'warning', text: '' }];
       }
 
       return [true, null];
@@ -192,7 +186,7 @@ const useEditorReaction = () => {
                     <ChevronRightIcon />
                   </Divider>
                   <Grid item xs={6} pl={2}>
-                    <Typography fontWeight={700}>{t('commons:change')}</Typography>
+                    <Typography fontWeight={700}>{t('commons.change')}</Typography>
                     <Typography variant="body2">
                       Schema:{' '}
                       <TextEmphasis color="warning">

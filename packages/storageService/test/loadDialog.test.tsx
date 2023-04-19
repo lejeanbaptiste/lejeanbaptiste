@@ -1,18 +1,26 @@
-// @ts-nocheck
+//@ts-nocheck
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import '@testing-library/jest-dom';
-import { act, getByTestId, getByTitle, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  getByTestId,
+  getByText,
+  getByTitle,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import StorageDialog from '../src';
-import type { StorageDialogProps } from '../src/@types/types';
 import Github from '../src/providers/Github';
 import Gitlab from '../src/providers/Gitlab';
+import type { StorageDialogProps } from '../src/types';
 import { spyProviderFunctions } from './mocks/provider';
 import * as mock from './mocks/resource';
 
 const user = userEvent.setup({
-  pointerEventsCheck: 'never',
+  pointerEventsCheck: 0,
 });
 
 jest.setTimeout(30_000);
@@ -27,7 +35,7 @@ beforeEach(() => {
 });
 
 const setup = async (props: Omit<StorageDialogProps, 'open'> = {}) => {
-  //@ts-ignore
+
   await act(async () => render(<StorageDialog open={true} {...props} />));
 };
 
@@ -43,8 +51,12 @@ describe('Load Dialog', () => {
 
       expect.assertions(2);
 
-      expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-      expect(screen.getByTestId('header-source')).toHaveTextContent('local');
+      const storageDialog = screen.getByTestId('storage-dialog');
+      const header = getByTestId(storageDialog, 'header');
+
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+
+      await waitFor(() => expect(getByText(header, 'local')).toBeInTheDocument());
     });
 
     test('select file', async () => {
@@ -54,14 +66,17 @@ describe('Load Dialog', () => {
 
       const file = new File(['hello'], 'hello.xml', { type: 'text/xml' });
 
-      expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-      expect(screen.getByTestId('header-source')).toHaveTextContent('local');
+      const storageDialog = screen.getByTestId('storage-dialog');
+      const header = getByTestId(storageDialog, 'header');
 
-      const input = screen.getByTestId('upload_panel-input');
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+      await waitFor(() => expect(getByText(header, 'local')).toBeInTheDocument());
+
+      const input = screen.getByTestId('upload_panel-input') as HTMLInputElement;
       await userEvent.upload(input, file);
 
-      expect(input.files[0]).toBe(file);
-      expect(input.files.item(0)).toBe(file);
+      expect(input.files![0]).toBe(file);
+      expect(input.files!.item(0)).toBe(file);
       expect(input.files).toHaveLength(1);
     });
   });
@@ -72,11 +87,14 @@ describe('Load Dialog', () => {
 
       expect.assertions(4);
 
-      expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-      expect(screen.getByTestId('header-source')).toHaveTextContent('cloud');
+      const storageDialog = screen.getByTestId('storage-dialog');
+      const header = getByTestId(storageDialog, 'header');
+
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+      await waitFor(() => expect(getByText(header, 'local')).toBeInTheDocument());
 
       await act(async () => user.click(screen.getByTestId('source_panel-paste')));
-      expect(screen.getByTestId('header-source')).toHaveTextContent('paste');
+      await waitFor(() => expect(getByText(header, 'paste')).toBeInTheDocument());
 
       const input = screen.getByTestId('paste_panel-input') as HTMLInputElement;
       await act(async () => user.type(input, '<xml>', { delay: 50 })); //simulate user typing
@@ -89,8 +107,11 @@ describe('Load Dialog', () => {
 
       expect.assertions(2);
 
-      expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-      expect(screen.getByTestId('header-source')).toHaveTextContent('paste');
+      const storageDialog = screen.getByTestId('storage-dialog');
+      const header = getByTestId(storageDialog, 'header');
+
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+      await waitFor(() => expect(getByText(header, 'paste')).toBeInTheDocument());
     });
 
     test('Source Paste with content', async () => {
@@ -98,8 +119,11 @@ describe('Load Dialog', () => {
 
       expect.assertions(3);
 
-      expect(screen.getByTestId('header-dialog-title')).toHaveTextContent('Load');
-      expect(screen.getByTestId('header-source')).toHaveTextContent('paste');
+      const storageDialog = screen.getByTestId('storage-dialog');
+      const header = getByTestId(storageDialog, 'header');
+
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+      await waitFor(() => expect(getByText(header, 'paste')).toBeInTheDocument());
       expect(screen.getByTestId('paste_panel-input')).toHaveTextContent('<xml>');
     });
   });
@@ -115,8 +139,10 @@ describe('Load Dialog', () => {
         expect.assertions(3);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
+
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(), {
           timeout: 500,
@@ -139,9 +165,10 @@ describe('Load Dialog', () => {
         expect.assertions(11);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -188,11 +215,12 @@ describe('Load Dialog', () => {
         expect.assertions(8);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
         const footer = getByTestId(storageDialog, 'footer-load');
         const footerLoadButton = getByTitle(footer, 'load');
 
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
         expect(footerLoadButton).not.toBeEnabled();
 
         const sidebar = getByTestId(storageDialog, 'sidebar');
@@ -227,9 +255,10 @@ describe('Load Dialog', () => {
         expect.assertions(4);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const sidebar = getByTestId(storageDialog, 'sidebar');
         const organizationsButton = getByTitle(sidebar, 'Organizations');
@@ -265,8 +294,9 @@ describe('Load Dialog', () => {
         expect.assertions(3);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-empty')).toBeInTheDocument());
 
@@ -281,11 +311,12 @@ describe('Load Dialog', () => {
         expect.assertions(3);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const sidebar = getByTestId(storageDialog, 'sidebar');
-        const shared = getByTitle(sidebar, 'Shared with me');
+        const shared = getByTitle(sidebar, 'shared with me');
         await act(async () => user.click(getByTestId(shared, 'primary-button')));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument());
@@ -301,11 +332,12 @@ describe('Load Dialog', () => {
         expect.assertions(6);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
         const footer = getByTestId(storageDialog, 'footer-load');
         const footerLoadButton = getByTitle(footer, 'load');
 
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -327,11 +359,12 @@ describe('Load Dialog', () => {
         expect.assertions(4);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
         const footer = getByTestId(storageDialog, 'footer-load');
         const footerLoadButton = getByTitle(footer, 'load');
 
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -350,11 +383,12 @@ describe('Load Dialog', () => {
         expect.assertions(8);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
         const footer = getByTestId(storageDialog, 'footer-load');
         const footerLoadButton = getByTitle(footer, 'load');
 
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -383,9 +417,10 @@ describe('Load Dialog', () => {
         expect.assertions(4);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -412,11 +447,12 @@ describe('Load Dialog', () => {
           expect.assertions(9);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
           const footer = getByTestId(storageDialog, 'footer-load');
           const footerLoadButton = getByTitle(footer, 'load');
 
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
           expect(footerLoadButton).not.toBeEnabled();
 
           const repositories = getByTestId(storageDialog, 'list-repos');
@@ -452,9 +488,10 @@ describe('Load Dialog', () => {
           expect.assertions(5);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
 
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -482,9 +519,10 @@ describe('Load Dialog', () => {
           expect.assertions(11);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
 
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -525,11 +563,12 @@ describe('Load Dialog', () => {
           expect.assertions(7);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
           const footer = getByTestId(storageDialog, 'footer-load');
           const footerLoadButton = getByTitle(footer, 'load');
 
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -559,9 +598,10 @@ describe('Load Dialog', () => {
           expect.assertions(4);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
 
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -588,8 +628,9 @@ describe('Load Dialog', () => {
         expect.assertions(4);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const input = screen.getByTestId('search-user-input') as HTMLInputElement;
         await act(async () => user.type(input, 'anto', { delay: 50 }));
@@ -613,9 +654,10 @@ describe('Load Dialog', () => {
         expect.assertions(8);
 
         const storageDialog = screen.getByTestId('storage-dialog');
+        const header = getByTestId(storageDialog, 'header');
 
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const repositories = getByTestId(storageDialog, 'list-repos');
         await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -660,9 +702,10 @@ describe('Load Dialog', () => {
           expect.assertions(8);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
 
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -706,9 +749,10 @@ describe('Load Dialog', () => {
           expect.assertions(8);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
 
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -752,9 +796,10 @@ describe('Load Dialog', () => {
           expect.assertions(8);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
 
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());
@@ -799,9 +844,10 @@ describe('Load Dialog', () => {
           expect.assertions(9);
 
           const storageDialog = screen.getByTestId('storage-dialog');
+          const header = getByTestId(storageDialog, 'header');
 
           expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+          await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
           const repositories = getByTestId(storageDialog, 'list-repos');
           await waitFor(() => expect(repositories).toBeInTheDocument());

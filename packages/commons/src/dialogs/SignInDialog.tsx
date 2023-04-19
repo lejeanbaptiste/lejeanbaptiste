@@ -10,15 +10,15 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { authProviders } = useAppState().providers;
   const { closeDialog } = useActions().ui;
 
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation('LWC');
 
-  const handleClose = (_event: MouseEvent, reason: string) => closeDialog(id);
+  const handleClose = (_event: MouseEvent) => closeDialog(id);
   const handleCancel = () => closeDialog(id);
 
   return (
     <Dialog id={id} fullWidth maxWidth="xs" onClose={handleClose} open={open}>
-      <DialogTitle textAlign="center" sx={{ ':first-letter': { textTransform: 'uppercase' } }}>
-        {t('commons:sign_in')} {t('commons:with')}
+      <DialogTitle textAlign="center" sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
+        {t('commons.sign in')} {t('commons.with')}
       </DialogTitle>
       <DialogContent>
         <Stack gap={2} py={5} alignItems="center">
@@ -28,7 +28,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         </Stack>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center' }}>
-        <Button onClick={handleCancel}>{t('cancel')}</Button>
+        <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
       </DialogActions>
     </Dialog>
   );

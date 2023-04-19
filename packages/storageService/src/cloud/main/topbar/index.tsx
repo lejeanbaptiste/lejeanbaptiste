@@ -1,23 +1,21 @@
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CreateNewFolderOutlinedIcon from '@mui/icons-material/CreateNewFolderOutlined';
-import { Box, Button, Divider, IconButton, Stack, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Button, Divider, IconButton, Stack, useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
 import { useActions, useAppState } from '../../../overmind';
 import type { SearchResults } from '../../../types';
-import Breadcrumbs from './Breadcrumbs';
-import Filename from './Filename';
-import SearchBar from './searchBar';
+import { Breadcrumbs, Filename, SearchBar } from './components';
 
 interface TopbarProps {
   onChangeSize?: (value: DOMRect) => void;
   onOpenCreateDialog: (type: 'repo' | 'folder') => void;
 }
 
-const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
-  const { t } = useTranslation();
+export const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
   const { dialogType } = useAppState().common;
   const { collectionSource, collectionType, name, repository, owner } = useAppState().cloud;
   const {
@@ -26,6 +24,8 @@ const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
     getProvider,
     searchGlobal,
   } = useActions().cloud;
+
+  const { t } = useTranslation('LWStorageService');
 
   const theme = useTheme();
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
@@ -127,7 +127,7 @@ const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
                   variant="outlined"
                   data-testid={`topbar:create-${repository ? 'folder' : 'repository'}`}
                 >
-                  {repository ? t('cloud:breadcrumbs:folder') : t('cloud:breadcrumbs:repository')}
+                  {repository ? t('cloud.breadcrumbs.folder') : t('cloud.breadcrumbs.repository')}
                 </Button>
               )}
             </AnimatePresence>
@@ -138,5 +138,3 @@ const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
     </Box>
   );
 };
-
-export default Topbar;

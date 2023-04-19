@@ -1,139 +1,172 @@
 {
-  "commons": {
-    "accept_all": "accepter tout",
-    "and": "et",
-    "basic_interactions": "interactions de base",
-    "cancel": "cancel",
-    "close": "fermer",
-    "contact_us": "contactez-nous",
-    "create": "créer",
-    "description": "description",
-    "discard_changes": "rejeter les modifications",
-    "dismiss": "rejeter",
-    "download": "télécharger",
-    "functionalities": "fonctionnalités",
-    "identity": "identité",
-    "language": "langue",
-    "link_your_account": "Reliez votre compte {{provider}}",
-    "more_information": "Plus d'informations",
-    "name": "nom",
-    "new": "nouveau",
-    "none": "rien",
-    "not_found": "non trouvé",
-    "open": "ouvrir",
-    "open_recent": "Ouvrir le récent",
-    "or": "ou",
-    "other": "autre",
-    "please": "s'il vous plaît",
-    "privacy": "confidentialité",
-    "privacy_policy": "Politique de confidentialité",
-    "privacy_settings": "Paramètres de confidentialité",
-    "recent": "récent",
-    "reject_all": "rejeter tout",
-    "sample_document": "document type",
-    "samples": "échantillons",
-    "save": "sauvegarder",
-    "save_as": "sauvegarder comme",
-    "session": "session",
-    "settings": "paramètres",
-    "sign_in": "connexion",
-    "sign_out": "se déconnecter",
-    "storage": "stockage",
-    "template": "modèle",
-    "templates": "modèles",
-    "unsaved_changes": "modifications non sauvegardées",
-    "with": "avec"
-  },
-  "cookie_consent": {
-    "consent_banner": {
-      "let_me_choose": "laissez-moi choisir",
-      "line1": "Nous et des tiers sélectionnés utilisons des cookies ou des technologies similaires à des fins techniques et, avec votre consentement, à des fins de mesure. Le refus d'accorder votre consentement peut rendre les fonctions connexes indisponibles.",
-      "line2": "Vous pouvez librement donner, refuser ou retirer votre consentement à tout moment.",
-      "line3": "Utilisez le bouton 'Accepter' pour consentir à l'utilisation de ces technologies. Utilisez le bouton 'Rejeter' ou fermez cet avis pour continuer sans accepter.",
-      "we_use_cookies": "Nous utilisons des cookies"
+  "LWC": {
+    "LWC": {
+      "messages": {
+        "service not available at the moment": "Service non disponible pour le moment"
+      }
     },
-    "privacy_settings": "paramètres de confidentialité",
-    "remove_consent": "supprimer le consentement",
-    "settings_modal": {
-      "AUTH_SESSION_description": "Stocke les données de connexion et de session des utilisateurs.",
-      "_ga_description": "Utilisé par Google Analytics pour collecter des données sur le nombre de fois qu'un utilisateur a visité le site web ainsi que les dates de la première et de la plus récente visite.",
-      "basic_interactions_description": "Ces traceurs sont utilisés pour les fonctionnalités de base de LEAF-Writer, qui incluent l'insertion de l'identifiant d'un utilisateur (par exemple, le nom du compte Github ou ORCID) dans toutes les annotations Web créées, et la prise en charge du chargement, de l'enregistrement et du partage de fichiers via les référentiels Git d'un utilisateur. LEAF-Writer ne peut fournir que des fonctionnalités limitées sans ces cookies.",
-      "cc_cookie_description": "Stocke les préférences de consentement aux cookies.",
-      "consent_preferences": "Préférences de consentement",
-      "cookie_expiration_time": "{{value}} {{period}}",
-      "cookie_usage": "Utilisation des cookies",
-      "cookie_usage_description": "Le panneau suivant vous permet de personnaliser vos préférences en matière de consentement à l'utilisation de la technologie des cookies pour nous aider à réaliser les fonctions et activités décrites ci-dessous. Vous pouvez revoir et modifier vos choix à tout moment. Sachez que le refus de consentement dans un but particulier peut rendre les fonctions correspondantes indisponibles. Pour plus de détails concernant les cookies et autres données sensibles, veuillez lire le document complet.",
-      "domain": "domaine",
-      "expiration": "expiration",
-      "indefinitely_until_user_sign_out": "indéfiniment jusqu'à ce que l'utilisateur se déconnecte",
-      "lw_description": "Stocke les données d'utilisation sur le stockage local du navigateur : fournisseurs d'identité et de stockage préférés, langue et thème de couleur préférés, référentiels et documents récents, schémas XML, etc.",
-      "measurement": "mesure",
-      "measurement_description": "Ces cookies collectent des informations sur la façon dont vous utilisez le site web, les pages que vous avez visitées et les liens sur lesquels vous avez cliqué. Toutes les données sont anonymisées et ne peuvent pas être utilisées pour vous identifier.",
-      "more_information_description": "Pour toute question concernant notre politique en matière de cookies et vos choix.",
-      "strictly_necessary": "strictement nécessaire",
-      "strictly_necessary_description": "Les cookies nécessaires contribuent à rendre un site web utilisable en permettant des fonctions de base comme la navigation dans les pages et l'accès aux zones sécurisées du site web. Le site web ne peut pas fonctionner correctement sans ces cookies."
+    "commons": {
+      "Conversion to HTML failed": "La conversion en HTML a échoué",
+      "accept_all": "accepter tout",
+      "and": "et",
+      "basic_interactions": "interactions de base",
+      "cancel": "Annuler",
+      "close": "fermer",
+      "contact_us": "Contactez-nous",
+      "conversion failed": "la conversion a échoué",
+      "create": "créer",
+      "description": "description",
+      "discard_changes": "annuler les modifications",
+      "dismiss": "rejeter",
+      "download": "télécharger",
+      "editing": "montage",
+      "export as format": "exporter en {{format}}",
+      "functionalities": "fonctionnalités",
+      "identity": "identité",
+      "language": "langue",
+      "learn_more": "Apprendre encore plus",
+      "link_your_account": "Associez votre compte {{fournisseur}}",
+      "more_information": "Plus d'information",
+      "name": "nom",
+      "new": "nouveau",
+      "none": "aucun",
+      "not_found": "pas trouvé",
+      "open": "ouvrir",
+      "open_recent": "ouverte récente",
+      "or": "ou",
+      "other": "autre",
+      "please": "s'il te plaît",
+      "privacy": "confidentialité",
+      "privacy_policy": "politique de confidentialité",
+      "privacy_settings": "Paramètres de confidentialité",
+      "recent": "récent",
+      "reject_all": "tout rejeter",
+      "request expired": "demande expirée",
+      "sample_document": "exemple de document",
+      "samples": "échantillons",
+      "save": "sauvegarder",
+      "save_as": "enregistrer sous",
+      "session": "session",
+      "settings": "paramètres",
+      "sign in": "s'identifier",
+      "sign_in": "s'identifier",
+      "sign_out": "se déconnecter",
+      "storage": "stockage",
+      "template": "modèle",
+      "templates": "modèles",
+      "unable to load document": "impossible de charger le document",
+      "unsaved_changes": "modifications non enregistrées",
+      "viewing": "visualisation",
+      "what_would_you_like_to_do": "Qu'est-ce que tu aimerais faire?",
+      "with": "avec",
+      "xml document": "Document XML"
     },
-    "warning": {
-      "must_accept_cookies_message": "Vous devez accepter nos politiques en matière de cookies pour pouvoir vous connecter. Cliquez sur l'icône du bouclier en haut de la page.",
-      "remove_consent_basic_interactions_message": "<0>Le retrait du consentement pour les</0> <1>interactions et fonctionnalités de base</1> <2>vous déconnectera.</2>"
-    }
-  },
-  "error": {
-    "message404": "Vous vous avancer sur des zones obscures, ou bien c'est une erreur. Retournez à <1>l'accueil.</1>",
-    "page_not_Found": "Soit vous avez essayé une route louche, soit vous êtes venu ici par erreur. Retournez à la <1>page principale.</1>",
-    "something_went_wrong": "Page non trouvée"
-  },
-  "home": {
-    "bugs": "bugs",
-    "requests": "demande",
-    "subtitle": "L'éditeur en ligne XML & RDF du cadre académique de l'édition en ligne (Linked Editing Academic Framework)",
-    "team": "Équipe"
-  },
-  "language": {
-    "english": "Anglais",
-    "french": "Français"
-  },
-  "messages": {
-    "annotation_need_space": "Annoter des documents nécessite plus d'espace.",
-    "link_to_storage_provider_instructions": "Vous pouvez le faire en cliquant sur l'icône de l'utilisateur dans le coin supérieur droit de l'écran, puis en sélectionnant une option dans la liste des fournisseurs de stockage.",
-    "rotate_phone": "Veuillez faire pivoter votre téléphone ou ouvrir LEAF-Writer sur un grand écran.",
-    "you_must_sign_in_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter pour ouvrir et enregistrer des documents depuis le cloud",
-    "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter avec un fournisseur de stockage pour ouvrir et enregistrer un document à partir du cloud"
-  },
-  "profile": {
-    "manage_your_lincs_account": "gérer votre compte LINCS"
-  },
-  "storage": {
-    "all_changes_salved": "tous les changements sont sauvegardés",
-    "click_to_save": "cliquez pour sauvegarder",
-    "document_not_saved": "Document non sauvegardé",
-    "document_saved": "Document sauvegardé",
+    "cookie_consent": {
+      "consent_banner": {
+        "let_me_choose": "laisse-moi choisir",
+        "line1": "Nous et des tiers sélectionnés utilisons des cookies ou des technologies similaires à des fins techniques et, avec votre consentement, à des fins de mesure. \nLe refus de consentement peut rendre les fonctionnalités associées indisponibles.",
+        "line2": "Vous pouvez librement donner, refuser ou retirer votre consentement à tout moment.",
+        "line3": "Utilisez le bouton \"Accepter\" pour consentir à l'utilisation de ces technologies. \nUtilisez le bouton \"Rejeter\" ou fermez cet avis pour continuer sans accepter.",
+        "we_use_cookies": "Nous utilisons des cookies"
+      },
+      "privacy_settings": "Paramètres de confidentialité",
+      "remove_consent": "retirer le consentement",
+      "settings_modal": {
+        "AUTH_SESSION_description": "Stocke les données de connexion et de session de l'utilisateur.",
+        "_ga_description": "Utilisé par Google Analytics pour collecter des données sur le nombre de fois qu'un utilisateur a visité le site Web ainsi que les dates de la première et de la plus récente visite.",
+        "basic_interactions_description": "Ces trackers sont utilisés pour les fonctionnalités de base de LEAF-Writer, qui incluent l'insertion d'un identifiant d'utilisateur (par exemple, le nom de compte Github ou ORCID) dans toutes les annotations Web créées, et la prise en charge du chargement, de l'enregistrement et du partage de fichiers via les référentiels Git d'un utilisateur. \nLEAF-Writer ne peut fournir que des fonctionnalités limitées sans ces cookies.",
+        "cc_cookie_description": "Stocke les préférences de consentement des cookies.",
+        "consent_preferences": "Préférences de consentement",
+        "cookie_expiration_time": "{{valeur}} {{période}}",
+        "cookie_usage": "Utilisation des cookies",
+        "cookie_usage_description": "Le panneau suivant vous permet de personnaliser vos préférences de consentement pour l'utilisation de la technologie des cookies pour nous aider à réaliser les fonctionnalités et les activités décrites ci-dessous. \nVous pouvez revoir et modifier vos choix à tout moment. \nVeuillez noter que le refus de consentement à une fin particulière peut rendre les fonctionnalités associées indisponibles. \nPour plus de détails relatifs aux cookies et autres données sensibles, veuillez lire l'intégralité.",
+        "domain": "domaine",
+        "expiration": "expiration",
+        "indefinitely_until_user_sign_out": "indéfiniment jusqu'à la déconnexion de l'utilisateur",
+        "lw_description": "Stocke les données d'utilisation sur le stockage local du navigateur : fournisseurs d'identité et de stockage préférés, langue et thème de couleur préférés, référentiels et documents récents, schémas XML, etc.",
+        "measurement": "la mesure",
+        "measurement_description": "Ces cookies collectent des informations sur la façon dont vous utilisez le site Web, les pages que vous avez visitées et les liens sur lesquels vous avez cliqué. \nToutes les données sont anonymisées et ne peuvent pas être utilisées pour vous identifier.",
+        "more_information_description": "Pour toute question concernant notre politique en matière de cookies et vos choix.",
+        "strictly_necessary": "strictement nécessaire",
+        "strictly_necessary_description": "Les cookies nécessaires aident à rendre un site Web utilisable en activant des fonctions de base telles que la navigation sur les pages et l'accès aux zones sécurisées du site Web. \nLe site Web ne peut pas fonctionner correctement sans ces cookies."
+      },
+      "warning": {
+        "must_accept_cookies_message": "Vous devez accepter nos politiques en matière de cookies pour pouvoir vous connecter. Cliquez sur l'icône du bouclier en haut.",
+        "remove_consent_basic_interactions_message": "<0>Suppression du consentement pour</0> <1>les interactions de base"
+      }
+    },
     "error": {
-      "xml_not_well-formed_message": "Le document que vous essayez de télécharger n'est pas bien formé. Vérifiez qu'il possède l'extension XML et qu'il respecte la grammaire XML appropriée."
+      "message404": "Soit vous avez essayé une route louche, soit vous êtes venu ici par erreur. \nRevenez à la <1>page principale.</1>",
+      "page_not_Found": "Page non trouvée",
+      "something went wrong": "quelque chose s'est mal passé",
+      "something_went_wrong": "Quelque chose s'est mal passé"
     },
-    "from_the_cloud": "à partir du nuage",
-    "from_your_device": "Depuis votre appareil",
-    "invalid_request": "Demande non valide",
-    "paste_your_XML_here": "collez votre XML ici",
-    "provider_not_found": "fournisseur non trouvé",
-    "saving": "en sauvant",
-    "waiting_for_resource": "en attente de la ressource",
-    "warning": {
-      "check_URL_structure": "vérifier la structure de l'URL",
-      "storage_provider_invalid": "Le fournisseur '{{provider}}' n'est pas valide ou n'est pas supporté"
+    "home": {
+      "bugs": "insectes",
+      "requests": "demandes",
+      "subtitle": "Le XML",
+      "team": "équipe"
     },
-    "you_will_lose_any_unsaved_changes": "Vous perdrez toutes les modifications non sauvées"
-  },
-  "templates": {
-    "choose_a_template": "choisir un modèle"
-  },
-  "ui": {
-    "appearance": "apparence",
-    "auto": "auto",
-    "dark": "noir",
-    "dark_theme": "Thème sombre",
-    "device_theme": "Thème de l'appareil",
-    "light": "light",
-    "light_theme": "Thème lumière"
+    "importExport": {
+      "convert and open": "convertir et ouvrir",
+      "convert document": "convertir un document",
+      "message": {
+        "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer doit le convertir pour pouvoir l'utiliser.",
+        "intercept_load_file_format": "<0>Ceci ressemble à un </0> <1>{{format}}</1> <2>document.</2>"
+      },
+      "try to open it without converting": "essayez de l'ouvrir sans convertir"
+    },
+    "message": {
+      "unable to upload file": "Incapable de télécharger le fichier"
+    },
+    "messages": {
+      "annotation_need_space": "Annoter des documents nécessite plus d'espace.",
+      "link_to_storage_provider_instructions": "Vous pouvez le faire en cliquant sur l'icône de l'utilisateur dans le coin supérieur droit de l'écran, puis en sélectionnant une option dans la liste des fournisseurs de stockage.",
+      "rotate_phone": "Veuillez faire pivoter votre téléphone ou ouvrir LEAF-Writer sur un grand écran.",
+      "you_must_sign_in_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter pour ouvrir et enregistrer des documents depuis le cloud",
+      "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter avec un fournisseur de stockage pour ouvrir et enregistrer un document à partir du cloud"
+    },
+    "profile": {
+      "manage_your_lincs_account": "Gérer votre compte LINCS"
+    },
+    "stoage": {
+    },
+    "storage": {
+      "all_changes_salved": "toutes les modifications enregistrées",
+      "click to upload": "cliquez pour télécharger",
+      "click_to_save": "cliquez pour enregistrer",
+      "document_not_saved": "Document non enregistré",
+      "document_saved": "Document enregistré",
+      "drag the document here": "faites glisser le document ici",
+      "error": {
+        "xml_not_well-formed_message": "Le document que vous essayez de télécharger n'est pas bien formé. \nVérifiez qu'il a l'extension XML et suit la grammaire XML correcte."
+      },
+      "export": "exporter",
+      "export document": "document d'exportation",
+      "from_the_cloud": "du nuage",
+      "from_your_device": "Depuis votre appareil",
+      "import": "importer",
+      "import document": "Importer un document",
+      "invalid_request": "Requête invalide",
+      "paste_your_XML_here": "collez votre XML ici",
+      "provider not found": "fournisseur introuvable",
+      "provider_not_found": "fournisseur introuvable",
+      "saving": "économie",
+      "waiting_for_resource": "en attente de ressource",
+      "warning": {
+        "check_URL_structure": "vérifier la structure de l'URL",
+        "storage_provider_invalid": "le fournisseur '{{provider}}' n'est pas valide ou n'est pas pris en charge"
+      },
+      "you_will_lose_any_unsaved_changes": "Vous perdrez toutes les modifications non enregistrées"
+    },
+    "templates": {
+      "choose_a_template": "choisir un modèle"
+    },
+    "ui": {
+      "appearance": "apparence",
+      "dark_theme": "Thème sombre",
+      "device_theme": "Thème de l'appareil",
+      "light_theme": "Thème lumière"
+    }
   }
 }

@@ -11,7 +11,7 @@ export const SimpleDialog = ({
   actions = [{ action: 'close', label: 'close' }],
   id = uuidv4(),
   maxWidth = 'sm',
-  Message,
+  Body,
   onBeforeClose,
   onClose,
   open = false,
@@ -21,7 +21,7 @@ export const SimpleDialog = ({
   children,
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('leafwriter');
 
   const [data, setData] = useState<{ [key: string]: any }>({});
 
@@ -53,7 +53,6 @@ export const SimpleDialog = ({
   return (
     <Dialog
       aria-labelledby="alert-dialog-title"
-      // disableAutoFocus
       fullWidth
       id={id}
       maxWidth={maxWidth}
@@ -68,13 +67,13 @@ export const SimpleDialog = ({
         {severity === 'warning' && <WarningAmberIcon color="warning" />}
         {title}
       </DialogTitle>
-      {(children || Message) && (
+      {(children || Body) && (
         <DialogContent sx={{ pt: 0.5 }}>
           {children
             ? children
-            : typeof Message === 'string'
-            ? Message
-            : Message && <Message data={data} onChangeData={setData} />}
+            : typeof Body === 'string'
+            ? Body
+            : Body && <Body data={data} onChangeData={setData} />}
         </DialogContent>
       )}
       <DialogActions

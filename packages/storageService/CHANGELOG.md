@@ -1,5 +1,161 @@
 # CHANGELOG
 
+## 2.1.1
+
+### Patch Changes
+
+- dev: logproxies from overmind for better debug xp [86112a698e3f7fcc69f4082289a1c70273d2acfd]
+
+## 2.1.0
+
+### Minor Changes
+
+- StorageFialog: Independently export StorageDialog (no default exports) [b8afe02caf76b79837f7c7a3049e0fad653d69a7]
+  BREAKING CHANGE: 🧨 import from the internal path `@cwrc/leafwriter-storage-service` results
+  in an independent exported component (no default export)
+
+### Patch Changes
+
+- Export types [02dab01336b4b96726e4a0796a0b25c9cf68dc0c]
+- FixTests [aee5d9ffc95d7b6d681ace765ca3c6a82ca1f07c]
+
+## 2.0.0
+
+### Major Changes
+
+- Headless: improve error handling [73c75ae66db24f53b58fbbf0e8f57c03bdff21e0]
+  - BREAKING CHANGE: 🧨 headless now returs an Error object when there is an error
+
+### Minor Changes
+
+- Database
+  - Export convient function to `clearCache` and `deleteDb` [c63e5f102bf8871814956a8f25dcf94be773941e]
+- Icons
+  - Support a vast collection of icons libraries [b5a93c73606dab39309c078b091573ea8deead7c]
+- UI
+  - Improve Header and Footer [39a24ed93c6f053e132c792f934a8ec15cee3ac8]
+
+### Patch Changes
+
+- State
+  - Fix State: partially reset state after release file [fb2fb331ea86b81113d01ab48ff4b98906bcc913]
+- Localization:
+  - Tweak settings [cb0aaf03ce5a284532380fc8df1248f451f51a5e] [43b1b44a8b1b20db0be1b78ff8134bf1abea3781]
+- Dialog:
+  - Rename 'Message' as 'Body' [5ccffc43d11fbfe109260c0df6277a0155951875]
+- Organization
+  - Split Upload panel into small components [594d65604767a285692269c44ad26b04fd6c8997]
+- Improve types [0cf1bb970015ce224142c3bd6e8350bfb36fe9d8]
+- Improve tests [42432586476f795c48ea1a86167f4c27fb959a77]
+- Improve import @mui dependencies [132abf208a5201930692b39fb7d9b2fcb88b7eff]
+- Update dependencies [e93abe44c9f046915c27acf055077868ad2d194a]
+  - core:
+    - add: react-icons@4.8.0
+    - update:
+      - @mui/material@5.12.1
+      - framer-motion@10.12.2
+    - bump:
+    - @mui/base@5.0.0-alpha.126
+    - @mui/lab@5.0.0-alpha.127
+    - axios@1.3.5
+  - dev
+    - update:
+      - @typescript-eslint/eslint-plugin@5.59.0
+      - @typescript-eslint/parser@5.59.0
+      - webpack@5.79.0
+    - bump @types/lodash@4.14.194
+
+## 1.4.0
+
+### New Features
+
+#### Github
+
+Load and save files large than 1MB
+
+#### Public Repositories
+
+Add a badge indicating the user has write permission. The badge only shows up when browsing someone else’s repository. You can see it while you browse another user or an organization repositories, and on the path (breadcrumbs) when navigating inside it.
+
+The storage output (resource) now contains a new property, `writePermission` (boolean), indicating if the user has permission to write on the repository to which the resource belongs.
+
+Change the way we store public repositories, from the `local storage` to `indexedDB`. IndexedDB has more storage space and it is more reliable for managing data.
+
+#### Language
+
+Add language as an optional property to settings. Now we can explicitly tell the storage service in which language it should operate. By default, it will first try to get the language on local storage (il18next) or fall back to en-CA. Supported languages so far: `en-CA` and `fr-CA`. Check the documentation for more details.
+
+### Minor Changes
+
+- Settings
+  - Add language as an optional setting. [af63bd90f401c52ad0d9024d66bfa97d12eb4dd0]
+    - These changes also refactor how to get language from the local storage
+- Github
+  - Load files large than 1mb [5f238d5b6588875b5f0c84acf1778e59f98a1a93] (closes #109)
+- Public Repositories:
+  - Add a badge indicating the user has written permission [41914a402f00cf2ab72fca6c735e33f6922b1c50] (closes #47)
+  - Add `writePermission` property for repositories owned by another user. [573ce4bceed860e794ddaea763bcdc17b55ba678]
+  - Move from the `local storage` to `indexedDB` [8f3f278351824deb4d715e189e0ce6df8f759edd]
+    - This change improves how we manage public repositories accessed by the user.
+    - It also makes some adjustments to the layout and UX.
+- Headless Functions
+  - Add localization [52e2d4ef142d602b1acdaa5509583b4103f2193b]
+    - Caution: This is a SOFT BREAKING CHANGE: 🧨 Error from headless function now returns an object with a type error and a message.
+
+### Patch Changes
+
+- Sidebar:
+  - Layout adjustments [7ce2ecd39d3727b817a217f593d312f32474737b]
+- Preferred Storage:
+  - Improve retrieve preferred storage from local storage [19ebd8b56eb94867e5950a0d4069a565cddffa7d]
+- Public Repositories:
+  - Change icons and add tooltip for repos shared with the logged user [f1548458a8442419f4cf12b8bd5949f3cfd5eadd]
+  - Debounce rapid clicks on the same user/org [d4a39ed8b55588fc5854f17d3e0ea6db23801735]
+  - Add scroll when the number of public repos overflows the space [d04daacc137360bb747839b2c78f24840ecd7910]
+- File Collection:
+  - Add ability to collapse details [6ecaf27afce386f6036d5f69eb591226e132b1c0]
+- Types:
+  - Add types. [819bbd13facd761ab304d58964e1a3537a785758]
+  - Export Validate function Type from StorageDialog [333163bcbf21bfcdeeb1a80306b475dc8452a9f3]
+- Localization
+  - Add localization [819bbd13facd761ab304d58964e1a3537a785758]
+  - Organize localization [bd4660e6e1c3af309ffa4358abd024f98e7b7981]
+- GitHub
+  - Regression:
+    - Fix save non-existing (create) files [24a1615fc9779572bb287daf72d954e895e041db]
+- Miscellaneous:
+  - Reorganize folder structure. [819bbd13facd761ab304d58964e1a3537a785758]
+- Update Dependencies:
+
+  - core: [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+    - update:
+      - framer-motion@10.10.0
+      - mdi-material-ui@7.7.0
+    - bump up:
+      - @mui/base@5.0.0-alpha.124
+      - @mui/icons-material@5.11.16
+      - @mui/lab@5.0.0-alpha.125
+      - @mui/material@5.11.16
+      - i18next@22.4.14
+  - dev:
+    - add misssing:n [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+      - @jest/globals@29.5.0
+      - eslint-plugin-prettier@4.2.1
+    - update:
+      - @types/jest@29.5.0 [3749999e007cca54a5dee54f9547a80bb0793671]
+      - @typescript-eslint/eslint-plugin@5.57.1 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+      - @typescript-eslint/parser@5.57.1 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+      - eslint-config-prettier@8.8.0 [3749999e007cca54a5dee54f9547a80bb0793671]
+      - ts-jest@29.1.0 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+      - webpack@5.77.0 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+    - bump up:
+      - mini-css-extract-plugin@2.7.5 webpack@5.76.3 [3749999e007cca54a5dee54f9547a80bb0793671]
+      - @types/lodash@4.14.192 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
+
+  ### Tests
+
+  - Refactoring [767dfaeb8657620cf7fca0652c3c7b0977001128]
+
 ## 1.3.9
 
 ### Patch Changes

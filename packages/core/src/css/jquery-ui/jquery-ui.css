@@ -464,6 +464,7 @@ button.cwrc .ui-button::-moz-focus-inner {
 .cwrc .ui-datepicker td {
   border: 0;
   padding: 1px;
+  height: auto;
 }
 .cwrc .ui-datepicker td span,
 .cwrc .ui-datepicker td a {

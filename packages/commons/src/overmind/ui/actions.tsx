@@ -8,6 +8,10 @@ import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../index';
 
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('LWC')
+const { t } = i18next;
+
 //* INITIALIZE
 /**
  * Run during initialization
@@ -24,7 +28,7 @@ export const onInitializeOvermind = async (
   actions.ui.setThemeAppearance(prefPaletteMode);
 
   //LANGUAGE
-  const prefLanguageCode = effects.storage.api.getFromLocalStorage<string>('i18nextLng');
+  const prefLanguageCode = effects.storage.api.getFromLocalStorage('i18nextLng');
   if (prefLanguageCode) {
     const prefLanguage = supportedLanguages.get(prefLanguageCode);
     state.ui.language = prefLanguage
@@ -52,7 +56,7 @@ export const setCookieConsent = ({ state }: Context, values?: string[]) => {
   state.ui.cookieConsent = values ?? [];
 };
 
-export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMode) => {
+export const setThemeAppearance = ({ state, actions, effects }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
 
   const darkMode =
@@ -64,7 +68,10 @@ export const setThemeAppearance = ({ state, actions }: Context, value: PaletteMo
 
   actions.ui.setDarkMode(darkMode);
 
-  localStorage.setItem('themeAppearance', value);
+  effects.storage.api.saveToLocalStorage('themeAppearance', value);
+
+  // Propagate the changes to other modules that might be listening in the page
+  setTimeout(() => window.dispatchEvent(new Event('changeTheme')), 0);
 };
 
 export const setDarkMode = ({ state }: Context, value: boolean) => {
@@ -93,7 +100,13 @@ export const switchLanguage = ({ state }: Context, value: string) => {
     name: 'english',
     shortName: 'en',
   };
+
+  i18next.changeLanguage(language.code);
   state.ui.language = language;
+
+  // Propagate the changes to other modules that might be listening in the page
+  setTimeout(() => window.dispatchEvent(new Event('changeLanguage')), 0);
+
   return value;
 };
 
@@ -143,7 +156,7 @@ export const emitNotification = async (
     options: {
       action: (key) => (
         <Button color="inherit" onClick={() => actions.ui.closeNotificationSnackbar(key)}>
-          {`${i18next.t('commons:dismiss')}`}
+          {`${t('commons.dismiss', { ns: 'LWC' })}`}
         </Button>
       ),
       persist,

@@ -1,5 +1,5 @@
 import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
-import { Storage } from '@src/components';
+import { Storage } from '@src/dialogs';
 import ModalProvider from 'mui-modal-provider';
 import { SnackbarProvider } from 'notistack';
 import React, { useEffect } from 'react';

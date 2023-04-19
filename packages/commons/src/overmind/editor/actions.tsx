@@ -2,13 +2,19 @@ import LeafWriter from '@cwrc/leafwriter';
 import { saveDocument } from '@cwrc/leafwriter-storage-service';
 import { AUTOSAVE_TIMEOUT_RETRY } from '@src/config';
 import type { Error, Resource } from '@src/types';
-import { isErrorMessage, log } from '@src/utilities';
+import { isErrorMessage } from '@src/types';
+import { log } from '@src/utilities';
 import i18next from 'i18next';
 import { Context } from '../';
 
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('LWC')
+const { t } = i18next;
+
 export const getGeonameUsername = async ({ effects }: Context) => {
   const response = await effects.editor.api.getGeonameUsername();
-  return response;
+  if (typeof response === 'string') return response;
+  return;
 };
 
 export const loadLeafWriter = async ({ state }: Context, container: HTMLElement) => {
@@ -57,7 +63,7 @@ export const save = async (
 
   //Check provider
   if (!resource?.provider) {
-    const message = i18next.t('storage:provider_not_found');
+    const message = t('storage.provider not found', { ns: 'LWC' });
     log.error(message);
     state.editor.isSaving = false;
     return { success: false, error: { type: 'error', message } };
@@ -67,7 +73,7 @@ export const save = async (
 
   //Check provider token
   if (!providerAuth) {
-    const message = i18next.t('storage:provider_not_found');
+    const message = t('storage.provider_not_found', { ns: 'LWC' });
     log.error(message);
     state.editor.isSaving = false;
     return { success: false, error: { type: 'error', message } };
@@ -158,7 +164,7 @@ export const subscribeToTimerService = ({ state, actions }: Context, editor: Lea
   state.editor.timerService.onTimer.subscribe(async () => {
     const content = await editor.getContent();
     if (typeof content !== 'string') return;
-    const screenshot = await editor.getDocumentScreenshot()
+    const screenshot = await editor.getDocumentScreenshot();
     await actions.editor.save({ content, screenshot });
   });
 };
@@ -171,6 +177,7 @@ export const close = async ({ state, actions }: Context) => {
   actions.editor.setResource();
   state.editor.libLoaded = false;
   state.editor.contentHasChanged = false;
+  state.editor.contentLastSaved = undefined;
 };
 
 export const setReadonly = ({ state }: Context, value: boolean) => {

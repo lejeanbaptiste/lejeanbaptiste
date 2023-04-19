@@ -1,47 +1,67 @@
 import type { DialogLookupType } from '../../js/dialogs/types';
 import Entity from '../../js/entities/Entity';
+import {
+  AuthorityLookupParams,
+  AuthorityLookupSettings,
+} from '../../overmind/lookups/services/type';
 
-export type NamedEntityType = 'person' | 'place' | 'organization' | 'title' | 'rs';
+export type NamedEntityType =
+  | 'person'
+  | 'place'
+  | 'organization'
+  | 'rs'
+  | 'title'
+  | 'thing'
+  | 'concept';
 export type Authority = 'dbpedia' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata';
-export type ServiceType = 'nssi' | 'custom';
+export type LookupService = 'LINCS' | 'internal' | 'custom';
 
 export interface AuthorityService {
-  config?: {
-    [x: string]: any;
-    username?: string;
-  };
   enabled: boolean;
-  entities: { [key: string]: boolean };
-  id: Authority;
+  entities: Partial<Record<NamedEntityType, boolean>>;
+  find?: (
+    params: AuthorityLookupParams,
+    settings?: AuthorityLookupSettings
+  ) => Promise<AuthorityLookupResult[] | undefined>;
+  readonly id: Authority | string;
+  lookupService?: LookupService;
   name?: string;
   priority: number;
   readonly requireAuth?: boolean;
+  settings?: AuthorityLookupSettings;
 }
 
-export interface LookupsProps {
-  authorities: { [key: string]: AuthorityService };
-  serviceType: 'nssi' | 'custom';
+export interface AuthorityServices {
+  [key: string]: AuthorityService;
 }
 
-export interface LookupsConfig {
-  authorities: Array<
-    | Authority
-    | [
-        Authority,
-        {
-          config?: {
-            [x: string]: any;
-            username?: string;
-          };
-          enabled?: boolean;
-          entities?: Array<[NamedEntityType, boolean]>;
-        }
-      ]
-  >;
-  serviceType?: ServiceType;
+export interface AuthorityServiceConfig extends Partial<AuthorityService> {
+  id: Authority | string;
 }
 
-export interface LookUpResult {
+// export interface LookupsProps {
+//   // authorities: { [key: string]: AuthorityService };
+//   authorities: Partial<Record<Authority, AuthorityService>>;
+// }
+
+// export interface LookupsConfig {
+//   authorities: Array<
+//     | Authority
+//     | [
+//         Authority,
+//         {
+//           config?: {
+//             [x: string]: any;
+//             username?: string;
+//           };
+//           enabled?: boolean;
+//           entities?: Array<[NamedEntityType, boolean]>;
+//         }
+//       ]
+//   >;
+// }
+
+export interface AuthorityLookupResult {
   description?: string;
   id: string;
   name: string;

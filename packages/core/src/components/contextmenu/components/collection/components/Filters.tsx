@@ -71,9 +71,10 @@ export const Filters = ({ onQuery }: FilterProps) => {
         <SearchIcon fontSize="small" />
       </Box>
       <InputBase
+        autoFocus
         inputProps={{ 'aria-label': 'search' }}
         onChange={handleQueryChange}
-        placeholder={t('commons:search').toString()}
+        placeholder={t('commons.search').toString()}
         sx={{
           width: '100%',
           color: query === '' ? 'inherit' : palette.primary.main,

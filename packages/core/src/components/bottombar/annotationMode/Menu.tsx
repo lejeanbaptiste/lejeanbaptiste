@@ -15,7 +15,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { closeNotificationSnackbar, notifyViaSnackbar } = useActions().ui;
   const { changeAnnotationMode } = useEditorReaction();
 
-  const { t } = useTranslation(['commons']);
+  const { t } = useTranslation('leafwriter');
 
   const openMenu = Boolean(anchorEl);
 
@@ -31,7 +31,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('undo')}
+            {t('commons.undo')}
           </Button>
         ),
       },
@@ -63,7 +63,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         sx={{ cursor: 'default', bgcolor: ({ palette }) => palette.action.hover }}
       >
         <Typography sx={{ cursor: 'default' }} variant="caption">
-          {t('annotation')}
+          {t('commons.annotation')}
         </Typography>
       </Box>
       {annotationModes.map(({ disabled, label, value }) => (

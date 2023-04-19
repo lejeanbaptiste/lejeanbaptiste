@@ -1,4 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, test } from '@jest/globals';
+import i18next from 'i18next';
 import { supportedLanguages } from '../src/utilities';
 import { overmind, resetOvermind } from './mocks/overmind';
 
@@ -11,30 +12,6 @@ beforeEach(() => {
 });
 
 describe('Overmind', () => {
-  describe('ui', () => {
-    test('initialize', async () => {
-      expect.assertions(2);
-      await overmind.actions.ui.onInitializeOvermind();
-      expect(overmind.state.ui.language).toEqual(supportedLanguages['en-CA']);
-      expect(overmind.state.ui.darkMode).toBe(false);
-    });
-
-    describe('language', () => {
-      test('change language', () => {
-        expect.assertions(2);
-        expect(overmind.state.ui.language).toEqual(supportedLanguages['en-CA']);
-        overmind.actions.ui.updateTranslation('fr-CA');
-        expect(overmind.state.ui.language).toEqual(supportedLanguages['fr-CA']);
-      });
-      test('language not supported', () => {
-        expect.assertions(2);
-        expect(overmind.state.ui.language).toEqual(supportedLanguages['en-CA']);
-        overmind.actions.ui.updateTranslation('pt-BR');
-        expect(overmind.state.ui.language).not.toEqual(supportedLanguages['pt-BR']);
-      });
-    });
-  });
-
   describe('local', () => {
     test('Set Resource', () => {
       expect.assertions(2);

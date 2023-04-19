@@ -1,6 +1,7 @@
-import i18n from 'i18next';
+import i18next from '../i18n';
 import $ from 'jquery';
 import tinymce from 'tinymce';
+import { v4 as uuidv4 } from 'uuid';
 import '../css/build.less';
 import '../lib/jquery/jquery_3.5_workaround';
 import type { LeafWriterEditor, LeafWriterOptionsSettings } from '../types';
@@ -20,6 +21,11 @@ import Tagger from './tagger';
 import { tinymceWrapperInit } from './tinymce/tinymceWrapper';
 import Utilities from './utilities';
 
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('leafwriter');
+
+const { t } = i18next;
+
 // /**
 //  * @class LeafWriter
 //  * @param {Object} config
@@ -38,6 +44,8 @@ import Utilities from './utilities';
 class Writer extends EventManager {
   overmindState?: any;
   overmindActions?: any;
+
+  readonly uuid: string;
 
   readonly initialConfig: LeafWriterOptionsSettings;
   readonly containerId: string;
@@ -89,6 +97,8 @@ class Writer extends EventManager {
 
   constructor(config: LeafWriterOptionsSettings) {
     super();
+
+    this.uuid = uuidv4();
 
     this.initialConfig = config;
 
@@ -342,7 +352,7 @@ class Writer extends EventManager {
     if (window.location.hostname === 'localhost') return;
 
     event.preventDefault();
-    const msg = i18n.t('leafwriter:You have unsaved changes');
+    const msg = t('You have unsaved changes', { ns: 'leafwriter' });
     (event || window.event).returnValue = msg;
     return msg;
   }

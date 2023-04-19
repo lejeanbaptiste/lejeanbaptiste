@@ -1,27 +1,38 @@
-import DownloadIcon from '@mui/icons-material/Download';
 import { LoadingButton } from '@mui/lab';
-import { Box, Button, DialogActions, IconButton, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Box,
+  Button,
+  DialogActions,
+  Icon,
+  IconButton,
+  useMediaQuery,
+} from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getIcon } from '../icons';
 import { useActions, useAppState } from '../overmind';
-import SaveOptions from './SaveOptions';
+import { SaveOptions } from './components/SaveOptions';
 
 export interface Props {
   onCancel: () => void;
 }
 
 export const FooterSave = ({ onCancel }: Props) => {
-  const { t } = useTranslation();
   const { resource } = useAppState().common;
   const { isSaving, owner, repository } = useAppState().cloud;
+
   const { download } = useActions().common;
   const { checkRepoUserWritenPermission, getProvider, saveAspullRequest, saveDocument } =
     useActions().cloud;
+
+  const { t } = useTranslation('LWStorageService');
+
   const [saveEnabled, setSaveEnabled] = useState(false);
   const [hasPermission, setHasPermission] = useState(true);
 
-  const theme = useTheme();
-  const isSM = useMediaQuery(theme.breakpoints.down('sm'));
+  const { breakpoints } = useTheme();
+  const isSM = useMediaQuery(breakpoints.down('sm'));
 
   useEffect(() => {
     if (!repository) {
@@ -41,9 +52,7 @@ export const FooterSave = ({ onCancel }: Props) => {
     setHasPermission(_hasPermission);
   };
 
-  const handleClickSave = (value: string) => {
-    save(value);
-  };
+  const handleClickSave = (value: string) => save(value);
 
   const save = async (value: string) => {
     if (value === 'save') return saveDocument();
@@ -56,23 +65,23 @@ export const FooterSave = ({ onCancel }: Props) => {
 
   return (
     <DialogActions data-testid="save:footer" sx={{ justifyContent: 'space-between' }}>
-      <Button onClick={onCancel} title="cancel" variant="outlined">
-        {t('commons:cancel')}
+      <Button onClick={onCancel} size="small" title="cancel">
+        {t('commons.cancel')}
       </Button>
       <Box flexGrow={1} />
       {isSM ? (
-        <IconButton disabled={isSaving} onClick={handleDownload}>
-          <DownloadIcon />
+        <IconButton disabled={isSaving} onClick={handleDownload} size="small">
+          <Icon component={getIcon('download')} />
         </IconButton>
       ) : (
         <Button
           disabled={isSaving}
           onClick={handleDownload}
-          startIcon={<DownloadIcon />}
+          size="small"
+          startIcon={<Icon component={getIcon('download')} />}
           title="download"
-          variant="outlined"
         >
-          {t('footer:download')}
+          {t('footer.download')}
         </Button>
       )}
       {repository && !hasPermission ? (
@@ -80,8 +89,9 @@ export const FooterSave = ({ onCancel }: Props) => {
           disabled={!saveEnabled || resource?.filename === ''}
           loading={isSaving}
           onClick={() => handleClickSave('forkPullRequest')}
+          size="small"
         >
-          {t('footer:fork_and_pull_request')}
+          {t('footer.fork_and_pull_request')}
         </LoadingButton>
       ) : (
         <SaveOptions enabled={saveEnabled} onSelect={handleClickSave} />

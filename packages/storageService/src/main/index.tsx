@@ -7,16 +7,16 @@ import {
   SlideProps,
   Stack,
   useMediaQuery,
-  useTheme,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React, { forwardRef, useEffect, useState } from 'react';
-import CloudDialog from '../cloud';
+import { CloudDialog } from '../cloud';
 import { FooterLoad, FooterSave } from '../footer';
-import Header from '../header';
+import { Header } from '../header';
 import { useDialog } from '../hooks/useDialog';
 import { PastePanel, UploadPanel } from '../local';
 import { useActions, useAppState } from '../overmind';
-import SourcePanel from '../sourcePanel';
+import { SourcePanel } from '../sourcePanel';
 import type { Resource, StorageDialogProps } from '../types';
 
 const HEIGHT = 600;
@@ -25,7 +25,7 @@ const Transition = forwardRef((props: SlideProps, ref) => (
   <Slide direction="down" ref={ref} {...props} />
 ));
 
-const Main = ({
+export const Main = ({
   config,
   onBackdropClick,
   onCancel,
@@ -39,24 +39,21 @@ const Main = ({
 }: StorageDialogProps) => {
   const { cloud } = useAppState();
   const { resource, submit, source } = useAppState().common;
+
   const { initialize } = useActions().cloud;
-  const { clearSubmit, configure, resetAll, setDialogType, setResource } = useActions().common;
+  const { clearSubmit, configure, resetAll, setDialogType } = useActions().common;
 
   useDialog();
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const theme = useTheme();
-  const isMD = useMediaQuery(theme.breakpoints.down('md'));
+  const { breakpoints } = useTheme();
+  const isMD = useMediaQuery(breakpoints.down('md'));
 
   useEffect(() => {
     setDialogType(type);
     init();
   }, []);
-
-  // useEffect(() => {
-  //   if (originResource && typeof originResource !== 'string') setResource(originResource);
-  // }, [originResource]);
 
   useEffect(() => {
     if (type === 'save') return;
@@ -153,5 +150,3 @@ const Main = ({
     </Dialog>
   );
 };
-
-export default Main;

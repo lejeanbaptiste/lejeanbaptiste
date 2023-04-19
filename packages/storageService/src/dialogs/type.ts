@@ -10,8 +10,8 @@ export interface DialogActionProps {
   variant?: 'contained' | 'outlined' | 'text';
 }
 
-//@ts-ignore
-export interface IDialog extends Partial<MuiDialogProps> {
+
+export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   actions?: DialogActionProps[];
   onBeforeClose?: (action?: string) => Promise<boolean>;
   onClose?: <T>(action?: string, data?: T) => void;
@@ -29,7 +29,7 @@ interface SimpleDialogMessageProps {
 }
 
 export interface SimpleDialogProps extends IDialog {
-  Message?: React.FC<SimpleDialogMessageProps> | string;
+  Body?: React.FC<SimpleDialogMessageProps> | string;
 }
 
 export type DialogProps = IDialog & SimpleDialogProps;

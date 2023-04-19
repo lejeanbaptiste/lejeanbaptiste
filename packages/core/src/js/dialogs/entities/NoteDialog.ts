@@ -217,9 +217,18 @@ class NoteDialog implements SchemaDialog {
   };
 
   private typeRequired = () => {
-    const mappingID = this.writer.schemaManager.mapper.currentMappingsId;
-    if (mappingID === 'orlando' || mappingID === 'cwrcEntry') return 'required';
-    return this.typeAtt?.required ? 'required' : '';
+    //! Bug on chrome
+    //* Element with display 'none' and with a field with a required attr
+    //* May cause "An invalid form control with name=’x’ is not focusable error"
+    //* Solution (not really): https://www.geekinsta.com/how-to-fix-an-invalid-form-control-with-name-is-not-focusable/
+    //* remove attr required
+    return '';
+
+    //? Correct implementation
+    // const mappingID = this.writer.schemaManager.mapper.currentMappingsId;
+    // if (mappingID === 'orlando' || mappingID === 'cwrcEntry') return 'required';
+    // return this.typeAtt?.required ? 'required' : '';
+
   };
 
   private noteTypeField(id: string) {

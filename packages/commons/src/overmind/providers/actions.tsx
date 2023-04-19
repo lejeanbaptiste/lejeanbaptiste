@@ -53,5 +53,5 @@ export const getStorageProvidersAuth = ({ state, actions }: Context) => {
 };
 
 export const isStorageProviderSupported = ({ state }: Context, providerId: string) => {
-  return !!state.providers.storageProviders.find((p) => p.providerId === providerId && p.service);
+  return !!state.providers.storageProviders.find((p) => p.providerId === providerId);
 };

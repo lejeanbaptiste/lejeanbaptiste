@@ -3,7 +3,7 @@ import { motion, Variants } from 'framer-motion';
 import React, { forwardRef, MouseEvent, useMemo } from 'react';
 import { type IconLeafWriter } from '../../../../icons';
 import { useActions } from '../../../../overmind';
-import { useContextmenu } from '../../hooks';
+import { isEntityType } from '../../../../types';
 import { Nest } from '../Nest';
 import { IconLeft, IconRight, Label } from './components';
 import { useItem } from './useItem';
@@ -57,8 +57,6 @@ export const Item = forwardRef<any, ItemProps>(
   ) => {
     const { ui } = useActions();
     const { entity, palette } = useTheme();
-
-    const { isEntityType } = useContextmenu();
 
     const { anchorEl, isEmpty, isLoading, nestedList, setAnchorEl, showNestedMenu } = useItem({
       active,

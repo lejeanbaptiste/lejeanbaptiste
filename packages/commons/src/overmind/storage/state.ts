@@ -1,7 +1,6 @@
-import type { Resource, StorageDialogState } from '@src/types';
+import type { StorageDialogState } from '@src/types';
 
 type State = {
-  recentDocuments?: Resource[];
   storageDialogState: StorageDialogState;
 };
 

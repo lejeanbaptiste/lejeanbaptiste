@@ -1,83 +1,69 @@
-import {
-  ConversionResult,
-  convertRNGToPattern,
-  Grammar,
-  readTreeFromJSON,
-  writeTreeToJSON,
-} from '@cwrc/salve-leafwriter';
-import LZUTF8 from 'lzutf8';
-import VirtualEditor from './virtualEditor';
+import { convertRNGToPattern, makeResourceLoader, writeTreeToJSON } from '@cwrc/salve-leafwriter';
+import { db } from './db';
+import { log } from './log';
+import type { CachedSchema, InitializeParameters } from './types';
 
-export interface InitializeOptions {
-  id: string;
-  url: string;
-  cachedSchema?: string;
-  createManifest?: boolean;
-}
+const HASH_ALGORITHM = 'SHA-256';
 
-export interface InitializeResponse {
-  parsedSchema?: string;
-  status: string;
-}
-
-interface SchemaParse extends InitializeResponse {
-  grammar: Grammar;
-}
-
-export const initialize = async (
-  virtualEditor: VirtualEditor,
-  { id, url, cachedSchema, createManifest = true }: InitializeOptions
-) => {
-  const { manifest } = cachedSchema ? JSON.parse(cachedSchema) : { manifest: null };
-
-  const convertedSchema = await convertSchema(new URL(url), createManifest);
-
-  const newVersion =
-    convertedSchema.manifest?.[0]?.filePath === manifest?.filePath &&
-    convertedSchema.manifest?.[0]?.hash !== manifest?.hash;
-
-  const { grammar, parsedSchema, status } =
-    cachedSchema && !newVersion ? readSchema(cachedSchema) : writeSchema(convertedSchema);
-
-  virtualEditor.schemaId = id;
-  virtualEditor.schema = grammar;
-
-  const response: InitializeResponse = { parsedSchema, status };
-
-  return response;
-};
-
-const convertSchema = async (url: URL, createManifest = false) => {
-  //@ts-ignore
-  return await convertRNGToPattern(url, { createManifest, manifestHashAlgorithm: 'SHA-1' });
-};
-
-const readSchema = (schemaData: string): SchemaParse => {
-  const { json } = JSON.parse(schemaData);
-  const decompressedJson = LZUTF8.decompress(json, { inputEncoding: 'StorageBinaryString' });
-  const grammar = readTreeFromJSON(decompressedJson);
-
-  return {
-    grammar,
-    status: 'Loaded from cache',
-  };
-};
-
-const writeSchema = (convertedSchema: ConversionResult): SchemaParse => {
-  const grammar = convertedSchema.pattern;
-  const json = writeTreeToJSON(convertedSchema.simplified, 3);
-
-  const compressedJson = LZUTF8.compress(json, { outputEncoding: 'StorageBinaryString' });
-  const manifest = convertedSchema.manifest[0];
-
-  const parsedSchema = JSON.stringify({
-    json: compressedJson,
-    manifest,
+export const processSchema = async ({ id, url, shouldCache = true }: InitializeParameters) => {
+  //* Convert Schema
+  const resourceLoader = makeResourceLoader();
+  const convertedSchema = await convertRNGToPattern(new URL(url), {
+    createManifest: shouldCache,
+    manifestHashAlgorithm: HASH_ALGORITHM,
+    resourceLoader,
   });
 
-  return {
-    grammar,
-    parsedSchema,
-    status: 'Loaded from file',
-  };
+  const { manifest, pattern, simplified, warnings } = convertedSchema;
+
+  //* Cache Schema
+  if (manifest) {
+    const gramarJson = writeTreeToJSON(simplified, 3);
+
+    const cachedSchema: CachedSchema = {
+      createdAt: new Date(),
+      gramarJson,
+      id,
+      hash: manifest[0].hash,
+      // simplified,
+      url,
+      warnings,
+    };
+
+    const cached = await db.cachedSchemas.put(cachedSchema).catch(() => null);
+    cached ? log.info('Schema cached: ', cached) : log.info('Schema cache failed');
+  }
+
+  return pattern;
+};
+
+export const verifyHash = async (url: string, cachedSchema: CachedSchema) => {
+  //* Manifest stored from a different URL
+  if (cachedSchema.url !== url) return false;
+
+  //* Manifest stored with a different algorithm
+  if (!cachedSchema.hash.startsWith(HASH_ALGORITHM)) return false;
+
+  //* Get resource
+  const resource = await makeResourceLoader().load(new URL(url));
+  const resourceText = await resource.getText();
+
+  //* Hash content and transform
+  const hashBuffer = await crypto.subtle.digest(
+    HASH_ALGORITHM,
+    new TextEncoder().encode(resourceText)
+  );
+
+  //* Convert buffer to byte array and then to hex string.
+  // This will allows us to compare the downloaded content with the manifest we stored previously
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+
+  //* Compare
+  // Salve includes the algoritthm's name to the hash followerd by a "-" (dash).
+  // We must extract it from the hash before the comparison.
+  const manifestHash = cachedSchema.hash.slice(HASH_ALGORITHM.length + 1);
+  const isSame = hashHex === manifestHash;
+
+  return isSame;
 };
