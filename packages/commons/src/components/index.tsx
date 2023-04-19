@@ -7,4 +7,3 @@ export * from './SigninButton';
 export * from './StyledToggleButtonGroup';
 export * from './StyledToolTip';
 export * from './TextEmphasis';
-export * from './uploadDropBox';

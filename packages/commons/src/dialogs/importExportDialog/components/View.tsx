@@ -1,6 +1,6 @@
 import { Stack } from '@mui/material';
-import { UploadDropBox } from '@src/components';
 import type { FileDetail } from '@src/types';
+import { UploadDropBox } from '@src/views/storage';
 import { useAtom, useAtomValue } from 'jotai';
 import React from 'react';
 import { useConversion } from '../hooks';
