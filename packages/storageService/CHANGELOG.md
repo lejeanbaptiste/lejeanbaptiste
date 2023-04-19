@@ -1,12 +1,18 @@
 # CHANGELOG
 
+## 2.1.1
+
+### Patch Changes
+
+- dev: logproxies from overmind for better debug xp [86112a698e3f7fcc69f4082289a1c70273d2acfd]
+
 ## 2.1.0
 
 ### Minor Changes
 
 - StorageFialog: Independently export StorageDialog (no default exports) [b8afe02caf76b79837f7c7a3049e0fad653d69a7]
   BREAKING CHANGE: 🧨 import from the internal path `@cwrc/leafwriter-storage-service` results
-in an independent exported component (no default export)
+  in an independent exported component (no default export)
 
 ### Patch Changes
 
