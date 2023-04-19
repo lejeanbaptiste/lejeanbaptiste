@@ -34,7 +34,7 @@
 		"@analytics/cookie-utils": "^0.2.10",
 		"@analytics/google-analytics": "^1.0.5",
 		"@cwrc/leafwriter": "^3.0.0",
-		"@cwrc/leafwriter-storage-service": "^2.1.0",
+		"@cwrc/leafwriter-storage-service": "^2.1.1",
 		"@emotion/react": "^11.10.6",
 		"@emotion/styled": "^11.10.6",
 		"@fontsource/lato": "^4.5.10",
