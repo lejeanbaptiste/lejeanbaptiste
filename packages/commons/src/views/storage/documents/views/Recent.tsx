@@ -7,8 +7,8 @@ import type { Resource } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AnimatePresence } from 'framer-motion';
 import React, { useState } from 'react';
-import type { Layout } from './';
-import { CARD_WIDTH, DocumentCard } from './components';
+import type { Layout } from '..';
+import { CARD_WIDTH, DocumentCard } from '../components';
 
 interface RecentViewProps {
   layout?: Layout;
@@ -45,7 +45,7 @@ export const RecentView = ({ layout, width }: RecentViewProps) => {
       return;
     }
 
-    await openResource({resource: document});
+    await openResource({ resource: document });
   };
 
   const removeItem = (id: string) => removeRecentDocument(id);

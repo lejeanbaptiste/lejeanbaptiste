@@ -6,8 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import React, { useState, type MouseEvent } from 'react';
 import type { Layout } from '../..';
-import { CoverImage } from './CoverImage';
-import { Footer } from './Footer';
+import { CoverImage, Footer } from './components';
 
 interface DocumentCardProps extends Resource {
   deletable?: boolean;
