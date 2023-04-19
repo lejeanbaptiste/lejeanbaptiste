@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## 3.1.0
+
+### Notable Changes
+
+#### Allow unauthenticated users to open public GitHub files
+
+Unauthenticated users can open public documents using the LWC permalink. The document opens on either 'view' or 'edit' mode, but the user cannot save the document to the cloud. In fact, without authentication, it is impossible to save the file back to the repository).
+
+### Minor Changes
+
+- Allow unauthenticated users to open public GitHub files [309f21a0652aa865f0fd09cdafd9baec9f2e973f]
+
+### Patch Changes
+
+- Load document
+  - Samples: fix bug preventing unauthenticated users from loading sample files [8ffc9f7a68b9bbb8a7fc02ae84b8fd796734f9a5]
+  - From the cloud: fix bug preventing unauthenticated users from being redirected to the sign-in page [c4c056bac7dc77adf90e1ce56fb7df8334438198]
+- Folder Structure
+  - Rename 'view' as 'page' [3299cd98a14ef31eece7615f9c6c3e4d4fcf5c07]
+  - Move Storage Dialog from Components to Dialog folder [05905fe4318d11e01f01c931badd33ec8f9c8aa5]
+  - Move profile from components to views [e7b322a4b27d60d5e05db2e748cd8acee49dffad]
+  - Move uploadDropBox from components to View [5f1d4034318f850d0fcfb7dc2f009dcd30527ed1]
+- Types:
+  - Permalink: better typing [9b9f47181d61fb9ee29811f6365c412648a78e38]
+  - Tweaks [966e007679ee39de3ba87fd76329ccb880ad7eb9]
+- Update dependencies
+  - core:
+    - bump: @cwrc/leafwriter-storage-service@2.1.1 [c885e7abba64e82a3550b7109cd95217713d3aa2]
+
 ## 3.0.0
 
 ### Notable Changes
@@ -23,7 +52,6 @@ In the `Explicit Flow`, the user clicks on the Import button to open the Import 
 ##### Export
 
 A document can be exported from the Main Menu when the document is opened. LW lists the possible formats in the option `download`. The user selects the format and downloads the converted document.
-
 
 ##### Open in a new tab
 
@@ -52,7 +80,6 @@ There are some changes and improvements in the UI. Most notably the storage view
   - Redesign the main menu.
   - Rework load resource logic.
   - Open documents on a new tab when a document is already opened. Connect with LEAF-TE API for file conversion.
-
 
 ### Minor Changes
 
