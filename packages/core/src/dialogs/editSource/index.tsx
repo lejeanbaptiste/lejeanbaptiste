@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
 import type { EditSourceDialogProps } from '../type';
 
-const Editor = React.lazy(() => import('./Editor'));
+const Editor = React.lazy(() => import('./Editor').then((module) => ({ default: module.Editor })));
 
 export const EditSourceDialog = ({
   content = '',
@@ -24,7 +24,7 @@ export const EditSourceDialog = ({
   const { settings } = useAppState().editor;
   const { loadDocumentXML: updateXMLContent, updateXMLHeader } = useActions().document;
 
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('leafwriter');
 
   const [currentContent, setCurrentContent] = useState('');
 
@@ -75,10 +75,10 @@ export const EditSourceDialog = ({
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button autoFocus onClick={handleClose}>
-          {t('commons:cancel')}
+          {t('commons.cancel')}
         </Button>
         <Button onClick={handleChange} variant="outlined">
-          {t('commons:change')}
+          {t('commons.change')}
         </Button>
       </DialogActions>
     </Dialog>

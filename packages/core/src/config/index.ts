@@ -1,3 +1,4 @@
+import { db } from '../db';
 import type { LeafWriterOptionsSettings, Schema } from '../types';
 import { SchemaMappings } from '../types';
 import { isValidHttpURL } from '../utilities';
@@ -5,10 +6,10 @@ import { schemas as defaultSchemas } from './schemas';
 
 export * from './language';
 
-export const createConfig = (settings: LeafWriterOptionsSettings = {}) => {
+export const createConfig = async (settings: LeafWriterOptionsSettings = {}) => {
   const { baseUrl, readonly, schemas: configSchemas } = settings;
   const supportedSchemas = configSchemas ? [...configSchemas, ...defaultSchemas] : defaultSchemas;
-  const schemas = setupSchemas(supportedSchemas);
+  const schemas = await setupSchemas(supportedSchemas);
 
   const config: LeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
@@ -32,10 +33,9 @@ export const createConfig = (settings: LeafWriterOptionsSettings = {}) => {
   return config;
 };
 
-export const setupSchemas = (schemas: Array<Schema>) => {
-  //add custom schemas stored on local storage
-  const customSchemasData = window.localStorage.getItem('custom_schemas');
-  if (customSchemasData) schemas = [...schemas, ...JSON.parse(customSchemasData)];
+export const setupSchemas = async (schemas: Array<Schema>) => {
+  const customSchemas = await db.customSchemas.toArray();
+  if (customSchemas) schemas = [...schemas, ...customSchemas];
 
   let supportedSchemas: Schema[] = [];
 

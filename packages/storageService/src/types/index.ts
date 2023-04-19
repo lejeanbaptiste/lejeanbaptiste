@@ -1,4 +1,8 @@
+import type { IconName } from '../icons';
+import { LanguageCode } from '../utilities';
 import type { ProviderAuth } from './Provider';
+
+export * from './assert';
 
 export interface StorageDialogProps {
   open: boolean;
@@ -20,8 +24,9 @@ export interface StorageDialogConfig {
   allowedMimeTypes?: AllowedMimeType[];
   allowPaste?: boolean;
   defaultCommitMessage?: string;
-  providers?: ProviderAuth[];
+  language?: LanguageCode;
   preferProvider?: string;
+  providers?: ProviderAuth[];
   showInvisibleFiles?: boolean;
   validate?: Validate;
 }
@@ -32,7 +37,14 @@ export type AllowedMimeType =
   | 'application/xml'
   | 'text/csv'
   | 'text/html'
-  | 'text/plain';
+  | 'text/plain'
+  | 'text/xml';
+
+  export interface FileDetail {
+    content: string;
+    file: File;
+  }
+  
 
 export interface SelectedItem {
   organization?: Organization;
@@ -55,10 +67,11 @@ export interface Resource {
   content?: string;
   hash?: string;
   url?: string;
+  writePermission?: boolean;
 }
 
 export interface SourcePanelOption {
-  icon: string;
+  icon: IconName;
   label: string;
   value: StorageSource | SuportedProviders;
 }
@@ -69,16 +82,6 @@ export interface Error {
   type: ErrorType;
   message: string;
 }
-
-export interface Language {
-  code: string;
-  name: string;
-  shortName: string;
-}
-
-export type Languages = {
-  [key: string]: Language;
-};
 
 export interface User {
   avatar_url?: string;
@@ -94,6 +97,7 @@ export interface User {
 }
 
 export interface Owner {
+  avatar_url?: string;
   id: string;
   name?: string;
   type: UserType;
@@ -126,6 +130,7 @@ export interface Repository {
     [x: string]: any;
   };
   path: string;
+  writePermission?: boolean;
   [x: string]: any;
 }
 
@@ -148,8 +153,9 @@ export interface Organization extends Owner {
   [x: string]: any;
 }
 
-export interface PublicRepository {
-  [storage: string]: Owner[];
+export interface PublicRepository extends Owner {
+  provider: string;
+  uuid: string;
 }
 
 export interface SearchResults {

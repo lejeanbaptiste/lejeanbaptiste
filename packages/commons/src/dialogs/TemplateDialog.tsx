@@ -1,25 +1,23 @@
 import { Button, Dialog, DialogActions, DialogTitle } from '@mui/material';
-import { TemplatesView, TopBar, type DisplayLayout } from '@src/components';
+import { TemplatesView, TopBar, type Layout } from '@src/views/storage/documents';
+import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from './type';
 
 export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
-  const { setResource } = useActions().editor;
-  const { loadSample } = useActions().storage;
   const { closeDialog } = useActions().ui;
 
-  const navigate = useNavigate();
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation('LWC');
+  const { openFromLibrary } = useOpenResource();
 
-  const [displayLayout, setDisplayLayout] = useState<DisplayLayout>('list');
+  const [layout, setLayout] = useState<Layout>('list');
   const [selected, setSelected] = useState<Resource>();
 
-  const changeDisplayLayout = (value: DisplayLayout) => setDisplayLayout(value);
+  const changeLayout = (value: Layout) => setLayout(value);
 
   const handleClose = (_event: MouseEvent, reason: string) => closeDialog(id);
   const handleCancel = () => closeDialog(id);
@@ -32,32 +30,32 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   };
 
   const load = async () => {
-    if (!selected || !selected.url) return;
-    const content = await loadSample(selected.url);
-    setResource({ content, filename: `${selected.title}.xml` });
-    navigate(`/edit?template=${selected.title}`, { replace: true });
+    if (!selected?.title) return;
+    openFromLibrary({ category: 'template', title: selected.title });
   };
+
+  const handleOnLoad = () => closeDialog(id);
 
   return (
     <Dialog fullWidth id={id} maxWidth="sm" onClose={handleClose} open={open}>
       <DialogTitle>
         <TopBar
-          displayLayout={displayLayout}
-          onChangeDisplayLayout={changeDisplayLayout}
-          title={`${t('templates:choose_a_template')}`}
+          layout={layout}
+          onLayoutChange={changeLayout}
+          title={`${t('templates.choose_a_template')}`}
         />
       </DialogTitle>
       <TemplatesView
-        displayLayout={displayLayout}
+        layout={layout}
+        onLoad={handleOnLoad}
         onSelect={handleSelect}
         selected={selected}
-        type="doubleClick"
         width={600}
       />
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleCancel}>{t('cancel')}</Button>
+        <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
         <Button onClick={handleCreate} variant="outlined">
-          {t('create')}
+          {t('commons.create')}
         </Button>
       </DialogActions>
     </Dialog>

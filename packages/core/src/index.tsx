@@ -12,9 +12,8 @@ import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
-import type { Authority, NamedEntityType } from './dialogs/entityLookups';
-// import i18next from './i18n';
 import './i18n';
+import i18next from './i18n';
 import Writer from './js/Writer';
 import { config } from './overmind';
 import type { EditorStateType } from './overmind/editor/state';
@@ -28,6 +27,7 @@ declare global {
   }
 }
 
+export { clearCache, deleteDb } from './db';
 export * as Types from './types';
 
 const overmind = createOvermind(config, {
@@ -102,9 +102,9 @@ export class Leafwriter {
 
     this.reactReact.render(
       <Provider value={overmind}>
-        {/* <I18nextProvider i18n={i18next}> */}
+        <I18nextProvider i18n={i18next}>
           <Providers {...this.options} />
-        {/* </I18nextProvider> */}
+        </I18nextProvider>
       </Provider>
     );
   }
@@ -256,29 +256,9 @@ export class Leafwriter {
     overmind.actions.document.setDocumentTouched(value);
   }
 
-  resetSettings() {
-    overmind.actions.editor.resetDialogWarnings();
+  async resetSettings() {
+    await overmind.actions.editor.resetDialogWarnings();
     overmind.actions.editor.resetPreferences();
-  }
-
-  getLookups() {
-    overmind.state.editor.lookups;
-  }
-
-  setLookup({}: {
-    name: Authority;
-    enabled?: boolean;
-    prioity?: number;
-    entity?: {
-      name: NamedEntityType;
-      enabled?: string;
-    };
-    config?: {
-      [x: string]: any;
-      username?: string;
-    };
-  }) {
-    //todo
   }
 
   async validate() {
@@ -293,6 +273,8 @@ export class Leafwriter {
     //todo
     this.onContentHasChanged.complete();
     overmind.actions.document.clear();
+    overmind.actions.editor.clear();
+    overmind.actions.user.clear();
     window.writer?.destroy();
     // window.writer = null;
   }

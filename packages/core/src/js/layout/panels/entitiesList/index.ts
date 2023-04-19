@@ -15,21 +15,6 @@ interface EntitiesListProps {
   writer: Writer;
 }
 
-const iconsMap = new Map([
-  ['person', 'user'],
-  ['place', 'globe'],
-  ['org', 'users'],
-  ['organization', 'users'],
-  ['title', 'book'],
-  ['rs', 'box-open'],
-  ['citation', 'address-card'],
-  ['note', 'sticky-note'],
-  ['date', 'calendar-alt'],
-  ['correction', 'triangle-exclamation'],
-  ['keyword', 'key'],
-  ['link', 'link'],
-]);
-
 /**
  * @class EntitiesList
  * @fires Writer#entitiesListInitialized
@@ -464,8 +449,6 @@ class EntitiesList {
 
     const id = entity.getId();
     const type = entity.getType();
-
-    // <i class="fas fa-${iconsMap.get(type)} icon"></i>
 
     return `
       <li

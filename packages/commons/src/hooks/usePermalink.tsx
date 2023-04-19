@@ -1,7 +1,10 @@
+import { db } from '@src/db';
 import { useActions, useAppState } from '@src/overmind';
 import type { Error, Resource } from '@src/types';
-import { isErrorMessage } from '@src/utilities';
+import { isErrorMessage } from '@src/types';
+import { isBefore } from 'date-fns';
 import Cookies from 'js-cookie';
+//@ts-ignore
 import queryString from 'query-string';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -22,7 +25,7 @@ export const usePermalink = () => {
   const { isStorageProviderSupported } = useActions().providers;
   const { getSampleDocuments, getTemplates } = useActions().storage;
 
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation('LWC');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -34,13 +37,30 @@ export const usePermalink = () => {
 
   const getResourceFromPermalink = async () => {
     let permalink = await parsePermalink();
-
+    if (!permalink) return;
     if (permalink && isErrorMessage(permalink)) return permalink;
 
-    if (userState === 'UNAUTHENTICATED' && permalink?.valid) {
+    if (permalink.resource?.isLocal) return permalink.resource;
+
+    if (userState === 'UNAUTHENTICATED' && permalink.valid) {
+      if (permalink.isSample) return permalink.resource;
+
+      // Get RAW URL if user is not signed in.
+      if (!!permalink.resource) {
+        const {owner, repo, path, filename } = permalink.resource;
+        if (owner && repo && filename) {
+          const url = `https://raw.githubusercontent.com/${owner}/${repo}/master/${path ?? ''}${filename}`;
+          permalink.resource.url = encodeURI(url);
+          return permalink.resource;
+        } 
+      }
+
+      //Redirect user to sign in.
       Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
       signIn();
-      return;
+
+      const error: Error = { type: 'warning', message: 'You must sign in to access this resource' };
+      return error;
     }
 
     if (userState === 'AUTHENTICATED') {
@@ -68,51 +88,92 @@ export const usePermalink = () => {
     return samples.find((sample) => sample.title === title);
   };
 
-  const parsePermalink = async (query?: string): Promise<Permalink | Error | null> => {
+  const parsePermalink = async (query?: string) => {
     if (!query && !location.search) return null;
 
     const search = queryString.parse(query || location.search);
-    const response = { valid: false, raw: location.search };
-
-    if (!search) response;
+    const permalinkQuery: Permalink = { valid: false, raw: location.search };
+    if (!search) return permalinkQuery;
 
     // * if it is a template
     if (typeof search.template === 'string') {
       const document = await getTemplateByTitle(search.template);
       if (!document) {
-        return {
+        const error: Error = {
           type: 'error',
-          message: `${t('template')} "${search.template}" ${t('not_found')}.`,
+          message: `${t('commons.template')} "${search.template}" ${t('commons.not_found')}.`,
         };
+        return error;
       }
 
-      return { ...response, isSample: true, resource: document, valid: true };
+      const permalink: Permalink = {
+        ...permalinkQuery,
+        isSample: true,
+        resource: document,
+        valid: true,
+      };
+      return permalink;
     }
 
     // * if it is a sample
     if (typeof search.sample === 'string') {
       const document = await getSampleByTitle(search.sample);
+
       if (!document) {
-        return {
+        const error: Error = {
           type: 'error',
-          message: `${t('sample_document')} "${search.sample}" ${t('not_found')}.`,
+          message: `${t('commons.sample_document')} "${search.sample}" ${t('commons.not_found')}.`,
         };
+        return error;
       }
 
-      return { ...response, isSample: true, resource: document, valid: true };
+      const permalink: Permalink = {
+        ...permalinkQuery,
+        isSample: true,
+        resource: document,
+        valid: true,
+      };
+      return permalink;
     }
 
+    // * if it was open from local device
+    if (search.local === 'true' && typeof search.id === 'string') {
+      const document = await db.documentRequested.get(search.id);
+      if (!document) {
+        const error: Error = {
+          type: 'error',
+          message: `${t('commons.unable to load document')}: ${search.filename}`,
+        };
+        return error;
+      }
+
+      const { expires, id, ...resource } = document;
+
+      if (!isBefore(new Date(), document.expires)) {
+        const error: Error = { type: 'error', message: `${t('commons.request expired')}` };
+        return error;
+      }
+
+      resource.isLocal = true;
+
+      const permalink: Permalink = { ...permalinkQuery, resource, valid: true };
+      return permalink;
+    }
+
+    // * if it is comes from a provider
     if (!search.provider || Array.isArray(search.provider)) {
-      return { type: 'error', message: t('storage:warning.check_URL_structure') };
+      const error: Error = { type: 'error', message: t('storage.warning.check_URL_structure') };
+      return error;
     }
 
     if (!isStorageProviderSupported(search.provider)) {
-      return {
+      const error: Error = {
         type: 'error',
-        message: `${t('storage:warning.storage_provider_invalid', {
+        message: `${t('storage.warning.storage_provider_invalid', {
           provider: search.provider,
-        })}. ${t('storage:warning.check_URL_structure')}`,
+        })}. ${t('storage.warning.check_URL_structure')}`,
       };
+      return error;
     }
 
     const { provider, owner, ownertype, repo, path, filename } = search;
@@ -124,7 +185,8 @@ export const usePermalink = () => {
     if (typeof path === 'string') resource.path = path;
     if (typeof filename === 'string') resource.filename = filename;
 
-    return { ...response, valid: true, resource };
+    const permalink: Permalink = { ...permalinkQuery, valid: true, resource };
+    return permalink;
   };
 
   const setPermalink = (value?: string | Resource) => {
@@ -167,5 +229,5 @@ export const usePermalink = () => {
     return params;
   };
 
-  return { getLanguage, getResourceFromPermalink, parsePermalink, setPermalink };
+  return { getLanguage, getResourceFromPermalink, parsePermalink, setPermalink, stringifyQuery };
 };

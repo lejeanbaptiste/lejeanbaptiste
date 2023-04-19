@@ -1,29 +1,25 @@
 import { documentValid } from './documentValid';
 import { documentWithError } from './documentWithError';
+import { gramarJsonStringfied } from './gramarJsonStringfied';
 import { schemaXML } from './schemaXML';
-import { stringfyParsedSchema } from './stringfyParsedSchema';
-import LZUTF8 from 'lzutf8';
 
 const id = 'cwrcTeiLite';
 const url = 'https://cwrc.ca/schemas/cwrc_tei_lite.rng';
 
-const copressedSchema = LZUTF8.compress(stringfyParsedSchema, {
-  outputEncoding: 'StorageBinaryString',
-});
+export const cachedSchema = {
+  createdAt: '2023-04-07T16:39:12.819Z',
+  gramarJson: gramarJsonStringfied,
+  hash: 'SHA-256-c4259bd3a1ef89df3efbc92fb7f5a71bc05e041d43ad2d9d3617a19eed44fa57',
+  id: 'cwrcTeiLite',
+  url: 'https://cwrc.ca/schemas/cwrc_tei_lite.rng',
+  warnings: [],
+};
 
-const cached = JSON.stringify({
-  json: copressedSchema,
-  manifest: {
-    filePath: './schema/xml/https%3A%2F%2Fcwrc.ca%2Fschemas%2Fcwrc_tei_lite.rng',
-    hash: 'SHA-1-f7a0c83ed61bb4bf2bd9241e2c4b0a579b993a04',
-  },
-});
-
-export default {
-  id,
-  url,
-  schemaXML,
-  cached,
-  documentWithError,
+export const cwrcTeiLite = {
+  cachedSchema,
   documentValid,
+  documentWithError,
+  id,
+  schemaXML,
+  url,
 };

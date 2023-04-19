@@ -4,13 +4,15 @@ import parse from 'autosuggest-highlight/parse';
 import React from 'react';
 import { Context } from '..';
 import { TextEmphasis } from '../../components/TextEmphasis';
+import { db } from '../../db';
 import i18next from '../../i18n';
+import { getIcon, type IconName } from '../../icons';
 import type {
   CollectionSource,
   Content,
   DocumentDetails,
-  FetchDocumentParams,
   Error,
+  FetchDocumentParams,
   GetFileLatestHashParams,
   NavigateToPathParams,
   Organization,
@@ -24,28 +26,25 @@ import type {
   SuportedProviders,
   UserType,
 } from '../../types';
+import { isErrorMessage } from '../../types';
 import type {
+  CreateFork,
   CreatePrResponse,
   CreateRepoParams,
-  CreateFork,
   ProviderAuth,
 } from '../../types/Provider';
-import { getIcon, isErrorMessage, log } from '../../utilities';
+import { getFromLocalStorage, log } from '../../utilities';
 
-// useTranslation('leafwriter-storage-service');
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('LWStorageService');
+
+const { t } = i18next;
 
 //* INIITIALIZE
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
   //PREFERRED STORAGE PROVIDER
-  const prefprovider = localStorage.getItem('prefStorageProvider');
+  const prefprovider = getFromLocalStorage('prefStorageProvider');
   state.cloud.name = prefprovider as SuportedProviders;
-
-  //PUBLIC REPOSITORIES
-  const publicRepositories = localStorage.getItem('publicRepositories');
-  if (publicRepositories) {
-    state.cloud.publicRepositories = JSON.parse(publicRepositories);
-  }
 };
 
 export const setIsLoading = ({ state }: Context, value: boolean) => {
@@ -94,7 +93,10 @@ export const changeProvider = async (
   const provider = actions.cloud.getProvider();
   if (!provider) return;
 
-  state.cloud.user = await provider.getAuthenticatedUser();
+  const authUser =  await provider.getAuthenticatedUser();
+  if (!authUser) return;
+
+  state.cloud.user = authUser;
 
   actions.cloud.resetRepos();
   actions.cloud.resetOwner();
@@ -139,7 +141,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   if (!state.cloud.name) {
     log.warn('no provider');
     return null;
-  };
+  }
 
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
@@ -162,11 +164,15 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('user not found')}`,
-        Message: () => (
+        title: `${t('cloud.user_not_found', { ns: 'LWStorageService' })}`,
+        Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
-              <Icon component={getIcon(resource.provider)} fontSize="small" mb="-3px" />
+              <Icon
+                component={getIcon(resource.provider as IconName)}
+                fontSize="small"
+                sx={{ mb: '-3px' }}
+              />
             ) : (
               <TextEmphasis disablePadding>{resource.provider ?? ''} :</TextEmphasis>
             )}
@@ -207,11 +213,15 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('path not found')}`,
-        Message: () => (
+        title: `${t('commons.path_not_found', { ns: 'LWStorageService' })}`,
+        Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
-              <Icon component={getIcon(resource.provider)} fontSize="small" mb="-3px" />
+              <Icon
+                component={getIcon(resource.provider as IconName)}
+                fontSize="small"
+                sx={{ mb: '-3px' }}
+              />
             ) : (
               <TextEmphasis disablePadding>{resource.provider ?? ''} :</TextEmphasis>
             )}
@@ -242,11 +252,15 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('path not found')}`,
-        Message: () => (
+        title: `${t('commons.path_not_found', { ns: 'LWStorageService' })}`,
+        Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
-              <Icon component={getIcon(resource.provider)} fontSize="small" mb="-3px" />
+              <Icon
+                component={getIcon(resource.provider as IconName)}
+                fontSize="small"
+                sx={{ mb: '-3px' }}
+              />
             ) : (
               <TextEmphasis disablePadding>{resource.provider ?? ''} :</TextEmphasis>
             )}
@@ -583,10 +597,7 @@ export const createRepo = async (
   return repository;
 };
 
-export const forkRepo = async ({
-  state,
-  actions,
-}: Context): Promise<Repository | Error | null> => {
+export const forkRepo = async ({ state, actions }: Context): Promise<Repository | Error | null> => {
   const provider = actions.cloud.getProvider();
   const { owner, repository } = state.cloud;
   if (!provider || !owner || !repository) return null;
@@ -710,10 +721,7 @@ export const navigateBack = ({ state, actions }: Context, level?: number | strin
 
 //? SEARCH
 
-export const searchUsers = async (
-  { actions }: Context,
-  query: string
-): Promise<PublicRepository[] | null> => {
+export const searchUsers = async ({ actions }: Context, query: string) => {
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
 
@@ -920,11 +928,15 @@ export const saveDocument = async ({ state, actions }: Context) => {
         maxWidth: 'xs',
         severity: 'warning',
         preventEscape: true,
-        title: `${i18next.t('error:message:overwriteFileConfirmation')}`,
-        Message: `${i18next.t('Do you want to overwrite')}?`,
+        title: `${t('cloud.message.file_already_exists', { ns: 'LWStorageService' })}`,
+        Body: `${t('cloud.message.Do_you_want_to_overwrite', { ns: 'LWStorageService' })}?`,
         actions: [
-          { action: 'cancel', label: `${i18next.t('cancel')}`, variant: 'outlined' },
-          { action: 'overwrite', label: `${i18next.t('overwrite')}` },
+          {
+            action: 'cancel',
+            label: `${t('commons.cancel', { ns: 'LWStorageService' })}`,
+            variant: 'outlined',
+          },
+          { action: 'overwrite', label: `${t('commons.overwrite', { ns: 'LWStorageService' })}` },
         ],
         //@ts-ignore
         onClose: async (action: string) => {
@@ -966,7 +978,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
       maxWidth: 'xs',
       preventEscape: true,
       severity: 'info',
-      title: `${i18next.t('commons:processing')}...`,
+      title: `${t('commons.processing', { ns: 'LWStorageService' })}...`,
     },
   });
 
@@ -999,8 +1011,8 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${i18next.t('error')}`,
-        Message: `${i18next.t('error:unabled to save')}`,
+        title: `${t('commons.error', { ns: 'LWStorageService' })}`,
+        Body: `${t('cloud.message.unabled_to_save', { ns: 'LWStorageService' })}`,
         onClose: () => actions.cloud.setIsSaving(false),
       },
     });
@@ -1012,12 +1024,14 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     actions.ui.closeDialog('progress');
 
     const title =
-      response.message === 'conflict' ? i18next.t('error:conflict') : i18next.t('error');
+      response.message === 'conflict'
+        ? t('commons.conflict', { ns: 'LWStorageService' })
+        : t('commons.error', { ns: 'LWStorageService' });
 
     const message =
       response.message === 'conflict'
-        ? i18next.t('error:unable to overwrite file')
-        : `${i18next.t('error:unabled to save')}. ${response.message}`;
+        ? t('cloud.message.unable_to_overwrite_file', { ns: 'LWStorageService' })
+        : `${t('cloud.message.unabled_to_save', { ns: 'LWStorageService' })}. ${response.message}`;
 
     actions.ui.openDialog({
       props: {
@@ -1026,7 +1040,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
         preventEscape: true,
         severity: 'error',
         title: title,
-        Message: message,
+        Body: message,
         onClose: () => actions.cloud.setIsSaving(false),
       },
     });
@@ -1059,7 +1073,7 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
       maxWidth: 'xs',
       preventEscape: true,
       severity: 'info',
-      title: `${i18next.t('commons:processing')}...`,
+      title: `${t('commons.processing', { ns: 'LWStorageService' })}...`,
     },
   });
 
@@ -1071,7 +1085,10 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
 
   if (!pullRequestResponse) {
     actions.cloud.setIsSaving(false);
-    return { type: 'error', message: i18next.t('error:message:unable_pull_reqest') };
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_pull_reqest', { ns: 'LWStorageService' }),
+    };
   }
 
   if (isErrorMessage(pullRequestResponse)) {
@@ -1112,7 +1129,10 @@ export const pullRequest = async ({
   const branchHead = await actions.cloud.branchFile();
 
   if (!branchHead)
-    return { type: 'error', message: i18next.t('error:message:unable_create_branch') };
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_create_branch', { ns: 'LWStorageService' }),
+    };
   if (isErrorMessage(branchHead)) return branchHead;
 
   const pullRequestResponse = await provider.createPullRequest({
@@ -1137,7 +1157,11 @@ export const pullRequestFromFork = async ({
 
   //------  Create version
   const fork = await actions.cloud.forkFile();
-  if (!fork) return { type: 'error', message: i18next.t('error:message:unable_fork_repo') };
+  if (!fork)
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_fork_repo', { ns: 'LWStorageService' }),
+    };
   if (isErrorMessage(fork)) return fork;
 
   actions.ui.openDialog({
@@ -1145,7 +1169,7 @@ export const pullRequestFromFork = async ({
       id: 'merge-progress',
       maxWidth: 'xs',
       severity: 'info',
-      title: `${i18next.t('cloud:messages:create_merge_request')}`,
+      title: `${t('cloud.message.create_merge_request', { ns: 'LWStorageService' })}`,
     },
   });
 
@@ -1177,7 +1201,11 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
 
   //------create branch
   const branch = await actions.cloud.createBranch();
-  if (!branch) return { type: 'error', message: i18next.t('error:message:unable_create_branch') };
+  if (!branch)
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_create_branch', { ns: 'LWStorageService' }),
+    };
 
   //------get document's hash from branch
   const branchHead = `branch-by-${provider.username}`;
@@ -1209,17 +1237,17 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
   if (!saveOnBranchResponse || saveOnBranchResponse.status === 409) {
     return {
       type: 'error',
-      message: i18next.t('error:message:unable_save_on_branch', { branch: branchHead }),
+      message: t('cloud.message.unable_save_on_branch', {
+        branch: branchHead,
+        ns: 'LWStorageService',
+      }),
     };
   }
 
   return branchHead;
 };
 
-export const forkFile = async ({
-  state,
-  actions,
-}: Context): Promise<Repository | Error | null> => {
+export const forkFile = async ({ state, actions }: Context): Promise<Repository | Error | null> => {
   const { common, cloud } = state;
   const { repository, repositoryContent, owner } = cloud;
   const { resource } = common;
@@ -1238,7 +1266,11 @@ export const forkFile = async ({
 
   //------create fork
   const fork = await actions.cloud.fork();
-  if (!fork) return { type: 'error', message: i18next.t('error:message:unable_fork_repo') };
+  if (!fork)
+    return {
+      type: 'error',
+      message: t('cloud.message.unable_fork_repo', { ns: 'LWStorageService' }),
+    };
   if (isErrorMessage(fork)) return fork;
 
   //------get document's hash from frok
@@ -1251,7 +1283,7 @@ export const forkFile = async ({
       id: 'saving-document',
       maxWidth: 'xs',
       severity: 'info',
-      title: `${i18next.t('commons:messages:saving_document')}`,
+      title: `${t('message.saving_document', { ns: 'LWStorageService' })}`,
     },
   });
 
@@ -1279,7 +1311,10 @@ export const forkFile = async ({
   if (!saveOnForkResponse || saveOnForkResponse.status === 409) {
     return {
       type: 'error',
-      message: i18next.t('error:message:unable_save_document_on_fork', { fork: fork.name }),
+      message: t('cloud.message.unable_save_document_on_fork', {
+        fork: fork.name,
+        ns: 'LWStorageService',
+      }),
     };
   }
 
@@ -1308,8 +1343,11 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | Er
         id: 'forking-repository',
         maxWidth: 'xs',
         severity: 'info',
-        title: `${i18next.t('forking')}`,
-        Message: `${i18next.t('cloud:messages:forking_can_take_minutes')}`,
+        title: `${t('cloud.forking', { ns: 'LWStorageService' })}`,
+        Body: `${t('cloud.message.forking_can_take_minutes', { ns: 'LWStorageService' })}. ${t(
+          'message.be_patient',
+          { ns: 'LWStorageService' }
+        )}.}`,
       },
     });
   }, 5_000);
@@ -1377,67 +1415,16 @@ export const createBranch = async ({ state, actions }: Context) => {
 
 //? PUBLIC RESPOSITORY
 
-export const addPublicRepository = ({ state, actions }: Context, owner: Owner) => {
-  const provider = actions.cloud.getProvider();
-  if (!provider) return;
-
-  const storageName = provider.name;
-  if (!storageName) return;
-
-  const publicRepos = state.cloud.publicRepositories ?? {};
-  if (!publicRepos[storageName]) publicRepos[storageName] = [];
-
-  const hasPublicRepository = publicRepos[storageName].some(
-    (_owner: Owner) => _owner.username === owner.username
-  );
-
-  if (hasPublicRepository) return;
-
-  publicRepos[storageName] = [owner, ...publicRepos[storageName]];
-
-  if (publicRepos[storageName].length > state.ui.publicRepositoriesLimit) {
-    publicRepos[storageName] = publicRepos[storageName].slice(0, state.ui.publicRepositoriesLimit);
-  }
-
-  state.cloud.publicRepositories = { ...publicRepos };
-  localStorage.setItem('publicRepositories', JSON.stringify({ ...publicRepos }));
+export const addPublicRepository = async (_: Context, publicRepository: PublicRepository) => {
+  await db.publicRepositories.add(publicRepository).catch(() => {
+    log.debug('Public Repository already added.', publicRepository);
+  });
 };
 
-export const getPublicRepository = (
-  { state, actions }: Context,
-  username: string
-): Owner | null => {
-  const provider = actions.cloud.getProvider();
-  if (!provider) return null;
-
-  const storageName = provider.name;
-  if (!storageName) return null;
-  if (!state.cloud.publicRepositories || !state.cloud.publicRepositories[storageName]) return null;
-
-  const owner = state.cloud.publicRepositories[storageName].find(
-    (_onwer: Owner) => _onwer.username === username
-  );
-  return owner ?? null;
+export const getPublicRepository = async (_: Context, uuid: string) => {
+  return await db.publicRepositories.get(uuid);
 };
 
-export const removePublicRepository = async ({ state, actions }: Context, username: string) => {
-  const provider = actions.cloud.getProvider();
-  if (!provider) return;
-
-  const storageName = provider.name;
-  if (
-    !storageName ||
-    !state.cloud.publicRepositories ||
-    !state.cloud.publicRepositories[storageName]
-  ) {
-    return;
-  }
-
-  const publicRepos = state.cloud.publicRepositories;
-  publicRepos[storageName] = publicRepos[storageName].filter(
-    (owner: Owner) => owner.username !== username
-  );
-
-  state.cloud.publicRepositories = { ...publicRepos };
-  localStorage.setItem('publicRepositories', JSON.stringify({ ...publicRepos }));
+export const removePublicRepository = async (_: Context, uuid: string) => {
+  await db.publicRepositories.delete(uuid);
 };

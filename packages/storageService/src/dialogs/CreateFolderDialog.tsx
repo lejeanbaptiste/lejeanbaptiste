@@ -7,7 +7,7 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import React, { ChangeEvent, useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions } from '../overmind';
 
@@ -18,9 +18,10 @@ interface CreateRepoDialogProps {
 }
 
 export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialogProps) => {
-  const { t } = useTranslation();
   const { createFolder } = useActions().cloud;
   const { openDialog } = useActions().ui;
+
+  const { t } = useTranslation('LWStorageService');
 
   const [name, setName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +44,7 @@ export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialo
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: `${t('error:message:folder_creation_error')}`,
+          title: `${t('cloud.message.folder_creation_error')}`,
           onClose: () => setIsLoading(false),
         },
       });
@@ -63,7 +64,7 @@ export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialo
       maxWidth="sm"
       open={open}
     >
-      <DialogTitle id="create-folder-title">{t('cloud:create_folder')}</DialogTitle>
+      <DialogTitle id="create-folder-title">{t('cloud.create_folder')}</DialogTitle>
       <DialogContent>
         <TextField
           autoComplete="off"
@@ -71,9 +72,9 @@ export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialo
           fullWidth
           id="name"
           inputProps={{ 'data-testid': 'save:create-folder:name-input' }}
-          label={t('commons:name')}
+          label={t('commons.name')}
           onChange={handleNameChange}
-          placeholder={`${t('cloud:folder_name')}`}
+          placeholder={`${t('cloud.folder_name')}`}
           required
           value={name}
           variant="standard"
@@ -81,7 +82,7 @@ export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialo
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
+        <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
         <LoadingButton
           data-testid="save:create-folder:create-button"
           disabled={name === ''}
@@ -89,7 +90,7 @@ export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialo
           onClick={handleCreate}
           variant="contained"
         >
-          {t('commons:create')}
+          {t('commons.create')}
         </LoadingButton>
       </DialogActions>
     </Dialog>

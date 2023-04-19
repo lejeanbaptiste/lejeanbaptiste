@@ -31,6 +31,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
   const [initialized, setInitialized] = useState(false);
   const [docLoaded, setDocLoaded] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     i18n.changeLanguage(state.ui.language.code);
@@ -38,8 +39,12 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
   useEffect(() => {
     window.document.addEventListener('fullscreenchange', fullscreenchanged);
+    window.addEventListener('changeLanguage', actions.ui.listenChangeLanguage);
+    window.addEventListener('changeTheme', actions.ui.listenChangeTheme);
     return () => {
       window.document.removeEventListener('fullscreenchange', fullscreenchanged);
+      window.removeEventListener('changeLanguage', actions.ui.listenChangeLanguage);
+      window.addEventListener('changeTheme', actions.ui.listenChangeTheme);
     };
   }, []);
 
@@ -55,13 +60,13 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   }, [document]);
 
   useEffect(() => {
-    actions.ui.updateReadonly();
-  }, [state.editor.isReadonly]);
+    if (ready) actions.ui.updateReadonly();
+  }, [ready, state.editor.isReadonly]);
 
   const fullscreenchanged = () => actions.ui.setFullscreen(!!window.document.fullscreenElement);
 
   const setup = async () => {
-    const config = createConfig(settings);
+    const config = await createConfig(settings);
 
     config.container = CONTAINER;
 
@@ -74,7 +79,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       actions.editor.setNssiToken(settings.credentials.nssiToken);
     }
 
-    actions.editor.initiateLookupSources(settings?.lookups);
+    await actions.editor.configureAuthorityServices(settings?.authorityServices);
 
     actions.user.setUser(user);
 
@@ -114,6 +119,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       setInitialized(true);
       setDocLoaded(true);
     });
+
+    setReady(true);
   };
 
   return (

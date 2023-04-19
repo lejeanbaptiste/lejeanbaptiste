@@ -5,6 +5,8 @@ import { OverridableComponent } from '@mui/material/OverridableComponent';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { useActions, useAppState } from '@src/overmind';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type Options = {
   label: string;
@@ -15,6 +17,11 @@ type Options = {
 export const EditorModeSelector = () => {
   const { readonly } = useAppState().editor;
   const { setReadonly } = useActions().editor;
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { t } = useTranslation('LWC');
 
   const [mode, setMode] = useState('');
 
@@ -27,11 +34,14 @@ export const EditorModeSelector = () => {
     setMode(event.target.value);
     const isReadonly = event.target.value === 'editing' ? false : true;
     setReadonly(isReadonly);
+
+    const route = isReadonly ? 'view' : 'edit';
+    navigate(`/${route}${location.search}`, { replace: true });
   };
 
   const options: Options[] = [
-    { label: 'Viewing', value: 'viewing', icon: VisibilityIcon },
-    { label: 'Editing', value: 'editing', icon: EditIcon },
+    { label: t('commons.viewing'), value: 'viewing', icon: VisibilityIcon },
+    { label: t('commons.editing'), value: 'editing', icon: EditIcon },
   ];
 
   return (

@@ -1,5 +1,135 @@
 # CHANGELOG
 
+## 3.0.0
+
+### Notable Changes
+
+#### IndexedDB
+
+LEAFWriter takes advantage of the browser's indexedDB to store and cache use preferences, settings, and internal states. More specifically, we have implemented 4 tables in this version:
+
+- authorityServices: Stores user preferences related to entity lookups
+- customSchemas: Stores user custom squemas
+- doNotDisplayDialog: Stores user preferences (when the user does not want a particular dialog to display again)
+- suspendedDocuments: Stores the current state right before the user scrape or use NERVE to enhance the document annotation. Because the process heavily modified the document, having the state of the document before the process starts allows the user to discard changes and go back to the previous state.
+
+LEAF-Writer Validator now has a similar setup. It uses indexedDB to cache transformed XML schemas. With this change, LEAF-Writer does not need to cache it. It has direct access via indexedDB if need it.
+
+All these come with a minor breaking change 🧨. The lookup service settings have been renamed as `authorityServices`, and their shape has changed. This affects how LEAF-Writer is instantiated.On the settings property, you should pass an array of authorities with an `id` and further configurations. for instance:
+
+```ts
+authorityServices: [
+  { id: 'geonames', settings: { username: 'geonamesUsername' } },
+  'lgpn',
+  { id: 'wikidata', entities: { organization: false, title: false, thing: true }}
+],
+```
+
+Check documentation for more.
+
+### Major Changes
+
+- Authority Service Preference [9dd3a58a2337af73b943d9e93ca87ca904e69f6b]
+  - Move AuthorityServices preferences from localstorage to indexedDB. Refactor setup.
+    - Reorganize the setup structure around AuthorityServices (previously LookupService). It reintegrates the code for the HTTP request (due to the small size). It also restructures the initial configuration for authority services.
+  - BREAKING CHANGE: 🧨 Change the initial settings when LW is initialized. Check documentation.
+
+### Minor Changes
+
+- Update Validator [09326d0f66667230e37bc1d79646beefcef94118]
+  - Adopt new API
+  - No need to receive and cache scheme. The validator does it by itself using the browser indexedDB.
+  - Add not about node module resolution [3095f7d4313b52f9fee7a806d8788a134b6e4bb7]
+    - Package Exports are only available when TSconfig nodeModuleRosultuon is set to NODE16 or NODENEXT. But, this new configuration means a different setup to load dependencies, which might break other things. We should way a little longer to adopt the new setup
+- Custom Schemas: Move custom schemas from localstorage to indexedDb [b5d7073d108b4cd73950179a87d5878ee14ca096]
+- Show Dialgos Preferences: Move doNotShowDialog from localstorage to indexedDb [c9abe4340f6bb714f3e840185f8f24fc260b960c]
+- DB: Expose convenient functions to clear cache and delete inxdedDB used by `leafwriter` [53c5d49e8eb64c2c6d0cc1c7351de12b061f6e64] [27995c1021b0fc222e524b2dad5897c434c4dddc]
+- Icons: Add support for multiple icon libraries [7829f26c5eb21daf3232a1df7ef17e34723fc80b]
+
+### Patch Changes
+
+- Form Validation: Replace yup with zod [e91e73434c91341cfc957668a9d6589a7af1bc91]
+- Simple Dialog: rename 'Message' as 'Body' [89a2143951e301ba2ceaad61dee1776e3c7f50de]
+- Theme: Listen to event 'changeTheme' dispatched from other modules [1f3ef3863656065f1f871bb1a7ad6deccb2e0967]
+- Localstorage: Integrate with internal localstorage API [5bda60827bcb51c1f72a87f68f26e22f9181ca2d]
+- State:
+  - Remove unnecessary conditions [f112e70406eefbb4c60bfdadde7a3a81833bef72]
+  - Fix reset preferences: authority services [249d8bbb2003dcbcc20be25a386bdefcd588b8b0]
+  - Improve reset state when LW is disposed of [5a7a3c1f91921db6539d4fde498836ab86fc0064]
+- Fix bug on Chrome: not focusable element [249d8bbb2003dcbcc20be25a386bdefcd588b8b0]
+  - Element with display 'none' and with a field with a required attr. May cause "An invalid form control with name=’x’ is not a focusable error". Solution (not really) from [here](https://www.geekinsta.com/how-to-fix-an-invalid-form-control-with-name-is-not-focusable/)
+- DB: Correct name 'suspendedDocuments' [d6ce31d0b388ba59a6655d11e43fc66e5c05c201]
+- Ribbon: remove uuid as an alternative to keys in a react array [d5b37828c5a797fe04ddfa33479c2f5fe4ddd905]
+- Localization tweaks [5ad2b2e680a0d3572b50d9806f6c86ccdecb9645] [93a7ccd7fe943bd0a5967897b5b73f9dafe66483] [dc60383132213559a592486fef4a4c234f1195bd] [de781242f2f00af3e5dbf5905bf4c8a20efa687a] [2e186bdac2c577ef3a32a4550ab21303d6abd302] [85524dc57cdd22913c0cb8e56a9ef4f1169b08b2]
+- Remove logs [9db77e7382d46bc425da370e56e851ca9e41754e] [80f85c5b05bfc83ced95f3ddd924aee49ba2699c]
+- RAW XML: Independent export of the editor [e0611ab8c1310d973ca584c5b3c09d25c8e84476]
+- Updated dependencies
+- Update dependencies [04cc4456ecf2aaea08d4feaf9cce8ca9ce502cbd]
+  - core:
+    - add: react-icons@4.8.0
+    - upgrade: @cwrc/leafwriter-validator@4.1.0 [abfc13b1280f984b845974708107b5a4dd093cd5]
+    - update:
+      - @mui/material@12.1 axios@1.3.5
+      - framer-motion@10.12.2
+    - bump
+      - jotai@2.0.4
+      - monaco-editor@0.37.1
+      - rdflib@2.2.32
+      - react-resizable-panels@0.0.40
+      - react-virtuoso@4.2.1
+  - dev:
+    - update:
+      - @typescript-eslint/eslint-plugin@5.59.0
+      - @typescript-eslint/parser@5.59.0
+      - webpack@5.79.0
+    - bump
+      - @types/shelljs@0.8.12
+      - typescript-plugin-css-modules@5.0.1
+
+## 2.7.4
+
+### Patch Changes
+
+- ContextMenu:
+  - Add autofocus to search tags [46b68723e54aed8286eef99dd4aac42398d3e827]
+- Suspended documents
+  - Improve how suspended documents are stored [428c68faa3fb677ff9a74f61835570bf9941664b]
+- CSS:
+  - Fix first-letter selector [6b5c8f1b803ca0dd62256560cf6c8e72a1475f05]
+  - Add CssBaseline as a way to solve css clash with the underlying webpage [4d9715b432f14c49e9d430ae7a09878802d69449]
+  - date picker:
+    - Attempt to block overwrite from bellow [ef75de61afae681ff78661d90ec71186c5e0d6ed]
+  - Clean [4c2679663bd96216fa348b3178b333607a4ed8a0]
+- Types:
+  - Move type assertion to a dedicated module [df77eac53eae5c24c69554a18564c005a63f75a8]
+  - Improve localStorage API to receive generic Type [7004c303e65596b188caaa48f2122f4a23955410]
+- Localization
+  - Create an instance, instead of using the library directly [9b4c5ac224e13a40bbca40aaaf8514a5d588c0b6]
+- Update dependencies [5e8eb21604c9d84cf25a34f34f1d608ca7b1e038]:
+  - core:
+    - add missing: @dnd-kit/utilities@3.2.1
+    - upgrade: notistack@3.0.1
+    - update:
+      - @fortawesome/fontawesome-free@6.4.0
+      - framer-motion@10.10.0
+      - mdi-material-ui@7.7.0
+      - monaco-editor@0.37.0
+      - react-virtuoso@4.2.0
+    - bump up:
+      - @mui/icons-material@5.11.16
+      - @mui/material@5.11.16
+      - i18next@22.4.14 react-resizable-panels@0.0.39
+  - dev:
+    - add missing:
+      - copy-webpack-plugin@11.0.0
+      - eslint-plugin-prettier@4.2.1
+    - update:
+      - @types/luxon@3.3.0
+      - @typescript-eslint/eslint-plugin@5.57.1
+      - @typescript-eslint/parser@5.57.1
+      - webpack@5.77.0
+    - bump up: @types/node@18.15.11
+
 ## 2.7.3
 
 ### Patch Changes

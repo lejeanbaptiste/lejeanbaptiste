@@ -7,7 +7,6 @@ import * as Comlink from 'comlink';
 import { Context } from '../';
 import Writer from '../../js/Writer';
 import { webpackEnv } from '../../types';
-import { log } from './../../utilities';
 
 declare global {
   interface Window {
@@ -51,22 +50,14 @@ export const initialize = async ({ state }: Context) => {
   const workerValidator = window.leafwriterValidator;
   state.validator.hasWorkerValidator = !!workerValidator;
 
-  const id = writer.schemaManager.getCurrentSchema()?.id;
+  const schemaId = writer.schemaManager.getCurrentSchema()?.id;
   const schemaURL = writer.schemaManager.getRng();
-  if (!id || !schemaURL) return;
+  if (!schemaId || !schemaURL) return;
 
-  const cachedSchema = localStorage.getItem(`schema_${id}`) ?? undefined;
+  const schemaWorker = await workerValidator.initialize({ id: schemaId, url: schemaURL });
+  if (schemaWorker.success) state.validator.hasSchema = true;
 
-  const { parsedSchema } = await workerValidator.initialize({ id, cachedSchema, url: schemaURL });
-
-  if (parsedSchema) {
-    localStorage.setItem(`schema_${id}`, parsedSchema);
-    log.info('Schema cached.');
-  }
-
-  state.validator.hasSchema = true;
-
-  window.writer?.event('workerValidatorLoaded').publish();
+  window.writer?.event('workerValidatorLoaded').publish(schemaWorker);
 };
 
 export const validate = async ({ state, actions }: Context) => {

@@ -14,7 +14,7 @@ interface MenuProps {
 export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { editorMode, editorModes } = useAppState().editor;
   const { closeNotificationSnackbar, openDialog, notifyViaSnackbar } = useActions().ui;
-  const { t } = useTranslation(['leafwriter']);
+  const { t } = useTranslation('leafwriter');
 
   const { changeEditorMode, editorModeShouldChange } = useEditorReaction();
 
@@ -43,12 +43,12 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         maxWidth: 'xs',
         severity,
         title: `${t('Change Editor Mode')}?`,
-        Message: () => <>{text}</>,
+        Body: () => <>{text}</>,
         actions: [
-          { action: 'cancel', label: t('commons:cancel').toString(), variant: 'outlined' },
+          { action: 'cancel', label: t('commons.cancel').toString(), variant: 'outlined' },
           {
             action: 'change',
-            label: severity === 'warning' ? t('change anyway').toString() : t('commons:change').toString(),
+            label: severity === 'warning' ? t('change anyway').toString() : t('commons.change').toString(),
           },
         ],
         onClose: async (action) => {
@@ -68,7 +68,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('commons:undo')}
+            {t('commons.undo')}
           </Button>
         ),
       },

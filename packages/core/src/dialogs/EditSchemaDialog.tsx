@@ -16,7 +16,8 @@ import { useModal } from 'mui-modal-provider';
 import React, { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
-import * as yup from 'yup';
+import { z } from 'zod';
+import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { TextEmphasis } from '../components';
 import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
@@ -30,8 +31,6 @@ interface SchemaForm {
 }
 
 const defaultValue: SchemaForm = { name: '', mapping: 'tei', rng: '', css: '' };
-
-const regexHttps = /^(https)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,6}(\/\S*)?$/;
 
 export const EditSchemaDialog = ({
   actionType = 'add',
@@ -59,21 +58,21 @@ export const EditSchemaDialog = ({
 
   const preventEscape = actionType === 'add';
 
-  const httpsUrl = yup
-    .string()
-    .url(t('Must be a valid URL').toString())
-    .matches(regexHttps, t('Must be a valid HTTP URL').toString());
+  const urlValidation = z
+    .string({ required_error: t('Schema URL is required').toString() })
+    .url({ message: t('Must be a valid URL').toString() });
 
-  const formValidation = yup.object().shape({
-    name: yup
-      .string()
-      .required(t('Every schema needs a name').toString())
-      .min(3, t('Must be at least characters', { min: 3 }).toString())
-      .max(20, t('Cannot have more than characters', { max: 20 }).toString()),
-    mapping: yup.string().required(),
-    rng: httpsUrl.required(t('Schema URL is required').toString()),
-    css: httpsUrl,
-  });
+  const formValidation = z
+    .object({
+      name: z
+        .string({ required_error: t('Every schema needs a name').toString() })
+        .min(3, { message: t('Must be at least characters', { min: 3 }).toString() })
+        .max(20, { message: t('Cannot have more than characters', { max: 20 }).toString() }),
+      mapping: z.string(),
+      rng: urlValidation,
+      css: urlValidation,
+    })
+    .partial({ css: true });
 
   useEffect(() => {
     if (schemaId) {
@@ -121,16 +120,16 @@ export const EditSchemaDialog = ({
         maxWidth: 'xs',
         title: t('deleteSchema').toString(),
         preventEscape: true,
-        Message: () => (
-          <Trans i18nKey="messages.deleteConfirmationMessage" values={{ name }}>
+        Body: () => (
+          <Trans i18nKey="messages.delete confirmation message" values={{ name }}>
             <Typography component="span">Are you sure you want to delete{` `}</Typography>
             <TextEmphasis color="info">{name}</TextEmphasis>
             <Typography component="span"> schema?</Typography>
           </Trans>
         ),
         actions: [
-          { action: 'cancel', label: t('commons:cancel').toString() },
-          { action: 'delete', label: t('commons:delete').toString(), variant: 'outlined' },
+          { action: 'cancel', label: t('commons.cancel').toString() },
+          { action: 'delete', label: t('commons.delete').toString(), variant: 'outlined' },
         ],
         onClose: async (action) => {
           if (action !== 'delete') return;
@@ -138,7 +137,7 @@ export const EditSchemaDialog = ({
           destroyModal(id);
           handleCancel();
 
-          deleteSchema(schemaId);
+          await deleteSchema(schemaId);
 
           handleBeforeClose();
           onDelete && (await onDelete(schemaId));
@@ -161,7 +160,9 @@ export const EditSchemaDialog = ({
 
     if (!schemaToSubmit) return;
 
-    const schema = schemaId ? updateSchema(schemaToSubmit as Schema) : addSchema(schemaToSubmit);
+    const schema = schemaId
+      ? await updateSchema(schemaToSubmit as Schema)
+      : await addSchema(schemaToSubmit);
     if (!schema) return;
 
     if (schemaId) schema.id = schemaId;
@@ -190,7 +191,8 @@ export const EditSchemaDialog = ({
         enableReinitialize={true}
         initialValues={initialValues}
         onSubmit={submit}
-        validationSchema={formValidation}
+        // validationSchema={formValidation}
+        validationSchema={toFormikValidationSchema(formValidation)}
       >
         {({ dirty, errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
           <form onSubmit={handleSubmit}>
@@ -208,13 +210,13 @@ export const EditSchemaDialog = ({
                   error={Boolean(touched.name && errors.name)}
                   fullWidth
                   helperText={touched.name && errors.name ? errors.name : ' '}
-                  label={t('commons:Name')}
+                  label={t('commons.Name')}
                   margin="dense"
                   name="name"
                   onBlur={handleBlur}
                   onChange={handleChange}
                   size="small"
-                  sx={{ ':first-letter': { textTransform: 'uppercase' } }}
+                  sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                   value={values.name}
                 />
                 {mappingIds.length > 1 && (
@@ -229,7 +231,7 @@ export const EditSchemaDialog = ({
                       onChange={handleChange}
                       size="small"
                       select
-                      sx={{ ':first-letter': { textTransform: 'uppercase' } }}
+                      sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                       value={values.mapping}
                     >
                       {mappingIds.map((id) => (
@@ -253,7 +255,7 @@ export const EditSchemaDialog = ({
                 onChange={handleChange}
                 placeholder="https://"
                 size="small"
-                sx={{ ':first-letter': { textTransform: 'uppercase' } }}
+                sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                 value={values.rng}
               />
               <TextField
@@ -268,7 +270,7 @@ export const EditSchemaDialog = ({
                 onChange={handleChange}
                 placeholder="https://"
                 size="small"
-                sx={{ ':first-letter': { textTransform: 'uppercase' } }}
+                sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                 value={values.css}
               />
               {actionType === 'add' && (
@@ -287,7 +289,7 @@ export const EditSchemaDialog = ({
             </DialogContent>
 
             <DialogActions sx={{ justifyContent: 'space-between' }}>
-              <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
+              <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
 
               {schemaId && (
                 <Tooltip
@@ -304,14 +306,14 @@ export const EditSchemaDialog = ({
                       disabled={schemaId === documentSchemaId}
                       onClick={handleDelete}
                     >
-                      {t('commons:delete')}
+                      {t('commons.delete')}
                     </Button>
                   </span>
                 </Tooltip>
               )}
 
               <Button color="primary" disabled={!dirty} type="submit" variant="outlined">
-                {schemaId ? t('commons:update') : t('commons:add')}
+                {schemaId ? t('commons.update') : t('commons.add')}
               </Button>
             </DialogActions>
           </form>

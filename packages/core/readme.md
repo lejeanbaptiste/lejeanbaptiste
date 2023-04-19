@@ -26,8 +26,8 @@
     - [Document](#document)
     - [User](#user)
     - [Settings](#settings)
-      - [lookups](#lookups)
-        - [Lookup Config](#lookup-config)
+      - [AuthorityService](#authorityservice)
+        - [NamedEntitySettings](#namedentitysettings)
       - [Schemas](#schemas)
     - [Full Config Example](#full-config-example)
 
@@ -128,8 +128,8 @@ The document object has 2 properties:
 
 | Name | Type | Default  | Description |
 | - | - | - | - |
-| xml* | string |  | (Required) The XML document to be rendered on LEAF-Writer |
-| url  | string |  | The Document's URL. It is used as an IRI on Web Annotations created on LEAF-Writer |
+| xml* | `string` |  | (Required) The XML document to be rendered on LEAF-Writer |
+| url  | `string` |  | The Document's URL. It is used as an IRI on Web Annotations created on LEAF-Writer |
 
 ### User
 
@@ -137,9 +137,9 @@ The user object has three properties, exclusively used to assign a creator to We
 
 | Name | Type | Default  | Description |
 | - | - | - | - |
-| name* | string |  | (Required) |
-| uri*  | string |  | (Required) URI pointing to the user info page, profile, or account |
-| email  | string |  | user's email |
+| name* | `string` |  | User's name. |
+| uri*  | `string` |  | (Required) URI pointing to the user info page, profile, or account |
+| email  | `string` |  | user's email |
 
 ### Settings
 
@@ -147,56 +147,57 @@ The settings object has three main properties used to set up and customize LEAF-
 
 | Name | Type | Default  | Description |
 | - | - | - | - |
-| baseUrl | string | `.` | **Important**: By default, LEAF-Writer will load its dependencies (web workers, on-demand modules, extra CSS files) from the root folder. If these files are not on the root, you should define the path to these dependencies here. For instance, set this property to `/path/to/project/addons/` if you put LEAF-Writer dependencies in this folder. |
-| lookups  | `LookupsProps` |  | An object containing to configure the entity lookups. See [Authorities](#authorities) |
-| readonly  | bollean | false | Set LEAF-Writer readonly (prevent editing functionalities) |
-| schemas  | `Schema[]` |  | An array of schemas to be included as supported by default. See more about Schemas [here](#schemas).  |
+| authorityServices  | ([`AuthorityService`](#authorityservice) \| `string`)`[]` |  | An list of authority services or their id's seting up the authority services. If you pass a string, it will enable the corresponding authority service. Use the object AuthorityService to fine tune the set up. |
+| baseUrl | `string` | `.` | **Important**: By default, LEAF-Writer will load its dependencies (web workers, on-demand modules, extra CSS files) from the root folder. If these files are not on the root, you should define the path to these dependencies here. For instance, set this property to `/path/to/project/addons/` if you put LEAF-Writer dependencies in this folder. |
+| readonly  | `boolean` | `false` | Set LEAF-Writer readonly (prevent editing functionalities) |
+| schemas  | [`Schema`](#schemas)`[]` |  | An array of schemas to be included as supported by default.  |
 
-#### lookups
+#### AuthorityService
 
-An object containing a single property `authorities` that configures the entity lookups. You can configure each authority individually when initializing LEAF-Writer by passing an array with either the authority's name (using the default configuration) or a tuple containing the authority's name and the [Lookup Config](#lookup-config) (see bellow).
+Configures authorities services used to run entity lookups.
+ LEAF-Writer includes 6 authority services supporing 5 types of entities:
 
-LEAF-Writer includes entity lookups to 6 different authorities in 5 types of entities:
-
-- [DBPedia](https://www.dbpedia.org): Person, Place, Organization, Title (book), and Thing.
-- [Geonames](https://www.geonames.org/): Place. **Note**: It is disabled by default because the Geonames endpoint needs authentication.
+- [DBPedia](https://www.dbpedia.org): Person, Place, Organization, Title, and Thing.
+- [Geonames](https://www.geonames.org/): Place.
+  - **Note**: Disabled by default because the Geonames endpoint needs authentication.
+    - To use Geonames, you must define your own username.
 - [Getty](https://www.getty.edu/research/tools/vocabularies/): Person and Place.
-- [LGPN](https://www.lgpn.ox.ac.uk/): Person (Greek names). **Note**: It is disabled by default since it is not frequently used.
-- [Wikipedia](https://www.wikidata.org/wiki/Wikidata:Main_Page): Person.
+- [LGPN](https://www.lgpn.ox.ac.uk/): Person (Greek names).
+  - **Note**: Disabled by default since it is not frequently used.
 - [VIAF](https://viaf.org/): Person, Place, Organization, Title (book), and Thing.
+- [Wikipedia](https://www.wikidata.org/wiki/Wikidata:Main_Page): Person.
 
-Example
+Individual users can turn each authority on and off, as well enable and disabled specific entities in each authority depending on their preferences.
 
-```ts
-{
-  authorities: [
-    'authorityName'
-    ['authoritysName', AuthorityConfigObject]
-  ]
-}
-```
-
-##### Lookup Config
+All properties are optional, except for the id.
 
 | Name | Type | Default  | Description |
 | - | - | - | - |
-| enabled | boolean |  | Enable / Disable Authority. Note: the user can manually enable the authority in the settings panel. |
-| entities  | \[ `person \| place \| organization \| title \| thing` , boolean][] |  | An array of tuples containing the Entity Name and a boolean. Enable / Disable a specific entity lookup. Note: the user can manually enable the entity in the settings panel. |
-| config  | Object: { username: string } |  | An arbitrary object with a username property. Used to pass a username to Geonames |
+| id* | `dbpedia` \| `geonames` \| `getty` \| `lgpn` \| `viaf` \| `wikidata` |  | The authority's id. Other values will be ignored. |
+| enabled | `boolean` |  | Enable / Disable Authority. **Note**: the user can manually enable the authority in the settings panel. |
+| entities  | [`NamedEntitySettings`](#namedentitysettings) |  | An obeject with namedEntity property with boolean values. This object not only defines the entities avialable for the authority, but also if they are enabled or didabled by default. |
+| settings  | Object: { username: string } |  | An arbitrary object with a username property. Used to pass a username to Geonames |
+
+##### NamedEntitySettings
+
+| Name | Type | Default  | Description |
+| - | - | - | - |
+| person | `boolean` |  | The authority's id |
+| place | `boolean` |  | Enable / Disable Authority. **Note**: the user can manually enable the authority in the settings panel. |
+| organization  | `boolean` |  | An array of tuples containing the Entity Name and a boolean. Enable / Disable a specific entity lookup. Note: the user can manually enable the entity in the settings panel. |
+| title  | `boolean` |  | An arbitrary object with a username property. Used to pass a username to Geonames |
+| rs  | `boolean` |  | An arbitrary object with a username property. Used to pass a username to Geonames |
 
 Example:
 
-Let’s say you want to enable LGPN and Geonames, disable Getty, and disable lookups for organization, title, and thing on Wikipedia.
+Let’s say you want to enable LGPN and Geonames, disable Getty, and disable lookups for organization, title, and thing on wikidata.
 
 ```ts
 [
-  ['lgpn'],
-  ['geonames',
-    { config: { username: geonamesUsername } }
-  ],
-  ['wikidata',
-    { entities: [['organization', false], ['title', false] ['thing', false]]}
-  ]
+  'lgpn',
+  { id: 'geonames', settings: { username: 'geonamesUsername' } }
+  { id: 'getty', enabled: false }
+  { id: 'wikidata', entities: { organization: false, title: false, thing: false }}
 ]
 ```
 
@@ -221,9 +222,9 @@ The schema object as five properties:
 
 | Name | Type | Default  | Description |
 | - | - | - | - |
-| id* | string |  | Unique id |
-| name*  | `LookupsProps` |  | A human-readable name to be displayed to the user |
-| mapping*  | string: `tei \| teiLite \| orlando \| cwrcEntry` |  | Define how to parse tag names and map schema-specific functionalities. LEAF-Writer supports these four mappings, which are bound to the document's root element (except for teiLite, which is a TEI variation and uses the TEI root element) |
+| id* | `string` |  | Unique id |
+| name*  | `string` |  | A human-readable name to be displayed to the user |
+| mapping*  | `tei` \| `teiLite` \| `orlando` \| `cwrcEntry` |  | Define how to parse tag names and map schema-specific functionalities. LEAF-Writer supports these four mappings, which are bound to the document's root element (except for teiLite, which is a TEI variation and uses the TEI root element) |
 | rng*  | `string[]` |  | A collection of URI pointing to the schema. It must be RNG schemas. LEAF-writer will get the first option unless the connection is not available. In this case, it will try to load the schema from the other options in order. Loading alternative routes to the schema will not change the document definitions. |
 | css*  | `string[]` |  | Similar to the rng property. A collection of URI pointing to the schema's CSS. LEAF-writer will get the first option unless the connection is not available. In this case, it will try to load the CSS from the other options in order. Loading alternative routes to the CSS will not change the document definitions. |
 
@@ -264,17 +265,11 @@ editor.init({
   }
   settings: {
     baseUrl: 'path/to/leafwriter/files/',
-    lookups: {
-      authorities: [
-        ['lgpn'],
-        ['geonames',
-          { config: { username: 'geonamesUsername' } }
-        ],
-        ['wikidata',
-          { entities: [['organization', false], ['title', false] ['thing', false]]}
-        ]
-      ],
-    },
+    authorityServices: [
+      { id: 'geonames', settings: { username: 'geonamesUsername' } },
+      'lgpn',
+      { id: 'wikidata', entities: { organization: false, title: false, thing: true }}
+    ],
     readonly: false,
     schemas: [{
       id: 'cwrcTeiLite',

@@ -1,5 +1,13 @@
+import { IconName } from '@src/icons';
 import type { OptionsObject, SnackbarMessage } from 'notistack';
 import React from 'react';
+
+export * from './assert';
+
+export declare var webpackEnv: {
+  NODE_ENV: string;
+  WORKER_ENV: string;
+};
 
 export interface Language {
   code: string;
@@ -74,6 +82,8 @@ export interface StorageDialogState {
 }
 
 export interface Resource {
+  id?: string;
+
   provider?: string;
   owner?: string;
   ownertype?: string;
@@ -83,6 +93,7 @@ export interface Resource {
   content?: string;
   hash?: string;
   url?: string;
+  writePermission?: boolean;
 
   schemaName?: string;
   modifiedAt?: Date;
@@ -90,11 +101,14 @@ export interface Resource {
 
   title?: string;
   category?: string;
-  icon?: string;
+  icon?: IconName;
+
+  isLocal?: boolean;
+  blob?: Blob;
 }
 
 export const ErrorTypes = ['info', 'warning', 'error'] as const;
-type ErrorType = typeof ErrorTypes[number];
+type ErrorType = (typeof ErrorTypes)[number];
 
 export interface Error {
   message: string;
@@ -109,5 +123,17 @@ export interface ProviderAuthProps {
 
 export interface ViewProps {
   title?: string;
-  value: string;
+  value: ViewType;
+}
+
+export type ViewType = 'blank' | 'recent' | 'samples' | 'templates';
+
+export interface FileDetail {
+  content: string;
+  file: File;
+}
+
+export interface DocumentRequested extends Resource {
+  expires: Date;
+  id: string;
 }

@@ -1,4 +1,4 @@
-import { MutableRefObject, useEffect, useState } from 'react';
+import { useEffect, useState, type MutableRefObject } from 'react';
 
 interface useScrollSpyProps {
   container: MutableRefObject<HTMLElement | null>;

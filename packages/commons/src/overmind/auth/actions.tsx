@@ -1,4 +1,5 @@
 import { log } from '@src//utilities';
+import { clearCache } from '@src/db';
 import type { AnnotationUserProfileProps, User } from '@src/types';
 import Cookies from 'js-cookie';
 import { Context } from '../index';
@@ -13,7 +14,7 @@ export const onInitializeOvermind = async ({ actions, effects }: Context, overmi
   const providers = await effects.auth.api.getProviders();
 
   //populate supported providers
-  if (!('error' in providers)) actions.providers.setup(providers);
+  if (!(providers instanceof Error)) actions.providers.setup(providers);
 
   //Authenticate
   await actions.auth.authenticateUser();
@@ -251,19 +252,24 @@ export const accountManagement = ({ effects }: Context) => {
   effects.auth.api.accountManagement();
 };
 
-export const signOut = async ({ effects }: Context) => {
-  localStorage.clear();
-  Cookies.remove('resource');
-  await effects.auth.api.logout();
-};
-
-export const setPreferredId = ({ state }: Context, providerId: string) => {
+export const setPreferredId = ({ state, effects }: Context, providerId: string) => {
   if (!state.auth.user) return;
 
   state.auth.user.preferredID = providerId;
-  localStorage.setItem('prefIdProvider', providerId);
+  effects.storage.api.saveToLocalStorage('prefIdProvider', providerId);
 
   state.auth.user.avatar_url = state.auth.user.identities.get(providerId)?.avatar_url ?? undefined;
 
   return providerId;
+};
+
+export const signOut = async ({ effects }: Context) => {
+  effects.storage.api.clearLocalStorage();
+  Cookies.remove('resource');
+
+  //* Clear IndexedDB tabels.
+  // Including the ones created by LEAF-Writer and Leafwriter Storage Service
+  await clearCache();
+
+  await effects.auth.api.logout();
 };

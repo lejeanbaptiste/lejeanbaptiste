@@ -1,7 +1,7 @@
 import { Validator } from '@cwrc/salve-dom-leafwriter';
 import { logEnabledFor } from './log';
-import { NodeDetail, TargetSelection } from './types';
-import { evaluateXPath } from './utils';
+import type { NodeDetail, TargetSelection } from './types';
+import { evaluateXPath } from './utilities';
 
 export interface SpeculateRequest {
   container: Node;

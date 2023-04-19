@@ -12,6 +12,7 @@
       "lib": ["es2021"],                       /* Specify library files to be included in the compilation. */
       "module": "commonjs",                    /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', 'es2020', or 'ESNext'. */
       "types": ["node", "jest"]                /* Type declaration files to be included in compilation. */,
+      // "moduleResolution": "node", 
     }
   },
   "compilerOptions": {
@@ -58,7 +59,8 @@
     "noUncheckedIndexedAccess": true,         /* Include 'undefined' in index signature results */
 
     /* Module Resolution Options */
-    "moduleResolution": "node"                /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */,
+    // "moduleResolution": "nodenext"            /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */,
+    "moduleResolution": "node"            /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */,
     // "baseUrl": "."                         /* Base directory to resolve non-absolute module names. */,
     // "paths": { "@src/*": ["src/*"] }       /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */,
     // "rootDirs": [],                        /* List of root folders whose combined content represents the structure of the project at runtime. */

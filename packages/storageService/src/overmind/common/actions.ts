@@ -4,27 +4,34 @@ import i18next from '../../i18n';
 import type {
   AllowedMimeType,
   DialogType,
-  SelectedItem,
-  Validate,
   Resource,
+  SelectedItem,
   StorageDialogConfig,
   StorageSource,
+  Validate,
 } from '../../types';
+import { updateTranslation } from '../../utilities';
+
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('LWStorageService');
+
+const { t } = i18next;
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
-  actions.ui.updateTranslation();
-
-  const { common, cloud } = state;
-
   const {
     allowedMimeTypes,
-    defaultCommitMessage,
     allowPaste,
-    showInvisibleFiles,
+    defaultCommitMessage,
+    language,
     preferProvider,
     providers: providerAuth,
+    showInvisibleFiles,
     validate,
   } = config;
+
+  updateTranslation(language);
+
+  const { common, cloud } = state;
 
   common.allowPaste = allowPaste ?? true;
   common.showInvisibleFiles = showInvisibleFiles ?? false;
@@ -38,7 +45,7 @@ export const configure = async ({ state, actions }: Context, config: StorageDial
     if (cloud.providers.length > 0 && preferProvider) {
       actions.cloud.setProvider(preferProvider);
       const provider = actions.cloud.getProvider();
-      state.cloud.user = await provider?.getAuthenticatedUser();
+      state.cloud.user = await provider?.getAuthenticatedUser() ?? undefined;
     }
   }
 
@@ -87,12 +94,16 @@ export const setSources = ({ state }: Context) => {
   if (dialogType === 'load') {
     sources.push({
       value: 'local',
-      label: i18next.t('commons:from_your_computer'),
+      label: t('commons.from_your_computer', { ns: 'LWStorageService' }),
       icon: 'computer',
     });
 
     if (allowPaste) {
-      sources.push({ value: 'paste', label: i18next.t('footer:pasteXml'), icon: 'paste' });
+      sources.push({
+        value: 'paste',
+        label: t('footer.pasteXml', { ns: 'LWStorageService' }),
+        icon: 'paste',
+      });
     }
   }
 };
@@ -124,7 +135,7 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: error ?? `${i18next.t('error:message:document_not_valid')}`,
+          title: error ?? `${t('message.document_not_valid', { ns: 'LWStorageService' })}`,
         },
       });
       if (state.common.resource) state.common.resource.filename = undefined;
@@ -135,7 +146,13 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
   }
 
   state.common.submit = { action: 'load', resource };
-  setTimeout(() => actions.common.resetAll(), 0);
+
+  setTimeout(() => {
+    if (state.common.resource?.content) {
+      actions.common.setResource({ ...state.common.resource, content: undefined, hash: undefined })
+      // state.common.resource = { ...state.common.resource, content: undefined, hash: undefined };
+    }
+  }, 100);
 };
 
 export const afterSave = async ({ state, actions }: Context, resource?: Resource) => {
@@ -167,6 +184,8 @@ export const setResource = (
   if (!filename) filename = common.resource?.filename;
   if (!hash) hash = common.resource?.hash;
 
+  const writePermission = provider ? cloud.repository?.writePermission : undefined;
+
   const updateResource: Resource = {
     provider,
     ownertype,
@@ -177,6 +196,7 @@ export const setResource = (
     content,
     hash,
     url,
+    writePermission,
   };
 
   state.common.resource = updateResource;

@@ -1,12 +1,12 @@
 import $ from 'jquery';
 import Cookies from 'js-cookie';
+import { json } from 'overmind';
 import { Context } from '../';
 import { db } from '../../db';
 import type {
   Authority,
   AuthorityService,
-  LookupsConfig,
-  LookupsProps,
+  AuthorityServiceConfig,
   NamedEntityType,
 } from '../../dialogs/entityLookups/types';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
@@ -32,94 +32,159 @@ export const writerInitSettings = (
   actions.validator.loadValidator();
 };
 
-export const initiateLookupServices = async ({ state, actions, effects }: Context) => {
-  // log.info(serviceType);
-  // serviceType = 'nssi';
-  const _token = await state.editor.nssiToken;
-  const token = await actions.editor.getNssiToken();
-
-  await effects.lookups.api.initialize(state.editor.lookups.authorities, { token });
-};
-
-export const initiateLookupSources = async (
+export const configureAuthorityServices = async (
   { state, actions, effects }: Context,
-  config?: LookupsConfig
+  configAuthorityServices?: (Authority | AuthorityServiceConfig)[]
 ) => {
-  const { lookups } = state.editor;
+  const { authorityServices } = state.editor;
 
   //* no config, use default
-  if (!config) {
-    await actions.editor.initiateLookupServices();
-    effects.editor.api.setLookupsDefaults({ ...lookups });
+  if (!configAuthorityServices) {
+    effects.editor.api.setDefaultAuthorityServices(json(authorityServices));
+    await actions.editor.applyUserPreferencesAuthrityServices();
     return;
   }
 
-  if (typeof config?.serviceType === 'string' && ['custom', 'nssi'].includes(config.serviceType)) {
-    state.editor.lookups.serviceType = config.serviceType;
-  }
-
-  //* no config, use default
-  if (!config.authorities || !Array.isArray(config.authorities)) return;
-
-  config.authorities.forEach((confgAuthority) => {
-    const [authorityId, configAuthorityService] =
-      typeof confgAuthority === 'string' ? [confgAuthority] : confgAuthority;
-
-    if (authorityId !== state.editor.lookups.authorities[authorityId]?.id) {
-      // implement new lookup
+  //* config services
+  configAuthorityServices.forEach((serviceConfig) => {
+    if (typeof serviceConfig === 'string') {
+      const authorityService = authorityServices[serviceConfig];
+      if (authorityService) authorityService.enabled = true;
       return;
     }
 
-    //required authentication?
-    if (
-      state.editor.lookups.authorities[authorityId]?.requireAuth &&
-      configAuthorityService?.config?.username === ''
-    ) {
-      log.warn(`Lookups: You must define a username to make requests to ${authorityId}`);
+    // * Get authority service to configure
+    const authorityService = authorityServices[serviceConfig.id];
+
+    // * Implements new authority service
+    if (!authorityService) {
+      //TODO
       return;
     }
 
-    //* No config, enabled and use default
-    if (!configAuthorityService) {
-      if (!state.editor.lookups.authorities[authorityId]?.enabled) {
-        actions.editor.toggleLookupAuthority(authorityId);
-      }
+    //* service specific configuration
+    if (serviceConfig.settings) authorityService.settings = serviceConfig.settings;
+
+    //* Required authentication?
+    if (authorityService.requireAuth && serviceConfig.settings?.username === '') {
+      log.warn(
+        `Config Authority Service: username required to make requests to ${authorityService.id}`
+      );
+      authorityService.enabled = false;
       return;
+    } else {
+      authorityService.enabled = true;
     }
 
-    const authority = state.editor.lookups.authorities[authorityId];
-    if (authority) {
-      //config
-      if (configAuthorityService.config) {
-        authority.config = configAuthorityService.config;
-        authority.enabled = true;
-      }
+    //* Enable service
+    if (serviceConfig.enabled !== undefined) authorityService.enabled = serviceConfig.enabled;
 
-      //enabled
-      if (configAuthorityService.enabled) {
-        authority.enabled = configAuthorityService.enabled;
-      }
+    //*  No entities, use default
+    if (!serviceConfig.entities) return;
 
-      //if not entities, use default
-      if (!configAuthorityService.entities || !Array.isArray(configAuthorityService.entities))
-        return;
+    //* entity types
+    for (const entity in serviceConfig.entities) {
+      if (!authorityService.entities[entity as NamedEntityType]) continue;
+      if (!Object.prototype.hasOwnProperty.call(serviceConfig.entities, entity)) continue;
 
-      //entity types
-      configAuthorityService.entities.forEach(([entityName, enabled]) => {
-        authority.entities[entityName] = enabled;
-      });
+      const value = serviceConfig.entities[entity as NamedEntityType];
+      if (value) authorityService.entities[entity as NamedEntityType] = value;
     }
   });
 
   // * Setup default
-  effects.editor.api.setLookupsDefaults({ ...state.editor.lookups });
+  effects.editor.api.setDefaultAuthorityServices(json(authorityServices));
+  await actions.editor.applyUserPreferencesAuthrityServices();
+};
 
-  // * User saved preferences
-  const savedPreferences = actions.editor.retrieveLookupAutoritiesConfig();
-  if (savedPreferences) state.editor.lookups = savedPreferences;
+const sanitazeAuthorityServices = (services: AuthorityService[]) => {
+  const sininatizedPreferences = services.map((service) => {
+    const { find, ...rest } = service;
+    return rest;
+  });
+  return sininatizedPreferences;
+};
 
-  // * Setup services
-  await actions.editor.initiateLookupServices();
+export const applyUserPreferencesAuthrityServices = async ({ state }: Context) => {
+  const { authorityServices } = state.editor;
+
+  //* No user preferences, add once.
+  const count = await db.authorityServices.count();
+  if (count === 0) {
+    const preferences: AuthorityService[] = Object.values(json(authorityServices));
+
+    const saninatizedPreferences = sanitazeAuthorityServices(preferences);
+    await db.authorityServices.bulkAdd(saninatizedPreferences);
+    return;
+  }
+
+  const preferences = await db.authorityServices.toArray();
+
+  for (const servicePreference of preferences) {
+    // * Get authority service to configure
+    const authorityService = authorityServices[servicePreference.id];
+
+    // * Remove not available service from preferences
+    if (!authorityService) {
+      log.warn(
+        `Authority Service Preferences: authority ${servicePreference.id} no longer available `
+      );
+      await db.authorityServices.delete(servicePreference.id);
+      continue;
+    }
+
+    //* service specific configuration
+    if (servicePreference.settings) {
+      //* Required authentication?
+      if (
+        authorityService.requireAuth &&
+        (authorityService.settings?.username === '' || servicePreference.settings?.username === '')
+      ) {
+        log.warn(
+          `Config Authority Service: username required to make requests to ${authorityService.id}`
+        );
+        authorityService.enabled = false;
+        continue;
+      }
+
+      authorityService.settings = servicePreference.settings;
+    }
+
+    //* Priority
+    authorityService.priority = servicePreference.priority;
+
+    //* Enable service
+    if (servicePreference.enabled !== undefined) {
+      authorityService.enabled = servicePreference.enabled;
+    }
+
+    //*  No entities, use default
+    if (!servicePreference.entities) continue;
+
+    //* entity types
+    let entitiesToRemove: NamedEntityType[] = [];
+    for (const entity in servicePreference.entities) {
+      if (!Object.prototype.hasOwnProperty.call(servicePreference.entities, entity)) continue;
+      if (!authorityService.entities[entity as NamedEntityType]) {
+        log.warn(
+          `Authority Service Preferences: authority ${servicePreference.id} no longer accept entity ${entity}`
+        );
+
+        entitiesToRemove.push(entity as NamedEntityType);
+        delete servicePreference.entities[entity as NamedEntityType];
+        continue;
+      }
+
+      const value = servicePreference.entities[entity as NamedEntityType];
+      if (value !== undefined) authorityService.entities[entity as NamedEntityType] = value;
+    }
+
+    if (entitiesToRemove.length > 0) {
+      await db.authorityServices.update(servicePreference.id, {
+        entities: servicePreference.entities,
+      });
+    }
+  }
 };
 
 export const applyInitialSettings = ({ state, actions }: Context) => {
@@ -154,15 +219,18 @@ export const setAutosave = ({ state }: Context, value?: boolean) => {
   state.editor.autosave = value;
 };
 
-export const suspendLWChangeEvent = async ({ state, actions }: Context, value: boolean) => {
+export const suspendLWChangeEvent = async ({ state }: Context, value: boolean) => {
+  if (!window.writer?.editor) return;
+
+  const { uuid } = window.writer;
   state.editor.LWChangeEventSuspended = value;
 
   if (value) {
     const content = await window.writer.getContent();
     if (typeof content !== 'string') return;
-    await db.suspendedDocument.add({ content });
+    await db.suspendedDocuments.put({ content, uuid }, uuid);
   } else {
-    await db.suspendedDocument.clear();
+    await db.suspendedDocuments.delete(uuid);
     state.editor.contentHasChanged = true;
   }
 };
@@ -260,17 +328,13 @@ export const setAnnotationrMode = ({ state }: Context, value: number) => {
  * @param schema - Omit<Schema, 'id'>
  * @returns The new schema that was added.
  */
-export const addSchema = ({ state, effects }: Context, newSchema: Omit<Schema, 'id'>) => {
+export const addSchema = async ({ state }: Context, newSchema: Omit<Schema, 'id'>) => {
   if (!window.writer?.editor) return;
+
   const schema = window.writer.schemaManager.addSchema({ ...newSchema, editable: true });
   state.editor.schemas[schema.id] = schema;
 
-  //Add to localstorage
-  let customSchemas: Schema[] = effects.editor.api.getFromLocalStorage('custom_schemas');
-  customSchemas = customSchemas ?? [];
-
-  customSchemas.push(schema);
-  effects.editor.api.saveToLocalStorage('custom_schemas', customSchemas);
+  await db.customSchemas.add(schema);
 
   return schema;
 };
@@ -281,19 +345,12 @@ export const addSchema = ({ state, effects }: Context, newSchema: Omit<Schema, '
  * update the schemas array.
  * @returns The updated schema.
  */
-export const updateSchema = ({ state, effects }: Context, updatedSchema: Schema) => {
+export const updateSchema = async ({ state }: Context, updatedSchema: Schema) => {
   if (!window.writer?.editor) return;
   window.writer.schemaManager.updateSchema(updatedSchema);
   state.editor.schemas[updatedSchema.id] = updatedSchema;
 
-  //update localstorage
-  let customSchemas: Schema[] = effects.editor.api.getFromLocalStorage('custom_schemas');
-  if (!customSchemas) return updatedSchema;
-
-  customSchemas = customSchemas.map((schema) =>
-    schema.id === updatedSchema.id ? updatedSchema : schema
-  );
-  effects.editor.api.saveToLocalStorage('custom_schemas', customSchemas);
+  await db.customSchemas.put(updatedSchema);
 
   return updatedSchema;
 };
@@ -303,7 +360,7 @@ export const updateSchema = ({ state, effects }: Context, updatedSchema: Schema)
  * the matching id
  * @param {string} schemaId - The id of the schema to delete
  */
-export const deleteSchema = ({ state, effects }: Context, schemaId: string) => {
+export const deleteSchema = async ({ state }: Context, schemaId: string) => {
   if (!window.writer?.editor) return;
   window.writer.schemaManager.deleteSchema(schemaId);
 
@@ -314,111 +371,98 @@ export const deleteSchema = ({ state, effects }: Context, schemaId: string) => {
 
   state.editor.schemas = schemaObjs;
 
-  //remove from localstorage
-  let customSchemas: Schema[] = effects.editor.api.getFromLocalStorage('custom_schemas');
-  if (!customSchemas) return;
-
-  customSchemas = customSchemas.filter((schema) => schema.id !== schemaId);
-  effects.editor.api.saveToLocalStorage('custom_schemas', customSchemas);
+  await db.customSchemas.delete(schemaId);
 };
 
 export const getSchemsByMappingId = ({ state }: Context, mappingId: string) => {
   return state.editor.schemasList.filter((schema) => schema.mapping === mappingId);
 };
 
-export const resetDialogWarnings = ({ actions }: Context) => {
+export const resetDialogWarnings = async ({ actions }: Context) => {
   Cookies.remove(DIALOG_PREFS_COOKIE_NAME, { path: '' });
-  actions.ui.resetDoNotDisplayDialogs();
+  await actions.ui.resetDoNotDisplayDialogs();
 };
 
-export const resetPreferences = ({ state, actions, effects }: Context) => {
-  if (state.editor.fontSize !== 11) actions.editor.setFontSize(11);
-  if (state.editor.showTags !== false) actions.editor.toggleShowTags(false);
-  if (state.editor.showEntities !== true) actions.editor.setShowEntities(true);
-  if (state.editor.editorMode !== 'xmlrdfoverlap') actions.editor.setEditorMode('xmlrdf');
-  if (state.editor.annotationMode !== 3) actions.editor.setAnnotationrMode(3);
+export const resetPreferences = async ({ state, actions, effects }: Context) => {
+  actions.editor.setFontSize(11);
+  actions.editor.toggleShowTags(false);
+  actions.editor.setShowEntities(true);
+  actions.editor.setEditorMode('xmlrdf');
+  actions.editor.setAnnotationrMode(3);
 
-  effects.editor.api.removeFromLocalStorage('lookup_preferences');
+  //* Authority service
+  const defaultAuthorityServices = effects.editor.api.getDefaultAuthorityServices();
+  if (defaultAuthorityServices) {
+    state.editor.authorityServices = defaultAuthorityServices;
+    const saninatizedPrefs = sanitazeAuthorityServices(Object.values(defaultAuthorityServices));
+    await db.authorityServices.bulkPut(saninatizedPrefs);
+  } else {
+    await db.authorityServices.clear();
+  }
 
-  const lookupsDefault = effects.editor.api.getLookupsDefaults();
-  if (lookupsDefault) state.editor.lookups = lookupsDefault;
+  await actions.ui.resetDoNotDisplayDialogs();
 
   actions.ui.resetPreferences();
-};
-
-export const getSettings = ({ state }: Context, config?: string) => {
-  return {
-    isAdvanced: true,
-    fontSize: state.editor.fontSize,
-    showEntities: state.editor.showEntities,
-    showTags: state.editor.showTags,
-    mode: state.editor.mode,
-    editorMode: state.editor.editorMode,
-    annotationMode: state.editor.annotationMode,
-    allowOverlap: state.editor.allowOverlap,
-
-    schemaId: state.document.schemaId,
-  };
 };
 
 export const setIsAnnotator = ({ state }: Context, value: boolean) => {
   state.editor.isAnnotator = value;
 };
 
-export const toggleLookupAuthority = ({ state: { editor }, effects }: Context, id: Authority) => {
-  if (!editor.lookups.authorities) return;
-
-  const authorityService = editor.lookups.authorities[id];
+export const toggleLookupAuthority = async (
+  { state: { editor }, effects }: Context,
+  authorityId: string
+) => {
+  const authorityService = editor.authorityServices[authorityId];
   if (!authorityService) return;
+
   authorityService.enabled = !authorityService.enabled;
 
-  //deactivate // reactivate  entities
-  [...Object.entries(authorityService.entities)].forEach(([namedEntityType]) => {
-    authorityService.entities[namedEntityType] = authorityService.enabled;
-  });
-
-  effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
+  await db.authorityServices.update(authorityId, { enabled: authorityService.enabled });
 };
 
-export const toggleLookupEntity = (
-  { state: { editor }, effects }: Context,
-  { authorityId, entityName }: { authorityId: Authority; entityName: NamedEntityType }
+export const toggleLookupEntity = async (
+  { state }: Context,
+  { authorityId, entityName }: { authorityId: string; entityName: NamedEntityType }
 ) => {
-  const authorityService = editor.lookups.authorities[authorityId];
-  if (authorityService?.entities[entityName] === undefined) return;
+  const authorityService = state.editor.authorityServices[authorityId];
+  if (!authorityService) return;
 
-  const entityEnabled = authorityService.entities[entityName];
-  authorityService.entities[entityName] = !entityEnabled;
+  const entity = authorityService.entities[entityName];
+  if (!entity) return;
 
-  effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
+  authorityService.entities[entityName] = !entity;
+
+  await db.authorityServices.update(authorityId, {
+    entities: json(authorityService.entities),
+  });
 };
 
-export const reorderLookupPriority = (
-  { state: { editor }, effects }: Context,
+export const reorderLookupPriority = async (
+  { state }: Context,
   authorities: AuthorityService[]
 ) => {
-  if (!editor.lookups.authorities) return;
-
   authorities.forEach((authority, index) => {
-    if (!editor.lookups.authorities) return;
-    const AuthorityService = editor.lookups.authorities[authority.id];
-    if (AuthorityService) AuthorityService.priority = index;
+    const authorityService = state.editor.authorityServices[authority.id];
+    if (!authorityService) return;
+    authorityService.priority = index;
   });
 
-  effects.editor.api.saveToLocalStorage('lookup_preferences', editor.lookups);
-};
+  const preferences: AuthorityService[] = Object.values(json(state.editor.authorityServices));
 
-export const retrieveLookupAutoritiesConfig = ({ effects }: Context) => {
-  const prefs: LookupsProps = effects.editor.api.getFromLocalStorage('lookup_preferences');
-  return prefs;
+  const saninatizedPreferences = sanitazeAuthorityServices(preferences);
+  await db.authorityServices.bulkPut(saninatizedPreferences);
 };
 
 export const getContent = async ({ state }: Context) => {
   if (state.editor.LWChangeEventSuspended) {
-    const suspended = db.suspendedDocument.toCollection();
-    const document = await suspended.last();
+    if (!window.writer?.editor) return;
 
-    return document?.content;
+    const { uuid } = window.writer;
+    const suspended = await db.suspendedDocuments.get(uuid);
+    if (!suspended) return;
+
+    return suspended.content;
   }
   return await window.writer.getContent();
 };
@@ -432,15 +476,17 @@ export const closeEditor = ({ state }: Context) => {
 };
 
 export const clear = ({ state }: Context) => {
+  state.editor.LWChangeEventSuspended = false;
   state.editor.advancedSettings = true;
   state.editor.allowOverlap = false;
   state.editor.annotationMode = 3;
-  state.editor.fontSize = 11;
+  state.editor.contentHasChanged = false;
   state.editor.editorMode = 'xmlrdf';
+  state.editor.fontSize = 11;
   state.editor.isAnnotator = false;
   state.editor.isReadonly = false;
   state.editor.mode = 0;
   state.editor.showEntities = true;
+  state.editor.showEntities = true;
   state.editor.showTags = false;
-  state.editor.schemas = {};
 };

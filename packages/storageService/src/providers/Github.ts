@@ -7,12 +7,11 @@ import { Octokit } from '@octokit/rest';
 import axios, { type AxiosInstance } from 'axios';
 import { Buffer } from 'buffer/';
 import type * as T from '../types';
+import { isErrorMessage } from '../types';
 import type * as Types from '../types/Provider';
 import type Provider from '../types/Provider';
-import { isErrorMessage } from '../utilities';
 
 // ------------- Internal types --------------
-
 
 interface CheckForPullRequest {
   branch: string;
@@ -78,12 +77,17 @@ export default class Github implements Provider {
    */
   async getAuthenticatedUser() {
     const response = await this.octokit.users.getAuthenticated();
-    if (!response) return null;
+    if (!response) return undefined;
 
-    const user = response.data as any;
-    user.username = user.login;
+    const user: Types.AuthenticatedUser = {
+      ...response.data,
+      username: response.data.login,
+      userId: response.data.id.toString(),
+      id: response.data.id.toString(),
+      type: 'user',
+    };
 
-    this.userId = user.id.toString();
+    this.userId = user.id;
     this.username = user.login;
 
     return user;
@@ -171,6 +175,7 @@ export default class Github implements Provider {
     //add username attr
     collection = collection.map((repo: any) => {
       repo.owner.username = repo.owner?.login;
+      repo.writePermission = repo.permissions.push; //* This is a shortcut to check if the user has write permission someone else's repo
       return repo;
     });
 
@@ -197,6 +202,7 @@ export default class Github implements Provider {
     const repo = response.data as unknown as T.Repository;
     repo.owner.username = repo.owner?.login;
     repo.owner.path = repo.name;
+    repo.writePermission = repo.permissions.push; //* This is a shortcut to check if the user has write permission someone else's repo
 
     return repo;
   }
@@ -292,6 +298,7 @@ export default class Github implements Provider {
     //add username attr
     const repositories = collection.map((repo: any) => {
       repo.owner.username = repo.owner?.login;
+      repo.writePermission = repo.permissions.push; //* This is a shortcut to check if the user has write permission someone else's repo
       return repo;
     });
 
@@ -306,17 +313,22 @@ export default class Github implements Provider {
 
     const collection = response.data.items ?? [];
 
-    const userCollection: any[] = [];
+    const userCollection: T.PublicRepository[] = [];
 
     for (const item of collection) {
       const detail = await this.getDetailsForUser({ user: item.login });
-      const user: any = {
+      const type = item.type.toLowerCase() === 'organization' ? 'organization' : 'user';
+
+      const user: T.PublicRepository = {
         avatar_url: item.avatar_url,
-        id: item.id,
+        id: item.id.toString(),
         name: (detail?.name as string) ?? '',
-        type: item.type === 'organization' ? 'organization' : 'user',
+        type,
         username: item.login,
+        provider: 'github',
+        uuid: `github-${type}-${item.id}`,
       };
+
       userCollection.push(user);
     }
 
@@ -445,33 +457,36 @@ export default class Github implements Provider {
    * @returns {Promise}
    */
   async getDocument({
-    ownerUsername,
+    ownerUsername: owner,
     path = '',
     branch: ref,
     repoName: repo,
   }: Types.RepoContentParams) {
-    if (!ownerUsername || !repo) return null;
+    if (!owner || !repo) return null;
+
     const result = await this.octokit.repos
-      .getContent({ owner: ownerUsername, path, ref, repo })
+      .getContent({ owner, path, ref, repo })
       .catch(() => null);
 
     if (!result) return null;
+    if (!('type' in result.data)) return null;
 
-    if (Array.isArray(result.data)) return null;
-    //@ts-ignore
-    if (result.data.type === 'dir') return null;
+    const { download_url, sha } = result.data;
 
-    //@ts-ignore
-    const { content, download_url, sha } = result.data;
+    // * When the file is > 1MB, the content returns empty.
+    // * So, to normalize the request, we fetch the content blob.
+    const blob = await this.octokit.rest.git.getBlob({ owner, repo, file_sha: sha });
+    if (!blob.data) return null;
+
+    const content = this.decodeContent(blob.data.content);
+    const url =
+      download_url ??
+      `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${encodeURIComponent(path)}`;
 
     return {
-      content: this.decodeContent(content),
+      content,
       hash: sha,
-      url:
-        download_url ??
-        `https://raw.githubusercontent.com/${ownerUsername}/${repo}/${ref}/${encodeURIComponent(
-          path
-        )}`,
+      url,
     };
   }
 

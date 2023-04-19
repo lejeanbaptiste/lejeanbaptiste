@@ -44,9 +44,9 @@ export default {
   coverageThreshold: {
     global: {
       branches: 75,
-      functions: 55,
-      lines: 65,
-      statements: 65,
+      functions: 50,
+      lines: 70,
+      statements: 70,
     },
   },
 
@@ -87,7 +87,9 @@ export default {
   // ],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
-  // moduleNameMapper: {},
+  moduleNameMapper: {
+    '^dexie$': require.resolve('dexie'),
+  },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],
@@ -131,10 +133,13 @@ export default {
   // runner: "jest-runner",
 
   // The paths to modules that run some code to configure or set up the testing environment before each test
-  // setupFiles: ['<rootDir>//test/setup/index.ts'],
+  setupFiles: [
+    // '<rootDir>/test/setup/index.ts',
+    'fake-indexeddb/auto',
+  ],
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
-  // setupFilesAfterEnv: ['<rootDir>/test/setup/index.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/setup/index.ts', '@testing-library/jest-dom/extend-expect'],
 
   // The number of seconds after which a test is considered as slow and reported as such in the results.
   // slowTestThreshold: 5,

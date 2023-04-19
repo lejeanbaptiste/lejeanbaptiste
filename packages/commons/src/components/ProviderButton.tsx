@@ -1,5 +1,5 @@
 import { Button, Tooltip } from '@mui/material';
-import { getIcon } from '@src/assets/icons';
+import { getIcon, type IconName } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import { motion } from 'framer-motion';
 import React from 'react';
@@ -13,9 +13,9 @@ export const ProviderButton = ({ name: provider }: ProviderButtonProps) => {
   const { cookieConsent } = useAppState().ui;
   const { signIn } = useActions().auth;
 
-  const { t } = useTranslation('storage');
+  const { t } = useTranslation('LWC');
 
-  const Icon = getIcon(provider);
+  const Icon = getIcon(provider as IconName);
 
   const singInClick = () => signIn({ idpHint: provider });
 
@@ -23,7 +23,7 @@ export const ProviderButton = ({ name: provider }: ProviderButtonProps) => {
     <Tooltip
       title={
         !cookieConsent.includes('interaction')
-          ? t('cookie_consent:warning.must_accept_cookies_message')
+          ? t('cookie_consent.warning.must_accept_cookies_message')
           : ''
       }
     >

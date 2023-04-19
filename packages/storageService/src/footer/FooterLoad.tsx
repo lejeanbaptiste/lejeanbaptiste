@@ -13,7 +13,7 @@ export const FooterLoad = ({ onCancel }: FooterProps) => {
   const { isLoading } = useAppState().cloud;
   const { load } = useActions().common;
   const { fetchDocument, navigateTo } = useActions().cloud;
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWStorageService');
 
   const handleLoad = async () => {
     if (source !== 'cloud') {
@@ -47,17 +47,18 @@ export const FooterLoad = ({ onCancel }: FooterProps) => {
 
   return (
     <DialogActions data-testid="footer-load" sx={{ justifyContent: 'space-between' }}>
-      <Button onClick={onCancel} title="cancel" variant="outlined">
-        {t('commons:cancel')}
+      <Button onClick={onCancel} size="small" title="cancel">
+        {t('commons.cancel')}
       </Button>
       <LoadingButton
         disabled={source === 'cloud' && !selectedItem}
         loading={isLoading}
         onClick={handleLoad}
         title="load"
-        variant="contained"
+        size="small"
+        variant="outlined"
       >
-        {selectedItem?.type === 'file' ? t('commons:load') : t('commons:open')}
+        {selectedItem?.type === 'file' ? t('commons.load') : t('commons.open')}
       </LoadingButton>
     </DialogActions>
   );

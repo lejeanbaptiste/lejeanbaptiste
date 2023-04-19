@@ -1,0 +1,1 @@
+export {clearCache, deleteDb} from './'; 

@@ -1,5 +1,5 @@
 import { Backdrop, useTheme } from '@mui/material';
-import { TeaIcon } from '@src/assets/icons';
+import { TeaIcon } from '@src/icons';
 import React from 'react';
 
 export const LoadingMask = () => {

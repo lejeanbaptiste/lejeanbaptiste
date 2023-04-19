@@ -9,7 +9,7 @@ export const SigninButton = () => {
 
   const { openDialog } = useActions().ui;
 
-  const { t } = useTranslation('storage');
+  const { t } = useTranslation('LWC');
 
   const handleClick = () => {
     if (!isDirty) return openDialog({ type: 'signIn' });
@@ -17,14 +17,13 @@ export const SigninButton = () => {
     openDialog({
       props: {
         severity: 'warning',
-        title: `${t('commons:unsaved_changes')}`,
-        Message: () => <Typography>{t('storage:you_will_lose_any_unsaved_changes')}.</Typography>,
+        title: `${t('commons.unsaved_changes')}`,
+        Body: () => <Typography>{t('storage.you_will_lose_any_unsaved_changes')}.</Typography>,
         actions: [
-          { action: 'cancel', label: `${t('commons:cancel')}` },
-          { action: 'signin', label: `${t('commons:sign_in')}`, variant: 'outlined' },
+          { action: 'cancel', label: `${t('commons.cancel')}` },
+          { action: 'signin', label: `${t('commons.sign_in')}`, variant: 'outlined' },
         ],
-        //@ts-ignore
-        onClose: async (action: string) => {
+        onClose: async (action) => {
           if (action === 'cancel') return;
           openDialog({ type: 'signIn' });
         },
@@ -36,7 +35,7 @@ export const SigninButton = () => {
     <Tooltip
       title={
         !cookieConsent.includes('interaction')
-          ? t('cookie_consent:warning.must_accept_cookies_message')
+          ? t('cookie_consent.warning.must_accept_cookies_message')
           : ''
       }
     >
@@ -49,7 +48,7 @@ export const SigninButton = () => {
           sx={{ width: 'max-content' }}
           variant="contained"
         >
-          {t('commons:sign_in')}
+          {t('commons.sign_in')}
         </Button>
       </span>
     </Tooltip>

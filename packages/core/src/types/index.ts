@@ -1,9 +1,10 @@
 import { OptionsObject, SnackbarMessage } from 'notistack';
 import type { Bookmark, Editor } from 'tinymce/tinymce';
-import type { LookupsConfig } from '../dialogs/entityLookups';
+import type { Authority, AuthorityServiceConfig } from '../dialogs/entityLookups';
 import Writer from '../js/Writer';
 
-export type { Authority, LookupsProps } from '../dialogs/entityLookups';
+export type { Authority } from '../dialogs/entityLookups';
+export * from './assert';
 
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;
@@ -44,7 +45,7 @@ export interface LeafWriterOptionsSettings {
   colorScheme?: string;
   language?: string;
 
-  lookups?: LookupsConfig;
+  authorityServices?: (Authority | AuthorityServiceConfig)[];
   schemas?: Schema[];
   schemasId?: SupportedSchemasId[];
 
@@ -89,15 +90,6 @@ export type ISettingsModuleName =
   | 'imageViewer'
   | 'validation';
 
-export type SupportedEntityLookups =
-  | 'dbpedia'
-  | 'geonames'
-  | 'getty'
-  | 'lgpn'
-  | 'viaf'
-  | 'wikidata'
-  | 'cwrc';
-
 export const SupportedSchemas: Map<string, Schema> = new Map();
 
 export interface User {
@@ -109,12 +101,12 @@ export const SchemaMappings = ['cwrcEntry', 'orlando', 'tei', 'teiLite'] as cons
 export type SchemaMappingType = (typeof SchemaMappings)[number];
 
 export interface Schema {
-  id: string;
-  name: string;
-  mapping: SchemaMappingType;
-  rng: string[];
   css: string[];
   editable?: boolean;
+  id: string;
+  mapping: SchemaMappingType;
+  name: string;
+  rng: string[];
 }
 
 export interface Language {

@@ -1,4 +1,3 @@
-export { EditView } from './edit';
-export { NotFoundView } from './error/NotFoundView';
-export { HomeView } from './home';
-export { LinkAccounts } from './LinkAccounts';
+export { Profile } from './profile';
+export { DocumentViews } from './storage/documents';
+export { UploadDropBox } from './storage/uploadDropBox';

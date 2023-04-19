@@ -10,7 +10,7 @@ import {
   Switch,
   TextField,
 } from '@mui/material';
-import React, { ChangeEvent, useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions } from '../overmind';
 
@@ -21,9 +21,10 @@ interface CreateRepoDialogProps {
 }
 
 export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogProps) => {
-  const { t } = useTranslation();
   const { createRepo } = useActions().cloud;
   const { openDialog } = useActions().ui;
+
+  const { t } = useTranslation('LWStorageService');
 
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -57,7 +58,7 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: `${t('error:message:repo_creation_error')}`,
+          title: `${t('cloud.message.repo_creation_error')}`,
           onClose: () => setIsLoading(false),
         },
       });
@@ -79,7 +80,7 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
       open={open}
     >
       <DialogTitle id="create-repository-title">
-        {t('cloud:createRepo:create_repository')}
+        {t('cloud.createRepo.create_repository')}
       </DialogTitle>
       <DialogContent>
         <Stack spacing={4}>
@@ -89,9 +90,9 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
             fullWidth
             id="name"
             inputProps={{ 'data-testid': 'save:create-repo:name-input' }}
-            label={t('commons:name')}
+            label={t('commons.name')}
             onChange={handleNameChange}
-            placeholder={`${t('cloud:createRepo:repository_name')}`}
+            placeholder={`${t('cloud.createRepo.repository_name')}`}
             required
             value={name}
             variant="standard"
@@ -99,10 +100,10 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
           <TextField
             autoComplete="off"
             fullWidth
-            helperText={t('cloud:createRepo:description_help')}
+            helperText={t('cloud.createRepo.description_help')}
             id="description"
             inputProps={{ 'data-testid': 'save:create-repo:description-input' }}
-            label={t('cloud:createRepo:description')}
+            label={t('cloud.createRepo.description')}
             onChange={handleDescriptionChange}
             value={description}
             variant="outlined"
@@ -111,14 +112,12 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
             control={
               <Switch checked={privateRepo} onChange={handleChangePrivateRepo} size="small" />
             }
-            // label={t('commons:private')}
-            label={'Private'}
+            label={t('commons.private')}
           />
         </Stack>
       </DialogContent>
-
       <DialogActions>
-        <Button onClick={handleCancel}>{t('commons:cancel')}</Button>
+        <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
         <LoadingButton
           data-testid="save:create-repo:create-button"
           disabled={name === ''}
@@ -126,7 +125,7 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
           onClick={handleCreate}
           variant="contained"
         >
-          {t('commons:create')}
+          {t('commons.create')}
         </LoadingButton>
       </DialogActions>
     </Dialog>

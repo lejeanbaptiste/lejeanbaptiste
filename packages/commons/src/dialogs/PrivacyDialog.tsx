@@ -20,7 +20,7 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { language } = useAppState().ui;
   const { closeDialog } = useActions().ui;
 
-  const { t } = useTranslation('commons');
+  const { t } = useTranslation('LWC');
   const { showSettings } = useCookieConsent();
 
   const [content, setContent] = useState('');
@@ -50,26 +50,14 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
       <DialogContent>
         <ReactMarkdown
           components={{
-            h1: ({ ...props }) => (
-              //@ts-ignore
-              <Typography component="h1" mb={3} variant="h4" {...props} />
-            ),
-            h2: ({ ...props }) => (
-              //@ts-ignore
-              <Typography component="h2" my={2} variant="h5" {...props} />
-            ),
-            h3: ({ ...props }) => (
-              //@ts-ignore
-              <Typography component="h3" my={1.5} variant="h6" {...props} />
-            ),
+            h1: ({ ...props }) => <Typography component="h1" mb={3} variant="h4" {...props} />,
+            h2: ({ ...props }) => <Typography component="h2" my={2} variant="h5" {...props} />,
+            h3: ({ ...props }) => <Typography component="h3" my={1.5} variant="h6" {...props} />,
             h4: ({ ...props }) => (
-              //@ts-ignore
               <Typography component="h4" my={1} variant="subtitle1" fontWeight={700} {...props} />
             ),
-            //@ts-ignore
             p: ({ ...props }) => <Typography mb={1} {...props} />,
             a: ({ ...props }) => (
-              //@ts-ignore
               <Link underline="hover" target="_blank" rel="noopener noreferrer" {...props} />
             ),
           }}
@@ -78,9 +66,9 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         </ReactMarkdown>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleOpenSettings}>{t('cookie_consent:privacy_settings')}</Button>
+        <Button onClick={handleOpenSettings}>{t('cookie_consent.privacy_settings')}</Button>
         <Button onClick={handleCancel} variant="outlined">
-          {t('close')}
+          {t('commons.close')}
         </Button>
       </DialogActions>
     </Dialog>

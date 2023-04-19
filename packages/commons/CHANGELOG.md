@@ -1,5 +1,221 @@
 # CHANGELOG
 
+## 3.1.0
+
+### Notable Changes
+
+#### Allow unauthenticated users to open public GitHub files
+
+Unauthenticated users can open public documents using the LWC permalink. The document opens on either 'view' or 'edit' mode, but the user cannot save the document to the cloud. In fact, without authentication, it is impossible to save the file back to the repository).
+
+### Minor Changes
+
+- Allow unauthenticated users to open public GitHub files [309f21a0652aa865f0fd09cdafd9baec9f2e973f]
+
+### Patch Changes
+
+- Load document
+  - Samples: fix bug preventing unauthenticated users from loading sample files [8ffc9f7a68b9bbb8a7fc02ae84b8fd796734f9a5]
+  - From the cloud: fix bug preventing unauthenticated users from being redirected to the sign-in page [c4c056bac7dc77adf90e1ce56fb7df8334438198]
+- Folder Structure
+  - Rename 'view' as 'page' [3299cd98a14ef31eece7615f9c6c3e4d4fcf5c07]
+  - Move Storage Dialog from Components to Dialog folder [05905fe4318d11e01f01c931badd33ec8f9c8aa5]
+  - Move profile from components to views [e7b322a4b27d60d5e05db2e748cd8acee49dffad]
+  - Move uploadDropBox from components to View [5f1d4034318f850d0fcfb7dc2f009dcd30527ed1]
+- Types:
+  - Permalink: better typing [9b9f47181d61fb9ee29811f6365c412648a78e38]
+  - Tweaks [966e007679ee39de3ba87fd76329ccb880ad7eb9]
+- Update dependencies
+  - core:
+    - bump: @cwrc/leafwriter-storage-service@2.1.1 [c885e7abba64e82a3550b7109cd95217713d3aa2]
+
+## 3.0.0
+
+### Notable Changes
+
+#### Import and Export
+
+In an effort to make LEAF-Writer more accessible, we are implementing Import from and Export to different formats. We started by adding support to import from `Transkribus` and export to `HTML`.
+
+The conversion is made by an external service (`LEAF-TE`). LWC submit the document to LEAF-TE and receive back the converted document.
+
+The options for both Import and Export are dynamically gathered from `LEAF-TE`. When new formats become available, LWC will show them without the need to redeploy the code, unless a more complex setup is needed.
+
+##### Import
+
+A document can be imported in two different flows: `Implicit` or `Explicit`
+
+The `Implicit Flow` intercept the document a user is about to open. It checks for clues to see if it needs to convert the file (e.g., the presence of a specific tag). If LWC finds a signal that the document can be converted, it will prompt the user to select the appropriate action: open as is, or convert it.
+
+In the `Explicit Flow`, the user clicks on the Import button to open the Import dialog. Then, the user selects the document format and the document to import.
+
+##### Export
+
+A document can be exported from the Main Menu when the document is opened. LW lists the possible formats in the option `download`. The user selects the format and downloads the converted document.
+
+##### Open in a new tab
+
+LWC opens documents in a new tab if you have a document already opened. This fix is a well know bug that prevented users from opening and replacing documents when another document is opened.
+
+Now, any document opened from the home page opens in the same tab.
+Documents open from the `edit` or `view` page open in a new tab.
+
+It is still possible to close a document and open another in the same tab.
+
+#### UI
+
+There are some changes and improvements in the UI. Most notably the storage view (recent documents, samples, templates). The interaction changed slightly: now, one click selected the document. It needs a double click to open it.
+
+### Major Changes
+
+- Storage View:
+  - One-click Selects. Double click open the document [d56031c7b57c757de520c293d65b802b19a7b64c] [198af8c6b79820cea469590cf89b924f3e23a589]
+- Implicit import files
+  - Show prompt when detecting special formats [06956667d5535250d6091929ce53c9529dd4f477]
+- documentRequest
+  - Temporarilly stores documents in the documentRequest table (indexedDB) to allow LEAF-Writer to open it in another browser tab. [1b6c26f3343540096fdb0534a98038c2c5fe53aa]
+- Introduce import and export functionalities [043c8e7f5c4c8bffe89cc5e6ec08af6cc3a61fcf]
+  - Add import/export dialog.
+  - Redesign storage views.
+  - Redesign the main menu.
+  - Rework load resource logic.
+  - Open documents on a new tab when a document is already opened. Connect with LEAF-TE API for file conversion.
+
+### Minor Changes
+
+- LEAF-Writer: Adopt new settings [394cdadda0327537dbee9a4396e993d46a79a90f]
+- Sign out: Clear indexedDb [64e905fdc05eb1eef9a8f5afe1da19f30c2c75c5]
+- Icons: Add support for multiple icon libraries [0b7036f7183aa0d5b8e8eb376a90ba6811fca656]
+- Storage Service Dialog: use export instead of default [3086f039e2afe5de3fb135261d0a6157e399a650]
+
+### Patch Changes
+
+- Db:
+  - Clean code [5c0a8b7b59caf8b1594d96b5c6be5267e90a614e]
+  - Add try-catch block [027575484434e508c164875d655ac9217fff3663]
+- Localization tweaks [2e94d3e1dc509f15fa2b99d01dc010e5cf1daa37] [1a86d429f0e10ed58ce06feab8ff735bec0683b8] [f864db4c22ffb279e8644c3e553021d09600f4fb]
+- Events: Dispatch events when changing `language` or `theme` [d0007fe73e12aac9165b1b77bb47318d14173692]
+- HTTP: Improve HTTP error handling and logging [a69a7712b4638614e98b4522b5a184ae7339f612]
+- Clean code [40c2837166f43dec0bcdc15c0a237734a660603e] [f16e1dd10228a4f9b25ab83f52361d7aa22f1258]
+- tsconfig: Step up `moduleResolution` to `nodenext` [1132da660acc09642fe456dbce0e7c0045d5ddb3]
+- Update dependencies [05a6a18ab83e856c640b276c95ffbc147a283565]
+  - core:
+    - upgrade: [70044dc3ca38174e102cd18ed677023e1ab93b5b]
+      - @cwrc/leafwriter@3.0.0
+      - @cwrc/leafwriter-storage-service@2.1.0
+    - update:
+      - @mui/material@5.12.1
+      - framer-motion@10.12.4 [70044dc3ca38174e102cd18ed677023e1ab93b5b]
+      - helmet@6.1.5
+    - bump:
+      - @mui/lab@5.5.0-alpha.127
+      - axios@1.3.5
+  - dev:
+    - add @types/webpackbar@4.0.3 [70044dc3ca38174e102cd18ed677023e1ab93b5b]
+    - update:
+      - @typescript-eslint/eslint-plugin@5.59.0
+      - @typescript-eslint/parser@5.59.0
+      - eslint@8.38.0
+      - webpack@5.79.0
+    - bump
+      - html-webpack-plugin@5.5.1
+      - typescript@5.0.4
+
+## 2.7.0
+
+### New Features
+
+#### Import File
+
+We are implementing `import files` on LEAF-Writer Commons. We are planning for two methods: an `Implicit` and an `Explicit` flow.
+
+This version introduces the mechanics for the `Implicit flow` (in alpha).
+When opening a file, LEAF-Writer Commons checks for clues to see if it needs to convert the file (e.g., the presence of a specific tag). These changes add the necessary checks and UX for converting from the `Transkribus-TEI` Output. This feature is still pending the connection to an external API to make the conversion.
+
+#### Export File
+
+We are implementing `export files` on LEAF-Writer Commons.
+
+This version introduces the mechanics and UI for `export to HTML` (in alpha).
+From the main menu, the user can export and download the XML document as an HTML file. This feature is still pending the connection to an external API to make the conversion.
+
+#### Viewing Mode (Readonly)
+
+When opening a document the user does not have write permission, LEAF-Writer will open in `viewing mode`. Users can switch to `edit mode` if they want to edit, make a pull request or download the document.
+
+The route to the viewing mode changed slightly.
+
+Instead of using the URL search query `&readonly=true)`, we use the route path `/view`.
+Example:
+
+Before: `https://localhost/edit?provider=github&owner=lucaju&ownertype=user&repo=cwrc-writer-samples&filename=Sample%20TEI%20letter%20-%20Original.xml&readoly=true`
+
+After: `https://localhost/view?provider=github&owner=lucaju&ownertype=user&repo=cwrc-writer-samples&filename=Sample%20TEI%20letter%20-%20Original.xml`
+
+#### File Browser
+
+A slight change in the UX: one click selects the view. A subsequent click (or a double click) opens it.
+
+### Minor Changes
+
+- Import
+  - Introduce Import Implicit Flow: Transkribus (alpha) [53aaadc736d814d99865c12503d24c21bb9a6b33]
+- Export:
+  - Introduce the mechanics and UI for export to HTML (alpha) [4db458797ed0da4d24699cebef48d0ee77b31f7c]
+  - Available in production [9b54affefa216c85774b8b27c364f48fd0befe17]
+- ReadOnly:
+  - Open document in viewing mode (read-only) when a user does not have write permission [31da45affbbef2bac63dcb515f6c9896ceb6cbe2]
+- Recent documents:
+  - Move from local storage to indexedDB using Dexie
+
+### Patch Changes
+
+- File Browser (recent documents/sample/template):
+  - Minor design changes [129a0aabc9bf1868048c99267b1b8174cc591afc]
+- Routes
+  - Use route '/view' for read-only mode
+- HTTP Request error
+  - Move and improve error handling [6ac549580e28bee525f94c18f4f51f8500a2f85c]
+- Dialogs
+  - Rename `title` as `label` [7745d58276178ed223e3160d3591f4306e63fd51]
+  - Rename `Message` to `Body` [5f10bf0e0668e6997d4a711164b3ff23f976a092]
+- Icons
+  - Improve typing [be908627f0129e2eb0697202d87c9b2212a3acf0]
+- Utilities
+  - Move functions to dedicated modules [751d5c68d0e60f621f1b5b19db7d2f29ac0aab49]
+- CSS:
+  - Fix first-letter selector [088f89721506aa8de0ad3258e33447b71e0e7fc5]
+- Types
+  - Improve localStorage API to receive generic Type [438977a16d56706b681f0f5df71f4b02cb4830ef]
+  - Clean [54655f682683c942fadb6f8348e83204b8946848] [5451628239e9f20cdd478dac8c96f7e852dc011e]
+- Update Dependencies [61506d40cdee49f66743cb20c0d1e6c723a844a3]
+  - core:
+    - remove unused: body-parser cookie-parser
+    - added: @mui/lab@5.0.0-alpha.125
+    - upgrade: notistack@3.0.1
+    - update:
+      - @cwrc/leafwriter-storage-service@1.4.0 [efef759c1ed692cc695cf69238fb938f7705f287]
+      - framer-motion@10.10.0
+      - mdi-material-ui@7.7.0
+      - react-router-dom@6.10.0
+    - bump up:
+      - @cwrc/leafwriter@2.7.4 [efef759c1ed692cc695cf69238fb938f7705f287]
+      - @mui/icons-material@5.11.16
+      - @mui/material@5.11.16
+      - i18next@22.4.14
+      - keycloak-js@21.0.2
+  - dev:
+  - remove: @types/react-responsive-masonry
+  - upgrade: css-minimizer-webpack-plugin@5.0.0
+  - update:
+    - @typescript-eslint/eslint-plugin@5.57.1
+    - @typescript-eslint/parser5.71.1
+    - eslint@8.37.0 webpack@5.77.0
+  - bump up:
+    - @types/node@18.15.11
+    - @types/webpack@5.18.1
+    - typescript@5.0.3
+
 ## 2.6.6
 
 ### Patch Changes

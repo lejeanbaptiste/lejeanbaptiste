@@ -1,14 +1,18 @@
+import i18next from '../../i18n';
 import type {
   CollectionSource,
   CollectionType,
   Content,
   Organization,
   Owner,
-  PublicRepository,
   Repository,
   SuportedProviders,
 } from '../../types';
-import i18next from '../../i18n';
+
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation('LWStorageService');
+
+const { t } = i18next;
 
 type State = {
   collectionSource: CollectionSource;
@@ -26,7 +30,6 @@ type State = {
   };
   owner?: Owner | Organization;
   providers: SuportedProviders[];
-  publicRepositories?: PublicRepository;
   repositories?: {
     collection: Repository[];
     hasMore?: boolean;
@@ -42,8 +45,8 @@ type State = {
 
 export const state: State = {
   collectionSource: 'owner',
-  commitMessage: i18next.t('cloud:settings:update'),
-  defaultCommitMessage: i18next.t('cloud:settings:update'),
+  commitMessage: t('cloud.settings.update', { ns: 'LWStorageService' }),
+  defaultCommitMessage: t('cloud.settings.update', { ns: 'LWStorageService' }),
   isFetching: false,
   isLoading: false,
   isSaving: false,
