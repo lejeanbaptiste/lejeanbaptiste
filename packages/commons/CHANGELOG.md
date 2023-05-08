@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## 3.1.1
+
+### Patch Changes
+
+- Update dependencies [4838d80bb78670dd754dc657c6489ce0eafacf20]
+  - core:
+    - upgrade: helmet@7.0.0
+    - update:
+      - @emotion/react@11.11.0
+      - @emotion/styled@11.11.0
+      - axios@1.4.0
+      - broadcast-channel@5.1.0
+      - date-fns@2.30.0
+      - jotai@2.1.0
+      - keycloak-js@21.1.1
+      - react-router-dom@6.11.1
+      - vanilla-cookieconsent@2.9.0
+    - bump:
+      - @cwrc/leafwriter@3.0.1
+      - @mui/material@5.12.3
+      - framer-motion@10.12.8
+      - i18next@22.4.15
+      - js-cookie@@3.0.5
+      - react-i18next@12.2.2
+      - react-markdown@8.0.7
+      - rxjs@7.8.1 swr@2.1.5
+  - dev:
+    - update:
+      - @octokit/type@9.2.1
+      - eslint@8.40.0
+      - webpack@5.82.0
+      - webpack-cli@5.1.0
+      - webpack-dev-middleware@6.1.0
+    - bump:
+      - @typescript-eslint/eslint-plugin@5.59.2
+      - @typescript-eslint/parser@5.59.2
+      - prettier@2.8.8
+
 ## 3.1.0
 
 ### Notable Changes

@@ -61,10 +61,10 @@ class Selection {
         "
       />
       <div id="${this.id}-footer" class="moduleFooter" style="border-top: 0px;">
-          <label>
-            <input type="checkbox" name="includeRdf" />
-          </label>
-          <button name="edit-xml">${editRawLabel}</button>
+        <label>
+          <input type="checkbox" name="includeRdf" />
+        </label>
+        <button type="button" name="edit-xml">${editRawLabel}</button>
       </div>
       <div id="${this.id}_selectionContents" style="display: none;" />
     </div>
@@ -95,7 +95,8 @@ class Selection {
     $(`#${this.id}-footer [name="edit-xml"]`)
       //@ts-ignore
       .button()
-      .on('click', async () => {
+      .on('click', async (event: JQuery.Event) => {
+        event.preventDefault();
         const docText = await writer.converter.getDocumentContent(true);
         writer.overmindActions.ui.openDialog({ type: 'editSource', props: { content: docText } });
       });

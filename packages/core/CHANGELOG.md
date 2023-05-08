@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## 3.0.1
+
+### Patch Changes
+
+- fix(core): 🐛 Raw xml panel: add type=button to a button element to avoid auto-submit behaviour [d64070c38f0160fa37c6e5708605778fec2819ac]
+- Update dependencies [84b12fb229cbe031a3f743395f8beaf7266f1025]
+  - core:
+    - update:
+      - @emotion/react@11.11.0
+      - @emotion/styled@11.11.0
+      - axios@1.4.0
+      - jotai@2.1.0
+      - monaco-editor@0.38.0
+      - react-i18next@12.2.2
+      - react-virtuoso@4.3.5
+      - wikibase-sdk@9.1.1
+    - bump:
+      - @mui/material@5.12.3
+      - framer-motion@10.12.8
+      - i18next@22.4.15
+      - js-cookie@3.0.5
+      - react-i18next@12.2.2
+      - react-resizable-panels@0.0.32
+      - rxjs@7.8.1
+  - dev:
+    - update
+      - @types/react-dom218.2.4
+      - webpack@5.82.0
+    - bump
+      - @types/progressbar.js@1.1.3
+      - @typescript-eslint/eslint-plugin@5.59.2
+      - @typescript-eslint/parser@5.59.2
+
 ## 3.0.0
 
 ### Notable Changes
