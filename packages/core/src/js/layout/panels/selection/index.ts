@@ -70,8 +70,6 @@ class Selection {
     </div>
   `);
 
-  //? add "type="button" to the edit-xml button to avoid default submit behaviour
-
     this.$prismContainer = $(`#${this.id}`);
     this.$selectionContents = $(`#${this.id}_selectionContents`);
 
