@@ -25,11 +25,24 @@ export class DexieDB extends Dexie {
   constructor() {
     super('LEAF-Writer');
     this.version(1).stores({
-      authorityServices: 'id, lookupService',
-      customSchemas: 'id, mapping',
-      doNotDisplayDialogs: 'id',
-      suspendedDocuments: 'uuid',
+      suspendedDocument: '++id',
     });
+    this.version(2)
+      .stores({
+        authorityServices: 'id, lookupService',
+        customSchemas: 'id, mapping',
+        doNotDisplayDialogs: 'id',
+        suspendedDocuments: 'uuid',
+      })
+      .upgrade((tx) => {
+        return tx
+          .table('suspendedDocuments')
+          .toCollection()
+          .modify((suspendedDocuments) => {
+            suspendedDocuments.uuid = suspendedDocuments.id;
+            delete suspendedDocuments.id;
+          });
+      });
   }
 }
 
