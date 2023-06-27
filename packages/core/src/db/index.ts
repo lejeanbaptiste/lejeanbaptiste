@@ -1,8 +1,8 @@
 // * Packege Exports is only available when TSconfig nodeModuleRosultuon is set to NODE16 or NODENEXT.
 // * But, this new configuration means different setup to load dependencies, which might break other things.
 // * We should way a little longer to adopt the new setup
-//@ts-ignore
-import * as ValidatorDB from '@cwrc/leafwriter-validator/db';
+
+import * as ValidatorDB from '@cwrc/leafwriter-validator/lib/db';
 import Dexie, { Table } from 'dexie';
 import { AuthorityService } from '../dialogs';
 import type { Schema } from '../types';
