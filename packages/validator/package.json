@@ -31,13 +31,13 @@
       "require": "./dist/leafwriter-validator.worker.js",
       "types": "./lib/index.worker.d.ts"
     },
-    "./db": {
+    "./lib/db": {
       "import": [
-        "./src/db/exports.ts",
-        "./lib/db/exports.js"
+        "./src/db/index.ts",
+        "./lib/db/index.js"
       ],
       "require": "./dist/leafwriter-validator.db.js",
-      "types": "./lib/db/exports.d.ts"
+      "types": "./lib/db/index.d.ts"
     }
   },
   "types": "lib/index.worker.d.ts",
