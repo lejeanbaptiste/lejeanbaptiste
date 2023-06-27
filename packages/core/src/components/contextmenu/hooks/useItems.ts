@@ -181,8 +181,9 @@ export const useItems = (ctx: State) => {
   const getTagItems = (tags: NodeDetail[], action: Action) => {
     if (!writer) return;
 
-    const menu = tags.map(({ name, fullName, invalid }) => {
+    const menu = tags.map(({ name, fullName, invalid, documentation }) => {
       const item: ItemProps = {
+        documentation,
         fullName,
         name,
         id: uuidv4(),

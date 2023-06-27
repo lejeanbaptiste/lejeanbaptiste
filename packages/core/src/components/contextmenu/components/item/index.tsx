@@ -21,6 +21,7 @@ interface BaseProps {
 }
 
 interface TagItemProps extends BaseProps {
+  documentation?: string;
   fullName?: string;
   invalid?: boolean;
   onClick?: () => void;
@@ -42,6 +43,7 @@ export const Item = forwardRef<any, ItemProps>(
       active = false,
       children,
       disabled = false,
+      documentation,
       fullName,
       getChildren,
       id,
@@ -132,7 +134,7 @@ export const Item = forwardRef<any, ItemProps>(
           columnGap={1}
         >
           {icon && <IconLeft icon={icon} entityType={id} />}
-          <Label fullName={fullName} invalid={invalid} name={name} />
+          <Label {...{ documentation, fullName, invalid, name }} />
           {rigthIconProps && <IconRight isLoading={isLoading} {...rigthIconProps} />}
         </Stack>
 
