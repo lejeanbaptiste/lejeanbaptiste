@@ -10,12 +10,11 @@ import { ProfileAnchor } from './ProfileAnchor';
 import { Settings } from './Settings';
 
 interface TopBarProps {
+  Center?: React.ReactNode;
   Left?: React.ReactNode;
-  Meta?: React.ReactNode;
-  title?: string;
 }
 
-export const TopBar = ({ Left, Meta, title = 'LEAF-Writer' }: TopBarProps) => {
+export const TopBar = ({ Center, Left }: TopBarProps) => {
   const { userState } = useAppState().auth;
   const { resource } = useAppState().editor;
   const { page } = useAppState().ui;
@@ -28,17 +27,11 @@ export const TopBar = ({ Left, Meta, title = 'LEAF-Writer' }: TopBarProps) => {
       elevation={!resource ? 0 : palette.mode === 'dark' ? 2 : 1}
       position="relative"
     >
-      <Toolbar variant="dense">
+      <Toolbar sx={{ flexWrap: 'wrap' ,justifyContent: 'space-between', maxHeight: '48px' }} variant="dense">
         <Stack direction="row" alignItems="center">
           {Left}
         </Stack>
-
-        <Box flexGrow={1} />
-
-        {Meta}
-
-        <Box flexGrow={1} />
-
+        {Center}
         <Stack
           direction="row"
           alignItems="center"
@@ -63,7 +56,7 @@ export const TopBar = ({ Left, Meta, title = 'LEAF-Writer' }: TopBarProps) => {
                 {page !== 'home' && <SigninButton />}
               </>
             ) : (
-              ''
+              null
             )}
           </AnimatePresence>
         </Stack>
