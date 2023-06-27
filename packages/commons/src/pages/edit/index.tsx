@@ -32,7 +32,7 @@ export const EditPage = () => {
 
   return (
     <Page>
-      <TopBar Left={<MainMenu />} Meta={<Meta />} />
+      <TopBar Left={<MainMenu />} Center={<Meta />} />
       {!resource ? <LoadingMask /> : <Editor />}
     </Page>
   );
