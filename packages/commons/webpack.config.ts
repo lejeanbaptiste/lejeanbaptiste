@@ -147,6 +147,7 @@ const webpackConfig: webpack.Configuration = {
       process: false,
       querystring: false,
       string_decoder: false,
+      stream: false,
       url: false,
     },
   },
