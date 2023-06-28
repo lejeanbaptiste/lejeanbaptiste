@@ -1,4 +1,4 @@
-FROM node:18.14-alpine
+FROM node:18.16-alpine
 
 # Needed because some dependencies are fetch from git and alpine does not come with git
 RUN apk add --no-cache git
