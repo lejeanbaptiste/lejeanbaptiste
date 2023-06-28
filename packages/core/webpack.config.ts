@@ -123,6 +123,7 @@ const webpackConfig: webpack.Configuration = {
       path: false,
       process: false,
       querystring: false,
+      stream: false,
       url: false,
     },
   },
