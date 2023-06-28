@@ -747,7 +747,9 @@ Not everything works perfectly when running jsdom inside a web browser. Sometime
 
 ### How To use JSDOM on LEAF-Writer Validator Web Worker
 
-A browserified version of jsdom (v20.0.0) is already in place on the web workers folder `/src/lib/jsdom`
+A browserified version of jsdom (v21.1.2) is already in place on the web workers folder `/src/lib/jsdom`
+
+**Important:** jsom v21.1.2 is the latest that has support to be browserified. v.22.0.0 remove this support. Check here: [https://github.com/jsdom/jsdom/releases/tag/22.0.0](https://github.com/jsdom/jsdom/releases/tag/22.0.0)
 
 If the file needs to be updated or regenerated, follow these steps:
 
