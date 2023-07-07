@@ -1,8 +1,9 @@
 import $ from 'jquery';
+import type { DialogBarProps } from '../../dialogs';
 import '../../lib/jquery/jquery.popup';
 import Writer from '../Writer';
 import { log } from './../../utilities';
-import type { LWDialogProps, LWDialogConfigProps } from './types';
+import type { LWDialogConfigProps, LWDialogProps } from './types';
 
 class Popup implements LWDialogProps {
   readonly writer: Writer;
@@ -118,21 +119,18 @@ class Popup implements LWDialogProps {
     //   );
     // }
 
-    // ! Deprecated
-    // const urlKeys = this.writer.schemaManager.mapper.getUrlAttributes();
-    // this.linkSelector = '';
+    // ? Use to create popups for tags with links (entities with 'ref' and actual links)
+    const urlKeys = this.writer.schemaManager.mapper.getUrlAttributes();
 
-    // $.map(urlKeys, (val, i) => {
-    //   this.linkSelector += `[${val}]`;
-    //   if (i < urlKeys.length - 1) this.linkSelector += ',';
-    // });
+    this.linkSelector = urlKeys.length > 0 ? urlKeys.map((value) => `[${value}]`).join(',') : '';
 
-    // if (this.linkSelector !== '') {
-    //   body.on('mouseover', this.linkSelector, (event: JQuery.Event) => this.linkMouseover(event));
-    // }
+    if (this.linkSelector !== '') {
+      body.on('click', this.linkSelector, (event: JQuery.Event) => this.entityShowPopupLink(event));
+      body.on('mouseout', this.linkSelector, (event: JQuery.Event) => this.entityMouseOut(event));
+    }
 
     // ! Deprecated
-    // body.on('mouseover', this.noteMouseoverSelector, (event: JQuery.Event) =>
+    // body.on('click', this.noteMouseoverSelector, (event: JQuery.Event) =>
     //   this.noteMouseover(event)
     // );
 
@@ -209,21 +207,6 @@ class Popup implements LWDialogProps {
 
     this.$popupEl.parent().on('mouseover', () => this.doMouseOver());
     this.$popupEl.parent().on('mouseout', () => this.doMouseOut());
-
-    const currentTagRect = this.$currentTag?.[0]?.getBoundingClientRect();
-    const editorRect = editor?.editorContainer.getBoundingClientRect();
-
-    const mceToolbarHeight = $('.tox-toolbar-overlord').height() ?? 0;
-
-    const position = {
-      left: editorRect.left + (currentTagRect?.left || 0),
-      top: editorRect.top + mceToolbarHeight + (currentTagRect?.bottom || 0),
-    };
-
-    this.writer.overmindActions.ui.openDialog({
-      type: 'popup',
-      props: { content, position, isLink: type === 'link' },
-    });
   }
 
   private attributeMouseover(event: JQuery.Event) {
@@ -246,6 +229,68 @@ class Popup implements LWDialogProps {
     // }
 
     // if (popText) this.doPopup(popText, 'tag');
+  }
+
+  private entityShowPopupLink(event: JQuery.Event) {
+    //@ts-ignore
+    const target: HTMLElement = event.target;
+
+    const entityId = target.getAttribute('id') || target.getAttribute('name');
+
+    if (!entityId) return;
+
+    this.setCurrentTag(entityId);
+
+    // ! Deprecated
+    const urlKeys = this.writer.schemaManager.mapper.getUrlAttributes();
+
+    let url = null;
+
+    for (const urlKey of urlKeys) {
+      url = target.getAttribute(urlKey);
+      if (url) break;
+    }
+
+    if (!url) return;
+
+    //remove previous popups
+    this.writer.overmindState.ui.dialogBar.forEach(({ props }: DialogBarProps) => {
+      if (props?.id?.includes('dom_')) {
+        this.writer.overmindActions.ui.closeDialog(props.id);
+      }
+    });
+
+    const isLink = url.indexOf('http') === 0;
+    const entityType = target.getAttribute('_type');
+
+    this.writer.overmindActions.ui.openDialog({
+      type: 'popup',
+      props: {
+        id: target.getAttribute('id'),
+        content: url,
+        isLink,
+        closeOnMouseOutTarget: true,
+        entityType,
+      },
+    });
+  }
+
+  private entityMouseOut(event: JQuery.Event) {
+    //@ts-ignore
+    const targetId = event.target.getAttribute('id');
+    if (!targetId) return;
+
+    setTimeout(() => {
+      const dialogBar: DialogBarProps = this.writer.overmindState.ui.dialogBar.find(
+        ({ props }: DialogBarProps) => props?.id === targetId
+      );
+      if (!dialogBar) return;
+
+      //@ts-ignore
+      if (dialogBar?.props?.closeOnMouseOutTarget) {
+        this.writer.overmindActions.ui.closeDialog(targetId);
+      }
+    }, 1000);
   }
 
   private linkMouseover(event: JQuery.Event) {
@@ -317,7 +362,7 @@ class Popup implements LWDialogProps {
     //@ts-ignore
     this.$popupEl.popup('close');
 
-    // this.writer.overmindActions.ui.closePopup();
+    this.writer.overmindActions.ui.closeDialog();
   }
 
   private removeListeners() {
