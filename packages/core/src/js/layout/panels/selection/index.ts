@@ -15,37 +15,35 @@ const editRawLabel = 'Edit Raw XML'; //'Include RDF';
 
 class Selection {
   readonly id: string;
-  readonly selectionTrimLength = 500_000;
   readonly writer: Writer;
 
   readonly $includeRdf: JQuery<HTMLElement>;
-  readonly $prismContainer: JQuery<HTMLElement>;
   readonly $selectionContents: JQuery<HTMLElement>;
 
   editor: monaco.editor.IStandaloneCodeEditor | undefined;
 
   enabled = true;
-  lastUpdate: number = 0;
   showingFullDoc = true;
 
   constructor({ parentId, writer }: ConfigProps) {
     this.writer = writer;
     this.id = this.writer.getUniqueId('selection_');
-    this.lastUpdate = new Date().getTime();
 
     // add to writer
     this.writer.selection = this; // needed by view markup button
 
     // * resize container to fill height
     const resizeObserver = new ResizeObserver((entries) => {
-      const editorContainer = $('#monac');
-      if (editorContainer) {
-        //@ts-ignore
-        editorContainer.height(entries[0].contentRect.height - 20);
-      }
+      if (!entries[0]) return;
+
+      const container = document.getElementById('monac');
+      if (!container) return;
+
+      container.style.height = `${entries[0].contentRect.height - 20}px`;
     });
-    //@ts-ignore
-    resizeObserver.observe($(`#${parentId}`)[0]);
+
+    const parentContainer = document.getElementById(parentId);
+    if (parentContainer) resizeObserver.observe(parentContainer);
 
     $(`#${parentId}`).append(`
     <div class="moduleParent" >
@@ -69,7 +67,6 @@ class Selection {
     </div>
   `);
 
-    this.$prismContainer = $(`#${this.id}`);
     this.$selectionContents = $(`#${this.id}_selectionContents`);
 
     //@ts-ignore
@@ -100,7 +97,6 @@ class Selection {
         writer.overmindActions.ui.openDialog({ type: 'editSource', props: { content: docText } });
       });
 
-    this.writer.event('loadingDocument').subscribe(() => this.clearView());
     this.writer.event('selectionChanged').subscribe(() => {
       if (!this.writer.editor?.selection.isCollapsed()) {
         this.updateView();
@@ -187,10 +183,6 @@ class Selection {
     });
   }
 
-  private clearView() {
-    this.$prismContainer.html('');
-  }
-
   enable(forceUpdate: boolean) {
     this.enabled = true;
     if (forceUpdate) this.updateView(true);
@@ -208,7 +200,6 @@ class Selection {
   destroy() {
     this.editor?.dispose();
 
-    this.writer.event('loadingDocument').unsubscribe(() => this.clearView());
     this.writer.event('selectionChanged').unsubscribe(() => {
       if (!this.writer.editor?.selection.isCollapsed()) {
         this.updateView();
