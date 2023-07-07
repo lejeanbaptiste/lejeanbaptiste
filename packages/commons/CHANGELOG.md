@@ -1,5 +1,71 @@
 # CHANGELOG
 
+## 3.1.2
+
+### Patch Changes
+
+- Main menu: hide shortcuts (temporary measure) (#136) [931f6baefa9918d80447bc87577f8546c3ab5beb]
+  - Not all shortcuts work and they are only for Mac. We should create variations to other OSs and heavily test them.
+- SEO support (mitigation). Add tags 'title' and 'meta > description' to the page (#142) [0a74772fb81e30473319b6ad04e13794bb5a1d28]
+- UI: truncate long document titles on the top bar and on the recent panel (#144) [12fbbe458b125bdabb506397c5785e1e4ad99bb6]
+- Webpack: add fallback 'stream' [a91dae2b074848c518a058ce0dd3ad5d3b9b03c9]
+- Update Dependencies [ba3c04eff5eb07b058cbff9d817410d791872a62]:
+  - core:
+    - upgrade:
+      - @fontsource/lato@5.0.4
+      - i18next@23.2.8
+      - react-i18next@13.0.1
+    - update:
+      - @cwrc/leafwriter@3.1.0
+      - @mui/icons-material@5.13.7
+      - @mui/material@5.13.7
+      - i18next-browser-languagedetector@7.1.0
+      - jotai@2.2.2
+      - react-icons@4.10.1
+      - react-router-dom@6.14.1
+      - swr@2.2.0
+    - bump:
+      - @analytics/cookie-utils@0.2.12
+      - @analytics/google-analytics@1.0.7
+      - @cwrc/leafwriter-storage-service@2.1.2
+      - @emotion/react@11.11.1
+      - @mui/base@5.0.0-beta.6
+      - @mui/lab@5.0.0-alpha.135
+      - @octokit/rest@19.0.13
+      - analytics@0.8.9
+      - dexie@3.2.4
+      - dexie-react-hooks@1.1.6
+      - framer-motion@10.12.18
+      - keycloak-js@21.1.2
+      - material-ui-popup-state@5.0.9
+      - overmind@28.0.3
+      - overmind-react@29.0.3
+      - vanilla-cookieconsent@2.9.1
+  - dev:
+    - upgrade:
+      - @octokit/types@10.0.0
+      - @types/node@20.4.0
+      - prettier@3.0.0
+    - update:
+      - @typescript-eslint/eslint-plugin@5.61.0
+      - @typescript-eslint/parser@5.61.0
+      - css-loader@6.8.1
+      - tslib@2.6.0
+      - typescript@5.1.6
+      - webpack@5.88.1
+      - webpack-bundle-analyzer@4.9.0
+    - bump:
+      - @types/dotenv-webpack@7.0.4
+      - @types/webpack-env@1.18.1
+      - css-minimizer-webpack-plugin@5.0.1
+      - html-webpack-plugin@5.5.3
+      - less-loader@11.1.3
+      - mini-css-extract-plugin@2.7.6
+      - ts-loader@9.4.4
+      - webpack-cli@5.1.4
+      - webpack-dev-middleware@6.1.1
+      - webpack-hot-middleware@2.25.4
+
 ## 3.1.1
 
 ### Patch Changes
