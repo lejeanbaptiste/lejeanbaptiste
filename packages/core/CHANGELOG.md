@@ -1,5 +1,70 @@
 # CHANGELOG
 
+## 3.1.0
+
+### Minor Changes
+
+- Tags:
+  - Add a tooltip (showing documentation) to the tag list (context menu, ribbon) (#146) [9109bc0e6fcd6dc6dffef9d63aaa464dbf5becc0]
+  - Improve tag search. Search for both name (key) and full name (label) (#148) [e8eb9ce0dea5bbf3ffc612ad05a9c6c3ce8f3c05]
+- Editor: Add popups to entities with links [a4f9a7be13c91a6f6667a5b8df9dea3038f9a9b9]
+
+### Patch Changes
+
+- IndexedDB: explicitly upgrade 'suspendedDocuments (#155) [ab845e4e0f8d54b6fc42fac6fd138ee2c3a4750d]
+- Person dialog: Do not assume schema has documentation [3c14f3a0d274e828824b4f03bdba6331e71eb3e0]
+- UI:
+  - Raw Xml Panel: Prevent hiding button one small window (remove min-height) (#151) [f7c41fb30f0fd8a72ef491eacec25bb65e753dd2]
+  - Privacy dialog: prevent dialog from being behind storage panel [a13bbc146d0498ec6d8420cdb16b4e7ec791b40b]
+  - BottomBar (refactor):  Re-export component [8596e653d140b587690a7f870a629b38d1fd36a2]
+- Validator: import validator utilities direct from '/lib' [9fb0a037a3ee8957dee6f362ffe02444e2988905]
+- Documentation: Explain how to use and integrate LEAF-Writer (#153) [c1eb26deb1a3845b908f82275f7a2f6b46d9d0f3]
+- Chore:
+  - Adjust typescript config [3615d4a03dcb79c90b8a8155dee0fb3bf84cac68]
+  - Remove unused files [26044e84b5cd017764471b67dbc377e5c8e4b54f]
+  - Adjust typescript config [5c26946c9a9fbfe3a5479f20ed11dbd3a1239c5d]
+  - Replace some jquery functions [3bde766a086774860fcadbe221d1e300fa0c11e5]
+- Webpack: add stream fallback [582a10854a2ad8fe4fe52a331b45d1811eb55164]
+- Update Dependencies [ba3c04eff5eb07b058cbff9d817410d791872a62]:
+  - core:
+    - upgrade:
+      - @fontsource/lato@5.0.4
+      - i18next@23.2.8
+      - monaco-editor@0.40.0
+      - react-i18next@13.0.1
+    -update:
+      @mui/icons-material@5.13.7
+      - @mui/material@5.13.7
+      - formik@2.4.2
+      - jotai@2.2.2
+      - jquery@3.7.0
+      - openseadragon@4.1.0
+      - react-icons@4.10.1
+      - react-intersection-observer@9.5.2
+    -bump:
+      - @cwrc/leafwriter-validator@4.1.1
+      - @emotion/react@11.1.1
+      - dexie@3.2.4
+      - dexie-react-hooks@1.1.6
+      - framer-motion@10.12.18
+      - overmind@28.0.3
+      - overmind-react29.0.3
+      - react-resizable-panels@0.0.53
+      - react-virtuoso@4.2.11
+      - wikibase-sdk@9.1.3
+  -dev:
+    -upgrade: @types/node@20.4.0
+    -update:
+      - @typescript-eslint/eslint-plugin@5.61.0
+      - @typescript-eslint/parser@5.61.0
+      - webpack@5.88.1
+    -bump:
+      - @types/jqueryui@1.12.17
+      - @types/openseadragon@3.0.6
+      - @types/uuid@9.0.2
+      - @types/react-dom@18.2.6
+      - mini-css-extract-plugin@2.7.6
+
 ## 3.0.1
 
 ### Patch Changes
@@ -1000,7 +1065,7 @@ The shape of the config object is the following:
           };
           enabled?: boolean;
           entities?: Array<[NamedEntityType, boolean]>;
-        }
+        },
       ]
   >;
 }
