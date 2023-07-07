@@ -1,11 +1,11 @@
 // import i18n from 'i18next';
-import i18n from '../../i18n';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
 import { supportedLanguages } from '../../config';
 import { db } from '../../db';
-import type { DialogBarProps } from '../../dialogs';
+import type { DialogBarProps, PopupProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
+import i18n from '../../i18n';
 import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 
 export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
@@ -117,9 +117,22 @@ export const switchLanguage = ({ state }: Context, value: string) => {
 };
 
 export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
+  const dialogOpened = state.ui.dialogBar.some(({ props }) => props?.id === dialogBar.props?.id);
+  if (dialogOpened) return;
+
   if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
   if (!dialogBar.type) dialogBar.type = 'simple';
   state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
+  return dialogBar.props.id;
+};
+
+export const editDialogPopupProps = ({ state }: Context, props: PopupProps) => {
+  state.ui.dialogBar = [
+    ...state.ui.dialogBar.map((dialog) => {
+      if (dialog.props?.id === props?.id) dialog.props = props;
+      return dialog;
+    }),
+  ];
 };
 
 export const closeDialog = ({ state }: Context, id: string) => {

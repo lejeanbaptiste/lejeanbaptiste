@@ -34,8 +34,8 @@ export const useDialog = () => {
 
       if (dismissed && displayId) {
         destroyModal(displayId);
-        // removeDisplayed(displayId);
-        // removeDialog(props.id);
+        removeDisplayed(displayId);
+        removeDialog(props.id);
         return;
       }
 
