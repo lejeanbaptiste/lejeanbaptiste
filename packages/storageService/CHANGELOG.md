@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## 2.1.2
+
+### Patch Changes
+
+- Documentation: Fix typo [302740a414c9960920487012f88675f73b87a79b]
+- Adjust typescript config [69f920960f425b133b291de41cffb9e1dc167244]
+- Update Dependencies [edd0207dcb4f5f215d424258df7ee083f9db2e48]
+  - core:
+    - upgrade:
+      - i18next@23.2.8
+      - react-i18next@13.0.1
+    - update:
+      - @emotion/react@11.11.1
+      - @emotion/styled@11.11.0
+      - @mui/icons-material@5.13.7
+      - @mui/material@5.13.7
+      - axios@1.4.0
+      - date-fns@2.30.0
+      - react-icons@4.10.1
+    - bump:
+      - @mui/base@5.0.0-beta.6
+      - @mui/lab@5.0.0-alpha.135
+      - @octokit/rest@19.0.13
+      - dexie@3.2.4
+      - dexie-react-hook@1.1.6
+      - framer-motion@10.12.18
+      - overmind@28.0.3
+      - overmind-react@28.0.3
+  - dev:
+    - update:
+      - @jest/globals@29.6.1
+      - @typescript-eslint/eslint-plugin@5.61.0
+      - @typescript-eslint/eslint-plugin@5.61.0
+      - jest-environment-jsdom@29.6.1
+      - webpack@5.88.1
+    - bump:
+      - @types/jest@29.5.1
+      - @types/lodash@4.14.195
+      - @types/testing-library__jest-dom@5.14.7
+      - mini-css-extract-plugin@2.7.6
+      - ts-jest@29.1.1
+
 ## 2.1.1
 
 ### Patch Changes
