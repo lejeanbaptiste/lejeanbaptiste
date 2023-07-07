@@ -53,7 +53,6 @@ class Selection {
         id="monac"
         class="Editor"
         style="
-          min-height: 600px;
           margin: 8px;
           overflow: hidden;
           border-radius: 4px;
