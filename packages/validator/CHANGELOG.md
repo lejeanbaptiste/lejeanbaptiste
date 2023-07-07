@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 4.1.1
+
+### Patch Changes
+
+- Fix the export path and remove the unused file[456a1f4ac790117b3123642193438d84f73bd3f0] [b435966050545a1fd464e553b34dc1e285d3be12]
+- Bump up jsdom to 21.1.2 [9bf73f0ab3a1a91482035ba1eacb77c2c72cf203]
+  - **Waning**: jsom v21.1.2 is the latest that has support to be browserified. v.22.0.0 remove this support. Check here: [https://github.com/jsdom/jsdom/releases/tag/22.0.0](https://github.com/jsdom/jsdom/releases/tag/22.0.0) [799d90e53bfcd4bc54e6c6a7919dd339f29b284a]\
+- Adjust typescript config [ffc2c89f4e56dcaf2f5f991b0bd9a80ecbe73221]
+- Update Dependencies [f4826aa03c58fdc4c4cc8d4bbc535fec406aae8b]:
+  - core:
+    - bump: dexie@1.8.1
+    - dev:
+      - upgrade: prettier@3.0.0
+      - update:
+        - @jest/globals@29.6.1
+        - @typescript-eslint/eslint-plugin@5.61.0
+        - @typescript-eslint/parser@5.61.0
+        - eslint@8.44.0
+        - jest-environment-jsdom@29.6.1
+        - typescript@5.1.6
+        - webpack@5.88.1
+        - webpack-cli@5.1.4
+      - bump:
+        - @types/jest@29.5.2
+        - @types/lodash@4.14.195
+        - ts-jest@29.1.1
+        - typedoc@0.24.8
+
 ## 4.1.0
 
 ### Minor Changes
