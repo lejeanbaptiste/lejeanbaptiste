@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.1.3
+
+### Patch Changes
+
+- Updated dependencies [d01baad72892b3366ecf3a528f64a10de293c117]
+  - core: update: @cwrc/leafwriter@3.2.0
+
 ## 3.1.2
 
 ### Patch Changes
