@@ -8,7 +8,7 @@ import { EntityLookupDialog } from './dialogs';
 import { useDialog, useNotifier } from './hooks';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
-import { MarkupPanel, TocPanel } from './panels';
+import { CodePanel, MarkupPanel, TocPanel } from './panels';
 import type { LeafWriterOptions } from './types';
 // import { Layout } from './layout';
 
@@ -24,9 +24,10 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   useNotifier();
 
   const [editorToobarContainer, setEditorToobarContainer] = useState<Element | null>(null);
+  const [codePanelContainer, setCodePanelContainer] = useState<Element | null>(null);
   const [tocPanelContainer, setTocPanelContainer] = useState<Element | null>(null);
   const [structureTreePanelContainer, setStructureTreePanelContainer] = useState<Element | null>(
-    null
+    null,
   );
 
   const [initialized, setInitialized] = useState(false);
@@ -100,15 +101,16 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       setWriter(window.writer);
 
       const toolbarContainer = window.document.querySelector('#editor-toolbar');
+      const _codePanelContainer = window.document.querySelector(`#${_writer.editorId}-code`);
       const _tocPanelContainer = window.document.querySelector(`#${_writer.editorId}-toc`);
       const _structureTreePanelContainer = window.document.querySelector(
-        `#${_writer.editorId}-markup`
+        `#${_writer.editorId}-markup`,
       );
 
       setEditorToobarContainer(toolbarContainer);
       setTocPanelContainer(_tocPanelContainer);
+      setCodePanelContainer(_codePanelContainer);
       setStructureTreePanelContainer(_structureTreePanelContainer);
-      setTocPanelContainer;
 
       setTimeout(() => _writer.layoutManager.resizeEditor(), 50);
     });
@@ -133,6 +135,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
           {tocPanelContainer && createPortal(<TocPanel />, tocPanelContainer)}
           {structureTreePanelContainer &&
             createPortal(<MarkupPanel />, structureTreePanelContainer)}
+          {codePanelContainer && createPortal(<CodePanel />, codePanelContainer)}
         </div>
       </Box>
       {/* //* WIP {docLoaded && <Layout />} */}

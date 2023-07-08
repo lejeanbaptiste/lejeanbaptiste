@@ -34,7 +34,7 @@ export const Meta = () => {
   return (
     <>
       {resource && (
-        <Stack direction="row">
+        <Stack direction="row" flex={1} flexShrink={1} justifyContent="center" minWidth={0}>
           <StyledTooltip
             enterDelay={1000}
             title={
@@ -45,7 +45,17 @@ export const Meta = () => {
               )
             }
           >
-            <Typography component="h2" ml={1} sx={{ cursor: 'default' }} variant="subtitle1">
+            <Typography
+              component="h2"
+              ml={1}
+              sx={{
+                cursor: 'default',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              variant="subtitle1"
+            >
               {resource.filename ?? 'untitled.xml'}
             </Typography>
           </StyledTooltip>

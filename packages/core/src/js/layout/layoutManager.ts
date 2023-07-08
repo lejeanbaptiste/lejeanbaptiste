@@ -8,7 +8,6 @@ import Writer from '../Writer';
 import { log } from './../../utilities';
 import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
-import Selection from './panels/selection';
 import Validation from './panels/validation';
 
 interface InitConfigProps {
@@ -27,7 +26,7 @@ interface ModuleConfig {
 }
 
 // track modules which cannot appear in readonly mode
-const WRITE_ONLY_MODULES: ISettingsModuleName[] = ['markup', 'validation', 'selection'];
+const WRITE_ONLY_MODULES: ISettingsModuleName[] = ['markup', 'validation', 'code'];
 
 class LayoutManager {
   readonly writer: Writer;
@@ -47,7 +46,7 @@ class LayoutManager {
 
   modulesLayout = new Map<LayoutLocation, ModuleConfig | ModuleConfig[]>([
     ['west', [{ id: 'markup' }, { id: 'entities' }]],
-    ['east', [{ id: 'selection' }]],
+    ['east', [{ id: 'code' }]],
   ]);
 
   modules: any[] = [];
@@ -446,7 +445,6 @@ class LayoutManager {
 
     if (module.id === 'entities') return new EntitiesList(config);
     if (module.id === 'validation') return new Validation(config);
-    if (module.id === 'selection') return new Selection(config);
     if (module.id === 'imageViewer') return new ImageViewer(config);
 
     return null;

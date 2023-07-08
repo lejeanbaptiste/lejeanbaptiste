@@ -155,7 +155,7 @@ class PersonDialog implements SchemaDialog {
       if (Array.isArray(val)) val = val[0];
       if (typeof val === 'number') val = val.toString();
       if (!val) return;
-      
+
       this.dialog.$el.find(`#${this.id}_other`).attr('value', val);
     });
 
@@ -351,7 +351,8 @@ class PersonDialog implements SchemaDialog {
   private personRoleField(id: string) {
     const fieldTitle = 'Role (optional)';
 
-    const documentText = capitalizeFirstLetter(this.roleAtt.documentation);
+    const documentText: string | undefined =
+      this.roleAtt?.documentation && capitalizeFirstLetter(this.roleAtt.documentation);
 
     const html = `
       <div class="attribute" style="display: flex; flex-direction: column; gap: 4px;">

@@ -1,12 +1,14 @@
 # LEAF-Writer
 
-![NPM](https://img.shields.io/npm/l/@cwrc/leafwriter)
 [![version](https://img.shields.io/npm/v/@cwrc/leafwriter.svg)](https://www.npmjs.com/package/@cwrc/leafwriter)
+![NPM](https://img.shields.io/npm/l/@cwrc/leafwriter)
 ![npm type definitions](https://img.shields.io/npm/types/@cwrc/leafwriter)
 
-![LEAF-Writer Logo](https://leaf-writer.leaf-vre.org/assets/logo/logo-horizontal-large-light.png)The XML & RDF online editor of the Linked Editing Academic Framework
+![LEAF-Writer Logo](https://leaf-writer.leaf-vre.org/assets/logo/logo-horizontal-small-light.png)
 
-**Partial Documentation - Working in progress**
+**The XML & RDF online editor of the Linked Editing Academic Framework**
+
+*Partial Documentation - Working in progress*
 
 ## Table of Contents
 
@@ -15,13 +17,13 @@
   - [Overview](#overview)
   - [Use](#use)
     - [Install](#install)
-    - [NPM and ES6](#npm-and-es6)
-    - [In a Browser (UMD compiled version)](#in-a-browser-umd-compiled-version)
-      - [Using a CDN-like service](#using-a-cdn-like-service)
-      - [Download pre-compiled files from CDN-like service](#download-pre-compiled-files-from-cdn-like-service)
-    - [Basic Example](#basic-example)
+      - [NPM](#npm)
+      - [CDN Direct link](#cdn-direct-link)
+    - [Basic Setup](#basic-setup)
+      - [Copy necesary files](#copy-necesary-files)
+      - [Load main dependencies in the html file](#load-main-dependencies-in-the-html-file)
       - [Instantiate and initialize](#instantiate-and-initialize)
-      - [Get current content from the editor](#get-current-content-from-the-editor)
+    - [Get current content from the editor](#get-current-content-from-the-editor)
   - [Config Object](#config-object)
     - [Document](#document)
     - [User](#user)
@@ -33,52 +35,66 @@
 
 ## Overview
 
-The Linked Editing Academic Framework (LEAF) has developed an in-browser text markup editor (LEAF-Writer, previously known as CWRC-Writer) for use by individual scholars and collaborative scholarly editing projects that require a light-weight online editing environment. This package is the base code that builds the editor as a React component to be embedded in any website. A default version of the LEAF-Writer that uses GitHub for storage is available for anyone's use at [https://leaf-writer.leaf-vre.org](https://leaf-writer.leaf-vre.org)
+The Linked Editing Academic Framework (LEAF) has developed an in-browser text markup editor (LEAF-Writer, previously known as CWRC-Writer) for use by individual scholars and collaborative scholarly editing projects that require a light-weight online editing environment. This package is the base code that builds the editor as a React component to be embedded in any website.
+
+A default version of the LEAF-Writer powers LEAF-Writer Commons ([https://leaf-writer.leaf-vre.org](https://leaf-writer.leaf-vre.org)), a public and free-to-use enviroment to edit XML documents, tagging named-entities, create Web Annotations, and generate open linked data.
 
 ## Use
 
 ### Install
 
-### NPM and ES6
+LEAF-Writer is developed in JavaScript and is partially typed (work in progress). It is designed as a React component (work in progress), but can be also used in valilla js. It is available on NPM and CDN services.
+
+**Caveat**: Due to LEAF-Writer legacy code, it cannot yet be used as a ES6 module. You will need to copy the necessary files to the public folder on the server and set up the base url if necessary.
+
+#### NPM
 
 ```nodejs
 npm install @cwrc/leafwriter
 ```
 
-### In a Browser (UMD compiled version)
+#### CDN Direct link
 
-If you prefer to load the pre-compiled version directly in the browser you have two options.
+`https://unpkg.com/browse/@cwrc/leafwriter@3.0.1/`
 
-#### Using a CDN-like service
+### Basic Setup
 
-Load directly from the web using UNPKG.
+#### Copy necesary files
 
-```html
-<script type="text/javascript" src=“https://unpkg.com/browse/@cwrc/leafwriter/dist/index.min.js”></script> 
+Copy the content of `dist` folder to a folder named `leafwriter` in the public folder on the server.
 
-<link rel="stylesheet" type="text/css" href=“https://unpkg.com/browse/@cwrc/leafwriter/dist/css/index.css”>
-<link rel="stylesheet" type="text/css" href=“https://unpkg.com/browse/@cwrc/leafwriter/dist/css/editor.css”>
+```bash
+cp -R ./node_modules/@cwrc/leafwriter/dist/* ./public/leafwriter
 ```
 
-#### Download pre-compiled files from CDN-like service
-
-Download from the web using JSDELIVER: [https://www.jsdelivr.com/package/npm/@cwrc/leafwriter](https://www.jsdelivr.com/package/npm/@cwrc/leafwriter)
-
-Copy the `dist` somewhere in your project tree. And load files:
+#### Load main dependencies in the html file
 
 ```html
-<script type="text/javascript" src=“path/to/leafwriter/dist/index.min.js”></script> 
-
-<link rel="stylesheet" type="text/css" href=“path/to/leafwriter/dist/css/index.css”>
-<link rel="stylesheet" type="text/css" href=“path/to/leafwriter/dist/css/editor.css”>
+<html>
+  <head>
+    ...
+    <script type="text/javascript" src=“https://unpkg.com/browse/@cwrc/leafwriter/dist/index.min.js”></script> 
+    <link href="./leafwriter/css/index.css" rel="stylesheet"  type="text/css" />
+    ...
+  </head>
+  <body>
+    <script src="./leafwriter/index.min.js"></script>
+    ...
+  </body>
+</html>
 ```
-
-### Basic Example
 
 #### Instantiate and initialize
 
 ```ts
-import Leafwriter from '@cwrc/leafwriter';
+import type { Leafwriter } from '@cwrc/leafwriter'; //Add LEAF-Writer types for intellisense
+
+//* This only tells typescript that Leafwriter exists on the global scope (Window) */
+declare global {
+  interface Window {
+    Leafwriter: any;
+  }
+}
 
 const container = document.getElementById('#leaf-writer');
 const editor = new Leafwriter.Leafwriter(container); //it must be an HTML ELEMENT (i.e., a div) 
@@ -88,7 +104,10 @@ editor.init({
     xml: '<xml ...>' // Required (string)},
   }, 
   settings: {
-    baseUrl: 'path/to/leafwriter/files/', // Optional. Only if LEAF-Writer dependencies are not in the root. Default: '.' 
+    //! Important: Tell LW where its dependencies (extra CSS, images, web worker) are located.
+    // In the example, we add the files to the folder `leafwriter` in the public folder.
+    // The default is '.'
+    baseUrl: './leafwriter',
   },
 });
 ```
@@ -97,7 +116,7 @@ You must pass a div container to a new LEAF-Writer instance. LEAF-Write will ren
 
 Then you initiate it by passing a [Config Object](#config-object). Note: To use LEAF-writer to create Web Annotations, you should pass the user name and URI in the config object.
 
-#### Get current content from the editor
+### Get current content from the editor
 
 Using async/await
 

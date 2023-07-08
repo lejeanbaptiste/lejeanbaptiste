@@ -17,13 +17,18 @@ const MAX_SCROLL_HEIGHT = 420;
 
 export const Collection = ({ isLoading = false, list, searchable = false }: CollectionsProps) => {
   const onlyValid = useAtomValue(showOnlyValidAtom);
-  
+
   const [activeItem, setActiveItem] = useState<string>();
   const [query, setQuery] = useState('');
 
   const applyFilters = (list: ItemProps[]) => {
     return list
-      .filter(({ name }) => name.toLowerCase().includes(query.toLowerCase()))
+      .filter(({ name, fullName }) => {
+        return (
+          name.toLowerCase().includes(query.toLowerCase()) ||
+          fullName?.toLowerCase().includes(query.toLowerCase())
+        );
+      })
       .filter((item) => (onlyValid ? !item.invalid : item));
   };
 

@@ -84,6 +84,7 @@ export const DocumentCard = ({
         borderWidth: 1,
         boxShadow: selected ? `0 0 4px ${alpha(palette.primary.main, 0.5)}` : 'none',
         cursor: 'pointer',
+        overflow: 'inherit !important',
       }}
       component={motion.div}
       variants={cardVariant}
@@ -104,7 +105,7 @@ export const DocumentCard = ({
             justifyContent="space-between"
             alignItems={layout === 'list' ? 'center' : 'flex-start'}
           >
-            <Stack direction="row" alignItems="center" gap={2}>
+            <Stack direction="row" alignItems="center" gap={2} width="90%">
               {icon && (
                 <Icon
                   color={hover ? 'primary' : 'inherit'}
@@ -113,7 +114,12 @@ export const DocumentCard = ({
                   sx={{ my: 0.25 }}
                 />
               )}
-              <Typography color={hover ? 'primary' : 'inherit'} fontWeight={700} variant="body2">
+              <Typography
+                color={hover ? 'primary' : 'inherit'}
+                fontWeight={700}
+                sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                variant="body2"
+              >
                 {title ?? filename}
               </Typography>
             </Stack>

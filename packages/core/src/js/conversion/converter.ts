@@ -31,7 +31,7 @@ class Converter {
     return this.cwrc2xml.getDocumentContent(includeRDF);
   }
 
-  buildXMLString(node: Element, identifyEntities = false) {
+  buildXMLString(node: Element | DocumentFragment, identifyEntities = false) {
     return this.cwrc2xml.buildXMLString(node, identifyEntities);
   }
 
