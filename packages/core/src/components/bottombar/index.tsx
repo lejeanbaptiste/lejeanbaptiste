@@ -3,10 +3,10 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import pck from '../../../package.json';
 import { useAppState } from '../../overmind';
+import { ValdidationErrors } from './ValdidationErrors';
 import AnnotationMode from './annotationMode';
 import EditorMode from './editorMode';
-import Schema from './schema';
-import { ValdidationErrors } from './ValdidationErrors';
+import { Schema } from './schema';
 
 export const BottomBar = () => {
   const { isReadonly } = useAppState().editor;

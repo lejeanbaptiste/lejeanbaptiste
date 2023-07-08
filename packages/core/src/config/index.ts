@@ -23,7 +23,8 @@ export const createConfig = async (settings: LeafWriterOptionsSettings = {}) => 
         { id: 'entities', title: 'Entities' },
       ],
       east: [
-        { id: 'selection', title: 'Raw XML' },
+        // { id: 'selection', title: 'Raw XML' },
+        { id: 'code', title: 'Raw XML' },
         { id: 'imageViewer', title: 'Image Viewer' },
         { id: 'validation', title: 'Validation' },
       ],

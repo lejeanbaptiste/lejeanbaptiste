@@ -18,7 +18,7 @@
     - [Full Feature Examples](#full-feature-examples)
       - [Load Dialog](#load-dialog-1)
       - [Save Dialog](#save-dialog-1)
-    - [React Suspence](#react-suspence)
+    - [React Suspense](#react-suspense)
   - [Bypass the Dialog with handy functions](#bypass-the-dialog-with-handy-functions)
     - [loadDocument](#loaddocument)
     - [saveDocument](#savedocument)
@@ -237,7 +237,7 @@ export const MyFStorageDialog = () => {
 
 See the API section for more details.
 
-### React Suspence
+### React Suspense
 
 You can use React suspense to optimize your code. The module will only be loaded when the Dialog is triggered for the first time.
 

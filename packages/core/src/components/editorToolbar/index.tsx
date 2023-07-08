@@ -209,14 +209,6 @@ export const EditorToolbar = () => {
     {
       group: 'ui',
       hide: isReadonly,
-      icon: 'code',
-      onClick: () => window.writer.selection?.showSelection(),
-      title: 'Show Raw XML',
-      type: 'iconButton',
-    },
-    {
-      group: 'ui',
-      hide: isReadonly,
       icon: 'validate',
       onClick: () => {
         window.writer.layoutManager.showModule('validation');

@@ -926,8 +926,8 @@ body .cwrc .ui-tooltip {
 }
 .cwrc .ui-widget input,
 .cwrc .ui-widget select,
-.cwrc .ui-widget textarea,
-.cwrc .ui-widget button {
+.cwrc .ui-widget textarea {
+/* .cwrc .ui-widget button { */
   font-family: Lato, Arial, Helvetica, sans-serif;
   font-size: 1em;
 }

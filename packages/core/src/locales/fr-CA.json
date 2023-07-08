@@ -110,6 +110,7 @@
     "dont show again": "ne plus afficher",
     "edit header": "modifier l'en-tête",
     "edit source": "modifier la source",
+    "edit_raw_xml": "Modifier le XML brut",
     "experimental": "expérimental",
     "font size": "taille de police",
     "hint": "Indice",
@@ -126,6 +127,7 @@
     "not supported": "Non supporté",
     "note": "Remarque",
     "select supported schema": "sélectionner le schéma pris en charge",
-    "show only valid tags": "afficher uniquement les balises valides"
+    "show only valid tags": "afficher uniquement les balises valides",
+    "show_lod_annotation": "Afficher l'annotation des données ouvertes liées"
   }
 }
