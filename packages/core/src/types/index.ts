@@ -86,9 +86,9 @@ export type ISettingsModuleName =
   | 'markup'
   | 'entities'
   | 'nerve'
-  | 'selection'
   | 'imageViewer'
-  | 'validation';
+  | 'validation'
+  | 'code';
 
 export const SupportedSchemas: Map<string, Schema> = new Map();
 

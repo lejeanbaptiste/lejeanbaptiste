@@ -110,6 +110,7 @@
     "dont show again": "don't show again",
     "edit header": "edit header",
     "edit source": "edit source",
+    "edit_raw_xml": "Edit Raw XML",
     "experimental": "experimental",
     "font size": "font size",
     "hint": "Hint",
@@ -126,6 +127,7 @@
     "not supported": "Not Supported",
     "note": "note",
     "select supported schema": "select supported schema",
-    "show only valid tags": "show only valid tags"
+    "show only valid tags": "show only valid tags",
+    "show_lod_annotation": "Show Linked Open Data Annotation"
   }
 }
