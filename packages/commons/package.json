@@ -33,7 +33,7 @@
 	"dependencies": {
 		"@analytics/cookie-utils": "^0.2.12",
 		"@analytics/google-analytics": "^1.0.7",
-		"@cwrc/leafwriter": "^3.1.0",
+		"@cwrc/leafwriter": "^3.2.0",
 		"@cwrc/leafwriter-storage-service": "^2.1.2",
 		"@emotion/react": "^11.11.1",
 		"@emotion/styled": "^11.11.0",
