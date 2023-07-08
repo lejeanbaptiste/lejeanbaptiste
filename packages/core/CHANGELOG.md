@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.2.0
+
+### Minor Changes
+
+- New Code/Raw XML/Selection Panel [e40e03ec6fff8a25fe1ff9d119df6f8a2c771a95]
+  - Refactored in React. Same funcionality. Added localization and dark theme.
+
 ## 3.1.0
 
 ### Minor Changes
@@ -16,7 +23,7 @@
 - UI:
   - Raw Xml Panel: Prevent hiding button one small window (remove min-height) (#151) [f7c41fb30f0fd8a72ef491eacec25bb65e753dd2]
   - Privacy dialog: prevent dialog from being behind storage panel [a13bbc146d0498ec6d8420cdb16b4e7ec791b40b]
-  - BottomBar (refactor):  Re-export component [8596e653d140b587690a7f870a629b38d1fd36a2]
+  - BottomBar (refactor): Re-export component [8596e653d140b587690a7f870a629b38d1fd36a2]
 - Validator: import validator utilities direct from '/lib' [9fb0a037a3ee8957dee6f362ffe02444e2988905]
 - Documentation: Explain how to use and integrate LEAF-Writer (#153) [c1eb26deb1a3845b908f82275f7a2f6b46d9d0f3]
 - Chore:
@@ -27,43 +34,14 @@
 - Webpack: add stream fallback [582a10854a2ad8fe4fe52a331b45d1811eb55164]
 - Update Dependencies [ba3c04eff5eb07b058cbff9d817410d791872a62]:
   - core:
-    - upgrade:
-      - @fontsource/lato@5.0.4
-      - i18next@23.2.8
-      - monaco-editor@0.40.0
-      - react-i18next@13.0.1
-    -update:
-      @mui/icons-material@5.13.7
-      - @mui/material@5.13.7
-      - formik@2.4.2
-      - jotai@2.2.2
-      - jquery@3.7.0
-      - openseadragon@4.1.0
-      - react-icons@4.10.1
-      - react-intersection-observer@9.5.2
-    -bump:
-      - @cwrc/leafwriter-validator@4.1.1
-      - @emotion/react@11.1.1
-      - dexie@3.2.4
-      - dexie-react-hooks@1.1.6
-      - framer-motion@10.12.18
-      - overmind@28.0.3
-      - overmind-react29.0.3
-      - react-resizable-panels@0.0.53
-      - react-virtuoso@4.2.11
-      - wikibase-sdk@9.1.3
-  -dev:
-    -upgrade: @types/node@20.4.0
-    -update:
-      - @typescript-eslint/eslint-plugin@5.61.0
-      - @typescript-eslint/parser@5.61.0
-      - webpack@5.88.1
-    -bump:
-      - @types/jqueryui@1.12.17
-      - @types/openseadragon@3.0.6
-      - @types/uuid@9.0.2
-      - @types/react-dom@18.2.6
-      - mini-css-extract-plugin@2.7.6
+    - upgrade: - @fontsource/lato@5.0.4 - i18next@23.2.8 - monaco-editor@0.40.0 - react-i18next@13.0.1
+      -update:
+      @mui/icons-material@5.13.7 - @mui/material@5.13.7 - formik@2.4.2 - jotai@2.2.2 - jquery@3.7.0 - openseadragon@4.1.0 - react-icons@4.10.1 - react-intersection-observer@9.5.2
+      -bump: - @cwrc/leafwriter-validator@4.1.1 - @emotion/react@11.1.1 - dexie@3.2.4 - dexie-react-hooks@1.1.6 - framer-motion@10.12.18 - overmind@28.0.3 - overmind-react29.0.3 - react-resizable-panels@0.0.53 - react-virtuoso@4.2.11 - wikibase-sdk@9.1.3
+      -dev:
+      -upgrade: @types/node@20.4.0
+      -update: - @typescript-eslint/eslint-plugin@5.61.0 - @typescript-eslint/parser@5.61.0 - webpack@5.88.1
+      -bump: - @types/jqueryui@1.12.17 - @types/openseadragon@3.0.6 - @types/uuid@9.0.2 - @types/react-dom@18.2.6 - mini-css-extract-plugin@2.7.6
 
 ## 3.0.1
 
