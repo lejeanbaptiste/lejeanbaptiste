@@ -14,7 +14,6 @@ import EntitiesManager from './entities/entitiesManager';
 import EventManager from './eventManager';
 import LayoutManager from './layout/layoutManager';
 import EntitiesList from './layout/panels/entitiesList';
-import Selection from './layout/panels/selection';
 import Validation from './layout/panels/validation';
 import SchemaManager from './schema/schemaManager';
 import Tagger from './tagger';
@@ -92,7 +91,6 @@ class Writer extends EventManager {
   readonly layoutContainerId: string | undefined;
 
   entitiesList?: EntitiesList;
-  selection?: Selection;
   validation?: Validation;
 
   constructor(config: LeafWriterOptionsSettings) {
@@ -352,7 +350,7 @@ class Writer extends EventManager {
     if (window.location.hostname === 'localhost') return;
 
     event.preventDefault();
-    const msg = t('You have unsaved changes', { ns: 'leafwriter' });
+    const msg = t('leafwriter:You have unsaved changes');
     (event || window.event).returnValue = msg;
     return msg;
   }
