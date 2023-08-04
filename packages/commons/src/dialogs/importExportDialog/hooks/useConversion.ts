@@ -82,7 +82,7 @@ export const useConversion = () => {
 
   const handleProcessError = (error: Error) => {
     notifyViaSnackbar({
-      message: `${t('commons.conversion failed')}. ${error.message}`,
+      message: `${t('LWC:commons.conversion failed')}. ${error.message}`,
       options: { autoHideDuration: 10_000, variant: 'error' },
     });
   };

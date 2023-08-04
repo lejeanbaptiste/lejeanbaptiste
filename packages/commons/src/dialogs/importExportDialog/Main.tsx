@@ -14,7 +14,7 @@ export const Main = () => {
   const dialogAction = useStore().get(dialogActionAtom);
 
   if (error || data?.length === 0) {
-    return <ErrorMessage message={t('LWC.messages.service not available at the moment')} />;
+    return <ErrorMessage message={t('LWC:messages.service not available at the moment')} />;
   }
 
   if (isLoading) {

@@ -35,7 +35,7 @@ export const Language = ({ onBack, onClose }: SubMenu) => {
         <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <ListItemText primary={t('commons.language')} sx={{ textTransform: 'capitalize' }} />
+        <ListItemText primary={t('LWC:commons.language')} sx={{ textTransform: 'capitalize' }} />
       </ListItem>
       {Array.from(supportedLanguages).map(([, { code, name }]) => (
         <ListItem key={code} color="primary" sx={{ px: 0.5 }}>

@@ -62,7 +62,7 @@ export const UploadDropBox = ({
 
     if (!content) {
       notifyViaSnackbar({
-        message: `${t('message.unable to upload file', { filename: selectedFile.name })}`,
+        message: `${t('LWC:messages.unable_to_upload file', { filename: selectedFile.name })}`,
         options: { variant: 'error' },
       });
 

@@ -21,7 +21,7 @@ export const Header = () => {
       textTransform="capitalize"
     >
       <Icon component={getIcon(dialogAction === 'import' ? 'importIcon' : 'download')} />
-      {dialogAction === 'import' ? t('storage.import document') : t('storage.export document')}
+      {dialogAction === 'import' ? t('LWC:storage.import document') : t('LWC:storage.export document')}
     </DialogTitle>
   );
 };
