@@ -25,7 +25,7 @@ export const Footer = ({ onClick }: ProfileProps) => {
         variant="caption"
         underline="none"
       >
-        {t('commons.privacy')}
+        {t('LWC:commons.privacy')}
       </Link>
     </Stack>
   );

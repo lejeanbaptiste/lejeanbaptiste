@@ -85,7 +85,7 @@ export const Storage = () => {
     const isContentValid = isValidXml(content);
     return isContentValid
       ? { valid: true }
-      : { valid: false, error: t('storage.error.xml_not_well-formed_message') };
+      : { valid: false, error: t('LWC:storage.error.xml_not_well-formed_message') };
   };
 
   const preferProvider = useMemo(() => {

@@ -66,9 +66,9 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         </ReactMarkdown>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleOpenSettings}>{t('cookie_consent.privacy_settings')}</Button>
+        <Button onClick={handleOpenSettings}>{t('LWC:cookie_consent.privacy_settings')}</Button>
         <Button onClick={handleCancel} variant="outlined">
-          {t('commons.close')}
+          {t('LWC:commons.close')}
         </Button>
       </DialogActions>
     </Dialog>

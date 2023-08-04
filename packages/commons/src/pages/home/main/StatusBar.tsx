@@ -17,7 +17,7 @@ export const StatusBar = () => {
   return (
     <Stack justifyContent="center" alignItems="center" px={2} mt={5}>
       <Chip
-        label={`${t('home.bugs')} / ${t('home.requests')}`}
+        label={`${t('LWC:home.bugs')} / ${t('LWC:home.requests')}`}
         onClick={handleClick}
         size="small"
         variant="outlined"

@@ -31,7 +31,7 @@ export const Sidebar = () => {
             textTransform="uppercase"
             variant="subtitle1"
           >
-            {t('commons.sign_in')} {t('commons.with')}
+            {t('LWC:commons.sign_in')} {t('LWC:commons.with')}
           </Typography>
         </Box>
 

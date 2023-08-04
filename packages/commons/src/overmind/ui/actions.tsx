@@ -156,7 +156,7 @@ export const emitNotification = async (
     options: {
       action: (key) => (
         <Button color="inherit" onClick={() => actions.ui.closeNotificationSnackbar(key)}>
-          {`${t('commons.dismiss', { ns: 'LWC' })}`}
+          {`${t('LWC:commons.dismiss', { ns: 'LWC' })}`}
         </Button>
       ),
       persist,

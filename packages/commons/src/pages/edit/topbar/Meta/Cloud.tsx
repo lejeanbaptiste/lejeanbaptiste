@@ -36,10 +36,10 @@ export const Cloud = () => {
       <Tooltip
         title={
           isDirty
-            ? t('storage.click_to_save')
+            ? t('LWC:storage.click_to_save')
             : isSaving
-            ? t('storage.saving')
-            : t('storage.all_changes_salved')
+            ? t('LWC:storage.saving')
+            : t('LWC:storage.all_changes_salved')
         }
       >
         <IconButton
@@ -76,7 +76,7 @@ export const Cloud = () => {
         animate={saveDelayed ? 'visible' : 'hidden'}
       >
         <Typography ml={0.5} textTransform="capitalize" variant="caption" whiteSpace="nowrap">
-          {t('storage.waiting_for_resource', { provider: resource?.provider })}
+          {t('LWC:storage.waiting_for_resource', { provider: resource?.provider })}
         </Typography>
       </Box>
     </Stack>
