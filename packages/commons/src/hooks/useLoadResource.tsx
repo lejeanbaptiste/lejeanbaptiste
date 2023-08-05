@@ -28,7 +28,7 @@ export const useLoadResource = () => {
 
   const loadFromPermalink = async () => {
     const resource = await getResourceFromPermalink();
-    if (!resource) return showErrorMessage(t('storage.warning.check_URL_structure'));
+    if (!resource) return showErrorMessage(t('LWC:storage.warning.check_URL_structure'));
     if (isErrorMessage(resource)) {
       showErrorMessage(resource.message);
       return;
@@ -51,7 +51,7 @@ export const useLoadResource = () => {
       return;
     }
 
-    if (!resource.provider) return showErrorMessage(t('storage.provider_not_found'));
+    if (!resource.provider) return showErrorMessage(t('LWC:storage.provider_not_found'));
 
     //Load document from RAW if user is not signed in
     if (resource.url?.includes('https://raw.githubusercontent')) {
@@ -62,7 +62,7 @@ export const useLoadResource = () => {
     }
 
     const providerAuth = getStorageProviderAuth(resource.provider);
-    if (!providerAuth) return showErrorMessage(t('storage.provider_not_found'));
+    if (!providerAuth) return showErrorMessage(t('LWC:storage.provider_not_found'));
 
     const document = await loadDocument(providerAuth, resource);
     if (document instanceof Error) return showErrorMessage(document.message);
@@ -76,7 +76,7 @@ export const useLoadResource = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${t('storage.invalid_request')}`,
+        title: `${t('LWC:storage.invalid_request')}`,
         Body: () => (
           <Typography sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
             {message}

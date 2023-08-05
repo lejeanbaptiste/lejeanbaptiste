@@ -75,7 +75,7 @@ class EntitiesManager {
     }
 
     const requiredAttributes = this.writer.schemaManager.mapper.getRequiredAttributes(
-      config.type as EntityType
+      config.type as EntityType,
     );
     for (const attName in requiredAttributes) {
       //@ts-ignore
@@ -108,7 +108,7 @@ class EntitiesManager {
     if (info?.properties?.type !== entity.getType()) {
       // changing type, remove old requiredAttributes
       const requiredAttributes = this.writer.schemaManager.mapper.getRequiredAttributes(
-        entity.getType()
+        entity.getType(),
       );
       for (const attName in requiredAttributes) {
         entity.removeAttribute(attName);
@@ -129,7 +129,7 @@ class EntitiesManager {
 
     // type might have changed so need to set these
     const requiredAttributes = this.writer.schemaManager.mapper.getRequiredAttributes(
-      entity.getType()
+      entity.getType(),
     );
     for (const attName in requiredAttributes) {
       //@ts-ignore
@@ -290,7 +290,7 @@ class EntitiesManager {
     $(`[name=${entityId}]`, this.writer.editor?.getBody()).each(
       (index: number, element: Element) => {
         entityTextContent += element.textContent;
-      }
+      },
     );
 
     return entityTextContent;
@@ -308,7 +308,7 @@ class EntitiesManager {
     const uriMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
       //@ts-ignore
       entity?.getType(),
-      'uri'
+      'uri',
     );
     if (uriMapping) entity?.setAttribute(uriMapping, uri);
   }
@@ -325,7 +325,7 @@ class EntitiesManager {
     const lemmaMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
       //@ts-ignore
       entity.getType(),
-      'lemma'
+      'lemma',
     );
 
     if (lemmaMapping) entity?.setAttribute(lemmaMapping, lemma);
@@ -343,7 +343,7 @@ class EntitiesManager {
     const certaintyMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
       //@ts-ignore
       entity.getType(),
-      'certainty'
+      'certainty',
     );
 
     if (certaintyMapping) entity?.setAttribute(certaintyMapping, certainty);
@@ -361,7 +361,7 @@ class EntitiesManager {
     const precisionyMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
       //@ts-ignore
       entity.getType(),
-      'precision'
+      'precision',
     );
 
     if (precisionyMapping) entity?.setAttribute(precisionyMapping, precision);
@@ -441,11 +441,7 @@ class EntitiesManager {
       this.writer.editor.selection.setRng(rng);
     }
 
-    if (doScroll) {
-      const val = entityTags.offset()?.top ?? 0;
-      //@ts-ignore
-      $(this.writer.editor.getDoc().documentElement).scrollTop(val);
-    }
+    if (doScroll) entityTags[0]?.scrollIntoView({ behavior: 'smooth' });
 
     this.writer.event('entityFocused').publish(id);
   }

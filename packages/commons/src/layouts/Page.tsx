@@ -18,9 +18,12 @@ export const Page = forwardRef<PageProps, any>(({ children, title, ...rest }, re
     <div ref={ref} {...rest}>
       <Helmet>
         <title>{title}</title>
-        <meta name="description" content="The XML & RDF online editor of the Linked Editing Academic Framework" />
+        <meta
+          name="description"
+          content="The XML & RDF online editor of the Linked Editing Academic Framework"
+        />
       </Helmet>
-      {children}
+      <div>{children}</div>
     </div>
   );
 });

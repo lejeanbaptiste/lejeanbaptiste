@@ -18,7 +18,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   return (
     <Dialog id={id} fullWidth maxWidth="xs" onClose={handleClose} open={open}>
       <DialogTitle textAlign="center" sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
-        {t('commons.sign in')} {t('commons.with')}
+        {t('LWC:commons.sign_in')} {t('LWC:commons.with')}
       </DialogTitle>
       <DialogContent>
         <Stack gap={2} py={5} alignItems="center">
@@ -28,7 +28,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         </Stack>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center' }}>
-        <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
+        <Button onClick={handleCancel}>{t('LWC:commons.cancel')}</Button>
       </DialogActions>
     </Dialog>
   );

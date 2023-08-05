@@ -1,9 +1,9 @@
+import { contract } from '@lincs.project/auth-api-contract';
 import { Provider } from '@src/services';
 import { log } from '@src/utilities';
-import axios, { type AxiosError } from 'axios';
+import { initClient, type ClientInferResponseBody } from '@ts-rest/core';
+import axios from 'axios';
 import Keycloak, { type KeycloakTokenParsed } from 'keycloak-js';
-//@ts-ignore
-import queryString from 'query-string';
 import { logHttpError } from '../../services/utilities';
 
 //* Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
@@ -15,11 +15,11 @@ export interface HTTPRequestError {
   };
 }
 
-export interface LinkedAccountProps {
-  identityProvider: string;
-  userId?: string;
-  userName?: string;
-}
+export type LinkedAccounts = ClientInferResponseBody<
+  typeof contract.v1.users.getLinkedAccounts,
+  200
+>;
+export type LinkedAccount = LinkedAccounts[0];
 
 interface tokenParsed extends KeycloakTokenParsed {
   identity_provider?: string;
@@ -31,6 +31,8 @@ interface tokenParsed extends KeycloakTokenParsed {
 
 /* The Api class is a wrapper for the Keycloak object that provides a set of functions that are used to
 authenticate the user and get the user's profile data */
+
+const getLincsAuthApi = (baseUrl: string) => initClient(contract, { baseUrl, baseHeaders: {} });
 export class Api {
   readonly clientId: string;
   readonly LINK_ACCOUNTS_CALLBACK_URL: string;
@@ -213,7 +215,7 @@ export class Api {
    */
   async getExternalIDPTokens(
     provider_alias: string,
-    keycloakAccessCode: string
+    keycloakAccessCode: string,
   ): Promise<any | Error> {
     try {
       const url = `${this.KEYCLOACK_BASE_URL}/realms/${this.realm}/broker/${provider_alias}/token`;
@@ -237,34 +239,33 @@ export class Api {
    */
   async getLinkedAccounts(
     keycloakAccessCode: string,
-    username: string
-  ): Promise<LinkedAccountProps[] | HTTPRequestError> {
+    username: string,
+  ): Promise<LinkedAccount[] | HTTPRequestError> {
     if (!this.AUTH_API_URL) {
       return { error: { message: 'AUTH API BASE URL is unedefined' } };
     }
 
-    const url = queryString.stringifyUrl({
-      url: `${this.AUTH_API_URL}/linkedAccounts`,
-      query: { username },
+    const authApi = getLincsAuthApi(this.AUTH_API_URL);
+    const response = await authApi.v1.users.getLinkedAccounts({
+      headers: { authorization: `Bearer ${keycloakAccessCode}` },
+      params: { username },
     });
 
-    const response = await axios
-      .get(url, { headers: { Authorization: `Bearer ${keycloakAccessCode}` } })
-      .catch((error: AxiosError) => {
-        if (error.response) return error.response;
-
-        const errorJson = error.toJSON();
-        log.error(errorJson);
-
-        throw new Error(error.message);
-      });
-
-    const { status, data } = response;
-    if (status >= 400) {
-      return { error: { status, message: `Linked Accounts: ${data.error}` } };
+    if (response.status === 401 || response.status === 404 || response.status === 500) {
+      console.warn(response.body.message);
+      return {
+        error: { status: response.status, message: `Linked Accounts: ${response.body.message}` },
+      };
     }
 
-    return data;
+    if (response.status !== 200) {
+      console.warn({ error: 'something went wrong' });
+      return {
+        error: { status: response.status, message: `Linked Accounts: something went wrong` },
+      };
+    }
+
+    return response.body;
   }
 
   /**
@@ -274,57 +275,68 @@ export class Api {
    * you log in.
    * @returns A promise that resolves to a string or an IHTTPRequestError
    */
-  async getLinkAccountUrl(
-    identity_provider: string,
-    keycloakAccessCode: string
-  ): Promise<string | HTTPRequestError> {
+  async getLinkAccountUrl({
+    username,
+    provider,
+    keycloakAccessCode,
+  }: {
+    username: string;
+    provider: string;
+    keycloakAccessCode: string;
+  }): Promise<string | HTTPRequestError> {
     if (!this.AUTH_API_URL) {
       return { error: { message: 'AUTH API URL is unedefined' } };
     }
 
-    const url = queryString.stringifyUrl({
-      url: `${this.AUTH_API_URL}/accountLinkUrl`,
+    const authApi = getLincsAuthApi(this.AUTH_API_URL);
+    const response = await authApi.v1.users.getLinkAccountUrl({
+      headers: { authorization: `Bearer ${keycloakAccessCode}` },
+      params: { username },
       query: {
-        provider: identity_provider,
+        provider,
         redirectUri: this.LINK_ACCOUNTS_CALLBACK_URL,
       },
     });
 
-    const response = await axios
-      .get(url, { headers: { Authorization: `Bearer ${keycloakAccessCode}` } })
-      .catch((error: AxiosError) => {
-        if (error.response) return error.response;
-
-        const errorJson = error.toJSON();
-        log.error(errorJson);
-
-        throw new Error(error.message);
-      });
-
-    const { status, data } = response;
-    if (status >= 400) {
-      return { error: { status, message: `Link Account URL: ${data.error}` } };
+    if (response.status === 401 || response.status === 404 || response.status === 500) {
+      console.warn(response.body.message);
+      return {
+        error: {
+          status: response.status,
+          message: `Link Account URL: ${response.body.message}`,
+        },
+      };
     }
 
-    return data;
+    if (response.status !== 200) {
+      console.warn({ error: 'something went wrong' });
+      return {
+        error: {
+          status: response.status,
+          message: 'Link Account URL: something went wrong',
+        },
+      };
+    }
+
+    return response.body.url;
   }
 
   async getProviders(): Promise<Provider[] | Error> {
     if (!this.AUTH_API_URL) {
       return new Error('AUTH API URL is unedefined');
-      // return { error: { message: 'AUTH API URL is unedefined' } };
     }
 
-    try {
-      const { data } = await axios.get<Provider[]>(`${this.AUTH_API_URL}/providers`);
-      return data as Provider[];
-    } catch (error) {
-      logHttpError(error);
-      if (axios.isAxiosError(error)) {
-        return new Error(error.message);
-      }
-      return new Error('error');
+    const authApi = getLincsAuthApi(this.AUTH_API_URL);
+    const response = await authApi.v1.providers.getAll();
+
+    if (response.status === 200) return response.body;
+
+    if (response.status === 500) {
+      console.warn(response.status, response.body.message);
+      return [];
     }
+
+    return new Error('error');
   }
 }
 

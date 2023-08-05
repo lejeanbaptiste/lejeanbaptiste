@@ -2,8 +2,8 @@ import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import { defaultRoles } from '../../../config/personRole';
 import type { EntityLink } from '../../../dialogs/entityLookups/types';
-import Entity from '../../../js/entities/Entity';
 import Writer from '../../../js/Writer';
+import Entity from '../../../js/entities/Entity';
 import type { EntityType, SchemaMappingType } from '../../../types';
 import { capitalizeFirstLetter } from '../../utilities';
 import DialogForm from '../dialogForm/dialogForm';
@@ -118,10 +118,17 @@ class PersonDialog implements SchemaDialog {
     this.dialog.$el.on(
       'buildDynamicFields',
       (event: JQuery.Event, config: any, dialog: DialogForm) => {
-        const roleChoices = this.roleAtt?.choices ? this.roleAtt.choices : defaultRoles;
-        const choiceOptions = this.generateRoleOptions(roleChoices);
+        const roleChoices: Role[] = this.roleAtt?.choices ? this.roleAtt.choices : defaultRoles;
+        const sortedRoleChoices = roleChoices.sort((a, b) => {
+          const A = a.label.toUpperCase();
+          const B = b.label.toUpperCase();
+          if (A < B) return -1;
+          if (A > B) return 1;
+          return 0;
+        });
+        const choiceOptions = this.generateRoleOptions(sortedRoleChoices);
         optionsRoleElement.html(choiceOptions);
-      }
+      },
     );
 
     this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any, dialog: DialogForm) => {

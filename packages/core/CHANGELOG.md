@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## 3.2.1
+
+### Patch Changes
+
+- UI
+  - Navigation scroll behaviour (elements scrollIntoView) [25cc98386950c2c8bcc94806bc1298b925c4443e](closes #157)
+  - Sort person role by label (Alphabetically) [66d1bcb47bc07f49cc1d0dfcb817ac197f8c6528](closes #160)
+- Formating [2084c44288dc16e88ca0b34aaf60b65bd7f1e547]
+- Update dependencies [620a3077894271ab342cf1a7a13e6f80917e4603]
+  - core:
+    - update:
+      - @mui/icons-material@5.14.3
+      - @mui/material@5.14.3
+      - i18next@23.4.1
+      - monaco-editor@0.41.0
+      - react-virtuoso@4.4.2
+      - wikibase-sdk@9.2.2
+    - bump:
+      - @fontsource/lato@5.0.7
+      - @fortawesome/fontawesome-free@6.4.2
+      - formik@2.4.3 jotai@2.2.3
+      - react-i18next@13.0.3
+      - react-resizable-panels@0.0.54
+  - dev:
+    - upgrade:
+      - @typescript-eslint/eslint-plugin@6.2.1
+      - @typescript-eslint/parser@6.2.1
+      - eslint-plugin-prettier@5.0.0
+    - update:
+      - esbuild-loader@3.1.0
+      - eslint-config-prettier@8.10.0
+      - eslint-plugin-react@7.33.1
+      - monaco-editor-webpack-plugin@7.1.0
+    - bump
+      - @types/luxon@3.3.1
+      - @types/node@20.4.7
+      - webpack@5.88.2
+
 ## 3.2.0
 
 ### Minor Changes

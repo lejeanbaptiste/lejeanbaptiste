@@ -1,12 +1,3 @@
-export const getElementPosition = (element: Element) => {
-  const { top, left } = element.getBoundingClientRect();
-  const { marginTop, marginLeft } = getComputedStyle(element);
-  return {
-    top: top - parseInt(marginTop, 10),
-    left: left - parseInt(marginLeft, 10),
-  };
-};
-
 export const getParents = (node: Node, selector: string) => {
   const parents: Node[] = [];
   let _node: Node | null = node;

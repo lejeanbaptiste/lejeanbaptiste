@@ -71,17 +71,17 @@ export const useFormatConversion = () => {
         props: {
           icon: 'importExportRoundedIcon',
           preventEscape: true,
-          title: t('importExport.convert document').toString(),
+          title: t('LWC:importExport.convert document').toString(),
           Body: () => <InterceptConvertDialog format={fromType} />,
           actions: [
-            { action: 'cancel', label: `${t('commons.cancel')}` },
+            { action: 'cancel', label: `${t('LWC:commons.cancel')}` },
             {
               action: 'noConvertOpen',
-              label: `${t('importExport.try to open it without converting')}`,
+              label: `${t('LWC:importExport.try to open it without converting')}`,
             },
             {
               action: 'convertOpen',
-              label: `${t('importExport.convert and open')}`,
+              label: `${t('LWC:importExport.convert and open')}`,
               variant: 'outlined',
             },
           ],
@@ -122,7 +122,7 @@ export const useFormatConversion = () => {
 
   const notifyConvertError = (error: Error) => {
     notifyViaSnackbar({
-      message: `${t('commons.conversion failed')}: ${error.message}`,
+      message: `${t('LWC:commons.conversion failed')}: ${error.message}`,
       options: { variant: 'error' },
     });
   };

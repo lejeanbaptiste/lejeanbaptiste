@@ -114,7 +114,7 @@ export const SimpleDialog = ({
             onClick={() => handleAction(action)}
             variant={variant ?? 'text'}
           >
-            {t(`${label ?? action}`)}
+            {t(`LWC:commons.${label ?? action}`)}
           </Button>
         ))}
       </DialogActions>
