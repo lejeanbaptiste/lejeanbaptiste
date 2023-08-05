@@ -378,3 +378,7 @@ span[data-mce-bogus] {
     color: black !important;
   }
 }
+
+* {
+  scroll-margin-top: 1rem;
+}

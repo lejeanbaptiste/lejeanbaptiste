@@ -239,7 +239,7 @@ class Utilities {
 
     //* Scroll Node into view
     const startScrollElement = isElement(node) ? node : node.parentElement;
-    if (startScrollElement) this.scrollIntoView(startScrollElement);
+    if (startScrollElement) startScrollElement.scrollIntoView({ behavior: 'smooth' });
 
     //* Focus and public Event
     // need focus to happen after timeout, otherwise it doesn't always work (in FF)
@@ -279,7 +279,7 @@ class Utilities {
 
     //* Scroll Node into view
     const startScrollElement = isElement(firstElement) ? firstElement : firstElement.parentElement;
-    if (startScrollElement) this.scrollIntoView(startScrollElement);
+    if (startScrollElement) startScrollElement.scrollIntoView({ behavior: 'smooth' });
 
     //* Focus and public Event
     // need focus to happen after timeout, otherwise it doesn't always work (in FF)
@@ -324,7 +324,7 @@ class Utilities {
     this.writer.editor.currentBookmark = editor.selection.getBookmark(1);
 
     //* Scroll Node into view
-    this.scrollIntoView(element);
+    element.scrollIntoView({ behavior: 'smooth' });
 
     //* Focus and public Event
     // need focus to happen after timeout, otherwise it doesn't always work (in FF)
@@ -652,25 +652,6 @@ class Utilities {
 
   destroy() {
     if (this.$entitiesConverter) this.$entitiesConverter.remove();
-  }
-
-  private scrollIntoView(element: Element) {
-    if (!this.writer.editor) return;
-    // scroll node into view
-    let elementTop = DOMUtilities.getElementPosition(element).top;
-
-    //! It is not clear why this is here and it is not working.
-    // if (node.matches(':hidden')) {
-    //   node.style.display = '';
-    //   nodeTop = getElementPosition(node).top;
-    //   node.style.display = 'none';
-    // }
-
-    const editorContentAreaContainer = this.writer.editor.getContentAreaContainer();
-    const containerHeight = editorContentAreaContainer.getBoundingClientRect().height * 0.25; //? Magic Number
-    const newScrollTop = elementTop - containerHeight;
-
-    element.ownerDocument.scrollingElement?.scrollTo({ top: newScrollTop, behavior: 'smooth' });
   }
 
   private getNode({ id, parentId, nodeIndex, xpath }: SelectNodeParams) {
