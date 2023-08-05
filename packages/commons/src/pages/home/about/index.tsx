@@ -13,11 +13,11 @@ export const AboutSection = () => {
         .hex(rgbToHex(primary.main))
         .alpha(mode === 'dark' ? 0.04 : 0.06)
         .hex(),
-    [mode]
+    [mode],
   );
 
   return (
-    <Box id="about" py={10} px={2} sx={{ bgcolor }}>
+    <Box id="about" py={10} px={2} sx={{ bgcolor, scrollMarginBlockStart: 300 }}>
       <Container maxWidth="lg">
         <Grid container columnSpacing={12} rowSpacing={4} mb={5}>
           <Grid item xs={12} sm={7} md={8}>
