@@ -13,11 +13,11 @@
   --link: rgb(70, 130, 180);
 }
 
-*[xml\:lang|="ar"],
-*[xml\:lang|="fa"],
-*[xml\:lang|="he"],
-*[xml\:lang|="iw"],
-*[xml\:lang|="ota"] {
+*[xml\:lang|='ar'],
+*[xml\:lang|='fa'],
+*[xml\:lang|='he'],
+*[xml\:lang|='iw'],
+*[xml\:lang|='ota'] {
   direction: rtl !important;
 }
 
@@ -30,10 +30,10 @@
 
   padding: 2px 4px 4px 4px;
   color: white !important;
-  border-radius: 4px
+  border-radius: 4px;
 }
 
-.showEntities .entityHighlight>.entity {
+.showEntities .entityHighlight > .entity {
   border-width: 2px;
 }
 
@@ -285,11 +285,11 @@
   top: 2px;
 }
 
-.noteWrapper>* {
+.noteWrapper > * {
   display: inherit;
 }
 
-.noteWrapper.hide>* {
+.noteWrapper.hide > * {
   display: none !important;
 }
 
@@ -311,9 +311,9 @@
   text-indent: initial;
 }
 
-*[_tag="citation"]:before,
-*[_tag="note"]:before,
-*[_tag="keyword"]:before {
+*[_tag='citation']:before,
+*[_tag='note']:before,
+*[_tag='keyword']:before {
   font-weight: 900;
 }
 
@@ -325,7 +325,7 @@ span[data-mce-bogus] {
   display: none;
 }
 
-*[_tag="pb"] {
+*[_tag='pb'] {
   display: flex !important;
   position: relative !important;
   flex-direction: row !important;
@@ -341,16 +341,16 @@ span[data-mce-bogus] {
   text-indent: 0px !important;
 }
 
-*[xml\:lang|="ar"] [_tag="pb"],
-*[xml\:lang|="fa"] [_tag="pb"],
-*[xml\:lang|="he"] [_tag="pb"],
-*[xml\:lang|="iw"] [_tag="pb"],
-*[xml\:lang|="ota"] [_tag="pb"] {
+*[xml\:lang|='ar'] [_tag='pb'],
+*[xml\:lang|='fa'] [_tag='pb'],
+*[xml\:lang|='he'] [_tag='pb'],
+*[xml\:lang|='iw'] [_tag='pb'],
+*[xml\:lang|='ota'] [_tag='pb'] {
   justify-content: left !important;
 }
 
-*[_tag="pb"]:before,
-*[_tag="pb"]:after {
+*[_tag='pb']:before,
+*[_tag='pb']:after {
   display: inline-flex !important;
   position: relative !important;
   left: 50% !important;
@@ -359,12 +359,12 @@ span[data-mce-bogus] {
   border-radius: 20px !important;
 }
 
-*[_tag="pb"]:before {
+*[_tag='pb']:before {
   content: '\00a0' !important;
   box-shadow: unset !important;
 }
 
-*[_tag="pb"]:after {
+*[_tag='pb']:after {
   content: attr(n) !important;
   background-color: #eaeaea !important;
   padding-left: 16px !important;
@@ -374,7 +374,7 @@ span[data-mce-bogus] {
 }
 
 @media (prefers-color-scheme: dark) {
-  *[_tag="pb"] {
+  *[_tag='pb'] {
     color: black !important;
   }
 }
