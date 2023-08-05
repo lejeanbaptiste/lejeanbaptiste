@@ -3,7 +3,7 @@ FROM node:18.16-alpine
 # Needed because some dependencies are fetch from git and alpine does not come with git
 RUN apk add --no-cache git
 
-RUN npm install pm2 ts-node -g
+RUN npm install ts-node -g
 
 WORKDIR /app
 
@@ -15,6 +15,7 @@ COPY ./packages/commons .
 
 RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build
 
-CMD ["pm2-runtime", "ecosystem.config.js"]
+## Note: pm2 should not be used with docker: https://github.com/goldbergyoni/nodebestpractices/blob/master/sections/docker/restart-and-replicate-processes.md
+CMD ["ts-node", "./server/index.ts"]
 
 EXPOSE 3000
