@@ -106,7 +106,7 @@ export const useLeafWriter = () => {
 
     if (response instanceof Error) {
       notifyViaSnackbar({
-        message: `${t('commons.Conversion to HTML failed').toString()}. ${response.message}`,
+        message: `${t('LWC:commons.Conversion to HTML failed').toString()}. ${response.message}`,
         options: { variant: 'error' },
       });
       return;
@@ -140,8 +140,8 @@ export const useLeafWriter = () => {
 
     const type = saved.success ? 'success' : saved.error?.type ?? 'info';
     const message = saved.success
-      ? t('storage.document_saved')
-      : `${t('error.something_went_wrong')}. ${t('storage.document_not_saved')}!`;
+      ? t('LWC:storage.document_saved')
+      : `${t('LWC:error.something_went_wrong')}. ${t('LWC:storage.document_not_saved')}!`;
 
     if (saved.success) leafWriter.setContentHasChanged(false);
 
@@ -151,8 +151,8 @@ export const useLeafWriter = () => {
   const saveFeedback = (saved: boolean) => {
     const type = saved ? 'success' : 'error';
     const message = saved
-      ? t('storage.document_saved')
-      : `${t('error.something went wrong')}. ${t('storage.document_not_saved')}!`;
+      ? t('LWC:storage.document_saved')
+      : `${t('LWC:error.something_went_wrong')}. ${t('LWC:storage.document_not_saved')}!`;
 
     notifyViaSnackbar({ message, options: { variant: type } });
 
@@ -172,10 +172,10 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        title: `${t('commons.unsaved_changes')}`,
+        title: `${t('LWC:commons.unsaved_changes')}`,
         actions: [
-          { action: 'cancel', label: `${t('commons.cancel')}` },
-          { action: 'discard', label: `${t('commons.discard_changes')}` },
+          { action: 'cancel', label: `${t('LWC:commons.cancel')}` },
+          { action: 'discard', label: `${t('LWC:commons.discard_changes')}` },
         ],
         onClose: async (action) => {
           if (action !== 'discard') return;

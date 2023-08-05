@@ -38,21 +38,21 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
         !storageProviders.some((provider) => provider.service?.isStorageProvider),
       disabledTooltipText: cloudDisabledMessage,
       icon: 'cloud',
-      label: t('storage.from_the_cloud'),
+      label: t('LWC:storage.from_the_cloud'),
       onClick: () => openStorageDialog({ source: 'cloud', type: 'load' }),
       value: 'cloud',
     },
     {
       disabled: isLoading,
       icon: 'computer',
-      label: t('storage.from_your_device'),
+      label: t('LWC:storage.from_your_device'),
       onClick: () => openStorageDialog({ source: 'local', type: 'load' }),
       value: 'local',
     },
     {
       disabled: isLoading,
       icon: 'importIcon',
-      label: t('storage.import document'),
+      label: t('LWC:storage.import document'),
       onClick: () => openDialog({ type: 'import', props: { maxWidth: 'md' } }),
       value: 'import',
     },
@@ -61,21 +61,21 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
       disabled: isLoading,
       hide: userState !== 'AUTHENTICATED' || countRecentDocs === 0,
       icon: 'recent',
-      label: t('commons.recent'),
+      label: t('LWC:commons.recent'),
       onClick: () => onSelect('recent'),
       value: 'recent',
     },
     {
       disabled: isLoading,
       icon: 'template',
-      label: t('commons.templates'),
+      label: t('LWC:commons.templates'),
       onClick: () => onSelect('templates'),
       value: 'templates',
     },
     {
       disabled: isLoading,
       icon: 'sample',
-      label: t('commons.samples'),
+      label: t('LWC:commons.samples'),
       onClick: () => onSelect('samples'),
       value: 'samples',
     },
@@ -99,7 +99,7 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
         textTransform="uppercase"
         variant="subtitle1"
       >
-        {t('commons.open')}
+        {t('LWC:commons.open')}
       </Typography>
       <AnimatePresence mode="popLayout">
         <Stack gap={1} pt={1} component={motion.div} layout="preserve-aspect">

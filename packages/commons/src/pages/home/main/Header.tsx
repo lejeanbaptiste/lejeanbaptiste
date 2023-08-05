@@ -20,7 +20,7 @@ export const Header = () => {
             sx={{ fontWeight: 300 }}
             variant={isMobile ? 'subtitle1' : 'h5'}
           >
-            {t('home.subtitle')}
+            {t('LWC:home.subtitle')}
           </Typography>
         </Stack>
       </Container>

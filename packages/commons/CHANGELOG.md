@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## 3.2.0
+
+### Minor Changes
+
+- Homepage
+  - Add link and route to the About section [9a67962c6d5857dc88e5fce2992c399da07a14d5] [17c956a06c7fdf8aec509764e335ff69f0be9f31] (closes #158)
+
+### Patch Changes
+
+- API
+  - Update auth-api endpoints [ef91d4da30b8d1ecd242dc8fee92e2183ba622a9] (closes #161)
+- Localization
+  - Fix localization path [ce5deb9101b46f80527a5529790f14934b936da1]
+
+- Updated dependencies [acb5d910689603b9c1484e81428df63a69a99734]
+  - core:
+    - upgrade:
+      - @octokit/rest@20.0.1
+      - keycloak-js@22.0.1
+    - update:
+      - @fontsource/lato@5.0.7
+      - @mui/icons-material@5.14.3
+      - @mui/material@5.14.3
+      - framer-motion@10.15.0
+      - i18next@23.4.1
+    - bump:
+      - **@cwrc/leafwriter@3.2.1**
+      - @mui/lab@5.0.0-alpha.138
+      - jotai@2.2.3
+      - react-i18next@13.0.3
+      - react-router-dom@6.14.2
+  - dev:
+    - upgrade:
+      - @octokit/types@11.1.0
+      - @typescript-eslint/eslint-plugin@6.2.1
+      - @typescript-eslint/parser@6.2.1
+      - eslint-plugin-prettier@5.0.0
+      - nodemon@3.0.1
+    - update:
+      - esbuild-loader@3.1.0
+      - eslint@8.46.0
+      - eslint-config-prettier@8.10.0
+      - eslint-plugin-react@7.33.1
+      - monaco-editor-webpack-plugin@7.1.0
+    - bump:
+      - @types/node@20.4.7
+      - prettier@3.0.1
+      - tslib@2.6.1
+      - webpack@5.88.2
+
 ## 3.1.3
 
 ### Patch Changes

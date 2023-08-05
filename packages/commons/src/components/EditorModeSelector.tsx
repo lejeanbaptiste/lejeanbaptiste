@@ -40,8 +40,8 @@ export const EditorModeSelector = () => {
   };
 
   const options: Options[] = [
-    { label: t('commons.viewing'), value: 'viewing', icon: VisibilityIcon },
-    { label: t('commons.editing'), value: 'editing', icon: EditIcon },
+    { label: t('LWC:commons.viewing'), value: 'viewing', icon: VisibilityIcon },
+    { label: t('LWC:commons.editing'), value: 'editing', icon: EditIcon },
   ];
 
   return (

@@ -3,7 +3,7 @@ import { clearCache } from '@src/db';
 import type { AnnotationUserProfileProps, User } from '@src/types';
 import Cookies from 'js-cookie';
 import { Context } from '../index';
-import type { LinkedAccountProps } from './effects';
+import type { LinkedAccount } from './effects';
 
 //* INIITIALIZE
 export const onInitializeOvermind = async ({ actions, effects }: Context, overmind: any) => {
@@ -73,7 +73,7 @@ export const setupMainIdentityProvider = async ({ actions, effects }: Context, t
 
 export const setUserProfile = async (
   { state, actions, effects }: Context,
-  identityProvider: string
+  identityProvider: string,
 ) => {
   const keyCloakProfile = await effects.auth.api.getUserData();
   const user = keyCloakProfile as User;
@@ -83,9 +83,9 @@ export const setUserProfile = async (
   state.auth.user.identities = new Map();
   const linkedAccounts = await actions.auth.getLinkedAccounts();
 
-  //in case the user have unloked the main provider from its account.
+  //in case the user have unlinked the main provider from its account.
   if (identityProvider === 'none' && linkedAccounts) {
-    identityProvider = linkedAccounts[0].identityProvider;
+    identityProvider = linkedAccounts[0].identityProvider!;
   }
 
   if (!identityProvider) return;
@@ -115,9 +115,9 @@ export const setUserProfile = async (
     } else {
       //If preferId is not a storage provider, use the first one available
       const firstAvailableStorageSupported = storageProviders.find(
-        (provider) => !!provider.service
+        (provider) => !!provider.service,
       );
-      if (firstAvailableStorageSupported) {
+      if (firstAvailableStorageSupported?.providerId) {
         prefStorageProvider = firstAvailableStorageSupported.providerId;
       }
     }
@@ -127,11 +127,19 @@ export const setUserProfile = async (
   if (prefStorageProvider) actions.storage.setPrefStorageProvider(prefStorageProvider);
 };
 
-export const linkAccount = async ({ actions, effects }: Context, identity_provider: string) => {
+export const linkAccount = async (
+  { state, actions, effects }: Context,
+  identity_provider: string,
+) => {
   const token = await effects.auth.api.getToken();
   if (!token) return log.warn('No Authentication token');
+  if (!state.auth.user?.username) return log.warn('User not auhtenticated');
 
-  const linkAccountUrl = await effects.auth.api.getLinkAccountUrl(identity_provider, token);
+  const linkAccountUrl = await effects.auth.api.getLinkAccountUrl({
+    username: state.auth.user.username,
+    provider: identity_provider,
+    keycloakAccessCode: token,
+  });
   if (typeof linkAccountUrl !== 'string') {
     const { message } = linkAccountUrl.error;
     actions.ui.emitNotification({ message });
@@ -159,6 +167,7 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
   for await (const account of linkedAccounts) {
     //IDENTITY
     const providerName = account.identityProvider;
+    if (!providerName) continue;
     if (state.auth.user.identities.get(providerName)) continue;
 
     if (!actions.providers.isProviderInitilized(providerName)) {
@@ -175,8 +184,10 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
 
 export const getUserDetails = async (
   { state }: Context,
-  { identityProvider: providerName, userId }: LinkedAccountProps
+  { identityProvider: providerName, userId }: LinkedAccount,
 ) => {
+  if (!providerName) return;
+
   const { supportedProviders } = state.providers;
 
   const provider = supportedProviders.find((p) => p.providerId === providerName && p.service);
@@ -191,8 +202,10 @@ export const getUserDetails = async (
 
 export const setupLinkedAccountProvider = async (
   { actions, effects }: Context,
-  { identityProvider: providerName, userId, userName }: LinkedAccountProps
+  { identityProvider: providerName, userId, userName }: LinkedAccount,
 ) => {
+  if (!providerName) return;
+
   const token = await effects.auth.api.getToken();
   if (!token) return log.warn('No Authentication token');
 

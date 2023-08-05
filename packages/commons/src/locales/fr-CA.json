@@ -1,12 +1,8 @@
 {
   "LWC": {
-    "LWC": {
-      "messages": {
-        "service not available at the moment": "Service non disponible pour le moment"
-      }
-    },
     "commons": {
       "Conversion to HTML failed": "La conversion en HTML a échoué",
+      "about": "à propos",
       "accept_all": "accepter tout",
       "and": "et",
       "basic_interactions": "interactions de base",
@@ -48,7 +44,6 @@
       "save_as": "enregistrer sous",
       "session": "session",
       "settings": "paramètres",
-      "sign in": "s'identifier",
       "sign_in": "s'identifier",
       "sign_out": "se déconnecter",
       "storage": "stockage",
@@ -98,7 +93,6 @@
     "error": {
       "message404": "Soit vous avez essayé une route louche, soit vous êtes venu ici par erreur. \nRevenez à la <1>page principale.</1>",
       "page_not_Found": "Page non trouvée",
-      "something went wrong": "quelque chose s'est mal passé",
       "something_went_wrong": "Quelque chose s'est mal passé"
     },
     "home": {
@@ -116,20 +110,17 @@
       },
       "try to open it without converting": "essayez de l'ouvrir sans convertir"
     },
-    "message": {
-      "unable to upload file": "Incapable de télécharger le fichier"
-    },
     "messages": {
       "annotation_need_space": "Annoter des documents nécessite plus d'espace.",
       "link_to_storage_provider_instructions": "Vous pouvez le faire en cliquant sur l'icône de l'utilisateur dans le coin supérieur droit de l'écran, puis en sélectionnant une option dans la liste des fournisseurs de stockage.",
       "rotate_phone": "Veuillez faire pivoter votre téléphone ou ouvrir LEAF-Writer sur un grand écran.",
+      "service not available at the moment": "Service non disponible pour le moment",
+      "unable_to_upload file": "Incapable de télécharger le fichier",
       "you_must_sign_in_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter pour ouvrir et enregistrer des documents depuis le cloud",
       "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter avec un fournisseur de stockage pour ouvrir et enregistrer un document à partir du cloud"
     },
     "profile": {
       "manage_your_lincs_account": "Gérer votre compte LINCS"
-    },
-    "stoage": {
     },
     "storage": {
       "all_changes_salved": "toutes les modifications enregistrées",
@@ -149,7 +140,6 @@
       "import document": "Importer un document",
       "invalid_request": "Requête invalide",
       "paste_your_XML_here": "collez votre XML ici",
-      "provider not found": "fournisseur introuvable",
       "provider_not_found": "fournisseur introuvable",
       "saving": "économie",
       "waiting_for_resource": "en attente de ressource",

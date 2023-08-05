@@ -78,14 +78,14 @@ export const Actions = ({ onAction }: ActionsProps) => {
 
   return (
     <DialogActions sx={{ justifyContent: 'space-between' }}>
-      <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
+      <Button onClick={handleCancel}>{t('LWC:commons.cancel')}</Button>
       <LoadingButton
         disabled={dialogAction === 'import' ? !fileDetail : false}
         loading={isProcessing}
         onClick={handleSelect}
         variant="outlined"
       >
-        <span>{dialogAction === 'import' ? t('storage.import') : t('storage.export')}</span>
+        <span>{dialogAction === 'import' ? t('LWC:storage.import') : t('LWC:storage.export')}</span>
       </LoadingButton>
     </DialogActions>
   );

@@ -73,7 +73,7 @@ export const TemplatesView = ({
     <Stack direction="column" pt={1} gap={1.5} width={width}>
       {[...categories.values()].map((category) => {
         return (
-          <Category key={category} title={category ?? t('commons.other')}>
+          <Category key={category} title={category ?? t('LWC:commons.other')}>
             <Masonry
               columns={columns}
               spacing={1.5}

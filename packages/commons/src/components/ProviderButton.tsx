@@ -23,7 +23,7 @@ export const ProviderButton = ({ name: provider }: ProviderButtonProps) => {
     <Tooltip
       title={
         !cookieConsent.includes('interaction')
-          ? t('cookie_consent.warning.must_accept_cookies_message')
+          ? t('LWC:cookie_consent.warning.must_accept_cookies_message')
           : ''
       }
     >

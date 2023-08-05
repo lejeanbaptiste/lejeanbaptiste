@@ -18,7 +18,7 @@ export const Footer = () => {
         sx={{ cursor: 'pointer', textTransform: 'capitalize' }}
         variant="caption"
       >
-        {t('commons.privacy')}
+        {t('LWC:commons.privacy')}
       </Link>
     </Stack>
   );

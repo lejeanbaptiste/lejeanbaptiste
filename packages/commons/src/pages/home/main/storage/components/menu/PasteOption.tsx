@@ -54,7 +54,7 @@ export const PasteOption = ({ disabled }: PasteOptionProps) => {
           },
         }}
         onChange={onChageTextfield}
-        placeholder={`${t('commons.or')} ${t('storage.paste_your_XML_here')}`}
+        placeholder={`${t('LWC:commons.or')} ${t('LWC:storage.paste_your_XML_here')}`}
         size="small"
         sx={{ '& fieldset': { borderColor: pasteHover ? palette.primary.main : 'inherit' } }}
       />
