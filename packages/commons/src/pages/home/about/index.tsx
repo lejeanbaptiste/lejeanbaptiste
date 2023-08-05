@@ -17,7 +17,7 @@ export const AboutSection = () => {
   );
 
   return (
-    <Box py={10} px={2} sx={{ bgcolor }}>
+    <Box id="about" py={10} px={2} sx={{ bgcolor }}>
       <Container maxWidth="lg">
         <Grid container columnSpacing={12} rowSpacing={4} mb={5}>
           <Grid item xs={12} sm={7} md={8}>
