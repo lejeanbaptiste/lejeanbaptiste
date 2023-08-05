@@ -1,7 +1,8 @@
-import { z } from 'zod';
+import { contract } from '@lincs.project/auth-api-contract';
+import { type ClientInferResponseBody } from '@ts-rest/core';
 import { SupportedProviderIds } from '../config';
 
-export type ProviderId = typeof SupportedProviderIds[number];
+export type ProviderId = (typeof SupportedProviderIds)[number];
 
 export type AuthenticateProp = {
   access_token?: string;
@@ -22,16 +23,8 @@ export interface ProviderService {
   getUserName: () => string;
 }
 
-const GetProvidersSchema = z
-  .object({
-    enabled: z.boolean(),
-    linkOnly: z.boolean(),
-    providerId: z.string(),
-    storeToken: z.boolean(),
-  })
-  .array();
-
-export type Provider = z.infer<typeof GetProvidersSchema.element>;
+export type Providers = ClientInferResponseBody<typeof contract.v1.providers.getAll, 200>;
+export type Provider = Providers[0];
 
 export interface SupportedProvider extends Provider {
   service?: ProviderService;
