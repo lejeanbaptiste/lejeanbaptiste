@@ -441,11 +441,7 @@ class EntitiesManager {
       this.writer.editor.selection.setRng(rng);
     }
 
-    if (doScroll) {
-      const val = entityTags.offset()?.top ?? 0;
-      //@ts-ignore
-      $(this.writer.editor.getDoc().documentElement).scrollTop(val);
-    }
+    if (doScroll) entityTags[0]?.scrollIntoView({ behavior: 'smooth' });
 
     this.writer.event('entityFocused').publish(id);
   }
