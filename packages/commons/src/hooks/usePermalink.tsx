@@ -80,11 +80,13 @@ export const usePermalink = () => {
 
   const getTemplateByTitle = async (title: string) => {
     const samples = await getTemplates();
+    if (samples instanceof Error) return;
     return samples.find((template) => template.title === title);
   };
 
   const getSampleByTitle = async (title: string) => {
     const samples = await getSampleDocuments();
+    if (samples instanceof Error) return;
     return samples.find((sample) => sample.title === title);
   };
 
@@ -101,7 +103,9 @@ export const usePermalink = () => {
       if (!document) {
         const error: Error = {
           type: 'error',
-          message: `${t('LWC:commons.template')} "${search.template}" ${t('LWC:commons.not_found')}.`,
+          message: `${t('LWC:commons.template')} "${search.template}" ${t(
+            'LWC:commons.not_found',
+          )}.`,
         };
         return error;
       }
@@ -122,7 +126,9 @@ export const usePermalink = () => {
       if (!document) {
         const error: Error = {
           type: 'error',
-          message: `${t('LWC:commons.sample_document')} "${search.sample}" ${t('LWC:commons.not_found')}.`,
+          message: `${t('LWC:commons.sample_document')} "${search.sample}" ${t(
+            'LWC:commons.not_found',
+          )}.`,
         };
         return error;
       }
