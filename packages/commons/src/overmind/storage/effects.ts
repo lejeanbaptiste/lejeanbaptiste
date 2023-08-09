@@ -1,3 +1,4 @@
+import { logHttpError } from '@src/services/utilities';
 import type { Resource } from '@src/types';
 import axios from 'axios';
 
@@ -8,8 +9,16 @@ export const api = {
    * @returns An array of Resource objects.
    */
   async loadCollection(collection: string) {
-    const { data } = await axios.get<Resource[]>(`./content/${collection}.json`);
-    return data;
+    try {
+      const { data } = await axios.get<Resource[]>(`./content/${collection}.json`);
+      return data;
+    } catch (error) {
+      logHttpError(error);
+      if (axios.isAxiosError(error)) {
+        return new Error(error.message);
+      }
+      return new Error('error');
+    }
   },
 
   /**
@@ -18,8 +27,16 @@ export const api = {
    * @returns The sample document.
    */
   async loadSample(url: string) {
-    const { data } = await axios.get<string>(url);
-    return data;
+    try {
+      const { data } = await axios.get<string>(url);
+      return data;
+    } catch (error) {
+      logHttpError(error);
+      if (axios.isAxiosError(error)) {
+        return new Error(error.message);
+      }
+      return new Error('error');
+    }
   },
 
   /**
@@ -28,8 +45,16 @@ export const api = {
    * @returns The document.
    */
   async getDocumentFromUrl(url: string) {
-    const { data } = await axios.get<string>(url);
-    return data;
+    try {
+      const { data } = await axios.get<string>(url);
+      return data;
+    } catch (error) {
+      logHttpError(error);
+      if (axios.isAxiosError(error)) {
+        return new Error(error.message);
+      }
+      return new Error('error');
+    }
   },
 
   /**
