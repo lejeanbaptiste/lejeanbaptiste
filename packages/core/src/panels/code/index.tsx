@@ -1,9 +1,9 @@
-import { Button, IconButton, Paper, Stack, ToggleButton, Tooltip } from '@mui/material';
+import { Button, Paper, Stack, ToggleButton, Tooltip } from '@mui/material';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TbVectorTriangle } from 'react-icons/tb';
 import { useActions } from '../../overmind';
 import { Editor } from './Editor';
-import ShareIcon from '@mui/icons-material/Share';
 
 export const CodePanel = () => {
   const { openDialog } = useActions().ui;
@@ -45,7 +45,7 @@ export const CodePanel = () => {
               sx={{ height: 28 }}
               value="check"
             >
-              <ShareIcon fontSize="inherit" />
+              <TbVectorTriangle fontSize="inherit" style={{ transform: 'rotate(27deg)' }} />
             </ToggleButton>
           </Tooltip>
           <Tooltip enterDelay={1000} title={t('leafwriter:edit_raw_xml')}>
