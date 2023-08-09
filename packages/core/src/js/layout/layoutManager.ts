@@ -1,7 +1,6 @@
 import fscreen from 'fscreen';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/tabs';
-// import 'layout-jquery3';
 import '../../lib/jquery/jquery.layout_and_plugins.js';
 import { ISettingsModuleName } from '../../types/index.js';
 import Writer from '../Writer';
@@ -51,22 +50,17 @@ class LayoutManager {
 
   modules: any[] = [];
 
-  constructor(writer: Writer, config?: InitConfigProps) {
+  constructor(writer: Writer) {
     this.writer = writer;
   }
 
   init(config: InitConfigProps) {
-    if (config.modules) {
-      this.modulesLayout.clear();
-      const regions = Object.entries(config.modules).forEach(([region, modules]) => {
-        this.modulesLayout.set(region as LayoutLocation, modules as ModuleConfig[]);
-      });
-    }
+    if (config.modules) this.modulesLayout.clear();
 
     this.$containerid = this.writer.getUniqueId('cwrc_');
 
     this.$container = $(`<div id="${this.$containerid}" class="cwrc cwrcWrapper" />`).appendTo(
-      config.container
+      config.container,
     );
 
     if (config.name) this.name = config.name;
@@ -87,15 +81,6 @@ class LayoutManager {
       </div>
     `;
     this.$container.html(loadingMaskHtml);
-
-    // filter modules
-    this.modulesLayout.forEach((module) => {
-      module = Array.isArray(module)
-        ? module.filter((module) => this.isModuleAllowed(module))
-        : this.isModuleAllowed(module)
-        ? module
-        : [];
-    });
 
     let html = '';
 
@@ -190,10 +175,7 @@ class LayoutManager {
         fxName: 'none',
       },
       center: {
-        //@ts-ignore
-        onresize_end: (region, pane, state, options) => {
-          this.resizeEditor();
-        },
+        onresize_end: () => this.resizeEditor(),
       },
     };
 
@@ -219,7 +201,7 @@ class LayoutManager {
       }
 
       const $region = this.$container?.find(
-        `.ui-layout-${region}:not(.cwrcHeader):not(.cwrcFooter)`
+        `.ui-layout-${region}:not(.cwrcHeader):not(.cwrcFooter)`,
       );
 
       if (!$region) return;
@@ -233,7 +215,7 @@ class LayoutManager {
       $region.tabs({
         //@ts-ignore
         activate: (event: any, ui: any) => $.layout.callbacks.resizeTabLayout(event, ui),
-        create: (event: any, ui: any) => {
+        create: () => {
           $region.parent().find('.ui-corner-all:not(button)').removeClass('ui-corner-all');
         },
       });
@@ -244,7 +226,7 @@ class LayoutManager {
     if (!this.writer.editor) return;
 
     const toolbar = document.querySelector('#editor-toolbar');
-    const tox = document.querySelector('.tox') as HTMLElement;
+    const tox = document.querySelector('.tox')! as HTMLElement;
     if (!toolbar || !tox) return;
 
     const toolbarHeight = toolbar.getBoundingClientRect().height;
@@ -393,18 +375,11 @@ class LayoutManager {
     this.$container?.remove();
   }
 
-  private isModuleAllowed(module: ModuleConfig) {
-    return (
-      !this.writer.isReadOnly || (this.writer.isReadOnly && !WRITE_ONLY_MODULES.includes(module.id))
-    );
-  }
-
   private addPanel(panelRegion: LayoutLocation, panelConfig: ModuleConfig | ModuleConfig[]) {
     if (!panelConfig) return '';
 
     //single module
     if (!Array.isArray(panelConfig)) {
-      // const module = Array.isArray(panelConfig) ? panelConfig[0] : panelConfig;
       return `
         <div
           id="${this.editorId}-${panelConfig.id}"
@@ -418,14 +393,13 @@ class LayoutManager {
       <div class="cwrc tabs ui-layout-${panelRegion}">
         <ul>
           ${panelConfig
-            .filter((module) => this.isModuleAllowed(module))
             .map(
               ({ id, title }) =>
                 `
                 <li id=${id}>
                   <a href="#${this.editorId}-${id}">${title}</a>
                 </li>
-              `
+              `,
             )
             .join('\n')}
         </ul>
@@ -437,8 +411,6 @@ class LayoutManager {
   }
 
   private initModule(module: ModuleConfig) {
-    if (this.isModuleAllowed(module) === false) return null;
-
     const config = module.config || {};
     config.writer = this.writer;
     config.parentId = `${this.editorId}-${module.id}`;
