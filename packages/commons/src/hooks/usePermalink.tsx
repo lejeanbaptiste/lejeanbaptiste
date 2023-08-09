@@ -47,12 +47,13 @@ export const usePermalink = () => {
 
       // Get RAW URL if user is not signed in.
       if (!!permalink.resource) {
-        const {owner, repo, path, filename } = permalink.resource;
+        const { owner, repo, path, filename } = permalink.resource;
         if (owner && repo && filename) {
-          const url = `https://raw.githubusercontent.com/${owner}/${repo}/master/${path ?? ''}${filename}`;
+          const _path = path ? `${path}/` : '';
+          const url = `https://raw.githubusercontent.com/${owner}/${repo}/main/${_path}${filename}`;
           permalink.resource.url = encodeURI(url);
           return permalink.resource;
-        } 
+        }
       }
 
       //Redirect user to sign in.
