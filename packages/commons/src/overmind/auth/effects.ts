@@ -32,7 +32,7 @@ interface tokenParsed extends KeycloakTokenParsed {
 /* The Api class is a wrapper for the Keycloak object that provides a set of functions that are used to
 authenticate the user and get the user's profile data */
 
-const getLincsAuthApi = (baseUrl: string) => initClient(contract, { baseUrl, baseHeaders: {} });
+const getLincsAuthApi = (baseUrl: string) => initClient(contract.v1, { baseUrl, baseHeaders: {} });
 export class Api {
   readonly clientId: string;
   readonly LINK_ACCOUNTS_CALLBACK_URL: string;
@@ -246,7 +246,7 @@ export class Api {
     }
 
     const authApi = getLincsAuthApi(this.AUTH_API_URL);
-    const response = await authApi.v1.users.getLinkedAccounts({
+    const response = await authApi.users.getLinkedAccounts({
       headers: { authorization: `Bearer ${keycloakAccessCode}` },
       params: { username },
     });
@@ -289,7 +289,7 @@ export class Api {
     }
 
     const authApi = getLincsAuthApi(this.AUTH_API_URL);
-    const response = await authApi.v1.users.getLinkAccountUrl({
+    const response = await authApi.users.getLinkAccountUrl({
       headers: { authorization: `Bearer ${keycloakAccessCode}` },
       params: { username },
       query: {
@@ -327,7 +327,7 @@ export class Api {
     }
 
     const authApi = getLincsAuthApi(this.AUTH_API_URL);
-    const response = await authApi.v1.providers.getAll();
+    const response = await authApi.providers.getAll();
 
     if (response.status === 200) return response.body;
 

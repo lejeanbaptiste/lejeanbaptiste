@@ -47,12 +47,13 @@ export const usePermalink = () => {
 
       // Get RAW URL if user is not signed in.
       if (!!permalink.resource) {
-        const {owner, repo, path, filename } = permalink.resource;
+        const { owner, repo, path, filename } = permalink.resource;
         if (owner && repo && filename) {
-          const url = `https://raw.githubusercontent.com/${owner}/${repo}/master/${path ?? ''}${filename}`;
+          const _path = path ? `${path}/` : '';
+          const url = `https://raw.githubusercontent.com/${owner}/${repo}/main/${_path}${filename}`;
           permalink.resource.url = encodeURI(url);
           return permalink.resource;
-        } 
+        }
       }
 
       //Redirect user to sign in.
@@ -80,11 +81,13 @@ export const usePermalink = () => {
 
   const getTemplateByTitle = async (title: string) => {
     const samples = await getTemplates();
+    if (samples instanceof Error) return;
     return samples.find((template) => template.title === title);
   };
 
   const getSampleByTitle = async (title: string) => {
     const samples = await getSampleDocuments();
+    if (samples instanceof Error) return;
     return samples.find((sample) => sample.title === title);
   };
 
@@ -101,7 +104,9 @@ export const usePermalink = () => {
       if (!document) {
         const error: Error = {
           type: 'error',
-          message: `${t('LWC:commons.template')} "${search.template}" ${t('LWC:commons.not_found')}.`,
+          message: `${t('LWC:commons.template')} "${search.template}" ${t(
+            'LWC:commons.not_found',
+          )}.`,
         };
         return error;
       }
@@ -122,7 +127,9 @@ export const usePermalink = () => {
       if (!document) {
         const error: Error = {
           type: 'error',
-          message: `${t('LWC:commons.sample_document')} "${search.sample}" ${t('LWC:commons.not_found')}.`,
+          message: `${t('LWC:commons.sample_document')} "${search.sample}" ${t(
+            'LWC:commons.not_found',
+          )}.`,
         };
         return error;
       }

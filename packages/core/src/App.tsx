@@ -134,8 +134,11 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
           {editorToobarContainer && createPortal(<EditorToolbar />, editorToobarContainer)}
           {tocPanelContainer && createPortal(<TocPanel />, tocPanelContainer)}
           {structureTreePanelContainer &&
+            !state.editor.isReadonly &&
             createPortal(<MarkupPanel />, structureTreePanelContainer)}
-          {codePanelContainer && createPortal(<CodePanel />, codePanelContainer)}
+          {codePanelContainer &&
+            !state.editor.isReadonly &&
+            createPortal(<CodePanel />, codePanelContainer)}
         </div>
       </Box>
       {/* //* WIP {docLoaded && <Layout />} */}

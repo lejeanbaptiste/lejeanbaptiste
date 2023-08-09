@@ -5,7 +5,6 @@ import { useLeafWriter, usePermalink } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import { isErrorMessage } from '@src/types';
 import { renameFileAsCopy } from '@src/utilities';
-//@ts-ignore
 import queryString from 'query-string';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +35,8 @@ export const useLoadResource = () => {
 
     if (resource.category && resource.url) {
       const content = await loadSample(resource.url);
+      if (content instanceof Error) return showErrorMessage(content.message);
+
       setResource({ content, filename: `${resource.title}.xml` });
       return;
     }
@@ -56,6 +57,7 @@ export const useLoadResource = () => {
     //Load document from RAW if user is not signed in
     if (resource.url?.includes('https://raw.githubusercontent')) {
       const content = await loadFromUrl(resource.url);
+      if (content instanceof Error) return showErrorMessage(content.message);
       const filename = resource.filename ? renameFileAsCopy(resource.filename) : undefined;
       setResource({ content, filename });
       return;
