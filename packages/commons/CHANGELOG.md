@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 3.2.1
+
+### Patch Changes
+
+- Permalink:
+  - Handle 404 error [eaaa9895d15e52576f56ca04307e0e47ab55681c]
+  - Fix url contructor [11cfe7953b326b8df61f371dc1997b631260e109]
+- Auth-api:
+  - simplify request call [28b43746c3e453e709edc6838a04b9404afb2e7b]
+- Update dependencies [3f16648354282eaddb44ef2f508924ca4bf46cef]
+  - core:
+    - update: @ts-rest/core@3.27.0 jotai@2.3.1
+    - bump:
+      - @cwrc/leafwriter-storage-service@2.1.3
+      - @cwrc/leafwriter@3.2.2
+      - @fontsource/lato@5.0.8
+      - @lincs.project/auth-api-contract@1.0.2
+      - @mui/lab@5.0.0-alpha.139
+      - @mui/material@5.14.4
+      - framer-motion@10.15.1
+      - i18next@23.4.2
+      - vanilla-cookieconsent@2.9.2
+  - dev:
+    - upgrade: eslint-config-prettier@9.0.0
+    - update:
+      - @typescript-eslint/eslint-plugin@6.3.0
+      - @typescript-eslint/parser@6.3.0
+      - less@4.2.0
+    - bump: @types/node@20.4.9
+
 ## 3.2.0
 
 ### Minor Changes
@@ -12,6 +42,7 @@
 - API
   - Update auth-api endpoints [ef91d4da30b8d1ecd242dc8fee92e2183ba622a9] (closes #161)
 - Localization
+
   - Fix localization path [ce5deb9101b46f80527a5529790f14934b936da1]
 
 - Updated dependencies [acb5d910689603b9c1484e81428df63a69a99734]
