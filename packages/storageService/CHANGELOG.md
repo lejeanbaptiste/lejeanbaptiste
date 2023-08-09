@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## 2.1.3
+
+### Patch Changes
+
+- Dependencies
+  - Update `@mui/base@5.0.0-beta.10` - use named exports [186051b81c72779828738e1974b8eecfb97a134a]
+  - Update dependencies:
+    - core:
+    - upgrade: @octokit/rest@20.0.1 [8163db4085d81cdd62e9e43801ec47fb9e633033]
+    - update:
+      - @mui/icons-material@5.14.3 [8163db4085d81cdd62e9e43801ec47fb9e633033]
+      - @mui/material@5.14.4 [5ffef89b1375e716112b3acb6e89eae935df9b4e]
+      - framer-motion@10.15.1 [5ffef89b1375e716112b3acb6e89eae935df9b4e]
+      - i18next@23.4.3 [5ffef89b1375e716112b3acb6e89eae935df9b4e]
+    - bump:
+      - @mui/base@5.0.0-beta.9 [8163db4085d81cdd62e9e43801ec47fb9e633033]
+      - @mui/lab@5.0.0-alpha.139 [5ffef89b1375e716112b3acb6e89eae935df9b4e]
+      - react-i18next@13.0.3 [8163db4085d81cdd62e9e43801ec47fb9e633033]
+  - dev:
+    - upgrade:
+      - eslint-plugin-prettier@5.0.0 [8163db4085d81cdd62e9e43801ec47fb9e633033]
+      - eslint-config-prettier@9.0.0 [5ffef89b1375e716112b3acb6e89eae935df9b4e]
+    - update:
+      - @testing-library/jest-dom@5.17.0 [8163db4085d81cdd62e9e43801ec47fb9e633033]
+      - @typescript-eslint/eslint-plugin@6.3.0 [5ffef89b1375e716112b3acb6e89eae935df9b4e]
+      - @typescript-eslint/parser@6.3.0 [5ffef89b1375e716112b3acb6e89eae935df9b4e]
+      - esbuild-loader@3.1.0 [8163db4085d81cdd62e9e43801ec47fb9e633033]
+      - eslint-config-prettier@8.10.0 [8163db4085d81cdd62e9e43801ec47fb9e633033]
+      - eslint-plugin-react@7.33.1 [8163db4085d81cdd62e9e43801ec47fb9e633033]
+    - bump: [8163db4085d81cdd62e9e43801ec47fb9e633033]
+      - @jest/globals@29.6.2
+      - @types/jest@29.5.3
+      - @types/lodash@4.14.196 
+      - @types/testing-library__jest-dom@5.14.9
+      - fake-indexeddb@4.0.2
+      - jest-environment-jsdom@29.6.2
+      - webpack@5.99.2
+
 ## 2.1.2
 
 ### Patch Changes
