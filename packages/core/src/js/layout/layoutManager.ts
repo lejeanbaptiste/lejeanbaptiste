@@ -55,7 +55,12 @@ class LayoutManager {
   }
 
   init(config: InitConfigProps) {
-    if (config.modules) this.modulesLayout.clear();
+    if (config.modules) {
+      this.modulesLayout.clear();
+      Object.entries(config.modules).forEach(([region, modules]) => {
+        this.modulesLayout.set(region as LayoutLocation, modules as ModuleConfig[]);
+      });
+    }
 
     this.$containerid = this.writer.getUniqueId('cwrc_');
 
