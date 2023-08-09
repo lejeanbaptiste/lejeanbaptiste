@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## 3.2.2
+
+### Patch Changes
+
+- Panels
+  - Fix panels display based on readonly mode [7d54717b739c6c35a9aff1e98d4a21da302096c8] [6d616d156c228a7bacbb659c2f12817cb4ef0440]
+  - Raw xml
+    - Change RDF link [23454b4c2cead2720b7d35c1e29efcd2672bfa55]
+- Update dependencies [1cece2dd30bbff86750b6182ae764d65f196e24b]
+  - core:
+    - update:
+      - framer-motion@10.15.1
+      - jotai@2.3.1
+      - luxon@3.4.0
+    - bump:
+      - @fontsource/lato@5.0.8
+      - @mui/material@5.14.4
+      - i18next@23.4.3
+  - dev:
+    - upgrade: eslint-config-prettier
+    - update:
+      - @typescript-eslint/eslint-plugin@6.3.0
+      - @typescript-eslint/parser@6.3.0
+    - bump: @types/node@20.4.9
+
 ## 3.2.1
 
 ### Patch Changes
