@@ -450,10 +450,17 @@ export default class Gitlab implements Provider {
     return latestCommit;
   }
 
-  async getDocument({ path = '', branch: ref, repoId }: Types.RepoContentParams) {
+  async getDocument({
+    branch: ref,
+    ownerUsername,
+    path = '',
+    repoId,
+    repoName,
+  }: Types.RepoContentParams): Promise<Types.DocumentDetails | null> {
     if (!repoId) return null;
+
     const encodedPath = encodeURIComponent(path);
-    const response: AxiosResponse<any> | null = await this.axios
+    const response = await this.axios
       .get(`/projects/${repoId}/repository/files/${encodedPath}`, {
         params: { ref },
       })
@@ -466,7 +473,8 @@ export default class Gitlab implements Provider {
     const document = {
       content: this.decodeContent(content),
       hash: last_commit_id,
-      url: `https://gitlab.com/api/v4/projects/${repoId}/repository/files/${encodedPath}/raw`,
+      url: `https://gitlab.com/${ownerUsername}/${repoName}/-/raw/${ref}/${encodedPath}?ref_type=heads`,
+      urlApi: `https://gitlab.com/api/v4/projects/${repoId}/repository/files/${encodedPath}/raw?ref=${ref}`,
     };
 
     return document;

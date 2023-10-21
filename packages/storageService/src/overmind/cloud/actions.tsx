@@ -10,7 +10,6 @@ import { getIcon, type IconName } from '../../icons';
 import type {
   CollectionSource,
   Content,
-  DocumentDetails,
   Error,
   FetchDocumentParams,
   GetFileLatestHashParams,
@@ -121,9 +120,10 @@ export const initialize = async ({ state, actions }: Context, initialValues: Ini
 
   if (state.cloud.providers.length > 0 && !source) actions.common.setSource('cloud');
   if (source) actions.common.setSource(source as StorageSource);
+  actions.common.setResource({ storageSource: source as StorageSource });
 
   const resourceLoaded = resource
-    ? await actions.cloud.rehydrate(resource)
+    ? await actions.cloud.rehydrate({ ...resource, storageSource: source as StorageSource })
     : await actions.cloud.resetOwner();
   return resourceLoaded;
 };
@@ -135,6 +135,11 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
       content: resource.content,
       hash: resource.hash,
     });
+  }
+
+  if (resource.storageSource === 'url') {
+    actions.common.setResource({ url: resource.url, storageSource: 'url' });
+    return 'url';
   }
 
   if (resource.provider) state.cloud.name = resource.provider as SuportedProviders;
@@ -282,6 +287,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
     return;
   }
 
+  actions.common.setResource({ ...resource, storageSource: 'cloud' });
   return 'repo';
 };
 
@@ -815,24 +821,32 @@ export const searchByFilename = async (
   return searchResults;
 };
 
-//? DOCUMENT
+export const fetchDocumentFromUrl = async ({ state, actions }: Context, url: string) => {
+  actions.cloud.setIsLoading(true);
 
-// interface FetchDocumentParams {
-//   filename?: string;
-//   path: string;
-//   repo?: Repository;
-// }
+  const response = await fetch(url);
+  if (!response.ok) return;
+
+  const data = await response.text();
+
+  const resource: Resource = { ...state.common.resource, content: data };
+
+  actions.common.setResource(resource);
+  actions.cloud.setIsLoading(false);
+
+  return resource;
+};
 
 export const fetchDocument = async (
   { state, actions }: Context,
-  { filename, path, repo }: FetchDocumentParams
-): Promise<DocumentDetails | null> => {
+  { filename, path, repo }: FetchDocumentParams,
+) => {
   const { owner } = state.cloud;
   const provider = actions.cloud.getProvider();
-  if (!provider || !owner) return null;
+  if (!provider || !owner) return;
 
   const repository = repo ? repo : state.cloud.repository;
-  if (!repository) return null;
+  if (!repository) return;
 
   actions.cloud.setIsLoading(true);
 
@@ -849,7 +863,7 @@ export const fetchDocument = async (
 
   if (!document) {
     actions.cloud.setIsLoading(false);
-    return null;
+    return;
   }
 
   if (state.cloud.repository?.id !== repository.id) state.cloud.repository = { ...repository };
@@ -858,16 +872,22 @@ export const fetchDocument = async (
 
   state.cloud.repositoryContent.path = reducedPath.split('/');
 
-  actions.common.setResource({
+  const resource: Resource = {
+    ...state.common.resource,
+    owner: state.cloud.owner?.username,
+    ownertype: state.cloud.owner?.type,
+    repo: state.cloud.name === 'gitlab' ? repository?.id : repository?.name,
+    path: reducedPath,
     filename: extractedFilename,
     content: document.content,
     hash: document.hash,
     url: document.url,
-  });
+  };
 
+  actions.common.setResource(resource);
   actions.cloud.setIsLoading(false);
 
-  return document;
+  return resource;
 };
 
 const splitPathFilename = (path: string): [string, string] => {

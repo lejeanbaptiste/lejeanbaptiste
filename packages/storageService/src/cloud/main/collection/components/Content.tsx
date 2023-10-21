@@ -59,8 +59,8 @@ export const Content = ({ content }: Props) => {
       return;
     }
 
-    const document = await fetchDocument({ path });
-    if (document) load();
+    const resource = await fetchDocument({ path });
+    load(resource);
   };
 
   const handleSecondaryActionClick = async () => {

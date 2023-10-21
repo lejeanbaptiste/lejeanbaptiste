@@ -91,7 +91,8 @@
       "save": "Enregistrer",
       "settings": "paramètres",
       "show_less": "Afficher moins",
-      "show_more": "Afficher plus"
+      "show_more": "Afficher plus",
+      "url": "URL"
     },
     "footer": {
       "download": "télécharger",
@@ -110,6 +111,8 @@
     "message": {
       "be_patient": "être patient",
       "document_not_valid": "document non valide",
+      "must be a valid https url": "",
+      "must point to a file type": "",
       "saving_document": "enregistrement du document"
     },
     "settings": {

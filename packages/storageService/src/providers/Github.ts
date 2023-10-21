@@ -461,7 +461,7 @@ export default class Github implements Provider {
     path = '',
     branch: ref,
     repoName: repo,
-  }: Types.RepoContentParams) {
+  }: Types.RepoContentParams): Promise<Types.DocumentDetails | null> {
     if (!owner || !repo) return null;
 
     const result = await this.octokit.repos

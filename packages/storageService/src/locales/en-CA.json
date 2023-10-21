@@ -91,7 +91,8 @@
       "save": "Save",
       "settings": "settings",
       "show_less": "Show less",
-      "show_more": "Show more"
+      "show_more": "Show more",
+      "url": "URL"
     },
     "footer": {
       "download": "download",
@@ -110,6 +111,8 @@
     "message": {
       "be_patient": "be patient",
       "document_not_valid": "document not valid",
+      "must be a valid https url": "Must be a valid https url",
+      "must point to a file type": "Must point to a {{filetypes}} file",
       "saving_document": "saving document"
     },
     "settings": {

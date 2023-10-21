@@ -32,7 +32,7 @@
 
 This is React File Storage component for listing, loading, and saving files from and to the local computer and Git hosting (GitHub and Gitlab). It was built to be used in conjunction with [LEAF-Writer-Commons](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer), but it is general enough to be freely used anywhere.
 
-The **Load Dialog** supports pasting from the clipboard, selecting files from the local computer, dragging & drop a file directly to the UI, and loading from a Git hoster (GitHub / Gitlab). On the git hoster, users can access their own repositories, shared repositories, repositories owned by organizations/groups, and search public repositories. Git repositories are limited to the default branch (usually 'master' or 'main'). There are also search functionalities by file name and within files' content.
+The **Load Dialog** supports pasting from the clipboard, selecting files from the local computer, dragging & drop a file directly to the UI, and load from an URL or  Git provider (GitHub / Gitlab). On the git provider, users can access their own repositories, shared repositories, repositories owned by organizations/groups, and search public repositories. Git repositories are limited to the default branch (usually 'master' or 'main'). There are also search functionalities by file name and within files' content.
 
 The **Save Dialog** supports downloading to the local computer and saving to Git hosting. On the git hoster, users can create new repositories and new folders and create and overwrite files. Optionally, users can make Pull Requests, saving the file into a different branch. If the user does not have written permission to a repository, they can Fork the repository and make a Pull Request to the original repository.
 
@@ -152,6 +152,8 @@ export const MyFStorageDialog = () => {
     <StorageDialog
       config={{
         allowedMimeTypes: ['application/xml'],
+        allowLocalFiles: true,
+        allowUrl: true,
         allowPaste: true,
         language: 'en-CA',
         preferProvider: 'github',
@@ -167,6 +169,7 @@ export const MyFStorageDialog = () => {
       onChange={handleOnChange}
       onLoad={handleLoad}
       resource={
+        storageSource: 'cloud | url | local | paste'
         provider: 'github | gitlab',
         owner: 'username | userid',
         ownertype: 'user',
@@ -219,6 +222,7 @@ export const MyFStorageDialog = () => {
       onCancel={close}
       onSave={handleSave}
       resource={
+        storageSource: 'cloud | local'
         provider: 'github | gitlab',
         owner: 'username | userid',
         ownertype: 'user',
@@ -345,7 +349,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 | config          | StorageDialogConfig           |         | A collection of configuration (see bellow).                                                                                                                                                                                                                                                                                                                                                             |
 | onBackdropClick | function                      |         | Callback fired when the **backdrop** is clicked.<br/><br/>**Save dialog** ignores this property since it does not allow for onBackdropClick.                                                                                                                                                                                                                                                            |
 | onCancel        | function                      |         | Callback fired when the **Cancel** button is clicked.                                                                                                                                                                                                                                                                                                                                                   |
-| onChange        | function                      |         | **Load dialog**: Callback fired when there is any change on the resource path (owner, repository, folder path). <br /> <br /> **Save dialog** ignores this property. <br /> <br /> **Signature**: `function(resource?: Resource) => void` See more about Resource below.                                                                                             |
+| onChange        | function                      |         | **Load dialog**: Callback fired when there is any change on the resource source (cloud, local, paste, url), on the resource url when the source is `url`, or on the resource path (owner, repository, folder path) when the source is `cloud`. <br /> <br /> **Save dialog** ignores this property. <br /> <br /> **Signature**: `function(resource?: Resource) => void` See more about Resource below. |
 | onLoad          | function                      |         | **Load dialog**: Callback fired when the **Load** button is clicked.  <br /> <br />**Save dialog** ignores this property. <br /> <br /> **Signature**: `function(resource: Resource) => void`. See more about Resource below.                                                                                                                                                                           |
 | onSave          | function                      |         | **Save dialog**: Callback fired when the **Save** button is clicked.  <br /> <br />**Load dialog** ignore this property. <br /> <br /> **Signature**: `function(resource: Resource) => void`. See more about Resource below.                                                                                                                                                                            |
 | resource        | Resource \| string            |         | The resource information, which might include the document's content to be saved.<br /> <br /> **Load Dialog** navigates directly to a specific location. If it is a string, displays `paste` source panel when open.<br /> <br /> **Save Dialog** navigates directly to a specific location, transport the document's content. See more about Resource type bellow.                                    |
@@ -357,7 +361,10 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 | Name                 | Type                   | Default  | Description                                                                                                                                                                                                       |
 | -------------------- | ---------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | allowedMimeTypes     | Array [`MIMEType`]     | []       | Restrict the file types  allowed. Empty array means no restriction.<br /> <br /> MIME type suported: `'application/json'`, `'application/pdf'`, `'application/xml'`, `'text/csv'`, `'text/html'`, `'text/plain'`. |
+| allowLocalFiles      | boolean                | true     | `Load dialog`: Allows loading files from local device.                                                                                                                                                            |
 | allowPaste           | boolean                | true     | `Load dialog`: Allows paste from clipboard.                                                                                                                                                                       |
+|                      |
+| allowUrl             | boolean                | true     | `Load dialog`: Allows load from URL.                                                                                                                                                                              |
 | defaultCommitMessage | string                 | 'update' | `Save Dialog`: Defines the default commit message.                                                                                                                                                                |
 | language             | string                 |          | Localize the UI and the messages. Must be valid and supported language code. E.g., `en-CA`                                                                                                                        |
 | providers            | Array [`ProviderAuth`] | []       | Setup Github / Gitlab providers.<br /> <br /> `ProviderAuth`: {<br />name: 'github' \| 'gitlab',<br /> access_token: 'string<br />}                                                                               |
@@ -369,6 +376,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 
 | Name            | Type                                   | Default | Description                                                                                                                                                              |
 | --------------- | -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| storageSource   | `cloud` \| `local` \| `paste` \| `url` |         | The resource's source.                                                                                                                                                   |
 | provider        | string                                 |         | `'github'`, `'gitlab'`, or empty if not from the git repository.                                                                                                         |
 | owner           | string                                 |         | Github `username` or Gitlab: `user id`.                                                                                                                                  |
 | ownertype       | string                                 |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation.                                                                                                      |
