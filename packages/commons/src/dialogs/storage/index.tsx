@@ -93,7 +93,7 @@ export const Storage = () => {
     if (user.prefStorageProvider) return user.prefStorageProvider;
 
     const prefIdIsStorageProvider = providers.some(
-      (provider) => provider.name === user.preferredID
+      (provider) => provider.name === user.preferredID,
     );
 
     return prefIdIsStorageProvider ? user.preferredID : providers[0]?.name;

@@ -49,7 +49,7 @@ export const save = async (
   }: {
     content: string;
     screenshot?: string;
-  }
+  },
 ): Promise<{ success: boolean; error?: Error }> => {
   state.editor.isSaving = true;
 
@@ -137,7 +137,7 @@ export const saveAs = async (
   }: {
     content: string;
     screenshot?: string;
-  }
+  },
 ): Promise<{ success: boolean; error?: Error }> => {
   const { resource } = state.editor;
 
