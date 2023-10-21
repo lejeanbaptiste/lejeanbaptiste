@@ -28,6 +28,7 @@ Transition.displayName = 'DialogTransition';
 
 export const Main = ({
   config,
+  headerLabel,
   onBackdropClick,
   onCancel,
   onChange,
@@ -127,7 +128,7 @@ export const Main = ({
             </Box>
           ) : (
             <Stack height="100%" width="100%">
-              <Header />
+              <Header label={headerLabel} />
               <DialogContent
                 dividers
                 sx={{ p: 0, overflowY: source === 'paste' ? 'auto' : 'hidden' }}

@@ -4,7 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../overmind';
 
-export const Header = () => {
+interface Props {
+  label?: string;
+}
+
+export const Header = ({ label }: Props) => {
   const { name: providerName } = useAppState().cloud;
   const { dialogType, source } = useAppState().common;
   const [scope, animate] = useAnimate<HTMLSpanElement>();
@@ -48,7 +52,7 @@ export const Header = () => {
           textAlign="center"
           variant="h6"
         >
-          {t(`commons.${dialogType}`)}
+          {label ? label : t(`commons.${dialogType}`)}
         </Typography>
       </Grid>
 
