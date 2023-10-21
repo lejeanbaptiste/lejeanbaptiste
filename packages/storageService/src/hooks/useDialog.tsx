@@ -1,6 +1,6 @@
 import { useModal } from 'mui-modal-provider';
 import { useEffect } from 'react';
-import { SimpleDialog, type DialogType, DialogProps } from '../dialogs';
+import { DialogProps, SimpleDialog, type DialogType } from '../dialogs';
 import { useActions, useAppState } from '../overmind';
 
 let displayed: string[] = [];
@@ -46,7 +46,7 @@ export const useDialog = () => {
             if (props.id) removeDialog(props.id);
           },
         },
-        options
+        options,
       );
 
       storeDisplayed(id);

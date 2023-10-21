@@ -51,7 +51,7 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
       onSelect(user.username);
     },
     500,
-    { leading: true, trailing: false }
+    { leading: true, trailing: false },
   );
 
   const handleClick = (value: string) => {

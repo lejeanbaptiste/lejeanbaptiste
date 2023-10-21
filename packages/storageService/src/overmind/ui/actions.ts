@@ -23,7 +23,7 @@ export const removeDialog = ({ state }: Context, id: string) => {
 
 export const setDialogDisplayId = (
   { state }: Context,
-  { id, displayId }: { id: string; displayId: string }
+  { id, displayId }: { id: string; displayId: string },
 ) => {
   state.ui.dialogBar = [
     ...state.ui.dialogBar.map((dialogBar) => {

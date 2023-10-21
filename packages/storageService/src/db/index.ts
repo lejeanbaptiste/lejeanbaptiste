@@ -1,6 +1,5 @@
-import type { PublicRepository } from '../types';
 import Dexie, { Table } from 'dexie';
-
+import type { PublicRepository } from '../types';
 
 export class DexieDB extends Dexie {
   publicRepositories!: Table<PublicRepository, string>;
@@ -14,7 +13,6 @@ export class DexieDB extends Dexie {
 }
 
 export const db = new DexieDB();
-
 
 export const clearCache = async () => {
   return await db.publicRepositories.clear().catch(() => new Error('Something went wrong.'));

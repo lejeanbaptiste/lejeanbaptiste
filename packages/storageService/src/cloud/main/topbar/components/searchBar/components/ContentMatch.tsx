@@ -34,7 +34,7 @@ export const ContentMatch = ({ text_matches }: ContentMatchProps) => {
       {text_matches?.map(({ fragment, matches }, index) => {
         let parts = parse(
           fragment,
-          matches.map((match: any) => match.indices)
+          matches.map((match: any) => match.indices),
         );
 
         parts = [{ text: '... ', highlight: false }, ...parts, { text: ' ...', highlight: false }];

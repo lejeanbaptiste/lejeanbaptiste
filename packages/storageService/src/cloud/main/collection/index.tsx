@@ -52,9 +52,7 @@ export const Collection = ({ height = '100%' }: Collection) => {
         ) : collectionType === 'content' ? (
           <>
             {repositoryContent.tree?.length === 0 && <Empty />}
-            {repositoryContent.tree?.map((item, i) => (
-              <Content key={i} content={item} />
-            ))}
+            {repositoryContent.tree?.map((item, i) => <Content key={i} content={item} />)}
           </>
         ) : null}
       </List>

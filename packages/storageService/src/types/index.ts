@@ -40,11 +40,10 @@ export type AllowedMimeType =
   | 'text/plain'
   | 'text/xml';
 
-  export interface FileDetail {
-    content: string;
-    file: File;
-  }
-  
+export interface FileDetail {
+  content: string;
+  file: File;
+}
 
 export interface SelectedItem {
   organization?: Organization;

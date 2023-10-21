@@ -41,6 +41,7 @@ import { getFromLocalStorage, log } from '../../utilities';
 const { t } = i18next;
 
 //* INIITIALIZE
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
   //PREFERRED STORAGE PROVIDER
   const prefprovider = getFromLocalStorage('prefStorageProvider');
@@ -86,14 +87,14 @@ export const setProvider = ({ state }: Context, providerName: string) => {
 
 export const changeProvider = async (
   { state, actions }: Context,
-  providerName: SuportedProviders
+  providerName: SuportedProviders,
 ) => {
   state.cloud.name = providerName;
 
   const provider = actions.cloud.getProvider();
   if (!provider) return;
 
-  const authUser =  await provider.getAuthenticatedUser();
+  const authUser = await provider.getAuthenticatedUser();
   if (!authUser) return;
 
   state.cloud.user = authUser;
@@ -304,7 +305,7 @@ export const setOwner = ({ state, actions }: Context, owner: Owner) => {
 
 export const setCollectionSource = (
   { state, actions }: Context,
-  collectionSource: CollectionSource
+  collectionSource: CollectionSource,
 ) => {
   const provider = actions.cloud.getProvider();
   if (!provider) return;
@@ -325,7 +326,7 @@ export const setCollectionSource = (
 
 export const getRepo = async (
   { state, actions }: Context,
-  { username, repoId, repoName }: { username: string; repoId: string; repoName: string }
+  { username, repoId, repoName }: { username: string; repoId: string; repoName: string },
 ): Promise<Repository | null> => {
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
@@ -391,7 +392,7 @@ export const fetchRepos = async ({ state, actions }: Context): Promise<void> => 
   if (!response) return;
 
   state.cloud.repositories = {
-    collection: [...(state.cloud.repositories?.collection || []), ...response.collection],
+    collection: [...(state.cloud.repositories?.collection ?? []), ...response.collection],
     hasMore: !!response.nextPage,
     nextPage: response.nextPage ?? undefined,
   };
@@ -422,7 +423,7 @@ export const fetchOrganizations = async ({ state, actions }: Context): Promise<v
 
 export const getOrganization = async (
   { actions }: Context,
-  org: Organization
+  org: Organization,
 ): Promise<Organization | null> => {
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
@@ -438,7 +439,7 @@ export const getOrganization = async (
 
 export const fetchReposForOrgs = async (
   { state, actions }: Context,
-  org?: Organization
+  org?: Organization,
 ): Promise<void> => {
   const provider = actions.cloud.getProvider();
   if (!provider) return;
@@ -457,7 +458,7 @@ export const fetchReposForOrgs = async (
   if (!response) return;
 
   state.cloud.repositories = {
-    collection: [...(state.cloud.repositories?.collection || []), ...response.collection],
+    collection: [...(state.cloud.repositories?.collection ?? []), ...response.collection],
     hasMore: !!response.nextPage,
     nextPage: response.nextPage ?? undefined,
   };
@@ -467,7 +468,7 @@ export const fetchReposForOrgs = async (
 
 export const checkOrgMemberWritenPermission = async (
   { state, actions }: Context,
-  org?: Organization
+  org?: Organization,
 ): Promise<boolean> => {
   const provider = actions.cloud.getProvider();
   if (!provider) return false;
@@ -563,7 +564,7 @@ export const fetchRepoContent = async ({ state, actions }: Context): Promise<Con
 
 export const createRepo = async (
   { state, actions }: Context,
-  newRepository: CreateRepoParams
+  newRepository: CreateRepoParams,
 ): Promise<Repository | null> => {
   const provider = actions.cloud.getProvider();
   if (!provider || !state.cloud.owner) return null;
@@ -619,7 +620,7 @@ export const forkRepo = async ({ state, actions }: Context): Promise<Repository 
 
 export const createFolder = async (
   { state, actions }: Context,
-  name: string
+  name: string,
 ): Promise<any | null> => {
   const provider = actions.cloud.getProvider();
   if (
@@ -662,7 +663,7 @@ export const createFolder = async (
 
 export const navigateTo = (
   { state, actions }: Context,
-  { org, repo, path }: NavigateToPathParams
+  { org, repo, path }: NavigateToPathParams,
 ) => {
   state.common.selectedItem = undefined;
 
@@ -731,7 +732,7 @@ export const searchUsers = async ({ actions }: Context, query: string) => {
 
 export const searchGlobal = async (
   { state, actions }: Context,
-  query: string
+  query: string,
 ): Promise<SearchResults[] | null> => {
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
@@ -746,7 +747,7 @@ export const searchGlobal = async (
 
 export const searchBlobs = async (
   { state, actions }: Context,
-  query: string
+  query: string,
 ): Promise<SearchResults> => {
   const provider = actions.cloud.getProvider();
   if (!provider) return { searchType: 'blobs', results: [] };
@@ -775,7 +776,7 @@ export const searchBlobs = async (
 
 export const searchByFilename = async (
   { state, actions }: Context,
-  query: string
+  query: string,
 ): Promise<SearchResults> => {
   const provider = actions.cloud.getProvider();
   if (!provider) return { searchType: 'filename', results: [] };
@@ -878,7 +879,7 @@ const splitPathFilename = (path: string): [string, string] => {
 
 export const getFileLatestHash = async (
   { actions }: Context,
-  { filename, path, repository, owner }: GetFileLatestHashParams
+  { filename, path, repository, owner }: GetFileLatestHashParams,
 ) => {
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
@@ -1346,7 +1347,7 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | Er
         title: `${t('cloud.forking', { ns: 'LWStorageService' })}`,
         Body: `${t('cloud.message.forking_can_take_minutes', { ns: 'LWStorageService' })}. ${t(
           'message.be_patient',
-          { ns: 'LWStorageService' }
+          { ns: 'LWStorageService' },
         )}.}`,
       },
     });

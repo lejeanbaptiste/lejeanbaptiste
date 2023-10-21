@@ -138,9 +138,13 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
           title: error ?? `${t('message.document_not_valid', { ns: 'LWStorageService' })}`,
         },
       });
-      if (state.common.resource) state.common.resource.filename = undefined;
-      if (state.common.resource) state.common.resource.content = undefined;
-      if (state.common.resource) state.common.resource.hash = undefined;
+
+      if (state.common.resource) {
+        state.common.resource.filename = undefined;
+        state.common.resource.content = undefined;
+        state.common.resource.hash = undefined;
+      }
+
       return;
     }
   }
@@ -149,8 +153,7 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
 
   setTimeout(() => {
     if (state.common.resource?.content) {
-      actions.common.setResource({ ...state.common.resource, content: undefined, hash: undefined })
-      // state.common.resource = { ...state.common.resource, content: undefined, hash: undefined };
+      actions.common.setResource({ ...state.common.resource, content: undefined, hash: undefined });
     }
   }, 100);
 };
@@ -169,7 +172,7 @@ export const clearSubmit = ({ state }: Context) => {
 
 export const setResource = (
   { state }: Context,
-  { filename, content, hash, url }: Partial<Resource>
+  { filename, content, hash, url }: Partial<Resource>,
 ) => {
   const { cloud, common } = state;
 

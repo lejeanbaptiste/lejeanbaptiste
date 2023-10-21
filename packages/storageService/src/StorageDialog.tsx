@@ -8,7 +8,14 @@ import { Main } from './main';
 import { config } from './overmind';
 import type { StorageDialogProps } from './types';
 
-export type { AllowedMimeType, Resource, StorageDialogProps, Validate } from './types';
+export type {
+  AllowedMimeType,
+  DialogType,
+  Resource,
+  StorageDialogProps,
+  StorageSource,
+  Validate,
+} from './types';
 export type { ProviderAuth } from './types/Provider';
 export type { LanguageCode } from './utilities';
 
