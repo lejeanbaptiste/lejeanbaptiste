@@ -65,12 +65,17 @@ export const setCommitMessage = ({ state }: Context, value: string) => {
 };
 
 export const initiateProviders = async ({ state, effects }: Context, providers: ProviderAuth[]) => {
-  for await (const providerAuth of providers) {
-    const hasProvider = state.cloud.providers.some((name) => name === providerAuth.name);
-    if (hasProvider) continue;
+  let suportedProviders: SuportedProviders[] = [];
+
+  for (const providerAuth of providers) {
+    const provider = suportedProviders.find((name) => name === providerAuth.name);
+    if (provider) continue;
+
     await effects.cloud.api.initialize(providerAuth);
-    state.cloud.providers = [...state.cloud.providers, providerAuth.name as SuportedProviders];
+    suportedProviders = [...suportedProviders, providerAuth.name as SuportedProviders];
   }
+
+  state.cloud.providers = suportedProviders;
 };
 
 export const getProvider = ({ state, effects }: Context) => {
