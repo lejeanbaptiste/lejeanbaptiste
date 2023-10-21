@@ -23,7 +23,7 @@ export const SourcePanel = () => {
   const { source, sources } = useAppState().common;
 
   const { changeProvider } = useActions().cloud;
-  const { setSource } = useActions().common;
+  const { setSource, setResource } = useActions().common;
 
   const { t } = useTranslation('LWStorageService');
   const { spacing } = useTheme();
@@ -32,10 +32,6 @@ export const SourcePanel = () => {
   const [openSettings, setOpenSettings] = useState(false);
 
   const container = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    source === 'cloud' && providerName ? setActive(providerName) : setActive(source);
-  }, []);
 
   useEffect(() => {
     source === 'cloud' && providerName ? setActive(providerName) : setActive(source);
@@ -48,6 +44,7 @@ export const SourcePanel = () => {
     const provider = providers.find((name) => name === value);
     const _source = provider ? 'cloud' : value;
     setSource(_source as StorageSource);
+    setResource({});
 
     if (provider) changeProvider(provider);
   };

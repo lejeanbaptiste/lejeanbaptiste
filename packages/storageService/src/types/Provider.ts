@@ -1,11 +1,4 @@
-import type {
-  CollectionSource,
-  DocumentDetails,
-  Organization,
-  PublicRepository,
-  Repository,
-  UserType,
-} from '.';
+import type { CollectionSource, Organization, PublicRepository, Repository, UserType } from '.';
 import type { Error } from '../types';
 
 export type ProviderAuth = {
@@ -56,6 +49,13 @@ export interface RepoContentParams {
   path?: string;
   repoId?: string;
   repoName?: string;
+}
+
+export interface DocumentDetails {
+  content: string;
+  hash: string;
+  url: string;
+  urlApi?: string;
 }
 
 export interface GetLatestCommitParams {
@@ -173,7 +173,7 @@ export interface AuthenticatedUser {
   id: string;
   userId: string;
   username: string;
-  type: UserType,
+  type: UserType;
 }
 
 export default interface Provider {

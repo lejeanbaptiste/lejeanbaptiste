@@ -19,8 +19,10 @@ const { t } = i18next;
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
   const {
+    allowLocalFiles,
     allowedMimeTypes,
     allowPaste,
+    allowUrl,
     defaultCommitMessage,
     language,
     preferProvider,
@@ -33,7 +35,9 @@ export const configure = async ({ state, actions }: Context, config: StorageDial
 
   const { common, cloud } = state;
 
+  common.allowLocalFiles = allowLocalFiles ?? true;
   common.allowPaste = allowPaste ?? true;
+  common.allowUrl = allowUrl ?? true;
   common.showInvisibleFiles = showInvisibleFiles ?? false;
   if (allowedMimeTypes) common.allowedMimeTypes = allowedMimeTypes;
   if (defaultCommitMessage) actions.cloud.setDefaultCommitMessage(defaultCommitMessage);
@@ -45,7 +49,7 @@ export const configure = async ({ state, actions }: Context, config: StorageDial
     if (cloud.providers.length > 0 && preferProvider) {
       actions.cloud.setProvider(preferProvider);
       const provider = actions.cloud.getProvider();
-      state.cloud.user = await provider?.getAuthenticatedUser() ?? undefined;
+      state.cloud.user = (await provider?.getAuthenticatedUser()) ?? undefined;
     }
   }
 
@@ -54,6 +58,10 @@ export const configure = async ({ state, actions }: Context, config: StorageDial
 
 export const setDialogType = ({ state }: Context, value: DialogType) => {
   state.common.dialogType = value;
+};
+
+export const setAllowLocalFiles = ({ state }: Context, value: boolean) => {
+  state.common.allowLocalFiles = value;
 };
 
 export const setAllowPaste = ({ state }: Context, value: boolean) => {
@@ -67,6 +75,10 @@ export const setAllowedAllFileTypes = ({ state }: Context, value: boolean) => {
 
 export const setAllowedMimeTypes = ({ state }: Context, value: AllowedMimeType[]) => {
   state.common.allowedMimeTypes = value;
+};
+
+export const setAllowUrl = ({ state }: Context, value: boolean) => {
+  state.common.allowUrl = value;
 };
 
 export const setShowInvisibleFiles = ({ state }: Context, value: boolean) => {
@@ -85,18 +97,28 @@ export const setSources = ({ state }: Context) => {
   state.common.sources = [];
 
   const { providers } = state.cloud;
-  const { allowPaste, dialogType, sources } = state.common;
+  const { allowLocalFiles, allowPaste, allowUrl, dialogType, sources } = state.common;
 
   providers.forEach((provider) => {
     sources.push({ value: provider, label: provider, icon: provider });
   });
 
   if (dialogType === 'load') {
-    sources.push({
-      value: 'local',
-      label: t('commons.from_your_computer', { ns: 'LWStorageService' }),
-      icon: 'computer',
-    });
+    if (allowUrl) {
+      sources.push({
+        value: 'url',
+        label: t('commons.url', { ns: 'LWStorageService' }),
+        icon: 'url',
+      });
+    }
+
+    if (allowLocalFiles) {
+      sources.push({
+        value: 'local',
+        label: t('commons.from_your_computer', { ns: 'LWStorageService' }),
+        icon: 'computer',
+      });
+    }
 
     if (allowPaste) {
       sources.push({
@@ -124,9 +146,9 @@ export const setSelectedItem = ({ state }: Context, value?: SelectedItem) => {
 
 export const load = async ({ state, actions }: Context, resource?: Resource) => {
   if (!resource) resource = state.common.resource;
-  if (!resource || !resource.content) return;
+  if (!resource) return;
 
-  if (state.common.validate) {
+  if (resource.content && state.common.validate) {
     const { valid, error } = state.common.validate(resource.content);
 
     if (!valid) {
@@ -149,7 +171,10 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
     }
   }
 
-  state.common.submit = { action: 'load', resource };
+  state.common.submit = {
+    action: 'load',
+    resource: { ...resource, storageSource: state.common.source },
+  };
 
   setTimeout(() => {
     if (state.common.resource?.content) {
@@ -168,6 +193,7 @@ export const afterSave = async ({ state, actions }: Context, resource?: Resource
 
 export const clearSubmit = ({ state }: Context) => {
   state.common.submit = undefined;
+  state.common.resource = undefined;
 };
 
 export const setResource = (
@@ -176,33 +202,40 @@ export const setResource = (
 ) => {
   const { cloud, common } = state;
 
-  const provider = common.source === 'cloud' ? cloud.name : undefined;
-  const ownertype = common.source === 'cloud' ? cloud.owner?.type : undefined;
+  let updatedResource: Resource = { storageSource: common.source };
 
-  const owner = cloud.name === 'gitlab' ? cloud.owner?.id : cloud.owner?.username;
-  const repo = cloud.name === 'gitlab' ? cloud.repository?.id : cloud.repository?.name;
+  if (common.source === 'url') {
+    updatedResource = { ...updatedResource, url };
+    state.common.resource = updatedResource;
+    return;
+  }
 
-  const path = common.source === 'cloud' ? cloud.repositoryContent.path?.join('/') : undefined;
+  if (common.source === 'paste') {
+    updatedResource = { ...updatedResource, content };
+    state.common.resource = updatedResource;
+    return;
+  }
 
-  if (!filename) filename = common.resource?.filename;
-  if (!hash) hash = common.resource?.hash;
+  if (common.source === 'local') {
+    updatedResource = { ...updatedResource, content, filename };
+    state.common.resource = updatedResource;
+    return;
+  }
 
-  const writePermission = provider ? cloud.repository?.writePermission : undefined;
-
-  const updateResource: Resource = {
-    provider,
-    ownertype,
-    owner,
-    repo,
-    path,
-    filename,
-    content,
-    hash,
-    url,
-    writePermission,
+  //* else "cloud"
+  updatedResource = {
+    ...updatedResource,
+    provider: cloud.name,
+    ownertype: cloud.owner?.type,
+    owner: cloud.name === 'gitlab' ? cloud.owner?.id : cloud.owner?.username,
+    repo: cloud.name === 'gitlab' ? cloud.repository?.id : cloud.repository?.name,
+    path: cloud.repositoryContent.path?.join('/'),
+    filename: filename ?? common.resource?.filename,
+    hash: hash ?? common.resource?.hash,
+    writePermission: cloud.repository?.writePermission,
   };
 
-  state.common.resource = updateResource;
+  state.common.resource = updatedResource;
 };
 
 export const resetAll = async ({ state }: Context) => {

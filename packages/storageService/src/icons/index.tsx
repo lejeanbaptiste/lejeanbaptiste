@@ -10,6 +10,7 @@ import { Gitlab } from 'mdi-material-ui';
 import React from 'react';
 import type { IconBaseProps, IconType } from 'react-icons';
 import { BiDownload } from 'react-icons/bi';
+import { MdLanguage } from 'react-icons/md';
 import { RxFileText } from 'react-icons/rx';
 
 const asMuiIcon = (ReactIcon: IconType, props?: IconBaseProps) => {
@@ -25,6 +26,7 @@ const icons = {
   github: GitHubIcon,
   gitlab: Gitlab,
   paste: ContentPasteIcon,
+  url: asMuiIcon(MdLanguage),
 };
 
 export type IconName = typeof icons extends Record<

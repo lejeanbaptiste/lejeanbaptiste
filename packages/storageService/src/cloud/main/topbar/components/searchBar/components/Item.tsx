@@ -52,8 +52,8 @@ export const Item = ({ item, onPrimaryAction, onSecondaryAction }: ItemProps) =>
     onPrimaryAction(item);
     if (type === 'folder') navigateTo({ repo: repository, path: `${path}/${name}` });
     if (type === 'file') {
-      const document = await fetchDocument({ repo: repository, path, filename: name });
-      if (document) load();
+      const resource = await fetchDocument({ repo: repository, path, filename: name });
+      load(resource);
     }
   };
 

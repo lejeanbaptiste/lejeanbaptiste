@@ -18,6 +18,7 @@ import { PastePanel, UploadPanel } from '../local';
 import { useActions, useAppState } from '../overmind';
 import { SourcePanel } from '../sourcePanel';
 import type { Resource, StorageDialogProps } from '../types';
+import { UrlPanel } from '../url';
 
 const HEIGHT = 600;
 
@@ -62,29 +63,36 @@ export const Main = ({
     if (!onChange) return;
 
     if (source !== 'cloud') {
-      onChange();
+      onChange(resource);
       return;
     }
 
+    //else "cloud"
     if (!cloud.owner) return;
-    const owner = cloud.name === 'gitlab' ? cloud.owner.id : cloud.owner.username;
-    const repo = cloud.name === 'gitlab' ? cloud.repository?.id : cloud.repository?.name;
-
     const changeObject: Resource = {
       provider: cloud.name,
       ownertype: cloud.owner.type,
-      owner,
-      repo,
+      owner: cloud.name === 'gitlab' ? cloud.owner.id : cloud.owner.username,
+      repo: cloud.name === 'gitlab' ? cloud.repository?.id : cloud.repository?.name,
       path: cloud.repositoryContent.path?.join('/'),
       filename: resource?.filename,
+      storageSource: resource?.storageSource,
     };
-
     onChange(changeObject);
-  }, [cloud.name, cloud.owner, cloud.repository, cloud.repositoryContent.path, resource, source]);
+  }, [
+    cloud.name,
+    cloud.owner,
+    cloud.repository,
+    cloud.repositoryContent.path,
+    resource,
+    resource?.url,
+    source,
+  ]);
 
   useEffect(() => {
-    if (submit?.action === 'load' && onLoad) onLoad(submit.resource);
-    if (submit?.action === 'save' && onSave) onSave(submit.resource);
+    const resource: Resource = { ...submit?.resource };
+    if (submit?.action === 'load' && onLoad) onLoad(resource);
+    if (submit?.action === 'save' && onSave) onSave(resource);
     clearSubmit();
   }, [submit]);
 
@@ -135,12 +143,18 @@ export const Main = ({
               >
                 {type === 'save' ? (
                   cloud.providers.length > 0 && <CloudDialog />
-                ) : type === 'load' && source === 'paste' ? (
-                  <PastePanel />
-                ) : type === 'load' && source === 'local' ? (
-                  <UploadPanel />
                 ) : (
-                  type === 'load' && source === 'cloud' && <CloudDialog />
+                  <>
+                    {source === 'paste' ? (
+                      <PastePanel />
+                    ) : source === 'local' ? (
+                      <UploadPanel />
+                    ) : source === 'url' ? (
+                      <UrlPanel />
+                    ) : (
+                      source === 'cloud' && <CloudDialog />
+                    )}
+                  </>
                 )}
               </DialogContent>
 

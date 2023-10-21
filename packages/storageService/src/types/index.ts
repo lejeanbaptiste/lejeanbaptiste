@@ -19,11 +19,13 @@ export interface StorageDialogProps {
 }
 
 export type DialogType = 'load' | 'save';
-export type StorageSource = 'cloud' | 'local' | 'paste';
+export type StorageSource = 'cloud' | 'local' | 'paste' | 'url';
 
 export interface StorageDialogConfig {
+  allowLocalFiles?: boolean;
   allowedMimeTypes?: AllowedMimeType[];
   allowPaste?: boolean;
+  allowUrl?: boolean;
   defaultCommitMessage?: string;
   language?: LanguageCode;
   preferProvider?: string;
@@ -58,6 +60,7 @@ export type Validate = (content: string) => { valid: boolean; error?: string };
 export type SuportedProviders = 'github' | 'gitlab';
 
 export interface Resource {
+  storageSource?: StorageSource;
   provider?: string;
   owner?: string;
   ownertype?: string;
@@ -90,9 +93,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   username?: string;
-  identities: {
-    [x: string]: any; //Allow more properties
-  };
+  identities: Record<string, any>; //Allow more properties
   prefferedID: string;
 }
 
@@ -168,12 +169,6 @@ export interface SearchResultsBlobs extends Content {
   repository: Repository;
   score?: number;
   text_matches: any[];
-}
-
-export interface DocumentDetails {
-  content: string;
-  hash: string;
-  url: string;
 }
 
 export interface MessageDialog {

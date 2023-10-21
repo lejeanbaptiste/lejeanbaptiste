@@ -15,8 +15,10 @@ import type {
 type State = {
   allowAllFileTypes: boolean;
   allowedFileTypes?: string[];
+  allowLocalFiles?: boolean;
   allowedMimeTypes?: AllowedMimeType[];
   allowPaste?: boolean;
+  allowUrl?: boolean;
   dialogType: DialogType;
   alertDialog: AlertDialog;
   messageDialog: MessageDialog;

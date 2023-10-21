@@ -9,23 +9,29 @@ export interface FooterProps {
 }
 
 export const FooterLoad = ({ onCancel }: FooterProps) => {
-  const { selectedItem, source } = useAppState().common;
+  const { resource, selectedItem, source } = useAppState().common;
   const { isLoading } = useAppState().cloud;
   const { load } = useActions().common;
-  const { fetchDocument, navigateTo } = useActions().cloud;
+  const { fetchDocument, fetchDocumentFromUrl, navigateTo } = useActions().cloud;
   const { t } = useTranslation('LWStorageService');
 
   const handleLoad = async () => {
-    if (source !== 'cloud') {
+    if (source === 'local' || source === 'paste') {
       load();
+      return;
+    }
+    if (source === 'url') {
+      if (!resource?.url) return;
+      const resourceDocument = await fetchDocumentFromUrl(resource.url);
+      load(resourceDocument);
       return;
     }
 
     if (!selectedItem) return;
 
     if (selectedItem.type === 'file' && selectedItem.path) {
-      const document = await fetchDocument({ path: selectedItem.path });
-      if (document) load();
+      const resource = await fetchDocument({ path: selectedItem.path });
+      load(resource);
       return;
     }
 
