@@ -1,6 +1,4 @@
 import { beforeAll, beforeEach, describe, expect, test } from '@jest/globals';
-import i18next from 'i18next';
-import { supportedLanguages } from '../src/utilities';
 import { overmind, resetOvermind } from './mocks/overmind';
 
 beforeAll(() => {

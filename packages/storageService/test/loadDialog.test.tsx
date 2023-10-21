@@ -35,7 +35,6 @@ beforeEach(() => {
 });
 
 const setup = async (props: Omit<StorageDialogProps, 'open'> = {}) => {
-
   await act(async () => render(<StorageDialog open={true} {...props} />));
 };
 
@@ -54,7 +53,7 @@ describe('Load Dialog', () => {
       const storageDialog = screen.getByTestId('storage-dialog');
       const header = getByTestId(storageDialog, 'header');
 
-      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load');
 
       await waitFor(() => expect(getByText(header, 'local')).toBeInTheDocument());
     });
@@ -69,7 +68,7 @@ describe('Load Dialog', () => {
       const storageDialog = screen.getByTestId('storage-dialog');
       const header = getByTestId(storageDialog, 'header');
 
-      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load');
       await waitFor(() => expect(getByText(header, 'local')).toBeInTheDocument());
 
       const input = screen.getByTestId('upload_panel-input') as HTMLInputElement;
@@ -90,7 +89,7 @@ describe('Load Dialog', () => {
       const storageDialog = screen.getByTestId('storage-dialog');
       const header = getByTestId(storageDialog, 'header');
 
-      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load');
       await waitFor(() => expect(getByText(header, 'local')).toBeInTheDocument());
 
       await act(async () => user.click(screen.getByTestId('source_panel-paste')));
@@ -110,7 +109,7 @@ describe('Load Dialog', () => {
       const storageDialog = screen.getByTestId('storage-dialog');
       const header = getByTestId(storageDialog, 'header');
 
-      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load');
       await waitFor(() => expect(getByText(header, 'paste')).toBeInTheDocument());
     });
 
@@ -122,7 +121,7 @@ describe('Load Dialog', () => {
       const storageDialog = screen.getByTestId('storage-dialog');
       const header = getByTestId(storageDialog, 'header');
 
-      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load')
+      expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load');
       await waitFor(() => expect(getByText(header, 'paste')).toBeInTheDocument());
       expect(screen.getByTestId('paste_panel-input')).toHaveTextContent('<xml>');
     });
@@ -474,7 +473,7 @@ describe('Load Dialog', () => {
           await act(async () => user.click(footerLoadButton));
 
           await waitFor(() =>
-            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
           );
 
           await closeLoadDialog();
@@ -677,7 +676,7 @@ describe('Load Dialog', () => {
 
         await waitFor(
           () => expect(getByTestId(searchBar, 'results')).toBeInTheDocument(),
-          { timeout: 2000 } //animation
+          { timeout: 2000 }, //animation
         );
 
         if (preferProvider === 'github') {
@@ -714,7 +713,7 @@ describe('Load Dialog', () => {
           await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
 
           await waitFor(() =>
-            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
           );
 
           const searchBar = getByTestId(storageDialog, 'search-bar');
@@ -731,7 +730,7 @@ describe('Load Dialog', () => {
               expect(results).toBeInTheDocument();
               return results;
             },
-            { timeout: 2000 } //animation
+            { timeout: 2000 }, //animation
           );
 
           const item = getByTitle(searchResult, 'lang');
@@ -778,7 +777,7 @@ describe('Load Dialog', () => {
               expect(results).toBeInTheDocument();
               return results;
             },
-            { timeout: 2000 } //animation
+            { timeout: 2000 }, //animation
           );
 
           const item = getByTitle(searchResult, 'language.xml');
@@ -808,7 +807,7 @@ describe('Load Dialog', () => {
           await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
 
           await waitFor(() =>
-            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
           );
 
           const searchBar = getByTestId(storageDialog, 'search-bar');
@@ -825,7 +824,7 @@ describe('Load Dialog', () => {
               expect(results).toBeInTheDocument();
               return results;
             },
-            { timeout: 2000 } //animation
+            { timeout: 2000 }, //animation
           );
 
           const item = getByTitle(searchResult, 'language.xml');
@@ -856,7 +855,7 @@ describe('Load Dialog', () => {
           await act(async () => userEvent.dblClick(getByTestId(repo, 'primary-button')));
 
           await waitFor(() =>
-            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
           );
 
           const searchBar = getByTestId(storageDialog, 'search-bar');
@@ -873,7 +872,7 @@ describe('Load Dialog', () => {
               expect(results).toBeInTheDocument();
               return results;
             },
-            { timeout: 2000 } //animation
+            { timeout: 2000 }, //animation
           );
 
           const item = getByTitle(searchResult, 'language.xml');
@@ -884,7 +883,7 @@ describe('Load Dialog', () => {
           await act(async () => userEvent.click(terciaryButton));
 
           await waitFor(() =>
-            expect(getByTestId(item, 'search-match-details')).toBeInTheDocument()
+            expect(getByTestId(item, 'search-match-details')).toBeInTheDocument(),
           );
 
           await act(async () => userEvent.unhover(item));
