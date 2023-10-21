@@ -1,4 +1,4 @@
-import { loadDocument } from '@cwrc/leafwriter-storage-service';
+import { loadDocument } from '@cwrc/leafwriter-storage-service/headless';
 import { Typography } from '@mui/material';
 import { db } from '@src/db';
 import { useLeafWriter, usePermalink } from '@src/hooks';

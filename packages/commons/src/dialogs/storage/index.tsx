@@ -8,9 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 
 const StorageDialog = React.lazy(() =>
-  import('@cwrc/leafwriter-storage-service/Dialog').then((module) => ({
+  import('@cwrc/leafwriter-storage-service/dialog').then((module) => ({
     default: module.StorageDialog,
-  }))
+  })),
 );
 
 export const Storage = () => {
