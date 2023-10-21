@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * It saves a value to local storage, but if the value is not a string, it converts it to a string
  * before saving it
@@ -5,6 +7,8 @@
  * @param {unknown} value - The value to be stored in local storage.
  */
 export const saveToLocalStorage = <T = unknown>(key: string, value: T) => {
+  if (typeof window === 'undefined') return null;
+
   const stringfiedValue = typeof value === 'string' ? value : JSON.stringify({ value });
   localStorage.setItem(key, stringfiedValue);
 };
@@ -15,6 +19,8 @@ export const saveToLocalStorage = <T = unknown>(key: string, value: T) => {
  * @returns The value of the key in localStorage.
  */
 export const getFromLocalStorage = <T = string>(key: string): T | null => {
+  if (typeof window === 'undefined') return null;
+
   const value = localStorage.getItem(key);
   if (!value) return null;
 
@@ -31,6 +37,8 @@ export const getFromLocalStorage = <T = string>(key: string): T | null => {
  * @param {string} key - The key to be used to store the data in local storage.
  */
 export const removeFromLocalStorage = (key: string) => {
+  if (typeof window === 'undefined') return null;
+
   localStorage.removeItem(key);
 };
 
@@ -38,5 +46,7 @@ export const removeFromLocalStorage = (key: string) => {
  * It deletes all keys from local storage
  */
 export const clearLocalStorage = () => {
+  if (typeof window === 'undefined') return null;
+
   localStorage.clear();
 };
