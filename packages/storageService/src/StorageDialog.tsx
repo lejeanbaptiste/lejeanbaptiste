@@ -30,3 +30,5 @@ export const StorageDialog = (props: StorageDialogProps) => (
     </I18nextProvider>
   </Provider>
 );
+
+export default StorageDialog;
