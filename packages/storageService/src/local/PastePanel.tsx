@@ -13,20 +13,18 @@ export const PastePanel = () => {
   const { breakpoints } = useTheme();
   const mobile = useMediaQuery(breakpoints.down('sm'));
 
-  const [text, setText] = useState<string | undefined>('');
+  const [text, setText] = useState<string>('');
   const ref = useRef<HTMLTextAreaElement>();
 
   useEffect(() => {
-    setText(resource?.content);
+    if (resource?.content) setText(resource.content);
   }, []);
 
   const onChageOnPastePanel = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const text = event.target.value;
     setText(text);
-    updateResource(text);
+    setResource({ content: text });
   };
-
-  const updateResource = (text: string) => setResource({ content: text });
 
   return (
     <Box p={2}>
