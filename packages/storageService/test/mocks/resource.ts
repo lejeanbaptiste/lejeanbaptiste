@@ -1,13 +1,6 @@
 import { SearchBlobsItem } from '../../src/providers/Gitlab';
-import {
-  DocumentDetails,
-  Organization,
-  PublicRepository,
-  Repository,
-  Resource,
-  User,
-} from '../../src/types';
-import type { AuthenticatedUser, ProviderAuth } from '../../src/types/Provider';
+import { Organization, PublicRepository, Repository, Resource } from '../../src/types';
+import type { AuthenticatedUser, DocumentDetails, ProviderAuth } from '../../src/types/Provider';
 
 export const unsupportedProviderAuth: ProviderAuth = { name: 'google', access_token: '12345' };
 export const githubAuth: ProviderAuth = { name: 'github', access_token: 'gho_vtkG' };
@@ -30,6 +23,7 @@ export const getResource = ({
 }: GetResourceParams): Resource | undefined => {
   if (!type) {
     return {
+      storageSource: 'cloud',
       provider,
       owner: provider === 'gitlab' ? '0102' : 'username',
       ownertype: 'user',
@@ -42,16 +36,28 @@ export const getResource = ({
   }
 
   if (type === 'empty') return {};
-  if (type === 'owner_undefined') return { provider };
-  if (type === 'ownertype_undefined') return { provider, owner: 'someusername' };
-  if (type === 'repo_undefined') return { provider, owner: 'someuser', ownertype: 'user' };
+  if (type === 'owner_undefined') return { storageSource: 'cloud', provider };
+  if (type === 'ownertype_undefined') {
+    return { storageSource: 'cloud', provider, owner: 'someusername' };
+  }
+  if (type === 'repo_undefined') {
+    return { storageSource: 'cloud', provider, owner: 'someuser', ownertype: 'user' };
+  }
 
   if (type === 'filename_undefined') {
-    return { provider, owner: 'someuser', ownertype: 'user', repo: 'somerepositotry', path: '' };
+    return {
+      storageSource: 'cloud',
+      provider,
+      owner: 'someuser',
+      ownertype: 'user',
+      repo: 'somerepositotry',
+      path: '',
+    };
   }
 
   if (type === 'repo_invalid') {
     return {
+      storageSource: 'cloud',
       provider,
       owner: 'someuser',
       ownertype: 'user',
@@ -63,6 +69,7 @@ export const getResource = ({
 
   if (type === 'document_not_found') {
     return {
+      storageSource: 'cloud',
       provider,
       owner: 'someuser',
       ownertype: 'user',
@@ -74,6 +81,7 @@ export const getResource = ({
 
   if (type === 'save') {
     return {
+      storageSource: 'cloud',
       provider,
       hash: '0b0bb91a0b70088815055f5987f04ecce4a00faf',
       content: '<?xml>content</xml>',
@@ -91,7 +99,7 @@ export const authenticatedUser: AuthenticatedUser = {
   identities: [''],
   type: 'user',
   id: 'lucaju',
-  userId: 'lucaju'
+  userId: 'lucaju',
 };
 
 export const repository: Repository = {
@@ -185,6 +193,7 @@ export const document: DocumentDetails = {
   content: 'test',
   hash: '111',
   url: 'https://document.xml',
+  urlApi: '',
 };
 
 export const savedDocument = {

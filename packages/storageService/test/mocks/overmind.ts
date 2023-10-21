@@ -11,6 +11,7 @@ export const resetOvermind = () => {
       alertDialog: { open: false },
       allowAllFileTypes: false,
       allowedMimeTypes: ['application/xml'],
+      allowUrl: false,
       dialogType: 'load',
       messageDialog: { open: false },
       showInvisibleFiles: false,
