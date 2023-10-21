@@ -24,6 +24,7 @@ const HEIGHT = 600;
 const Transition = forwardRef((props: SlideProps, ref) => (
   <Slide direction="down" ref={ref} {...props} />
 ));
+Transition.displayName = 'DialogTransition';
 
 export const Main = ({
   config,

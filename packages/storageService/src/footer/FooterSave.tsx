@@ -1,12 +1,5 @@
 import { LoadingButton } from '@mui/lab';
-import {
-  Box,
-  Button,
-  DialogActions,
-  Icon,
-  IconButton,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Button, DialogActions, Icon, IconButton, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

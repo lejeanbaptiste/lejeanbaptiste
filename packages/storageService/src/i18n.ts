@@ -23,7 +23,7 @@ const i18n = i18next.createInstance(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (error, _t) => {
     if (error) return log.error(error);
-  }
+  },
 );
 
 export default i18n;

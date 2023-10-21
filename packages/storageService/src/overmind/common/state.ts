@@ -3,13 +3,13 @@ import type {
   AlertDialog,
   AllowedMimeType,
   DialogType,
-  SelectedItem,
-  SourcePanelOption,
-  Validate,
   MessageDialog,
   Resource,
+  SelectedItem,
+  SourcePanelOption,
   StorageSource,
   Submit,
+  Validate,
 } from '../../types';
 
 type State = {

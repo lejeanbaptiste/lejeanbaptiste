@@ -283,8 +283,12 @@ export default class Gitlab implements Provider {
     const response: AxiosResponse<any> | null = await this.axios.get(
       `/projects/${repoId}/repository/tree`,
       {
-        params: { path, ref: branch, recursive: true },
-      }
+        params: {
+          path,
+          ref: branch,
+          recursive: true,
+        },
+      },
     );
 
     if (!response) return null;
@@ -305,7 +309,7 @@ export default class Gitlab implements Provider {
 
   async getRepoBranches({ repoId }: Types.RepoBranchesParams) {
     const response: AxiosResponse<any> | null = await this.axios.get(
-      `${BASE_URL}/projects/${repoId}/repository/branches`
+      `${BASE_URL}/projects/${repoId}/repository/branches`,
     );
     if (!response) return null;
     return response.data;
@@ -330,7 +334,7 @@ export default class Gitlab implements Provider {
           provider: 'gitlab',
           uuid: `gitlab-user-${id}`,
         };
-      }
+      },
     );
 
     let collection = userCollection ?? [];

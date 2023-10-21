@@ -10,7 +10,6 @@ export interface DialogActionProps {
   variant?: 'contained' | 'outlined' | 'text';
 }
 
-
 export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   actions?: DialogActionProps[];
   onBeforeClose?: (action?: string) => Promise<boolean>;
@@ -24,8 +23,8 @@ export type DialogType = 'simple';
 
 interface SimpleDialogMessageProps {
   onClose?: <T>(action?: string, data?: T) => void;
-  data?: {[key: string]: any},
-  onChangeData?: (data: {[key: string]: any}) => void;
+  data?: { [key: string]: any };
+  onChangeData?: (data: { [key: string]: any }) => void;
 }
 
 export interface SimpleDialogProps extends IDialog {

@@ -156,8 +156,8 @@ export const MyFStorageDialog = () => {
         language: 'en-CA',
         preferProvider: 'github',
         providers: [
-          { name: 'github', access_token: 'github_token' },
-          { name: 'gitlab', access_token: 'github_token' }
+          { name: 'github', access_token: '{github_token}' },
+          { name: 'gitlab', access_token: '{github_token}' }
         ],
         showInvisibleFiles: true,
         validate: handleValidation,
@@ -167,10 +167,10 @@ export const MyFStorageDialog = () => {
       onChange={handleOnChange}
       onLoad={handleLoad}
       resource={
-        provider: 'github_or_gitlab',
-        owner: 'username_or_userid',
+        provider: 'github | gitlab',
+        owner: 'username | userid',
         ownertype: 'user',
-        repo: 'repository_name_or_id',
+        repo: 'repository-name| repository-id',
         path: 'path/to/documents',
         writePermission: true,
       }
@@ -211,18 +211,18 @@ export const MyFStorageDialog = () => {
         language: 'en-CA',
         preferProvider: 'github_or_gitlab',
         providers: [
-          { name: 'github', access_token: 'github_token' },
-          { name: 'gitlab', access_token: 'github_token' }
+          { name: 'github', access_token: '{github_token}' },
+          { name: 'gitlab', access_token: '{github_token}' }
         ],
         showInvisibleFiles: true,
       }}
       onCancel={close}
       onSave={handleSave}
       resource={
-        provider: 'github_or_gitlab',
-        owner: 'username_or_userid',
+        provider: 'github | gitlab',
+        owner: 'username | userid',
         ownertype: 'user',
-        repo: 'repository_name_or_id',
+        repo: 'repository-name | repository-id',
         path: 'path/to/documents';
         filename: 'filename',
         content: 'the content of the decument',
@@ -248,10 +248,10 @@ import React, { Suspense useState } from  'react';
 const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service/Dialog'));
 
 export  const  MyFStorageDialog = () => {
- const [open, setOpen] =  useState(true);  
+ const [open, setOpen] = useState(true);  
 
- const  handleClose  = () =>  setOpen(false);
- const  handleLoad  = () =>  setOpen(false);
+ const handleClose = () =>  setOpen(false);
+ const handleLoad = () =>  setOpen(false);
 
  return (
     <>
@@ -288,10 +288,10 @@ const providerAuth = {
 }
 
 const resource: Resource = {
-  provider: 'github_or_gitlab',
-  owner: 'username_or_userid',
+  provider: 'github',
+  owner: 'username',
   ownertype: 'user',
-  repo: 'repository_name_or_id',
+  repo: 'repository-name',
   path: 'path/to/documents';
   filename: 'filename'
 }
@@ -317,10 +317,10 @@ const providerAuth = {
 }
 
 const document: Resource = {
-  provider: 'github_or_gitlab',
-  owner: 'username_or_userid',
+  provider: 'github',
+  owner: 'username',
   ownertype: 'user',
-  repo: 'repository_name_or_id',
+  repo: 'repository-name',
   path: 'path/to/documents';
   filename: 'filename',
   content: 'the content of the decument',
@@ -339,18 +339,18 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 
 ### Dialog props
 
-| Name            | Type                          | Default | Description                                                                                                                                                                                                                                                                                                                                                          |
-| --------------- | ----------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| open*           | boolean                       | false   | Display / hide dialog                                                                                                                                                                                                                                                                                                                                                |
-| config          | StorageDialogConfig           |         | A collection of configuration (see bellow).                                                                                                                                                                                                                                                                                                                          |
-| onBackdropClick | function                      |         | Callback fired when the **backdrop** is clicked.<br/><br/>**Save dialog** ignores this property since it does not allow for onBackdropClick.                                                                                                                                                                                                                         |
-| onCancel        | function                      |         | Callback fired when the **Cancel** button is clicked.                                                                                                                                                                                                                                                                                                                |
+| Name            | Type                          | Default | Description                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------- | ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| open*           | boolean                       | false   | Display / hide dialog                                                                                                                                                                                                                                                                                                                                                                                   |
+| config          | StorageDialogConfig           |         | A collection of configuration (see bellow).                                                                                                                                                                                                                                                                                                                                                             |
+| onBackdropClick | function                      |         | Callback fired when the **backdrop** is clicked.<br/><br/>**Save dialog** ignores this property since it does not allow for onBackdropClick.                                                                                                                                                                                                                                                            |
+| onCancel        | function                      |         | Callback fired when the **Cancel** button is clicked.                                                                                                                                                                                                                                                                                                                                                   |
 | onChange        | function                      |         | **Load dialog**: Callback fired when there is any change on the resource path (owner, repository, folder path). <br /> <br /> **Save dialog** ignores this property. <br /> <br /> **Signature**: `function(resource?: Resource) => void` See more about Resource below.                                                                                             |
-| onLoad          | function                      |         | **Load dialog**: Callback fired when the **Load** button is clicked.  <br /> <br />**Save dialog** ignores this property. <br /> <br /> **Signature**: `function(resource: Resource) => void`. See more about Resource below.                                                                                                                                        |
-| onSave          | function                      |         | **Save dialog**: Callback fired when the **Save** button is clicked.  <br /> <br />**Load dialog** ignore this property. <br /> <br /> **Signature**: `function(resource: Resource) => void`. See more about Resource below.                                                                                                                                         |
-| resource        | Resource \| string            |         | The resource information, which might include the document's content to be saved.<br /> <br /> **Load Dialog** navigates directly to a specific location. If it is a string, displays `paste` source panel when open.<br /> <br /> **Save Dialog** navigates directly to a specific location, transport the document's content. See more about Resource type bellow. |
-| source          | 'cloud' \| 'local' \| 'paste' | 'local' | The storage source panel  to be display when dialog opens. If `providers` is defined in the configurations, the dialog opens with the `cloud` source panel.                                                                                                                                                                                                          |
-| type            | 'load' \| 'save'              | 'load'  | The dialog type to be open.                                                                                                                                                                                                                                                                                                                                          |
+| onLoad          | function                      |         | **Load dialog**: Callback fired when the **Load** button is clicked.  <br /> <br />**Save dialog** ignores this property. <br /> <br /> **Signature**: `function(resource: Resource) => void`. See more about Resource below.                                                                                                                                                                           |
+| onSave          | function                      |         | **Save dialog**: Callback fired when the **Save** button is clicked.  <br /> <br />**Load dialog** ignore this property. <br /> <br /> **Signature**: `function(resource: Resource) => void`. See more about Resource below.                                                                                                                                                                            |
+| resource        | Resource \| string            |         | The resource information, which might include the document's content to be saved.<br /> <br /> **Load Dialog** navigates directly to a specific location. If it is a string, displays `paste` source panel when open.<br /> <br /> **Save Dialog** navigates directly to a specific location, transport the document's content. See more about Resource type bellow.                                    |
+| source          | 'cloud' \| 'local' \| 'paste' | 'local' | The storage source panel  to be display when dialog opens. If `providers` is defined in the configurations, the dialog opens with the `cloud` source panel.                                                                                                                                                                                                                                             |
+| type            | 'load' \| 'save'              | 'load'  | The dialog type to be open.                                                                                                                                                                                                                                                                                                                                                                             |
 
 ### StorageDialogConfig
 
@@ -359,7 +359,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 | allowedMimeTypes     | Array [`MIMEType`]     | []       | Restrict the file types  allowed. Empty array means no restriction.<br /> <br /> MIME type suported: `'application/json'`, `'application/pdf'`, `'application/xml'`, `'text/csv'`, `'text/html'`, `'text/plain'`. |
 | allowPaste           | boolean                | true     | `Load dialog`: Allows paste from clipboard.                                                                                                                                                                       |
 | defaultCommitMessage | string                 | 'update' | `Save Dialog`: Defines the default commit message.                                                                                                                                                                |
-| language   | string                |     | Localize the UI and the messages. Must be valid and supported language code. E.g., `en-CA` 
+| language             | string                 |          | Localize the UI and the messages. Must be valid and supported language code. E.g., `en-CA`                                                                                                                        |
 | providers            | Array [`ProviderAuth`] | []       | Setup Github / Gitlab providers.<br /> <br /> `ProviderAuth`: {<br />name: 'github' \| 'gitlab',<br /> access_token: 'string<br />}                                                                               |
 | preferProvider       | string                 |          | The preferred git host provider: `'github'` \| `'gitlab'`                                                                                                                                                         |
 | showInvisibleFiles   | boolean                | false    | Show/hide invisible files (files starting with `'.'`)                                                                                                                                                             |
@@ -367,17 +367,18 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 
 ### Resource
 
-| Name      | Type   | Default | Description                                                                                                                                                              |
-| --------- | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| provider  | string |         | `'github'`, `'gitlab'`, or empty if not from the git repository.                                                                                                         |
-| owner     | string |         | Github `username` or Gitlab: `user id`.                                                                                                                                  |
-| ownertype | string |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation.                                                                                                      |
-| repo      | string |         | Github `repository name`. Gitlab `repository id`.                                                                                                                        |
-| path      | string |         | Folder structure. *e.g.*, `'path/to/file'`.                                                                                                                              |
-| filename  | string |         | The file name.                                                                                                                                                           |
-| content   | string |         | The document content.                                                                                                                                                    |
-| hash      | string |         | The Commit hash. On **Github**, it is the SHA value. On **Gitlab**, it is the lastCommitId. If present, the dialog alerts the user that the content will be overwritten. |
-| writePermission      | boolean |         | Indicates if the loged user has write permission for the repository. Default: `undefined` for owned repositories. |
+| Name            | Type                                   | Default | Description                                                                                                                                                              |
+| --------------- | -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| provider        | string                                 |         | `'github'`, `'gitlab'`, or empty if not from the git repository.                                                                                                         |
+| owner           | string                                 |         | Github `username` or Gitlab: `user id`.                                                                                                                                  |
+| ownertype       | string                                 |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation.                                                                                                      |
+| repo            | string                                 |         | Github `repository name`. Gitlab `repository id`.                                                                                                                        |
+| path            | string                                 |         | Folder structure. *e.g.*, `'path/to/file'`.                                                                                                                              |
+| filename        | string                                 |         | The file name.                                                                                                                                                           |
+| content         | string                                 |         | The document content.                                                                                                                                                    |
+| hash            | string                                 |         | The Commit hash. On **Github**, it is the SHA value. On **Gitlab**, it is the lastCommitId. If present, the dialog alerts the user that the content will be overwritten. |
+| url             | string                                 |         | The resource url.                                                                                                                                                        |
+| writePermission | boolean                                |         | Indicates if the loged user has write permission for the repository. Default: `undefined` for owned repositories.                                                        |
 
 ## Development
 
