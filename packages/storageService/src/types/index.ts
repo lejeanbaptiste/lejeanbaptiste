@@ -7,6 +7,7 @@ export * from './assert';
 export interface StorageDialogProps {
   open: boolean;
   config?: StorageDialogConfig;
+  headerLabel?: string;
   onBackdropClick?: () => void;
   onCancel?: () => void;
   onChange?: (resource?: Resource) => void;
