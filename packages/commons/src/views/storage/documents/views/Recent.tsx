@@ -1,4 +1,4 @@
-import { loadDocument } from '@cwrc/leafwriter-storage-service';
+import { loadDocument } from '@cwrc/leafwriter-storage-service/headless';
 import Masonry from '@mui/lab/Masonry';
 import { db } from '@src/db';
 import { useOpenResource } from '@src/hooks';

@@ -1,4 +1,4 @@
-import { loadDocument } from '@cwrc/leafwriter-storage-service';
+import { loadDocument } from '@cwrc/leafwriter-storage-service/headless';
 import { db } from '@src/db';
 import { useLeafWriter, useMessage, useOpenResource } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';

@@ -1,5 +1,5 @@
 import LeafWriter from '@cwrc/leafwriter';
-import { saveDocument } from '@cwrc/leafwriter-storage-service';
+import { saveDocument } from '@cwrc/leafwriter-storage-service/headless';
 import { AUTOSAVE_TIMEOUT_RETRY } from '@src/config';
 import type { Error, Resource } from '@src/types';
 import { isErrorMessage } from '@src/types';
