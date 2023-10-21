@@ -1,4 +1,3 @@
-//@ts-nocheck
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import '@testing-library/jest-dom';
 import {
@@ -96,7 +95,7 @@ describe('Load Dialog', () => {
       await waitFor(() => expect(getByText(header, 'paste')).toBeInTheDocument());
 
       const input = screen.getByTestId('paste_panel-input') as HTMLInputElement;
-      await act(async () => user.type(input, '<xml>', { delay: 50 })); //simulate user typing
+      await act(async () => user.type(input, '<xml>')); //simulate user typing
 
       expect(input).toHaveTextContent('<xml>');
     });
@@ -114,7 +113,7 @@ describe('Load Dialog', () => {
     });
 
     test('Source Paste with content', async () => {
-      await setup({ resource: { content: '<xml>' } });
+      await setup({ resource: '<xml>' });
 
       expect.assertions(3);
 
@@ -632,7 +631,7 @@ describe('Load Dialog', () => {
         await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const input = screen.getByTestId('search-user-input') as HTMLInputElement;
-        await act(async () => user.type(input, 'anto', { delay: 50 }));
+        await act(async () => user.type(input, 'anto'));
         expect(input).toHaveValue('anto');
 
         await waitFor(() => expect(screen.getByTestId('search-user-result')).toBeInTheDocument());
@@ -671,7 +670,7 @@ describe('Load Dialog', () => {
 
         const input = getByTitle(searchBar, 'search') as HTMLInputElement;
 
-        await act(async () => user.type(input, 'car', { delay: 50 })); //simulate user typing
+        await act(async () => user.type(input, 'car')); //simulate user typing
         expect(input).toHaveValue('car');
 
         await waitFor(
@@ -721,7 +720,7 @@ describe('Load Dialog', () => {
 
           const input = getByTitle(searchBar, 'search') as HTMLInputElement;
 
-          await act(async () => user.type(input, 'lang', { delay: 50 })); //simulate user typing
+          await act(async () => user.type(input, 'lang')); //simulate user typing
           expect(input).toHaveValue('lang');
 
           const searchResult = await waitFor(
@@ -760,7 +759,7 @@ describe('Load Dialog', () => {
           await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
 
           await waitFor(() =>
-            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
           );
 
           const searchBar = getByTestId(storageDialog, 'search-bar');
@@ -768,7 +767,7 @@ describe('Load Dialog', () => {
 
           const input = getByTitle(searchBar, 'search') as HTMLInputElement;
 
-          await act(async () => user.type(input, 'lang', { delay: 50 })); //simulate user typing
+          await act(async () => user.type(input, 'lang')); //simulate user typing
           expect(input).toHaveValue('lang');
 
           const searchResult = await waitFor(
@@ -815,7 +814,7 @@ describe('Load Dialog', () => {
 
           const input = getByTitle(searchBar, 'search') as HTMLInputElement;
 
-          await act(async () => user.type(input, 'lang', { delay: 50 })); //simulate user typing
+          await act(async () => user.type(input, 'lang')); //simulate user typing
           expect(input).toHaveValue('lang');
 
           const searchResult = await waitFor(
