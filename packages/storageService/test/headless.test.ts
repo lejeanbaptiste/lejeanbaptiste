@@ -63,7 +63,7 @@ describe('headless', () => {
 
         const response = await loadDocument(
           mock.githubAuth,
-          mock.getResource({ type: 'repo_invalid' })
+          mock.getResource({ type: 'repo_invalid' }),
         );
         expect(response).toHaveProperty('message');
       });
@@ -75,11 +75,11 @@ describe('headless', () => {
         async ({ provider }) => {
           const response = await loadDocument(
             mock.getProviderAuth(provider),
-            mock.getResource({ provider })
+            mock.getResource({ provider }),
           );
           expect(response).toHaveProperty('content');
           expect(response).toHaveProperty('hash');
-        }
+        },
       );
     });
   });
@@ -135,7 +135,7 @@ describe('headless', () => {
 
         const response = await saveDocument(
           mock.githubAuth,
-          mock.getResource({ type: 'repo_invalid' })
+          mock.getResource({ type: 'repo_invalid' }),
         );
         expect(response).toHaveProperty(['message']);
       });
@@ -155,10 +155,10 @@ describe('headless', () => {
 
           const response = await saveDocument(
             mock.getProviderAuth(provider),
-            mock.getResource({ provider })
+            mock.getResource({ provider }),
           );
           expect(response).toHaveProperty(['message']);
-        }
+        },
       );
 
       test.each([{ provider: 'github' }, { provider: 'gitlab' }])(
@@ -171,10 +171,10 @@ describe('headless', () => {
 
           const response = await saveDocument(
             mock.getProviderAuth(provider),
-            mock.getResource({ provider })
+            mock.getResource({ provider }),
           );
           expect(response).toHaveProperty(['message']);
-        }
+        },
       );
     });
 
@@ -190,11 +190,11 @@ describe('headless', () => {
           const response = await saveDocument(
             mock.getProviderAuth(provider),
             mock.getResource({ provider }),
-            true
+            true,
           );
           expect(response).toHaveProperty('content');
           expect(response).toHaveProperty('hash');
-        }
+        },
       );
 
       test.each([{ provider: 'github' }, { provider: 'gitlab' }])(
@@ -202,11 +202,11 @@ describe('headless', () => {
         async ({ provider }) => {
           const response = await loadDocument(
             mock.getProviderAuth(provider),
-            mock.getResource({ provider })
+            mock.getResource({ provider }),
           );
           expect(response).toHaveProperty('content');
           expect(response).toHaveProperty('hash');
-        }
+        },
       );
     });
   });

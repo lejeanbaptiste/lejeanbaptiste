@@ -127,7 +127,7 @@ describe('Save Dialog', () => {
 
         const input = getByTestId(
           saveSettingsDialog,
-          'save:settings:commit-input'
+          'save:settings:commit-input',
         ) as HTMLInputElement;
 
         await act(async () => user.clear(input));
@@ -170,11 +170,11 @@ describe('Save Dialog', () => {
 
         const inputName = getByTestId(
           createRepoDialog,
-          'save:create-repo:name-input'
+          'save:create-repo:name-input',
         ) as HTMLInputElement;
         const inputDescription = getByTestId(
           createRepoDialog,
-          'save:create-repo:description-input'
+          'save:create-repo:description-input',
         ) as HTMLInputElement;
 
         await act(async () => user.type(inputName, 'repo-name', { delay: 50 }));
@@ -225,7 +225,7 @@ describe('Save Dialog', () => {
 
         const inputName = getByTestId(
           createFolderDialog,
-          'save:create-folder:name-input'
+          'save:create-folder:name-input',
         ) as HTMLInputElement;
 
         await act(async () => user.clear(inputName));
@@ -430,7 +430,7 @@ describe('Save Dialog', () => {
           await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
 
           await waitFor(() =>
-            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
           );
 
           const saveOptionsButton = getByTestId(footer, 'save-options-button');
@@ -439,13 +439,13 @@ describe('Save Dialog', () => {
           await act(async () => await user.click(saveOptionsButton));
 
           await waitFor(() =>
-            expect(screen.getByTestId('save:footer:save-options-dialog')).toBeInTheDocument()
+            expect(screen.getByTestId('save:footer:save-options-dialog')).toBeInTheDocument(),
           );
           const saveOptionsDialog = screen.getByTestId('save:footer:save-options-dialog');
 
           expect(getByTestId(saveOptionsDialog, 'save-options:save-button')).toBeInTheDocument();
           expect(
-            getByTestId(saveOptionsDialog, 'save-options:pullRequest-button')
+            getByTestId(saveOptionsDialog, 'save-options:pullRequest-button'),
           ).toBeInTheDocument();
 
           const saveButton = getByTestId(saveOptionsDialog, 'save-options:save-button');
@@ -489,7 +489,7 @@ describe('Save Dialog', () => {
           await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
 
           await waitFor(() =>
-            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument()
+            expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
           );
 
           const saveOptionsButton = getByTestId(footer, 'save-options-button');
@@ -498,13 +498,13 @@ describe('Save Dialog', () => {
           await act(async () => await user.click(saveOptionsButton));
 
           await waitFor(() =>
-            expect(screen.getByTestId('save:footer:save-options-dialog')).toBeInTheDocument()
+            expect(screen.getByTestId('save:footer:save-options-dialog')).toBeInTheDocument(),
           );
           const saveOptionsDialog = screen.getByTestId('save:footer:save-options-dialog');
 
           expect(getByTestId(saveOptionsDialog, 'save-options:save-button')).toBeInTheDocument();
           expect(
-            getByTestId(saveOptionsDialog, 'save-options:pullRequest-button')
+            getByTestId(saveOptionsDialog, 'save-options:pullRequest-button'),
           ).toBeInTheDocument();
 
           const savePrButton = getByTestId(saveOptionsDialog, 'save-options:pullRequest-button');
