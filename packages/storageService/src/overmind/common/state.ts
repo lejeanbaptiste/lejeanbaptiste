@@ -12,7 +12,8 @@ import type {
   Validate,
 } from '../../types';
 
-interface State {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type State = {
   allowAllFileTypes: boolean;
   allowedFileTypes?: string[];
   allowLocalFiles?: boolean;
@@ -29,7 +30,7 @@ interface State {
   sources: SourcePanelOption[];
   submit?: Submit;
   validate?: Validate;
-}
+};
 
 export const state: State = {
   allowAllFileTypes: false,

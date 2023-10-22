@@ -1,4 +1,5 @@
 import { Context } from '../';
+import { Resource } from '../../types';
 import { log } from '../../utilities';
 
 export const uploadFile = async (_context: Context, file: File): Promise<string | null> => {
@@ -20,11 +21,6 @@ export const uploadFile = async (_context: Context, file: File): Promise<string 
     reader.readAsText(file);
   });
 };
-
-interface Resource {
-  content: string;
-  filename?: string;
-}
 
 export const setResource = async ({ state }: Context, { content, filename }: Resource) => {
   if (!content) return;
