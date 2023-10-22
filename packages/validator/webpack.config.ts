@@ -35,7 +35,7 @@ const webpackConfig: webpack.Configuration = {
       {
         test: /\.[jt]s?$/,
         loader: 'esbuild-loader',
-        options: { tsconfig: './tsconfig.json', target: 'es2020' },
+        options: { target: 'es2020' },
       },
     ],
   },
