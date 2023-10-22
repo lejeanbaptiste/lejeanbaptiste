@@ -1,7 +1,17 @@
 module.exports = {
   extends: ['eslint:recommended', 'prettier'],
   env: { es6: true },
-  ignorePatterns: ['**/coverage/**/*.*', '**/dist/**/*.*', '**/packages/eslint-*/*.js'],
+  ignorePatterns: [
+    '**/coverage/**/*.*',
+    '**/dist/**/*.*',
+    '**/lib/**/*.*',
+    '**/docs/**/*.*',
+    '**/packages/eslint-*/*.js',
+    '**/changelog.config.js',
+    '**/jest.config.ts',
+    '**/webpack.config.ts',
+    '**/*.d.ts'
+  ],
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
