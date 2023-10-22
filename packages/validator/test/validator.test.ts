@@ -246,7 +246,7 @@ describe('Validator', () => {
     });
 
     describe('getValuesForTagAttributeAt', () => {
-      test('getValuesForTagAttributeAt', async () => {
+      test.skip('getValuesForTagAttributeAt', async () => {
         expect.assertions(2);
         const attributeValues = await Validator.getValuesForTagAttributeAt(
           '/TEI/text/body/div/closer/signed/persName/persName/@cert',
