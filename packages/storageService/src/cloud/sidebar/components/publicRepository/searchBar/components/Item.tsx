@@ -8,7 +8,6 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import React from 'react';
 import type { PublicRepository } from '../../../../../../types';
 
 interface ItemProps {

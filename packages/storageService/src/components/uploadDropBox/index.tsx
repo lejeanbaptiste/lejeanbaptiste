@@ -1,5 +1,5 @@
 import { Stack } from '@mui/material';
-import React, { createRef, useMemo } from 'react';
+import { createRef, useMemo } from 'react';
 import Dropzone, { type DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';

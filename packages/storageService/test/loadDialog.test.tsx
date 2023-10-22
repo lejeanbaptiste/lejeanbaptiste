@@ -11,7 +11,6 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import React from 'react';
 import StorageDialog from '../src';
 import Github from '../src/providers/Github';
 import Gitlab from '../src/providers/Gitlab';

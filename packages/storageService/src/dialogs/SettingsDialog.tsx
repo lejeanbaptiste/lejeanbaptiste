@@ -1,5 +1,4 @@
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, Switch } from '@mui/material';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 

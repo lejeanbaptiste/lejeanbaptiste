@@ -1,6 +1,5 @@
 import GppGoodRoundedIcon from '@mui/icons-material/GppGoodRounded';
 import { Box, Button, Stack, Tooltip, Typography } from '@mui/material';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface CrumbProps {

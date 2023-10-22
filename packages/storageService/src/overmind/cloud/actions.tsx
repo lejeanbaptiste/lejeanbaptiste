@@ -1,7 +1,6 @@
 import { Icon, Stack } from '@mui/material';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
-import React from 'react';
 import { Context } from '..';
 import { TextEmphasis } from '../../components/TextEmphasis';
 import { db } from '../../db';

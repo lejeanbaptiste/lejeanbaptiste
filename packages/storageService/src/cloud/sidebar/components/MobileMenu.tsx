@@ -3,7 +3,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { IconButton, MenuItem, Stack } from '@mui/material';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import { useLiveQuery } from 'dexie-react-hooks';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../../db';
 import { useActions, useAppState } from '../../../overmind';

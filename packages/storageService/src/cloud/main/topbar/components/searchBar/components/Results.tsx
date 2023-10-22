@@ -1,5 +1,5 @@
 import { Box, Button, Divider, ListSubheader, Stack } from '@mui/material';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../../../../../overmind';
 import type { Content, SearchResultsBlobs } from '../../../../../../types';

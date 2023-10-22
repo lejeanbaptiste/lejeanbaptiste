@@ -1,5 +1,5 @@
 import { Stack } from '@mui/material';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { UploadDropBox } from '../components';
 import { useActions } from '../overmind';
 import type { FileDetail } from '../types';

@@ -14,7 +14,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import debounce from 'lodash/debounce';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
 import type { Content, SearchResults, SearchResultsBlobs } from '../../../../../types';

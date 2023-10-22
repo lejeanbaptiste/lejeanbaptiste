@@ -1,6 +1,5 @@
 import { Box, MenuList } from '@mui/material';
 import { motion, type Variants } from 'framer-motion';
-import React from 'react';
 import type { Content, SearchResults, SearchResultsBlobs } from '../../../../../../types';
 import { Results } from './Results';
 

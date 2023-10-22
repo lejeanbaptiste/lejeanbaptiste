@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion, type Variants } from 'framer-motion';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { UserType } from '../../../types';
 
 interface SideButtonProps {

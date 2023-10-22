@@ -1,5 +1,5 @@
 import { Box, List } from '@mui/material';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState } from '../../../overmind';
 import { useScrollSpy } from '../../hooks/useScrollSpy';
 import { Content, Empty, LoadMore, Organization, Repository, Skeletons } from './components';

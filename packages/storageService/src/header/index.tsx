@@ -1,6 +1,6 @@
 import { Box, Grid, Typography } from '@mui/material';
 import { useAnimate } from 'framer-motion';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../overmind';
 

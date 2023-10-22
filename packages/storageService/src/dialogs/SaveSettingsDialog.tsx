@@ -8,7 +8,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import React, { useState, type ChangeEvent, type FocusEvent } from 'react';
+import { useState, type ChangeEvent, type FocusEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 

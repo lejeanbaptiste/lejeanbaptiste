@@ -1,7 +1,6 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const Empty = () => {

@@ -1,7 +1,6 @@
 import ModalProvider from 'mui-modal-provider';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
-import React from 'react';
 import { I18nextProvider } from 'react-i18next';
 import i18next from './i18n';
 import { Main } from './main';

@@ -10,7 +10,7 @@ import {
   Paper,
   Popper,
 } from '@mui/material';
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
 
