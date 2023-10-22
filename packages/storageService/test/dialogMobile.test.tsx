@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import '@testing-library/jest-dom';
 import '@testing-library/jest-dom/jest-globals';
@@ -26,7 +25,6 @@ beforeEach(() => {
 });
 
 const setup = async (props: Omit<StorageDialogProps, 'open'> = {}) => {
-  //@ts-ignore
   await act(async () => render(<StorageDialog open={true} {...props} />));
 };
 
@@ -50,8 +48,7 @@ describe('Dialog Mobile', () => {
         //* ALLOWS TO RESIZE WINDOW
         const matchMediaBK = window.matchMedia;
         //@ts-ignore
-        window.matchMedia = (match: string) => ({
-          //@ts-ignore
+        window.matchMedia = () => ({
           matches: true, // <-- Set according to what you want to test
           addListener: () => {},
           removeListener: () => {},
@@ -80,7 +77,7 @@ describe('Dialog Mobile', () => {
         await waitFor(() => expect(repositories).toBeInTheDocument());
 
         const repo = getByTitle(repositories, 'repo1');
-        await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+        await user.dblClick(getByTestId(repo, 'primary-button'));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument());
 
@@ -108,8 +105,7 @@ describe('Dialog Mobile', () => {
         //* ALLOWS TO RESIZE WINDOW
         const matchMediaBK = window.matchMedia;
         //@ts-ignore
-        window.matchMedia = (match: string) => ({
-          //@ts-ignore
+        window.matchMedia = () => ({
           matches: true, // <-- Set according to what you want to test
           addListener: () => {},
           removeListener: () => {},
@@ -142,7 +138,7 @@ describe('Dialog Mobile', () => {
         await waitFor(() => expect(repositories).toBeInTheDocument());
 
         const repo = getByTitle(repositories, 'repo1');
-        await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+        await user.dblClick(getByTestId(repo, 'primary-button'));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument());
 

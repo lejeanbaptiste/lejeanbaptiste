@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import '@testing-library/jest-dom';
 import '@testing-library/jest-dom/jest-globals';
@@ -34,13 +33,12 @@ beforeEach(() => {
 });
 
 const setup = async (props: Omit<StorageDialogProps, 'open'> = {}) => {
-  //@ts-ignore
   await act(async () => render(<StorageDialog open={true} {...props} />));
 };
 
 const closeLoadDialog = async () => {
   const footer = screen.getByTestId('save:footer');
-  await act(async () => user.click(getByTitle(footer, 'cancel')));
+  await user.click(getByTitle(footer, 'cancel'));
 };
 
 describe('Save Dialog', () => {
@@ -96,7 +94,7 @@ describe('Save Dialog', () => {
           timeout: 500,
         });
 
-        await act(async () => await user.click(screen.getByTestId('save:open-settings-button')));
+        await user.click(screen.getByTestId('save:open-settings-button'));
         const saveSettingsDialog = screen.getByTestId('save:settings-dialog');
         await waitFor(() => expect(saveSettingsDialog).toBeInTheDocument());
       });
@@ -122,7 +120,7 @@ describe('Save Dialog', () => {
           timeout: 500,
         });
 
-        await act(async () => await user.click(screen.getByTestId('save:open-settings-button')));
+        await user.click(screen.getByTestId('save:open-settings-button'));
         const saveSettingsDialog = screen.getByTestId('save:settings-dialog');
         await waitFor(() => expect(saveSettingsDialog).toBeInTheDocument());
 
@@ -131,11 +129,11 @@ describe('Save Dialog', () => {
           'save:settings:commit-input',
         ) as HTMLInputElement;
 
-        await act(async () => user.clear(input));
-        await act(async () => user.type(input, 'by me', { delay: 50 }));
+        await user.clear(input);
+        await user.type(input, 'by me');
         expect(input).toHaveValue('by me');
 
-        await act(async () => await user.click(screen.getByTitle('done')));
+        await user.click(screen.getByTitle('done'));
 
         await closeLoadDialog();
       });
@@ -164,7 +162,7 @@ describe('Save Dialog', () => {
         });
 
         const createRepoButton = getByTestId(storageDialog, 'topbar:create-repository');
-        await act(async () => await user.click(createRepoButton));
+        await user.click(createRepoButton);
 
         const createRepoDialog = screen.getByTestId('save:create-repo-dialog');
         await waitFor(() => expect(createRepoDialog).toBeInTheDocument());
@@ -178,14 +176,14 @@ describe('Save Dialog', () => {
           'save:create-repo:description-input',
         ) as HTMLInputElement;
 
-        await act(async () => user.type(inputName, 'repo-name', { delay: 50 }));
-        await act(async () => user.type(inputDescription, 'repo description', { delay: 50 }));
+        await user.type(inputName, 'repo-name');
+        await user.type(inputDescription, 'repo description');
 
         expect(inputName).toHaveValue('repo-name');
         expect(inputDescription).toHaveValue('repo description');
 
         const createButton = getByTestId(createRepoDialog, 'save:create-repo:create-button');
-        await act(async () => user.click(createButton));
+        await user.click(createButton);
 
         await closeLoadDialog();
       });
@@ -213,13 +211,13 @@ describe('Save Dialog', () => {
         await waitFor(() => expect(repositories).toBeInTheDocument());
 
         const input = getByTestId(storageDialog, 'save:filename-input') as HTMLInputElement;
-        expect(input).toHaveValue(resource.filename);
+        expect(input).toHaveValue(resource?.filename);
 
         const repo = getByTitle(repositories, 'repo1');
-        await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+        await user.dblClick(getByTestId(repo, 'primary-button'));
 
         const createFolderButton = getByTestId(storageDialog, 'topbar:create-folder');
-        await act(async () => await user.click(createFolderButton));
+        await user.click(createFolderButton);
 
         const createFolderDialog = screen.getByTestId('save:create-folder-dialog');
         await waitFor(() => expect(createFolderDialog).toBeInTheDocument());
@@ -229,14 +227,14 @@ describe('Save Dialog', () => {
           'save:create-folder:name-input',
         ) as HTMLInputElement;
 
-        await act(async () => user.clear(inputName));
+        await user.clear(inputName);
         expect(inputName).toHaveValue('');
 
-        await act(async () => user.type(inputName, 'folder-name'));
+        await user.type(inputName, 'folder-name');
         expect(inputName).toHaveValue('folder-name');
 
         // const createButton = getByTestId(createFolderDialog, 'save:create-folder:create-button');
-        // await act(async () => user.click(createButton));
+        // await user.click(createButton);
 
         await closeLoadDialog();
       });
@@ -268,12 +266,12 @@ describe('Save Dialog', () => {
         });
 
         const input = getByTestId(storageDialog, 'save:filename-input') as HTMLInputElement;
-        expect(input).toHaveValue(resource.filename);
+        expect(input).toHaveValue(resource?.filename);
 
-        await act(async () => user.clear(input));
+        await user.clear(input);
         expect(input).toHaveValue('');
 
-        await act(async () => user.type(input, 'new_file.xml'));
+        await user.type(input, 'new_file.xml');
         expect(input).toHaveValue('new_file.xml');
 
         await closeLoadDialog();
@@ -300,16 +298,16 @@ describe('Save Dialog', () => {
         await waitFor(() => expect(repositories).toBeInTheDocument());
 
         const input = getByTestId(storageDialog, 'save:filename-input') as HTMLInputElement;
-        expect(input).toHaveValue(resource.filename);
+        expect(input).toHaveValue(resource?.filename);
 
         const repo = getByTitle(repositories, 'repo1');
-        await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+        await user.dblClick(getByTestId(repo, 'primary-button'));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument());
 
         const file = getByTitle(storageDialog, 'file1.xml');
         const fileButton = getByTestId(file, 'primary-button');
-        await act(async () => user.click(fileButton));
+        await user.click(fileButton);
 
         expect(input).toHaveValue('file1.xml');
 
@@ -344,19 +342,19 @@ describe('Save Dialog', () => {
         expect(input).toHaveValue(resource.filename);
 
         const repo = getByTitle(repositories, 'repo1');
-        await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+        await user.dblClick(getByTestId(repo, 'primary-button'));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument());
 
         //? mock download function
-        footerDownloadButton.onclick = jest.fn((event) => event.stopPropagation());
+        footerDownloadButton.onclick = jest.fn((event: MouseEvent) => event.stopPropagation());
 
         //* hack: some of the processes from previou stests are stuck.
         //* in this case 'isSaving' is set to true, which cause some actions to be disabled.
         footerDownloadButton.classList.remove('Mui-disabled');
         expect(footerDownloadButton).not.toHaveClass('Mui-disabled');
 
-        await act(async () => user.click(footerDownloadButton));
+        await user.click(footerDownloadButton);
       });
 
       test('Save', async () => {
@@ -385,7 +383,7 @@ describe('Save Dialog', () => {
         expect(input).toHaveValue(resource.filename);
 
         const repo = getByTitle(repositories, 'repo1');
-        await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+        await user.dblClick(getByTestId(repo, 'primary-button'));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument());
 
@@ -396,9 +394,9 @@ describe('Save Dialog', () => {
         expect(saveButton).not.toHaveClass('Mui-disabled');
 
         //? mock download function
-        saveButton.onclick = jest.fn((event) => event.stopPropagation());
+        saveButton.onclick = jest.fn((event: MouseEvent) => event.stopPropagation());
 
-        await act(async () => user.click(saveButton));
+        await user.click(saveButton);
       });
 
       describe('Open Save / PR Options', () => {
@@ -428,7 +426,7 @@ describe('Save Dialog', () => {
           expect(input).toHaveValue(resource.filename);
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           await waitFor(() =>
             expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
@@ -437,7 +435,7 @@ describe('Save Dialog', () => {
           const saveOptionsButton = getByTestId(footer, 'save-options-button');
           saveOptionsButton.classList.remove('Mui-disabled');
           expect(saveOptionsButton).not.toHaveClass('Mui-disabled');
-          await act(async () => await user.click(saveOptionsButton));
+          await user.click(saveOptionsButton);
 
           await waitFor(() =>
             expect(screen.getByTestId('save:footer:save-options-dialog')).toBeInTheDocument(),
@@ -456,9 +454,9 @@ describe('Save Dialog', () => {
           expect(saveButton).not.toHaveClass('Mui-disabled');
 
           //? mock download function
-          saveButton.onclick = jest.fn((event) => event.stopPropagation());
+          saveButton.onclick = jest.fn((event: MouseEvent) => event.stopPropagation());
 
-          await act(async () => user.click(saveButton));
+          await user.click(saveButton);
         });
 
         test('Pull Request', async () => {
@@ -487,7 +485,7 @@ describe('Save Dialog', () => {
           expect(input).toHaveValue(resource.filename);
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           await waitFor(() =>
             expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
@@ -496,7 +494,7 @@ describe('Save Dialog', () => {
           const saveOptionsButton = getByTestId(footer, 'save-options-button');
           saveOptionsButton.classList.remove('Mui-disabled');
           expect(saveOptionsButton).not.toHaveClass('Mui-disabled');
-          await act(async () => await user.click(saveOptionsButton));
+          await user.click(saveOptionsButton);
 
           await waitFor(() =>
             expect(screen.getByTestId('save:footer:save-options-dialog')).toBeInTheDocument(),
@@ -515,9 +513,9 @@ describe('Save Dialog', () => {
           expect(savePrButton).not.toHaveClass('Mui-disabled');
 
           //? mock download function
-          savePrButton.onclick = jest.fn((event) => event.stopPropagation());
+          savePrButton.onclick = jest.fn((event: MouseEvent) => event.stopPropagation());
 
-          await act(async () => user.click(savePrButton));
+          await user.click(savePrButton);
         });
       });
     });
