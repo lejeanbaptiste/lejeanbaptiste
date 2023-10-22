@@ -25,8 +25,8 @@ export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
 export type DialogType = 'export' | 'import' | 'privacy' | 'signIn' | 'simple' | 'templates';
 
 interface SimpleDialogMessageProps {
-  data?: { [key: string]: any };
-  onChangeData?: (data: { [key: string]: any }) => void;
+  data?: Record<string, any>;
+  onChangeData?: (data: Record<string, any>) => void;
 }
 
 export interface SimpleDialogProps extends IDialog {

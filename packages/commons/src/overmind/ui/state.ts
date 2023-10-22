@@ -2,7 +2,7 @@ import type { DialogBarProps } from '@src/dialogs';
 import type { NotificationProps, Language, PaletteMode } from '@src/types';
 import { supportedLanguages } from '@src/utilities';
 
-type State = {
+interface State {
   cookieConsent: string[];
   darkMode: boolean;
   dialogBar: DialogBarProps[];
@@ -10,7 +10,7 @@ type State = {
   notifications: NotificationProps[];
   page: string;
   themeAppearance: PaletteMode;
-};
+}
 
 export const state: State = {
   cookieConsent: [''],

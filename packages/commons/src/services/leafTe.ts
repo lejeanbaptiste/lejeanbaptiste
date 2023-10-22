@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { logHttpError } from './utilities';
 
-type ServiceError = {
+interface ServiceError {
   msg: string;
   type: string;
   loc: [string, number];
-};
+}
 
 const BASE_URL = 'https://leaf-turning.leaf-vre.org/v1';
 
@@ -14,14 +14,14 @@ export const listTransformations = async ({ from, to }: { from?: string; to?: st
     throw new Error(`Must provide just one property: 'from' | 'to'`);
   }
 
-  const { data } = await axios.get<{ [key: string]: string[] }>(`${BASE_URL}/list-transformations`);
+  const { data } = await axios.get<Record<string, string[]>>(`${BASE_URL}/list-transformations`);
   if (from) {
     const possibleType = data[from] ?? [];
     return possibleType;
   }
 
   if (to) {
-    const possibleType: Set<string> = new Set();
+    const possibleType = new Set<string>();
     Object.entries(data).forEach(([fromType, toType]) => {
       if (toType.includes(to)) possibleType.add(fromType);
     });
@@ -31,16 +31,16 @@ export const listTransformations = async ({ from, to }: { from?: string; to?: st
   throw new Error(`Must provide a property: 'from' | 'to'`);
 };
 
-type ConversionRequest = {
+interface ConversionRequest {
   content: string;
   fromType: string;
   toType: string;
-};
+}
 
-type ConversionResponse = {
+interface ConversionResponse {
   transformed_string: string;
   details?: ServiceError;
-};
+}
 
 export const convertDocument = async ({ content, fromType, toType }: ConversionRequest) => {
   try {

@@ -22,7 +22,7 @@ export const useConversion = () => {
   const leafwriterEditor = useLeafWriter();
 
   const processImportFile = async (_fileDetail?: FileDetail) => {
-    let fileToProcess = _fileDetail ?? fileDetail;
+    const fileToProcess = _fileDetail ?? fileDetail;
     if (!fileToProcess || !selectedType) return;
     setIsProcessing(true);
 
