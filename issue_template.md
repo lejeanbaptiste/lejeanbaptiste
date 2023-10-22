@@ -34,7 +34,7 @@
 
 - Operating System:
 
-- Attachments:
+- Attachements:
 <!--- Please attach any relevant files (XML documents, screenshots, etc.) or specify the document template you were using -->
 
-- User name if submitting an issue for the LEAF-embedded LEAF-Writer, or the Github / GitLab / LINCS username if using LEAF-Writer Commons.
+\*LINCS/Leaf user name if submitting an issue for the LINCS/Leaf research space, or the Github / GitLab username if using Leaf Writer.
