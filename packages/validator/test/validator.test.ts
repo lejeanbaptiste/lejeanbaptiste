@@ -112,7 +112,7 @@ describe('Validator', () => {
                 index: expect.any(Number),
                 isAttr: error.type === 'AttributeNameError' ? true : false,
                 xpath: expect.any(String),
-              })
+              }),
             );
             expect(error).toHaveProperty(
               'element',
@@ -120,7 +120,7 @@ describe('Validator', () => {
                 name: expect.any(String),
                 documentation: expect.any(String),
                 xpath: expect.any(String),
-              })
+              }),
             );
 
             if (error.type === 'AttributeNameError') {
@@ -130,7 +130,7 @@ describe('Validator', () => {
                   parentElementName: expect.any(String),
                   parentElementXpath: expect.any(String),
                   parentElementIndex: expect.any(Number),
-                })
+                }),
               );
             }
           });
@@ -249,7 +249,7 @@ describe('Validator', () => {
       test('getValuesForTagAttributeAt', async () => {
         expect.assertions(2);
         const attributeValues = await Validator.getValuesForTagAttributeAt(
-          '/TEI/text/body/div/closer/signed/persName/persName/@cert'
+          '/TEI/text/body/div/closer/signed/persName/persName/@cert',
         );
         expect(attributeValues).toHaveLength(4);
         expect(attributeValues).toContainEqual({
@@ -265,7 +265,7 @@ describe('Validator', () => {
       test('Invalid xpath', async () => {
         expect.assertions(1);
         const attributeValues = await Validator.getValuesForTagAttributeAt(
-          '/TEI/text/body/divv/closer/signed/persName/persName/@cert'
+          '/TEI/text/body/divv/closer/signed/persName/persName/@cert',
         );
         expect(attributeValues).toBeUndefined();
       });
@@ -280,7 +280,7 @@ describe('Validator', () => {
           xpath: '/TEI/text[1]/body[1]/div[1]/P[1]',
           index: 0,
         },
-        { speculativeValidate: true }
+        { speculativeValidate: true },
       );
 
       expect(results).toHaveProperty('nodes', expect.any(Array));
@@ -307,7 +307,7 @@ describe('Validator', () => {
             type: 'span',
           },
         },
-        { speculativeValidate: true }
+        { speculativeValidate: true },
       );
 
       expect(results).toHaveProperty('nodes', expect.any(Array));
@@ -334,7 +334,7 @@ describe('Validator', () => {
             type: 'span',
           },
         },
-        { speculativeValidate: true }
+        { speculativeValidate: true },
       );
 
       expect(results).toHaveProperty('nodes', expect.any(Array));
@@ -359,7 +359,7 @@ describe('Validator', () => {
             xpath: 'TEI/text/body/div',
           },
         },
-        { speculativeValidate: true }
+        { speculativeValidate: true },
       );
 
       expect(results).toHaveProperty('nodes', expect.any(Array));
@@ -384,7 +384,7 @@ describe('Validator', () => {
             xpath: 'TEI/text/body/div',
           },
         },
-        { speculativeValidate: true }
+        { speculativeValidate: true },
       );
 
       expect(results).toHaveProperty('nodes', expect.any(Array));
@@ -408,7 +408,7 @@ describe('Validator', () => {
             xpath: 'TEI/text/body/div/p',
           },
         },
-        { speculativeValidate: true }
+        { speculativeValidate: true },
       );
 
       expect(results).toHaveProperty('nodes', expect.any(Array));
@@ -433,7 +433,7 @@ describe('Validator', () => {
             startContainerIndex: 0,
           },
         },
-        { speculativeValidate: true }
+        { speculativeValidate: true },
       );
 
       expect(results).toHaveProperty('nodes', expect.any(Array));
@@ -458,7 +458,7 @@ describe('Validator', () => {
             xpath: 'TEI/text/body/div/p',
           },
         },
-        { speculativeValidate: true }
+        { speculativeValidate: true },
       );
 
       expect(results).toHaveProperty('nodes', expect.any(Array));
@@ -529,7 +529,7 @@ describe('Validator', () => {
       expect.assertions(1);
       expect(async () => {
         await Validator.getValuesForTagAttributeAt(
-          '/TEI/text/body/div/closer/signed/persName/persName/@cert'
+          '/TEI/text/body/div/closer/signed/persName/persName/@cert',
         );
       }).rejects.toThrow();
     });

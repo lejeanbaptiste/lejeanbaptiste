@@ -47,7 +47,7 @@ export interface ValidationResponse {
   errors?: ValidationError[];
 }
 
-const ERROR_TYPES: Map<string, ErrorNames> = new Map();
+const ERROR_TYPES = new Map<string, ErrorNames>();
 ERROR_TYPES.set('AttributeNameError', 'AttributeNameError');
 ERROR_TYPES.set('AttributeValueError', 'AttributeValueError');
 ERROR_TYPES.set('ElementNameError', 'ElementNameError');
@@ -61,7 +61,7 @@ ERROR_TYPES.set('text not allowed here', 'ValidationError');
 
 export const validate = (
   vEditor: VirtualEditor,
-  callback?: (workingStateData: ValidationResponse) => void
+  callback?: (workingStateData: ValidationResponse) => void,
 ) => {
   if (logEnabledFor('DEBUG')) console.time('Validate Document');
 
@@ -79,7 +79,7 @@ export const validate = (
 
 const handleValidatorStateUpdate = (
   vEditor: VirtualEditor,
-  { partDone, state }: WorkingStateData
+  { partDone, state }: WorkingStateData,
 ): ValidationResponse => {
   if (!vEditor.validator) throw new Error('Validator is not set');
   //* state [1] INCOMPLETE: Doesn't happens here because validator runs without timeout
@@ -100,7 +100,7 @@ const handleValidatorStateUpdate = (
 
   //* State [3] INVALID: Process errors and Resolve
   const errors: ValidationError[] = vEditor.validator.errors.map((errorData) =>
-    parseErrors(vEditor, errorData)
+    parseErrors(vEditor, errorData),
   );
 
   vEditor.validator.events.removeAllListeners('state-update');
@@ -111,7 +111,7 @@ const handleValidatorStateUpdate = (
 
 const parseErrors = (
   vEditor: VirtualEditor,
-  { error, index, node }: ErrorData
+  { error, index, node }: ErrorData,
 ): ValidationError => {
   if (!vEditor.document || !vEditor.validator) {
     throw new Error('vEditor: Document or Validator not set');
@@ -173,7 +173,7 @@ const parseErrors = (
 
 export const parseValidatorEvents = (
   events: EventSet,
-  options: { only?: EventName[]; skip?: EventName[] }
+  options: { only?: EventName[]; skip?: EventName[] },
 ) => {
   let nodes: NodeDetail[] = [];
 

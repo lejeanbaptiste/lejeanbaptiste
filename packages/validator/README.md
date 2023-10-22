@@ -84,7 +84,7 @@ import type { Validator } from '@cwrc/leafwriter-validator';
 import * as Comlink from 'comlink';
 
 const worker = await new Worker('leafwriter-validator.worker.js');
-const validator:Comlink.Remote<Validator> = Comlink.wrap(worker);
+const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
 ```
 
 ### For development
@@ -98,13 +98,13 @@ The second method is more suitable for development. In this case, we should be i
 import type { Validator } from '@cwrc/leafwriter-validator';
 import * as Comlink from 'comlink';
 
-const worker = await new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url))
+const worker = await new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url));
 const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
 ```
 
 ## Initialize
 
-To use the validator, we first need to initialize it with the schema. Call the the method `initialize` passing the [InitializeParameters](#initializeparameters)  with the schema's`id` and `URL` from which LEAF-Writer Validator can download a Relax NG schema. We use the id to identify the schema and avoid reloading the same schema if the method is called with the same parameters. Optionally, we can pass a third property `shouldCache` (default: `true`) to cache the schema.
+To use the validator, we first need to initialize it with the schema. Call the the method `initialize` passing the [InitializeParameters](#initializeparameters) with the schema's`id` and `URL` from which LEAF-Writer Validator can download a Relax NG schema. We use the id to identify the schema and avoid reloading the same schema if the method is called with the same parameters. Optionally, we can pass a third property `shouldCache` (default: `true`) to cache the schema.
 
 This is an asynchronous function because LEAF-Writer Validator has to download and convert the schema to salve's internal format (more about how Salve converts schemas [here](https://github.com/mangalam-research/salve#converting-schemas)). Besides converting the schema, Salve can export a JSON version to be cached and a manifest with a hash that can be used to check if the file got updated and should be reprocessed. For this reason, we cache and store the schemas by default.
 
@@ -119,7 +119,7 @@ Example:
 ```ts
 const response = await validator.loadSchema({
   id: 'cwrcTeiLite',
-  url: 'https://cwrc.ca/schemas/cwrc_tei_lite.rng'
+  url: 'https://cwrc.ca/schemas/cwrc_tei_lite.rng',
 });
 
 console.log(response.success); // true
@@ -131,28 +131,28 @@ With the schema loaded, we can now send the document into LEAF-Writer Validator,
 
 **Parameters**
 
-| Name          | Type   | Description                                                                                                                                                                      |
-| ------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| XML document* | string | The XML document                                                                                                                                                                 |
-| callback      | func   | A function to receive event updates and the final results.<br/> Signature: `(workingStateData: WorkingStateData) => void`. See more about [WorkingStateData](#workingstatedata). |
+| Name           | Type   | Description                                                                                                                                                                      |
+| -------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| XML document\* | string | The XML document                                                                                                                                                                 |
+| callback       | func   | A function to receive event updates and the final results.<br/> Signature: `(workingStateData: WorkingStateData) => void`. See more about [WorkingStateData](#workingstatedata). |
 
 Example:
 
 ```ts
 const documentString = new XMLSerializer(XMLDocument);
 
-validator.validate(documentString,(event) => {
+validator.validate(documentString, (event) => {
   if (event.state === 1 || event.state === 2) {
-    console.log(event.partDone * 100) // 22% (assuming partDone === 0.2)
+    console.log(event.partDone * 100); // 22% (assuming partDone === 0.2)
   }
 
   if (event.state === 4) {
-    console.log(event.valid) // true
+    console.log(event.valid); // true
   }
-  
+
   if (event.state === 3) {
-    console.log(event.valid) // false
-    event.errors.forEach((error) => console.log(error)) //the list of errors
+    console.log(event.valid); // false
+    event.errors.forEach((error) => console.log(error)); //the list of errors
   }
 });
 ```
@@ -216,11 +216,11 @@ Get the element definition using xpath. Call `getTagAt` passing `tagName`, `pare
 
 **Parameters**
 
-| Name         | Type   | Description                                               |
-| ------------ | ------ | --------------------------------------------------------- |
-| tagName*     | string | The tag name                                              |
-| parentXpath* | string | The tag's parent Xpath                                    |
-| index        | number | The index position relative to its parent. Default is `0` |
+| Name          | Type   | Description                                               |
+| ------------- | ------ | --------------------------------------------------------- |
+| tagName\*     | string | The tag name                                              |
+| parentXpath\* | string | The tag's parent Xpath                                    |
+| index         | number | The index position relative to its parent. Default is `0` |
 
 Example:
 
@@ -246,10 +246,10 @@ Get a list of element for a tag using xpath. Call `getNodesForTagAt` passing `xp
 
 **Parameters**
 
-| Name   | Type   | Description                                               |
-| ------ | ------ | --------------------------------------------------------- |
-| xpath* | string | The tag's Xpath                                           |
-| index  | number | The index position relative to its parent. Default is `0` |
+| Name    | Type   | Description                                               |
+| ------- | ------ | --------------------------------------------------------- |
+| xpath\* | string | The tag's Xpath                                           |
+| index   | number | The index position relative to its parent. Default is `0` |
 
 Example:
 
@@ -278,10 +278,10 @@ Get a list of attributes for a tag using xpath. Call `getAttributesForTagAt` pas
 
 **Parameters**
 
-| Name   | Type   | Description                                               |
-| ------ | ------ | --------------------------------------------------------- |
-| xpath* | string | The tag's Xpath                                           |
-| index  | number | The index position relative to its parent. Default is `1` |
+| Name    | Type   | Description                                               |
+| ------- | ------ | --------------------------------------------------------- |
+| xpath\* | string | The tag's Xpath                                           |
+| index   | number | The index position relative to its parent. Default is `1` |
 
 Example:
 
@@ -310,15 +310,15 @@ Get attribute's details for a tag using xpath. Call `getTagAttributeAt` passing 
 
 **Parameters**
 
-| Name           | Type   | Description                                            |
-| -------------- | ------ | ------------------------------------------------------ |
-| attributeName* | string | The attribute's name                                   |
-| parentXpath*   | string | The attribute's parent Xpath (*i.e.*, the tag's xpath) |
+| Name            | Type   | Description                                            |
+| --------------- | ------ | ------------------------------------------------------ |
+| attributeName\* | string | The attribute's name                                   |
+| parentXpath\*   | string | The attribute's parent Xpath (_i.e._, the tag's xpath) |
 
 Example:
 
 ```ts
-const attribute = await validator.getTagAttributeAt('seg','TEI/text/body/div/p');
+const attribute = await validator.getTagAttributeAt('seg', 'TEI/text/body/div/p');
 
 console.log(attribute);
 /*
@@ -339,14 +339,16 @@ Get a list of possible values for tag's attribute using xpath. Call `getValuesFo
 
 **Parameters**
 
-| Name   | Type   | Description                                                                                               |
-| ------ | ------ | --------------------------------------------------------------------------------------------------------- |
-| xpath* | string | The attribute's Xpath. The last part of the Xpath must start with a `@` sign to define it as an attribute |
+| Name    | Type   | Description                                                                                               |
+| ------- | ------ | --------------------------------------------------------------------------------------------------------- |
+| xpath\* | string | The attribute's Xpath. The last part of the Xpath must start with a `@` sign to define it as an attribute |
 
 Example:
 
 ```ts
-const attributeValue = await validator.getValuesForTagAttributeAt('/TEI/text/body/div/closer/signed/persName/persName/@cert');
+const attributeValue = await validator.getValuesForTagAttributeAt(
+  '/TEI/text/body/div/closer/signed/persName/persName/@cert',
+);
 
 console.log(attributeValue);
 /*
@@ -372,10 +374,10 @@ The method returns the object [PossibleNodesAt](#possiblenodesat), which include
 
 **Parameters**
 
-| Name    | Type                                              | Description                                                                       |
-| ------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
-| target* | [Target](#target)                                 | The target xpath and index and optionally a [selection](#targetselection) objects |
-| options | [PossibleNodesAtOptions](#possiblenodesatoptions) | The options for this request,most notably `speculativeValidate`                   |
+| Name     | Type                                              | Description                                                                       |
+| -------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| target\* | [Target](#target)                                 | The target xpath and index and optionally a [selection](#targetselection) objects |
+| options  | [PossibleNodesAtOptions](#possiblenodesatoptions) | The options for this request,most notably `speculativeValidate`                   |
 
 Example:
 
@@ -485,9 +487,9 @@ The method returns the object [PossibleNodesAt](#possiblenodesat), which include
 
 **Parameter**
 
-| Name    | Type              | Description                                                                       |
-| ------- | ----------------- | --------------------------------------------------------------------------------- |
-| target* | [Target](#target) | The target xpath and index and optionally a [selection](#targetselection) objects |
+| Name     | Type              | Description                                                                       |
+| -------- | ----------------- | --------------------------------------------------------------------------------- |
+| target\* | [Target](#target) | The target xpath and index and optionally a [selection](#targetselection) objects |
 
 Example:
 
@@ -542,7 +544,7 @@ Use `reset` to dispose of the validator, schema and the document from the web wo
 Example:
 
 ```ts
-validator.reset()
+validator.reset();
 ```
 
 ## Clean Up
@@ -558,7 +560,7 @@ Example:
 ```ts
 import { clearCache } from '@cwrc/leafwriter-validator/db';
 
-await clearCache()
+await clearCache();
 ```
 
 ### Delete Db
@@ -571,7 +573,7 @@ Example:
 ```ts
 import { deleteDb } from '@cwrc/leafwriter-validator/db';
 
-await deleteDb()
+await deleteDb();
 ```
 
 ## Types
@@ -581,26 +583,26 @@ Run `npm run build-documentation` to get a nice page with all the types.
 
 ### InitializeParameters
 
-| Name           | Type    | Description                                            |
-| -------------- | ------- | ------------------------------------------------------ |
-| id*            | string  | Schema identifier                                      |
-| url*           | string  | The schema url.                                        |
-| shouldCache    | boolean | Whether or not to cache the validator to this speciffic schema. Default is true. |
+| Name        | Type    | Description                                                                      |
+| ----------- | ------- | -------------------------------------------------------------------------------- |
+| id\*        | string  | Schema identifier                                                                |
+| url\*       | string  | The schema url.                                                                  |
+| shouldCache | boolean | Whether or not to cache the validator to this speciffic schema. Default is true. |
 
 ### InitializeResponse
 
-| Name| Type| Description|
-| - | - | - |
-| success*| boolean | Indiates if the LEAF-Writer Validator was initiated with success. |
-| error | Error | An error object with a property `message` (string)  |
+| Name      | Type    | Description                                                       |
+| --------- | ------- | ----------------------------------------------------------------- |
+| success\* | boolean | Indiates if the LEAF-Writer Validator was initiated with success. |
+| error     | Error   | An error object with a property `message` (string)                |
 
 ### NodeDetail
 
 | Name          | Type                                                                                            | Description                                                                                                                                                              |
 | ------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| type*         | `attribute` \| `attributeValue` \| `tag` \| `text`                                              | A simplfication on the internal validator events. Note: `tag` includes all tag events `endTag` \| `enterStartTag` \| `leaveStartTag`.                                    |
-| name*         | string                                                                                          | That name of the node (tag name, attribute name, or atribute value).                                                                                                     |
-| eventType*    | `attributeName` \| `attributeValue` \| `endTag` \| `enterStartTag` \| `leaveStartTag` \| `text` | Intetnal validator events. Useful for debug.                                                                                                                             |
+| type\*        | `attribute` \| `attributeValue` \| `tag` \| `text`                                              | A simplfication on the internal validator events. Note: `tag` includes all tag events `endTag` \| `enterStartTag` \| `leaveStartTag`.                                    |
+| name\*        | string                                                                                          | That name of the node (tag name, attribute name, or atribute value).                                                                                                     |
+| eventType\*   | `attributeName` \| `attributeValue` \| `endTag` \| `enterStartTag` \| `leaveStartTag` \| `text` | Intetnal validator events. Useful for debug.                                                                                                                             |
 | documentation | string                                                                                          | Documentation (if available).                                                                                                                                            |
 | fullName      | string                                                                                          | Full name extracted from documentation (if available).                                                                                                                   |
 | ns            | string                                                                                          | The namespace.                                                                                                                                                           |
@@ -609,30 +611,30 @@ Run `npm run build-documentation` to get a nice page with all the types.
 
 ### PossibleNodesAt
 
-| Name    | Type                        | Description                 |
-| ------- | --------------------------- | --------------------------- |
-| target* | [target](#target)           | The target in the document. |
-| nodes*  | [NodeDetail](#nodedetail)[] | An array of possible tags.  |
+| Name     | Type                        | Description                 |
+| -------- | --------------------------- | --------------------------- |
+| target\* | [target](#target)           | The target in the document. |
+| nodes\*  | [NodeDetail](#nodedetail)[] | An array of possible tags.  |
 
 ### PossibleNodesAtOptions
 
 | Name                | Type    | Description                    |
-| ------------------- | ------- | ------------------------------ |
+| ------------------- | ------- | ------------------------------ | ----------------------------------------------------------- |
 | speculativeValidate | boolean | The tag Xpath in the document. | nabled/disabled speculatively validation. Default is `true` |
 
 ### Target
 
 | Name      | Type                                | Description                                                                      |
 | --------- | ----------------------------------- | -------------------------------------------------------------------------------- |
-| xpath*    | string                              | The tag Xpath in the document.                                                   |
-| index*    | number                              | The index position relative to its parent.                                       |
+| xpath\*   | string                              | The tag Xpath in the document.                                                   |
+| index\*   | number                              | The index position relative to its parent.                                       |
 | selection | [TargetSelection](#targetselection) | Give more specificity to the request. Omit to consider the caret exact position. |
 
 ### TargetSelection
 
 | Name                | Type                                                                          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| type*               | `'span'` \| `'inside'` \| `'around'` \| `'before'` \| `'after'` \| `'change'` | `span`: Use when to add a portion of the document inside a new tag. We must also provide `startContainerIndex`, `startOffset`, `endContainerIndex`, and `endOffset`. <br/><br/> `inside`: Similar to `span`. Use to add a new tag containing all the content of the target tag into the parent tag, as if we would have made a text selection with everything inside the target tag. We must also provide `startContainerIndex`, `endContainerIndex`, and `xpath`. <br/><br/> `around`: Similar to `inside`. Use to add a new tag containing all the content of the target tag (and including the target tag itself) into the parent tag. We must also provide `xpath`. <br/><br/> `before`: Add a new tag before a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `after`: Similar to `before`. Use to add a new tag after a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `change`: Similar to `inside`. Use to change the target tag, preserving the content inside. We must also provide `startContainerIndex`, `endContainerIndex`, `xpath`, and `skip`. |
+| type\*              | `'span'` \| `'inside'` \| `'around'` \| `'before'` \| `'after'` \| `'change'` | `span`: Use when to add a portion of the document inside a new tag. We must also provide `startContainerIndex`, `startOffset`, `endContainerIndex`, and `endOffset`. <br/><br/> `inside`: Similar to `span`. Use to add a new tag containing all the content of the target tag into the parent tag, as if we would have made a text selection with everything inside the target tag. We must also provide `startContainerIndex`, `endContainerIndex`, and `xpath`. <br/><br/> `around`: Similar to `inside`. Use to add a new tag containing all the content of the target tag (and including the target tag itself) into the parent tag. We must also provide `xpath`. <br/><br/> `before`: Add a new tag before a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `after`: Similar to `before`. Use to add a new tag after a target and into the parent container. We must also provide `containerIndex` and `xpath`. <br/><br/> `change`: Similar to `inside`. Use to change the target tag, preserving the content inside. We must also provide `startContainerIndex`, `endContainerIndex`, `xpath`, and `skip`. |
 | startContainerIndex | number                                                                        | The container index relative to its parent where the selection starts. Used with `span`, `inside`, and `change`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | startOffset         | string                                                                        | The index position relative to `startContainerIndex` where selection starts. This is where the selection caret starting point. Used with `span`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | endContainerIndex   | string                                                                        | The container index relative to its parent where the selection ends. Used with `span`, `inside`, and `change`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -643,18 +645,18 @@ Run `npm run build-documentation` to get a nice page with all the types.
 
 ### ValidationError
 
-| Name     | Type                                                                                                                | Description                                                                                                                                        |
-| -------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| type*    | `'AttributeNameError'` \| `'AttributeValueError'` \| `'ElementNameError'` \| `'ChoiceError'` \| `'ValidationError'` | The error type.                                                                                                                                    |
-| msg*     | string                                                                                                              | An explanatory message about the error, indicating for instance that an attribute doesn't belong to a tag or a tag cannot be a child of its parent |
-| target*  | [ValidationErrorTarget](#validationerrortarget)                                                                     | The invalid element.                                                                                                                               |
-| element* | [ValidationErrorElement]                                                                                            | The specific parent tag where the error was found.                                                                                                 |
+| Name      | Type                                                                                                                | Description                                                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type\*    | `'AttributeNameError'` \| `'AttributeValueError'` \| `'ElementNameError'` \| `'ChoiceError'` \| `'ValidationError'` | The error type.                                                                                                                                    |
+| msg\*     | string                                                                                                              | An explanatory message about the error, indicating for instance that an attribute doesn't belong to a tag or a tag cannot be a child of its parent |
+| target\*  | [ValidationErrorTarget](#validationerrortarget)                                                                     | The invalid element.                                                                                                                               |
+| element\* | [ValidationErrorElement]                                                                                            | The specific parent tag where the error was found.                                                                                                 |
 
 ### ValidationErrorElement
 
 | Name               | Type   | Description                                                                                                    |
 | ------------------ | ------ | -------------------------------------------------------------------------------------------------------------- |
-| xpath*             | string | The target Xpath in the document. It can be useful to locate and navigate to the exact error position quickly. |
+| xpath\*            | string | The target Xpath in the document. It can be useful to locate and navigate to the exact error position quickly. |
 | name               | string | The name of the element (tag or attribute), if defined in the schema.                                          |
 | documentation      | string | If available in the schema. It can help users understand the context where the error occurred.                 |
 | fullname           | string | The full name of the element (tag or attribute), if defined in the document schema.                            |
@@ -666,9 +668,9 @@ Run `npm run build-documentation` to get a nice page with all the types.
 
 | Name          | Type    | Description                                                                                            |
 | ------------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| xpath*        | string  | The target’s Xpath in the document. Useful to locate and navigate to the exact error position quickly. |
-| index*        | number  | The index position relative to its parent.                                                             |
-| isAttr*       | boolean | If the error is an attribute. Default is `false`.                                                      |
+| xpath\*       | string  | The target’s Xpath in the document. Useful to locate and navigate to the exact error position quickly. |
+| index\*       | number  | The index position relative to its parent.                                                             |
+| isAttr\*      | boolean | If the error is an attribute. Default is `false`.                                                      |
 | ns            | string  | The namespace.                                                                                         |
 | name          | string  | The name of the element (tag or attribute), if defined in the schema.                                  |
 | documentation | string  | If available in the schema. It can help users understand the context where the error occurred.         |
@@ -676,25 +678,25 @@ Run `npm run build-documentation` to get a nice page with all the types.
 
 ### WorkingStateData
 
-| Name      | Type                                                              | Description                                                           |
-| --------- | ----------------------------------------------------------------- | --------------------------------------------------------------------- |
-| state*    | `1` [INCOMPLETE] \| `2` [WORKING] \| `3` [INVALID] \| `4` [VALID] | The state of the validation process.                                  |
-| partDone* | number                                                            | The percentage of the document validated (0-1).                       |
-| valid     | boolean                                                           | Of the document is valid or not. Only available on state `3` and `4`. |
-| errors    | [ValidationError](#validationerror)[]                             | An array of errors. Only available on state `3`.                      |
+| Name       | Type                                                              | Description                                                           |
+| ---------- | ----------------------------------------------------------------- | --------------------------------------------------------------------- |
+| state\*    | `1` [INCOMPLETE] \| `2` [WORKING] \| `3` [INVALID] \| `4` [VALID] | The state of the validation process.                                  |
+| partDone\* | number                                                            | The percentage of the document validated (0-1).                       |
+| valid      | boolean                                                           | Of the document is valid or not. Only available on state `3` and `4`. |
+| errors     | [ValidationError](#validationerror)[]                             | An array of errors. Only available on state `3`.                      |
 
 ### CachedSchema
 
-*This is an internal type. It is only described here for completeness.*
+_This is an internal type. It is only described here for completeness._
 
-| Name           | Type    | Description                                            |
-| -------------- | ------- | ------------------------------------------------------ |
-| createdAt*     | Date    | The timestamp when the cache was created |
-| gramarJson*    | string  | Stringfied JSON repersentaiton of Salve processed schema |
-| hash*          | string  | The hash representation of the schema file. We use `sha-256`. |
-| id*            | string  | The schema ID |
-| url*           | string  | The schema URL |
-| warnings       | string[] | A list of warnings generated by Salve when the schema was processed |
+| Name         | Type     | Description                                                         |
+| ------------ | -------- | ------------------------------------------------------------------- |
+| createdAt\*  | Date     | The timestamp when the cache was created                            |
+| gramarJson\* | string   | Stringfied JSON repersentaiton of Salve processed schema            |
+| hash\*       | string   | The hash representation of the schema file. We use `sha-256`.       |
+| id\*         | string   | The schema ID                                                       |
+| url\*        | string   | The schema URL                                                      |
+| warnings     | string[] | A list of warnings generated by Salve when the schema was processed |
 
 ## Development
 
@@ -754,10 +756,10 @@ A browserified version of jsdom (v21.1.2) is already in place on the web workers
 If the file needs to be updated or regenerated, follow these steps:
 
 1. Install JSDOM and Browserify
-`npm install -D jsdom browserify`
+   `npm install -D jsdom browserify`
 
 2. Browserify jsdom
-`npm run browserify-jsdom` (check package.json for the details)
+   `npm run browserify-jsdom` (check package.json for the details)
 
 ### Unit tests
 

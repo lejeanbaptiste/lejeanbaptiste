@@ -118,7 +118,7 @@ class VirtualEditor {
     validate(this, callback);
   }
 
-  async getAttributesForTagAt(xpath: string, index: number = 1) {
+  async getAttributesForTagAt(xpath: string, index = 1) {
     if (!this.document || !this.validator) {
       throw new Error('vEditor: Document or Validator not set');
     }
@@ -144,7 +144,7 @@ class VirtualEditor {
     return atttibutes;
   }
 
-  async getNodesForTagAt(xpath: string, index: number = 0) {
+  async getNodesForTagAt(xpath: string, index = 0) {
     if (!this.document || !this.validator) {
       throw new Error('vEditor: Document or Validator not set');
     }
@@ -172,7 +172,7 @@ class VirtualEditor {
 
   async getPossibleNodesAt(
     target: Target,
-    options: PossibleNodesAtOptions = { speculativeValidate: true }
+    options: PossibleNodesAtOptions = { speculativeValidate: true },
   ) {
     if (!this.document || !this.validator) {
       throw new Error('vEditor: Document or Validator not set');
@@ -198,7 +198,7 @@ class VirtualEditor {
     if (speculativeValidate) {
       const speculativeNode = speculateAt(
         { document: this.document, validator: this.validator },
-        { container, index, possibleNodes, selection }
+        { container, index, possibleNodes, selection },
       );
       possibleNodes = speculativeNode;
     }
@@ -212,7 +212,7 @@ class VirtualEditor {
     return result;
   }
 
-  async getTagAt(tagName: string, parentXpath: string, index: number = 0) {
+  async getTagAt(tagName: string, parentXpath: string, index = 0) {
     if (!this.document || !this.validator) {
       throw new Error('vEditor: Document or Validator not set');
     }

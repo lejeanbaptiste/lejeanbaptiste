@@ -51,7 +51,7 @@ export const verifyHash = async (url: string, cachedSchema: CachedSchema) => {
   //* Hash content and transform
   const hashBuffer = await crypto.subtle.digest(
     HASH_ALGORITHM,
-    new TextEncoder().encode(resourceText)
+    new TextEncoder().encode(resourceText),
   );
 
   //* Convert buffer to byte array and then to hex string.
