@@ -28,6 +28,9 @@
 		"dev:webpack-worker-dev": "env-cmd -e development-worker-dev webpack",
 		"dev:server": "env-cmd -e development nodemon",
 		"dev:server-worker-dev": "env-cmd -e development-worker-dev nodemon",
+		"format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format-check": "prettier . --check",
+    "lint": "eslint .",
 		"build": "env-cmd -e production webpack"
 	},
 	"dependencies": {
@@ -108,6 +111,8 @@
 		"css-loader": "^6.8.1",
 		"css-minimizer-webpack-plugin": "^5.0.1",
 		"esbuild-loader": "^4.0.2",
+		"eslint": "^8.52.0",
+		"eslint-config-custom": "*",
 		"history": "^5.3.0",
 		"html-webpack-plugin": "^5.5.3",
 		"less": "^4.2.0",
@@ -115,7 +120,6 @@
 		"mini-css-extract-plugin": "^2.7.6",
 		"monaco-editor-webpack-plugin": "^7.1.0",
 		"nodemon": "^3.0.1",
-		"prettier": "^3.0.1",
 		"process": "^0.11.10",
 		"svg-inline-loader": "^0.8.2",
 		"ts-loader": "^9.4.4",
