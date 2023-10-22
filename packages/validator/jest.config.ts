@@ -145,7 +145,7 @@ export default {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: 'jsdom',
+  testEnvironment: './test/setup/FixJSDOMEnvironment.ts', // * workaround to add 'structuredClone' to 'jest-environment-jsdom v.29.6.2'. When it gets fixed, we should return to use 'jsdom'. 
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
