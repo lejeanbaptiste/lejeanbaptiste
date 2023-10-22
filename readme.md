@@ -94,17 +94,15 @@ Options that can be set on the configuration object:
 
   ```js
   config.modules = {
-    west: [
-      {id: 'structure', title: 'Markup'},
-      {id: 'entities'}
-    ],
-    east: [
-      {id: 'selection'}
-    ],
+    west: [{ id: 'structure', title: 'Markup' }, { id: 'entities' }],
+    east: [{ id: 'selection' }],
     south: [
-      {id: 'validation', config: {'validationUrl': 'https://validator.services.cwrc.ca/validator/validate.html'}}
-    ]
-  }
+      {
+        id: 'validation',
+        config: { validationUrl: 'https://validator.services.cwrc.ca/validator/validate.html' },
+      },
+    ],
+  };
   ```
 
 - `config.annotator`: Boolean. If true, the user may only add annotations to the document.
@@ -283,4 +281,3 @@ git clone https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer
 cd leaf-writer
 docker compose up
 ```
-
