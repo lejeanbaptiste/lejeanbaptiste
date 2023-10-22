@@ -967,8 +967,8 @@ export const saveDocument = async ({ state, actions }: Context) => {
         onClose: async (action) => {
           if (action === 'cancel') {
             actions.cloud.setIsSaving(false);
-            return
-          } 
+            return;
+          }
 
           await actions.cloud._createOrUpdateFile(fileLatestHash);
           actions.cloud.setIsSaving(false);

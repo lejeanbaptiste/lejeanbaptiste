@@ -32,7 +32,7 @@
     - bump: [8163db4085d81cdd62e9e43801ec47fb9e633033]
       - @jest/globals@29.6.2
       - @types/jest@29.5.3
-      - @types/lodash@4.14.196 
+      - @types/lodash@4.14.196
       - @types/testing-library__jest-dom@5.14.9
       - fake-indexeddb@4.0.2
       - jest-environment-jsdom@29.6.2
