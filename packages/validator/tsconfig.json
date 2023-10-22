@@ -13,10 +13,10 @@
   },
   "compilerOptions": {
     "baseUrl": ".",
+    "outDir": "lib",
     "paths": {
       "@src/*": ["src/*"]
     },
-    "outDir": "lib",
     "types": ["node", "jest", "mocha"]
   }
 }
