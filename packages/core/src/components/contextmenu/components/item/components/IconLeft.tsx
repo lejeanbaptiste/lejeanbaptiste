@@ -1,5 +1,5 @@
 import { Icon, useTheme } from '@mui/material';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ItemProps } from '../';
 import { isEntityType } from '../../../../../types';
 import { useContextmenu } from '../../../hooks';

@@ -1,5 +1,4 @@
 import { Button, DialogActions } from '@mui/material';
-import React from 'react';
 import { useActions, useAppState } from '../../overmind';
 import type { EntityLink } from './types';
 

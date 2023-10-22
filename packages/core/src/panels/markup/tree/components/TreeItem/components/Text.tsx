@@ -2,7 +2,7 @@ import TagRoundedIcon from '@mui/icons-material/TagRounded';
 import { ListItemButton, useTheme } from '@mui/material';
 import chroma from 'chroma-js';
 import classNames from 'classnames';
-import React, { HTMLAttributes, MouseEvent, forwardRef, useMemo, useState } from 'react';
+import { HTMLAttributes, MouseEvent, forwardRef, useMemo, useState } from 'react';
 import { useItem } from '../useItem';
 import { Icon, ItemProps, Label } from './';
 

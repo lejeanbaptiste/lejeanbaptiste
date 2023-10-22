@@ -1,7 +1,7 @@
 import { useTheme } from '@mui/material';
 // import * as monaco from 'monaco-editor';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 // * Intellisense for XML: https://mono.software/2017/04/11/custom-intellisense-with-monaco-editor/
 

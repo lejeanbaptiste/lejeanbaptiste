@@ -1,4 +1,3 @@
-import React from 'react';
 import { MarkupPanel, TocPanel } from '../panels';
 import { PanelId, PanelProp } from '../types';
 import { Entities } from './Entities';

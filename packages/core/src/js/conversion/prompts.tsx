@@ -1,5 +1,5 @@
 import { Typography } from '@mui/material';
-import React, { FC } from 'react';
+import { FC } from 'react';
 import { Trans } from 'react-i18next';
 import { TextEmphasis } from '../../components';
 import { SimpleDialogMessageProps } from '../../dialogs';

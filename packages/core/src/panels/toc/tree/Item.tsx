@@ -1,5 +1,5 @@
 import { Box, ListItem, ListItemButton, PaletteMode, Typography, useTheme } from '@mui/material';
-import React, { useMemo, type HTMLAttributes, type MouseEvent } from 'react';
+import { useMemo, type HTMLAttributes, type MouseEvent } from 'react';
 import { ExpandButton } from './ExpandButton';
 
 interface Props extends Omit<HTMLAttributes<HTMLLIElement>, 'id'> {

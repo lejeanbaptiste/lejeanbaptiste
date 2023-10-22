@@ -1,5 +1,4 @@
 import { Box, Link, Paper, Stack } from '@mui/material';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import pck from '../../../package.json';
 import { useAppState } from '../../overmind';

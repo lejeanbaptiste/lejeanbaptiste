@@ -1,6 +1,5 @@
 import { Box, Tooltip, Typography } from '@mui/material';
 import { useAtomValue } from 'jotai';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { tagFullNameAtom, tagNameAtom, xpathAtom } from '../store';
 

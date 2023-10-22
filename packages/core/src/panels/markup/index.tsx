@@ -1,6 +1,5 @@
 import { Paper } from '@mui/material';
 import { Provider } from 'jotai';
-import React from 'react';
 import { Tree } from './tree';
 
 export const MarkupPanel = () => {

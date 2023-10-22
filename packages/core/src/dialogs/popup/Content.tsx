@@ -1,6 +1,5 @@
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Icon, IconButton, Link, Stack, Typography } from '@mui/material';
-import React from 'react';
 import { getIcon } from '../../icons';
 import { EntityType } from '../../types';
 

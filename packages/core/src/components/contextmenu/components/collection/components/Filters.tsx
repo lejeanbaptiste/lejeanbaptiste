@@ -2,7 +2,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { alpha, Box, Icon, InputBase, Stack, ToggleButton, Tooltip, useTheme } from '@mui/material';
 import { useAtom } from 'jotai';
 import { debounce } from 'lodash';
-import React, { useMemo, useState, type ChangeEvent } from 'react';
+import { useMemo, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useContextmenu } from '../../../hooks';
 import { showOnlyValidAtom } from '../../../store';

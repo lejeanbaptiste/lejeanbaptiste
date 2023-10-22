@@ -60,7 +60,6 @@ import {
   ShuffleVariant,
   TagPlus,
 } from 'mdi-material-ui';
-import React from 'react';
 import type { IconBaseProps, IconType } from 'react-icons';
 import { FaBoxOpen, FaUserAlt, FaUsers } from 'react-icons/fa';
 import { ImBook } from 'react-icons/im';

@@ -1,7 +1,7 @@
 import HorizontalRuleRoundedIcon from '@mui/icons-material/HorizontalRuleRounded';
 import { Box, Icon as MuiIcon, SvgIconTypeMap, useTheme, type PaletteMode } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 
 type IconProps = {
   color?: string;

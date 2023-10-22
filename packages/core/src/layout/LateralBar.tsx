@@ -1,5 +1,5 @@
 import { Icon, Paper, Stack, ToggleButton, Tooltip } from '@mui/material';
-import React, { MouseEvent } from 'react';
+import { MouseEvent } from 'react';
 import { ToggleButtonGroup } from '../components';
 import { getIcon, IconLeafWriter } from '../icons';
 import { useActions, useAppState } from '../overmind';

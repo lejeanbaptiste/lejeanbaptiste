@@ -1,5 +1,5 @@
 import { Box, Paper } from '@mui/material';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import EntitiesList from '../js/layout/panels/entitiesList';
 
 const containerID = 'entities-panel';

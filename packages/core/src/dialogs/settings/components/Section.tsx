@@ -1,5 +1,4 @@
 import { Box, List, Stack, Typography } from '@mui/material';
-import React from 'react';
 
 export interface SectionProps {
   children?: React.ReactNode;

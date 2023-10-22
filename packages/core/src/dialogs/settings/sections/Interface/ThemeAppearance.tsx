@@ -3,7 +3,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import { Box, ListItem, Stack, ToggleButton, Typography } from '@mui/material';
-import React, { type MouseEvent } from 'react';
+import { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyledToolTip, ToggleButtonGroup } from '../../../../components';
 import { useActions, useAppState } from '../../../../overmind';

@@ -1,6 +1,5 @@
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, Tooltip } from '@mui/material';
-import React from 'react';
 import { useAppState } from '../../overmind';
 
 export const ValdidationErrors = () => {

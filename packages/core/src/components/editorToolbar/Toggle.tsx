@@ -1,5 +1,4 @@
 import { Icon, ToggleButton } from '@mui/material';
-import React from 'react';
 import { StyledToolTip } from '../../components';
 import { getIcon } from '../../icons';
 

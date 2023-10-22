@@ -1,6 +1,5 @@
 import { DialogProps as MuiDialogProps } from '@mui/material/Dialog';
 import { Options as ModalProviderOptions } from 'mui-modal-provider';
-import React from 'react';
 import type { Schema, SchemaMappingType } from '../types';
 export declare type ModalComponentProps<P> = Omit<P, 'open'>;
 

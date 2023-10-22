@@ -1,6 +1,6 @@
 import TranslateIcon from '@mui/icons-material/Translate';
 import { Box, ListItem, Stack, ToggleButton, Typography } from '@mui/material';
-import React, { type MouseEvent } from 'react';
+import { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToggleButtonGroup } from '../../../../components';
 import { supportedLanguages } from '../../../../config';

@@ -1,7 +1,6 @@
 import BlockIcon from '@mui/icons-material/Block';
 import { Stack } from '@mui/material';
 import { motion, type Variants } from 'framer-motion';
-import React from 'react';
 
 const itemVariants: Variants = {
   hidden: { height: 0 },

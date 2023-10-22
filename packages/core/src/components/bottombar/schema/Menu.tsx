@@ -8,7 +8,6 @@ import {
   Menu as MenuMui,
 } from '@mui/material';
 import { SnackbarKey } from 'notistack';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SeverityType } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';

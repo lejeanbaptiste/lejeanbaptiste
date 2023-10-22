@@ -1,6 +1,6 @@
 import { Menu } from '@mui/material';
 import { Provider, useSetAtom } from 'jotai';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useActions, useAppState } from '../../overmind';
 import { Collection, Header, type ItemProps } from './components';
 import { useContextmenu } from './hooks';

@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useAtom, useAtomValue } from 'jotai';
-import React, { MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { useActions } from '../../../overmind';

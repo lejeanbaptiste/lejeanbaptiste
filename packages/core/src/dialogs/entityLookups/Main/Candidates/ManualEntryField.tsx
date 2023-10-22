@@ -10,7 +10,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import React, { useEffect, type ChangeEvent } from 'react';
+import { useEffect, type ChangeEvent } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useActions, useAppState } from '../../../../overmind';
 

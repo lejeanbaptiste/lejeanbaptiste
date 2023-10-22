@@ -1,5 +1,4 @@
 import { Box } from '@mui/material';
-import React from 'react';
 import { PanelResizeHandle } from 'react-resizable-panels';
 
 export const ResizeHandle = () => (

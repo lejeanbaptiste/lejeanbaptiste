@@ -1,7 +1,7 @@
 import FormatSizeIcon from '@mui/icons-material/FormatSize';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Box, Button, ListItem, Menu, MenuItem, Typography } from '@mui/material';
-import React, { MouseEvent, useState } from 'react';
+import { MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../overmind';
 

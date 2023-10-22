@@ -1,6 +1,5 @@
 import CloseIcon from '@mui/icons-material/Close';
 import { Icon, IconButton, Stack, Typography } from '@mui/material';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { getIcon } from '../../icons';
 
