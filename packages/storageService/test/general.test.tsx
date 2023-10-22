@@ -18,20 +18,20 @@ describe('General', () => {
 
   describe('ui', () => {
     describe('language', () => {
-      test('change language', () => {
+      test('change language', async () => {
         expect.assertions(3);
         expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
-        updateTranslation('fr-CA');
+        await updateTranslation('fr-CA');
         expect(i18next.language).toEqual(supportedLanguages['fr-CA'].code);
-        updateTranslation('en-CA');
+        await updateTranslation('en-CA');
         expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
       });
 
-      test('language not supported', () => {
+      test('language not supported', async () => {
         expect.assertions(2);
         expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
         //@ts-ignore
-        updateTranslation('pt-BR');
+        await updateTranslation('pt-BR');
         expect(i18next.language).not.toEqual('pt-BR');
       });
     });

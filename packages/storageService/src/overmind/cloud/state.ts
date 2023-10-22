@@ -14,7 +14,7 @@ import type {
 
 const { t } = i18next;
 
-type State = {
+interface State {
   collectionSource: CollectionSource;
   collectionType?: CollectionType;
   commitMessage: string;
@@ -41,7 +41,7 @@ type State = {
     tree?: Content[];
   };
   user?: Owner;
-};
+}
 
 export const state: State = {
   collectionSource: 'owner',

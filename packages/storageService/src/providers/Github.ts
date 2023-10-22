@@ -58,7 +58,7 @@ export default class Github implements Provider {
   }
 
   private parseHeaderLink(s: string) {
-    const output: { [x: string]: string } = {};
+    const output: Record<string, string> = {};
     const regex = /<([^>]+)>; rel="([^"]+)"/g;
 
     let m;

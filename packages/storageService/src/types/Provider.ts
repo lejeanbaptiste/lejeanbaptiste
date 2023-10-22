@@ -1,10 +1,10 @@
 import type { CollectionSource, Organization, PublicRepository, Repository, UserType } from '.';
 import type { Error } from '../types';
 
-export type ProviderAuth = {
+export interface ProviderAuth {
   access_token: string;
   name: string;
-};
+}
 
 export interface UserDetailParams {
   type?: string;
@@ -203,7 +203,7 @@ export default interface Provider {
   } | null>;
   getRepo: (params: RepoParams) => Promise<Repository>;
   getRepoBranches(params: RepoBranchesParams): Promise<any>;
-  getRepoContent(params: RepoContentParams): Promise<any | null>;
+  getRepoContent(params: RepoContentParams): Promise<any>;
   getRepoContentRecursively: (params: RepoContentParams) => Promise<any[] | null>;
   getReposForAuthenticatedUser(params: ReposParams): Promise<{
     collection: Repository[];
@@ -217,7 +217,7 @@ export default interface Provider {
     collection: Repository[];
     nextPage: string | null;
   } | null>;
-  saveDocument: (params: SaveDocument) => Promise<null | ProviderError | { [key: string]: any }>;
+  saveDocument: (params: SaveDocument) => Promise<null | ProviderError | Record<string, any>>;
   searchBlobs: (params: SearchBlobsParams) => Promise<any[]>;
   searchUsers: (query: string) => Promise<PublicRepository[]>;
 }

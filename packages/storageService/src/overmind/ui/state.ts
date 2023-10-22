@@ -1,8 +1,8 @@
 import type { DialogBarProps } from '../../dialogs';
 
-type State = {
+interface State {
   dialogBar: DialogBarProps[];
-};
+}
 
 export const state: State = {
   dialogBar: [],

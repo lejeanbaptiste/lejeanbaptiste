@@ -72,7 +72,7 @@ export default class Gitlab implements Provider {
   }
 
   private parseHeaderLink(s: string) {
-    const output: { [x: string]: string } = {};
+    const output: Record<string, string> = {};
     const regex = /<([^>]+)>; rel="([^"]+)"/g;
 
     let m;
@@ -239,13 +239,13 @@ export default class Gitlab implements Provider {
     if (checkForkStatus) {
       //check status
       const validateForkCreation = (status: ImportStatus) => status === 'finished';
-      await (<Promise<ImportStatus>>this.pool({
+      await (this.pool({
         fn: this.getImportStatus,
         params: response.data.id,
         validate: validateForkCreation,
       }).catch(() => {
         throw new Error('Fork is taking too long. Try again later.');
-      }));
+      }) as Promise<ImportStatus>);
     }
 
     const repo: T.Repository = response.data;
