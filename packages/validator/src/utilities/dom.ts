@@ -48,12 +48,12 @@ export const evaluateXPath = (xpath: string, docXML: Document) => {
   return result;
 };
 
-export const getXPathForElement = (el: any, xml: Document) => {
+export const getXPathForElement = (el: Node | null, xml: Document) => {
   let xpath = '';
   let pos: number;
-  let tempitem: any;
+  let tempitem: Node | null;
 
-  while (el !== xml.documentElement && el.nodeName !== '#document') {
+  while (el && el !== xml.documentElement && el.nodeName !== '#document') {
     pos = 0;
     tempitem = el;
     while (tempitem) {
@@ -66,7 +66,11 @@ export const getXPathForElement = (el: any, xml: Document) => {
 
     xpath = `${el.nodeName}[${pos}]/${xpath}`;
 
-    el = el.nodeType === 2 ? el.ownerElement : el.parentNode;
+    if (el.nodeType === 2) {
+      el = (el as Attr).ownerElement;
+    } else {
+      el = el.parentNode
+    }
   }
 
   xpath = `/${xml.documentElement.nodeName}/${xpath}`;
