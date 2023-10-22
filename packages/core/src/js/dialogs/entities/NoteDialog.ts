@@ -82,7 +82,7 @@ class NoteDialog implements SchemaDialog {
         const typeChoices = this.typeAtt?.choices ? this.typeAtt.choices : this.setTypeOptions();
         const choiceOptions = this.generateTypeOptions(typeChoices);
         optionsTypeElement.html(choiceOptions);
-      }
+      },
     );
 
     this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any, dialog: DialogForm) => {
@@ -135,7 +135,7 @@ class NoteDialog implements SchemaDialog {
       if (Array.isArray(val)) val = val[0];
       if (typeof val === 'number') val = val.toString();
       if (!val) return;
-      
+
       this.dialog.$el.find(`#${this.id}_other`).attr('value', val);
     });
 
@@ -228,7 +228,6 @@ class NoteDialog implements SchemaDialog {
     // const mappingID = this.writer.schemaManager.mapper.currentMappingsId;
     // if (mappingID === 'orlando' || mappingID === 'cwrcEntry') return 'required';
     // return this.typeAtt?.required ? 'required' : '';
-
   };
 
   private noteTypeField(id: string) {

@@ -549,7 +549,7 @@ class Tagger {
       if (isElement(child)) {
         if (tagsIdsToAdd.includes(child.id)) {
           newContent += child.innerHTML;
-          tagsIdsToAdd = tagsIdsToAdd.filter((tagId) => tagId !== (child ).id);
+          tagsIdsToAdd = tagsIdsToAdd.filter((tagId) => tagId !== child.id);
         }
       } else {
         newContent += child.textContent;
@@ -749,7 +749,7 @@ class Tagger {
     const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type as EntityType);
     const uriAttribute = this.writer.schemaManager.mapper.getAttributeForProperty(
       type as EntityType,
-      'uri'
+      'uri',
     );
     const removeEntity =
       isNamedEntity && (uriAttribute && info.attributes[uriAttribute]) === undefined;
@@ -896,7 +896,7 @@ class Tagger {
           id,
           _attributes: jsonAttrsString,
         }),
-        noteContent
+        noteContent,
       );
 
       if (!tag) return;
@@ -919,7 +919,7 @@ class Tagger {
         const nodes = this.getNodesInBetween(
           range.startContainer,
           range.endContainer,
-          NodeFilter.SHOW_TEXT
+          NodeFilter.SHOW_TEXT,
         );
 
         const startRange = range.cloneRange();
@@ -937,7 +937,7 @@ class Tagger {
             name: id,
             _attributes: jsonAttrsString,
           },
-          ''
+          '',
         );
         if (start) startRange.surroundContents(start);
 
@@ -958,7 +958,7 @@ class Tagger {
             class: `entity ${type} end`,
             name: id,
           },
-          ''
+          '',
         );
         if (end) endRange.surroundContents(end);
       } else {
@@ -973,7 +973,7 @@ class Tagger {
             id,
             _attributes: jsonAttrsString,
           }),
-          ''
+          '',
         );
         if (start) range.surroundContents(start);
       }
@@ -1421,7 +1421,7 @@ class Tagger {
   private showInvalidDeleteConfirm(
     element: Element,
     isContents: boolean,
-    callback: (confirmed: boolean) => void
+    callback: (confirmed: boolean) => void,
   ) {
     const showConfirmKey = 'confirm-delete-tag-invalidating';
     const contentsMsg = isContents ? 'contents of the' : '';
@@ -1660,7 +1660,7 @@ class Tagger {
             ? NodeFilter.FILTER_ACCEPT
             : NodeFilter.FILTER_SKIP;
         },
-      }
+      },
     );
     walker.currentNode = currentNode;
 

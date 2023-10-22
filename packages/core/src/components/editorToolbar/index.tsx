@@ -42,7 +42,7 @@ export const EditorToolbar = () => {
 
   const isSupported = useCallback(
     (name: EntityType) => window.writer.schemaManager.mapper.getEntitiesMapping().has(name),
-    [schemaId]
+    [schemaId],
   );
 
   const items: (MenuItem | Item)[] = [

@@ -218,7 +218,7 @@ class Translation implements LWDialogProps {
     const $resp = $(`#${this.id}_resp`);
     const hasResp = this.writer.schemaManager.isAttributeValidForTag(
       this.respAttribute,
-      this.tagName
+      this.tagName,
     );
     hasResp ? $resp.parent().show() : $resp.parent().hide();
 

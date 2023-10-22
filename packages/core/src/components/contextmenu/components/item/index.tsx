@@ -55,7 +55,7 @@ export const Item = forwardRef<any, ItemProps>(
       searchable = true,
       type,
     },
-    ref
+    ref,
   ) => {
     const { ui } = useActions();
     const { entity, palette } = useTheme();
@@ -148,5 +148,5 @@ export const Item = forwardRef<any, ItemProps>(
         )}
       </MenuItem>
     );
-  }
+  },
 );

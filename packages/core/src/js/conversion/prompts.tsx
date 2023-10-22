@@ -257,10 +257,10 @@ export const openEditorModeDialog = async (writer: Writer) => {
           <Typography>
             {`${t(
               'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
-              { ns: 'leafwriter' }
+              { ns: 'leafwriter' },
             )} ${t(
               'Annotations that overlap will be created in RDF only with no equivalent XML tags',
-              { ns: 'leafwriter' }
+              { ns: 'leafwriter' },
             )}.`}
           </Typography>
           <Typography paragraph mt={3} variant="caption">
@@ -278,7 +278,7 @@ export const openEditorModeDialog = async (writer: Writer) => {
           <Typography>
             {`${t(
               'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
-              { ns: 'leafwriter' }
+              { ns: 'leafwriter' },
             )}`}
           </Typography>
           <Typography paragraph mt={3} variant="caption">

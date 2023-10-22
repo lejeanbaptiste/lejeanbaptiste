@@ -32,7 +32,7 @@ export const find = async ({ query, type }: AuthorityLookupParams) => {
 
 const callLGPN = async (query: string, type: NamedEntityType) => {
   const encodedQuery = encodeURIComponent(query);
-  
+
   let urlQuery = `lgpn_search.cgi?`;
   urlQuery += `name=${encodedQuery}`;
   urlQuery += `;style=${FORMAT}`;
@@ -77,7 +77,7 @@ const callLGPN = async (query: string, type: NamedEntityType) => {
         query,
         type,
       };
-    }
+    },
   );
 
   return results;

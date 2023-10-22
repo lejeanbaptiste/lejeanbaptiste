@@ -7,7 +7,10 @@ export * from './SelectionBadge';
 export * from './Tag';
 export * from './Text';
 
-interface Item { id: string; contentOnly?: boolean }
+interface Item {
+  id: string;
+  contentOnly?: boolean;
+}
 
 export interface ItemProps {
   canAddToMultiselection?: (id: string) => boolean;

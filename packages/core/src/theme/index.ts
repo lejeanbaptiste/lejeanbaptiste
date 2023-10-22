@@ -117,7 +117,7 @@ const theme = (darkMode: boolean) =>
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: darkMode? chroma.rgb(191, 213, 213).hex() : chroma.rgb(28, 64, 69).hex(),
+        main: darkMode ? chroma.rgb(191, 213, 213).hex() : chroma.rgb(28, 64, 69).hex(),
       },
       secondary: {
         main: chroma.rgb(255, 114, 0).hex(),

@@ -52,7 +52,7 @@ const useEditorReaction = () => {
               <Typography paragraph>
                 <TextEmphasis color="warning">Markup only</TextEmphasis>{' '}
                 {t(
-                  'The existing RDF annotations will be discarded and no RDF will be created when tagging entities'
+                  'The existing RDF annotations will be discarded and no RDF will be created when tagging entities',
                 )}
               </Typography>
             ),
@@ -70,7 +70,7 @@ const useEditorReaction = () => {
               <Typography paragraph>
                 <TextEmphasis color="info">Markup and Linking</TextEmphasis>{' '}
                 {t(
-                  'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap'
+                  'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
                 )}
               </Typography>
             ),
@@ -104,7 +104,7 @@ const useEditorReaction = () => {
               <Typography paragraph>
                 <TextEmphasis color="warning">Markup and Linking with overlap</TextEmphasis>{' '}
                 {t(
-                  'You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue'
+                  'You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue',
                 )}
               </Typography>
             ),
@@ -139,7 +139,7 @@ const useEditorReaction = () => {
     },
 
     schemaShouldChange: async (
-      schemaId: string
+      schemaId: string,
     ): Promise<[boolean, null | MessageResponseProps]> => {
       const { schemaManager, utilities } = window.writer;
 
@@ -153,7 +153,7 @@ const useEditorReaction = () => {
           {
             severity: 'error',
             text: t(
-              'The root element of the schema could not be determined and so it will not be used'
+              'The root element of the schema could not be determined and so it will not be used',
             ),
           },
         ];
@@ -168,7 +168,7 @@ const useEditorReaction = () => {
               <>
                 <Typography paragraph>
                   {t(
-                    `The current documents root element does not match the root elements required by the selected schema`
+                    `The current documents root element does not match the root elements required by the selected schema`,
                   )}
                   {t('Applying this schema change will cause a document loading error')}
                 </Typography>

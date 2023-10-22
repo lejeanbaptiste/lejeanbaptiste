@@ -92,14 +92,14 @@ export const resetPreferences = ({ effects }: Context) => {
 
 export const openEntityLookupsDialog = (
   { state }: Context,
-  props: Omit<EntityLookupDialogProps, 'open'>
+  props: Omit<EntityLookupDialogProps, 'open'>,
 ) => {
   state.ui.entityLookupDialogProps = { ...props, open: true };
 };
 
 export const closeEntityLookupsDialog = (
   { state: { ui } }: Context,
-  link?: EntityLink | Pick<EntityLink, 'query' | 'type'>
+  link?: EntityLink | Pick<EntityLink, 'query' | 'type'>,
 ) => {
   const dialog = ui.entityLookupDialogProps;
   if (link && dialog.onClose) dialog.onClose(link);
@@ -150,7 +150,7 @@ export const removeDialog = ({ state }: Context, id: string) => {
 
 export const setDialogDisplayId = (
   { state }: Context,
-  { id, displayId }: { id: string; displayId: string }
+  { id, displayId }: { id: string; displayId: string },
 ) => {
   state.ui.dialogBar = [
     ...state.ui.dialogBar.map((dialogBar) => {
@@ -174,13 +174,13 @@ export const closeNotificationSnackbar = ({ state }: Context, key?: string | num
   state.ui.notifications = state.ui.notifications.map((notification) =>
     dismissAll || notification.key === key
       ? { ...notification, dismissed: true }
-      : { ...notification }
+      : { ...notification },
   );
 };
 
 export const removeNotificationSnackbar = ({ state }: Context, key: string | number) => {
   state.ui.notifications = state.ui.notifications.filter(
-    (notification) => notification.key !== key
+    (notification) => notification.key !== key,
   );
 };
 
@@ -227,7 +227,7 @@ export const showTextNodes = ({ state, actions }: Context, value?: boolean) => {
 
 export const changePanel = (
   { state }: Context,
-  { side, panelId }: { side: Uncapitalize<Side>; panelId: PanelId }
+  { side, panelId }: { side: Uncapitalize<Side>; panelId: PanelId },
 ) => {
   const sidePanel = state.ui.layout[side];
   if (!sidePanel) return;

@@ -25,7 +25,7 @@ const axiosInstance = axios.create({ baseURL, timeout });
 
 export const find = async (
   { query }: AuthorityLookupParams,
-  { username }: AuthorityLookupSettings = {}
+  { username }: AuthorityLookupSettings = {},
 ) => {
   if (!username || username === '') {
     // throw new Error(
@@ -67,7 +67,7 @@ export const find = async (
       const uri = `https://geonames.org/${geonameId}`;
 
       return { description, id: uri, name, repository: 'geonames', type: 'place', query, uri };
-    }
+    },
   );
 
   return results;

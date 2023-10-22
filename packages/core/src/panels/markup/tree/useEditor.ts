@@ -168,7 +168,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
     for (let i = firstIndex; i <= lastIndex; i++) {
       const item = flattenedTree.find(
         ({ depth, index, parentId }) =>
-          depth === startItem.depth && parentId === endItem.parentId && index === i
+          depth === startItem.depth && parentId === endItem.parentId && index === i,
       );
       if (item) expandedSelection.push(item.id);
     }

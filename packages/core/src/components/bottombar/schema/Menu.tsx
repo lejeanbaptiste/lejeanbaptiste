@@ -47,7 +47,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const handleOpenConfirmationDialog = (
     schemaId: string,
     text: React.ReactNode,
-    severity?: SeverityType
+    severity?: SeverityType,
   ) => {
     openDialog({
       type: 'simple',

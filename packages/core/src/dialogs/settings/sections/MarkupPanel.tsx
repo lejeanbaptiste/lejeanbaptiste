@@ -12,7 +12,7 @@ export const MarkupPanel = () => {
     <>
       <Toggler
         description={`${t('Text Nodes must be displayed for better accuracy').toString()} (${t(
-          'experimental'
+          'experimental',
         )})`}
         disabled={!structurePanel.showTextNodes}
         icon="dragAndDrop"
@@ -22,7 +22,7 @@ export const MarkupPanel = () => {
       />
       <Toggler
         description={`(${t('beta')}) ${t('Some features are not fully implemented')} ${t(
-          'It can produce unexpected results or make LEAF-Writer crash'
+          'It can produce unexpected results or make LEAF-Writer crash',
         )} ${t('Use with caution')}`}
         icon="textNode"
         onChange={showTextNodes}

@@ -32,12 +32,12 @@ export const useItem = ({ content = '', id, isEntity = false, selected = false }
       entityType
         ? getIcon(entity[entityType].icon as IconLeafWriter)
         : getIcon(id as IconLeafWriter),
-    [id]
+    [id],
   );
 
   const inverseThemeMode: PaletteMode = useMemo(
     () => (palette.mode === 'light' ? 'dark' : 'light'),
-    [palette.mode]
+    [palette.mode],
   );
 
   useEffect(() => {

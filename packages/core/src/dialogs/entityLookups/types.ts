@@ -21,7 +21,7 @@ export interface AuthorityService {
   entities: Partial<Record<NamedEntityType, boolean>>;
   find?: (
     params: AuthorityLookupParams,
-    settings?: AuthorityLookupSettings
+    settings?: AuthorityLookupSettings,
   ) => Promise<AuthorityLookupResult[] | undefined>;
   readonly id: Authority | string;
   lookupService?: LookupService;

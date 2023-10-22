@@ -280,7 +280,7 @@ export const EditSchemaDialog = ({
                       {t('note')}:
                     </span>
                     {` ${t(
-                      'LEAF-Writer cannot guarantee that the document will work correctly with the selected schema'
+                      'LEAF-Writer cannot guarantee that the document will work correctly with the selected schema',
                     )}.
       ${t('Tagging might not work as expected')}.`}
                   </Typography>

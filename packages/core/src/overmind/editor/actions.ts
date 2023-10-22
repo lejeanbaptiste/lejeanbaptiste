@@ -16,7 +16,7 @@ const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
 export const writerInitSettings = (
   { state: { editor }, actions }: Context,
-  settings: LeafWriterOptionsSettings
+  settings: LeafWriterOptionsSettings,
 ) => {
   const { baseUrl, schemas } = settings;
 
@@ -34,7 +34,7 @@ export const writerInitSettings = (
 
 export const configureAuthorityServices = async (
   { state, actions, effects }: Context,
-  configAuthorityServices?: (Authority | AuthorityServiceConfig)[]
+  configAuthorityServices?: (Authority | AuthorityServiceConfig)[],
 ) => {
   const { authorityServices } = state.editor;
 
@@ -68,7 +68,7 @@ export const configureAuthorityServices = async (
     //* Required authentication?
     if (authorityService.requireAuth && serviceConfig.settings?.username === '') {
       log.warn(
-        `Config Authority Service: username required to make requests to ${authorityService.id}`
+        `Config Authority Service: username required to make requests to ${authorityService.id}`,
       );
       authorityService.enabled = false;
       return;
@@ -127,7 +127,7 @@ export const applyUserPreferencesAuthrityServices = async ({ state }: Context) =
     // * Remove not available service from preferences
     if (!authorityService) {
       log.warn(
-        `Authority Service Preferences: authority ${servicePreference.id} no longer available `
+        `Authority Service Preferences: authority ${servicePreference.id} no longer available `,
       );
       await db.authorityServices.delete(servicePreference.id);
       continue;
@@ -141,7 +141,7 @@ export const applyUserPreferencesAuthrityServices = async ({ state }: Context) =
         (authorityService.settings?.username === '' || servicePreference.settings?.username === '')
       ) {
         log.warn(
-          `Config Authority Service: username required to make requests to ${authorityService.id}`
+          `Config Authority Service: username required to make requests to ${authorityService.id}`,
         );
         authorityService.enabled = false;
         continue;
@@ -167,7 +167,7 @@ export const applyUserPreferencesAuthrityServices = async ({ state }: Context) =
       if (!Object.prototype.hasOwnProperty.call(servicePreference.entities, entity)) continue;
       if (!authorityService.entities[entity as NamedEntityType]) {
         log.warn(
-          `Authority Service Preferences: authority ${servicePreference.id} no longer accept entity ${entity}`
+          `Authority Service Preferences: authority ${servicePreference.id} no longer accept entity ${entity}`,
         );
 
         entitiesToRemove.push(entity as NamedEntityType);
@@ -198,7 +198,7 @@ export const applyInitialSettings = ({ state, actions }: Context) => {
 
 export const setNssiToken = (
   { state }: Context,
-  value: string | (() => Promise<string | undefined>)
+  value: string | (() => Promise<string | undefined>),
 ) => {
   state.editor.nssiToken = value;
 };
@@ -411,7 +411,7 @@ export const setIsAnnotator = ({ state }: Context, value: boolean) => {
 
 export const toggleLookupAuthority = async (
   { state: { editor } }: Context,
-  authorityId: string
+  authorityId: string,
 ) => {
   const authorityService = editor.authorityServices[authorityId];
   if (!authorityService) return;
@@ -423,7 +423,7 @@ export const toggleLookupAuthority = async (
 
 export const toggleLookupEntity = async (
   { state }: Context,
-  { authorityId, entityName }: { authorityId: string; entityName: NamedEntityType }
+  { authorityId, entityName }: { authorityId: string; entityName: NamedEntityType },
 ) => {
   const authorityService = state.editor.authorityServices[authorityId];
   if (!authorityService) return;
@@ -440,7 +440,7 @@ export const toggleLookupEntity = async (
 
 export const reorderLookupPriority = async (
   { state }: Context,
-  authorities: AuthorityService[]
+  authorities: AuthorityService[],
 ) => {
   authorities.forEach((authority, index) => {
     const authorityService = state.editor.authorityServices[authority.id];

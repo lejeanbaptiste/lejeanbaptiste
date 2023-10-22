@@ -14,7 +14,7 @@ class LoadingIndicator implements LWDialogProps {
         <div class="progressBar">
           <div class="progressLabel" />
         </div>
-      </div>`
+      </div>`,
     ).appendTo(parentEl);
 
     //@ts-ignore

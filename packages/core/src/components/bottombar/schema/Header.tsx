@@ -24,7 +24,11 @@ export const Header = ({ onClickAdd }: HeaderProps) => {
       <Typography sx={{ cursor: 'default', textTransform: 'capitalize' }} variant="caption">
         {t('commons.schemas')}
       </Typography>
-      <IconButton aria-label={t('commons.add').toString()} onClick={() => onClickAdd('add')} size="small">
+      <IconButton
+        aria-label={t('commons.add').toString()}
+        onClick={() => onClickAdd('add')}
+        size="small"
+      >
         <AddIcon sx={{ height: 12, width: 12 }} />
       </IconButton>
     </Box>

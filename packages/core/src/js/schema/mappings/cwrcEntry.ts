@@ -53,7 +53,7 @@ const title: EntityMappingProps = {
     const anno = annotationsManager.commonAnnotation(
       entity,
       ['dcterms:BibliographicResource', 'dcterms:title'],
-      'oa:identifying'
+      'oa:identifying',
     );
 
     if (format === 'xml') {
@@ -86,7 +86,7 @@ const citation: EntityMappingProps = {
     return annotationsManager.commonAnnotation(
       entity,
       'dcterms:BibliographicResource',
-      'cw:citing'
+      'cw:citing',
     );
   },
 };
@@ -189,7 +189,7 @@ const keyword: EntityMappingProps = {
     const anno = annotationsManager.commonAnnotation(
       entity,
       ['oa:Tag', 'cnt:ContentAsText', 'skos:Concept'],
-      'oa:classifying'
+      'oa:classifying',
     );
 
     const keyword = entity.getAttribute('KEYWORDTYPE');

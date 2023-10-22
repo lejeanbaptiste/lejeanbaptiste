@@ -65,7 +65,7 @@ export const validate = async ({ state, actions }: Context) => {
   if (!writer || !state.validator.hasWorkerValidator) return;
 
   const workerValidator = window.leafwriterValidator;
-  const hasValidator = await workerValidator.hasValidator()
+  const hasValidator = await workerValidator.hasValidator();
   // console.log(hasValidator)
   // if (!hasValidator) return;
 
@@ -113,7 +113,7 @@ export const getAt = async (
     parentXpath?: string;
     tagName?: string;
     xpath?: string;
-  }
+  },
 ) => {
   const {
     getTagAt,
@@ -151,7 +151,7 @@ export const getAt = async (
 
 export const getTagAt = async (
   { state }: Context,
-  { tagName, parentXpath, index }: { tagName: string; parentXpath: string; index?: number }
+  { tagName, parentXpath, index }: { tagName: string; parentXpath: string; index?: number },
 ) => {
   if (!state.validator.hasWorkerValidator) return;
   const workerValidator = window.leafwriterValidator;
@@ -162,7 +162,7 @@ export const getTagAt = async (
 
 export const getNodesForTagAt = async (
   { state }: Context,
-  { xpath, index }: { xpath: string; index?: number }
+  { xpath, index }: { xpath: string; index?: number },
 ) => {
   if (!state.validator.hasWorkerValidator) return;
   const workerValidator = window.leafwriterValidator;
@@ -173,7 +173,7 @@ export const getNodesForTagAt = async (
 
 export const getAttributesForTagAt = async (
   { state }: Context,
-  { xpath, index }: { xpath: string; index?: number }
+  { xpath, index }: { xpath: string; index?: number },
 ) => {
   if (!state.validator.hasWorkerValidator) return;
   const workerValidator = window.leafwriterValidator;
@@ -184,7 +184,7 @@ export const getAttributesForTagAt = async (
 
 export const getTagAttributeAt = async (
   { state }: Context,
-  { attributeName, parentXpath }: { attributeName: string; parentXpath: string }
+  { attributeName, parentXpath }: { attributeName: string; parentXpath: string },
 ) => {
   if (!state.validator.hasWorkerValidator) return;
   const workerValidator = window.leafwriterValidator;
@@ -195,7 +195,7 @@ export const getTagAttributeAt = async (
 
 export const getValuesForTagAttributeAt = async (
   { state }: Context,
-  { xpath }: { xpath: string }
+  { xpath }: { xpath: string },
 ) => {
   if (!state.validator.hasWorkerValidator) return;
   const workerValidator = window.leafwriterValidator;

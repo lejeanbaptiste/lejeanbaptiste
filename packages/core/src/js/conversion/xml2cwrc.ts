@@ -132,7 +132,7 @@ class XML2CWRC {
           .split(' ') // split the variables
           .map((s) => s.split('=')) // split keys from values
           //@ts-ignore
-          .map(([k, v]) => ({ [k]: v })) // create an objects
+          .map(([k, v]) => ({ [k]: v })), // create an objects
       );
 
       if (!('href' in attributes)) return;
@@ -169,7 +169,7 @@ class XML2CWRC {
     const hasOldRdfParent =
       this.writer.utilities.evaluateXPath(
         doc,
-        this.writer.schemaManager.mapper.getRdfParentSelector()
+        this.writer.schemaManager.mapper.getRdfParentSelector(),
       ) === null;
     return hasRdf && (hasOldAnnotationIds || hasOldRdfParent);
   }
@@ -234,12 +234,12 @@ class XML2CWRC {
 
         const mappingInfo = this.writer.schemaManager.mapper.getReverseMapping(
           entityEl as Element,
-          true
+          true,
         );
 
         if (mappingInfo.type !== entityConfig.type) {
           log.warn(
-            `xml2cwrc.processRDF: entity type mismatch. RDF = ${entityConfig.type}. Element = ${mappingInfo.type}.`
+            `xml2cwrc.processRDF: entity type mismatch. RDF = ${entityConfig.type}. Element = ${mappingInfo.type}.`,
           );
         }
         entityConfig = { ...entityConfig, ...mappingInfo };
@@ -258,7 +258,7 @@ class XML2CWRC {
         const entityEl = this.writer.utilities.evaluateXPath(
           doc,
           //@ts-ignore
-          entityConfig.range.startXPath
+          entityConfig.range.startXPath,
         ) as Element;
         //@ts-ignore
         entityConfig.range.startXPath = this.writer.utilities.getElementXPath(entityEl);
@@ -267,7 +267,7 @@ class XML2CWRC {
           const entityElEnd = this.writer.utilities.evaluateXPath(
             doc,
             //@ts-ignore
-            entityConfig.range.endXPath
+            entityConfig.range.endXPath,
           ) as Element;
           //@ts-ignore
           entityConfig.range.endXPath = this.writer.utilities.getElementXPath(entityElEnd);
@@ -282,7 +282,7 @@ class XML2CWRC {
     // remove all the nodes between the root or header and the rdf parent (including the rdf parent)
     const rdfParentXpath = this.writer.utilities.evaluateXPath(
       doc,
-      this.writer.schemaManager.mapper.getRdfParentSelector()
+      this.writer.schemaManager.mapper.getRdfParentSelector(),
     );
 
     let rdfParent =
@@ -556,7 +556,7 @@ class XML2CWRC {
 
     const docRoot = $(
       `[_tag="${this.writer.schemaManager.getRoot()}"]`,
-      this.writer.editor?.getBody()
+      this.writer.editor?.getBody(),
     )[0];
 
     if (!docRoot) return;

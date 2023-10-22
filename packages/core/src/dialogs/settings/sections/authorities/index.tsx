@@ -21,7 +21,7 @@ export const Authorities = () => {
 
   useEffect(() => {
     const authtoriesList = [...Object.values(authorityServices)].sort(
-      (a, b) => a.priority - b.priority
+      (a, b) => a.priority - b.priority,
     );
     setItems(authtoriesList);
     return () => {};

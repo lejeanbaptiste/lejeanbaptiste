@@ -14,5 +14,5 @@ export const detailsHoverTimeOutAtom = atom(
     timer = setTimeout(() => {
       set(_detailsHoverTimeOutAtom, TIME_OUT_HOVER);
     }, TIME_OUT_HOVER_RESET);
-  }
+  },
 );

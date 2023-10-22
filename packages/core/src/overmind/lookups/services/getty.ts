@@ -94,7 +94,7 @@ const callGetty = async (query: string, type: NamedEntityType) => {
         query,
         uri: Subject.value,
       };
-    }
+    },
   );
 
   return results;

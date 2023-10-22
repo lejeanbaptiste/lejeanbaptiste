@@ -101,7 +101,7 @@ class AttributesEditor implements LWDialogProps {
   private toggleHintComponent = (show?: boolean) => {
     if (!show) {
       const attributesUsed = $('.attsContainer div.attribute', this.$schemaDialog).filter(
-        (i, li) => $(li).is(':visible') == true
+        (i, li) => $(li).is(':visible') == true,
       );
       show = attributesUsed.length === 0 ? true : false;
     }

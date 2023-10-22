@@ -41,7 +41,7 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
       selected,
       style,
     },
-    ref
+    ref,
   ) => {
     const { palette } = useTheme();
 
@@ -151,7 +151,7 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
                 ? alpha(color, palette.action.hoverOpacity + palette.action.selectedOpacity)
                 : alpha(
                     palette.primary[palette.mode],
-                    palette.action.hoverOpacity + palette.action.selectedOpacity
+                    palette.action.hoverOpacity + palette.action.selectedOpacity,
                   ),
             },
           },
@@ -192,5 +192,5 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
         </Tooltip>
       </ListItemButton>
     );
-  }
+  },
 );

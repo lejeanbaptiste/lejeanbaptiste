@@ -128,7 +128,7 @@ const moveToTextNode = (
   event: EditorEvent<KeyboardEvent>,
   editor: Editor,
   range: Range,
-  direction: 'back' | 'forward'
+  direction: 'back' | 'forward',
 ) => {
   const textNode: Node | null =
     direction === 'back'
