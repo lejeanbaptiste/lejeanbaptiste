@@ -19,7 +19,6 @@ export const Content = ({
   shortcut,
   sx = { textTransform: 'capitalize' },
 }: ContentProps) => {
-
   const showShortCut = false;
 
   return (
@@ -33,7 +32,8 @@ export const Content = ({
       {hasChildren ? (
         <ChevronRightIcon fontSize="small" />
       ) : (
-        shortcut && showShortCut && (
+        shortcut &&
+        showShortCut && (
           <Typography color="GrayText" variant="caption">
             {shortcut}
           </Typography>

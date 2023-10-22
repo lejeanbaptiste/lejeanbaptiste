@@ -2,7 +2,7 @@ import type { FileDetail, Resource } from '@src/types';
 import { atom, createStore } from 'jotai';
 import type { DialogTye } from './';
 
-export const ImportExportStore = createStore()
+export const ImportExportStore = createStore();
 
 export const dialogActionAtom = atom<DialogTye>('import');
 export const conversionTypesAtom = atom<string[]>([]);
@@ -22,9 +22,8 @@ export const cancelActionAtom = atom(
     ImportExportStore.set(fileDetailAtom, undefined);
     ImportExportStore.set(isProcessingAtom, false);
     ImportExportStore.set(resourceAtom, undefined);
-  }
+  },
 );
-
 
 ImportExportStore.set(dialogActionAtom, 'import');
 ImportExportStore.set(conversionTypesAtom, []);
@@ -38,4 +37,4 @@ export const cancelAction = () => {
   ImportExportStore.set(fileDetailAtom, undefined);
   ImportExportStore.set(isProcessingAtom, false);
   ImportExportStore.set(resourceAtom, undefined);
-}
+};

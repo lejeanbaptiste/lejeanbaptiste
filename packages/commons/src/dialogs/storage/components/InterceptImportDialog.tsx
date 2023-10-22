@@ -19,9 +19,9 @@ export const InterceptImportDialog = ({ format }: InterceptImportDialogProps) =>
           <Typography component="span">document.</Typography>
         </Trans>{' '}
         <Typography component="span">
-          {`${t('LWC:importExport.message.LEAF-Writer needs to convert it to be able to use it')} ${t(
-            'LWC:commons.what_would_you_like_to_do'
-          )}`}
+          {`${t(
+            'LWC:importExport.message.LEAF-Writer needs to convert it to be able to use it',
+          )} ${t('LWC:commons.what_would_you_like_to_do')}`}
         </Typography>
       </Typography>
       <Button

@@ -10,7 +10,7 @@ export const StatusBar = () => {
 
   const handleClick = () => {
     window.open(
-      'https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report'
+      'https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report',
     );
   };
 

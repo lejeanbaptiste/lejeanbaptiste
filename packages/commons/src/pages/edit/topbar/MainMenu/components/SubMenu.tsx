@@ -10,7 +10,6 @@ import { Content } from './Content';
 import { Item, type ItemProps } from './Item';
 
 export interface SubMenuProps extends CascadingMenuProps {
-  
   hide?: boolean;
   icon?: IconName;
   label: string;
@@ -31,13 +30,13 @@ export const SubMenu = ({ hide, icon, label, popupId, ...props }: SubMenuProps) 
   const [options, setOptions] = useState<(ItemProps | 'divider' | SubMenuProps)[]>([]);
 
   useEffect(() => {
-    loadOptions()
+    loadOptions();
   }, []);
 
   const loadOptions = async () => {
-    const opts = await getOptions(popupId)
+    const opts = await getOptions(popupId);
     if (popupId) setOptions(opts);
-  }
+  };
 
   const variants: Variants = {
     visible: { height: 'auto', opacity: 1 },

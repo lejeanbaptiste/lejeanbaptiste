@@ -26,20 +26,20 @@ export const useKeyboardShortcut = () => {
   useKey(
     (event: KeyboardEvent) => event.metaKey && event.code === 'KeyS',
     (event) => shorcutEventAction(event, '⌘S'),
-    { event: 'keydown' }
+    { event: 'keydown' },
   );
 
   useKey(
     (event: KeyboardEvent) =>
       event.metaKey && event.altKey && event.shiftKey && event.code === 'KeyS',
     (event) => shorcutEventAction(event, '⌘⌥⇧S'),
-    { event: 'keydown' }
+    { event: 'keydown' },
   );
 
   useKey(
     (event: KeyboardEvent) => event.metaKey && event.code === 'KeyO',
     (event) => shorcutEventAction(event, '⌘O'),
-    { event: 'keydown' }
+    { event: 'keydown' },
   );
 
   return { shortcut };

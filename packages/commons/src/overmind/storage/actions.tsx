@@ -21,7 +21,7 @@ export const setPrefStorageProvider = ({ state, effects }: Context, providerId: 
   if (!state.auth.user) return;
 
   const prefIsStorageProvider = state.providers.storageProviders.some(
-    (provider) => provider.providerId === providerId && !!provider.service
+    (provider) => provider.providerId === providerId && !!provider.service,
   );
 
   if (!prefIsStorageProvider) {
@@ -37,7 +37,7 @@ export const setPrefStorageProvider = ({ state, effects }: Context, providerId: 
 
 export const openStorageDialog = async (
   { state }: Context,
-  storageDialogState: Omit<StorageDialogState, 'open'>
+  storageDialogState: Omit<StorageDialogState, 'open'>,
 ) => {
   state.storage.storageDialogState = { open: true, ...storageDialogState };
 };
@@ -130,7 +130,7 @@ export const loadFromUrl = async ({ effects }: Context, url: string) => {
 
 export const download = (
   _context: Context,
-  { content, filename }: { content: string; filename: string }
+  { content, filename }: { content: string; filename: string },
 ) => {
   const blob = new Blob([content]); //, { type: 'text/plain;charset=utf-8' });
   saveAs(blob, filename);

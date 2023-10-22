@@ -43,7 +43,7 @@ export const useOpenResource = () => {
 
     const params = queryString.stringify(
       { filename, id, local: true },
-      { skipEmptyString: true, skipNull: true, sort: false }
+      { skipEmptyString: true, skipNull: true, sort: false },
     );
 
     open(`/edit?${params}`);

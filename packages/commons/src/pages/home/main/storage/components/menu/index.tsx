@@ -110,7 +110,7 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
               ''
             ) : (
               <MenuButton key={option.label} active={selectedMenu === option.value} {...option} />
-            )
+            ),
           )}
           <Divider sx={{ ml: 2 }} />
           <PasteOption disabled={isLoading} />

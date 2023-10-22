@@ -32,7 +32,7 @@ root.render(
         <App />
       </BrowserRouter>
     </HelmetProvider>
-  </Provider>
+  </Provider>,
 );
 
 // if (module.hot) module.hot.accept();

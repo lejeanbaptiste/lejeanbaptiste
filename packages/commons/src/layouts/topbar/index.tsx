@@ -27,7 +27,10 @@ export const TopBar = ({ Center, Left }: TopBarProps) => {
       elevation={!resource ? 0 : palette.mode === 'dark' ? 2 : 1}
       position="relative"
     >
-      <Toolbar sx={{ flexWrap: 'wrap' ,justifyContent: 'space-between', maxHeight: '48px' }} variant="dense">
+      <Toolbar
+        sx={{ flexWrap: 'wrap', justifyContent: 'space-between', maxHeight: '48px' }}
+        variant="dense"
+      >
         <Stack direction="row" alignItems="center">
           {Left}
         </Stack>
@@ -55,9 +58,7 @@ export const TopBar = ({ Center, Left }: TopBarProps) => {
                 <LanguageMenu />
                 {page !== 'home' && <SigninButton />}
               </>
-            ) : (
-              null
-            )}
+            ) : null}
           </AnimatePresence>
         </Stack>
       </Toolbar>

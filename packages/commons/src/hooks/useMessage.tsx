@@ -19,7 +19,7 @@ export const useMessage = () => {
         <>
           <Typography paragraph variant="caption">
             {t(
-              'LWC:messages.you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud'
+              'LWC:messages.you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud',
             )}
             .
           </Typography>

@@ -71,7 +71,7 @@ export const useConversion = () => {
     const blob = new Blob([convertedContent]); //, { type: 'text/plain;charset=utf-8' });
     const filename = changeFileExtension(
       editor.resource.filename ?? 'untitled',
-      selectedType.toLowerCase()
+      selectedType.toLowerCase(),
     );
 
     const resource: Resource = { blob, content: convertedContent, filename };

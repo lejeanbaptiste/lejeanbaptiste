@@ -24,5 +24,5 @@ log.info(
 The XML & RDF online editor of the Linked Editing Academic Framework
 `,
   titleStyle,
-  textStyle
+  textStyle,
 );

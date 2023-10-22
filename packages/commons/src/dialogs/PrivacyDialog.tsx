@@ -5,7 +5,7 @@ import {
   DialogContent,
   DialogTitle,
   Link,
-  Typography
+  Typography,
 } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
 import { useAppState } from '@src/overmind';
