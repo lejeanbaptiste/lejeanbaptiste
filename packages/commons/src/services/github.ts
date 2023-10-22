@@ -1,6 +1,5 @@
 import { Octokit } from '@octokit/rest';
 import type { GetResponseDataTypeFromEndpointMethod } from '@octokit/types';
-//@ts-ignore
 import queryString from 'query-string';
 import type { AuthenticateProp, ProviderService } from './types';
 
@@ -34,7 +33,7 @@ type GetAuthenticatedResponseDataType = GetResponseDataTypeFromEndpointMethod<
  * @param {String} token The OAuth access_token from GitHub
  */
 const authenticate = ({ access_token, IDPTokens, userId, userName }: AuthenticateProp) => {
-  if (!access_token && IDPTokens) {
+  if (!access_token && IDPTokens && typeof IDPTokens === 'string') {
     const GH_tokens = queryString.parse(IDPTokens);
     access_token = GH_tokens?.access_token as string;
   }

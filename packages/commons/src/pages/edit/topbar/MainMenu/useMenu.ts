@@ -40,7 +40,7 @@ export const useMenu = () => {
       icon: 'folderOpen',
       label: `${t('LWC:commons.open')}...`,
       onTrigger: () =>
-        openStorageDialog({
+        void openStorageDialog({
           source: userState === 'AUTHENTICATED' ? 'cloud' : 'local',
           resource: undefined,
           type: 'load',
@@ -67,7 +67,7 @@ export const useMenu = () => {
       hide: readonly,
       icon: 'save',
       label: t('LWC:commons.save'),
-      onTrigger: () => (!resource?.provider ? handleSave('saveAs') : handleSave()),
+      onTrigger: () => void (!resource?.provider ? handleSave('saveAs') : handleSave()),
       shortcut: ' ⌘S',
       tooltipText: cloudDisabledMessage,
     },
@@ -78,7 +78,7 @@ export const useMenu = () => {
       hide: readonly,
       icon: 'saveAs',
       label: `${t('LWC:commons.save_as')}...`,
-      onTrigger: () => handleSave('saveAs'),
+      onTrigger: () => void handleSave('saveAs'),
       shortcut: ' ⌘⌥⇧S',
       tooltipText: cloudDisabledMessage,
     },
@@ -106,7 +106,7 @@ export const useMenu = () => {
     const options: ItemProps[] = [
       {
         label: `${t('LWC:commons.xml document')} (.xml)`,
-        onTrigger: () => handleDownload('xml'),
+        onTrigger: () => void handleDownload('xml'),
         sx: { textTransform: 'initial' },
       },
     ];
@@ -174,7 +174,7 @@ export const useMenu = () => {
     event.stopPropagation();
 
     if (action === 'load') {
-      openStorageDialog({ source: 'cloud', resource: undefined, type: 'load' });
+      void openStorageDialog({ source: 'cloud', resource: undefined, type: 'load' });
       return;
     }
 

@@ -6,7 +6,7 @@ export type ProviderId = (typeof SupportedProviderIds)[number];
 
 export interface AuthenticateProp {
   access_token?: string;
-  IDPTokens?: string | any;
+  IDPTokens?: string | Record<string, unknown>;
   providerName: string;
   userId?: string;
   userName?: Readonly<string>;
@@ -18,7 +18,7 @@ export interface ProviderService {
   isStorageProvider: boolean;
   authenticate(params: Omit<AuthenticateProp, 'providerName'>): void;
   getAccessToken: () => string;
-  getAuthenticatedUser(userId?: string): any;
+  getAuthenticatedUser(userId?: string): unknown;
   getUserId: () => string;
   getUserName: () => string;
 }

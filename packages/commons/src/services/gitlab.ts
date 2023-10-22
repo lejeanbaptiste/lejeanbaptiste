@@ -24,7 +24,9 @@ const getUserName = () => _userName;
 let axiosApi: AxiosInstance;
 
 const authenticate = ({ access_token, IDPTokens, userId, userName }: AuthenticateProp) => {
-  if (!access_token && IDPTokens) access_token = IDPTokens.access_token as string;
+  if (!access_token && IDPTokens && typeof IDPTokens === 'object' && 'access_token' in IDPTokens) {
+    access_token = IDPTokens.access_token as string;
+  }
   if (!access_token) throw new Error('No access token provided');
 
   _access_token = access_token;
@@ -38,7 +40,7 @@ const authenticate = ({ access_token, IDPTokens, userId, userName }: Authenticat
 };
 
 const getAuthenticatedUser = async () => {
-  const response = await axiosApi.get('/user').catch((error) => {
+  const response = await axiosApi.get<Record<string, unknown>>('/user').catch((error) => {
     log.error(error);
     return null;
   });

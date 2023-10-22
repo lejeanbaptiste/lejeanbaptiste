@@ -19,34 +19,16 @@ let _userName: string;
 const getUserName = () => _userName;
 
 const authenticate = ({ access_token, IDPTokens }: AuthenticateProp) => {
-  if (!access_token && IDPTokens) {
-    access_token = IDPTokens.access_token;
-    _userName = IDPTokens.name;
-    _userId = IDPTokens.orcid;
+  if (!access_token && IDPTokens && typeof IDPTokens === 'object') {
+    access_token = IDPTokens.access_token as string;
+    _userName = IDPTokens.name as string;
+    _userId = IDPTokens.orcid as string;
   }
 
   if (!access_token) throw new Error('No access token provided');
 };
 
-const getAuthenticatedUser = async (userId?: string) => {
-  //? This block should be used to fetch user data from ORCID API
-  // * However, the request can only be made by HTTPS conenction (no localhost)
-  // * and might be only possible make the request from the domain of the assignned callbak URL.
-  // if (!userId) userId = _userId;
-  // if (!userId || userId === '') throw new Error('No userID');
-
-  // const headers = { Accept: 'application/json', Authorization: `Bearer ${_access_token}` };
-  // const response = await axios.get(`${BASE_URL}/${userId}/person`, { headers });
-
-  // const { data } = response;
-
-  // const user = {
-  //   ...data,
-  //   name: `${data.name['given-names'].value} ${data.name['family-name'].value}`,
-  //   username: data.name.path,
-  //   uri: `https://orcid.org/${data.path}`,
-  // };
-
+const getAuthenticatedUser = async (_userId?: string) => {
   //? Alternative
   //* return the data stored from the token
   // * it might be enough since LEAF-Writer only needs the user name and id.

@@ -73,12 +73,12 @@ export const api = {
    * @param {string} key - The key to store the value under.
    * @returns The value of the key in localStorage.
    */
-  getFromLocalStorage<T = string>(key: string): T | null {
+  getFromLocalStorage<T = string | Record<string, unknown>>(key: string): T | null {
     const value = localStorage.getItem(key);
     if (!value) return null;
 
     try {
-      const object = JSON.parse(value);
+      const object = JSON.parse(value) as Record<string, unknown>;
       return object as T;
     } catch (error) {
       return value as T;
