@@ -61,7 +61,8 @@
     "build": "npm run clean && tsc && webpack",
     "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
     "build-documentation": "typedoc --out docs src/index.tsx",
-
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format-check": "prettier . --check",
     "clean": "shx rm -rf dist lib lib-esm",
     "lint": "eslint .",
     "test": "DEBUG_PRINT_LIMIT=40000 jest",
