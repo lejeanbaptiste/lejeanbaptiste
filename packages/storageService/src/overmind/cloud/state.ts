@@ -14,7 +14,8 @@ import type {
 
 const { t } = i18next;
 
-interface State {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type State = {
   collectionSource: CollectionSource;
   collectionType?: CollectionType;
   commitMessage: string;
@@ -41,7 +42,7 @@ interface State {
     tree?: Content[];
   };
   user?: Owner;
-}
+};
 
 export const state: State = {
   collectionSource: 'owner',

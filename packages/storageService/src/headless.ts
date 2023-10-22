@@ -233,7 +233,7 @@ const getFileLatestHash = async ({ filePath, repository, owner }: GetFileLatestH
 };
 
 const initializeProvider = async (providerAuth: ProviderAuth) => {
-  let module: any;
+  let module;
 
   if (providerAuth.name === 'github') module = await import('./providers/Github');
   if (providerAuth.name === 'gitlab') module = await import('./providers/Gitlab');

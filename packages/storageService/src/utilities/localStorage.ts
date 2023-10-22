@@ -18,14 +18,16 @@ export const saveToLocalStorage = <T = unknown>(key: string, value: T) => {
  * @param {string} key - The key to store the value under.
  * @returns The value of the key in localStorage.
  */
-export const getFromLocalStorage = <T = string>(key: string): T | null => {
+export const getFromLocalStorage = <T = string | Record<string, unknown>>(
+  key: string,
+): T | null => {
   if (typeof window === 'undefined') return null;
 
   const value = localStorage.getItem(key);
   if (!value) return null;
 
   try {
-    const object = JSON.parse(value);
+    const object = JSON.parse(value) as Record<string, unknown>;
     return object as T;
   } catch (error) {
     return value as T;
