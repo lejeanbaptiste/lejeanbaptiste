@@ -2,7 +2,6 @@ import { db } from '@src/db';
 import { useAppState } from '@src/overmind';
 import type { DocumentRequested, Resource } from '@src/types';
 import { add } from 'date-fns';
-//@ts-ignore
 import queryString from 'query-string';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,7 +26,7 @@ export const useOpenResource = () => {
 
   const { stringifyQuery } = usePermalink();
 
-  const openResource = async ({ resource, meta }: OpenResourceProps) => {
+  const openResource = async ({ resource }: OpenResourceProps) => {
     return resource.provider
       ? openResourceFromProvider(resource)
       : await openLocalResource(resource);

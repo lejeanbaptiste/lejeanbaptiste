@@ -4,6 +4,7 @@ import React from 'react';
 
 export * from './assert';
 
+// eslint-disable-next-line no-var
 export declare var webpackEnv: {
   NODE_ENV: string;
   WORKER_ENV: string;
@@ -42,7 +43,7 @@ export interface IdentityProps {
   name: string;
   uri: string;
   username: string;
-  [x: string]: any; //Allow more properties
+  [x: string]: unknown; //Allow more properties
 }
 
 export interface AnnotationUserProfileProps {

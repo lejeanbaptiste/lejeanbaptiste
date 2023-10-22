@@ -6,7 +6,7 @@ import fr from './locales/fr-CA.json';
 
 export const resources = { en, fr } as const;
 
-i18next
+void i18next
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({

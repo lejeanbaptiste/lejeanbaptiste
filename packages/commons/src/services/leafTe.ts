@@ -53,14 +53,16 @@ export const convertDocument = async ({ content, fromType, toType }: ConversionR
   } catch (error) {
     logHttpError(error);
 
-    if (axios.isAxiosError(error)) {
-      if (error.response?.data.detail) {
+    if (axios.isAxiosError(error) && error.response?.data) {
+      const data = error.response.data as ConversionResponse;
+
+      if (data.details) {
         const { status } = error.response;
-        const { detail } = error.response.data;
+        const { details } = data;
         if (status === 422) {
-          return new Error(`${detail.type}: ${detail.message}. Location: ${detail.loc.join(',')}`);
+          return new Error(`${details.type}: ${details.msg}. Location: ${details.loc.join(',')}`);
         }
-        if (status >= 400) return new Error(error.response.data.detail);
+        if (status >= 400) return new Error(details.msg);
       }
       return new Error(error.message);
     }

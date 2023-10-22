@@ -19,7 +19,7 @@ const loadDevServer = async () => {
   devServer(server);
 };
 
-if (process.env.WEBPACK_DEV === 'true') loadDevServer();
+if (process.env.WEBPACK_DEV === 'true') void loadDevServer();
 
 server.use(helmet.frameguard({ action: 'sameorigin' }));
 

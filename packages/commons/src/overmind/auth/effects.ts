@@ -100,7 +100,7 @@ export class Api {
    * @returns The URL of the external service.
    */
   async getExternalServiceUrl(service: string) {
-    const response = await axios.get(`./api/${service}-url`);
+    const response = await axios.get<string>(`./api/${service}-url`);
     return response.data;
   }
 
@@ -216,10 +216,10 @@ export class Api {
   async getExternalIDPTokens(
     provider_alias: string,
     keycloakAccessCode: string,
-  ): Promise<any | Error> {
+  ): Promise<string | Record<string, unknown> | Error> {
     try {
       const url = `${this.KEYCLOACK_BASE_URL}/realms/${this.realm}/broker/${provider_alias}/token`;
-      const { data } = await axios.get(url, {
+      const { data } = await axios.get<string | Record<string, unknown>>(url, {
         headers: { Authorization: `Bearer ${keycloakAccessCode}` },
       });
       return data;
