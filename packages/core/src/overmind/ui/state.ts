@@ -7,7 +7,8 @@ import type {
 import { Panel } from '../../layout/Utilities';
 import type { ContextMenuState, Language, LayoutProps, NotificationProps } from '../../types';
 
-interface State {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type State = {
   contextMenu: ContextMenuState;
   darkMode: boolean;
   dialogBar: DialogBarProps[];
@@ -25,7 +26,7 @@ interface State {
   settingsDialogOpen: boolean;
   themeAppearance: 'light' | 'auto' | 'dark';
   title: string;
-}
+};
 
 export const state: State = {
   contextMenu: { show: false },

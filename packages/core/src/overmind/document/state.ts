@@ -1,7 +1,8 @@
 import { derived } from 'overmind';
 import { Context } from '../';
 
-interface State {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type State = {
   loaded: boolean;
   rootName?: string;
   schemaId: string;
@@ -9,7 +10,7 @@ interface State {
   touched: boolean;
   url?: string;
   xml?: string;
-}
+};
 
 export const state: State = {
   loaded: false,
