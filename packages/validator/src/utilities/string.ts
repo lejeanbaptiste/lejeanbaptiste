@@ -6,7 +6,7 @@
  * @param {String} documentation The documentation string
  * @returns {String} The full name
  */
-export const getFullNameFromDocumentation = (documentation: string = ''): string | undefined => {
+export const getFullNameFromDocumentation = (documentation = ''): string | undefined => {
   const hit = /^\((.*?)\)/.exec(documentation);
   if (hit === null) return;
   return hit[1];

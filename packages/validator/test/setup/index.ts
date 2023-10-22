@@ -11,7 +11,7 @@ Object.defineProperty(global.self, 'crypto', {
     subtle: {
       digest: (algorithm: string, data: Uint8Array) => {
         return new Promise((resolve, reject) =>
-          resolve(crypto.createHash(algorithm).update(data).digest())
+          resolve(crypto.createHash(algorithm).update(data).digest()),
         );
       },
     },

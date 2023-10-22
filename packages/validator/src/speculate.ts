@@ -12,7 +12,7 @@ export interface SpeculateRequest {
 
 export const speculateAt = (
   { document, validator }: { document: Document; validator: Validator },
-  { container, index, possibleNodes, selection }: SpeculateRequest
+  { container, index, possibleNodes, selection }: SpeculateRequest,
 ) => {
   if (!document || !validator) {
     throw new Error('vEditor: Document or Validator not set');
@@ -41,7 +41,7 @@ const generateSpeculativeContent = (
   document: Document,
   tag: NodeDetail,
   selection?: TargetSelection,
-  container?: Node
+  container?: Node,
 ) => {
   if (!document) throw new Error('vEditor: Document not set');
 
@@ -133,7 +133,7 @@ const processSpeculativeContentSpan = (
   tag: NodeDetail,
   selection: Required<
     Pick<TargetSelection, 'endContainerIndex' | 'endOffset' | 'startContainerIndex' | 'startOffset'>
-  >
+  >,
 ) => {
   const { startContainerIndex, startOffset, endContainerIndex, endOffset } = selection;
 
@@ -169,7 +169,7 @@ const processSpeculativeContentChildNodes = (
   selection: Required<
     Pick<TargetSelection, 'endContainerIndex' | 'startContainerIndex' | 'xpath'>
   > &
-    Pick<TargetSelection, 'skip'>
+    Pick<TargetSelection, 'skip'>,
 ) => {
   const { startContainerIndex, endContainerIndex, skip, xpath } = selection;
 
@@ -193,7 +193,7 @@ const processSpeculativeContentChildNodes = (
 const processSpeculativeContentBefore = (
   document: Document,
   tag: NodeDetail,
-  selection: Required<Pick<TargetSelection, 'containerIndex' | 'xpath'>>
+  selection: Required<Pick<TargetSelection, 'containerIndex' | 'xpath'>>,
 ) => {
   if (!document) throw new Error('vEditor: Document not set');
 
@@ -227,7 +227,7 @@ const processSpeculativeContentBefore = (
 const processSpeculativeContentAfter = (
   document: Document,
   tag: NodeDetail,
-  selection: Required<Pick<TargetSelection, 'containerIndex' | 'xpath'>>
+  selection: Required<Pick<TargetSelection, 'containerIndex' | 'xpath'>>,
 ) => {
   const { containerIndex, xpath } = selection;
 
@@ -254,7 +254,7 @@ const processSpeculativeContentAfter = (
 const processSpeculativeContentNode = (
   document: Document,
   tag: NodeDetail,
-  selection: Required<Pick<TargetSelection, 'xpath'>>
+  selection: Required<Pick<TargetSelection, 'xpath'>>,
 ) => {
   if (tag.type === 'text') return;
 
