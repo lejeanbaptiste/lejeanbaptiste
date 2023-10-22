@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/jest-globals';
 import {
   act,
   getByTestId,
@@ -9,7 +10,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from '@testing-library/user-event';
 import React from 'react';
 import StorageDialog from '../src';
 import Github from '../src/providers/Github';

@@ -32,7 +32,6 @@ describe('General', () => {
         expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
         //@ts-ignore
         updateTranslation('pt-BR');
-        //@ts-ignore
         expect(i18next.language).not.toEqual('pt-BR');
       });
     });
