@@ -47,6 +47,9 @@
     "build-documentation": "typedoc --out docs src/index.tsx",
     "release-copy-assets": "ts-node release.ts",
     "clean": "shx rm -rf dist lib lib-esm",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format-check": "prettier . --check",
+    "lint": "eslint .",
     "cm": "git-cz",
     "prepublishOnly": "npm run build"
   },
