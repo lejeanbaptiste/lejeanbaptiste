@@ -69,7 +69,7 @@ export const getXPathForElement = (el: Node | null, xml: Document) => {
     if (el.nodeType === 2) {
       el = (el as Attr).ownerElement;
     } else {
-      el = el.parentNode
+      el = el.parentNode;
     }
   }
 
