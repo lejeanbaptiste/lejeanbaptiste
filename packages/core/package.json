@@ -141,8 +141,7 @@
     "monaco-editor-webpack-plugin": "^7.1.0",
     "shelljs": "^0.8.5",
     "shx": "^0.3.4",
-    "typescript-plugin-css-modules": "^5.0.1",
-    "webpack": "^5.88.2",
+    "tsconfig": "*",
     "webpackbar": "^5.0.2"
   }
 }
