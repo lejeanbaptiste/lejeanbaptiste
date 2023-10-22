@@ -7,12 +7,12 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material';
-import React, { Suspense, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../overmind';
 import type { EditSourceDialogProps } from '../type';
 
-const Editor = React.lazy(() => import('./Editor').then((module) => ({ default: module.Editor })));
+const Editor = lazy(() => import('./Editor').then((module) => ({ default: module.Editor })));
 
 export const EditSourceDialog = ({
   content = '',

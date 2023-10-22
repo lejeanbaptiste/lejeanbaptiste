@@ -8,7 +8,6 @@ import { PaletteMode } from '@mui/material';
 import html2canvas from 'html2canvas';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
-import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';

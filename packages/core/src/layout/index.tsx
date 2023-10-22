@@ -1,5 +1,4 @@
 import { Stack } from '@mui/material';
-import React from 'react';
 import { PanelGroup } from 'react-resizable-panels';
 import { BottomBar } from '../components';
 import { LateralBar } from './LateralBar';

@@ -1,6 +1,6 @@
 import { ListItemButton, Stack, Tooltip, alpha, useTheme } from '@mui/material';
 import classNames from 'classnames';
-import React, {
+import {
   forwardRef,
   useEffect,
   useMemo,

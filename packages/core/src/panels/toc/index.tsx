@@ -1,5 +1,4 @@
 import { Paper } from '@mui/material';
-import React from 'react';
 import { Tree } from './tree';
 
 export const TocPanel = () => {

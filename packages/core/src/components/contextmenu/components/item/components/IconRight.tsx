@@ -1,5 +1,5 @@
 import { CircularProgress, Icon } from '@mui/material';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ItemProps } from '../';
 import { useContextmenu } from '../../../hooks';
 

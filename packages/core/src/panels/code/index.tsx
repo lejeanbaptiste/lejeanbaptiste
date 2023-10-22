@@ -1,5 +1,5 @@
 import { Button, Paper, Stack, ToggleButton, Tooltip } from '@mui/material';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TbVectorTriangle } from 'react-icons/tb';
 import { useActions } from '../../overmind';

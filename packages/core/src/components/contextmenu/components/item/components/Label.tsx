@@ -1,5 +1,4 @@
 import { Stack, Tooltip, Typography } from '@mui/material';
-import React from 'react';
 
 export interface LabelProps {
   documentation?: string;

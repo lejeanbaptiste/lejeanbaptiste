@@ -1,5 +1,5 @@
 import { useSetAtom } from 'jotai';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAppState } from '../../../overmind';
 import { SortableTree } from './SortableTree';
 import { allowDndAtom, displayTextNodesAtom } from './store';

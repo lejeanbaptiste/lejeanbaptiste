@@ -1,5 +1,5 @@
 import { Paper, Popper } from '@mui/material';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useActions, useAppState } from '../../overmind';
 import { EntityType } from '../../types';
 import { IDialog } from '../type';

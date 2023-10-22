@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { Formik } from 'formik';
 import { useModal } from 'mui-modal-provider';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';

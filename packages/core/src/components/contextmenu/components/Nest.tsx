@@ -1,5 +1,4 @@
 import { Menu } from '@mui/material';
-import React from 'react';
 import { MIN_WIDTH } from '..';
 import { useWindowSize } from '../../../hooks';
 import { Collection } from './collection';

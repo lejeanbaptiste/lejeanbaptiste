@@ -1,6 +1,6 @@
 import DoNotDisturbAltIcon from '@mui/icons-material/DoNotDisturbAlt';
 import { Icon, IconButton, useTheme } from '@mui/material';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { getIcon } from '../../../../icons';
 import type { NamedEntityType } from '../../../entityLookups';
 

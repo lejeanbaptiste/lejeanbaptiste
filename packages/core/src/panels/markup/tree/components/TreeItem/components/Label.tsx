@@ -8,7 +8,7 @@ import {
   type PaletteMode,
 } from '@mui/material';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 
 interface LabelProps extends TypographyProps {
   children: React.ReactNode;

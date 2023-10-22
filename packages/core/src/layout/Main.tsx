@@ -1,4 +1,3 @@
-import React from 'react';
 import { Panel } from 'react-resizable-panels';
 
 export const Main = () => {

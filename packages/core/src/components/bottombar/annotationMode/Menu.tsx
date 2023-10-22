@@ -1,6 +1,5 @@
 import { Box, Button, Menu as MuiMenu, MenuItem, Typography } from '@mui/material';
 import { SnackbarKey } from 'notistack';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
 import useEditorReaction from '../hooks/useEditorReaction';

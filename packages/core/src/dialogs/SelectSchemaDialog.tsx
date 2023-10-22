@@ -12,7 +12,7 @@ import {
   Typography,
   type SelectChangeEvent,
 } from '@mui/material';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import { useActions, useAppState } from '../overmind';

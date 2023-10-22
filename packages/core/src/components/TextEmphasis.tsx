@@ -1,5 +1,4 @@
 import { Typography, TypographyProps, useTheme } from '@mui/material';
-import React from 'react';
 
 interface TextEmphasis extends TypographyProps {
   color?: 'primary' | 'secondary' | 'info' | 'warning' | 'error' | 'inherit';

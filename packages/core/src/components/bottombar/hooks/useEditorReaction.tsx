@@ -1,6 +1,5 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Divider, Grid, Typography } from '@mui/material';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SeverityType } from '../../../dialogs';
 import { useActions, useAppState } from '../../../overmind';

@@ -1,7 +1,7 @@
 import type { UniqueIdentifier } from '@dnd-kit/core';
 import { AnimateLayoutChanges, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import React, { CSSProperties } from 'react';
+import { CSSProperties } from 'react';
 
 import { iOS } from '../../utilities';
 import { TreeItemProps as TreeItemProps, TreeItem } from './TreeItem';

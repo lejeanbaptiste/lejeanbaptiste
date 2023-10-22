@@ -1,5 +1,4 @@
 import { Icon, ListItem, ListItemButton, ListItemIcon, Stack, Typography } from '@mui/material';
-import React from 'react';
 import { getIcon, type IconLeafWriter } from '../../../icons';
 
 type ButtonProps = {

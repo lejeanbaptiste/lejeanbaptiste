@@ -1,5 +1,5 @@
 import { Box, Button, Tooltip } from '@mui/material';
-import React, { MouseEvent, useState } from 'react';
+import { MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../../overmind';
 import { Menu } from './Menu';
