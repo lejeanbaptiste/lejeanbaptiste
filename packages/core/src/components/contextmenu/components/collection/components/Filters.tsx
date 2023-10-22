@@ -28,7 +28,7 @@ export const Filters = ({ onQuery }: FilterProps) => {
 
   const handleChangeDebounce = useMemo(
     () => debounce((_query: string) => onQuery(_query), 200, { trailing: true }),
-    []
+    [],
   );
 
   const toggleInvalid = () => setOnlyValid(!onlyValid);

@@ -55,7 +55,7 @@ export const useDialog = () => {
             if (props.id) removeDialog(props.id);
           },
         },
-        options
+        options,
       );
 
       storeDisplayed(id);

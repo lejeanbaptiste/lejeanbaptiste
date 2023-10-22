@@ -18,7 +18,6 @@ export const iOS = /iPad|iPhone|iPod/.test(navigator.platform);
 export const isControlKey = (e: MouseEvent<any, any>) =>
   e.ctrlKey || (navigator.platform.toUpperCase().indexOf('MAC') >= 0 && e.metaKey);
 
-
 // * SORTABLE AND DND FUNCTIONS
 
 export const tagFilter: string[] = ['head', 'heading']; // array of tag names to filter tree by. "head" is for tei lite. "heading" is for cwrc entry.
@@ -31,7 +30,7 @@ export const getProjection = (
   activeId: UniqueIdentifier,
   overId: UniqueIdentifier,
   dragOffset: number,
-  indentationWidth: number
+  indentationWidth: number,
 ) => {
   const overItemIndex = items.findIndex(({ id }) => id === overId);
   const activeItemIndex = items.findIndex(({ id }) => id === activeId);
@@ -77,7 +76,7 @@ const getMinDepth = ({ nextItem }: { nextItem: FlattenedItem }) => {
 const flatten = (
   items: TreeItems,
   parentId: UniqueIdentifier | null = null,
-  depth = 0
+  depth = 0,
 ): FlattenedItem[] => {
   return items.reduce<FlattenedItem[]>((acc, item, index) => {
     return [
@@ -174,9 +173,7 @@ export const getNodes = ({ index = 0, level = 0, node, parent, treeType }: GetNo
   }
 
   const nodeChildren =
-    isElement(node) && treeType === 'tag'
-      ? Array.from(node.children)
-      : Array.from(node.childNodes);
+    isElement(node) && treeType === 'tag' ? Array.from(node.children) : Array.from(node.childNodes);
 
   nodeChildren.forEach((child, index) => {
     const childItem = getNodes({ index, level: level + 1, node: child, parent: item, treeType });

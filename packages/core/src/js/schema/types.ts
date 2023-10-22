@@ -30,7 +30,7 @@ export interface EntityMappingProps {
   annotation: (
     annotationManage: AnnotationsManager,
     entity: Entity,
-    format?: AnnotationFormat
+    format?: AnnotationFormat,
   ) => AnnotationProps | void;
   isNote?: boolean; //indicates if the entity is a "note type" (default is false)
   label: string; // the entity's name

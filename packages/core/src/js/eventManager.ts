@@ -309,7 +309,6 @@ class EventManager {
   destroy() {
     // TODO empty callbacks
   }
-
 }
 
 export default EventManager;

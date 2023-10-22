@@ -23,7 +23,7 @@ export const Text = forwardRef<HTMLDivElement, TextProps>(
       selected,
       style,
     },
-    ref
+    ref,
   ) => {
     const { palette } = useTheme();
 
@@ -101,5 +101,5 @@ export const Text = forwardRef<HTMLDivElement, TextProps>(
         </Label>
       </ListItemButton>
     );
-  }
+  },
 );

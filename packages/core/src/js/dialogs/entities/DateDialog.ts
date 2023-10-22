@@ -186,7 +186,7 @@ class DateDialog implements SchemaDialog {
           //@ts-ignore
           instance.settings.dateFormat || $.datepicker._defaults.dateFormat,
           selectedDate,
-          instance.settings
+          instance.settings,
         );
 
         _this.dateRange.not(this).datepicker('option', option, date);

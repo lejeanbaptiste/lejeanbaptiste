@@ -177,7 +177,7 @@ class DialogManager {
     }
 
     this.$cwrcDialogWrapper = $(
-      '<div class="cwrc cwrcDialogWrapper" style="color-scheme: light"></div>'
+      '<div class="cwrc cwrcDialogWrapper" style="color-scheme: light"></div>',
     ).appendTo(container);
 
     setDialogListeners(this.$cwrcDialogWrapper);

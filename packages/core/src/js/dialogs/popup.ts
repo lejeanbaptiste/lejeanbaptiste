@@ -79,13 +79,13 @@ class Popup implements LWDialogProps {
           const x = _this.writer.utilities.constrain(
             topLeft.left,
             $docBody.width() ?? 0,
-            $popupEl.outerWidth()
+            $popupEl.outerWidth(),
           );
 
           const y = _this.writer.utilities.constrain(
             topLeft.top,
             $docBody.height() ?? 0,
-            $popupEl.outerHeight()
+            $popupEl.outerHeight(),
           );
 
           $popupEl.css({ left: `${x}px`, top: `${y}px` });
@@ -282,7 +282,7 @@ class Popup implements LWDialogProps {
 
     setTimeout(() => {
       const dialogBar: DialogBarProps = this.writer.overmindState.ui.dialogBar.find(
-        ({ props }: DialogBarProps) => props?.id === targetId
+        ({ props }: DialogBarProps) => props?.id === targetId,
       );
       if (!dialogBar) return;
 

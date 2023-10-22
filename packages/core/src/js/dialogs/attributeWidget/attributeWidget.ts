@@ -64,12 +64,12 @@ class AttributeWidget {
                     this.setData(dataObj);
                   },
                   this,
-                  mapping
-                )
+                  mapping,
+                ),
               );
             }
           }
-        }, this)
+        }, this),
       );
     }
   }
@@ -119,7 +119,7 @@ class AttributeWidget {
         att.name,
         displayName,
         requiredClass,
-        initialVals[att.name]
+        initialVals[att.name],
       );
 
       //field component
@@ -270,7 +270,7 @@ class AttributeWidget {
     attributeName: string,
     displayName: string,
     requiredClass: string,
-    isInitial = false
+    isInitial = false,
   ) {
     const selected = isInitial ? 'selected' : '';
     return `
@@ -345,7 +345,7 @@ class AttributeWidget {
 
       $(
         `.attsContainer > div[data-name="form_${name}"] input[type!="hidden"], select`,
-        this.$el
+        this.$el,
       ).each((index, element) => {
         const val = $(element).val();
         const attrName = $(element).attr('name');

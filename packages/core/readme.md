@@ -8,7 +8,7 @@
 
 **The XML & RDF online editor of the Linked Editing Academic Framework**
 
-*Partial Documentation - Working in progress*
+_Partial Documentation - Working in progress_
 
 ## Table of Contents
 
@@ -73,7 +73,7 @@ cp -R ./node_modules/@cwrc/leafwriter/dist/* ./public/leafwriter
 <html>
   <head>
     ...
-    <script type="text/javascript" src=“https://unpkg.com/browse/@cwrc/leafwriter/dist/index.min.js”></script> 
+    <script type="text/javascript" src=“https://unpkg.com/browse/@cwrc/leafwriter/dist/index.min.js”></script>
     <link href="./leafwriter/css/index.css" rel="stylesheet"  type="text/css" />
     ...
   </head>
@@ -97,12 +97,12 @@ declare global {
 }
 
 const container = document.getElementById('#leaf-writer');
-const editor = new Leafwriter.Leafwriter(container); //it must be an HTML ELEMENT (i.e., a div) 
+const editor = new Leafwriter.Leafwriter(container); //it must be an HTML ELEMENT (i.e., a div)
 
 editor.init({
   document: {
-    xml: '<xml ...>' // Required (string)},
-  }, 
+    xml: '<xml ...>', // Required (string)},
+  },
   settings: {
     //! Important: Tell LW where its dependencies (extra CSS, images, web worker) are located.
     // In the example, we add the files to the folder `leafwriter` in the public folder.
@@ -124,11 +124,11 @@ Using async/await
 //Assuming the instance is named `editor`
 
 const currentContent = await editor.getContent();
-console.log(currentContent)
+console.log(currentContent);
 
 // Or as a Promise
 editor.getContent().then((currentContent) => {
-  console.log(currentContent)
+  console.log(currentContent);
 });
 ```
 
@@ -145,36 +145,36 @@ The config objects takes 4 objects:
 
 The document object has 2 properties:
 
-| Name | Type | Default  | Description |
-| - | - | - | - |
-| xml* | `string` |  | (Required) The XML document to be rendered on LEAF-Writer |
-| url  | `string` |  | The Document's URL. It is used as an IRI on Web Annotations created on LEAF-Writer |
+| Name  | Type     | Default | Description                                                                        |
+| ----- | -------- | ------- | ---------------------------------------------------------------------------------- |
+| xml\* | `string` |         | (Required) The XML document to be rendered on LEAF-Writer                          |
+| url   | `string` |         | The Document's URL. It is used as an IRI on Web Annotations created on LEAF-Writer |
 
 ### User
 
 The user object has three properties, exclusively used to assign a creator to Web Annotations created on LEAF-Writer
 
-| Name | Type | Default  | Description |
-| - | - | - | - |
-| name* | `string` |  | User's name. |
-| uri*  | `string` |  | (Required) URI pointing to the user info page, profile, or account |
-| email  | `string` |  | user's email |
+| Name   | Type     | Default | Description                                                        |
+| ------ | -------- | ------- | ------------------------------------------------------------------ |
+| name\* | `string` |         | User's name.                                                       |
+| uri\*  | `string` |         | (Required) URI pointing to the user info page, profile, or account |
+| email  | `string` |         | user's email                                                       |
 
 ### Settings
 
 The settings object has three main properties used to set up and customize LEAF-Writer. (more to come).
 
-| Name | Type | Default  | Description |
-| - | - | - | - |
-| authorityServices  | ([`AuthorityService`](#authorityservice) \| `string`)`[]` |  | An list of authority services or their id's seting up the authority services. If you pass a string, it will enable the corresponding authority service. Use the object AuthorityService to fine tune the set up. |
-| baseUrl | `string` | `.` | **Important**: By default, LEAF-Writer will load its dependencies (web workers, on-demand modules, extra CSS files) from the root folder. If these files are not on the root, you should define the path to these dependencies here. For instance, set this property to `/path/to/project/addons/` if you put LEAF-Writer dependencies in this folder. |
-| readonly  | `boolean` | `false` | Set LEAF-Writer readonly (prevent editing functionalities) |
-| schemas  | [`Schema`](#schemas)`[]` |  | An array of schemas to be included as supported by default.  |
+| Name              | Type                                                      | Default | Description                                                                                                                                                                                                                                                                                                                                            |
+| ----------------- | --------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| authorityServices | ([`AuthorityService`](#authorityservice) \| `string`)`[]` |         | An list of authority services or their id's seting up the authority services. If you pass a string, it will enable the corresponding authority service. Use the object AuthorityService to fine tune the set up.                                                                                                                                       |
+| baseUrl           | `string`                                                  | `.`     | **Important**: By default, LEAF-Writer will load its dependencies (web workers, on-demand modules, extra CSS files) from the root folder. If these files are not on the root, you should define the path to these dependencies here. For instance, set this property to `/path/to/project/addons/` if you put LEAF-Writer dependencies in this folder. |
+| readonly          | `boolean`                                                 | `false` | Set LEAF-Writer readonly (prevent editing functionalities)                                                                                                                                                                                                                                                                                             |
+| schemas           | [`Schema`](#schemas)`[]`                                  |         | An array of schemas to be included as supported by default.                                                                                                                                                                                                                                                                                            |
 
 #### AuthorityService
 
 Configures authorities services used to run entity lookups.
- LEAF-Writer includes 6 authority services supporing 5 types of entities:
+LEAF-Writer includes 6 authority services supporing 5 types of entities:
 
 - [DBPedia](https://www.dbpedia.org): Person, Place, Organization, Title, and Thing.
 - [Geonames](https://www.geonames.org/): Place.
@@ -190,22 +190,22 @@ Individual users can turn each authority on and off, as well enable and disabled
 
 All properties are optional, except for the id.
 
-| Name | Type | Default  | Description |
-| - | - | - | - |
-| id* | `dbpedia` \| `geonames` \| `getty` \| `lgpn` \| `viaf` \| `wikidata` |  | The authority's id. Other values will be ignored. |
-| enabled | `boolean` |  | Enable / Disable Authority. **Note**: the user can manually enable the authority in the settings panel. |
-| entities  | [`NamedEntitySettings`](#namedentitysettings) |  | An obeject with namedEntity property with boolean values. This object not only defines the entities avialable for the authority, but also if they are enabled or didabled by default. |
-| settings  | Object: { username: string } |  | An arbitrary object with a username property. Used to pass a username to Geonames |
+| Name     | Type                                                                 | Default | Description                                                                                                                                                                           |
+| -------- | -------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id\*     | `dbpedia` \| `geonames` \| `getty` \| `lgpn` \| `viaf` \| `wikidata` |         | The authority's id. Other values will be ignored.                                                                                                                                     |
+| enabled  | `boolean`                                                            |         | Enable / Disable Authority. **Note**: the user can manually enable the authority in the settings panel.                                                                               |
+| entities | [`NamedEntitySettings`](#namedentitysettings)                        |         | An obeject with namedEntity property with boolean values. This object not only defines the entities avialable for the authority, but also if they are enabled or didabled by default. |
+| settings | Object: { username: string }                                         |         | An arbitrary object with a username property. Used to pass a username to Geonames                                                                                                     |
 
 ##### NamedEntitySettings
 
-| Name | Type | Default  | Description |
-| - | - | - | - |
-| person | `boolean` |  | The authority's id |
-| place | `boolean` |  | Enable / Disable Authority. **Note**: the user can manually enable the authority in the settings panel. |
-| organization  | `boolean` |  | An array of tuples containing the Entity Name and a boolean. Enable / Disable a specific entity lookup. Note: the user can manually enable the entity in the settings panel. |
-| title  | `boolean` |  | An arbitrary object with a username property. Used to pass a username to Geonames |
-| rs  | `boolean` |  | An arbitrary object with a username property. Used to pass a username to Geonames |
+| Name         | Type      | Default | Description                                                                                                                                                                  |
+| ------------ | --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| person       | `boolean` |         | The authority's id                                                                                                                                                           |
+| place        | `boolean` |         | Enable / Disable Authority. **Note**: the user can manually enable the authority in the settings panel.                                                                      |
+| organization | `boolean` |         | An array of tuples containing the Entity Name and a boolean. Enable / Disable a specific entity lookup. Note: the user can manually enable the entity in the settings panel. |
+| title        | `boolean` |         | An arbitrary object with a username property. Used to pass a username to Geonames                                                                                            |
+| rs           | `boolean` |         | An arbitrary object with a username property. Used to pass a username to Geonames                                                                                            |
 
 Example:
 
@@ -222,7 +222,7 @@ Let’s say you want to enable LGPN and Geonames, disable Getty, and disable loo
 
 #### Schemas
 
-Out-of-the-box, LEAF-Writer supports the following schemas: 
+Out-of-the-box, LEAF-Writer supports the following schemas:
 
 - [TEI All](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng)
 - [TEI Corpus](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_corpus.rng)
@@ -239,13 +239,13 @@ There are two ways to use LEAF-Writer with other schemas.
 
 The schema object as five properties:
 
-| Name | Type | Default  | Description |
-| - | - | - | - |
-| id* | `string` |  | Unique id |
-| name*  | `string` |  | A human-readable name to be displayed to the user |
-| mapping*  | `tei` \| `teiLite` \| `orlando` \| `cwrcEntry` |  | Define how to parse tag names and map schema-specific functionalities. LEAF-Writer supports these four mappings, which are bound to the document's root element (except for teiLite, which is a TEI variation and uses the TEI root element) |
-| rng*  | `string[]` |  | A collection of URI pointing to the schema. It must be RNG schemas. LEAF-writer will get the first option unless the connection is not available. In this case, it will try to load the schema from the other options in order. Loading alternative routes to the schema will not change the document definitions. |
-| css*  | `string[]` |  | Similar to the rng property. A collection of URI pointing to the schema's CSS. LEAF-writer will get the first option unless the connection is not available. In this case, it will try to load the CSS from the other options in order. Loading alternative routes to the CSS will not change the document definitions. |
+| Name      | Type                                           | Default | Description                                                                                                                                                                                                                                                                                                             |
+| --------- | ---------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id\*      | `string`                                       |         | Unique id                                                                                                                                                                                                                                                                                                               |
+| name\*    | `string`                                       |         | A human-readable name to be displayed to the user                                                                                                                                                                                                                                                                       |
+| mapping\* | `tei` \| `teiLite` \| `orlando` \| `cwrcEntry` |         | Define how to parse tag names and map schema-specific functionalities. LEAF-Writer supports these four mappings, which are bound to the document's root element (except for teiLite, which is a TEI variation and uses the TEI root element)                                                                            |
+| rng\*     | `string[]`                                     |         | A collection of URI pointing to the schema. It must be RNG schemas. LEAF-writer will get the first option unless the connection is not available. In this case, it will try to load the schema from the other options in order. Loading alternative routes to the schema will not change the document definitions.      |
+| css\*     | `string[]`                                     |         | Similar to the rng property. A collection of URI pointing to the schema's CSS. LEAF-writer will get the first option unless the connection is not available. In this case, it will try to load the CSS from the other options in order. Loading alternative routes to the CSS will not change the document definitions. |
 
 Example:
 
@@ -279,7 +279,7 @@ editor.init({
     url: 'https://...',
   },
   user: {
-    name: 'FirstName lastNamez, 
+    name: 'FirstName lastNamez,
     uri: 'https://...',
   }
   settings: {
@@ -304,6 +304,6 @@ editor.init({
       ],
     }]
   },
-  
+
 });
 ```

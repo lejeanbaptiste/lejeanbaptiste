@@ -11,7 +11,7 @@ import { EntityType } from '../../types';
 
 export const initiate = (
   { state: { lookups }, actions }: Context,
-  { entry, type }: { entry?: Entity; type: DialogLookupType }
+  { entry, type }: { entry?: Entity; type: DialogLookupType },
 ) => {
   actions.lookups.setType(type);
 
@@ -54,7 +54,7 @@ export const search = async ({ state, effects }: Context, query: string) => {
   const authorityServices = state.editor.authorityServices;
 
   const listPriority = Object.values(authorityServices).sort(
-    (serviceA, serviceB) => serviceA.priority - serviceB.priority
+    (serviceA, serviceB) => serviceA.priority - serviceB.priority,
   );
 
   await Promise.all(
@@ -65,7 +65,7 @@ export const search = async ({ state, effects }: Context, query: string) => {
       results.set(id, []); //* guarantee the order
       const response = await find({ query, type: state.lookups.typeLookup }, settings);
       if (response) results.set(id, response);
-    })
+    }),
   );
 
   // const response = await effects.lookups.api.find({ query, type: state.lookups.typeLookup });

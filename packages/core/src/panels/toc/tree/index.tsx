@@ -35,7 +35,7 @@ export const Tree = () => {
       if (!shouldShow) {
         const childrenId = children.map((child) => child.id);
         childrenId.forEach(
-          (id) => (cloneExpandedItems = cloneExpandedItems.filter((exp) => exp !== id))
+          (id) => (cloneExpandedItems = cloneExpandedItems.filter((exp) => exp !== id)),
         );
         return parentId && cloneExpandedItems.includes(parentId);
       }

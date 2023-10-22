@@ -66,7 +66,7 @@ export const Collection = ({ isLoading = false, list, searchable = false }: Coll
                       id={item.id ?? item.name}
                       onMouseEnter={handleMouseEnter}
                     />
-                  )
+                  ),
                 )
               )}
             </AnimatePresence>

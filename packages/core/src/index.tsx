@@ -105,7 +105,7 @@ export class Leafwriter {
         <I18nextProvider i18n={i18next}>
           <Providers {...this.options} />
         </I18nextProvider>
-      </Provider>
+      </Provider>,
     );
   }
 
@@ -126,7 +126,7 @@ export class Leafwriter {
   }
 
   async getDocumentScreenshot(
-    params: ScreenshotParams = { width: 800, height: 480, windowWidth: 800, windowHeight: 1000 }
+    params: ScreenshotParams = { width: 800, height: 480, windowWidth: 800, windowHeight: 1000 },
   ) {
     const page = window.writer.editor?.getBody();
     if (!page) return;

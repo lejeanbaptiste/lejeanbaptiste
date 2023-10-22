@@ -13,6 +13,6 @@ export interface AuthorityLookupSettings {
 export default interface LookupServiceApi {
   find: (
     params: AuthorityLookupParams,
-    settings?: AuthorityLookupSettings
+    settings?: AuthorityLookupSettings,
   ) => Promise<AuthorityLookupResult[]>;
 }

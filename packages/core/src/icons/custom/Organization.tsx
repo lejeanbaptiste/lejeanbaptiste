@@ -10,7 +10,7 @@ const OrganizationIcon = createSvgIcon(
 	c0,0.7,0.5,1.2,1.2,1.2h7.2c0.7,0,1.2-0.5,1.2-1.2v-0.7C16.8,14.1,15.5,12.8,13.9,12.8z M8.3,12.5C8,12.2,7.6,12,7.2,12H5.6
 	C4.7,12,4,12.7,4,13.6v0.8c0,0.4,0.4,0.8,0.8,0.8h1.6C6.6,14,7.3,13,8.3,12.5L8.3,12.5z"
   />,
-  'Organization'
+  'Organization',
 );
 
 export default OrganizationIcon;

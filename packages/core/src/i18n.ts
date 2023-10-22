@@ -22,7 +22,7 @@ const i18n = createInstance(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (error, _t) => {
     if (error) return log.error(error);
-  }
+  },
 );
 
 // i18n.use(initReactI18next).init();

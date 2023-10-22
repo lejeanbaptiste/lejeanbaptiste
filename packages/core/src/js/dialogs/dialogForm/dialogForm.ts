@@ -358,7 +358,7 @@ class DialogForm {
         const propVal = this.currentData.properties[propName];
         const propMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
           this.type,
-          propName
+          propName,
         );
 
         if (propVal && propMapping) {

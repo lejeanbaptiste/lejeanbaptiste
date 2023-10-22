@@ -191,7 +191,7 @@ class Mapper {
 
         default:
           log.warn(
-            `mapper.getReverseMapping.cleanupMappings: cannot remove node with unknown type ${match}`
+            `mapper.getReverseMapping.cleanupMappings: cannot remove node with unknown type ${match}`,
           );
           break;
       }
@@ -248,7 +248,7 @@ class Mapper {
         // hack: if innerResult return undefined, result is also undefined
         if (!innerResult) {
           log.warn(
-            `mapper.getReverseMapping.getValueFromXPath: cannot get match for unrecognizable xpath ${xpath}`
+            `mapper.getReverseMapping.getValueFromXPath: cannot get match for unrecognizable xpath ${xpath}`,
           );
           result = undefined;
         } else {
@@ -256,7 +256,7 @@ class Mapper {
         }
       } else {
         log.warn(
-          `mapper.getReverseMapping.getValueFromXPath: cannot get match for unrecognizable xpath ${xpath}`
+          `mapper.getReverseMapping.getValueFromXPath: cannot get match for unrecognizable xpath ${xpath}`,
         );
       }
     }
@@ -593,7 +593,7 @@ class Mapper {
       'correction',
       'keyword',
       'link',
-    ])
+    ]),
   ) {
     const candidateEntities: Record<string, HTMLElement[]> = {};
     const headerTag = this.getHeaderTag();
@@ -642,7 +642,7 @@ class Mapper {
           }
 
           return false;
-        }
+        },
       );
 
       candidateEntities[type] = $.makeArray(matches);

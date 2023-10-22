@@ -32,8 +32,8 @@ export const useTree = () => {
         childrenIds.forEach(
           (childId) =>
             (cloneExpandedItems = cloneExpandedItems.filter(
-              (expandedItemId) => expandedItemId !== childId
-            ))
+              (expandedItemId) => expandedItemId !== childId,
+            )),
         );
         return parentId && cloneExpandedItems.includes(parentId);
       }

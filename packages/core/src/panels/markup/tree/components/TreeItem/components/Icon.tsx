@@ -20,7 +20,7 @@ export const Icon = ({
 
   const inverseThemeMode: PaletteMode = useMemo(
     () => (palette.mode === 'light' ? 'dark' : 'light'),
-    [palette.mode]
+    [palette.mode],
   );
 
   return (

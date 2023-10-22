@@ -134,7 +134,7 @@ class SchemaManager {
    */
   isRootSupported(root: string) {
     const schemaMapping = Array.from(this.mapper.mappings.entries()).some(([_id, mapping]) =>
-      mapping.root.includes(root)
+      mapping.root.includes(root),
     );
 
     return schemaMapping;
@@ -147,7 +147,7 @@ class SchemaManager {
    */
   getSchemaIdFromRoot(root: string) {
     const schemaMapping = Array.from(this.mapper.mappings.entries()).find(([_id, mapping]) =>
-      mapping.root.includes(root)
+      mapping.root.includes(root),
     );
 
     if (!schemaMapping) return null;
@@ -163,7 +163,7 @@ class SchemaManager {
    */
   getMappingIdsFromRoot(root: string) {
     const schemaMappings = Array.from(this.mapper.mappings.entries()).filter(([_id, mapping]) =>
-      mapping.root.includes(root)
+      mapping.root.includes(root),
     );
 
     const mappingIds: SchemaMappingType[] = schemaMappings.map(([key]) => key as SchemaMappingType);
@@ -262,7 +262,7 @@ class SchemaManager {
       currEl: JQuery<HTMLElement>,
       defHits: any,
       level: number,
-      status: any
+      status: any,
     ) => {
       if (status.canContainText) return false;
 
@@ -514,7 +514,7 @@ class SchemaManager {
    */
   updateSchema(updatedSchema: Schema) {
     this.schemas = this.schemas.map((schema) =>
-      schema.id !== updatedSchema.id ? updatedSchema : schema
+      schema.id !== updatedSchema.id ? updatedSchema : schema,
     );
   }
 
@@ -737,7 +737,7 @@ class SchemaManager {
     $('a\\:documentation *', this.schemaXML).each((index, el) => {
       if (el.parentElement) {
         el.parentElement.innerHTML = this.writer.utilities.escapeHTMLString(
-          el.parentElement.textContent
+          el.parentElement.textContent,
         );
       }
     });

@@ -8,7 +8,7 @@ import { type MenuItem } from './';
 
 export const IconButton = ({ color, disabled, icon, onClick, title, tooltip }: MenuItem) => {
   const { palette } = useTheme();
-  const {t}  = useTranslation('leafwriter')
+  const { t } = useTranslation('leafwriter');
 
   let tip = `${tooltip ?? title}`;
   if (disabled) tip += ` - ${t('not supported')}`;

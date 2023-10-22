@@ -15,7 +15,6 @@ export const Header = ({ count, nodeType }: HeaderProps) => {
   const fullName = useAtomValue(tagFullNameAtom);
   const tagName = useAtomValue(tagNameAtom);
   const xpath = useAtomValue(xpathAtom);
-  
 
   const TagName = () => (
     <Typography variant="caption">

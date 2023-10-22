@@ -20,4 +20,4 @@ export const clear = ({ state }: Context) => {
     name: 'Anonymous',
     uri: '#anonymous',
   };
-}
+};

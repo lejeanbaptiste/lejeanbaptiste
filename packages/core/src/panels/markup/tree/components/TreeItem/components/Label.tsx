@@ -28,7 +28,7 @@ export const Label = ({
 
   const inverseThemeMode: PaletteMode = useMemo(
     () => (palette.mode === 'light' ? 'dark' : 'light'),
-    [palette.mode]
+    [palette.mode],
   );
 
   const detailsVariant: Variants = {

@@ -361,7 +361,7 @@ class CWRC2XML {
     const getOffsetFromParentForEntity = (
       id: string,
       parent: JQuery<HTMLElement>,
-      isEnd: boolean
+      isEnd: boolean,
     ) => {
       let offset = 0;
 
@@ -490,9 +490,8 @@ class CWRC2XML {
           if (!id) return;
 
           //@ts-ignore
-          const entityContentLength = _this.writer.entitiesManager
-            .getEntity(id)
-            .getContent()?.length;
+          const entityContentLength = _this.writer.entitiesManager.getEntity(id).getContent()
+            ?.length;
           if (!entityContentLength) return;
 
           offsets.push({
@@ -513,10 +512,13 @@ class CWRC2XML {
   //! deprecated?
   private determineOffsetRelationships(offsets: any[]) {
     const entityOffsets: any[] = [];
-    const relationships: Record<string, {
+    const relationships: Record<
+      string,
+      {
         contains: string[];
         overlaps: string[];
-      }> = {};
+      }
+    > = {};
 
     for (let i = 0; i < offsets.length; i++) {
       const o = offsets[i];

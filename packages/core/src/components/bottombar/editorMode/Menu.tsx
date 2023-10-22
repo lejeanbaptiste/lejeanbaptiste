@@ -35,7 +35,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const handleOpenConfirmationDialog = (
     value: string,
     text: React.ReactNode,
-    severity?: SeverityType
+    severity?: SeverityType,
   ) => {
     openDialog({
       type: 'simple',
@@ -48,7 +48,10 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
           { action: 'cancel', label: t('commons.cancel').toString(), variant: 'outlined' },
           {
             action: 'change',
-            label: severity === 'warning' ? t('change anyway').toString() : t('commons.change').toString(),
+            label:
+              severity === 'warning'
+                ? t('change anyway').toString()
+                : t('commons.change').toString(),
           },
         ],
         onClose: async (action) => {

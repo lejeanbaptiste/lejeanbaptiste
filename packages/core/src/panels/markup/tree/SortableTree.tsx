@@ -55,7 +55,7 @@ export const SortableTree = () => {
         distance: 10,
         tolerance: !allowDnd ? 0 : undefined,
       },
-    })
+    }),
   );
 
   const [offsetLeft, setOffsetLeft] = useState(0);
@@ -145,7 +145,7 @@ export const SortableTree = () => {
 
   const handleSelectItem = (
     event: MouseEvent<HTMLElement, Event>,
-    { id, contentOnly = true }: { id: UniqueIdentifier; contentOnly?: boolean }
+    { id, contentOnly = true }: { id: UniqueIdentifier; contentOnly?: boolean },
   ) => {
     event.shiftKey ? addToselectItems(id) : selectItem(id, { contentOnly });
   };
@@ -154,7 +154,7 @@ export const SortableTree = () => {
 
   const selectItem = (
     id: UniqueIdentifier,
-    { contentOnly }: SelectItemOptions = { contentOnly: true }
+    { contentOnly }: SelectItemOptions = { contentOnly: true },
   ) => {
     const { utilities } = writer;
 
@@ -170,7 +170,7 @@ export const SortableTree = () => {
 
     utilities.selectNode(
       { id: id as string, nodeIndex, parentId: parentId as string, xpath },
-      contentOnly
+      contentOnly,
     );
     return;
   };
@@ -193,7 +193,7 @@ export const SortableTree = () => {
     for (let i = firstIndex; i <= lastIndex; i++) {
       const item = visibleTree.find(
         ({ depth, index, parentId }) =>
-          depth === anchor.depth && parentId === anchor.parentId && index === i
+          depth === anchor.depth && parentId === anchor.parentId && index === i,
       );
       if (item) expandedSelection.push(item.id as string);
     }
@@ -222,7 +222,7 @@ export const SortableTree = () => {
 
   const handleContextMenu = (
     event: MouseEvent<HTMLElement, Event>,
-    { id }: { id: string; contentOnly?: boolean }
+    { id }: { id: string; contentOnly?: boolean },
   ) => {
     const position = { posX: event.clientX, posY: event.clientY };
     selectedItems.includes(id) && selectedItems.length > 1
@@ -232,7 +232,7 @@ export const SortableTree = () => {
 
   const openContextMenuForSingleItem = (
     id: UniqueIdentifier,
-    position: { posX: number; posY: number }
+    position: { posX: number; posY: number },
   ) => {
     if (!selectedItems.includes(id)) selectItem(id);
     const selectedItem = visibleTree.find((item) => item.id === id);
@@ -260,7 +260,7 @@ export const SortableTree = () => {
       if (!Array.isArray(tagIds)) return false;
       const anchor = visibleTree.find(({ id }) => id === multiselectAnchor);
       return tagIds.every(
-        (tagId) => visibleTree.find(({ id }) => id === tagId)?.label === anchor?.label
+        (tagId) => visibleTree.find(({ id }) => id === tagId)?.label === anchor?.label,
       );
     };
 
@@ -317,7 +317,7 @@ export const SortableTree = () => {
       // const overIndex = flattenedItems.findIndex(({ id }) => id === over.id);
       const activeIndex = visibleTree.findIndex(({ id }) => id === active.id);
       const overIndexParent = visibleTree[parentIndex]?.children.findIndex(
-        ({ id }) => id === over.id
+        ({ id }) => id === over.id,
       );
       // const activeTreeItem = flattenedItems[activeIndex];Í
 
@@ -402,7 +402,7 @@ export const SortableTree = () => {
               />
             ) : null}
           </DragOverlay>,
-          document.body
+          document.body,
         )}
       </SortableContext>
     </DndContext>

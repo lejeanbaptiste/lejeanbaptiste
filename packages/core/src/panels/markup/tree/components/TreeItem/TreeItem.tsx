@@ -49,7 +49,7 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
       wrapperRef,
       ...props
     },
-    ref
+    ref,
   ) => {
     const { palette } = useTheme();
 
@@ -79,7 +79,7 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
           styles.Wrapper,
           styles.indicator,
           clone && styles.clone,
-          ghost && styles.ghost
+          ghost && styles.ghost,
         )}
         {...props}
         sx={{
@@ -90,7 +90,7 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
           pl: `${indentationWidth * depth}px`,
           '--indicator-bgcolor': alpha(
             palette.primary[palette.mode],
-            palette.action.selectedOpacity
+            palette.action.selectedOpacity,
           ),
           pointerEvents: disableInteraction ? 'none' : 'auto',
         }}
@@ -106,5 +106,5 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
         )}
       </ListItem>
     );
-  }
+  },
 );

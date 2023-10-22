@@ -248,7 +248,7 @@ class AnnotationsManager {
       if (annotation['dcterms:contributor']) {
         userIsContributor = !!annotation['dcterms:contributor'].find(
           //@ts-ignore
-          (contributor = contributor['@id'] === userInfo.id)
+          (contributor = contributor['@id'] === userInfo.id),
         );
       }
 
@@ -332,7 +332,7 @@ class AnnotationsManager {
    */
   async getAnnotations(entities: Entity[], format: AnnotationFormat = 'json') {
     const rdfStringArray = await Promise.all(
-      entities.map((entity) => this.getAnnotationString(entity, format))
+      entities.map((entity) => this.getAnnotationString(entity, format)),
     );
 
     const rdfString = rdfStringArray.join('');
@@ -447,7 +447,7 @@ class AnnotationsManager {
             } catch (e2) {
               reject(e2);
             }
-          }
+          },
         );
       } catch (error1) {
         reject(error1);

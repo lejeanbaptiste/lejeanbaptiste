@@ -128,7 +128,7 @@ class Writer extends EventManager {
     if (this.allowOverlap && this.mode === this.XML) {
       this.allowOverlap = false;
       log.warn(
-        "Mode set to XML and overlap allowed. Disabling overlap since XML doesn't allow it."
+        "Mode set to XML and overlap allowed. Disabling overlap since XML doesn't allow it.",
       );
     }
 

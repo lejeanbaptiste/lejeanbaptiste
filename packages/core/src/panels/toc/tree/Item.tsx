@@ -42,7 +42,7 @@ export const Item = ({
 
   const inverseThemeMode: PaletteMode = useMemo(
     () => (palette.mode === 'light' ? 'dark' : 'light'),
-    [palette.mode]
+    [palette.mode],
   );
 
   const hanldeSelectItem = () => onSelectItem && onSelectItem(nodeId);

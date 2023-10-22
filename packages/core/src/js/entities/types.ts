@@ -100,7 +100,7 @@ export interface AnnotationHasBody {
   'cito:hasCitedEntity'?: string;
   'cito:hasCitationEvent'?: 'cito:cites'; //string
   'skos:altLabel'?: string;
-  'pubType'?: string;
+  pubType?: string;
   'xsd:date'?: string;
   'cnt:chars'?: string;
 }

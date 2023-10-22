@@ -15,7 +15,7 @@ export const schemas: Schema[] = [
     ],
   },
 
-// {
+  // {
   //   id: 'epidoc',
   //   name: 'EpiDoc',
   //   mapping: 'tei',

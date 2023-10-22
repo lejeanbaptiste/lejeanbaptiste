@@ -177,7 +177,7 @@ const getEntryForPath = (path: string) => {
             return true;
           }
         },
-        true
+        true,
       );
     }
   }
@@ -321,7 +321,7 @@ const getChildrenJSON = (
   level: number,
   type: string,
   children: any[],
-  refParentProps?: any
+  refParentProps?: any,
 ) => {
   // first get the direct types
   let hits: any[] = [];

@@ -193,8 +193,8 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
         title: 'Warning',
         msg: `
           <p>You are about to lose edits you've made to ${totalModified} Nerve-identified entit${
-          totalModified > 1 ? 'ies' : 'y'
-        }.</p>
+            totalModified > 1 ? 'ies' : 'y'
+          }.</p>
           <p>Do you wish to proceed?</p>
         `,
         // showConfirmKey: 'confirm-reject-nerve-entities',
@@ -564,7 +564,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       Object.assign(
         //@ts-ignore
         context.tags[nerveTypeName].defaults,
-        sm.mapper.getRequiredAttributes(entityType)
+        sm.mapper.getRequiredAttributes(entityType),
       );
     });
 
@@ -1305,7 +1305,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
             };
             setMergeMode(false);
           }
-        }
+        },
       );
       mergeDialog.$el.on('cancel', function () {});
     }

@@ -10,7 +10,7 @@ const CitationCardIcon = createSvgIcon(
 	 M18.2,11.8c0,0.1-0.1,0.2-0.2,0.2h-4c-0.1,0-0.2-0.1-0.2-0.2v-0.5c0-0.1,0.1-0.2,0.2-0.2h4c0.1,0,0.2,0.1,0.2,0.2V11.8z M18.2,10
 	c0,0.1-0.1,0.2-0.2,0.2h-4c-0.1,0-0.2-0.1-0.2-0.2V9.6c0-0.1,0.1-0.2,0.2-0.2h4c0.1,0,0.2,0.1,0.2,0.2V10z"
   />,
-  'CitationCard'
+  'CitationCard',
 );
 
 export default CitationCardIcon;
