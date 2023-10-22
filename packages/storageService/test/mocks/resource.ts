@@ -6,10 +6,10 @@ export const unsupportedProviderAuth: ProviderAuth = { name: 'google', access_to
 export const githubAuth: ProviderAuth = { name: 'github', access_token: 'gho_vtkG' };
 export const gitlabAuth: ProviderAuth = { name: 'gitlab', access_token: '1234' };
 
-export const getProviderAuth = (provider = 'github'): ProviderAuth | undefined => {
+export const getProviderAuth = (provider = 'github'): ProviderAuth => {
   if (provider === 'github') return githubAuth;
   if (provider === 'gitlab') return gitlabAuth;
-  return;
+  return githubAuth;
 };
 
 type GetResourceParams = {
@@ -17,10 +17,7 @@ type GetResourceParams = {
   type?: string;
 };
 
-export const getResource = ({
-  type,
-  provider = 'github',
-}: GetResourceParams): Resource | undefined => {
+export const getResource = ({ type, provider = 'github' }: GetResourceParams): Resource => {
   if (!type) {
     return {
       storageSource: 'cloud',
@@ -89,7 +86,13 @@ export const getResource = ({
     };
   }
 
-  return;
+  return {
+    storageSource: 'cloud',
+    provider,
+    hash: '0b0bb91a0b70088815055f5987f04ecce4a00faf',
+    content: '<?xml>content</xml>',
+    filename: 'document.xml',
+  };
 };
 
 export const authenticatedUser: AuthenticatedUser = {
