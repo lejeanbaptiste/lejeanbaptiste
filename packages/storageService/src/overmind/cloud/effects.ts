@@ -1,6 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Provider, { ProviderAuth } from '../../types/Provider';
 
-type Providers = { [key: string]: Provider };
+type Providers = Record<string, Provider>;
 
 export class Api {
   providers: Providers = {};

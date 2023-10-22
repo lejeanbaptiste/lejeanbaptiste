@@ -31,7 +31,7 @@ export const configure = async ({ state, actions }: Context, config: StorageDial
     validate,
   } = config;
 
-  updateTranslation(language);
+  await updateTranslation(language);
 
   const { common, cloud } = state;
 
@@ -185,10 +185,10 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
 
 export const afterSave = async ({ state, actions }: Context, resource?: Resource) => {
   if (!resource) resource = state.common.resource;
-  if (!resource || !resource.content) return;
+  if (!resource?.content) return;
 
   state.common.submit = { action: 'save', resource };
-  actions.common.resetAll();
+  await actions.common.resetAll();
 };
 
 export const clearSubmit = ({ state }: Context) => {
@@ -255,7 +255,7 @@ export const resetAll = async ({ state }: Context) => {
   state.cloud.repositories = undefined;
 };
 
-export const download = ({ state, actions }: Context) => {
+export const download = async ({ state, actions }: Context) => {
   const { resource } = state.common;
   if (!resource) return;
 
@@ -266,5 +266,5 @@ export const download = ({ state, actions }: Context) => {
   saveAs(blob, filename);
 
   actions.common.setResource({ filename, content });
-  actions.common.afterSave();
+  await actions.common.afterSave();
 };

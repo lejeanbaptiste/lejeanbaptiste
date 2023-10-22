@@ -14,7 +14,7 @@ const { t } = i18next;
 let provider: Provider | null;
 
 export const loadDocument = async (providerAuth: ProviderAuth, resource: Resource) => {
-  updateTranslation();
+  await updateTranslation();
 
   const { provider: providerName, owner, ownertype, repo, filename } = resource;
   let { path } = resource;
@@ -96,7 +96,7 @@ export const saveDocument = async (
   resource: Resource,
   overwrite = false,
 ) => {
-  updateTranslation();
+  await updateTranslation();
 
   const { provider: providerName, owner, ownertype, repo, filename, content, hash } = resource;
   let { path } = resource;

@@ -21,10 +21,10 @@ export const uploadFile = async (_context: Context, file: File): Promise<string 
   });
 };
 
-type Resource = {
+interface Resource {
   content: string;
   filename?: string;
-};
+}
 
 export const setResource = async ({ state }: Context, { content, filename }: Resource) => {
   if (!content) return;

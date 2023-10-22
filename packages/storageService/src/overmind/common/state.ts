@@ -12,7 +12,7 @@ import type {
   Validate,
 } from '../../types';
 
-type State = {
+interface State {
   allowAllFileTypes: boolean;
   allowedFileTypes?: string[];
   allowLocalFiles?: boolean;
@@ -29,7 +29,7 @@ type State = {
   sources: SourcePanelOption[];
   submit?: Submit;
   validate?: Validate;
-};
+}
 
 export const state: State = {
   allowAllFileTypes: false,

@@ -964,9 +964,11 @@ export const saveDocument = async ({ state, actions }: Context) => {
           },
           { action: 'overwrite', label: `${t('commons.overwrite', { ns: 'LWStorageService' })}` },
         ],
-        //@ts-ignore
-        onClose: async (action: string) => {
-          if (action === 'cancel') return actions.cloud.setIsSaving(false);
+        onClose: async (action) => {
+          if (action === 'cancel') {
+            actions.cloud.setIsSaving(false);
+            return
+          } 
 
           await actions.cloud._createOrUpdateFile(fileLatestHash);
           actions.cloud.setIsSaving(false);
