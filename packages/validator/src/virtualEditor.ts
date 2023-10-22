@@ -76,7 +76,7 @@ class VirtualEditor {
   }
 
   hasValidator() {
-    return this.validator ? true : false;
+    return !!this.validator;
   }
 
   setDocument(documentString: string) {
