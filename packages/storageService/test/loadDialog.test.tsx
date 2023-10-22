@@ -40,7 +40,7 @@ const setup = async (props: Omit<StorageDialogProps, 'open'> = {}) => {
 
 const closeLoadDialog = async () => {
   const footer = screen.getByTestId('footer-load');
-  await act(async () => user.click(getByTitle(footer, 'cancel')));
+  await user.click(getByTitle(footer, 'cancel'));
 };
 
 describe('Load Dialog', () => {
@@ -92,11 +92,11 @@ describe('Load Dialog', () => {
       expect(getByTestId(header, 'header-dialog-title').textContent).toBe('Load');
       await waitFor(() => expect(getByText(header, 'local')).toBeInTheDocument());
 
-      await act(async () => user.click(screen.getByTestId('source_panel-paste')));
+      await user.click(screen.getByTestId('source_panel-paste'));
       await waitFor(() => expect(getByText(header, 'paste')).toBeInTheDocument());
 
       const input = screen.getByTestId('paste_panel-input') as HTMLInputElement;
-      await act(async () => user.type(input, '<xml>')); //simulate user typing
+      await user.type(input, '<xml>'); //simulate user typing
 
       expect(input).toHaveTextContent('<xml>');
     });
@@ -173,7 +173,7 @@ describe('Load Dialog', () => {
         await waitFor(() => expect(repositories).toBeInTheDocument());
 
         const repo = getByTitle(repositories, 'repo1');
-        await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+        await user.dblClick(getByTestId(repo, 'primary-button'));
 
         const repositoryList = getByTestId(storageDialog, 'list-content');
         await waitFor(() => expect(repositoryList).toBeInTheDocument());
@@ -181,9 +181,7 @@ describe('Load Dialog', () => {
         const file = getByTitle(storageDialog, 'file_name_without_extension');
         expect(getByTestId(file, 'primary-button')).toHaveClass('Mui-disabled');
 
-        await act(async () => {
-          await user.click(screen.getByTestId('source_panel-settings_button'));
-        });
+        await user.click(screen.getByTestId('source_panel-settings_button'));
 
         const globalSettingsDialog = screen.getByTestId('global_settings-dialog');
         await waitFor(() => expect(globalSettingsDialog).toBeInTheDocument());
@@ -192,12 +190,12 @@ describe('Load Dialog', () => {
         expect(allowAllFilesButton).not.toHaveClass('Mui-checked');
 
         //toggle allow all
-        await act(async () => user.click(allowAllFilesButton));
+        await user.click(allowAllFilesButton);
         expect(allowAllFilesButton).toHaveClass('Mui-checked');
         expect(getByTestId(file, 'primary-button')).not.toHaveClass('Mui-disabled');
 
         //toggle not allow all
-        await act(async () => user.click(allowAllFilesButton));
+        await user.click(allowAllFilesButton);
         expect(allowAllFilesButton).not.toHaveClass('Mui-checked');
         expect(getByTestId(file, 'primary-button')).toHaveClass('Mui-disabled');
 
@@ -224,7 +222,7 @@ describe('Load Dialog', () => {
 
         const sidebar = getByTestId(storageDialog, 'sidebar');
         const organizationsButton = getByTitle(sidebar, 'Organizations');
-        await act(async () => user.click(getByTestId(organizationsButton, 'primary-button')));
+        await user.click(getByTestId(organizationsButton, 'primary-button'));
 
         const organizations = await waitFor(() => {
           const listOrganizations = getByTestId(storageDialog, 'list-organizations');
@@ -234,13 +232,13 @@ describe('Load Dialog', () => {
 
         const organization = getByTitle(organizations, 'organization 1');
         const orgButton = getByTestId(organization, 'primary-button');
-        await act(async () => user.click(orgButton));
+        await user.click(orgButton);
 
         expect(orgButton).toHaveClass('Mui-selected');
         expect(footerLoadButton).toBeEnabled();
         expect(footerLoadButton).toHaveTextContent('open');
 
-        await act(async () => user.click(footerLoadButton));
+        await user.click(footerLoadButton);
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument());
 
         await closeLoadDialog();
@@ -261,7 +259,7 @@ describe('Load Dialog', () => {
 
         const sidebar = getByTestId(storageDialog, 'sidebar');
         const organizationsButton = getByTitle(sidebar, 'Organizations');
-        await act(async () => user.click(getByTestId(organizationsButton, 'primary-button')));
+        await user.click(getByTestId(organizationsButton, 'primary-button'));
 
         const organizations = await waitFor(() => {
           const listOrganizations = getByTestId(storageDialog, 'list-organizations');
@@ -271,7 +269,7 @@ describe('Load Dialog', () => {
 
         const organization = getByTitle(organizations, 'organization 1');
         const orgButton = getByTestId(organization, 'primary-button');
-        await act(async () => user.dblClick(orgButton));
+        await user.dblClick(orgButton);
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument());
 
@@ -316,7 +314,7 @@ describe('Load Dialog', () => {
 
         const sidebar = getByTestId(storageDialog, 'sidebar');
         const shared = getByTitle(sidebar, 'shared with me');
-        await act(async () => user.click(getByTestId(shared, 'primary-button')));
+        await user.click(getByTestId(shared, 'primary-button'));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument());
 
@@ -344,7 +342,7 @@ describe('Load Dialog', () => {
 
         const repo = getByTitle(repositories, 'private_repo');
         const repoButton = getByTestId(repo, 'primary-button');
-        await act(async () => user.click(repoButton));
+        await user.click(repoButton);
 
         expect(repoButton).not.toHaveClass('Mui-selected');
         expect(footerLoadButton).not.toBeEnabled();
@@ -371,7 +369,7 @@ describe('Load Dialog', () => {
 
         const repo = getByTitle(repositories, 'private_repo');
         const repoButton = getByTestId(repo, 'primary-button');
-        await act(async () => user.dblClick(repoButton));
+        await user.dblClick(repoButton);
       });
 
       test('Select and Open repository', async () => {
@@ -395,13 +393,13 @@ describe('Load Dialog', () => {
 
         const repo = getByTitle(repositories, 'repo1');
         const repoButton = getByTestId(repo, 'primary-button');
-        await act(async () => user.click(repoButton));
+        await user.click(repoButton);
 
         expect(repoButton).toHaveClass('Mui-selected');
         expect(footerLoadButton).toBeEnabled();
         expect(footerLoadButton).toHaveTextContent('open');
 
-        await act(async () => user.click(footerLoadButton));
+        await user.click(footerLoadButton);
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument());
 
@@ -425,7 +423,7 @@ describe('Load Dialog', () => {
         await waitFor(() => expect(repositories).toBeInTheDocument());
 
         const repo = getByTitle(repositories, 'repo1');
-        await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+        await user.dblClick(getByTestId(repo, 'primary-button'));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument());
 
@@ -458,19 +456,19 @@ describe('Load Dialog', () => {
           await waitFor(() => expect(repositories).toBeInTheDocument());
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           expect(footerLoadButton).not.toBeEnabled();
 
           const folder = getByTitle(storageDialog, 'folder1');
           const folderButton = getByTestId(folder, 'primary-button');
-          await act(async () => user.click(folderButton));
+          await user.click(folderButton);
 
           expect(folderButton).toHaveClass('Mui-selected');
           expect(footerLoadButton).toBeEnabled();
           expect(footerLoadButton).toHaveTextContent('open');
 
-          await act(async () => user.click(footerLoadButton));
+          await user.click(footerLoadButton);
 
           await waitFor(() =>
             expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
@@ -496,13 +494,13 @@ describe('Load Dialog', () => {
           await waitFor(() => expect(repositories).toBeInTheDocument());
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           const repositoryList = getByTestId(storageDialog, 'list-content');
           await waitFor(() => expect(repositoryList).toBeInTheDocument());
 
           const folder = getByTitle(repositoryList, 'folder1');
-          await act(async () => await user.dblClick(getByTestId(folder, 'primary-button')));
+          await await user.dblClick(getByTestId(folder, 'primary-button'));
           await waitFor(() => expect(repositoryList).toBeInTheDocument());
 
           await closeLoadDialog();
@@ -527,17 +525,17 @@ describe('Load Dialog', () => {
           await waitFor(() => expect(repositories).toBeInTheDocument());
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           const repositoryList = getByTestId(storageDialog, 'list-content');
           await waitFor(() => expect(repositoryList).toBeInTheDocument());
 
           const file = getByTitle(storageDialog, 'file1.xml');
-          await act(async () => user.click(getByTestId(file, 'primary-button')));
+          await user.click(getByTestId(file, 'primary-button'));
 
           const secondaryButton = getByTestId(file, 'secondary-button');
           await waitFor(() => expect(secondaryButton).toBeInTheDocument());
-          await act(async () => user.click(secondaryButton));
+          await user.click(secondaryButton);
 
           const contentDetails = getByTestId(file, 'content-details');
           await waitFor(() => expect(contentDetails).toBeInTheDocument());
@@ -573,20 +571,20 @@ describe('Load Dialog', () => {
           await waitFor(() => expect(repositories).toBeInTheDocument());
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           const repositoryList = getByTestId(storageDialog, 'list-content');
           await waitFor(() => expect(repositoryList).toBeInTheDocument());
 
           const file = getByTitle(storageDialog, 'file1.xml');
           const fileButton = getByTestId(file, 'primary-button');
-          await act(async () => user.click(fileButton));
+          await user.click(fileButton);
 
           expect(fileButton).toHaveClass('Mui-selected');
           expect(footerLoadButton).toBeEnabled();
           expect(footerLoadButton).toHaveTextContent('Load');
 
-          await act(async () => user.click(footerLoadButton));
+          await user.click(footerLoadButton);
         });
 
         test('Open file', async () => {
@@ -606,14 +604,14 @@ describe('Load Dialog', () => {
           await waitFor(() => expect(repositories).toBeInTheDocument());
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           const repositoryList = getByTestId(storageDialog, 'list-content');
           await waitFor(() => expect(repositoryList).toBeInTheDocument());
 
           const file = getByTitle(storageDialog, 'file1.xml');
           const fileButton = getByTestId(file, 'primary-button');
-          await act(async () => user.dblClick(fileButton));
+          await user.dblClick(fileButton);
         });
       });
     });
@@ -632,7 +630,7 @@ describe('Load Dialog', () => {
         await waitFor(() => expect(getByText(header, preferProvider)).toBeInTheDocument());
 
         const input = screen.getByTestId('search-user-input') as HTMLInputElement;
-        await act(async () => user.type(input, 'anto'));
+        await user.type(input, 'anto');
         expect(input).toHaveValue('anto');
 
         await waitFor(() => expect(screen.getByTestId('search-user-result')).toBeInTheDocument());
@@ -662,7 +660,7 @@ describe('Load Dialog', () => {
         await waitFor(() => expect(repositories).toBeInTheDocument());
 
         const repo = getByTitle(repositories, 'repo1');
-        await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+        await user.dblClick(getByTestId(repo, 'primary-button'));
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument());
 
@@ -671,7 +669,7 @@ describe('Load Dialog', () => {
 
         const input = getByTitle(searchBar, 'search') as HTMLInputElement;
 
-        await act(async () => user.type(input, 'car')); //simulate user typing
+        await user.type(input, 'car'); //simulate user typing
         expect(input).toHaveValue('car');
 
         await waitFor(
@@ -680,10 +678,10 @@ describe('Load Dialog', () => {
         );
 
         if (preferProvider === 'github') {
-          await act(async () => user.click(getByTestId(searchBar, 'search-bar:show-more')));
+          await user.click(getByTestId(searchBar, 'search-bar:show-more'));
         }
 
-        await act(async () => user.click(getByTestId(searchBar, 'search-clear-field')));
+        await user.click(getByTestId(searchBar, 'search-clear-field'));
         expect(input).toHaveValue('');
 
         await closeLoadDialog();
@@ -710,7 +708,7 @@ describe('Load Dialog', () => {
           await waitFor(() => expect(repositories).toBeInTheDocument());
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           await waitFor(() =>
             expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
@@ -721,7 +719,7 @@ describe('Load Dialog', () => {
 
           const input = getByTitle(searchBar, 'search') as HTMLInputElement;
 
-          await act(async () => user.type(input, 'lang')); //simulate user typing
+          await user.type(input, 'lang'); //simulate user typing
           expect(input).toHaveValue('lang');
 
           const searchResult = await waitFor(
@@ -737,7 +735,7 @@ describe('Load Dialog', () => {
 
           const primaryButton = getByTestId(item, 'primary-button');
           await waitFor(() => expect(primaryButton).toBeInTheDocument());
-          await act(async () => user.click(primaryButton));
+          await user.click(primaryButton);
         });
 
         test('Open File', async () => {
@@ -757,7 +755,7 @@ describe('Load Dialog', () => {
           await waitFor(() => expect(repositories).toBeInTheDocument());
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           await waitFor(() =>
             expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
@@ -768,7 +766,7 @@ describe('Load Dialog', () => {
 
           const input = getByTitle(searchBar, 'search') as HTMLInputElement;
 
-          await act(async () => user.type(input, 'lang')); //simulate user typing
+          await user.type(input, 'lang'); //simulate user typing
           expect(input).toHaveValue('lang');
 
           const searchResult = await waitFor(
@@ -784,7 +782,7 @@ describe('Load Dialog', () => {
 
           const primaryButton = getByTestId(item, 'primary-button');
           await waitFor(() => expect(primaryButton).toBeInTheDocument());
-          await act(async () => user.click(primaryButton));
+          await user.click(primaryButton);
         });
 
         test('Open Parent Folder', async () => {
@@ -804,7 +802,7 @@ describe('Load Dialog', () => {
           await waitFor(() => expect(repositories).toBeInTheDocument());
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => user.dblClick(getByTestId(repo, 'primary-button')));
+          await user.dblClick(getByTestId(repo, 'primary-button'));
 
           await waitFor(() =>
             expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
@@ -815,7 +813,7 @@ describe('Load Dialog', () => {
 
           const input = getByTitle(searchBar, 'search') as HTMLInputElement;
 
-          await act(async () => user.type(input, 'lang')); //simulate user typing
+          await user.type(input, 'lang'); //simulate user typing
           expect(input).toHaveValue('lang');
 
           const searchResult = await waitFor(
@@ -828,11 +826,11 @@ describe('Load Dialog', () => {
           );
 
           const item = getByTitle(searchResult, 'language.xml');
-          await act(async () => user.hover(item));
+          await user.hover(item);
 
           const secondaryButton = getByTestId(item, 'secondary-button');
           await waitFor(() => expect(secondaryButton).toBeInTheDocument());
-          await act(async () => user.click(secondaryButton));
+          await user.click(secondaryButton);
         });
 
         test('Display details', async () => {
@@ -852,7 +850,7 @@ describe('Load Dialog', () => {
           await waitFor(() => expect(repositories).toBeInTheDocument());
 
           const repo = getByTitle(repositories, 'repo1');
-          await act(async () => userEvent.dblClick(getByTestId(repo, 'primary-button')));
+          await userEvent.dblClick(getByTestId(repo, 'primary-button'));
 
           await waitFor(() =>
             expect(getByTestId(storageDialog, 'list-content')).toBeInTheDocument(),
@@ -863,7 +861,7 @@ describe('Load Dialog', () => {
 
           const input = getByTitle(searchBar, 'search') as HTMLInputElement;
 
-          await act(async () => userEvent.type(input, 'lang', { delay: 50 })); //simulate user typing
+          await userEvent.type(input, 'lang', { delay: 50 }); //simulate user typing
           expect(input).toHaveValue('lang');
 
           const searchResult = await waitFor(
@@ -876,17 +874,17 @@ describe('Load Dialog', () => {
           );
 
           const item = getByTitle(searchResult, 'language.xml');
-          await act(async () => userEvent.hover(item));
+          await userEvent.hover(item);
 
           const terciaryButton = getByTestId(item, 'tertiary-button');
           await waitFor(() => expect(terciaryButton).toBeInTheDocument());
-          await act(async () => userEvent.click(terciaryButton));
+          await userEvent.click(terciaryButton);
 
           await waitFor(() =>
             expect(getByTestId(item, 'search-match-details')).toBeInTheDocument(),
           );
 
-          await act(async () => userEvent.unhover(item));
+          await userEvent.unhover(item);
 
           await closeLoadDialog();
         });
