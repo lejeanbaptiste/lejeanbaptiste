@@ -1,8 +1,9 @@
 // @ts-nocheck
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/jest-globals';
 import { act, getByTestId, getByTitle, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from '@testing-library/user-event';
 import React from 'react';
 import StorageDialog from '../src';
 import type { StorageDialogProps } from '../src/types';
@@ -10,7 +11,7 @@ import { spyProviderFunctions } from './mocks/provider';
 import * as mock from './mocks/resource';
 
 const user = userEvent.setup({
-  pointerEventsCheck: 'never',
+  pointerEventsCheck: 0,
 });
 
 jest.setTimeout(30_000);
