@@ -1,6 +1,6 @@
 import { Stack, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useWindowSize } from 'react-use';
 import { CreateFolderDialog, CreateRepoDialog } from '../../dialogs';
 import { Collection } from './collection';

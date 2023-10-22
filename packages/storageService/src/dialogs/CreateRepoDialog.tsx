@@ -10,7 +10,7 @@ import {
   Switch,
   TextField,
 } from '@mui/material';
-import React, { useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions } from '../overmind';
 

@@ -7,7 +7,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../../overmind';
 import { Crumb } from './Crumb';

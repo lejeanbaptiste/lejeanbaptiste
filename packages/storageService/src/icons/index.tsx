@@ -7,7 +7,6 @@ import { type SvgIconTypeMap } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { createSvgIcon } from '@mui/material/utils';
 import { Gitlab } from 'mdi-material-ui';
-import React from 'react';
 import type { IconBaseProps, IconType } from 'react-icons';
 import { BiDownload } from 'react-icons/bi';
 import { MdLanguage } from 'react-icons/md';

@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { formatDistance } from 'date-fns';
 import { AnimatePresence } from 'framer-motion';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useActions, useAppState } from '../../../../overmind';
 import type { Content as ContentProps } from '../../../../types';
 import type { LatestCommit } from '../../../../types/Provider';

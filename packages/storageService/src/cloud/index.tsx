@@ -1,6 +1,5 @@
 import { Stack, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import React from 'react';
 import { Main } from './main';
 import { Sidebar } from './sidebar';
 

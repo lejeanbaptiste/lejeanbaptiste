@@ -9,7 +9,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import React, { forwardRef, useEffect, useState } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import { CloudDialog } from '../cloud';
 import { FooterLoad, FooterSave } from '../footer';
 import { Header } from '../header';

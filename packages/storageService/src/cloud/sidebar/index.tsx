@@ -1,6 +1,6 @@
 import { Stack, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppState } from '../../overmind';
 import { MainMenu, MobileMenu, PublicRepositories } from './components';
 

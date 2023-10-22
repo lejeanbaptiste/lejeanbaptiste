@@ -1,6 +1,5 @@
 import { Box, MenuList } from '@mui/material';
 import { motion, type Variants } from 'framer-motion';
-import React from 'react';
 import type { PublicRepository } from '../../../../../../types';
 import { Item } from './Item';
 

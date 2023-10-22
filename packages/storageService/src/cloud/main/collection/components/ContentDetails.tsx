@@ -1,6 +1,5 @@
 import { Link, Stack, Typography } from '@mui/material';
 import { motion, type Variants } from 'framer-motion';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LatestCommit } from '../../../../types/Provider';
 

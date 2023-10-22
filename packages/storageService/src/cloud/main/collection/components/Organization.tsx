@@ -1,5 +1,4 @@
 import { Avatar, Box, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
-import React from 'react';
 import { useActions, useAppState } from '../../../../overmind';
 import type { Organization as OrganizationProps } from '../../../../types';
 

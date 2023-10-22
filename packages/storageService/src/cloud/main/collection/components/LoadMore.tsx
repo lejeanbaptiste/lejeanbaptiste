@@ -1,6 +1,5 @@
 import { CircularProgress, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
