@@ -82,7 +82,8 @@ export const Zone = ({
               show={!filename}
               sx={{ '::first-letter': { textTransform: 'uppercase' } }}
             >
-              {t('LWC:storage.drag the document here')} {t('LWC:commons.or')} {t('LWC:storage.click to upload')}
+              {t('LWC:storage.drag the document here')} {t('LWC:commons.or')}{' '}
+              {t('LWC:storage.click to upload')}
             </Label>
           )}
           {isProcessing && (

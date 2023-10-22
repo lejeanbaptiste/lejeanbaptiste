@@ -10,7 +10,7 @@ Further, LEAF-Writer does not warrant or make any representations concerning the
 
 ## External links
 
-LEAF-Writer does not regularly review all of the sites that link to it or are linked to from it and is not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by LEAF-Writer of the site. Use of any such linked website is at the user's own risk. You are advised to review the Privacy Policy of every site you visit, as this Privacy Policy does not apply to this third party content. LEAF-Writer has no control over and assumes no responsibility for the content, privacy policies or practices of any third party sites or services.  
+LEAF-Writer does not regularly review all of the sites that link to it or are linked to from it and is not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by LEAF-Writer of the site. Use of any such linked website is at the user's own risk. You are advised to review the Privacy Policy of every site you visit, as this Privacy Policy does not apply to this third party content. LEAF-Writer has no control over and assumes no responsibility for the content, privacy policies or practices of any third party sites or services.
 
 ## Legal requirements
 

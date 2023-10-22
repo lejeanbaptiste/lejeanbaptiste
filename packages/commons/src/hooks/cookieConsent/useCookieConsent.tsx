@@ -61,7 +61,9 @@ export const useCookieConsent = () => {
             { action: 'cancel', label: `${t('LWC:commons.cancel')}`, variant: 'outlined' },
             {
               action: 'signout',
-              label: `${t('LWC:cookie_consent.remove_consent')} ${t('LWC:commons.and')} ${t('LWC:commons.sign_out')}`,
+              label: `${t('LWC:cookie_consent.remove_consent')} ${t('LWC:commons.and')} ${t(
+                'LWC:commons.sign_out',
+              )}`,
             },
           ],
           onClose: async (action) => {
@@ -145,7 +147,7 @@ export const useCookieConsent = () => {
     <p style="${pStyle}">${t('LWC:cookie_consent.consent_banner.line2', { lng })}</p>
     <p style="${pStyle}">${t('LWC:cookie_consent.consent_banner.line3', { lng })}</p>
     <button type="button" data-cc="c-settings" class="cc-link" style="text-transform: capitalize">${t(
-      'LWC:cookie_consent.consent_banner.let_me_choose'
+      'LWC:cookie_consent.consent_banner.let_me_choose',
     )}</button>`,
       primary_btn: {
         text: t('LWC:commons.accept_all', { lng }),
@@ -203,9 +205,12 @@ export const useCookieConsent = () => {
         ],
       },
       {
-        title: `${t('LWC:commons.basic_interactions', { lng })} & ${t('LWC:commons.functionalities', {
-          lng,
-        })}`,
+        title: `${t('LWC:commons.basic_interactions', { lng })} & ${t(
+          'LWC:commons.functionalities',
+          {
+            lng,
+          },
+        )}`,
         //e.g., Contacting the User, Interaction with live chat platforms Managing web conferencing and online telephony, Managing support and contact requests, Interaction with support and feedback platforms, Tag Management, Registration and authentication, User database management
         description: t('LWC:cookie_consent.settings_modal.basic_interactions_description', { lng }),
         toggle: {

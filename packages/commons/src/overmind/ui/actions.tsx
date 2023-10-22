@@ -19,7 +19,7 @@ const { t } = i18next;
  */
 export const onInitializeOvermind = async (
   { state, actions, effects }: Context,
-  _overmind: any
+  _overmind: any,
 ) => {
   //DARK MODE
   const prefPaletteMode =
@@ -126,13 +126,13 @@ export const closeNotificationSnackbar = ({ state }: Context, key?: string | num
   state.ui.notifications = state.ui.notifications.map((notification) =>
     dismissAll || notification.key === key
       ? { ...notification, dismissed: true }
-      : { ...notification }
+      : { ...notification },
   );
 };
 
 export const removeNotificationSnackbar = ({ state }: Context, key: string | number) => {
   state.ui.notifications = state.ui.notifications.filter(
-    (notification) => notification.key !== key
+    (notification) => notification.key !== key,
   );
 };
 
@@ -149,7 +149,7 @@ export const emitNotification = async (
     message,
     persist = true,
     variant = 'error',
-  }: { message: string; persist?: boolean; variant?: VariantType }
+  }: { message: string; persist?: boolean; variant?: VariantType },
 ) => {
   actions.ui.notifyViaSnackbar({
     message,
@@ -188,7 +188,7 @@ export const removeDialog = ({ state }: Context, id: string) => {
 
 export const setDialogDisplayId = (
   { state }: Context,
-  { id, displayId }: { id: string; displayId: string }
+  { id, displayId }: { id: string; displayId: string },
 ) => {
   state.ui.dialogBar = [
     ...state.ui.dialogBar.map((dialogBar) => {

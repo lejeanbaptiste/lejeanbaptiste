@@ -42,7 +42,7 @@ export const Item = ({
       if (onClick) onClick(event);
       if (onTrigger) onTrigger(data);
     },
-    [rootPopupState, onClick]
+    [rootPopupState, onClick],
   );
 
   const variants: Variants = {

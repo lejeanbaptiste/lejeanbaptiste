@@ -11,15 +11,17 @@ interface State {
 
 export const state: State = {
   authProviders: derived(({ supportedProviders }: State) =>
-    supportedProviders.filter((supported) => !supported.linkOnly)
+    supportedProviders.filter((supported) => !supported.linkOnly),
   ),
   identityProviders: derived(({ supportedProviders }: State) =>
     supportedProviders.filter((provider) =>
-      supportedIdentityProviders.includes(provider.providerId)
-    )
+      supportedIdentityProviders.includes(provider.providerId),
+    ),
   ),
   supportedProviders: [],
   storageProviders: derived(({ supportedProviders }: State) =>
-    supportedProviders.filter((provider) => supportedStorageProviders.includes(provider.providerId))
+    supportedProviders.filter((provider) =>
+      supportedStorageProviders.includes(provider.providerId),
+    ),
   ),
 };

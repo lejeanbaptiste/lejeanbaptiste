@@ -56,7 +56,7 @@ export const useDialog = () => {
           },
           type,
         },
-        options
+        options,
       );
 
       storeDisplayed(id);

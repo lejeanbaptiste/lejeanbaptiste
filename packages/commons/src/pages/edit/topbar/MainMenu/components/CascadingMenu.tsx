@@ -19,7 +19,7 @@ export const CascadingMenu = ({ popupState, ...props }: CascadingMenuProps) => {
       rootPopupState: rootPopupState || popupState,
       parentPopupState: popupState,
     }),
-    [rootPopupState?.anchorEl, popupState.anchorEl]
+    [rootPopupState?.anchorEl, popupState.anchorEl],
   );
 
   return (

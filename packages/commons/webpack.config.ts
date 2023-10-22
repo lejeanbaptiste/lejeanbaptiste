@@ -59,7 +59,7 @@ const plugins = [
               'node_modules',
               '@cwrc/leafwriter-validator',
               'dist',
-              'leafwriter-validator.worker.js'
+              'leafwriter-validator.worker.js',
             ),
       },
     ],

@@ -4,18 +4,18 @@ import { Context } from '../index';
 
 export const setup = ({ state }: Context, lincsProviders: Provider[]) => {
   state.providers.supportedProviders = lincsProviders.filter(
-    (p) => p.enabled && SupportedProviderIds.includes(p.providerId as ProviderId)
+    (p) => p.enabled && SupportedProviderIds.includes(p.providerId as ProviderId),
   );
 };
 
 export const initProvider = async (
   { state, effects }: Context,
-  { IDPTokens, providerName, userId, userName }: AuthenticateProp
+  { IDPTokens, providerName, userId, userName }: AuthenticateProp,
 ) => {
   if (!SupportedProviderIds.includes(providerName as ProviderId)) return;
 
   let supportedProvider = state.providers.supportedProviders.find(
-    (provider) => provider.providerId === providerName
+    (provider) => provider.providerId === providerName,
   );
   if (!supportedProvider) return;
 
@@ -35,7 +35,7 @@ export const isProviderInitilized = ({ state }: Context, providerId: string) => 
 
 export const getStorageProviderAuth = ({ state }: Context, providerId: string) => {
   const provider = state.providers.storageProviders.find(
-    (p) => p.providerId === providerId && p.service
+    (p) => p.providerId === providerId && p.service,
   );
   if (!provider?.service) return;
   return { name: provider.service.name, access_token: provider.service.getAccessToken() };
@@ -48,7 +48,7 @@ export const getStorageProvidersAuth = ({ state, actions }: Context) => {
     const access_token = provider.service?.getAccessToken();
     if (access_token) auths.push({ name: provider.providerId, access_token });
   });
-  
+
   return auths;
 };
 
