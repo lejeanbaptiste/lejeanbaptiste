@@ -2,12 +2,12 @@ import { supportedStorageProviders, supportedIdentityProviders } from '@src/conf
 import type { SupportedProvider } from '@src/services';
 import { derived } from 'overmind';
 
-type State = {
+interface State {
   authProviders: SupportedProvider[];
   identityProviders: SupportedProvider[];
   supportedProviders: SupportedProvider[];
   storageProviders: SupportedProvider[];
-};
+}
 
 export const state: State = {
   authProviders: derived(({ supportedProviders }: State) =>

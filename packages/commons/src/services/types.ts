@@ -4,13 +4,13 @@ import { SupportedProviderIds } from '../config';
 
 export type ProviderId = (typeof SupportedProviderIds)[number];
 
-export type AuthenticateProp = {
+export interface AuthenticateProp {
   access_token?: string;
   IDPTokens?: string | any;
   providerName: string;
   userId?: string;
   userName?: Readonly<string>;
-};
+}
 
 export interface ProviderService {
   name: string;

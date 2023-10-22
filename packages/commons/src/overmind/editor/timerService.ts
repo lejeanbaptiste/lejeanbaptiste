@@ -18,15 +18,15 @@ export interface TimerServiceProps {
   onTimer: Subject<number>;
 }
 
-const tick: number = 1_000;
+const tick = 1_000;
 
 let timer: NodeJS.Timer;
 
-let currentAttempt: number = 0;
-let currentTick: number = 0;
+let currentAttempt = 0;
+let currentTick = 0;
 let duration: number = AUTOSAVE_TIMEOUT;
-let isRunning: boolean = false;
-let maxAttempts: number = Infinity;
+let isRunning = false;
+let maxAttempts = Infinity;
 
 const setDuration = (value: number) => {
   duration = value;

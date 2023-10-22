@@ -1,7 +1,7 @@
 import type { Resource } from '@src/types';
 import { TimerService, type TimerServiceProps } from './timerService';
 
-type State = {
+interface State {
   autosave: boolean;
   contentHasChanged: boolean;
   contentLastSaved?: string;
@@ -11,7 +11,7 @@ type State = {
   readonly: boolean;
   saveDelayed: boolean;
   timerService: TimerServiceProps;
-};
+}
 
 export const state: State = {
   autosave: true,
