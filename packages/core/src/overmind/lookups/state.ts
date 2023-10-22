@@ -7,7 +7,7 @@ import type {
 } from '../../dialogs/entityLookups/types';
 import { EntityType } from '../../types';
 
-type State = {
+interface State {
   isUriValid: boolean;
   manualInput: string;
   query: string;
@@ -15,7 +15,7 @@ type State = {
   selected?: EntryLink;
   typeEntity: EntityType;
   typeLookup: NamedEntityType;
-};
+}
 
 export const state: State = {
   isUriValid: derived((state: State, rootState: Context['state']) => {

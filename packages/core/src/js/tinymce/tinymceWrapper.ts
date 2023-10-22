@@ -335,7 +335,7 @@ export const tinymceWrapperInit = function ({
     if (writer.editor?.currentNode) {
       // check if the node still exists in the document
       if (writer.editor?.currentNode.parentNode === null) {
-        let rng = writer.editor?.selection.getRng();
+        const rng = writer.editor?.selection.getRng();
         const parent = rng.commonAncestorContainer.parentNode;
         if (isElement(parent)) {
           // trying to type inside a bogus node?
@@ -375,7 +375,7 @@ export const tinymceWrapperInit = function ({
           } else if (tinymce.isMac ? event.metaKey : event.ctrlKey) {
             // don't show message if we got here through undo/redo
             const node = $('[_textallowed="true"]', writer.editor?.getBody()).first();
-            let rng = writer.editor?.selection.getRng();
+            const rng = writer.editor?.selection.getRng();
             if (node[0]) rng.selectNodeContents(node[0]);
             rng.collapse(true);
             writer.editor?.selection.setRng(rng);
@@ -446,7 +446,7 @@ export const tinymceWrapperInit = function ({
           // artifact from utilities.selectElementById
           let sibling: any;
           // let rng = writer.editor.selection.getRng(true);
-          let rng = writer.editor.selection.getRng();
+          const rng = writer.editor.selection.getRng();
           if (rng.collapsed) {
             // the user's trying to type in a bogus tag
             // find the closest valid tag and correct the cursor location

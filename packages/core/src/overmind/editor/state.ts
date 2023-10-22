@@ -10,7 +10,7 @@ import {
   wikidataFind,
 } from '../lookups/services';
 
-export type EditorStateType = {
+export interface EditorStateType {
   advancedSettings: boolean;
   allowOverlap: boolean;
   annotationMode: number;
@@ -37,7 +37,7 @@ export type EditorStateType = {
   LWChangeEventSuspended: boolean;
   mode: number;
   nssiToken?: string | (() => Promise<string | undefined>);
-  schemas: { [key: string]: Schema };
+  schemas: Record<string, Schema>;
   schemasList: Schema[];
   schemaMappings: SchemaMappingType[];
   proxyLoaderXmlEndpoint?: string;
@@ -45,11 +45,9 @@ export type EditorStateType = {
   settings?: any;
   showEntities: boolean;
   showTags: boolean;
-
   latestEvent?: string;
-
   authorityServices: AuthorityServices;
-};
+}
 
 export const state: EditorStateType = {
   advancedSettings: true,

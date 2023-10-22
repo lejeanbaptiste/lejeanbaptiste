@@ -60,14 +60,14 @@ class Writer extends EventManager {
   triples: TripleProps[] = []; // triples store
 
   currentDocId: string | null = null;
-  isInitialized: boolean = false; // is the editor initialized
-  isDocLoaded: boolean = false; // has a doc been loaded
-  isReadOnly: boolean = false; // is the editor in readonly mode
-  isAnnotator: boolean = false; // is the editor in annotate (entities) only mode
+  isInitialized = false; // is the editor initialized
+  isDocLoaded = false; // has a doc been loaded
+  isReadOnly = false; // is the editor in readonly mode
+  isAnnotator = false; // is the editor in annotate (entities) only mode
 
   mode: number = this.XMLRDF; // editor mode
   annotationMode: number = this.JSON; //format to produce annotations in (XML or JSON)
-  allowOverlap: boolean = false; // can entities overlap?
+  allowOverlap = false; // can entities overlap?
 
   // entityLookupDialogs: EntityLookupDialogsLegacy
 

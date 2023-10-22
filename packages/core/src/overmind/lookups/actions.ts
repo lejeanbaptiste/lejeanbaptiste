@@ -49,7 +49,7 @@ export const setType = ({ state: { lookups } }: Context, type: EntityType) => {
 export const search = async ({ state, effects }: Context, query: string) => {
   if (query === '') return [];
 
-  const results: Map<string, AuthorityLookupResult[]> = new Map();
+  const results = new Map<string, AuthorityLookupResult[]>();
 
   const authorityServices = state.editor.authorityServices;
 

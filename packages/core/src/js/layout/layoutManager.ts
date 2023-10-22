@@ -231,7 +231,7 @@ class LayoutManager {
     if (!this.writer.editor) return;
 
     const toolbar = document.querySelector('#editor-toolbar');
-    const tox = document.querySelector('.tox')! as HTMLElement;
+    const tox = document.querySelector('.tox')! ;
     if (!toolbar || !tox) return;
 
     const toolbarHeight = toolbar.getBoundingClientRect().height;

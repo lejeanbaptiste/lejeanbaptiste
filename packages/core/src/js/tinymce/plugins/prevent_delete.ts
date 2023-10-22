@@ -112,7 +112,7 @@ const deleteConfirm = (editor: Editor, range: Range, direction: 'back' | 'forwar
         editor.writer.tagger.removeStructureTag(element.getAttribute('id'), !hasTextContent);
       }
 
-      if (textNode && textNode.parentNode) {
+      if (textNode?.parentNode) {
         // if parentNode is null that means the text was normalized as part of removeStructureTag
         const rng = editor.selection.getRng();
         rng.selectNode(textNode);
@@ -137,7 +137,7 @@ const moveToTextNode = (
 
   if (textNode !== null && textNode.parentNode !== null) {
     // if parentNode is null that means the text was normalized as part of removeStructureTag
-    let nextParent = textNode.parentElement;
+    const nextParent = textNode.parentElement;
     if (
       nextParent.textContent.length === 0 ||
       (nextParent.textContent.length === 1 && nextParent.textContent.charCodeAt(0) === 65279)
@@ -155,7 +155,7 @@ const moveToTextNode = (
     } else {
       if (textNode.parentElement.nodeName === 'SPAN') {
         if (textNode.parentElement.textContent.length === 1) {
-          let nextParent = textNode.parentElement;
+          const nextParent = textNode.parentElement;
           // this keydown will delete all text content, leaving an empty tag
           // so insert zero-width non-breaking space (zwnb) to prevent tag deletion
           nextParent.textContent = '\uFEFF';

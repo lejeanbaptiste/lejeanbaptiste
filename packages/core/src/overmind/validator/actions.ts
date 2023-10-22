@@ -65,12 +65,14 @@ export const validate = async ({ state, actions }: Context) => {
   if (!writer || !state.validator.hasWorkerValidator) return;
 
   const workerValidator = window.leafwriterValidator;
-  if (!workerValidator.hasValidator()) return;
+  const hasValidator = await workerValidator.hasValidator()
+  // console.log(hasValidator)
+  // if (!hasValidator) return;
 
   const documentString = await writer.converter.getDocumentContent(false);
 
   const validationProgress = ({ partDone, state, valid, errors }: ValidationResponse) => {
-    if (state <= 2) {
+    if (state.valueOf() <= 2) {
       writer.event('documentValidating').publish(partDone);
       return;
     }

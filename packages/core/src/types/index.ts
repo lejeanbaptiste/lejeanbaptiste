@@ -90,7 +90,7 @@ export type ISettingsModuleName =
   | 'validation'
   | 'code';
 
-export const SupportedSchemas: Map<string, Schema> = new Map();
+export const SupportedSchemas = new Map<string, Schema>();
 
 export interface User {
   name: string;
@@ -115,7 +115,7 @@ export interface Language {
   shortName: string;
 }
 
-export const Languages: Map<string, Language> = new Map();
+export const Languages = new Map<string, Language>();
 
 export type ErrorType = 'info' | 'warning' | 'error';
 
@@ -192,32 +192,32 @@ export type PanelId =
   | 'xmlViewer'
   | 'imageViewer';
 
-export type PanelProp = {
+export interface PanelProp {
   id: PanelId;
   label: string;
-};
+}
 
 export interface SideItem extends PanelProp {
   hide?: boolean;
 }
 
-export type SideProp = {
+export interface SideProp {
   hide?: boolean;
   id: Side;
   items: SideItem[];
-};
+}
 
-export type SectionProp = {
+export interface SectionProp {
   activePanel: PanelId | null;
   collapsed?: boolean;
   hide?: boolean;
   id: Side;
   panels: PanelId[];
-};
+}
 
-export type LayoutProps = {
+export interface LayoutProps {
   outerLeft?: SideProp;
   left: SectionProp;
   right?: SectionProp;
   outerRight?: SideProp;
-};
+}

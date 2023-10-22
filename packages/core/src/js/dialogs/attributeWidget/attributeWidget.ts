@@ -24,7 +24,7 @@ class AttributeWidget {
 
   mode: 0 | 1 = 0; //add
 
-  isDirty: boolean = false;
+  isDirty = false;
 
   constructor({ writer, $el, $parent, showSchemaHelp = false }: AttributeWidgetConfig) {
     this.writer = writer;
@@ -59,7 +59,7 @@ class AttributeWidget {
                 'change',
                 $.proxy(
                   function (mapping: any, event: any) {
-                    const dataObj: { [key: string]: any } = {};
+                    const dataObj: Record<string, any> = {};
                     dataObj[mapping] = $(event.target).val();
                     this.setData(dataObj);
                   },
@@ -192,7 +192,7 @@ class AttributeWidget {
     return `<select name="${attributeName}">
       ${choices
         .map((attVal) => {
-          let selected = defaultValue == attVal ? ' selected="selected"' : '';
+          const selected = defaultValue == attVal ? ' selected="selected"' : '';
           return `<option value="${attVal}"${selected}>${attVal}</option>`;
         })
         .join('\n')}
@@ -244,7 +244,7 @@ class AttributeWidget {
         : capitalizeFirstLetter(documentation)
       : '';
 
-    let htmlPart = `
+    const htmlPart = `
       <div data-name="form_${attributeName}" class="attribute" style="display:${displayCSS};">
         <div style="display: flex; flex-direction: column; gap: 4px;">
           <div style="display: flex; flex-direction: row; align-items: baseline; width: 100%;">
@@ -270,7 +270,7 @@ class AttributeWidget {
     attributeName: string,
     displayName: string,
     requiredClass: string,
-    isInitial: boolean = false
+    isInitial = false
   ) {
     const selected = isInitial ? 'selected' : '';
     return `
@@ -294,7 +294,7 @@ class AttributeWidget {
    * @param {Object} data A map of attribute name / value pairs
    * @returns {Boolean} True if data was set
    */
-  setData(data: { [key: string]: any }) {
+  setData(data: Record<string, any>) {
     let wasDataSet = false;
     for (const key in data) {
       const val = data[key];
@@ -338,7 +338,7 @@ class AttributeWidget {
    * @returns {Object|undefined} Returns undefined if invalid
    */
   getData() {
-    const attributes: { [key: string]: any } = {};
+    const attributes: Record<string, any> = {};
 
     $('.attributeSelector li.selected', this.$parent).each((index, el) => {
       const name = $(el).data('name');

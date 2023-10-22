@@ -34,7 +34,7 @@ export const createConfig = async (settings: LeafWriterOptionsSettings = {}) => 
   return config;
 };
 
-export const setupSchemas = async (schemas: Array<Schema>) => {
+export const setupSchemas = async (schemas: Schema[]) => {
   const customSchemas = await db.customSchemas.toArray();
   if (customSchemas) schemas = [...schemas, ...customSchemas];
 

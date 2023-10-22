@@ -123,7 +123,7 @@ class DateDialog implements SchemaDialog {
 
     //date type event
     $(`#${id}_type input`).on('click', function () {
-      let inputVal = $(this).val();
+      const inputVal = $(this).val();
       toggleDate(inputVal as DateTypes);
     });
 

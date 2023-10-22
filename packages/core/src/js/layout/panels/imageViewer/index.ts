@@ -20,8 +20,8 @@ class ImageViewer {
   osd: any | null;
 
   $pageBreaks: any;
-  currentIndex: number = -1;
-  ignoreScroll: boolean = false;
+  currentIndex = -1;
+  ignoreScroll = false;
 
   constructor({ attribute, parentId, tag, writer }: ImageViewerProps) {
     this.writer = writer;

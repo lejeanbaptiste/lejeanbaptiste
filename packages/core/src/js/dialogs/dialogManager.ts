@@ -146,7 +146,7 @@ interface DefaultDialogConfig {
   type?: string;
 }
 
-const defaultDialogs: Map<string, DefaultDialogConfig> = new Map([
+const defaultDialogs = new Map<string, DefaultDialogConfig>([
   ['attributesEditor', { dialogClass: AttributesEditor }],
   ['copyPaste', { dialogClass: CopyPaste }],
   ['loadingindicator', { dialogClass: LoadingIndicator }],
@@ -162,8 +162,8 @@ const defaultDialogs: Map<string, DefaultDialogConfig> = new Map([
 class DialogManager {
   readonly writer: Writer;
   readonly $cwrcDialogWrapper: JQuery<HTMLElement>;
-  readonly dialogs: Map<string, LWDialogProps> = new Map();
-  readonly schemaDialogs: Map<string, SchemaDialog> = new Map();
+  readonly dialogs = new Map<string, LWDialogProps>();
+  readonly schemaDialogs = new Map<string, SchemaDialog>();
 
   // schema dialogs name, class map
   // readonly schemaDialogs: { [x: string]: SchemaDialog } = {};
@@ -271,7 +271,7 @@ class DialogManager {
     const prefsCookies = Cookies.get(DIALOG_PREFS_COOKIE_NAME);
     if (!prefsCookies) return;
 
-    let prefs = JSON.parse(prefsCookies);
+    const prefs = JSON.parse(prefsCookies);
     if (prefs[name] === undefined) return;
 
     return prefs[name];
@@ -279,7 +279,7 @@ class DialogManager {
 
   setDialogPref(name: string, value: any) {
     const prefsCookies = Cookies.get(DIALOG_PREFS_COOKIE_NAME);
-    let prefs = prefsCookies ? JSON.parse(prefsCookies) : {};
+    const prefs = prefsCookies ? JSON.parse(prefsCookies) : {};
 
     prefs[name] = value;
     Cookies.set(DIALOG_PREFS_COOKIE_NAME, JSON.stringify(prefs), { expires: 7, path: '' });

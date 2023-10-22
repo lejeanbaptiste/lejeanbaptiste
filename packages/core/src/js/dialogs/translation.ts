@@ -79,7 +79,7 @@ class Translation implements LWDialogProps {
       close: (event: JQuery.Event) => {},
     });
 
-    let langOptions = iso6392.reduce((result: { name: string; value: string }[], lang) => {
+    const langOptions = iso6392.reduce((result: { name: string; value: string }[], lang) => {
       const value = lang.iso6391; //lang.iso6392T === undefined ? lang.iso6392B : lang.iso6392T
       const name = lang.name;
       if (value !== undefined) result.push({ name, value });

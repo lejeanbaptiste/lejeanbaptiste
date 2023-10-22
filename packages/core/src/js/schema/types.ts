@@ -38,7 +38,7 @@ export interface EntityMappingProps {
   mappingFunction?: (entity: Entity) => string[]; // a function which accepts an Entity and returns an array of start and end XML strings to be displayed in the Writer (see Mapper.getDefaultMapping)
   parentTag: string | string[]; // the XML tag(s) that encapsulates the entity, also used to determine if an XML tag is associated with an entity
   requiresSelection?: boolean; //indicates id a text selection is required to add the entity (as opposed to a point in the text) (default is true)
-  requiredAttributes?: { [x: string]: string }; // a map of attribute names and values that will be added to every instance of this entity type
+  requiredAttributes?: Record<string, string>; // a map of attribute names and values that will be added to every instance of this entity type
   textTag?: string | string[]; // used to specify the tag that contains the text content of the entity, mainly used by notes but also by more complex entity mappings
   types?: string[]; //list of possible values to create annotation
   xpathSelector?: string; // if the entity can have several different parentTags or if several entities share the same parentTag, this selector can help differentiate

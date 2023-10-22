@@ -9,12 +9,12 @@ export const capitalizeFirstLetter = (string: string) => {
   return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
 };
 
-type SelectNodeParams = {
+interface SelectNodeParams {
   id?: string;
   nodeIndex?: number;
   parentId?: string;
   xpath?: string;
-};
+}
 
 /**
  * @class Utilities
@@ -201,7 +201,7 @@ class Utilities {
    * @param {boolean} [selectContentsOnly=false] - boolean = false
    * @returns The node that is being returned is the node that is being selected.
    */
-  selectNode(selectedNode: SelectNodeParams, selectContentsOnly: boolean = false) {
+  selectNode(selectedNode: SelectNodeParams, selectContentsOnly = false) {
     if (!this.writer.editor) return;
 
     const { editor, entitiesManager } = this.writer;
@@ -494,7 +494,7 @@ class Utilities {
       if (
         //@ts-ignore
         contextNode.getAttribute('_tag') === this.writer.schemaManager.getRoot() &&
-        xpath.charAt(0) !== '@'
+        !xpath.startsWith('@')
       ) {
         if (xpath.charAt(1) !== '/') {
           xpath = `/${xpath}`;
@@ -685,7 +685,7 @@ class Utilities {
     return node;
   }
 
-  private getNodeByParentChildIndex(parentId: string, nodeIndex: number = 0) {
+  private getNodeByParentChildIndex(parentId: string, nodeIndex = 0) {
     if (!this.writer.editor) return;
     const parent = this.writer.editor.getBody().querySelector(`#${parentId}`);
     return parent?.childNodes.item(nodeIndex);

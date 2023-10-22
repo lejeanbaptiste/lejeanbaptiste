@@ -163,7 +163,7 @@ export const setDialogDisplayId = (
 export const notifyViaSnackbar = ({ state }: Context, notification: NotificationProps | string) => {
   if (typeof notification === 'string') notification = { message: notification };
 
-  let key = notification.options && notification.options.key;
+  let key = notification.options?.key;
   if (!key) key = new Date().getTime() + Math.random();
 
   state.ui.notifications = [...state.ui.notifications, { ...notification, key }];

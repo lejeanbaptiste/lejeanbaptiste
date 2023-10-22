@@ -13,7 +13,6 @@ const wdk = WBK({
 
 const baseURL = '';
 const FORMAT = 'json';
-const MAX_HITS = 20; //defaut: 20
 const LANGUAGE = 'en';
 const timeout = 3_000;
 

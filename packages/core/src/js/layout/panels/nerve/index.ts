@@ -39,17 +39,13 @@ interface TagProps {
   lemmaAttribute?: string;
   linkAttribute?: string;
   idAttribute?: string;
-  defaults?: {
-    [x: string]: string;
-  };
+  defaults?: Record<string, string>;
   lemma?: string;
   uri?: string;
   type?: string;
 }
 
-type Itags = {
-  [x: string]: TagProps;
-};
+type Itags = Record<string, TagProps>;
 
 interface ContextProps {
   name: string;
@@ -357,7 +353,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
     }
 
     const jobId = response.data.jobId;
-    let jobStatus = response.data.status;
+    const jobStatus = response.data.status;
     let resultsUri = response.data.resultsUri;
 
     if (jobStatus !== 'READY') {
@@ -401,10 +397,10 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
     return new Promise(executePoll);
   };
 
-  type IGetNssiResultsParams = {
+  interface IGetNssiResultsParams {
     jobId: string;
     resultsUri: string;
-  };
+  }
 
   const getNssiResults = async ({ jobId, resultsUri }: IGetNssiResultsParams) => {
     const token = await writer.overmindActions.editor.getNssiToken();
@@ -1083,7 +1079,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
     return false;
   };
 
-  const acceptEntity = (entityId: string, removeFromView: boolean = true) => {
+  const acceptEntity = (entityId: string, removeFromView = true) => {
     const entity = writer.entitiesManager.getEntity(entityId);
     const tag = $(`#${entityId}`, writer.editor.getBody())[0];
 
@@ -1171,7 +1167,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
       .always(() => li?.hide?.());
   };
 
-  const rejectEntity = (entityId: string, removeFromView: boolean = true) => {
+  const rejectEntity = (entityId: string, removeFromView = true) => {
     const entry = writer.entitiesManager.getEntity(entityId);
     const taggedByNerve = entry.getCustomValue('nerve') !== undefined;
 

@@ -6,14 +6,12 @@ import { log } from './../../utilities';
 import Entity, { type EntityConfig } from './Entity';
 
 interface InfoProps {
-  attributes: { [x: string]: any }; //Key/value pairs of attributes
-  properties?: { [x: string]: any }; //Key/value pairs of Entity properties
-  customValues?: { [x: string]: any }; //Any additional custom values
+  attributes: Record<string, any>; //Key/value pairs of attributes
+  properties?: Record<string, any>; //Key/value pairs of Entity properties
+  customValues?: Record<string, any>; //Any additional custom values
 }
 
-interface EntitiesProps {
-  [x: string]: Entity;
-}
+type EntitiesProps = Record<string, Entity>;
 
 export type SortingTypes = 'seq' | 'cat' | 'alpha';
 
@@ -213,7 +211,7 @@ class EntitiesManager {
 
     if (sortingMethod === 'cat') {
       const entArray = Object.values(this.entities);
-      const categories: { [x: string]: Entity[] } = {};
+      const categories: Record<string, Entity[]> = {};
 
       entArray.forEach((entry) => {
         const type = entry.getType();

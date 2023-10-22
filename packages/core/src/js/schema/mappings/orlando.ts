@@ -76,7 +76,7 @@ const title: EntityMappingProps = {
       // body.prepend(levelXml.firstChild);
     } else {
       if (!Array.isArray(anno['oa:hasBody'])) {
-        anno['oa:hasBody']['pubType'] = entity.getAttribute('TITLETYPE');
+        anno['oa:hasBody'].pubType = entity.getAttribute('TITLETYPE');
       }
     }
 

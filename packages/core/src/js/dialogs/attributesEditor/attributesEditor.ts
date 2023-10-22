@@ -37,7 +37,7 @@ class AttributesEditor implements LWDialogProps {
       </div>
     `).appendTo(parentEl);
 
-    let dialogOpenTimestamp: number = 0;
+    let dialogOpenTimestamp = 0;
 
     //@ts-ignore
     this.$schemaDialog.dialog({

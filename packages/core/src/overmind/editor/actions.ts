@@ -23,7 +23,7 @@ export const writerInitSettings = (
   editor.baseUrl = baseUrl;
   editor.settings = settings;
 
-  const schemaObjs: { [key: string]: Schema } = {};
+  const schemaObjs: Record<string, Schema> = {};
   schemas?.forEach((element) => (schemaObjs[element.id] = element));
 
   editor.schemas = schemaObjs;
@@ -162,7 +162,7 @@ export const applyUserPreferencesAuthrityServices = async ({ state }: Context) =
     if (!servicePreference.entities) continue;
 
     //* entity types
-    let entitiesToRemove: NamedEntityType[] = [];
+    const entitiesToRemove: NamedEntityType[] = [];
     for (const entity in servicePreference.entities) {
       if (!Object.prototype.hasOwnProperty.call(servicePreference.entities, entity)) continue;
       if (!authorityService.entities[entity as NamedEntityType]) {
@@ -262,7 +262,7 @@ export const toggleAdvancedSettings = ({ state }: Context, value: boolean) => {
   state.editor.advancedSettings = value;
 };
 
-export const setReadonly = ({ state }: Context, value: boolean = false) => {
+export const setReadonly = ({ state }: Context, value = false) => {
   state.editor.isReadonly = value;
 };
 
@@ -366,7 +366,7 @@ export const deleteSchema = async ({ state }: Context, schemaId: string) => {
 
   const updatedSchemaList = state.editor.schemasList.filter((schema) => schema.id !== schemaId);
 
-  const schemaObjs: { [key: string]: Schema } = {};
+  const schemaObjs: Record<string, Schema> = {};
   updatedSchemaList.forEach((element) => (schemaObjs[element.id] = element));
 
   state.editor.schemas = schemaObjs;
@@ -410,7 +410,7 @@ export const setIsAnnotator = ({ state }: Context, value: boolean) => {
 };
 
 export const toggleLookupAuthority = async (
-  { state: { editor }, effects }: Context,
+  { state: { editor } }: Context,
   authorityId: string
 ) => {
   const authorityService = editor.authorityServices[authorityId];

@@ -21,7 +21,7 @@ export const RESERVED_ATTRIBUTES = new Set([
   '_attributes',
 ]);
 
-export const getAttributeString = (attObj: { [x: string]: any }) => {
+export const getAttributeString = (attObj: Record<string, any>) => {
   let str = '';
   Object.entries(attObj).forEach(([key, value]) => {
     if (value && value !== '') str += ` ${key}="${value}"`;
@@ -40,7 +40,7 @@ export const getTagAndDefaultAttributes = (entity: Entity, closeTag = true) => {
   const tag = entity.getTag();
   const attributes = Object.assign({}, entity.getAttributes());
 
-  for (let key in attributes) {
+  for (const key in attributes) {
     if (RESERVED_ATTRIBUTES.has(key)) delete attributes[key];
   }
 
@@ -146,7 +146,7 @@ class Mapper {
     shouldRemoveMatch,
   }: {
     entityElement: Element;
-    mappingInfo: { [x: string]: any };
+    mappingInfo: Record<string, any>;
     isCWRC: boolean;
     textTag?: string | any[];
     shouldRemoveMatch: boolean;
@@ -270,7 +270,7 @@ class Mapper {
    * @param {Boolean} [cleanUp] Whether to remove the elements that got matched by reverse mapping. Default is false.
    * @returns {Object} The entity config object.
    */
-  getReverseMapping(element: Element, cleanUp: boolean = false) {
+  getReverseMapping(element: Element, cleanUp = false) {
     const isCWRC = element.ownerDocument === this.writer.editor?.getDoc();
     const type = this.getEntityTypeForTag(element);
 
@@ -282,7 +282,7 @@ class Mapper {
 
     const mapping = entry.mapping;
 
-    const obj: { [x: string]: any } = {
+    const obj: Record<string, any> = {
       attributes: {},
     };
 
@@ -356,7 +356,7 @@ class Mapper {
 
     // put xpath mappings at beginning
     const mappings = this.getMappings();
-    let sortedMappings: Map<EntityType, EntityMappingProps> = new Map();
+    let sortedMappings = new Map<EntityType, EntityMappingProps>();
 
     mappings.entities.forEach((mapping, type) => {
       if (mapping.xpathSelector) {
@@ -397,7 +397,7 @@ class Mapper {
     // return;
 
     const entry = this.getMappings().entities.get(type);
-    if (!entry || !entry.mapping) return;
+    if (!entry?.mapping) return;
 
     const properties = Object.entries(entry.mapping);
 
@@ -434,7 +434,7 @@ class Mapper {
     const props: string[] = [];
 
     if (entry.mapping) {
-      for (let key in entry.mapping) {
+      for (const key in entry.mapping) {
         if (key === 'customValues') continue;
         props.push(key);
       }
@@ -518,7 +518,7 @@ class Mapper {
    * @param {Boolean} [showEntityDialog] Should the entity dialog be shown after conversion? Default is false
    * @returns {Entity|null} The new entity
    */
-  convertTagToEntity(tag: Element, showEntityDialog: boolean = false) {
+  convertTagToEntity(tag: Element, showEntityDialog = false) {
     const entityType = this.getEntityTypeForTag(tag);
     const _tagAttr = tag.getAttribute('_tag');
 
@@ -530,7 +530,7 @@ class Mapper {
     const id = tag.getAttribute('id');
     const isNote = this.isEntityTypeNote(entityType);
     const isNamedEntity = this.isNamedEntity(entityType);
-    const config: { [x: string]: any } = {
+    const config: Record<string, any> = {
       id,
       tag: _tagAttr,
       type: entityType,
@@ -548,14 +548,14 @@ class Mapper {
       config.noteContent = $tag.html();
     }
 
-    const entityAttributes: { [x: string]: any } = {
+    const entityAttributes: Record<string, any> = {
       _entity: true,
       _type: entityType,
       class: `entity ${entityType} start end`,
       name: id,
     };
 
-    if (isNote) entityAttributes['_note'] = true;
+    if (isNote) entityAttributes._note = true;
 
     for (const name in entityAttributes) {
       tag.setAttribute(name, entityAttributes[name]);
@@ -580,7 +580,7 @@ class Mapper {
    * @returns {Object} A map of the entities, organized by type
    */
   findEntities(
-    typesToFind: Set<string> = new Set([
+    typesToFind = new Set<string>([
       'person',
       'place',
       'org',
@@ -595,7 +595,7 @@ class Mapper {
       'link',
     ])
   ) {
-    const candidateEntities: { [x: string]: HTMLElement[] } = {};
+    const candidateEntities: Record<string, HTMLElement[]> = {};
     const headerTag = this.getHeaderTag();
 
     // TODO tei mapping for correction will match on both choice and corr tags, creating 2 entities when it should be one
