@@ -45,14 +45,14 @@ class CWRC2XML {
     //@ts-ignore
     const rootAttributes = this.writer.tagger.getAttributesForTag($rootEl[0]);
     for (const attributeName in rootAttributes) {
-      if (attributeName.indexOf('xmlns') === 0) {
+      if (attributeName.startsWith('xmlns')) {
         delete rootAttributes[attributeName];
       }
     }
 
     // namespaces
     const schemaNamespace = this.writer.schemaManager.mapper.getNamespace();
-    if (schemaNamespace) rootAttributes['xmlns'] = schemaNamespace;
+    if (schemaNamespace) rootAttributes.xmlns = schemaNamespace;
     if (includeRDF) rootAttributes['xmlns:rdf'] = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 
     //@ts-ignore
@@ -105,7 +105,7 @@ class CWRC2XML {
     const selectorTags = selector.split('/');
     let $currNode: JQuery<Element> = $docEl;
 
-    for (let tag of selectorTags) {
+    for (const tag of selectorTags) {
       if (tag === '') continue;
 
       if (tag.indexOf('::') === -1) {
@@ -116,9 +116,9 @@ class CWRC2XML {
           $currNode = $nextNode;
         } else {
           // node doesn't exist so add it
-          let namespace = $currNode[0]?.namespaceURI;
+          const namespace = $currNode[0]?.namespaceURI;
           //@ts-ignore
-          let node = xmlDoc.createElementNS(namespace, tag);
+          const node = xmlDoc.createElementNS(namespace, tag);
           const child = $currNode[0]?.firstElementChild;
 
           $currNode = child
@@ -195,7 +195,7 @@ class CWRC2XML {
    * @param {Boolean} [identifyEntities] If true, adds cwrcTempId to entity elements. Default is false.
    * @returns {String}
    */
-  buildXMLString(node: any, identifyEntities: boolean = false) {
+  buildXMLString(node: any, identifyEntities = false) {
     const _this = this;
     let xmlString = '';
 
@@ -372,7 +372,7 @@ class CWRC2XML {
       // count as they will be present when the document is loaded.
       const getOffset = (parent: JQuery<any>) => {
         // To allow this function to exit recursion it must be able to return false.
-        let ret: boolean = true;
+        let ret = true;
 
         //@ts-ignore
         parent.contents().each((index, element) => {
@@ -513,12 +513,10 @@ class CWRC2XML {
   //! deprecated?
   private determineOffsetRelationships(offsets: any[]) {
     const entityOffsets: any[] = [];
-    const relationships: {
-      [x: string]: {
+    const relationships: Record<string, {
         contains: string[];
         overlaps: string[];
-      };
-    } = {};
+      }> = {};
 
     for (let i = 0; i < offsets.length; i++) {
       const o = offsets[i];

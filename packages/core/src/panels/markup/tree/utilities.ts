@@ -141,14 +141,14 @@ export const adjustTranslate: Modifier = ({ transform }) => ({ ...transform });
 
 // * TREE FUNCTIONS
 
-type GetNodesParams = {
+interface GetNodesParams {
   index?: number;
   level?: number;
   node: Node;
   parent?: TreeItem;
   treeType: TreeItemType;
   xpath?: string;
-};
+}
 
 /**
  * It takes a DOM element and returns a tree item
@@ -191,7 +191,7 @@ export const getNodes = ({ index = 0, level = 0, node, parent, treeType }: GetNo
  * @param {Element} element - element node to process
  * @returns A treeItem object
  */
-export const processElement = (element: Element, parent?: TreeItem, index: number = 0) => {
+export const processElement = (element: Element, parent?: TreeItem, index = 0) => {
   const id = element.getAttribute('id') ?? element.getAttribute('name');
   const tagName = element.getAttribute('_tag');
 
@@ -228,7 +228,7 @@ export const processElement = (element: Element, parent?: TreeItem, index: numbe
  * @param {Node} node - the node to process
  * @returns A treeItem object
  */
-export const processNode = (node: Node, parent?: TreeItem, index: number = 0) => {
+export const processNode = (node: Node, parent?: TreeItem, index = 0) => {
   // * remove comments to ignore nodes with tab and line-breaks
   // const trimmedContent = node.textContent.replaceAll(/\\n|\\t|\\r/g, '').trim();
   // if (trimmedContent === '') return;
@@ -274,12 +274,12 @@ const getXpathIndex = (node: Node, nodeName: string) => {
   return index;
 };
 
-type MoveNodeParams = {
+interface MoveNodeParams {
   childIndex: number;
   dragId: UniqueIdentifier;
   dropId: UniqueIdentifier;
   position?: 'after' | 'before';
-};
+}
 
 /**
  * It takes a `dragId` and a `dropId` and moves the node with the `dragId` into the node with the
@@ -302,7 +302,7 @@ export const moveNode = ({
 
   const { schemaManager } = writer;
 
-  let dragNodeEditor = writer.editor.getBody().querySelector(`#${dragId}`);
+  const dragNodeEditor = writer.editor.getBody().querySelector(`#${dragId}`);
   const dropNodeEditor = writer.editor.getBody().querySelector(`#${dropId}`);
 
   if (!dropNodeEditor || !dragNodeEditor) return;

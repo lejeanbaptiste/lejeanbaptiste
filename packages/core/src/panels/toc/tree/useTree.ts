@@ -16,11 +16,11 @@ export interface FlattenedItem extends TreeItem {
   parentId: UniqueIdentifier | null;
 }
 
-type TraverseTreeParams = {
+interface TraverseTreeParams {
   element: Element;
   headings: TreeItem[];
   level?: number;
-};
+}
 
 export const useTree = () => {
   const getEditorTreeModel = () => {
@@ -49,7 +49,7 @@ export const useTree = () => {
     const levels = [...new Set(headings.map((heading) => heading.level))].sort();
 
     //map levels into depth
-    const depthLevelMapping: Map<number, number> = new Map();
+    const depthLevelMapping = new Map<number, number>();
     levels.forEach((level) => {
       if (depthLevelMapping.has(level)) return;
       depthLevelMapping.set(level, depthLevelMapping.size);

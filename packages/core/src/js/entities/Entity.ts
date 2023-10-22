@@ -10,10 +10,10 @@ export interface AnnotationRange {
 
 // ? This should be really be called annotations?
 export interface EntityConfig {
-  attributes?: { [x: string]: any }; //? should we defiine them? Or take from the schema? ! TRY TO MAKE SCHEMA DEPENDENT
+  attributes?: Record<string, any>; //? should we defiine them? Or take from the schema? ! TRY TO MAKE SCHEMA DEPENDENT
   certainty?: string;
   content?: string;
-  customValues?: { [x: string]: any };
+  customValues?: Record<string, any>;
   didUpdate?: boolean;
   dateCreated?: string; //? should we required a proper format? ! YES
   dateModified?: string; //? should we required a proper format? ! YES
@@ -22,7 +22,7 @@ export interface EntityConfig {
   isNote?: boolean;
   lemma?: string;
   noteContent?: string;
-  originalData?: { [x: string]: any };
+  originalData?: Record<string, any>;
   precision?: string;
   range?: AnnotationRange;
   source?: string; //? should we defiined them? Or take from the schema? // PREDEFINE USING AUTHORITIES and 'CUSTOM';
@@ -35,7 +35,7 @@ export interface EntityConfig {
  * @param content
  * @returns {String}
  */
-const getTitleFromContent = (content: string, trim: number = 0) => {
+const getTitleFromContent = (content: string, trim = 0) => {
   content = content.trim().replace(/\s+/g, ' ');
   if (trim === 0) return content;
   if (content.length <= trim) return content;
@@ -81,10 +81,10 @@ class Entity {
   id: string;
 
   /** Is the entity named, i.e. does it have a URI */
-  _isNamedEntity: boolean = false;
+  _isNamedEntity = false;
 
   /** Is the entity a note */
-  _isNote: boolean = false;
+  _isNote = false;
 
   /** XML content, used by note-type entities. */
   noteContent?: string;
@@ -121,7 +121,7 @@ class Entity {
   // UTILITIES PROPERTIES
 
   /** If the entity got updated over the session. */
-  _didUpdate: boolean = false;
+  _didUpdate = false;
 
   /** Store original data loaded from XML. */
   _originalData?: any;

@@ -72,7 +72,7 @@ class Tagger {
    * @param {Element} tag The tag
    * @param {Object} attributes A name/value map of attributes
    */
-  setAttributesForTag(tag: Element, attributes: { [x: string]: string }) {
+  setAttributesForTag(tag: Element, attributes: Record<string, string>) {
     // remove previous attributes
     const currAttributes = tag.attributes;
     for (let i = currAttributes.length - 1; i >= 0; i--) {
@@ -106,7 +106,7 @@ class Tagger {
    * @param {Element} tag The tag
    * @param {Object} attributes A name/value map of attributes
    */
-  addAttributesToTag(tag: Element, attributes: { [x: string]: string }) {
+  addAttributesToTag(tag: Element, attributes: Record<string, string>) {
     const currAttrs = this.getAttributesForTag(tag);
 
     for (const attName in attributes) {
@@ -235,7 +235,7 @@ class Tagger {
   editTagDialog(id: string | string[]) {
     if (!this.writer.editor) return;
     //? what to do if id is multiple
-    if (Array.isArray(id)) id = id[0] as string;
+    if (Array.isArray(id)) id = id[0]!;
 
     const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
 
@@ -433,7 +433,7 @@ class Tagger {
     if (!this.writer.editor) return;
 
     //? what to do if id is multiple
-    if (Array.isArray(id)) id = id[0] as string;
+    if (Array.isArray(id)) id = id[0]!;
     const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
 
     if (tag.attr('_entity')) {
@@ -541,7 +541,7 @@ class Tagger {
 
     let newContent = '';
 
-    for (let index: number = 0; index < parent.childNodes.length; index++) {
+    for (let index = 0; index < parent.childNodes.length; index++) {
       if (index < anchorIndex) continue;
 
       const child = parent.childNodes.item(index);
@@ -549,7 +549,7 @@ class Tagger {
       if (isElement(child)) {
         if (tagsIdsToAdd.includes(child.id)) {
           newContent += child.innerHTML;
-          tagsIdsToAdd = tagsIdsToAdd.filter((tagId) => tagId !== (child as Element).id);
+          tagsIdsToAdd = tagsIdsToAdd.filter((tagId) => tagId !== (child ).id);
         }
       } else {
         newContent += child.textContent;
@@ -572,7 +572,7 @@ class Tagger {
   getNodeIndexByid(node: Node, id: string) {
     let index: number | null = null;
     for (let i = 0; i < node.childNodes.length; i++) {
-      let child = node.childNodes[i];
+      const child = node.childNodes[i];
       if (isElement(child) && child.id === id) {
         index = i;
         break;
@@ -693,7 +693,7 @@ class Tagger {
         customValues: info.customValues,
       };
 
-      if (info.properties && info.properties.noteContent) {
+      if (info.properties?.noteContent) {
         if (!info.properties.content || info.properties.content === '') {
           info.properties.content = info.properties.noteContent;
         }
@@ -809,7 +809,7 @@ class Tagger {
 
     const entity = this.writer.entitiesManager.getEntity(entityId);
     const $tag = $(`#${entityId}`, this.writer.editor.getBody());
-    if (!entity || !$tag || !$tag[0]) return;
+    if (!entity || !$tag?.[0]) return;
 
     const tagName = $tag.attr('_tag');
     if (!tagName) return;
@@ -861,7 +861,7 @@ class Tagger {
     const type = entity.getType();
     const parentTag = entity.getTag() ?? this.writer.schemaManager.mapper.getParentTag(type);
 
-    const tagAttributes: { [key: string]: string } = {};
+    const tagAttributes: Record<string, string> = {};
     for (const key in entity.attributes) {
       // if (Mapper.reservedAttributes[key] !== true) {
       //   tagAttributes[key] = entity.attributes[key];
@@ -1033,7 +1033,7 @@ class Tagger {
     tagName,
   }: {
     action: Action;
-    attributes: { [x: string]: any };
+    attributes: Record<string, any>;
     bookmark: Bookmark | { tagId: string | undefined };
     tagName: string;
   }) {
@@ -1074,7 +1074,7 @@ class Tagger {
     const editorTagName = this.writer.schemaManager.getTagForEditor(tagName);
     let open_tag = `<${editorTagName} id="${id}" _tag="${tagName}"`;
 
-    const jsonAttrs: { [key: string]: any } = {};
+    const jsonAttrs: Record<string, any> = {};
     for (const key in attributes) {
       // if (Mapper.reservedAttributes[key] !== true) {
       //   // if (reservedAttributes.get(key) !== true) {
@@ -1191,9 +1191,9 @@ class Tagger {
    * @param {String} [id] The tag id
    * @param {Boolean} [removeContents] True to remove tag contents as well
    */
-  removeStructureTag(id: string | string[], removeContents: boolean = false) {
+  removeStructureTag(id: string | string[], removeContents = false) {
     //? what to do if id is multiple
-    if (Array.isArray(id)) id = id[0] as string;
+    if (Array.isArray(id)) id = id[0]!;
 
     const doRemove = () => {
       if (removeContents) {
@@ -1263,7 +1263,7 @@ class Tagger {
    */
   removeStructureTagContents(id: string | string[]) {
     //? what to do if id is multiple
-    if (Array.isArray(id)) id = id[0] as string;
+    if (Array.isArray(id)) id = id[0]!;
 
     const tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
 
@@ -1611,7 +1611,7 @@ class Tagger {
     if (isStructTag || this.writer.allowOverlap === false) {
       let $currentNode: JQuery<any>;
       let currentNode: any = range.startContainer;
-      const ents: { [x: string]: boolean } = {};
+      const ents: Record<string, boolean> = {};
 
       while (currentNode !== range.endContainer) {
         currentNode = currentNode.nextSibling;

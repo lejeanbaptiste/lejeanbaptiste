@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { getIcon, type IconLeafWriter } from '../../../../../icons';
 import { detailsHoverTimeOutAtom } from './store';
 
-type Props = {
+interface Props {
   content?: string;
   id: string;
   isEntity?: boolean;
   selected?: boolean;
-};
+}
 
 const TIME_OUT_SELECT = 350;
 

@@ -66,7 +66,7 @@ class DialogForm {
 
   attributesWidget?: AttributeWidget;
 
-  attWidgetInit: boolean = false;
+  attWidgetInit = false;
 
   static processForm(dialogInstance: DialogForm) {
     const data = dialogInstance.currentData;
@@ -164,7 +164,7 @@ class DialogForm {
             value = data.attributes[mapping];
           }
 
-          if (mapping === 'otherType') value = data.attributes['type'];
+          if (mapping === 'otherType') value = data.attributes.type;
           if (!value) return;
 
           switch (type) {
@@ -445,7 +445,7 @@ class DialogForm {
       // check to see if the control has been instantiated
       const uiInstance = Object.keys(formEl.data()).find((key) => {
         // instance stored in key that starts with "ui"
-        return key.indexOf('ui') === 0;
+        return key.startsWith('ui');
       });
 
       if (uiInstance) {

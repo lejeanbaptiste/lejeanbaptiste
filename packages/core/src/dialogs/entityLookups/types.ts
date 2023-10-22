@@ -31,9 +31,7 @@ export interface AuthorityService {
   settings?: AuthorityLookupSettings;
 }
 
-export interface AuthorityServices {
-  [key: string]: AuthorityService;
-}
+export type AuthorityServices = Record<string, AuthorityService>;
 
 export interface AuthorityServiceConfig extends Partial<AuthorityService> {
   id: Authority | string;

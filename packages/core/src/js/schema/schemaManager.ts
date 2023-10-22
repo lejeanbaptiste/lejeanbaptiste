@@ -60,7 +60,7 @@ class SchemaManager {
   schema: { elements: string[] } = { elements: [] };
 
   private root: string | null = null;
-  private header: string = '';
+  private header = '';
   private idName: string | null = null;
   private css: string | null = null;
   private documentSchemaUrl: string | null = null;
@@ -293,9 +293,9 @@ class SchemaManager {
       });
     };
 
-    let useLocalStorage = false;
+    const useLocalStorage = false;
     if (useLocalStorage) {
-      let localData = localStorage[`cwrc.${tag}.text`];
+      const localData = localStorage[`cwrc.${tag}.text`];
       if (localData) return localData === 'true';
     }
     //@ts-ignore
@@ -410,8 +410,8 @@ class SchemaManager {
     removeContents = false,
   }: {
     contextNode: Element;
-    removeContext?: Boolean;
-    removeContents?: Boolean;
+    removeContext?: boolean;
+    removeContents?: boolean;
   }) {
     let parentEl = contextNode.parentElement;
     if (!parentEl) return false;
@@ -648,7 +648,7 @@ class SchemaManager {
         $('start', includesXML).replaceWith(el);
       } else if (el.nodeName == 'define') {
         const name = $(el).attr('name');
-        let match = $(`define[name="${name}"]`, includesXML);
+        const match = $(`define[name="${name}"]`, includesXML);
         if (match.length == 1) {
           match.replaceWith(el);
         } else {

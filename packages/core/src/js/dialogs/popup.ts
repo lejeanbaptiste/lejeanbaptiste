@@ -13,9 +13,9 @@ class Popup implements LWDialogProps {
 
   $currentTag: JQuery | null = null;
   popupCloseId: any = null;
-  linkSelector: string = '';
+  linkSelector = '';
 
-  attributeSelector: string = '';
+  attributeSelector = '';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
@@ -260,7 +260,7 @@ class Popup implements LWDialogProps {
       }
     });
 
-    const isLink = url.indexOf('http') === 0;
+    const isLink = url.startsWith('http');
     const entityType = target.getAttribute('_type');
 
     this.writer.overmindActions.ui.openDialog({
@@ -316,7 +316,7 @@ class Popup implements LWDialogProps {
   }
 
   private showLink(url: string | JQuery<HTMLElement>) {
-    if (typeof url === 'string' && url.indexOf('http') === 0) {
+    if (typeof url === 'string' && url.startsWith('http')) {
       this.doPopup(url, 'link');
       this.$popupEl.on('click', () => this.doClick());
     } else {

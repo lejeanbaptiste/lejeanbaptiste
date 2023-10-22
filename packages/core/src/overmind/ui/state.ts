@@ -7,7 +7,7 @@ import type {
 import { Panel } from '../../layout/Utilities';
 import type { ContextMenuState, Language, LayoutProps, NotificationProps } from '../../types';
 
-type State = {
+interface State {
   contextMenu: ContextMenuState;
   darkMode: boolean;
   dialogBar: DialogBarProps[];
@@ -25,7 +25,7 @@ type State = {
   settingsDialogOpen: boolean;
   themeAppearance: 'light' | 'auto' | 'dark';
   title: string;
-};
+}
 
 export const state: State = {
   contextMenu: { show: false },

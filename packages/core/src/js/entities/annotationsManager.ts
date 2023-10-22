@@ -20,7 +20,7 @@ import type {
 
 const leafWriterVersion = pck.version;
 
-const prefixMap: Map<string, string> = new Map([
+const prefixMap = new Map<string, string>([
   ['bibo', 'http://purl.org/ontology/bibo/'],
   ['cnt', 'http://www.w3.org/2011/content#'],
   ['cw', 'http://cwrc.ca/ns/cw#'],
@@ -42,7 +42,7 @@ const prefixMap: Map<string, string> = new Map([
   ['org', 'http://www.w3.org/ns/org#'],
 ]);
 
-const namespaces: Map<string, string> = new Map([
+const namespaces = new Map<string, string>([
   ['rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'],
   ['rdfs', 'http://www.w3.org/2000/01/rdf-schema#'],
   ['as', 'http://www.w3.org/ns/activitystreams#'],
@@ -60,7 +60,7 @@ const namespaces: Map<string, string> = new Map([
   ['org', 'http://www.w3.org/ns/org#'],
 ]);
 
-const legacyTypes: Map<string, string> = new Map([
+const legacyTypes = new Map<string, string>([
   ['person', 'foaf:Person'],
   ['org', 'foaf:Organization'],
   ['place', 'geo:SpatialThing'],
@@ -335,7 +335,7 @@ class AnnotationsManager {
       entities.map((entity) => this.getAnnotationString(entity, format))
     );
 
-    let rdfString = rdfStringArray.join('');
+    const rdfString = rdfStringArray.join('');
 
     // triples
     // for (const triple of this.writer.triples) {
@@ -370,7 +370,7 @@ class AnnotationsManager {
     const type = entity.getType();
     const annoMappings = this.writer.schemaManager.mapper.getMappings().entities;
     const e = annoMappings.get(type);
-    if (e && e.annotation !== undefined) {
+    if (e?.annotation !== undefined) {
       return e.annotation(this, entity);
     }
     //  else {
@@ -487,13 +487,13 @@ class AnnotationsManager {
     entityConfig.originalData = annotation;
 
     // type
-    let annotationTypes: string | string[] =
-      annotation['oa:hasBody']['type'] || annotation['oa:hasBody']['@type'];
+    const annotationTypes: string | string[] =
+      annotation['oa:hasBody'].type || annotation['oa:hasBody']['@type'];
     //@ts-ignore
     entityConfig.type = this.getEntityTypeForAnnotation(annotationTypes);
 
     //uri
-    entityConfig.uri = annotation['oa:hasBody']['id'] || annotation['oa:hasBody']['@id'];
+    entityConfig.uri = annotation['oa:hasBody'].id || annotation['oa:hasBody']['@id'];
 
     // range
     entityConfig.range = {};
@@ -653,7 +653,7 @@ class AnnotationsManager {
     }
 
     // lookup info
-    let cwrcLookupObjString = rdf.find('cw\\:cwrcInfo, cwrcInfo').text();
+    const cwrcLookupObjString = rdf.find('cw\\:cwrcInfo, cwrcInfo').text();
 
     if (cwrcLookupObjString !== '') {
       const cwrcLookupObj = JSON.parse(cwrcLookupObjString);
@@ -677,7 +677,7 @@ class AnnotationsManager {
       // convert uri to prefixed form
 
       for (const [namespace, uri] of prefixMap) {
-        if (uri && annotation.indexOf(uri) === 0) {
+        if (uri && annotation.startsWith(uri)) {
           annotation = annotation.replace(uri, `${namespace}:`);
           break;
         }

@@ -367,7 +367,7 @@ class XML2CWRC {
       openingTagString = `<${htmlTag} _tag="${nodeName}" id="${id}" _textallowed="${canContainText}"`;
 
       if (node.hasAttributes()) {
-        const jsonAttrs: { [x: string]: any } = {};
+        const jsonAttrs: Record<string, any> = {};
         const attrs = node.attributes;
 
         for (let i = 0; i < attrs.length; i++) {

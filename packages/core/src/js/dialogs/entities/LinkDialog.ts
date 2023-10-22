@@ -67,7 +67,7 @@ class LinkDialog implements SchemaDialog {
     //Show/hide if filed has content
     $(`#${this.id}_input`, this.$el).on('keyup', () => {
       const externalLinkBT = $('#external-link-button', this.$el);
-      let src = $(`#${this.id}_input`).val();
+      const src = $(`#${this.id}_input`).val();
       const hasVal = src && src !== '';
 
       hasVal ? externalLinkBT.css('display', 'inline') : externalLinkBT.css('display', 'none');

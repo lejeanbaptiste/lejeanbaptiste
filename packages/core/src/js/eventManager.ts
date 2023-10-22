@@ -2,9 +2,7 @@
 import $ from 'jquery';
 import { log } from './../utilities';
 
-interface Events {
-  [x: string]: EventProps;
-}
+type Events = Record<string, EventProps>;
 
 interface EventProps {
   event: string;
@@ -21,7 +19,7 @@ interface EventProps {
  * @param {Writer} writer
  */
 class EventManager {
-  debug: boolean = false;
+  debug = false;
   events: Events = {};
 
   constructor() {

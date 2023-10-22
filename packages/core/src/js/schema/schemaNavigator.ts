@@ -166,7 +166,7 @@ const getEntryForPath = (path: string) => {
             context = item;
 
             if (i === tags.length - 1) {
-              if (item['$key'] === 'element') {
+              if (item.$key === 'element') {
                 match = item;
                 return false;
               } else {
@@ -284,7 +284,7 @@ const getParentsJSON = (defName: string, defHits: any, level: number, parents: a
         }
       });
 
-      if (docs !== null && docs['#text'] !== undefined) {
+      if (docs?.['#text'] !== undefined) {
         docs = docs['#text'];
       } else if (docs === null) {
         docs = '';
@@ -345,7 +345,7 @@ const getChildrenJSON = (
       }
     });
 
-    if (docs !== null && docs['#text'] !== undefined) {
+    if (docs?.['#text'] !== undefined) {
       docs = docs['#text'];
     } else if (docs == null) {
       docs = '';
@@ -376,7 +376,7 @@ const getChildrenJSON = (
       };
 
       if (type === 'element') {
-        if (refParentProps && refParentProps.optional != null) {
+        if (refParentProps?.optional != null) {
           //@ts-ignore
           childObj.required = !refParentProps.optional;
         } else {
@@ -389,7 +389,7 @@ const getChildrenJSON = (
           }
         }
       } else if (type === 'attribute') {
-        if (refParentProps && refParentProps.optional != null) {
+        if (refParentProps?.optional != null) {
           //@ts-ignore
           childObj.required = !refParentProps.optional;
         } else {
@@ -466,7 +466,7 @@ const getChildrenJSON = (
     // store optional value
     let optional = null;
     queryUp(ref, (item: any) => {
-      if (item.$parent && item.$parent.$key) {
+      if (item.$parent?.$key) {
         const parentKey = item.$parent.$key;
         if (parentKey === 'choice' || parentKey === 'optional' || parentKey === 'zeroOrMore') {
           // we're taking choice to mean optional, even though it could mean a requirement to choose one or more elements
@@ -537,7 +537,7 @@ const queryDown = (context: any, matchingFunc: Function, processRefs = false) =>
           const refs = isArray(prop) ? prop : [prop];
 
           // eslint-disable-next-line no-unused-vars
-          let defs = [];
+          const defs = [];
           for (let j = 0; j < refs.length; j++) {
             const name = refs[j]['@name'];
             //@ts-ignore

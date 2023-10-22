@@ -31,8 +31,8 @@ export type DialogType =
   | 'settings';
 
 export interface SimpleDialogMessageProps {
-  data?: { [key: string]: any };
-  onChangeData?: (data: { [key: string]: any }) => void;
+  data?: Record<string, any>;
+  onChangeData?: (data: Record<string, any>) => void;
 }
 
 export interface SimpleDialogProps extends IDialog {

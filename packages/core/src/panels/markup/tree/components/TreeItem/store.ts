@@ -7,6 +7,7 @@ let timer: NodeJS.Timeout;
 const _detailsHoverTimeOutAtom = atom(TIME_OUT_HOVER);
 export const detailsHoverTimeOutAtom = atom(
   (get) => get(_detailsHoverTimeOutAtom),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (get, set, value?) => {
     set(_detailsHoverTimeOutAtom, 0);
     clearTimeout(timer);

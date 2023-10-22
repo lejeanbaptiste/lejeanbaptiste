@@ -102,9 +102,9 @@ const citation: EntityMappingProps = {
     if (entity.getURI()) {
       //add citation body
       const hasBodyCitation: AnnotationHasBody = {
-        '@id': `${anno['id']}#Cites`,
+        '@id': `${anno.id}#Cites`,
         '@type': 'cito:Citation',
-        'cito:hasCitingEntity': anno['id'],
+        'cito:hasCitingEntity': anno.id,
         'cito:hasCitedEntity': entity.getURI(),
         'cito:hasCitationEvent': 'cito:cites',
       };
@@ -113,7 +113,7 @@ const citation: EntityMappingProps = {
         ? [...anno['oa:hasBody'], hasBodyCitation]
         : [anno['oa:hasBody'], hasBodyCitation];
 
-      anno['@context']['cito'] = 'http://purl.org/spar/cito/';
+      anno['@context'].cito = 'http://purl.org/spar/cito/';
     }
     return anno;
   },
@@ -250,7 +250,7 @@ const keyword: EntityMappingProps = {
           'skos:altLabel': entity.getContent(),
         },
       ];
-      anno['@context']['skos'] = 'http://www.w3.org/2004/02/skos/';
+      anno['@context'].skos = 'http://www.w3.org/2004/02/skos/';
     } else if (hasAna) {
       anno['oa:hasBody'] = [
         {
@@ -262,7 +262,7 @@ const keyword: EntityMappingProps = {
           'skos:altLabel': entity.getContent(),
         },
       ];
-      anno['@context']['skos'] = 'http://www.w3.org/2004/02/skos/';
+      anno['@context'].skos = 'http://www.w3.org/2004/02/skos/';
     } else {
       anno['oa:hasBody'] = {
         '@type': 'fabio:UncontrolledVocabulary',

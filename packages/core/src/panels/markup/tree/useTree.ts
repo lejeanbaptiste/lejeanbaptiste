@@ -45,7 +45,7 @@ export const useTree = () => {
 
   useEffect(() => {
     if (initialized) {
-      let treeModel = getEditorTreeModel();
+      const treeModel = getEditorTreeModel();
       if (!treeModel) return;
       expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
       setItems(treeModel);
@@ -64,7 +64,7 @@ export const useTree = () => {
 
   useEffect(() => {
     if (initialized) {
-      let treeModel = getEditorTreeModel();
+      const treeModel = getEditorTreeModel();
       if (!treeModel) return;
 
       setItems(treeModel);
@@ -96,7 +96,7 @@ export const useTree = () => {
     return [treeModel];
   };
 
-  const expandUpTo = (treeModel: TreeItems, depth: number = Infinity) => {
+  const expandUpTo = (treeModel: TreeItems, depth = Infinity) => {
     const flatten = flattenedTree.length > 0 ? flattenedTree : flattenTree(treeModel);
     const itemsToExpand = flatten
       .filter((item) => item.type === 'tag' && item.depth < depth)

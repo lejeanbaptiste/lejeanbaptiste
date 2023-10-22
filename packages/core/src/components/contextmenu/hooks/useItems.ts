@@ -68,7 +68,7 @@ export const useItems = (ctx: State) => {
   };
 
   const paramsForChangeTag = () => {
-    if (!writer || !ctx.element || !ctx.element.parentNode) return;
+    if (!writer || !ctx.element?.parentNode) return;
 
     const parentNode = ctx.element.parentNode as Element;
 
@@ -95,7 +95,7 @@ export const useItems = (ctx: State) => {
   };
 
   const paramsForAddTagBefore = () => {
-    if (!writer || !ctx.element || !ctx.element.parentNode) return;
+    if (!writer || !ctx.element?.parentNode) return;
 
     const parentNode = ctx.element.parentNode as Element;
     const xpath = writer.utilities.getElementXPath(parentNode);
@@ -114,7 +114,7 @@ export const useItems = (ctx: State) => {
   };
 
   const paramsForAddTagAfter = () => {
-    if (!writer || !ctx.element || !ctx.element.parentNode) return;
+    if (!writer || !ctx.element?.parentNode) return;
 
     const parentNode = ctx.element.parentNode as Element;
     const xpath = writer.utilities.getElementXPath(parentNode);
@@ -134,7 +134,7 @@ export const useItems = (ctx: State) => {
   };
 
   const paramsForAddTagAround = () => {
-    if (!writer || !ctx.element || !ctx.element.parentNode) return;
+    if (!writer || !ctx.element?.parentNode) return;
 
     const parentNode = ctx.element.parentNode as Element;
     const xpath = writer.utilities.getElementXPath(parentNode);

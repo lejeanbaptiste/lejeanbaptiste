@@ -58,7 +58,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
   }, [initialized, enabled, items]);
 
   useEffect(() => {
-    if (!!nodeChanged) {
+    if (nodeChanged) {
       if (selectedItems.includes(nodeChanged)) return;
 
       // const flatten = flattenedTree.length > 0 ? flattenedTree : flattenTree(items);
@@ -162,8 +162,8 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
 
     const expandedSelection: UniqueIdentifier[] = [];
 
-    let firstIndex = Math.min(startItem.index, endItem.index);
-    let lastIndex = Math.max(startItem.index, endItem.index);
+    const firstIndex = Math.min(startItem.index, endItem.index);
+    const lastIndex = Math.max(startItem.index, endItem.index);
 
     for (let i = firstIndex; i <= lastIndex; i++) {
       const item = flattenedTree.find(
@@ -206,7 +206,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
 
     const id = node?.id;
     if (!id) {
-      log.info(`markup panel: attribute 'id' missing from node ${node}`);
+      log.info(`markup panel: attribute 'id' missing from node ${node?.tagName}`);
       return;
     }
 
