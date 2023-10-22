@@ -10,7 +10,8 @@ import {
   wikidataFind,
 } from '../lookups/services';
 
-export interface EditorStateType {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type EditorStateType = {
   advancedSettings: boolean;
   allowOverlap: boolean;
   annotationMode: number;
@@ -47,7 +48,7 @@ export interface EditorStateType {
   showTags: boolean;
   latestEvent?: string;
   authorityServices: AuthorityServices;
-}
+};
 
 export const state: EditorStateType = {
   advancedSettings: true,

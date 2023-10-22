@@ -7,7 +7,8 @@ import type {
 } from '../../dialogs/entityLookups/types';
 import { EntityType } from '../../types';
 
-interface State {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type State = {
   isUriValid: boolean;
   manualInput: string;
   query: string;
@@ -15,7 +16,7 @@ interface State {
   selected?: EntryLink;
   typeEntity: EntityType;
   typeLookup: NamedEntityType;
-}
+};
 
 export const state: State = {
   isUriValid: derived((state: State, rootState: Context['state']) => {
