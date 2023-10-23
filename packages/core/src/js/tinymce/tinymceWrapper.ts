@@ -36,7 +36,7 @@ export const tinymceWrapperInit = function ({
   const toolbar = document.querySelector('#editor-toolbar');
   const toolbarHeight = toolbar?.getBoundingClientRect().height ?? 0;
 
-  tinymce.init({
+  void tinymce.init({
     selector: `#${editorId}`,
     ui_container: `#${layoutContainerId}`,
     skin_url: window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -89,12 +89,9 @@ export const tinymceWrapperInit = function ({
 
     // disables style keyboard shortcuts
     formats: {
-      //@ts-ignore
-      bold: {},
-      //@ts-ignore
-      italic: {},
-      //@ts-ignore
-      underline: {},
+      bold: [],
+      italic: [],
+      underline: [],
     },
 
     setup: (editor: LeafWriterEditor) => {
@@ -109,7 +106,7 @@ export const tinymceWrapperInit = function ({
       editor.copiedEntity = undefined; // the entity element that was copied
       editor.lastKeyPress = undefined; // the last key the user pressed
 
-      editor.on('init', (event) => {
+      editor.on('init', () => {
         if (writer.isReadOnly === true) {
           editor.mode.set('readonly');
         }
@@ -425,7 +422,7 @@ export const tinymceWrapperInit = function ({
     writer.event('writerKeyup').publish(event);
   };
 
-  const onChangeHandler = (event: any) => {
+  const onChangeHandler = () => {
     $('br', writer.editor?.getBody()).remove(); // remove br tags that get added by shift+enter
     writer.event('contentChanged').publish();
   };

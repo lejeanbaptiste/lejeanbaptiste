@@ -105,9 +105,8 @@ export const useContextmenu = () => {
 
     //This is an async function that fetch tag metadata, such as the full name.
     // The context menu does not need to "await" for it to complete to initialize
-    getTagAt({ tagName, parentXpath, index: 0 }).then((tag) => {
-      if (!tag) return null;
-      setTagMeta(tag);
+    void getTagAt({ tagName, parentXpath, index: 0 }).then((tag) => {
+      if (tag) setTagMeta(tag);
     });
 
     setXpath(ctx.nodeType === 'text' && ctx.xpath ? ctx.xpath : elementXpath);

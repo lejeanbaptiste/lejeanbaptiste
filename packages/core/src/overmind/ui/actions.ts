@@ -8,6 +8,7 @@ import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLo
 import i18n from '../../i18n';
 import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
   //DARK MODE
   const prefPaletteMode: PaletteMode =
@@ -23,7 +24,7 @@ export const onInitializeOvermind = ({ state, actions, effects }: Context, overm
     const language = prefLanguage ?? { code: 'en-CA', name: 'english', shortName: 'en' };
 
     state.ui.language = language;
-    i18n.changeLanguage(language.shortName);
+    void i18n.changeLanguage(language.shortName);
   }
 };
 
@@ -42,14 +43,14 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
   effects.editor.api.saveToLocalStorage<PaletteMode>('themeAppearance', value);
 };
 
-export const listenChangeLanguage = ({ state, effects }: Context) => {
+export const listenChangeLanguage = async ({ state, effects }: Context) => {
   //* check language
   const prefLanguageCode = effects.editor.api.getFromLocalStorage('i18nextLng');
   if (prefLanguageCode && prefLanguageCode !== state.ui.language.code) {
     const prefLanguage = supportedLanguages.get(prefLanguageCode);
     if (prefLanguage) {
       state.ui.language = prefLanguage;
-      i18n.changeLanguage(prefLanguage.code);
+      await i18n.changeLanguage(prefLanguage.code);
     }
   }
 };
@@ -193,6 +194,7 @@ export const doNotDisplayDialog = async (_context: Context, value: string) => {
   await db.doNotDisplayDialogs.put({ id: value });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const resetDoNotDisplayDialogs = async (_context: Context) => {
   await db.doNotDisplayDialogs.clear();
 };
