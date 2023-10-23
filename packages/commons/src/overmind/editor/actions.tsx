@@ -149,7 +149,7 @@ export const saveAs = async (
 
   actions.storage.openStorageDialog({
     source: 'cloud',
-    resource,
+    resource: { ...resource, content },
     type: 'save',
   });
 
