@@ -68,7 +68,7 @@ export const addToRecentDocument = async (_context: Context, document: Resource)
 
   resource.modifiedAt = new Date();
 
-  await db.recentDocuments.put(resource, resource.id);
+  await db.recentDocuments.put({ ...resource }, resource.id);
 };
 
 export const downloadImage = async ({ state }: Context, screenshot: string) => {
@@ -98,7 +98,7 @@ export const updateRecentDocument = async ({ state }: Context) => {
   resource.modifiedAt = new Date();
 
   try {
-    await db.recentDocuments.put(resource, resource.id);
+    await db.recentDocuments.put({ ...resource }, resource.id);
   } catch (error) {
     log.info(error);
   }
