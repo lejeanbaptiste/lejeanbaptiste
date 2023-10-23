@@ -1,5 +1,80 @@
 # CHANGELOG
 
+## 3.2.3
+
+### Patch Changes
+
+- [b4550aade219d929e9f1607c8c98dbbcdbdf8599] contextmenu: fix position
+
+### Maintenance
+
+- [a95c55cc6f2b83f03ddf17bd3836f048b9e5503a] update esbuild-loader to 4.0.2
+- [c12961736495a0699c2bec970e8583f459e005fd] decentralize lint/format
+- [4a455a5fca5776f2a43a3263671ddcf8ea7d29c6] add lint/format scripts
+- Linting, formating, typing
+  - [8f480019cde054a826fc3be2ba0248903d8680c4]
+  - [10ecb962bf3ce9391a098ddeeddc0af9ba2a3833]
+  - [1e09b594ce79ac6be3f15a77cbbb166ed55b804d]
+  - [9d9bc873670137a9fbd6cc5822e1d5c0fb2836ca]
+- [edf546a8282d56aa8c9558e2c6e7eda35d93276e] remove unnecessary files
+  - changelog.config.js
+  - issue_template.md
+- [be37f8843591d408439c9d055b959d5ebe0112c4] centralize tsconfig
+- [3160d7ca655707d433c5459227b976deb76c302b] improve tsconfig: implicit import react
+- [94f3db63c8e583ecb44bacd31c900b0a8c957580] update documentation
+- [ca1637f723b3f6704820b59d5e01b611b0cb741a] update dependencies
+  - core:
+    - update:
+      - axios@1.5.1
+      - framer-motion@10.16.4
+      - i18next@23.6.0
+      - jotai@2.5.0
+      - monaco-editor@0.44.0
+      - mui-modal-provider@2.3.1
+      - react-i18next@13.3.1
+      - react-icons@4.11.0
+      - react-virtuoso@4.6.2
+      - zod@3.22.4
+    - bump:
+      - @cwrc/leafwriter-validator@4.1.2
+      - @fontsource/lato@5.0.17
+      - @mui/icons-material@5.14.14
+      - @mui/material@5.14.14
+      - formik@2.4.5
+      - jquery@3.7.1
+      - luxon@3.4.3
+      - overmind-react@29.0.5
+      - progressbar.js@1.1.1
+      - react-resizable-panels@0.0.55
+      - uuid@9.0.1
+      - wikibase-sdk@9.2.3
+  - dev:
+    - remove:
+      - @typescript-eslint/eslint-plugin
+      - @typescript-eslint/parser
+      - eslint-config-prettier
+      - eslint-plugin-prettier
+      - eslint-plugin-react
+      - husky
+    - add:
+      - eslint@8.52.0
+      - typescript
+      - typescript-plugin-css-modules
+    - update: @types/node@20.8.7
+      - bump:
+        - @types/chroma-js@2.4.2
+        - @types/css@0.0.35
+        - @types/fscreen@1.0.3
+        - @types/jquery@3.5.25
+        - @types/jqueryui@1.12.19
+        - @types/js-cookie@3.0.5
+        - @types/luxon@3.3.3
+        - @types/openseadragon@3.0.8
+        - @types/progressbar.js@1.1.5
+        - @types/react-dom@18.2.14
+        - @types/tinymce@4.6.7
+        - @types/uuid@9.0.6
+
 ## 3.2.2
 
 ### Patch Changes

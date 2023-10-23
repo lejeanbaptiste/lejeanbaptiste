@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "description": "intuitive document editing with xml and rdf",
   "keywords": [
     "xml",
