@@ -2,11 +2,11 @@ import { NextFunction, Request, Response, Router } from 'express';
 
 /**
  * It sets the HTTP headers for the response object
- * @param {Request} req - Request - The incoming request object
+ * @param {Request} _req - Request - The incoming request object
  * @param {Response} res - The response object.
  * @param {NextFunction} next - This is a function that is called when the middleware is complete.
  */
-const httpHeaders = (req: Request, res: Response, next: NextFunction) => {
+const httpHeaders = (_req: Request, res: Response, next: NextFunction) => {
   // res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', ['GET']);
   res.header('Access-Control-Allow-Headers', 'Content-Type');
