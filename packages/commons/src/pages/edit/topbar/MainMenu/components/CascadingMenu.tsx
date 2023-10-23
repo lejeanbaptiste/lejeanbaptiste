@@ -1,7 +1,7 @@
 import { MenuProps } from '@mui/material';
 import HoverMenu from 'material-ui-popup-state/HoverMenu';
 import { bindMenu, usePopupState } from 'material-ui-popup-state/hooks';
-import React, { useContext, useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { CascadingContext } from '..';
 import { useMenu } from '../useMenu';
 

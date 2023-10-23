@@ -2,7 +2,6 @@ import { Stack } from '@mui/material';
 import type { FileDetail } from '@src/types';
 import { UploadDropBox } from '@src/views/storage';
 import { useAtom, useAtomValue } from 'jotai';
-import React from 'react';
 import { useConversion } from '../hooks';
 import { fileDetailAtom, isProcessingAtom } from '../store';
 

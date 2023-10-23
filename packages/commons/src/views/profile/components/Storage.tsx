@@ -17,7 +17,7 @@ import { getIcon, type IconName } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import { BroadcastChannel } from 'broadcast-channel';
 import chroma from 'chroma-js';
-import React, { type MouseEvent } from 'react';
+import { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SubMenu } from '../types';
 

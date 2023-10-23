@@ -3,11 +3,11 @@ import { LoadingMask } from '@src/components';
 import { useFormatConversion, useOpenResource, usePermalink } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { isValidXml } from '@src/utilities';
-import React, { Suspense, useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 
-const StorageDialog = React.lazy(() =>
+const StorageDialog = lazy(() =>
   import('@cwrc/leafwriter-storage-service/dialog').then((module) => ({
     default: module.StorageDialog,
   })),

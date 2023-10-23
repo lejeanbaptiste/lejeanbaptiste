@@ -1,6 +1,5 @@
 import { Icon, Stack, Typography } from '@mui/material';
 import { getIcon } from '@src/icons';
-import React from 'react';
 
 interface ErrorMessageProps {
   message: string;

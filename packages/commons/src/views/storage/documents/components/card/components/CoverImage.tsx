@@ -1,6 +1,5 @@
 import { Box, Stack, useTheme } from '@mui/material';
 import { motion, type Variants } from 'framer-motion';
-import React from 'react';
 
 interface SampleCardProps {
   expanded: boolean;

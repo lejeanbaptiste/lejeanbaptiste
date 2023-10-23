@@ -1,6 +1,5 @@
 import { Backdrop, useTheme } from '@mui/material';
 import { TeaIcon } from '@src/icons';
-import React from 'react';
 
 export const LoadingMask = () => {
   const { palette, zIndex } = useTheme();

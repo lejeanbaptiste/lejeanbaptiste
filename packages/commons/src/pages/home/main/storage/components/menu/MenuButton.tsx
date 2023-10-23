@@ -13,7 +13,6 @@ import {
 import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 import { getIcon, type IconName } from '@src/icons';
 import { motion } from 'framer-motion';
-import React from 'react';
 
 export interface MenuButtonProps {
   active?: boolean;

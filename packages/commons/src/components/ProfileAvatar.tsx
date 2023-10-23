@@ -2,7 +2,7 @@ import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
 import { getIcon, type IconName } from '@src/icons';
 import { useAppState } from '@src/overmind';
 import { motion, useAnimation, type Variants } from 'framer-motion';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ProfileAvatarProps {
   clickable?: boolean;

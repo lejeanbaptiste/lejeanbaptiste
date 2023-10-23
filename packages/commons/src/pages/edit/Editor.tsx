@@ -3,7 +3,7 @@ import { LoadingMask } from '@src/components';
 import { schemas } from '@src/config/schemas';
 import { useAnalytics, useLeafWriter } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMenu } from './topbar';
 
 export const Editor = () => {

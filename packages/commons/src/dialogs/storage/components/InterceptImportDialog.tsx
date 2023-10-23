@@ -1,7 +1,6 @@
 import { Button, Icon, Link, Stack, Typography } from '@mui/material';
 import { TextEmphasis } from '@src/components';
 import { getIcon } from '@src/icons';
-import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 type InterceptImportDialogProps = {

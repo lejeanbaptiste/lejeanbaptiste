@@ -2,7 +2,6 @@ import { Button, Tooltip } from '@mui/material';
 import { getIcon, type IconName } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import { motion } from 'framer-motion';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ProviderButtonProps {

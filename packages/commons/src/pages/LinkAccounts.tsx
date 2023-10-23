@@ -1,6 +1,6 @@
 import { Page } from '@src/layouts';
 import { BroadcastChannel } from 'broadcast-channel';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 export const LinkAccountsPage = () => {
   const query = new URLSearchParams(location.search);

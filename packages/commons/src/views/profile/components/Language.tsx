@@ -5,7 +5,7 @@ import { useAnalytics, useCookieConsent } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { supportedLanguages } from '@src/utilities';
 import chroma from 'chroma-js';
-import React, { type MouseEvent } from 'react';
+import { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SubMenu } from '../types';
 

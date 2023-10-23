@@ -1,6 +1,6 @@
 import { Box, Container, Grid, rgbToHex, useTheme } from '@mui/material';
 import chroma from 'chroma-js';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { About } from './About';
 import { Team } from './Team';
 

@@ -6,7 +6,6 @@ import { useActions } from '@src/overmind';
 import { isErrorMessage } from '@src/types';
 import { renameFileAsCopy } from '@src/utilities';
 import queryString from 'query-string';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 

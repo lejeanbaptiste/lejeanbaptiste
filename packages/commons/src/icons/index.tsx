@@ -28,7 +28,6 @@ import TranslateIcon from '@mui/icons-material/Translate';
 import { SvgIconTypeMap, createSvgIcon } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { FileExportOutline, Gitlab } from 'mdi-material-ui';
-import React from 'react';
 import type { IconBaseProps, IconType } from 'react-icons';
 import { BiArrowToTop, BiDownload } from 'react-icons/bi';
 import { FaFeather, FaOrcid } from 'react-icons/fa';

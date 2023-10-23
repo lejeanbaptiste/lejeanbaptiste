@@ -5,7 +5,6 @@ import '@fontsource/lato/700.css';
 import '@fontsource/lato/900.css';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';

@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { AnimationControls, motion, type Variants } from 'framer-motion';
-import React, { type MouseEvent } from 'react';
+import { type MouseEvent } from 'react';
 import { Layout } from '..';
 
 const ENABLE_GRID = true;

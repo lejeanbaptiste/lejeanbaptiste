@@ -4,7 +4,7 @@ import { getIcon, IconName } from '@src/icons';
 import type { Resource } from '@src/types';
 import { formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
-import React, { useState, type MouseEvent } from 'react';
+import { useState, type MouseEvent } from 'react';
 import type { Layout } from '../..';
 import { CoverImage, Footer } from './components';
 

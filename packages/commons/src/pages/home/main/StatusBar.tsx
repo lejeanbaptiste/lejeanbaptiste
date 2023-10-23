@@ -1,5 +1,4 @@
 import { Chip, Stack, useMediaQuery, useTheme } from '@mui/material';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const StatusBar = () => {

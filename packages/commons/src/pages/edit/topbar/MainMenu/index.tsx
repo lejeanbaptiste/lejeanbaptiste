@@ -4,7 +4,7 @@ import { Logo } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { bindFocus, bindMenu, bindTrigger, usePopupState } from 'material-ui-popup-state/hooks';
-import React, { createContext } from 'react';
+import { createContext } from 'react';
 import { CascadingMenu, Item, SubMenu, type ItemProps, type SubMenuProps } from './components';
 
 import { useMenu } from './useMenu';

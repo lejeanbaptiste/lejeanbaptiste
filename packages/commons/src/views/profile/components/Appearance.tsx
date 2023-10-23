@@ -13,7 +13,7 @@ import { getIcon } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import type { PaletteMode } from '@src/types';
 import chroma from 'chroma-js';
-import React, { type MouseEvent } from 'react';
+import { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { OptionProps, SubMenu } from '../types';
 

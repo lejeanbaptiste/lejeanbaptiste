@@ -2,7 +2,7 @@ import { Stack, Typography, styled } from '@mui/material';
 import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 import { useLeafWriter } from '@src/hooks';
 import { useAppState } from '@src/overmind';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Cloud } from './Cloud';
 import { FullPath } from './FullPath';
 

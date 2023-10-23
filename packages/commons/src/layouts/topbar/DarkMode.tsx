@@ -3,7 +3,6 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { IconButton } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import { motion, type Variants } from 'framer-motion';
-import React from 'react';
 
 export const DarkMode = () => {
   const { darkMode } = useAppState().ui;

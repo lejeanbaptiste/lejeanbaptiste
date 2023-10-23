@@ -5,7 +5,6 @@ import {
 } from '@src/services/leafTe';
 import type { Resource } from '@src/types';
 import { renameFileAsCopy } from '@src/utilities';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { InterceptConvertDialog } from './components';
 import { formatCheckers } from './utilities';

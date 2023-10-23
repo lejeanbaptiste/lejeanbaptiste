@@ -3,7 +3,7 @@ import { Divider, Stack, Typography } from '@mui/material';
 import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Layout } from '..';
 import { CARD_WIDTH, DocumentCard } from '../components';

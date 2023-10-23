@@ -1,6 +1,5 @@
 import { Button, Tooltip, Typography } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const SigninButton = () => {

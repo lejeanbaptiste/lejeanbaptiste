@@ -1,6 +1,5 @@
 import { List, ListItem, ListItemButton, ListItemText, useTheme } from '@mui/material';
 import { useAtom, useAtomValue } from 'jotai';
-import React from 'react';
 import { isProcessingAtom, conversionTypesAtom, selectedTypeAtom } from '../store';
 
 export const Sidebar = () => {

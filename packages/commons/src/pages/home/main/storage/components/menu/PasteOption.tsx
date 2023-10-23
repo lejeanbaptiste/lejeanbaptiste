@@ -1,7 +1,7 @@
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import { Stack, TextField, useTheme } from '@mui/material';
 import { useActions } from '@src/overmind';
-import React, { useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface PasteOptionProps {

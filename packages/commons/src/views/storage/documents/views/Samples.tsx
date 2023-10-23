@@ -2,7 +2,7 @@ import Masonry from '@mui/lab/Masonry';
 import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Layout } from '..';
 import { CARD_WIDTH, DocumentCard } from '../components';
 

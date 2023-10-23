@@ -1,7 +1,6 @@
 import ScreenRotationOutlinedIcon from '@mui/icons-material/ScreenRotationOutlined';
 import ScreenshotMonitorOutlinedIcon from '@mui/icons-material/ScreenshotMonitorOutlined';
 import { Stack, Typography } from '@mui/material';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const SmallScreenMessage = () => {

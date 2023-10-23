@@ -2,7 +2,7 @@ import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
 import { Storage } from '@src/dialogs';
 import ModalProvider from 'mui-modal-provider';
 import { SnackbarProvider } from 'notistack';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useRoutes } from 'react-router-dom';
 import { useAnalytics, useCookieConsent, usePermalink } from './hooks';

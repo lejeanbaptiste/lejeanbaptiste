@@ -4,7 +4,7 @@ import { Box, FormControl, Icon, MenuItem, Stack, SvgIconTypeMap, Typography } f
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { useActions, useAppState } from '@src/overmind';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
