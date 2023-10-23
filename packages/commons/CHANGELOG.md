@@ -1,5 +1,85 @@
 # CHANGELOG
 
+## 3.2.2
+
+### Patch Changes
+
+- [401453596f59e0ae5b6be83b163fc0b00de11482] import storageService from 'exports'
+- saving
+  - [21ac781069fa46e9997978dd50f2e6d0402c3e6e] address issue preventing the document to be updated in the local storage
+  - [15172336ed6d7b9ad03e67dfc9c990f3369373f3] address issue preventing saving local files in the cloud (#164)
+- [6cb3f53b473179b1002b656fdd571e23028667ec] storage: Do not allow load from url
+  - This features needs to be implement on LW-Commons to work
+  
+### Maintenance
+
+- linting, formating, typing
+  - [c713a2f3553de1ddff446541b709c23bb0698695]
+  - [93a10b4529de15147508e2632720bc60aadec7b9]
+  - [42744c4accb25dec0518eeed7570f8883337f0c8]
+  - [60a66740abe345dc6eb94011a14e987873ece693]
+  - [61f5b3c0d4b0b754265bc94ff83ea3765676b92f]
+  - [317c89e69f77edb43d3a8a47a90a9930916cacac]
+- [e85b9115a6ebccc74199bf5577a426d6a69b7a1d] centralize tsconfig
+- [dc0939ea602da8b06405f2e4ce6e82de19cda0fe] improve tsconfig: implicit import react
+- [f3a03773d687fb620a8d8f160f408e23fbb99cb7] add scripts: lint & format
+- [edf546a8282d56aa8c9558e2c6e7eda35d93276e] remove unnecessary files
+  - changelog.config.js
+  - issue_template.md
+- [30adfc56eec0183a161d86062c10f86fcc121998] update esbuild to 4.0.2
+- [ca1df10456603d7d75715c95b41a6de040b3e019] centralize linting and formating
+- [cf97e093498b280a39b13b914e9f0bbb3d7640d9] update dependencies
+  - core:
+    - remove debug
+    - upgrade: react-markdown@9.0.0
+    - update:
+      - @cwrc/leafwriter-storage-service@2.2.1
+      - @mui/lab@5.0.0-alpha.149
+      - @ts-rest/core@3.30.4
+      - axios@1.5.1
+      - broadcast-channel@5.5.1
+      - framer-motion@10.16.4
+      - i18next@23.6.0
+      - jotai@2.5.0
+      - mui-modal-provider@2.3.1
+      - react-i18next@13.3.1
+      - react-icons4.11.0
+      - react-router-dom@6.17.0
+    - bump:
+      - @cwrc/leafwriter@3.2.3
+      - @fontsource/lato@5.0.16
+      - @mui/icons-material@5.14.14
+      - @mui/material@5.14.14
+      - @octokit/rest@20.0.2
+      - keycloak-js@22.0.4
+      - material-ui-popup-state@5.0.10
+      - overmind-react@29.0.5
+      - swr@2.2.4
+      - zod@3.22.4
+  - dev:
+    - remove:
+      - @typescript-eslint/eslint-plugin
+      - @typescript-eslint/parser
+    - add:
+      - tslib@2.6.2
+      - typescript@5.2.2
+      - webpack@5.89.0
+      - webpack-bundle-analyzer@4.9.1
+    - upgrade: @octokit/types@12.0.0
+    - update:
+      - ts-loader@9.5.0
+      - types/node@20.8.7
+    bump:
+      @types/chroma-js@2.4.2
+      @types/compression@1.7.4
+      @types/dotenv-webpack@7.0.6
+      @types/express@4.17.20
+      @types/md5@2.3.5
+      @types/webpack@5.28.4
+      @types/webpack-env@1.18.3
+      @types/webpack-hot-middleware@2.25.8
+      @types/webpackbar@4.0.5
+
 ## 3.2.1
 
 ### Patch Changes
