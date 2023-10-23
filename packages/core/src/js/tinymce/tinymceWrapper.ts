@@ -161,13 +161,11 @@ export const tinymceWrapperInit = function ({
 
           if (writer.isReadOnly) return;
 
-          // const editorPosition = writer.utilities.getOffsetPosition(
-          //   editor.getContentAreaContainer()
-          // );
+          const offsetX = fscreen.fullscreenElement ? 0 : 0;
+          const offsetY = fscreen.fullscreenElement ? 0 : -90;
 
-          const posX = event.screenX;
-          let posY = event.screenY - 39;
-          if (!fscreen.fullscreenElement) posY = posY - 78;
+          const posX = event.screenX - (event.view?.screenLeft ?? 0) + offsetX;
+          const posY = event.screenY - (event.view?.screenTop ?? 0) + offsetY;
 
           writer.overmindActions.ui.showContextMenu({
             eventSource: 'editor',
