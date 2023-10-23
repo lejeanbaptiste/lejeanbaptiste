@@ -29,8 +29,8 @@
 		"dev:server": "env-cmd -e development nodemon",
 		"dev:server-worker-dev": "env-cmd -e development-worker-dev nodemon",
 		"format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "format-check": "prettier . --check",
-    "lint": "eslint .",
+		"format-check": "prettier . --check",
+		"lint": "eslint .",
 		"build": "env-cmd -e production webpack"
 	},
 	"dependencies": {
