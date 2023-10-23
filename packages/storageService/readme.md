@@ -32,7 +32,7 @@
 
 This is React File Storage component for listing, loading, and saving files from and to the local computer and Git hosting (GitHub and Gitlab). It was built to be used in conjunction with [LEAF-Writer-Commons](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer), but it is general enough to be freely used anywhere.
 
-The **Load Dialog** supports pasting from the clipboard, selecting files from the local computer, dragging & drop a file directly to the UI, and load from an URL or Git provider (GitHub / Gitlab). On the git provider, users can access their own repositories, shared repositories, repositories owned by organizations/groups, and search public repositories. Git repositories are limited to the default branch (usually 'master' or 'main'). There are also search functionalities by file name and within files' content.
+The **Load Dialog** supports pasting from the clipboard, selecting files from the local computer, dragging & drop a file directly to the UI, and load from an URL or Git provider (GitHub | Gitlab). On the git provider, users can access their own repositories, shared repositories, repositories owned by organizations/groups, and search public repositories. Git repositories are limited to the default branch (usually 'master' or 'main'). There are also search functionalities by file name and within files' content.
 
 The **Save Dialog** supports downloading to the local computer and saving to Git hosting. On the git hoster, users can create new repositories and new folders and create and overwrite files. Optionally, users can make Pull Requests, saving the file into a different branch. If the user does not have written permission to a repository, they can Fork the repository and make a Pull Request to the original repository.
 
@@ -164,6 +164,7 @@ export const MyFStorageDialog = () => {
         showInvisibleFiles: true,
         validate: handleValidation,
       }}
+      headerLabel="Custom header"
       onBackdropClick={clickAway}
       onCancel={close}
       onChange={handleOnChange}
@@ -219,6 +220,7 @@ export const MyFStorageDialog = () => {
         ],
         showInvisibleFiles: true,
       }}
+      headerLabel="Custom header"
       onCancel={close}
       onSave={handleSave}
       resource={
@@ -347,6 +349,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 | --------------- | ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | open\*          | boolean                       | false   | Display / hide dialog                                                                                                                                                                                                                                                                                                                                                                                   |
 | config          | StorageDialogConfig           |         | A collection of configuration (see bellow).                                                                                                                                                                                                                                                                                                                                                             |
+| headerLabel    | string           |         | Dialog's custom header. Ex: instead of `load` you can pass any string, such as `load document`.                                                                                                                                                                                                                                                                                                                                                             |
 | onBackdropClick | function                      |         | Callback fired when the **backdrop** is clicked.<br/><br/>**Save dialog** ignores this property since it does not allow for onBackdropClick.                                                                                                                                                                                                                                                            |
 | onCancel        | function                      |         | Callback fired when the **Cancel** button is clicked.                                                                                                                                                                                                                                                                                                                                                   |
 | onChange        | function                      |         | **Load dialog**: Callback fired when there is any change on the resource source (cloud, local, paste, url), on the resource url when the source is `url`, or on the resource path (owner, repository, folder path) when the source is `cloud`. <br /> <br /> **Save dialog** ignores this property. <br /> <br /> **Signature**: `function(resource?: Resource) => void` See more about Resource below. |
@@ -377,16 +380,16 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 | Name            | Type                                   | Default | Description                                                                                                                                                              |
 | --------------- | -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | storageSource   | `cloud` \| `local` \| `paste` \| `url` |         | The resource's source.                                                                                                                                                   |
-| provider        | string                                 |         | `'github'`, `'gitlab'`, or empty if not from the git repository.                                                                                                         |
-| owner           | string                                 |         | Github `username` or Gitlab: `user id`.                                                                                                                                  |
-| ownertype       | string                                 |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation.                                                                                                      |
-| repo            | string                                 |         | Github `repository name`. Gitlab `repository id`.                                                                                                                        |
-| path            | string                                 |         | Folder structure. _e.g._, `'path/to/file'`.                                                                                                                              |
+| url             | string                                 |         | The resource's url. Only for sourceStorage `url` or `cloud`.                                                                                                                                                        |
+| provider        | string                                 |         | `'github'`, `'gitlab'`, or empty if not from the git repository. Only for sourceStorage `cloud`.                                                                                                         |
+| owner           | string                                 |         | Github `username` or Gitlab: `user id`. Only for sourceStorage `cloud`.                                                                                                                                   |
+| ownertype       | string                                 |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation. Only for sourceStorage `cloud`.                                                                                                      |
+| repo            | string                                 |         | Github `repository name`. Gitlab `repository id`. Only for sourceStorage `cloud`.                                                                                                                        |
+| path            | string                                 |         | Folder structure. _e.g._, `'path/to/file'`. Only for sourceStorage `cloud`.                                                                                                                               |
 | filename        | string                                 |         | The file name.                                                                                                                                                           |
-| content         | string                                 |         | The document content.                                                                                                                                                    |
-| hash            | string                                 |         | The Commit hash. On **Github**, it is the SHA value. On **Gitlab**, it is the lastCommitId. If present, the dialog alerts the user that the content will be overwritten. |
-| url             | string                                 |         | The resource url.                                                                                                                                                        |
-| writePermission | boolean                                |         | Indicates if the loged user has write permission for the repository. Default: `undefined` for owned repositories.                                                        |
+| content         | string                                 |         | The document content. Only for sourceStorage `cloud`.                                                                                                                                                     |
+| hash            | string                                 |         | The Commit hash. On **Github**, it is the SHA value. On **Gitlab**, it is the lastCommitId. If present, the dialog alerts the user that the content will be overwritten. Only for sourceStorage `cloud`.  |
+| writePermission | boolean                                |         | Indicates if the loged user has write permission for the repository. Default: `undefined` for owned repositories. Only for sourceStorage `cloud`.                                                         |
 
 ## Development
 
