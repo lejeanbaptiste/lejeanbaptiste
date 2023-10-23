@@ -1,5 +1,64 @@
 # CHANGELOG
 
+## 4.1.2
+
+## Chore
+
+- [2982fa8f973c77dcbfdf36c4da9bddc6bdbe061a] Esbuild-loader: load tsconfig automatically
+  - update `esbuild-loader` to 4.0.2
+- [8dbea6c53c78e3526d8806e34cd9e82b6a4f38e1] TestEnvironment: workaraound to make `structuredClone` work on `jsdom`
+  - Caused by `test-environment-jsdom` new version
+  - update `test-environment-jsdom` to 29.7.0
+- [e5e1f9ac03eaa0f1c9930abc7fd4434d0d0d72d5] Centralize `eslint` and `prettier`
+  - add dependency to internal the pacakge `eslint-config-custom`
+  - remove dependencie to `eslint-config-prettier` and `eslint-plugin-prettier`
+- [c9e8b1bccdaf81482721ded06a5438f094ba5c23] Centralize tsconfig
+  - add dependency to internal the pacakge `tsconfig`
+  - Simplify tsconfig  + [552641368f5a8ac8af73fcb45811bd04661285b0]
+
+### Test
+
+- [017548b7cf96cf3b488c3565d2f822764e8f86b5] Temporarily skip a test
+  - getValuesForTagAttributeAt
+
+### Maintance
+
+- Remove unnecessary files
+  - [1daa7745a93840cfc381dfe4e0cf98fac197b2b5] issue_template.md
+  - [ca9b1154c8bb1d9afdcceea657dfc2306abc9c99]
+    - .prettierrc
+    - changelog.config.js
+    - temp files
+- Linting, formating, typing
+  - [e006a25690e176936a42515fd55fd68983194831]
+  - [797c14a421413ddbe206c36793a48d93592f1a11]
+  - [7af054c88903125761cf82a3da676e290c5bdcb4]
+  - [45773daee50a378712e0810e304f0eee3068cf31]
+- [66f7f49514cb13c7205815a9c9e69b4d8508292a] Update dependencies
+  - dev:
+    - remove:
+    - @typescript-eslint/eslint-plugin
+    - @typescript-eslint/parser
+    - commitizen
+    - git-cz
+    - husky
+    - prettier
+    - webpack-cli
+  - add:
+    - @types/node@20.8.7
+    - eslint@8.52.0
+    - typedoc@0.25.2
+  - update:
+    - @jest/globals@29.7.0
+    - jest@29.7.0
+    - typescript@5.2.2
+    - webpack@5.89.0
+  - bump:
+    - @types/jest@29.5.6
+    - @types/jsdom@21.1.4
+    - @types/lodash@4.14.200
+    - @types/mocha@10.0.3
+
 ## 4.1.1
 
 ### Patch Changes
