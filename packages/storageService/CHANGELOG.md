@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2.2.1
+
+### Patch Changes
+
+- [d52d2b9fa42a04d2b61df30cee4507829c3bb1de] Saving: address issue preventing saving local files in the cloud
+
+### Maintenance
+
+- [ef61675d24511a912a8494cbec1909741523d6a4] linting
+
 ## 2.2.0
 
 ### Highlights
