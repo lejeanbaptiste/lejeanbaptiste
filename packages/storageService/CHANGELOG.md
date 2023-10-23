@@ -1,32 +1,31 @@
 # CHANGELOG
 
-## 2.2.0-alpha.1
+## 2.2.0
 
-### Higilights
+### Highlights
 
 #### New source: URL
 
-User can now choose to load from an URL. THe storage sercice will load the document and run validations (if provided). It returens the URL and the content.
+Users can now choose to load from a URL. The storage service will load the document and run validations (if provided). It returns the URL and the content.
 
 #### Customizable header
 
-It is possible not to customize the dialog's header. Instead of `laod` or `save` (default), you can pass any string.
+It is possible not to customize the dialog's header. Instead of `load` or `save` (default), you can pass any string.
 
-#### Compatiable with NextJS
+#### Compatible with NextJS
 
-Storeage service will check it is is running on the server or in the browser before accessing the local storage. The storage services tries to match user preferences (laguange and theme) by checking for properties saved on the local storage.
-
+Storage service will check if it is running on the server or in the browser before accessing the local storage. The storage services try to match user preferences (language and theme) by checking for properties saved on the local storage.
 
 ### Minor Changes
 
-- [285644dfe7525b985673be41c305df875d9dad52] add property to change the dialog header
-- [4c8b0ee85b43f2bce50d4f8d3b2c6898d4670bce] Add support to load file from URL
+- [285644dfe7525b985673be41c305df875d9dad52] Add property to change the dialog header
+- [4c8b0ee85b43f2bce50d4f8d3b2c6898d4670bce] Add support to load a file from a URL
 
 ### Patch Changes
 
 - [8afcc1c1c36d985485da4cb49d2c16df8af47c60] Add compatibility with nextJS ['use client']
   - Test if the code is running on the browser before accessing the local storage
-- [4b38a9f0444ea11464ace94a7d1541a6f18b454d] Fix providers initialization
+- [4b38a9f0444ea11464ace94a7d1541a6f18b454d] Fix the provider’s initialization
 
 ### Performance
 
@@ -39,10 +38,10 @@ Storeage service will check it is is running on the server or in the browser bef
 - [8f15dcbb41e51fb27d3f5341c50a4c065b72844f] Remove undocumented/invalid properties
 - [2262ed9e706dacfe05ea6810acb521ce15c4cc06] bump @testing-library/jest-dom to 6.1.4
 - [bb8c9b42f2d27c6eb374993f7e57eafd55db808b] update @testing-library/user-event to 14.5.1
-- [f27dd7bed57d6d4a46b09b377b4901435cf1d904] fix bug: resolve problem with 'act' from '@testing-library/react'
+- [f27dd7bed57d6d4a46b09b377b4901435cf1d904] fix bug: resolve a problem with 'act' from '@testing-library/react'
 - [abf2a464e9076ca28c8ebf3c78fd03e9b1dfd16b] adjust test coverage threshold
 
-### Maintance
+### Maintenance
 
 - Linting, formating, typing
   - [4891617bd2683e49094c7e23e72e85b508803d31]
@@ -100,6 +99,10 @@ Storeage service will check it is is running on the server or in the browser bef
       - @types/jest@29.5.6
       - @types/lodash@4.14.200
       - @types/mocha@10.0.3
+
+## 2.2.0-alpah.1
+
+Same as above (v.2.2.0)
 
 ## 2.1.3
 
