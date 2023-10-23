@@ -1,5 +1,106 @@
 # CHANGELOG
 
+## 2.2.0-alpha.1
+
+### Higilights
+
+#### New source: URL
+
+User can now choose to load from an URL. THe storage sercice will load the document and run validations (if provided). It returens the URL and the content.
+
+#### Customizable header
+
+It is possible not to customize the dialog's header. Instead of `laod` or `save` (default), you can pass any string.
+
+#### Compatiable with NextJS
+
+Storeage service will check it is is running on the server or in the browser before accessing the local storage. The storage services tries to match user preferences (laguange and theme) by checking for properties saved on the local storage.
+
+
+### Minor Changes
+
+- [285644dfe7525b985673be41c305df875d9dad52] add property to change the dialog header
+- [4c8b0ee85b43f2bce50d4f8d3b2c6898d4670bce] Add support to load file from URL
+
+### Patch Changes
+
+- [8afcc1c1c36d985485da4cb49d2c16df8af47c60] Add compatibility with nextJS ['use client']
+  - Test if the code is running on the browser before accessing the local storage
+- [4b38a9f0444ea11464ace94a7d1541a6f18b454d] Fix providers initialization
+
+### Performance
+
+- [72892c9983772375ea09d072b301beae4a9e687a] avoid rerenders
+- [f01b306421172582da74fdf37b5921389c8298d1] improve tree-shaking
+
+### Tests
+
+- [3d1fdc37cae1a07eaa97bfe433a07b76d608b66f] Update test
+- [8f15dcbb41e51fb27d3f5341c50a4c065b72844f] Remove undocumented/invalid properties
+- [2262ed9e706dacfe05ea6810acb521ce15c4cc06] bump @testing-library/jest-dom to 6.1.4
+- [bb8c9b42f2d27c6eb374993f7e57eafd55db808b] update @testing-library/user-event to 14.5.1
+- [f27dd7bed57d6d4a46b09b377b4901435cf1d904] fix bug: resolve problem with 'act' from '@testing-library/react'
+- [abf2a464e9076ca28c8ebf3c78fd03e9b1dfd16b] adjust test coverage threshold
+
+### Maintance
+
+- Linting, formating, typing
+  - [4891617bd2683e49094c7e23e72e85b508803d31]
+  - [7b299cc5026af8f6415a394f7b72d5dc3502add0]
+  - [d69a324d7525a02456d63365903c2f69cbbc7a82]
+  - [d9019cf5d47c737fafe5327f2841055b7e8f1f4b]
+  - [d295423c43ffffb7530d82e3bdfc19fb3f068227]
+  - [d10ae910a1026d24e1f24ef2d94f612b3654f112]
+  - [8cde0f1f836d56bab6f28ca5bfe03794d71509c6] [6fc6cad64b10976a5cb42bc24adc36d815fef4f6] prettier: remove config 'react/jsx-max-props-per-line'
+- [c39ba386cdd9f1482d39e6e93f8c5989473937d3] update esbuild-loader to 4.0.2
+- [f29ee9fa643af32e32bde70ff32372096928b7c1] centralize linting
+- [8cde0f1f836d56bab6f28ca5bfe03794d71509c6] prettier: remove config 'react/jsx-max-props-per-line'
+- [58887c9f1867f18bc8a8045c341e2887b7459604] add scripts to format with prettier
+- [8a0513339e9ad6ca8ed64c85f0dd5f57b4d8a2c3] remove unnecessary files
+- [a086c80a47e8945b8bd095daa10b4f9e0ee74894] centralize tsconfig
+  - .prettierrc
+  - changelog.config.js
+- [7d6190f27fe92b6aa91059eafa38dddcc2f9d890] improve tsconfig: implicit import react
+- [2a5ff2569b21c2c9f6405aceb703f63c949ff692] make ts more strict
+- [9f2044185521e8acafd06acac1b57c31ff0a4b1c] Update documentation
+- [686217e51d37010470d0f6fa30f4bc52a4ea6575] update dependencies
+  - core:
+    - update:
+      - @mui/base@5.0.0-beta.20
+      - @mui/lab@5.0.0-alpha.149
+      - axios@1.5.1
+      - framer-motion@10.16.4
+      - i18next@23.6.0
+      - mui-modal-provider@2.3.1
+      - react-i18next@13.3.1
+      - react-icons@4.11.0
+    - bump:
+      - @mui/icons-material@5.14.14
+      - @mui/material@5.14.14
+      - @octokit/rest@20.0.2
+      - overmind-react@29.0.5
+      - uuid@9.0.1
+  - dev:
+    - remove:
+      - eslint-config-prettier
+      - eslint-plugin-prettier
+      - eslint-plugin-react
+    - add:
+      - @types/node@20.8.7
+      - eslint@8.52.0
+      - typescript@5.2.2
+    - upgrade: fake-indexeddb@5.0.0
+    - upgrade:
+      - @jest/globals@29.7.0
+      - jest-environment-jsdom@29.7.0
+      - webpack@5.89.0
+    - bump:
+      - @types/autosuggest-highlight@3.2.2
+      - @types/file-saver@2.0.6
+      - @types/jest@29.5.6
+      - @types/lodash@4.14.200
+      - @types/mocha@10.0.3
+
 ## 2.1.3
 
 ### Patch Changes
