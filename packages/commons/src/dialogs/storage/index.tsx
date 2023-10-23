@@ -106,6 +106,7 @@ export const Storage = () => {
           <StorageDialog
             config={{
               allowedMimeTypes: ['application/xml'],
+              allowUrl: false,
               defaultCommitMessage: 'Updated via LEAF-Writer',
               providers,
               preferProvider,
