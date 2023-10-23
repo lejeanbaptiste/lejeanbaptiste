@@ -37,7 +37,7 @@ const config: Config.InitialOptions = {
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/packages/storageService/**/?(*.)+(spec|test).[jt]s?(x)'],
       testPathIgnorePatterns: ['<rootDir>/packages/storageService/lib*'],
-      moduleFileExtensions: ["ts","tsx","js", "mjs", "cjs", "jsx", "json", "node"],
+      moduleFileExtensions: ['ts', 'tsx', 'js', 'mjs', 'cjs', 'jsx', 'json', 'node'],
       preset: 'ts-jest',
     },
     {
