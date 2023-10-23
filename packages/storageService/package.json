@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-storage-service",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "sideEffects": false,
   "description": "storage service for leaf-writer",
   "keywords": [
