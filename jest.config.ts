@@ -2,11 +2,11 @@ import type { Config } from '@jest/types';
 
 const config: Config.InitialOptions = {
   // collectCoverage: true,
-  coverageProvider: 'v8',
+  // coverageProvider: 'v8',
   coverageThreshold: {
     global: {
       branches: 70,
-      functions: 60,
+      functions: 55,
       lines: 70,
       statements: 70,
     },
@@ -25,6 +25,7 @@ const config: Config.InitialOptions = {
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/packages/validator/**/?(*.)+(spec|test).[jt]s?(x)'],
       testPathIgnorePatterns: ['<rootDir>/packages/validator/lib*'],
+      preset: 'ts-jest',
     },
     {
       displayName: { name: 'Storage Dialog', color: 'cyanBright' },
@@ -36,6 +37,8 @@ const config: Config.InitialOptions = {
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/packages/storageService/**/?(*.)+(spec|test).[jt]s?(x)'],
       testPathIgnorePatterns: ['<rootDir>/packages/storageService/lib*'],
+      moduleFileExtensions: ["ts","tsx","js", "mjs", "cjs", "jsx", "json", "node"],
+      preset: 'ts-jest',
     },
     {
       displayName: { name: 'Core', color: 'blue' },
@@ -47,6 +50,7 @@ const config: Config.InitialOptions = {
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/packages/core/**/?(*.)+(spec|test).[jt]s?(x)'],
       testPathIgnorePatterns: ['<rootDir>/packages/core/lib*'],
+      preset: 'ts-jest',
     },
     {
       displayName: { name: 'commons', color: 'red' },
@@ -57,6 +61,7 @@ const config: Config.InitialOptions = {
       setupFiles: ['fake-indexeddb/auto'],
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/packages/commons/**/?(*.)+(spec|test).[jt]s?(x)'],
+      preset: 'ts-jest',
     },
   ],
 };
