@@ -134,6 +134,7 @@ export const initialize = async ({ state, actions }: Context, initialValues: Ini
 
 export const rehydrate = async ({ state, actions }: Context, resource: Resource) => {
   if (state.common.dialogType === 'save') {
+    actions.common.setContentToSave(resource.content);
     actions.common.setResource({
       filename: resource.filename,
       content: resource.content,
@@ -984,14 +985,15 @@ export const saveDocument = async ({ state, actions }: Context) => {
 
 export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: string) => {
   const { commitMessage, repository, repositoryContent, owner } = state.cloud;
-  const { resource } = state.common;
+  const { resource, contentToSave } = state.common;
   const provider = actions.cloud.getProvider();
+
   if (
+    !contentToSave ||
     !provider ||
     !owner ||
     !repository ||
     !repositoryContent.path ||
-    !resource?.content ||
     !resource?.filename
   ) {
     return null;
@@ -1021,7 +1023,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
 
   const response = await provider.saveDocument({
     branch: repository.default_branch,
-    content: resource.content,
+    content: contentToSave,
     message: commitMessage,
     ownerUsername: owner.username,
     path,
@@ -1029,6 +1031,8 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     repoName: repository.name,
     hash,
   });
+
+  actions.common.setContentToSave(undefined);
 
   if (!response) {
     actions.ui.closeDialog('progress');
@@ -1075,11 +1079,16 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     return null;
   }
 
-  actions.common.setResource({
+  const updatedRsoure = actions.common.setResource({
     filename: resource.filename,
     content: response.content,
     hash: response.hash,
   });
+
+  state.common.submit = {
+    action: 'save',
+    resource: updatedRsoure ?? resource,
+  };
 
   actions.ui.closeDialog('progress');
   actions.cloud.setIsSaving(false);

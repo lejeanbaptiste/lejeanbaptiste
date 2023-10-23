@@ -20,6 +20,7 @@ type State = {
   allowedMimeTypes?: AllowedMimeType[];
   allowPaste?: boolean;
   allowUrl?: boolean;
+  contentToSave?: string;
   dialogType: DialogType;
   alertDialog: AlertDialog;
   messageDialog: MessageDialog;
