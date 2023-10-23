@@ -1,6 +1,5 @@
 import { IconName } from '@src/icons';
 import type { OptionsObject, SnackbarMessage } from 'notistack';
-import React from 'react';
 
 export * from './assert';
 

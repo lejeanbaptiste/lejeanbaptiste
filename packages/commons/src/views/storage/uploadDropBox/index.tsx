@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import { useActions } from '@src/overmind';
 import type { FileDetail } from '@src/types';
-import React, { createRef, useMemo } from 'react';
+import { createRef, useMemo } from 'react';
 import Dropzone, { type DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
 import { Zone } from './components';

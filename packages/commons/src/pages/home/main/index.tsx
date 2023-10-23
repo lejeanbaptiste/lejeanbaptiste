@@ -1,5 +1,4 @@
 import { Container, Stack, useMediaQuery, useTheme } from '@mui/material';
-import React from 'react';
 import { Header } from './Header';
 import { SmallScreenMessage } from './SmallScreenMessage';
 import { StatusBar } from './StatusBar';

@@ -7,7 +7,6 @@ import { useLeafWriter } from '@src/hooks';
 import { useAppState } from '@src/overmind';
 import { motion, type Variants } from 'framer-motion';
 import { CloudSyncOutline } from 'mdi-material-ui';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({

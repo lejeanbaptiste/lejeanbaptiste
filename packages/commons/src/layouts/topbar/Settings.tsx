@@ -2,7 +2,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { IconButton } from '@mui/material';
 import { useLeafWriter } from '@src/hooks';
 import { motion, type Variants } from 'framer-motion';
-import React from 'react';
 
 export const Settings = () => {
   const { leafWriter } = useLeafWriter();

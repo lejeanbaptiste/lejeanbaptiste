@@ -10,7 +10,6 @@ import {
 import { useCookieConsent, useLeafWriter } from '@src/hooks';
 import { getIcon } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { OptionProps, ViewType } from '../types';
 import { Footer } from './Footer';

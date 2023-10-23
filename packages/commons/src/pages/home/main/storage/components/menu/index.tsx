@@ -5,7 +5,6 @@ import { useActions, useAppState } from '@src/overmind';
 import { ViewType } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AnimatePresence, motion } from 'framer-motion';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MenuButton, type MenuButtonProps } from './MenuButton';
 import { PasteOption } from './PasteOption';

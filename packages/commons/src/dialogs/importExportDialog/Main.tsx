@@ -1,6 +1,5 @@
 import { CircularProgress, Stack } from '@mui/material';
 import { useStore } from 'jotai';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ErrorMessage, Sidebar, View } from './components';
 import { useConversionAvailability } from './hooks';

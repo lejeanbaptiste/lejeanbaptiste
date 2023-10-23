@@ -1,7 +1,6 @@
 import { DialogProps as MuiDialogProps } from '@mui/material/Dialog';
 import { IconName } from '@src/icons';
 import { Options as ModalProviderOptions } from 'mui-modal-provider';
-import React from 'react';
 export declare type ModalComponentProps<P> = Omit<P, 'open'>;
 
 export type SeverityType = 'error' | 'info' | 'success' | 'warning';

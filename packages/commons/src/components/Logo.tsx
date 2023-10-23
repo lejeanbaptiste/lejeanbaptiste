@@ -1,6 +1,5 @@
 import { useTheme } from '@mui/material';
 import Box, { BoxProps } from '@mui/material/Box';
-import React from 'react';
 
 interface LogoProps extends BoxProps {
   height?: string | number;

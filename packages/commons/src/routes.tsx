@@ -1,4 +1,3 @@
-import React from 'react';
 import { BasicLayout } from './layouts';
 import { EditPage, HomePage, LinkAccountsPage, NotFoundPage } from './pages';
 

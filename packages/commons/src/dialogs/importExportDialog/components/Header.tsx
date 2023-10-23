@@ -1,7 +1,6 @@
 import { DialogTitle, Icon } from '@mui/material';
 import { getIcon } from '@src/icons';
 import { useStore } from 'jotai';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialogActionAtom } from '../store';
 

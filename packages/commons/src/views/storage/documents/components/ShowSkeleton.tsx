@@ -1,6 +1,5 @@
 import { Skeleton, Stack } from '@mui/material';
 import { motion } from 'framer-motion';
-import React from 'react';
 import type { Layout } from '..';
 
 interface ShowSkeletonProps {

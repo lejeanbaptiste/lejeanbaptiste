@@ -1,7 +1,7 @@
 import { Dialog, DialogContent } from '@mui/material';
 import { useActions } from '@src/overmind';
 import { Provider } from 'jotai';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from '../type';
 import { Main } from './Main';

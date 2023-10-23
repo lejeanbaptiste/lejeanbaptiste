@@ -1,6 +1,5 @@
 import { Box, Container, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { Logo } from '@src/components';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const Header = () => {

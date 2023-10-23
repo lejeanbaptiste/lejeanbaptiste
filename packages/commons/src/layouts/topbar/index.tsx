@@ -2,7 +2,6 @@ import { AppBar, Box, Stack, Toolbar, useTheme } from '@mui/material';
 import { EditorModeSelector, ProfileAvatar, SigninButton } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence } from 'framer-motion';
-import React from 'react';
 import { DarkMode } from './DarkMode';
 import { LanguageMenu } from './LanguageMenu';
 import { Privacy } from './Privacy';

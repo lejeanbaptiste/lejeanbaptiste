@@ -1,6 +1,5 @@
 import { Icon, IconButton, Stack, Typography } from '@mui/material';
 import { getIcon, type IconName } from '@src/icons';
-import React from 'react';
 
 type FullPathProps = {
   children: React.ReactNode;

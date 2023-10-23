@@ -1,6 +1,6 @@
 import { Typography } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const useMessage = () => {

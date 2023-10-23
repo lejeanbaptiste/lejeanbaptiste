@@ -3,7 +3,7 @@ import { Button, DialogActions } from '@mui/material';
 import { useOpenResource } from '@src/hooks';
 import { saveAs } from 'file-saver';
 import { useAtomValue, useSetAtom } from 'jotai';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConversion } from '../hooks/useConversion';
 import {

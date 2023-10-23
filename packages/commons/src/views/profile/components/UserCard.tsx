@@ -2,7 +2,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Button, IconButton, Link, Stack, Typography } from '@mui/material';
 import { ProfileAvatar, StyledToolTip } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const UserCard = () => {

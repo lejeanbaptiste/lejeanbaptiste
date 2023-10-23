@@ -1,7 +1,7 @@
 import { Box, LinearProgress, Stack, useTheme } from '@mui/material';
 import { getIcon } from '@src/icons';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Label } from './Label';
 

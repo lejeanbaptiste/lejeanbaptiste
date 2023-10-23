@@ -4,7 +4,6 @@ import type { NotificationProps, PaletteMode } from '@src/types';
 import { supportedLanguages } from '@src/utilities';
 import i18next from 'i18next';
 import type { VariantType } from 'notistack';
-import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../index';
 

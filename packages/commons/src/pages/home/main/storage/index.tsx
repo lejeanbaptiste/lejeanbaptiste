@@ -4,7 +4,7 @@ import { useAppState } from '@src/overmind';
 import type { ViewProps, ViewType } from '@src/types';
 import { DocumentViews } from '@src/views';
 import { useLiveQuery } from 'dexie-react-hooks';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Menu, Sidebar } from './components';
 

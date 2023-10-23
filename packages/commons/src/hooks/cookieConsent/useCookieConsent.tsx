@@ -1,7 +1,7 @@
 import { Typography } from '@mui/material';
 import { TextEmphasis } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAnalytics } from '..';
 
