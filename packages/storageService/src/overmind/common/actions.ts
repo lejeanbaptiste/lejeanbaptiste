@@ -81,6 +81,10 @@ export const setAllowUrl = ({ state }: Context, value: boolean) => {
   state.common.allowUrl = value;
 };
 
+export const setContentToSave = ({ state }: Context, value: string | undefined) => {
+  state.common.contentToSave = value;
+};
+
 export const setShowInvisibleFiles = ({ state }: Context, value: boolean) => {
   state.common.showInvisibleFiles = value;
 };
@@ -236,6 +240,8 @@ export const setResource = (
   };
 
   state.common.resource = updatedResource;
+
+  return updatedResource;
 };
 
 export const resetAll = async ({ state }: Context) => {
@@ -259,7 +265,9 @@ export const download = async ({ state, actions }: Context) => {
   const { resource } = state.common;
   if (!resource) return;
 
-  const { content, filename } = resource;
+  const content = state.common.contentToSave;
+
+  const { filename } = resource;
   if (!content || !filename) return;
 
   const blob = new Blob([content]); //, { type: 'text/plain;charset=utf-8' });
