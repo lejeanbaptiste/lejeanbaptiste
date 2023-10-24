@@ -1,5 +1,4 @@
 {
-  "extends": "tsconfig/website.json",
   "include": ["**/*.ts", "**/*.tsx", "src/**/*.json", "./package.json", "./.env-cmdrc.js"],
   "exclude": ["node_modules"],
   "ts-node": {
@@ -12,12 +11,29 @@
     }
   },
   "compilerOptions": {
+    "allowJs": true,
     "baseUrl": ".",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmit": true,
+    "outDir": "dist",
     "paths": {
       "@src/*": ["src/*"]
     },
-    "outDir": "dist"
+    "preserveWatchOutput": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
   }
 }
