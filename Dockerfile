@@ -15,7 +15,6 @@ COPY ./packages/commons .
 
 RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build
 
-## Note: pm2 should not be used with docker: https://github.com/goldbergyoni/nodebestpractices/blob/master/sections/docker/restart-and-replicate-processes.md
 CMD ["ts-node", "./server/index.ts"]
 
 EXPOSE 3000
