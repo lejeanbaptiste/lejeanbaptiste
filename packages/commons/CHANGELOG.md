@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## 3.2.3
+
+### Maintenance
+
+- [af60589e08b8b1891010a2ef2234cb7dc07953b0] simplify tsconfig
+  - `"forceConsistentCasingInFileNames": false` --> fix eslint crashing on mac
+- [98f69959de2d8c7e2b16c9482c774e34e48d67e9] simplify webpack config
+  - Since it is a mororepo, webpack can get files from sibiling packages instead of navigating through node_modules
+- [c82d5e7c676abd2865de9ffc058ae28d7036bcc8] update dependencies
+  - core:
+    - update: axios@1.6.0
+    - bump:
+      - @fontsource/lato@5.0.17
+      - @mui/icons-material5.14.15
+      - @mui/lab@5.0.0-alpha.150
+      - @mui/material@5.14.15
+      - keycloak-js@22.0.5
+  - dev:
+    - update: @octokit/types@12.1.1
+    - bump: @types/node@20.8.9
+
+- Updated dependencies
+- @cwrc/leafwriter@3.3.0
+- @cwrc/leafwriter-storage-service@2.2.2
+
 ## 3.2.2
 
 ### Patch Changes
