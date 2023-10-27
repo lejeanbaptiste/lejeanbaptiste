@@ -2,7 +2,6 @@
 // * But, this new configuration means different setup to load dependencies, which might break other things.
 // * We should way a little longer to adopt the new setup
 
-import * as ValidatorDB from '@cwrc/leafwriter-validator/lib/db';
 import Dexie, { Table } from 'dexie';
 import { AuthorityService } from '../dialogs';
 import type { Schema } from '../types';
@@ -49,7 +48,6 @@ export class DexieDB extends Dexie {
 export const db = new DexieDB();
 
 export const clearCache = async () => {
-  await ValidatorDB.clearCache();
   await db.suspendedDocuments
     .clear()
     .catch(() => new Error('Clear `suspendedDocuments` table: Something went wrong.'));
@@ -65,6 +63,5 @@ export const clearCache = async () => {
 };
 
 export const deleteDb = async () => {
-  await ValidatorDB.deleteDb();
   return await db.delete().catch(() => new Error('Something went wrong.'));
 };
