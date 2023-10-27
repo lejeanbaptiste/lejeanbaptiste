@@ -10,7 +10,7 @@
   - [15172336ed6d7b9ad03e67dfc9c990f3369373f3] address issue preventing saving local files in the cloud (#164)
 - [6cb3f53b473179b1002b656fdd571e23028667ec] storage: Do not allow load from url
   - This features needs to be implement on LW-Commons to work
-  
+
 ### Maintenance
 
 - linting, formating, typing
@@ -69,16 +69,16 @@
     - update:
       - ts-loader@9.5.0
       - types/node@20.8.7
-    bump:
-      @types/chroma-js@2.4.2
-      @types/compression@1.7.4
-      @types/dotenv-webpack@7.0.6
-      @types/express@4.17.20
-      @types/md5@2.3.5
-      @types/webpack@5.28.4
-      @types/webpack-env@1.18.3
-      @types/webpack-hot-middleware@2.25.8
-      @types/webpackbar@4.0.5
+        bump:
+        @types/chroma-js@2.4.2
+        @types/compression@1.7.4
+        @types/dotenv-webpack@7.0.6
+        @types/express@4.17.20
+        @types/md5@2.3.5
+        @types/webpack@5.28.4
+        @types/webpack-env@1.18.3
+        @types/webpack-hot-middleware@2.25.8
+        @types/webpackbar@4.0.5
 
 ## 3.2.1
 
