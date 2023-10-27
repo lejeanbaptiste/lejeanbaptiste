@@ -30,36 +30,22 @@ const plugins = [
       { from: 'src/manifest.json', to: '[name][ext]' },
       {
         //copy images from LEAF-Writer core
-        from: isDev
-          ? path.resolve(__dirname, '..', 'core', 'src', 'images')
-          : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'lib', 'images'),
+        from: path.resolve(__dirname, '..', 'core', 'src', 'images'),
         to: 'images',
       },
       {
-        context: isDev
-          ? path.resolve(__dirname, '..', 'core', 'src')
-          : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'lib'),
+        context: path.resolve(__dirname, '..', 'core', 'src'),
         from: 'css/tinymce/skins',
         to: 'css/tinymce/skins',
       },
       {
         //Copy pre-compiled CSS to stylize the editor (must be recompiled after each change)
-        from: isDev
-          ? path.resolve(__dirname, '..', 'core', 'src', 'css', 'build', 'editor.css')
-          : path.resolve(__dirname, 'node_modules', '@cwrc/leafwriter', 'lib', 'css', 'editor.css'),
+        from: path.resolve(__dirname, '..', 'core', 'src', 'css', 'build', 'editor.css'),
         to: 'css/[name][ext]',
       },
       {
         //Copy pre-compiled worker
-        from: isDev
-          ? path.resolve(__dirname, '..', 'validator', 'dist')
-          : path.resolve(
-              __dirname,
-              'node_modules',
-              '@cwrc/leafwriter-validator',
-              'dist',
-              'leafwriter-validator.worker.js',
-            ),
+        from: path.resolve(__dirname, '..', 'validator', 'dist', 'leafwriter-validator.worker.js'),
       },
     ],
   }),
