@@ -9,7 +9,6 @@ const isDev = process.env.NODE_isDev;
 
 const entry: EntryObject = {
   'leafwriter-validator.worker': path.resolve(__dirname, 'src', 'index.worker.ts'),
-  'leafwriter-validator.db': path.resolve(__dirname, 'src', 'db', 'index.ts'),
 };
 
 const output = {
