@@ -1,39 +1,13 @@
 {
+  "extends": "tsconfig/website.json",
   "include": ["**/*.ts", "**/*.tsx", "src/**/*.json", "./package.json", "./.env-cmdrc.js"],
   "exclude": ["node_modules"],
-  "ts-node": {
-    "files": true,
-    "compilerOptions": {
-      "lib": ["esnext"],
-      "module": "commonjs",
-      "target": "ESNext",
-      "types": ["node", "esnext"]
-    }
-  },
   "compilerOptions": {
-    "allowJs": true,
     "baseUrl": ".",
-    "composite": false,
-    "declaration": false,
-    "declarationMap": false,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "incremental": true,
-    "inlineSources": false,
-    "isolatedModules": true,
-    "jsx": "react",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "esnext",
-    "moduleResolution": "node",
-    "noEmit": true,
+    "forceConsistentCasingInFileNames": false,
     "outDir": "dist",
     "paths": {
       "@src/*": ["src/*"]
-    },
-    "preserveWatchOutput": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "target": "ESNext",
+    }
   }
 }
