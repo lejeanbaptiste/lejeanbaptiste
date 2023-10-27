@@ -12,15 +12,13 @@
     }
   },
   "compilerOptions": {
-    "allowJs": true ,
     "baseUrl": ".",
-    "lib": ["esnext", "DOM", "DOM.Iterable"],
     "outDir": "lib",
     "paths": {
       "@src/*": ["src/*"]
     },
     "plugins": [{ "name": "typescript-plugin-css-modules" }],
-    "resolveJsonModule": true,
     "types": ["node"],
+    "target": "ESNext"
   }
 }
