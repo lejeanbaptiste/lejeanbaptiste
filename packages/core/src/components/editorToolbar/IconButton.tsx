@@ -1,4 +1,4 @@
-import { Icon, IconButton as MuiIconButton, Tooltip, useTheme } from '@mui/material';
+import { Icon, IconButton as MuiIconButton, useTheme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { StyledToolTip } from '../../components';
 import { getIcon } from '../../icons';

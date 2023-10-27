@@ -1,4 +1,4 @@
-import { Button as MuiButton, Icon } from '@mui/material';
+import { Icon, Button as MuiButton } from '@mui/material';
 import { StyledToolTip } from '../../components';
 import { getIcon } from '../../icons';
 

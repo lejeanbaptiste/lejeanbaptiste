@@ -3,10 +3,10 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
 import type { IDialog } from '../type';
-import { Section } from './components';
 import { Header } from './Header';
-import { Authorities, Editor, Interface, Reset, MarkupPanel } from './sections';
 import { SideMenu, type MenuItemProps } from './SideMenu';
+import { Section } from './components';
+import { Authorities, Editor, Interface, MarkupPanel, Reset } from './sections';
 
 export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
   const { isReadonly, settings } = useAppState().editor;

@@ -1,4 +1,4 @@
-import { Box, Button, Menu as MuiMenu, MenuItem, Typography } from '@mui/material';
+import { Box, Button, MenuItem, Menu as MuiMenu, Typography } from '@mui/material';
 import { SnackbarKey } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
