@@ -36,8 +36,8 @@
 	"dependencies": {
 		"@analytics/cookie-utils": "^0.2.12",
 		"@analytics/google-analytics": "^1.0.7",
-		"@cwrc/leafwriter": "^3.2.3",
-		"@cwrc/leafwriter-storage-service": "^2.2.1",
+		"@cwrc/leafwriter": "^3.3.0",
+		"@cwrc/leafwriter-storage-service": "^2.2.2",
 		"@emotion/react": "^11.11.1",
 		"@emotion/styled": "^11.11.0",
 		"@fontsource/lato": "^5.0.17",
