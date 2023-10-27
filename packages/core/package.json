@@ -54,7 +54,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@cwrc/leafwriter-validator": "^4.1.2",
+    "@cwrc/leafwriter-validator": "^4.2.0",
     "@dnd-kit/core": "^6.0.8",
     "@dnd-kit/modifiers": "^6.0.1",
     "@dnd-kit/sortable": "^7.0.2",
