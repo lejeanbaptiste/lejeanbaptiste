@@ -1,7 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "server.js",
+  "display": "website.js",
   "extends": "./base.json",
+  "ts-node": {
+    "files": true,
+    "compilerOptions": {
+      "lib": ["esnext"],
+      "module": "commonjs",
+      "target": "ESNext",
+      "types": ["node", "esnext"]
+    }
+  },
   "compilerOptions": {
     "allowJs": true,
     "declaration": false,
