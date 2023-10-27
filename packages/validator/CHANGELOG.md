@@ -14,7 +14,7 @@
   - remove dependencie to `eslint-config-prettier` and `eslint-plugin-prettier`
 - [c9e8b1bccdaf81482721ded06a5438f094ba5c23] Centralize tsconfig
   - add dependency to internal the pacakge `tsconfig`
-  - Simplify tsconfig  + [552641368f5a8ac8af73fcb45811bd04661285b0]
+  - Simplify tsconfig + [552641368f5a8ac8af73fcb45811bd04661285b0]
 
 ### Test
 
