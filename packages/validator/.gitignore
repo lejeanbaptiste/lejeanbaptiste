@@ -2,7 +2,6 @@
 .DS_store
 
 /lib**
-**/dist
 /docs
 
 # Logs
@@ -91,7 +90,6 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
