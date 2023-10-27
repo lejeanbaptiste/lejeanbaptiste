@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 2.2.2
+
+### Maintenance
+
+- [914476873a830dc9fdcfa389ad71ea6c7417fb08] update dependencies
+  - core:
+    - update: axios@1.6.0
+    - bump:
+      - @mui/base@5.0.0-beta.21
+      - @mui/icons-material@5.14.15
+      - @mui/lab@5.0.0-alpha.150
+      - @mui/material@5.14.15
+  - dev:
+    - bump:
+      - @types/node@20.8.9
+      - fake-indexeddb@5.0.1
+
 ## 2.2.1
 
 ### Patch Changes
