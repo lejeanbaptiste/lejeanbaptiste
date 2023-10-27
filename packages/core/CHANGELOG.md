@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 3.3.0
+
+### Minor Changes
+
+- [c67caa63a499c671dba873586248e72307a19771] no longer clean validator db
+
+### Maintenance
+
+- [c82d5e7c676abd2865de9ffc058ae28d7036bcc8] update dependencies
+  - core:
+    - update: axios@1.6.0
+    - bump:
+      - @mui/icons-material@5.14.15
+      - @mui/material@5.14.15
+  - dev: bump: @types/node@20.8.9
+
+### Patch Changes
+
+- Updated dependencies
+  - @cwrc/leafwriter-validator@4.2.0
+
 ## 3.2.3
 
 ### Patch Changes
