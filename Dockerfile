@@ -6,15 +6,15 @@ RUN apk add --no-cache git
 RUN npm install ts-node -g
 
 WORKDIR /app
-
-COPY ./packages/commons/package.json .
+COPY . .
 
 RUN npm install
+ENV NODE_ENV=production
 
-COPY ./packages/commons .
-
+WORKDIR /app/packages/commons
 RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build
 
-CMD ["ts-node", "./server/index.ts"]
-
+ENV PORT 3000
 EXPOSE 3000
+
+CMD ["ts-node", "./server/index.ts"]
