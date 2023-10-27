@@ -13,14 +13,12 @@
   },
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": ["esnext", "DOM", "DOM.Iterable"],
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "outDir": "lib",
     "paths": {
       "@src/*": ["src/*"]
     },
-    "resolveJsonModule": true,
     "types": ["node", "jest", "mocha", "@testing-library/jest-dom"]
   }
 }
