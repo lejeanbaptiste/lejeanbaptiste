@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 4.2.0
+
+### Minor Changes
+
+- [4d7c41ef46861e86dfb38fc09011a864df16532a] stop emiting leafwriter-validator.db in the dist folder
+
+### Maintenance
+
+- [3b1f4fb96545f335b38a1c6e31ea4dec6bb618b3] update dependencies
+  - dev: bump: @types/node@20.8.9
+
 ## 4.1.2
 
 ## Chore
