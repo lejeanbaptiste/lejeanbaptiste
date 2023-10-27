@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import * as salve from '@cwrc/salve-leafwriter';
 import * as Comlink from 'comlink';
 //@ts-ignore
