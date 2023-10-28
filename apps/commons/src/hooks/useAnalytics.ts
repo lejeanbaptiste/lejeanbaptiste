@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 //@ts-ignore
 import { removeCookie } from '@analytics/cookie-utils';
 //@ts-ignore

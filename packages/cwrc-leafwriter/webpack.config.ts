@@ -1,63 +1,61 @@
 import path from 'path';
+
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { EsbuildPlugin } from 'esbuild-loader';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
-import webpack, { type EntryObject } from 'webpack';
+import webpack, { EntryObject } from 'webpack';
 import WebpackBar from 'webpackbar';
 
-const isDev = process.env.NODE_ENV === 'development';
+import pkg from './package.json';
+
+const isDev = process.env.NODE_isDev;
 
 const entry: EntryObject = {
-  app: [path.resolve(__dirname, 'src', 'index.tsx')],
+  index: [path.resolve(__dirname, 'src', 'index.tsx')],
+  'index.min': [path.resolve(__dirname, 'src', 'index.tsx')],
 };
 
 const output = {
   path: path.resolve(__dirname, 'dist'),
-  filename: 'js/[name].js',
   pathinfo: isDev ? true : false,
+  library: {
+    name: 'Leafwriter',
+    type: 'umd',
+    umdNamedDefine: true,
+  },
+};
+
+const optimization = {
+  emitOnErrors: isDev ? true : false,
+  minimize: isDev ? false : true,
+  minimizer: isDev ? [] : [new EsbuildPlugin({ css: true, include: /\.min\.js$/ })],
+  sideEffects: isDev ? false : true,
+  usedExports: isDev ? false : true,
 };
 
 const plugins = [
   new CleanWebpackPlugin({ cleanStaleWebpackAssets: false }),
   new CopyWebpackPlugin({
     patterns: [
-      { from: path.resolve(__dirname, 'src', 'assets'), to: 'assets' },
-      { from: path.resolve(__dirname, 'src', 'content'), to: 'content' },
-      { from: 'src/silent-check-sso.html', to: '[name][ext]' },
-      { from: 'src/manifest.json', to: '[name][ext]' },
-      {
-        //copy images from LEAF-Writer core
-        from: path.resolve(__dirname, '..', 'core', 'src', 'images'),
-        to: 'images',
-      },
-      {
-        context: path.resolve(__dirname, '..', 'core', 'src'),
-        from: 'css/tinymce/skins',
-        to: 'css/tinymce/skins',
-      },
-      {
-        //Copy pre-compiled CSS to stylize the editor (must be recompiled after each change)
-        from: path.resolve(__dirname, '..', 'core', 'src', 'css', 'build', 'editor.css'),
-        to: 'css/[name][ext]',
-      },
-      {
-        //Copy pre-compiled worker
-        from: path.resolve(__dirname, '..', 'validator', 'dist', 'leafwriter-validator.worker.js'),
-      },
+      //images
+      { from: path.resolve(__dirname, 'src', 'images'), to: 'images' },
+      //pre-compiled CSS required by tinyMCE
+      { from: path.resolve(__dirname, 'src', 'css', 'tinymce', 'skins'), to: 'css/tinymce/skins' },
+      //pre-compiled CSS to stylize the editor
+      { from: path.resolve(__dirname, 'src', 'css', 'build', 'editor.css'), to: 'css/[name][ext]' },
+      //pre-compiled worker
+      { from: path.resolve(__dirname, '..', 'cwrc-leafwriter-validator', 'dist') },
     ],
   }),
-  new HtmlWebpackPlugin({
-    template: path.resolve(__dirname, 'src', 'index.html'),
-    favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon.svg'),
-  }),
+
   new MiniCssExtractPlugin({ filename: 'css/[name].css' }),
   new MonacoWebpackPlugin({ filename: 'monaco-[name].[ext].js', languages: ['xml', 'json'] }),
   new WebpackBar({ color: isDev ? '#7e57c2' : '#9ccc65' }),
   new webpack.DefinePlugin({
     webpackEnv: {
+      LEAFWRITER_VERSION: JSON.stringify(pkg.version),
       NODE_ENV: JSON.stringify(process.env.NODE_ENV),
       WORKER_ENV: JSON.stringify(process.env.WORKER_ENV),
     },
@@ -67,12 +65,12 @@ const plugins = [
 
 const webpackConfig: webpack.Configuration = {
   entry,
+  optimization,
   output,
   plugins,
   cache: isDev ? true : false,
   devtool: isDev ? 'inline-source-map' : 'source-map', // inline-source-map //'eval-source-map' (might be faster for dev),
   mode: isDev ? 'development' : 'production',
-  performance: { hints: isDev ? false : 'warning' },
   module: {
     rules: [
       {
@@ -114,15 +112,9 @@ const webpackConfig: webpack.Configuration = {
       },
     ],
   },
-  optimization: {
-    emitOnErrors: isDev ? true : false,
-    minimize: isDev ? false : true,
-    minimizer: isDev ? [] : [new EsbuildPlugin({ css: true })],
-    sideEffects: isDev ? false : true,
-    usedExports: isDev ? false : true,
-  },
+  performance: { hints: isDev ? false : 'warning' },
   resolve: {
-    alias: { '@src': path.resolve(__dirname, 'src/') },
+    // alias: { '@src': path.resolve(__dirname, 'src/') },
     extensions: ['.tsx', '.ts', '.js', '.json'],
     fallback: {
       buffer: false,
@@ -131,7 +123,6 @@ const webpackConfig: webpack.Configuration = {
       path: false,
       process: false,
       querystring: false,
-      string_decoder: false,
       stream: false,
       url: false,
     },
@@ -139,7 +130,5 @@ const webpackConfig: webpack.Configuration = {
   stats: isDev ? { children: true } : {},
   watch: isDev ? true : false,
 };
-
-webpackConfig.resolve?.fallback;
 
 export default webpackConfig;

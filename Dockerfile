@@ -11,7 +11,7 @@ COPY . .
 RUN npm install
 ENV NODE_ENV=production
 
-WORKDIR /app/packages/commons
+WORKDIR /app/apps/commons
 RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build
 
 ENV PORT 3000

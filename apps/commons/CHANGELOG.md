@@ -9,6 +9,7 @@
 - [98f69959de2d8c7e2b16c9482c774e34e48d67e9] simplify webpack config
   - Since it is a mororepo, webpack can get files from sibiling packages instead of navigating through node_modules
 - [c82d5e7c676abd2865de9ffc058ae28d7036bcc8] update dependencies
+
   - core:
     - update: axios@1.6.0
     - bump:

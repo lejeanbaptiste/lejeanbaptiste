@@ -17,7 +17,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   jest.restoreAllMocks();
-  fetchMock.mockIf(cwrcTeiLite.url, (req) => {
+  fetchMock.mockIf(cwrcTeiLite.url, () => {
     return new Promise((resolve) => resolve(cwrcTeiLite.schemaXML));
   });
 });
@@ -66,7 +66,7 @@ describe('Validator', () => {
     test('Document Valid', (done) => {
       expect.hasAssertions();
 
-      Validator.validate(cwrcTeiLite.documentValid, ({ partDone, state, valid, errors }) => {
+      Validator.validate(cwrcTeiLite.documentValid, ({ partDone, state, valid }) => {
         if (state === WorkingState.INCOMPLETE || state === WorkingState.WORKING) {
           expect(partDone).toBeGreaterThanOrEqual(0);
         }
