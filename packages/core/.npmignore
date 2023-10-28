@@ -1,7 +1,0 @@
-.*
-**/tsconfig.json
-**/webpack.config.ts
-
-coverage
-node_modules
-NOTES

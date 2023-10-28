@@ -1,0 +1,17 @@
+{
+    "short_name": "LEAF-Writer",
+    "name": "LEAF-Writer Commons",
+    "icons": [
+      {
+        "src": "assets/logo/logo.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+    "start_url": "/",
+    "background_color": "#FFFFFF",
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#3367D6",
+    "description": "The XML & RDF online editor of the Linked Editing Academic Framework"
+  }

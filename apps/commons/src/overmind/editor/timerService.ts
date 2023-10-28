@@ -1,0 +1,95 @@
+import { AUTOSAVE_TIMEOUT } from '@src/config';
+import { Subject } from 'rxjs';
+
+export interface TimerServiceProps {
+  currentAttempt: number;
+  currentTick: number;
+  duration: number;
+  isRunning: boolean;
+  maxAttempts: number;
+  tick: number;
+
+  setDuration: (value: number) => TimerServiceProps;
+  setMaxAttempt: (value: number) => TimerServiceProps;
+  start: () => TimerServiceProps;
+  stop: () => TimerServiceProps;
+
+  onTick: Subject<number>;
+  onTimer: Subject<number>;
+}
+
+const tick = 1_000;
+
+let timer: NodeJS.Timer;
+
+let currentAttempt = 0;
+let currentTick = 0;
+let duration: number = AUTOSAVE_TIMEOUT;
+let isRunning = false;
+let maxAttempts = Infinity;
+
+const setDuration = (value: number) => {
+  duration = value;
+  return TimerService;
+};
+
+const setMaxAttempt = (value: number) => {
+  maxAttempts = value;
+  return TimerService;
+};
+
+const start = () => {
+  if (isRunning) return TimerService;
+
+  timer = setInterval(() => {
+    currentTick += tick;
+    onTick.next(currentTick);
+
+    if (currentTick === duration) {
+      currentTick = 0;
+      onTimer.next(duration);
+    }
+  }, tick);
+
+  isRunning = true;
+  return TimerService;
+};
+
+const onTick = new Subject<number>();
+const onTimer = new Subject<number>();
+
+// onTick.subscribe(() => {
+//   console.log(currentTick)
+// });
+
+onTimer.subscribe(() => {
+  if (maxAttempts !== Infinity) currentAttempt += 1;
+  if (currentAttempt === maxAttempts) stop();
+});
+
+const stop = () => {
+  currentAttempt = 0;
+  currentTick = 0;
+  duration = 30_000;
+  isRunning = false;
+  maxAttempts = Infinity;
+  clearInterval(timer);
+  return TimerService;
+};
+
+export const TimerService: TimerServiceProps = {
+  currentAttempt,
+  currentTick,
+  duration,
+  maxAttempts,
+  isRunning,
+  onTick,
+  onTimer,
+  setDuration,
+  setMaxAttempt,
+  start,
+  stop,
+  tick,
+};
+
+export default TimerService;

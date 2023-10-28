@@ -1,0 +1,62 @@
+[{
+    "name": "Susan Brown",
+    "email": "sbrown@uoguelph.ca",
+    "positions": [
+      "Project Director (2011 - present)"
+    ]
+  },
+  {
+    "name": "James Chartrand",
+    "positions": [
+      "Lead Developer (2011 - 2018)"
+    ]
+  },
+  {
+    "name": "James Cummings",
+    "email": "james.cummings@newcastle.ac.uk",
+    "positions": [
+      "Scoping and Direction (2020 - present)"
+    ]
+  },
+  {
+    "name": "Luciano Frizzera",
+    "email": "lucaju@gmail.com",
+    "positions": [
+      "Lead Developer (2020 - present)",
+      "Developer (2019 - 2020)"
+    ]
+  },
+  {
+    "name": "Mihaela Ilovan",
+    "email": "ilovan@ualberta.ca",
+    "positions": [
+      "Project Manager (2014 - present)"
+    ]
+  },
+  {
+    "name": "Diane Jakacki",
+    "email": "diane.jakacki@bucknell.edu",
+    "positions": [
+      "Scoping and Direction (2020 - present)"
+    ]
+  },
+  {
+    "name": "Andrew MacDonald",
+    "positions": [
+      "Lead Developer (2018 - 2020)",
+      "Developer (2013 - 2018)"
+    ]
+  },
+  {
+    "name": "Geoffrey Rockwell",
+    "positions": [
+      "Scoping and Direction (2011 - 2014)"
+    ]
+  },
+  {
+    "name": "Megan Sellmer",
+    "positions": [
+      "Testing and Documentation (2011 - 2016)"
+    ]
+  }
+]

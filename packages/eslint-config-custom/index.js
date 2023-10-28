@@ -6,6 +6,7 @@ module.exports = {
     '**/dist/**/*.*',
     '**/lib/**/*.*',
     '**/docs/**/*.*',
+    '**/apps/eslint-*/*.js',
     '**/packages/eslint-*/*.js',
     '**/changelog.config.js',
     '**/jest.config.ts',

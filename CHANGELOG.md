@@ -79,8 +79,6 @@
 - [feat] Add log manager
   - We use loglevel to control when to output logs (no more dirty logs on production version).
 
-# @cwrc/leafwriter-commons
-
 ## 1.2.0
 
 ### Minor Changes

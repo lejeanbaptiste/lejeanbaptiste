@@ -1,0 +1,7 @@
+.*
+**/tsconfig.json
+**/webpack.config.ts
+node_modules
+coverage
+test
+docs

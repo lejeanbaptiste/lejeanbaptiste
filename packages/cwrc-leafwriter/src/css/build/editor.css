@@ -1,0 +1,384 @@
+:root {
+  --main-bg-color: brown;
+  --person: rgb(46, 134, 222);
+  --place: rgb(255, 159, 67);
+  --organization: rgb(176, 185, 122);
+  --title: rgb(175, 70, 240);
+  --rs: rgb(131, 149, 167);
+  --citation: rgb(0, 128, 64);
+  --note: rgb(224, 190, 0);
+  --date: rgb(253, 119, 170);
+  --correction: rgb(191, 4, 4);
+  --keyword: rgb(16, 172, 132);
+  --link: rgb(70, 130, 180);
+}
+
+*[xml\:lang|='ar'],
+*[xml\:lang|='fa'],
+*[xml\:lang|='he'],
+*[xml\:lang|='iw'],
+*[xml\:lang|='ota'] {
+  direction: rtl !important;
+}
+
+/* This CSS gets applied to the tinymce editor */
+/* entity colours */
+.showEntities .entity,
+.ui-dialog-content .entity {
+  /* border-width: 1px;
+  border-bottom-style: dotted; */
+
+  padding: 2px 4px 4px 4px;
+  color: white !important;
+  border-radius: 4px;
+}
+
+.showEntities .entityHighlight > .entity {
+  border-width: 2px;
+}
+
+.entityHighlight.person {
+  background-color: rgba(255, 0, 0, 0.2);
+}
+
+.entityHighlight.date {
+  background-color: rgba(255, 114, 0, 0.2);
+}
+
+.entityHighlight.place {
+  background-color: rgba(0, 153, 153, 0.2);
+}
+
+.entityHighlight.rs {
+  background-color: rgba(0, 204, 0, 0.2);
+}
+
+.entityHighlight.org {
+  background-color: rgba(109, 56, 214, 0.2);
+}
+
+.entityHighlight.organization {
+  background-color: rgba(109, 56, 214, 0.2);
+}
+
+.entityHighlight.title {
+  background-color: rgba(224, 190, 0, 0.2);
+}
+
+.entityHighlight.correction {
+  background-color: rgba(255, 51, 0, 0.2);
+}
+
+.entityHighlight.link {
+  background-color: rgba(50, 101, 255, 0.2);
+}
+
+.showEntities .person,
+.ui-dialog-content .person {
+  border-color: var(--person);
+  background-color: var(--person);
+}
+
+.showEntities .date,
+.ui-dialog-content .date {
+  border-color: var(--date);
+  background-color: var(--date);
+}
+
+.showEntities .place,
+.ui-dialog-content .place {
+  border-color: var(--place);
+  background-color: var(--place);
+}
+
+.showEntities .rs,
+.ui-dialog-content .rs {
+  border-color: var(--rs);
+  background-color: var(--rs);
+}
+
+/* .showEntities .org,
+.ui-dialog-content .org {
+  border-color: var(--organization);
+  background-color: var(--organization);
+} */
+
+.showEntities .organization,
+.ui-dialog-content .organization {
+  border-color: var(--organization);
+  background-color: var(--organization);
+}
+
+.showEntities .title,
+.ui-dialog-content .title {
+  border-color: var(--title);
+  background-color: var(--title);
+}
+
+.showEntities .correction,
+.ui-dialog-content .correction {
+  border-color: var(--correction);
+  background-color: var(--correction);
+}
+
+.showEntities .link,
+.ui-dialog-content .link {
+  border-color: var(--link);
+  background-color: var(--link);
+}
+
+.entity[_candidate] {
+  border-width: 0px !important;
+}
+
+.entity.person[_candidate] {
+  color: #ff0000 !important;
+}
+
+.entity.place[_candidate] {
+  color: #009999 !important;
+}
+
+.entity.org[_candidate] {
+  color: #6d38d6 !important;
+}
+
+.entity.organization[_candidate] {
+  color: #6d38d6 !important;
+}
+
+.entity.title[_candidate] {
+  color: #e0be00 !important;
+}
+
+.entity.date[_candidate] {
+  color: #ff7200 !important;
+}
+
+.entity.correction[_candidate] {
+  color: #ff3300 !important;
+}
+
+.entity.link[_candidate] {
+  color: #3265ff !important;
+}
+
+.entity.keyword[_candidate] {
+  color: #008040 !important;
+}
+
+.entity.rs[_candidate] {
+  color: #00cc00 !important;
+}
+
+.noteWrapper::before {
+  cursor: pointer;
+}
+
+/* .noteWrapper.note::before {
+  content: url(../images/note_inline_large.png);
+} */
+
+/* .noteWrapper.note::before {
+  content: "N";
+  background-color: rgb(224, 190, 0);
+  border-radius: 4px;
+  font-family: 'Lato';
+  font-weight: 700;
+  padding: 2px 4px 2px 4px;
+  color: white;
+  margin-left: 2px;
+  margin-right: 2px;
+} */
+
+.noteWrapper.note::before {
+  content: url(../images/sticky-note-inline.svg);
+  /* background-color: rgb(224, 190, 0); */
+  background-color: var(--note);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 2px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
+}
+
+/* .noteWrapper.citation::before {
+  content: url(../images/citation_inline_large.png);
+} */
+
+.noteWrapper.citation::before {
+  content: url(../images/citation.svg);
+  /* background-color: rgb(205, 0, 116); */
+  background-color: var(--citation);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 2px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
+}
+
+/* .noteWrapper.keyword::before {
+  content: url(../images/keyword_inline_large.png);
+} */
+
+.noteWrapper.keyword::before {
+  content: url(../images/key_inline.svg);
+  background-color: rgb(0, 128, 64);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 2px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
+}
+
+/* .noteWrapper.note.entityHighlight::before {
+  content: url(../images/note_inline_large_highlight.png);
+} */
+
+.noteWrapper.note.entityHighlight::before {
+  content: url(../images/sticky-note-inline.svg);
+  background-color: rgb(224, 190, 0);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 6px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
+}
+
+/* .noteWrapper.citation.entityHighlight::before {
+  content: url(../images/citation_inline_large_highlight.png);
+} */
+
+.noteWrapper.citation.entityHighlight::before {
+  content: url(../images/citation.svg);
+  background-color: var(--citation);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 6px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
+}
+
+/* .noteWrapper.keyword.entityHighlight::before {
+  content: url(../images/keyword_inline_large_highlight.png);
+} */
+
+.noteWrapper.keyword.entityHighlight::before {
+  content: url(../images/key_inline.svg);
+  background-color: rgb(0, 128, 64);
+  border-radius: 2px;
+  padding: 2px 3px 0px 3px;
+  color: white;
+  margin-left: 6px;
+  margin-right: 2px;
+  position: relative;
+  top: 2px;
+}
+
+.noteWrapper > * {
+  display: inherit;
+}
+
+.noteWrapper.hide > * {
+  display: none !important;
+}
+
+/* .showEntities .citation.start,
+.showEntities .note.start,
+.showEntities .keyword.start {
+  border: none !important;
+} */
+
+.showEntities .citation.start,
+.showEntities .note.start,
+.showEntities .keyword.start {
+  color: #333 !important;
+  background-color: #ddd;
+  display: inherit;
+  font-family: 'Lato';
+  padding-left: 24px;
+  margin-left: -22px;
+  text-indent: initial;
+}
+
+*[_tag='citation']:before,
+*[_tag='note']:before,
+*[_tag='keyword']:before {
+  font-weight: 900;
+}
+
+span[data-mce-bogus] {
+  height: 0px;
+  width: 0px;
+  line-height: 0px;
+  font-size: 0px;
+  display: none;
+}
+
+*[_tag='pb'] {
+  display: flex !important;
+  position: relative !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: start;
+  height: 2px !important;
+  margin-top: 4em !important;
+  margin-bottom: 4em !important;
+  background-color: #f5f5f5 !important;
+  font-family: 'Lato' !important;
+  font-size: 0.8em !important;
+  text-align: center !important;
+  text-indent: 0px !important;
+}
+
+*[xml\:lang|='ar'] [_tag='pb'],
+*[xml\:lang|='fa'] [_tag='pb'],
+*[xml\:lang|='he'] [_tag='pb'],
+*[xml\:lang|='iw'] [_tag='pb'],
+*[xml\:lang|='ota'] [_tag='pb'] {
+  justify-content: left !important;
+}
+
+*[_tag='pb']:before,
+*[_tag='pb']:after {
+  display: inline-flex !important;
+  position: relative !important;
+  left: 50% !important;
+  width: unset !important;
+  height: unset !important;
+  border-radius: 20px !important;
+}
+
+*[_tag='pb']:before {
+  content: '\00a0' !important;
+  box-shadow: unset !important;
+}
+
+*[_tag='pb']:after {
+  content: attr(n) !important;
+  background-color: #eaeaea !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-shadow: unset !important;
+  text-indent: unset !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  *[_tag='pb'] {
+    color: black !important;
+  }
+}
+
+* {
+  scroll-margin-top: 1rem;
+}
