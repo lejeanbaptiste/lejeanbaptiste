@@ -45,7 +45,7 @@
     "build": "npm run clean && tsc && webpack && npm run release-copy-assets",
     "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack && npm run release-copy-assets",
     "build-documentation": "typedoc --out docs src/index.tsx",
-    "release-copy-assets": "ts-node release.ts",
+    "release-copy-assets": "node release.js",
     "clean": "shx rm -rf dist lib lib-esm",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",

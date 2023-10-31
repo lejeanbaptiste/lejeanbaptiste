@@ -1,4 +1,5 @@
-import shell from 'shelljs';
+// eslint-disable-next-line no-undef
+const shell = require('shelljs')
 
 if (!shell.which('git')) {
   shell.echo('Sorry, this script requires git');
