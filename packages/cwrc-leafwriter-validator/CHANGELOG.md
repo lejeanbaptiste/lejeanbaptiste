@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 4.2.1
+
+### Patch Changes
+
+- [7529683795cb209289b7b193bb4e1b083b4e660a] use tsup to build the library
+- [6d79340153a76c9aa19a78128ccd5353ac5f8a3d] update dependencies
+  - dev:
+    - add:
+      - ts-node@10.9.1
+      - typedoc@0.25.3
+    - bump
+      - @types/jest@29.5.7
+      - @types/node@20.8.10
+
 ## 4.2.0
 
 ### Minor Changes
