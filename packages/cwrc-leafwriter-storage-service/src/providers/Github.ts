@@ -664,7 +664,7 @@ export default class Github implements Provider {
     if (!response) return null;
     if (isErrorMessage(response)) return response;
 
-    const updatedResource = { ...params, hash: response.data.content?.sha };
+    const updatedResource = { ...params, hash: response.data.content?.sha, url: response.url };
     return updatedResource;
   }
 
