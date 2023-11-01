@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.0.0-alpha.2
+
+### Patch Changes
+
+- [994effa1a4c3138f15626b0753f640dd738cb55c] Save document: add `url` and `content` to the response
+
+
 ## 3.0.0-alpha.1
 
 ### Major Changes
