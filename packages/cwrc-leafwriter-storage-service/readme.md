@@ -173,7 +173,7 @@ export const MyFStorageDialog = () => {
         storageSource: 'cloud | url | local | paste'
         provider: 'github | gitlab',
         owner: 'username | userid',
-        ownertype: 'user',
+        ownerType: 'user',
         repo: 'repository-name| repository-id',
         path: 'path/to/documents',
         writePermission: true,
@@ -227,7 +227,7 @@ export const MyFStorageDialog = () => {
         storageSource: 'cloud | local'
         provider: 'github | gitlab',
         owner: 'username | userid',
-        ownertype: 'user',
+        ownerType: 'user',
         repo: 'repository-name | repository-id',
         path: 'path/to/documents';
         filename: 'filename',
@@ -296,7 +296,7 @@ const providerAuth = {
 const resource: Resource = {
   provider: 'github',
   owner: 'username',
-  ownertype: 'user',
+  ownerType: 'user',
   repo: 'repository-name',
   path: 'path/to/documents';
   filename: 'filename'
@@ -325,7 +325,7 @@ const providerAuth = {
 const document: Resource = {
   provider: 'github',
   owner: 'username',
-  ownertype: 'user',
+  ownerType: 'user',
   repo: 'repository-name',
   path: 'path/to/documents';
   filename: 'filename',
@@ -383,7 +383,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 | url             | string                                 |         | The resource's url. Only for sourceStorage `url` or `cloud`.                                                                                                                                             |
 | provider        | string                                 |         | `'github'`, `'gitlab'`, or empty if not from the git repository. Only for sourceStorage `cloud`.                                                                                                         |
 | owner           | string                                 |         | Github `username` or Gitlab: `user id`. Only for sourceStorage `cloud`.                                                                                                                                  |
-| ownertype       | string                                 |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation. Only for sourceStorage `cloud`.                                                                                                      |
+| ownerType       | string                                 |         | `'user'` or `'org'`. Gitlab groups are used here as 'org' notation. Only for sourceStorage `cloud`.                                                                                                      |
 | repo            | string                                 |         | Github `repository name`. Gitlab `repository id`. Only for sourceStorage `cloud`.                                                                                                                        |
 | path            | string                                 |         | Folder structure. _e.g._, `'path/to/file'`. Only for sourceStorage `cloud`.                                                                                                                              |
 | filename        | string                                 |         | The file name.                                                                                                                                                                                           |

@@ -16,7 +16,7 @@ let provider: Provider | null;
 export const loadDocument = async (providerAuth: ProviderAuth, resource: Resource) => {
   await updateTranslation();
 
-  const { provider: providerName, owner, ownertype, repo, filename } = resource;
+  const { provider: providerName, owner, ownerType, repo, filename } = resource;
   let { path } = resource;
 
   if (!providerName) {
@@ -29,7 +29,7 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
       t('cloud.message.document_owner_undefined', { ns: 'LWStorageService' }).toString(),
     );
   }
-  if (!ownertype) {
+  if (!ownerType) {
     return new Error(
       t('cloud.message.document_owner_type_undefined', { ns: 'LWStorageService' }).toString(),
     );
@@ -81,7 +81,7 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
   const documentResource: Resource = {
     provider: providerName,
     owner,
-    ownertype,
+    ownerType,
     repo,
     path,
     filename,
@@ -98,7 +98,7 @@ export const saveDocument = async (
 ) => {
   await updateTranslation();
 
-  const { provider: providerName, owner, ownertype, repo, filename, content, hash } = resource;
+  const { provider: providerName, owner, ownerType, repo, filename, content, hash } = resource;
   let { path } = resource;
 
   if (!providerName) {
@@ -111,7 +111,7 @@ export const saveDocument = async (
       t('cloud.message.document_owner_undefined', { ns: 'LWStorageService' }).toString(),
     );
   }
-  if (!ownertype) {
+  if (!ownerType) {
     return new Error(
       t('cloud.message.document_owner_type_undefined', { ns: 'LWStorageService' }).toString(),
     );
@@ -200,7 +200,7 @@ export const saveDocument = async (
   const documentResource: Resource = {
     provider: providerName,
     owner,
-    ownertype,
+    ownerType,
     repo,
     path,
     filename,
