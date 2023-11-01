@@ -28,7 +28,6 @@
         "./src/index.tsx",
         "./lib/index.js"
       ],
-      "require": "./dist/index.js",
       "types": "./lib/index.d.ts"
     },
     "./dialog": {
@@ -36,7 +35,6 @@
         "./src/StorageDialog.tsx",
         "./lib/StorageDialog.js"
       ],
-      "require": "./dist/StorageDialog.js",
       "types": "./lib/StorageDialog.d.ts"
     },
     "./headless": {
@@ -44,7 +42,6 @@
         "./src/headless.ts",
         "./lib/headless.js"
       ],
-      "require": "./dist/headless.js",
       "types": "./lib/headless.d.ts"
     }
   },
@@ -52,18 +49,16 @@
   "main": "./lib/index.js",
   "module": "src/index.tsx",
   "files": [
+    "lib",
     "headless.d.ts",
-    "dialog.d.ts",
-    "dist",
-    "lib"
+    "dialog.d.ts"
   ],
   "scripts": {
-    "build": "npm run clean && tsc && webpack",
-    "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
+    "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration",
     "build-documentation": "typedoc --out docs src/index.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
-    "clean": "shx rm -rf dist lib lib-esm",
+    "clean": "shx rm -rf lib",
     "lint": "eslint .",
     "test": "DEBUG_PRINT_LIMIT=40000 jest",
     "test-watch": "jest --watchAll --verbose",
@@ -110,20 +105,17 @@
     "@types/jest": "^29.5.6",
     "@types/lodash": "^4.14.200",
     "@types/mocha": "^10.0.3",
-    "@types/node": "^20.8.9",
-    "clean-webpack-plugin": "^4.0.0",
-    "esbuild-loader": "^4.0.2",
+    "@types/node": "^20.8.10",
     "eslint": "^8.52.0",
     "eslint-config-custom": "*",
     "fake-indexeddb": "^5.0.1",
     "jest-environment-jsdom": "^29.7.0",
-    "mini-css-extract-plugin": "^2.7.6",
     "process": "^0.11.10",
     "shx": "^0.3.4",
     "ts-jest": "^29.1.1",
     "tsconfig": "*",
-    "typescript": "^5.2.2",
+    "tsup": "^7.2.0",
     "webpack": "^5.89.0",
-    "webpackbar": "^5.0.2"
+    "typescript": "^5.2.2"
   }
 }
