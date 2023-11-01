@@ -66,8 +66,8 @@ npm i @cwrc/leafwriter-storage-service
 #### Load Dialog
 
 ```ts
-import React, { useState } from  'react';
-import StorageDialog from  '@cwrc/leafwriter-storage-service/Dialog';
+import { useState } from  'react';
+import { StorageDialog } from '@cwrc/leafwriter-storage-service/dialog';
 
 export  const  MyFStorageDialog  = () => {
  const [open, setOpen] =  useState(true);
@@ -91,8 +91,8 @@ If the property `type` is not defined, the component displays the Load Dialog. P
 #### Save Dialog
 
 ```ts
-import React, { useState } from 'react';
-import StorageDialog from '@cwrc/leafwriter-storage-service/Dialog';
+import { useState } from 'react';
+import { StorageDialog } from '@cwrc/leafwriter-storage-service/dialog';
 
 export const MyFStorageDialog = () => {
   const [open, setOpen] = useState(true);
@@ -118,9 +118,8 @@ Property `open` controls the component visibility; `onCancel` is triggered by th
 #### Load Dialog
 
 ```ts
-import React, { useState } from 'react';
-import StorageDialog from '@cwrc/leafwriter-storage-service/Dialog';
-import type { Resource } from '@cwrc/leafwriter-storage-service';
+import { useState } from 'react';
+import { StorageDialog, type Resource } from '@cwrc/leafwriter-storage-service/dialog';
 
 export const MyFStorageDialog = () => {
   const [open, setOpen] = useState(true);
@@ -190,9 +189,8 @@ See the API section for more details.
 #### Save Dialog
 
 ```ts
-import React, { useState } from 'react';
-import StorageDialog from '@cwrc/leafwriter-storage-service/Dialog';
-import type { Resource } from '@cwrc/leafwriter-storage-service';
+import { useState } from 'react';
+import { StorageDialog, type Resource } from '@cwrc/leafwriter-storage-service/dialog';
 
 export const MyFStorageDialog = () => {
   const [open, setOpen] = useState(true);
@@ -250,8 +248,8 @@ You can use React suspense to optimize your code. The module will only be loaded
 Example:
 
 ```ts
-import React, { Suspense useState } from  'react';
-const StorageDialog = React.lazy(() => import('@cwrc/leafwriter-storage-service/Dialog'));
+import { Suspense lazy, useState } from  'react';
+const { StorageDialog } = lazy(() => import('@cwrc/leafwriter-storage-service/dialog'));
 
 export  const  MyFStorageDialog = () => {
  const [open, setOpen] = useState(true);
@@ -285,8 +283,7 @@ Use this function to load a document from a git provider without opening the dia
 The function returns the resource with the content and its hash.
 
 ```ts
-import { loadDocument } from '@cwrc/leafwriter-storage-service/headless';
-import type { Resource } from '@cwrc/leafwriter-storage-service';
+import { loadDocument, type Resource } from '@cwrc/leafwriter-storage-service/headless';
 
 const providerAuth = {
   name: 'github',
@@ -314,8 +311,7 @@ By default, the function will not overwrite any file. To overwrite, you must pas
 The function returns the resource with the content and a new hash.
 
 ```ts
-import { saveDocument } from '@cwrc/leafwriter-storage-service/headless';
-import type { Resource } from '@cwrc/leafwriter-storage-service';
+import { saveDocument, type Resource } from '@cwrc/leafwriter-storage-service/headless';
 
 const providerAuth = {
   name: 'github',
