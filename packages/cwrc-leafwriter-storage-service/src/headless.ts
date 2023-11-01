@@ -204,8 +204,8 @@ export const saveDocument = async (
     repo,
     path,
     filename,
-    content: response.content,
-    hash: response.hash,
+    content: response.content as string,
+    hash: response.hash as string,
   };
 
   return documentResource;

@@ -65,6 +65,7 @@ export interface Resource {
   owner?: string;
   ownerType?: string;
   repo?: string;
+  branch?: string;
   path?: string;
   filename?: string;
   content?: string;

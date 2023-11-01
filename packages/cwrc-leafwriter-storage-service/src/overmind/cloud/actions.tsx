@@ -1080,6 +1080,8 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
   }
 
   const updatedRsoure = actions.common.setResource({
+    ...resource,
+    branch: repository.default_branch,
     filename: resource.filename,
     content: response.content,
     hash: response.hash,
