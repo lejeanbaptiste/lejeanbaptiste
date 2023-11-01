@@ -202,7 +202,7 @@ export const clearSubmit = ({ state }: Context) => {
 
 export const setResource = (
   { state }: Context,
-  { filename, content, hash, url }: Partial<Resource>,
+  { branch, filename, content, hash, url }: Partial<Resource>,
 ) => {
   const { cloud, common } = state;
 
@@ -233,6 +233,7 @@ export const setResource = (
     ownerType: cloud.owner?.type,
     owner: cloud.name === 'gitlab' ? cloud.owner?.id : cloud.owner?.username,
     repo: cloud.name === 'gitlab' ? cloud.repository?.id : cloud.repository?.name,
+    branch: branch ?? 'main',
     path: cloud.repositoryContent.path?.join('/'),
     filename: filename ?? common.resource?.filename,
     hash: hash ?? common.resource?.hash,
