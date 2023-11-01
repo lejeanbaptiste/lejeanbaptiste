@@ -71,7 +71,7 @@ export const Main = ({
     if (!cloud.owner) return;
     const changeObject: Resource = {
       provider: cloud.name,
-      ownertype: cloud.owner.type,
+      ownerType: cloud.owner.type,
       owner: cloud.name === 'gitlab' ? cloud.owner.id : cloud.owner.username,
       repo: cloud.name === 'gitlab' ? cloud.repository?.id : cloud.repository?.name,
       path: cloud.repositoryContent.path?.join('/'),

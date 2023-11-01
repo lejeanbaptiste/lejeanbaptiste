@@ -23,7 +23,7 @@ export const getResource = ({ type, provider = 'github' }: GetResourceParams): R
       storageSource: 'cloud',
       provider,
       owner: provider === 'gitlab' ? '0102' : 'username',
-      ownertype: 'user',
+      ownerType: 'user',
       repo: provider === 'gitlab' ? '4324' : 'some-repositotry',
       path: '',
       filename: 'carta.xml',
@@ -38,7 +38,7 @@ export const getResource = ({ type, provider = 'github' }: GetResourceParams): R
     return { storageSource: 'cloud', provider, owner: 'someusername' };
   }
   if (type === 'repo_undefined') {
-    return { storageSource: 'cloud', provider, owner: 'someuser', ownertype: 'user' };
+    return { storageSource: 'cloud', provider, owner: 'someuser', ownerType: 'user' };
   }
 
   if (type === 'filename_undefined') {
@@ -46,7 +46,7 @@ export const getResource = ({ type, provider = 'github' }: GetResourceParams): R
       storageSource: 'cloud',
       provider,
       owner: 'someuser',
-      ownertype: 'user',
+      ownerType: 'user',
       repo: 'somerepositotry',
       path: '',
     };
@@ -57,7 +57,7 @@ export const getResource = ({ type, provider = 'github' }: GetResourceParams): R
       storageSource: 'cloud',
       provider,
       owner: 'someuser',
-      ownertype: 'user',
+      ownerType: 'user',
       repo: 'invalid-repo',
       path: '',
       filename: 'carta.xml',
@@ -69,7 +69,7 @@ export const getResource = ({ type, provider = 'github' }: GetResourceParams): R
       storageSource: 'cloud',
       provider,
       owner: 'someuser',
-      ownertype: 'user',
+      ownerType: 'user',
       repo: 'invalid-repo',
       path: '',
       filename: 'invalid_filename.xml',

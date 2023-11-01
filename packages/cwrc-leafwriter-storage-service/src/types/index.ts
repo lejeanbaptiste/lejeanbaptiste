@@ -63,7 +63,7 @@ export interface Resource {
   storageSource?: StorageSource;
   provider?: string;
   owner?: string;
-  ownertype?: string;
+  ownerType?: string;
   repo?: string;
   path?: string;
   filename?: string;

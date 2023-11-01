@@ -157,16 +157,16 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   const provider = actions.cloud.getProvider();
   if (!provider) return null;
 
-  if (!resource.owner || !resource.ownertype) {
+  if (!resource.owner || !resource.ownerType) {
     actions.cloud.setOwner({ id: provider.userId, username: provider.username, type: 'user' });
     return 'user';
   }
 
-  const ownertype = resource.ownertype as UserType;
+  const ownerType = resource.ownerType as UserType;
 
   const ownerDetails = await provider.getDetailsForUser({
     user: resource.owner,
-    type: ownertype,
+    type: ownerType,
   });
 
   if (!ownerDetails) {
@@ -203,10 +203,10 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
 
   const { id, name, username } = ownerDetails;
 
-  state.cloud.owner = { id, name, type: ownertype, username };
+  state.cloud.owner = { id, name, type: ownerType, username };
 
   if (!resource.repo) {
-    ownertype === 'organization'
+    ownerType === 'organization'
       ? await actions.cloud.fetchReposForOrgs()
       : await actions.cloud.fetchRepos();
     return 'repos';
@@ -243,7 +243,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
           </Stack>
         ),
         onClose: async () => {
-          ownertype === 'organization'
+          ownerType === 'organization'
             ? await actions.cloud.fetchReposForOrgs()
             : await actions.cloud.fetchRepos();
         },
@@ -880,7 +880,7 @@ export const fetchDocument = async (
   const resource: Resource = {
     ...state.common.resource,
     owner: state.cloud.owner?.username,
-    ownertype: state.cloud.owner?.type,
+    ownerType: state.cloud.owner?.type,
     repo: state.cloud.name === 'gitlab' ? repository?.id : repository?.name,
     path: reducedPath,
     filename: extractedFilename,
