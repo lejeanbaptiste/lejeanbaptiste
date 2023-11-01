@@ -239,7 +239,7 @@ export const setResource = (
     hash: hash ?? common.resource?.hash,
     writePermission: cloud.repository?.writePermission,
     url,
-    content
+    content,
   };
 
   state.common.resource = updatedResource;

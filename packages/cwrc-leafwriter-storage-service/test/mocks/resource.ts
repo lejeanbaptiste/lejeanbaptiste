@@ -206,7 +206,7 @@ export const savedDocument = {
   hash: 'new hash',
   message: 'update',
   path: '',
-  url: 'http://www.test.com'
+  url: 'http://www.test.com',
 };
 
 export const githubResultSearchBlob = [
