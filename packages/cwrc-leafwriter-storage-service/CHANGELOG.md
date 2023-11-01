@@ -1,11 +1,16 @@
 # CHANGELOG
 
+## 3.0.0-alpha.3
+
+### Patch Changes
+
+- [ec1371fbcaf88fc3249b80a8fc87641133bba0e4] Save document: add `url` and `content` to the response
+
 ## 3.0.0-alpha.2
 
 ### Patch Changes
 
 - [994effa1a4c3138f15626b0753f640dd738cb55c] Save document: add `url` and `content` to the response
-
 
 ## 3.0.0-alpha.1
 
