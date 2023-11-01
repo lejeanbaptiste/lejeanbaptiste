@@ -1083,7 +1083,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     ...resource,
     branch: repository.default_branch,
     filename: resource.filename,
-    content: response.content,
+    content: contentToSave,
     hash: response.hash,
   });
 

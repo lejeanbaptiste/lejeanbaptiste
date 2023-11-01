@@ -83,6 +83,7 @@ export const getResource = ({ type, provider = 'github' }: GetResourceParams): R
       hash: '0b0bb91a0b70088815055f5987f04ecce4a00faf',
       content: '<?xml>content</xml>',
       filename: 'document.xml',
+      url: 'https://document.xml',
     };
   }
 
@@ -205,6 +206,7 @@ export const savedDocument = {
   hash: 'new hash',
   message: 'update',
   path: '',
+  url: 'http://www.test.com'
 };
 
 export const githubResultSearchBlob = [
