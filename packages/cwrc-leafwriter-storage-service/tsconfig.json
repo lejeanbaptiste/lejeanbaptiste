@@ -1,16 +1,7 @@
 {
   "extends": "tsconfig/react-library.json",
   "include": ["src/**/*"],
-  "exclude": ["node_modules"],
-  "ts-node": {
-    "files": true,
-    "compilerOptions": {
-      "lib": ["esnext"],
-      "module": "commonjs",
-      "target": "ESNext",
-      "types": ["node", "jest", "mocha", "@testing-library/jest-dom"]
-    }
-  },
+  "exclude": ["node_modules", "lib"],
   "compilerOptions": {
     "baseUrl": ".",
     "noUnusedLocals": true,

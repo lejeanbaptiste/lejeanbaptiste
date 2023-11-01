@@ -2,7 +2,6 @@
 .DS_store
 
 **/lib**
-**/dist
 
 # Logs
 logs
