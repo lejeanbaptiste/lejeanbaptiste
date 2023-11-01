@@ -1085,6 +1085,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     filename: resource.filename,
     content: contentToSave,
     hash: response.hash,
+    url: response.url,
   });
 
   state.common.submit = {
