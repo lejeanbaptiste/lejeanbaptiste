@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## 3.0.0-alpha.1
+
+### Major Changes
+
+- [e2bb42f6dd25dba2a25d76b52ed7825fe97f450c] Add branch name to resource object (if it is a repository)
+- [57cd8147dba0d02ab09beb2cc117cb8d93f157f6] stop publishing umd bundle (vanila JS) and use TSUP for compile ts lib
+  - BREAKING CHANGE: 🧨 Affect those using UMD bundles. Let me know if you want it back.
+
+### Patch Changes
+
+- [61035b9a844138a74b64c514b9f7cea047a41aef] Rename `Resource.ownertype` to `Resource.ownerType`
+  - BREAKING CHANGE: 🧨 Property name changed.
+
+### Maintenance
+
+- [1645fab8afa79ba4d3f74c2f350ad3d7e96202e0] remove docs (not useful)
+- [6a67252c92703ef7392985ede70b27eca3d3189b] DOCS: simplify import statements
+- [6a9a5901a56d27932f6e6380ca9753b80772d09a] update dependencies
+  - core:
+    - bump:
+      - @mui/base@5.0.0-beta.22
+      - @mui/icons-material@5.14.16
+      - @mui/lab@5.0.0-alpha.151
+      - @mui/material@5.14.16
+      - dexie-react-hooks@1.17
+  - dev:
+    - remove webpack
+    - add:
+      - @octokit/types@12.1.1
+      - jest@29.7.0
+      - ts-node@10.9.1
+      - typdoc@0.25.3
+    - bump:
+      - @types/jest@29.5.7
+      - @types/node@10.8.10
+
 ## 2.2.2
 
 ### Maintenance
