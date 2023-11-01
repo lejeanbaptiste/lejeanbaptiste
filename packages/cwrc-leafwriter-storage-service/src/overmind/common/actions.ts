@@ -238,6 +238,8 @@ export const setResource = (
     filename: filename ?? common.resource?.filename,
     hash: hash ?? common.resource?.hash,
     writePermission: cloud.repository?.writePermission,
+    url,
+    content
   };
 
   state.common.resource = updatedResource;
