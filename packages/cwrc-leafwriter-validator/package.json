@@ -30,14 +30,6 @@
       ],
       "require": "./dist/leafwriter-validator.worker.js",
       "types": "./lib/index.worker.d.ts"
-    },
-    "./lib/db": {
-      "import": [
-        "./src/db/index.ts",
-        "./lib/db/index.js"
-      ],
-      "require": "./dist/leafwriter-validator.db.js",
-      "types": "./lib/db/index.d.ts"
     }
   },
   "types": "lib/index.worker.d.ts",
@@ -48,9 +40,8 @@
   ],
   "scripts": {
     "browserify-jsdom": "browserify -r jsdom -s jsdom -o src/lib/jsdom/jsdom-browserified.js",
-    "build": "npm run clean && tsc && webpack",
-    "build_es6": "npm run clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
-    "clean": "shx rm -rf dist lib lib-esm",
+    "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration && webpack",
+    "clean": "shx rm -rf dist lib",
     "format": "prettier --write \"**/*.{ts,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
@@ -58,7 +49,7 @@
     "test-watch": "jest --watchAll --verbose",
     "build-documentation": "typedoc src/index.worker.ts",
     "cm": "git-cz",
-    "prepublishOnly": "npm test && npm run build_es6 && npm run build-documentation"
+    "prepublishOnly": "npm test && npm run build && npm run build-documentation"
   },
   "dependencies": {
     "@cwrc/salve-dom-leafwriter": "^6.0.3",
@@ -87,7 +78,7 @@
     "shx": "^0.3.4",
     "ts-jest": "^29.1.1",
     "tsconfig": "*",
-    "typedoc": "^0.25.2",
+    "tsup": "^7.2.0",
     "typescript": "^5.2.2",
     "webpack": "^5.89.0",
     "webpackbar": "^5.0.2"
