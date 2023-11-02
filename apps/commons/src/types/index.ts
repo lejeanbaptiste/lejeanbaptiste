@@ -86,7 +86,7 @@ export interface Resource {
 
   provider?: string;
   owner?: string;
-  ownertype?: string;
+  ownerType?: string;
   repo?: string;
   path?: string;
   filename?: string;
