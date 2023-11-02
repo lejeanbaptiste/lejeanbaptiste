@@ -3,7 +3,6 @@
   "display": "webworker",
   "extends": "./base.json",
   "compilerOptions": {
-    "incremental": true,
     "lib": ["es2021", "DOM", "WebWorker"],
     "module": "ESNext",
     "target": "ESNEXT"
