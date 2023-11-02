@@ -52,7 +52,7 @@ export const addToRecentDocument = async (_context: Context, document: Resource)
   if (
     !resource.provider === undefined ||
     resource.owner === undefined ||
-    resource.ownertype === undefined ||
+    resource.ownerType === undefined ||
     resource.repo === undefined ||
     resource.path === undefined ||
     resource.filename === undefined ||

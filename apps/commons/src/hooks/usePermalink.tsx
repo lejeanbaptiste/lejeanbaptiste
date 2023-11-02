@@ -183,11 +183,11 @@ export const usePermalink = () => {
       return error;
     }
 
-    const { provider, owner, ownertype, repo, path, filename } = search;
+    const { provider, owner, ownerType, repo, path, filename } = search;
 
     const resource: Resource = { provider };
     if (typeof owner === 'string') resource.owner = owner;
-    if (typeof ownertype === 'string') resource.ownertype = ownertype;
+    if (typeof ownerType === 'string') resource.ownerType = ownerType;
     if (typeof repo === 'string') resource.repo = repo;
     if (typeof path === 'string') resource.path = path;
     if (typeof filename === 'string') resource.filename = filename;
@@ -222,8 +222,8 @@ export const usePermalink = () => {
   };
 
   const stringifyQuery = (query: Resource) => {
-    const { provider, owner, ownertype, repo, path, filename } = query;
-    const reducedQuery = { provider, owner, ownertype, repo, path, filename };
+    const { provider, owner, ownerType, repo, path, filename } = query;
+    const reducedQuery = { provider, owner, ownerType, repo, path, filename };
 
     const params = queryString.stringify(reducedQuery, {
       skipEmptyString: true,
