@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 3.3.1
+
+### Maintenance
+
+- [a1d4ea3fafda6029a7bda21a7da73edc160be08f] remove docs (not useful)
+- [d16863dccbd1f2b77edcc4a617d94b0ffd078902] release script: use js to avoid ts-node
+- [ad2ff0bedd371b945c2a860e5a057de036eda4b9] remove babel config (unused)
+- [e09779417b94f744e2726a58b444cf516dfc7168] tweak tsconfig
+- [d013ef05803980ec974d6a324bd1dee8bfbceae5] remove build es6 (unused)
+- [6362aa29ad276555345d2a40c351b927d33aaa18] update dependencies
+  - core:
+    - bump:
+      - @mui/icons-material@5.14.16
+      - @mui/material@5.14.16
+      - dexie-react-hooks@1.1.7
+  - dev: bump: @types/node@20.8.10
+
 ## 3.3.0
 
 ### Minor Changes
