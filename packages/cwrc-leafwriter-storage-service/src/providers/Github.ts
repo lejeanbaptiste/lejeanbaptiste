@@ -86,9 +86,9 @@ export default class Github implements Provider {
       id: response.data.id.toString(),
       type: 'user',
     };
-
+  
     this.userId = user.id;
-    this.username = user.login;
+    this.username = response.data.login;
 
     return user;
   }

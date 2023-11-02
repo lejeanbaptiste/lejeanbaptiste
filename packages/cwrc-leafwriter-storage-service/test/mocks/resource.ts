@@ -96,14 +96,16 @@ export const getResource = ({ type, provider = 'github' }: GetResourceParams): R
   };
 };
 
-export const authenticatedUser: AuthenticatedUser = {
-  username: 'lucaju',
-  email: 'lucaju@gmail.com',
-  prefferedID: 'github',
-  identities: [''],
-  type: 'user',
-  id: 'lucaju',
-  userId: 'lucaju',
+export const authenticatedUser = (provider: string): AuthenticatedUser => {
+  return {
+    username: 'lucaju',
+    email: 'lucaju@gmail.com',
+    prefferedID: provider === 'gitlab' ? 'gitlab' : 'github',
+    identities: [''],
+    type: 'user',
+    id: 'lucaju',
+    userId: 'lucaju',
+  };
 };
 
 export const repository: Repository = {

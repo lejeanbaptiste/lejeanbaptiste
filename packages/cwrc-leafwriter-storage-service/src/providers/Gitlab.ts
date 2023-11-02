@@ -44,6 +44,16 @@ interface PoolProps {
   maxAttempts?: number;
 }
 
+interface GetUserResponse {
+  id: number;
+  username: string;
+  name: string;
+  state: string;
+  locked: boolean;
+  avatar_url: string;
+  web_url: string;
+}
+
 // --------------
 
 export default class Gitlab implements Provider {
@@ -85,14 +95,19 @@ export default class Gitlab implements Provider {
   }
 
   async getAuthenticatedUser() {
-    const response: AxiosResponse<any> | null = await this.axios.get('/user');
+    const response: AxiosResponse<GetUserResponse> | null = await this.axios
+      .get('/user')
+      .catch(() => null);
     if (!response) return undefined;
+    if (response.status > 200) return undefined;
+
+    const data = response.data;
 
     const user: Types.AuthenticatedUser = {
-      ...response.data,
-      username: response.data.username,
-      userId: response.data.id.toString(),
-      id: response.data.id.toString(),
+      ...data,
+      username: data.username,
+      userId: data.id.toString(),
+      id: data.id.toString(),
       type: 'user',
     };
 
