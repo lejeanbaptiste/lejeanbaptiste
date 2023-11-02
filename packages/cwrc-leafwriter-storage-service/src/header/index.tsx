@@ -19,7 +19,7 @@ export const Header = ({ label }: Props) => {
 
   useEffect(() => {
     if (scope.current) changeTitle();
-  }, [source]);
+  }, [source, providerName]);
 
   const changeTitle = async () => {
     if (!scope.current) return;
