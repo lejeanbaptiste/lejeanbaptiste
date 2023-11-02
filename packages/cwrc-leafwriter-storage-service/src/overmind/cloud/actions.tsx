@@ -64,14 +64,16 @@ export const setCommitMessage = ({ state }: Context, value: string) => {
 };
 
 export const initiateProviders = async ({ state, effects }: Context, providers: ProviderAuth[]) => {
-  let suportedProviders: SuportedProviders[] = [];
+  let suportedProviders = [...state.cloud.providers];
 
   for (const providerAuth of providers) {
     const provider = suportedProviders.find((name) => name === providerAuth.name);
     if (provider) continue;
 
-    await effects.cloud.api.initialize(providerAuth);
-    suportedProviders = [...suportedProviders, providerAuth.name as SuportedProviders];
+    const isInitialized = await effects.cloud.api.initialize(providerAuth);
+    if (isInitialized) {
+      suportedProviders = [...suportedProviders, providerAuth.name as SuportedProviders];
+    }
   }
 
   state.cloud.providers = suportedProviders;

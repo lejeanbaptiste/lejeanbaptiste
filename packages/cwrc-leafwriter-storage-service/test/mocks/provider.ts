@@ -12,7 +12,7 @@ const spyGithub = () => {
   const provider = Github.prototype;
   jest
     .spyOn(provider, 'getAuthenticatedUser')
-    .mockImplementation(async () => mock.authenticatedUser);
+    .mockImplementation(async () => mock.authenticatedUser('github'));
 
   jest.spyOn(provider, 'getRepo').mockImplementation(async () => mock.repository);
 
@@ -52,7 +52,7 @@ const spyGitlab = () => {
 
   jest
     .spyOn(provider, 'getAuthenticatedUser')
-    .mockImplementation(async () => mock.authenticatedUser);
+    .mockImplementation(async () => mock.authenticatedUser('gitlab'));
 
   jest.spyOn(provider, 'getRepo').mockImplementation(async () => mock.repository);
 
