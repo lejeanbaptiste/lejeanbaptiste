@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.0.0-alpha.5
+
+### Patch Changes
+
+- [65b5292c4c7a68bcbd9e7e88fdf631eba364c14e] change source name when switching providers
+- [37e9e57a9f83dc721021a53aedbc5f477e6b0050] providers: catch error before prevent initialize providers
+
 ## 3.0.0-alpha.4
 
 ### Patch Changes
