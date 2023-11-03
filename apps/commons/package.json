@@ -1,4 +1,20 @@
 {
+  "scripts": {
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format-check": "prettier . --check",
+    "lint": "eslint .",
+    "clean": "rimraf node_modules public server",
+    "build": "npm run clean && npm run build:webpack && npm run build:server",
+    "dev": "npm run dev:webpack & npm run build:server:dev -- --onSuccess \"npm run start:dev\"",
+    "dev-worker": "npm run dev:webpack-worker-dev & npm run build:server:dev -- --onSuccess \"npm run start:dev\"",
+    "build:webpack": "env-cmd -e production webpack",
+    "dev:webpack": "env-cmd -e development webpack",
+    "dev:webpack-worker-dev": "env-cmd -e development-worker-dev webpack",
+    "build:server": "env-cmd -e production tsup",
+    "build:server:dev": "env-cmd -e development tsup",
+    "start": "env-cmd -e production node --watch server/index.mjs",
+    "start:dev": "env-cmd -e development node --watch server/index.mjs"
+  },
   "dependencies": {
     "@analytics/cookie-utils": "^0.2.12",
     "@analytics/google-analytics": "^1.0.7",
