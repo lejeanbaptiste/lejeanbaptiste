@@ -1,20 +1,19 @@
-FROM node:20.9-alpine
-
-# Needed because some dependencies are fetch from git and alpine does not come with git
-RUN apk add --no-cache git
-
-RUN npm install ts-node -g
-
+FROM node:20.9-alpine AS base
 WORKDIR /app
+
+
+# 1. Build the source code only when needed
+FROM base AS builder
+RUN apk add --no-cache git
 COPY . .
-
-RUN npm install
+RUN \
+  if [ -f package-lock.json ]; then npm ci; \
+  else npm install; \
+  fi
 ENV NODE_ENV=production
-
-WORKDIR /app/apps/commons
-RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build
-
-ENV PORT 3000
+RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build-commons
+USER node
 EXPOSE 3000
+ENV PORT 3000
 
-CMD ["ts-node", "./server/index.ts"]
+CMD ["node", "apps/commons/server/index.js"]
