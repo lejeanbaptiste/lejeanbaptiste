@@ -12,6 +12,7 @@
     }
   },
   "compilerOptions": {
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "outDir": "lib",
     "paths": {
