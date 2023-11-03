@@ -19,9 +19,9 @@ services:
   leafwriter:
     container_name: leafwriter-commons-dev
     build:
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     env_file:
       - .env
-    volumes:
-      - ./:/app/
+    # volumes:
+    #   - ./:/app/
     restart: unless-stopped
