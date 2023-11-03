@@ -1,4 +1,26 @@
 {
+  "name": "leafwriter-commons",
+  "version": "3.2.4",
+  "private": true,
+  "description": "xml editing and rdf annotation using github as document store",
+  "keywords": [
+    "xml",
+    "rdf",
+    "editor",
+    "annotation"
+  ],
+  "homepage": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer",
+  "bugs": {
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
+  },
+  "license": "GPL-2.0",
+  "author": "Luciano Frizzera <lucaju@gmail.com>",
+  "main": "src/index.ts",
+  "type": "commonjs",
   "scripts": {
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
