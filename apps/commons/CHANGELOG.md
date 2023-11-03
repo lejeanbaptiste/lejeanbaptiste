@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## 3.3.0
+
+### Patch Changes
+
+- [ecf5f7c211cb7889819e42c4cfc7355c42b930be] storageService: rename resource.ownertype to resource.ownerType
+
+### Maintenance
+
+- [cc99bf6056578c6dc1c5732dc3a9e8eecad30b86] reserve 'server' folder for production
+- [467b92906093e277cc8b95869705b51c91df7086] move server code to foler 'src-server'
+  - also remove 'webpack server-dev'
+- [8c0779b88e383177d22b111c5a2ef48321741324] [83f8fc641638d12f38c3ee89cfb2536995102ee5] use tsup to build server code and node watch to start
+  - drop nodemon dependency
+- [e23ce2f99f35007e4c5ed7a8388d47f9e9796589] update dependencies
+  - core:
+    - upgrade:
+      - broadcast-channel@6.0.0
+      - @cwrc/leafwriter-storage-service@3.0.0 [3f9a8f33f7b4ea72a60ba32907652fa32a57e20f]
+    - update: react-router-dom@6.18.0
+    - bump:
+      - @cwrc/leafwriter@3.3.1
+      - @mui/icons-material@5.1.16
+      - @mui/lab@5.0.0-alpha.151
+      - @mui/material@5.15.16
+      - dexie-react-hooks@1.1.7 |
+  - dev:
+    - remove:
+      - @types/webpack-hot-middleware
+      - history
+      - nodemon
+      - ts-loader
+      - ts-node
+      - tslib
+      - webpack-bundle-analyzer
+      - webpack-dev-middleware
+      - webpack-hot-middleware
+    - add:
+      - @types/react-dom@18.2.14
+      - rimraf@5.0.5
+      - tsup@7.2.0
+    - bump: @types/node@20.8.10
+
 ## 3.2.3
 
 ### Maintenance
