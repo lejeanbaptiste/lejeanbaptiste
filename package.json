@@ -30,7 +30,10 @@
     "test": "jest --silent --onlyChanged",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "dev": "npm run dev -w leafwriter-commons",
+    "dev-worker": "npm run dev-worker -w leafwriter-commons",
+    "build-commons": "npm run build -w leafwriter-commons"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.2",
