@@ -1,0 +1,92 @@
+{
+  "name": "@cwrc/leafwriter-validator",
+  "version": "4.2.1",
+  "description": "webworker to handle validation on Leaf-Writer",
+  "keywords": [
+    "xml",
+    "rdf",
+    "editor",
+    "annotation",
+    "rng validation"
+  ],
+  "homepage": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer",
+  "bugs": {
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "GPL-2.0",
+  "author": "Luciano Frizzera <lucaju@gmail.com>",
+  "exports": {
+    ".": {
+      "import": [
+        "./src/index.worker",
+        "./lib/index.worker"
+      ],
+      "require": "./dist/leafwriter-validator.worker.js",
+      "types": "./lib/index.worker.d.ts"
+    }
+  },
+  "types": "lib/index.worker.d.ts",
+  "module": "src/index.worker.ts",
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "scripts": {
+    "browserify-jsdom": "browserify -r jsdom -s jsdom -o src/lib/jsdom/jsdom-browserified.js",
+    "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration && webpack",
+    "clean": "shx rm -rf dist lib",
+    "format": "prettier --write \"**/*.{ts,md}\"",
+    "format-check": "prettier . --check",
+    "lint": "eslint .",
+    "test": "jest",
+    "test-watch": "jest --watchAll --verbose",
+    "build-documentation": "typedoc src/index.worker.ts",
+    "cm": "git-cz",
+    "prepublishOnly": "npm test && npm run build && npm run build-documentation"
+  },
+  "dependencies": {
+    "@cwrc/salve-dom-leafwriter": "^6.0.3",
+    "@cwrc/salve-leafwriter": "^1.2.2",
+    "comlink": "^4.4.1",
+    "dexie": "^3.2.4",
+    "lodash": "^4.17.21",
+    "loglevel": "^1.8.1"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@types/jest": "^29.5.7",
+    "@types/jsdom": "^21.1.4",
+    "@types/lodash": "^4.14.200",
+    "@types/mocha": "^10.0.3",
+    "@types/node": "^20.8.10",
+    "browserify": "^17.0.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "esbuild-loader": "^4.0.2",
+    "eslint": "^8.52.0",
+    "eslint-config-custom": "*",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jest-fetch-mock": "^3.0.3",
+    "jsdom": "21.1.2",
+    "shx": "^0.3.4",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.1",
+    "tsconfig": "*",
+    "tsup": "^7.2.0",
+    "typedoc": "^0.25.3",
+    "typescript": "^5.2.2",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpackbar": "^5.0.2"
+  },
+  "peerDependencies": {
+    "comlink": "^4.4.1"
+  }
+}

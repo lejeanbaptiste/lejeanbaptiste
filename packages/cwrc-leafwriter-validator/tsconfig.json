@@ -1,0 +1,22 @@
+{
+  "extends": "tsconfig/webworker.json",
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "lib"],
+  "ts-node": {
+    "files": true,
+    "compilerOptions": {
+      "lib": ["esnext"],
+      "module": "commonjs",
+      "target": "ESNext",
+      "types": ["node", "jest", "mocha"]
+    }
+  },
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "lib",
+    "paths": {
+      "@src/*": ["src/*"]
+    },
+    "types": ["node", "jest", "mocha"]
+  }
+}

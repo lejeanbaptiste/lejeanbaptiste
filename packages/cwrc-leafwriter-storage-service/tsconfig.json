@@ -1,0 +1,15 @@
+{
+  "extends": "tsconfig/react-library.json",
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "lib"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "outDir": "lib",
+    "paths": {
+      "@src/*": ["src/*"]
+    },
+    "types": ["node", "jest", "mocha", "@testing-library/jest-dom"]
+  }
+}

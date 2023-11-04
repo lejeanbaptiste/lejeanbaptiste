@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "webworker",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "lib": ["es2021", "DOM", "WebWorker"],
+    "module": "ESNext",
+    "target": "ESNEXT"
+  }
+}
