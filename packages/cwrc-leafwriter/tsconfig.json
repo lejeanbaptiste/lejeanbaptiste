@@ -1,0 +1,25 @@
+{
+  "extends": "tsconfig/react-library.json",
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "lib"],
+  "ts-node": {
+    "files": true,
+    "compilerOptions": {
+      "lib": ["esnext"],
+      "module": "commonjs",
+      "target": "ESNext",
+      "types": ["node"]
+    }
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "outDir": "lib",
+    "paths": {
+      "@src/*": ["src/*"]
+    },
+    "plugins": [{ "name": "typescript-plugin-css-modules" }],
+    "types": ["node"],
+    "target": "ESNext"
+  }
+}

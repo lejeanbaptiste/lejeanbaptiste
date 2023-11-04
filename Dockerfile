@@ -1,21 +1,19 @@
-FROM node:18.16-alpine
-
-# Needed because some dependencies are fetch from git and alpine does not come with git
-RUN apk add --no-cache git
-
-RUN npm install ts-node -g
-
+FROM node:20.9-alpine AS base
 WORKDIR /app
 
-COPY ./packages/commons/package.json .
 
-RUN npm install
-
-COPY ./packages/commons .
-
-RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build
-
-## Note: pm2 should not be used with docker: https://github.com/goldbergyoni/nodebestpractices/blob/master/sections/docker/restart-and-replicate-processes.md
-CMD ["ts-node", "./server/index.ts"]
-
+# 1. Build the source code only when needed
+FROM base AS builder
+RUN apk add --no-cache git
+COPY . .
+RUN \
+  if [ -f package-lock.json ]; then npm ci; \
+  else npm install; \
+  fi
+ENV NODE_ENV=production
+RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build-commons
+USER node
 EXPOSE 3000
+ENV PORT 3000
+
+CMD ["node", "apps/commons/server/index.js"]

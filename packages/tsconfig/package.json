@@ -1,0 +1,10 @@
+{
+  "name": "tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "react-library.json",
+    "website.json",
+    "webworker.json"
+  ]
+}

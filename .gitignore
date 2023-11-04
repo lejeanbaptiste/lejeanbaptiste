@@ -5,7 +5,12 @@ Makefile
 
 #packages
 **/node_modules
-**/commons/dist
+**/packates/dist
+**/packates/docs
+
+#apps
+**/commons/public
+**/commons/server
 
 # Logs
 logs

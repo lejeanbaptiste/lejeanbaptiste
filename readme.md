@@ -5,10 +5,10 @@
 ![GPL-2.0](https://img.shields.io/badge/license-GLP--2.0-orange)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
-[![version](https://img.shields.io/badge/LEAF--Writer-Commons-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/commons)
-[![version](https://img.shields.io/badge/LEAF--Writer-Core-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/core)
-[![version](https://img.shields.io/badge/LEAF--Writer-Storage--Service-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/storageService)
-[![version](https://img.shields.io/badge/LEAF--Writer-Validator-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/validator)
+[![version](https://img.shields.io/badge/LEAF--Writer-Commons-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/apps/commons)
+[![version](https://img.shields.io/badge/LEAF--Writer-Core-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter)
+[![version](https://img.shields.io/badge/LEAF--Writer-Storage--Service-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-storage-service)
+[![version](https://img.shields.io/badge/LEAF--Writer-Validator-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-validator)
 
 [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) has developed the in-browser text markup editor LEAF-Writer (a modular component of the larger LEAF platform) for use by individual scholars and collaborative scholarly editing projects that require a light-weight online editing environment. LEAF-Writer can be found at the Leaf-Writer Commons at [https://leaf-writer.leaf-vre.org/](https://leaf-writer.leaf-vre.org/) where it is open to all with Github accounts.
 
@@ -94,17 +94,15 @@ Options that can be set on the configuration object:
 
   ```js
   config.modules = {
-    west: [
-      {id: 'structure', title: 'Markup'},
-      {id: 'entities'}
-    ],
-    east: [
-      {id: 'selection'}
-    ],
+    west: [{ id: 'structure', title: 'Markup' }, { id: 'entities' }],
+    east: [{ id: 'selection' }],
     south: [
-      {id: 'validation', config: {'validationUrl': 'https://validator.services.cwrc.ca/validator/validate.html'}}
-    ]
-  }
+      {
+        id: 'validation',
+        config: { validationUrl: 'https://validator.services.cwrc.ca/validator/validate.html' },
+      },
+    ],
+  };
   ```
 
 - `config.annotator`: Boolean. If true, the user may only add annotations to the document.
@@ -283,4 +281,3 @@ git clone https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer
 cd leaf-writer
 docker compose up
 ```
-

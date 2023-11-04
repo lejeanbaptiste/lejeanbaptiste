@@ -1,0 +1,13 @@
+{
+  "extends": "tsconfig/website.json",
+  "include": ["**/*.ts", "**/*.tsx", "src/**/*.json", "./package.json", "./.env-cmdrc.js"],
+  "exclude": ["node_modules", "server", "public"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": false,
+    "outDir": "dist",
+    "paths": {
+      "@src/*": ["src/*"]
+    }
+  }
+}

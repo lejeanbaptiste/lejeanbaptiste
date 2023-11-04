@@ -1,0 +1,124 @@
+{
+  "name": "@cwrc/leafwriter-storage-service",
+  "version": "3.0.0",
+  "sideEffects": false,
+  "description": "storage service for leaf-writer",
+  "keywords": [
+    "storage",
+    "cloud",
+    "github",
+    "gitlab"
+  ],
+  "homepage": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer",
+  "bugs": {
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "GPL-2.0",
+  "author": "Luciano Frizzera <lucaju@gmail.com>",
+  "exports": {
+    ".": {
+      "import": [
+        "./src/index.tsx",
+        "./lib/index.js"
+      ],
+      "types": "./lib/index.d.ts"
+    },
+    "./dialog": {
+      "import": [
+        "./src/StorageDialog.tsx",
+        "./lib/StorageDialog.js"
+      ],
+      "types": "./lib/StorageDialog.d.ts"
+    },
+    "./headless": {
+      "import": [
+        "./src/headless.ts",
+        "./lib/headless.js"
+      ],
+      "types": "./lib/headless.d.ts"
+    }
+  },
+  "types": "lib/index.d.ts",
+  "main": "./lib/index.js",
+  "module": "src/index.tsx",
+  "files": [
+    "lib",
+    "headless.d.ts",
+    "dialog.d.ts"
+  ],
+  "scripts": {
+    "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration",
+    "build-documentation": "typedoc --out docs src/index.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format-check": "prettier . --check",
+    "clean": "shx rm -rf lib",
+    "lint": "eslint .",
+    "test": "DEBUG_PRINT_LIMIT=40000 jest",
+    "test-watch": "jest --watchAll --verbose",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/base": "5.0.0-beta.22",
+    "@mui/icons-material": "^5.14.16",
+    "@mui/lab": "5.0.0-alpha.151",
+    "@mui/material": "^5.14.16",
+    "@octokit/rest": "^20.0.2",
+    "autosuggest-highlight": "^3.3.4",
+    "axios": "^1.6.0",
+    "buffer": "^6.0.3",
+    "date-fns": "^2.30.0",
+    "dexie": "^3.2.4",
+    "dexie-react-hooks": "^1.1.7",
+    "file-saver": "^2.0.5",
+    "framer-motion": "^10.16.4",
+    "i18next": "^23.6.0",
+    "lodash": "^4.17.21",
+    "loglevel": "^1.8.1",
+    "mdi-material-ui": "^7.7.0",
+    "mui-modal-provider": "^2.3.1",
+    "overmind": "^28.0.3",
+    "overmind-react": "^29.0.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-i18next": "^13.3.1",
+    "react-icons": "^4.11.0",
+    "react-use": "^17.4.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@octokit/types": "^12.1.1",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.5.1",
+    "@types/autosuggest-highlight": "^3.2.2",
+    "@types/file-saver": "^2.0.6",
+    "@types/jest": "^29.5.7",
+    "@types/lodash": "^4.14.200",
+    "@types/mocha": "^10.0.3",
+    "@types/node": "^20.8.10",
+    "eslint": "^8.52.0",
+    "eslint-config-custom": "*",
+    "fake-indexeddb": "^5.0.1",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "process": "^0.11.10",
+    "shx": "^0.3.4",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.1",
+    "tsconfig": "*",
+    "tsup": "^7.2.0",
+    "typedoc": "^0.25.3",
+    "typescript": "^5.2.2"
+  }
+}

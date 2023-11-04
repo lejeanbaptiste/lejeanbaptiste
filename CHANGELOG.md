@@ -35,7 +35,6 @@
 - **Update to Reac 18**
   - Update dependencies
 
-
 # @cwrc/leafwriter-storage-service
 
 ## 1.1.0
@@ -50,7 +49,7 @@
 - [Perf] Simplify code logic
 - [Chore] Rename types folder
 - [Dependencies] update
-  
+
 [a885b2f]
 
 - [feat] Add a log manager to improve dev/prod versions
@@ -69,7 +68,6 @@
 - [dependencies] Update dependencies
 - [tests] Patch tests for React 18
 
-
 # @cwrc/leafwriter-validator
 
 ## 1.1.0
@@ -80,9 +78,6 @@
 
 - [feat] Add log manager
   - We use loglevel to control when to output logs (no more dirty logs on production version).
-
-
-# @cwrc/leafwriter-commons
 
 ## 1.2.0
 
@@ -120,7 +115,7 @@
 
 - **Update to Reac 18**
   - Update dependencies
-  
+
 [924a08a]
 
 - Updated dependencies
