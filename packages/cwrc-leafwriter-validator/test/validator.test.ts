@@ -2,7 +2,7 @@ import { WorkingState } from '@cwrc/salve-dom-leafwriter';
 import { beforeAll, describe, expect, jest, test } from '@jest/globals';
 import fetchMock from 'jest-fetch-mock';
 import Validator from '../src/Validator';
-import { clearCache, deleteDb } from '../src/db';
+import { deleteDb } from '../src/db';
 import { log, logEnabledFor } from '../src/log';
 import type { NodeDetail } from '../src/types';
 import { cwrcTeiLite } from './mocks';
@@ -549,7 +549,7 @@ describe('Validator', () => {
     test('clear cache', async () => {
       expect.assertions(1);
 
-      const response = await clearCache();
+      const response = await Validator.clearCache();
       expect(response).not.toBe(Error);
     });
 
