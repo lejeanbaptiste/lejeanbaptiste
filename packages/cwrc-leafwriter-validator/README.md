@@ -34,9 +34,7 @@ As a web worker, LEAF-Writer Validator is fast and non-blocking. Validation will
   - [Get Possible Nodes At](#get-possible-nodes-at)
   - [Get Valid Nodes At](#get-valid-nodes-at)
   - [Reset](#reset)
-  - [Clean Up](#clean-up)
-    - [Clear Cache](#clear-cache)
-    - [Delete Db](#delete-db)
+  - [Clear Cache](#clear-cache)
   - [Types](#types)
     - [InitializeParameters](#initializeparameters)
     - [InitializeResponse](#initializeresponse)
@@ -547,33 +545,14 @@ Example:
 validator.reset();
 ```
 
-## Clean Up
-
-LEAF-Writer Validator keeps schema chached in the browser's indexedDB for faster and optimized responsed. If you ever need to clear the cache or remove the DB completely, LEAF-Wrtier exposes two methods for clean up: `clear chache` and `delete db`. These must be imported from the subpath `db`. It can be important if you want to remove all personal data when the user log out, for instance.
-
-### Clear Cache
+## Clear Cache
 
 Convenient function to delete all schemas cached by the LEAF-Writer Validator stored in the IndexedDB on the table `LEAF-Writer-Validator`.
 
 Example:
 
 ```ts
-import { clearCache } from '@cwrc/leafwriter-validator/db';
-
-await clearCache();
-```
-
-### Delete Db
-
-Convenient function to delete LEAF-Writer Validator IndexedDB.
-Different from `clearCache`, `deleteDb` is independente from the `Validator` object, ther must initialized. You can use it this to remove the database without importing or iniating the Validator.
-
-Example:
-
-```ts
-import { deleteDb } from '@cwrc/leafwriter-validator/db';
-
-await deleteDb();
+await validator.clearCache();
 ```
 
 ## Types
