@@ -429,10 +429,7 @@ export const toggleLookupEntity = async (
   const authorityService = state.editor.authorityServices[authorityId];
   if (!authorityService) return;
 
-  const entity = authorityService.entities[entityName];
-  if (!entity) return;
-
-  authorityService.entities[entityName] = !entity;
+  authorityService.entities[entityName] = !authorityService.entities[entityName];
 
   await db.authorityServices.update(authorityId, {
     entities: json(authorityService.entities),
