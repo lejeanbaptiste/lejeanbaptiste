@@ -1,3 +1,4 @@
+import { clearCache } from './db';
 import type { InitializeParameters, PossibleNodesAtOptions, Target } from './types';
 import type { ValidationResponse } from './validate';
 import { virtualEditor } from './virtualEditor';
@@ -35,6 +36,9 @@ const Validator = {
   },
   reset() {
     virtualEditor.reset();
+  },
+  async clearCache() {
+    return await clearCache();
   },
 };
 
