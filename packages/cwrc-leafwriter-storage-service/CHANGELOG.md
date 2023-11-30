@@ -159,7 +159,7 @@ Users can now choose to load from a URL. The storage service will load the docum
 
 #### Customizable header
 
-It is possible not to customize the dialog's header. Instead of `load` or `save` (default), you can pass any string.
+It is possible to customize the dialog's header. Instead of `load` or `save` (default), you can pass any string.
 
 #### Compatible with NextJS
 
@@ -343,7 +343,7 @@ Same as above (v.2.2.0)
 
 ### Minor Changes
 
-- StorageFialog: Independently export StorageDialog (no default exports) [b8afe02caf76b79837f7c7a3049e0fad653d69a7]
+- StorageDialog: Independently export StorageDialog (no default exports) [b8afe02caf76b79837f7c7a3049e0fad653d69a7]
   BREAKING CHANGE: 🧨 import from the internal path `@cwrc/leafwriter-storage-service` results
   in an independent exported component (no default export)
 
