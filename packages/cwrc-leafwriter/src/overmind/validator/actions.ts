@@ -219,3 +219,9 @@ export const clear = ({ state }: Context) => {
   state.validator.hasSchema = false;
   state.validator.hasWorkerValidator = false;
 };
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const clearCache = async  (_props: Context) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  await window.leafwriterValidator.clearCache()
+};

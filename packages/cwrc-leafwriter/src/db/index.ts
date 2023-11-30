@@ -38,7 +38,9 @@ export class DexieDB extends Dexie {
           .table('suspendedDocuments')
           .toCollection()
           .modify((suspendedDocuments) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             suspendedDocuments.uuid = suspendedDocuments.id;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             delete suspendedDocuments.id;
           });
       });
@@ -60,6 +62,9 @@ export const clearCache = async () => {
   await db.doNotDisplayDialogs
     .clear()
     .catch(() => new Error('Clear `doNotDisplayDialogs` table: Something went wrong.'));
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  await window.leafwriterValidator.clearCache();
 };
 
 export const deleteDb = async () => {
