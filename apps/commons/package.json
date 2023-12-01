@@ -1,6 +1,6 @@
 {
   "name": "leafwriter-commons",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "private": true,
   "description": "xml editing and rdf annotation using github as document store",
   "keywords": [
@@ -41,7 +41,7 @@
     "@analytics/cookie-utils": "^0.2.12",
     "@analytics/google-analytics": "^1.0.7",
     "@cwrc/leafwriter": "*",
-    "@cwrc/leafwriter-storage-service": "3.0.0",
+    "@cwrc/leafwriter-storage-service": "*",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@fontsource/lato": "^5.0.17",
