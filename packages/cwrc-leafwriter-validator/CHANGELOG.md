@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 4.3.0
+
+### Minor Changes
+
+- [6a126413cfaec79f518a3e673ac12009d2410219] Add method to clear indexedDB cache
+
+### Patch Changes
+
+- Tests:
+  - [754bd483af5855b0596fd5985274bc2f64b61f9b] Add test Clear cache
+- Documention
+  - [1e222a980922161f87d2e6b9196a8ec40601f96e] Add documentation on the `clear cache` method
+- Maintenance
+  - [33761ce22b414afd503a4a63241e28f8517f36b5] Coalesce tsconfig in the package
+  - [6c537699ac3fc86d185030961c146c793ce16bab] Update dist
+  - [eac8d3c472220296050cb4270f071e7cf8b52bbe] Update dependencies
+    - dev:
+      - fix: tsup@7.2.0 (due to compatibility issues)
+      - update:
+        - @types/node@20.10.1
+        - eslint@8.54.0
+      - bump:
+        - @types/jest@29.5.10
+        - @types/jsdom@21.1.6
+        - @types/lodash@4.14.202
+        - @types/mocha@10.0.6
+
 ## 4.2.1
 
 ### Patch Changes
