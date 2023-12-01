@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## 3.0.1
+
+### Patch Changes
+
+- [71b909f8b22f0b47aef25b18e6aaee46e842fc0a] Format
+- Documantation
+  - [6ab2e0f3e184aecd615ab3a1f840503a567afc9f] Fix typo
+- Maintenance
+  - [4fc1ead2eb1b64355be0bd45b8dda2bbe05d4e68] Coalesce tsconfig in the package
+  - [0712bc9d58bca1a471049bc03c2e8ff9e3c15827] Update dependencies
+    - core:
+      - update:
+        - @mui/base@5.0.0-beta.25
+        - @mui/lab@5.0.0-alpha.154
+        - i18next@23.7.7
+        - react-i18next@13.5.0
+        - react-icons@4.12.0
+      - bump:
+        - @mui/icons-material@5.14.19
+        - @mui/material@5.14.19
+        - axios@1.6.2
+        - framer-motion@10.16.9
+        - react-use@17.4.1
+      - dev:
+        - upgrade: tsup@8.0.1
+        - update:
+          - @octokit/types@12.3.0
+          - @testing-library/react@14.1.2
+          - @types/node@20.10.1
+          - eslint@8.54.0
+          - typescript@5.3.2
+        - bump:
+          - @testing-library/jest-dom@6.1.5
+          - @types/autosuggest-highlight@3.2.3
+          - @types/file-saver@2.0.7
+          - @types/jest@29.5.10
+          - @types/lodash@4.14.202
+          - typedoc@0.25.4
+
 ## 3.0.0
 
 ### Major Changes
