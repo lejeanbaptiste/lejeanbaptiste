@@ -1,5 +1,71 @@
 # CHANGELOG
 
+## 3.4.0
+
+### Highlights
+
+#### Clear schema
+
+There is now an option to clear cache (indexedDB) on the settings panel.
+
+### Minor Changes
+
+- [7dc69966efa1ddfcdbeb69707ac4d1485f407ccf] Add option to clear cache (indexedDB) on the settings panel
+- [a90891751d05665b4b282410e89cc8b84b2086ca] Add static method to clear indexedDB tables
+
+### Patch Changes
+
+- [155f5aed7377e95c4486f945601adcf91dfc6258] Settings: issue preventing toggling entity types
+- [c8f81c70276879aef7198a3235d96e4d24a1a0cd] Fix typing
+- Format
+  - [9dfe9909aed8fcb3e7b8c553cac5b91c504e5ce3] [1b7e3bb7731e76b57933e4d8691826c79199c7f5]
+- Maintenance
+  - [69d0c936151f96bc7a56c8a915bd7842463aa2a3] Coalesce tsconfig in the package
+  - [cbb7cfbc69d8f2c4d68cff9e2ca51f2b6377ac5f] Update dependencies
+    - core:
+      - upgrade:
+        - @dnd-kit/modifiers@7.0.0
+        - @dnd-kit/sortable@8.0.0 |
+      - update:
+        - @cwrc/leafwriter-validator@4.3.0
+        - @dnd-kit/core@6.1.0
+        - fortawesome/fontawesome-free@6.5.1
+        - i18next@23.7.7
+        - jotai@2.6.0
+        - react-i18next@13.5.0
+        - react-icons@4.12.0
+      - bump:
+        - @dnd-kit/utilities@3.2.2
+        - @mui/icons-material@5.14.19
+        - @mui/material@5.14.19
+        - axios@1.6.2
+        - framer-motion@10.16.9
+        - luxon@3.4.4
+        - rdflib@3.2.33
+        - react-intersection-observer@9.5.3
+        - react-resizable-panels@0.0.63
+        - react-use@17.4.1
+        - wikibase-sdk@9.2.4
+      - dev:
+        - update:
+          - @types/node@20.10.1
+          - eslint@8.54.0
+          - typescript@5.3.2
+        - bump:
+          - @types/chroma-js@2.4.3
+          - @types/css@0.0.37
+          - @types/fscreen@1.0.4
+          - @types/jquery@3.5.29
+          - @types/jqueryui@1.12.21
+          - @types/js-cookie@3.0.6
+          - @types/luxon@ 3.3.6
+          - @types/openseadragon@3.0.10
+          - @types/progressbar.js@1.1.7
+          - @types/react-dom@18.2.17
+          - @types/shelljs@0.8.15
+          - @types/tinymce@4.6.9
+          - @types/uuid@9.0.7
+
 ## 3.3.1
 
 ### Maintenance
