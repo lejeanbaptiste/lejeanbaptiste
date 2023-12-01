@@ -251,8 +251,8 @@ class TitleDialog implements SchemaDialog {
       this.mappingID === 'orlando'
         ? 'TITLETYPE'
         : this.mappingID == 'cwrcEntry'
-        ? 'LEVEL'
-        : 'level'; //tei & teiLite
+          ? 'LEVEL'
+          : 'level'; //tei & teiLite
 
     const html = `
       <div

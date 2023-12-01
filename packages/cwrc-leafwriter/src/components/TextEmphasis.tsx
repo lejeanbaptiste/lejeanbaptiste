@@ -19,8 +19,8 @@ export const TextEmphasis = ({
     color === 'inherit'
       ? 'inherit'
       : palette.mode === 'light'
-      ? palette[color].dark
-      : palette[color].light;
+        ? palette[color].dark
+        : palette[color].light;
 
   const textColor = variation === 'filled' ? palette.background.paper : accentColor;
 

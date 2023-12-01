@@ -17,8 +17,10 @@ export const useItems = (ctx: State) => {
   const { writer } = window;
 
   const { isAnnotator } = useAppState().editor;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { markupPanel } = useAppState().ui;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { openDialog, showTextNodes } = useActions().ui;
   const { getPossibleNodesAt } = useActions().validator;
 

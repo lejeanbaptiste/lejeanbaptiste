@@ -22,12 +22,12 @@ export const Section = ({ side, ...props }: SectionProps) => {
   }, []);
 
   useEffect(() => {
-    if (ref?.current?.getCollapsed()) ref.current.expand();
+    if (ref?.current?.isCollapsed) ref.current.expand();
   }, [layout[side]?.activePanel]);
 
   useEffect(() => {
-    ref.current?.getCollapsed() ? ref.current.expand() : ref.current?.collapse();
-  }, [ref?.current?.getCollapsed()]);
+    ref.current?.isCollapsed ? ref.current.expand() : ref.current?.collapse();
+  }, [ref?.current?.isCollapsed]);
 
   return (
     <PanelSection ref={ref} id={side} {...props}>
