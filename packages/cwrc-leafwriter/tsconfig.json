@@ -1,5 +1,4 @@
 {
-  "extends": "tsconfig/react-library.json",
   "include": ["src/**/*"],
   "exclude": ["node_modules", "lib"],
   "ts-node": {
@@ -12,14 +11,31 @@
     }
   },
   "compilerOptions": {
+    "allowJs": true,
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
     "outDir": "lib",
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "paths": {
       "@src/*": ["src/*"]
     },
+    "preserveWatchOutput": true,
     "plugins": [{ "name": "typescript-plugin-css-modules" }],
-    "types": ["node"],
-    "target": "ESNext"
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
+    "types": ["node"]
   }
 }
