@@ -1,15 +1,31 @@
 {
-  "extends": "tsconfig/react-library.json",
   "include": ["src/**/*"],
   "exclude": ["node_modules", "lib"],
   "compilerOptions": {
+    "allowJs": true,
     "baseUrl": ".",
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "node",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "outDir": "lib",
     "paths": {
       "@src/*": ["src/*"]
     },
+    "preserveWatchOutput": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es6",
     "types": ["node", "jest", "mocha", "@testing-library/jest-dom"]
   }
 }
