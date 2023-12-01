@@ -1,5 +1,6 @@
 import { Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { clearCache } from '../../../db';
 import { useActions } from '../../../overmind';
 import { Button } from '../components';
 
@@ -9,7 +10,7 @@ export const Reset = () => {
   const { t } = useTranslation('leafwriter');
 
   return (
-    <Stack direction="row">
+    <Stack>
       <Button
         icon="reset"
         onClick={async () => {
@@ -27,6 +28,17 @@ export const Reset = () => {
         }}
       >
         {t('Reset Settings')}
+      </Button>
+      <Button
+        icon="reset"
+        onClick={async () => {
+          await clearCache();
+          notifyViaSnackbar(
+            `${t('Cache cleared')}. ${t('You might need to reload the document')}.`,
+          );
+        }}
+      >
+        {t('Clear Cache')}
       </Button>
     </Stack>
   );

@@ -1,4 +1,7 @@
 {
+  "Cache cleared": "Cache vidé",
+  "Clear Cache": "Vider le cache",
+  "You might need to reload the document": "Vous devrez peut-être recharger le document",
   "leafwriter": {
     "Add Entity Annotation": "Ajouter une annotation d'entité",
     "Add Tag": "Ajouter une étiquette",

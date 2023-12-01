@@ -65,25 +65,28 @@ export const validate = async ({ state, actions }: Context) => {
   if (!writer || !state.validator.hasWorkerValidator) return;
 
   const workerValidator = window.leafwriterValidator;
-  const hasValidator = await workerValidator.hasValidator();
+  // const hasValidator = await workerValidator.hasValidator();
   // console.log(hasValidator)
   // if (!hasValidator) return;
 
   const documentString = await writer.converter.getDocumentContent(false);
 
-  const validationProgress = ({ partDone, state, valid, errors }: ValidationResponse) => {
+  const validationProgress = async ({ partDone, state, valid, errors }: ValidationResponse) => {
     if (state.valueOf() <= 2) {
       writer.event('documentValidating').publish(partDone);
       return;
     }
 
     const totalError = valid ? 0 : errors?.length ?? 0;
-    actions.validator.updateValidationError(totalError);
+    await actions.validator.updateValidationError(totalError);
 
     writer.event('documentValidated').publish(valid, { valid, errors }, documentString);
   };
 
-  if (documentString) workerValidator.validate(documentString, Comlink.proxy(validationProgress));
+  if (documentString) {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    await workerValidator.validate(documentString, Comlink.proxy(validationProgress));
+  }
 };
 
 export const updateValidationError = async ({ state }: Context, value: number) => {
@@ -218,4 +221,10 @@ export const getPossibleNodesAt = async ({ state }: Context, params: PossibleNod
 export const clear = ({ state }: Context) => {
   state.validator.hasSchema = false;
   state.validator.hasWorkerValidator = false;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const clearCache = async (_props: Context) => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  await window.leafwriterValidator.clearCache();
 };

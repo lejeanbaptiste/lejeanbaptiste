@@ -14,7 +14,7 @@ import { log } from './../../utilities';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
-export const writerInitSettings = (
+export const writerInitSettings = async (
   { state: { editor }, actions }: Context,
   settings: LeafWriterOptionsSettings,
 ) => {
@@ -29,7 +29,7 @@ export const writerInitSettings = (
   editor.schemas = schemaObjs;
 
   actions.editor.setReadonly(settings.readonly);
-  actions.validator.loadValidator();
+  await actions.validator.loadValidator();
 };
 
 export const configureAuthorityServices = async (
@@ -99,6 +99,7 @@ export const configureAuthorityServices = async (
 
 const sanitazeAuthorityServices = (services: AuthorityService[]) => {
   const sininatizedPreferences = services.map((service) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { find, ...rest } = service;
     return rest;
   });
@@ -428,10 +429,7 @@ export const toggleLookupEntity = async (
   const authorityService = state.editor.authorityServices[authorityId];
   if (!authorityService) return;
 
-  const entity = authorityService.entities[entityName];
-  if (!entity) return;
-
-  authorityService.entities[entityName] = !entity;
+  authorityService.entities[entityName] = !authorityService.entities[entityName];
 
   await db.authorityServices.update(authorityId, {
     entities: json(authorityService.entities),

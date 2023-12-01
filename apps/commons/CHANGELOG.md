@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## 3.3.1
+
+### Patch Changes
+
+- Maintenance
+  - [1b7e3bb7731e76b57933e4d8691826c79199c7f5] Format
+  - [b00a79acbd95189394f20ba67d9a382db8bda2ae] Coalesce tsconfig in the app
+  - [c4478406d800e83b892c48bea026f537c68a17f5] Update dependencies
+    - core
+      - upgrade:
+        - broadcast-channel@7.0.0
+        - keycloak-js@23.0.1
+        - react-helmet-async@2.0.1
+      - update:
+        - @cwrc/leafwriter@3.4.0
+        - @mui/lab@5.0.0-alpha.154
+        - helmet@7.1.0
+        - i18next23.7.0
+        - i18next-browser-languagedetector@7.2.0
+        - jotai@2.6.0
+        - react-i18next@13.5.0
+        - react-icons@4.12.0
+        - react-router-dom@6.20.0
+      - bump:
+        - @cwrc/leafwriter-storage-service@3.0.1
+        - @lincs.project/auth-api-contract@1.0.3
+        - @mui/icons-material@5.14.19
+        - @ts-rest/core@3.30.5
+        - axios@1.6.2
+        - framer-motion@10.16.9
+        - react-markdown@9.0.1
+        - react-use@17.4.1
+    - dev:
+      - upgrade: tsup@8.0.1
+      - update:
+        - @octokit/types@12.3.0
+        - @types/node@20.10.1
+        - eslint@8.54.0
+        - typescript@5.3.1
+      - bump:
+        - @types/chroma-js@2.4.3
+        - @types/compression@1.7.5
+        - types/dotenv-webpack@7.0.7
+        - @types/express@4.17.21
+        - @types/md5@2.3.5
+        - @types/react-dom@18.2.17
+        - @types/webpack@5.28.5
+        - @types/webpack-env@1.18.4
+        - @types/webpackbar@4.0.6
+
 ## 3.3.0
 
 ### Patch Changes

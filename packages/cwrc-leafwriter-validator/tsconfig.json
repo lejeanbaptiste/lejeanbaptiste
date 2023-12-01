@@ -1,5 +1,4 @@
 {
-  "extends": "tsconfig/webworker.json",
   "include": ["src/**/*"],
   "exclude": ["node_modules", "lib"],
   "ts-node": {
@@ -13,10 +12,26 @@
   },
   "compilerOptions": {
     "baseUrl": ".",
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "lib": ["es2021", "DOM", "WebWorker"],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "outDir": "lib",
     "paths": {
       "@src/*": ["src/*"]
     },
-    "types": ["node", "jest", "mocha"]
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "types": ["node", "jest", "mocha"],
+    "target": "ESNEXT"
   }
 }
