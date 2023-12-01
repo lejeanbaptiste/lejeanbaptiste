@@ -35,8 +35,8 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
     value === 'auto'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
       : value === 'light'
-      ? false
-      : true;
+        ? false
+        : true;
 
   actions.ui.setDarkMode(darkMode);
 

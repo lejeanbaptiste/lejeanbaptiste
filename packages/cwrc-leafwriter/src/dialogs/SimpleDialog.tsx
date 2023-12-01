@@ -72,8 +72,8 @@ export const SimpleDialog = ({
           {children
             ? children
             : typeof Body === 'string'
-            ? Body
-            : Body && <Body data={data} onChangeData={setData} />}
+              ? Body
+              : Body && <Body data={data} onChangeData={setData} />}
         </DialogContent>
       )}
       <DialogActions

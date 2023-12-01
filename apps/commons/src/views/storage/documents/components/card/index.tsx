@@ -77,8 +77,8 @@ export const DocumentCard = ({
         bgcolor: selected
           ? alpha(palette.primary[palette.mode], 0.15)
           : hover
-          ? alpha(palette.primary[palette.mode], palette.action.selectedOpacity)
-          : alpha(palette.primary[palette.mode], palette.action.hoverOpacity),
+            ? alpha(palette.primary[palette.mode], palette.action.selectedOpacity)
+            : alpha(palette.primary[palette.mode], palette.action.hoverOpacity),
         borderStyle: 'solid',
         borderColor: selected ? alpha(palette.primary.main, 0.5) : 'transparent',
         borderWidth: 1,

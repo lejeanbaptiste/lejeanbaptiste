@@ -112,8 +112,8 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
             {themeAppearance === 'auto'
               ? t('LWC:ui.device_theme')
               : themeAppearance === 'dark'
-              ? t('LWC:ui.dark_theme')
-              : t('LWC:ui.light_theme')}
+                ? t('LWC:ui.dark_theme')
+                : t('LWC:ui.light_theme')}
           </span>
         </>
       ),
@@ -121,8 +121,8 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
         themeAppearance === 'auto'
           ? 'brightness4'
           : themeAppearance === 'dark'
-          ? 'darkModeIcon'
-          : 'brightness7',
+            ? 'darkModeIcon'
+            : 'brightness7',
       secondaryIcon: 'chevronRight',
       action: () => onChangeView('appearance'),
     },

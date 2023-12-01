@@ -771,8 +771,8 @@ export const searchBlobs = async (
   const extension = allowAllFileTypes
     ? undefined
     : allowedFileTypes?.length === 1
-    ? allowedFileTypes[0]
-    : undefined;
+      ? allowedFileTypes[0]
+      : undefined;
 
   const response: SearchResultsBlobs[] | undefined = await provider.searchBlobs({
     extension,

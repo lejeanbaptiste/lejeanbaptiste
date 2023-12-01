@@ -5,6 +5,7 @@ import '@fontsource/lato/700.css';
 import '@fontsource/lato/900.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 import { PaletteMode } from '@mui/material';
+import Dexie from 'dexie';
 import html2canvas from 'html2canvas';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
@@ -47,6 +48,11 @@ export class Leafwriter {
   private _onEditorStateChange: Subject<EditorStateType>;
 
   private options?: LeafWriterOptions;
+
+  static async clearDB() {
+    await Dexie.delete('LEAF-Writer-Validator');
+    await Dexie.delete('LEAF-Writer');
+  }
 
   constructor(domElement: HTMLElement) {
     this.domElement = domElement;

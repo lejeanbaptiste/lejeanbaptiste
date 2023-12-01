@@ -19,8 +19,8 @@ export const Main = () => {
   const heighBase = isSM
     ? height - 32 - topBarHeight // 32px (heigh of side bar stacked on top of main section)
     : isMD
-    ? height - topBarHeight
-    : 600 - topBarHeight + 8;
+      ? height - topBarHeight
+      : 600 - topBarHeight + 8;
   const [collectionHeight, setCollectionHeight] = useState(heighBase);
 
   useEffect(() => {

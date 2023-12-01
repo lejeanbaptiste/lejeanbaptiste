@@ -16,11 +16,11 @@ export const Layout = () => {
       <Stack direction="row" height="90vh">
         <LateralBar side="Left" />
         <PanelGroup direction="horizontal">
-          <Section collapsible={true} defaultSize={30} minSize={20} side="left" />
+          <Section collapsible={true} side="left" />
           <ResizeHandle />
           <Main />
           <ResizeHandle />
-          <Section collapsible={true} defaultSize={30} minSize={20} side="right" />
+          <Section collapsible={true} side="right" />
         </PanelGroup>
         <LateralBar side="Right" />
       </Stack>
