@@ -59,8 +59,8 @@ export const Zone = ({
         borderColor: isDragReject
           ? palette.error.light
           : isDragAccept
-          ? palette.success.light
-          : palette.grey[400],
+            ? palette.success.light
+            : palette.grey[400],
         bgcolor: palette.mode === 'light' ? palette.grey[50] : palette.grey[800],
         cursor: isProcessing ? 'default' : 'pointer',
       }}
