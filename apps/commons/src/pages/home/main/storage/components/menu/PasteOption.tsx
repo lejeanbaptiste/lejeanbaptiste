@@ -38,8 +38,8 @@ export const PasteOption = ({ disabled }: PasteOptionProps) => {
           color: disabled
             ? palette.action.disabled
             : pasteHover
-            ? palette.primary.light
-            : 'text.secondary',
+              ? palette.primary.light
+              : 'text.secondary',
         }}
       />
       <TextField

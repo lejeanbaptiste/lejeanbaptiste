@@ -37,8 +37,8 @@ export const Cloud = () => {
           isDirty
             ? t('LWC:storage.click_to_save')
             : isSaving
-            ? t('LWC:storage.saving')
-            : t('LWC:storage.all_changes_salved')
+              ? t('LWC:storage.saving')
+              : t('LWC:storage.all_changes_salved')
         }
       >
         <IconButton
