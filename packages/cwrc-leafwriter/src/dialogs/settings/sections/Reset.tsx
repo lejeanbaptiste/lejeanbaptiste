@@ -1,8 +1,8 @@
 import { Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { clearCache } from '../../../db';
 import { useActions } from '../../../overmind';
 import { Button } from '../components';
-import { clearCache } from '@src/db';
 
 export const Reset = () => {
   const { resetDialogWarnings, resetPreferences } = useActions().editor;
