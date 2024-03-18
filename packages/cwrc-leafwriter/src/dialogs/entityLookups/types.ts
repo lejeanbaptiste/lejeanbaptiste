@@ -13,7 +13,7 @@ export type NamedEntityType =
   | 'title'
   | 'thing'
   | 'concept';
-export type Authority = 'dbpedia' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata';
+export type Authority = 'dbpedia' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata' | 'gnd';
 export type LookupService = 'LINCS' | 'internal' | 'custom';
 
 export interface AuthorityService {
