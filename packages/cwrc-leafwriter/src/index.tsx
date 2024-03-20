@@ -270,6 +270,10 @@ export class Leafwriter {
     overmind.actions.validator.validate();
   }
 
+  async isValid() {
+    overmind.state.validator.validationErrors === 0;
+  }
+
   async showSettingsDialog() {
     overmind.actions.ui.openDialog({ type: 'settings' });
   }
