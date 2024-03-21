@@ -77,7 +77,7 @@ class PersonDialog implements SchemaDialog {
           </div>
 
           <div class="attributeSelector">
-            <h3 style="border-bottom: 1px solid #ddd; padding-bottom: 4px;">Markups</h3>
+            <h3 style="border-bottom: 1px solid #ddd; padding-bottom: 4px;">Attributes</h3>
             <ul></ul>
           </div>
         </div>
