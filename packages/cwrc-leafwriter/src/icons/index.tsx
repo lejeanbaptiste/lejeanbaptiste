@@ -207,14 +207,15 @@ const icons = {
   xmlViewer: CodeRoundedIcon,
 };
 
-export type IconLeafWriter = typeof icons extends Record<
-  infer I,
-  OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & {
-    muiName: string;
-  }
->
-  ? I
-  : never;
+export type IconLeafWriter =
+  typeof icons extends Record<
+    infer I,
+    OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & {
+      muiName: string;
+    }
+  >
+    ? I
+    : never;
 
 export const getIcon = (name: IconLeafWriter) => {
   return icons[name];
