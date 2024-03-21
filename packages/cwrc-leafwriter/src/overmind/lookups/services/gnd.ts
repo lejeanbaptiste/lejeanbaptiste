@@ -3,7 +3,12 @@ import type { AuthorityLookupResult } from '../../../dialogs/entityLookups/types
 import { log } from './../../../utilities';
 import { type AuthorityLookupParams } from './type';
 
-type NamedEntityType = 'Person' | 'PlaceOrGeographicName' | 'CorporateBody' | 'Work' | 'SubjectHeading';
+type NamedEntityType =
+  | 'Person'
+  | 'PlaceOrGeographicName'
+  | 'CorporateBody'
+  | 'Work'
+  | 'SubjectHeading';
 
 interface Doc {
   id: string;
@@ -39,7 +44,7 @@ const callGND = async (query: string, type: NamedEntityType) => {
 
   const params = new URLSearchParams({
     q: query,
-    filter: "type:" + type,
+    filter: 'type:' + type,
     format: FORMAT,
     size: MAX_HITS.toString(),
   });
@@ -67,9 +72,10 @@ const callGND = async (query: string, type: NamedEntityType) => {
   if (!data) return [];
 
   // const mapResponse = responseJson.docs.map(
-  const results: AuthorityLookupResult[] = data.member.map(( entry:Doc ) => {
+  const results: AuthorityLookupResult[] = data.member.map((entry: Doc) => {
     //? assuming first instance of description, name and uri;
-    const description = entry.biographicalOrHistoricalInformation?.[0] ?? 'No description available';
+    const description =
+      entry.biographicalOrHistoricalInformation?.[0] ?? 'No description available';
     const name = entry.preferredName ?? '';
     const uri = entry.id;
 

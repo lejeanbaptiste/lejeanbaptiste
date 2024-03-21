@@ -8,7 +8,7 @@ import {
   lgpnFind,
   viafFind,
   wikidataFind,
-  gndFind
+  gndFind,
 } from '../lookups/services';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
@@ -143,7 +143,8 @@ export const state: EditorStateType = {
       name: 'LGPN',
       priority: 5,
       lookupService: 'internal',
-    },gnd: {
+    },
+    gnd: {
       enabled: true,
       entities: { person: true, place: true, organization: true, title: true, rs: true },
       find: gndFind,
