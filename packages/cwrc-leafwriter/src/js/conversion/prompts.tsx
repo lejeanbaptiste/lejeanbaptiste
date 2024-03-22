@@ -26,6 +26,8 @@ export interface ProcessSchemaProps {
 const { t } = i18next;
 
 export const openProcessIssueDialog = (params: ProcessSchemaProps, action?: string) => {
+  window.writer.dialogManager.getDialog('loadingindicator')?.hide?.();
+  
   if (action === 'selectSchema') return promptSelectSchema(params);
   if (action === 'addSchema') return promptAddSchema(params);
 
