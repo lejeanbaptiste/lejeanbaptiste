@@ -23,8 +23,9 @@ export const processSchema = async ({ id, url, shouldCache = true }: InitializeP
     const cachedSchema: CachedSchema = {
       createdAt: new Date(),
       gramarJson,
-      id,
       hash: manifest[0].hash,
+      id,
+      maxAge: 2592000000, // 30 days
       // simplified,
       url,
       warnings,
@@ -43,6 +44,11 @@ export const verifyHash = async (url: string, cachedSchema: CachedSchema) => {
 
   //* Manifest stored with a different algorithm
   if (!cachedSchema.hash.startsWith(HASH_ALGORITHM)) return false;
+
+  //* Manifest is expired
+  if (cachedSchema.maxAge && Date.now() - cachedSchema.createdAt.getTime() > cachedSchema.maxAge) {
+    return false;
+  }
 
   //* Get resource
   const resource = await makeResourceLoader().load(new URL(url));
