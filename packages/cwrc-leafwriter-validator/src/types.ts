@@ -3,6 +3,8 @@ export interface CachedSchema {
   gramarJson: string;
   hash: string;
   id: string;
+  maxAge?: number; // in milliseconds
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   simplified?: any;
   url: string;
   warnings?: string[];
