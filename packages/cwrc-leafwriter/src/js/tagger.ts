@@ -3,9 +3,9 @@ import type { Bookmark } from 'tinymce';
 import type { EntityType } from '../types';
 import { isElement } from '../utilities';
 import { log } from './../utilities';
+import Writer from './Writer';
 import Entity from './entities/Entity';
 import { RESERVED_ATTRIBUTES } from './schema/mapper';
-import Writer from './Writer';
 
 export type Action = 'add' | 'before' | 'after' | 'around' | 'inside' | 'change';
 // type SelectionResults = 'no_selection' | 'no_common_parent' | 'overlap' | 'valid';
@@ -78,9 +78,6 @@ class Tagger {
     for (let i = currAttributes.length - 1; i >= 0; i--) {
       const attr = currAttributes[i];
       if (!attr) continue;
-      // if (Mapper.reservedAttributes[attr.name] !== true) {
-      // tag.removeAttribute(attr.name);
-      // }
       if (!RESERVED_ATTRIBUTES.has(attr.name)) {
         tag.removeAttribute(attr.name);
       }
@@ -88,16 +85,12 @@ class Tagger {
 
     // set non-reserved attributes directly on the tag
     for (const attName in attributes) {
-      // if (Mapper.reservedAttributes[attName] !== true) {
-      //   continue;
-      // }
-      if (!RESERVED_ATTRIBUTES.has(attName)) continue;
-      //@ts-ignore
+      if (RESERVED_ATTRIBUTES.has(attName)) continue;
       tag.setAttribute(attName, attributes[attName]);
     }
 
     // set all attributes in the _attributes holder
-    const jsonAttrsString = JSON.stringify(attributes).replace(/"/g, '&quot;');
+    const jsonAttrsString = JSON.stringify(attributes); //.replace(/"/g, '&quot;');
     tag.setAttribute('_attributes', jsonAttrsString);
   }
 
