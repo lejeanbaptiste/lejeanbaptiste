@@ -71,8 +71,8 @@ class VirtualEditor {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const documentation = definition
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      ? definition.pat.name.documentation
+      ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        definition.pat.name.documentation
       : 'Element undefined or documentation unavailable';
 
     return documentation as string;
