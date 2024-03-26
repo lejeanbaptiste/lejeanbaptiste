@@ -141,6 +141,8 @@ const parseErrors = (
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const elementNode =
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
     type === 'AttributeNameError' || type === 'AttributeValueError' ? node.ownerElement : node;
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
