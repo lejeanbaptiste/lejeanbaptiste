@@ -139,15 +139,15 @@ const parseErrors = (
 
   const element: ValidationErrorElement = {};
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const elementNode =
-    type === 'AttributeNameError' || type === 'AttributeValueError'
-      ? //@ts-ignore
-        node.ownerElement
-      : node;
+    type === 'AttributeNameError' || type === 'AttributeValueError' ? node.ownerElement : node;
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
   element.name = elementNode.nodeName;
   element.documentation = element.name ? vEditor.getDocumentation(element.name) : '';
   element.fullName = getFullNameFromDocumentation(element.documentation);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   element.xpath = getXPathForElement(elementNode, vEditor.document);
 
   if (type === 'ElementNameError') {
@@ -159,11 +159,15 @@ const parseErrors = (
   }
 
   if (type === 'AttributeNameError') {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const parentElement = elementNode.parentElement ?? elementNode;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     element.parentElementName = parentElement.nodeName;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     element.parentElementXpath = getXPathForElement(parentElement, vEditor.document);
 
     //index of element that holds the attribute
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     const index = Array.from(parentElement.childNodes).findIndex((child) => child === elementNode);
     element.parentElementIndex = index;
   }
