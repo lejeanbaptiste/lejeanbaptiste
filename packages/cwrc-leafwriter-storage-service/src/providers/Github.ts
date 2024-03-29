@@ -194,7 +194,11 @@ export default class Github implements Provider {
    */
   async getRepo({ username, repoName }: Types.RepoParams) {
     const response = await this.octokit.rest.repos
-      .get({ owner: username, repo: repoName })
+      .get({
+        owner: username,
+        repo: repoName,
+        headers: { 'If-None-Match': '' },
+      })
       .catch((error) => {
         throw new Error(`Repository not found: ${error}`);
       });
@@ -229,7 +233,13 @@ export default class Github implements Provider {
   }: Types.RepoContentParams) {
     if (!ownerUsername || !repoName) return null;
     const response = await this.octokit.rest.repos
-      .getContent({ owner: ownerUsername, repo: repoName, path, ref })
+      .getContent({
+        owner: ownerUsername,
+        repo: repoName,
+        path,
+        ref,
+        headers: { 'If-None-Match': '' },
+      })
       .catch(() => null);
 
     if (!response) return null;
@@ -388,6 +398,7 @@ export default class Github implements Provider {
       repo: repoName,
       tree_sha: originBranch.commit.commit.tree.sha,
       recursive: 'true',
+      headers: { 'If-None-Match': '' },
     });
 
     if (response.data.truncated) return null;
@@ -422,6 +433,7 @@ export default class Github implements Provider {
       path,
       per_page: 1,
       repo: repoName,
+      headers: { 'If-None-Match': '' },
     });
 
     if (!response) return null;
@@ -458,7 +470,13 @@ export default class Github implements Provider {
     if (!owner || !repo) return null;
 
     const result = await this.octokit.repos
-      .getContent({ owner, path, ref, repo })
+      .getContent({
+        owner,
+        path,
+        ref,
+        repo,
+        headers: { 'If-None-Match': '' },
+      })
       .catch(() => null);
 
     if (!result) return null;
@@ -468,7 +486,12 @@ export default class Github implements Provider {
 
     // * When the file is > 1MB, the content returns empty.
     // * So, to normalize the request, we fetch the content blob.
-    const blob = await this.octokit.rest.git.getBlob({ owner, repo, file_sha: sha });
+    const blob = await this.octokit.rest.git.getBlob({
+      owner,
+      repo,
+      file_sha: sha,
+      headers: { 'If-None-Match': '' },
+    });
     if (!blob.data) return null;
 
     const content = this.decodeContent(blob.data.content);
