@@ -79,13 +79,19 @@ export const clear = ({ state }: Context) => {
   state.document.loaded = false;
   state.document.url = undefined;
   state.document.xml = undefined;
+  state.document.isReload = false;
 };
 
-export const loadDocumentXML = ({ actions }: Context, content: string) => {
+export const loadDocumentXML = ({ actions, state }: Context, content: string) => {
   window.writer?.loadDocumentXML(content);
   actions.document.updateContent(content);
+  if (state.document.isReload) state.editor.contentHasChanged = true;
 };
 
 export const setDocumentTouched = ({ state }: Context, value: boolean) => {
   state.document.touched = value;
+};
+
+export const setIsReload = ({ state }: Context, value: boolean) => {
+  state.document.isReload = value;
 };
