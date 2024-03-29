@@ -39,9 +39,7 @@ export const updateContent = ({ state }: Context, content: string) => {
 export const updateXMLHeader = ({ state }: Context, content: string) => {
   const parser = new DOMParser();
 
-  let xml: XMLDocument;
-
-  xml = parser.parseFromString(content, 'application/xml');
+  const xml = parser.parseFromString(content, 'application/xml');
   const errorNode = xml.querySelector('parsererror');
 
   if (errorNode) {
