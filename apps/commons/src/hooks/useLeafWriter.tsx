@@ -61,6 +61,12 @@ export const useLeafWriter = () => {
     const onLoadEvent = leafWriter.onLoad.subscribe(({ schemaName }) => {
       if (!leafWriter || !resource) return;
 
+      if (leafWriter.isReload()) {
+        // We got a reload event, possibly after a manual XML edit, don't tap the document,
+        //since this would fake-update what was last saved and would create even more entries for last opened.
+        return;
+      }
+
       leafWriter.autosave = autosave;
       tapDocument(resource, schemaName);
       subscribeToTimerService(leafWriter);
