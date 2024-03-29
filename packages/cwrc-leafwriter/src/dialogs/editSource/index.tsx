@@ -22,7 +22,7 @@ export const EditSourceDialog = ({
   type = 'content',
 }: EditSourceDialogProps) => {
   const { settings } = useAppState().editor;
-  const { loadDocumentXML: updateXMLContent, updateXMLHeader } = useActions().document;
+  const { setIsReload, loadDocumentXML: updateXMLContent, updateXMLHeader } = useActions().document;
 
   const { t } = useTranslation('leafwriter');
 
@@ -40,6 +40,9 @@ export const EditSourceDialog = ({
 
   const handleChange = () => {
     if (currentContent === content) return onClose && onClose(id);
+
+    // Tell everyone that we manually updated, so the document will be reloaded.
+    setIsReload(true);
 
     if (type === 'content') updateXMLContent(currentContent);
     if (type === 'header') updateXMLHeader(currentContent);
