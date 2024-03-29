@@ -199,10 +199,15 @@ export default class Github implements Provider {
         throw new Error(`Repository not found: ${error}`);
       });
 
-    const repo = response.data as unknown as T.Repository;
-    repo.owner.username = repo.owner?.login;
-    repo.owner.path = repo.name;
-    repo.writePermission = repo.permissions.push; //* This is a shortcut to check if the user has write permission someone else's repo
+    const data = response.data;
+
+    const repo: T.Repository = {
+      ...data,
+      id: data.id.toString(),
+      owner: { username: data.owner.login },
+      path: data.name,
+      writePermission: data.permissions?.push,
+    };
 
     return repo;
   }
@@ -229,19 +234,7 @@ export default class Github implements Provider {
 
     if (!response) return null;
 
-    let content = response.data ?? [];
-
-    if (Array.isArray(content)) {
-      content = content.map((item: any) => {
-        item.type = item.type === 'dir' ? 'folder' : item.type;
-        return item;
-      });
-    } else {
-      // @ts-ignore
-      content.type = content.type === 'dir' ? 'folder' : content.type;
-    }
-
-    return content;
+    return response.data;
   }
 
   async getRepoBranches({ owner, repoName }: Types.RepoBranchesParams) {

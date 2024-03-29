@@ -52,7 +52,7 @@ export interface SelectedItem {
   organization?: Organization;
   path?: string;
   repository?: Repository;
-  type?: 'file' | 'folder' | 'repo' | 'org';
+  type?: 'file' | 'folder' | 'repo' | 'org' | 'dir';
 }
 
 export type Validate = (content: string) => { valid: boolean; error?: string };
@@ -125,7 +125,7 @@ export interface NavigateToPathParams {
 export interface Repository {
   name: string;
   id: string;
-  description?: string;
+  description?: string | null;
   default_branch: string;
   owner: {
     username: string;
@@ -141,7 +141,7 @@ export interface Content {
   nameHighlight?: HighlightParts[];
   path: string;
   id?: string;
-  type?: 'file' | 'folder';
+  type?: 'file' | 'folder' | 'dir';
   [x: string]: any;
 }
 
