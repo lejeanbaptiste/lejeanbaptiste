@@ -678,6 +678,11 @@ export default class Github implements Provider {
       });
 
     if (!response) return null;
+
+    if (response.status === 403) {
+      return { type: 'warning', status: 403, message: 'forbidden' } as Types.ProviderError;
+    }
+
     if (isErrorMessage(response)) return response;
 
     const updatedResource = {
