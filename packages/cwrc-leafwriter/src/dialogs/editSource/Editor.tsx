@@ -1,7 +1,10 @@
 import { useTheme } from '@mui/material';
-// import * as monaco from 'monaco-editor';
+import { useSetAtom } from 'jotai';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { EditSourceDialogProps } from '../type';
+import { useEditor } from './hooks/useEditor';
+import { contentTypeAtom, currentContentAtom, originalContentAtom } from './store';
 
 // * Intellisense for XML: https://mono.software/2017/04/11/custom-intellisense-with-monaco-editor/
 
@@ -13,38 +16,49 @@ import { useEffect, useRef } from 'react';
 // };
 
 interface EditorProps {
-  content: string;
-  updateContent: (value: string) => void;
+  initialContent: string;
+  type: EditSourceDialogProps['type'];
 }
 
-export const Editor = ({ content, updateContent }: EditorProps) => {
+export const Editor = ({ initialContent, type }: EditorProps) => {
   const { palette } = useTheme();
+  const setCurrentContent = useSetAtom(currentContentAtom);
+  const setOriginalContent = useSetAtom(originalContentAtom);
+  const setType = useSetAtom(contentTypeAtom);
+
+  const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
   const divEl = useRef<HTMLDivElement>(null);
-  let editor: monaco.editor.IStandaloneCodeEditor;
+
+  useEditor(editor);
 
   useEffect(() => {
+    setOriginalContent(initialContent);
+    setType(type);
+
     if (divEl.current) {
-      editor = monaco.editor.create(divEl.current, {
+      setCurrentContent(initialContent);
+      const monacoEditor = monaco.editor.create(divEl.current, {
         lineNumbers: 'on',
         language: 'xml',
-        // minimap: { enabled: false },
         theme: palette.mode === 'dark' ? 'vs-dark' : 'vs-light',
-        value: content,
+        value: initialContent,
         wordWrap: 'wordWrapColumn',
         wordWrapColumn: 100,
         wrappingIndent: 'indent',
       });
 
-      editor.getModel()?.onDidChangeContent(() => {
-        const content = editor.getValue();
-        updateContent(content);
+      monacoEditor.getModel()?.onDidChangeContent(() => {
+        const content = monacoEditor.getValue();
+        setCurrentContent(content);
       });
+
+      setEditor(monacoEditor);
     }
 
     return () => {
-      editor.dispose();
+      editor?.dispose();
     };
   }, []);
 
-  return <div className="Editor" style={{ minHeight: 600 }} ref={divEl} />;
+  return <div className="Editor" ref={divEl} style={{ minHeight: 600 }} />;
 };

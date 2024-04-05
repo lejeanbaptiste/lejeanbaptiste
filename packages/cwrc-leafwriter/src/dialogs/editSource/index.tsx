@@ -1,18 +1,14 @@
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-} from '@mui/material';
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogTitle } from '@mui/material';
+import { Provider } from 'jotai';
+import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useActions, useAppState } from '../../overmind';
+import { useAppState } from '../../overmind';
 import type { EditSourceDialogProps } from '../type';
+import { Footer } from './components/footer';
+import { Loader } from './components/loader';
+import { useDialog } from './hooks/useDialog';
 
-const Editor = lazy(() => import('./Editor').then((module) => ({ default: module.Editor })));
+const Editor = lazy(() => import('./editor').then((module) => ({ default: module.Editor })));
 
 export const EditSourceDialog = ({
   content = '',
@@ -22,39 +18,15 @@ export const EditSourceDialog = ({
   type = 'content',
 }: EditSourceDialogProps) => {
   const { settings } = useAppState().editor;
-  const { setIsReload, loadDocumentXML: updateXMLContent, updateXMLHeader } = useActions().document;
-
   const { t } = useTranslation('leafwriter');
+  const { resetContext } = useDialog();
 
-  const [currentContent, setCurrentContent] = useState('');
+  const title = type === 'header' ? t('leafwriter:edit_header') : t('leafwriter:edit_source');
 
-  const title = type === 'header' ? t('edit header') : t('edit source');
-
-  useEffect(() => {
-    setCurrentContent(content);
-  }, []);
-
-  const handleUpdateContent = (value: string) => setCurrentContent(value);
-
-  const handleClose = () => onClose && onClose(id);
-
-  const handleChange = () => {
-    if (currentContent === content) return onClose && onClose(id);
-
-    // Tell everyone that we manually updated, so the document will be reloaded.
-    setIsReload(true);
-
-    if (type === 'content') updateXMLContent(currentContent);
-    if (type === 'header') updateXMLHeader(currentContent);
-
-    onClose && onClose(id);
+  const handleClose = () => {
+    resetContext();
+    onClose?.(id);
   };
-
-  const Progress = () => (
-    <Box display="flex" height={600} width="100%" alignItems="center" justifyContent="center">
-      <CircularProgress sx={{ width: '100%' }} />
-    </Box>
-  );
 
   return (
     <Dialog
@@ -64,26 +36,21 @@ export const EditSourceDialog = ({
       maxWidth="lg"
       open={open}
     >
-      <DialogTitle
-        id="edit-source-title"
-        p={0}
-        sx={{ textAlign: 'center', fontSize: '1rem', textTransform: 'capitalize' }}
-      >
-        {title}
-      </DialogTitle>
-      <DialogContent sx={{ minHeight: 600, padding: 0 }}>
-        <Suspense fallback={<Progress />}>
-          <Editor content={content} updateContent={handleUpdateContent} />
-        </Suspense>
-      </DialogContent>
-      <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button autoFocus onClick={handleClose}>
-          {t('commons.cancel')}
-        </Button>
-        <Button onClick={handleChange} variant="outlined">
-          {t('commons.change')}
-        </Button>
-      </DialogActions>
+      <Provider>
+        <DialogTitle
+          id="edit-source-title"
+          p={0}
+          sx={{ fontSize: '1rem', textAlign: 'center', textTransform: 'capitalize' }}
+        >
+          {title}
+        </DialogTitle>
+        <DialogContent sx={{ minHeight: 600, padding: 0 }}>
+          <Suspense fallback={<Loader />}>
+            <Editor initialContent={content} type={type} />
+          </Suspense>
+        </DialogContent>
+        <Footer onCancel={handleClose} onDone={handleClose} />
+      </Provider>
     </Dialog>
   );
 };
