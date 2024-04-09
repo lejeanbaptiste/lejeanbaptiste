@@ -6,6 +6,7 @@
 import { Octokit } from '@octokit/rest';
 import axios, { type AxiosInstance } from 'axios';
 import { Buffer } from 'buffer/';
+import i18next from '../i18n';
 import type * as T from '../types';
 import { isErrorMessage } from '../types';
 import type * as Types from '../types/Provider';
@@ -670,7 +671,7 @@ export default class Github implements Provider {
         branch,
         sha: hash,
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         if (error.message.includes('does not match')) {
           return { type: 'warning', status: 409, message: 'conflict' } as Types.ProviderError;
         }
@@ -680,7 +681,11 @@ export default class Github implements Provider {
     if (!response) return null;
 
     if (response.status === 403) {
-      return { type: 'warning', status: 403, message: 'forbidden' } as Types.ProviderError;
+      return {
+        type: 'error',
+        status: 403,
+        message: `${i18next.t('LWStorageService:cloud.message.forbidden')}: ${i18next.t('LWStorageService:cloud.message.check_permission')}`,
+      } as Types.ProviderError;
     }
 
     if (isErrorMessage(response)) return response;

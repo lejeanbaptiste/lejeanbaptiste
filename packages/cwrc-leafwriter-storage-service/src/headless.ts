@@ -189,13 +189,12 @@ export const saveDocument = async (
   });
 
   if (!response) {
-    const errorMessage = `${t('cloud.message.something_went_wrong', {
-      ns: 'LWStorageService',
-    })}. ${t('cloud.message.unabled_to_save', { ns: 'LWStorageService' })}.`;
-    return new Error(errorMessage);
+    return { message: errorMessage, type: 'error' };
   }
 
-  if (isErrorMessage(response)) return new Error(response.message);
+  if (isErrorMessage(response)) {
+    return { message: response.message, type: response.type };
+  }
 
   const documentResource: Resource = {
     provider: providerName,
