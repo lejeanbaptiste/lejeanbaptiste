@@ -31,8 +31,8 @@ export const processSchema = async ({ id, url, shouldCache = true }: InitializeP
       warnings,
     };
 
-    const cached = await db.cachedSchemas.put(cachedSchema).catch(() => null);
-    cached ? log.info('Schema cached: ', cached) : log.info('Schema cache failed');
+    const cachedSchemaId = await db.cachedSchemas.put(cachedSchema);
+    cachedSchemaId ? log.info('Schema cached: ', cachedSchemaId) : log.info('Schema cache failed');
   }
 
   return pattern;

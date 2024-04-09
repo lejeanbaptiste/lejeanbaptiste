@@ -4,7 +4,7 @@ import type { CachedSchema } from '../types';
 export const DB_NAME = 'LEAF-Writer-Validator';
 
 export class DexieDB extends Dexie {
-  cachedSchemas!: Table<CachedSchema>;
+  cachedSchemas!: Table<CachedSchema, string>;
 
   constructor() {
     super(DB_NAME);
