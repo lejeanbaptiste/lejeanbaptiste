@@ -13,4 +13,3 @@ xmlValidityAtom.debugLabel = 'xmlValidity.Atom';
 
 export const contentTypeAtom = atom<EditSourceDialogProps['type']>('content');
 contentTypeAtom.debugLabel = 'contentType.Atom';
-
