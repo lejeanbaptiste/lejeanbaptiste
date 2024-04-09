@@ -71,10 +71,8 @@ class EntitiesManager {
       entity = new Entity(config);
     }
 
-    const requiredAttributes = this.writer.schemaManager.mapper.getRequiredAttributes(
-      config.type,
-    );
-    
+    const requiredAttributes = this.writer.schemaManager.mapper.getRequiredAttributes(config.type);
+
     for (const attName in requiredAttributes) {
       entity.setAttribute(attName, requiredAttributes[attName]);
     }
