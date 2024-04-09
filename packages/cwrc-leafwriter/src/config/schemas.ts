@@ -44,4 +44,21 @@ export const schemas: Schema[] = [
     ],
     css: ['https://cwrc.ca/templates/css/tei.css'],
   },
+  {
+    id: 'teiSimplePrint',
+    name: 'TEI Simple Print',
+    mapping: 'tei',
+    rng: [
+      'https://tei-c.org/release/xml/tei/custom/schema/relaxng/tei_simplePrint.rng',
+      'https://jenkins.tei-c.org/job/TEIP5/lastSuccessfulBuild/artifact/P5/release/xml/tei/custom/schema/relaxng/tei_simplePrint.rng',
+    ],
+    css: ['https://cwrc.ca/templates/css/tei.css'],
+  },
+  {
+    id: 'jTei',
+    name: 'jTEI Article',
+    mapping: 'tei',
+    rng: ['https://tei-c.org/release/xml/tei/custom/schema/relaxng/tei_jtei.rng'],
+    css: ['https://cwrc.ca/templates/css/tei.css'],
+  },
 ];
