@@ -50,7 +50,7 @@ export const save = async (
     content: string;
     screenshot?: string;
   },
-): Promise<{ success: boolean; error?: Error }> => {
+): Promise<{ success: true } | { success: false; error: Error }> => {
   state.editor.isSaving = true;
 
   // Check diff document
