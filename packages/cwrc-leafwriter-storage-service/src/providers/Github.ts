@@ -671,7 +671,7 @@ export default class Github implements Provider {
         branch,
         sha: hash,
       })
-      .catch((error: unknown) => {
+      .catch((error) => {
         if (error.message.includes('does not match')) {
           return { type: 'warning', status: 409, message: 'conflict' } as Types.ProviderError;
         }
