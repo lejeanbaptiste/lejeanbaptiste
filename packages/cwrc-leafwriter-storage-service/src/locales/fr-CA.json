@@ -26,6 +26,7 @@
       },
       "message": {
         "Do_you_want_to_overwrite": "Voulez-vous écraser",
+        "check_permission": "",
         "create_merge_request": "Création d'une demande de fusion",
         "document_filename_undefined": "Le nom de fichier du document n'est pas défini",
         "document_has_no_content": "Le document n'a pas de contenu",
@@ -34,6 +35,7 @@
         "document_owner_undefined": "Le propriétaire du document n'est pas défini",
         "file_already_exists": "Le fichier existe déjà",
         "folder_creation_error": "Erreur de création de dossier",
+        "forbidden": "",
         "forking_can_take_minutes": "Forger un dépôt peut prendre plusieurs minutes",
         "repo_creation_error": "Erreur de création du référentiel",
         "repository_not_found": "Référentiel introuvable",
