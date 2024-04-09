@@ -14,13 +14,11 @@ export const schemas: Schema[] = [
       'https://raw.githubusercontent.com/cwrc/CWRC-Schema/master/templates/css/orlando.css',
     ],
   },
-
   // {
   //   id: 'epidoc',
   //   name: 'EpiDoc',
   //   mapping: 'tei',
   //   rng: [
-  //     'http://www.stoa.org/epidoc/schema/latest/tei-epidoc.rng',
   //     'https://www.stoa.org/epidoc/schema/latest/tei-epidoc.rng',
   //     'https://cwrc.ca/epidoc/schema/latest/tei-epidoc.rng',
   //   ],
@@ -33,47 +31,6 @@ export const schemas: Schema[] = [
     rng: [
       'https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng',
       'https://jenkins.tei-c.org/job/TEIP5/lastSuccessfulBuild/artifact/P5/release/xml/tei/custom/schema/relaxng/tei_all.rng',
-    ],
-    css: ['https://cwrc.ca/templates/css/tei.css'],
-  },
-  {
-    id: 'teiCorpus',
-    name: 'TEI Corpus',
-    mapping: 'tei',
-    rng: [
-      'https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_corpus.rng',
-      'https://jenkins.tei-c.org/job/TEIP5/lastSuccessfulBuild/artifact/P5/release/xml/tei/custom/schema/relaxng/tei_corpus.rng',
-    ],
-    css: ['https://cwrc.ca/templates/css/tei.css'],
-  },
-  {
-    id: 'teiDrama',
-    name: 'TEI Drama',
-    mapping: 'tei',
-    rng: [
-      'https://tei-c.org/release/xml/tei/custom/schema/relaxng/tei_drama.rng',
-      'https://jenkins.tei-c.org/job/TEIP5/lastSuccessfulBuild/artifact/P5/release/xml/tei/custom/schema/relaxng/tei_drama.rng',
-    ],
-    css: ['https://cwrc.ca/templates/css/tei.css'],
-  },
-
-  {
-    id: 'teiMs',
-    name: 'TEI Manuscript',
-    mapping: 'tei',
-    rng: [
-      'https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_ms.rng',
-      'https://jenkins.tei-c.org/job/TEIP5/lastSuccessfulBuild/artifact/P5/release/xml/tei/custom/schema/relaxng/tei_ms.rng',
-    ],
-    css: ['https://cwrc.ca/templates/css/tei.css'],
-  },
-  {
-    id: 'teiSpeech',
-    name: 'TEI Speech',
-    mapping: 'tei',
-    rng: [
-      'https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_speech.rng',
-      'https://jenkins.tei-c.org/job/TEIP5/lastSuccessfulBuild/artifact/P5/release/xml/tei/custom/schema/relaxng/tei_speech.rng',
     ],
     css: ['https://cwrc.ca/templates/css/tei.css'],
   },
