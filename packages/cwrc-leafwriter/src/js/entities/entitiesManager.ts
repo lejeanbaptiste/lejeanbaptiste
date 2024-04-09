@@ -65,18 +65,17 @@ class EntitiesManager {
       if (!config.id) config.id = this.writer.getUniqueId('dom_');
 
       if (!config.tag) {
-        //@ts-ignore
-        config.tag = this.writer.schemaManager.mapper.getParentTag(config.type as EntityType);
+        config.tag = this.writer.schemaManager.mapper.getParentTag(config.type);
       }
 
       entity = new Entity(config);
     }
 
     const requiredAttributes = this.writer.schemaManager.mapper.getRequiredAttributes(
-      config.type as EntityType,
+      config.type,
     );
+    
     for (const attName in requiredAttributes) {
-      //@ts-ignore
       entity.setAttribute(attName, requiredAttributes[attName]);
     }
 

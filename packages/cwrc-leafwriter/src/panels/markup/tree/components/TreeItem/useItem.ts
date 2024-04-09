@@ -30,7 +30,7 @@ export const useItem = ({ content = '', id, isEntity = false, selected = false }
   const icon = useMemo(
     () =>
       entityType
-        ? getIcon(entity[entityType].icon as IconLeafWriter)
+        ? getIcon(entity[entityType].icon)
         : getIcon(id as IconLeafWriter),
     [id],
   );

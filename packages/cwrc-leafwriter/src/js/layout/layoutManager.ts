@@ -356,7 +356,7 @@ class LayoutManager {
         const tab = document.querySelector(`.ui-layout-${region} > ul > li#${id}`);
         if (!tab) return;
 
-        if (WRITE_ONLY_MODULES.includes(id as ISettingsModuleName)) {
+        if (WRITE_ONLY_MODULES.includes(id)) {
           (tab as HTMLElement).style.display = readonly ? 'none' : '';
         }
 
