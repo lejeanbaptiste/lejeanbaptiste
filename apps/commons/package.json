@@ -57,7 +57,7 @@
     "chroma-js": "^2.4.2",
     "compression": "^1.7.4",
     "date-fns": "^3.6.0",
-    "dexie": "^3.2.7",
+    "dexie": "^4.0.4",
     "dexie-react-hooks": "^1.1.7",
     "env-cmd": "^10.1.0",
     "express": "^4.19.2",
