@@ -1,5 +1,92 @@
 # CHANGELOG
 
+## 3.5.0
+
+### Minor Changes
+
+- [9ff0a719ce6cf97590c45dfbda025e609ad861c9] Raw xml editor: add well-formness validator and warn user if xml invalid before update (#212)
+- [dd2a89b6419befeafb288c9ac01a428ea83cf5d1] Explose public method `isValid` (#204)
+- [b946af926d481030b7511c601682aca88e65bf71] Schema: Drop support: TeiCorpus, TeiDrama, TeiMS, and TeiSpeech  (# 183)
+- [754ce95ed1935e5a8f0596585fb403034af736d6] Schema: add supoprt for 'TEI Simple Print' and jTei (# 183)
+
+### Patch Changes
+
+- [422bdd779578b9e0c5b03c3b37406ae755ad56f8] Better error handling when saving. Show error message to user (#135 #200)
+- [4820bb45aa23d883dbf5483a9ce44c93c0862977] Reset and hide invalid stats when document becomes valid again (#211) - Thanks Jacob B (@jgb-hda)
+- [9053ed6b50a43d1756584bce48ba08a351dc67fd] Add condition ot to autosave if content is reloaded from code view changes (#203) - Thanks Jacob B (@jgb-hda)
+- [0c43cee8ce6da76aac0e116361cc6c4b62691f93] Edit raw: fix behaviour preventing update document/markup panel when editing on code view (#203) - Thanks Jacob B (@jgb-hda)
+- [b601a6ab7ab2ac569fe2898ac9f24733512e4da7] Entity panel: fix filter preventing organization to be displayed (#210)
+- [a562736cb65172636c5b166da399848e0628759e] Fix bug preventing tag attributes and data to be stored correctly after update (#190)
+- [e9cb4a18817a2f8ec74683fa12f5ceccb40d631c] Fix issue preventing logout when leafwriterValidator is not prevent on the window context (#205)
+- [4ee0a8ee6c86177c680a0e564fcd863eafe9b7a8] Conversion prompt messages: fix bug preventing message's content to show up
+- [1f44be58e0a22ed998a3d3733a0b68d92482bfb2] Add schema: fix issue preventing user to edit the fields (#176 #174) - Thanks Jacob B (@jgb-hda)
+- [b6e8df0caa5cd38994bdf855fc96cdbe22dc6c7c] dialogs: Change `markups` to `attributes` (#181)
+- Improve typing [e59fb474b2778aac898148c53187120bfba02eda] [9d1d10f2e1b079f2c10f75d53adca6c4d0901b4e] [e6492690c6f52de9e1cbc43217e68a7365913740]
+- Updated dependencies
+  - @cwrc/leafwriter-validator@4.4.0
+
+### Chore
+
+- [b739bfe6e5c4d8d1f54101cedfe4fa6c1db1023d] Rename file
+- [d1fdd9f6929bf9924a8fe994edfcfd9d54aaebf5] Avoid path alias
+- update dependencies
+  - core:
+    - add: jotai-devtools@0.8.0 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+    - upgrade:  
+      - dexie@4.0.4 [520e2a300dac03cf8d0cc51cc2af6a77c21667c4]
+      - framer-motion@11.0.27 [48acf449732cf06f5f52df23abc9d43709d757e8]
+      - react-i18next@13.1.0 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - react-icons@5.0.1 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - react-resizable-panels@2.0.13 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - wikibase-sdk@10.0.2 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+    - update:
+      - @mui/icons-material@5.15.15 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - @mui/material@5.15.15 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - classnames@2.5.1 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - i18next@23.10.1 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - jotai@2.8.0 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - i18next@23.11.1 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - loglevel@1.9.1 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - mdi-material-ui@7.8.0 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - monaco-editor@0.47.0 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - mui-modal-provider@2.4.2 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - react-intersection-observer@9.8.2 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - react-use@17.5.0 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - react-virtuoso@4.7.8 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - zod-formik-adapter@1.3.0 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+    - bump:
+      - @emotion/react@11.11.4 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - @emotion/styled@11.11.5 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - @fortawesome/fontawesome-free@6.5.2 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - @fontsource/lato@5.0.20 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - axios@1.6.8 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - dexie@3.27 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - openseadragon@4.1.1 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - rdflib@2.2.34 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - react-resizable-panels@2.0.16 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - tinymce@5.10.9 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+  - dev:
+    - add: css-loader@6.11.0 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+    - upgrade:
+      - copy-webpack-plugin@12.0.2 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - webpackbar @6.0.1 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+    - update:
+      - @types/luxon@3.4.2 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - @types/node@20.12.7 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - esbuild-loader@4.1.0 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - eslint@8.57.0 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - mini-css-extract-plugin@2.8.1 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - typescript@5.4.3 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - typescript-plugin-css-modules@5.1.0 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - webpack@5.91.0 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+    - bump:
+      - @types/chroma-js@2.4.4 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - @types/react-dom@18.2.24 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
+      - @types/jqueryui@1.12.22 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - @types/react-dom@18.2.22 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - @types/uuid@9.0.8 [36e55b9071e75b89f0373ef16a38c71a316924f1]
+      - ypescript@5.4.5 [48acf449732cf06f5f52df23abc9d43709d757e8]
+
 ## 3.4.0
 
 ### Highlights
