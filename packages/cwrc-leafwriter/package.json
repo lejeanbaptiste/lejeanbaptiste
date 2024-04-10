@@ -71,7 +71,7 @@
     "comlink": "^4.4.1",
     "css": "^3.0.0",
     "css-tooltip": "^0.3.4",
-    "dexie": "^3.2.7",
+    "dexie": "^4.0.4",
     "dexie-react-hooks": "^1.1.7",
     "formik": "^2.4.5",
     "framer-motion": "^11.0.27",
