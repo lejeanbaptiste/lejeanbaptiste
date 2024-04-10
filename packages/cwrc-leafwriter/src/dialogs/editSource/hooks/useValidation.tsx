@@ -1,4 +1,4 @@
-import { useActions } from '@src/overmind';
+import { useActions } from '../../../overmind';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { currentContentAtom, xmlValidityAtom } from '../store';

@@ -1,4 +1,4 @@
-import { useActions } from '@src/overmind';
+import { useActions } from '../../../overmind';
 import { useAtom, useSetAtom } from 'jotai';
 import {
   contentTypeAtom,
