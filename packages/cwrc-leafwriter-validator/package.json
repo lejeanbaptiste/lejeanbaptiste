@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-validator",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "description": "webworker to handle validation on Leaf-Writer",
   "keywords": [
     "xml",
@@ -55,7 +55,7 @@
     "@cwrc/salve-dom-leafwriter": "^6.0.3",
     "@cwrc/salve-leafwriter": "^1.2.2",
     "comlink": "^4.4.1",
-    "dexie": "^3.2.7",
+    "dexie": "^4.0.4",
     "lodash": "^4.17.21",
     "loglevel": "^1.9.1"
   },
