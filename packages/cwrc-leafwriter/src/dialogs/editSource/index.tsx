@@ -8,7 +8,7 @@ import { Footer } from './components/footer';
 import { Loader } from './components/loader';
 import { useDialog } from './hooks/useDialog';
 
-const Editor = lazy(() => import('./__editor').then((module) => ({ default: module.Editor })));
+const Editor = lazy(() => import('./editor').then((module) => ({ default: module.Editor })));
 
 export const EditSourceDialog = ({
   content = '',
