@@ -1,5 +1,76 @@
 # CHANGELOG
 
+## 3.4
+
+### Minor Changes
+
+- [535a46761a292eb57ef482342726494d648ea857] remove template files: Person/Place/Organizations List (#209)
+
+### Patch Changes
+
+- [e80b5cfede5c352c97c37b7b9f163da31e92256c] Prevent showing settings button on the homepage (#206)
+- [d223e9e6620b499dc116c2cf7f554e5201505d51] Main menu: Rename `download` as `Export`(#177)
+- Updated dependencies
+  - @cwrc/leafwriter-storage-service@3.1.0
+  - @cwrc/leafwriter@3.5.0
+
+### Chore
+
+- [2e2972825b2ccaeae8f0df664f79f078c98c9d15] schemas (dev): incorporate more schemas for testing purposes
+- update dependencies
+  - core:
+    - upgrade:
+      - date-fns@3.6.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - dexie@4.0.4 [ff94486b8c8efcda6eccef691421f9ce6fa8397a]
+      - framer-motion@11.0.27 [02eedc44b435ed093e2d70b4174000d7cced2194]
+      - keycloak-js@24.0.2 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - query-string@9.0.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - react-i18next@14.0.7 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - react-icons@5.0.1 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+    - update:
+      - @octokit/rest@20.1.0 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - @mui/icons-material@5.15.15 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - @mui/lab@5.0.0-alpha.170 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - @mui/material@5.15.15 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - @ts-rest/core@3.41.2 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - express@4.19.2 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - i18next@23.11.1 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - i18next-browser-languagedetector@7.2.1 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - jotai@2.8.0 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - loglevel@1.9.1 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - material-ui-popup-state@5.1.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - mdi-material-ui@7.8.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - mui-modal-provider@2.4.2 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - react-router-dom@6.22.3 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - react-use@17.5.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+    - bump:
+      - @emotion/react@11.11.4 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - @emotion/styled@11.11.5 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - @fontsource/lato@5.0.20 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - analytics@0.8.11 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - axios@1.6.8 dexie@3.2.7 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - react-helmet-async@2.0.4 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - swr@2.2.5 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+  - dev:
+    - upgrade:
+      - @octokit/types@13.4.0 [5f7c0356046e7b2c643fa81d975fcefafd2a8a29]
+      - copy-webpack-plugin@12.0.2 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - css-minimizer-webpack-plugin@6.0.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - less-loader@12.2.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - webpackbar@6.0.1 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+    - update:
+      - @types/node@20.12.7
+      - css-loader@6.10.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - esbuild-loader@4.1.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - eslint@8.57.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - html-webpack-plugin@2.8.1 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - webpack@5.91.0 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+    - bump:
+      - @types/chroma-js@2.4.4 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - @types/react-dom@18.2.24
+      - tsup@8.0.2 [a6593b7c742d17083e06b106cf1d8737e84fa4bd]
+      - typescript@5.4.5 [02eedc44b435ed093e2d70b4174000d7cced2194]
+
 ## 3.3.1
 
 ### Patch Changes
