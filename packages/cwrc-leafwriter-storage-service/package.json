@@ -79,7 +79,7 @@
     "dexie": "^3.2.7",
     "dexie-react-hooks": "^1.1.7",
     "file-saver": "^2.0.5",
-    "framer-motion": "^11.0.25",
+    "framer-motion": "^11.0.27",
     "i18next": "^23.11.1",
     "lodash": "^4.17.21",
     "loglevel": "^1.9.1",
@@ -118,6 +118,6 @@
     "ts-node": "^10.9.2",
     "tsup": "^8.0.2",
     "typedoc": "^0.25.13",
-    "typescript": "^5.4.4"
+    "typescript": "^5.4.5"
   }
 }
