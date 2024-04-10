@@ -1,7 +1,7 @@
 import type {
   Target as PossibleNodesAtTarget,
   ValidationResponse,
-  Validator,
+  ValidatorType,
 } from '@cwrc/leafwriter-validator';
 import * as Comlink from 'comlink';
 import { Context } from '../';
@@ -10,7 +10,7 @@ import { webpackEnv } from '../../types';
 
 declare global {
   interface Window {
-    leafwriterValidator: Comlink.Remote<Validator>;
+    leafwriterValidator: Comlink.Remote<ValidatorType>;
     writer: Writer;
   }
 }
@@ -24,7 +24,7 @@ export const loadValidator = async ({ state }: Context) => {
   state.validator.hasWorkerValidator = true;
 };
 
-const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<Validator>> => {
+const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<ValidatorType>> => {
   return await new Promise((resolve) => {
     // TODO: Improve the way to load webworkers for dev
     // * Check ThreadsJS once again.
@@ -35,7 +35,7 @@ const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<Validator>> =
         ? new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url))
         : new Worker(`${baseUrl}/leafwriter-validator.worker.js`);
 
-    const validator: Comlink.Remote<Validator> = Comlink.wrap(worker);
+    const validator: Comlink.Remote<ValidatorType> = Comlink.wrap(worker);
 
     resolve(validator);
   });
