@@ -1,5 +1,70 @@
 # CHANGELOG
 
+## 3.1.0
+
+### Minor Changes
+
+- [2e625a717b3b12a0c09bc9a008cdc0880acac322] Better error handling when saving. Returns an object instead of thowning error (#135 #200)
+- [a72ee887f5bc60bf00b234c5d1c758c633fa9624] Github: produce error mesage if `createOrUpdateFileContents` return 403-forbiden (#135 #200)
+
+### Patch Changes
+
+- [011297f3120b18fe7921b78bd630e6b2365ddd8a] github: fix loading from possibe outdated document from cache (#203)
+- Improve typing [73a50ec071de1970dcf0d86d8e255c9c9d2c5ce8] [f08aa79e03bdcc68adf93adda4a624b15eeb89bc] [b8a9d3642b3f810ae7273c09a0ffdef94e030be3]
+
+### Chore
+
+- [e95ec8fa930395aee47828a8d5aeeaae38e8e74f]fix i18next call to work with i18ally
+- update dependencies:
+  - core:
+    - upgrade:
+      - octokit/rest@20.1.0 [18f68dd9b6b848b580a2836340a801ec96c1365c]
+      - date-fns@3.6.0 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - dexie@4.0.4 [2ae5593b0cefd0f65101bcdb4dec7f2854bf1adc]
+      - framer-motion@11.0.18 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - react-i18next@14.1.0 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - react-icons@5.0.1 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+    - update:
+      - @mui/base@5.0.0-beta.40 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - @mui/icons-material@5.15.14 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - @mui/lab@5.0.0-alpha.169 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - @mui/material@5.15.14 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - i18next@23.11.1 [18f68dd9b6b848b580a2836340a801ec96c1365c]
+      - loglevel@1.9.1 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - mdi-material-ui@7.8.0 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - mui-modal-provider@2.4.2 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - react-use@17.5.0 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+    - bump:
+      - @emotion/styled@11.11.5 [18f68dd9b6b848b580a2836340a801ec96c1365c]
+      - @mui/icons-material@5.15.15 [18f68dd9b6b848b580a2836340a801ec96c1365c]
+      - @mui/lab@5.0.0-alpha.170 [18f68dd9b6b848b580a2836340a801ec96c1365c]
+      - @mui/material@5.15.15 [18f68dd9b6b848b580a2836340a801ec96c1365c]
+      - framer-motion@11.0.27 [142a21a5cb70a098c3a9807ac2de3157d6c7bcce]
+      - axios@1.6.8 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - dexie@3.2.7 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+  - dev:
+    - upgrade: @octokit/types@13.4.0
+    - update:
+      - @octokit/types@12.6.0 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - @testing-library/jest-dom@6.4.2 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - @testing-library/react@14.3.0 [18f68dd9b6b848b580a2836340a801ec96c1365c]
+      - @types/lodash@4.17.0 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - @types/node@20.11.30 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - eslint@8.57.0 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - typescript@5.4.3 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+    - bump:
+      - @testing-library/user-event@14.5.2 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - @types/jest@29.5.12 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - @types/node@20.12.7 [18f68dd9b6b848b580a2836340a801ec96c1365c]
+      - fake-indexeddb@5.0.2 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - ts-jest@29.1.2 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - ts-node@10.9.2 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - tsup@8.0.2 [790d1d096dc00640fd8a11ec8ffaf078e7e712af]
+      - typedoc@0.25.13 [18f68dd9b6b848b580a2836340a801ec96c1365c]
+      - typescript@5.4.5 [142a21a5cb70a098c3a9807ac2de3157d6c7bcce]
+
+- \_\_
+
 ## 3.0.1
 
 ### Patch Changes
