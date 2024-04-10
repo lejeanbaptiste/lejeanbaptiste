@@ -120,6 +120,9 @@ class Validation {
     if (valid) {
       list.append(this.createSucessMessageComponent());
 
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const $validateButton = $(`.revalidate-bt`).button();
       $validateButton.on('click', () => this.writer.validate());
 
