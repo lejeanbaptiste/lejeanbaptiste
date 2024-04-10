@@ -1,14 +1,15 @@
 import { Dialog, DialogContent, DialogTitle } from '@mui/material';
 import { Provider } from 'jotai';
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
 import type { EditSourceDialogProps } from '../type';
 import { Footer } from './components/footer';
 import { Loader } from './components/loader';
+import { Editor } from './editor';
 import { useDialog } from './hooks/useDialog';
 
-const Editor = lazy(() => import('./editor').then((module) => ({ default: module.Editor })));
+// const Editor = lazy(() => import('./editor').then((module) => ({ default: module.Editor })));
 
 export const EditSourceDialog = ({
   content = '',
