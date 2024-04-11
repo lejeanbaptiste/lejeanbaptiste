@@ -19,6 +19,7 @@
       "editing": "montage",
       "export": "exporter",
       "export as format": "exporter en {{format}}",
+      "export_document": "document d'exportation",
       "functionalities": "fonctionnalités",
       "identity": "identité",
       "language": "langue",

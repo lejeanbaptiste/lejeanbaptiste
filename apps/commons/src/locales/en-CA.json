@@ -19,6 +19,7 @@
       "editing": "editing",
       "export": "export",
       "export as format": "export as {{format}}",
+      "export_document": "export document",
       "functionalities": "functionalities",
       "identity": "identity",
       "language": "language",

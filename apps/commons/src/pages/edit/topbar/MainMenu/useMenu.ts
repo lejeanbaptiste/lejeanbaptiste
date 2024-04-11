@@ -85,7 +85,7 @@ export const useMenu = () => {
     {
       hide: readonly,
       icon: 'download',
-      label: `${t('LWC:commons.export')}`,
+      label: `${t('LWC:commons.export_document')}`,
       popupId: 'download',
     },
     'divider',
