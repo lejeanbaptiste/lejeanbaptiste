@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.4
+## 3.4.0
 
 ### Minor Changes
 
