@@ -9,7 +9,7 @@
 ### Patch Changes
 
 - [e80b5cfede5c352c97c37b7b9f163da31e92256c] Prevent showing settings button on the homepage (#206)
-- [d223e9e6620b499dc116c2cf7f554e5201505d51] Main menu: Rename `download` as `Export`(#177)
+- [d223e9e6620b499dc116c2cf7f554e5201505d51] Main menu: Rename `download` as `Export Document`(#177)
 - Updated dependencies
   - @cwrc/leafwriter-storage-service@3.1.0
   - @cwrc/leafwriter@3.5.0
