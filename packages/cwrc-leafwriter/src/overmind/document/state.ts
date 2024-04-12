@@ -3,6 +3,7 @@ import { Context } from '../';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {
+  isReload: boolean;
   loaded: boolean;
   rootName?: string;
   schemaId: string;
@@ -13,6 +14,7 @@ type State = {
 };
 
 export const state: State = {
+  isReload: false,
   loaded: false,
   schemaId: '',
   schemaName: derived((state: State, rootState: Context['state']) => {

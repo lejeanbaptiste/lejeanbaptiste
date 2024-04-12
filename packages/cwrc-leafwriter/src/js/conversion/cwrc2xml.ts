@@ -490,8 +490,9 @@ class CWRC2XML {
           if (!id) return;
 
           //@ts-ignore
-          const entityContentLength = _this.writer.entitiesManager.getEntity(id).getContent()
-            ?.length;
+          const entityContentLength = _this.writer.entitiesManager
+            .getEntity(id)
+            .getContent()?.length;
           if (!entityContentLength) return;
 
           offsets.push({

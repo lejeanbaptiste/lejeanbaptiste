@@ -371,11 +371,11 @@ class Mapper {
       // prioritize xpath
       if (mapping.xpathSelector && isElement && typeof element !== 'string') {
         const result = this.writer.utilities.evaluateXPath(element, mapping.xpathSelector);
-        if (result) return type as EntityType;
+        if (result) return type;
       } else {
         const parentTag = mapping.parentTag;
         if ((Array.isArray(parentTag) && parentTag.indexOf(tag) !== -1) || parentTag === tag) {
-          return type as EntityType;
+          return type;
         }
       }
     }

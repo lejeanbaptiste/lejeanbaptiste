@@ -57,7 +57,7 @@ class EntitiesList {
             <option value="person">Person</option>
             <option value="place">Place</option>
             <option value="date">Date</option>
-            <option value="org">Organization</option>
+            <option value="organization">Organization</option>
             <option value="citation">Citation</option>
             <option value="note">Note</option>
             <option value="title">Title</option>
@@ -109,7 +109,9 @@ class EntitiesList {
 
     if (this.writer.isReadOnly) this.$entities.find('.moduleFooter').hide();
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     this.$entities.find('select').selectmenu({
       appendTo: this.writer.layoutManager.getContainer(),
       position: { my: 'left top', at: 'left bottom', collision: 'flipfit' },

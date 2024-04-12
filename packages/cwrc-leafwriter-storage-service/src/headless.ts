@@ -20,39 +20,27 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
   let { path } = resource;
 
   if (!providerName) {
-    return new Error(
-      t('cloud.message.storage_provider_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.storage_provider_undefined'));
   }
   if (!owner) {
-    return new Error(
-      t('cloud.message.document_owner_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.document_owner_undefined'));
   }
   if (!ownerType) {
-    return new Error(
-      t('cloud.message.document_owner_type_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.document_owner_type_undefined'));
   }
   if (!repo) {
-    return new Error(
-      t('cloud.message.repository_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.repository_undefined'));
   }
 
   if (!path) path = '';
 
   if (!filename) {
-    return new Error(
-      t('cloud.message.document_filename_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.document_filename_undefined'));
   }
 
   provider = await initializeProvider(providerAuth);
   if (!provider) {
-    return new Error(
-      t('cloud.message.storage_provider_not_supported', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.storage_provider_not_supported'));
   }
 
   const repository = await provider
@@ -60,9 +48,7 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
     .catch(() => null);
 
   if (!repository) {
-    return new Error(
-      t('cloud.message.repository_not_found', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.repository_not_found'));
   }
 
   const filePath = path === '' ? filename : `${path}/${filename}`;
@@ -75,7 +61,7 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
     branch: repository.default_branch,
   });
   if (!document) {
-    return new Error(t('cloud.message.document_not_found', { ns: 'LWStorageService' }).toString());
+    return new Error(t('LWStorageService:cloud.message.document_not_found'));
   }
 
   const documentResource: Resource = {
@@ -102,52 +88,35 @@ export const saveDocument = async (
   let { path } = resource;
 
   if (!providerName) {
-    return new Error(
-      t('cloud.message.storage_provider_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.storage_provider_undefined'));
   }
   if (!owner) {
-    return new Error(
-      t('cloud.message.document_owner_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.document_owner_undefined'));
   }
   if (!ownerType) {
-    return new Error(
-      t('cloud.message.document_owner_type_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.document_owner_type_undefined'));
   }
-  if (!repo)
-    return new Error(
-      t('cloud.message.repository_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+  if (!repo) return new Error(t('LWStorageService:cloud.message.repository_undefined'));
 
   if (!path) path = '';
 
   if (!filename) {
-    return new Error(
-      t('cloud.message.document_filename_undefined', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.document_filename_undefined'));
   }
   if (!content) {
-    return new Error(
-      t('cloud.message.document_has_no_content', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.document_has_no_content'));
   }
 
   provider = await initializeProvider(providerAuth);
   if (!provider) {
-    return new Error(
-      t('cloud.message.storage_provider_not_supported', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.storage_provider_not_supported'));
   }
 
   const repository = await provider
     .getRepo({ username: owner, repoId: repo, repoName: repo })
     .catch(() => null);
   if (!repository) {
-    return new Error(
-      t('cloud.message.repository_not_found', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.repository_not_found'));
   }
 
   const filePath = path === '' ? filename : `${path}/${filename}`;
@@ -162,17 +131,13 @@ export const saveDocument = async (
   });
 
   if (!hasPermission) {
-    return new Error(
-      t('cloud.message.user_has_no_write_permission', { ns: 'LWStorageService' }).toString(),
-    );
+    return new Error(t('LWStorageService:cloud.message.user_has_no_write_permission'));
   }
 
   //check file exist
   const fileLatestHash = await getFileLatestHash({ filePath, repository, owner });
   if (fileLatestHash === hash && !overwrite) {
-    const errorMessage = `${t('cloud.message.file_already_exists', {
-      ns: 'LWStorageService',
-    })}. ${t('cloud.message.unable_to_overwrite_file', { ns: 'LWStorageService' })}.`;
+    const errorMessage = `${t('LWStorageService:cloud.message.file_already_exists')}. ${t('LWStorageService:cloud.message.unable_to_overwrite_file')}.`;
     return new Error(errorMessage);
   }
 
@@ -189,13 +154,13 @@ export const saveDocument = async (
   });
 
   if (!response) {
-    const errorMessage = `${t('cloud.message.something_went_wrong', {
-      ns: 'LWStorageService',
-    })}. ${t('cloud.message.unabled_to_save', { ns: 'LWStorageService' })}.`;
-    return new Error(errorMessage);
+    const errorMessage = `${t('LWStorageService:cloud.message.something_went_wrong')}. ${t('LWStorageService:cloud.message.unabled_to_save')}.`;
+    return { message: errorMessage, type: 'error' };
   }
 
-  if (isErrorMessage(response)) return new Error(response.message);
+  if (isErrorMessage(response)) {
+    return { message: response.message, type: response.type };
+  }
 
   const documentResource: Resource = {
     provider: providerName,

@@ -6,6 +6,7 @@
 import { Octokit } from '@octokit/rest';
 import axios, { type AxiosInstance } from 'axios';
 import { Buffer } from 'buffer/';
+import i18next from '../i18n';
 import type * as T from '../types';
 import { isErrorMessage } from '../types';
 import type * as Types from '../types/Provider';
@@ -194,15 +195,24 @@ export default class Github implements Provider {
    */
   async getRepo({ username, repoName }: Types.RepoParams) {
     const response = await this.octokit.rest.repos
-      .get({ owner: username, repo: repoName })
+      .get({
+        owner: username,
+        repo: repoName,
+        headers: { 'If-None-Match': '' },
+      })
       .catch((error) => {
         throw new Error(`Repository not found: ${error}`);
       });
 
-    const repo = response.data as unknown as T.Repository;
-    repo.owner.username = repo.owner?.login;
-    repo.owner.path = repo.name;
-    repo.writePermission = repo.permissions.push; //* This is a shortcut to check if the user has write permission someone else's repo
+    const data = response.data;
+
+    const repo: T.Repository = {
+      ...data,
+      id: data.id.toString(),
+      owner: { username: data.owner.login },
+      path: data.name,
+      writePermission: data.permissions?.push,
+    };
 
     return repo;
   }
@@ -224,24 +234,18 @@ export default class Github implements Provider {
   }: Types.RepoContentParams) {
     if (!ownerUsername || !repoName) return null;
     const response = await this.octokit.rest.repos
-      .getContent({ owner: ownerUsername, repo: repoName, path, ref })
+      .getContent({
+        owner: ownerUsername,
+        repo: repoName,
+        path,
+        ref,
+        headers: { 'If-None-Match': '' },
+      })
       .catch(() => null);
 
     if (!response) return null;
 
-    let content = response.data ?? [];
-
-    if (Array.isArray(content)) {
-      content = content.map((item: any) => {
-        item.type = item.type === 'dir' ? 'folder' : item.type;
-        return item;
-      });
-    } else {
-      // @ts-ignore
-      content.type = content.type === 'dir' ? 'folder' : content.type;
-    }
-
-    return content;
+    return response.data;
   }
 
   async getRepoBranches({ owner, repoName }: Types.RepoBranchesParams) {
@@ -395,6 +399,7 @@ export default class Github implements Provider {
       repo: repoName,
       tree_sha: originBranch.commit.commit.tree.sha,
       recursive: 'true',
+      headers: { 'If-None-Match': '' },
     });
 
     if (response.data.truncated) return null;
@@ -429,6 +434,7 @@ export default class Github implements Provider {
       path,
       per_page: 1,
       repo: repoName,
+      headers: { 'If-None-Match': '' },
     });
 
     if (!response) return null;
@@ -465,7 +471,13 @@ export default class Github implements Provider {
     if (!owner || !repo) return null;
 
     const result = await this.octokit.repos
-      .getContent({ owner, path, ref, repo })
+      .getContent({
+        owner,
+        path,
+        ref,
+        repo,
+        headers: { 'If-None-Match': '' },
+      })
       .catch(() => null);
 
     if (!result) return null;
@@ -475,7 +487,12 @@ export default class Github implements Provider {
 
     // * When the file is > 1MB, the content returns empty.
     // * So, to normalize the request, we fetch the content blob.
-    const blob = await this.octokit.rest.git.getBlob({ owner, repo, file_sha: sha });
+    const blob = await this.octokit.rest.git.getBlob({
+      owner,
+      repo,
+      file_sha: sha,
+      headers: { 'If-None-Match': '' },
+    });
     if (!blob.data) return null;
 
     const content = this.decodeContent(blob.data.content);
@@ -662,6 +679,15 @@ export default class Github implements Provider {
       });
 
     if (!response) return null;
+
+    if (response.status === 403) {
+      return {
+        type: 'error',
+        status: 403,
+        message: `${i18next.t('LWStorageService:cloud.message.forbidden')}: ${i18next.t('LWStorageService:cloud.message.check_permission')}`,
+      } as Types.ProviderError;
+    }
+
     if (isErrorMessage(response)) return response;
 
     const updatedResource = {

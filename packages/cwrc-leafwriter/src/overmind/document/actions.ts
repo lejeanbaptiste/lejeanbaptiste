@@ -39,9 +39,7 @@ export const updateContent = ({ state }: Context, content: string) => {
 export const updateXMLHeader = ({ state }: Context, content: string) => {
   const parser = new DOMParser();
 
-  let xml: XMLDocument;
-
-  xml = parser.parseFromString(content, 'application/xml');
+  const xml = parser.parseFromString(content, 'application/xml');
   const errorNode = xml.querySelector('parsererror');
 
   if (errorNode) {
@@ -79,13 +77,19 @@ export const clear = ({ state }: Context) => {
   state.document.loaded = false;
   state.document.url = undefined;
   state.document.xml = undefined;
+  state.document.isReload = false;
 };
 
-export const loadDocumentXML = ({ actions }: Context, content: string) => {
+export const loadDocumentXML = ({ actions, state }: Context, content: string) => {
   window.writer?.loadDocumentXML(content);
   actions.document.updateContent(content);
+  if (state.document.isReload) state.editor.contentHasChanged = true;
 };
 
 export const setDocumentTouched = ({ state }: Context, value: boolean) => {
   state.document.touched = value;
+};
+
+export const setIsReload = ({ state }: Context, value: boolean) => {
+  state.document.isReload = value;
 };

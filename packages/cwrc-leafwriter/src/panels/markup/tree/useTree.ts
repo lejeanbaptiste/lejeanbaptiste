@@ -58,6 +58,7 @@ export const useTree = () => {
       if (!treeModel) return;
 
       setItems(treeModel);
+      expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
       setUpdatePending(false);
     }
   }, [updatePending]);
@@ -97,7 +98,13 @@ export const useTree = () => {
   };
 
   const expandUpTo = (treeModel: TreeItems, depth = Infinity) => {
-    const flatten = flattenedTree.length > 0 ? flattenedTree : flattenTree(treeModel);
+    // If update is running, rebuild tree in any case, since the automatic rebuild will not have run yet.
+    const flatten =
+      flattenedTree.length > 0
+        ? updatePending
+          ? flattenTree(treeModel)
+          : flattenedTree
+        : flattenTree(treeModel);
     const itemsToExpand = flatten
       .filter((item) => item.type === 'tag' && item.depth < depth)
       .map((item) => item.id);

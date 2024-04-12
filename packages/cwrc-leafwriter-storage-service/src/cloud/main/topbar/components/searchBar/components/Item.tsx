@@ -50,7 +50,9 @@ export const Item = ({ item, onPrimaryAction, onSecondaryAction }: ItemProps) =>
 
   const handlePrimaryAction = async () => {
     onPrimaryAction(item);
-    if (type === 'folder') navigateTo({ repo: repository, path: `${path}/${name}` });
+    if (type === 'folder' || type === 'dir') {
+      navigateTo({ repo: repository, path: `${path}/${name}` });
+    }
     if (type === 'file') {
       const resource = await fetchDocument({ repo: repository, path, filename: name });
       load(resource);
@@ -116,7 +118,7 @@ export const Item = ({ item, onPrimaryAction, onSecondaryAction }: ItemProps) =>
       >
         {!isSM && (
           <ListItemIcon sx={{ minWidth: 40 }}>
-            {type === 'folder' ? <FolderOpenIcon /> : <DescriptionOutlinedIcon />}
+            {type === 'folder' || type === 'dir' ? <FolderOpenIcon /> : <DescriptionOutlinedIcon />}
           </ListItemIcon>
         )}
 

@@ -34,7 +34,7 @@ export const FooterLoad = ({ onCancel }: FooterProps) => {
       return;
     }
 
-    if (selectedItem.type === 'folder') {
+    if (selectedItem.type === 'folder' || selectedItem.type === 'dir') {
       navigateTo({ path: selectedItem.path });
       return;
     }

@@ -70,6 +70,11 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
   }, [nodeChanged]);
 
   const handleDocumentLoaded = () => {
+    if (initialized && enabled) {
+      // This will force a rebuild of the tree after manual XML editing.
+      setTimeout(() => setUpdatePending(true), 1);
+      return;
+    }
     setInitialized(true);
     setEnabled(true);
   };

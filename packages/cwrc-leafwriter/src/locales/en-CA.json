@@ -83,6 +83,7 @@
     "add schema": "add schema",
     "beta": "beta",
     "change anyway": "change anyway",
+    "check_well-formedness": "Check well-formedness",
     "commons": {
       "Name": "Name",
       "add": "add",
@@ -94,6 +95,7 @@
       "change": "change",
       "close": "close",
       "delete": "delete",
+      "discard_changes": "discard changes",
       "edit": "edit",
       "editor": "editor",
       "hint": "hint",
@@ -113,7 +115,9 @@
     "dont show again": "don't show again",
     "edit header": "edit header",
     "edit source": "edit source",
+    "edit_header": "edit_header",
     "edit_raw_xml": "Edit Raw XML",
+    "edit_source": "edit source",
     "experimental": "experimental",
     "font size": "font size",
     "hint": "Hint",
@@ -131,6 +135,7 @@
     "note": "note",
     "select supported schema": "select supported schema",
     "show only valid tags": "show only valid tags",
-    "show_lod_annotation": "Show Linked Open Data Annotation"
+    "show_lod_annotation": "Show Linked Open Data Annotation",
+    "xml_document_invalid": "XML document invalid"
   }
 }

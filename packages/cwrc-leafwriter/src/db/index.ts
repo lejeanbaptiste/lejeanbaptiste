@@ -1,4 +1,4 @@
-// * Packege Exports is only available when TSconfig nodeModuleRosultuon is set to NODE16 or NODENEXT.
+// * Package Exports is only available when TSconfig nodeModuleRosultuon is set to NODE16 or NODENEXT.
 // * But, this new configuration means different setup to load dependencies, which might break other things.
 // * We should way a little longer to adopt the new setup
 
@@ -64,7 +64,7 @@ export const clearCache = async () => {
     .catch(() => new Error('Clear `doNotDisplayDialogs` table: Something went wrong.'));
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  await window.leafwriterValidator.clearCache();
+  await window.leafwriterValidator?.clearCache();
 };
 
 export const deleteDb = async () => {

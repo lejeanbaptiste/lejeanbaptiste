@@ -31,7 +31,7 @@ export const Content = ({ content }: Props) => {
   const { name, path, type } = content;
 
   const isDisabled = () => {
-    const isFolder = type === 'folder';
+    const isFolder = type === 'folder' || type === 'dir';
 
     const isAllowed = !allowedFileTypes
       ? true
@@ -49,7 +49,7 @@ export const Content = ({ content }: Props) => {
   };
 
   const handleDoubleClick = async () => {
-    if (type === 'folder') {
+    if (type === 'folder' || type === 'dir') {
       navigateTo({ path });
       return;
     }
@@ -114,7 +114,7 @@ export const Content = ({ content }: Props) => {
         }}
       >
         <ListItemIcon sx={{ minWidth: 40 }}>
-          {type === 'folder' ? <FolderOpenIcon /> : <DescriptionOutlinedIcon />}
+          {type === 'folder' || type === 'dir' ? <FolderOpenIcon /> : <DescriptionOutlinedIcon />}
         </ListItemIcon>
         <ListItemText
           disableTypography

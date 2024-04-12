@@ -28,10 +28,7 @@ export const useItem = ({ content = '', id, isEntity = false, selected = false }
   const color = entityType ? entity[entityType].color.main : palette.primary[palette.mode];
 
   const icon = useMemo(
-    () =>
-      entityType
-        ? getIcon(entity[entityType].icon as IconLeafWriter)
-        : getIcon(id as IconLeafWriter),
+    () => (entityType ? getIcon(entity[entityType].icon) : getIcon(id as IconLeafWriter)),
     [id],
   );
 

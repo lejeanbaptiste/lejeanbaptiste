@@ -1,6 +1,6 @@
 import type {
-  NodeDetail,
   ErrorNames,
+  NodeDetail,
   ValidationError,
   ValidationErrorElement,
   ValidationErrorTarget,
@@ -51,14 +51,15 @@ class Validation {
         : (this.autoValidateTimerActive = true);
 
       this.autoValidateTimer = setTimeout(() => {
-        this.validate();
+        void this.validate();
         this.autoValidateTimerActive = false;
       }, this.AUTO_VALIDATE_ONCHANGE_TIMER);
     });
 
     this.writer.event('documentLoaded').subscribe(() => {
       this.clearResult();
-      const hasValidorHasSchema = writer.overmindState.validator.hasSchema;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const hasValidorHasSchema = !!writer.overmindState.validator.hasSchema;
       if (hasValidorHasSchema) this.writer.validate();
     });
 
@@ -80,7 +81,7 @@ class Validation {
 
       this.progressBar = new ProgressBar.Circle('#validation-progress-bar');
 
-      this.validate();
+      void this.validate();
     });
 
     this.writer
@@ -102,6 +103,7 @@ class Validation {
   }
 
   async validate() {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     await this.writer.overmindActions.validator.validate();
   }
 
@@ -118,9 +120,15 @@ class Validation {
     if (valid) {
       list.append(this.createSucessMessageComponent());
 
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       //@ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const $validateButton = $(`.revalidate-bt`).button();
       $validateButton.on('click', () => this.writer.validate());
+
+      // Make sure validation error counter get's removed if it has been shown before
+      const $stats = $('.moduleFooter > div.stats');
+      $stats.empty();
 
       return;
     }

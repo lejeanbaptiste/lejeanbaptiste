@@ -83,6 +83,7 @@
     "add schema": "ajouter un schéma",
     "beta": "bêta",
     "change anyway": "changer quand même",
+    "check_well-formedness": "",
     "commons": {
       "Name": "Nom",
       "add": "ajouter",
@@ -94,6 +95,7 @@
       "change": "changement",
       "close": "fermer",
       "delete": "supprimer",
+      "discard_changes": "",
       "edit": "modifier",
       "editor": "éditeur",
       "hint": "indice",
@@ -113,7 +115,9 @@
     "dont show again": "ne plus afficher",
     "edit header": "modifier l'en-tête",
     "edit source": "modifier la source",
+    "edit_header": "",
     "edit_raw_xml": "Modifier le XML brut",
+    "edit_source": "",
     "experimental": "expérimental",
     "font size": "taille de police",
     "hint": "Indice",
@@ -131,6 +135,7 @@
     "note": "Remarque",
     "select supported schema": "sélectionner le schéma pris en charge",
     "show only valid tags": "afficher uniquement les balises valides",
-    "show_lod_annotation": "Afficher l'annotation des données ouvertes liées"
+    "show_lod_annotation": "Afficher l'annotation des données ouvertes liées",
+    "xml_document_invalid": ""
   }
 }
