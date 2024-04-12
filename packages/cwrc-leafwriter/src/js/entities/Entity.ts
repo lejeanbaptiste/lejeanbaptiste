@@ -130,7 +130,7 @@ class Entity {
     // SET VALUES FROM CONFIG
 
     this.id = config.id;
-    this.type = config.type as EntityType;
+    this.type = config.type;
     this.tag = config.tag;
 
     // DATE CREATED

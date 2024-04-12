@@ -35,6 +35,6 @@ self.salve = salve;
 
 log.info(LOG_PREFIX, 'WORKER READY');
 
-export type Validator = typeof Validator;
+export type ValidatorType = typeof Validator;
 
 Comlink.expose(Validator);

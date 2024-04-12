@@ -4,4 +4,4 @@ export { find as gettyFind } from './getty';
 export { find as lgpnFind } from './lgpn';
 export { find as viafFind } from './viaf';
 export { find as wikidataFind } from './wikidata';
-export { find as gndFind} from './gnd';
+export { find as gndFind } from './gnd';

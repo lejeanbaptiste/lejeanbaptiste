@@ -28,12 +28,13 @@ const icons = {
   url: asMuiIcon(MdLanguage),
 };
 
-export type IconName = typeof icons extends Record<
-  infer I,
-  OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & { muiName: string }
->
-  ? I
-  : never;
+export type IconName =
+  typeof icons extends Record<
+    infer I,
+    OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & { muiName: string }
+  >
+    ? I
+    : never;
 
 export const getIcon = (name: IconName) => {
   return icons[name];

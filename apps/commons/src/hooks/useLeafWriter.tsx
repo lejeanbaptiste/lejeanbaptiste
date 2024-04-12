@@ -61,6 +61,12 @@ export const useLeafWriter = () => {
     const onLoadEvent = leafWriter.onLoad.subscribe(({ schemaName }) => {
       if (!leafWriter || !resource) return;
 
+      if (leafWriter.isReload()) {
+        // We got a reload event, possibly after a manual XML edit, don't tap the document,
+        //since this would fake-update what was last saved and would create even more entries for last opened.
+        return;
+      }
+
       leafWriter.autosave = autosave;
       tapDocument(resource, schemaName);
       subscribeToTimerService(leafWriter);
@@ -136,16 +142,20 @@ export const useLeafWriter = () => {
 
     const saved = await save({ content, screenshot });
 
-    if (!saved.success && saved.error?.message === 'conflict') return;
+    if (!saved.success) {
+      notifyViaSnackbar({
+        message: `${saved.error.message}. ${t('LWC:storage.document_not_saved')}!`,
+        options: { variant: saved.error.type },
+      });
+      return;
+    }
 
-    const type = saved.success ? 'success' : saved.error?.type ?? 'info';
-    const message = saved.success
-      ? t('LWC:storage.document_saved')
-      : `${t('LWC:error.something_went_wrong')}. ${t('LWC:storage.document_not_saved')}!`;
+    leafWriter.setContentHasChanged(false);
 
-    if (saved.success) leafWriter.setContentHasChanged(false);
-
-    notifyViaSnackbar({ message, options: { variant: type } });
+    notifyViaSnackbar({
+      message: t('LWC:storage.document_saved'),
+      options: { variant: 'success' },
+    });
   };
 
   const saveFeedback = (saved: boolean) => {

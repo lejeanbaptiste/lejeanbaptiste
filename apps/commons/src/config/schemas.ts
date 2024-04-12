@@ -1,6 +1,6 @@
 import type { Types } from '@cwrc/leafwriter';
 
-const isLocalDev = window.location.origin === 'https://localhost';
+const isLocalDev = window.location.origin === 'http://localhost:3000';
 
 export const schemas: Types.Schema[] = isLocalDev
   ? [

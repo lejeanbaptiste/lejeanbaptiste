@@ -130,6 +130,10 @@ export class Leafwriter {
     return await overmind.actions.editor.getContent();
   }
 
+  isReload() {
+    return overmind.state.document.isReload;
+  }
+
   async getDocumentScreenshot(
     params: ScreenshotParams = { width: 800, height: 480, windowWidth: 800, windowHeight: 1000 },
   ) {
@@ -268,6 +272,10 @@ export class Leafwriter {
 
   async validate() {
     overmind.actions.validator.validate();
+  }
+
+  async isValid() {
+    overmind.state.validator.validationErrors === 0;
   }
 
   async showSettingsDialog() {

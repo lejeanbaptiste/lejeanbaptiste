@@ -26,6 +26,7 @@
       },
       "message": {
         "Do_you_want_to_overwrite": "Do you want to overwrite",
+        "check_permission": "Check permissions",
         "create_merge_request": "Creating Merge Resquest",
         "document_filename_undefined": "Document's filename is undefined",
         "document_has_no_content": "Document has no content",
@@ -34,6 +35,7 @@
         "document_owner_undefined": "Document's owner is undefined",
         "file_already_exists": "File already exists",
         "folder_creation_error": "Folder creation error",
+        "forbidden": "Forbidden",
         "forking_can_take_minutes": "Forking a repository can take several minutes",
         "repo_creation_error": "Repositoy creation error",
         "repository_not_found": "Repository not found",

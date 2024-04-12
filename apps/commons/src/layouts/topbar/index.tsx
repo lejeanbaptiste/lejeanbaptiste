@@ -52,10 +52,14 @@ export const TopBar = ({ Center, Left }: TopBarProps) => {
             ) : userState === 'UNAUTHENTICATED' ? (
               <>
                 <Privacy />
-                <Settings />
                 <DarkMode />
                 <LanguageMenu />
-                {page !== 'home' && <SigninButton />}
+                {page !== 'home' && (
+                  <>
+                    <Settings />
+                    <SigninButton />
+                  </>
+                )}
               </>
             ) : null}
           </AnimatePresence>

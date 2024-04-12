@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## 4.4.0
+
+### Minor Changes
+
+- [6810a43befebbbf3ff32c38c432483e77308c140] cache: force revalidation after 30 days (#172)
+
+### Patch Changes
+
+- [482f599591f93345b1b1bf11a3b6822841911de7] rename `Validator` Type name to avoid conflict with the class with the same name
+- Typing improvements [c4dccfcecc6457234d1746038ec9c493e9c40a8b] [84e5541a02d4c863d9f34fcf98f974dff0ad22fa] [9385a5344affa69a043d9aaad8b7478168a19652] [7ac1f3982e80e0bb30db9c971ed450f987f83882]
+- [420bc35ae1f465b7bb5182f0e6b6c64cc4daa84f] Regenerate standalone lib
+
+### Chore
+
+- [d2f4bc57672d40110a497eb0c184756ab981d03d] Tweak tsconfig
+- [5acf79746fd5a4e4a248388904f9086c6a0120ce] Rename tsup coonfig name
+- [4c51a86d3dfde6827e181a9a5c5707ee171ceddc] Add previous skiiped test
+- update dependencies
+  - core:
+    - upgrade: dexie@4.0.4 [d89e6b2ad4fc50778b118c84861be521fd4fbd2a]
+    - update: loglevel@1.9.1 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+    - bump: dexie@3.2.7 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+  - dev:
+    - remove: webpack-cli [11e255b166b59cc067406217379f6f405677e3d8]
+    - upgrade:
+      - tsup@8.0.2 [11e255b166b59cc067406217379f6f405677e3d8]
+      - webpackbar@6.0.1 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+    - update:
+      - @types/lodash@4.17.0 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+      - @types/node@20.12.7 [fb8827ad93723bf1216c846c5ebe1a779508a0a4]
+      - esbuild-loader@4.1.0 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+      - eslint@8.57.0 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+      - typescript@5.4.3 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+      - webpack@5.91.0 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+    - bump:
+      - @types/jest@29.5.12 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+      - ts-jest@29.1.2 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+      - ts-node@10.9.2 [b483d4cd078b1230bcd831443bddaca88e3f0bd0]
+      - typedoc@0.25.13 [fb8827ad93723bf1216c846c5ebe1a779508a0a4]
+      - typescript@5.4.5 [c5d60885aa31738aaffb10e6f5b8f13b4d428cee]
+
 ## 4.3.0
 
 ### Minor Changes

@@ -169,11 +169,12 @@ export interface ProviderError extends Error {
 export type CreatePrResponse = 'created' | 'exists' | null;
 
 export interface AuthenticatedUser {
-  [key: string]: any;
   id: string;
   userId: string;
   username: string;
   type: UserType;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
 export default interface Provider {

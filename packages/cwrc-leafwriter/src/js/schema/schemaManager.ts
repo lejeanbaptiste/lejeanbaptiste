@@ -630,7 +630,7 @@ class SchemaManager {
     let schemaFile;
     const includeHref = include.attr('href');
 
-    if (includeHref && includeHref.includes('/')) {
+    if (includeHref?.includes('/')) {
       schemaFile = includeHref.match(/(.*\/)(.*)/)?.[2]; // grab the filename
     } else {
       schemaFile = includeHref;

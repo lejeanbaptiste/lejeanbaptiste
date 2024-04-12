@@ -85,7 +85,7 @@ export const useMenu = () => {
     {
       hide: readonly,
       icon: 'download',
-      label: `${t('LWC:commons.download')}`,
+      label: `${t('LWC:commons.export_document')}`,
       popupId: 'download',
     },
     'divider',
@@ -115,7 +115,7 @@ export const useMenu = () => {
     if (!conversionFormats) return options;
 
     const conversionOptions: ItemProps[] = conversionFormats.map((format) => ({
-      label: `${t('LWC:commons.export as format', { format })} (.${format.toLowerCase()})`,
+      label: `${format} ${t('LWC:commons.document', { format })} (.${format.toLowerCase()})`,
       onTrigger: () => handleDownload(format),
       sx: { textTransform: 'initial', '::first-letter': { textTransform: 'uppercase' } },
     }));
@@ -151,7 +151,8 @@ export const useMenu = () => {
 
     const document = await loadDocument(providerAuth, resource);
     if (document instanceof Error) return;
-    if (!document || 'error' in document || !document.content || !document.url) {
+
+    if (!document.content || !document.url) {
       return;
     }
 
