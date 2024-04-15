@@ -4,6 +4,7 @@
 
 ### Minor Changes
 
+- [9b5c66259478211e61401658569db14e4584a945] Authority: Add support to GND: The Gemeinsame Normdatei (translated as Integrated Authority File, also known as the Universal Authority File) or GND (#189). Thanks Jacob @jgb-hda 
 - [9ff0a719ce6cf97590c45dfbda025e609ad861c9] Raw xml editor: add well-formness validator and warn user if xml invalid before update (#212)
 - [dd2a89b6419befeafb288c9ac01a428ea83cf5d1] Explose public method `isValid` (#204)
 - [b946af926d481030b7511c601682aca88e65bf71] Schema: Drop support: TeiCorpus, TeiDrama, TeiMS, and TeiSpeech  (# 183)
