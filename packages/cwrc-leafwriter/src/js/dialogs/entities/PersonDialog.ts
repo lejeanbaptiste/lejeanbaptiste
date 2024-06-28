@@ -17,7 +17,7 @@ interface Role {
 }
 
 const personTypeOptions = ['real', 'fictional', 'both'];
-const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
+const certaintyOptions = ['high', 'medium', 'low', 'unknown'];
 
 class PersonDialog implements SchemaDialog {
   readonly writer: Writer;
