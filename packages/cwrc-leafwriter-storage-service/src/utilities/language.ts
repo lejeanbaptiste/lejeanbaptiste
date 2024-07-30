@@ -15,9 +15,8 @@ export const supportedLanguages: Languages = {
   'fr-CA': { code: 'fr-CA', name: 'french', shortName: 'fr' },
 };
 
-export const updateTranslation = async (code?: LanguageCode) => {
-  const prefLanguageCode = code ?? getFromLocalStorage<LanguageCode>('i18nextLng');
-
+export const updateTranslation = async (code?: string) => {
+  const prefLanguageCode = code ?? getFromLocalStorage<string>('i18nextLng');
   if (!prefLanguageCode) return;
 
   const prefLanguage = supportedLanguages[prefLanguageCode];

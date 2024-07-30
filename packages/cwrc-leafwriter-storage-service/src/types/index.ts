@@ -1,5 +1,4 @@
 import type { IconName } from '../icons';
-import { LanguageCode } from '../utilities';
 import type { ProviderAuth } from './Provider';
 
 export * from './assert';
@@ -27,7 +26,7 @@ export interface StorageDialogConfig {
   allowPaste?: boolean;
   allowUrl?: boolean;
   defaultCommitMessage?: string;
-  language?: LanguageCode;
+  language?: string;
   preferProvider?: string;
   providers?: ProviderAuth[];
   showInvisibleFiles?: boolean;
