@@ -25,7 +25,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
-    "clean": "rimraf node_modules public server",
+    "clean": "rimraf -rf .turbo node_modules public server",
     "build": "npm run clean && npm run build:webpack && npm run build:server",
     "dev": "npm run dev:webpack & npm run build:server:dev -- --onSuccess \"npm run start:dev\"",
     "dev-worker": "npm run dev:webpack-worker-dev & npm run build:server:dev -- --onSuccess \"npm run start:dev\"",
