@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 4.0.0-beta.0
+
+### Major Changes
+
+- [33d0e19899adbb79ba43848fdb5956c76e0b535b] Simplify locales by removing the country code
+BREAKING CHANGE: 🧨 the language options accept locales with 2-letters code instead of 4. For example: `en` instead of `en-CA`
+
+### Minor Changes
+
+- [af7c449f454581848d611759fed3e84462aae766] Rename type `LanguageCode` as `Locales`
+- [100fd60aa5ddeafb284f25b2f44d8c39b1f1e842] Relax language value (string)
+- [b2bc8459c6c8c419d825c7a8be0a1834fbd9a80f] Localization: add new term
+
+### Patch Changes
+
+- [c18a6ade51526c53486d712e7028e185d906e59b] Add ids to dialogs
+- [e038139362e18a450f81f0e1f7af56b2b3ae537b] Dialogbar: test of dialog exist before add new
+- [f43b36d9f967c8524b24c11711ae90f897d2b4a6] Alert dialog: remove icon color
+
+- \_\_
+
 ## 3.1.0
 
 ### Minor Changes
