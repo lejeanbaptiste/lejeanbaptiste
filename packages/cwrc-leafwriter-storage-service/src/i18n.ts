@@ -1,7 +1,10 @@
 import i18next from 'i18next';
-import en from './locales/en-CA.json';
-import fr from './locales/fr-CA.json';
+import en from './locales/en.json';
+import fr from './locales/fr.json';
 import { log } from './utilities';
+
+export const locales = ['en', 'fr'] as const;
+export type Locales = (typeof locales)[number];
 
 export const resources = { en, fr } as const;
 
@@ -10,8 +13,8 @@ export const resources = { en, fr } as const;
 // Note that we are using createInstance here
 const i18n = i18next.createInstance(
   {
-    lng: 'en-CA',
-    fallbackLng: 'en-CA',
+    lng: 'en',
+    fallbackLng: 'en',
     ns: ['LWStorageService'],
     defaultNS: 'LWStorageService',
     react: { useSuspense: false },

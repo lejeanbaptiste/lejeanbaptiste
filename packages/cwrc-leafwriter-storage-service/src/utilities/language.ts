@@ -1,18 +1,16 @@
 import i18next from '../i18n';
 import { getFromLocalStorage } from './localStorage';
 
-export type LanguageCode = 'en-CA' | 'fr-CA';
 export interface Language {
   code: string;
   name: string;
-  shortName: string;
 }
 
-export type Languages = Record<LanguageCode, Language>;
+export type Languages = Record<string, Language>;
 
 export const supportedLanguages: Languages = {
-  'en-CA': { code: 'en-CA', name: 'english', shortName: 'en' },
-  'fr-CA': { code: 'fr-CA', name: 'french', shortName: 'fr' },
+  en: { code: 'en', name: 'english' },
+  fr: { code: 'fr', name: 'french' },
 };
 
 export const updateTranslation = async (code?: string) => {
@@ -20,6 +18,6 @@ export const updateTranslation = async (code?: string) => {
   if (!prefLanguageCode) return;
 
   const prefLanguage = supportedLanguages[prefLanguageCode];
-  const language = prefLanguage ? prefLanguage : supportedLanguages['en-CA'];
+  const language = prefLanguage ? prefLanguage : supportedLanguages.en;
   if (i18next.language !== language.code) await i18next.changeLanguage(language.code);
 };
