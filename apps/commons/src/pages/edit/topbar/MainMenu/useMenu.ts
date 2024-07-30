@@ -86,7 +86,7 @@ export const useMenu = () => {
       hide: readonly,
       icon: 'download',
       label: `${t('LWC:commons.export_document')}`,
-      popupId: 'download',
+      popupId: 'export',
     },
     'divider',
     {
@@ -97,12 +97,12 @@ export const useMenu = () => {
   ];
 
   const getOptions = async (id?: string) => {
-    if (id === 'download') return getDownloadOptions();
+    if (id === 'export') return getExportOptions();
     if (id === 'recent') return await getRecentFiles();
     return [];
   };
 
-  const getDownloadOptions = async () => {
+  const getExportOptions = async () => {
     const options: ItemProps[] = [
       {
         label: `${t('LWC:commons.xml document')} (.xml)`,
