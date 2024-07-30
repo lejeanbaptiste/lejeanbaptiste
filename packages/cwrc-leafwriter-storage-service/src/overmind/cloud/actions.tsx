@@ -39,7 +39,7 @@ import { getFromLocalStorage, log } from '../../utilities';
 const { t } = i18next;
 
 //* INIITIALIZE
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
   //PREFERRED STORAGE PROVIDER
   const prefprovider = getFromLocalStorage('prefStorageProvider');
@@ -634,6 +634,7 @@ export const forkRepo = async ({ state, actions }: Context): Promise<Repository 
 export const createFolder = async (
   { state, actions }: Context,
   name: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any | null> => {
   const provider = actions.cloud.getProvider();
   if (
