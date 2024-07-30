@@ -223,6 +223,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   if (!repo) {
     actions.ui.openDialog({
       props: {
+        id: 'repository-not-found',
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
@@ -262,6 +263,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   if (!content) {
     actions.ui.openDialog({
       props: {
+        id: 'path-not-found',
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
