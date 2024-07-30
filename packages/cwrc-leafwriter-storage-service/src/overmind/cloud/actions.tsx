@@ -1434,7 +1434,7 @@ export const createBranch = async ({ state, actions }: Context) => {
   if (!cloud.repository) return null;
 
   //check if branch exists
-  let branch: any = await provider.getBranch({
+  let branch = await provider.getBranch({
     branch: `branch-by-${provider.username}`,
     ownerUsername: cloud.owner?.username,
     repoId: cloud.repository?.id,
