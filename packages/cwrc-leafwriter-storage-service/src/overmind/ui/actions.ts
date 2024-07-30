@@ -3,6 +3,9 @@ import { Context } from '../';
 import type { DialogBarProps } from '../../dialogs';
 
 export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
+  const isDisplayed = state.ui.dialogBar.some(({ props }) => props?.id === dialogBar.props?.id);
+  if (isDisplayed) return;
+
   if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
   if (!dialogBar.type) dialogBar.type = 'simple';
   state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
