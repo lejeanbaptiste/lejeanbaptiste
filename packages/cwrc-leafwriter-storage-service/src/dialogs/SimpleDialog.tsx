@@ -64,8 +64,8 @@ export const SimpleDialog = ({
         id="alert-dialog-title"
         sx={{ display: 'flex', alignItems: 'center', gap: 1, textTransform: 'capitalize' }}
       >
-        {severity === 'error' && <ErrorOutlineIcon color="error" />}
-        {severity === 'warning' && <WarningAmberIcon color="warning" />}
+        {severity === 'error' && <ErrorOutlineIcon />}
+        {severity === 'warning' && <WarningAmberIcon />}
         {title}
       </DialogTitle>
       {(children || Body) && (
