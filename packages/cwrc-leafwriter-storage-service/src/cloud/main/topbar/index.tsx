@@ -35,10 +35,12 @@ export const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
 
   useEffect(() => {
     onChangeSize && onChangeSize(containerRect as DOMRect);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [containerRect.height]);
 
   useEffect(() => {
     if (dialogType === 'save') checkPermissions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionSource, collectionType, owner]);
 
   const variants: Variants = {
