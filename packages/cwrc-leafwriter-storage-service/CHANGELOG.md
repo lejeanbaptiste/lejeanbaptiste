@@ -5,7 +5,7 @@
 ### Major Changes
 
 - [33d0e19899adbb79ba43848fdb5956c76e0b535b] Simplify locales by removing the country code
-BREAKING CHANGE: 🧨 the language options accept locales with 2-letters code instead of 4. For example: `en` instead of `en-CA`
+  BREAKING CHANGE: 🧨 the language options accept locales with 2-letters code instead of 4. For example: `en` instead of `en-CA`
 
 ### Minor Changes
 
@@ -37,6 +37,7 @@ BREAKING CHANGE: 🧨 the language options accept locales with 2-letters code in
 
 - [e95ec8fa930395aee47828a8d5aeeaae38e8e74f]fix i18next call to work with i18ally
 - update dependencies:
+
   - core:
     - upgrade:
       - octokit/rest@20.1.0 [18f68dd9b6b848b580a2836340a801ec96c1365c]
