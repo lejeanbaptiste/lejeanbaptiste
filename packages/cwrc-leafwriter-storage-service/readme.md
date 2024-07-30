@@ -154,7 +154,7 @@ export const MyFStorageDialog = () => {
         allowLocalFiles: true,
         allowUrl: true,
         allowPaste: true,
-        language: 'en-CA',
+        language: 'en',
         preferProvider: 'github',
         providers: [
           { name: 'github', access_token: '{github_token}' },
@@ -210,7 +210,7 @@ export const MyFStorageDialog = () => {
       config={{
         allowedMimeTypes: ['application/xml'],
         defaultCommitMessage: 'Updated via leaf-writer',
-        language: 'en-CA',
+        language: 'en',
         preferProvider: 'github_or_gitlab',
         providers: [
           { name: 'github', access_token: '{github_token}' },
@@ -365,7 +365,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 |                      |
 | allowUrl             | boolean                | true     | `Load dialog`: Allows load from URL.                                                                                                                                                                             |
 | defaultCommitMessage | string                 | 'update' | `Save Dialog`: Defines the default commit message.                                                                                                                                                               |
-| language             | string                 |          | Localize the UI and the messages. Must be valid and supported language code. E.g., `en-CA`                                                                                                                       |
+| language             | string                 |          | Localize the UI and the messages. Must be valid and supported language code. E.g., `en`                                                                                                                          |
 | providers            | Array [`ProviderAuth`] | []       | Setup Github / Gitlab providers.<br /> <br /> `ProviderAuth`: {<br />name: 'github' \| 'gitlab',<br /> access_token: 'string<br />}                                                                              |
 | preferProvider       | string                 |          | The preferred git host provider: `'github'` \| `'gitlab'`                                                                                                                                                        |
 | showInvisibleFiles   | boolean                | false    | Show/hide invisible files (files starting with `'.'`)                                                                                                                                                            |

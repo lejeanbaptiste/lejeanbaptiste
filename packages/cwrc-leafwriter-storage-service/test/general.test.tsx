@@ -20,19 +20,19 @@ describe('General', () => {
     describe('language', () => {
       test('change language', async () => {
         expect.assertions(3);
-        expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
-        await updateTranslation('fr-CA');
-        expect(i18next.language).toEqual(supportedLanguages['fr-CA'].code);
-        await updateTranslation('en-CA');
-        expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
+        expect(i18next.language).toEqual(supportedLanguages['en'].code);
+        await updateTranslation('fr');
+        expect(i18next.language).toEqual(supportedLanguages['fr'].code);
+        await updateTranslation('en');
+        expect(i18next.language).toEqual(supportedLanguages['en'].code);
       });
 
       test('language not supported', async () => {
         expect.assertions(2);
-        expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
+        expect(i18next.language).toEqual(supportedLanguages['en'].code);
         //@ts-ignore
-        await updateTranslation('pt-BR');
-        expect(i18next.language).not.toEqual('pt-BR');
+        await updateTranslation('zz');
+        expect(i18next.language).not.toEqual('zz');
       });
     });
   });
