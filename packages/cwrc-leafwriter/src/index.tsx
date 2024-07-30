@@ -126,6 +126,10 @@ export class Leafwriter {
     return this._onEditorStateChange;
   }
 
+  getDocumentRootName() {
+    return overmind.state.document.rootName;
+  }
+
   async getContent() {
     return await overmind.actions.editor.getContent();
   }
