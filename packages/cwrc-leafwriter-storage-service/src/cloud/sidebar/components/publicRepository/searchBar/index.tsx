@@ -61,7 +61,7 @@ export const SearchBar = ({ collapsible = true, onClear, onChange, onSelect }: S
     }
 
     setIsLoading(true);
-    const list = onChange ? (await onChange(query)) ?? [] : [];
+    const list = onChange ? ((await onChange(query)) ?? []) : [];
     setOptions(list);
     setIsLoading(false);
   };

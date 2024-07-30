@@ -69,7 +69,7 @@ export const SearchBar = ({
     }
 
     setIsLoading(true);
-    const list = onChange ? (await onChange(query)) ?? [] : [];
+    const list = onChange ? ((await onChange(query)) ?? []) : [];
     setOptions(list);
     setIsLoading(false);
   };
