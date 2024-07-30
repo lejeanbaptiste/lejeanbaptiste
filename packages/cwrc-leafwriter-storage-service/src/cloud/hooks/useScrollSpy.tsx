@@ -10,11 +10,13 @@ export const useScrollSpy = ({ container, target, offset = 0 }: useScrollSpyProp
   const [reachBottom, setReachBottom] = useState(false);
 
   useEffect(() => {
-    if (container.current) container.current.addEventListener('scroll', spy);
+    const node = container.current;
+    if (node) node.addEventListener('scroll', spy);
 
     return () => {
-      if (container.current) container.current.removeEventListener('scroll', spy);
+      if (node) node.removeEventListener('scroll', spy);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const spy = () => {
