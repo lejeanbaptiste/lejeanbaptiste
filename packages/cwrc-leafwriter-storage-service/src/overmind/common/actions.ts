@@ -161,7 +161,8 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: error ?? `${t('message.document_not_valid', { ns: 'LWStorageService' })}`,
+          title: t('LWStorageService:commons.error'),
+          Body: error ?? t('LWStorageService:message.document_not_valid'),
         },
       });
 
