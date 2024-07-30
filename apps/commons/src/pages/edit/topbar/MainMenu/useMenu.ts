@@ -25,7 +25,7 @@ export const useMenu = () => {
 
   const { t } = useTranslation('LWC');
 
-  const { handleCloseDocument, handleDownload, handleSave } = useLeafWriter();
+  const { getDocumentRootName, handleCloseDocument, handleDownload, handleSave } = useLeafWriter();
   const { openResource } = useOpenResource();
 
   const { cloudDisabledMessage } = useMessage();
@@ -111,7 +111,8 @@ export const useMenu = () => {
       },
     ];
 
-    const conversionFormats = await listTransformations({ from: 'TEI' });
+    const documentRootName = getDocumentRootName();
+    const conversionFormats = await listTransformations({ from: documentRootName });
     if (!conversionFormats) return options;
 
     const conversionOptions: ItemProps[] = conversionFormats.map((format) => ({

@@ -123,6 +123,11 @@ export const useLeafWriter = () => {
     download({ content: response, filename });
   };
 
+  const getDocumentRootName = () => {
+    if (!leafWriter || !resource) return;
+    return leafWriter.getDocumentRootName();
+  };
+
   const getContent = async () => {
     if (!leafWriter || !resource) return;
     return await leafWriter.getContent();
@@ -221,6 +226,7 @@ export const useLeafWriter = () => {
 
   return {
     leafWriter,
+    getDocumentRootName,
     disposeLeafWriter,
     getContent,
     handleCloseDocument,
