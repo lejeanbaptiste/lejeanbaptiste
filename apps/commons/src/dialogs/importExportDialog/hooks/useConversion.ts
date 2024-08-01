@@ -1,4 +1,4 @@
-import { useLeafWriter } from '@src/hooks';
+import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { convertDocument } from '@src/services/leafTe';
 import { FileDetail, Resource } from '@src/types';
@@ -19,7 +19,7 @@ export const useConversion = () => {
   const setIsProcessing = useSetAtom(isProcessingAtom);
   const setResource = useSetAtom(resourceAtom);
 
-  const leafwriterEditor = useLeafWriter();
+  const leafwriterEditor = useAtomValue(leafwriterAtom);
 
   const processImportFile = async (_fileDetail?: FileDetail) => {
     const fileToProcess = _fileDetail ?? fileDetail;
@@ -51,7 +51,7 @@ export const useConversion = () => {
   const processExportFile = async () => {
     if (!editor.resource || !selectedType) return;
 
-    const content = await leafwriterEditor.getContent();
+    const content = await leafwriterEditor?.getContent();
     if (!content) return;
     setIsProcessing(true);
 
