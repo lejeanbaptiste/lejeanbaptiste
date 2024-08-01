@@ -4,8 +4,8 @@
 
 ### Mahor Changes
 
-- [ce7ab42dcac3e59202e92683435145b0517f7192] [144a99c91cee9526783b9dec1b57b2278b0bb02f] localization: 
-  - Add support to Portuguese, Spanish, Romanian, and German
+- [ce7ab42dcac3e59202e92683435145b0517f7192] [144a99c91cee9526783b9dec1b57b2278b0bb02f] localization:
+  - Add support to Portuguese, Spanish, and Romanian,
 
 ### Minor Changes
 
