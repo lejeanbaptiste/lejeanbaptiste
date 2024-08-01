@@ -91,6 +91,11 @@ export const MainMenu = () => {
           popupState={popupState}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           {...bindMenu(popupState)}
+          slotProps={{
+            paper: {
+              sx: { top: '8px !important', left: '18px !important' },
+            },
+          }}
           onPointerDown={handleMenuClick}
         >
           <Stack direction="row" mx={1} mt={2} mb={2} alignItems="center" justifyContent="center">
