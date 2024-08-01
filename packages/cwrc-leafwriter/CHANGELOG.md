@@ -5,7 +5,7 @@
 ### Major Changes
 
 - [3b28cdb69d6631c726bdc996d7ad33ef9cb7978f] localization:
-  - Add support to Portuguese, Spanish, Romanian, and German.
+  - Add support to Portuguese, Spanish, and Romanian.
   - Rename localization namespace
   
 ### Minor Changes
