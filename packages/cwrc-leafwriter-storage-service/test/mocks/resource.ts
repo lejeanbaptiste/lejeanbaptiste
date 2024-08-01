@@ -12,6 +12,7 @@ export const getProviderAuth = (provider = 'github'): ProviderAuth => {
   return githubAuth;
 };
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type GetResourceParams = {
   provider?: string;
   type?: string;

@@ -17,22 +17,22 @@ describe('General', () => {
   });
 
   describe('ui', () => {
-    describe('language', () => {
-      test('change language', async () => {
+    describe('locale', () => {
+      test('change locale', async () => {
         expect.assertions(3);
-        expect(i18next.language).toEqual(supportedLanguages['en'].code);
-        await updateTranslation('fr');
-        expect(i18next.language).toEqual(supportedLanguages['fr'].code);
-        await updateTranslation('en');
-        expect(i18next.language).toEqual(supportedLanguages['en'].code);
+        expect(i18n.language).toEqual('en');
+        await updateLocale('fr');
+        expect(i18n.language).toEqual('fr');
+        await updateLocale('en');
+        expect(i18n.language).toEqual('en');
       });
 
-      test('language not supported', async () => {
+      test('locale not supported', async () => {
         expect.assertions(2);
-        expect(i18next.language).toEqual(supportedLanguages['en'].code);
+        expect(i18n.language).toEqual('en');
         //@ts-ignore
-        await updateTranslation('zz');
-        expect(i18next.language).not.toEqual('zz');
+        await updateLocale('zz');
+        expect(i18n.language).not.toEqual('zz');
       });
     });
   });

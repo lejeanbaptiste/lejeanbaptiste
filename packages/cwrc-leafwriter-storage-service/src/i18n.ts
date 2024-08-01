@@ -1,12 +1,18 @@
 import i18next from 'i18next';
+import z from 'zod';
+import de from './locales/de.json';
 import en from './locales/en.json';
+import es from './locales/es.json';
 import fr from './locales/fr.json';
+import pt from './locales/pt.json';
+import ro from './locales/ro.json';
 import { log } from './utilities';
 
-export const locales = ['en', 'fr'] as const;
-export type Locales = (typeof locales)[number];
+export const resources = { en, es, fr, pt, de, ro } as const;
 
-export const resources = { en, fr } as const;
+export const locales = ['en', 'fr', 'es', 'pt', 'de', 'ro'] as const;
+export const localesSchema = z.enum(locales);
+export type Locales = z.infer<typeof localesSchema>;
 
 //https://luxiyalu.com/how-to-have-multiple-instances-of-i18next-for-component-library/
 
@@ -14,13 +20,16 @@ export const resources = { en, fr } as const;
 const i18n = i18next.createInstance(
   {
     lng: 'en',
-    fallbackLng: 'en',
-    ns: ['LWStorageService'],
-    defaultNS: 'LWStorageService',
+    fallbackLng: ['en', 'fr'],
+    defaultNS: 'SS',
+    ns: ['SS'],
+    nsSeparator: '.',
     react: { useSuspense: false },
     // interpolation: { escapeValue: false },
     // debug: true,
     resources,
+    returnEmptyString: false,
+    supportedLngs: locales,
   },
   // We must provide a function as second parameter, otherwise i18next errors
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
