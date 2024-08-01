@@ -1,13 +1,77 @@
 # CHANGELOG
 
+## 3.6.0
+
+### Major Changes
+
+- [3b28cdb69d6631c726bdc996d7ad33ef9cb7978f] localization:
+  - Add support to Portuguese, Spanish, Romanian, and German.
+  - Rename localization namespace
+  
+### Minor Changes
+
+- [cef0247e85badc3401aa5e320a22fe435fb65c78] Add `id` property to leafwriter class
+
+### Patch Changes
+
+- [85e852012ba5d04300e7c8f5a0dd3545ea144f79] Improv support to css (replace some less files)
+- [7dd4e8f419f2f165ce2729283a1db9da4053597f] Update dependencies
+  - core:
+    - add:
+      - nanoid: 5.0.7
+      - react-i18next@15.0.0
+    - upgrade: uuid@10.0.0
+    - update:
+      - @emotion/react@11.13.0
+      - @emotion/styled@11.13.0
+      - @fortawesome/fontawesome-free@6.6.0
+      - @mui/icons-material@5.16.6
+      - @mui/material@5.16.6
+      - axios@1.7.2
+      - chroma-js@2.6.0
+      - framer-motion@11.3.21
+      - i18next@23.12.2
+      - jotai@2.9.1
+      - jotai-devtools@0.10.0
+      - mdi-material-ui@7.9.1
+      - monaco-editor@0.50.0
+      - react@18.3.1
+      - react-dom@18.3.1
+      - react-icons@5.2.1
+      - react-intersection-observer@9.13.0
+      - react-virtuoso@4.9.0
+      - zod@3.23.8
+    - bump:
+      - @cwrc/leafwriter-validator@4.4.1
+      - dexie@4.0.8
+      - formik@2.4.6
+      - jquery-ui1.13.3
+      - rdflib@2.2.35
+      - react-resizable-panels@2.0.22
+      - react-use@17.5.1
+  - dev:
+    - upgrade:
+      - @types/node@22.0.2
+      - @types/uuid@10.0.0
+      - css-loader@7.1.2
+    - update:
+      - @types/react-dom@18.3.0
+      - esbuild-loader@4.2.2
+      - mini-css-extract-plugin@2.9.0
+      - typescript@5.5.4
+      - webpack@5.93.0
+    - bump:
+      - @types/jquery@3.5.30
+      - @types/jqueryui@1.12.23
+
 ## 3.5.0
 
 ### Minor Changes
 
-- [9b5c66259478211e61401658569db14e4584a945] Authority: Add support to GND: The Gemeinsame Normdatei (translated as Integrated Authority File, also known as the Universal Authority File) or GND (#189). Thanks Jacob @jgb-hda 
+- [9b5c66259478211e61401658569db14e4584a945] Authority: Add support to GND: The Gemeinsame Normdatei (translated as Integrated Authority File, also known as the Universal Authority File) or GND (#189). Thanks Jacob @jgb-hda
 - [9ff0a719ce6cf97590c45dfbda025e609ad861c9] Raw xml editor: add well-formness validator and warn user if xml invalid before update (#212)
 - [dd2a89b6419befeafb288c9ac01a428ea83cf5d1] Explose public method `isValid` (#204)
-- [b946af926d481030b7511c601682aca88e65bf71] Schema: Drop support: TeiCorpus, TeiDrama, TeiMS, and TeiSpeech  (# 183)
+- [b946af926d481030b7511c601682aca88e65bf71] Schema: Drop support: TeiCorpus, TeiDrama, TeiMS, and TeiSpeech (# 183)
 - [754ce95ed1935e5a8f0596585fb403034af736d6] Schema: add supoprt for 'TEI Simple Print' and jTei (# 183)
 
 ### Patch Changes
@@ -33,7 +97,7 @@
 - update dependencies
   - core:
     - add: jotai-devtools@0.8.0 [9431deef11d6a496ae46004d5650e27f58f2bd4d]
-    - upgrade:  
+    - upgrade:
       - dexie@4.0.4 [520e2a300dac03cf8d0cc51cc2af6a77c21667c4]
       - framer-motion@11.0.27 [48acf449732cf06f5f52df23abc9d43709d757e8]
       - react-i18next@13.1.0 [36e55b9071e75b89f0373ef16a38c71a316924f1]
