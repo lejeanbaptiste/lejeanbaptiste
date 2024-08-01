@@ -1,0 +1,182 @@
+.validationList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  height: 100%;
+  padding-left: 4px;
+  padding-right: 8px;
+  /* margin-top: 11px */
+}
+
+.validationList li {
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.validationList li #header {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.icon-rotate-0 {
+  transform: rotate(0deg);
+}
+
+.icon-rotate-180 {
+  transform: rotate(180deg);
+  cursor: pointer;
+}
+
+.validationList li #headerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 0.9em;
+}
+
+.validationList li .expandButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+
+.validationList li:hover {
+  background-color: #eee;
+  cursor: pointer;
+
+  & #headerIcon i {
+    color: #000 !important;
+  }
+}
+
+.validationList li.selected {
+  background-color: #eee;
+  box-shadow: 0 0px 4px rgb(0 0 0 / 20%);
+}
+
+.validationList li.selected:hover {
+  cursor: auto;
+}
+
+.validationList li #details {
+  font-size: 0.85em;
+}
+
+.validationList li #details .documentation {
+  border-left: 1px solid #000;
+  margin-left: 8px;
+}
+
+.validationList li #details .documentation .text {
+  margin-left: 12px;
+  margin-top: 8px;
+}
+
+.validationList li #details .xpath {
+  margin-left: 8px;
+  margin-top: 8px;
+  word-break: break-all;
+}
+
+.validationList li #details .possible {
+  margin-left: 8px;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.validationList li .element {
+  margin-top: 4px;
+  margin-left: 2px;
+  margin-right: 2px;
+  padding-bottom: 1px;
+  padding-left: 2px;
+  padding-right: 2px;
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.03);
+  cursor: default;
+}
+
+.validationList li [data-tooltip] {
+  position: relative;
+}
+
+.validationList li [data-tooltip]:hover::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  width: max-content;
+  max-width: 300px;
+  top: -0.1rem;
+  left: 50%;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  transform: translate(-50%, -100%);
+  background-color: #222c;
+  color: white;
+  border-radius: 2px;
+}
+
+.moduleParent .stats #stats-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.moduleParent .stats #stats-container #info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 8px;
+  border-radius: 12px;
+  background-color: #ff9800;
+  color: white;
+  box-shadow: 0 0 8px rgb(0 0 0 / 40%);
+
+  & i {
+    color: white;
+  }
+}
+
+.moduleParent .revalidate-bt {
+  height: 24px;
+  width: 24px;
+  padding: 0;
+  padding-top: 1px;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  text-align: center;
+
+  & i {
+    opacity: 0.8;
+    font-size: 0.7rem;
+  }
+}
+
+.moduleParent .revalidate-bt:hover {
+  background-color: #ddd;
+  & i {
+    transform: rotate(30deg);
+  }
+}
+
+.validationList #validation-progress {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.validationList #validation-progress-bar {
+  position: relative;
+  max-width: 200px;
+  font-size: 2rem;
+}

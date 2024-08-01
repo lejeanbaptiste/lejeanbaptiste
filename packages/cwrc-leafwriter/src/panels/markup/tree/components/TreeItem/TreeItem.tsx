@@ -3,7 +3,7 @@ import classNames from 'classnames';
 import { forwardRef, type HTMLAttributes } from 'react';
 import type { TreeItemType } from '../../types';
 import { Tag, Text, type ItemProps } from './components';
-import styles from './TreeItem.module.css';
+import * as styles from './TreeItem.module.css';
 
 export interface TreeItemProps extends Omit<HTMLAttributes<HTMLLIElement>, 'id'>, ItemProps {
   expanded?: boolean;
