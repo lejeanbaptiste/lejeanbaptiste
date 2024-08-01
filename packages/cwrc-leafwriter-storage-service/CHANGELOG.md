@@ -6,11 +6,14 @@
 
 See changes below (4.0.0-beta.1 and 4.0.0-beta.0)
 
+- Drop support for German (no translator yet)
+
 ## 4.0.0-beta.1
 
 ### Major Changes
 
-- [b6bdeb06c1ce3918dfa96b2594e374a29889f995] **Locale**: Add support for Spanish, Portuguese, Romanian, and German
+- [b6bdeb06c1ce3918dfa96b2594e374a29889f995] **Locale**:
+  - Add support for Spanish, Portuguese, Romanian, and German
   - BREAKING CHANGE: 🧨 Rename config property: `language` -> `locale`
 
 ### Patch Changes
