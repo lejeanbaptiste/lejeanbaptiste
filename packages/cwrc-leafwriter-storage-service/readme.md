@@ -27,6 +27,8 @@
     - [StorageDialogConfig](#storagedialogconfig)
     - [Resource](#resource)
   - [Development](#development)
+    - [Localization](#localization)
+      - [Add new locale](#add-new-locale)
 
 ## Overview
 
@@ -154,7 +156,7 @@ export const MyFStorageDialog = () => {
         allowLocalFiles: true,
         allowUrl: true,
         allowPaste: true,
-        language: 'en',
+        locale: 'en',
         preferProvider: 'github',
         providers: [
           { name: 'github', access_token: '{github_token}' },
@@ -210,7 +212,7 @@ export const MyFStorageDialog = () => {
       config={{
         allowedMimeTypes: ['application/xml'],
         defaultCommitMessage: 'Updated via leaf-writer',
-        language: 'en',
+        locale: 'en',
         preferProvider: 'github_or_gitlab',
         providers: [
           { name: 'github', access_token: '{github_token}' },
@@ -365,7 +367,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 |                      |
 | allowUrl             | boolean                | true     | `Load dialog`: Allows load from URL.                                                                                                                                                                             |
 | defaultCommitMessage | string                 | 'update' | `Save Dialog`: Defines the default commit message.                                                                                                                                                               |
-| language             | string                 |          | Localize the UI and the messages. Must be valid and supported language code. E.g., `en`                                                                                                                          |
+| locale               | string                 | 'en'     | Localize the UI and the messages. Must be valid and supported language code. E.g., `en`                                                                                                                          |
 | providers            | Array [`ProviderAuth`] | []       | Setup Github / Gitlab providers.<br /> <br /> `ProviderAuth`: {<br />name: 'github' \| 'gitlab',<br /> access_token: 'string<br />}                                                                              |
 | preferProvider       | string                 |          | The preferred git host provider: `'github'` \| `'gitlab'`                                                                                                                                                        |
 | showInvisibleFiles   | boolean                | false    | Show/hide invisible files (files starting with `'.'`)                                                                                                                                                            |
@@ -397,3 +399,37 @@ We use **Material** UI (@mui/material) to build the visual elements, **@octokit/
 This component is written in **Typescript** and bundled with **Webpack**.
 
 We use **Jest** for testing.
+
+### Localization
+
+This project is developed primarily in English and French.
+We use localization tools (i18next) to provide transaltion to other languages.
+
+#### Add new locale
+
+To add a new localization, follow these steps:
+
+1. Add new locale file
+
+Duplicate the `.src/locales/en.json` file and rename it according to the ISO 639 [language codes](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) (two-letter code). For instance, to add Italian, name the file `it.json`
+
+Replace all key values for an empty string `''`.
+The system is designed to fallback to English is a key has an empty string.
+
+2. Add support for new locale
+
+on the `./src/i18n.ts`:
+
+```ts
+...
+// IMPORT NEW LOCAL
+import it from './locales/it.json'; 
+...
+// ADD RESOURCE.
+export const resources = { en, es, fr, pt, de, ro, it } as const; 
+
+ // ADD TO THE LIST OF SUPPORTED LOCALES
+ // The order here reflect the order in which locales will be displayd in the UI
+export const locales = ['en', 'fr', 'es', 'pt', 'de', 'ro', 'it'] as const;
+...
+```
