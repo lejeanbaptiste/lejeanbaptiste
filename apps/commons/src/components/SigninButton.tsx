@@ -42,7 +42,7 @@ export const SigninButton = () => {
         <Button
           disabled={!cookieConsent.includes('interaction')}
           id="signin-button"
-          onClick={handleClick}
+          onPointerDown={handleClick}
           size="small"
           sx={{ width: 'max-content' }}
           variant="contained"

@@ -38,7 +38,7 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
   return (
     <List dense disablePadding sx={{ width: 300 }}>
       <ListItem sx={{ px: 1.75 }}>
-        <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
+        <IconButton onPointerDown={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
         <ListItemText primary={t('LWC.commons.identity')} sx={{ textTransform: 'capitalize' }} />
@@ -46,7 +46,7 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
       {options.map(({ id, icon, label }) => (
         <ListItem key={id} color="primary" sx={{ px: 0.5 }}>
           <ListItemButton
-            onClick={(event) => handleSelect(event, id)}
+            onPointerDown={(event) => handleSelect(event, id)}
             selected={id === themeAppearance}
             sx={{
               borderRadius: 1,

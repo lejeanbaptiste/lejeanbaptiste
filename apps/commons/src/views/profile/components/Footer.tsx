@@ -19,7 +19,7 @@ export const Footer = ({ onClick }: ProfileProps) => {
     <Stack direction="row" justifyContent="center" alignItems="center" py={0.5}>
       <Link
         color="text.secondary"
-        onClick={handleClickPrivacy}
+        onPointerDown={handleClickPrivacy}
         sx={{ cursor: 'pointer', textTransform: 'capitalize' }}
         variant="caption"
         underline="none"

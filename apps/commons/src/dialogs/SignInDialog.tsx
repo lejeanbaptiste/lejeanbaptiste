@@ -27,7 +27,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         </Stack>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center' }}>
-        <Button onClick={handleCancel}>{t('LWC:commons.cancel')}</Button>
+        <Button onPointerDown={handleCancel}>{t('LWC.commons.cancel')}</Button>
       </DialogActions>
     </Dialog>
   );

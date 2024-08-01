@@ -14,7 +14,7 @@ export const ProfileAnchor = ({ children }: ProfileAnchorProps) => {
   const handleProfileClose = () => setAnchorProfileEl(null);
 
   return (
-    <Box id="test" ref={ref} onClick={handleProfileClick}>
+    <Box id="test" ref={ref} onPointerDown={handleProfileClick}>
       {children}
       {anchorProfileEl && <Profile anchor={anchorProfileEl} onClose={handleProfileClose} />}
     </Box>

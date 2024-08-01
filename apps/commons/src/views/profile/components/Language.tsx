@@ -32,7 +32,7 @@ export const Language = ({ onBack, onClose }: SubMenu) => {
   return (
     <List dense disablePadding sx={{ width: 300 }}>
       <ListItem sx={{ px: 1.75 }}>
-        <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
+        <IconButton onPointerDown={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
         <ListItemText primary={t('LWC.commons.language')} sx={{ textTransform: 'capitalize' }} />

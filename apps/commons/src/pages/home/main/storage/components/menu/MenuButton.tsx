@@ -74,7 +74,7 @@ export const MenuButton = ({
       >
         <ListItemButton
           disabled={disabled}
-          onClick={onClick}
+          onPointerDown={onClick}
           selected={active}
           sx={{ py: 0.5, borderRadius: 1 }}
         >

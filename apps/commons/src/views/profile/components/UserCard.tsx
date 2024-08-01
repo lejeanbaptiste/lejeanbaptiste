@@ -55,7 +55,7 @@ export const UserCard = () => {
       {page !== 'edit' && (
         <IconButton
           color="primary"
-          onClick={handleManageAccontClick}
+          onPointerDown={handleManageAccontClick}
           size="small"
           sx={{ mt: '4px !important' }}
         >

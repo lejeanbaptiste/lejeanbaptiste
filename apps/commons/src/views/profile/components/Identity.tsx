@@ -72,7 +72,7 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
   return (
     <List dense disablePadding sx={{ width: 300 }}>
       <ListItem sx={{ px: 1.75 }}>
-        <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
+        <IconButton onPointerDown={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
         <ListItemText primary={t('LWC.commons.identity')} sx={{ textTransform: 'capitalize' }} />
@@ -86,7 +86,7 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
             secondaryAction={
               !service && (
                 <StyledToolTip arrow title={t('LWC.commons.link_your_account', { provider: id })}>
-                  <IconButton onClick={() => handleConnectAccount(id)} size="small">
+                  <IconButton onPointerDown={() => handleConnectAccount(id)} size="small">
                     <AddLinkIcon color="primary" fontSize="small" />
                   </IconButton>
                 </StyledToolTip>
@@ -96,7 +96,7 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
           >
             <ListItemButton
               disabled={!service}
-              onClick={(event) => handleSelect(event, id)}
+              onPointerDown={(event) => handleSelect(event, id)}
               selected={id === user?.preferredID}
               sx={{
                 borderRadius: 1,

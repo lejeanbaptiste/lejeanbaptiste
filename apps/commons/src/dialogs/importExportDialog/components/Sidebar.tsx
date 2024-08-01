@@ -17,7 +17,7 @@ export const Sidebar = () => {
         <ListItem key={fileType} disablePadding>
           <ListItemButton
             disabled={isProcessing}
-            onClick={() => handleClick(fileType)}
+            onPointerDown={() => handleClick(fileType)}
             selected={selectedType === fileType}
             sx={{ py: 0.5, borderRadius: 1 }}
           >
