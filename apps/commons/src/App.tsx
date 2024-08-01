@@ -11,7 +11,7 @@ import { routes } from './routes';
 import { theme } from './theme';
 
 export const App = () => {
-  const { cookieConsent, darkMode, language, themeAppearance } = useAppState().ui;
+  const { cookieConsent, darkMode, currentLocale, themeAppearance } = useAppState().ui;
   const { storageDialogState } = useAppState().storage;
 
   const { setDarkMode, switchLanguage } = useActions().ui;
@@ -43,8 +43,8 @@ export const App = () => {
   }, [location.pathname, location.search]);
 
   useEffect(() => {
-    i18n.changeLanguage(language.code);
-  }, [language]);
+    i18n.changeLanguage(currentLocale);
+  }, [currentLocale]);
 
   useEffect(() => {
     if (themeAppearance === 'auto') setDarkMode(prefersDarkMode);

@@ -9,12 +9,6 @@ export declare var webpackEnv: {
   WORKER_ENV: string;
 };
 
-export interface Language {
-  code: string;
-  name: string;
-  shortName: string;
-}
-
 export type PaletteMode = 'light' | 'auto' | 'dark';
 
 export interface NotificationProps {
