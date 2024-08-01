@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import Provider, { ProviderAuth } from '../../types/Provider';
+import Provider, { ProviderAuth } from '@src/types/Provider';
 
 type Providers = Record<string, Provider>;
 

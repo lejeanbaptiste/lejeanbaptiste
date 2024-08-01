@@ -684,7 +684,7 @@ export default class Github implements Provider {
       return {
         type: 'error',
         status: 403,
-        message: `${i18next.t('LWStorageService:cloud.message.forbidden')}: ${i18next.t('LWStorageService:cloud.message.check_permission')}`,
+        message: `${i18next.t('SS.cloud.message.forbidden')}: ${i18next.t('SS.cloud.message.check_permission')}`,
       } as Types.ProviderError;
     }
 

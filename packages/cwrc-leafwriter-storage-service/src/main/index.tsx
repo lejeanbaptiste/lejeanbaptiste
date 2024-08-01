@@ -16,9 +16,9 @@ import { Header } from '../header';
 import { useDialog } from '../hooks/useDialog';
 import { PastePanel, UploadPanel } from '../local';
 import { useActions, useAppState } from '../overmind';
-import { SourcePanel } from '../sourcePanel';
+import { SourcePanel } from '../source-panel';
 import type { Resource, StorageDialogProps } from '../types';
-import { UrlPanel } from '../url';
+import { UrlPanel } from '../url-panel';
 
 const HEIGHT = 600;
 

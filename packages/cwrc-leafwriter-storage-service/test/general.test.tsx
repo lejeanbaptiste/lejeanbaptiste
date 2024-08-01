@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
+import i18n from '@src/i18n';
+import { log, logEnabledFor, updateLocale } from '@src/utilities';
 import '@testing-library/jest-dom';
-import i18next from '../src/i18n';
-import { log, logEnabledFor, supportedLanguages, updateTranslation } from '../src/utilities';
 
 describe('General', () => {
   describe('log', () => {

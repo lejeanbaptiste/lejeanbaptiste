@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
-import { loadDocument, saveDocument } from '../src/headless';
-import Github from '../src/providers/Github';
-import Gitlab from '../src/providers/Gitlab';
+import { loadDocument, saveDocument } from '@src/headless';
+import Github from '@src/providers/Github';
+import Gitlab from '@src/providers/Gitlab';
 import { spyProviderFunctions } from './mocks/provider';
 import * as mock from './mocks/resource';
 
