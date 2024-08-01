@@ -13,7 +13,7 @@ interface FilterProps {
 
 export const Filters = ({ onQuery }: FilterProps) => {
   const { palette, spacing, transitions } = useTheme();
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const [onlyValid, setOnlyValid] = useAtom(showOnlyValidAtom);
 
@@ -74,7 +74,7 @@ export const Filters = ({ onQuery }: FilterProps) => {
         autoFocus
         inputProps={{ 'aria-label': 'search' }}
         onChange={handleQueryChange}
-        placeholder={t('commons.search').toString()}
+        placeholder={t('LW.commons.search').toString()}
         sx={{
           width: '100%',
           color: query === '' ? 'inherit' : palette.primary.main,
@@ -89,7 +89,7 @@ export const Filters = ({ onQuery }: FilterProps) => {
 
       <Tooltip
         componentsProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
-        title={t('show only valid tags')}
+        title={t('LW.show only valid tags')}
       >
         <ToggleButton
           onChange={toggleInvalid}

@@ -18,7 +18,7 @@ export type XMLValidity =
 
 export const useValidation = () => {
   const { openDialog } = useActions().ui;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
   const currentContent = useAtomValue(currentContentAtom);
   const setXmlValidity = useSetAtom(xmlValidityAtom);
 
@@ -62,13 +62,13 @@ export const useValidation = () => {
         props: {
           maxWidth: 'xs',
           severity: 'warning',
-          title: t('leafwriter:xml_document_invalid'),
+          title: t('LW.xml_document_invalid'),
           Body: () => message,
           actions: [
-            { action: 'cancel', label: t('leafwriter:commons.cancel') },
+            { action: 'cancel', label: t('LW.commons.cancel') },
             {
               action: 'discard',
-              label: t('leafwriter:commons.discard_changes'),
+              label: t('LW.commons.discard_changes'),
               variant: 'outlined',
             },
           ],

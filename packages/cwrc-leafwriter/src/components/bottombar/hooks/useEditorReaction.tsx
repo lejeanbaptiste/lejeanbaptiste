@@ -20,7 +20,7 @@ const useEditorReaction = () => {
   const { schemasList } = useAppState().editor;
   const { document, editor } = useActions();
 
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   return {
     editorModeShouldChange: (editorMode: string): [boolean, null | MessageResponseProps] => {
@@ -51,7 +51,7 @@ const useEditorReaction = () => {
               <Typography paragraph>
                 <TextEmphasis color="warning">Markup only</TextEmphasis>{' '}
                 {t(
-                  'The existing RDF annotations will be discarded and no RDF will be created when tagging entities',
+                  'LW.The existing RDF annotations will be discarded and no RDF will be created when tagging entities',
                 )}
               </Typography>
             ),
@@ -69,7 +69,7 @@ const useEditorReaction = () => {
               <Typography paragraph>
                 <TextEmphasis color="info">Markup and Linking</TextEmphasis>{' '}
                 {t(
-                  'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
+                  'LW.XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
                 )}
               </Typography>
             ),
@@ -86,7 +86,7 @@ const useEditorReaction = () => {
             text: (
               <Typography paragraph>
                 <TextEmphasis color="info">Markup and Linking with overlap</TextEmphasis>{' '}
-                {t('Only RDF will be created for entities that overlap existing XML structures')}
+                {t('LW.Only RDF will be created for entities that overlap existing XML structures')}
               </Typography>
             ),
           },
@@ -103,7 +103,7 @@ const useEditorReaction = () => {
               <Typography paragraph>
                 <TextEmphasis color="warning">Markup and Linking with overlap</TextEmphasis>{' '}
                 {t(
-                  'You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue',
+                  'LW.You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue',
                 )}
               </Typography>
             ),
@@ -122,7 +122,7 @@ const useEditorReaction = () => {
     changeEditorMode: ({ value, isUndo }: ActionParams) => {
       const editorMode = editor.setEditorMode(value);
 
-      let message = isUndo ? t('Editor Mode restored') : t('Editor Mode has changed');
+      let message = isUndo ? t('LW.Editor Mode restored') : t('LW.Editor Mode has changed');
       if (editorMode) message = `${message}: ${editorMode.label}`;
 
       return message;
@@ -131,7 +131,7 @@ const useEditorReaction = () => {
     changeAnnotationMode: ({ value, isUndo }: { value: number; isUndo?: boolean }) => {
       const annotationMode = editor.setAnnotationrMode(value);
 
-      let message = isUndo ? t('Annotation Mode restored') : t('Annotation Mode has changed');
+      let message = isUndo ? t('LW.Annotation Mode restored') : t('LW.Annotation Mode has changed');
       if (annotationMode) message = `${message}: ${annotationMode.label}`;
 
       return message;
@@ -152,7 +152,7 @@ const useEditorReaction = () => {
           {
             severity: 'error',
             text: t(
-              'The root element of the schema could not be determined and so it will not be used',
+              'LW.The root element of the schema could not be determined and so it will not be used',
             ),
           },
         ];
@@ -167,13 +167,13 @@ const useEditorReaction = () => {
               <>
                 <Typography paragraph>
                   {t(
-                    `The current documents root element does not match the root elements required by the selected schema`,
+                    `LW.The current documents root element does not match the root elements required by the selected schema`,
                   )}
-                  {t('Applying this schema change will cause a document loading error')}
+                  {t('LW.Applying this schema change will cause a document loading error')}
                 </Typography>
                 <Grid container mb={2.5}>
                   <Grid item xs={5}>
-                    <Typography fontWeight={700}>{t('Current document')}</Typography>
+                    <Typography fontWeight={700}>{t('LW.Current document')}</Typography>
                     <Typography variant="body2">
                       Schema: <TextEmphasis color="info">{schemaName}</TextEmphasis>
                     </Typography>
@@ -185,7 +185,7 @@ const useEditorReaction = () => {
                     <ChevronRightIcon />
                   </Divider>
                   <Grid item xs={6} pl={2}>
-                    <Typography fontWeight={700}>{t('commons.change')}</Typography>
+                    <Typography fontWeight={700}>{t('LW.commons.change')}</Typography>
                     <Typography variant="body2">
                       Schema:{' '}
                       <TextEmphasis color="warning">
@@ -215,7 +215,7 @@ const useEditorReaction = () => {
     changeSchema: ({ value, isUndo }: ActionParams) => {
       const schema = document.setSchema(value);
 
-      let message = isUndo ? t('Schema restored') : t('Schema has changed');
+      let message = isUndo ? t('LW.Schema restored') : t('LW.Schema has changed');
       if (schema) message = `${message}: ${schema.name}`;
 
       return message;

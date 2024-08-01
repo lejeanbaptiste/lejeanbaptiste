@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ count, nodeType }: HeaderProps) => {
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const fullName = useAtomValue(tagFullNameAtom);
   const tagName = useAtomValue(tagNameAtom);
@@ -28,7 +28,7 @@ export const Header = ({ count, nodeType }: HeaderProps) => {
 
   const MultipleTags = () => (
     <Typography variant="caption" sx={{ textTransform: 'capitalize' }}>
-      {t('multiple tags')} ({count})
+      {t('LW.multiple tags')} ({count})
     </Typography>
   );
 

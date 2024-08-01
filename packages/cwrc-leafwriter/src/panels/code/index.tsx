@@ -36,7 +36,7 @@ export const CodePanel = () => {
       <Stack direction="column" gap={1}>
         <Editor showLOD={showLOD} />
         <Stack direction="row" justifyContent="space-between">
-          <Tooltip enterDelay={1000} title={t('leafwriter:show_lod_annotation')}>
+          <Tooltip enterDelay={1000} title={t('LW.show_lod_annotation')}>
             <ToggleButton
               color="secondary"
               onChange={handleClickShowLODAnnotation}
@@ -48,9 +48,9 @@ export const CodePanel = () => {
               <TbVectorTriangle fontSize="inherit" style={{ transform: 'rotate(27deg)' }} />
             </ToggleButton>
           </Tooltip>
-          <Tooltip enterDelay={1000} title={t('leafwriter:edit_raw_xml')}>
+          <Tooltip enterDelay={1000} title={t('LW.edit_raw_xml')}>
             <Button onClick={handleClickEditXml} size="small" sx={{ height: 28 }}>
-              {t('leafwriter:commons.edit')}
+              {t('LW.commons.edit')}
             </Button>
           </Tooltip>
         </Stack>

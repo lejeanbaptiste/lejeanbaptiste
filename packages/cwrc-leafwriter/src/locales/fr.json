@@ -2,7 +2,7 @@
   "Cache cleared": "Cache vidé",
   "Clear Cache": "Vider le cache",
   "You might need to reload the document": "Vous devrez peut-être recharger le document",
-  "leafwriter": {
+  "LW": {
     "Add Entity Annotation": "Ajouter une annotation d'entité",
     "Add Tag": "Ajouter une étiquette",
     "Add Tag After": "Ajouter une balise après",
@@ -16,10 +16,12 @@
     "Annotations that overlap will be created in RDF only with no equivalent XML tags": "Les annotations qui se chevauchent seront créées en RDF uniquement, sans balises XML équivalentes",
     "Applying this schema change will cause a document loading error": "L'application de ce changement de schéma entraînera une erreur de chargement du document",
     "Bugs": "Insectes",
+    "Cache cleared": "",
     "Cannot have more than characters": "Ne peut pas contenir plus de {{max}} caractères",
     "Change Editor Mode": "Changer le mode de l'éditeur",
     "Change Schema": "Modifier le schéma",
     "Change Tag": "Changer de balise",
+    "Clear Cache": "",
     "Confirmation dialog preferences have been reset": "Les préférences de la boîte de dialogue de confirmation ont été réinitialisées",
     "Convert to Entity Annotation": "Convertir en annotation d'entité",
     "Copy Content": "Copier le contenu",
@@ -79,6 +81,7 @@
     "You can change the editor mode anytime in the status bar": "Vous pouvez changer le mode de l'éditeur à tout moment dans la barre d'état (en bas à gauche)",
     "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "Vous avez des entités qui se chevauchent et essayez de passer à un mode qui les interdit. \nLes entités qui se chevauchent seront ignorées si vous continuez",
     "You have unsaved changes": "Vous avez des modifications non enregistrées",
+    "You might need to reload the document": "",
     "You must provide a username to make requests": "Vous devez fournir un nom d'utilisateur pour faire des demandes",
     "add schema": "ajouter un schéma",
     "beta": "bêta",
@@ -122,6 +125,14 @@
     "font size": "taille de police",
     "hint": "Indice",
     "language": "Langue",
+    "languages": {
+      "de": "Allemand",
+      "en": "Anglaise",
+      "es": "Espagnol",
+      "fr": "Français",
+      "pt": "Portugais",
+      "ro": "Roumain"
+    },
     "markup panel": "panneau de balisage",
     "messages": {
       "LEAF-Writer could not find the document schema declaration": "LEAF-Writer n'a pas pu trouver la déclaration de schéma de document.",

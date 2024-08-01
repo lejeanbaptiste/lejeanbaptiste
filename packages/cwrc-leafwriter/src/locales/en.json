@@ -2,7 +2,7 @@
   "Cache cleared": "Cache cleared",
   "Clear Cache": "Clear Cache",
   "You might need to reload the document": "You might need to reload the document",
-  "leafwriter": {
+  "LW": {
     "Add Entity Annotation": "Add Entity Annotation",
     "Add Tag": "Add Tag",
     "Add Tag After": "Add Tag After",
@@ -16,10 +16,12 @@
     "Annotations that overlap will be created in RDF only with no equivalent XML tags": "Annotations that overlap will be created in RDF only, with no equivalent XML tags",
     "Applying this schema change will cause a document loading error": "Applying this schema change will cause a document loading error",
     "Bugs": "Bugs",
+    "Cache cleared": "Cache cleared",
     "Cannot have more than characters": "Cannot have more than {{max}} characters",
     "Change Editor Mode": "Change Editor Mode",
     "Change Schema": "Change Schema",
     "Change Tag": "Change Tag",
+    "Clear Cache": "Clear Cache",
     "Confirmation dialog preferences have been reset": "Confirmation dialog preferences have been reset",
     "Convert to Entity Annotation": "Convert to Entity Annotation",
     "Copy Content": "Copy Content",
@@ -79,6 +81,7 @@
     "You can change the editor mode anytime in the status bar": "You can change the editor mode anytime in the status bar (bottom left)",
     "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "You have overlapping entities and are attemping to switch to a mode which prohibits them. The overlapping entities will be discarded if you continue",
     "You have unsaved changes": "You have unsaved change",
+    "You might need to reload the document": "You might need to reload the document",
     "You must provide a username to make requests": "You must provide a username to make requests",
     "add schema": "add schema",
     "beta": "beta",
@@ -122,6 +125,14 @@
     "font size": "font size",
     "hint": "Hint",
     "language": "language",
+    "languages": {
+      "de": "German",
+      "en": "English",
+      "es": "Spanish",
+      "fr": "French",
+      "pt": "Portuguese",
+      "ro": "Romanian"
+    },
     "markup panel": "markup panel",
     "messages": {
       "LEAF-Writer could not find the document schema declaration": "LEAF-Writer could not find the document schema declaration.",

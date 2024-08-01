@@ -21,7 +21,7 @@ export const Authority = ({
   const { toggleLookupAuthority, toggleLookupEntity } = useActions().editor;
   const { notifyViaSnackbar } = useActions().ui;
 
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const [hover, setHover] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -43,7 +43,7 @@ export const Authority = ({
     const authorityService = authorityServices[id];
     if (authorityService?.requireAuth && !authorityService.settings?.username) {
       notifyViaSnackbar({
-        message: `${t('You must provide a username to make requests', { authorityService })}.`,
+        message: `${t('LW.You must provide a username to make requests', { authorityService })}.`,
         options: { variant: 'error' },
       });
       return;

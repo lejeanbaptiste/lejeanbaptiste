@@ -13,7 +13,7 @@ interface FooterProps {
 }
 
 export const Footer = ({ onCancel, onDone }: FooterProps) => {
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
   const currentContent = useAtomValue(currentContentAtom);
   const originalContent = useAtomValue(originalContentAtom);
   const { updateContent } = useDialog();
@@ -38,11 +38,11 @@ export const Footer = ({ onCancel, onDone }: FooterProps) => {
 
   return (
     <DialogActions sx={{ justifyContent: 'space-between' }}>
-      <Button onClick={onCancel}>{t('leafwriter:commons.cancel')}</Button>
+      <Button onClick={onCancel}>{t('LW.commons.cancel')}</Button>
       <Stack direction="row" alignItems="center" spacing={1}>
         <Validator />
         <Button autoFocus onClick={handlClickChange} variant="outlined">
-          {t('leafwriter:commons.change')}
+          {t('LW.commons.change')}
         </Button>
       </Stack>
     </DialogActions>

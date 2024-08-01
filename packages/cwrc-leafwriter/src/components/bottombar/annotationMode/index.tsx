@@ -6,7 +6,7 @@ import { Menu } from './Menu';
 
 const AnnotationMode = () => {
   const { annotationModeLabel } = useAppState().editor;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>();
   const openMenu = Boolean(anchorEl);
@@ -19,7 +19,7 @@ const AnnotationMode = () => {
 
   return (
     <Box>
-      <Tooltip title={t('Annotation Mode')}>
+      <Tooltip title={t('LW.Annotation Mode')}>
         <Button
           id="annotation-mode-select"
           aria-controls="annotation-mode-menu"
