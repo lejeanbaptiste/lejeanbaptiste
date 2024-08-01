@@ -1,12 +1,12 @@
 import type { DialogBarProps } from '@src/dialogs';
-import type { NotificationProps, Language, PaletteMode } from '@src/types';
-import { supportedLanguages } from '@src/utilities';
+import { Locales } from '@src/i18n';
+import type { NotificationProps, PaletteMode } from '@src/types';
 
 interface State {
   cookieConsent: string[];
+  currentLocale: Locales;
   darkMode: boolean;
   dialogBar: DialogBarProps[];
-  language: Language;
   notifications: NotificationProps[];
   page: string;
   themeAppearance: PaletteMode;
@@ -14,9 +14,9 @@ interface State {
 
 export const state: State = {
   cookieConsent: [''],
+  currentLocale: 'en',
   darkMode: false,
   dialogBar: [],
-  language: supportedLanguages.get('en-CA')!,
   notifications: [],
   page: 'home',
   themeAppearance: 'auto',

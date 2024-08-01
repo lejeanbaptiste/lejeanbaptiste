@@ -113,6 +113,14 @@
       },
       "try to open it without converting": "essayez de l'ouvrir sans convertir"
     },
+    "languages": {
+      "de": "Allemand",
+      "en": "Anglaise",
+      "es": "Espagnol",
+      "fr": "Français",
+      "pt": "Portugais",
+      "ro": "Roumain"
+    },
     "messages": {
       "annotation_need_space": "Annoter des documents nécessite plus d'espace.",
       "link_to_storage_provider_instructions": "Vous pouvez le faire en cliquant sur l'icône de l'utilisateur dans le coin supérieur droit de l'écran, puis en sélectionnant une option dans la liste des fournisseurs de stockage.",

@@ -1,7 +1,7 @@
 import { Button } from '@mui/material';
 import type { DialogBarProps } from '@src/dialogs';
+import { localesSchema, type Locales } from '@src/i18n';
 import type { NotificationProps, PaletteMode } from '@src/types';
-import { supportedLanguages } from '@src/utilities';
 import i18next from 'i18next';
 import type { VariantType } from 'notistack';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,12 +27,11 @@ export const onInitializeOvermind = async (
   actions.ui.setThemeAppearance(prefPaletteMode);
 
   //LANGUAGE
-  const prefLanguageCode = effects.storage.api.getFromLocalStorage('i18nextLng');
-  if (prefLanguageCode) {
-    const prefLanguage = supportedLanguages.get(prefLanguageCode);
-    state.ui.language = prefLanguage
-      ? prefLanguage
-      : { code: 'en-CA', name: 'english', shortName: 'en' };
+  const prefLocale = effects.storage.api.getFromLocalStorage<string>('i18nextLng');
+  if (prefLocale) {
+    state.ui.currentLocale = localesSchema.safeParse(prefLocale).success
+      ? (prefLocale as Locales)
+      : 'en';
   }
 };
 
@@ -90,23 +89,19 @@ export const setDarkMode = ({ state }: Context, value: boolean) => {
 
 /**
  * Switch language to the value provided. If value is not valid, it fallsback to `en-CA`.
- * @param {string} value - The value of the language code that was selected.
+ * @param {string} locale - The value of the language code that was selected.
  * @returns The value of the language code.
  */
-export const switchLanguage = ({ state }: Context, value: string) => {
-  const language = supportedLanguages.get(value) ?? {
-    code: 'en-CA',
-    name: 'english',
-    shortName: 'en',
-  };
+export const switchLanguage = ({ state }: Context, locale: string) => {
+  const localeSupported = localesSchema.safeParse(locale).success ? (locale as Locales) : 'en';
 
-  i18next.changeLanguage(language.code);
-  state.ui.language = language;
+  i18next.changeLanguage(localeSupported);
+  state.ui.currentLocale = localeSupported;
 
   // Propagate the changes to other modules that might be listening in the page
   setTimeout(() => window.dispatchEvent(new Event('changeLanguage')), 0);
 
-  return value;
+  return locale;
 };
 
 // * Notification

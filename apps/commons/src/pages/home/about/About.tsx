@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 export const About = () => {
-  const { language } = useAppState().ui;
+  const { currentLocale } = useAppState().ui;
 
   const { breakpoints } = useTheme();
 
@@ -16,13 +16,12 @@ export const About = () => {
 
   useEffect(() => {
     loadContent();
-  }, [language]);
+  }, [currentLocale]);
 
   const isMobile = useMediaQuery(breakpoints.down('sm'));
 
   const loadContent = async () => {
-    const file = `about_${language.code}.md`;
-    const response = await fetch(`./content/${file}`);
+    const response = await fetch(`./content/about/${currentLocale}.md`);
     const text = await response.text();
     setContent(text);
   };
