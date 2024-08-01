@@ -10,7 +10,7 @@ import { Schema } from './schema';
 export const BottomBar = () => {
   const { isReadonly } = useAppState().editor;
   const { validationErrors } = useAppState().validator;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
   const version = pck.version;
 
   return (
@@ -41,7 +41,7 @@ export const BottomBar = () => {
           href="https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report"
           target="_blank"
         >
-          {t('Bugs')} / {t('Requests')}
+          {t('LW.Bugs')} / {t('LW.Requests')}
         </Link>
 
         <Link
@@ -60,9 +60,9 @@ export const BottomBar = () => {
           href="https://www.tiny.cloud"
           target="_blank"
           rel="noopener"
-          title={t('Powered by').toString()}
+          title={t('LW.Powered by').toString()}
         >
-          {t('Powered by')} Tiny
+          {t('LW.Powered by')} Tiny
         </Link>
       </Stack>
     </Paper>

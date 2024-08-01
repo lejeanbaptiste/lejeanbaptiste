@@ -18,10 +18,10 @@ export const EditSourceDialog = ({
   type = 'content',
 }: EditSourceDialogProps) => {
   const { settings } = useAppState().editor;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
   const { resetContext } = useDialog();
 
-  const title = type === 'header' ? t('leafwriter:edit_header') : t('leafwriter:edit_source');
+  const title = type === 'header' ? t('LW.edit_header') : t('LW.edit_source');
 
   const handleClose = () => {
     resetContext();

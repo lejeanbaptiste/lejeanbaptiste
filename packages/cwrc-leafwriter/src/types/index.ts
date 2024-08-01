@@ -2,10 +2,12 @@ import { OptionsObject, SnackbarMessage } from 'notistack';
 import type { Bookmark, Editor } from 'tinymce/tinymce';
 import type { Authority, AuthorityServiceConfig } from '../dialogs/entityLookups';
 import Writer from '../js/Writer';
+import { Locales } from '../i18n';
 
 export type { Authority } from '../dialogs/entityLookups';
 export * from './assert';
 
+// eslint-disable-next-line no-var
 export declare var webpackEnv: {
   LEAFWRITER_VERSION?: string;
   NODE_ENV: string;
@@ -43,7 +45,8 @@ export interface LeafWriterOptionsSettings {
   };
 
   colorScheme?: string;
-  language?: string;
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  locale?: Locales | (string & {});
 
   authorityServices?: (Authority | AuthorityServiceConfig)[];
   schemas?: Schema[];
@@ -108,14 +111,6 @@ export interface Schema {
   name: string;
   rng: string[];
 }
-
-export interface Language {
-  code: string;
-  name: string;
-  shortName: string;
-}
-
-export const Languages = new Map<string, Language>();
 
 export type ErrorType = 'info' | 'warning' | 'error';
 

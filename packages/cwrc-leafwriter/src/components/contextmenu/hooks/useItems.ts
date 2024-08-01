@@ -24,7 +24,7 @@ export const useItems = (ctx: State) => {
   const { openDialog, showTextNodes } = useActions().ui;
   const { getPossibleNodesAt } = useActions().validator;
 
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const getEntitiesOptions = () => {
     const type = 'entity';
@@ -224,7 +224,7 @@ export const useItems = (ctx: State) => {
         {
           id: uuidv4(),
           type: 'action',
-          name: t('Edit Header'),
+          name: t('LW.Edit Header'),
           icon: 'edit',
           onClick: () => {
             const header = writer.editor
@@ -249,7 +249,7 @@ export const useItems = (ctx: State) => {
       const items: ItemProps[] = [
         {
           id: uuidv4(),
-          name: t('commons.edit'),
+          name: t('LW.commons.edit'),
           type: 'action',
           onClick: () => ctx.tagId && writer.tagger.editTagDialog(ctx.tagId),
         },
@@ -277,7 +277,7 @@ export const useItems = (ctx: State) => {
     if (ctx.isMultiple) {
       items.push({
         type: 'collection',
-        name: t('Add Tag Around'),
+        name: t('LW.Add Tag Around'),
         icon: 'add',
         getChildren: async () => {
           const params = paramsForAddTagAround();
@@ -293,7 +293,7 @@ export const useItems = (ctx: State) => {
       if (Array.isArray(ctx.tagId)) {
         items.push({
           type: 'action',
-          name: t('Merge Tags'),
+          name: t('LW.Merge Tags'),
           icon: 'merge',
           disabled: !ctx.allowsMerge,
           onClick: () => {
@@ -309,7 +309,7 @@ export const useItems = (ctx: State) => {
     if (ctx.useSelection && ctx.allowsTagAround) {
       items.push({
         type: 'collection',
-        name: t('Add Tag'),
+        name: t('LW.Add Tag'),
         icon: 'add',
         getChildren: async () => {
           const params = paramsForAddTag();
@@ -323,7 +323,7 @@ export const useItems = (ctx: State) => {
       if (writer.schemaManager.isSchemaCustom() === false) {
         items.push({
           type: 'collection',
-          name: t('Add Entity Annotation'),
+          name: t('LW.'),
           icon: 'add',
           searchable: false,
           children: getEntitiesOptions(),
@@ -336,7 +336,7 @@ export const useItems = (ctx: State) => {
     if (!ctx.useSelection) {
       items.push({
         type: 'collection',
-        name: t('Add Tag Before'),
+        name: t('LW.Add Tag Before'),
         icon: 'add',
         getChildren: async () => {
           const params = paramsForAddTagBefore();
@@ -349,7 +349,7 @@ export const useItems = (ctx: State) => {
 
       items.push({
         type: 'collection',
-        name: t('Add Tag After'),
+        name: t('LW.Add Tag After'),
         icon: 'add',
         getChildren: async () => {
           const params = paramsForAddTagAfter();
@@ -362,7 +362,7 @@ export const useItems = (ctx: State) => {
 
       items.push({
         type: 'collection',
-        name: t('Add Tag Around'),
+        name: t('LW.Add Tag Around'),
         icon: 'add',
         getChildren: async () => {
           const params = paramsForAddTagAround();
@@ -377,7 +377,7 @@ export const useItems = (ctx: State) => {
       if (ctx.nodeType !== 'text') {
         items.push({
           type: 'collection',
-          name: t('Add Tag Inside'),
+          name: t('LW.Add Tag Inside'),
           icon: 'add',
           getChildren: async () => {
             const params = paramsForAddTagInside();
@@ -395,7 +395,7 @@ export const useItems = (ctx: State) => {
     if (ctx.nodeType !== 'text') {
       items.push({
         type: 'action',
-        name: ctx.isEntity ? t('Edit Entity Annotation') : t('Edit Tag'),
+        name: ctx.isEntity ? t('LW.Edit Entity Annotation') : t('LW.Edit Tag'),
         icon: 'edit',
         onClick: () => ctx.tagId && writer.tagger.editTagDialog(ctx.tagId),
       });
@@ -406,7 +406,7 @@ export const useItems = (ctx: State) => {
       if (tagName && writer.schemaManager.isTagEntity(tagName)) {
         items.push({
           type: 'action',
-          name: t('Convert to Entity Annotation'),
+          name: t('LW.Convert to Entity Annotation'),
           icon: 'edit',
           onClick: () => {
             if (ctx.element) {
@@ -423,7 +423,7 @@ export const useItems = (ctx: State) => {
     ) {
       items.push({
         type: 'collection',
-        name: t('Change Tag'),
+        name: t('LW.Change Tag'),
         icon: 'edit',
         getChildren: async () => {
           const params = paramsForChangeTag();
@@ -438,7 +438,7 @@ export const useItems = (ctx: State) => {
     if (ctx.nodeType === 'text') {
       items.push({
         type: 'action',
-        name: t('Copy Content'),
+        name: t('LW.Copy Content'),
         icon: 'copy',
         onClick: async () => {
           if (!ctx.xpath || !writer.editor) return;
@@ -459,7 +459,7 @@ export const useItems = (ctx: State) => {
     } else {
       items.push({
         type: 'action',
-        name: ctx.isEntity ? t('Copy Entity') : t('Copy Tag and Contents'),
+        name: ctx.isEntity ? t('LW.Copy Entity') : t('LW.Copy Tag and Contents'),
         icon: 'copy',
         onClick: () => ctx.tagId && writer.tagger.copyTag(ctx.tagId),
       });
@@ -468,7 +468,7 @@ export const useItems = (ctx: State) => {
     if (ctx.nodeType === 'text') {
       items.push({
         type: 'action',
-        name: t('Paste Content'),
+        name: t('LW.Paste Content'),
         icon: 'paste',
         onClick: async () => {
           if (!ctx.xpath || !writer.editor) return;
@@ -488,14 +488,14 @@ export const useItems = (ctx: State) => {
       if (writer.editor?.copiedElement?.element !== undefined) {
         items.push({
           type: 'action',
-          name: t('Paste Tag'),
+          name: t('LW.Paste Tag'),
           icon: 'paste',
           onClick: () => writer.tagger.pasteTag(),
         });
       } else if (writer.editor?.copiedEntity !== undefined) {
         items.push({
           type: 'action',
-          name: t('Paste Entity'),
+          name: t('LW.Paste Entity'),
           icon: 'paste',
           onClick: () => writer.tagger.pasteEntity(),
         });
@@ -505,7 +505,7 @@ export const useItems = (ctx: State) => {
     if (ctx.useSelection) {
       items.push({
         type: 'action',
-        name: t('Split Tag'),
+        name: t('LW.Split Tag'),
         icon: 'split',
         onClick: () => writer.tagger.splitTag(),
       });
@@ -516,7 +516,7 @@ export const useItems = (ctx: State) => {
     if (ctx.nodeType === 'text') {
       items.push({
         type: 'action',
-        name: t('Remove Content'),
+        name: t('LW.Remove Content'),
         icon: 'remove',
         onClick: () => {
           if (!ctx.xpath) return;
@@ -525,7 +525,7 @@ export const useItems = (ctx: State) => {
       });
       items.push({
         type: 'action',
-        name: t('Remove Node'),
+        name: t('LW.Remove Node'),
         icon: 'remove',
         onClick: () => {
           if (!ctx.xpath) return;
@@ -536,7 +536,7 @@ export const useItems = (ctx: State) => {
       if (ctx.isEntity) {
         items.push({
           type: 'action',
-          name: t('Remove Entity'),
+          name: t('LW.Remove Entity'),
           icon: 'remove',
           onClick: () => writer.tagger.removeEntity(ctx.tagId),
         });
@@ -544,21 +544,21 @@ export const useItems = (ctx: State) => {
 
       items.push({
         type: 'action',
-        name: t('Remove Tag'),
+        name: t('LW.Remove Tag'),
         icon: 'remove',
         onClick: () => ctx.tagId && writer.tagger.removeStructureTag(ctx.tagId, false),
       });
 
       items.push({
         type: 'action',
-        name: t('Remove Content Only'),
+        name: t('LW.Remove Content Only'),
         icon: 'remove',
         onClick: () => ctx.tagId && writer.tagger.removeStructureTagContents(ctx.tagId),
       });
 
       items.push({
         type: 'action',
-        name: t('Remove All'),
+        name: t('LW.Remove All'),
         icon: 'remove',
         onClick: () => ctx.tagId && writer.tagger.removeStructureTag(ctx.tagId, true),
       });
@@ -569,7 +569,7 @@ export const useItems = (ctx: State) => {
       // items.push({ type: 'divider', name: 'divider' });
       // items.push({
       //   type: 'action',
-      //   name: t('Show Text Nodes'),
+      //   name: t('LW.Show Text Nodes'),
       //   icon: markupPanel.showTextNodes ? 'checkIcon' : undefined,
       //   onClick: () => showTextNodes(),
       // });

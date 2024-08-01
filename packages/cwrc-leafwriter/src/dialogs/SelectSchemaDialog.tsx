@@ -34,7 +34,7 @@ export const SelectSchemaDialog = ({
   preventEscape = true,
 }: SelectSchemaDialogProps) => {
   const { closeDialog } = useActions().ui;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const { schemasList } = useAppState().editor;
 
@@ -84,14 +84,14 @@ export const SelectSchemaDialog = ({
       open={open}
     >
       <DialogTitle id="alert-dialog-title" sx={{ textTransform: 'capitalize' }} variant="h5">
-        {t('Select schema')},
+        {t('LW.Select schema')},
       </DialogTitle>
 
       <DialogContent>
         <Stack mt={2}>
           <FormControl fullWidth>
             <InputLabel id="select-schema-label" sx={{ textTransform: 'capitalize' }}>
-              {t('commons.schema')}
+              {t('LW.commons.schema')}
             </InputLabel>
             <Select
               fullWidth
@@ -113,21 +113,21 @@ export const SelectSchemaDialog = ({
           <Stack mt={2}>
             <Typography variant="caption">
               <span style={{ textTransform: 'uppercase', textDecoration: 'underline' }}>
-                {t('note')}:
+                {t('LW.note')}:
               </span>
               {` ${t(
-                'LEAF-Writer cannot guarantee that the document will work correctly with the selected schema',
+                'LW.LEAF-Writer cannot guarantee that the document will work correctly with the selected schema',
               )}.
-          ${t('Tagging might not work as expected')}.`}
+          ${t('LW.Tagging might not work as expected')}.`}
             </Typography>
           </Stack>
         </Stack>
       </DialogContent>
 
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
+        <Button onClick={handleCancel}>{t('LW.commons.cancel')}</Button>
         <Button color="primary" onClick={handleSelect} variant="outlined">
-          {t('commons.select')}
+          {t('LW.commons.select')}
         </Button>
       </DialogActions>
     </Dialog>

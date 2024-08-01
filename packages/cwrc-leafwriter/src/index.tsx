@@ -227,8 +227,8 @@ export class Leafwriter {
     return overmind.actions.ui.setThemeAppearance(value);
   }
 
-  switchLanguage(value: string) {
-    return overmind.actions.ui.switchLanguage(value);
+  switchLocale(value: string) {
+    return overmind.actions.ui.switchLocale(value);
   }
 
   getFontSize() {

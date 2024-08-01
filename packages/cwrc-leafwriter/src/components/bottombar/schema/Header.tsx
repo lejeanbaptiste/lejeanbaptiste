@@ -7,7 +7,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ onClickAdd }: HeaderProps) => {
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   return (
     <Box
@@ -24,7 +24,7 @@ export const Header = ({ onClickAdd }: HeaderProps) => {
         {t('commons.schemas')}
       </Typography>
       <IconButton
-        aria-label={t('commons.add').toString()}
+        aria-label={t('LW.commons.add').toString()}
         onClick={() => onClickAdd('add')}
         size="small"
       >

@@ -1,11 +1,10 @@
 // import i18n from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
-import { supportedLanguages } from '../../config';
 import { db } from '../../db';
 import type { DialogBarProps, PopupProps } from '../../dialogs';
 import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
-import i18n from '../../i18n';
+import i18n, { Locales, localesSchema } from '../../i18n';
 import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
@@ -17,14 +16,14 @@ export const onInitializeOvermind = ({ state, actions, effects }: Context, overm
   actions.ui.setThemeAppearance(prefPaletteMode);
 
   //LANGUAGE
-  const prefLanguageCode = effects.editor.api.getFromLocalStorage('i18nextLng');
-  if (prefLanguageCode) {
-    const prefLanguage = supportedLanguages.get(prefLanguageCode);
+  const prefLocale = effects.editor.api.getFromLocalStorage<string>('i18nextLng');
+  if (prefLocale) {
+    const supportedLocaled = localesSchema.safeParse(prefLocale).success
+      ? (prefLocale as Locales)
+      : 'en';
 
-    const language = prefLanguage ?? { code: 'en-CA', name: 'english', shortName: 'en' };
-
-    state.ui.language = language;
-    void i18n.changeLanguage(language.shortName);
+    state.ui.currentLocale = supportedLocaled;
+    void i18n.changeLanguage(supportedLocaled);
   }
 };
 
@@ -45,14 +44,22 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
 
 export const listenChangeLanguage = async ({ state, effects }: Context) => {
   //* check language
-  const prefLanguageCode = effects.editor.api.getFromLocalStorage('i18nextLng');
-  if (prefLanguageCode && prefLanguageCode !== state.ui.language.code) {
-    const prefLanguage = supportedLanguages.get(prefLanguageCode);
-    if (prefLanguage) {
-      state.ui.language = prefLanguage;
-      await i18n.changeLanguage(prefLanguage.code);
-    }
+  const prefLocale = effects.editor.api.getFromLocalStorage<string>('i18nextLng');
+  if (prefLocale) {
+    const supportedLocaled = localesSchema.safeParse(prefLocale).success
+      ? (prefLocale as Locales)
+      : 'en';
+
+    state.ui.currentLocale = supportedLocaled;
+    void i18n.changeLanguage(supportedLocaled);
   }
+};
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+export const switchLocal = ({ state }: Context, locale: Locales | (string & {})) => {
+  const supportedLocaled = localesSchema.safeParse(locale).success ? (locale as Locales) : 'en';
+  state.ui.currentLocale = supportedLocaled;
+  void i18n.changeLanguage(supportedLocaled);
 };
 
 export const listenChangeTheme = ({ state, actions, effects }: Context) => {
@@ -107,14 +114,10 @@ export const closeEntityLookupsDialog = (
   ui.entityLookupDialogProps = { open: false };
 };
 
-export const switchLanguage = ({ state }: Context, value: string) => {
-  const language = supportedLanguages.get(value) ?? {
-    code: 'en-CA',
-    name: 'english',
-    shortName: 'en',
-  };
-  state.ui.language = language;
-  return value;
+export const switchLocale = ({ state }: Context, locale: string) => {
+  const supportedLocale = localesSchema.safeParse(locale).success ? (locale as Locales) : 'en';
+  state.ui.currentLocale = supportedLocale;
+  return supportedLocale;
 };
 
 export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {

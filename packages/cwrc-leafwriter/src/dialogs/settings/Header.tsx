@@ -8,13 +8,13 @@ type HeaderProps = {
 };
 
 export const Header = ({ onClose }: HeaderProps) => {
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   return (
     <Stack direction="row" justifyContent="center" alignItems="center" py={2} spacing={2}>
       <Icon component={getIcon('settings')} sx={{ height: 24, width: 24 }} />
       <Typography sx={{ textTransform: 'capitalize' }} variant="h5">
-        {t('commons.settings')}
+        {t('LW.commons.settings')}
       </Typography>
       <IconButton
         aria-label="close"

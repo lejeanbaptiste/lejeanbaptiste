@@ -3,26 +3,25 @@ import { Box, ListItem, Stack, ToggleButton, Typography } from '@mui/material';
 import { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToggleButtonGroup } from '../../../../components';
-import { supportedLanguages } from '../../../../config';
+import { locales } from '../../../../i18n';
 import { useActions, useAppState } from '../../../../overmind';
 
 export const Language = () => {
-  const { t, i18n } = useTranslation('leafwriter');
+  const { t, i18n } = useTranslation();
 
-  const { language } = useAppState().ui;
-  const { switchLanguage } = useActions().ui;
+  const { currentLocale } = useAppState().ui;
+  const { switchLocale: switchLanguage } = useActions().ui;
 
-  const changeLanguage = (_event: MouseEvent<HTMLElement>, code: string) => {
-    if (!code) code = language.code;
-    switchLanguage(code);
-    i18n.changeLanguage(code);
+  const changeLanguage = (_event: MouseEvent<HTMLElement>, locale: string) => {
+    switchLanguage(locale);
+    i18n.changeLanguage(locale);
   };
 
   return (
     <ListItem dense disableGutters>
       <TranslateIcon sx={{ mx: 1, height: 18, width: 18 }} />
       <Typography sx={{ textTransform: 'capitalize' }} variant="body2">
-        {t('language')}
+        {t('LW.language')}
       </Typography>
       <Box flexGrow={1} />
       <Stack direction="row">
@@ -30,18 +29,18 @@ export const Language = () => {
           aria-label="language"
           exclusive
           onChange={changeLanguage}
-          value={language.code}
+          value={currentLocale}
         >
-          {Array.from(supportedLanguages.values()).map(({ code, shortName }) => (
+          {locales.map((locale) => (
             <ToggleButton
-              key={code}
-              aria-label={shortName}
+              key={locale}
+              aria-label={locale}
               color="primary"
               size="small"
               sx={{ height: 28 }}
-              value={code}
+              value={locale}
             >
-              {shortName}
+              {t(`LW.languages.${locale}`, { lng: locale, fallbackLng: 'en' })}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
