@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## 4.0.0-beta.1
+
+### Minor Changes
+
+- [b6bdeb06c1ce3918dfa96b2594e374a29889f995] **Locale**: Add support for Spanish, Portuguese, Romanian, and German
+  - BREAKING CHANGE: 🧨 Rename config property: `language` -> `locale`
+
+### Patch Changes
+
+- [8000744f6e641324b90f9b270b3b5604d1f5caf6] Rename files using kebab case; use import alias `@src/`; rename locale namespace
+- [5865fff19b2a7ce0a082f112a49a5a2470f6b9db] Update dependencies
+  - core:
+    - upgrade: react-i18next@15.0.0
+    - update:
+      - @emotion/react@11.13.0
+      - @emotion/styled@11.13.0
+      - @mui/lab@5.0.0-alpha.173
+    - bump:
+      - @mui/icons-material@5.16.6
+      - @mui/material@5.16.6
+      - @octokit/rest@20.1.1
+      - framer-motion@11.3.21
+      - i18next@13.12.12
+      - react-use@17.5.1
+  - dev:
+    - add:
+      - @testing-library/dom@10.4.0
+      - @types/react@18.3.3
+      - @types/react-dom@18.3.0
+    - upgrade:
+      - @testing-library/react@16.0.0
+      - @types/node@22.0.2
+    - update: tsup@8.2.3
+      - bump:
+      - @testing-library/jest-dom@6.4.8
+      - ts-jest@29.2.4
+      - typedoc@0.26.5
+      - typescript@5.5.4
+
 ## 4.0.0-beta.0
 
 ### Major Changes
