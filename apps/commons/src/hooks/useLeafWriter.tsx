@@ -1,22 +1,28 @@
-import type { Leafwriter } from '@cwrc/leafwriter';
+import { schemas } from '@src/config/schemas';
+import { leafwriterAtom, leafWriterEventsAtom, tapDocumentTimerAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { convertDocument } from '@src/services/leafTe';
 import type { Resource } from '@src/types';
 import { changeFileExtension } from '@src/utilities';
-import { useEffect } from 'react';
+import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-
-let leafWriter: Leafwriter | null = null;
-let leafWriterEvents: any[] = [];
-let tapDocumentTimer: NodeJS.Timeout;
+import { useAnalytics } from './useAnalytics';
 
 export const useLeafWriter = () => {
+  const { analytics } = useAnalytics();
+  const navigate = useNavigate();
   const { t } = useTranslation();
-  const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
 
+  const { userState, user } = useAppState().auth;
+  const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
+  const { currentLocale } = useAppState().ui;
+
+  const { getKeycloakAuthToken } = useActions().auth;
   const {
     close,
+    getGeonameUsername,
+    loadLeafWriter,
     save,
     saveAs,
     setAutosave,
@@ -28,18 +34,47 @@ export const useLeafWriter = () => {
   const { addToRecentDocument, download } = useActions().storage;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
-  const navigate = useNavigate();
+  const [leafWriter, setLeafWriter] = useAtom(leafwriterAtom);
+  const [leafWriterEvent, setLeafWriterEvents] = useAtom(leafWriterEventsAtom);
+  const [tapDocumentTimer, setTapDocumentTimer] = useAtom(tapDocumentTimerAtom);
 
-  useEffect(() => {
-    leafWriter?.setContentHasChanged(contentHasChanged);
-  }, [contentHasChanged]);
+  const loadLib = async (element: HTMLElement) => {
+    const lw = await loadLeafWriter(element);
+    setLeafWriter(lw);
+  };
 
-  useEffect(() => {
-    leafWriter?.setReadonly(readonly);
-  }, [readonly]);
+  const initLeafWriter = async () => {
+    if (!leafWriter || !resource?.content) return;
 
-  const setCurrentLeafWriter = (lw: Leafwriter | null) => (leafWriter = lw);
+    const geonamesUsername = await getGeonameUsername();
+
+    const author = user && {
+      name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
+      uri: user?.identities.get(user.preferredID)?.uri ?? '',
+    };
+
+    leafWriter.init({
+      document: {
+        url: resource.url,
+        xml: resource.content ?? '',
+      },
+      settings: {
+        authorityServices: [{ id: 'geonames', settings: { username: geonamesUsername } }],
+        credentials: { nssiToken: userState === 'AUTHENTICATED' ? getKeycloakAuthToken : '' },
+        locale: currentLocale,
+        readonly,
+        schemas,
+      },
+      user: author,
+    });
+
+    setEditorEvents();
+
+    if (analytics) {
+      analytics.track('editor', { opened: true });
+      analytics.page();
+    }
+  };
 
   const setEditorEvents = () => {
     if (!leafWriter) return;
@@ -57,7 +92,8 @@ export const useLeafWriter = () => {
 
       if (autosave && resource?.provider) timerService.start();
     });
-    leafWriterEvents.push(dirtyEvent);
+    // leafWriterEvents.push(dirtyEvent);
+    setLeafWriterEvents((prev) => [...prev, dirtyEvent]);
 
     const onLoadEvent = leafWriter.onLoad.subscribe(({ schemaName }) => {
       if (!leafWriter || !resource) return;
@@ -72,26 +108,32 @@ export const useLeafWriter = () => {
       tapDocument(resource, schemaName);
       subscribeToTimerService(leafWriter);
     });
-    leafWriterEvents.push(onLoadEvent);
+    // leafWriterEvents.push(onLoadEvent);
+    setLeafWriterEvents((prev) => [...prev, onLoadEvent]);
 
     const onCloseEvent = leafWriter.onClose.subscribe(() => {
       unsubscribeFromTimerService();
       disposeLeafWriter();
       navigate('/', { replace: true });
     });
-    leafWriterEvents.push(onCloseEvent);
+    // leafWriterEvents.push(onCloseEvent);
+    setLeafWriterEvents((prev) => [...prev, onCloseEvent]);
 
     const onStateChangeEvent = leafWriter.onEditorStateChange.subscribe((editorState) => {
       if (editorState.autosave !== undefined && editorState.autosave !== autosave) {
         setAutosave(editorState.autosave);
       }
     });
-    leafWriterEvents.push(onStateChangeEvent);
+    // leafWriterEvents.push(onStateChangeEvent);
+    setLeafWriterEvents((prev) => [...prev, onStateChangeEvent]);
   };
 
   const removeSubscribers = () => {
-    leafWriterEvents.forEach((subs) => subs.unsubscribe());
-    leafWriterEvents = [];
+    // leafWriterEvents.forEach((subs) => subs.unsubscribe());
+    // leafWriterEvents = [];
+
+    leafWriterEvent.forEach((subs) => subs.unsubscribe());
+    setLeafWriterEvents([]);
   };
 
   const handleDownload = async (format: string) => {
@@ -203,39 +245,40 @@ export const useLeafWriter = () => {
   };
 
   const tapDocument = (resource: Resource, schemaName: string) => {
-    tapDocumentTimer = setTimeout(async () => {
-      if (!leafWriter || !resource) return;
+    setTapDocumentTimer(
+      setTimeout(async () => {
+        if (!leafWriter || !resource) return;
 
-      const content = await leafWriter.getContent();
-      if (!content) return;
-      const screenshot = await leafWriter.getDocumentScreenshot();
+        const content = await leafWriter.getContent();
+        if (!content) return;
+        const screenshot = await leafWriter.getDocumentScreenshot();
 
-      setContentLastSaved(content);
-      addToRecentDocument({ ...resource, screenshot, schemaName });
-    }, 5_000);
+        setContentLastSaved(content);
+        addToRecentDocument({ ...resource, screenshot, schemaName });
+      }, 5_000),
+    );
   };
 
   const disposeLeafWriter = () => {
     timerService.stop();
-    clearTimeout(tapDocumentTimer);
+    if (tapDocumentTimer) clearTimeout(tapDocumentTimer);
 
     leafWriter?.dispose();
-    leafWriter = null;
-
+    setLeafWriter(null);
     close();
   };
 
   return {
-    leafWriter,
-    getDocumentRootName,
     disposeLeafWriter,
+    getDocumentRootName,
     getContent,
     handleCloseDocument,
     handleDownload,
     handleSave,
+    initLeafWriter,
+    loadLib,
     saveFeedback,
     setEditorEvents,
-    setCurrentLeafWriter,
     tapDocument,
   };
 };

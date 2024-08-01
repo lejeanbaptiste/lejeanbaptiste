@@ -7,9 +7,11 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { useCookieConsent, useLeafWriter } from '@src/hooks';
+import { useCookieConsent } from '@src/hooks';
 import { getIcon } from '@src/icons';
+import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
+import { useAtomValue } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import type { OptionProps, ViewType } from '../types';
 import { Footer } from './Footer';
@@ -28,7 +30,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
   const { openDialog } = useActions().ui;
 
   const { t } = useTranslation();
-  const { leafWriter } = useLeafWriter();
+  const leafWriter = useAtomValue(leafwriterAtom);
   const { clearCookieConsent, showSettings } = useCookieConsent();
 
   const handleSignOut = async () => {
