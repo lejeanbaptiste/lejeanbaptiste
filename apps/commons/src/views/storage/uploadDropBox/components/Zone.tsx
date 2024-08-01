@@ -22,7 +22,7 @@ export const Zone = ({
   isProcessing = false,
   width = 'auto',
 }: UploadPanelZoneProps) => {
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
   const { palette } = useTheme();
 
   const IconFileText = useMemo(() => getIcon('fileText'), []);
@@ -82,8 +82,8 @@ export const Zone = ({
               show={!filename}
               sx={{ '::first-letter': { textTransform: 'uppercase' } }}
             >
-              {t('LWC:storage.drag the document here')} {t('LWC:commons.or')}{' '}
-              {t('LWC:storage.click to upload')}
+              {t('LWC.storage.drag the document here')} {t('LWC.commons.or')}{' '}
+              {t('LWC.storage.click to upload')}
             </Label>
           )}
           {isProcessing && (

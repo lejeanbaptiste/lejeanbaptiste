@@ -12,6 +12,7 @@ let leafWriterEvents: any[] = [];
 let tapDocumentTimer: NodeJS.Timeout;
 
 export const useLeafWriter = () => {
+  const { t } = useTranslation();
   const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
 
   const {
@@ -112,7 +113,7 @@ export const useLeafWriter = () => {
 
     if (response instanceof Error) {
       notifyViaSnackbar({
-        message: `${t('LWC:commons.Conversion to HTML failed').toString()}. ${response.message}`,
+        message: `${t('LWC.commons.Conversion to HTML failed').toString()}. ${response.message}`,
         options: { variant: 'error' },
       });
       return;
@@ -149,7 +150,7 @@ export const useLeafWriter = () => {
 
     if (!saved.success) {
       notifyViaSnackbar({
-        message: `${saved.error.message}. ${t('LWC:storage.document_not_saved')}!`,
+        message: `${saved.error.message}. ${t('LWC.storage.document_not_saved')}!`,
         options: { variant: saved.error.type },
       });
       return;
@@ -158,7 +159,7 @@ export const useLeafWriter = () => {
     leafWriter.setContentHasChanged(false);
 
     notifyViaSnackbar({
-      message: t('LWC:storage.document_saved'),
+      message: t('LWC.storage.document_saved'),
       options: { variant: 'success' },
     });
   };
@@ -166,8 +167,8 @@ export const useLeafWriter = () => {
   const saveFeedback = (saved: boolean) => {
     const type = saved ? 'success' : 'error';
     const message = saved
-      ? t('LWC:storage.document_saved')
-      : `${t('LWC:error.something_went_wrong')}. ${t('LWC:storage.document_not_saved')}!`;
+      ? t('LWC.storage.document_saved')
+      : `${t('LWC.error.something_went_wrong')}. ${t('LWC.storage.document_not_saved')}!`;
 
     notifyViaSnackbar({ message, options: { variant: type } });
 
@@ -187,10 +188,10 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        title: `${t('LWC:commons.unsaved_changes')}`,
+        title: `${t('LWC.commons.unsaved_changes')}`,
         actions: [
-          { action: 'cancel', label: `${t('LWC:commons.cancel')}` },
-          { action: 'discard', label: `${t('LWC:commons.discard_changes')}` },
+          { action: 'cancel', label: `${t('LWC.commons.cancel')}` },
+          { action: 'discard', label: `${t('LWC.commons.discard_changes')}` },
         ],
         onClose: async (action) => {
           if (action !== 'discard') return;

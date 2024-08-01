@@ -13,7 +13,7 @@ export const Language = ({ onBack, onClose }: SubMenu) => {
   const { currentLocale } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
 
-  const { t, i18n } = useTranslation('LWC');
+  const { t, i18n } = useTranslation();
   const { analytics } = useAnalytics();
 
   const { switchLanguage: switchLanguageConsent } = useCookieConsent();
@@ -35,7 +35,7 @@ export const Language = ({ onBack, onClose }: SubMenu) => {
         <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <ListItemText primary={t('LWC:commons.language')} sx={{ textTransform: 'capitalize' }} />
+        <ListItemText primary={t('LWC.commons.language')} sx={{ textTransform: 'capitalize' }} />
       </ListItem>
       {locales.map((locale) => (
         <ListItem key={locale} color="primary" sx={{ px: 0.5 }}>

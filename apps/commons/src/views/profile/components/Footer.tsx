@@ -8,7 +8,7 @@ interface ProfileProps {
 
 export const Footer = ({ onClick }: ProfileProps) => {
   const { openDialog } = useActions().ui;
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const handleClickPrivacy = () => {
     onClick();
@@ -24,7 +24,7 @@ export const Footer = ({ onClick }: ProfileProps) => {
         variant="caption"
         underline="none"
       >
-        {t('LWC:commons.privacy')}
+        {t('LWC.commons.privacy')}
       </Link>
     </Stack>
   );

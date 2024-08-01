@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 export const LanguageMenu = () => {
   const { currentLocale } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const { switchLanguage: switchLanguageConsent } = useCookieConsent();
 
@@ -51,12 +51,12 @@ export const LanguageMenu = () => {
         size="small"
         startIcon={<LanguageIcon fontSize="inherit" />}
       >
-        {language.shortName}
+        {currentLocale}
       </Button>
       <Menu anchorEl={anchorEl} id="language-menu" onClose={handleClose} open={open}>
-        {Array.from(supportedLanguages).map(([, { code, name }]) => (
-          <MenuItem key={code} onClick={() => handleClick(code)} value={code}>
-            {t(name)}
+        {locales.map((locale) => (
+          <MenuItem key={locale} onPointerDown={() => handleSelectLocale(locale)} value={locale}>
+            {t(`LWC.languages.${locale}`, { lng: locale, fallbackLng: 'en' })}
           </MenuItem>
         ))}
       </Menu>

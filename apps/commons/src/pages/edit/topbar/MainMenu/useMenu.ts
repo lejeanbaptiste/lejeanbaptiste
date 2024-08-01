@@ -23,7 +23,7 @@ export const useMenu = () => {
   const { openStorageDialog } = useActions().storage;
   const { openDialog } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const { getDocumentRootName, handleCloseDocument, handleDownload, handleSave } = useLeafWriter();
   const { openResource } = useOpenResource();
@@ -33,12 +33,12 @@ export const useMenu = () => {
   const mainMenuOptions: (ItemProps | 'divider' | SubMenuProps)[] = [
     {
       icon: 'template',
-      label: `${t('LWC:commons.new')}...`,
+      label: `${t('LWC.commons.new')}...`,
       onTrigger: () => openDialog({ type: 'templates' }),
     },
     {
       icon: 'folderOpen',
-      label: `${t('LWC:commons.open')}...`,
+      label: `${t('LWC.commons.open')}...`,
       onTrigger: () =>
         void openStorageDialog({
           source: userState === 'AUTHENTICATED' ? 'cloud' : 'local',
@@ -51,12 +51,12 @@ export const useMenu = () => {
       disabled: userState !== 'AUTHENTICATED',
       hide: recentDocumentsCount === 0,
       icon: 'recent',
-      label: `${t('LWC:commons.open_recent')}`,
+      label: `${t('LWC.commons.open_recent')}`,
       popupId: 'recent',
     },
     {
       icon: 'importIcon',
-      label: t('LWC:storage.import document'),
+      label: t('LWC.storage.import document'),
       onTrigger: () => openDialog({ type: 'import', props: { maxWidth: 'md' } }),
     },
     'divider',
@@ -66,7 +66,7 @@ export const useMenu = () => {
         !storageProviders.some((provider) => provider.service?.isStorageProvider),
       hide: readonly,
       icon: 'save',
-      label: t('LWC:commons.save'),
+      label: t('LWC.commons.save'),
       onTrigger: () => void (!resource?.provider ? handleSave('saveAs') : handleSave()),
       shortcut: ' ⌘S',
       tooltipText: cloudDisabledMessage,
@@ -77,7 +77,7 @@ export const useMenu = () => {
         !storageProviders.some((provider) => provider.service?.isStorageProvider),
       hide: readonly,
       icon: 'saveAs',
-      label: `${t('LWC:commons.save_as')}...`,
+      label: `${t('LWC.commons.save_as')}...`,
       onTrigger: () => void handleSave('saveAs'),
       shortcut: ' ⌘⌥⇧S',
       tooltipText: cloudDisabledMessage,
@@ -85,12 +85,12 @@ export const useMenu = () => {
     {
       hide: readonly,
       icon: 'download',
-      label: `${t('LWC:commons.export_document')}`,
+      label: `${t('LWC.commons.export_document')}`,
       popupId: 'export',
     },
     'divider',
     {
-      label: t('LWC:commons.close'),
+      label: t('LWC.commons.close'),
       onTrigger: () => handleCloseDocument(),
       shortcut: ' ⌘W',
     },
@@ -105,7 +105,7 @@ export const useMenu = () => {
   const getExportOptions = async () => {
     const options: ItemProps[] = [
       {
-        label: `${t('LWC:commons.xml document')} (.xml)`,
+        label: `${t('LWC.commons.xml document')} (.xml)`,
         onTrigger: () => void handleDownload('xml'),
         sx: { textTransform: 'initial' },
       },
@@ -116,7 +116,7 @@ export const useMenu = () => {
     if (!conversionFormats) return options;
 
     const conversionOptions: ItemProps[] = conversionFormats.map((format) => ({
-      label: `${format} ${t('LWC:commons.document', { format })} (.${format.toLowerCase()})`,
+      label: `${format} ${t('LWC.commons.document', { format })} (.${format.toLowerCase()})`,
       onTrigger: () => handleDownload(format),
       sx: { textTransform: 'initial', '::first-letter': { textTransform: 'uppercase' } },
     }));

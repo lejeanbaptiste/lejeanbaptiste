@@ -2,7 +2,7 @@ import { Chip, Stack, useMediaQuery, useTheme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 export const StatusBar = () => {
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const { breakpoints } = useTheme();
   const isMobile = useMediaQuery(breakpoints.down('sm'));
@@ -16,7 +16,7 @@ export const StatusBar = () => {
   return (
     <Stack justifyContent="center" alignItems="center" px={2} mt={5}>
       <Chip
-        label={`${t('LWC:home.bugs')} / ${t('LWC:home.requests')}`}
+        label={`${t('LWC.home.bugs')} / ${t('LWC.home.requests')}`}
         onClick={handleClick}
         size="small"
         variant="outlined"

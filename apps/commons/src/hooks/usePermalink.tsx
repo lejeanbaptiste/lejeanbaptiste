@@ -25,7 +25,7 @@ export const usePermalink = () => {
   const { isStorageProviderSupported } = useActions().providers;
   const { getSampleDocuments, getTemplates } = useActions().storage;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -104,8 +104,8 @@ export const usePermalink = () => {
       if (!document) {
         const error: Error = {
           type: 'error',
-          message: `${t('LWC:commons.template')} "${search.template}" ${t(
-            'LWC:commons.not_found',
+          message: `${t('LWC.commons.template')} "${search.template}" ${t(
+            'LWC.commons.not_found',
           )}.`,
         };
         return error;
@@ -127,8 +127,8 @@ export const usePermalink = () => {
       if (!document) {
         const error: Error = {
           type: 'error',
-          message: `${t('LWC:commons.sample_document')} "${search.sample}" ${t(
-            'LWC:commons.not_found',
+          message: `${t('LWC.commons.sample_document')} "${search.sample}" ${t(
+            'LWC.commons.not_found',
           )}.`,
         };
         return error;
@@ -149,7 +149,7 @@ export const usePermalink = () => {
       if (!document) {
         const error: Error = {
           type: 'error',
-          message: `${t('LWC:commons.unable to load document')}: ${search.filename}`,
+          message: `${t('LWC.commons.unable to load document')}: ${search.filename}`,
         };
         return error;
       }
@@ -157,7 +157,7 @@ export const usePermalink = () => {
       const { expires, id, ...resource } = document;
 
       if (!isBefore(new Date(), document.expires)) {
-        const error: Error = { type: 'error', message: `${t('LWC:commons.request expired')}` };
+        const error: Error = { type: 'error', message: `${t('LWC.commons.request expired')}` };
         return error;
       }
 
@@ -169,16 +169,16 @@ export const usePermalink = () => {
 
     // * if it is comes from a provider
     if (!search.provider || Array.isArray(search.provider)) {
-      const error: Error = { type: 'error', message: t('LWC:storage.warning.check_URL_structure') };
+      const error: Error = { type: 'error', message: t('LWC.storage.warning.check_URL_structure') };
       return error;
     }
 
     if (!isStorageProviderSupported(search.provider)) {
       const error: Error = {
         type: 'error',
-        message: `${t('LWC:storage.warning.storage_provider_invalid', {
+        message: `${t('LWC.storage.warning.storage_provider_invalid', {
           provider: search.provider,
-        })}. ${t('LWC:storage.warning.check_URL_structure')}`,
+        })}. ${t('LWC.storage.warning.check_URL_structure')}`,
       };
       return error;
     }

@@ -11,7 +11,7 @@ export const useConversion = () => {
   const { editor } = useAppState();
   const { notifyViaSnackbar } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const fileDetail = useAtomValue(fileDetailAtom);
   const selectedType = useAtomValue(selectedTypeAtom);
@@ -82,7 +82,7 @@ export const useConversion = () => {
 
   const handleProcessError = (error: Error) => {
     notifyViaSnackbar({
-      message: `${t('LWC:commons.conversion failed')}. ${error.message}`,
+      message: `${t('LWC.commons.conversion failed')}. ${error.message}`,
       options: { autoHideDuration: 10_000, variant: 'error' },
     });
   };

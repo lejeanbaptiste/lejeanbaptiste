@@ -23,6 +23,7 @@ void i18next
     defaultNS: 'LWC',
     fallbackLng: ['en', 'fr'],
     ns: ['LWC'],
+    nsSeparator: '.',
     resources,
     returnEmptyString: false,
     supportedLngs: locales,
