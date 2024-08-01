@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 export const Footer = () => {
   const { openDialog } = useActions().ui;
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const handleClick = () => {
     openDialog({ type: 'privacy' });
@@ -17,7 +17,7 @@ export const Footer = () => {
         sx={{ cursor: 'pointer', textTransform: 'capitalize' }}
         variant="caption"
       >
-        {t('LWC:commons.privacy')}
+        {t('LWC.commons.privacy')}
       </Link>
     </Stack>
   );

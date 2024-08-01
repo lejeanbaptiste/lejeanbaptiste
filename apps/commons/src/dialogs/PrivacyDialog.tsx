@@ -17,10 +17,10 @@ import { useActions } from '../overmind';
 import type { IDialog } from './type';
 
 export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
-  const { language } = useAppState().ui;
+  const { currentLocale } = useAppState().ui;
   const { closeDialog } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
   const { showSettings } = useCookieConsent();
 
   const [content, setContent] = useState('');
@@ -30,8 +30,7 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   }, []);
 
   const loadContent = async () => {
-    const file = `privacy_${language.code}.md`;
-    const response = await fetch(`./content/${file}`);
+    const response = await fetch(`./content/privacy/${currentLocale}.md`);
     const text = await response.text();
     setContent(text);
   };
@@ -66,10 +65,9 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         </ReactMarkdown>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleOpenSettings}>{t('LWC:cookie_consent.privacy_settings')}</Button>
-        <Button onClick={handleCancel} variant="outlined">
-          {t('LWC:commons.close')}
+          {t('LWC.cookie_consent.privacy_settings')}
         </Button>
+          {t('LWC.commons.close')}
       </DialogActions>
     </Dialog>
   );

@@ -32,7 +32,7 @@ export const UploadDropBox = ({
   onSelectFile,
   width = 'auto',
 }: UploadDropBoxProps) => {
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const { uploadFile } = useActions().storage;
   const { notifyViaSnackbar } = useActions().ui;
@@ -62,7 +62,7 @@ export const UploadDropBox = ({
 
     if (!content) {
       notifyViaSnackbar({
-        message: `${t('LWC:messages.unable_to_upload file', { filename: selectedFile.name })}`,
+        message: `${t('LWC.messages.unable_to_upload file', { filename: selectedFile.name })}`,
         options: { variant: 'error' },
       });
 

@@ -11,7 +11,7 @@ import { Menu, Sidebar } from './components';
 export const Storage = () => {
   const { userState } = useAppState().auth;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
   const { palette } = useTheme();
 
   const countRecentDocs = useLiveQuery(() => db.recentDocuments.count(), [], 0);
@@ -20,9 +20,9 @@ export const Storage = () => {
 
   const view: Record<ViewType, ViewProps> = {
     blank: { title: '', value: 'blank' },
-    recent: { title: `${t('LWC:commons.recent')}`, value: 'recent' },
-    samples: { title: `${t('LWC:commons.samples')}`, value: 'samples' },
-    templates: { title: `${t('LWC:commons.templates')}`, value: 'templates' },
+    recent: { title: `${t('LWC.commons.recent')}`, value: 'recent' },
+    samples: { title: `${t('LWC.commons.samples')}`, value: 'samples' },
+    templates: { title: `${t('LWC.commons.templates')}`, value: 'templates' },
   };
 
   useEffect(() => {

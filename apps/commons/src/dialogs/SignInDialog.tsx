@@ -9,7 +9,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { authProviders } = useAppState().providers;
   const { closeDialog } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const handleClose = (_event: MouseEvent) => closeDialog(id);
   const handleCancel = () => closeDialog(id);
@@ -17,7 +17,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   return (
     <Dialog id={id} fullWidth maxWidth="xs" onClose={handleClose} open={open}>
       <DialogTitle textAlign="center" sx={{ '::first-letter': { textTransform: 'uppercase' } }}>
-        {t('LWC:commons.sign_in')} {t('LWC:commons.with')}
+        {t('LWC.commons.sign_in')} {t('LWC.commons.with')}
       </DialogTitle>
       <DialogContent>
         <Stack gap={2} py={5} alignItems="center">
