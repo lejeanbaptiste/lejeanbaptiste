@@ -4,7 +4,7 @@ import { useCookieConsent } from '@src/hooks';
 import { locales } from '@src/i18n';
 import { useActions, useAppState } from '@src/overmind';
 import { motion, type Variants } from 'framer-motion';
-import { useState, type MouseEvent } from 'react';
+import { useState, type PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const LanguageMenu = () => {
@@ -29,7 +29,7 @@ export const LanguageMenu = () => {
     handleClose();
   };
 
-  const handleOpenMenu = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleOpenMenu = (event: PointerEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -47,7 +47,7 @@ export const LanguageMenu = () => {
     >
       <Button
         color="inherit"
-        onClick={handleOpenMenu}
+        onPointerDown={handleOpenMenu}
         size="small"
         startIcon={<LanguageIcon fontSize="inherit" />}
       >

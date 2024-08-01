@@ -167,7 +167,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
             .filter((item) => !item.hide)
             .map(({ action, id, label, icon, secondaryIcon }, index, array) => (
               <ListItem key={id} divider={index === array.length - 1} sx={{ px: 0.5 }}>
-                <ListItemButton onClick={action} sx={{ borderRadius: 1 }}>
+                <ListItemButton onPointerDown={action} sx={{ borderRadius: 1 }}>
                   <ListItemIcon sx={{ minWidth: 32 }}>
                     {icon && <Icon component={getIcon(icon)} fontSize="small" />}
                   </ListItemIcon>

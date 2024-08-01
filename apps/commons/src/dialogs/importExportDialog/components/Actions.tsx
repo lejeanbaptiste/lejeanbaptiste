@@ -82,7 +82,7 @@ export const Actions = ({ onAction }: ActionsProps) => {
       <LoadingButton
         disabled={dialogAction === 'import' ? !fileDetail : false}
         loading={isProcessing}
-        onClick={handleSelect}
+        onPointerDown={handleSelect}
         variant="outlined"
       >
         <span>{dialogAction === 'import' ? t('LWC.storage.import') : t('LWC.storage.export')}</span>

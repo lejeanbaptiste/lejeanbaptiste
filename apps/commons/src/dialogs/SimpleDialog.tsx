@@ -111,7 +111,7 @@ export const SimpleDialog = ({
           <Button
             key={index}
             disabled={actionsDisabled}
-            onClick={() => handleAction(action)}
+            onPointerDown={() => handleAction(action)}
             variant={variant ?? 'text'}
           >
             {t(`LWC.commons.${label ?? action}`)}

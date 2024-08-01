@@ -17,7 +17,7 @@ export const StatusBar = () => {
     <Stack justifyContent="center" alignItems="center" px={2} mt={5}>
       <Chip
         label={`${t('LWC.home.bugs')} / ${t('LWC.home.requests')}`}
-        onClick={handleClick}
+        onPointerDown={handleClick}
         size="small"
         variant="outlined"
         sx={{ mb: 1 }}

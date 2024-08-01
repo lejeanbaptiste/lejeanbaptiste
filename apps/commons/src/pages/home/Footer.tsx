@@ -13,7 +13,7 @@ export const Footer = () => {
   return (
     <Stack justifyContent="center" alignItems="center" py={2}>
       <Link
-        onClick={handleClick}
+        onPointerDown={handleClick}
         sx={{ cursor: 'pointer', textTransform: 'capitalize' }}
         variant="caption"
       >

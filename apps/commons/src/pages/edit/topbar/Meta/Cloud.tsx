@@ -44,7 +44,7 @@ export const Cloud = () => {
         <IconButton
           aria-label="save"
           disableRipple={!isDirty}
-          onClick={handleClick}
+          onPointerDown={handleClick}
           size="small"
           sx={{
             mt: -0.125,

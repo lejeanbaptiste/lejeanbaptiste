@@ -54,7 +54,7 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
       />
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button onPointerDown={handleCancel}>{t('LWC.commons.cancel')}</Button>
-        <Button onClick={handleCreate} variant="outlined">
+        <Button onPointerDown={handleCreate} variant="outlined">
           {t('LWC.commons.create')}
         </Button>
       </DialogActions>

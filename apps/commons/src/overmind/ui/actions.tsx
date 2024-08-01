@@ -149,7 +149,7 @@ export const emitNotification = async (
     message,
     options: {
       action: (key) => (
-        <Button color="inherit" onClick={() => actions.ui.closeNotificationSnackbar(key)}>
+        <Button color="inherit" onPointerDown={() => actions.ui.closeNotificationSnackbar(key)}>
           {`${t('LWC.commons.dismiss')}`}
         </Button>
       ),
