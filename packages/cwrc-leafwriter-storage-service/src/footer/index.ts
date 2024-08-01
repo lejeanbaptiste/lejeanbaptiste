@@ -1,2 +1,2 @@
-export { FooterLoad } from './FooterLoad';
-export { FooterSave } from './FooterSave';
+export { FooterLoad } from './footer-load';
+export { FooterSave } from './footer-save';

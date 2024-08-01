@@ -1,6 +1,3 @@
-import { saveAs } from 'file-saver';
-import { Context } from '../';
-import i18next from '../../i18n';
 import type {
   AllowedMimeType,
   DialogType,
@@ -9,13 +6,16 @@ import type {
   StorageDialogConfig,
   StorageSource,
   Validate,
-} from '../../types';
-import { updateTranslation } from '../../utilities';
+} from '@src/types';
+import { saveAs } from 'file-saver';
+import { Context } from '../';
+import i18n from '../../i18n';
+import { updateLocale } from '../../utilities/locale';
 
 // * The following line is need for VSC extension i18n ally to work
-// useTranslation('LWStorageService');
+// useTranslation();
 
-const { t } = i18next;
+const { t } = i18n;
 
 export const configure = async ({ state, actions }: Context, config: StorageDialogConfig = {}) => {
   const {
@@ -24,14 +24,14 @@ export const configure = async ({ state, actions }: Context, config: StorageDial
     allowPaste,
     allowUrl,
     defaultCommitMessage,
-    language,
+    locale,
     preferProvider,
     providers: providerAuth,
     showInvisibleFiles,
     validate,
   } = config;
 
-  await updateTranslation(language);
+  await updateLocale(locale);
 
   const { common, cloud } = state;
 
@@ -109,27 +109,19 @@ export const setSources = ({ state }: Context) => {
 
   if (dialogType === 'load') {
     if (allowUrl) {
-      sources.push({
-        value: 'url',
-        label: t('commons.url', { ns: 'LWStorageService' }),
-        icon: 'url',
-      });
+      sources.push({ value: 'url', label: t('SS.commons.url'), icon: 'url' });
     }
 
     if (allowLocalFiles) {
       sources.push({
         value: 'local',
-        label: t('commons.from_your_computer', { ns: 'LWStorageService' }),
+        label: t('SS.commons.from_your_computer'),
         icon: 'computer',
       });
     }
 
     if (allowPaste) {
-      sources.push({
-        value: 'paste',
-        label: t('footer.pasteXml', { ns: 'LWStorageService' }),
-        icon: 'paste',
-      });
+      sources.push({ value: 'paste', label: t('SS.footer.pasteXml'), icon: 'paste' });
     }
   }
 };
@@ -161,8 +153,8 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
           maxWidth: 'xs',
           preventEscape: true,
           severity: 'error',
-          title: t('LWStorageService:commons.error'),
-          Body: error ?? t('LWStorageService:message.document_not_valid'),
+          title: t('SS.commons.error'),
+          Body: error ?? t('SS.message.document_not_valid'),
         },
       });
 

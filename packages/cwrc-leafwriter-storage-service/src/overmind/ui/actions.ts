@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
-import type { DialogBarProps } from '../../dialogs';
+import type { DialogBarProps } from '@src/dialogs';
 
 export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
   const isDisplayed = state.ui.dialogBar.some(({ props }) => props?.id === dialogBar.props?.id);

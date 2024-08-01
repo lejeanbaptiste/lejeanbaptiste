@@ -9,6 +9,8 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { SaveSettingsDialog } from '@src/dialogs';
+import { useActions, useAppState } from '@src/overmind';
 import {
   useEffect,
   useRef,
@@ -18,8 +20,6 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SaveSettingsDialog } from '../../../../dialogs';
-import { useActions, useAppState } from '../../../../overmind';
 
 export const Filename = () => {
   const { allowAllFileTypes, allowedFileTypes, resource } = useAppState().common;
@@ -27,7 +27,7 @@ export const Filename = () => {
   const { setFilename } = useActions().common;
   const { saveDocument } = useActions().cloud;
 
-  const { t } = useTranslation('LWStorageService');
+  const { t } = useTranslation();
 
   const [value, setValue] = useState<string>('');
   const [openSettings, setOpenSettings] = useState(false);
@@ -99,7 +99,7 @@ export const Filename = () => {
           onBlur={handleBlur}
           onChange={handleChange}
           onKeyPress={handleKeyPress}
-          placeholder={`${t('cloud.breadcrumbs.filename')}`}
+          placeholder={`${t('SS.cloud.breadcrumbs.filename')}`}
           sx={{ px: 1.5, flex: 1 }}
           value={value}
         />

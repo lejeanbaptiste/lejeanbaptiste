@@ -1,2 +1,2 @@
-export * from './TextEmphasis';
-export * from './uploadDropBox';
+export * from './text-emphasis';
+export * from './upload-dropbox';

@@ -9,13 +9,13 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
+import { useActions, useAppState } from '@src/overmind';
+import type { Content as ContentProps } from '@src/types';
+import type { LatestCommit } from '@src/types/Provider';
 import { formatDistance } from 'date-fns';
 import { AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { useActions, useAppState } from '../../../../overmind';
-import type { Content as ContentProps } from '../../../../types';
-import type { LatestCommit } from '../../../../types/Provider';
-import { ContentDetails } from './ContentDetails';
+import { ContentDetails } from './content-details';
 
 interface Props {
   content: ContentProps;

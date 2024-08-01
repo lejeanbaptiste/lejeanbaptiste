@@ -1,4 +1,3 @@
-import { derived } from 'overmind';
 import type {
   AlertDialog,
   AllowedMimeType,
@@ -10,7 +9,8 @@ import type {
   StorageSource,
   Submit,
   Validate,
-} from '../../types';
+} from '@src/types';
+import { derived } from 'overmind';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {

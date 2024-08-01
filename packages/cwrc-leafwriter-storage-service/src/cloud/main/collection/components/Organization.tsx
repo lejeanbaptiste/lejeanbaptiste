@@ -1,6 +1,6 @@
 import { Avatar, Box, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
-import { useActions, useAppState } from '../../../../overmind';
-import type { Organization as OrganizationProps } from '../../../../types';
+import { useActions, useAppState } from '@src/overmind';
+import type { Organization as OrganizationProps } from '@src/types';
 
 interface Props {
   organization: OrganizationProps;

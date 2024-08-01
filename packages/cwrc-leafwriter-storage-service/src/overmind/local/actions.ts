@@ -1,6 +1,6 @@
 import { Context } from '../';
-import { Resource } from '../../types';
-import { log } from '../../utilities';
+import { Resource } from '@src/types';
+import { log } from '@src//utilities';
 
 export const uploadFile = async (_context: Context, file: File): Promise<string | null> => {
   return new Promise((resolve, reject) => {
