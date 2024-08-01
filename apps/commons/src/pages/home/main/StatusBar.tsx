@@ -1,11 +1,8 @@
-import { Chip, Stack, useMediaQuery, useTheme } from '@mui/material';
+import { Chip, Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 export const StatusBar = () => {
   const { t } = useTranslation();
-
-  const { breakpoints } = useTheme();
-  const isMobile = useMediaQuery(breakpoints.down('sm'));
 
   const handleClick = () => {
     window.open(
