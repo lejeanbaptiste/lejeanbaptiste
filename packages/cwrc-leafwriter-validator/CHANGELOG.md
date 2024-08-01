@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 4.4.1
+
+### Patch Changes
+
+### Patch Changes
+- [c244244038d2f2d12df3b48a2267261a8c0dd5b8] New build
+- [3eaf12d08c8a1ec382c47a762f3c07cd3a1ca20f] Update dependencies
+  - core:
+    - bump: dexie@4.0.8
+  - dev:
+    - upgrade: @types/node@22.0.2
+    - update:
+      - esbuild-loader@4.2.2
+      - ts-jest@29.2.4
+      - tsup@8.2.3
+      - typedoc@0.26.5
+      - typescript@5.5.4
+      - webpack@5.93.0
+    - bump:
+      - @types/jsdom@21.1.7
+      - @types/lodash@4.17.7
+      - @types/mocha@10.0.7
+
 ## 4.4.0
 
 ### Minor Changes
