@@ -1,4 +1,4 @@
-import { IconName } from '@src/icons';
+import type { IconName } from '@src/icons';
 import type { OptionsObject, SnackbarMessage } from 'notistack';
 
 export * from './assert';
