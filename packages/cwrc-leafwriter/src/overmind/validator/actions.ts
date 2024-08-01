@@ -77,7 +77,7 @@ export const validate = async ({ state, actions }: Context) => {
       return;
     }
 
-    const totalError = valid ? 0 : errors?.length ?? 0;
+    const totalError = valid ? 0 : (errors?.length ?? 0);
     await actions.validator.updateValidationError(totalError);
 
     writer.event('documentValidated').publish(valid, { valid, errors }, documentString);
