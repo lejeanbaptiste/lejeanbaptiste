@@ -13,6 +13,11 @@
 
 ### Patch Changes
 
+- [631bd7c1a547a003a8bc82679e9201370f5ad956] redirect link for documentation
+- [423bff9aa90440197619c351c98cb44af9fb0507] locale: add terms
+- [a3d42dac8775bc03d5050ab0f3f4272942c81946] UX: add message if auth server is not available
+- [e7f0c2a0716787ad40e12f59b3c650c0070f0ed9] Improve DX: better type checking and error handling
+- [c4a3c1dee2e7d0d4e6fc5bbc6836eaf246ebf098] Improve DX: extend button types and rename a property
 - [8231788c0c8274be36f01fe175eeabe5f794c9b6] 18n: redefine nsSeparator as `.`
 - [d6e4c610ca297401261212e3508b9eec6ade92b6] Replace onClick for onPointerDown
 - [96a25fce655f054afee2fd2cc5fa9283819e13ca] mui: use slopProps instead of accessing props directly
@@ -34,7 +39,7 @@
       - @mui/material@5.16.6
       - @octokit/rest@20.1.1
       - @ts-rest/core@3.49.2
-      - axios@1.7.2
+      - axios@1.7.3 [76d4cb1dbb6de2d78601458e530b9bae4711d17f]
       - chroma-js@2.6.0
       - framer-motion@11.3.21
       - i18next@23.12.2
@@ -54,7 +59,7 @@
       - react-use@17.5.1
   - dev:
     - upgrade:
-      - @types/node@22.0.2
+      - @types/node@22.1.0 [76d4cb1dbb6de2d78601458e530b9bae4711d17f]
       - css-loader@7.1.2
       - css-minimizer-webpack-plugin@7.0.0
       - rimraf@6.0.1
@@ -63,7 +68,7 @@
       - @types/react-dom@18.3.0
       - esbuild-loader@4.2.2
       - mini-css-extract-plugin@2.9.0
-      - tsup@8.2.3
+      - tsup@8.2.4 [76d4cb1dbb6de2d78601458e530b9bae4711d17f]
       - typescript@5.5.4
       - webpack@5.93.0
     - bump:

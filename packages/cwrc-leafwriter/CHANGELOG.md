@@ -27,12 +27,13 @@
       - @fortawesome/fontawesome-free@6.6.0
       - @mui/icons-material@5.16.6
       - @mui/material@5.16.6
-      - axios@1.7.2
+      - axios@1.7.3 [fef4978241ffdfbdd0fc94901ae028d6d1370aae]
       - chroma-js@2.6.0
       - framer-motion@11.3.21
       - i18next@23.12.2
       - jotai@2.9.1
       - jotai-devtools@0.10.0
+      - luxon@3.5.0 [fef4978241ffdfbdd0fc94901ae028d6d1370aae]
       - mdi-material-ui@7.9.1
       - monaco-editor@0.50.0
       - react@18.3.1
@@ -51,7 +52,7 @@
       - react-use@17.5.1
   - dev:
     - upgrade:
-      - @types/node@22.0.2
+      - @types/node@22.1.0 [fef4978241ffdfbdd0fc94901ae028d6d1370aae]
       - @types/uuid@10.0.0
       - css-loader@7.1.2
     - update:
