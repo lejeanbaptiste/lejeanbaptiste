@@ -1,4 +1,12 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { ProviderButton } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +29,15 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
       </DialogTitle>
       <DialogContent>
         <Stack gap={2} py={5} alignItems="center">
+          {authProviders.length >= 0 ? (
+            <Typography align="center" variant="caption">
+              {`${t('LWC.messsages.authentication_server_is_currently_unavailable')}. ${t('LWC.messages.try_again')}.`}
+            </Typography>
+          ) : (
+            authProviders.map(({ providerId }) => (
               <ProviderButton key={providerId} providerId={providerId} />
+            ))
+          )}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center' }}>
