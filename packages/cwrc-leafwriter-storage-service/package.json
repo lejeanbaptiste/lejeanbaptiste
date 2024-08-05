@@ -73,7 +73,7 @@
     "@mui/material": "^5.16.6",
     "@octokit/rest": "^20.1.1",
     "autosuggest-highlight": "^3.3.4",
-    "axios": "^1.7.2",
+    "axios": "^1.7.3",
     "buffer": "^6.0.3",
     "date-fns": "^3.6.0",
     "dexie": "^4.0.8",
@@ -107,7 +107,7 @@
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.7",
     "@types/mocha": "^10.0.7",
-    "@types/node": "^22.0.2",
+    "@types/node": "^22.1.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "eslint": "^8.57.0",
@@ -119,7 +119,7 @@
     "shx": "^0.3.4",
     "ts-jest": "^29.2.4",
     "ts-node": "^10.9.2",
-    "tsup": "^8.2.3",
+    "tsup": "^8.2.4",
     "typedoc": "^0.26.5",
     "typescript": "^5.5.4"
   }
