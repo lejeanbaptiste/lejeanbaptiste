@@ -43,9 +43,7 @@ export const Sidebar = () => {
         />
         {
           <Stack gap={2} pt={2} alignItems="center" pr={2}>
-            {authProviders.map(({ providerId }) => (
-              <ProviderButton key={providerId} name={providerId} />
-            ))}
+                <ProviderButton key={providerId} providerId={providerId} />
           </Stack>
         }
       </Stack>
