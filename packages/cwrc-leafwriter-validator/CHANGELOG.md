@@ -10,11 +10,11 @@
   - core:
     - bump: dexie@4.0.8
   - dev:
-    - upgrade: @types/node@22.0.2
+    - upgrade: @types/node@22.1.0 [032fbf9571eb02d0c6c7d98a509108d3fda96bb7]
     - update:
       - esbuild-loader@4.2.2
       - ts-jest@29.2.4
-      - tsup@8.2.3
+      - tsup@8.2.4 [032fbf9571eb02d0c6c7d98a509108d3fda96bb7]
       - typedoc@0.26.5
       - typescript@5.5.4
       - webpack@5.93.0

@@ -30,6 +30,7 @@ See changes below (4.0.0-beta.1 and 4.0.0-beta.0)
       - @mui/icons-material@5.16.6
       - @mui/material@5.16.6
       - @octokit/rest@20.1.1
+      - axios@1.7.3 [55917a4cc6d657f4280dbb67ab969744c5996290]
       - framer-motion@11.3.21
       - i18next@13.12.12
       - react-use@17.5.1
@@ -40,9 +41,9 @@ See changes below (4.0.0-beta.1 and 4.0.0-beta.0)
       - @types/react-dom@18.3.0
     - upgrade:
       - @testing-library/react@16.0.0
-      - @types/node@22.0.2
-    - update: tsup@8.2.3
-      - bump:
+      - @types/node@22.1.0 [55917a4cc6d657f4280dbb67ab969744c5996290]
+    - update: tsup@8.2.4 [55917a4cc6d657f4280dbb67ab969744c5996290]
+    - bump:
       - @testing-library/jest-dom@6.4.8
       - ts-jest@29.2.4
       - typedoc@0.26.5
