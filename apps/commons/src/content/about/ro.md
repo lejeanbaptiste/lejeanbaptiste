@@ -18,7 +18,7 @@ LEAF-Writer may also work with custom schemas. When you open a document, LEAF-Wr
 
 You can use LEAF-Writer to edit XML documents or produce new documents from templates. There are templates and sample documents here for getting started.
 
-To learn more about how to use LEAF-Writer, see the [documentation](https://cwrc.ca/Documentation/public/DITA_Files-Various_Applications/CWRC-Writer/CWRCWriter_Started_Splash.html).
+To learn more about how to use LEAF-Writer, see the [documentation](https://www.leaf-vre.org/docs/documentation/leaf-commons/leaf-writer-documentation-basic).
 
 If you run into a bug or there is a feature you would like to see added, please submit a ticket to <https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues>.
 

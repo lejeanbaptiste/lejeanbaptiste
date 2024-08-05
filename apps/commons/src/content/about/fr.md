@@ -16,7 +16,7 @@ LEAF-Writer est conçu pour fonctionner avec [les personnalisations de la Text E
 
 Vous pouvez utiliser LEAF-Writer pour éditer des documents XML ou produire de nouveaux documents à partir de modèles. Il existe des modèles et des exemples de documents ici pour commencer.
 
-Pour en savoir plus sur l'utilisation de LEAF-Writer, consultez la [documentation](https://cwrc.ca/Documentation/public/DITA_Files-Various_Applications/CWRC-Writer/CWRCWriter_Started_Splash.html).
+Pour en savoir plus sur l'utilisation de LEAF-Writer, consultez la [documentation](https://www.leaf-vre.org/docs/documentation/leaf-commons/leaf-writer-documentation-basic).
 
 Si vous rencontrez un bogue ou s'il y a une fonctionnalité que vous aimeriez voir ajoutée, veuillez envoyer un ticket à <https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues>.
 
