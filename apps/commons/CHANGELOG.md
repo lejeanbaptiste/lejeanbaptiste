@@ -15,7 +15,7 @@
 
 - [631bd7c1a547a003a8bc82679e9201370f5ad956] redirect link for documentation
 - [423bff9aa90440197619c351c98cb44af9fb0507] locale: add terms
-- [a3d42dac8775bc03d5050ab0f3f4272942c81946] UX: add message if auth server is not available
+- [a3d42dac8775bc03d5050ab0f3f4272942c81946] [b18f94469e67dbf2db063cf9c2518a17813ad625] UX: add message if auth server is not available
 - [e7f0c2a0716787ad40e12f59b3c650c0070f0ed9] Improve DX: better type checking and error handling
 - [c4a3c1dee2e7d0d4e6fc5bbc6836eaf246ebf098] Improve DX: extend button types and rename a property
 - [8231788c0c8274be36f01fe175eeabe5f794c9b6] 18n: redefine nsSeparator as `.`
