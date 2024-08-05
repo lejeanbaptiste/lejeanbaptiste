@@ -21,9 +21,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
       </DialogTitle>
       <DialogContent>
         <Stack gap={2} py={5} alignItems="center">
-          {authProviders.map(({ providerId }) => (
-            <ProviderButton key={providerId} name={providerId} />
-          ))}
+              <ProviderButton key={providerId} providerId={providerId} />
         </Stack>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center' }}>
