@@ -29,7 +29,7 @@ export const SignInDialog = ({ id = uuidv4(), open = true }: IDialog) => {
       </DialogTitle>
       <DialogContent>
         <Stack gap={2} py={5} alignItems="center">
-          {authProviders.length >= 0 ? (
+          {authProviders.length === 0 ? (
             <Typography align="center" variant="caption">
               {`${t('LWC.messsages.authentication_server_is_currently_unavailable')}. ${t('LWC.messages.try_again')}.`}
             </Typography>
