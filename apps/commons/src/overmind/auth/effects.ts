@@ -100,8 +100,8 @@ export class Api {
    * @returns The URL of the external service.
    */
   async getExternalServiceUrl(service: string) {
-    const response = await axios.get<string>(`./api/${service}-url`);
-    return response.data;
+    const { data } = await axios.get<string>(`./api/${service}-url`);
+    return data;
   }
 
   /**
@@ -246,26 +246,26 @@ export class Api {
     }
 
     const authApi = getLincsAuthApi(this.AUTH_API_URL);
-    const response = await authApi.users.getLinkedAccounts({
+    const { body, status } = await authApi.users.getLinkedAccounts({
       headers: { authorization: `Bearer ${keycloakAccessCode}` },
       params: { username },
     });
 
-    if (response.status === 401 || response.status === 404 || response.status === 500) {
-      console.warn(response.body.message);
+    if (status === 401 || status === 404 || status === 500) {
+      console.warn(body.message);
       return {
-        error: { status: response.status, message: `Linked Accounts: ${response.body.message}` },
+        error: { status, message: `Linked Accounts: ${body.message}` },
       };
     }
 
-    if (response.status !== 200) {
+    if (status !== 200) {
       console.warn({ error: 'something went wrong' });
       return {
-        error: { status: response.status, message: `Linked Accounts: something went wrong` },
+        error: { status: status, message: `Linked Accounts: something went wrong` },
       };
     }
 
-    return response.body;
+    return body;
   }
 
   /**
@@ -289,7 +289,7 @@ export class Api {
     }
 
     const authApi = getLincsAuthApi(this.AUTH_API_URL);
-    const response = await authApi.users.getLinkAccountUrl({
+    const { body, status } = await authApi.users.getLinkAccountUrl({
       headers: { authorization: `Bearer ${keycloakAccessCode}` },
       params: { username },
       query: {
@@ -298,27 +298,24 @@ export class Api {
       },
     });
 
-    if (response.status === 401 || response.status === 404 || response.status === 500) {
-      console.warn(response.body.message);
+    if (status === 401 || status === 404 || status === 500) {
+      console.warn(body.message);
       return {
         error: {
-          status: response.status,
-          message: `Link Account URL: ${response.body.message}`,
+          status: status,
+          message: `Link Account URL: ${body.message}`,
         },
       };
     }
 
-    if (response.status !== 200) {
+    if (status !== 200) {
       console.warn({ error: 'something went wrong' });
       return {
-        error: {
-          status: response.status,
-          message: 'Link Account URL: something went wrong',
-        },
+        error: { status, message: 'Link Account URL: something went wrong' },
       };
     }
 
-    return response.body.url;
+    return body.url;
   }
 
   async getProviders(): Promise<Provider[] | Error> {
@@ -327,12 +324,12 @@ export class Api {
     }
 
     const authApi = getLincsAuthApi(this.AUTH_API_URL);
-    const response = await authApi.providers.getAll();
+    const { body, status } = await authApi.providers.getAll();
 
-    if (response.status === 200) return response.body;
+    if (status === 200) return body;
 
-    if (response.status === 500) {
-      console.warn(response.status, response.body.message);
+    if (status === 500) {
+      console.warn(status, body.message);
       return [];
     }
 

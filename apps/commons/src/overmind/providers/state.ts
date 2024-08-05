@@ -14,14 +14,16 @@ export const state: State = {
     supportedProviders.filter((supported) => !supported.linkOnly),
   ),
   identityProviders: derived(({ supportedProviders }: State) =>
-    supportedProviders.filter((provider) =>
-      supportedIdentityProviders.includes(provider.providerId),
-    ),
+    supportedProviders.filter((provider) => {
+      if (!provider.providerId) return false;
+      supportedIdentityProviders.includes(provider.providerId);
+    }),
   ),
   supportedProviders: [],
   storageProviders: derived(({ supportedProviders }: State) =>
-    supportedProviders.filter((provider) =>
-      supportedStorageProviders.includes(provider.providerId),
-    ),
+    supportedProviders.filter((provider) => {
+      if (!provider.providerId) return false;
+      supportedStorageProviders.includes(provider.providerId);
+    }),
   ),
 };
