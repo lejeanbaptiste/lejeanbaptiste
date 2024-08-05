@@ -126,9 +126,13 @@
       "link_to_storage_provider_instructions": "Vous pouvez le faire en cliquant sur l'icône de l'utilisateur dans le coin supérieur droit de l'écran, puis en sélectionnant une option dans la liste des fournisseurs de stockage.",
       "rotate_phone": "Veuillez faire pivoter votre téléphone ou ouvrir LEAF-Writer sur un grand écran.",
       "service not available at the moment": "Service non disponible pour le moment",
+      "try_again": "",
       "unable_to_upload file": "Incapable de télécharger le fichier",
       "you_must_sign_in_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter pour ouvrir et enregistrer des documents depuis le cloud",
       "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "Vous devez vous connecter avec un fournisseur de stockage pour ouvrir et enregistrer un document à partir du cloud"
+    },
+    "messsages": {
+      "authentication_server_is_currently_unavailable": ""
     },
     "profile": {
       "manage_your_lincs_account": "Gérer votre compte LINCS"

@@ -126,9 +126,13 @@
       "link_to_storage_provider_instructions": "",
       "rotate_phone": "",
       "service not available at the moment": "",
+      "try_again": "",
       "unable_to_upload file": "",
       "you_must_sign_in_to_open_and_save_document_from_the_cloud": "",
       "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": ""
+    },
+    "messsages": {
+      "authentication_server_is_currently_unavailable": ""
     },
     "profile": {
       "manage_your_lincs_account": ""
