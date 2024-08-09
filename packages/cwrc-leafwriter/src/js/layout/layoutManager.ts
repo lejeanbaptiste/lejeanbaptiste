@@ -324,7 +324,7 @@ class LayoutManager {
     }
 
     const container = this.getContainer()?.parent();
-    if (container?.[0]) fscreen.requestFullscreen(container[0]);
+    if (container?.[0]) fscreen.requestFullscreen($(document.body)[0]); // Use document body as element to start the full screen view from as otherwise some dialogs would not show up
 
     return true;
   }
