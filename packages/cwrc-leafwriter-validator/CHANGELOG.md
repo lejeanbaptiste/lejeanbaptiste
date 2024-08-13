@@ -10,7 +10,7 @@
   - core:
     - bump: dexie@4.0.8
   - dev:
-    - upgrade: @types/node@22.1.0 [032fbf9571eb02d0c6c7d98a509108d3fda96bb7]
+    - upgrade: @types/node@22.2.0 [6d9335da7d6b4428e171c0ee31776bc414cd8131]
     - update:
       - esbuild-loader@4.2.2
       - ts-jest@29.2.4

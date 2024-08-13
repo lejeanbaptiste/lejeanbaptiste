@@ -4,8 +4,8 @@
 
 ### Major Changes
 
-- [3b28cdb69d6631c726bdc996d7ad33ef9cb7978f] localization:
-  - Add support to Portuguese, Spanish, and Romanian.
+- [3b28cdb69d6631c726bdc996d7ad33ef9cb7978f] [1ac64fea4170d0ad2e11989d3956b5e8f2b24a16] localization:
+  - Add support to Portuguese, Spanish, Romanian, and German.
   - Rename localization namespace
   
 ### Minor Changes
@@ -19,28 +19,30 @@
   - core:
     - add:
       - nanoid: 5.0.7
-      - react-i18next@15.0.0
+      - react-i18next@15.0.1 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
     - upgrade: uuid@10.0.0
     - update:
       - @emotion/react@11.13.0
       - @emotion/styled@11.13.0
       - @fortawesome/fontawesome-free@6.6.0
-      - @mui/icons-material@5.16.6
-      - @mui/material@5.16.6
+      - @mui/icons-material@5.16.7 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
+      - @mui/material@5.16.7 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
       - axios@1.7.3 [fef4978241ffdfbdd0fc94901ae028d6d1370aae]
       - chroma-js@2.6.0
-      - framer-motion@11.3.21
-      - i18next@23.12.2
-      - jotai@2.9.1
-      - jotai-devtools@0.10.0
+      - framer-motion@11.3.214 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
+      - i18next@23.12.3 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
+      - jotai@2.9.2 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
+      - jotai-devtools@0.10.0 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
+      - jquery-ui@1.14.0 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
       - luxon@3.5.0 [fef4978241ffdfbdd0fc94901ae028d6d1370aae]
       - mdi-material-ui@7.9.1
       - monaco-editor@0.50.0
-      - react@18.3.1
+      - react@18.3.1 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
       - react-dom@18.3.1
       - react-icons@5.2.1
       - react-intersection-observer@9.13.0
       - react-virtuoso@4.9.0
+      - wikibase-sdk@10.1.0 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
       - zod@3.23.8
     - bump:
       - @cwrc/leafwriter-validator@4.4.1
@@ -48,11 +50,11 @@
       - formik@2.4.6
       - jquery-ui1.13.3
       - rdflib@2.2.35
-      - react-resizable-panels@2.0.22
+      - react-resizable-panels@2.0.23 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
       - react-use@17.5.1
   - dev:
     - upgrade:
-      - @types/node@22.1.0 [fef4978241ffdfbdd0fc94901ae028d6d1370aae]
+      - @types/node@22.2.0 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
       - @types/uuid@10.0.0
       - css-loader@7.1.2
     - update:
