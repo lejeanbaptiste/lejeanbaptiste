@@ -36,7 +36,7 @@ const types = [
   'TextLabels',
 ];
 
-const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
+const certaintyOptions = ['high', 'medium', 'low', 'unknown'];
 
 class RsDialog implements SchemaDialog {
   readonly writer: Writer;
