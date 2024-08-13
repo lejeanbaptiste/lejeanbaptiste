@@ -11,7 +11,7 @@ import { xmlValidityAtom } from '../store';
 
 export const Validator = () => {
   const [scope, animate] = useAnimate();
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
   const xmlValidity = useAtomValue(xmlValidityAtom);
   const { checkValidity } = useValidation();
 
@@ -45,7 +45,7 @@ export const Validator = () => {
           </Typography>
         </Stack>
       )}
-      <Tooltip placement="top" title={t('leafwriter:check_well-formedness')}>
+      <Tooltip placement="top" title={t('LW.check_well-formedness')}>
         <IconButton onClick={handleChecKDocument} sx={{ borderRadius: 2 }}>
           <TbPencilCheck strokeWidth={1.5} />
         </IconButton>

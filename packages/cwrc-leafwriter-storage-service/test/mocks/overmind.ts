@@ -1,5 +1,5 @@
+import { config } from '@src/overmind';
 import { createOvermindMock, IContext } from 'overmind';
-import { config } from '../../src/overmind';
 
 export let overmind: IContext<typeof config>;
 

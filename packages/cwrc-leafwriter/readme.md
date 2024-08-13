@@ -32,6 +32,9 @@ _Partial Documentation - Working in progress_
         - [NamedEntitySettings](#namedentitysettings)
       - [Schemas](#schemas)
     - [Full Config Example](#full-config-example)
+  - [Development](#development)
+    - [Localization](#localization)
+      - [Add new locale](#add-new-locale)
 
 ## Overview
 
@@ -168,6 +171,7 @@ The settings object has three main properties used to set up and customize LEAF-
 | ----------------- | --------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | authorityServices | ([`AuthorityService`](#authorityservice) \| `string`)`[]` |         | An list of authority services or their id's seting up the authority services. If you pass a string, it will enable the corresponding authority service. Use the object AuthorityService to fine tune the set up.                                                                                                                                       |
 | baseUrl           | `string`                                                  | `.`     | **Important**: By default, LEAF-Writer will load its dependencies (web workers, on-demand modules, extra CSS files) from the root folder. If these files are not on the root, you should define the path to these dependencies here. For instance, set this property to `/path/to/project/addons/` if you put LEAF-Writer dependencies in this folder. |
+| locales           | `string`                                                  | `en`    | Localize the UI and the messages. Must be valid and supported language code. E.g., `en`                                                                                                                                                                                                                                                                |
 | readonly          | `boolean`                                                 | `false` | Set LEAF-Writer readonly (prevent editing functionalities)                                                                                                                                                                                                                                                                                             |
 | schemas           | [`Schema`](#schemas)`[]`                                  |         | An array of schemas to be included as supported by default.                                                                                                                                                                                                                                                                                            |
 
@@ -289,6 +293,7 @@ editor.init({
       'lgpn',
       { id: 'wikidata', entities: { organization: false, title: false, thing: true }}
     ],
+    locale: 'en',
     readonly: false,
     schemas: [{
       id: 'cwrcTeiLite',
@@ -306,4 +311,40 @@ editor.init({
   },
 
 });
+```
+
+## Development
+
+### Localization
+
+This project is developed primarily in English and French.
+We use localization tools (i18next) to provide transaltion to other languages.
+
+#### Add new locale
+
+To add a new localization, follow these steps:
+
+1. Add new locale file
+
+Duplicate the `.src/locales/en.json` file and rename it according to the ISO 639 [language codes](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) (two-letter code). For instance, to add Italian, name the file `it.json`
+
+Replace all key values for an empty string `''`.
+The system is designed to fallback to English is a key has an empty string.
+
+2. Add support for new locale
+
+on the `./src/i18n.ts`:
+
+```ts
+...
+// IMPORT NEW LOCAL
+import it from './locales/it.json'; 
+...
+// ADD RESOURCE.
+export const resources = { en, es, fr, pt, de, ro, it } as const; 
+
+ // ADD TO THE LIST OF SUPPORTED LOCALES
+ // The order here reflect the order in which locales will be displayd in the UI
+export const locales = ['en', 'fr', 'es', 'pt', 'de', 'ro', 'it'] as const;
+...
 ```

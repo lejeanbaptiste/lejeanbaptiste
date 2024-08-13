@@ -749,7 +749,7 @@ export default class Gitlab implements Provider {
       const result = await fnToPoll(params);
       attempts++;
 
-      if (validate && validate(result)) {
+      if (validate?.(result)) {
         return resolve(result);
       } else if (attempts === maxAttempts) {
         return reject(new Error('Exceeded max attempts'));

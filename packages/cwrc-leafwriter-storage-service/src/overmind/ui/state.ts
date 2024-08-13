@@ -1,4 +1,4 @@
-import type { DialogBarProps } from '../../dialogs';
+import type { DialogBarProps } from '@src/dialogs';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {

@@ -20,6 +20,7 @@ import type { EditorStateType } from './overmind/editor/state';
 import Providers from './Providers';
 import type { LeafWriterOptions, LWDocument, ScreenshotParams } from './types';
 import './utilities/log';
+import { nanoid } from 'nanoid';
 
 declare global {
   interface Window {
@@ -38,6 +39,7 @@ const overmind = createOvermind(config, {
 const DEFAULT_HEIGHT = '700px';
 
 export class Leafwriter {
+  private readonly _id: string;
   private readonly domElement: HTMLElement;
 
   private reactReact: Root | undefined;
@@ -55,6 +57,7 @@ export class Leafwriter {
   }
 
   constructor(domElement: HTMLElement) {
+    this._id = nanoid();
     this.domElement = domElement;
     this.onContentHasChanged = new Subject();
     this._onLoad = new Subject();
@@ -114,6 +117,10 @@ export class Leafwriter {
     );
   }
 
+  get id() {
+    return this._id;
+  }
+
   get onLoad() {
     return this._onLoad;
   }
@@ -124,6 +131,10 @@ export class Leafwriter {
 
   get onEditorStateChange() {
     return this._onEditorStateChange;
+  }
+
+  getDocumentRootName() {
+    return overmind.state.document.rootName;
   }
 
   async getContent() {
@@ -223,8 +234,8 @@ export class Leafwriter {
     return overmind.actions.ui.setThemeAppearance(value);
   }
 
-  switchLanguage(value: string) {
-    return overmind.actions.ui.switchLanguage(value);
+  switchLocale(value: string) {
+    return overmind.actions.ui.switchLocale(value);
   }
 
   getFontSize() {

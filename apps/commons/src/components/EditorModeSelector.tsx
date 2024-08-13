@@ -21,7 +21,7 @@ export const EditorModeSelector = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const [mode, setMode] = useState('');
 
@@ -40,8 +40,8 @@ export const EditorModeSelector = () => {
   };
 
   const options: Options[] = [
-    { label: t('LWC:commons.viewing'), value: 'viewing', icon: VisibilityIcon },
-    { label: t('LWC:commons.editing'), value: 'editing', icon: EditIcon },
+    { label: t('LWC.commons.viewing'), value: 'viewing', icon: VisibilityIcon },
+    { label: t('LWC.commons.editing'), value: 'editing', icon: EditIcon },
   ];
 
   return (

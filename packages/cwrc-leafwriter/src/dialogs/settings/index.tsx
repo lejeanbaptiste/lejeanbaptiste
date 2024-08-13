@@ -10,14 +10,14 @@ import { Authorities, Editor, Interface, MarkupPanel, Reset } from './sections';
 
 export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
   const { isReadonly, settings } = useAppState().editor;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const menuItems: MenuItemProps[] = [
-    { id: 'interface', label: t('commons.interface') },
-    { id: 'editor', label: t('commons.editor') },
-    { id: 'authorities', label: t('commons.authorities'), hide: isReadonly },
-    { id: 'markup-panel', label: t('markup panel'), hide: isReadonly },
-    { id: 'reset', label: t('commons.reset'), hide: isReadonly },
+    { id: 'interface', label: t('LW.commons.interface') },
+    { id: 'editor', label: t('LW.commons.editor') },
+    { id: 'authorities', label: t('LW.commons.authorities'), hide: isReadonly },
+    { id: 'markup-panel', label: t('LW.markup panel'), hide: isReadonly },
+    { id: 'reset', label: t('LW.commons.reset'), hide: isReadonly },
   ];
 
   const handleClose = () => onClose && onClose(id);
@@ -36,21 +36,21 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
         <SideMenu items={menuItems} />
         <DialogContent>
           <Stack component={motion.div} layout spacing={3}>
-            <Section id="interface" title={t('commons.interface')}>
+            <Section id="interface" title={t('LW.commons.interface')}>
               <Interface />
             </Section>
-            <Section id="editor" title={t('commons.editor')}>
+            <Section id="editor" title={t('LW.commons.editor')}>
               <Editor />
             </Section>
             {!isReadonly && (
               <>
-                <Section id="authorities" title={t('commons.authorities')}>
+                <Section id="authorities" title={t('LW.commons.authorities')}>
                   <Authorities />
                 </Section>
-                <Section id="markup-panel" title={t('markup panel')}>
+                <Section id="markup-panel" title={t('LW.markup panel')}>
                   <MarkupPanel />
                 </Section>
-                <Section id="reset" title={t('commons.reset')}>
+                <Section id="reset" title={t('LW.commons.reset')}>
                   <Reset />
                 </Section>
               </>

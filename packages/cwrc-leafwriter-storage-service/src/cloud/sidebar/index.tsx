@@ -1,7 +1,7 @@
 import { Stack, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useAppState } from '@src/overmind';
 import { useEffect, useState } from 'react';
-import { useAppState } from '../../overmind';
 import { MainMenu, MobileMenu, PublicRepositories } from './components';
 
 export const Sidebar = () => {

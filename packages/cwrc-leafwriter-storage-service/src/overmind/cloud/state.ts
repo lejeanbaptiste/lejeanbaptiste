@@ -1,4 +1,3 @@
-import i18next from '../../i18n';
 import type {
   CollectionSource,
   CollectionType,
@@ -7,12 +6,13 @@ import type {
   Owner,
   Repository,
   SuportedProviders,
-} from '../../types';
+} from '@src/types';
+import i18n from '../../i18n';
 
 // * The following line is need for VSC extension i18n ally to work
-// useTranslation('LWStorageService');
+// useTranslation();
 
-const { t } = i18next;
+const { t } = i18n;
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {
@@ -46,8 +46,8 @@ type State = {
 
 export const state: State = {
   collectionSource: 'owner',
-  commitMessage: t('cloud.settings.update', { ns: 'LWStorageService' }),
-  defaultCommitMessage: t('cloud.settings.update', { ns: 'LWStorageService' }),
+  commitMessage: t('SS.cloud.settings.update'),
+  defaultCommitMessage: t('SS.cloud.settings.update'),
   isFetching: false,
   isLoading: false,
   isSaving: false,

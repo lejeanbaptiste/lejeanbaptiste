@@ -24,7 +24,7 @@ interface ConvertedDocument {
 
 export const useFormatConversion = () => {
   const { notifyViaSnackbar, openDialog } = useActions().ui;
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const checkDocumentFormat = async (content: string) => {
     let matchFormat: string | undefined = undefined;
@@ -70,17 +70,17 @@ export const useFormatConversion = () => {
         props: {
           icon: 'importExportRoundedIcon',
           preventEscape: true,
-          title: t('LWC:importExport.convert document').toString(),
+          title: t('LWC.importExport.convert document').toString(),
           Body: () => <InterceptConvertDialog format={fromType} />,
           actions: [
-            { action: 'cancel', label: `${t('LWC:commons.cancel')}` },
+            { action: 'cancel', label: `${t('LWC.commons.cancel')}` },
             {
               action: 'noConvertOpen',
-              label: `${t('LWC:importExport.try to open it without converting')}`,
+              label: `${t('LWC.importExport.try to open it without converting')}`,
             },
             {
               action: 'convertOpen',
-              label: `${t('LWC:importExport.convert and open')}`,
+              label: `${t('LWC.importExport.convert and open')}`,
               variant: 'outlined',
             },
           ],
@@ -121,7 +121,7 @@ export const useFormatConversion = () => {
 
   const notifyConvertError = (error: Error) => {
     notifyViaSnackbar({
-      message: `${t('LWC:commons.conversion failed')}: ${error.message}`,
+      message: `${t('LWC.commons.conversion failed')}: ${error.message}`,
       options: { variant: 'error' },
     });
   };

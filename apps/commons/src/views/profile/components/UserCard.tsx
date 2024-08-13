@@ -11,7 +11,7 @@ export const UserCard = () => {
 
   const { accountManagement } = useActions().auth;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const userDetail = useMemo(() => {
     if (!user) return;
@@ -55,11 +55,11 @@ export const UserCard = () => {
       {page !== 'edit' && (
         <IconButton
           color="primary"
-          onClick={handleManageAccontClick}
+          onPointerDown={handleManageAccontClick}
           size="small"
           sx={{ mt: '4px !important' }}
         >
-          <StyledToolTip title={t('LWC:profile.manage_your_lincs_account')}>
+          <StyledToolTip title={t('LWC.profile.manage_your_lincs_account')}>
             <SettingsIcon fontSize="inherit" />
           </StyledToolTip>
         </IconButton>

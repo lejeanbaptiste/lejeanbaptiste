@@ -91,13 +91,17 @@ export const MainMenu = () => {
           popupState={popupState}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           {...bindMenu(popupState)}
-          PaperProps={{ sx: { top: '8px !important', left: '18px !important' } }}
-          onClick={handleMenuClick}
+          slotProps={{
+            paper: {
+              sx: { top: '8px !important', left: '18px !important' },
+            },
+          }}
+          onPointerDown={handleMenuClick}
         >
           <Stack direction="row" mx={1} mt={2} mb={2} alignItems="center" justifyContent="center">
             <Logo
               height={24}
-              onClick={handleMenuLogoClick}
+              onPointerDown={handleMenuLogoClick}
               size="small"
               sx={{ cursor: 'pointer' }}
             />

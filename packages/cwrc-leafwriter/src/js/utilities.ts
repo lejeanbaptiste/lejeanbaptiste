@@ -368,7 +368,7 @@ class Utilities {
       // * skip if the node is not a TAG (ELEMENT that is not part of the document - i.e. do not has attr '_tag')
       if (isElement(_node) && !_node.getAttribute('_tag')) continue;
 
-      const nodeName = isElement(_node) ? _node.getAttribute('_tag') ?? '' : _node.nodeName;
+      const nodeName = isElement(_node) ? (_node.getAttribute('_tag') ?? '') : _node.nodeName;
       const pathName = _node.nodeType === Node.TEXT_NODE ? 'text()' : nodeName;
 
       const index = getNodeIndex(_node, nodeName);

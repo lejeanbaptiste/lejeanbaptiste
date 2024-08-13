@@ -3,7 +3,7 @@ import { Logo } from '@src/components';
 import { useTranslation } from 'react-i18next';
 
 export const Header = () => {
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
   const theme = useTheme();
 
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -19,7 +19,7 @@ export const Header = () => {
             sx={{ fontWeight: 300 }}
             variant={isMobile ? 'subtitle1' : 'h5'}
           >
-            {t('LWC:home.subtitle')}
+            {t('LWC.home.subtitle')}
           </Typography>
         </Stack>
       </Container>

@@ -8,7 +8,7 @@ const MAX_WIDTH = 170;
 
 export const Sidebar = () => {
   const { authProviders } = useAppState().providers;
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   return (
     <AnimatePresence>
@@ -30,7 +30,7 @@ export const Sidebar = () => {
             textTransform="uppercase"
             variant="subtitle1"
           >
-            {t('LWC:commons.sign_in')} {t('LWC:commons.with')}
+            {t('LWC.commons.sign_in')} {t('LWC.commons.with')}
           </Typography>
         </Box>
 
@@ -43,9 +43,15 @@ export const Sidebar = () => {
         />
         {
           <Stack gap={2} pt={2} alignItems="center" pr={2}>
-            {authProviders.map(({ providerId }) => (
-              <ProviderButton key={providerId} name={providerId} />
-            ))}
+            {authProviders.length === 0 ? (
+              <Typography align="center" variant="caption">
+                {`${t('LWC.messsages.authentication_server_is_currently_unavailable')}. ${t('LWC.messages.try_again')}.`}
+              </Typography>
+            ) : (
+              authProviders.map(({ providerId }) => (
+                <ProviderButton key={providerId} providerId={providerId} />
+              ))
+            )}
           </Stack>
         }
       </Stack>

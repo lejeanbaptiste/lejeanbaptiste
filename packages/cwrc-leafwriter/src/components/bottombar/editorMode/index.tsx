@@ -6,7 +6,7 @@ import { Menu } from './Menu';
 
 const EditorMode = () => {
   const { editorModeLabel } = useAppState().editor;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openMenu = Boolean(anchorEl);
@@ -16,7 +16,7 @@ const EditorMode = () => {
 
   return (
     <Box>
-      <Tooltip title={t('Editor Mode')}>
+      <Tooltip title={t('LW.Editor Mode')}>
         <Button
           aria-controls="editor-mode-menu"
           aria-expanded={openMenu ? 'true' : undefined}

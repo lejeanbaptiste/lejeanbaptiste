@@ -1,5 +1,80 @@
 # CHANGELOG
 
+## 3.5.0
+
+### Mahor Changes
+
+- [ce7ab42dcac3e59202e92683435145b0517f7192] [144a99c91cee9526783b9dec1b57b2278b0bb02f] localization:
+  - Add support to Portuguese, Spanish, Romanian, and German,
+
+### Minor Changes
+
+- [b96dc7d21a8a2efb2c326dd89383100e1fe87ce3] Edit page: use state to control leafwriter module
+
+### Patch Changes
+
+- [f0a2c696b98c6ed8b019ac40e57e191c1f866d43] Fix intermittent error while loading supported providers, wich prevent users to access their github account
+- [631bd7c1a547a003a8bc82679e9201370f5ad956] redirect link for documentation
+- [423bff9aa90440197619c351c98cb44af9fb0507] locale: add terms
+- [a3d42dac8775bc03d5050ab0f3f4272942c81946] [b18f94469e67dbf2db063cf9c2518a17813ad625] UX: add message if auth server is not available
+- [e7f0c2a0716787ad40e12f59b3c650c0070f0ed9] Improve DX: better type checking and error handling
+- [c4a3c1dee2e7d0d4e6fc5bbc6836eaf246ebf098] Improve DX: extend button types and rename a property
+- [8231788c0c8274be36f01fe175eeabe5f794c9b6] 18n: redefine nsSeparator as `.`
+- [d6e4c610ca297401261212e3508b9eec6ade92b6] Replace onClick for onPointerDown
+- [96a25fce655f054afee2fd2cc5fa9283819e13ca] mui: use slopProps instead of accessing props directly
+- [ced9d4db357d7c8471eb1b52edc4db67ba07f1c2] update dependencies
+  - core:
+    - upgrade:
+      - @cwrc/leafwriter-storage-service@4.0.0
+      - i18next-browser-languagedetector@8.0.0
+      - keycloak-js@25.0.2
+      - react-i18next@15.0.1 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - uuid@10.0.0
+    - update:
+      - @cwrc/leafwriter@3.6.0
+      - @emotion/react@11.13.0
+      - @emotion/styled@11.13.0
+      - @lincs.project/auth-api-contract@1.2.1
+      - @mui/icons-material@5.16.7 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - @mui/lab@5.0.0-alpha.173 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - @mui/material@5.16.7
+      - @octokit/rest@20.1.1
+      - @ts-rest/core@3.49.2
+      - axios@1.7.3 [76d4cb1dbb6de2d78601458e530b9bae4711d17f]
+      - chroma-js@2.6.0
+      - framer-motion@11.3.24 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - i18next@23.12.3 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - jotai@2.9.2 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - mdi-material-ui@7.9.1
+      - query-string@9.1.0
+      - react@18.3.1
+      - react-dom@18.3.1
+      - react-icons@5.2.1
+      - react-router-dom@6.26.0
+      - zod@3.23.8
+    - bump:
+      - @octokit/rest@20.1.1
+      - dexie@4.0.8
+      - material-ui-popup-state@5.1.2
+      - react-helmet-async@2.0.5
+      - react-use@17.5.1
+  - dev:
+    - upgrade:
+      - @types/node@22.1.2 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - css-loader@7.1.2
+      - css-minimizer-webpack-plugin@7.0.0
+      - rimraf@6.0.1
+    - update:
+      - @octokit/types@13.5.0
+      - @types/react-dom@18.3.0
+      - esbuild-loader@4.2.2
+      - mini-css-extract-plugin@2.9.0
+      - tsup@8.2.4 [76d4cb1dbb6de2d78601458e530b9bae4711d17f]
+      - typescript@5.5.4
+      - webpack@5.93.0
+    - bump:
+      - @types/webpack-env@1.18.5
+
 ## 3.4.0
 
 ### Minor Changes

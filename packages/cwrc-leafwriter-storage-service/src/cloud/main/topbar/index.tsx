@@ -2,12 +2,12 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CreateNewFolderOutlinedIcon from '@mui/icons-material/CreateNewFolderOutlined';
 import { Box, Button, Divider, IconButton, Stack, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useActions, useAppState } from '@src/overmind';
+import type { SearchResults } from '@src/types';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
-import { useActions, useAppState } from '../../../overmind';
-import type { SearchResults } from '../../../types';
 import { Breadcrumbs, Filename, SearchBar } from './components';
 
 interface TopbarProps {
@@ -25,7 +25,7 @@ export const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
     searchGlobal,
   } = useActions().cloud;
 
-  const { t } = useTranslation('LWStorageService');
+  const { t } = useTranslation();
 
   const theme = useTheme();
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
@@ -35,10 +35,12 @@ export const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
 
   useEffect(() => {
     onChangeSize && onChangeSize(containerRect as DOMRect);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [containerRect.height]);
 
   useEffect(() => {
     if (dialogType === 'save') checkPermissions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionSource, collectionType, owner]);
 
   const variants: Variants = {
@@ -127,7 +129,9 @@ export const Topbar = ({ onOpenCreateDialog, onChangeSize }: TopbarProps) => {
                   variant="outlined"
                   data-testid={`topbar:create-${repository ? 'folder' : 'repository'}`}
                 >
-                  {repository ? t('cloud.breadcrumbs.folder') : t('cloud.breadcrumbs.repository')}
+                  {repository
+                    ? t('SS.cloud.breadcrumbs.folder')
+                    : t('SS.cloud.breadcrumbs.repository')}
                 </Button>
               )}
             </AnimatePresence>

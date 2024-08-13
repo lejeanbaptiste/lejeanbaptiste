@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { dialogActionAtom } from '../store';
 
 export const Header = () => {
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const dialogAction = useStore().get(dialogActionAtom);
 
@@ -21,8 +21,8 @@ export const Header = () => {
     >
       <Icon component={getIcon(dialogAction === 'import' ? 'importIcon' : 'download')} />
       {dialogAction === 'import'
-        ? t('LWC:storage.import document')
-        : t('LWC:storage.export document')}
+        ? t('LWC.storage.import document')
+        : t('LWC.storage.export document')}
     </DialogTitle>
   );
 };

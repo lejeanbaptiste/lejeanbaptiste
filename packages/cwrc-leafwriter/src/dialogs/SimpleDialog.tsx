@@ -21,7 +21,7 @@ export const SimpleDialog = ({
   children,
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const [data, setData] = useState<{ [key: string]: any }>({});
 
@@ -86,7 +86,7 @@ export const SimpleDialog = ({
       >
         {actions.map(({ action, label, variant }, index) => (
           <Button key={index} onClick={() => handleAction(action)} variant={variant ?? 'text'}>
-            {t(`${label ?? action}`)}
+            {t(`LW.${label ?? action}`)}
           </Button>
         ))}
       </DialogActions>

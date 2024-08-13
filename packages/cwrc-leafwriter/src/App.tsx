@@ -35,8 +35,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    i18n.changeLanguage(state.ui.language.code);
-  }, [state.ui.language]);
+    i18n.changeLanguage(state.ui.currentLocale);
+  }, [state.ui.currentLocale]);
 
   useEffect(() => {
     window.document.addEventListener('fullscreenchange', fullscreenchanged);
@@ -79,6 +79,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     if (settings?.credentials?.nssiToken) {
       actions.editor.setNssiToken(settings.credentials.nssiToken);
     }
+
+    if (settings?.locale) actions.ui.switchLocal(settings.locale);
 
     await actions.editor.configureAuthorityServices(settings?.authorityServices);
 

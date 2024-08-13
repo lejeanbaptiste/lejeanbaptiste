@@ -1,7 +1,6 @@
+import { Locales } from '@src/i18n';
 import type { IconName } from '../icons';
-import { LanguageCode } from '../utilities';
 import type { ProviderAuth } from './Provider';
-
 export * from './assert';
 
 export interface StorageDialogProps {
@@ -27,7 +26,8 @@ export interface StorageDialogConfig {
   allowPaste?: boolean;
   allowUrl?: boolean;
   defaultCommitMessage?: string;
-  language?: LanguageCode;
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  locale?: Locales | (string & {});
   preferProvider?: string;
   providers?: ProviderAuth[];
   showInvisibleFiles?: boolean;
