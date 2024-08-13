@@ -13,17 +13,21 @@ export const state: State = {
   authProviders: derived(({ supportedProviders }: State) =>
     supportedProviders.filter((supported) => !supported.linkOnly),
   ),
-  identityProviders: derived(({ supportedProviders }: State) =>
-    supportedProviders.filter((provider) => {
+  identityProviders: derived(({ supportedProviders }: State) => {
+    const _identityProviders = supportedProviders.filter((provider) => {
       if (!provider.providerId) return false;
-      supportedIdentityProviders.includes(provider.providerId);
-    }),
-  ),
+      const isSupported = supportedIdentityProviders.includes(provider.providerId);
+      return isSupported;
+    });
+    return _identityProviders;
+  }),
   supportedProviders: [],
-  storageProviders: derived(({ supportedProviders }: State) =>
-    supportedProviders.filter((provider) => {
+  storageProviders: derived(({ supportedProviders }: State) => {
+    const _storageProviders = supportedProviders.filter((provider) => {
       if (!provider.providerId) return false;
-      supportedStorageProviders.includes(provider.providerId);
-    }),
-  ),
+      const isSupported = supportedStorageProviders.includes(provider.providerId);
+      return isSupported;
+    });
+    return _storageProviders;
+  }),
 };
