@@ -6,8 +6,6 @@
 
 See changes below (4.0.0-beta.1 and 4.0.0-beta.0)
 
-- Drop support for German (no translator yet)
-
 ## 4.0.0-beta.1
 
 ### Major Changes
@@ -21,14 +19,14 @@ See changes below (4.0.0-beta.1 and 4.0.0-beta.0)
 - [8000744f6e641324b90f9b270b3b5604d1f5caf6] Rename files using kebab case; use import alias `@src/`; rename locale namespace
 - [5865fff19b2a7ce0a082f112a49a5a2470f6b9db] Update dependencies
   - core:
-    - upgrade: react-i18next@15.0.0
+    - upgrade: react-i18next@15.0.1 [06be0ddbf6c2e4250e2ef05cdb5c8f2b966ab4c2]
     - update:
       - @emotion/react@11.13.0
       - @emotion/styled@11.13.0
       - @mui/lab@5.0.0-alpha.173
     - bump:
-      - @mui/icons-material@5.16.6
-      - @mui/material@5.16.6
+      - @mui/icons-material@5.16.7 [06be0ddbf6c2e4250e2ef05cdb5c8f2b966ab4c2]
+      - @mui/material@5.16.7 [06be0ddbf6c2e4250e2ef05cdb5c8f2b966ab4c2]
       - @octokit/rest@20.1.1
       - axios@1.7.3 [55917a4cc6d657f4280dbb67ab969744c5996290]
       - framer-motion@11.3.21
@@ -41,7 +39,7 @@ See changes below (4.0.0-beta.1 and 4.0.0-beta.0)
       - @types/react-dom@18.3.0
     - upgrade:
       - @testing-library/react@16.0.0
-      - @types/node@22.1.0 [55917a4cc6d657f4280dbb67ab969744c5996290]
+      - @types/node@22.2.0 [06be0ddbf6c2e4250e2ef05cdb5c8f2b966ab4c2]
     - update: tsup@8.2.4 [55917a4cc6d657f4280dbb67ab969744c5996290]
     - bump:
       - @testing-library/jest-dom@6.4.8

@@ -5,7 +5,7 @@
 ### Mahor Changes
 
 - [ce7ab42dcac3e59202e92683435145b0517f7192] [144a99c91cee9526783b9dec1b57b2278b0bb02f] localization:
-  - Add support to Portuguese, Spanish, and Romanian,
+  - Add support to Portuguese, Spanish, Romanian, and German,
 
 ### Minor Changes
 
@@ -13,6 +13,7 @@
 
 ### Patch Changes
 
+- [f0a2c696b98c6ed8b019ac40e57e191c1f866d43] Fix intermittent error while loading supported providers, wich prevent users to access their github account
 - [631bd7c1a547a003a8bc82679e9201370f5ad956] redirect link for documentation
 - [423bff9aa90440197619c351c98cb44af9fb0507] locale: add terms
 - [a3d42dac8775bc03d5050ab0f3f4272942c81946] [b18f94469e67dbf2db063cf9c2518a17813ad625] UX: add message if auth server is not available
@@ -27,23 +28,23 @@
       - @cwrc/leafwriter-storage-service@4.0.0
       - i18next-browser-languagedetector@8.0.0
       - keycloak-js@25.0.2
-      - react-i18next@15.0.0
+      - react-i18next@15.0.1 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
       - uuid@10.0.0
     - update:
       - @cwrc/leafwriter@3.6.0
       - @emotion/react@11.13.0
       - @emotion/styled@11.13.0
       - @lincs.project/auth-api-contract@1.2.1
-      - @mui/icons-material@5.16.6
-      - @mui/lab@5.0.0-alpha.173
-      - @mui/material@5.16.6
+      - @mui/icons-material@5.16.7 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - @mui/lab@5.0.0-alpha.173 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - @mui/material@5.16.7
       - @octokit/rest@20.1.1
       - @ts-rest/core@3.49.2
       - axios@1.7.3 [76d4cb1dbb6de2d78601458e530b9bae4711d17f]
       - chroma-js@2.6.0
-      - framer-motion@11.3.21
-      - i18next@23.12.2
-      - jotai@2.9.1
+      - framer-motion@11.3.24 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - i18next@23.12.3 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+      - jotai@2.9.2 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
       - mdi-material-ui@7.9.1
       - query-string@9.1.0
       - react@18.3.1
@@ -59,7 +60,7 @@
       - react-use@17.5.1
   - dev:
     - upgrade:
-      - @types/node@22.1.0 [76d4cb1dbb6de2d78601458e530b9bae4711d17f]
+      - @types/node@22.1.2 [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
       - css-loader@7.1.2
       - css-minimizer-webpack-plugin@7.0.0
       - rimraf@6.0.1
