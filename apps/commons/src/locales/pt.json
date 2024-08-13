@@ -1,177 +1,177 @@
 {
-  "LWC": {
-    "commons": {
-      "Conversion to HTML failed": "",
-      "about": "",
-      "accept_all": "",
-      "and": "",
-      "basic_interactions": "",
-      "cancel": "",
-      "close": "",
-      "contact_us": "",
-      "conversion failed": "",
-      "create": "",
-      "description": "",
-      "discard_changes": "",
-      "dismiss": "",
-      "document": "",
-      "download": "",
-      "editing": "",
-      "export": "",
-      "export as format": "",
-      "export_document": "",
-      "functionalities": "",
-      "identity": "",
-      "language": "",
-      "learn_more": "",
-      "link_your_account": "",
-      "more_information": "",
-      "name": "",
-      "new": "",
-      "none": "",
-      "not_found": "",
-      "open": "",
-      "open_recent": "",
-      "or": "",
-      "other": "",
-      "please": "",
-      "privacy": "",
-      "privacy_policy": "",
-      "privacy_settings": "",
-      "recent": "",
-      "reject_all": "",
-      "request expired": "",
-      "sample_document": "",
-      "samples": "",
-      "save": "",
-      "save_as": "",
-      "session": "",
-      "settings": "",
-      "sign_in": "",
-      "sign_out": "",
-      "storage": "",
-      "template": "",
-      "templates": "",
-      "unable to load document": "",
-      "unsaved_changes": "",
-      "viewing": "",
-      "what_would_you_like_to_do": "",
-      "with": "",
-      "xml document": ""
-    },
-    "cookie_consent": {
-      "consent_banner": {
-        "let_me_choose": "",
-        "line1": "",
-        "line2": "",
-        "line3": "",
-        "we_use_cookies": ""
-      },
-      "privacy_settings": "",
-      "remove_consent": "",
-      "settings_modal": {
-        "AUTH_SESSION_description": "",
-        "_ga_description": "",
-        "basic_interactions_description": "",
-        "cc_cookie_description": "",
-        "consent_preferences": "",
-        "cookie_expiration_time": "",
-        "cookie_usage": "",
-        "cookie_usage_description": "",
-        "domain": "",
-        "expiration": "",
-        "indefinitely_until_user_sign_out": "",
-        "lw_description": "",
-        "measurement": "",
-        "measurement_description": "",
-        "more_information_description": "",
-        "strictly_necessary": "",
-        "strictly_necessary_description": ""
-      },
-      "warning": {
-        "must_accept_cookies_message": "",
-        "remove_consent_basic_interactions_message": ""
-      }
-    },
-    "error": {
-      "message404": "",
-      "page_not_Found": "",
-      "something_went_wrong": ""
-    },
-    "home": {
-      "bugs": "",
-      "requests": "",
-      "subtitle": "",
-      "team": ""
-    },
-    "importExport": {
-      "convert and open": "",
-      "convert document": "",
-      "message": {
-        "LEAF-Writer needs to convert it to be able to use it": "",
-        "intercept_load_file_format": ""
-      },
-      "try to open it without converting": ""
-    },
-    "languages": {
-      "de": "",
-      "en": "",
-      "es": "",
-      "fr": "",
-      "pt": "",
-      "ro": ""
-    },
-    "messages": {
-      "annotation_need_space": "",
-      "link_to_storage_provider_instructions": "",
-      "rotate_phone": "",
-      "service not available at the moment": "",
-      "try_again": "",
-      "unable_to_upload file": "",
-      "you_must_sign_in_to_open_and_save_document_from_the_cloud": "",
-      "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": ""
-    },
-    "messsages": {
-      "authentication_server_is_currently_unavailable": ""
-    },
-    "profile": {
-      "manage_your_lincs_account": ""
-    },
-    "storage": {
-      "all_changes_salved": "",
-      "click to upload": "",
-      "click_to_save": "",
-      "document_not_saved": "",
-      "document_saved": "",
-      "drag the document here": "",
-      "error": {
-        "xml_not_well-formed_message": ""
-      },
-      "export": "",
-      "export document": "",
-      "from_the_cloud": "",
-      "from_your_device": "",
-      "import": "",
-      "import document": "",
-      "invalid_request": "",
-      "paste_your_XML_here": "",
-      "provider_not_found": "",
-      "saving": "",
-      "waiting_for_resource": "",
-      "warning": {
-        "check_URL_structure": "",
-        "storage_provider_invalid": ""
-      },
-      "you_will_lose_any_unsaved_changes": ""
-    },
-    "templates": {
-      "choose_a_template": ""
-    },
-    "ui": {
-      "appearance": "",
-      "dark_theme": "",
-      "device_theme": "",
-      "light_theme": ""
+    "LWC": {
+        "commons": {
+            "Conversion to HTML failed": "A conversão para HTML falhou",
+            "about": "Sobre",
+            "accept_all": "Aceitar todos",
+            "and": "e",
+            "basic_interactions": "interações básicas",
+            "cancel": "cancelar",
+            "close": "fechar",
+            "contact_us": "entre em contato",
+            "conversion failed": "A conversão falhou",
+            "create": "criar",
+            "description": "descrição",
+            "discard_changes": "descartar mudanças",
+            "dismiss": "descartar",
+            "document": "Documento",
+            "download": "download",
+            "editing": "edição",
+            "export": "exportar",
+            "export as format": "exportar {{format}}",
+            "export_document": "exportar documento",
+            "functionalities": "funcionalidades",
+            "identity": "identidade",
+            "language": "idioma",
+            "learn_more": "Saiba mais",
+            "link_your_account": "Link seu conta {{provider}}",
+            "more_information": "Mais informações",
+            "name": "nome",
+            "new": "novo",
+            "none": "nenhum",
+            "not_found": "não encontrado",
+            "open": "abrir",
+            "open_recent": "abrir recente",
+            "or": "ou",
+            "other": "outro",
+            "please": "por favor",
+            "privacy": "privacidade",
+            "privacy_policy": "Política de Privacidade",
+            "privacy_settings": "Configurações de privacidade",
+            "recent": "recente",
+            "reject_all": "rejeitar todos",
+            "request expired": "solicitação expirada",
+            "sample_document": "Exemplo de documento",
+            "samples": "exemplos",
+            "save": "salvar",
+            "save_as": "salvar como",
+            "session": "sessão",
+            "settings": "configurações",
+            "sign_in": "Login",
+            "sign_out": "Sair",
+            "storage": "Armazenamento",
+            "template": "modelo",
+            "templates": "modelos",
+            "unable to load document": "não foi possível carregar o documento",
+            "unsaved_changes": "alterações não salvas",
+            "viewing": "ver",
+            "what_would_you_like_to_do": "O que você gostaria de fazer?",
+            "with": "com",
+            "xml document": "Documento XML"
+        },
+        "cookie_consent": {
+            "consent_banner": {
+                "let_me_choose": "deixe-me escolher",
+                "line1": "Nós e terceiros selecionados usamos cookies ou tecnologias semelhantes para fins técnicos e, com seu consentimento, para medição. Negar o consentimento pode tornar recursos relacionados indisponíveis.",
+                "line2": "Você pode livremente dar, negar ou retirar seu consentimento a qualquer momento.",
+                "line3": "Use o botão 'Aceitar' para consentir com o uso de tais tecnologias. Use o botão 'Rejeitar' ou feche este aviso para continuar sem aceitar.",
+                "we_use_cookies": "Nós usamos cookies"
+            },
+            "privacy_settings": "configurações de privacidade",
+            "remove_consent": "remover consentimento",
+            "settings_modal": {
+                "AUTH_SESSION_description": "Armazena dados de login e sessão do usuário.",
+                "_ga_description": "Usado pelo Google Analytics para coletar dados sobre o número de vezes que um usuário visitou o site, bem como as datas da primeira visita da visita mais recente.",
+                "basic_interactions_description": "Esses rastreadores são usados para funcionalidades básicas do LEAF-Writer, que incluem inserir um identificador de usuário (por exemplo, nome da conta do Github ou ORCID) em quaisquer Anotações Web que são criadas e dar suporte ao carregamento, salvamento e compartilhamento de arquivos por meio dos repositórios Git de um usuário. O LEAF-Writer terá suas funcionalidades limitadas sem esses cookies.",
+                "cc_cookie_description": "Armazena preferências de consentimento de cookies.",
+                "consent_preferences": "Preferências de consentimento",
+                "cookie_expiration_time": "",
+                "cookie_usage": "Utilização de cookies",
+                "cookie_usage_description": "O painel a seguir permite que você personalize suas preferências de consentimento para o uso da tecnologia de cookies para que o Leaf-Writer possa fornecer os recursos descritos abaixo. Você pode revisar e alterar suas escolhas a qualquer momento. Esteja ciente de que negar o consentimento para uma finalidade específica pode tornar os recursos relacionados indisponíveis. Para obter mais detalhes relativos a cookies e outros dados confidenciais, leia o texto completo.",
+                "domain": "domínio",
+                "expiration": "expira em",
+                "indefinitely_until_user_sign_out": "indefinidamente até que o usuário faça log out",
+                "lw_description": "Armazena dados de uso no armazenamento local do navegador: provedores de identidade e armazenamento preferidos, idioma e tema de cores preferidos, repositórios e documentos recentes, esquemas XML, etc.",
+                "measurement": "medição",
+                "measurement_description": "Esses cookies coletam informações sobre como você usa o site, quais páginas você visitou e em quais links você clicou. Todos os dados são anonimizados e não podem ser usados para identificá-lo.",
+                "more_information_description": "Para quaisquer dúvidas sobre nossa política de cookies e suas escolhas.",
+                "strictly_necessary": "estritamente necessário",
+                "strictly_necessary_description": "Os cookies necessários ajudam a tornar um site utilizável, permitindo funções básicas como navegação de página e acesso a áreas seguras do site. O site não pode funcionar corretamente sem esses cookies."
+            },
+            "warning": {
+                "must_accept_cookies_message": "Você deve aceitar nossas políticas de cookies para poder fazer login. Clique no ícone de escudo na parte superior.",
+                "remove_consent_basic_interactions_message": "<0>Remover o consentimento para</0> <1>interações e funcionalidades básicas</1> <2>irá desconectá-lo.</2>"
+            }
+        },
+        "error": {
+            "message404": "Você tentou alguma rota obscura, ou veio aqui por engano. Volte para a <1>página principal.</1>",
+            "page_not_Found": "Página não encontrada",
+            "something_went_wrong": "Algo deu errado"
+        },
+        "home": {
+            "bugs": "bugs",
+            "requests": "pedidos",
+            "subtitle": "O editor online de XML e RDF do Linked Editing Academic Framework",
+            "team": "time"
+        },
+        "importExport": {
+            "convert and open": "converter e abrir",
+            "convert document": "converter documento",
+            "message": {
+                "LEAF-Writer needs to convert it to be able to use it": "O LEAF-Writer precisa convertê-lo para poder usá-lo.",
+                "intercept_load_file_format": "<0>Isso parece um </0> <1>{{format}}</1> <2>documento.</2>"
+            },
+            "try to open it without converting": "tente abrir sem converter"
+        },
+        "languages": {
+            "de": "Alemão",
+            "en": "Inglês",
+            "es": "Espanhol",
+            "fr": "Francês",
+            "pt": "Português",
+            "ro": "Romeno"
+        },
+        "messages": {
+            "annotation_need_space": "Anotar documentos requer mais espaço.",
+            "link_to_storage_provider_instructions": "Você pode fazer isso clicando no ícone do usuário no canto superior direito da tela e selecionando uma opção na lista de provedores de armazenamento",
+            "rotate_phone": "Gire seu telefone ou abra o LEAF-Writer em uma tela grande.",
+            "service not available at the moment": "Serviço indisponível no momento",
+            "try_again": "Tentar novamente",
+            "unable_to_upload file": "Não é possível carregar o arquivo",
+            "you_must_sign_in_to_open_and_save_document_from_the_cloud": "Você deve fazer login para abrir e salvar documentos da nuvem",
+            "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "Você deve fazer login com um provedor de armazenamento para abrir e salvar o documento na nuvem"
+        },
+        "messsages": {
+            "authentication_server_is_currently_unavailable": "O servidor de autenticação não está disponível no momento"
+        },
+        "profile": {
+            "manage_your_lincs_account": "Gerencie sua conta LINCS"
+        },
+        "storage": {
+            "all_changes_salved": "todas as alterações salvas",
+            "click to upload": "clique para fazer upload",
+            "click_to_save": "clique para salvar",
+            "document_not_saved": "Documento não salvo",
+            "document_saved": "Documento salvo",
+            "drag the document here": "arraste o document aqui",
+            "error": {
+                "xml_not_well-formed_message": "O documento que você está tentando carregar não está bem formado. Verifique se ele tem a extensão XML e segue a gramática XML correta."
+            },
+            "export": "exportar",
+            "export document": "exportar documento",
+            "from_the_cloud": "das nuvens",
+            "from_your_device": "do seu dispositivo",
+            "import": "importar",
+            "import document": "importar documento",
+            "invalid_request": "Solicitação inválida",
+            "paste_your_XML_here": "cole o XML aqui",
+            "provider_not_found": "provedor não encontrado",
+            "saving": "salvando",
+            "waiting_for_resource": "esperando pelo documento",
+            "warning": {
+                "check_URL_structure": "verifique a estrutura do URL",
+                "storage_provider_invalid": "provedor '{{provider}}' é invalido ou não suportado"
+            },
+            "you_will_lose_any_unsaved_changes": "Você perderá todas as alterações não salvas"
+        },
+        "templates": {
+            "choose_a_template": "escolha um modelo"
+        },
+        "ui": {
+            "appearance": "aparência",
+            "dark_theme": "Tema escuro",
+            "device_theme": "Tema do dispositivo",
+            "light_theme": "Tema claro"
+        }
     }
-  }
 }
