@@ -7,7 +7,7 @@ import { Button } from '../components';
 export const Reset = () => {
   const { resetDialogWarnings, resetPreferences } = useActions().editor;
   const { notifyViaSnackbar } = useActions().ui;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   return (
     <Stack>
@@ -15,30 +15,30 @@ export const Reset = () => {
         icon="reset"
         onClick={async () => {
           await resetDialogWarnings();
-          notifyViaSnackbar(t('Confirmation dialog preferences have been reset').toString());
+          notifyViaSnackbar(t('LW.Confirmation dialog preferences have been reset').toString());
         }}
       >
-        {t('Reset Dialog Warnings')}
+        {t('LW.Reset Dialog Warnings')}
       </Button>
       <Button
         icon="reset"
         onClick={async () => {
           await resetPreferences();
-          notifyViaSnackbar(t('Settings preferences have been reset to default').toString());
+          notifyViaSnackbar(t('LW.Settings preferences have been reset to default').toString());
         }}
       >
-        {t('Reset Settings')}
+        {t('LW.Reset Settings')}
       </Button>
       <Button
         icon="reset"
         onClick={async () => {
           await clearCache();
           notifyViaSnackbar(
-            `${t('Cache cleared')}. ${t('You might need to reload the document')}.`,
+            `${t('LW.Cache cleared')}. ${t('LW.You might need to reload the document')}.`,
           );
         }}
       >
-        {t('Clear Cache')}
+        {t('LW.Clear Cache')}
       </Button>
     </Stack>
   );

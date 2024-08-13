@@ -11,7 +11,7 @@ import { AuthorityService } from '../../../entityLookups';
 import { Authority } from './Authority';
 
 export const Authorities = () => {
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
   const { authorityServices } = useAppState().editor;
   const { reorderLookupPriority } = useActions().editor;
 
@@ -46,9 +46,9 @@ export const Authorities = () => {
       <Stack direction="row">
         <FilterTiltShiftIcon sx={{ mx: 1, height: 18, width: 18, mt: 0.25 }} />
         <Stack>
-          <Typography variant="body2">{t('Entities Lookup Sources')}</Typography>
+          <Typography variant="body2">{t('LW.Entities Lookup Sources')}</Typography>
           <Typography color="text.secondary" variant="caption">
-            {t('Drag authorities to reorder priority')}
+            {t('LW.Drag authorities to reorder priority')}
           </Typography>
         </Stack>
       </Stack>

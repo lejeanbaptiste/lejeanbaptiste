@@ -8,12 +8,12 @@ import { dialogActionAtom } from './store';
 export const Main = () => {
   const { data, error, isLoading } = useConversionAvailability();
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const dialogAction = useStore().get(dialogActionAtom);
 
   if (error || data?.length === 0) {
-    return <ErrorMessage message={t('LWC:messages.service not available at the moment')} />;
+    return <ErrorMessage message={t('LWC.messages.service not available at the moment')} />;
   }
 
   if (isLoading) {

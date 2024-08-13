@@ -1,4 +1,4 @@
-import { useLeafWriter } from '@src/hooks';
+import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { convertDocument } from '@src/services/leafTe';
 import { FileDetail, Resource } from '@src/types';
@@ -11,7 +11,7 @@ export const useConversion = () => {
   const { editor } = useAppState();
   const { notifyViaSnackbar } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const fileDetail = useAtomValue(fileDetailAtom);
   const selectedType = useAtomValue(selectedTypeAtom);
@@ -19,7 +19,7 @@ export const useConversion = () => {
   const setIsProcessing = useSetAtom(isProcessingAtom);
   const setResource = useSetAtom(resourceAtom);
 
-  const leafwriterEditor = useLeafWriter();
+  const leafwriterEditor = useAtomValue(leafwriterAtom);
 
   const processImportFile = async (_fileDetail?: FileDetail) => {
     const fileToProcess = _fileDetail ?? fileDetail;
@@ -51,7 +51,7 @@ export const useConversion = () => {
   const processExportFile = async () => {
     if (!editor.resource || !selectedType) return;
 
-    const content = await leafwriterEditor.getContent();
+    const content = await leafwriterEditor?.getContent();
     if (!content) return;
     setIsProcessing(true);
 
@@ -82,7 +82,7 @@ export const useConversion = () => {
 
   const handleProcessError = (error: Error) => {
     notifyViaSnackbar({
-      message: `${t('LWC:commons.conversion failed')}. ${error.message}`,
+      message: `${t('LWC.commons.conversion failed')}. ${error.message}`,
       options: { autoHideDuration: 10_000, variant: 'error' },
     });
   };

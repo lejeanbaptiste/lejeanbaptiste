@@ -1,3 +1,3 @@
-export * from './Filename';
+export * from './filename';
 export * from './breadcrumbs';
-export * from './searchBar';
+export * from './search-bar';

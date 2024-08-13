@@ -1,11 +1,11 @@
 import { Icon, Stack } from '@mui/material';
+import { TextEmphasis } from '@src/components';
+import { db } from '@src/db';
+import { getIcon, type IconName } from '@src/icons';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
-import { Context } from '..';
-import { TextEmphasis } from '../../components/TextEmphasis';
-import { db } from '../../db';
-import i18next from '../../i18n';
-import { getIcon, type IconName } from '../../icons';
+import { Context } from '../';
+import i18n from '../../i18n';
 import type {
   CollectionSource,
   Content,
@@ -34,12 +34,12 @@ import type {
 import { getFromLocalStorage, log } from '../../utilities';
 
 // * The following line is need for VSC extension i18n ally to work
-// useTranslation('LWStorageService');
+// useTranslation();
 
-const { t } = i18next;
+const { t } = i18n;
 
 //* INIITIALIZE
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
   //PREFERRED STORAGE PROVIDER
   const prefprovider = getFromLocalStorage('prefStorageProvider');
@@ -177,7 +177,7 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${t('cloud.user_not_found', { ns: 'LWStorageService' })}`,
+        title: `${t('SS.cloud.user_not_found')}`,
         Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
@@ -223,10 +223,11 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   if (!repo) {
     actions.ui.openDialog({
       props: {
+        id: 'repository-not-found',
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${t('commons.path_not_found', { ns: 'LWStorageService' })}`,
+        title: `${t('SS.commons.repository_not_found')}`,
         Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
@@ -262,10 +263,11 @@ export const rehydrate = async ({ state, actions }: Context, resource: Resource)
   if (!content) {
     actions.ui.openDialog({
       props: {
+        id: 'path-not-found',
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${t('commons.path_not_found', { ns: 'LWStorageService' })}`,
+        title: `${t('SS.commons.path_not_found')}`,
         Body: () => (
           <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
             {resource.provider ? (
@@ -634,6 +636,7 @@ export const forkRepo = async ({ state, actions }: Context): Promise<Repository 
 export const createFolder = async (
   { state, actions }: Context,
   name: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any | null> => {
   const provider = actions.cloud.getProvider();
   if (
@@ -956,15 +959,15 @@ export const saveDocument = async ({ state, actions }: Context) => {
         maxWidth: 'xs',
         severity: 'warning',
         preventEscape: true,
-        title: `${t('cloud.message.file_already_exists', { ns: 'LWStorageService' })}`,
-        Body: `${t('cloud.message.Do_you_want_to_overwrite', { ns: 'LWStorageService' })}?`,
+        title: `${t('SS.cloud.message.file_already_exists')}`,
+        Body: `${t('SS.cloud.message.Do_you_want_to_overwrite')}?`,
         actions: [
           {
             action: 'cancel',
-            label: `${t('commons.cancel', { ns: 'LWStorageService' })}`,
+            label: `${t('SS.commons.cancel')}`,
             variant: 'outlined',
           },
-          { action: 'overwrite', label: `${t('commons.overwrite', { ns: 'LWStorageService' })}` },
+          { action: 'overwrite', label: `${t('SS.commons.overwrite')}` },
         ],
         onClose: async (action) => {
           if (action === 'cancel') {
@@ -1009,7 +1012,7 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
       maxWidth: 'xs',
       preventEscape: true,
       severity: 'info',
-      title: `${t('commons.processing', { ns: 'LWStorageService' })}...`,
+      title: `${t('SS.commons.processing')}...`,
     },
   });
 
@@ -1044,8 +1047,8 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'error',
-        title: `${t('commons.error', { ns: 'LWStorageService' })}`,
-        Body: `${t('cloud.message.unabled_to_save', { ns: 'LWStorageService' })}`,
+        title: `${t('SS.commons.error')}`,
+        Body: `${t('SS.cloud.message.unabled_to_save')}`,
         onClose: () => actions.cloud.setIsSaving(false),
       },
     });
@@ -1057,14 +1060,12 @@ export const _createOrUpdateFile = async ({ state, actions }: Context, hash?: st
     actions.ui.closeDialog('progress');
 
     const title =
-      response.message === 'conflict'
-        ? t('commons.conflict', { ns: 'LWStorageService' })
-        : t('commons.error', { ns: 'LWStorageService' });
+      response.message === 'conflict' ? t('SS.commons.conflict') : t('SS.commons.error');
 
     const message =
       response.message === 'conflict'
-        ? t('cloud.message.unable_to_overwrite_file', { ns: 'LWStorageService' })
-        : `${t('cloud.message.unabled_to_save', { ns: 'LWStorageService' })}. ${response.message}`;
+        ? t('SS.cloud.message.unable_to_overwrite_file')
+        : `${t('SS.cloud.message.unabled_to_save')}. ${response.message}`;
 
     actions.ui.openDialog({
       props: {
@@ -1114,7 +1115,7 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
       maxWidth: 'xs',
       preventEscape: true,
       severity: 'info',
-      title: `${t('commons.processing', { ns: 'LWStorageService' })}...`,
+      title: `${t('SS.commons.processing')}...`,
     },
   });
 
@@ -1128,7 +1129,7 @@ export const saveAspullRequest = async ({ state, actions }: Context, crossOrigin
     actions.cloud.setIsSaving(false);
     return {
       type: 'error',
-      message: t('cloud.message.unable_pull_reqest', { ns: 'LWStorageService' }),
+      message: t('SS.cloud.message.unable_pull_reqest'),
     };
   }
 
@@ -1172,7 +1173,7 @@ export const pullRequest = async ({
   if (!branchHead)
     return {
       type: 'error',
-      message: t('cloud.message.unable_create_branch', { ns: 'LWStorageService' }),
+      message: t('SS.cloud.message.unable_create_branch'),
     };
   if (isErrorMessage(branchHead)) return branchHead;
 
@@ -1201,7 +1202,7 @@ export const pullRequestFromFork = async ({
   if (!fork)
     return {
       type: 'error',
-      message: t('cloud.message.unable_fork_repo', { ns: 'LWStorageService' }),
+      message: t('SS.cloud.message.unable_fork_repo'),
     };
   if (isErrorMessage(fork)) return fork;
 
@@ -1210,7 +1211,7 @@ export const pullRequestFromFork = async ({
       id: 'merge-progress',
       maxWidth: 'xs',
       severity: 'info',
-      title: `${t('cloud.message.create_merge_request', { ns: 'LWStorageService' })}`,
+      title: `${t('SS.cloud.message.create_merge_request')}`,
     },
   });
 
@@ -1245,7 +1246,7 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
   if (!branch)
     return {
       type: 'error',
-      message: t('cloud.message.unable_create_branch', { ns: 'LWStorageService' }),
+      message: t('SS.cloud.message.unable_create_branch'),
     };
 
   //------get document's hash from branch
@@ -1278,10 +1279,7 @@ export const branchFile = async ({ state, actions }: Context): Promise<string | 
   if (!saveOnBranchResponse || saveOnBranchResponse.status === 409) {
     return {
       type: 'error',
-      message: t('cloud.message.unable_save_on_branch', {
-        branch: branchHead,
-        ns: 'LWStorageService',
-      }),
+      message: t('SS.cloud.message.unable_save_on_branch', { branch: branchHead }),
     };
   }
 
@@ -1310,7 +1308,7 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
   if (!fork)
     return {
       type: 'error',
-      message: t('cloud.message.unable_fork_repo', { ns: 'LWStorageService' }),
+      message: t('SS.cloud.message.unable_fork_repo'),
     };
   if (isErrorMessage(fork)) return fork;
 
@@ -1324,7 +1322,7 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
       id: 'saving-document',
       maxWidth: 'xs',
       severity: 'info',
-      title: `${t('message.saving_document', { ns: 'LWStorageService' })}`,
+      title: `${t('SS.message.saving_document')}`,
     },
   });
 
@@ -1352,9 +1350,8 @@ export const forkFile = async ({ state, actions }: Context): Promise<Repository 
   if (!saveOnForkResponse || saveOnForkResponse.status === 409) {
     return {
       type: 'error',
-      message: t('cloud.message.unable_save_document_on_fork', {
+      message: t('SS.cloud.message.unable_save_document_on_fork', {
         fork: fork.name,
-        ns: 'LWStorageService',
       }),
     };
   }
@@ -1384,11 +1381,8 @@ export const fork = async ({ state, actions }: Context): Promise<Repository | Er
         id: 'forking-repository',
         maxWidth: 'xs',
         severity: 'info',
-        title: `${t('cloud.forking', { ns: 'LWStorageService' })}`,
-        Body: `${t('cloud.message.forking_can_take_minutes', { ns: 'LWStorageService' })}. ${t(
-          'message.be_patient',
-          { ns: 'LWStorageService' },
-        )}.}`,
+        title: `${t('SS.cloud.forking')}`,
+        Body: `${t('SS.cloud.message.forking_can_take_minutes')}. ${t('SS.message.be_patient')}.}`,
       },
     });
   }, 5_000);
@@ -1431,7 +1425,7 @@ export const createBranch = async ({ state, actions }: Context) => {
   if (!cloud.repository) return null;
 
   //check if branch exists
-  let branch: any = await provider.getBranch({
+  let branch = await provider.getBranch({
     branch: `branch-by-${provider.username}`,
     ownerUsername: cloud.owner?.username,
     repoId: cloud.repository?.id,

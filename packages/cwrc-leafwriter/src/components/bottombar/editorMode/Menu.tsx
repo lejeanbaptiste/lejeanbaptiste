@@ -13,7 +13,7 @@ interface MenuProps {
 export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { editorMode, editorModes } = useAppState().editor;
   const { closeNotificationSnackbar, openDialog, notifyViaSnackbar } = useActions().ui;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const { changeEditorMode, editorModeShouldChange } = useEditorReaction();
 
@@ -41,7 +41,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       props: {
         maxWidth: 'xs',
         severity,
-        title: `${t('Change Editor Mode')}?`,
+        title: `${t('LW.Change Editor Mode')}?`,
         Body: () => <>{text}</>,
         actions: [
           { action: 'cancel', label: t('commons.cancel').toString(), variant: 'outlined' },
@@ -49,8 +49,8 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
             action: 'change',
             label:
               severity === 'warning'
-                ? t('change anyway').toString()
-                : t('commons.change').toString(),
+                ? t('LW.change anyway').toString()
+                : t('LW.commons.change').toString(),
           },
         ],
         onClose: async (action) => {
@@ -70,7 +70,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('commons.undo')}
+            {t('LW.commons.undo')}
           </Button>
         ),
       },
@@ -103,7 +103,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         sx={{ cursor: 'default', bgcolor: ({ palette }) => palette.action.hover }}
       >
         <Typography sx={{ cursor: 'default' }} variant="caption">
-          {t('Editor Mode')}
+          {t('LW.Editor Mode')}
         </Typography>
       </Box>
       {editorModes.map(({ disabled, label, value }) => (

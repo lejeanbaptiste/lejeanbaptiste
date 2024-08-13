@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
+import i18n from '@src/i18n';
+import { log, logEnabledFor, updateLocale } from '@src/utilities';
 import '@testing-library/jest-dom';
-import i18next from '../src/i18n';
-import { log, logEnabledFor, supportedLanguages, updateTranslation } from '../src/utilities';
 
 describe('General', () => {
   describe('log', () => {
@@ -17,22 +17,22 @@ describe('General', () => {
   });
 
   describe('ui', () => {
-    describe('language', () => {
-      test('change language', async () => {
+    describe('locale', () => {
+      test('change locale', async () => {
         expect.assertions(3);
-        expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
-        await updateTranslation('fr-CA');
-        expect(i18next.language).toEqual(supportedLanguages['fr-CA'].code);
-        await updateTranslation('en-CA');
-        expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
+        expect(i18n.language).toEqual('en');
+        await updateLocale('fr');
+        expect(i18n.language).toEqual('fr');
+        await updateLocale('en');
+        expect(i18n.language).toEqual('en');
       });
 
-      test('language not supported', async () => {
+      test('locale not supported', async () => {
         expect.assertions(2);
-        expect(i18next.language).toEqual(supportedLanguages['en-CA'].code);
+        expect(i18n.language).toEqual('en');
         //@ts-ignore
-        await updateTranslation('pt-BR');
-        expect(i18next.language).not.toEqual('pt-BR');
+        await updateLocale('zz');
+        expect(i18n.language).not.toEqual('zz');
       });
     });
   });

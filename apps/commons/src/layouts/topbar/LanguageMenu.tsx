@@ -1,16 +1,16 @@
 import LanguageIcon from '@mui/icons-material/Language';
 import { Box, Button, Menu, MenuItem } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
+import { locales } from '@src/i18n';
 import { useActions, useAppState } from '@src/overmind';
-import { supportedLanguages } from '@src/utilities';
 import { motion, type Variants } from 'framer-motion';
-import { useState, type MouseEvent } from 'react';
+import { useState, type PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const LanguageMenu = () => {
-  const { language } = useAppState().ui;
+  const { currentLocale } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const { switchLanguage: switchLanguageConsent } = useCookieConsent();
 
@@ -23,14 +23,13 @@ export const LanguageMenu = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const handleClick = (code: string) => {
-    if (!code) code = language.code;
-    switchLanguage(code);
-    switchLanguageConsent(code);
+  const handleSelectLocale = (locale: string) => {
+    switchLanguage(locale);
+    switchLanguageConsent(locale);
     handleClose();
   };
 
-  const handleOpenMenu = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleOpenMenu = (event: PointerEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -48,16 +47,16 @@ export const LanguageMenu = () => {
     >
       <Button
         color="inherit"
-        onClick={handleOpenMenu}
+        onPointerDown={handleOpenMenu}
         size="small"
         startIcon={<LanguageIcon fontSize="inherit" />}
       >
-        {language.shortName}
+        {currentLocale}
       </Button>
       <Menu anchorEl={anchorEl} id="language-menu" onClose={handleClose} open={open}>
-        {Array.from(supportedLanguages).map(([, { code, name }]) => (
-          <MenuItem key={code} onClick={() => handleClick(code)} value={code}>
-            {t(name)}
+        {locales.map((locale) => (
+          <MenuItem key={locale} onPointerDown={() => handleSelectLocale(locale)} value={locale}>
+            {t(`LWC.languages.${locale}`, { lng: locale, fallbackLng: 'en' })}
           </MenuItem>
         ))}
       </Menu>

@@ -1,7 +1,8 @@
 import { Stack, Typography, styled } from '@mui/material';
 import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
-import { useLeafWriter } from '@src/hooks';
+import { leafwriterAtom } from '@src/jotai';
 import { useAppState } from '@src/overmind';
+import { useAtomValue } from 'jotai';
 import { useMemo } from 'react';
 import { Cloud } from './Cloud';
 import { FullPath } from './FullPath';
@@ -21,7 +22,7 @@ export const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
 export const Meta = () => {
   const { resource } = useAppState().editor;
 
-  const { leafWriter } = useLeafWriter();
+  const leafWriter = useAtomValue(leafwriterAtom);
 
   const fullPath = useMemo(() => {
     if (!resource) return '';

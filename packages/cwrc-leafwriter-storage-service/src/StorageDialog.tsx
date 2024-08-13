@@ -7,6 +7,7 @@ import { Main } from './main';
 import { config } from './overmind';
 import type { StorageDialogProps } from './types';
 
+export type { Locales } from './i18n';
 export type {
   AllowedMimeType,
   DialogType,
@@ -16,7 +17,6 @@ export type {
   Validate,
 } from './types';
 export type { ProviderAuth } from './types/Provider';
-export type { LanguageCode } from './utilities';
 
 const overmind = createOvermind(config, { name: 'StorageDialog', logProxies: true });
 

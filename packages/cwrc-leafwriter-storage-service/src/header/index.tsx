@@ -13,7 +13,7 @@ export const Header = ({ label }: Props) => {
   const { dialogType, source } = useAppState().common;
   const [scope, animate] = useAnimate<HTMLSpanElement>();
 
-  const { t } = useTranslation('LWStorageService');
+  const { t } = useTranslation();
 
   const [title, setTitle] = useState('');
 
@@ -52,7 +52,7 @@ export const Header = ({ label }: Props) => {
           textAlign="center"
           variant="h6"
         >
-          {label ? label : t(`commons.${dialogType}`)}
+          {label ? label : t(`SS.commons.${dialogType}`)}
         </Typography>
       </Grid>
 

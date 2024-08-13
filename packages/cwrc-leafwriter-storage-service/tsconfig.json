@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "lib"],
   "compilerOptions": {
     "allowJs": true,
@@ -19,7 +19,7 @@
     "noUnusedParameters": true,
     "outDir": "lib",
     "paths": {
-      "@src/*": ["src/*"]
+      "@src/*": ["./src/*"]
     },
     "preserveWatchOutput": true,
     "resolveJsonModule": true,

@@ -29,7 +29,7 @@ export const Storage = ({ onBack, onClose }: SubMenu) => {
   const { setPrefStorageProvider } = useActions().storage;
   const { notifyViaSnackbar } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const { analytics } = useAnalytics();
 
@@ -52,7 +52,7 @@ export const Storage = ({ onBack, onClose }: SubMenu) => {
       channel.close();
 
       if (!linkAccountCallback.success) {
-        notifyViaSnackbar(`${t(`LWC:error.something_went_wrong`)}`);
+        notifyViaSnackbar(`${t(`LWC.error.something_went_wrong`)}`);
         return;
       }
 
@@ -72,10 +72,10 @@ export const Storage = ({ onBack, onClose }: SubMenu) => {
   return (
     <List dense disablePadding sx={{ width: 300 }}>
       <ListItem sx={{ px: 1.75 }}>
-        <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
+        <IconButton onPointerDown={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <ListItemText primary={t('LWC:commons.storage')} sx={{ textTransform: 'capitalize' }} />
+        <ListItemText primary={t('LWC.commons.storage')} sx={{ textTransform: 'capitalize' }} />
       </ListItem>
       {supportedProviders
         .filter((provider) => supportedStorageProviders.includes(provider.providerId))
@@ -85,8 +85,8 @@ export const Storage = ({ onBack, onClose }: SubMenu) => {
             color="primary"
             secondaryAction={
               !service && (
-                <StyledToolTip arrow title={t('LWC:commons.link_your_account', { provider: id })}>
-                  <IconButton onClick={() => handleLinkAccount(id)} size="small">
+                <StyledToolTip arrow title={t('LWC.commons.link_your_account', { provider: id })}>
+                  <IconButton onPointerDown={() => handleLinkAccount(id)} size="small">
                     <AddLinkIcon color="primary" fontSize="small" />
                   </IconButton>
                 </StyledToolTip>
@@ -96,7 +96,7 @@ export const Storage = ({ onBack, onClose }: SubMenu) => {
           >
             <ListItemButton
               disabled={!service}
-              onClick={(event) => handleSelect(event, id)}
+              onPointerDown={(event) => handleSelect(event, id)}
               selected={user?.prefStorageProvider === id}
               sx={{
                 borderRadius: 1,

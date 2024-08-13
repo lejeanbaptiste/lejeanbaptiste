@@ -2,45 +2,45 @@ import i18next from './i18n';
 import type { Repository, Resource } from './types';
 import { isErrorMessage } from './types';
 import Provider, { type ProviderAuth } from './types/Provider';
-import { updateTranslation } from './utilities';
+import { updateLocale } from './utilities';
 
 export type { Resource } from './types';
 
 // * The following line is need for VSC extension i18n ally to work
-// useTranslation('LWStorageService');
+// useTranslation();
 
 const { t } = i18next;
 
 let provider: Provider | null;
 
 export const loadDocument = async (providerAuth: ProviderAuth, resource: Resource) => {
-  await updateTranslation();
+  await updateLocale();
 
   const { provider: providerName, owner, ownerType, repo, filename } = resource;
   let { path } = resource;
 
   if (!providerName) {
-    return new Error(t('LWStorageService:cloud.message.storage_provider_undefined'));
+    return new Error(t('SS.cloud.message.storage_provider_undefined'));
   }
   if (!owner) {
-    return new Error(t('LWStorageService:cloud.message.document_owner_undefined'));
+    return new Error(t('SS.cloud.message.document_owner_undefined'));
   }
   if (!ownerType) {
-    return new Error(t('LWStorageService:cloud.message.document_owner_type_undefined'));
+    return new Error(t('SS.cloud.message.document_owner_type_undefined'));
   }
   if (!repo) {
-    return new Error(t('LWStorageService:cloud.message.repository_undefined'));
+    return new Error(t('SS.cloud.message.repository_undefined'));
   }
 
   if (!path) path = '';
 
   if (!filename) {
-    return new Error(t('LWStorageService:cloud.message.document_filename_undefined'));
+    return new Error(t('SS.cloud.message.document_filename_undefined'));
   }
 
   provider = await initializeProvider(providerAuth);
   if (!provider) {
-    return new Error(t('LWStorageService:cloud.message.storage_provider_not_supported'));
+    return new Error(t('SS.cloud.message.storage_provider_not_supported'));
   }
 
   const repository = await provider
@@ -48,7 +48,7 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
     .catch(() => null);
 
   if (!repository) {
-    return new Error(t('LWStorageService:cloud.message.repository_not_found'));
+    return new Error(t('SS.cloud.message.repository_not_found'));
   }
 
   const filePath = path === '' ? filename : `${path}/${filename}`;
@@ -61,7 +61,7 @@ export const loadDocument = async (providerAuth: ProviderAuth, resource: Resourc
     branch: repository.default_branch,
   });
   if (!document) {
-    return new Error(t('LWStorageService:cloud.message.document_not_found'));
+    return new Error(t('SS.cloud.message.document_not_found'));
   }
 
   const documentResource: Resource = {
@@ -82,41 +82,41 @@ export const saveDocument = async (
   resource: Resource,
   overwrite = false,
 ) => {
-  await updateTranslation();
+  await updateLocale();
 
   const { provider: providerName, owner, ownerType, repo, filename, content, hash } = resource;
   let { path } = resource;
 
   if (!providerName) {
-    return new Error(t('LWStorageService:cloud.message.storage_provider_undefined'));
+    return new Error(t('SS.cloud.message.storage_provider_undefined'));
   }
   if (!owner) {
-    return new Error(t('LWStorageService:cloud.message.document_owner_undefined'));
+    return new Error(t('SS.cloud.message.document_owner_undefined'));
   }
   if (!ownerType) {
-    return new Error(t('LWStorageService:cloud.message.document_owner_type_undefined'));
+    return new Error(t('SS.cloud.message.document_owner_type_undefined'));
   }
-  if (!repo) return new Error(t('LWStorageService:cloud.message.repository_undefined'));
+  if (!repo) return new Error(t('SS.cloud.message.repository_undefined'));
 
   if (!path) path = '';
 
   if (!filename) {
-    return new Error(t('LWStorageService:cloud.message.document_filename_undefined'));
+    return new Error(t('SS.cloud.message.document_filename_undefined'));
   }
   if (!content) {
-    return new Error(t('LWStorageService:cloud.message.document_has_no_content'));
+    return new Error(t('SS.cloud.message.document_has_no_content'));
   }
 
   provider = await initializeProvider(providerAuth);
   if (!provider) {
-    return new Error(t('LWStorageService:cloud.message.storage_provider_not_supported'));
+    return new Error(t('SS.cloud.message.storage_provider_not_supported'));
   }
 
   const repository = await provider
     .getRepo({ username: owner, repoId: repo, repoName: repo })
     .catch(() => null);
   if (!repository) {
-    return new Error(t('LWStorageService:cloud.message.repository_not_found'));
+    return new Error(t('SS.cloud.message.repository_not_found'));
   }
 
   const filePath = path === '' ? filename : `${path}/${filename}`;
@@ -131,13 +131,13 @@ export const saveDocument = async (
   });
 
   if (!hasPermission) {
-    return new Error(t('LWStorageService:cloud.message.user_has_no_write_permission'));
+    return new Error(t('SS.cloud.message.user_has_no_write_permission'));
   }
 
   //check file exist
   const fileLatestHash = await getFileLatestHash({ filePath, repository, owner });
   if (fileLatestHash === hash && !overwrite) {
-    const errorMessage = `${t('LWStorageService:cloud.message.file_already_exists')}. ${t('LWStorageService:cloud.message.unable_to_overwrite_file')}.`;
+    const errorMessage = `${t('SS.cloud.message.file_already_exists')}. ${t('SS.cloud.message.unable_to_overwrite_file')}.`;
     return new Error(errorMessage);
   }
 
@@ -154,7 +154,7 @@ export const saveDocument = async (
   });
 
   if (!response) {
-    const errorMessage = `${t('LWStorageService:cloud.message.something_went_wrong')}. ${t('LWStorageService:cloud.message.unabled_to_save')}.`;
+    const errorMessage = `${t('SS.cloud.message.something_went_wrong')}. ${t('SS.cloud.message.unabled_to_save')}.`;
     return { message: errorMessage, type: 'error' };
   }
 

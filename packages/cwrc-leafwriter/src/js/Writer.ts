@@ -21,7 +21,7 @@ import { tinymceWrapperInit } from './tinymce/tinymceWrapper';
 import Utilities from './utilities';
 
 // * The following line is need for VSC extension i18n ally to work
-// useTranslation('leafwriter');
+// useTranslation();
 
 const { t } = i18next;
 
@@ -350,7 +350,7 @@ class Writer extends EventManager {
     if (window.location.hostname === 'localhost') return;
 
     event.preventDefault();
-    const msg = t('leafwriter:You have unsaved changes');
+    const msg = t('LW.You have unsaved changes');
     (event || window.event).returnValue = msg;
     return msg;
   }

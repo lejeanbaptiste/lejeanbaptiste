@@ -1,5 +1,73 @@
 # CHANGELOG
 
+## 4.0.0
+
+### Major Changes
+
+See changes below (4.0.0-beta.1 and 4.0.0-beta.0)
+
+## 4.0.0-beta.1
+
+### Major Changes
+
+- [b6bdeb06c1ce3918dfa96b2594e374a29889f995] **Locale**:
+  - Add support for Spanish, Portuguese, Romanian, and German
+  - BREAKING CHANGE: 🧨 Rename config property: `language` -> `locale`
+
+### Patch Changes
+
+- [8000744f6e641324b90f9b270b3b5604d1f5caf6] Rename files using kebab case; use import alias `@src/`; rename locale namespace
+- [5865fff19b2a7ce0a082f112a49a5a2470f6b9db] Update dependencies
+  - core:
+    - upgrade: react-i18next@15.0.1 [06be0ddbf6c2e4250e2ef05cdb5c8f2b966ab4c2]
+    - update:
+      - @emotion/react@11.13.0
+      - @emotion/styled@11.13.0
+      - @mui/lab@5.0.0-alpha.173
+    - bump:
+      - @mui/icons-material@5.16.7 [06be0ddbf6c2e4250e2ef05cdb5c8f2b966ab4c2]
+      - @mui/material@5.16.7 [06be0ddbf6c2e4250e2ef05cdb5c8f2b966ab4c2]
+      - @octokit/rest@20.1.1
+      - axios@1.7.3 [55917a4cc6d657f4280dbb67ab969744c5996290]
+      - framer-motion@11.3.21
+      - i18next@13.12.12
+      - react-use@17.5.1
+  - dev:
+    - add:
+      - @testing-library/dom@10.4.0
+      - @types/react@18.3.3
+      - @types/react-dom@18.3.0
+    - upgrade:
+      - @testing-library/react@16.0.0
+      - @types/node@22.2.0 [06be0ddbf6c2e4250e2ef05cdb5c8f2b966ab4c2]
+    - update: tsup@8.2.4 [55917a4cc6d657f4280dbb67ab969744c5996290]
+    - bump:
+      - @testing-library/jest-dom@6.4.8
+      - ts-jest@29.2.4
+      - typedoc@0.26.5
+      - typescript@5.5.4
+
+## 4.0.0-beta.0
+
+### Major Changes
+
+- [33d0e19899adbb79ba43848fdb5956c76e0b535b] Simplify locales by removing the country code
+  BREAKING CHANGE: 🧨 the language options accept locales with 2-letters code instead of 4. For example: `en` instead of `en-CA`
+
+### Minor Changes
+
+- [af7c449f454581848d611759fed3e84462aae766] Rename type `LanguageCode` as `Locales`
+- [100fd60aa5ddeafb284f25b2f44d8c39b1f1e842] Relax language value (string)
+- [b2bc8459c6c8c419d825c7a8be0a1834fbd9a80f] Localization: add new term
+
+### Patch Changes
+
+- [c18a6ade51526c53486d712e7028e185d906e59b] Add ids to dialogs
+- [e038139362e18a450f81f0e1f7af56b2b3ae537b] Dialogbar: test of dialog exist before add new
+- [f43b36d9f967c8524b24c11711ae90f897d2b4a6] Alert dialog: remove icon color
+
+- \_\_
+
 ## 3.1.0
 
 ### Minor Changes
@@ -16,6 +84,7 @@
 
 - [e95ec8fa930395aee47828a8d5aeeaae38e8e74f]fix i18next call to work with i18ally
 - update dependencies:
+
   - core:
     - upgrade:
       - octokit/rest@20.1.0 [18f68dd9b6b848b580a2836340a801ec96c1365c]

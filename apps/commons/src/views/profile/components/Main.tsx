@@ -7,9 +7,11 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { useCookieConsent, useLeafWriter } from '@src/hooks';
+import { useCookieConsent } from '@src/hooks';
 import { getIcon } from '@src/icons';
+import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
+import { useAtomValue } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import type { OptionProps, ViewType } from '../types';
 import { Footer } from './Footer';
@@ -22,13 +24,13 @@ interface MainProps {
 export const Main = ({ onChangeView, onClose }: MainProps) => {
   const { user } = useAppState().auth;
   const { contentHasChanged: isDirty } = useAppState().editor;
-  const { language, page, themeAppearance } = useAppState().ui;
+  const { currentLocale, page, themeAppearance } = useAppState().ui;
 
   const { signOut } = useActions().auth;
   const { openDialog } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
-  const { leafWriter } = useLeafWriter();
+  const { t } = useTranslation();
+  const leafWriter = useAtomValue(leafwriterAtom);
   const { clearCookieConsent, showSettings } = useCookieConsent();
 
   const handleSignOut = async () => {
@@ -37,11 +39,11 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
     openDialog({
       props: {
         severity: 'warning',
-        title: `${t('LWC:commons.unsaved_changes')}`,
-        Body: () => <Typography>{t('LWC:storage.you_will_lose_any_unsaved_changes')}.</Typography>,
+        title: `${t('LWC.commons.unsaved_changes')}`,
+        Body: () => <Typography>{t('LWC.storage.you_will_lose_any_unsaved_changes')}.</Typography>,
         actions: [
-          { action: 'cancel', label: `${t('LWC:commons.cancel')}` },
-          { action: 'signout', label: `${t('LWC:commons.sign_out')}`, variant: 'outlined' },
+          { action: 'cancel', label: `${t('LWC.commons.cancel')}` },
+          { action: 'signout', label: `${t('LWC.commons.sign_out')}`, variant: 'outlined' },
         ],
         onClose: async (action) => {
           if (action === 'cancel') return onClose();
@@ -62,9 +64,9 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'identity',
       label: (
         <>
-          {t('LWC:commons.identity')}:{' '}
+          {t('LWC.commons.identity')}:{' '}
           <span style={{ textTransform: 'capitalize' }}>
-            {user?.preferredID ?? t('LWC:commons.none')}
+            {user?.preferredID ?? t('LWC.commons.none')}
           </span>
         </>
       ),
@@ -77,9 +79,9 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'storage',
       label: (
         <>
-          {t('LWC:commons.storage')}:{' '}
+          {t('LWC.commons.storage')}:{' '}
           <span style={{ textTransform: 'capitalize' }}>
-            {user?.prefStorageProvider ?? t('LWC:commons.none')}
+            {user?.prefStorageProvider ?? t('LWC.commons.none')}
           </span>
         </>
       ),
@@ -90,13 +92,13 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
     },
     {
       id: 'privacy',
-      label: t('LWC:commons.privacy_settings'),
+      label: t('LWC.commons.privacy_settings'),
       icon: 'privacyTip',
       action: () => showSettings(),
     },
     {
       id: 'logout',
-      label: t('LWC:commons.sign_out'),
+      label: t('LWC.commons.sign_out'),
       icon: 'logout',
       action: () => handleSignOut(),
     },
@@ -107,13 +109,13 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'appearance',
       label: (
         <>
-          {t('LWC:ui.appearance')}:{' '}
+          {t('LWC.ui.appearance')}:{' '}
           <span style={{ textTransform: 'capitalize' }}>
             {themeAppearance === 'auto'
-              ? t('LWC:ui.device_theme')
+              ? t('LWC.ui.device_theme')
               : themeAppearance === 'dark'
-                ? t('LWC:ui.dark_theme')
-                : t('LWC:ui.light_theme')}
+                ? t('LWC.ui.dark_theme')
+                : t('LWC.ui.light_theme')}
           </span>
         </>
       ),
@@ -130,8 +132,10 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
       id: 'language',
       label: (
         <>
-          {t('LWC:commons.language')}:{' '}
-          <span style={{ textTransform: 'capitalize' }}>{language.name}</span>
+          {t('LWC.commons.language')}:{' '}
+          <span>
+            {t(`LWC.languages.${currentLocale}`, { lng: currentLocale, fallbackLng: 'en' })}
+          </span>
         </>
       ),
       icon: 'translate',
@@ -143,7 +147,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
   const editorMenu: OptionProps[] = [
     {
       id: 'settings',
-      label: t('LWC:commons.settings'),
+      label: t('LWC.commons.settings'),
       icon: 'settings',
       hide: page !== 'edit',
       action: (event) => {
@@ -165,7 +169,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
             .filter((item) => !item.hide)
             .map(({ action, id, label, icon, secondaryIcon }, index, array) => (
               <ListItem key={id} divider={index === array.length - 1} sx={{ px: 0.5 }}>
-                <ListItemButton onClick={action} sx={{ borderRadius: 1 }}>
+                <ListItemButton onPointerDown={action} sx={{ borderRadius: 1 }}>
                   <ListItemIcon sx={{ minWidth: 32 }}>
                     {icon && <Icon component={getIcon(icon)} fontSize="small" />}
                   </ListItemIcon>

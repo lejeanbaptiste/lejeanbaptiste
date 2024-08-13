@@ -7,16 +7,16 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useActions, useAppState } from '@src/overmind';
 import { useTranslation } from 'react-i18next';
-import { useActions, useAppState } from '../../../../../overmind';
-import { Crumb } from './Crumb';
+import { Crumb } from './crumb';
 
 export const Breadcrumbs = () => {
   const { collectionSource, collectionType, repositoryContent, owner, repository } =
     useAppState().cloud;
   const { navigateBack, navigateTo } = useActions().cloud;
 
-  const { t } = useTranslation('LWStorageService');
+  const { t } = useTranslation();
 
   const theme = useTheme();
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
@@ -46,14 +46,14 @@ export const Breadcrumbs = () => {
       >
         {collectionType === 'organizations' && (
           <Typography mt={2} sx={{ textTransform: 'capitalize' }}>
-            {t('cloud.breadcrumbs.organizations')}
+            {t('SS.cloud.breadcrumbs.organizations')}
           </Typography>
         )}
 
         {collectionType === 'repos' && collectionSource === 'organization' && (
           <Crumb
             level={-1}
-            name={`${t('cloud.breadcrumbs.organizations')}`}
+            name={`${t('SS.cloud.breadcrumbs.organizations')}`}
             onClick={handleClickOrgs}
           />
         )}
@@ -61,7 +61,7 @@ export const Breadcrumbs = () => {
         {owner && collectionType === 'repos' && collectionSource !== 'collaborator' ? (
           <Crumb
             disabled={!repository}
-            label={`${t('cloud.breadcrumbs.owner')}`}
+            label={`${t('SS.cloud.breadcrumbs.owner')}`}
             level={-2}
             name={owner.username}
             onClick={handleClickOwner}
@@ -69,7 +69,7 @@ export const Breadcrumbs = () => {
         ) : (
           collectionType === 'repos' && (
             <Typography mt={2} sx={{ textTransform: 'capitalize' }}>
-              {t('cloud.breadcrumbs.repositories')}
+              {t('SS.cloud.breadcrumbs.repositories')}
             </Typography>
           )
         )}
@@ -77,7 +77,7 @@ export const Breadcrumbs = () => {
         {collectionType === 'content' && !isSM && (
           <Crumb
             disabled={!repository}
-            label={`${t('cloud.breadcrumbs.owner')}`}
+            label={`${t('SS.cloud.breadcrumbs.owner')}`}
             level={-1}
             name={repository?.owner?.username}
             onClick={handleClickOwner}
@@ -87,7 +87,7 @@ export const Breadcrumbs = () => {
           <Crumb
             color={'primary'}
             disabled={repositoryContent.path && repositoryContent.path[0] === ''}
-            label={`${t('cloud.breadcrumbs.repository')}`}
+            label={`${t('SS.cloud.breadcrumbs.repository')}`}
             level={0}
             name={repository?.name}
             onClick={handleClickRepo}
@@ -97,7 +97,7 @@ export const Breadcrumbs = () => {
         {collectionType === 'content' && (
           <Crumb
             disabled={true}
-            label={`${t('cloud.breadcrumbs.branch')}`}
+            label={`${t('SS.cloud.breadcrumbs.branch')}`}
             level={0}
             name={repository?.default_branch}
             onClick={handleClickRepo}

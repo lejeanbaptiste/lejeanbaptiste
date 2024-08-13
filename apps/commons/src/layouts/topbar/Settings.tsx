@@ -1,10 +1,11 @@
 import SettingsIcon from '@mui/icons-material/Settings';
 import { IconButton } from '@mui/material';
-import { useLeafWriter } from '@src/hooks';
+import { leafwriterAtom } from '@src/jotai';
 import { motion, type Variants } from 'framer-motion';
+import { useAtomValue } from 'jotai';
 
 export const Settings = () => {
-  const { leafWriter } = useLeafWriter();
+  const leafWriter = useAtomValue(leafwriterAtom);
 
   const handleClick = () => {
     leafWriter?.showSettingsDialog();

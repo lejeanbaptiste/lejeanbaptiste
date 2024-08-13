@@ -8,7 +8,7 @@ import i18next from 'i18next';
 import { Context } from '../';
 
 // * The following line is need for VSC extension i18n ally to work
-// useTranslation('LWC')
+// useTranslation()
 const { t } = i18next;
 
 export const getGeonameUsername = async ({ effects }: Context) => {
@@ -63,7 +63,7 @@ export const save = async (
 
   //Check provider
   if (!resource?.provider) {
-    const message = t('LWC:storage.provider_not_found', { ns: 'LWC' });
+    const message = t('LWC.storage.provider_not_found');
     log.error(message);
     state.editor.isSaving = false;
     return { success: false, error: { type: 'error', message } };
@@ -73,7 +73,7 @@ export const save = async (
 
   //Check provider token
   if (!providerAuth) {
-    const message = t('LWC:storage.provider_not_found', { ns: 'LWC' });
+    const message = t('LWC.storage.provider_not_found');
     log.error(message);
     state.editor.isSaving = false;
     return { success: false, error: { type: 'error', message } };

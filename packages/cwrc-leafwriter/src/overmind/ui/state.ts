@@ -4,18 +4,19 @@ import type {
   EntityLookupDialogProps,
   PopupProps,
 } from '../../dialogs';
+import { type Locales } from '../../i18n';
 import { Panel } from '../../layout/Utilities';
-import type { ContextMenuState, Language, LayoutProps, NotificationProps } from '../../types';
+import type { ContextMenuState, LayoutProps, NotificationProps } from '../../types';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {
   contextMenu: ContextMenuState;
+  currentLocale: Locales;
   darkMode: boolean;
   dialogBar: DialogBarProps[];
   editSourceProps: EditSourceDialogProps;
   entityLookupDialogProps: EntityLookupDialogProps;
   fullscreen: boolean;
-  language: Language;
   layout: LayoutProps;
   markupPanel: {
     allowDragAndDrop: boolean;
@@ -30,12 +31,12 @@ type State = {
 
 export const state: State = {
   contextMenu: { show: false },
+  currentLocale: 'en',
   darkMode: false,
   dialogBar: [],
   editSourceProps: { open: false },
   entityLookupDialogProps: { open: false },
   fullscreen: false,
-  language: { code: 'en-CA', name: 'english', shortName: 'en' },
   layout: {
     outerLeft: { id: 'left', items: [Panel.toc, Panel.markup, Panel.entities] },
     left: { activePanel: 'markup', id: 'left', panels: ['toc', 'markup', 'entities'] },

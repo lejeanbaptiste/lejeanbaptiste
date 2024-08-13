@@ -21,7 +21,7 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
   const { themeAppearance } = useAppState().ui;
   const { setThemeAppearance } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const handleSelect = (event: MouseEvent, value: string) => {
     event.stopPropagation();
@@ -30,23 +30,23 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
   };
 
   const options: OptionProps[] = [
-    { id: 'auto', label: t('LWC:ui.device_theme'), icon: 'brightness4' },
-    { id: 'dark', label: t('LWC:ui.dark_theme'), icon: 'darkModeIcon' },
-    { id: 'light', label: t('LWC:ui.light_theme'), icon: 'brightness7' },
+    { id: 'auto', label: t('LWC.ui.device_theme'), icon: 'brightness4' },
+    { id: 'dark', label: t('LWC.ui.dark_theme'), icon: 'darkModeIcon' },
+    { id: 'light', label: t('LWC.ui.light_theme'), icon: 'brightness7' },
   ];
 
   return (
     <List dense disablePadding sx={{ width: 300 }}>
       <ListItem sx={{ px: 1.75 }}>
-        <IconButton onClick={() => onBack()} size="small" sx={{ mr: 1 }}>
+        <IconButton onPointerDown={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <ListItemText primary={t('LWC:commons.identity')} sx={{ textTransform: 'capitalize' }} />
+        <ListItemText primary={t('LWC.commons.identity')} sx={{ textTransform: 'capitalize' }} />
       </ListItem>
       {options.map(({ id, icon, label }) => (
         <ListItem key={id} color="primary" sx={{ px: 0.5 }}>
           <ListItemButton
-            onClick={(event) => handleSelect(event, id)}
+            onPointerDown={(event) => handleSelect(event, id)}
             selected={id === themeAppearance}
             sx={{
               borderRadius: 1,

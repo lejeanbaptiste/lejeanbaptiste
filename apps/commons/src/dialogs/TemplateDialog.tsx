@@ -11,7 +11,7 @@ import type { IDialog } from './type';
 export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
   const { closeDialog } = useActions().ui;
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
   const { openFromLibrary } = useOpenResource();
 
   const [layout, setLayout] = useState<Layout>('list');
@@ -42,7 +42,7 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         <TopBar
           layout={layout}
           onLayoutChange={changeLayout}
-          title={`${t('LWC:templates.choose_a_template')}`}
+          title={`${t('LWC.templates.choose_a_template')}`}
         />
       </DialogTitle>
       <TemplatesView
@@ -53,9 +53,9 @@ export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
         width={600}
       />
       <DialogActions sx={{ justifyContent: 'space-between' }}>
-        <Button onClick={handleCancel}>{t('LWC:commons.cancel')}</Button>
-        <Button onClick={handleCreate} variant="outlined">
-          {t('LWC:commons.create')}
+        <Button onPointerDown={handleCancel}>{t('LWC.commons.cancel')}</Button>
+        <Button onPointerDown={handleCreate} variant="outlined">
+          {t('LWC.commons.create')}
         </Button>
       </DialogActions>
     </Dialog>

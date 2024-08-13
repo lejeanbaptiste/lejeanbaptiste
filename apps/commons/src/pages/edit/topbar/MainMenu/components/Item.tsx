@@ -2,7 +2,7 @@ import { Box, MenuItem, MenuItemProps } from '@mui/material';
 import { StyledToolTip } from '@src/components';
 import type { IconName } from '@src/icons';
 import { motion, type Variants } from 'framer-motion';
-import { MouseEvent, useCallback, useContext } from 'react';
+import { useCallback, useContext, type PointerEvent } from 'react';
 import { CascadingContext } from '..';
 import type { ItemType } from '../useMenu';
 import { Content } from './Content';
@@ -24,7 +24,7 @@ export const Item = ({
   hide = false,
   icon,
   label,
-  onClick,
+  onPointerDown,
   onTrigger,
   shortcut,
   type = 'menuItem',
@@ -36,13 +36,13 @@ export const Item = ({
   if (!rootPopupState) throw new Error('must be used inside a CascadingMenu');
 
   const handleClick = useCallback(
-    (event: MouseEvent<HTMLLIElement, globalThis.MouseEvent>) => {
+    (event: PointerEvent<HTMLLIElement>) => {
       rootPopupState.close();
 
-      if (onClick) onClick(event);
+      if (onPointerDown) onPointerDown(event);
       if (onTrigger) onTrigger(data);
     },
-    [rootPopupState, onClick],
+    [rootPopupState, onPointerDown],
   );
 
   const variants: Variants = {
@@ -66,7 +66,7 @@ export const Item = ({
             {...props}
             dense
             disabled={disabled}
-            onClick={(event) => handleClick(event)}
+            onPointerDown={(event) => handleClick(event)}
             sx={{ justifyContent: 'space-between', mx: 0.5, px: 0.75, gap: 1.5, borderRadius: 1 }}
           >
             <Content {...{ icon, shortcut, sx }}>{label}</Content>

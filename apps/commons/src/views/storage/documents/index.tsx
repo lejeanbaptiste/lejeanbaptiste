@@ -18,7 +18,7 @@ const MIN_HEIGHT = 333;
 
 export const DocumentViews = ({ title, value }: DocumentViewsProps) => {
   const { userState } = useAppState().auth;
-  const { language } = useAppState().ui;
+  const { currentLocale } = useAppState().ui;
 
   const animationControl = useAnimation();
   const { width: _windowWidth } = useWindowSize();
@@ -38,7 +38,7 @@ export const DocumentViews = ({ title, value }: DocumentViewsProps) => {
 
   useEffect(() => {
     switchView();
-  }, [language, value]);
+  }, [currentLocale, value]);
 
   const changeViewSize = () => {
     setWidth(userState === 'AUTHENTICATED' ? getMaxWidth() : MIN_WIDTH);

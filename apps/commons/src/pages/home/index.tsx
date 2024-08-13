@@ -19,7 +19,7 @@ export const HomePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const { getResourceFromPermalink } = usePermalink();
 
@@ -65,7 +65,9 @@ export const HomePage = () => {
   return (
     <Page>
       <TopBar
-        Left={<Button onClick={() => handleClickTopBar('about')}>{t('LWC:commons.about')}</Button>}
+        Left={
+          <Button onPointerDown={() => handleClickTopBar('about')}>{t('LWC.commons.about')}</Button>
+        }
       />
       <Stack>
         <Main />

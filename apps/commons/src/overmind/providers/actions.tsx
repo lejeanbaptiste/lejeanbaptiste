@@ -44,9 +44,11 @@ export const getStorageProviderAuth = ({ state }: Context, providerId: string) =
 export const getStorageProvidersAuth = ({ state, actions }: Context) => {
   const auths: { name: string; access_token: string }[] = [];
 
-  state.providers.storageProviders.forEach((provider) => {
-    const access_token = provider.service?.getAccessToken();
-    if (access_token) auths.push({ name: provider.providerId, access_token });
+  state.providers.storageProviders.forEach(({ providerId, service }) => {
+    const access_token = service?.getAccessToken();
+    if (providerId && access_token) {
+      auths.push({ name: providerId, access_token });
+    }
   });
 
   return auths;

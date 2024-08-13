@@ -1,4 +1,4 @@
-import { IconName } from '@src/icons';
+import type { IconName } from '@src/icons';
 import type { OptionsObject, SnackbarMessage } from 'notistack';
 
 export * from './assert';
@@ -8,12 +8,6 @@ export declare var webpackEnv: {
   NODE_ENV: string;
   WORKER_ENV: string;
 };
-
-export interface Language {
-  code: string;
-  name: string;
-  shortName: string;
-}
 
 export type PaletteMode = 'light' | 'auto' | 'dark';
 

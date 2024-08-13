@@ -22,7 +22,7 @@ interface MenuProps {
 export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { document, editor } = useAppState();
   const { closeNotificationSnackbar, openDialog, notifyViaSnackbar } = useActions().ui;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const { changeSchema, schemaShouldChange } = useEditorReaction();
 
@@ -53,14 +53,18 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       props: {
         maxWidth: severity === 'error' ? 'xs' : 'sm',
         severity,
-        title: `${t('Change Schema')}?`,
+        title: `${t('LW.Change Schema')}?`,
         Body: () => <>{text}</>,
         actions:
           severity === 'error'
-            ? [{ action: 'close', label: t('commons.close').toString() }]
+            ? [{ action: 'close', label: t('LW.commons.close').toString() }]
             : [
-                { action: 'cancel', label: t('commons.cancel').toString(), variant: 'outlined' },
-                { action: 'change', label: t('change anyway').toString() },
+                {
+                  action: 'cancel',
+                  label: t('LW.commons.cancel').toString(),
+                  variant: 'outlined',
+                },
+                { action: 'change', label: t('LW.change anyway').toString() },
               ],
         onClose: async (action) => {
           if (action !== 'change') return;
@@ -79,7 +83,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('commons.undo')}
+            {t('LW.commons.undo')}
           </Button>
         ),
       },

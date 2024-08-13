@@ -1,2 +1,2 @@
-export { PastePanel } from './PastePanel';
-export { UploadPanel } from './UploadPanel';
+export { PastePanel } from './paste-panel';
+export { UploadPanel } from './upload-panel';

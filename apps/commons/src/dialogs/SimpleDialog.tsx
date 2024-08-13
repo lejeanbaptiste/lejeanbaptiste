@@ -23,7 +23,7 @@ export const SimpleDialog = ({
   children,
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const [data, setData] = useState<{ [key: string]: any }>({});
   const [actionsDisabled, setActionsDisabled] = useState(false);
@@ -111,10 +111,10 @@ export const SimpleDialog = ({
           <Button
             key={index}
             disabled={actionsDisabled}
-            onClick={() => handleAction(action)}
+            onPointerDown={() => handleAction(action)}
             variant={variant ?? 'text'}
           >
-            {t(`LWC:commons.${label ?? action}`)}
+            {t(`LWC.commons.${label ?? action}`)}
           </Button>
         ))}
       </DialogActions>

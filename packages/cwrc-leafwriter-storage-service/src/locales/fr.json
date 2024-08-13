@@ -1,0 +1,125 @@
+{
+  "SS": {
+    "cloud": {
+      "breadcrumbs": {
+        "branch": "Branche",
+        "filename": "nom de fichier",
+        "folder": "Dossier",
+        "organizations": "organisations",
+        "owner": "Propriétaire",
+        "repositories": "Dépôt",
+        "repository": "Dépôts"
+      },
+      "createRepo": {
+        "create_repository": "Créer un référentiel",
+        "description": "Description",
+        "description_help": "La description apparaîtra sur la page GitHub de votre nouveau dépôt.",
+        "repository_name": "Nom du dépôt"
+      },
+      "create_folder": "Créer un dossier",
+      "folder_name": "Nom du dossier",
+      "forking": "bifurquer",
+      "loading_more": "chargement plus",
+      "mainMenu": {
+        "my_repositories": "Mes dépôts",
+        "organizations": "Organisations"
+      },
+      "message": {
+        "Do_you_want_to_overwrite": "Voulez-vous écraser",
+        "check_permission": "",
+        "create_merge_request": "Création d'une demande de fusion",
+        "document_filename_undefined": "Le nom de fichier du document n'est pas défini",
+        "document_has_no_content": "Le document n'a pas de contenu",
+        "document_not_found": "Document introuvable",
+        "document_owner_type_undefined": "Le type de propriétaire du document n'est pas défini",
+        "document_owner_undefined": "Le propriétaire du document n'est pas défini",
+        "file_already_exists": "Le fichier existe déjà",
+        "folder_creation_error": "Erreur de création de dossier",
+        "forbidden": "",
+        "forking_can_take_minutes": "Forger un dépôt peut prendre plusieurs minutes",
+        "repo_creation_error": "Erreur de création du référentiel",
+        "repository_not_found": "Référentiel introuvable",
+        "repository_undefined": "Référentiel non défini",
+        "something_went_wrong": "Quelque chose s'est mal passé",
+        "storage_provider_not_supported": "Fournisseur de stockage non pris en charge",
+        "storage_provider_undefined": "Fournisseur de stockage non défini",
+        "unable_create_branch": "impossible de créer une nouvelle branche",
+        "unable_fork_repo": "dépôt de fourche impossible",
+        "unable_pull_reqest": "demande d'extraction impossible",
+        "unable_save_document_on_fork": "impossible d'enregistrer le document sur la fourche",
+        "unable_save_on_branch": "impossible d'enregistrer sur la branche",
+        "unable_to_overwrite_file": "impossible d'écraser le fichier",
+        "unabled_to_save": "impossible de sauvegarder",
+        "user_has_no_write_permission": "L'utilisateur n'est pas autorisé à enregistrer un document dans ce référentiel"
+      },
+      "publicRepositories": {
+        "public_repositories": "Dépôts publics",
+        "user_or_organization": "utilisateur ou organisation"
+      },
+      "search": {
+        "content_across_username": "Contenu dans {{username}} dépôt",
+        "content_on_repository": "Contenu sur {{repository}}",
+        "filename_or_content": "nom de fichier ou contenu",
+        "files_on_repositoty": "Fichiers sur {{repository}}"
+      },
+      "settings": {
+        "comit_message": "Commit message",
+        "done": "Fait",
+        "save_settings": "Enregistrer les paramètres",
+        "update": "mettre à jour"
+      },
+      "shared_with_me": "partagé avec moi",
+      "user_not_found": "utilisateur non trouvé",
+      "view_source": "voir la source"
+    },
+    "commons": {
+      "by": "par",
+      "cancel": "Annuler",
+      "conflict": "conflit",
+      "create": "Créer",
+      "empty": "vide",
+      "error": "erreur",
+      "from_your_computer": "depuis votre ordinateur",
+      "last_modified": "dernière modification",
+      "load": "Charger",
+      "message": "message",
+      "name": "nom",
+      "open": "ouvert",
+      "or": "ou",
+      "overwrite": "écraser",
+      "path_not_found": "chemin introuvable",
+      "private": "Privé",
+      "processing": "Traitement",
+      "repository_not_found": "",
+      "save": "Enregistrer",
+      "settings": "paramètres",
+      "show_less": "Afficher moins",
+      "show_more": "Afficher plus",
+      "url": "URL"
+    },
+    "footer": {
+      "download": "télécharger",
+      "fork_and_pull_request": "Fork et Pull Request",
+      "pasteXml": "coller XML",
+      "pull_request": "Demande d'extraction"
+    },
+    "local": {
+      "click to upload": "cliquez pour télécharger",
+      "drag the document here": "faites glisser le document ici",
+      "message": {
+        "unable_to_upload_file": "incapable de télécharger le fichier"
+      },
+      "paste_document_here": "Coller le document ici"
+    },
+    "message": {
+      "be_patient": "être patient",
+      "document_not_valid": "document non valide",
+      "must be a valid https url": "",
+      "must point to a file type": "",
+      "saving_document": "enregistrement du document"
+    },
+    "settings": {
+      "allow_all_files": "Autoriser tous les fichiers"
+    }
+  }
+}

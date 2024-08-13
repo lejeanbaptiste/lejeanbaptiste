@@ -1,6 +1,6 @@
-import { SearchBlobsItem } from '../../src/providers/Gitlab';
-import { Organization, PublicRepository, Repository, Resource } from '../../src/types';
-import type { AuthenticatedUser, DocumentDetails, ProviderAuth } from '../../src/types/Provider';
+import { SearchBlobsItem } from '@src/providers/Gitlab';
+import { Organization, PublicRepository, Repository, Resource } from '@src/types';
+import type { AuthenticatedUser, DocumentDetails, ProviderAuth } from '@src/types/Provider';
 
 export const unsupportedProviderAuth: ProviderAuth = { name: 'google', access_token: '12345' };
 export const githubAuth: ProviderAuth = { name: 'github', access_token: 'gho_vtkG' };
@@ -12,6 +12,7 @@ export const getProviderAuth = (provider = 'github'): ProviderAuth => {
   return githubAuth;
 };
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type GetResourceParams = {
   provider?: string;
   type?: string;

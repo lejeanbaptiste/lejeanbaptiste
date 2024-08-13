@@ -6,7 +6,7 @@ import { Menu } from './Menu';
 
 export const Schema = () => {
   const { schemaId, schemaName } = useAppState().document;
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openMenu = Boolean(anchorEl);
@@ -20,7 +20,7 @@ export const Schema = () => {
   return (
     <Grow in={schemaId !== ''}>
       <Box>
-        <Tooltip title={t('commons.schemas')} sx={{ textTransform: 'capitalize' }}>
+        <Tooltip title={t('LW.commons.schemas')} sx={{ textTransform: 'capitalize' }}>
           <Button
             aria-controls="schema-menu"
             aria-expanded={openMenu ? 'true' : undefined}

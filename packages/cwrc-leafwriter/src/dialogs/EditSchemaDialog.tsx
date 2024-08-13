@@ -52,22 +52,24 @@ export const EditSchemaDialog = ({
 
   const { destroyModal } = useModal();
 
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const [initialValues, setInitialValues] = useState<SchemaForm>(defaultValue);
 
   const preventEscape = actionType === 'add';
 
   const urlValidation = z
-    .string({ required_error: t('Schema URL is required').toString() })
-    .url({ message: t('Must be a valid URL').toString() });
+    .string({ required_error: t('LW.Schema URL is required').toString() })
+    .url({ message: t('LW.Must be a valid URL').toString() });
 
   const formValidation = z
     .object({
       name: z
-        .string({ required_error: t('Every schema needs a name').toString() })
-        .min(3, { message: t('Must be at least characters', { min: 3 }).toString() })
-        .max(20, { message: t('Cannot have more than characters', { max: 20 }).toString() }),
+        .string({ required_error: t('LW.Every schema needs a name').toString() })
+        .min(3, { message: t('LW.Must be at least characters', { min: 3 }).toString() })
+        .max(20, {
+          message: t('LW.Cannot have more than characters', { max: 20 }).toString(),
+        }),
       mapping: z.string(),
       rng: urlValidation,
       css: urlValidation,
@@ -118,18 +120,22 @@ export const EditSchemaDialog = ({
       type: 'simple',
       props: {
         maxWidth: 'xs',
-        title: t('deleteSchema').toString(),
+        title: t('LW.deleteSchema').toString(),
         preventEscape: true,
         Body: () => (
-          <Trans i18nKey="messages.delete confirmation message" values={{ name }}>
+          <Trans i18nKey="LW.messages.delete confirmation message" values={{ name }}>
             <Typography component="span">Are you sure you want to delete{` `}</Typography>
             <TextEmphasis color="info">{name}</TextEmphasis>
             <Typography component="span"> schema?</Typography>
           </Trans>
         ),
         actions: [
-          { action: 'cancel', label: t('commons.cancel').toString() },
-          { action: 'delete', label: t('commons.delete').toString(), variant: 'outlined' },
+          { action: 'cancel', label: t('LW.commons.cancel').toString() },
+          {
+            action: 'delete',
+            label: t('LW.commons.delete').toString(),
+            variant: 'outlined',
+          },
         ],
         onClose: async (action) => {
           if (action !== 'delete') return;
@@ -185,7 +191,7 @@ export const EditSchemaDialog = ({
       open={open}
     >
       <DialogTitle id="form-dialog-title" sx={{ textTransform: 'capitalize' }} variant="h5">
-        {actionType === 'add' ? t('add schema') : t('Change Schema')}
+        {actionType === 'add' ? t('LW.add schema') : t('LW.Change Schema')}
       </DialogTitle>
       <Formik
         enableReinitialize={true}
@@ -210,7 +216,7 @@ export const EditSchemaDialog = ({
                   error={Boolean(touched.name && errors.name)}
                   fullWidth
                   helperText={touched.name && errors.name ? errors.name : ' '}
-                  label={t('commons.Name')}
+                  label={t('LW.commons.Name')}
                   margin="dense"
                   name="name"
                   onBlur={handleBlur}
@@ -277,26 +283,26 @@ export const EditSchemaDialog = ({
                 <Stack mt={2}>
                   <Typography variant="caption">
                     <span style={{ textTransform: 'uppercase', textDecoration: 'underline' }}>
-                      {t('note')}:
+                      {t('LW.note')}:
                     </span>
                     {` ${t(
-                      'LEAF-Writer cannot guarantee that the document will work correctly with the selected schema',
+                      'LW.LEAF-Writer cannot guarantee that the document will work correctly with the selected schema',
                     )}.
-      ${t('Tagging might not work as expected')}.`}
+      ${t('LW.Tagging might not work as expected')}.`}
                   </Typography>
                 </Stack>
               )}
             </DialogContent>
 
             <DialogActions sx={{ justifyContent: 'space-between' }}>
-              <Button onClick={handleCancel}>{t('commons.cancel')}</Button>
+              <Button onClick={handleCancel}>{t('LW.commons.cancel')}</Button>
 
               {schemaId && (
                 <Tooltip
                   placement="top"
                   title={
                     schemaId === documentSchemaId
-                      ? t('The current document is using this schema')
+                      ? t('LW.The current document is using this schema')
                       : ''
                   }
                 >
@@ -306,14 +312,14 @@ export const EditSchemaDialog = ({
                       disabled={schemaId === documentSchemaId}
                       onClick={handleDelete}
                     >
-                      {t('commons.delete')}
+                      {t('LW.commons.delete')}
                     </Button>
                   </span>
                 </Tooltip>
               )}
 
               <Button color="primary" disabled={!dirty} type="submit" variant="outlined">
-                {schemaId ? t('commons.update') : t('commons.add')}
+                {schemaId ? t('LW.commons.update') : t('LW.commons.add')}
               </Button>
             </DialogActions>
           </form>

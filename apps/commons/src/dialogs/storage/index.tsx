@@ -17,13 +17,14 @@ export const Storage = () => {
   const { user } = useAppState().auth;
   const { storageProviders } = useAppState().providers;
   const { storageDialogState } = useAppState().storage;
+  const { currentLocale } = useAppState().ui;
 
   const { setResource } = useActions().editor;
   const { getStorageProvidersAuth } = useActions().providers;
   const { closeStorageDialog } = useActions().storage;
 
   const location = useLocation();
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
 
   const { setPermalink } = usePermalink();
   const { openResource } = useOpenResource();
@@ -85,7 +86,7 @@ export const Storage = () => {
     const isContentValid = isValidXml(content);
     return isContentValid
       ? { valid: true }
-      : { valid: false, error: t('LWC:storage.error.xml_not_well-formed_message') };
+      : { valid: false, error: t('LWC.storage.error.xml_not_well-formed_message') };
   };
 
   const preferProvider = useMemo(() => {
@@ -108,6 +109,7 @@ export const Storage = () => {
               allowedMimeTypes: ['application/xml'],
               allowUrl: false,
               defaultCommitMessage: 'Updated via LEAF-Writer',
+              locale: currentLocale,
               providers,
               preferProvider,
               validate: validXML,

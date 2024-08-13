@@ -14,7 +14,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { closeNotificationSnackbar, notifyViaSnackbar } = useActions().ui;
   const { changeAnnotationMode } = useEditorReaction();
 
-  const { t } = useTranslation('leafwriter');
+  const { t } = useTranslation();
 
   const openMenu = Boolean(anchorEl);
 
@@ -30,7 +30,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       options: {
         action: (key) => (
           <Button color="secondary" onClick={() => handleUndo(key, previousValue)} size="small">
-            {t('commons.undo')}
+            {t('LW.commons.undo')}
           </Button>
         ),
       },
