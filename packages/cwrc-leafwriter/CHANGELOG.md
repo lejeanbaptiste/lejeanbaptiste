@@ -2,19 +2,17 @@
 
 ## 3.6.0
 
-### Major Changes
+### Minor Changes
 
 - [3b28cdb69d6631c726bdc996d7ad33ef9cb7978f] [1ac64fea4170d0ad2e11989d3956b5e8f2b24a16] localization:
   - Add support to Portuguese, Spanish, Romanian, and German.
   - Rename localization namespace
   
-### Minor Changes
-
-- [cef0247e85badc3401aa5e320a22fe435fb65c78] Add `id` property to leafwriter class
-
 ### Patch Changes
-
-- [85e852012ba5d04300e7c8f5a0dd3545ea144f79] Improv support to css (replace some less files)
+- [cef0247e85badc3401aa5e320a22fe435fb65c78] Add `id` property to leafwriter class
+- [b19f800796ded79cfaeb3212c2b149cd69c28bf7] [9a4da50c45876362a140669b91c9b9fddc062130] Fix wrong value for `cert` and `certainty` attributes. Thanks @sieversMartin
+- [ede901c32636a300996a451a8ba061b96dc5d1df] Modal popups from buttons don't appear in full-screen mode. Thanks @jgb-hda
+- [85e852012ba5d04300e7c8f5a0dd3545ea144f79] Improve support to css (replace some less files)
 - [7dd4e8f419f2f165ce2729283a1db9da4053597f] Update dependencies
   - core:
     - add:
