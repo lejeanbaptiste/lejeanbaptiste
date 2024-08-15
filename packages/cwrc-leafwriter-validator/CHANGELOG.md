@@ -3,8 +3,6 @@
 ## 4.4.1
 
 ### Patch Changes
-
-### Patch Changes
 - [c244244038d2f2d12df3b48a2267261a8c0dd5b8] New build
 - [3eaf12d08c8a1ec382c47a762f3c07cd3a1ca20f] Update dependencies
   - core:
