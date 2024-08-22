@@ -129,6 +129,8 @@
             "link_to_storage_provider_instructions": "Sie können das erreichen, in dem sie auf das Nutzersymbol in der oberen rechten Ecke klicken und einen der aufgeführten Anbieter für Speicher auswählen.",
             "rotate_phone": "Bitte drehen Sie ihr Smartphone oder nutzen Sie LEAF-Writer auf einem größeren Bildschirm.",
             "service not available at the moment": "Der Dienst ist im Moment nicht erreichbar",
+            "try_again": "Erneut versuchen",
+            "unable_to_upload file": "Datei kann nicht hochgeladen werden",
             "you_must_sign_in_to_open_and_save_document_from_the_cloud": "Sie müssen sich anmelden, um Dokumente aus der Cloud speichern oder öffnen zu können.",
             "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "Sie müssen sich bei einem Speicheranbieter anmelden, um Dokumente aus der Cloud öffnen oder speichern zu können."
         },
