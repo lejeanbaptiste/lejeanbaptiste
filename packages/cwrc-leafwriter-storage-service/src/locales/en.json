@@ -1,125 +1,125 @@
 {
-  "SS": {
-    "cloud": {
-      "breadcrumbs": {
-        "branch": "Branch",
-        "filename": "filename",
-        "folder": "Folder",
-        "organizations": "organizations",
-        "owner": "Owner",
-        "repositories": "Repositories",
-        "repository": "Repository"
-      },
-      "createRepo": {
-        "create_repository": "Create Repository",
-        "description": "Description",
-        "description_help": "The description will appear on the GitHub page for your new repository.",
-        "repository_name": "Repository Name"
-      },
-      "create_folder": "Create Folder",
-      "folder_name": "Folder name",
-      "forking": "forking",
-      "loading_more": "loading more",
-      "mainMenu": {
-        "my_repositories": "My Repositories",
-        "organizations": "Organizations"
-      },
-      "message": {
-        "Do_you_want_to_overwrite": "Do you want to overwrite",
-        "check_permission": "Check permissions",
-        "create_merge_request": "Creating Merge Resquest",
-        "document_filename_undefined": "Document's filename is undefined",
-        "document_has_no_content": "Document has no content",
-        "document_not_found": "Document no found",
-        "document_owner_type_undefined": "Document's owner type is undefined",
-        "document_owner_undefined": "Document's owner is undefined",
-        "file_already_exists": "File already exists",
-        "folder_creation_error": "Folder creation error",
-        "forbidden": "Forbidden",
-        "forking_can_take_minutes": "Forking a repository can take several minutes",
-        "repo_creation_error": "Repositoy creation error",
-        "repository_not_found": "Repository not found",
-        "repository_undefined": "Repository undefined",
-        "something_went_wrong": "Something went wrong",
-        "storage_provider_not_supported": "Storage provider not supported",
-        "storage_provider_undefined": "Storage provider undefined",
-        "unable_create_branch": "unable to create a new branch",
-        "unable_fork_repo": "unable fork repo",
-        "unable_pull_reqest": "unable pull reqest",
-        "unable_save_document_on_fork": "unable save document on fork",
-        "unable_save_on_branch": "unable save on branch",
-        "unable_to_overwrite_file": "unable to overwrite file",
-        "unabled_to_save": "unabled to save",
-        "user_has_no_write_permission": "User has no permission to save a document in this repository"
-      },
-      "publicRepositories": {
-        "public_repositories": "Public Repositories",
-        "user_or_organization": "user or organization"
-      },
-      "search": {
-        "content_across_username": "Content across {{username}} repositories",
-        "content_on_repository": "Content on {{repository}}",
-        "filename_or_content": "filename or content",
-        "files_on_repositoty": "Files on {{repository}}"
-      },
-      "settings": {
-        "comit_message": "Comit message",
-        "done": "Done",
-        "save_settings": "Save Settings",
-        "update": "update"
-      },
-      "shared_with_me": "shared with me",
-      "user_not_found": "user not found",
-      "view_source": "view source"
-    },
-    "commons": {
-      "by": "by",
-      "cancel": "Cancel",
-      "conflict": "conflict",
-      "create": "Create",
-      "empty": "Empty",
-      "error": "error",
-      "from_your_computer": "from your computer",
-      "last_modified": "last modified",
-      "load": "Load",
-      "message": "message",
-      "name": "Name",
-      "open": "open",
-      "or": "or",
-      "overwrite": "overwrite",
-      "path_not_found": "path not found",
-      "private": "Private",
-      "processing": "Processing",
-      "repository_not_found": "Repository not found",
-      "save": "Save",
-      "settings": "settings",
-      "show_less": "Show less",
-      "show_more": "Show more",
-      "url": "URL"
-    },
-    "footer": {
-      "download": "download",
-      "fork_and_pull_request": "Fork and Pull Request",
-      "pasteXml": "paste XML",
-      "pull_request": "Pull request"
-    },
-    "local": {
-      "click to upload": "click to upload",
-      "drag the document here": "drag the document here",
-      "message": {
-        "unable_to_upload_file": "unable to upload file"
-      },
-      "paste_document_here": "Paste document here"
-    },
-    "message": {
-      "be_patient": "be patient",
-      "document_not_valid": "document not valid",
-      "must be a valid https url": "Must be a valid https url",
-      "must point to a file type": "Must point to a {{filetypes}} file",
-      "saving_document": "saving document"
-    },
-    "settings": {
-      "allow_all_files": "Allow all files"
+    "SS": {
+        "cloud": {
+            "breadcrumbs": {
+                "branch": "Branch",
+                "filename": "filename",
+                "folder": "Folder",
+                "organizations": "organizations",
+                "owner": "Owner",
+                "repositories": "Repositories",
+                "repository": "Repository"
+            },
+            "createRepo": {
+                "create_repository": "Create Repository",
+                "description": "Description",
+                "description_help": "The description will appear on the GitHub page for your new repository.",
+                "repository_name": "Repository Name"
+            },
+            "create_folder": "Create Folder",
+            "folder_name": "Folder name",
+            "forking": "forking",
+            "loading_more": "loading more",
+            "mainMenu": {
+                "my_repositories": "My Repositories",
+                "organizations": "Organizations"
+            },
+            "message": {
+                "Do_you_want_to_overwrite": "Do you want to overwrite",
+                "check_permission": "Check permissions",
+                "create_merge_request": "Creating Merge Request",
+                "document_filename_undefined": "Document's filename is undefined",
+                "document_has_no_content": "Document has no content",
+                "document_not_found": "Document no found",
+                "document_owner_type_undefined": "Document's owner type is undefined",
+                "document_owner_undefined": "Document's owner is undefined",
+                "file_already_exists": "File already exists",
+                "folder_creation_error": "Folder creation error",
+                "forbidden": "Forbidden",
+                "forking_can_take_minutes": "Forking a repository can take several minutes",
+                "repo_creation_error": "Repositoy creation error",
+                "repository_not_found": "Repository not found",
+                "repository_undefined": "Repository undefined",
+                "something_went_wrong": "Something went wrong",
+                "storage_provider_not_supported": "Storage provider not supported",
+                "storage_provider_undefined": "Storage provider undefined",
+                "unable_create_branch": "unable to create a new branch",
+                "unable_fork_repo": "unable fork repo",
+                "unable_pull_reqest": "unable pull reqest",
+                "unable_save_document_on_fork": "unable save document on fork",
+                "unable_save_on_branch": "unable save on branch",
+                "unable_to_overwrite_file": "unable to overwrite file",
+                "unabled_to_save": "unabled to save",
+                "user_has_no_write_permission": "User has no permission to save a document in this repository"
+            },
+            "publicRepositories": {
+                "public_repositories": "Public Repositories",
+                "user_or_organization": "user or organization"
+            },
+            "search": {
+                "content_across_username": "Content across {{username}} repositories",
+                "content_on_repository": "Content on {{repository}}",
+                "filename_or_content": "filename or content",
+                "files_on_repositoty": "Files on {{repository}}"
+            },
+            "settings": {
+                "comit_message": "Comit message",
+                "done": "Done",
+                "save_settings": "Save Settings",
+                "update": "update"
+            },
+            "shared_with_me": "shared with me",
+            "user_not_found": "user not found",
+            "view_source": "view source"
+        },
+        "commons": {
+            "by": "by",
+            "cancel": "Cancel",
+            "conflict": "conflict",
+            "create": "Create",
+            "empty": "Empty",
+            "error": "error",
+            "from_your_computer": "from your computer",
+            "last_modified": "last modified",
+            "load": "Load",
+            "message": "message",
+            "name": "Name",
+            "open": "open",
+            "or": "or",
+            "overwrite": "overwrite",
+            "path_not_found": "path not found",
+            "private": "Private",
+            "processing": "Processing",
+            "repository_not_found": "Repository not found",
+            "save": "Save",
+            "settings": "settings",
+            "show_less": "Show less",
+            "show_more": "Show more",
+            "url": "URL"
+        },
+        "footer": {
+            "download": "download",
+            "fork_and_pull_request": "Fork and Pull Request",
+            "pasteXml": "paste XML",
+            "pull_request": "Pull request"
+        },
+        "local": {
+            "click to upload": "click to upload",
+            "drag the document here": "drag the document here",
+            "message": {
+                "unable_to_upload_file": "unable to upload file"
+            },
+            "paste_document_here": "Paste document here"
+        },
+        "message": {
+            "be_patient": "be patient",
+            "document_not_valid": "document not valid",
+            "must be a valid https url": "Must be a valid https url",
+            "must point to a file type": "Must point to a {{filetypes}} file",
+            "saving_document": "saving document"
+        },
+        "settings": {
+            "allow_all_files": "Allow all files"
+        }
     }
-  }
 }
