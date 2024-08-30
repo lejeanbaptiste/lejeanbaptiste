@@ -1,125 +1,125 @@
 {
-  "SS": {
-    "cloud": {
-      "breadcrumbs": {
-        "branch": "Zweig",
-        "filename": "Dateiname",
-        "folder": "Ordner",
-        "organizations": "Organisationen",
-        "owner": "Besitzer",
-        "repositories": "Repositorien",
-        "repository": "Repositorium"
-      },
-      "createRepo": {
-        "create_repository": "Repositorium erstellen",
-        "description": "Beschreibung",
-        "description_help": "Die Beschreibung wird auf der GitHub-Seite des neuen Repositoriums angezeigt.",
-        "repository_name": "Name des Repositoriums"
-      },
-      "create_folder": "Ordner erstellen",
-      "folder_name": "Name des Ordner",
-      "forking": "forking",
-      "loading_more": "lade mehr",
-      "mainMenu": {
-        "my_repositories": "Meine Repositorien",
-        "organizations": "Organisationen"
-      },
-      "message": {
-        "Do_you_want_to_overwrite": "Möchten Sie überschreiben",
-        "check_permission": "Berechtitgung überprüfen",
-        "create_merge_request": "Erstelle Merge-Anfrage",
-        "document_filename_undefined": "Dateiname des Dokuments ist nicht spezifiziert.",
-        "document_has_no_content": "Dokument hat keinen Inhalt.",
-        "document_not_found": "Dokument nicht gefunden",
-        "document_owner_type_undefined": "Document's owner type is undefined",
-        "document_owner_undefined": "Besitzer des Dokuments nicht spezifiziert.",
-        "file_already_exists": "Datei existiert bereits.",
-        "folder_creation_error": "Fehler beim Erstellen des Ordners",
-        "forbidden": "Verboten",
-        "forking_can_take_minutes": "Forken eines Repositoriums kann einige Minuten dauern.",
-        "repo_creation_error": "Fehler beim Erstellen des Repositoriums.",
-        "repository_not_found": "Repositorium nicht gefunden",
-        "repository_undefined": "Repositorium nicht spezifizert.",
-        "something_went_wrong": "Erwas lief schief.",
-        "storage_provider_not_supported": "Speicheranbieter nicht unterstützt.",
-        "storage_provider_undefined": "Speicheranbieter nicht definiert.",
-        "unable_create_branch": "Konnte keinen neuen Branch erstellen.",
-        "unable_fork_repo": "Konnte Repositorium nicht forken",
-        "unable_pull_reqest": "Pull-Anfrage konnte nicht durchgeführt werden.",
-        "unable_save_document_on_fork": "Dokument konnte nicht in Fork gespeichert werden.",
-        "unable_save_on_branch": "Konnte nicht in Branch gespeichert werden.",
-        "unable_to_overwrite_file": "Konnte Datei nicht überschreiben.",
-        "unabled_to_save": "Konnte nicht speichern",
-        "user_has_no_write_permission": "Nutzer hat keine Berechtigungen ein Dokument in diesem Repositorium zu speichern."
-      },
-      "publicRepositories": {
-        "public_repositories": "Öffentliche Repositorien",
-        "user_or_organization": "Nutzer oder Organisation"
-      },
-      "search": {
-        "content_across_username": "Inhalt der {{username}} Repositorien",
-        "content_on_repository": "Inhalt in {{repository}}",
-        "filename_or_content": "Dateiname oder Inhalt",
-        "files_on_repositoty": "Dateien in: {{repository}}"
-      },
-      "settings": {
-        "commit_message": "Commit-Nachricht",
-        "done": "Fertig",
-        "save_settings": "Einstellungen gespeichert",
-        "update": "aktualisieren"
-      },
-      "shared_with_me": "Mit mir geteilt",
-      "user_not_found": "Nutzer nicht gefunden",
-      "view_source": "Original anzeigen"
-    },
-    "commons": {
-      "by": "von",
-      "cancel": "Abbrechen",
-      "conflict": "Konflikt",
-      "create": "Erstellen",
-      "empty": "Leer",
-      "error": "Fehler",
-      "from_your_computer": "Von Ihrem Computer",
-      "last_modified": "zuletzt geändert",
-      "load": "Lade",
-      "message": "Nachricht",
-      "name": "Name",
-      "open": "öffnen",
-      "or": "oder",
-      "overwrite": "überschreiben",
-      "path_not_found": "Pfad nicht gefunden",
-      "private": "Privat",
-      "processing": "Processing",
-      "repository_not_found": "",
-      "save": "Speichern",
-      "settings": "Einstellungen",
-      "show_less": "Zeige weniger",
-      "show_more": "Zeige mehr",
-      "url": ""
-    },
-    "footer": {
-      "download": "Herunterladen",
-      "fork_and_pull_request": "Fork und Pull-Anfrage",
-      "pasteXml": "XML einfügen",
-      "pull_request": "Pull-Anfrage"
-    },
-    "local": {
-      "click to upload": "Klicken, um hochzuladen",
-      "drag the document here": "drag the document here",
-      "message": {
-        "unable_to_upload_file": "Kann Datei nicht hochladen"
-      },
-      "paste_document_here": "Füge das Dokument hier ein"
-    },
-    "message": {
-      "be_patient": "Bitte haben Sie Geduld",
-      "document_not_valid": "Dokument nicht gültig",
-      "must be a valid https url": "",
-      "must point to a file type": "",
-      "saving_document": "speichere Dokument"
-    },
-    "settings": {
-      "allow_all_files": "Alle Dateien erlauben"
+    "SS": {
+        "cloud": {
+            "breadcrumbs": {
+                "branch": "Zweig",
+                "filename": "Dateiname",
+                "folder": "Ordner",
+                "organizations": "Organisationen",
+                "owner": "Besitzer",
+                "repositories": "Repositorien",
+                "repository": "Repositorium"
+            },
+            "createRepo": {
+                "create_repository": "Repositorium erstellen",
+                "description": "Beschreibung",
+                "description_help": "Die Beschreibung wird auf der GitHub-Seite des neuen Repositoriums angezeigt.",
+                "repository_name": "Name des Repositoriums"
+            },
+            "create_folder": "Ordner erstellen",
+            "folder_name": "Ordnername",
+            "forking": "forke",
+            "loading_more": "lade mehr",
+            "mainMenu": {
+                "my_repositories": "Meine Repositorien",
+                "organizations": "Organisationen"
+            },
+            "message": {
+                "Do_you_want_to_overwrite": "Möchten Sie überschreiben",
+                "check_permission": "Berechtitgung überprüfen",
+                "create_merge_request": "Erstelle Merge-Anfrage",
+                "document_filename_undefined": "Dateiname des Dokuments ist nicht spezifiziert.",
+                "document_has_no_content": "Dokument hat keinen Inhalt.",
+                "document_not_found": "Dokument nicht gefunden",
+                "document_owner_type_undefined": "Document's owner type is undefined",
+                "document_owner_undefined": "Besitzer des Dokuments nicht spezifiziert.",
+                "file_already_exists": "Datei existiert bereits.",
+                "folder_creation_error": "Fehler beim Erstellen des Ordners",
+                "forbidden": "Verboten",
+                "forking_can_take_minutes": "Forken eines Repositoriums kann einige Minuten dauern.",
+                "repo_creation_error": "Fehler beim Erstellen des Repositoriums.",
+                "repository_not_found": "Repositorium nicht gefunden",
+                "repository_undefined": "Repositorium nicht spezifizert.",
+                "something_went_wrong": "Erwas lief schief.",
+                "storage_provider_not_supported": "Speicheranbieter nicht unterstützt.",
+                "storage_provider_undefined": "Speicheranbieter nicht definiert.",
+                "unable_create_branch": "Konnte keinen neuen Branch erstellen.",
+                "unable_fork_repo": "Konnte Repositorium nicht forken",
+                "unable_pull_reqest": "Pull-Anfrage konnte nicht durchgeführt werden.",
+                "unable_save_document_on_fork": "Dokument konnte nicht in Fork gespeichert werden.",
+                "unable_save_on_branch": "Konnte nicht in Branch gespeichert werden.",
+                "unable_to_overwrite_file": "Konnte Datei nicht überschreiben.",
+                "unabled_to_save": "Konnte nicht speichern",
+                "user_has_no_write_permission": "Nutzer hat keine Berechtigungen ein Dokument in diesem Repositorium zu speichern."
+            },
+            "publicRepositories": {
+                "public_repositories": "Öffentliche Repositorien",
+                "user_or_organization": "Nutzer oder Organisation"
+            },
+            "search": {
+                "content_across_username": "Inhalt der {{username}} Repositorien",
+                "content_on_repository": "Inhalt in {{repository}}",
+                "filename_or_content": "Dateiname oder Inhalt",
+                "files_on_repositoty": "Dateien in: {{repository}}"
+            },
+            "settings": {
+                "commit_message": "Commit-Nachricht",
+                "done": "Fertig",
+                "save_settings": "Einstellungen gespeichert",
+                "update": "aktualisieren"
+            },
+            "shared_with_me": "Mit mir geteilt",
+            "user_not_found": "Nutzer nicht gefunden",
+            "view_source": "Original anzeigen"
+        },
+        "commons": {
+            "by": "von",
+            "cancel": "Abbrechen",
+            "conflict": "Konflikt",
+            "create": "Erstellen",
+            "empty": "Leer",
+            "error": "Fehler",
+            "from_your_computer": "Von Ihrem Computer",
+            "last_modified": "zuletzt geändert",
+            "load": "Lade",
+            "message": "Nachricht",
+            "name": "Name",
+            "open": "öffnen",
+            "or": "oder",
+            "overwrite": "überschreiben",
+            "path_not_found": "Pfad nicht gefunden",
+            "private": "Privat",
+            "processing": "Processing",
+            "repository_not_found": "",
+            "save": "Speichern",
+            "settings": "Einstellungen",
+            "show_less": "Zeige weniger",
+            "show_more": "Zeige mehr",
+            "url": ""
+        },
+        "footer": {
+            "download": "Herunterladen",
+            "fork_and_pull_request": "Fork und Pull-Anfrage",
+            "pasteXml": "XML einfügen",
+            "pull_request": "Pull-Anfrage"
+        },
+        "local": {
+            "click to upload": "Klicken, um hochzuladen",
+            "drag the document here": "drag the document here",
+            "message": {
+                "unable_to_upload_file": "Kann Datei nicht hochladen"
+            },
+            "paste_document_here": "Füge das Dokument hier ein"
+        },
+        "message": {
+            "be_patient": "Bitte haben Sie Geduld",
+            "document_not_valid": "Dokument nicht gültig",
+            "must be a valid https url": "",
+            "must point to a file type": "",
+            "saving_document": "speichere Dokument"
+        },
+        "settings": {
+            "allow_all_files": "Alle Dateien erlauben"
+        }
     }
-  }
 }
