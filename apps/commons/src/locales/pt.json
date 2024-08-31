@@ -123,7 +123,7 @@
         },
         "messages": {
             "annotation_need_space": "Anotar documentos requer mais espaço.",
-            "link_to_storage_provider_instructions": "Você pode fazer isso clicando no ícone do usuário no canto superior direito da tela e selecionando uma opção na lista de provedores de armazenamento",
+            "link_to_storage_provider_instructions": "Você pode fazer isso clicando no ícone do usuário no canto superior direito da tela e selecionando uma opção na lista de provedores de armazenamento.",
             "rotate_phone": "Gire seu telefone ou abra o LEAF-Writer em uma tela grande.",
             "service not available at the moment": "Serviço indisponível no momento",
             "try_again": "Tentar novamente",
