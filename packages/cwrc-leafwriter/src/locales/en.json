@@ -78,7 +78,7 @@
         "Use with caution": "Use with caution",
         "XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": "XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap",
         "You can change the editor mode anytime in the status bar": "You can change the editor mode anytime in the status bar (bottom left)",
-        "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "You have overlapping entities and are attemping to switch to a mode which prohibits them. The overlapping entities will be discarded if you continue",
+        "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "You have overlapping entities and are attempting to switch to a mode which prohibits them. The overlapping entities will be discarded if you continue",
         "You have unsaved changes": "You have unsaved change",
         "You might need to reload the document": "You might need to reload the document",
         "You must provide a username to make requests": "You must provide a username to make requests",
