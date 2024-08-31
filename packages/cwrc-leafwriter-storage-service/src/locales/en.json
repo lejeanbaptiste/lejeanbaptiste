@@ -114,7 +114,7 @@
         "message": {
             "be_patient": "be patient",
             "document_not_valid": "document not valid",
-            "must be a valid https url": "Must be a valid https url",
+            "must be a valid https url": "Must be a valid https URL",
             "must point to a file type": "Must point to a {{filetypes}} file",
             "saving_document": "saving document"
         },
