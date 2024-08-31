@@ -3,7 +3,7 @@
         "cloud": {
             "breadcrumbs": {
                 "branch": "",
-                "filename": "",
+                "filename": "nome do arquivo",
                 "folder": "Pasta",
                 "organizations": "organizações",
                 "owner": "Proprietário",
@@ -37,89 +37,89 @@
                 "folder_creation_error": "Error ao criar a pasta",
                 "forbidden": "Proibido",
                 "forking_can_take_minutes": "Forking um repositório pode levar vários minutos",
-                "repo_creation_error": "",
-                "repository_not_found": "",
-                "repository_undefined": "",
-                "something_went_wrong": "",
-                "storage_provider_not_supported": "",
-                "storage_provider_undefined": "",
-                "unable_create_branch": "",
-                "unable_fork_repo": "",
-                "unable_pull_reqest": "",
-                "unable_save_document_on_fork": "",
-                "unable_save_on_branch": "",
-                "unable_to_overwrite_file": "",
-                "unabled_to_save": "",
-                "user_has_no_write_permission": ""
+                "repo_creation_error": "Error ao criar repositório",
+                "repository_not_found": "Repositório não encontrado",
+                "repository_undefined": "Repositório indefinido",
+                "something_went_wrong": "Algo deu errado",
+                "storage_provider_not_supported": "O provedor de armazenamento não é compativel",
+                "storage_provider_undefined": "Provedor indefinido",
+                "unable_create_branch": "Não é possível criar um novo branch",
+                "unable_fork_repo": "Não foi possível fazer um fork do repositório",
+                "unable_pull_reqest": "não foi possível faze o pull request",
+                "unable_save_document_on_fork": "não foi possível salvar documento no fork",
+                "unable_save_on_branch": "não foi possível salvar no branch",
+                "unable_to_overwrite_file": "não foi possível sobrescrever o arquivo",
+                "unabled_to_save": "não foi possível salvar",
+                "user_has_no_write_permission": "O usuário não tem permissão para salvar um documento neste repositório"
             },
             "publicRepositories": {
-                "public_repositories": "",
-                "user_or_organization": ""
+                "public_repositories": "Repositórios Públicos",
+                "user_or_organization": "usuário ou organização"
             },
             "search": {
-                "content_across_username": "",
-                "content_on_repository": "",
-                "filename_or_content": "",
-                "files_on_repositoty": ""
+                "content_across_username": "Conteúdo nos repositório de {{username}}",
+                "content_on_repository": "Conteúdo em {{repository}}",
+                "filename_or_content": "nome do arquivo ou conteúdo",
+                "files_on_repositoty": "Arquivos em {{repository}}"
             },
             "settings": {
-                "comit_message": "",
-                "done": "",
-                "save_settings": "",
-                "update": ""
+                "comit_message": "Mensagem de confirmação",
+                "done": "Pronto",
+                "save_settings": "Salvar configurações",
+                "update": "atualizar"
             },
-            "shared_with_me": "",
-            "user_not_found": "",
-            "view_source": ""
+            "shared_with_me": "compartilhado comigo",
+            "user_not_found": "usuário não encontrado",
+            "view_source": "ver fonte"
         },
         "commons": {
-            "by": "",
-            "cancel": "",
-            "conflict": "",
-            "create": "",
-            "empty": "",
-            "error": "",
-            "from_your_computer": "",
-            "last_modified": "",
-            "load": "",
-            "message": "",
-            "name": "",
-            "open": "",
-            "or": "",
-            "overwrite": "",
-            "path_not_found": "",
-            "private": "",
-            "processing": "",
-            "repository_not_found": "",
-            "save": "",
-            "settings": "",
-            "show_less": "",
-            "show_more": "",
-            "url": ""
+            "by": "por",
+            "cancel": "Cancelar",
+            "conflict": "conflito",
+            "create": "Criar",
+            "empty": "Vazio",
+            "error": "error",
+            "from_your_computer": "do seu computador",
+            "last_modified": "modificado pela última vez",
+            "load": "Carregar",
+            "message": "mensagem",
+            "name": "Nome",
+            "open": "abrir",
+            "or": "ou",
+            "overwrite": "sobrescrever",
+            "path_not_found": "caminho não encontrado",
+            "private": "Privado",
+            "processing": "Processando",
+            "repository_not_found": "Repositório não encontrado",
+            "save": "Salvar",
+            "settings": "configurações",
+            "show_less": "Mostrar menos",
+            "show_more": "Mostrar mais",
+            "url": "URL"
         },
         "footer": {
             "download": "",
-            "fork_and_pull_request": "",
-            "pasteXml": "",
+            "fork_and_pull_request": "Fork e Pull Request",
+            "pasteXml": "copiar XML",
             "pull_request": ""
         },
         "local": {
-            "click to upload": "",
-            "drag the document here": "",
+            "click to upload": "clique para fazer upload",
+            "drag the document here": "arraste o documento aqui",
             "message": {
-                "unable_to_upload_file": ""
+                "unable_to_upload_file": "não foi possível fazer upload do arquivo"
             },
-            "paste_document_here": ""
+            "paste_document_here": "Copie o documento aqui"
         },
         "message": {
-            "be_patient": "",
-            "document_not_valid": "",
-            "must be a valid https url": "",
-            "must point to a file type": "",
-            "saving_document": ""
+            "be_patient": "tenha paciência",
+            "document_not_valid": "Documento invalido",
+            "must be a valid https url": "Deve ser uma URL https válida",
+            "must point to a file type": "Deve apontar para um arquivo {{filetypes}}",
+            "saving_document": "salvando o documento"
         },
         "settings": {
-            "allow_all_files": ""
+            "allow_all_files": "Permitir todos os arquivos"
         }
     }
 }
