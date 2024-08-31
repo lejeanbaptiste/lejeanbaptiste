@@ -1,125 +1,125 @@
 {
-  "SS": {
-    "cloud": {
-      "breadcrumbs": {
-        "branch": "",
-        "filename": "",
-        "folder": "",
-        "organizations": "",
-        "owner": "",
-        "repositories": "",
-        "repository": ""
-      },
-      "createRepo": {
-        "create_repository": "",
-        "description": "",
-        "description_help": "",
-        "repository_name": ""
-      },
-      "create_folder": "",
-      "folder_name": "",
-      "forking": "",
-      "loading_more": "",
-      "mainMenu": {
-        "my_repositories": "",
-        "organizations": ""
-      },
-      "message": {
-        "Do_you_want_to_overwrite": "",
-        "check_permission": "",
-        "create_merge_request": "",
-        "document_filename_undefined": "",
-        "document_has_no_content": "",
-        "document_not_found": "",
-        "document_owner_type_undefined": "",
-        "document_owner_undefined": "",
-        "file_already_exists": "",
-        "folder_creation_error": "",
-        "forbidden": "",
-        "forking_can_take_minutes": "",
-        "repo_creation_error": "",
-        "repository_not_found": "",
-        "repository_undefined": "",
-        "something_went_wrong": "",
-        "storage_provider_not_supported": "",
-        "storage_provider_undefined": "",
-        "unable_create_branch": "",
-        "unable_fork_repo": "",
-        "unable_pull_reqest": "",
-        "unable_save_document_on_fork": "",
-        "unable_save_on_branch": "",
-        "unable_to_overwrite_file": "",
-        "unabled_to_save": "",
-        "user_has_no_write_permission": ""
-      },
-      "publicRepositories": {
-        "public_repositories": "",
-        "user_or_organization": ""
-      },
-      "search": {
-        "content_across_username": "",
-        "content_on_repository": "",
-        "filename_or_content": "",
-        "files_on_repositoty": ""
-      },
-      "settings": {
-        "comit_message": "",
-        "done": "",
-        "save_settings": "",
-        "update": ""
-      },
-      "shared_with_me": "",
-      "user_not_found": "",
-      "view_source": ""
-    },
-    "commons": {
-      "by": "",
-      "cancel": "",
-      "conflict": "",
-      "create": "",
-      "empty": "",
-      "error": "",
-      "from_your_computer": "",
-      "last_modified": "",
-      "load": "",
-      "message": "",
-      "name": "",
-      "open": "",
-      "or": "",
-      "overwrite": "",
-      "path_not_found": "",
-      "private": "",
-      "processing": "",
-      "repository_not_found": "",
-      "save": "",
-      "settings": "",
-      "show_less": "",
-      "show_more": "",
-      "url": ""
-    },
-    "footer": {
-      "download": "",
-      "fork_and_pull_request": "",
-      "pasteXml": "",
-      "pull_request": ""
-    },
-    "local": {
-      "click to upload": "",
-      "drag the document here": "",
-      "message": {
-        "unable_to_upload_file": ""
-      },
-      "paste_document_here": ""
-    },
-    "message": {
-      "be_patient": "",
-      "document_not_valid": "",
-      "must be a valid https url": "",
-      "must point to a file type": "",
-      "saving_document": ""
-    },
-    "settings": {
-      "allow_all_files": ""
+    "SS": {
+        "cloud": {
+            "breadcrumbs": {
+                "branch": "Rama",
+                "filename": "nombre del archivo",
+                "folder": "Carpeta",
+                "organizations": "organizaciones",
+                "owner": "Propietario",
+                "repositories": "Repositorios",
+                "repository": "Repositorio"
+            },
+            "createRepo": {
+                "create_repository": "Crear Repositorio",
+                "description": "Descripción",
+                "description_help": "La descripción aparecerá en la página de GitHub de tu nuevo repositorio.",
+                "repository_name": "Nombre del Repositorio"
+            },
+            "create_folder": "Crear Carpeta",
+            "folder_name": "Nombre de la carpeta",
+            "forking": "bifurcación",
+            "loading_more": "cargando más",
+            "mainMenu": {
+                "my_repositories": "Mis Repositorios",
+                "organizations": "Organizaciones"
+            },
+            "message": {
+                "Do_you_want_to_overwrite": "¿Deseas sobrescribir?",
+                "check_permission": "Verificar permisos",
+                "create_merge_request": "Creando Solicitud de Fusión",
+                "document_filename_undefined": "El nombre de archivo del documento no está definido",
+                "document_has_no_content": "El documento no tiene contenido",
+                "document_not_found": "No se encontró el documento",
+                "document_owner_type_undefined": "El tipo de propietario del documento no está definido",
+                "document_owner_undefined": "El propietario del documento no está definido",
+                "file_already_exists": "El archivo ya existe",
+                "folder_creation_error": "Error al crear la carpeta",
+                "forbidden": "Prohibido",
+                "forking_can_take_minutes": "Bifurcar un repositorio puede tardar varios minutos",
+                "repo_creation_error": "Error al crear el repositorio",
+                "repository_not_found": "No se encontró el repositorio",
+                "repository_undefined": "El repositorio no está definido",
+                "something_went_wrong": "Algo salió mal",
+                "storage_provider_not_supported": "El proveedor de almacenamiento no es compatible",
+                "storage_provider_undefined": "El proveedor de alojamiento no está definido",
+                "unable_create_branch": "no se puede crear una nueva rama",
+                "unable_fork_repo": "no se puede bifurcar el repositorio",
+                "unable_pull_reqest": "no se puede realizar la solicitud de extracción",
+                "unable_save_document_on_fork": "no se puede guardar el documento en la bifurcación",
+                "unable_save_on_branch": "no se puede guardar en la rama",
+                "unable_to_overwrite_file": "no se puede sobrescribir el archivo",
+                "unabled_to_save": "no se puede guardar",
+                "user_has_no_write_permission": "El usuario no tiene permiso para guardar un documento en este repositorio"
+            },
+            "publicRepositories": {
+                "public_repositories": "Repositorios Públicos",
+                "user_or_organization": "usuario u organización"
+            },
+            "search": {
+                "content_across_username": "Contenido en los repositorios de {{username}}",
+                "content_on_repository": "Contenido en {{repository}}",
+                "filename_or_content": "nombre del archivo o contenido",
+                "files_on_repositoty": "Archivos en {{repository}}"
+            },
+            "settings": {
+                "comit_message": "Mensaje de confirmación",
+                "done": "Hecho",
+                "save_settings": "Guardar Configuración",
+                "update": "actualizar"
+            },
+            "shared_with_me": "compartido conmigo",
+            "user_not_found": "no se encontró el usuario",
+            "view_source": "ver fuente"
+        },
+        "commons": {
+            "by": "por",
+            "cancel": "Cancelar",
+            "conflict": "conflicto",
+            "create": "Crear",
+            "empty": "Vacío",
+            "error": "error",
+            "from_your_computer": "desde tu computadora",
+            "last_modified": "modificado por última vez",
+            "load": "Cargar",
+            "message": "mensaje",
+            "name": "Nombre",
+            "open": "abrir",
+            "or": "o",
+            "overwrite": "sobreescribir",
+            "path_not_found": "no se encontró la ruta",
+            "private": "Privado",
+            "processing": "Procesando",
+            "repository_not_found": "No se encontró el repositorio",
+            "save": "Guardar",
+            "settings": "configuración",
+            "show_less": "Mostrar menos",
+            "show_more": "Mostrar más",
+            "url": "URL"
+        },
+        "footer": {
+            "download": "descargar",
+            "fork_and_pull_request": "Bifurcación y Solicitud de Extracción",
+            "pasteXml": "copiar XML",
+            "pull_request": "Solicitud de extracción"
+        },
+        "local": {
+            "click to upload": "Haz clic para cargar",
+            "drag the document here": "arrastra el documento aquí",
+            "message": {
+                "unable_to_upload_file": "no se pudo subir el archivo"
+            },
+            "paste_document_here": "Copiar el documento aquí"
+        },
+        "message": {
+            "be_patient": "ten paciencia",
+            "document_not_valid": "el documento no es válido",
+            "must be a valid https url": "Debe ser una URL https válida",
+            "must point to a file type": "Debe apuntar a un archivo {{filetypes}}",
+            "saving_document": "guardando documento"
+        },
+        "settings": {
+            "allow_all_files": "Permitir todos los archivos"
+        }
     }
-  }
 }
