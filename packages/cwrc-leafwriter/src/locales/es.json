@@ -78,7 +78,7 @@
         "Use with caution": "Usar con precaución",
         "XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": "Se crearán etiquetas XML y anotaciones RDF - Web Semántica equivalentes a las etiquetas XML, de manera consistente con la jerarquía del esquema XML, por lo que no se permitirá que las anotaciones se superpongan",
         "You can change the editor mode anytime in the status bar": "Puedes cambiar el modo de editor en cualquier momento en la barra de estado (en la esquina inferior izquierda)",
-        "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "Tienes entidades superpuestas y estás intentando cambiar a un modo que las prohíbe. Las entidades superpuestas se eliminarán si continúas",
+        "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "Tienes entidades superpuestas y estás intentando cambiar a un modo que las prohíbe. Las entidades superpuestas se eliminarán si continúas.",
         "You have unsaved changes": "Tienes cambios sin guardar",
         "You might need to reload the document": "Es posible que necesites recargar el documento",
         "You must provide a username to make requests": "Debes proporcionar un nombre de usuario para hacer solicitudes",
