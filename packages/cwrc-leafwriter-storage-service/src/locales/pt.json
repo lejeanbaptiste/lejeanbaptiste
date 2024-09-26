@@ -2,7 +2,7 @@
     "SS": {
         "cloud": {
             "breadcrumbs": {
-                "branch": "",
+                "branch": "Ramo",
                 "filename": "nome do arquivo",
                 "folder": "Pasta",
                 "organizations": "organizações",
@@ -18,7 +18,7 @@
             },
             "create_folder": "Criar pasta",
             "folder_name": "Nome da pasta",
-            "forking": "",
+            "forking": "bifurcação",
             "loading_more": "Carregando mais",
             "mainMenu": {
                 "my_repositories": "Meus repositórios",
@@ -98,10 +98,10 @@
             "url": "URL"
         },
         "footer": {
-            "download": "",
+            "download": "download",
             "fork_and_pull_request": "Fork e Pull Request",
             "pasteXml": "copiar XML",
-            "pull_request": ""
+            "pull_request": "Solicitação de pull"
         },
         "local": {
             "click to upload": "clique para fazer upload",
