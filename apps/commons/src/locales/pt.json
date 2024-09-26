@@ -75,7 +75,7 @@
                 "basic_interactions_description": "Esses rastreadores são usados para funcionalidades básicas do LEAF-Writer, que incluem inserir um identificador de usuário (por exemplo, nome da conta do Github ou ORCID) em quaisquer Anotações Web que são criadas e dar suporte ao carregamento, salvamento e compartilhamento de arquivos por meio dos repositórios Git de um usuário. O LEAF-Writer terá suas funcionalidades limitadas sem esses cookies.",
                 "cc_cookie_description": "Armazena preferências de consentimento de cookies.",
                 "consent_preferences": "Preferências de consentimento",
-                "cookie_expiration_time": "",
+                "cookie_expiration_time": "{{value}} {{period}}",
                 "cookie_usage": "Utilização de cookies",
                 "cookie_usage_description": "O painel a seguir permite que você personalize suas preferências de consentimento para o uso da tecnologia de cookies para que o Leaf-Writer possa fornecer os recursos descritos abaixo. Você pode revisar e alterar suas escolhas a qualquer momento. Esteja ciente de que negar o consentimento para uma finalidade específica pode tornar os recursos relacionados indisponíveis. Para obter mais detalhes relativos a cookies e outros dados confidenciais, leia o texto completo.",
                 "domain": "domínio",
@@ -109,7 +109,7 @@
             "convert document": "converter documento",
             "message": {
                 "LEAF-Writer needs to convert it to be able to use it": "O LEAF-Writer precisa convertê-lo para poder usá-lo.",
-                "intercept_load_file_format": "<0>Isso parece um </0> <1>{{format}}</1> <2>documento.</2>"
+                "intercept_load_file_format": "<0>Isso parece um </0> <2>documento <1>{{format}}</1>.</2>"
             },
             "try to open it without converting": "tente abrir sem converter"
         },
