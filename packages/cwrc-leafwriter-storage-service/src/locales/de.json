@@ -26,43 +26,44 @@
             },
             "message": {
                 "Do_you_want_to_overwrite": "Möchten Sie überschreiben",
-                "check_permission": "Berechtitgung überprüfen",
-                "create_merge_request": "Erstelle Merge-Anfrage",
-                "document_filename_undefined": "Dateiname des Dokuments ist nicht spezifiziert.",
-                "document_has_no_content": "Dokument hat keinen Inhalt.",
+                "check_permission": "Berechtigung überprüfen",
+                "create_merge_request": "Erstelle Merge Request",
+                "document_filename_undefined": "Dateiname des Dokuments ist nicht spezifiziert",
+                "document_has_no_content": "Dokument hat keinen Inhalt",
                 "document_not_found": "Dokument nicht gefunden",
-                "document_owner_type_undefined": "Document's owner type is undefined",
-                "document_owner_undefined": "Besitzer des Dokuments nicht spezifiziert.",
-                "file_already_exists": "Datei existiert bereits.",
+                "document_owner_type_undefined": "Art des Besitzers des Dokuments ist unspezifiziert",
+                "document_owner_undefined": "Besitzer des Dokuments nicht spezifiziert",
+                "file_already_exists": "Datei existiert bereits",
                 "folder_creation_error": "Fehler beim Erstellen des Ordners",
                 "forbidden": "Verboten",
-                "forking_can_take_minutes": "Forken eines Repositoriums kann einige Minuten dauern.",
-                "repo_creation_error": "Fehler beim Erstellen des Repositoriums.",
+                "forking_can_take_minutes": "Forken eines Repositoriums kann einige Minuten dauern",
+                "repo_creation_error": "Fehler beim Erstellen des Repositoriums",
                 "repository_not_found": "Repositorium nicht gefunden",
-                "repository_undefined": "Repositorium nicht spezifizert.",
-                "something_went_wrong": "Erwas lief schief.",
-                "storage_provider_not_supported": "Speicheranbieter nicht unterstützt.",
-                "storage_provider_undefined": "Speicheranbieter nicht definiert.",
-                "unable_create_branch": "Konnte keinen neuen Branch erstellen.",
+                "repository_undefined": "Repositorium nicht spezifizert",
+                "something_went_wrong": "Etwas lief schief",
+                "storage_provider_not_supported": "Speicheranbieter nicht unterstützt",
+                "storage_provider_undefined": "Speicheranbieter nicht definiert",
+                "unable_create_branch": "Konnte keinen neuen Branch erstellen",
                 "unable_fork_repo": "Konnte Repositorium nicht forken",
-                "unable_pull_reqest": "Pull-Anfrage konnte nicht durchgeführt werden.",
-                "unable_save_document_on_fork": "Dokument konnte nicht in Fork gespeichert werden.",
-                "unable_save_on_branch": "Konnte nicht in Branch gespeichert werden.",
-                "unable_to_overwrite_file": "Konnte Datei nicht überschreiben.",
+                "unable_pull_reqest": "Pull Request konnte nicht durchgeführt werden",
+                "unable_save_document_on_fork": "Dokument konnte nicht in Fork gespeichert werden",
+                "unable_save_on_branch": "Konnte nicht in Branch gespeichert werden",
+                "unable_to_overwrite_file": "Konnte Datei nicht überschreiben",
                 "unabled_to_save": "Konnte nicht speichern",
-                "user_has_no_write_permission": "Nutzer hat keine Berechtigungen ein Dokument in diesem Repositorium zu speichern."
+                "user_has_no_write_permission": "Nutzer hat keine Berechtigungen ein Dokument in diesem Repositorium zu speichern"
             },
             "publicRepositories": {
                 "public_repositories": "Öffentliche Repositorien",
                 "user_or_organization": "Nutzer oder Organisation"
             },
             "search": {
-                "content_across_username": "Inhalt der {{username}} Repositorien",
+                "content_across_username": "Inhalt der Repositorien von {{username}}",
                 "content_on_repository": "Inhalt in {{repository}}",
                 "filename_or_content": "Dateiname oder Inhalt",
                 "files_on_repositoty": "Dateien in: {{repository}}"
             },
             "settings": {
+                "comit_message": "Commit-Nachricht",
                 "commit_message": "Commit-Nachricht",
                 "done": "Fertig",
                 "save_settings": "Einstellungen gespeichert",
@@ -89,33 +90,33 @@
             "overwrite": "überschreiben",
             "path_not_found": "Pfad nicht gefunden",
             "private": "Privat",
-            "processing": "Processing",
-            "repository_not_found": "",
+            "processing": "Verarbeite",
+            "repository_not_found": "Repositorium nicht gefunden",
             "save": "Speichern",
             "settings": "Einstellungen",
             "show_less": "Zeige weniger",
             "show_more": "Zeige mehr",
-            "url": ""
+            "url": "URL"
         },
         "footer": {
             "download": "Herunterladen",
             "fork_and_pull_request": "Fork und Pull-Anfrage",
             "pasteXml": "XML einfügen",
-            "pull_request": "Pull-Anfrage"
+            "pull_request": "Pull Request"
         },
         "local": {
             "click to upload": "Klicken, um hochzuladen",
-            "drag the document here": "drag the document here",
+            "drag the document here": "Das Dokument hierhin ziehen",
             "message": {
-                "unable_to_upload_file": "Kann Datei nicht hochladen"
+                "unable_to_upload_file": "Die Datei kann nicht hochgeladen werden"
             },
-            "paste_document_here": "Füge das Dokument hier ein"
+            "paste_document_here": "Das Dokument hier einfügen"
         },
         "message": {
             "be_patient": "Bitte haben Sie Geduld",
             "document_not_valid": "Dokument nicht gültig",
-            "must be a valid https url": "",
-            "must point to a file type": "",
+            "must be a valid https url": "Muss eine valide https-URL sein",
+            "must point to a file type": "Muss auf eine Datei von einem der erlaubten Dateitypen {{filetypes}} zeigen",
             "saving_document": "speichere Dokument"
         },
         "settings": {
