@@ -7,11 +7,10 @@ import en from './locales/en.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
 import pt from './locales/pt.json';
-import ro from './locales/ro.json';
 
-export const resources = { en, es, fr, pt, ro, de } as const;
+export const resources = { en, es, fr, pt, de } as const;
 
-export const locales = ['en', 'fr', 'de', 'es', 'pt', 'ro'] as const;
+export const locales = ['en', 'fr', 'de', 'es', 'pt'] as const;
 export const localesSchema = z.enum(locales);
 export type Locales = z.infer<typeof localesSchema>;
 
