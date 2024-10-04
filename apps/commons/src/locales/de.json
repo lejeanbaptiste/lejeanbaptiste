@@ -8,12 +8,12 @@
             "basic_interactions": "Grundlegende Interaktionen",
             "cancel": "Abbrechen",
             "close": "Schließen",
-            "contact_us": "Kontaktieren Sie uns",
+            "contact_us": "kontaktieren Sie uns",
             "conversion failed": "Konvertierung fehlgeschlagen",
             "create": "Erstellen",
             "description": "Beschreibung",
             "discard_changes": "Änderungen verwerfen",
-            "dismiss": "Verwerfen",
+            "dismiss": "verwerfen",
             "document": "Dokument",
             "download": "Herunterladen",
             "editing": "Editieren",
@@ -34,7 +34,7 @@
             "open_recent": "Zuletzt geöffnet",
             "or": "oder",
             "other": "andere",
-            "please": "Bitte",
+            "please": "bitte",
             "privacy": "Datenschutz",
             "privacy_policy": "Datenschutzrichtlinien",
             "privacy_settings": "Datenschutzeinstellungen",
@@ -43,7 +43,7 @@
             "request expired": "Anfrage abgelaufen",
             "sample_document": "Beispieldokument",
             "samples": "Beispiele",
-            "save": "Speichern",
+            "save": "speichern",
             "save_as": "Speichern unter",
             "session": "Sitzung",
             "settings": "Einstellungen",
@@ -81,7 +81,7 @@
                 "domain": "Domain",
                 "expiration": "Ablaufdatum",
                 "indefinitely_until_user_sign_out": "Unbegrenzt, bis sich der Nutzer abmeldet",
-                "lw_description": "Speichert Nutzungsdaten in dem lokalen Speicher des Browsers: Bevorzugte Identität und Speicheranbieter, gewählte Sprache und Darstellung, zuletzt genutzte Repositorien und Dokumente, XML-Schemas etc.",
+                "lw_description": "Speichert Nutzungsdaten in dem lokalen Speicher des Browsers: Bevorzugte Identität und Speicheranbieter, gewählte Sprache und Darstellung, zuletzt genutzte Repositorien und Dokumente, XML-Schemata etc.",
                 "measurement": "Messungen",
                 "measurement_description": "Diese Cookies werden genutzt, um Informationen darüber zu sammeln, wie Sie diese Webseite nutzen, welche Seiten Sie aufgerufen haben und auf welche Links sie geklickt haben. Alle Daten sind anonymisiert und können nicht dazu genutzt werden, Sie zu identifizieren.",
                 "more_information_description": "Bei jedweden Fragen zu unseren Cookierichtlinien und ihren damit zusammenhängen Auswahlmöglichkeiten:",
@@ -111,7 +111,7 @@
                 "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer muss vor der Nutzung eine Konvertierung durchführen.",
                 "intercept_load_file_format": "<0>Dies sieht nach einem </0> <1>{{format}}</1> <2>Dokument aus.</2>"
             },
-            "try to open it without converting": "Versuche zu öffnen, ohne zu konvertieren."
+            "try to open it without converting": "Versuche zu öffnen, ohne zu konvertieren"
         },
         "languages": {
             "de": "Deutsch",
@@ -131,8 +131,11 @@
             "service not available at the moment": "Der Dienst ist im Moment nicht erreichbar",
             "try_again": "Erneut versuchen",
             "unable_to_upload file": "Datei kann nicht hochgeladen werden",
-            "you_must_sign_in_to_open_and_save_document_from_the_cloud": "Sie müssen sich anmelden, um Dokumente aus der Cloud speichern oder öffnen zu können.",
-            "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "Sie müssen sich bei einem Speicheranbieter anmelden, um Dokumente aus der Cloud öffnen oder speichern zu können."
+            "you_must_sign_in_to_open_and_save_document_from_the_cloud": "Sie müssen sich anmelden, um Dokumente aus der Cloud öffnen oder darin speichern zu können",
+            "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "Sie müssen sich bei einem Speicheranbieter anmelden, um Dokumente aus der Cloud öffnen oder darin speichern zu können"
+        },
+        "messsages": {
+            "authentication_server_is_currently_unavailable": "Authentifizierungsserver ist momentan nicht erreichbar"
         },
         "profile": {
             "manage_your_lincs_account": "Verwalten Sie Ihren LINCS Konto"
@@ -150,7 +153,7 @@
             "export": "Exportieren",
             "export document": "Dokument exportieren",
             "from_the_cloud": "Aus der Cloud",
-            "from_your_device": "Von ihrem Gerät",
+            "from_your_device": "Von Ihrem Gerät",
             "import": "Importieren",
             "import document": "Dokument importieren",
             "invalid_request": "Ungültige Anfrage",
@@ -161,12 +164,12 @@
             "waiting_for_resource": "Warten auf die Ressource",
             "warning": {
                 "check_URL_structure": "Überprüfen Sie die Struktur der URL",
-                "storage_provider_invalid": "Anbieter '{{provider}}' ist ungültig oder wird nicht unterstützt."
+                "storage_provider_invalid": "Anbieter '{{provider}}' ist ungültig oder wird nicht unterstützt"
             },
-            "you_will_lose_any_unsaved_changes": "Nicht gespeicherte Einstellungen gehen verloren"
+            "you_will_lose_any_unsaved_changes": "Nicht gespeicherte Änderungen gehen verloren"
         },
         "templates": {
-            "choose_a_template": "Erscheinungsbild wählen"
+            "choose_a_template": "Vorlage wählen"
         },
         "ui": {
             "appearance": "Erscheinungsbild",
