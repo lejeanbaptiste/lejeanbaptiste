@@ -1,3 +1,7 @@
+# Über
+​
+LEAF-Writer bietet:
+​
 - Bearbeitung von XML-Dokumenten unter Einhaltung eines vorgegebenen Schemas, einschließlich Validierung gegen im Internet verfügbare Schemata
 - Unterstützung für Cascading Stylesheets (CSS), um eine WYSIWYG-Ansicht von Dokumenten sowie eine Ansicht mit Tags zu ermöglichen
 - die Möglichkeit, Referenzen auf benannte Entitäten (Personen, Orte oder Organisationen) aus bereits getaggten XML-Referenzen innerhalb eines Dokuments zu extrahieren, um Web-Annotationen zu erzeugen
