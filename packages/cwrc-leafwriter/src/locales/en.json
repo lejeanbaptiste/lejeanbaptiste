@@ -79,7 +79,7 @@
         "XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": "XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap",
         "You can change the editor mode anytime in the status bar": "You can change the editor mode anytime in the status bar (bottom left)",
         "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "The document has overlapping entities, and you are attempting to switch to a mode that prohibits them. If you continue, the overlapping entities will be discarded.",
-        "You have unsaved changes": "You have unsaved change",
+        "You have unsaved changes": "You have unsaved changes",
         "You might need to reload the document": "You might need to reload the document",
         "You must provide a username to make requests": "You must provide a username to make requests",
         "add schema": "add schema",
@@ -136,7 +136,7 @@
         "messages": {
             "LEAF-Writer could not find the document schema declaration": "LEAF-Writer could not find the document schema declaration.",
             "delete confirmation message": "<0>Are you sure you want to delete </0><1>{{name}}</1><2> schema?</2>",
-            "root element invalid": "<1>LEAF-Writer cannot open this document.</1> Root element <2>{{rootName}}</2> not suported.",
+            "root element invalid": "<1>LEAF-Writer cannot open this document.</1> Root element <2>{{rootName}}</2> not supported.",
             "schema not loaded": "<0>LEAF-Writer could not load the schema: </0><1>{{rng}}</1>",
             "schema not supported": "<0>LEAF-Writer does not support the schema attached to the document: </0><1>{{rng}}</1>"
         },
