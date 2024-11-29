@@ -6,7 +6,7 @@ export const StatusBar = () => {
 
   const handleClick = () => {
     window.open(
-      'https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report',
+      'mailto:contact-project+calincs-cwrc-leaf-writer-leaf-writer-31283590-issue-@incoming.gitlab.com',
     );
   };
 
