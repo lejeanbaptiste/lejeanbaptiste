@@ -1,8 +1,6 @@
 import TranslateIcon from '@mui/icons-material/Translate';
-import { Box, ListItem, Stack, ToggleButton, Typography } from '@mui/material';
-import { type MouseEvent } from 'react';
+import { Box, ListItem, MenuItem, Select, Typography, type SelectChangeEvent } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { ToggleButtonGroup } from '../../../../components';
 import { locales } from '../../../../i18n';
 import { useActions, useAppState } from '../../../../overmind';
 
@@ -12,9 +10,9 @@ export const Language = () => {
   const { currentLocale } = useAppState().ui;
   const { switchLocale: switchLanguage } = useActions().ui;
 
-  const changeLanguage = (_event: MouseEvent<HTMLElement>, locale: string) => {
-    switchLanguage(locale);
-    i18n.changeLanguage(locale);
+  const handleChange = (event: SelectChangeEvent) => {
+    switchLanguage(event.target.value);
+    i18n.changeLanguage(event.target.value);
   };
 
   return (
@@ -24,27 +22,14 @@ export const Language = () => {
         {t('LW.language')}
       </Typography>
       <Box flexGrow={1} />
-      <Stack direction="row">
-        <ToggleButtonGroup
-          aria-label="language"
-          exclusive
-          onChange={changeLanguage}
-          value={currentLocale}
-        >
-          {locales.map((locale) => (
-            <ToggleButton
-              key={locale}
-              aria-label={locale}
-              color="primary"
-              size="small"
-              sx={{ height: 28 }}
-              value={locale}
-            >
-              {t(`LW.languages.${locale}`, { lng: locale, fallbackLng: 'en' })}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-      </Stack>
+
+      <Select id="language-selectort" onChange={handleChange} size="small" value={currentLocale}>
+        {locales.map((locale) => (
+          <MenuItem key={locale} aria-label={locale} color="primary" value={locale}>
+            {t(`LW.languages.${locale}`, { lng: locale, fallbackLng: 'en' })}
+          </MenuItem>
+        ))}
+      </Select>
     </ListItem>
   );
 };
