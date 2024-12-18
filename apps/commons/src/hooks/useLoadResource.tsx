@@ -51,7 +51,7 @@ export const useLoadResource = () => {
       return;
     }
 
-    if (!resource.provider) return showErrorMessage(t('LWC.storage.provider_not_found'));
+    if (!resource.provider) return showErrorMessage(t('LWC.storage.provider not found'));
 
     //Load document from RAW if user is not signed in
     if (resource.url?.includes('https://raw.githubusercontent')) {
@@ -63,7 +63,7 @@ export const useLoadResource = () => {
     }
 
     const providerAuth = getStorageProviderAuth(resource.provider);
-    if (!providerAuth) return showErrorMessage(t('LWC.storage.provider_not_found'));
+    if (!providerAuth) return showErrorMessage(t('LWC.storage.provider not found'));
 
     const document = await loadDocument(providerAuth, resource);
     if (document instanceof Error) return showErrorMessage(document.message);
