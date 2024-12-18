@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 3.5.1
+
+### Minor Changes
+
+- [19f3c894325398648a867384109f21cf978b56b5] add new UI/UX for bug reports
+
+### Patch Changes
+
+- [315407a7e97248a1d579b993055a6a37b2c9133e] authentication: switch auth state to UNAUTHENTICATED if LINCS API is unreachable
+- [52dda7efdf5340e2f4d198bf27dacec3ecf00026] locales: format and remove unused terms
+- Updated dependencies
+  - core: bump: @cwrc/leafwriter@3.6.1
+
 ## 3.5.0
 
 ### Mahor Changes

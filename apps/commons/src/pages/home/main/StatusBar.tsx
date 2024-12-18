@@ -1,24 +1,10 @@
-import { Chip, Stack } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { Stack } from '@mui/material';
+import { BugReport } from './bugReport';
 
 export const StatusBar = () => {
-  const { t } = useTranslation();
-
-  const handleClick = () => {
-    window.open(
-      'https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report',
-    );
-  };
-
   return (
-    <Stack justifyContent="center" alignItems="center" px={2} mt={5}>
-      <Chip
-        label={`${t('LWC.home.bugs')} / ${t('LWC.home.requests')}`}
-        onPointerDown={handleClick}
-        size="small"
-        variant="outlined"
-        sx={{ mb: 1 }}
-      />
+    <Stack justifyContent="center" alignItems="center" mt={5}>
+      <BugReport />
     </Stack>
   );
 };

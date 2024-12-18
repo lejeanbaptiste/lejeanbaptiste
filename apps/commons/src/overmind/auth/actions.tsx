@@ -14,7 +14,7 @@ export const onInitializeOvermind = async ({ actions, effects }: Context, overmi
   const providers = await effects.auth.api.getProviders();
 
   //populate supported providers
-  if (!(providers instanceof Error)) actions.providers.setup(providers);
+  if (!(providers instanceof Error) && providers.length > 0) actions.providers.setup(providers);
 
   //Authenticate
   await actions.auth.authenticateUser();
@@ -32,11 +32,17 @@ export const authenticateUser = async ({ state, actions, effects }: Context) => 
   }
 
   const token = await effects.auth.api.getToken();
-  if (!token) return log.warn('No Authentication token');
+  if (!token) {
+    state.auth.userState = 'UNAUTHENTICATED';
+    return log.warn('No Authentication token');
+  }
 
   //Identity provider
   const identityProvider = await actions.auth.setupMainIdentityProvider(token);
-  if (!identityProvider) return;
+  if (!identityProvider) {
+    state.auth.userState = 'UNAUTHENTICATED';
+    return;
+  }
 
   await actions.auth.setUserProfile(identityProvider);
 
