@@ -207,7 +207,7 @@ class Mapper {
       } else {
         for (const key2 in level1) {
           const level2 = level1[key2];
-          if (level2.match) {
+          if (level2?.match) {
             if (shouldRemoveMatch) removeMatch(level2.match);
             level1[key2] = level2.value;
           }
