@@ -63,7 +63,7 @@ export const save = async (
 
   //Check provider
   if (!resource?.provider) {
-    const message = t('LWC.storage.provider_not_found');
+    const message = t('LWC.storage.provider not found');
     log.error(message);
     state.editor.isSaving = false;
     return { success: false, error: { type: 'error', message } };
@@ -73,7 +73,7 @@ export const save = async (
 
   //Check provider token
   if (!providerAuth) {
-    const message = t('LWC.storage.provider_not_found');
+    const message = t('LWC.storage.provider not found');
     log.error(message);
     state.editor.isSaving = false;
     return { success: false, error: { type: 'error', message } };
