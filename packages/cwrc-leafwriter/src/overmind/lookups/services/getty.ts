@@ -63,7 +63,7 @@ const getEntitySourceURI = (query: string, gettyVocab: NamedEntityType) => {
 const callGetty = async (query: string, type: NamedEntityType) => {
   const urlQuery = getEntitySourceURI(query, type);
 
-  const response = await axiosInstance.get<GettyResults>(urlQuery).catch((error) => {
+  const response = await axiosInstance.get<GettyResults>(urlQuery).catch(() => {
     return {
       status: 500,
       statusText: `The request exeeded the timeout (${timeout})`,
