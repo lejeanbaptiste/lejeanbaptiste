@@ -1,81 +1,75 @@
-import axios from 'axios';
 import type { AuthorityLookupResult } from '../../../dialogs/entityLookups/types';
-import { log } from './../../../utilities';
-import { type AuthorityLookupParams } from './type';
+import { log } from '../../../utilities';
+import { LINCS_API_ReconcileResultSchema, type AuthorityLookupParams } from './type';
 
-type NamedEntityType = 'person' | 'place' | 'organisation' | 'work' | 'thing';
-
-interface Doc {
-  [x: string]: any;
-  comment: string[];
-  label: string[];
-  resource: string[];
-}
-
-interface DBPedidaResults {
-  docs: Doc[];
-}
-
-const baseURL = 'https://lookup.dbpedia.org/api/search';
-const FORMAT = 'json';
-const MAX_HITS = 25; // default: 100; but it breaks at 45+
-const timeout = 3_000;
-
-const axiosInstance = axios.create({ baseURL, timeout });
+type AuthoritySource =
+  | 'DBpedia-All'
+  | 'DBpedia-Event'
+  | 'DBpedia-Organisation'
+  | 'DBpedia-Person'
+  | 'DBpedia-Place'
+  | 'DBpedia-Work';
 
 export const find = async ({ query, type }: AuthorityLookupParams) => {
-  if (type === 'person') return await callDBPedia(query, 'person');
-  if (type === 'place') return await callDBPedia(query, 'place');
-  if (type === 'organization') return await callDBPedia(query, 'organisation');
-  if (type === 'title') return await callDBPedia(query, 'work');
-  if (type === 'rs') return await callDBPedia(query, 'thing');
-  if (type === 'thing') return await callDBPedia(query, 'thing');
-  if (type === 'concept') return await callDBPedia(query, 'thing');
+  let sources: AuthoritySource | AuthoritySource[] = 'DBpedia-All';
 
-  log.warn(`DBPEDIA: Entity type ${type} invalid`);
-};
+  if (type === 'person') sources = 'DBpedia-Person';
+  if (type === 'place') sources = 'DBpedia-Place';
+  if (type === 'organization') sources = 'DBpedia-Organisation';
+  if (type === 'title') sources = 'DBpedia-Work';
+  if (type === 'rs') sources = 'DBpedia-All';
+  if (type === 'thing') sources = 'DBpedia-All';
+  if (type === 'concept') sources = 'DBpedia-All';
 
-const callDBPedia = async (query: string, type: NamedEntityType) => {
-  const encodeQueryString = encodeURIComponent(query);
+  sources = Array.isArray(sources) ? sources : [sources];
 
-  const params = new URLSearchParams({
-    QueryClass: type,
-    QueryString: encodeQueryString,
-    format: FORMAT,
-    MaxHits: MAX_HITS.toString(),
+  const response = await fetch('https://lincs-api.lincsproject.ca/api/link/reconcile', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      entity: query,
+      authorities: sources,
+    }),
   });
 
-  const urlQuery = `KeywordSearch?$${params}`;
-
-  const response = await axiosInstance.get<DBPedidaResults>(urlQuery).catch((error) => {
-    return {
-      status: 500,
-      statusText: `The request exeeded the timeout (${timeout})`,
-      data: undefined,
-    };
-  });
-
-  if (response.status >= 400) {
-    const errorMsg = `
-      Something wrong with the call to DBPedia, possibly a problem with the network or the server.
-      HTTP error: ${response.statusText}
-    `;
+  if (!response.ok) {
+    console.error(response);
+    const errorMsg = `Something wrong with the call to DBPedia via LINCS-API. Possibly a problem with the network or the server. HTTP error: ${response.statusText}`;
     log.warn(errorMsg);
+
     return [];
   }
 
-  const data = response.data;
-  if (!data) return [];
+  const data: unknown = await response.json();
+  const validatedData = LINCS_API_ReconcileResultSchema.safeParse(data);
 
-  // const mapResponse = responseJson.docs.map(
-  const results: AuthorityLookupResult[] = data.docs.map(({ comment, label, resource }) => {
-    //? assuming first instance of description, name and uri;
-    const description = comment?.[0] ?? 'No description available';
-    const name = label[0]?.replace(/(<([^>]+)>)/gi, '') ?? '';
-    const uri = resource[0];
+  if (!validatedData.success) {
+    console.error(validatedData.error);
+    const errorMsg = `The data return from DBPedia via LINCS-API is invalid and not compatible with LEAF-Writer. Error: ${validatedData.error.errors[0].message}`;
+    log.warn(errorMsg);
 
-    return { description, id: uri ?? '', name, repository: 'dbpedia', query, type, uri: uri ?? '' };
+    return [];
+  }
+
+  const entries: AuthorityLookupResult[] = [];
+
+  validatedData.data.forEach((source) => {
+    const matches: AuthorityLookupResult[] = source.matches.map((match) => {
+      return {
+        id: match.uri,
+        name: match.label,
+        query,
+        repository: 'viaf',
+        type,
+        uri: match.uri,
+      };
+    });
+
+    entries.push(...matches);
   });
 
-  return results;
+  return entries;
 };
