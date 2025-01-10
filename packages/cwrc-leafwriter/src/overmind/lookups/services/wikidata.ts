@@ -26,8 +26,6 @@ export const find = async ({ query, type }: AuthorityLookupParams) => {
   if (type === 'rs') return await callWikidata(query, 'rs');
   if (type === 'thing') return await callWikidata(query, 'rs');
   if (type === 'concept') return await callWikidata(query, 'rs');
-
-  log.warn(`WIKIDATA: Entity type ${type} invalid`);
 };
 
 const callWikidata = async (query: string, type: NamedEntityType) => {
@@ -35,10 +33,9 @@ const callWikidata = async (query: string, type: NamedEntityType) => {
     format: FORMAT,
     language: LANGUAGE,
     search: query,
-    // limit: MAX_HITS,
   });
 
-  const response = await axiosInstance.get<SearchResponse>(url).catch((error) => {
+  const response = await axiosInstance.get<SearchResponse>(url).catch(() => {
     return {
       status: 500,
       statusText: `The request exeeded the timeout (${timeout})`,

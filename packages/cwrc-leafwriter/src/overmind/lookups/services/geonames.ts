@@ -39,7 +39,7 @@ export const find = async (
   const params = new URLSearchParams({ maxRows: MAX_HITS.toString(), q: encodedURI, username });
   const urlQuery = `searchJSON?${params}`;
 
-  const response = await axiosInstance.get<GeonamesResults>(urlQuery).catch((error) => {
+  const response = await axiosInstance.get<GeonamesResults>(urlQuery).catch(() => {
     return {
       status: 500,
       statusText: `The request exeeded the timeout (${timeout})`,
