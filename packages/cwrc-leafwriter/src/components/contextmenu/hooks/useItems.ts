@@ -323,7 +323,7 @@ export const useItems = (ctx: State) => {
       if (writer.schemaManager.isSchemaCustom() === false) {
         items.push({
           type: 'collection',
-          name: t('LW.'),
+          name: t('LW.Add Entity Annotation'),
           icon: 'add',
           searchable: false,
           children: getEntitiesOptions(),
