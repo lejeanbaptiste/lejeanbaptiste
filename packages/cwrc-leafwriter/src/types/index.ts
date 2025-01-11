@@ -129,7 +129,7 @@ export type EntityType =
   | 'organization'
   | 'place'
   | 'person'
-  | 'rs'
+  | 'thing'
   | 'work';
 
 //UI

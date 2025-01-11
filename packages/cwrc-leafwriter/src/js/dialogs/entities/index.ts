@@ -7,7 +7,7 @@ import NoteDialog from './NoteDialog';
 import OrganizationDialog from './OrganizationDialog';
 import PersonDialog from './PersonDialog';
 import PlaceDialog from './PlaceDialog';
-import RsDialog from './RsDialog';
+import ThingDialog from './ThingDialog';
 import WorkDialog from './WorkDialog';
 
 export { CitationDialog };
@@ -18,7 +18,7 @@ export { NoteDialog };
 export { OrganizationDialog };
 export { PersonDialog };
 export { PlaceDialog };
-export { RsDialog };
+export { ThingDialog };
 export { WorkDialog };
 
 export default {
@@ -31,6 +31,6 @@ export default {
   organization: OrganizationDialog,
   person: PersonDialog,
   place: PlaceDialog,
-  rs: RsDialog,
+  thing: ThingDialog,
   work: WorkDialog,
 };

@@ -123,6 +123,6 @@ export const reset = ({ state: { lookups } }: Context) => {
   lookups.query = '';
   lookups.results = undefined;
   lookups.selected = undefined;
-  lookups.typeEntity = 'rs';
-  lookups.typeLookup = 'rs';
+  lookups.typeEntity = 'thing';
+  lookups.typeLookup = 'thing';
 };

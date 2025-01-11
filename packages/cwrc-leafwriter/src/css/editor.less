@@ -38,8 +38,8 @@
   background-color: fade(@entity-place, 20%);
 }
 
-.entityHighlight.rs {
-  background-color: fade(@entity-rs, 20%);
+.entityHighlight.thing {
+  background-color: fade(@entity-thing, 20%);
 }
 
 .entityHighlight.org {
@@ -82,10 +82,10 @@
   background-color: @entity-place;
 }
 
-.showEntities .rs,
-.ui-dialog-content .rs {
-  border-color: @entity-rs;
-  background-color: @entity-rs;
+.showEntities .thing,
+.ui-dialog-content .thing {
+  border-color: @entity-thing;
+  background-color: @entity-thing;
 }
 
 .showEntities .organization,
@@ -142,8 +142,8 @@
 .entity.keyword[_candidate] {
   color: @entity-keyword !important;
 }
-.entity.rs[_candidate] {
-  color: @entity-rs !important;
+.entity.thing[_candidate] {
+  color: @entity-thing !important;
 }
 
 .noteWrapper::before {

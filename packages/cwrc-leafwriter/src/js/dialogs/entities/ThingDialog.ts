@@ -1,8 +1,8 @@
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/selectmenu';
 import type { EntityLink } from '../../../dialogs/entityLookups/types';
-import Entity from '../../../js/entities/Entity';
-import Writer from '../../../js/Writer';
+import Entity from '../../entities/Entity';
+import Writer from '../../Writer';
 import { EntityType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
@@ -38,14 +38,14 @@ const types = [
 
 const certaintyOptions = ['high', 'medium', 'low', 'unknown'];
 
-class RsDialog implements SchemaDialog {
+class ThingDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
   readonly $el: JQuery<HTMLElement>;
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityType = 'rs';
+  type: EntityType = 'thing';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
@@ -56,7 +56,7 @@ class RsDialog implements SchemaDialog {
         ${this.selectedTextField(id)}
         ${this.tagAsField(id)}
         ${this.certaintyField(id)}
-        ${this.rsTypeField(id)}
+        ${this.thingTypeField(id)}
         ${this.otherTypeField()}
       </div>
     `;
@@ -111,8 +111,8 @@ class RsDialog implements SchemaDialog {
     this.dialog = new DialogForm({
       writer,
       $el: this.$el,
-      type: 'rs',
-      title: 'Tag Referencing String',
+      type: 'thing',
+      title: 'Tag Thing',
     });
 
     const _this = this;
@@ -283,7 +283,7 @@ class RsDialog implements SchemaDialog {
     return html;
   }
 
-  private rsTypeField(id: string) {
+  private thingTypeField(id: string) {
     const fieldTitle = 'Type (optional)';
 
     const html = `
@@ -324,6 +324,17 @@ class RsDialog implements SchemaDialog {
     this.dialog.show(config);
   }
 
+  /*************  ✨ Codeium Command ⭐  *************/
+  /**
+   * Destroy the dialog.
+   *
+   * This will destroy the dialog, but also manually destroy the selectmenu widget
+   * for the type field because the dialog's destroy method doesn't do this.
+   *
+   * TODO: This should be fixed in the Dialog class so that widgets are
+   * automatically destroyed when the dialog is destroyed.
+   */
+  /******  794c081c-03bc-4fe0-bc33-a86c880a7bac  *******/
   destroy() {
     //@ts-ignore
     this.$el.find('select[name=type]').selectmenu('destroy');
@@ -331,4 +342,4 @@ class RsDialog implements SchemaDialog {
   }
 }
 
-export default RsDialog;
+export default ThingDialog;

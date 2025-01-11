@@ -60,8 +60,8 @@ const work: EntityMappingProps = {
   },
 };
 
-const rs: EntityMappingProps = {
-  label: 'Referencing String',
+const thing: EntityMappingProps = {
+  label: 'Thing',
   mapping: {
     certainty: '@cert',
     lemma: '@key',
@@ -394,7 +394,7 @@ export const teiLite: SchemaMappingProps = {
     ['place', place],
     ['organization', organization],
     ['work', work],
-    ['rs', rs],
+    ['thing', thing],
     ['citation', citation],
     ['note', note],
     ['date', date],
