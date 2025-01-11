@@ -33,25 +33,6 @@ declare module '@mui/material/styles' {
   }
 }
 
-// Update the Button's color prop options
-// declare module '@mui/material/Button' {
-//   interface ButtonPropsColorOverrides {
-//     person: true;
-//   }
-// }
-
-// declare module '@mui/material/Icon' {
-//   interface ButtonPropsColorOverrides {
-//     person: true;
-//   }
-// }
-
-// declare module '@mui/material/SvgIcon' {
-//   interface ButtonPropsColorOverrides {
-//     person: true;
-//   }
-// }
-
 const theme = (darkMode: boolean) =>
   createTheme({
     entity: {
