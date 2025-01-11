@@ -48,9 +48,9 @@ export const empty: SchemaMappingProps = {
       },
     ],
     [
-      'title',
+      'work',
       {
-        label: 'Title',
+        label: 'Work',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],

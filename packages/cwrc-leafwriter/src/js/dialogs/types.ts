@@ -1,6 +1,6 @@
 import Writer from '../Writer';
 
-export type DialogLookupType = 'citation' | 'organization' | 'person' | 'place' | 'rs' | 'title';
+export type DialogLookupType = 'citation' | 'organization' | 'person' | 'place' | 'thing' | 'work';
 
 export interface LWDialogConfigProps {
   parentEl: JQuery<HTMLElement>;

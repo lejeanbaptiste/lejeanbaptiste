@@ -1,20 +1,20 @@
 import $ from 'jquery';
 import type { EntityLink } from '../../../dialogs/entityLookups/types';
-import Entity from '../../../js/entities/Entity';
-import Writer from '../../../js/Writer';
+import Entity from '../../entities/Entity';
+import Writer from '../../Writer';
 import type { EntityType, SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import { getSourceNameFromUrl } from './util';
 
-interface TitleLevel {
+interface WorLevel {
   level: string;
   description: string;
   type: string;
 }
 
-const titleLevels: TitleLevel[] = [
+const workLevels: WorLevel[] = [
   {
     level: 'a',
     type: 'Analytic',
@@ -45,14 +45,14 @@ const titleLevels: TitleLevel[] = [
 
 const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
 
-class TitleDialog implements SchemaDialog {
+class WorkDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
   readonly mappingID: SchemaMappingType;
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityType = 'title';
+  type: EntityType = 'work';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
@@ -124,7 +124,7 @@ class TitleDialog implements SchemaDialog {
       });
     });
 
-    this.dialog = new DialogForm({ writer, $el, type: 'title', title: 'Tag Title' });
+    this.dialog = new DialogForm({ writer, $el, type: 'work', title: 'Tag Work' });
   }
 
   private updateLink(lemma: string, uri: string) {
@@ -240,7 +240,7 @@ class TitleDialog implements SchemaDialog {
   }
 
   private titleLevelField(id: string) {
-    const fieldTitle = 'This title is';
+    const fieldTitle = 'This work is';
 
     const valueEncoding =
       this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
@@ -266,7 +266,7 @@ class TitleDialog implements SchemaDialog {
           <p class="fieldLabel">${fieldTitle}</p>
         </div>
 
-        ${titleLevels
+        ${workLevels
           .map(({ level, type, description }) => {
             const valueEncoding =
               this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
@@ -322,4 +322,4 @@ class TitleDialog implements SchemaDialog {
   }
 }
 
-export default TitleDialog;
+export default WorkDialog;

@@ -65,7 +65,7 @@ import { FaBoxOpen, FaUserAlt, FaUsers } from 'react-icons/fa';
 import { ImBook } from 'react-icons/im';
 import { BookOutlinedIcon } from './custom/Book';
 import BoxOpenIcon, { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
-import titleIcon from './svg/book-solid.svg';
+import workIcon from './svg/book-solid.svg';
 import rsIcon from './svg/box-open-solid.svg';
 import iconCitation from './svg/citation.svg';
 import validateIcon from './svg/clipboard-check-solid.svg';
@@ -194,7 +194,7 @@ const icons = {
   textNode: TagRoundedIcon,
   thing: BoxIcon,
   thingDraft: BoxOutlinedIcon,
-  title: asMuiIcon(ImBook, { x: 1, y: 1 }),
+  work: asMuiIcon(ImBook, { x: 1, y: 1 }),
   titleDraft: BookOutlinedIcon,
   toc: FormatListBulletedIcon,
   translate: TranslateRoundedIcon,
@@ -225,7 +225,7 @@ const svgs = new Map([
   ['tags', LabelIcon],
   ['person', iconPerson],
   ['place', PlaceIconSVG],
-  ['title', titleIcon],
+  ['work', workIcon],
   ['date', EventIconSVG],
   ['organization', iconOrg],
   ['citation', iconCitation],

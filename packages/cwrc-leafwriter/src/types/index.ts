@@ -130,7 +130,7 @@ export type EntityType =
   | 'place'
   | 'person'
   | 'rs'
-  | 'title';
+  | 'work';
 
 //UI
 export type PaletteMode = 'light' | 'auto' | 'dark';

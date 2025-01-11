@@ -100,13 +100,13 @@ export const EditorToolbar = () => {
       type: 'iconButton',
     },
     {
-      color: entity.title.color.main,
+      color: entity.work.color.main,
       group: 'action',
-      disabled: !isSupported('title'),
+      disabled: !isSupported('work'),
       hide: isReadonly,
-      icon: entity.title.icon,
-      onClick: () => window.writer.tagger.addEntityDialog('title'),
-      title: 'Tag Title',
+      icon: entity.work.icon,
+      onClick: () => window.writer.tagger.addEntityDialog('work'),
+      title: 'Tag Work',
       type: 'iconButton',
     },
     {

@@ -585,7 +585,7 @@ class Mapper {
       'place',
       'org',
       'organization',
-      'title',
+      'work',
       'rs',
       'citation',
       'note',

@@ -16,7 +16,7 @@ type DialogType =
   | 'link'
   | 'organization'
   | 'place'
-  | 'title'
+  | 'work'
   | 'note'
   | 'rs';
 

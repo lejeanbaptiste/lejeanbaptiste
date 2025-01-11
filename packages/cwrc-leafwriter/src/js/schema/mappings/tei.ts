@@ -84,8 +84,8 @@ const organization: EntityMappingProps = {
   },
 };
 
-const title: EntityMappingProps = {
-  label: 'Title',
+const work: EntityMappingProps = {
+  label: 'Work',
   mapping: {
     certainty: '@cert',
     lemma: '@key',
@@ -442,7 +442,7 @@ export const tei: SchemaMappingProps = {
     ['person', person],
     ['place', place],
     ['organization', organization],
-    ['title', title],
+    ['work', work],
     ['rs', rs],
     ['citation', citation],
     ['note', note],

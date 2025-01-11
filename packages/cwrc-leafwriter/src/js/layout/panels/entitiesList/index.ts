@@ -56,11 +56,11 @@ class EntitiesList {
             <option value="all" selected="selected">All</option>
             <option value="person">Person</option>
             <option value="place">Place</option>
-            <option value="date">Date</option>
             <option value="organization">Organization</option>
+            <option value="work">Work</option>
             <option value="citation">Citation</option>
             <option value="note">Note</option>
-            <option value="title">Title</option>
+            <option value="date">Date</option>
             <option value="correction">Correction</option>
             <option value="keyword">Keyword</option>
             <option value="link">Link</option>
@@ -486,7 +486,7 @@ class EntitiesList {
       'place',
       'org',
       'organization',
-      'title',
+      'work',
       'rs',
       'citation',
       'note',

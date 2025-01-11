@@ -16,8 +16,7 @@ export const find = async ({ query, type }: AuthorityLookupParams) => {
   if (type === 'person') sources = 'DBpedia-Person';
   if (type === 'place') sources = 'DBpedia-Place';
   if (type === 'organization') sources = 'DBpedia-Organisation';
-  if (type === 'title') sources = 'DBpedia-Work';
-  if (type === 'rs') sources = 'DBpedia-All';
+  if (type === 'work') sources = 'DBpedia-Work';
   if (type === 'thing') sources = 'DBpedia-All';
   if (type === 'concept') sources = 'DBpedia-All';
 

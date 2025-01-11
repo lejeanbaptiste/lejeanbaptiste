@@ -23,14 +23,14 @@ interface NerveToCWRCMappings {
   PERSON: string;
   LOCATION: string;
   ORGANIZATION: string;
-  TITLE: string;
+  WORK: string;
 }
 
 const NerveToCWRCMappings: NerveToCWRCMappings = {
   PERSON: 'person',
   LOCATION: 'place',
   ORGANIZATION: 'org',
-  TITLE: 'title',
+  WORK: 'work',
 };
 
 interface TagProps {
@@ -56,7 +56,7 @@ const iconsMap = new Map([
   ['place', 'globe'],
   ['org', 'users'],
   ['organization', 'users'],
-  ['title', 'book'],
+  ['work', 'book'],
   ['rs', 'box-open'],
   ['citation', 'address-card'],
   ['note', 'sticky-note'],
@@ -115,7 +115,7 @@ function Nerve({ writer, parentId, nerveUrl }: NerveConfig) {
                 <option value="type_person">Person</option>
                 <option value="type_place">Place</option>
                 <option value="type_org">Organization</option>
-                <option value="type_title">Title</option>
+                <option value="type_work">Work</option>
               </optgroup>
               <optgroup label="Status">
                 <option value="status_edited">Edited</option>
@@ -1334,7 +1334,7 @@ const NerveEditDialog = (writer: any, parentEl: HTMLElement) => {
           <option value="person">Person</option>
           <option value="place">Place</option>
           <option value="org">Organization</option>
-          <option value="title">Title</option>
+          <option value="work">Work</option>
         </select>
       </div>
       <div>

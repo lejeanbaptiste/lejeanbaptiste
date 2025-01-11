@@ -16,8 +16,7 @@ export const find = async ({ query, type }: AuthorityLookupParams) => {
   if (type === 'person') sources = 'VIAF-Personal';
   if (type === 'place') sources = 'VIAF-Geographic';
   if (type === 'organization') sources = 'VIAF-Corporate';
-  if (type === 'title') sources = ['VIAF-Bibliographic', 'VIAF-Expressions', 'VIAF-Works'];
-  if (type === 'rs') sources = ['VIAF-Expressions', 'VIAF-Works'];
+  if (type === 'work') sources = ['VIAF-Bibliographic', 'VIAF-Expressions', 'VIAF-Works'];
   if (type === 'thing') sources = ['VIAF-Expressions', 'VIAF-Works'];
   if (type === 'concept') sources = ['VIAF-Expressions', 'VIAF-Works'];
 

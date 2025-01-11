@@ -8,7 +8,7 @@ import OrganizationDialog from './OrganizationDialog';
 import PersonDialog from './PersonDialog';
 import PlaceDialog from './PlaceDialog';
 import RsDialog from './RsDialog';
-import TitleDialog from './TitleDialog';
+import WorkDialog from './WorkDialog';
 
 export { CitationDialog };
 export { DateDialog };
@@ -19,7 +19,7 @@ export { OrganizationDialog };
 export { PersonDialog };
 export { PlaceDialog };
 export { RsDialog };
-export { TitleDialog };
+export { WorkDialog };
 
 export default {
   citation: CitationDialog,
@@ -32,5 +32,5 @@ export default {
   person: PersonDialog,
   place: PlaceDialog,
   rs: RsDialog,
-  title: TitleDialog,
+  work: WorkDialog,
 };
