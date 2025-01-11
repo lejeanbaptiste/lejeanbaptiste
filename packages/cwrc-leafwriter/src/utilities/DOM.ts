@@ -13,7 +13,7 @@ export const isElement = (param: unknown): param is Element => {
   return (param as Element).getAttribute !== undefined;
 };
 
-export const isValidCSSSelector = ((dummyElement) => (selector: any) => {
+export const isValidCSSSelector = ((dummyElement) => (selector: string) => {
   try {
     dummyElement.querySelector(selector);
   } catch {

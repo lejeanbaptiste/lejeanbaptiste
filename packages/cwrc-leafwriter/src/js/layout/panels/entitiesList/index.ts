@@ -221,6 +221,7 @@ class EntitiesList {
   private acceptAll() {
     const filter = this.getFilter();
     this.writer.entitiesManager.eachEntity((index: number, entity: Entity) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const isCandidate = entity.getAttribute('_candidate');
       const isFromNerve = entity.getCustomValue('nerve');
       const type = entity.getType();

@@ -200,6 +200,7 @@ export const useItems = (ctx: State) => {
             return;
           }
 
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           //@ts-ignore
           writer.editor.currentBookmark.tagId = ctx.tagId;
           writer.tagger.addTagDialog({
@@ -449,8 +450,9 @@ export const useItems = (ctx: State) => {
           const content = typeof node === 'object' ? node.textContent : node.toString();
           if (!content || content === '') return;
 
-          //@ts-ignore
-          const permission = await navigator.permissions.query({ name: 'clipboard-write' });
+          const permission = await navigator.permissions.query({
+            name: 'clipboard-write' as PermissionName,
+          });
           if (permission.state == 'granted' || permission.state == 'prompt') {
             await navigator.clipboard.writeText(content);
           }
@@ -476,8 +478,9 @@ export const useItems = (ctx: State) => {
           const node = writer.utilities.evaluateXPath(writer.editor.getBody(), ctx.xpath);
           if (node === null || typeof node !== 'object') return;
 
-          // @ts-ignore
-          const permission = await navigator.permissions.query({ name: 'clipboard-read' });
+          const permission = await navigator.permissions.query({
+            name: 'clipboard-read' as PermissionName,
+          });
           if (permission.state == 'granted' || permission.state == 'prompt') {
             const content = await navigator.clipboard.readText();
             node.textContent = content;
