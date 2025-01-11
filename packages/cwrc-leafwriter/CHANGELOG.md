@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 3.7.0
+
+### Minor Changes
+
+- [8e47e6421d53974ab35022138a82bedf5628ef9c] entity lookups: Move requests to VIAF and DBPedia to LINCS-API
+
+### Patch Changes
+
+- [28c3e72d4eb9f6546bdb301285cdf82b31d7f3c1] remove unused vars / code
+
 ## 3.6.1
 
 ### Patch Changes

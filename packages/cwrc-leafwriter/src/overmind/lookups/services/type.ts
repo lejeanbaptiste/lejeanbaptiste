@@ -1,4 +1,5 @@
 import type { AuthorityLookupResult, NamedEntityType } from '../../../dialogs/entityLookups/types';
+import { z } from 'zod';
 
 export interface AuthorityLookupParams {
   query: string;
@@ -16,3 +17,16 @@ export default interface LookupServiceApi {
     settings?: AuthorityLookupSettings,
   ) => Promise<AuthorityLookupResult[]>;
 }
+
+export const LINCS_API_ReconcileResultSchema = z.array(
+  z.object({
+    authority: z.string(),
+    matches: z.array(
+      z.object({
+        description: z.string().optional(),
+        label: z.string(),
+        uri: z.string().url(),
+      }),
+    ),
+  }),
+);
