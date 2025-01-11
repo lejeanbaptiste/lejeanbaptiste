@@ -11,7 +11,7 @@ module.exports = {
     '**/changelog.config.js',
     '**/jest.config.ts',
     '**/webpack.config.ts',
-    '**/*.d.ts'
+    '**/*.d.ts',
   ],
   parserOptions: {
     ecmaVersion: 'latest',
@@ -46,6 +46,7 @@ module.exports = {
         '@typescript-eslint/ban-ts-comment': 1,
         '@typescript-eslint/no-explicit-any': 1,
         '@typescript-eslint/require-await': 0,
+        '@typescript-eslint/no-misused-promises': [2, { checksVoidReturn: false }],
       },
     },
     {

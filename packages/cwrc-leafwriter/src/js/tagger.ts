@@ -734,9 +734,6 @@ class Tagger {
     const $tag = $(`[name=${id}]`, this.writer.editor?.getBody());
 
     const type: string = info.properties.type || entity.getType();
-    if (type !== entity.getType()) {
-      log.info('tagger.editEntity: changing entity type'); // only possible via nerve
-    }
 
     // named entity check
     const isNamedEntity = this.writer.schemaManager.mapper.isNamedEntity(type as EntityType);

@@ -16,9 +16,9 @@ type DialogType =
   | 'link'
   | 'organization'
   | 'place'
-  | 'title'
+  | 'work'
   | 'note'
-  | 'rs';
+  | 'thing';
 
 interface DialogFormConfig {
   writer: Writer;

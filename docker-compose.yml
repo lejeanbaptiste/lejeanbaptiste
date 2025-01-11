@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   leafwriter:
@@ -8,7 +8,6 @@ services:
       - GA_MEASUREMENT_ID
       - GEONAMES_USERNAME
       - KEYCLOAK_URL
-      - NSSI_URL
       - AUTH_API_URL
     ports:
       - 3000:3000

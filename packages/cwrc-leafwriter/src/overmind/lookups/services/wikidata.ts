@@ -4,7 +4,7 @@ import type { AuthorityLookupResult } from '../../../dialogs/entityLookups/types
 import { log } from './../../../utilities';
 import { type AuthorityLookupParams } from './type';
 
-type NamedEntityType = 'person' | 'place' | 'org' | 'title' | 'rs';
+type NamedEntityType = 'person' | 'place' | 'org' | 'work' | 'thing';
 
 const wdk = WBK({
   instance: 'https://www.wikidata.org',
@@ -22,10 +22,9 @@ export const find = async ({ query, type }: AuthorityLookupParams) => {
   if (type === 'person') return await callWikidata(query, 'person');
   if (type === 'place') return await callWikidata(query, 'place');
   if (type === 'organization') return await callWikidata(query, 'org');
-  if (type === 'title') return await callWikidata(query, 'title');
-  if (type === 'rs') return await callWikidata(query, 'rs');
-  if (type === 'thing') return await callWikidata(query, 'rs');
-  if (type === 'concept') return await callWikidata(query, 'rs');
+  if (type === 'work') return await callWikidata(query, 'work');
+  if (type === 'thing') return await callWikidata(query, 'thing');
+  if (type === 'concept') return await callWikidata(query, 'thing');
 };
 
 const callWikidata = async (query: string, type: NamedEntityType) => {

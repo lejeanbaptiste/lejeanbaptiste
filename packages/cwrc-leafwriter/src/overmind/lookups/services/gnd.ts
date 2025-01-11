@@ -31,8 +31,7 @@ export const find = async ({ query, type }: AuthorityLookupParams) => {
   if (type === 'person') return await callGND(query, 'Person');
   if (type === 'place') return await callGND(query, 'PlaceOrGeographicName');
   if (type === 'organization') return await callGND(query, 'CorporateBody');
-  if (type === 'title') return await callGND(query, 'Work');
-  if (type === 'rs') return await callGND(query, 'SubjectHeading');
+  if (type === 'work') return await callGND(query, 'Work');
   if (type === 'thing') return await callGND(query, 'SubjectHeading');
   if (type === 'concept') return await callGND(query, 'SubjectHeading');
 };

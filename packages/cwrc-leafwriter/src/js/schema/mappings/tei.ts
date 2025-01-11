@@ -84,8 +84,8 @@ const organization: EntityMappingProps = {
   },
 };
 
-const title: EntityMappingProps = {
-  label: 'Title',
+const work: EntityMappingProps = {
+  label: 'Work',
   mapping: {
     certainty: '@cert',
     lemma: '@key',
@@ -98,8 +98,8 @@ const title: EntityMappingProps = {
   },
 };
 
-const rs: EntityMappingProps = {
-  label: 'Referencing String',
+const thing: EntityMappingProps = {
+  label: 'Thing',
   mapping: {
     certainty: '@cert',
     lemma: '@key',
@@ -442,8 +442,8 @@ export const tei: SchemaMappingProps = {
     ['person', person],
     ['place', place],
     ['organization', organization],
-    ['title', title],
-    ['rs', rs],
+    ['work', work],
+    ['thing', thing],
     ['citation', citation],
     ['note', note],
     ['date', date],

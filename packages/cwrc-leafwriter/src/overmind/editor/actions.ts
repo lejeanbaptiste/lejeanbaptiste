@@ -197,25 +197,6 @@ export const applyInitialSettings = ({ state, actions }: Context) => {
   if (state.editor.showTags) $(body).addClass('showTags');
 };
 
-export const setNssiToken = (
-  { state }: Context,
-  value: string | (() => Promise<string | undefined>),
-) => {
-  state.editor.nssiToken = value;
-};
-
-export const getNssiToken = async ({ state }: Context) => {
-  const { nssiToken } = state.editor;
-  // if (!nssiToken) throw Error('Nssi token was not set up');
-  if (!nssiToken) {
-    // log.error('Nssi token was not set up');
-    return;
-  }
-
-  const token = typeof nssiToken === 'string' ? nssiToken : await nssiToken();
-  return token;
-};
-
 export const setAutosave = ({ state }: Context, value?: boolean) => {
   state.editor.autosave = value;
 };

@@ -180,14 +180,14 @@ The settings object has three main properties used to set up and customize LEAF-
 Configures authorities services used to run entity lookups.
 LEAF-Writer includes 6 authority services supporing 5 types of entities:
 
-- [DBPedia](https://www.dbpedia.org): Person, Place, Organization, Title, and Thing.
+- [DBPedia](https://www.dbpedia.org): Person, Place, Organization, Work, and Thing.
 - [Geonames](https://www.geonames.org/): Place.
   - **Note**: Disabled by default because the Geonames endpoint needs authentication.
     - To use Geonames, you must define your own username.
 - [Getty](https://www.getty.edu/research/tools/vocabularies/): Person and Place.
 - [LGPN](https://www.lgpn.ox.ac.uk/): Person (Greek names).
   - **Note**: Disabled by default since it is not frequently used.
-- [VIAF](https://viaf.org/): Person, Place, Organization, Title (book), and Thing.
+- [VIAF](https://viaf.org/): Person, Place, Organization, Work (book), and Thing.
 - [Wikipedia](https://www.wikidata.org/wiki/Wikidata:Main_Page): Person.
 
 Individual users can turn each authority on and off, as well enable and disabled specific entities in each authority depending on their preferences.
@@ -208,19 +208,19 @@ All properties are optional, except for the id.
 | person       | `boolean` |         | The authority's id                                                                                                                                                           |
 | place        | `boolean` |         | Enable / Disable Authority. **Note**: the user can manually enable the authority in the settings panel.                                                                      |
 | organization | `boolean` |         | An array of tuples containing the Entity Name and a boolean. Enable / Disable a specific entity lookup. Note: the user can manually enable the entity in the settings panel. |
-| title        | `boolean` |         | An arbitrary object with a username property. Used to pass a username to Geonames                                                                                            |
+| work         | `boolean` |         | An arbitrary object with a username property. Used to pass a username to Geonames                                                                                            |
 | rs           | `boolean` |         | An arbitrary object with a username property. Used to pass a username to Geonames                                                                                            |
 
 Example:
 
-Let’s say you want to enable LGPN and Geonames, disable Getty, and disable lookups for organization, title, and thing on wikidata.
+Let’s say you want to enable LGPN and Geonames, disable Getty, and disable lookups for organization, Work, and thing on wikidata.
 
 ```ts
 [
   'lgpn',
   { id: 'geonames', settings: { username: 'geonamesUsername' } }
   { id: 'getty', enabled: false }
-  { id: 'wikidata', entities: { organization: false, title: false, thing: false }}
+  { id: 'wikidata', entities: { organization: false, work: false, thing: false }}
 ]
 ```
 
@@ -291,7 +291,7 @@ editor.init({
     authorityServices: [
       { id: 'geonames', settings: { username: 'geonamesUsername' } },
       'lgpn',
-      { id: 'wikidata', entities: { organization: false, title: false, thing: true }}
+      { id: 'wikidata', entities: { organization: false, work: false, thing: true }}
     ],
     locale: 'en',
     readonly: false,

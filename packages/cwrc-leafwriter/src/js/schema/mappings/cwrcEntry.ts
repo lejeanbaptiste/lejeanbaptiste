@@ -41,8 +41,8 @@ const organization: EntityMappingProps = {
   },
 };
 
-const title: EntityMappingProps = {
-  label: 'Title',
+const work: EntityMappingProps = {
+  label: 'Work',
   mapping: {
     lemma: '@REG',
     uri: '@REF',
@@ -231,7 +231,7 @@ export const cwrcEntry: SchemaMappingProps = {
     ['person', person],
     ['place', place],
     ['organization', organization],
-    ['title', title],
+    ['work', work],
     ['citation', citation],
     ['note', note],
     ['date', date],
