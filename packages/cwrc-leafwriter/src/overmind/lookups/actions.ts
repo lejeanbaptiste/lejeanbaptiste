@@ -34,7 +34,7 @@ export const initiate = (
 
 export const setType = ({ state: { lookups } }: Context, type: EntityType) => {
   lookups.typeEntity = type;
-  lookups.typeLookup = type === 'citation' ? 'title' : (type as NamedEntityType);
+  lookups.typeLookup = type === 'citation' ? 'work' : (type as NamedEntityType);
 };
 
 // export const search = async ({ state: { lookups }, effects }: Context, query: string) => {

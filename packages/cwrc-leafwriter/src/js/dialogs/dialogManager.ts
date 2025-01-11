@@ -236,7 +236,7 @@ class DialogManager {
       (type === 'person' ||
         type === 'place' ||
         type === 'organization' ||
-        type === 'title' ||
+        type === 'work' ||
         type === 'rs' ||
         type === 'citation')
     ) {

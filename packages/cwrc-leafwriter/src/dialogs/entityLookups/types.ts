@@ -10,7 +10,7 @@ export type NamedEntityType =
   | 'place'
   | 'organization'
   | 'rs'
-  | 'title'
+  | 'work'
   | 'thing'
   | 'concept';
 export type Authority = 'dbpedia' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata' | 'gnd';

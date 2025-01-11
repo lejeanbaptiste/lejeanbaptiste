@@ -12,7 +12,7 @@ function NerveEditDialog(writer: any, parentEl: HTMLElement) {
           <option value="person">Person</option>
           <option value="place">Place</option>
           <option value="org">Organization</option>
-          <option value="title">Title</option>
+          <option value="work">Work</option>
         </select>
       </div>
       <div>

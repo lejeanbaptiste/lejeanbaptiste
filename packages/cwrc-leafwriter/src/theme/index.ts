@@ -13,9 +13,7 @@ interface Entities {
   place: Entity;
   organization: Entity;
   org: Entity;
-  title: Entity;
-  referencing_string: Entity;
-  rs: Entity;
+  work: Entity;
   thing: Entity;
   citation: Entity;
   note: Entity;
@@ -73,17 +71,9 @@ const theme = (darkMode: boolean) =>
         color: { main: chroma.rgb(176, 185, 122).hex() },
         icon: 'organization',
       },
-      title: {
+      work: {
         color: { main: chroma.rgb(175, 70, 240).hex() },
-        icon: 'title',
-      },
-      referencing_string: {
-        color: { main: chroma.rgb(131, 149, 167).hex() },
-        icon: 'referencing_string',
-      },
-      rs: {
-        color: { main: chroma.rgb(131, 149, 167).hex() },
-        icon: 'referencing_string',
+        icon: 'work',
       },
       thing: {
         color: { main: chroma.rgb(131, 149, 167).hex() },

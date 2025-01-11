@@ -91,7 +91,7 @@ export const state: EditorStateType = {
   authorityServices: {
     viaf: {
       enabled: true,
-      entities: { person: true, place: true, organization: true, title: true, rs: true },
+      entities: { person: true, place: true, organization: true, work: true, thing: true },
       find: viafFind,
       id: 'viaf',
       name: 'VIAF',
@@ -100,7 +100,7 @@ export const state: EditorStateType = {
     },
     wikidata: {
       enabled: true,
-      entities: { person: true, place: true, organization: true, title: true, rs: true },
+      entities: { person: true, place: true, organization: true, work: true, thing: true },
       find: wikidataFind,
       id: 'wikidata',
       name: 'Wikidata',
@@ -109,7 +109,7 @@ export const state: EditorStateType = {
     },
     dbpedia: {
       enabled: true,
-      entities: { person: true, place: true, organization: true, title: true, rs: true },
+      entities: { person: true, place: true, organization: true, work: true, thing: true },
       find: dbpediaFind,
       id: 'dbpedia',
       name: 'DBpedia',
@@ -146,7 +146,7 @@ export const state: EditorStateType = {
     },
     gnd: {
       enabled: true,
-      entities: { person: true, place: true, organization: true, title: true, rs: true },
+      entities: { person: true, place: true, organization: true, work: true, thing: true },
       find: gndFind,
       id: 'gnd',
       name: 'GND',
