@@ -60,7 +60,6 @@ export const useLeafWriter = () => {
       },
       settings: {
         authorityServices: [{ id: 'geonames', settings: { username: geonamesUsername } }],
-        credentials: { nssiToken: userState === 'AUTHENTICATED' ? getKeycloakAuthToken : '' },
         locale: currentLocale,
         readonly,
         schemas,
