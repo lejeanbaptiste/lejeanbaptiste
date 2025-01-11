@@ -223,10 +223,9 @@ class EntitiesList {
     this.writer.entitiesManager.eachEntity((index: number, entity: Entity) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const isCandidate = entity.getAttribute('_candidate');
-      const isFromNerve = entity.getCustomValue('nerve');
       const type = entity.getType();
 
-      if (isCandidate === 'true' && isFromNerve !== 'true') {
+      if (isCandidate === 'true') {
         if (filter === 'all' || filter === type) {
           this.acceptEntity(entity.getId());
         }
@@ -254,11 +253,7 @@ class EntitiesList {
 
   private getCandidates() {
     let entities = this.writer.entitiesManager.getEntitiesArray();
-    entities = entities.filter((entry) => {
-      return (
-        entry.getAttribute('_candidate') === 'true' && entry.getCustomValue('nerve') !== 'true'
-      );
-    });
+    entities = entities.filter((entry) => entry.getAttribute('_candidate') === 'true');
     return entities;
   }
 
@@ -285,10 +280,7 @@ class EntitiesList {
 
     const filter = this.getFilter();
     this.writer.entitiesManager.eachEntity((index: number, entity: Entity) => {
-      if (
-        entity.getAttribute('_candidate') === 'true' &&
-        entity.getCustomValue('nerve') !== 'true'
-      ) {
+      if (entity.getAttribute('_candidate') === 'true') {
         if (filter === 'all' || filter === entity.getType()) {
           this.rejectEntity(entity.getId());
         }
@@ -560,8 +552,6 @@ class EntitiesList {
     this.clear();
 
     let entities = this.writer.entitiesManager.getEntitiesArray(this.getSorting());
-
-    entities = entities.filter((entry: Entity) => entry.getCustomValue('nerve') !== 'true');
 
     const filter = this.getFilter();
     if (filter !== 'all') {

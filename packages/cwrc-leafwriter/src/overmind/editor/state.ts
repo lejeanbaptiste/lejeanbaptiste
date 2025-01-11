@@ -38,7 +38,6 @@ export type EditorStateType = {
   isReadonly: boolean;
   LWChangeEventSuspended: boolean;
   mode: number;
-  nssiToken?: string | (() => Promise<string | undefined>);
   schemas: Record<string, Schema>;
   schemasList: Schema[];
   schemaMappings: SchemaMappingType[];
