@@ -1,74 +1,90 @@
 import $ from 'jquery';
-import 'jquery-ui/ui/widgets/selectmenu';
 import type { EntityLink } from '../../../dialogs/entityLookups/types';
-import Entity from '../../../js/entities/Entity';
-import Writer from '../../../js/Writer';
-import { EntityType } from '../../../types';
+import Entity from '../../entities/Entity';
+import Writer from '../../Writer';
+import type { EntityType, SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import { getSourceNameFromUrl } from './util';
 
-const OTHER_OPTION = '$$$$OTHER$$$$';
-const typeRoot = 'http://sparql.cwrc.ca/ontology/cwrc#';
+interface WorLevel {
+  level: string;
+  description: string;
+  type: string;
+}
 
-const types = [
-  'Award',
-  'BirthPosition',
-  'Certainty',
-  'Credential',
-  'EducationalAward',
-  'Ethnicity',
-  'Gender',
-  'GeographicHeritage',
-  'NationalHeritage',
-  'NationalIdentity',
-  'NaturalPerson',
-  'Occupation',
-  'PoliticalAffiliation',
-  'Precision',
-  'RaceColour',
-  'Religion',
-  'ReproductiveHistory',
-  'Role',
-  'Sexuality',
-  'SocialClass',
-  'TextLabels',
+const workLevels: WorLevel[] = [
+  {
+    level: 'a',
+    type: 'Analytic',
+    description: 'Analytic article, poem, or other item published as part of a larger item',
+  },
+  {
+    level: 'm',
+    type: 'Monographic',
+    description:
+      'Monographic book, collection, single volume, or other item published as a distinct item',
+  },
+  {
+    level: 'j',
+    type: 'Journal',
+    description: 'Journal magazine, newspaper or other periodical publication',
+  },
+  {
+    level: 's',
+    type: 'Series',
+    description: 'Series book, radio, or other series',
+  },
+  {
+    level: 'u',
+    type: 'Unpublished',
+    description: 'Unpublished thesis, manuscript, letters or other unpublished material',
+  },
 ];
 
-const certaintyOptions = ['high', 'medium', 'low', 'unknown'];
+const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
 
-class RsDialog implements SchemaDialog {
+class WorkDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
-  readonly $el: JQuery<HTMLElement>;
+  readonly mappingID: SchemaMappingType;
 
   entry?: Entity;
   selectedText?: string;
-  type: EntityType = 'rs';
+  type: EntityType = 'work';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.writer = writer;
-    const id = writer.getUniqueId('rsForm_');
+    const mappingID = writer.schemaManager.mapper.currentMappingsId;
+    if (!mappingID) throw Error('Schema Mappings not found');
+
+    this.mappingID = mappingID;
+
+    const idPrefix =
+      this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
+        ? 'noteForm_' //orlando and cwrcEntry
+        : 'titleForm_'; //tei & teiLite
+
+    const id = writer.getUniqueId(idPrefix);
 
     const entityAttributesSection = `
       <div class="entityAttributes">
         ${this.selectedTextField(id)}
         ${this.tagAsField(id)}
-        ${this.certaintyField(id)}
-        ${this.rsTypeField(id)}
-        ${this.otherTypeField()}
+        ${this.mappingID === 'tei' || this.mappingID === 'teiLite' ? this.certaintyField(id) : ''}
+        ${this.titleLevelField(id)}
       </div>
     `;
 
-    this.$el = $(`
+    const $el = $(`
       <div class="annotationDialog">
         <div class="content">
           <div class="main">
             ${entityAttributesSection}
-          
+            
             <hr style="width: 100%; border: none; border-bottom: 1px solid #ccc;">
-          
+            
             <div
               id="${id}_attParent"
               class="attributes"
@@ -86,7 +102,7 @@ class RsDialog implements SchemaDialog {
     `).appendTo(parentEl);
 
     //@ts-ignore
-    const $relinkButton = $(`#${id}_tagAs .relink-bt`, this.$el).button();
+    const $relinkButton = $(`#${id}_tagAs .relink-bt`, $el).button();
     $relinkButton.on('click', () => {
       parentEl.css('display', 'none');
 
@@ -108,72 +124,7 @@ class RsDialog implements SchemaDialog {
       });
     });
 
-    this.dialog = new DialogForm({
-      writer,
-      $el: this.$el,
-      type: 'rs',
-      title: 'Tag Referencing String',
-    });
-
-    const _this = this;
-
-    // select setup
-    this.$el
-      .find('select[name=type]')
-      //@ts-ignore
-      .selectmenu('menuWidget')
-      .addClass('overflow')
-      .height('300px')
-      .css('box-shadow', '0px 1px 8px rgb(0 0 0 / 35%)');
-
-    //select event
-    this.$el
-      .find('select[name=type]')
-      //@ts-ignore
-      .selectmenu('refresh')
-      .on('selectmenuselect', function (event: JQuery.Event, ui: any) {
-        if (ui.item.value === OTHER_OPTION) {
-          _this.$el.find('input[name=otherType]').parent().show();
-          return;
-        }
-
-        // set the other input value to that of the selection and then hide
-        _this.$el.find('input[name=otherType]').val(ui.item.value).parent().hide();
-
-        // manually fire change event in order to update attribute widget
-        //@ts-ignore
-        $(this).trigger('change', { target: this });
-      });
-
-    //dialog evvents
-    this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any) => {
-      // handle type selection
-      const entry = config.entry;
-      let typeValue = '';
-      let otherType = false;
-
-      if (entry !== undefined && entry.getAttribute('type') !== undefined) {
-        typeValue = entry.getAttribute('type');
-        otherType = types.indexOf(typeValue) === -1;
-      }
-
-      if (otherType) {
-        //@ts-ignore
-        this.$el.find('select[name=type]').val(OTHER_OPTION).selectmenu('refresh');
-        this.$el.find('input[name=otherType]').val(typeValue).parent().show();
-      } else {
-        this.$el.find('select[name=type]').val(typeValue);
-        this.$el.find('input[name=otherType]').val(typeValue).parent().hide();
-      }
-    });
-
-    this.dialog.$el.on('beforeSave', (event: JQuery.Event, config: any) => {
-      //@ts-ignore
-      if (this.dialog.currentData.attributes.type === '') {
-        //@ts-ignore
-        delete this.dialog.currentData.attributes.type;
-      }
-    });
+    this.dialog = new DialogForm({ writer, $el, type: 'work', title: 'Tag Work' });
   }
 
   private updateLink(lemma: string, uri: string) {
@@ -226,21 +177,26 @@ class RsDialog implements SchemaDialog {
   private tagAsField(id: string) {
     const fieldTitle = 'Tag as';
 
+    //? it might be necesary to check on this - change the mapping accordin to the schema mapping
+    // const dataMapping =
+    //   this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
+    //     ? 'STANDARD' //orlando and cwrcEntry
+    //     : 'prop.lemma'; //tei & teiLite
+
     return `
       <div id="${id}_tagAs" class="attribute">
         <div style="display: flex; align-items: center; gap: 8px;">
-        <p class="fieldLabel">${fieldTitle}</p>
-        
-        <div class="relink-bt" style="cursor: pointer; padding: 4px;">
-          <i class="fas fa-edit" />
+          <p class="fieldLabel">${fieldTitle}</p>
+          
+          <div class="relink-bt" style="cursor: pointer; padding: 4px;">
+            <i class="fas fa-edit" />
+          </div>
         </div>
-      </div>
 
-        
         <div style="display: flex; flex-direction: column;" >
           <span class="tagAs" data-type="label" data-mapping="prop.lemma"></span>
           <span class="tagAsSource" style="color: #999; display: none;">source: 
-          <a class="tagAsSourceLink" href="" target="_blank" rel="noopener noreferrer nofollow"></a>
+            <a class="tagAsSourceLink" href="" target="_blank" rel="noopener noreferrer nofollow"></a>
           </span>
         </div>
       </div>
@@ -283,34 +239,71 @@ class RsDialog implements SchemaDialog {
     return html;
   }
 
-  private rsTypeField(id: string) {
-    const fieldTitle = 'Type (optional)';
+  private titleLevelField(id: string) {
+    const fieldTitle = 'This work is';
+
+    const valueEncoding =
+      this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
+        ? 'type' //orlando and cwrcEntry
+        : 'level'; //tei & teiLite
+
+    const dataMapping =
+      this.mappingID === 'orlando'
+        ? 'TITLETYPE'
+        : this.mappingID == 'cwrcEntry'
+          ? 'LEVEL'
+          : 'level'; //tei & teiLite
 
     const html = `
-      <div class="attribute type">
+      <div
+        id="${id}_level"
+        class="attribute"
+        data-transform="controlgroup"
+        data-type="radio"
+        data-mapping="${dataMapping}"
+      >
         <div>
           <p class="fieldLabel">${fieldTitle}</p>
         </div>
 
-        <select name="type" data-mapping="type" data-type="select" data-transform="selectmenu">
-          <option value="">(none)</option>
-          <option value="${OTHER_OPTION}">Other (specify)</option>
-          ${types.map((type) => `<option value="${typeRoot + type}">${type}</option>`).join('\n')}
-        </select>
+        ${workLevels
+          .map(({ level, type, description }) => {
+            const valueEncoding =
+              this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
+                ? type.toUpperCase() //orlando and cwrcEntry
+                : level; //tei & teiLite
+
+            return `
+              <input
+                type="radio"
+                value="${valueEncoding}"
+                name="level"
+                id="${id}_level_${level}"
+              />
+              <label
+                for="${id}_level_${level}"
+                style=" width: 100%; margin-bottom: 4px; text-align: left; border-radius: 4px;"
+              >
+                <span
+                  style="
+                    display: block;
+                    padding-bottom: 2px;
+                    font-weight: 700;
+                    text-transform: capitalize;
+                  "
+                >
+                  ${this.mappingID === 'tei' || this.mappingID == 'teiLite' ? ' Level' : ''}
+                  ${valueEncoding}
+                </span>
+                <span style="font-size: 0.8rem;">${description}</span>
+              </label>
+            `;
+          })
+          .join('\n')}
       </div>
     `;
 
     return html;
-  }
-
-  private otherTypeField() {
-    const fieldTitle = 'Other type';
-    return `
-      <div style="margin-top: 5px">
-        <label>${fieldTitle}</label>
-        <input name="otherType" type="text" data-mapping="type" data-type="textbox" />
-      </div>
-    `;
   }
 
   show(config: { [x: string]: any; entry: Entity; query: string }) {
@@ -325,10 +318,8 @@ class RsDialog implements SchemaDialog {
   }
 
   destroy() {
-    //@ts-ignore
-    this.$el.find('select[name=type]').selectmenu('destroy');
     this.dialog.destroy();
   }
 }
 
-export default RsDialog;
+export default WorkDialog;

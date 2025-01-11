@@ -5,14 +5,7 @@ import {
   AuthorityLookupSettings,
 } from '../../overmind/lookups/services/type';
 
-export type NamedEntityType =
-  | 'person'
-  | 'place'
-  | 'organization'
-  | 'rs'
-  | 'title'
-  | 'thing'
-  | 'concept';
+export type NamedEntityType = 'person' | 'place' | 'organization' | 'work' | 'thing' | 'concept';
 export type Authority = 'dbpedia' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata' | 'gnd';
 export type LookupService = 'LINCS' | 'internal' | 'custom';
 

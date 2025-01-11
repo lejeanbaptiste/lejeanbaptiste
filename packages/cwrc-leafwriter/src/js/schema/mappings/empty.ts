@@ -48,9 +48,9 @@ export const empty: SchemaMappingProps = {
       },
     ],
     [
-      'title',
+      'work',
       {
-        label: 'Title',
+        label: 'Work',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],
@@ -58,9 +58,9 @@ export const empty: SchemaMappingProps = {
       },
     ],
     [
-      'rs',
+      'thing',
       {
-        label: 'Referencing String',
+        label: 'Thing',
         mapping: {},
         parentTag: '',
         mappingFunction: (entity) => [''],

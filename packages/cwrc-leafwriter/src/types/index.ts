@@ -30,7 +30,7 @@ export interface LeafWriterOptionsPreference {
   fontSize?: number; // [Optional] Changes the document's default font size. Default: 11. Options: 10-18
   themeMode?: string; // [Optional] Use dark/light mode. Default: 'auto' (follows the system). Options: 'auto' | 'light' | 'dark'
   workspace?: {
-    leftSide: string[]; // [Required] List of panel names. Default: ['structure', 'nerve']
+    leftSide: string[]; // [Required] List of panel names. Default: ['structure']
     rightSide: string[]; // [Required] List of panel names. Default: ['xml-viewer', 'image-viewer', 'validator']
   };
 }
@@ -39,10 +39,6 @@ export interface LeafWriterOptionsSettings {
   container?: string;
 
   baseUrl?: string;
-
-  credentials?: {
-    nssiToken?: string | (() => Promise<string | undefined>);
-  };
 
   colorScheme?: string;
   // eslint-disable-next-line @typescript-eslint/ban-types
@@ -88,7 +84,6 @@ export type ISettingsModuleName =
   | 'toc'
   | 'markup'
   | 'entities'
-  | 'nerve'
   | 'imageViewer'
   | 'validation'
   | 'code';
@@ -129,8 +124,8 @@ export type EntityType =
   | 'organization'
   | 'place'
   | 'person'
-  | 'rs'
-  | 'title';
+  | 'thing'
+  | 'work';
 
 //UI
 export type PaletteMode = 'light' | 'auto' | 'dark';
@@ -178,14 +173,7 @@ export interface ScreenshotParams {
 
 export type Side = 'left' | 'right';
 
-export type PanelId =
-  | 'toc'
-  | 'markup'
-  | 'entities'
-  | 'nerve'
-  | 'validate'
-  | 'xmlViewer'
-  | 'imageViewer';
+export type PanelId = 'toc' | 'markup' | 'entities' | 'validate' | 'xmlViewer' | 'imageViewer';
 
 export interface PanelProp {
   id: PanelId;

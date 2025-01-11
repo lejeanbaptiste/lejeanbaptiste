@@ -40,7 +40,6 @@ export class Api {
 
   private KEYCLOACK_BASE_URL!: string;
   private AUTH_API_URL!: string;
-  private NSSI_BASE_URL?: string;
 
   private keycloak!: Keycloak;
 
@@ -65,9 +64,6 @@ export class Api {
 
     this.AUTH_API_URL = await this.getExternalServiceUrl('auth-api');
     if (!this.AUTH_API_URL) throw log.error('Failed to configure AUTH_API_URL');
-
-    this.NSSI_BASE_URL = await this.getExternalServiceUrl('nssi');
-    if (!this.NSSI_BASE_URL) throw log.error('Failed to configure NSSI_BASE_URL');
 
     this.keycloak = new Keycloak({
       clientId: this.clientId,

@@ -3,8 +3,8 @@
   --person: rgb(46, 134, 222);
   --place: rgb(255, 159, 67);
   --organization: rgb(176, 185, 122);
-  --title: rgb(175, 70, 240);
-  --rs: rgb(131, 149, 167);
+  --work: rgb(175, 70, 240);
+  --thing: rgb(131, 149, 167);
   --citation: rgb(0, 128, 64);
   --note: rgb(224, 190, 0);
   --date: rgb(253, 119, 170);
@@ -49,7 +49,7 @@
   background-color: rgba(0, 153, 153, 0.2);
 }
 
-.entityHighlight.rs {
+.entityHighlight.thing {
   background-color: rgba(0, 204, 0, 0.2);
 }
 
@@ -61,7 +61,7 @@
   background-color: rgba(109, 56, 214, 0.2);
 }
 
-.entityHighlight.title {
+.entityHighlight.work {
   background-color: rgba(224, 190, 0, 0.2);
 }
 
@@ -91,10 +91,10 @@
   background-color: var(--place);
 }
 
-.showEntities .rs,
-.ui-dialog-content .rs {
-  border-color: var(--rs);
-  background-color: var(--rs);
+.showEntities .thing,
+.ui-dialog-content .thing {
+  border-color: var(--thing);
+  background-color: var(--thing);
 }
 
 /* .showEntities .org,
@@ -109,10 +109,10 @@
   background-color: var(--organization);
 }
 
-.showEntities .title,
-.ui-dialog-content .title {
-  border-color: var(--title);
-  background-color: var(--title);
+.showEntities .work,
+.ui-dialog-content .work {
+  border-color: var(--work);
+  background-color: var(--work);
 }
 
 .showEntities .correction,
@@ -147,7 +147,7 @@
   color: #6d38d6 !important;
 }
 
-.entity.title[_candidate] {
+.entity.work[_candidate] {
   color: #e0be00 !important;
 }
 
@@ -167,7 +167,7 @@
   color: #008040 !important;
 }
 
-.entity.rs[_candidate] {
+.entity.thing[_candidate] {
   color: #00cc00 !important;
 }
 
