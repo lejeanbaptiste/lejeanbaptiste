@@ -76,10 +76,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
     actions.editor.writerInitSettings(config);
 
-    if (settings?.credentials?.nssiToken) {
-      actions.editor.setNssiToken(settings.credentials.nssiToken);
-    }
-
     if (settings?.locale) actions.ui.switchLocal(settings.locale);
 
     await actions.editor.configureAuthorityServices(settings?.authorityServices);

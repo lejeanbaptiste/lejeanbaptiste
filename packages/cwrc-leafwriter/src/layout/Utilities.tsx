@@ -9,7 +9,6 @@ export const Panel: Record<PanelId, PanelProp> = {
   imageViewer: { id: 'imageViewer', label: 'Image Viwer' },
   xmlViewer: { id: 'xmlViewer', label: 'XML Viewer' },
   validate: { id: 'validate', label: 'Validate' },
-  nerve: { id: 'nerve', label: 'Nerve' },
 };
 
 export const PanelComponent: Record<'toc' | 'markup' | 'entities', React.ReactNode> = {
