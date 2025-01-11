@@ -35,13 +35,9 @@ export const find = async ({ query, type }: AuthorityLookupParams) => {
   if (type === 'rs') return await callGND(query, 'SubjectHeading');
   if (type === 'thing') return await callGND(query, 'SubjectHeading');
   if (type === 'concept') return await callGND(query, 'SubjectHeading');
-
-  log.warn(`GND: Entity type ${type} invalid`);
 };
 
 const callGND = async (query: string, type: NamedEntityType) => {
-  const encodeQueryString = encodeURIComponent(query);
-
   const params = new URLSearchParams({
     q: query,
     filter: 'type:' + type,
@@ -51,7 +47,7 @@ const callGND = async (query: string, type: NamedEntityType) => {
 
   const urlQuery = `search?${params}`;
 
-  const response = await axiosInstance.get<GNDResults>(urlQuery).catch((error) => {
+  const response = await axiosInstance.get<GNDResults>(urlQuery).catch(() => {
     return {
       status: 500,
       statusText: `The request exeeded the timeout (${timeout})`,

@@ -37,7 +37,7 @@ const callLGPN = async (query: string, type: NamedEntityType) => {
   urlQuery += `name=${encodedQuery}`;
   urlQuery += `;style=${FORMAT}`;
 
-  const response = await axiosInstance.get(urlQuery).catch((error) => {
+  const response = await axiosInstance.get(urlQuery).catch(() => {
     return {
       status: 500,
       statusText: `The request exeeded the timeout (${timeout})`,

@@ -1,108 +1,75 @@
-import axios from 'axios';
 import type { AuthorityLookupResult } from '../../../dialogs/entityLookups/types';
-import { log } from './../../../utilities';
-import { type AuthorityLookupParams } from './type';
+import { log } from '../../../utilities';
+import { LINCS_API_ReconcileResultSchema, type AuthorityLookupParams } from './type';
 
-type NamedEntityType =
-  | 'personalNames'
-  | 'geographicNames'
-  | 'corporateNames'
-  | 'uniformTitleWorks'
-  | 'names';
-
-interface RecordDataMainHeadingsData {
-  [x: string]: any;
-  text: string;
-}
-
-interface RecordData {
-  [x: string]: any;
-  nameType: string;
-  Document: {
-    [x: string]: any;
-    '@about': string;
-  };
-  mainHeadings: {
-    [x: string]: any;
-    data: RecordDataMainHeadingsData | RecordDataMainHeadingsData[];
-  };
-}
-
-interface Record {
-  record: {
-    recordData: RecordData;
-    recordPacking: string;
-    recordSchema: string;
-  };
-}
-
-interface VIAFResults {
-  searchRetrieveResponse: {
-    numberOfRecords: string;
-    records: Record[];
-    resultSetIdleTime: string;
-    version: string;
-  };
-}
-
-const baseURL = 'https://viaf.org/viaf';
-const FORMAT = 'application/json';
-const MAX_HITS = 10; //default: 10
-const timeout = 3_000;
-
-const axiosInstance = axios.create({ baseURL, timeout });
+type AuthoritySource =
+  | 'VIAF-Bibliographic'
+  | 'VIAF-Corporate'
+  | 'VIAF-Expressions'
+  | 'VIAF-Geographic'
+  | 'VIAF-Personal'
+  | 'VIAF-Works';
 
 export const find = async ({ query, type }: AuthorityLookupParams) => {
-  if (type === 'person') return await callVIAF(query, 'personalNames');
-  if (type === 'place') return await callVIAF(query, 'geographicNames');
-  if (type === 'organization') return await callVIAF(query, 'corporateNames');
-  if (type === 'title') return await callVIAF(query, 'uniformTitleWorks');
-  if (type === 'rs') return await callVIAF(query, 'names');
-  if (type === 'thing') return await callVIAF(query, 'names');
-  if (type === 'concept') return await callVIAF(query, 'names');
+  let sources: AuthoritySource | AuthoritySource[] = 'VIAF-Expressions';
 
-  log.warn(`VIAF: Entity type ${type} invalid`);
-};
+  if (type === 'person') sources = 'VIAF-Personal';
+  if (type === 'place') sources = 'VIAF-Geographic';
+  if (type === 'organization') sources = 'VIAF-Corporate';
+  if (type === 'title') sources = ['VIAF-Bibliographic', 'VIAF-Expressions', 'VIAF-Works'];
+  if (type === 'rs') sources = ['VIAF-Expressions', 'VIAF-Works'];
+  if (type === 'thing') sources = ['VIAF-Expressions', 'VIAF-Works'];
+  if (type === 'concept') sources = ['VIAF-Expressions', 'VIAF-Works'];
 
-const callVIAF = async (query: string, methodName: NamedEntityType) => {
-  const encodedUri = encodeURIComponent(query);
+  sources = Array.isArray(sources) ? sources : [sources];
 
-  let urlQuery = 'search?';
-  urlQuery += `query=local.${methodName}+all+%22${encodedUri}%22`;
-  urlQuery += `&httpAccept=${FORMAT}`;
-  // urlQuery += `&maximumRecords=${MAX_HITS}`;
-
-  const response = await axiosInstance.get<VIAFResults>(urlQuery).catch((error) => {
-    return {
-      status: 500,
-      statusText: `The request exeeded the timeout (${timeout})`,
-      data: undefined,
-    };
+  const response = await fetch('https://lincs-api.lincsproject.ca/api/link/reconcile', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      entity: query,
+      authorities: sources,
+    }),
   });
 
-  if (response.status >= 400) {
-    const errorMsg = `
-      Something wrong with the call to DBPedia, possibly a problem with the network or the server.
-      HTTP error: ${response.statusText}
-    `;
+  if (!response.ok) {
+    console.error(response);
+    const errorMsg = `Something wrong with the call to VIAF via LINCS-API. Possibly a problem with the network or the server. HTTP error: ${response.statusText}`;
     log.warn(errorMsg);
+
     return [];
   }
-  const data = response.data;
-  if (!data) return [];
-  if (!data.searchRetrieveResponse.records) return [];
 
-  const results: AuthorityLookupResult[] = data.searchRetrieveResponse.records.map((entry) => {
-    const { nameType, Document, mainHeadings } = entry.record.recordData;
-    const uri = Document['@about'];
+  const data: unknown = await response.json();
+  const validatedData = LINCS_API_ReconcileResultSchema.safeParse(data);
 
-    //? Assumes the first instance of mainHeading
-    const name = Array.isArray(mainHeadings.data)
-      ? mainHeadings.data[0]?.text
-      : mainHeadings.data.text;
+  if (!validatedData.success) {
+    console.error(validatedData.error);
+    const errorMsg = `The data return from VIAF via LINCS-API is invalid and not compatible with LEAF-Writer. Error: ${validatedData.error.errors[0].message}`;
+    log.warn(errorMsg);
 
-    return { id: uri, name: name ?? '', repository: 'viaf', query, type: nameType, uri };
+    return [];
+  }
+
+  const entries: AuthorityLookupResult[] = [];
+
+  validatedData.data.forEach((source) => {
+    const matches: AuthorityLookupResult[] = source.matches.map((match) => {
+      return {
+        id: match.uri,
+        name: match.label,
+        query,
+        repository: 'viaf',
+        type,
+        uri: match.uri,
+      };
+    });
+
+    entries.push(...matches);
   });
 
-  return results;
+  return entries;
 };
