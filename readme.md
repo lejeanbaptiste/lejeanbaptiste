@@ -234,22 +234,6 @@ Displays the markup of the text that's selected in the current document.
 
 Module ID: `validation`
 
-Configuration:
-
-- `validationUrl`: The URL for the validation service endpoint. The CWRC-hosted service is at [https://validator.services.cwrc.ca/validator/validate.html)](https://validator.services.cwrc.ca/validator/validate.html).
-
-Requests and displays the results of document validation. See [validate](#validate-callback).
-
-### [NERVE](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/layout/modules/nerve/nerve.js)
-
-Module ID: `nerve`
-
-Configuration:
-
-- `nerveUrl`: The URL for the NERVE service endpoint. The CWRC-hosted service is at [https://nerve.services.cwrc.ca/ner](https://nerve.services.cwrc.ca/ner).
-
-Sends the document for named entity recognition and adds the results as entities to the document.
-
 ### [ImageViewer](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/layout/modules/imageViewer/imageViewer.js)
 
 Module ID: `imageViewer`
