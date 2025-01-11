@@ -237,7 +237,7 @@ class DialogManager {
         type === 'place' ||
         type === 'organization' ||
         type === 'work' ||
-        type === 'rs' ||
+        type === 'thing' ||
         type === 'citation')
     ) {
       this.writer.overmindActions.ui.openEntityLookupsDialog({

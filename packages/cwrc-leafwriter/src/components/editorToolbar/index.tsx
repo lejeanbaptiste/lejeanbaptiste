@@ -112,10 +112,10 @@ export const EditorToolbar = () => {
     {
       color: entity.thing.color.main,
       group: 'action',
-      disabled: !isSupported('rs'),
+      disabled: !isSupported('thing'),
       hide: isReadonly,
       icon: entity.thing.icon,
-      onClick: () => window.writer.tagger.addEntityDialog('rs'),
+      onClick: () => window.writer.tagger.addEntityDialog('thing'),
       title: 'Tag Thing',
       type: 'iconButton',
     },

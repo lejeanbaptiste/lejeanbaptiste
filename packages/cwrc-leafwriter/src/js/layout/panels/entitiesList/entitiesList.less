@@ -153,8 +153,8 @@
   background-color: @entity-work;
 }
 
-.entitiesList .rs.expanded #container #side {
-  background-color: @entity-rs;
+.entitiesList .thing.expanded #container #side {
+  background-color: @entity-thing;
 }
 
 .entitiesList .citation.expanded #container #side {
@@ -323,18 +323,18 @@
   border-color: fade(@entity-work, 50%);
 }
 
-.entitiesList .rs:hover .icon,
-.entitiesList.candidates .rs.candidate:hover .icon {
-  color: @entity-rs;
-  fill: @entity-rs;
+.entitiesList .thing:hover .icon,
+.entitiesList.candidates .thing.candidate:hover .icon {
+  color: @entity-thing;
+  fill: @entity-thing;
 }
-.entitiesList .rs:hover > div,
-.entitiesList.candidates .rs.candidate:hover > div {
-  background-color: fade(@entity-rs, 20%);
+.entitiesList .thing:hover > div,
+.entitiesList.candidates .thing.candidate:hover > div {
+  background-color: fade(@entity-thing, 20%);
 }
-.entitiesList .rs.expanded > div:hover {
-  box-shadow: 0 0px 8px fade(@entity-rs, 20%);
-  border-color: fade(@entity-rs, 50%);
+.entitiesList .thing.expanded > div:hover {
+  box-shadow: 0 0px 8px fade(@entity-thing, 20%);
+  border-color: fade(@entity-thing, 50%);
 }
 
 .entitiesList .citation:hover .icon,

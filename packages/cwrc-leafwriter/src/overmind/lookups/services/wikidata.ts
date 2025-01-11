@@ -23,6 +23,8 @@ export const find = async ({ query, type }: AuthorityLookupParams) => {
   if (type === 'place') return await callWikidata(query, 'place');
   if (type === 'organization') return await callWikidata(query, 'org');
   if (type === 'work') return await callWikidata(query, 'work');
+  if (type === 'thing') return await callWikidata(query, 'thing');
+  if (type === 'concept') return await callWikidata(query, 'thing');
 };
 
 const callWikidata = async (query: string, type: NamedEntityType) => {

@@ -57,7 +57,7 @@ const iconsMap = new Map([
   ['place', 'globe'],
   ['org', 'users'],
   ['work', 'book'],
-  ['rs', 'box-open'],
+  ['thing', 'box-open'],
   ['citation', 'address-card'],
   ['note', 'sticky-note'],
   ['date', 'calendar-alt'],

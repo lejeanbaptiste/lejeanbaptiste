@@ -58,6 +58,7 @@ class EntitiesList {
             <option value="place">Place</option>
             <option value="organization">Organization</option>
             <option value="work">Work</option>
+            <option value="thing">Thing</option>
             <option value="citation">Citation</option>
             <option value="note">Note</option>
             <option value="date">Date</option>
@@ -487,7 +488,7 @@ class EntitiesList {
       'org',
       'organization',
       'work',
-      'rs',
+      'thing',
       'citation',
       'note',
       'date',

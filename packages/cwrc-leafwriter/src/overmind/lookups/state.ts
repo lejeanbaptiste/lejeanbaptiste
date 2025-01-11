@@ -28,6 +28,6 @@ export const state: State = {
   }),
   manualInput: '',
   query: '',
-  typeEntity: 'rs',
-  typeLookup: 'rs',
+  typeEntity: 'thing',
+  typeLookup: 'thing',
 };
