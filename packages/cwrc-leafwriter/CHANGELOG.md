@@ -4,16 +4,16 @@
 
 ### Minor Changes
 
-- [8e47e6421d53974ab35022138a82bedf5628ef9c] entity lookups: Move requests to VIAF and DBPedia to LINCS-API
+- [60d8a77f92f80c5c15c711af3a107dc73689f7f8] entity type: complete renaming 'rs' as 'thing
+- [63583998a86049d6feb49348ff2568e923575bfb] entity type: rename 'title' as 'work' (Closes: #253)
+- [8e47e6421d53974ab35022138a82bedf5628ef9c] entity lookups: Move requests to VIAF and DBPedia to LINCS-API (Closes: #255)
 
 ### Patch Changes
 
+- [b17dd6de5cb5a1c49058f94ad1e69a5d45707a46] context menu: missing item label
+- [4efe7bba8ec7911bce42edf0a31bf35c306a38cf] remove code and metions to legacy features: nerve / nssi / relations
+- [087d5ffe0846563526791ae52111bdcde525f77a] use selector to control language option (Closes: #247)
 - [28c3e72d4eb9f6546bdb301285cdf82b31d7f3c1] remove unused vars / code
-
-## 3.6.1
-
-### Patch Changes
-
 - [82a83d81ec2e6095441443ae111841fe7fe3bca4] scrape tags: prevent code access property of undefined element
 
 ## 3.6.0
