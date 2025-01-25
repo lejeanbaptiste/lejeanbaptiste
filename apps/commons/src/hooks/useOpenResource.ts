@@ -3,7 +3,7 @@ import { useAppState } from '@src/overmind';
 import type { DocumentRequested, Resource } from '@src/types';
 import { add } from 'date-fns';
 import queryString from 'query-string';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { v4 as uuidv4 } from 'uuid';
 import { usePermalink } from './usePermalink';
 

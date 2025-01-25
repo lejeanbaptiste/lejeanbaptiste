@@ -5,7 +5,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { isErrorMessage } from '@src/types';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import { Footer } from './Footer';
 import { AboutSection } from './about';
 import { Main } from './main';
