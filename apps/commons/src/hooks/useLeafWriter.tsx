@@ -18,10 +18,8 @@ export const useLeafWriter = () => {
   const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
   const { currentLocale } = useAppState().ui;
 
-  const { getKeycloakAuthToken } = useActions().auth;
   const {
     close,
-    getGeonameUsername,
     loadLeafWriter,
     save,
     saveAs,
@@ -46,8 +44,6 @@ export const useLeafWriter = () => {
   const initLeafWriter = async () => {
     if (!leafWriter || !resource?.content) return;
 
-    const geonamesUsername = await getGeonameUsername();
-
     const author = user && {
       name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
       uri: user?.identities.get(user.preferredID)?.uri ?? '',
@@ -59,7 +55,6 @@ export const useLeafWriter = () => {
         xml: resource.content ?? '',
       },
       settings: {
-        authorityServices: [{ id: 'geonames', settings: { username: geonamesUsername } }],
         locale: currentLocale,
         readonly,
         schemas,
