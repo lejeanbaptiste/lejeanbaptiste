@@ -14,7 +14,7 @@ export const useLeafWriter = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { userState, user } = useAppState().auth;
+  const { user } = useAppState().auth;
   const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
   const { currentLocale } = useAppState().ui;
 
