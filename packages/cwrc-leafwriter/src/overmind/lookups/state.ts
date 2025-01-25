@@ -6,6 +6,7 @@ import type {
   NamedEntityType,
 } from '../../dialogs/entityLookups/types';
 import { EntityType } from '../../types';
+import { urlRegex } from '../../utilities';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {
@@ -22,10 +23,7 @@ export const state: State = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isUriValid: derived((state: State, _rootState: Context['state']) => {
     if (!state.manualInput) return true;
-    const urlRegex =
-      /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?$/i;
-    const isValid = urlRegex.test(state.manualInput);
-    return isValid;
+    return urlRegex.test(state.manualInput);
   }),
   manualInput: '',
   query: '',
