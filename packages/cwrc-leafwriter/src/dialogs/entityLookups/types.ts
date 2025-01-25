@@ -1,65 +1,64 @@
 import type { DialogLookupType } from '../../js/dialogs/types';
 import Entity from '../../js/entities/Entity';
-import {
-  AuthorityLookupParams,
-  AuthorityLookupSettings,
-} from '../../overmind/lookups/services/type';
+import { z } from 'zod';
 
 export type NamedEntityType = 'person' | 'place' | 'organization' | 'work' | 'thing' | 'concept';
-export type Authority = 'dbpedia' | 'geonames' | 'getty' | 'lgpn' | 'viaf' | 'wikidata' | 'gnd';
-export type LookupService = 'LINCS' | 'internal' | 'custom';
 
-export interface AuthorityService {
-  enabled: boolean;
-  entities: Partial<Record<NamedEntityType, boolean>>;
-  find?: (
-    params: AuthorityLookupParams,
-    settings?: AuthorityLookupSettings,
-  ) => Promise<AuthorityLookupResult[] | undefined>;
-  readonly id: Authority | string;
-  lookupService?: LookupService;
-  name?: string;
-  priority: number;
-  readonly requireAuth?: boolean;
-  settings?: AuthorityLookupSettings;
+export const authorities = [
+  'dbpedia',
+  'geonames',
+  'getty',
+  'lincs',
+  'viaf',
+  'wikidata',
+  'gnd',
+] as const;
+
+export const authoritySchema = z.enum(authorities);
+
+export type Authority = z.infer<typeof authoritySchema>;
+
+export type LookupService = 'LINCS' | 'custom';
+export type LookupServiceType = 'API' | 'TEI-FILE';
+
+export interface AuthorityLookupParams {
+  query: string;
+  type: NamedEntityType;
 }
+
+export interface AuthorityServiceBase {
+  readonly id: string;
+  name: string;
+  entities: Partial<Record<NamedEntityType, boolean>>;
+  serviceSource: LookupService;
+  serviceType: LookupServiceType;
+  priority: number;
+  disabled?: boolean;
+}
+
+export interface LincsAuthorityService extends AuthorityServiceBase {
+  readonly id: Authority;
+  serviceSource: 'LINCS';
+  serviceType: 'API';
+}
+
+export interface AuthorityServiceCustom extends AuthorityServiceBase {
+  find: (params: AuthorityLookupParams) => Promise<AuthorityLookupResult[]>;
+  serviceSource: 'custom';
+}
+
+export type AuthorityService = LincsAuthorityService | AuthorityServiceCustom;
 
 export type AuthorityServices = Record<string, AuthorityService>;
 
-export interface AuthorityServiceConfig extends Partial<AuthorityService> {
-  id: Authority | string;
-}
-
-// export interface LookupsProps {
-//   // authorities: { [key: string]: AuthorityService };
-//   authorities: Partial<Record<Authority, AuthorityService>>;
-// }
-
-// export interface LookupsConfig {
-//   authorities: Array<
-//     | Authority
-//     | [
-//         Authority,
-//         {
-//           config?: {
-//             [x: string]: any;
-//             username?: string;
-//           };
-//           enabled?: boolean;
-//           entities?: Array<[NamedEntityType, boolean]>;
-//         }
-//       ]
-//   >;
-// }
+export type AuthorityServiceConfig = AuthorityServiceBase['id'] | AuthorityService;
 
 export interface AuthorityLookupResult {
+  authority: Authority | (string & {});
   description?: string;
-  id: string;
-  name: string;
-  repository: Authority;
-  logo?: string;
+  entityType: NamedEntityType;
+  label: string;
   query: string;
-  type: string;
   uri: string;
 }
 
@@ -72,10 +71,10 @@ export interface EntityLookupDialogProps {
 }
 
 export interface EntryLink {
-  id: string;
+  authority: Authority | (string & {});
+  entityType: NamedEntityType;
+  label: string;
   uri: string;
-  name: string;
-  repository: string;
 }
 
 export interface EntityLink {

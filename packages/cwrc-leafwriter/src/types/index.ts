@@ -4,7 +4,7 @@ import type { Authority, AuthorityServiceConfig } from '../dialogs/entityLookups
 import Writer from '../js/Writer';
 import { Locales } from '../i18n';
 
-export type { Authority } from '../dialogs/entityLookups';
+export type { Authority, NamedEntityType } from '../dialogs/entityLookups';
 export * from './assert';
 
 // eslint-disable-next-line no-var
@@ -44,7 +44,7 @@ export interface LeafWriterOptionsSettings {
   // eslint-disable-next-line @typescript-eslint/ban-types
   locale?: Locales | (string & {});
 
-  authorityServices?: (Authority | AuthorityServiceConfig)[];
+  authorityServices?: AuthorityServiceConfig[];
   schemas?: Schema[];
   schemasId?: SupportedSchemasId[];
 

@@ -182,34 +182,35 @@ LEAF-Writer includes 6 authority services supporing 5 types of entities:
 
 - [DBPedia](https://www.dbpedia.org): Person, Place, Organization, Work, and Thing.
 - [Geonames](https://www.geonames.org/): Place.
-  - **Note**: Disabled by default because the Geonames endpoint needs authentication.
-    - To use Geonames, you must define your own username.
 - [Getty](https://www.getty.edu/research/tools/vocabularies/): Person and Place.
+- [GND](https://www.dnb.de/EN/Professionell/Standardisierung/GND/gnd_node.html): Person, Place, Organization, Work (book), and Thing..
 - [LGPN](https://www.lgpn.ox.ac.uk/): Person (Greek names).
   - **Note**: Disabled by default since it is not frequently used.
 - [VIAF](https://viaf.org/): Person, Place, Organization, Work (book), and Thing.
 - [Wikipedia](https://www.wikidata.org/wiki/Wikidata:Main_Page): Person.
 
+
 Individual users can turn each authority on and off, as well enable and disabled specific entities in each authority depending on their preferences.
 
 All properties are optional, except for the id.
 
-| Name     | Type                                                                 | Default | Description                                                                                                                                                                           |
-| -------- | -------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| id\*     | `dbpedia` \| `geonames` \| `getty` \| `lgpn` \| `viaf` \| `wikidata` |         | The authority's id. Other values will be ignored.                                                                                                                                     |
-| enabled  | `boolean`                                                            |         | Enable / Disable Authority. **Note**: the user can manually enable the authority in the settings panel.                                                                               |
-| entities | [`NamedEntitySettings`](#namedentitysettings)                        |         | An obeject with namedEntity property with boolean values. This object not only defines the entities avialable for the authority, but also if they are enabled or didabled by default. |
-| settings | Object: { username: string }                                         |         | An arbitrary object with a username property. Used to pass a username to Geonames                                                                                                     |
+| Name          | Type                                                                          | Default | Description                                                                                                                                                                           |
+| ------------- | ----------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id\*          | `dbpedia` \| `geonames` \| `getty` \| `gnd` \| `lgpn` \| `viaf` \| `wikidata` |         | The authority's id. Other values will be ignored.                                                                                                                                     |
+| disabled      | `boolean`                                                                     |         | Disable Authority. **Note**: the user can manually enable the authority in the settings panel.                                                                                        |
+| serviceSource | `LINCS` \| `custom`                                                           |         | Indicates how the authority is implemented. LINCS means it is implemented by LINCS-API. Custom means it is implemented by a developer as and addon to LEAF-Writer.                    |
+| serviceType   | `API` \| `TEI-FILE`                                                           |         | Indicates how the data will be fetched. API means it is fetched using an external API service. TEI-FILE means the data will be fetched from a TEI file in some external repository.   |
+| entities      | [`NamedEntitySettings`](#namedentitysettings)                                 |         | An obeject with namedEntity property with boolean values. This object not only defines the entities avialable for the authority, but also if they are enabled or didabled by default. |
 
 ##### NamedEntitySettings
 
-| Name         | Type      | Default | Description                                                                                                                                                                  |
-| ------------ | --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| person       | `boolean` |         | The authority's id                                                                                                                                                           |
-| place        | `boolean` |         | Enable / Disable Authority. **Note**: the user can manually enable the authority in the settings panel.                                                                      |
-| organization | `boolean` |         | An array of tuples containing the Entity Name and a boolean. Enable / Disable a specific entity lookup. Note: the user can manually enable the entity in the settings panel. |
-| work         | `boolean` |         | An arbitrary object with a username property. Used to pass a username to Geonames                                                                                            |
-| rs           | `boolean` |         | An arbitrary object with a username property. Used to pass a username to Geonames                                                                                            |
+| Name         | Type      | Default | Description |
+| ------------ | --------- | ------- | ----------- |
+| person       | `boolean` | true    |             |
+| place        | `boolean` | true    |             |
+| organization | `boolean` | true    |             |
+| work         | `boolean` | true    |             |
+| thing        | `boolean` | true    |             |
 
 Example:
 
@@ -217,8 +218,7 @@ Let’s say you want to enable LGPN and Geonames, disable Getty, and disable loo
 
 ```ts
 [
-  'lgpn',
-  { id: 'geonames', settings: { username: 'geonamesUsername' } }
+  'geonames',
   { id: 'getty', enabled: false }
   { id: 'wikidata', entities: { organization: false, work: false, thing: false }}
 ]
@@ -289,7 +289,6 @@ editor.init({
   settings: {
     baseUrl: 'path/to/leafwriter/files/',
     authorityServices: [
-      { id: 'geonames', settings: { username: 'geonamesUsername' } },
       'lgpn',
       { id: 'wikidata', entities: { organization: false, work: false, thing: true }}
     ],
