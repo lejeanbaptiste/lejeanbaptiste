@@ -224,10 +224,10 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        title: `${t('LWC.commons.unsaved_changes')}`,
+        title: t('LWC.commons.unsaved_changes'),
         actions: [
-          { action: 'cancel', label: `${t('LWC.commons.cancel')}` },
-          { action: 'discard', label: `${t('LWC.commons.discard_changes')}` },
+          { action: 'cancel', label: t('LWC.commons.cancel') },
+          { action: 'discard', label: t('LWC.commons.discard changes') },
         ],
         onClose: async (action) => {
           if (action !== 'discard') return;
