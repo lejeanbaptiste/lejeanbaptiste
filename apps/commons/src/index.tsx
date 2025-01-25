@@ -7,7 +7,7 @@ import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import App from './App';
 import './i18n';
 import { config } from './overmind';

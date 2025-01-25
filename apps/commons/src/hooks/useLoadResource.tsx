@@ -7,7 +7,7 @@ import { isErrorMessage } from '@src/types';
 import { renameFileAsCopy } from '@src/utilities';
 import queryString from 'query-string';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 export const useLoadResource = () => {
   const { setResource } = useActions().editor;
