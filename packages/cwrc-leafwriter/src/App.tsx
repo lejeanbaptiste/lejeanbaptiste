@@ -45,7 +45,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     return () => {
       window.document.removeEventListener('fullscreenchange', fullscreenchanged);
       window.removeEventListener('changeLanguage', actions.ui.listenChangeLanguage);
-      window.addEventListener('changeTheme', actions.ui.listenChangeTheme);
+      window.removeEventListener('changeTheme', actions.ui.listenChangeTheme);
     };
   }, []);
 
