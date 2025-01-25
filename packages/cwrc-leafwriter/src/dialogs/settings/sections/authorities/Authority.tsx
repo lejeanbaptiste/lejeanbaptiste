@@ -15,7 +15,7 @@ interface AuthorityProps {
 }
 
 export const Authority = ({
-  authorityService: { enabled, entities, id, name },
+  authorityService: { disabled, entities, id, name },
 }: AuthorityProps) => {
   const { authorityServices } = useAppState().editor;
   const { toggleLookupAuthority, toggleLookupEntity } = useActions().editor;
@@ -39,17 +39,7 @@ export const Authority = ({
   const handleHadleMouseDown = () => setIsDragging(true);
   const handleHadleMouseUp = () => setIsDragging(false);
 
-  const handleAuthorityToogle = () => {
-    const authorityService = authorityServices[id];
-    if (authorityService?.requireAuth && !authorityService.settings?.username) {
-      notifyViaSnackbar({
-        message: `${t('LW.You must provide a username to make requests', { authorityService })}.`,
-        options: { variant: 'error' },
-      });
-      return;
-    }
-    toggleLookupAuthority(id);
-  };
+  const handleAuthorityToogle = () => toggleLookupAuthority(id);
 
   const handleEntityToggle = (entityName: NamedEntityType) => {
     toggleLookupEntity({ authorityId: id, entityName });
@@ -78,13 +68,13 @@ export const Authority = ({
               <ToggleButton
                 color="primary"
                 onChange={handleAuthorityToogle}
-                selected={enabled}
+                selected={!disabled}
                 size="small"
                 sx={{ border: 0 }}
-                value={enabled}
+                value={!disabled}
               >
                 <Icon
-                  component={enabled ? AdjustIcon : CircleOutlinedIcon}
+                  component={disabled ? CircleOutlinedIcon : AdjustIcon}
                   sx={{ height: 12, width: 12 }}
                 />
               </ToggleButton>
@@ -96,7 +86,7 @@ export const Authority = ({
           {Object.entries(entities).map(([id, entityEnabled]) => (
             <Grid key={id} item sx={{ width: 28 }}>
               <EntityType
-                available={enabled}
+                available={disabled ?? true}
                 enabled={entityEnabled}
                 onClick={handleEntityToggle}
                 name={id as NamedEntityType}

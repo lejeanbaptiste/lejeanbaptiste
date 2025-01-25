@@ -1,10 +1,10 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { IconButton, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import { IconButton, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
 import { useState } from 'react';
 import { useActions, useAppState } from '../../../../overmind';
-import type { EntryLink, AuthorityLookupResult } from '../../types';
+import type { AuthorityLookupResult, EntryLink } from '../../types';
 
-const Candidate = ({ description, id, name, repository, uri }: AuthorityLookupResult) => {
+const Candidate = ({ authority, description, entityType, label, uri }: AuthorityLookupResult) => {
   const { closeEntityLookupsDialog } = useActions().ui;
   const { selected } = useAppState().lookups;
   const { setSelected, processSelected } = useActions().lookups;
@@ -12,7 +12,7 @@ const Candidate = ({ description, id, name, repository, uri }: AuthorityLookupRe
   const [hover, setHover] = useState(false);
 
   const handleOnClick = () => {
-    const entry: EntryLink = { id, uri, name, repository };
+    const entry: EntryLink = { authority, entityType, label, uri };
     setSelected(entry);
   };
 
@@ -36,15 +36,33 @@ const Candidate = ({ description, id, name, repository, uri }: AuthorityLookupRe
           {hover && <OpenInNewIcon fontSize="inherit" />}
         </IconButton>
       }
-      selected={selected?.uri === uri}
       sx={{ my: 0.5 }}
       onClick={handleOnClick}
       onDoubleClick={handleOnDoubleClick}
     >
-      <ListItemButton sx={{ borderRadius: 1 }}>
+      <ListItemButton selected={selected?.uri === uri} sx={{ borderRadius: 1 }}>
         <ListItemText
-          primary={name}
-          secondary={description && <span dangerouslySetInnerHTML={{ __html: description }} />}
+          primary={label}
+          secondary={
+            description && (
+              <Typography
+                color="text.secondary"
+                // fontSize="0.775rem"
+                sx={{
+                  display: selected?.uri === uri ? 'block' : '-webkit-box',
+                  // * WebkitBoxOrient is deprecated, but still works. See: https://developer.mozilla.org/en-US/docs/Web/CSS/box-orient
+                  // TODO: Replace WebkitBoxOrient for another solution.
+                  WebkitBoxOrient: 'vertical',
+                  WebkitLineClamp: '2',
+                  overflow: selected?.uri === uri ? 'auto' : 'hidden',
+                  transition: '0.4s',
+                }}
+                variant="body2"
+              >
+                {description}
+              </Typography>
+            )
+          }
         />
       </ListItemButton>
     </ListItem>

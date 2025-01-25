@@ -4,7 +4,6 @@ import { json } from 'overmind';
 import { Context } from '../';
 import { db } from '../../db';
 import type {
-  Authority,
   AuthorityService,
   AuthorityServiceConfig,
   NamedEntityType,
@@ -34,7 +33,7 @@ export const writerInitSettings = async (
 
 export const configureAuthorityServices = async (
   { state, actions, effects }: Context,
-  configAuthorityServices?: (Authority | AuthorityServiceConfig)[],
+  configAuthorityServices?: AuthorityServiceConfig[],
 ) => {
   const { authorityServices } = state.editor;
 
@@ -48,8 +47,7 @@ export const configureAuthorityServices = async (
   //* config services
   configAuthorityServices.forEach((serviceConfig) => {
     if (typeof serviceConfig === 'string') {
-      const authorityService = authorityServices[serviceConfig];
-      if (authorityService) authorityService.enabled = true;
+      authorityServices[serviceConfig];
       return;
     }
 
@@ -58,26 +56,12 @@ export const configureAuthorityServices = async (
 
     // * Implements new authority service
     if (!authorityService) {
-      //TODO
+      //TODO Implements new authority service
       return;
     }
 
-    //* service specific configuration
-    if (serviceConfig.settings) authorityService.settings = serviceConfig.settings;
-
-    //* Required authentication?
-    if (authorityService.requireAuth && serviceConfig.settings?.username === '') {
-      log.warn(
-        `Config Authority Service: username required to make requests to ${authorityService.id}`,
-      );
-      authorityService.enabled = false;
-      return;
-    } else {
-      authorityService.enabled = true;
-    }
-
-    //* Enable service
-    if (serviceConfig.enabled !== undefined) authorityService.enabled = serviceConfig.enabled;
+    //* Disable service
+    authorityService.disabled = serviceConfig.disabled;
 
     //*  No entities, use default
     if (!serviceConfig.entities) return;
@@ -99,9 +83,11 @@ export const configureAuthorityServices = async (
 
 const sanitazeAuthorityServices = (services: AuthorityService[]) => {
   const sininatizedPreferences = services.map((service) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { find, ...rest } = service;
-    return rest;
+    if (service.serviceSource !== 'LINCS') {
+      const { find, ...rest } = service;
+      return rest;
+    }
+    return service;
   });
   return sininatizedPreferences;
 };
@@ -113,7 +99,6 @@ export const applyUserPreferencesAuthrityServices = async ({ state }: Context) =
   const count = await db.authorityServices.count();
   if (count === 0) {
     const preferences: AuthorityService[] = Object.values(json(authorityServices));
-
     const saninatizedPreferences = sanitazeAuthorityServices(preferences);
     await db.authorityServices.bulkAdd(saninatizedPreferences);
     return;
@@ -134,30 +119,11 @@ export const applyUserPreferencesAuthrityServices = async ({ state }: Context) =
       continue;
     }
 
-    //* service specific configuration
-    if (servicePreference.settings) {
-      //* Required authentication?
-      if (
-        authorityService.requireAuth &&
-        (authorityService.settings?.username === '' || servicePreference.settings?.username === '')
-      ) {
-        log.warn(
-          `Config Authority Service: username required to make requests to ${authorityService.id}`,
-        );
-        authorityService.enabled = false;
-        continue;
-      }
-
-      authorityService.settings = servicePreference.settings;
-    }
-
     //* Priority
     authorityService.priority = servicePreference.priority;
 
-    //* Enable service
-    if (servicePreference.enabled !== undefined) {
-      authorityService.enabled = servicePreference.enabled;
-    }
+    //* disabled service
+    authorityService.disabled = servicePreference.disabled;
 
     //*  No entities, use default
     if (!servicePreference.entities) continue;
@@ -398,9 +364,9 @@ export const toggleLookupAuthority = async (
   const authorityService = editor.authorityServices[authorityId];
   if (!authorityService) return;
 
-  authorityService.enabled = !authorityService.enabled;
+  authorityService.disabled = !authorityService.disabled;
 
-  await db.authorityServices.update(authorityId, { enabled: authorityService.enabled });
+  await db.authorityServices.update(authorityId, { disabled: authorityService.disabled });
 };
 
 export const toggleLookupEntity = async (
