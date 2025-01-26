@@ -5,9 +5,7 @@ import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { Grid, Icon, IconButton, Paper, Stack, ToggleButton, Typography } from '@mui/material';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useActions, useAppState } from '../../../../overmind';
-import { AuthorityService, NamedEntityType } from '../../../entityLookups';
+import { useActions } from '../../../../overmind';
 import { EntityType } from './EntityType';
 
 interface AuthorityProps {
@@ -19,9 +17,6 @@ export const Authority = ({
 }: AuthorityProps) => {
   const { authorityServices } = useAppState().editor;
   const { toggleLookupAuthority, toggleLookupEntity } = useActions().editor;
-  const { notifyViaSnackbar } = useActions().ui;
-
-  const { t } = useTranslation();
 
   const [hover, setHover] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
