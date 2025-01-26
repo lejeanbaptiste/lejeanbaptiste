@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
-- [f5cd1f0a48fe3d4733afd7f9e2b254274c69fb77]  remove logic related to legacy feature: nerve / nssi
+- [f5cd1f0a48fe3d4733afd7f9e2b254274c69fb77] remove logic related to legacy feature: nerve / nssi
 
 ## 3.5.1
 
