@@ -63,6 +63,8 @@ import {
 import type { IconBaseProps, IconType } from 'react-icons';
 import { FaBoxOpen, FaUserAlt, FaUsers } from 'react-icons/fa';
 import { ImBook } from 'react-icons/im';
+import { TbChartBubbleFilled } from 'react-icons/tb';
+
 import { BookOutlinedIcon } from './custom/Book';
 import { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 import workIcon from './svg/book-solid.svg';
@@ -118,6 +120,7 @@ const icons = {
   code: CodeRoundedIcon,
   CodeRoundedIcon: CodeRoundedIcon,
   computer: ComputerIcon,
+  concept: asMuiIcon(TbChartBubbleFilled),
   copy: ContentCopyIcon,
   correction: WarningRoundedIcon,
   date: EventIcon,

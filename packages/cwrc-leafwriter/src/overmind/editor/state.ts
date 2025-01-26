@@ -1,4 +1,5 @@
 import { derived } from 'overmind';
+import type { AuthorityServices, Schema, SchemaMappingType } from '../../types';
 import { lgpn } from '../lookups/services/lgpn';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions

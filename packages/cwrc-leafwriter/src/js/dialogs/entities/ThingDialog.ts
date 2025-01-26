@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/selectmenu';
-import type { EntityLink } from '../../../dialogs/entityLookups/types';
+import type { EntityLink } from '../../../types/authority';
 import Entity from '../../entities/Entity';
 import Writer from '../../Writer';
 import { EntityType } from '../../../types';

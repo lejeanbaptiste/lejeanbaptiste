@@ -3,8 +3,7 @@
 // * We should way a little longer to adopt the new setup
 
 import Dexie, { Table } from 'dexie';
-import { AuthorityServiceBase } from '../dialogs';
-import type { Schema } from '../types';
+import type { AuthorityServiceBase, Schema } from '../types';
 
 export interface SuspendedDocument {
   content: string;

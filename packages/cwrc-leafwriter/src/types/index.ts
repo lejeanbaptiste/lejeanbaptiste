@@ -1,11 +1,11 @@
 import { OptionsObject, SnackbarMessage } from 'notistack';
 import type { Bookmark, Editor } from 'tinymce/tinymce';
-import type { Authority, AuthorityServiceConfig } from '../dialogs/entityLookups';
-import Writer from '../js/Writer';
 import { Locales } from '../i18n';
+import Writer from '../js/Writer';
+import type { AuthorityServiceConfig } from './authority';
 
-export type { Authority, NamedEntityType } from '../dialogs/entityLookups';
 export * from './assert';
+export * from './authority';
 
 // eslint-disable-next-line no-var
 export declare var webpackEnv: {
@@ -57,18 +57,7 @@ export interface LeafWriterOptionsSettings {
   allowOverlap?: boolean;
 }
 
-export type SupportedSchemasId =
-  | 'cwrcTeiLite'
-  | 'orlando'
-  | 'event'
-  | 'cwrcEntry'
-  | 'epidoc'
-  | 'teiAll'
-  | 'teiDrama'
-  | 'teiCorpus'
-  | 'teiMs'
-  | 'teiLite'
-  | 'reed';
+export type SupportedSchemasId = 'orlando' | 'teiAll' | 'teiLite' | 'teiSimplePrint' | 'jTei';
 
 interface ISettingsModules {
   west: ISettingsModulesPanel[];
@@ -116,6 +105,7 @@ export interface Error {
 
 export type EntityType =
   | 'citation'
+  | 'concept'
   | 'correction'
   | 'date'
   | 'keyword'

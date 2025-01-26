@@ -1,6 +1,10 @@
 import { z } from 'zod';
-import type { AuthorityLookupResult, LincsAuthorityService } from '../../../dialogs';
-import type { Authority, NamedEntityType } from '../../../types';
+import type {
+  Authority,
+  AuthorityLookupResult,
+  LincsAuthorityService,
+  NamedEntityType,
+} from '../../../types';
 import { log } from '../../../utilities';
 
 const lincsApiAuthoritySources = [

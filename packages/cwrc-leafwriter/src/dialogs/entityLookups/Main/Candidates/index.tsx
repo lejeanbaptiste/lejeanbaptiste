@@ -1,7 +1,7 @@
 import { Box, ListSubheader } from '@mui/material';
 import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
-import type { AuthorityLookupResult } from '../../types';
+import type { AuthorityLookupResult } from '../../../../types/authority';
 import Candidate from './Candidate';
 
 interface CandidateListProps {

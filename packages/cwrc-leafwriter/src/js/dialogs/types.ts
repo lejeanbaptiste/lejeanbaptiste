@@ -1,10 +1,9 @@
+import { NamedEntityType } from '@src/types';
 import Writer from '../Writer';
-
-export type DialogLookupType = 'citation' | 'organization' | 'person' | 'place' | 'thing' | 'work';
 
 export interface LWDialogConfigProps {
   parentEl: JQuery<HTMLElement>;
-  type?: DialogLookupType;
+  type?: NamedEntityType;
   writer: Writer;
 }
 

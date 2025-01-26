@@ -1,4 +1,4 @@
-import type { AuthorityServices } from '../../dialogs/entityLookups';
+import { AuthorityServices } from '../../types';
 
 export const api = (() => {
   let lookupsDefaults: AuthorityServices;

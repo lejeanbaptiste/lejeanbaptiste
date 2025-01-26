@@ -21,6 +21,7 @@ interface Entities {
   correction: Entity;
   keyword: Entity;
   link: Entity;
+  concept: Entity;
 }
 
 declare module '@mui/material/styles' {
@@ -55,6 +56,10 @@ const theme = (darkMode: boolean) =>
       work: {
         color: { main: chroma.rgb(175, 70, 240).hex() },
         icon: 'work',
+      },
+      concept: {
+        color: { main: chroma.rgb(70, 101, 240).hex() },
+        icon: 'concept',
       },
       thing: {
         color: { main: chroma.rgb(131, 149, 167).hex() },

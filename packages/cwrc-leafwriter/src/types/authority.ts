@@ -1,8 +1,17 @@
-import type { DialogLookupType } from '../../js/dialogs/types';
-import Entity from '../../js/entities/Entity';
 import { z } from 'zod';
+import Entity from '../js/entities/Entity';
 
-export type NamedEntityType = 'person' | 'place' | 'organization' | 'work' | 'thing' | 'concept';
+export const namedEntityTypes = [
+  'person',
+  'place',
+  'organization',
+  'work',
+  'thing',
+  'concept',
+  'citation',
+] as const;
+export const namedEntityTypesSchema = z.enum(namedEntityTypes);
+export type NamedEntityType = z.infer<typeof namedEntityTypesSchema>;
 
 export const authorities = [
   'dbpedia',
@@ -13,9 +22,7 @@ export const authorities = [
   'wikidata',
   'gnd',
 ] as const;
-
 export const authoritySchema = z.enum(authorities);
-
 export type Authority = z.infer<typeof authoritySchema>;
 
 export type LookupService = 'LINCS' | 'custom';
@@ -26,13 +33,22 @@ export interface AuthorityLookupParams {
   type: NamedEntityType;
 }
 
+export interface AuthorityLookupResult {
+  authority: Authority | (string & {});
+  description?: string;
+  entityType: NamedEntityType;
+  label: string;
+  query: string;
+  uri: string;
+}
+
 export interface AuthorityServiceBase {
   readonly id: string;
   name: string;
   entities: Partial<Record<NamedEntityType, boolean>>;
   serviceSource: LookupService;
   serviceType: LookupServiceType;
-  priority: number;
+  priority?: number;
   disabled?: boolean;
 }
 
@@ -53,21 +69,12 @@ export type AuthorityServices = Record<string, AuthorityService>;
 
 export type AuthorityServiceConfig = AuthorityServiceBase['id'] | AuthorityService;
 
-export interface AuthorityLookupResult {
-  authority: Authority | (string & {});
-  description?: string;
-  entityType: NamedEntityType;
-  label: string;
-  query: string;
-  uri: string;
-}
-
 export interface EntityLookupDialogProps {
   onClose?: (response?: EntityLink | Pick<EntityLink, 'query' | 'type'>) => void;
   entry?: Entity;
   open: boolean;
   query?: string;
-  type?: DialogLookupType;
+  type?: NamedEntityType;
 }
 
 export interface EntryLink {

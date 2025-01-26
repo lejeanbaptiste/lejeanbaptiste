@@ -7,7 +7,7 @@ import type {
   AuthorityService,
   AuthorityServiceConfig,
   NamedEntityType,
-} from '../../dialogs/entityLookups/types';
+} from '../../types/authority';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
 import { log } from './../../utilities';
 
