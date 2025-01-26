@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import { defaultRoles } from '../../../config/personRole';
-import type { EntityLink } from '../../../dialogs/entityLookups/types';
+import type { EntityLink } from '../../../types/authority';
 import Writer from '../../../js/Writer';
 import Entity from '../../../js/entities/Entity';
 import type { EntityType, SchemaMappingType } from '../../../types';

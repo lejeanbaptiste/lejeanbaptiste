@@ -2,7 +2,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IconButton, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
 import { useState } from 'react';
 import { useActions, useAppState } from '../../../../overmind';
-import type { AuthorityLookupResult, EntryLink } from '../../types';
+import type { AuthorityLookupResult, EntryLink } from '../../../../types/authority';
 
 const Candidate = ({ authority, description, entityType, label, uri }: AuthorityLookupResult) => {
   const { closeEntityLookupsDialog } = useActions().ui;

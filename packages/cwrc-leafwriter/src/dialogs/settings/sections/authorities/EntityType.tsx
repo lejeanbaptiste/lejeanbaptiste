@@ -2,7 +2,7 @@ import DoNotDisturbAltIcon from '@mui/icons-material/DoNotDisturbAlt';
 import { Icon, IconButton, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { getIcon } from '../../../../icons';
-import type { NamedEntityType } from '../../../entityLookups';
+import type { NamedEntityType } from '../../../../types';
 
 interface EntityTypeProps {
   available: boolean;

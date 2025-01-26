@@ -1,12 +1,13 @@
 import type {
   DialogBarProps,
   EditSourceDialogProps,
-  EntityLookupDialogProps,
+  // EntityLookupDialogProps,
   PopupProps,
 } from '../../dialogs';
 import { type Locales } from '../../i18n';
 import { Panel } from '../../layout/Utilities';
 import type { ContextMenuState, LayoutProps, NotificationProps } from '../../types';
+import type { EntityLookupDialogProps } from '../../types/authority';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {

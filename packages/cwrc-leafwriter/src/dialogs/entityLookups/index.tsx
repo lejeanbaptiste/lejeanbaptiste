@@ -7,8 +7,6 @@ import Loader from './Loader';
 import Main from './Main';
 import QueryField from './QueryField';
 
-export * from './types';
-
 export const EntityLookupDialog = () => {
   const { entry, open, type } = useAppState().ui.entityLookupDialogProps;
   const { results } = useAppState().lookups;

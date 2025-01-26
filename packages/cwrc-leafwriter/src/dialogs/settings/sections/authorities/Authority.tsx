@@ -4,6 +4,7 @@ import AdjustIcon from '@mui/icons-material/Adjust';
 import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { Grid, Icon, IconButton, Paper, Stack, ToggleButton, Typography } from '@mui/material';
+import type { AuthorityService, NamedEntityType } from '@src/types';
 import { useState } from 'react';
 import { useActions } from '../../../../overmind';
 import { EntityType } from './EntityType';
@@ -12,10 +13,9 @@ interface AuthorityProps {
   authorityService: AuthorityService;
 }
 
-export const Authority = ({
-  authorityService: { disabled, entities, id, name },
-}: AuthorityProps) => {
-  const { authorityServices } = useAppState().editor;
+export const Authority = ({ authorityService }: AuthorityProps) => {
+  const { disabled, entities, id, name } = authorityService;
+
   const { toggleLookupAuthority, toggleLookupEntity } = useActions().editor;
 
   const [hover, setHover] = useState(false);

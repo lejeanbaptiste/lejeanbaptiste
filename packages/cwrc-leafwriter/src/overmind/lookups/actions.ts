@@ -1,19 +1,18 @@
 import { Context } from '..';
+import Entity from '../../js/entities/Entity';
+import { EntityType } from '../../types';
 import type {
   Authority,
   AuthorityLookupResult,
   EntityLink,
   EntryLink,
   NamedEntityType,
-} from '../../dialogs/entityLookups/types';
-import type { DialogLookupType } from '../../js/dialogs/types';
-import Entity from '../../js/entities/Entity';
-import { EntityType } from '../../types';
+} from '../../types/authority';
 import { createLincsApiFetcher } from './services/lincs-api';
 
 export const initiate = (
   { state: { lookups }, actions }: Context,
-  { entry, type }: { entry?: Entity; type: DialogLookupType },
+  { entry, type }: { entry?: Entity; type: NamedEntityType },
 ) => {
   actions.lookups.setType(type);
 
@@ -47,7 +46,9 @@ export const search = async ({ state }: Context, query: string) => {
   const enabledAuthorities = Object.values(authorityServices)
     .filter((authority) => !authority.disabled)
     .filter((authority) => authority.entities[state.lookups.typeLookup] === true)
-    .toSorted((serviceA, serviceB) => serviceA.priority - serviceB.priority);
+    .toSorted(
+      (serviceA, serviceB) => (serviceA.priority ?? Infinity) - (serviceB.priority ?? Infinity),
+    );
 
   const authorityServedByLincs = enabledAuthorities.filter(
     (authority) => authority.serviceSource === 'LINCS',

@@ -1,6 +1,6 @@
 import { Button, DialogActions } from '@mui/material';
 import { useActions, useAppState } from '../../overmind';
-import type { EntityLink } from './types';
+import type { EntityLink } from '../../types/authority';
 
 const Footer = () => {
   const { type } = useAppState().ui.entityLookupDialogProps;

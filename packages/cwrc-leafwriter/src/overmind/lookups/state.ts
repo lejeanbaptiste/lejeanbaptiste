@@ -1,10 +1,6 @@
 import { derived } from 'overmind';
 import { Context } from '..';
-import type {
-  AuthorityLookupResult,
-  EntryLink,
-  NamedEntityType,
-} from '../../dialogs/entityLookups/types';
+import type { AuthorityLookupResult, EntryLink, NamedEntityType } from '../../types/authority';
 import { EntityType } from '../../types';
 import { urlRegex } from '../../utilities';
 

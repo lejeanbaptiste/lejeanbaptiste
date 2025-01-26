@@ -1,7 +1,8 @@
 import type {
   AuthorityLookupParams,
   AuthorityLookupResult,
-} from '../../../dialogs/entityLookups/types';
+  AuthorityServiceCustom,
+} from '../../../types/authority';
 import { log } from './../../../utilities';
 
 interface Person {

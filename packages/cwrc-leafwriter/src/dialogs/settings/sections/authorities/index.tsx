@@ -7,8 +7,8 @@ import { Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../overmind';
-import { AuthorityService } from '../../../entityLookups';
 import { Authority } from './Authority';
+import { AuthorityService } from '../../../../types';
 
 export const Authorities = () => {
   const { t } = useTranslation();
@@ -20,8 +20,8 @@ export const Authorities = () => {
   const [items, setItems] = useState<AuthorityService[]>([]);
 
   useEffect(() => {
-    const authtoriesList = [...Object.values(authorityServices)].sort(
-      (a, b) => a.priority - b.priority,
+    const authtoriesList = [...Object.values(authorityServices)].toSorted(
+      (a, b) => (a.priority ?? Infinity) - (b.priority ?? Infinity),
     );
     setItems(authtoriesList);
     return () => {};
