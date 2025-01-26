@@ -16,10 +16,15 @@ interface LGPNResults {
   persons: Person[];
 }
 
-export const lgpnService = {
+export const lgpn: AuthorityServiceCustom = {
+  id: 'lgpn',
+  name: 'LGPN',
+  entities: { person: true, place: true },
+  // disabled: true,
+  serviceSource: 'custom',
+  serviceType: 'API',
   find: async ({ query, type }: AuthorityLookupParams) => {
     const encodedQuery = encodeURIComponent(query);
-
     const response = await fetch(
       `https://lookup.services.cwrc.ca/lgpn2/cgi-bin/urlQuery.cgi?name=${encodedQuery};style=json`,
       {

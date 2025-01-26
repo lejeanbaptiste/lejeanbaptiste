@@ -1,7 +1,5 @@
 import { derived } from 'overmind';
-import type { AuthorityServices } from '../../dialogs/entityLookups';
-import type { Schema, SchemaMappingType } from '../../types';
-import { lgpnService } from '../lookups/services/lgpn';
+import { lgpn } from '../lookups/services/lgpn';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type EditorStateType = {
@@ -128,23 +126,14 @@ export const state: EditorStateType = {
       serviceSource: 'LINCS',
       serviceType: 'API',
     },
-    lgpn: {
-      disabled: true,
-      entities: { person: true, place: true },
-      find: lgpnService.find,
-      id: 'lgpn',
-      name: 'LGPN',
-      priority: 6,
-      serviceSource: 'custom',
-      serviceType: 'API',
-    },
     gnd: {
       entities: { person: true, place: true, organization: true, work: true, thing: true },
       id: 'gnd',
       name: 'GND',
-      priority: 7,
+      priority: 6,
       serviceSource: 'LINCS',
       serviceType: 'API',
     },
+    lgpn,
   },
 };
