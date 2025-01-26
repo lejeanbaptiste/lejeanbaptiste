@@ -16,7 +16,7 @@ interface AuthorityProps {
 export const Authority = ({ authorityService }: AuthorityProps) => {
   const { disabled, entities, id, name } = authorityService;
 
-  const { toggleLookupAuthority, toggleLookupEntity } = useActions().editor;
+  const { toggleLookupAuthority, toggleLookupEntity } = useActions().lookups;
 
   const [hover, setHover] = useState(false);
   const [isDragging, setIsDragging] = useState(false);

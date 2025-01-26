@@ -1,13 +1,18 @@
+import { json } from 'overmind';
 import { Context } from '..';
+import { db } from '../../db';
 import Entity from '../../js/entities/Entity';
-import { EntityType } from '../../types';
 import type {
   Authority,
   AuthorityLookupResult,
+  AuthorityService,
+  AuthorityServiceConfig,
   EntityLink,
   EntryLink,
   NamedEntityType,
-} from '../../types/authority';
+} from '../../types';
+import { EntityType } from '../../types';
+import { log } from './../../utilities';
 import { createLincsApiFetcher } from './services/lincs-api';
 
 export const initiate = (
@@ -33,15 +38,169 @@ export const initiate = (
   void actions.lookups.search(lookups.query);
 };
 
+export const configureAuthorityServices = async (
+  { state, actions, effects }: Context,
+  configAuthorityServices?: AuthorityServiceConfig[],
+) => {
+  const { authorityServices } = state.lookups;
+
+  //* no config, use default
+  if (!configAuthorityServices) {
+    effects.editor.api.setDefaultAuthorityServices(json(authorityServices));
+    await actions.lookups.applyUserPreferencesAuthrityServices();
+    return;
+  }
+
+  //* config services
+  configAuthorityServices.forEach((serviceConfig) => {
+    if (typeof serviceConfig === 'string') {
+      authorityServices[serviceConfig];
+      return;
+    }
+
+    // * Get authority service to configure
+    const authorityService = authorityServices[serviceConfig.id];
+
+    // * Implements new authority service
+    if (!authorityService) {
+      //TODO Implements new authority service
+      return;
+    }
+
+    //* Disable service
+    authorityService.disabled = serviceConfig.disabled;
+
+    //*  No entities, use default
+    if (!serviceConfig.entities) return;
+
+    //* entity types
+    for (const entity in serviceConfig.entities) {
+      if (!authorityService.entities[entity as NamedEntityType]) continue;
+      if (!Object.prototype.hasOwnProperty.call(serviceConfig.entities, entity)) continue;
+
+      const value = serviceConfig.entities[entity as NamedEntityType];
+      if (value) authorityService.entities[entity as NamedEntityType] = value;
+    }
+  });
+
+  // * Setup default
+  effects.editor.api.setDefaultAuthorityServices(json(authorityServices));
+  await actions.lookups.applyUserPreferencesAuthrityServices();
+};
+
+export const applyUserPreferencesAuthrityServices = async ({ state }: Context) => {
+  const { authorityServices } = state.lookups;
+
+  //* No user preferences, add once.
+  const count = await db.authorityServices.count();
+  if (count === 0) {
+    const preferences: AuthorityService[] = Object.values(json(authorityServices));
+    const saninatizedPreferences = sanitazeAuthorityServices(preferences);
+    await db.authorityServices.bulkAdd(saninatizedPreferences);
+    return;
+  }
+
+  const preferences = await db.authorityServices.toArray();
+
+  for (const servicePreference of preferences) {
+    // * Get authority service to configure
+    const authorityService = authorityServices[servicePreference.id];
+
+    // * Remove not available service from preferences
+    if (!authorityService) {
+      log.warn(
+        `Authority Service Preferences: authority ${servicePreference.id} no longer available `,
+      );
+      await db.authorityServices.delete(servicePreference.id);
+      continue;
+    }
+
+    //* Priority
+    authorityService.priority = servicePreference.priority;
+
+    //* disabled service
+    authorityService.disabled = servicePreference.disabled;
+
+    //*  No entities, use default
+    if (!servicePreference.entities) continue;
+
+    //* entity types
+    const entitiesToRemove: NamedEntityType[] = [];
+    for (const entity in servicePreference.entities) {
+      if (!Object.prototype.hasOwnProperty.call(servicePreference.entities, entity)) continue;
+      if (!authorityService.entities[entity as NamedEntityType]) {
+        log.warn(
+          `Authority Service Preferences: authority ${servicePreference.id} no longer accept entity ${entity}`,
+        );
+
+        entitiesToRemove.push(entity as NamedEntityType);
+        delete servicePreference.entities[entity as NamedEntityType];
+        continue;
+      }
+
+      const value = servicePreference.entities[entity as NamedEntityType];
+      if (value !== undefined) authorityService.entities[entity as NamedEntityType] = value;
+    }
+
+    if (entitiesToRemove.length > 0) {
+      await db.authorityServices.update(servicePreference.id, {
+        entities: servicePreference.entities,
+      });
+    }
+  }
+};
+
 export const setType = ({ state: { lookups } }: Context, type: EntityType) => {
   lookups.typeEntity = type;
   lookups.typeLookup = type === 'citation' ? 'work' : (type as NamedEntityType);
 };
 
+export const toggleLookupAuthority = async (
+  { state: { lookups } }: Context,
+  authorityId: string,
+) => {
+  const authorityService = lookups.authorityServices[authorityId];
+  if (!authorityService) return;
+
+  authorityService.disabled = !authorityService.disabled;
+
+  await db.authorityServices.update(authorityId, { disabled: authorityService.disabled });
+};
+
+export const toggleLookupEntity = async (
+  { state }: Context,
+  { authorityId, entityName }: { authorityId: string; entityName: NamedEntityType },
+) => {
+  const authorityService = state.lookups.authorityServices[authorityId];
+  if (!authorityService) return;
+
+  authorityService.entities[entityName] = !authorityService.entities[entityName];
+
+  await db.authorityServices.update(authorityId, {
+    entities: json(authorityService.entities),
+  });
+};
+
+export const reorderLookupPriority = async (
+  { state }: Context,
+  authorities: AuthorityService[],
+) => {
+  authorities.forEach((authority, index) => {
+    const authorityService = state.lookups.authorityServices[authority.id];
+    if (!authorityService) return;
+    authorityService.priority = index;
+  });
+
+  const preferences: AuthorityService[] = Object.values(json(state.lookups.authorityServices));
+
+  const saninatizedPreferences = sanitazeAuthorityServices(preferences);
+  await db.authorityServices.bulkPut(saninatizedPreferences);
+};
+
 export const search = async ({ state }: Context, query: string) => {
   if (query === '') return [];
 
-  const authorityServices = state.editor.authorityServices;
+  const authorityServices = state.lookups.authorityServices;
 
   const enabledAuthorities = Object.values(authorityServices)
     .filter((authority) => !authority.disabled)
@@ -95,26 +254,6 @@ export const search = async ({ state }: Context, query: string) => {
     state.lookups.results = prioritizedResults;
     return prioritizedResults;
   });
-
-  // const listPriority = [...customAuthorities, ...authorityServedByLincs].toSorted(
-  //   (serviceA, serviceB) => serviceA.priority - serviceB.priority,
-  // );
-
-  // await Promise.allSettled(
-  //   listPriority.map(async ({ disabled, entities, id, ...authority }) => {
-  //     if (disabled || !entities[state.lookups.typeLookup]) return;
-
-  //     if (authority.serviceSource === 'LINCS') {
-  //       console.log('LINCS');
-  //       console.log(authority);
-  //       //TODO - implement LINCS
-  //     } else {
-  //       results.set(id, []); //* guarantee the priority order
-  //       const response = await authority.find?.({ query, type: state.lookups.typeLookup });
-  //       if (response) results.set(id, response);
-  //     }
-  //   }),
-  // );
 };
 
 export const processSelected = ({ state: { lookups } }: Context) => {
@@ -168,4 +307,17 @@ export const reset = ({ state: { lookups } }: Context) => {
   lookups.selected = undefined;
   lookups.typeEntity = 'thing';
   lookups.typeLookup = 'thing';
+};
+
+// -----
+
+export const sanitazeAuthorityServices = (services: AuthorityService[]) => {
+  const sininatizedPreferences = services.map((service) => {
+    if (service.serviceSource !== 'LINCS') {
+      const { find, ...rest } = service;
+      return rest;
+    }
+    return service;
+  });
+  return sininatizedPreferences;
 };

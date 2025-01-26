@@ -78,7 +78,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
     if (settings?.locale) actions.ui.switchLocal(settings.locale);
 
-    await actions.editor.configureAuthorityServices(settings?.authorityServices);
+    await actions.lookups.configureAuthorityServices(settings?.authorityServices);
 
     actions.user.setUser(user);
 
