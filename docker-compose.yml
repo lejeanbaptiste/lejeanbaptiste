@@ -6,7 +6,6 @@ services:
       dockerfile: Dockerfile
     environment:
       - GA_MEASUREMENT_ID
-      - GEONAMES_USERNAME
       - KEYCLOAK_URL
       - AUTH_API_URL
     ports:
