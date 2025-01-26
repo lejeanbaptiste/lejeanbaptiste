@@ -20,7 +20,7 @@ Você pode usar o LEAF-Writer para editar documentos XML ou produzir novos docum
 
 Para saber mais sobre como usar o LEAF-Writer, consulte a [documentação](https://www.leaf-vre.org/docs/documentation/leaf-commons/leaf-writer-documentation-basic).
 
-Se você encontrar um bug ou houver um recurso que você gostaria de ver adicionado, envie um tíquete para  <https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues>.
+Se você encontrar um bug ou houver um recurso que você gostaria de ver adicionado, envie um tíquete para <https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues>.
 
 Se você estiver interessado em adotar/adaptar o Leaf Writer para um ambiente diferente, consul [essa referencia](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer). Você pode entrar em contato conosco por meio de um tíquete do Gitlab em qualquer um dos repositórios de código do LEAF-Writer.
 
