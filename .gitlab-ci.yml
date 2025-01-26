@@ -37,7 +37,7 @@ cache:
 # Overwrite test job
 test:
   stage: test
-  image: node:18.1-alpine
+  image: node:20.9-alpine
   script:
     - npm install
     - npm test
