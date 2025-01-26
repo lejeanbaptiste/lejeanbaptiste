@@ -872,7 +872,8 @@ class SchemaManager {
     }
 
     const cssObj = CSS.parse(cssData);
-    const popupCssObj: { stylesheet: { rules: any[] } } = {
+    const popupCssObj: CSS.Stylesheet = {
+      type: 'stylesheet',
       stylesheet: { rules: [] },
     };
 
@@ -905,7 +906,7 @@ class SchemaManager {
           //@ts-ignore
           popupRule.selectors = convertedPopupSelectors;
 
-          popupCssObj.stylesheet.rules.push(popupRule);
+          popupCssObj.stylesheet?.rules.push(popupRule);
         }
       }
     }
