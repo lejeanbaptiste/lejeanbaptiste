@@ -189,7 +189,6 @@ LEAF-Writer includes 6 authority services supporing 5 types of entities:
 - [VIAF](https://viaf.org/): Person, Place, Organization, Work (book), and Thing.
 - [Wikipedia](https://www.wikidata.org/wiki/Wikidata:Main_Page): Person.
 
-
 Individual users can turn each authority on and off, as well enable and disabled specific entities in each authority depending on their preferences.
 
 All properties are optional, except for the id.
@@ -337,10 +336,10 @@ on the `./src/i18n.ts`:
 ```ts
 ...
 // IMPORT NEW LOCAL
-import it from './locales/it.json'; 
+import it from './locales/it.json';
 ...
 // ADD RESOURCE.
-export const resources = { en, es, fr, pt, de, ro, it } as const; 
+export const resources = { en, es, fr, pt, de, ro, it } as const;
 
  // ADD TO THE LIST OF SUPPORTED LOCALES
  // The order here reflect the order in which locales will be displayd in the UI
