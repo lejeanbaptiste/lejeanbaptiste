@@ -7,13 +7,13 @@ import { Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../overmind';
-import { Authority } from './Authority';
 import { AuthorityService } from '../../../../types';
+import { Authority } from './Authority';
 
 export const Authorities = () => {
   const { t } = useTranslation();
-  const { authorityServices } = useAppState().editor;
-  const { reorderLookupPriority } = useActions().editor;
+  const { authorityServices } = useAppState().lookups;
+  const { reorderLookupPriority } = useActions().lookups;
 
   const sensors = useSensors(useSensor(PointerSensor));
 

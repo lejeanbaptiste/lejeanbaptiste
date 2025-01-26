@@ -1,6 +1,5 @@
 import { derived } from 'overmind';
-import type { AuthorityServices, Schema, SchemaMappingType } from '../../types';
-import { lgpn } from '../lookups/services/lgpn';
+import type { Schema, SchemaMappingType } from '../../types';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type EditorStateType = {
@@ -27,6 +26,7 @@ export type EditorStateType = {
   }[];
   isAnnotator: boolean;
   isReadonly: boolean;
+  latestEvent?: string;
   LWChangeEventSuspended: boolean;
   mode: number;
   schemas: Record<string, Schema>;
@@ -37,8 +37,6 @@ export type EditorStateType = {
   settings?: any;
   showEntities: boolean;
   showTags: boolean;
-  latestEvent?: string;
-  authorityServices: AuthorityServices;
 };
 
 export const state: EditorStateType = {
@@ -78,63 +76,4 @@ export const state: EditorStateType = {
   schemas: {},
   schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),
   schemaMappings: ['cwrcEntry', 'orlando', 'tei', 'teiLite'],
-  authorityServices: {
-    viaf: {
-      entities: { person: true, place: true, organization: true, work: true, thing: true },
-      id: 'viaf',
-      name: 'VIAF',
-      priority: 0,
-      serviceSource: 'LINCS',
-      serviceType: 'API',
-    },
-    wikidata: {
-      entities: { person: true, place: true, organization: true, work: true, thing: true },
-      id: 'wikidata',
-      name: 'Wikidata',
-      priority: 1,
-      serviceSource: 'LINCS',
-      serviceType: 'API',
-    },
-    dbpedia: {
-      entities: { person: true, place: true, organization: true, work: true, thing: true },
-      id: 'dbpedia',
-      name: 'DBpedia',
-      priority: 2,
-      serviceSource: 'LINCS',
-      serviceType: 'API',
-    },
-    getty: {
-      entities: { person: true, place: true },
-      id: 'getty',
-      name: 'Getty',
-      priority: 3,
-      serviceSource: 'LINCS',
-      serviceType: 'API',
-    },
-    geonames: {
-      entities: { place: true },
-      id: 'geonames',
-      name: 'Geonames',
-      priority: 4,
-      serviceSource: 'LINCS',
-      serviceType: 'API',
-    },
-    lincs: {
-      entities: { person: true, place: true, organization: true, work: true, thing: true },
-      id: 'lincs',
-      name: 'Lincs',
-      priority: 5,
-      serviceSource: 'LINCS',
-      serviceType: 'API',
-    },
-    gnd: {
-      entities: { person: true, place: true, organization: true, work: true, thing: true },
-      id: 'gnd',
-      name: 'GND',
-      priority: 6,
-      serviceSource: 'LINCS',
-      serviceType: 'API',
-    },
-    lgpn,
-  },
 };
