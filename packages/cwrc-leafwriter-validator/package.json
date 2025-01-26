@@ -28,8 +28,7 @@
         "./src/index.worker",
         "./lib/index.worker"
       ],
-      "require": "./dist/leafwriter-validator.worker.js",
-      "types": "./lib/index.worker.d.ts"
+      "require": "./dist/leafwriter-validator.worker.js"
     }
   },
   "types": "lib/index.worker.d.ts",
