@@ -21,11 +21,6 @@ api.get('/ga-measurement-id', (_req, res) => {
   res.status(200).send(process.env.GA_MEASUREMENT_ID);
 });
 
-/* A route that returns the value of the environment variable GEONAMES_USERNAME. */
-api.get('/geonames-username', (_req, res) => {
-  res.status(200).send(process.env.GEONAMES_USERNAME);
-});
-
 /* A route that returns the value of the environment variable KEYCLOAK_URL. */
 api.get('/keycloak-url', (_req, res) => {
   res.status(200).send(process.env.KEYCLOAK_URL);

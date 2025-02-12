@@ -1,16 +1,12 @@
+import { getDefaultStore } from 'jotai';
 import $ from 'jquery';
 import Cookies from 'js-cookie';
-import { json } from 'overmind';
 import { Context } from '../';
 import { db } from '../../db';
-import type {
-  Authority,
-  AuthorityService,
-  AuthorityServiceConfig,
-  NamedEntityType,
-} from '../../dialogs/entityLookups/types';
+import { configureAuthorityServicesAtom } from '../../jotai/entity-lookup';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
-import { log } from './../../utilities';
+
+const defaultJotaiStore = getDefaultStore();
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
@@ -30,162 +26,6 @@ export const writerInitSettings = async (
 
   actions.editor.setReadonly(settings.readonly);
   await actions.validator.loadValidator();
-};
-
-export const configureAuthorityServices = async (
-  { state, actions, effects }: Context,
-  configAuthorityServices?: (Authority | AuthorityServiceConfig)[],
-) => {
-  const { authorityServices } = state.editor;
-
-  //* no config, use default
-  if (!configAuthorityServices) {
-    effects.editor.api.setDefaultAuthorityServices(json(authorityServices));
-    await actions.editor.applyUserPreferencesAuthrityServices();
-    return;
-  }
-
-  //* config services
-  configAuthorityServices.forEach((serviceConfig) => {
-    if (typeof serviceConfig === 'string') {
-      const authorityService = authorityServices[serviceConfig];
-      if (authorityService) authorityService.enabled = true;
-      return;
-    }
-
-    // * Get authority service to configure
-    const authorityService = authorityServices[serviceConfig.id];
-
-    // * Implements new authority service
-    if (!authorityService) {
-      //TODO
-      return;
-    }
-
-    //* service specific configuration
-    if (serviceConfig.settings) authorityService.settings = serviceConfig.settings;
-
-    //* Required authentication?
-    if (authorityService.requireAuth && serviceConfig.settings?.username === '') {
-      log.warn(
-        `Config Authority Service: username required to make requests to ${authorityService.id}`,
-      );
-      authorityService.enabled = false;
-      return;
-    } else {
-      authorityService.enabled = true;
-    }
-
-    //* Enable service
-    if (serviceConfig.enabled !== undefined) authorityService.enabled = serviceConfig.enabled;
-
-    //*  No entities, use default
-    if (!serviceConfig.entities) return;
-
-    //* entity types
-    for (const entity in serviceConfig.entities) {
-      if (!authorityService.entities[entity as NamedEntityType]) continue;
-      if (!Object.prototype.hasOwnProperty.call(serviceConfig.entities, entity)) continue;
-
-      const value = serviceConfig.entities[entity as NamedEntityType];
-      if (value) authorityService.entities[entity as NamedEntityType] = value;
-    }
-  });
-
-  // * Setup default
-  effects.editor.api.setDefaultAuthorityServices(json(authorityServices));
-  await actions.editor.applyUserPreferencesAuthrityServices();
-};
-
-const sanitazeAuthorityServices = (services: AuthorityService[]) => {
-  const sininatizedPreferences = services.map((service) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { find, ...rest } = service;
-    return rest;
-  });
-  return sininatizedPreferences;
-};
-
-export const applyUserPreferencesAuthrityServices = async ({ state }: Context) => {
-  const { authorityServices } = state.editor;
-
-  //* No user preferences, add once.
-  const count = await db.authorityServices.count();
-  if (count === 0) {
-    const preferences: AuthorityService[] = Object.values(json(authorityServices));
-
-    const saninatizedPreferences = sanitazeAuthorityServices(preferences);
-    await db.authorityServices.bulkAdd(saninatizedPreferences);
-    return;
-  }
-
-  const preferences = await db.authorityServices.toArray();
-
-  for (const servicePreference of preferences) {
-    // * Get authority service to configure
-    const authorityService = authorityServices[servicePreference.id];
-
-    // * Remove not available service from preferences
-    if (!authorityService) {
-      log.warn(
-        `Authority Service Preferences: authority ${servicePreference.id} no longer available `,
-      );
-      await db.authorityServices.delete(servicePreference.id);
-      continue;
-    }
-
-    //* service specific configuration
-    if (servicePreference.settings) {
-      //* Required authentication?
-      if (
-        authorityService.requireAuth &&
-        (authorityService.settings?.username === '' || servicePreference.settings?.username === '')
-      ) {
-        log.warn(
-          `Config Authority Service: username required to make requests to ${authorityService.id}`,
-        );
-        authorityService.enabled = false;
-        continue;
-      }
-
-      authorityService.settings = servicePreference.settings;
-    }
-
-    //* Priority
-    authorityService.priority = servicePreference.priority;
-
-    //* Enable service
-    if (servicePreference.enabled !== undefined) {
-      authorityService.enabled = servicePreference.enabled;
-    }
-
-    //*  No entities, use default
-    if (!servicePreference.entities) continue;
-
-    //* entity types
-    const entitiesToRemove: NamedEntityType[] = [];
-    for (const entity in servicePreference.entities) {
-      if (!Object.prototype.hasOwnProperty.call(servicePreference.entities, entity)) continue;
-      if (!authorityService.entities[entity as NamedEntityType]) {
-        log.warn(
-          `Authority Service Preferences: authority ${servicePreference.id} no longer accept entity ${entity}`,
-        );
-
-        entitiesToRemove.push(entity as NamedEntityType);
-        delete servicePreference.entities[entity as NamedEntityType];
-        continue;
-      }
-
-      const value = servicePreference.entities[entity as NamedEntityType];
-      if (value !== undefined) authorityService.entities[entity as NamedEntityType] = value;
-    }
-
-    if (entitiesToRemove.length > 0) {
-      await db.authorityServices.update(servicePreference.id, {
-        entities: servicePreference.entities,
-      });
-    }
-  }
 };
 
 export const applyInitialSettings = ({ state, actions }: Context) => {
@@ -371,66 +211,16 @@ export const resetPreferences = async ({ state, actions, effects }: Context) => 
   actions.editor.setShowEntities(true);
   actions.editor.setEditorMode('xmlrdf');
   actions.editor.setAnnotationrMode(3);
-
-  //* Authority service
-  const defaultAuthorityServices = effects.editor.api.getDefaultAuthorityServices();
-  if (defaultAuthorityServices) {
-    state.editor.authorityServices = defaultAuthorityServices;
-    const saninatizedPrefs = sanitazeAuthorityServices(Object.values(defaultAuthorityServices));
-    await db.authorityServices.bulkPut(saninatizedPrefs);
-  } else {
-    await db.authorityServices.clear();
-  }
-
   await actions.ui.resetDoNotDisplayDialogs();
+
+  await db.authorityServices.clear();
+  defaultJotaiStore.set(configureAuthorityServicesAtom, undefined);
 
   actions.ui.resetPreferences();
 };
 
 export const setIsAnnotator = ({ state }: Context, value: boolean) => {
   state.editor.isAnnotator = value;
-};
-
-export const toggleLookupAuthority = async (
-  { state: { editor } }: Context,
-  authorityId: string,
-) => {
-  const authorityService = editor.authorityServices[authorityId];
-  if (!authorityService) return;
-
-  authorityService.enabled = !authorityService.enabled;
-
-  await db.authorityServices.update(authorityId, { enabled: authorityService.enabled });
-};
-
-export const toggleLookupEntity = async (
-  { state }: Context,
-  { authorityId, entityName }: { authorityId: string; entityName: NamedEntityType },
-) => {
-  const authorityService = state.editor.authorityServices[authorityId];
-  if (!authorityService) return;
-
-  authorityService.entities[entityName] = !authorityService.entities[entityName];
-
-  await db.authorityServices.update(authorityId, {
-    entities: json(authorityService.entities),
-  });
-};
-
-export const reorderLookupPriority = async (
-  { state }: Context,
-  authorities: AuthorityService[],
-) => {
-  authorities.forEach((authority, index) => {
-    const authorityService = state.editor.authorityServices[authority.id];
-    if (!authorityService) return;
-    authorityService.priority = index;
-  });
-
-  const preferences: AuthorityService[] = Object.values(json(state.editor.authorityServices));
-
-  const saninatizedPreferences = sanitazeAuthorityServices(preferences);
-  await db.authorityServices.bulkPut(saninatizedPreferences);
 };
 
 export const getContent = async ({ state }: Context) => {

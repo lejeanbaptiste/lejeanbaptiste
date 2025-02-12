@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
 import { useDialog, useNotifier } from '@src/hooks';
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 
 export const BasicLayout = () => {
   useDialog();

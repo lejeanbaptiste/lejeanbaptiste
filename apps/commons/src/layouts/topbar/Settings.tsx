@@ -3,8 +3,10 @@ import { IconButton } from '@mui/material';
 import { leafwriterAtom } from '@src/jotai';
 import { motion, type Variants } from 'framer-motion';
 import { useAtomValue } from 'jotai';
+import { useTranslation } from 'react-i18next';
 
 export const Settings = () => {
+  const { t } = useTranslation();
   const leafWriter = useAtomValue(leafwriterAtom);
 
   const handleClick = () => {
@@ -20,6 +22,7 @@ export const Settings = () => {
   return (
     <IconButton
       key="darkMode"
+      aria-label={t('LWC.commons.settings')}
       component={motion.button}
       variants={optionVariants}
       initial="initial"

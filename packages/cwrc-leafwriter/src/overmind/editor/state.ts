@@ -1,15 +1,5 @@
 import { derived } from 'overmind';
-import type { AuthorityServices } from '../../dialogs/entityLookups';
 import type { Schema, SchemaMappingType } from '../../types';
-import {
-  dbpediaFind,
-  geonamesFind,
-  gettyFind,
-  lgpnFind,
-  viafFind,
-  wikidataFind,
-  gndFind,
-} from '../lookups/services';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type EditorStateType = {
@@ -36,6 +26,7 @@ export type EditorStateType = {
   }[];
   isAnnotator: boolean;
   isReadonly: boolean;
+  latestEvent?: string;
   LWChangeEventSuspended: boolean;
   mode: number;
   schemas: Record<string, Schema>;
@@ -46,8 +37,6 @@ export type EditorStateType = {
   settings?: any;
   showEntities: boolean;
   showTags: boolean;
-  latestEvent?: string;
-  authorityServices: AuthorityServices;
 };
 
 export const state: EditorStateType = {
@@ -87,70 +76,4 @@ export const state: EditorStateType = {
   schemas: {},
   schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),
   schemaMappings: ['cwrcEntry', 'orlando', 'tei', 'teiLite'],
-  authorityServices: {
-    viaf: {
-      enabled: true,
-      entities: { person: true, place: true, organization: true, work: true, thing: true },
-      find: viafFind,
-      id: 'viaf',
-      name: 'VIAF',
-      priority: 0,
-      lookupService: 'internal',
-    },
-    wikidata: {
-      enabled: true,
-      entities: { person: true, place: true, organization: true, work: true, thing: true },
-      find: wikidataFind,
-      id: 'wikidata',
-      name: 'Wikidata',
-      priority: 1,
-      lookupService: 'internal',
-    },
-    dbpedia: {
-      enabled: true,
-      entities: { person: true, place: true, organization: true, work: true, thing: true },
-      find: dbpediaFind,
-      id: 'dbpedia',
-      name: 'DBpedia',
-      priority: 2,
-      lookupService: 'internal',
-    },
-    getty: {
-      enabled: true,
-      entities: { person: true, place: true },
-      find: gettyFind,
-      id: 'getty',
-      name: 'Getty',
-      priority: 3,
-      lookupService: 'internal',
-    },
-    geonames: {
-      enabled: false,
-      entities: { place: true },
-      find: geonamesFind,
-      id: 'geonames',
-      name: 'Geonames',
-      priority: 4,
-      requireAuth: true,
-      lookupService: 'internal',
-    },
-    lgpn: {
-      enabled: false,
-      entities: { person: true },
-      find: lgpnFind,
-      id: 'lgpn',
-      name: 'LGPN',
-      priority: 5,
-      lookupService: 'internal',
-    },
-    gnd: {
-      enabled: true,
-      entities: { person: true, place: true, organization: true, work: true, thing: true },
-      find: gndFind,
-      id: 'gnd',
-      name: 'GND',
-      priority: 5,
-      lookupService: 'internal',
-    },
-  },
 };

@@ -1,0 +1,60 @@
+import { AuthorityService } from '../types';
+
+export const authoritiesInitialConfig: AuthorityService[] = [
+  {
+    id: 'viaf',
+    name: 'VIAF',
+    entities: { person: true, place: true, organization: true, work: true, thing: true },
+    serviceType: 'API',
+    serviceSource: 'LINCS',
+    priority: 0,
+  },
+  {
+    id: 'wikidata',
+    name: 'Wikidata',
+    entities: { person: true, place: true, organization: true, work: true, thing: true },
+    serviceType: 'API',
+    serviceSource: 'LINCS',
+    priority: 1,
+  },
+  {
+    id: 'dbpedia',
+    name: 'DBpedia',
+    entities: { person: true, place: true, organization: true, work: true, thing: true },
+    serviceType: 'API',
+    serviceSource: 'LINCS',
+    priority: 2,
+  },
+  {
+    id: 'getty',
+    name: 'Getty',
+    entities: { person: true, place: true },
+    serviceType: 'API',
+    serviceSource: 'LINCS',
+    priority: 3,
+  },
+  {
+    id: 'geonames',
+    name: 'Geonames',
+    entities: { place: true },
+    serviceType: 'API',
+    serviceSource: 'LINCS',
+    priority: 4,
+  },
+  {
+    id: 'lincs',
+    name: 'LINCS',
+    entities: { person: true, place: true, organization: true, work: true, thing: true },
+    serviceType: 'API',
+    serviceSource: 'LINCS',
+    priority: 5,
+  },
+  {
+    id: 'gnd',
+    name: 'GND',
+    entities: { person: true, place: true, organization: true, work: true, thing: true },
+    serviceType: 'API',
+    serviceSource: 'LINCS',
+    priority: 6,
+  },
+];

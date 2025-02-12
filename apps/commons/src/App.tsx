@@ -4,7 +4,7 @@ import ModalProvider from 'mui-modal-provider';
 import { SnackbarProvider } from 'notistack';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useRoutes } from 'react-router-dom';
+import { useLocation, useRoutes } from 'react-router';
 import { useAnalytics, useCookieConsent, usePermalink } from './hooks';
 import { useActions, useAppState } from './overmind';
 import { routes } from './routes';

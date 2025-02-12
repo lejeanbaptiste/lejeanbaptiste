@@ -335,54 +335,48 @@ class AttributeWidget {
 
   /**
    * Collects the data from the attribute widget and performs validation.
-   * @returns {Object|undefined} Returns undefined if invalid
    */
   getData() {
-    const attributes: Record<string, any> = {};
+    const attributes: Map<string, string> = new Map();
 
-    $('.attributeSelector li.selected', this.$parent).each((index, el) => {
-      const name = $(el).data('name');
+    const selectedAttributes = this.$parent?.[0].querySelectorAll(`.attributeSelector li.selected`);
+    selectedAttributes?.forEach((el) => {
+      const name = (el as HTMLElement).dataset.name;
+      if (!name) return;
 
-      $(
-        `.attsContainer > div[data-name="form_${name}"] input[type!="hidden"], select`,
-        this.$el,
-      ).each((index, element) => {
-        const val = $(element).val();
-        const attrName = $(element).attr('name');
+      const element = this.$el[0].querySelector(`[data-name="form_${name}"]`);
+      const input = element?.querySelector('input, select');
+      if (!input) return;
 
-        // ignore blank values
-        if (attrName && val && val !== '') attributes[attrName] = val;
-      });
+      const inputElement = input as HTMLInputElement | HTMLSelectElement;
+      const attributeName = inputElement.name;
+      const value = inputElement.value;
+      if (value !== '') attributes.set(attributeName, value);
     });
 
     // validation
     const invalid: string[] = [];
-
-    $('.attsContainer span.required', this.$el)
-      .parent()
-      // .children('input[type!="hidden"], select')
-      .find('input[type!="hidden"], select')
-      .each((index, element) => {
-        const attrName = $(element).attr('name');
+    this.$el[0]
+      .querySelector('.attsContainer span.required')
+      ?.parentElement?.querySelectorAll('input[type!="hidden"], select')
+      .forEach((el) => {
+        const attrName = el.getAttribute('name');
         if (!attrName) return;
 
-        const entry = attributes[attrName];
-        if (!entry || entry == '') invalid.push(attrName);
+        const entry = attributes.get(attrName);
+        if (!entry || entry === '') invalid.push(attrName);
       });
 
     //highlight invalid
-    if (invalid.length > 0) {
-      for (const name of invalid) {
-        $(`.attsContainer *[name="${name}"]`, this.$el)
-          .css({ borderColor: 'red' })
-          .on('keyup', (event) => {
-            $(this).css({ borderColor: '#ccc' });
-          });
-      }
-      return attributes; // still return values even if invalid (for now)
-    }
+    invalid.forEach((name) => {
+      $(`.attsContainer *[name="${name}"]`, this.$el)
+        .css({ borderColor: 'red' })
+        .on('keyup', () => {
+          $(this).css({ borderColor: '#ccc' });
+        });
+    });
 
-    return attributes;
+    return Object.fromEntries(attributes);
   }
 
   destroy() {}

@@ -7,9 +7,10 @@ import '@fortawesome/fontawesome-free/css/all.css';
 import { PaletteMode } from '@mui/material';
 import Dexie from 'dexie';
 import html2canvas from 'html2canvas';
+import { nanoid } from 'nanoid';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
-import { createRoot, Root } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
 import './i18n';
@@ -18,9 +19,9 @@ import Writer from './js/Writer';
 import { config } from './overmind';
 import type { EditorStateType } from './overmind/editor/state';
 import Providers from './Providers';
+import { JotaiProvider } from './providers/jotai-provider';
 import type { LeafWriterOptions, LWDocument, ScreenshotParams } from './types';
 import './utilities/log';
-import { nanoid } from 'nanoid';
 
 declare global {
   interface Window {
@@ -109,11 +110,13 @@ export class Leafwriter {
     if (!this.reactReact || !this.options) return;
 
     this.reactReact.render(
-      <Provider value={overmind}>
-        <I18nextProvider i18n={i18next}>
-          <Providers {...this.options} />
-        </I18nextProvider>
-      </Provider>,
+      <JotaiProvider>
+        <Provider value={overmind}>
+          <I18nextProvider i18n={i18next}>
+            <Providers {...this.options} />
+          </I18nextProvider>
+        </Provider>
+      </JotaiProvider>,
     );
   }
 

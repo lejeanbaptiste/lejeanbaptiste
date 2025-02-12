@@ -23,7 +23,6 @@ variables:
   KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_ENVIRONMENT_SLUG
 
   K8S_SECRET_GA_MEASUREMENT_ID: $GA_MEASUREMENT_ID
-  K8S_SECRET_GEONAMES_USERNAME: $GEONAMES_USERNAME
   K8S_SECRET_KEYCLOAK_URL: $KEYCLOAK_URL
   K8S_SECRET_AUTH_API_URL: $AUTH_API_URL
 
@@ -38,7 +37,7 @@ cache:
 # Overwrite test job
 test:
   stage: test
-  image: node:18.1-alpine
+  image: node:20.9-alpine
   script:
     - npm install
     - npm test

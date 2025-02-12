@@ -1,16 +1,5 @@
-import type { AuthorityServices } from '../../dialogs/entityLookups';
-
 export const api = (() => {
-  let lookupsDefaults: AuthorityServices;
-
   return {
-    getDefaultAuthorityServices: () => {
-      return lookupsDefaults;
-    },
-    setDefaultAuthorityServices: (value: AuthorityServices) => {
-      lookupsDefaults = value;
-    },
-
     /**
      * It saves a value to local storage, but if the value is not a string, it converts it to a string
      * before saving it

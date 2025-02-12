@@ -3,8 +3,7 @@
 // * We should way a little longer to adopt the new setup
 
 import Dexie, { Table } from 'dexie';
-import { AuthorityService } from '../dialogs';
-import type { Schema } from '../types';
+import type { AuthorityServiceBase, Schema } from '../types';
 
 export interface SuspendedDocument {
   content: string;
@@ -16,7 +15,7 @@ export interface DoNotDisplayDialogs {
 }
 
 export class DexieDB extends Dexie {
-  authorityServices!: Table<Omit<AuthorityService, 'find'>>;
+  authorityServices!: Table<AuthorityServiceBase>;
   customSchemas!: Table<Schema>;
   doNotDisplayDialogs!: Table<DoNotDisplayDialogs>;
   suspendedDocuments!: Table<SuspendedDocument>;
@@ -42,6 +41,38 @@ export class DexieDB extends Dexie {
             suspendedDocuments.uuid = suspendedDocuments.id;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             delete suspendedDocuments.id;
+          });
+      });
+    this.version(3)
+      .stores({
+        authorityServices: 'id',
+        customSchemas: 'id, mapping',
+        doNotDisplayDialogs: 'id',
+        suspendedDocuments: 'uuid',
+      })
+      .upgrade((tx) => {
+        // return tx.table('authorityServices').toCollection().delete();
+        return tx
+          .table('authorityServices')
+          .toCollection()
+          .modify((authorityServices) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            delete authorityServices.lookupService;
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            authorityServices.disabled = authorityServices.enabled;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            delete authorityServices.enabled;
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            if (authorityServices.id !== 'lgpn') {
+              authorityServices.serviceSource = 'LINCS';
+            } else {
+              authorityServices.serviceSource = 'custom';
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            authorityServices.serviceType = 'API';
           });
       });
   }

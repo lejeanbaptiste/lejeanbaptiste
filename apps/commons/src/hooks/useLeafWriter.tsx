@@ -6,22 +6,22 @@ import type { Resource } from '@src/types';
 import { changeFileExtension } from '@src/utilities';
 import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
+import { lgpn } from '@cwrc/leafwriter-authority-service-lgpn';
+import { LeafWriterOptions, LeafWriterOptionsSettings } from '@cwrc/leafwriter/lib/src/types';
 
 export const useLeafWriter = () => {
   const { analytics } = useAnalytics();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { userState, user } = useAppState().auth;
+  const { user } = useAppState().auth;
   const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
   const { currentLocale } = useAppState().ui;
 
-  const { getKeycloakAuthToken } = useActions().auth;
   const {
     close,
-    getGeonameUsername,
     loadLeafWriter,
     save,
     saveAs,
@@ -46,11 +46,16 @@ export const useLeafWriter = () => {
   const initLeafWriter = async () => {
     if (!leafWriter || !resource?.content) return;
 
-    const geonamesUsername = await getGeonameUsername();
-
     const author = user && {
       name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
       uri: user?.identities.get(user.preferredID)?.uri ?? '',
+    };
+
+    const settings: LeafWriterOptionsSettings = {
+      authorityServices: [lgpn],
+      locale: currentLocale,
+      readonly,
+      schemas,
     };
 
     leafWriter.init({
@@ -58,12 +63,7 @@ export const useLeafWriter = () => {
         url: resource.url,
         xml: resource.content ?? '',
       },
-      settings: {
-        authorityServices: [{ id: 'geonames', settings: { username: geonamesUsername } }],
-        locale: currentLocale,
-        readonly,
-        schemas,
-      },
+      settings,
       user: author,
     });
 
@@ -229,10 +229,10 @@ export const useLeafWriter = () => {
         maxWidth: 'xs',
         preventEscape: true,
         severity: 'warning',
-        title: `${t('LWC.commons.unsaved_changes')}`,
+        title: t('LWC.commons.unsaved_changes'),
         actions: [
-          { action: 'cancel', label: `${t('LWC.commons.cancel')}` },
-          { action: 'discard', label: `${t('LWC.commons.discard_changes')}` },
+          { action: 'cancel', label: t('LWC.commons.cancel') },
+          { action: 'discard', label: t('LWC.commons.discard changes') },
         ],
         onClose: async (action) => {
           if (action !== 'discard') return;
