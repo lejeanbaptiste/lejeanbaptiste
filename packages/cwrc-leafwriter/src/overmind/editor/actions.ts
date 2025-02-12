@@ -1,9 +1,12 @@
+import { getDefaultStore } from 'jotai';
 import $ from 'jquery';
 import Cookies from 'js-cookie';
 import { Context } from '../';
 import { db } from '../../db';
+import { configureAuthorityServicesAtom } from '../../jotai/entity-lookup';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
-import { sanitazeAuthorityServices } from '../lookups/actions';
+
+const defaultJotaiStore = getDefaultStore();
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
@@ -208,18 +211,10 @@ export const resetPreferences = async ({ state, actions, effects }: Context) => 
   actions.editor.setShowEntities(true);
   actions.editor.setEditorMode('xmlrdf');
   actions.editor.setAnnotationrMode(3);
-
-  //* Authority service
-  const defaultAuthorityServices = effects.editor.api.getDefaultAuthorityServices();
-  if (defaultAuthorityServices) {
-    state.lookups.authorityServices = defaultAuthorityServices;
-    const saninatizedPrefs = sanitazeAuthorityServices(Object.values(defaultAuthorityServices));
-    await db.authorityServices.bulkPut(saninatizedPrefs);
-  } else {
-    await db.authorityServices.clear();
-  }
-
   await actions.ui.resetDoNotDisplayDialogs();
+
+  await db.authorityServices.clear();
+  defaultJotaiStore.set(configureAuthorityServicesAtom, undefined);
 
   actions.ui.resetPreferences();
 };

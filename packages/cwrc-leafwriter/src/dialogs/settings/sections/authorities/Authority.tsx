@@ -1,12 +1,12 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import AdjustIcon from '@mui/icons-material/Adjust';
-import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import { Grid, Icon, IconButton, Paper, Stack, ToggleButton, Typography } from '@mui/material';
-import type { AuthorityService, NamedEntityType } from '@src/types';
-import { useState } from 'react';
-import { useActions } from '../../../../overmind';
+import { Grid, IconButton, Paper, Stack, ToggleButton, Typography } from '@mui/material';
+import { useSetAtom } from 'jotai';
+import { useEffect, useState } from 'react';
+import { MdAdjust, MdOutlineCircle } from 'react-icons/md';
+import { RxDragHandleDots2 } from 'react-icons/rx';
+import { toggleLookupAuthorityAtom, toggleLookupEntityAtom } from '../../../../jotai/entity-lookup';
+import type { AuthorityService, NamedEntityType } from '../../../../types';
 import { EntityType } from './EntityType';
 
 interface AuthorityProps {
@@ -16,7 +16,8 @@ interface AuthorityProps {
 export const Authority = ({ authorityService }: AuthorityProps) => {
   const { disabled, entities, id, name } = authorityService;
 
-  const { toggleLookupAuthority, toggleLookupEntity } = useActions().lookups;
+  const toggleLookupAuthority = useSetAtom(toggleLookupAuthorityAtom);
+  const toggleLookupEntity = useSetAtom(toggleLookupEntityAtom);
 
   const [hover, setHover] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -28,17 +29,9 @@ export const Authority = ({ authorityService }: AuthorityProps) => {
     transition,
   };
 
-  const handleMouseOver = () => setHover(true);
-  const handleMouseOut = () => setHover(false);
-
   const handleHadleMouseDown = () => setIsDragging(true);
-  const handleHadleMouseUp = () => setIsDragging(false);
 
-  const handleAuthorityToogle = () => toggleLookupAuthority(id);
-
-  const handleEntityToggle = (entityName: NamedEntityType) => {
-    toggleLookupEntity({ authorityId: id, entityName });
-  };
+  useEffect(() => {}, [disabled]);
 
   return (
     <Paper
@@ -48,13 +41,13 @@ export const Authority = ({ authorityService }: AuthorityProps) => {
       style={style}
       sx={{
         zIndex: isDragging ? 1 : 0,
-        bgcolor: isDragging ? ({ palette }) => palette.background.paper : 'transparent',
+        backgroundColor: isDragging ? ({ palette }) => palette.background.paper : 'transparent',
         borderRadius: 1,
         cursor: isDragging ? 'grabbing' : 'default',
       }}
-      onMouseOver={handleMouseOver}
-      onMouseOut={handleMouseOut}
-      onMouseUp={handleHadleMouseUp}
+      onMouseOver={() => setHover(true)}
+      onMouseOut={() => setHover(false)}
+      onMouseUp={() => setIsDragging(false)}
     >
       <Stack direction="row">
         <Grid container alignItems="center" sx={{ minHeight: 34, pl: 0.5 }}>
@@ -62,29 +55,30 @@ export const Authority = ({ authorityService }: AuthorityProps) => {
             <Stack direction="row" spacing={1} alignItems="center">
               <ToggleButton
                 color="primary"
-                onChange={handleAuthorityToogle}
+                onChange={() => toggleLookupAuthority(id)}
                 selected={!disabled}
                 size="small"
                 sx={{ border: 0 }}
                 value={!disabled}
               >
-                <Icon
-                  component={disabled ? CircleOutlinedIcon : AdjustIcon}
-                  sx={{ height: 12, width: 12 }}
-                />
+                {!!disabled ? (
+                  <MdOutlineCircle style={{ height: 12, width: 12 }} />
+                ) : (
+                  <MdAdjust style={{ height: 12, width: 12 }} />
+                )}
               </ToggleButton>
-              <Typography sx={{ cursor: 'default', textTransform: 'capitalize' }} variant="body2">
-                {name ?? id}
+              <Typography sx={{ cursor: 'default' }} variant="body2">
+                {name}
               </Typography>
             </Stack>
           </Grid>
-          {Object.entries(entities).map(([id, entityEnabled]) => (
-            <Grid key={id} item sx={{ width: 28 }}>
+          {Object.entries(entities).map(([entityName, entityEnabled]) => (
+            <Grid key={entityName} item sx={{ width: 28 }}>
               <EntityType
-                available={disabled ?? true}
+                available={!disabled}
                 enabled={entityEnabled}
-                onClick={handleEntityToggle}
-                name={id as NamedEntityType}
+                onClick={(entityName) => toggleLookupEntity({ authorityId: id, entityName })}
+                name={entityName as NamedEntityType}
               />
             </Grid>
           ))}
@@ -97,9 +91,9 @@ export const Authority = ({ authorityService }: AuthorityProps) => {
           size="small"
           sx={{ cursor: !hover ? 'default' : isDragging ? 'grabbing' : 'grab' }}
         >
-          <DragIndicatorIcon
+          <RxDragHandleDots2
             fontSize="inherit"
-            sx={{ pointerEvents: 'none', transition: 'height 0.3s', height: hover ? 18 : 0 }}
+            style={{ pointerEvents: 'none', transition: 'height 0.3s', height: hover ? 18 : 0 }}
           />
         </IconButton>
       </Stack>

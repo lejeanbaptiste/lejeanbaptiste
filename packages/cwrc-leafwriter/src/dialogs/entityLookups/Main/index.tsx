@@ -1,13 +1,16 @@
 import { DialogContent, List, Stack } from '@mui/material';
+import { useAtomValue } from 'jotai';
 import { useState } from 'react';
-import { useAppState } from '../../../overmind';
-import CandidateList from './Candidates';
-import ManualEntryField from './Candidates/ManualEntryField';
-import SideMenu from './SideMenu';
+import { authoritiesAtom, lookupsBeenFetchedAtom } from '../store';
+import { CandidatesList } from './candidates-list';
+import { ManualEntryField } from './manual-entry-field';
+import { SideMenu } from './side-menu';
 
-const Main = () => {
+export const Main = () => {
+  const lookupsBeenFetched = useAtomValue(lookupsBeenFetchedAtom);
+  const authorities = useAtomValue(authoritiesAtom);
+
   const [authorityInView, setAuthorityInView] = useState<string[]>([]);
-  const { results } = useAppState().lookups;
 
   const handleSetAuthorityInView = (view: { id: string; inView: boolean }) => {
     let InView: string[] = [];
@@ -24,17 +27,22 @@ const Main = () => {
 
   return (
     <Stack direction="row">
-      <DialogContent sx={{ px: 1, pt: 0, pb: 0.5, maxHeight: '65vh' }}>
-        <List sx={{ '& ul': { padding: 0 } }} subheader={<li />}>
-          {results &&
-            [...results].map(([authority, candidates]) => (
-              <CandidateList
-                key={authority}
-                authority={authority}
-                candidates={candidates}
-                setAuthorityInView={handleSetAuthorityInView}
-              />
-            ))}
+      <DialogContent sx={{ height: '65vh', px: 1, pt: 0, pb: 0.5 }}>
+        <List
+          sx={{
+            pb: 0,
+            filter: lookupsBeenFetched === authorities.length ? 'blur(4px)' : 'none',
+            '& ul': { p: 0 },
+          }}
+          subheader={<li />}
+        >
+          {authorities.map((authority) => (
+            <CandidatesList
+              key={authority.id}
+              authority={authority}
+              setAuthorityInView={handleSetAuthorityInView}
+            />
+          ))}
         </List>
         <ManualEntryField setAuthorityInView={handleSetAuthorityInView} />
       </DialogContent>
@@ -42,5 +50,3 @@ const Main = () => {
     </Stack>
   );
 };
-
-export default Main;

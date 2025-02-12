@@ -1,10 +1,12 @@
+import { getDefaultStore } from 'jotai';
+import { RESET } from 'jotai/utils';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/tooltip';
 import Cookies from 'js-cookie';
-import type { EntityLink } from '../../types/authority';
+import { entityLookupDialogAtom } from '../../jotai/entity-lookup';
 import '../../lib/jquery/jquery.popup';
-// import Triple from './dialogs/triple.js';
+import { namedEntityTypesSchema, type EntityLink } from '../../types';
 import { log } from '../../utilities';
 import Writer from '../Writer';
 import AttributesEditor from './attributesEditor/attributesEditor';
@@ -16,6 +18,8 @@ import Message from './message';
 import Popup from './popup';
 import Translation from './translation';
 import type { LWDialogProps } from './types';
+
+const defaultJotaiStore = getDefaultStore();
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
@@ -177,7 +181,7 @@ class DialogManager {
     }
 
     this.$cwrcDialogWrapper = $(
-      '<div class="cwrc cwrcDialogWrapper" style="color-scheme: light"></div>',
+      `<div class="cwrc cwrcDialogWrapper" style="color-scheme: light" />`,
     ).appendTo(container);
 
     setDialogListeners(this.$cwrcDialogWrapper);
@@ -225,30 +229,32 @@ class DialogManager {
    * @param {Object} [config] A configuration object to pass to the dialog
    */
   show(type: string, config?: object) {
-    const dialog = this.dialogs.get(type) ?? this.schemaDialogs.get(type);
-    if (!dialog) {
-      log.warn(`Dialog ${type} not found!`);
+    const isNamedEntityType = namedEntityTypesSchema.safeParse(type);
+    if (!config && isNamedEntityType.success) {
+      const namedEntityType = isNamedEntityType.data;
+
+      const currentBookmark = window.writer?.editor?.currentBookmark;
+      let query = '';
+      if (currentBookmark && 'rng' in currentBookmark) {
+        query = currentBookmark.rng.toString().trim().replaceAll(/\s+/g, ' '); // remove excess whitespace
+      }
+
+      defaultJotaiStore.set(entityLookupDialogAtom, {
+        isUserAuthenticated: this.writer.overmindState.user?.uri !== '#anonymous',
+        onClose: (response?: EntityLink | Pick<EntityLink, 'query' | 'type'>) => {
+          defaultJotaiStore.set(entityLookupDialogAtom, RESET);
+          if (response) this.show(response.type, response);
+        },
+        query,
+        type: namedEntityType,
+      });
+
       return;
     }
 
-    if (
-      !config &&
-      (type === 'person' ||
-        type === 'place' ||
-        type === 'organization' ||
-        type === 'work' ||
-        type === 'thing' ||
-        type === 'citation')
-    ) {
-      this.writer.overmindActions.ui.openEntityLookupsDialog({
-        type,
-        onClose: (response?: EntityLink | Pick<EntityLink, 'query' | 'type'>) => {
-          if (!response) return;
-
-          const type = response.type;
-          this.show(type, response);
-        },
-      });
+    const dialog = this.dialogs.get(type) ?? this.schemaDialogs.get(type);
+    if (!dialog) {
+      log.warn(`Dialog ${type} not found!`);
       return;
     }
 

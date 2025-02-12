@@ -1,13 +1,12 @@
 import { Icon, ListItem, ListItemButton, ListItemIcon, Stack, Typography } from '@mui/material';
 import { getIcon, type IconLeafWriter } from '../../../icons';
 
-type ButtonProps = {
-  children: React.ReactNode;
+interface ButtonProps extends React.PropsWithChildren {
   disabled?: boolean;
   description?: string;
   icon: IconLeafWriter;
   onClick: () => void;
-};
+}
 
 export const Button = ({ children, disabled, description, icon, onClick }: ButtonProps) => (
   <ListItem dense disableGutters alignItems={description ? 'flex-start' : 'center'}>

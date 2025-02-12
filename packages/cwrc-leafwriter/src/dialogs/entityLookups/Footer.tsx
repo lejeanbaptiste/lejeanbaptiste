@@ -1,17 +1,28 @@
 import { Button, DialogActions } from '@mui/material';
-import { useActions, useAppState } from '../../overmind';
+import { useAtomValue } from 'jotai';
+import { useTranslation } from 'react-i18next';
 import type { EntityLink } from '../../types/authority';
+import {
+  entityTypeAtom,
+  isUriValidAtom,
+  manualInputAtom,
+  onCloseAtom,
+  queryAtom,
+  selectedAtom,
+} from './store';
+import { useEntityLookup } from './useEntityLookup';
 
-const Footer = () => {
-  const { type } = useAppState().ui.entityLookupDialogProps;
-  const { closeEntityLookupsDialog } = useActions().ui;
-  const { isUriValid, query, selected, manualInput } = useAppState().lookups;
-  const { processSelected } = useActions().lookups;
+export const Footer = () => {
+  const { t } = useTranslation();
 
-  const handleNoLink = () => {
-    if (!type) return;
-    handleClose({ type, query });
-  };
+  const entityType = useAtomValue(entityTypeAtom);
+  const isUriValid = useAtomValue(isUriValidAtom);
+  const manualInput = useAtomValue(manualInputAtom);
+  const onClose = useAtomValue(onCloseAtom);
+  const query = useAtomValue(queryAtom);
+  const selected = useAtomValue(selectedAtom);
+
+  const { processSelected } = useEntityLookup();
 
   const handlSelectLink = () => {
     const link = processSelected();
@@ -20,12 +31,8 @@ const Footer = () => {
     handleClose(link);
   };
 
-  const handleCancel = () => {
-    handleClose();
-  };
-
   const handleClose = (link?: EntityLink | Pick<EntityLink, 'query' | 'type'>) => {
-    closeEntityLookupsDialog(link);
+    onClose?.(link);
   };
 
   return (
@@ -37,21 +44,20 @@ const Footer = () => {
         borderTopColor: ({ palette }) => palette.divider,
       }}
     >
-      <Button autoFocus onClick={handleCancel} variant="text">
-        Cancel
+      <Button onClick={() => handleClose()} variant="text">
+        {t('LW.commons.cancel')}
       </Button>
-      <Button onClick={handleNoLink} variant="text">
-        Tag without Linking
+      <Button onClick={() => query && handleClose({ type: entityType, query })} variant="text">
+        {t('LW.lookups.tag without linking')}
       </Button>
       <Button
+        autoFocus
         disabled={!selected && (manualInput === '' || !isUriValid)}
         onClick={handlSelectLink}
         variant="contained"
       >
-        Select
+        {t('LW.commons.select')}
       </Button>
     </DialogActions>
   );
 };
-
-export default Footer;

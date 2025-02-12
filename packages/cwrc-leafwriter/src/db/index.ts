@@ -56,20 +56,23 @@ export class DexieDB extends Dexie {
           .table('authorityServices')
           .toCollection()
           .modify((authorityServices) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            delete authorityServices.lookupService;
+
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             authorityServices.disabled = authorityServices.enabled;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            delete authorityServices.enabled;
+
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             if (authorityServices.id !== 'lgpn') {
               authorityServices.serviceSource = 'LINCS';
             } else {
               authorityServices.serviceSource = 'custom';
             }
+
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             authorityServices.serviceType = 'API';
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            delete authorityServices.lookupService;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            delete authorityServices.enabled;
           });
       });
   }
