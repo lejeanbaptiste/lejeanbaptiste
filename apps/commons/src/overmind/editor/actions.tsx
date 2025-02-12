@@ -11,12 +11,6 @@ import { Context } from '../';
 // useTranslation()
 const { t } = i18next;
 
-export const getGeonameUsername = async ({ effects }: Context) => {
-  const response = await effects.editor.api.getGeonameUsername();
-  if (typeof response === 'string') return response;
-  return;
-};
-
 export const loadLeafWriter = async ({ state }: Context, container: HTMLElement) => {
   const LW = (await import('@cwrc/leafwriter')).Leafwriter;
   const leafWriter = new LW(container);

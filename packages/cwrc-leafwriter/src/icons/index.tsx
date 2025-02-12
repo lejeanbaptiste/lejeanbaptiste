@@ -47,7 +47,7 @@ import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
-import { SvgIconTypeMap, createSvgIcon } from '@mui/material';
+import { SvgIcon, SvgIconProps, SvgIconTypeMap, createSvgIcon } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import {
   CloudSyncOutline,
@@ -63,6 +63,8 @@ import {
 import type { IconBaseProps, IconType } from 'react-icons';
 import { FaBoxOpen, FaUserAlt, FaUsers } from 'react-icons/fa';
 import { ImBook } from 'react-icons/im';
+import { TbChartBubbleFilled } from 'react-icons/tb';
+
 import { BookOutlinedIcon } from './custom/Book';
 import { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 import workIcon from './svg/book-solid.svg';
@@ -118,6 +120,7 @@ const icons = {
   code: CodeRoundedIcon,
   CodeRoundedIcon: CodeRoundedIcon,
   computer: ComputerIcon,
+  concept: asMuiIcon(TbChartBubbleFilled),
   copy: ContentCopyIcon,
   correction: WarningRoundedIcon,
   date: EventIcon,
@@ -217,6 +220,16 @@ export type IconLeafWriter =
 
 export const getIcon = (name: IconLeafWriter) => {
   return icons[name];
+};
+
+export interface IconProps extends SvgIconProps {
+  name: IconLeafWriter;
+}
+
+export const Icon = (props: IconProps) => {
+  const { name, ...rest } = props;
+  const icon = icons[name];
+  return <SvgIcon component={icon} {...rest} />;
 };
 
 const svgs = new Map([

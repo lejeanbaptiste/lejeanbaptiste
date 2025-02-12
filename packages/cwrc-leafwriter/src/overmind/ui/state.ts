@@ -1,9 +1,4 @@
-import type {
-  DialogBarProps,
-  EditSourceDialogProps,
-  EntityLookupDialogProps,
-  PopupProps,
-} from '../../dialogs';
+import type { DialogBarProps, EditSourceDialogProps, PopupProps } from '../../dialogs';
 import { type Locales } from '../../i18n';
 import { Panel } from '../../layout/Utilities';
 import type { ContextMenuState, LayoutProps, NotificationProps } from '../../types';
@@ -15,7 +10,6 @@ type State = {
   darkMode: boolean;
   dialogBar: DialogBarProps[];
   editSourceProps: EditSourceDialogProps;
-  entityLookupDialogProps: EntityLookupDialogProps;
   fullscreen: boolean;
   layout: LayoutProps;
   markupPanel: {
@@ -35,7 +29,6 @@ export const state: State = {
   darkMode: false,
   dialogBar: [],
   editSourceProps: { open: false },
-  entityLookupDialogProps: { open: false },
   fullscreen: false,
   layout: {
     outerLeft: { id: 'left', items: [Panel.toc, Panel.markup, Panel.entities] },

@@ -11,9 +11,10 @@ type Props = {
 
 export const Content = ({ content = '', entityType, isLink = false }: Props) => {
   const handleCopyToClipboard = async () => {
-    //@ts-ignore
-    const permission = await navigator.permissions.query({ name: 'clipboard-write' });
-    if (permission.state == 'granted' || permission.state == 'prompt') {
+    const permission = await navigator.permissions.query({
+      name: 'clipboard-write' as PermissionName,
+    });
+    if (permission.state === 'granted' || permission.state === 'prompt') {
       await navigator.clipboard.writeText(content ?? '');
     }
   };

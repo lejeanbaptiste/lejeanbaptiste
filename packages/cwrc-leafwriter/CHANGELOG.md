@@ -1,86 +1,123 @@
 # CHANGELOG
 
-## 3.7.0
+## 3.6.0
+
+### What's new
+
+#### Overhaul authority lookup service
+
+These changes consolidates internal code making requests to authorities (except LGPN) into call to LINCS API. These changes also
+
+- Add LINCS as an authority; effectively changing LEAF-Writer settings object (breaking changes).
+- Fetch each authority independently
+- Remove the need for user authentiation on geonames
+- Move away from overmind and use jotai instead
+- Add localization change types
+- Update indexedDB schema
+- Improve UI
+- Move LGPN to an external package to serve as a sample to build add on authority services
+
+BREAKING CHANGE: 🧨 LEAF-Writer settings object changed. It might break for some user (developers), but we won't relaease a major version at this point.
+Please let us know if you have any problems.
 
 ### Minor Changes
 
+- [86a252931deda37ea9c77dd0c3ac76f0d9b8763d] verhaul authority lookup service
+  - BREAKING CHANGE: 🧨 LEAF-Writer settings object changed. It might break for some user
+  - [f70fa22800ad701b390f90b34ad287477e3722d5]
+  - [873a2327f6f2d3ec0b86539244ff264692665049]
+  - [65b3123062f2201275f7fc81bed7b7502508d051]
+  - [b6c17507473bf67cab23cba170e5d1acd8f22ce2]
+(developers), but we won't relaease a major version at this point.
+Please let us know if you have any problems.
 - [60d8a77f92f80c5c15c711af3a107dc73689f7f8] entity type: complete renaming 'rs' as 'thing
 - [63583998a86049d6feb49348ff2568e923575bfb] entity type: rename 'title' as 'work' (Closes: #253)
 - [8e47e6421d53974ab35022138a82bedf5628ef9c] entity lookups: Move requests to VIAF and DBPedia to LINCS-API (Closes: #255)
-
-### Patch Changes
-
-- [b17dd6de5cb5a1c49058f94ad1e69a5d45707a46] context menu: missing item label
-- [4efe7bba8ec7911bce42edf0a31bf35c306a38cf] remove code and metions to legacy features: nerve / nssi / relations
-- [087d5ffe0846563526791ae52111bdcde525f77a] use selector to control language option (Closes: #247)
-- [28c3e72d4eb9f6546bdb301285cdf82b31d7f3c1] remove unused vars / code
-- [82a83d81ec2e6095441443ae111841fe7fe3bca4] scrape tags: prevent code access property of undefined element
-
-## 3.6.0
-
-### Minor Changes
-
 - [3b28cdb69d6631c726bdc996d7ad33ef9cb7978f] [1ac64fea4170d0ad2e11989d3956b5e8f2b24a16] localization:
   - Add support to Portuguese, Spanish, Romanian, and German.
   - Rename localization namespace
 
 ### Patch Changes
 
+- [40e599a4a64ba863114987376b918b616804592e] fix css selector cause LW to add extra attributes to a tag
+- [44e39d680a0df2e73587bb9fc9c4bbf1bcc82baa] removelistener when LF is disposed
+- [b17dd6de5cb5a1c49058f94ad1e69a5d45707a46] context menu: missing item label
+- [4efe7bba8ec7911bce42edf0a31bf35c306a38cf] remove code and metions to legacy features: nerve / nssi / relations
+- [087d5ffe0846563526791ae52111bdcde525f77a] use selector to control language option (Closes: #247)
+- [28c3e72d4eb9f6546bdb301285cdf82b31d7f3c1] remove unused vars / code
+- [82a83d81ec2e6095441443ae111841fe7fe3bca4] scrape tags: prevent code access property of undefined element
 - [cef0247e85badc3401aa5e320a22fe435fb65c78] Add `id` property to leafwriter class
 - [b19f800796ded79cfaeb3212c2b149cd69c28bf7] [9a4da50c45876362a140669b91c9b9fddc062130] Fix wrong value for `cert` and `certainty` attributes. Thanks @sieversMartin
 - [ede901c32636a300996a451a8ba061b96dc5d1df] Modal popups from buttons don't appear in full-screen mode. Thanks @jgb-hda
 - [85e852012ba5d04300e7c8f5a0dd3545ea144f79] Improve support to css (replace some less files)
 - [7dd4e8f419f2f165ce2729283a1db9da4053597f] Update dependencies
   - core:
+    - remove:
+      - @reactivex/rxjs
+      - react-use
+      - wikibase-sdk
     - add:
-      - nanoid: 5.0.7
-      - react-i18next@15.0.1 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
-    - upgrade: uuid@10.0.0
+      - nanoid@5.0.9 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - react-i18next@15.4.0 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
+    - upgrade:
+      - @dnd-kit/modifiers@9.0.0 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - @dnd-kit/sortable@10.0.0 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - uuid@11.0.5 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
     - update:
-      - @emotion/react@11.13.0
-      - @emotion/styled@11.13.0
-      - @fortawesome/fontawesome-free@6.6.0
+      - @dnd-kit/core@6.3.1 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - @emotion/react@11.14.11 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - @emotion/styled@11.14.0 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - @fontsource/lato@5.1.1 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - @fortawesome/fontawesome-free@6.7.2 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
       - @mui/icons-material@5.16.7 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
       - @mui/material@5.16.7 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
       - axios@1.7.3 [fef4978241ffdfbdd0fc94901ae028d6d1370aae]
-      - chroma-js@2.6.0
-      - framer-motion@11.3.214 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
-      - i18next@23.12.3 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
-      - jotai@2.9.2 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
+      - chroma-js@3.1.2 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - framer-motion@11.18.2 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - i18next@23.16.8 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - jotai@2.12.0 [0275636ff448128b0cc558ae27be9b02a9e1111a]
       - jotai-devtools@0.10.0 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
-      - jquery-ui@1.14.0 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
+      - jquery-ui@1.14.1 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
       - luxon@3.5.0 [fef4978241ffdfbdd0fc94901ae028d6d1370aae]
-      - mdi-material-ui@7.9.1
-      - monaco-editor@0.50.0
+      - mdi-material-ui@7.9.3 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - monaco-editor@0.52.2 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
       - react@18.3.1 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
       - react-dom@18.3.1
-      - react-icons@5.2.1
-      - react-intersection-observer@9.13.0
-      - react-virtuoso@4.9.0
-      - wikibase-sdk@10.1.0 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
-      - zod@3.23.8
+      - react-icons@5.4.0 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - react-intersection-observer@9.15.1 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - react-resizable-panels@2.1.7 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - react-virtuoso@4.12.3 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - zod@3.24.2 [0275636ff448128b0cc558ae27be9b02a9e1111a]
     - bump:
       - @cwrc/leafwriter-validator@4.4.1
-      - dexie@4.0.8
+      - axios@1.7.9 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - comlink@4.4.2 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - dexie@4.0.11 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
       - formik@2.4.6
-      - jquery-ui1.13.3
-      - rdflib@2.2.35
-      - react-resizable-panels@2.0.23 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
-      - react-use@17.5.1
+      - loglevel@1.9.2 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - mui-modal-provider@2.4.6 [0275636ff448128b0cc558ae27be9b02a9e1111a]
+      - notistack@3.0.2 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - rdflib@2.2.36 [0275636ff448128b0cc558ae27be9b02a9e1111a]
   - dev:
+    - remove:
+      - shx
     - upgrade:
-      - @types/node@22.2.0 [088f57d0c56713f01be7b5b4c6aec3d54a0f8698]
+      - @types/chroma-js@3.1.1 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - @types/node@22.13.11 [0275636ff448128b0cc558ae27be9b02a9e1111a]
       - @types/uuid@10.0.0
       - css-loader@7.1.2
+      - webpack-cli@6.0.1 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - webpackbar@7.0.0 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
     - update:
-      - @types/react-dom@18.3.0
-      - esbuild-loader@4.2.2
-      - mini-css-extract-plugin@2.9.0
-      - typescript@5.5.4
-      - webpack@5.93.0
+      - @types/react-dom@18.3.5 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - esbuild-loader@4.3.0 [0275636ff448128b0cc558ae27be9b02a9e1111a]
+      - mini-css-extract-plugin@2.9.0 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
+      - typescript@5.7.3 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
     - bump:
-      - @types/jquery@3.5.30
+      - @types/css@0.0.38
+      - @types/jquery@3.5.32 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
       - @types/jqueryui@1.12.23
+      - eslint@8.57.1 [4b27083ee5bcd295f77f3bedea5b02bd2ea5d0e5]
 
 ## 3.5.0
 

@@ -3,8 +3,10 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { IconButton } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import { motion, type Variants } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export const DarkMode = () => {
+  const { t } = useTranslation();
   const { darkMode } = useAppState().ui;
   const { setDarkMode } = useActions().ui;
 
@@ -22,6 +24,7 @@ export const DarkMode = () => {
   return (
     <IconButton
       key="darkMode"
+      aria-label={t('LWC.ui.appearance')}
       component={motion.button}
       variants={optionVariants}
       initial="initial"

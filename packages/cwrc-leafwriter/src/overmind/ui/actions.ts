@@ -3,9 +3,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../';
 import { db } from '../../db';
 import type { DialogBarProps, PopupProps } from '../../dialogs';
-import type { EntityLink, EntityLookupDialogProps } from '../../dialogs/entityLookups';
 import i18n, { Locales, localesSchema } from '../../i18n';
-import { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
+import type {
+  ContextMenuState,
+  NotificationProps,
+  PaletteMode,
+  PanelId,
+  Side
+} from '../../types';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
@@ -96,22 +101,6 @@ export const updateTitle = ({ state }: Context, title: string) => {
 
 export const resetPreferences = ({ effects }: Context) => {
   effects.editor.api.removeFromLocalStorage('themeAppearance');
-};
-
-export const openEntityLookupsDialog = (
-  { state }: Context,
-  props: Omit<EntityLookupDialogProps, 'open'>,
-) => {
-  state.ui.entityLookupDialogProps = { ...props, open: true };
-};
-
-export const closeEntityLookupsDialog = (
-  { state: { ui } }: Context,
-  link?: EntityLink | Pick<EntityLink, 'query' | 'type'>,
-) => {
-  const dialog = ui.entityLookupDialogProps;
-  if (link && dialog.onClose) dialog.onClose(link);
-  ui.entityLookupDialogProps = { open: false };
 };
 
 export const switchLocale = ({ state }: Context, locale: string) => {

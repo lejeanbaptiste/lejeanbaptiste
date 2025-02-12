@@ -3,7 +3,7 @@ import { useLoadResource } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { Editor } from './Editor';
 import { MainMenu, Meta } from './topbar';
 

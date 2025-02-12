@@ -9,10 +9,10 @@ interface PasteOptionProps {
 }
 
 export const PasteOption = ({ disabled }: PasteOptionProps) => {
-  const { openStorageDialog } = useActions().storage;
-
   const { t } = useTranslation();
   const { palette } = useTheme();
+
+  const { openStorageDialog } = useActions().storage;
 
   const [pasteHover, setPasteHover] = useState(false);
 
@@ -45,18 +45,23 @@ export const PasteOption = ({ disabled }: PasteOptionProps) => {
       <TextField
         color="primary"
         disabled={disabled}
+        InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
         InputProps={{
           sx: {
             fontSize: '0.8rem',
             fieldset: {
-              borderColor: palette.mode === 'dark' ? palette.grey[800] : palette.grey[300],
+              borderColor: `light-dark(${palette.grey[300]}, ${palette.grey[800]})`,
             },
           },
         }}
+        label={t('LWC.storage.paste_your_XML_here')}
         onChange={onChageTextfield}
-        placeholder={`${t('LWC.commons.or')} ${t('LWC.storage.paste_your_XML_here')}`}
         size="small"
-        sx={{ '& fieldset': { borderColor: pasteHover ? palette.primary.main : 'inherit' } }}
+        sx={{
+          '& fieldset': {
+            borderColor: pasteHover ? palette.primary.main : 'inherit',
+          },
+        }}
       />
     </Stack>
   );

@@ -423,10 +423,10 @@ on the `./src/i18n.ts`:
 ```ts
 ...
 // IMPORT NEW LOCAL
-import it from './locales/it.json'; 
+import it from './locales/it.json';
 ...
 // ADD RESOURCE.
-export const resources = { en, es, fr, pt, de, ro, it } as const; 
+export const resources = { en, es, fr, pt, de, ro, it } as const;
 
  // ADD TO THE LIST OF SUPPORTED LOCALES
  // The order here reflect the order in which locales will be displayd in the UI

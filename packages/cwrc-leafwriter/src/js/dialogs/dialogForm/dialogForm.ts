@@ -18,7 +18,8 @@ type DialogType =
   | 'place'
   | 'work'
   | 'note'
-  | 'thing';
+  | 'thing'
+  | 'concept';
 
 interface DialogFormConfig {
   writer: Writer;

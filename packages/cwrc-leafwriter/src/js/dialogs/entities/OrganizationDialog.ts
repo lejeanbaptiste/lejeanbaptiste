@@ -1,13 +1,18 @@
+import { getDefaultStore } from 'jotai';
+import { RESET } from 'jotai/utils';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
-import type { EntityLink } from '../../../dialogs/entityLookups/types';
+import { entityLookupDialogAtom } from '../../../jotai/entity-lookup';
 import Entity from '../../../js/entities/Entity';
 import Writer from '../../../js/Writer';
 import type { EntityType, SchemaMappingType } from '../../../types';
+import { namedEntityTypesSchema } from '../../../types/authority';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import { getSourceNameFromUrl } from './util';
+
+const defaultJotaiStore = getDefaultStore();
 
 const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
 const cwrcEntryOrgTypeOptions = [
@@ -91,25 +96,34 @@ class OrgDialog implements SchemaDialog {
     $relinkButton.on('click', () => {
       parentEl.css('display', 'none');
 
-      this.writer.overmindActions.ui.openEntityLookupsDialog({
-        entry: this.entry,
-        type: this.type,
-        onClose: (response?: EntityLink) => {
-          parentEl.css('display', 'block');
+      const isNamedEntityType = namedEntityTypesSchema.safeParse(this.type);
+      if (isNamedEntityType.success) {
+        const namedEntityType = isNamedEntityType.data;
 
-          if (!response) {
-            this.updateTagAs();
-            return;
-          }
-
-          const uri = response.uri ?? '';
-          const lemma = response.name ?? '';
-          this.updateLink(lemma, uri);
-        },
-      });
+        defaultJotaiStore.set(entityLookupDialogAtom, {
+          isUserAuthenticated: this.writer.overmindState.user?.uri !== '#anonymous',
+          onClose: (response) => {
+            defaultJotaiStore.set(entityLookupDialogAtom, RESET);
+            parentEl.css('display', 'block');
+            if (!response) {
+              this.updateTagAs();
+              return;
+            }
+            this.updateLink(response.name, response.uri);
+            this.updateTagAs(response.name, response.uri);
+          },
+          query: this.entry?.getContent()?.trim() ?? '',
+          type: namedEntityType,
+        });
+      }
     });
 
-    this.dialog = new DialogForm({ writer, $el, type: 'organization', title: 'Tag Organization' });
+    this.dialog = new DialogForm({
+      writer,
+      $el,
+      type: 'organization',
+      title: 'Tag Organization',
+    });
   }
 
   private updateLink(lemma: string, uri: string) {
