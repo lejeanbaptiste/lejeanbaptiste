@@ -3,5 +3,14 @@ module.exports = {
   maxMessageLength: 110,
   path: 'git-cz',
   questions: ['scope', 'type', 'subject', 'body', 'breaking', 'issues'],
-  scopes: ['root', 'commons', 'leafwriter', 'storage service', 'validator', 'eslint', 'tsconfig'],
+  scopes: [
+    'root',
+    'commons',
+    'leafwriter',
+    'storage service',
+    'validator',
+    'authority services - LGPN',
+    'eslint',
+    'tsconfig',
+  ],
 };
