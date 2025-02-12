@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## 4.0.1
+
+### Patch Changes
+
+- [8000744f6e641324b90f9b270b3b5604d1f5caf6] update dependencies
+  - core:
+    - add: zod@3.24.1
+    - upgrade: date-fns@4.1.0 uuid@11.0.5
+    - update:
+      - @emotion/react@11.14.0
+      - @emotion/styled@11.4.0
+      - @mui/base@5.0.0-beta.68
+      - framer-motion@11.18.2
+      - i18next@23.16.8
+      - react-dropzone@14.3.5
+      - react-i18next@15.4.0
+      - react-icons@5.4.0
+      - react-use@17.6.0
+    - bump:
+      - @mui/icons-material@5.16.14
+      - @mui/material@5.16.14
+      - axios@1.7.9
+      - dexie@4.0.11
+      - loglevel@1.9.2
+      - mdi-material-ui@7.9.3
+      - mui-modal-provider@2.4.6 [43260e1da5efdf14c4741f7c091a39eaf31b551b]
+      - zod@3.24.2 [43260e1da5efdf14c4741f7c091a39eaf31b551b]
+  - dev:
+    - remove:
+      - @octokit/types
+      - jest-environment-jsdom
+      - process
+      - shx
+    - update:
+      - @testing-library/jest-dom@6.6.3
+      - @testing-library/react@16.2.0
+      - @testing-library/user-event@14.6.1
+      - @types/node@22.13.1 [43260e1da5efdf14c4741f7c091a39eaf31b551b]
+      - tsup@8.3.6
+      - typedoc0.27.7 [43260e1da5efdf14c4741f7c091a39eaf31b551b]
+      - typescript@5.7.3
+    - bump:
+      - @types/jest@29.5.14
+      - @types/lodash@4.17.15 [43260e1da5efdf14c4741f7c091a39eaf31b551b]
+      - @types/mocha@10.0.10
+      - @types/react@18.3.5
+      - eslint@8.57.1
+      - ts-jest@29.2.5
+
+
 ## 4.0.0
 
 ### Major Changes
