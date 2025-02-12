@@ -5,6 +5,78 @@
 ### Minor Changes
 
 - [f5cd1f0a48fe3d4733afd7f9e2b254274c69fb77] remove logic related to legacy feature: nerve / nssi
+- [4ee3972a01449a8fc8670e6f0e015a1950e94b40] remove endpooint to fetch internal geonames-username
+- [09fcde11fec2412b968e12db9432868a2cbc5f74] add LGPN as a custom authority
+  
+### Patch Changes
+
+- [683c11a97ff8c450b9f9154e49fb33bdb70d2f70] Update LEAF-Writer settings object
+- [075e01f73cd9f199e2403a0bc922f2c09d1c1da7] Update localization
+- [6df32a92882ed0bfa727cc2572f0d7c6c8897c83] replace dependency: react-router-dom -> react-router and make the necessary changes
+- [4147045e1287f95c487de4ca3281bd7053fab9a3] improve accessibility
+- [271ee888327093f403c58ee1f81ac593280905a3] Update dependencies
+  - add: @cwrc/leafwriter-authority-service-lgpn [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+  - remove: react-router-dom [f0a2c696b98c6ed8b019ac40e57e191c1f866d43]
+  - core:
+    - upgrade:
+      - chroma-js@3.1.2
+      - date-fns@4.1.0
+      - helmet@8.0.0
+      - keycloak-js@26.1.2 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - uuid@11.0.5
+    - update:
+      - @analytics/google-analytics@1.1.0
+      - @emotion/react@11.14.0
+      - @emotion/styled@11.14.0
+      - @fontsource/lato@5.1.1
+      - @ts-rest/core@3.52.0 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - compression@1.8.0 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - express@4.21.2
+      - framer-motion@11.18.2
+      - i18next@23.16.8
+      - jotai@2.12.0 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - material-ui-popup-state@5.3.3
+      - react-dropzone@14.3.5
+      - react-i18next@15.4.0
+      - react-icons@5.4.0
+      - react-use@17.6.0
+      - swr@2.3.2 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - zod@2.24.2 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+    - bump:
+      - @mui/icons-material@5.15.14
+      - @mui/material@5.16.14
+      - analytics@8.16.0 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - axios@1.7.9
+      - compression@1.7.5
+      - dexie@4.0.11
+      - i18next-browser-languagedetector@8.0.2
+      - mdi-material-ui@7.9.3 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - mui-modal-provider@2.4.6
+      - notistack@3.0.2
+      - query-string@9.1.1
+      - react-markdown@9.0.3
+  - dev:
+    - upgrade:
+      - @types/chroma-js@3.1.0
+      - webpack-cli@5.0.1
+      - webpackbar@7.0.0
+    - update:
+      - @octokit/types@13.8.0 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - @types/node@22.13.1 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - esbuild-loader@4.3.0 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - tsup@8.3.6
+      - typescript@5.7.3
+      - webpack@5.97.1
+    - bump:
+      - @types/chroma-js@3.1.1 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
+      - @types/dotenv-webpack@7.0.8
+      - @types/react-dom@18.3.5
+      - @types/webpack-env@1.18.6
+      - eslint@8.57.1
+      - html-webpack-plugin@5.6.3
+      - less@4.2.2
+      - mini-css-extract-plugin@2.9.2
+      - @types/webpack-env@1.18.8 [3243334bf668d7b0c3fed0c725734f2ed59536a7]
 
 ## 3.5.1
 
@@ -69,7 +141,7 @@
       - react@18.3.1
       - react-dom@18.3.1
       - react-icons@5.2.1
-      - react-router-dom@6.26.0
+      - react-router@7.1.5
       - zod@3.23.8
     - bump:
       - @octokit/rest@20.1.1
