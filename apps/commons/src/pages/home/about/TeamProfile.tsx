@@ -25,9 +25,8 @@ export const TeamProfile = ({ profile }: TeamProfileProps) => {
           whileHover={{ rotate: -30, boxShadow: 'rgba(0,0,0,0.3) 0px 0px 3px 1px' }}
           alt={name}
           src={gravatarUrl}
-          sx={{ width: 36, height: 36, cursor: 'default' }}
+          sx={{ width: 36, height: 36, color: 'text.primary', cursor: 'default' }}
         >
-          {' '}
           {!gravatarUrl && name.slice(0, 1)}
         </Avatar>
         <Stack>

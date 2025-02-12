@@ -2,8 +2,10 @@ import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 import { IconButton } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
 import { motion, type Variants } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export const Privacy = () => {
+  const { t } = useTranslation();
   const { showSettings } = useCookieConsent();
 
   const handleClick = () => showSettings();
@@ -17,6 +19,7 @@ export const Privacy = () => {
   return (
     <IconButton
       key="darkMode"
+      aria-label={t('LWC.commons.privacy')}
       component={motion.button}
       variants={optionVariants}
       initial="initial"
