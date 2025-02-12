@@ -1,0 +1,39 @@
+{
+  "name": "@cwrc/leafwriter-authority-service-lgpn",
+  "version": "1.0.0",
+  "description": "A custom LGPN authority lookup service for LEAF-Writer",
+  "keywords": [
+    "entity",
+    "authority",
+    "lookup",
+    "LGPN",
+    "LEAF-Writer"
+  ],
+  "homepage": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer",
+  "bugs": {
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "GPL-2.0",
+  "author": "Luciano Frizzera <lucaju@gmail.com>",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration",
+    "clean": "rm -rf .turbo node_modules lib",
+    "lint": "eslint .",
+    "cm": "git-cz",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-custom": "*",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3"
+  }
+}
