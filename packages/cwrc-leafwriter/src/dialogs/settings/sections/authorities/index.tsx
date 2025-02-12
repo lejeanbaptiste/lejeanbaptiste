@@ -1,30 +1,35 @@
 import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { DragEndEvent } from '@dnd-kit/core/dist/types';
+import type { DragEndEvent } from '@dnd-kit/core/dist/types';
 import { restrictToFirstScrollableAncestor, restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import FilterTiltShiftIcon from '@mui/icons-material/FilterTiltShift';
 import { Stack, Typography } from '@mui/material';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useActions, useAppState } from '../../../../overmind';
-import { AuthorityService } from '../../../../types';
+import { MdFilterTiltShift } from 'react-icons/md';
+import { authorityServicesAtom, reorderLookupPriorityAtom } from '../../../../jotai/entity-lookup';
+import type { AuthorityService } from '../../../../types';
 import { Authority } from './Authority';
 
 export const Authorities = () => {
   const { t } = useTranslation();
-  const { authorityServices } = useAppState().lookups;
-  const { reorderLookupPriority } = useActions().lookups;
+  const authorityServices = useAtomValue(authorityServicesAtom);
+  const reorderLookupPriority = useSetAtom(reorderLookupPriorityAtom);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  const [items, setItems] = useState<AuthorityService[]>([]);
+  const [items, setItems] = useState<AuthorityService[]>(
+    Array.from(authorityServices.values()).toSorted(
+      (a, b) => (a.priority ?? Infinity) - (b.priority ?? Infinity),
+    ),
+  );
 
   useEffect(() => {
-    const authtoriesList = [...Object.values(authorityServices)].toSorted(
+    console.log(authorityServices);
+    const authtoriesList = Array.from(authorityServices.values()).toSorted(
       (a, b) => (a.priority ?? Infinity) - (b.priority ?? Infinity),
     );
     setItems(authtoriesList);
-    return () => {};
   }, [authorityServices]);
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -43,8 +48,8 @@ export const Authorities = () => {
 
   return (
     <Stack width="100%" py={1} spacing={2}>
-      <Stack direction="row">
-        <FilterTiltShiftIcon sx={{ mx: 1, height: 18, width: 18, mt: 0.25 }} />
+      <Stack direction="row" mx={1} gap={1.5}>
+        <MdFilterTiltShift style={{ height: 18, width: 18, marginLeft: 8, marginTop: 2 }} />
         <Stack>
           <Typography variant="body2">{t('LW.Entities Lookup Sources')}</Typography>
           <Typography color="text.secondary" variant="caption">
@@ -61,8 +66,8 @@ export const Authorities = () => {
           sensors={sensors}
         >
           <SortableContext items={items} strategy={verticalListSortingStrategy}>
-            {items.map((authority) => (
-              <Authority key={authority.id} authorityService={authority} />
+            {items.map((item) => (
+              <Authority key={item.id} authorityService={item} />
             ))}
           </SortableContext>
         </DndContext>

@@ -6,7 +6,7 @@ import type { IDialog } from '../type';
 import { Header } from './Header';
 import { SideMenu, type MenuItemProps } from './SideMenu';
 import { Section } from './components';
-import { Authorities, Editor, Interface, MarkupPanel, Reset } from './sections';
+import { Authorities, Authorities2, Editor, Interface, MarkupPanel, Reset } from './sections';
 
 export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
   const { isReadonly, settings } = useAppState().editor;
@@ -44,6 +44,9 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
             </Section>
             {!isReadonly && (
               <>
+                {/* <Section id="authorities" title={t('LW.commons.authorities')}>
+                  <Authorities2 />
+                </Section> */}
                 <Section id="authorities" title={t('LW.commons.authorities')}>
                   <Authorities />
                 </Section>

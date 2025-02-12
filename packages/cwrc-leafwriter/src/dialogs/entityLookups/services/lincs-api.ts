@@ -6,6 +6,7 @@ import type {
   NamedEntityType,
 } from '../../../types';
 import { log } from '../../../utilities';
+import i18n from '../../../i18n';
 
 const lincsApiAuthoritySources = [
   'DBpedia-All',
@@ -118,35 +119,19 @@ export const getAuthoritySources = (
   }
 };
 
-export const createLincsApiFetcher = ({
-  entityType,
-  authorities,
-  moreResults,
-}: {
-  entityType: NamedEntityType;
-  authorities: LincsAuthorityService[];
-  moreResults: boolean;
-}) => {
-  const authoritiesSources = authorities
-    .map(({ id }) => getAuthoritySources(id, entityType))
-    .flat();
-
-  return async (query: string) => {
-    return await reconcile({ query, entityType, authoritiesSources, moreResults });
-  };
-};
-
-const reconcile = async ({
+export const reconcile = async ({
   query,
   entityType,
-  authoritiesSources,
+  authority,
   moreResults = false,
 }: {
   query: string;
   entityType: NamedEntityType;
-  authoritiesSources: LINCS_API_AUTHORITY_SOURCE[];
+  authority: LincsAuthorityService;
   moreResults?: boolean;
 }) => {
+  const authoritiesSources = getAuthoritySources(authority.id, entityType);
+
   const response = await fetch('https://lincs-api.lincsproject.ca/api/link/reconcile', {
     method: 'POST',
     headers: { accept: 'application/json', 'Content-Type': 'application/json' },
@@ -159,36 +144,41 @@ const reconcile = async ({
 
   if (!response.ok) {
     log.warn(response.status, response.statusText);
-    throw new Error(`${response.status}: ${response.statusText}`);
+    const message =
+      response.statusText !== '' ? response.statusText : i18n.t('LW.messages.Failed to fetch');
+    throw new Error(message, { cause: `${response.status}` });
   }
 
   const data: unknown = await response.json();
   const validatedData = LINCS_API_ReconcileResultSchema.safeParse(data);
 
   if (!validatedData.success) {
-    const msg = `Data return is invalid or not compatible with LEAF-Writer. Error: ${validatedData.error.errors[0].message}`;
-    log.warn(msg, validatedData.error);
-    throw new Error(msg);
+    const message = `Data return is invalid or not compatible with LEAF-Writer. Error: ${validatedData.error.errors[0].message}`;
+    log.warn(message, validatedData.error);
+    throw new Error(i18n.t('LW.messages.Failed to fetch'), { cause: validatedData.error });
   }
 
-  const results: Map<Authority, AuthorityLookupResult[]> = new Map();
+  // const results: Map<Authority, AuthorityLookupResult[]> = new Map();
+  const mapResults: Map<AuthorityLookupResult['uri'], AuthorityLookupResult> = new Map();
 
   validatedData.data.forEach((source) => {
-    const authorityName = source.authority.split('-')[0].toLowerCase() as Authority;
+    // const authorityName = source.authority.split('-')[0].toLowerCase() as Authority;
 
-    const matches: AuthorityLookupResult[] = source.matches.map(({ description, label, uri }) => {
-      return {
-        authority: authorityName,
+    source.matches.forEach(({ description, label, uri }) => {
+      if (mapResults.has(uri)) return;
+      const entityReturn: AuthorityLookupResult = {
+        // authority: authorityName,
         description: description,
-        entityType,
+        // entityType,
         label,
-        query,
+        // query,
         uri,
       };
+      mapResults.set(uri, entityReturn);
     });
-
-    results.set(authorityName, matches);
   });
+
+  const results: AuthorityLookupResult[] = Array.from(mapResults.values());
 
   return results;
 };

@@ -1,4 +1,3 @@
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Box,
   FormControl,
@@ -10,19 +9,25 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useEffect, type ChangeEvent } from 'react';
+import { useAtom, useAtomValue } from 'jotai';
+import { useResetAtom } from 'jotai/utils';
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { RxExternalLink } from 'react-icons/rx';
 import { useInView } from 'react-intersection-observer';
-import { useActions, useAppState } from '../../../../overmind';
+import { isUriValidAtom, manualInputAtom, selectedAtom } from '../store';
 
 interface ManualEntryFieldProps {
   setAuthorityInView: (view: { id: string; inView: boolean }) => void;
 }
 
-const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) => {
-  const { isUriValid, manualInput } = useAppState().lookups;
-  const { setManualInput, setSelected } = useActions().lookups;
-
+export const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) => {
+  const { t } = useTranslation();
   const { palette } = useTheme();
+
+  const isUriValid = useAtomValue(isUriValidAtom);
+  const [manualInput, setManualInput] = useAtom(manualInputAtom);
+  const resetSelected = useResetAtom(selectedAtom);
 
   const { ref, inView, entry } = useInView({
     /* Optional options */
@@ -33,24 +38,15 @@ const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) => {
     if (entry) setAuthorityInView({ id: entry.target.id, inView });
   }, [inView]);
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setManualInput(value);
-  };
-
-  const handleclick = () => {
-    setSelected();
-  };
-
   return (
-    <Box ref={ref} id="other" px={0.5} pb={1}>
+    <Box ref={ref} id="other">
       <Box
         sx={{
           px: 1,
+          backgroundColor: `light-dark(${palette.background.paper}, ${palette.grey[800]})`,
           borderBottomWidth: 1,
           borderBottomStyle: 'solid',
           borderBottomColor: palette.grey[700],
-          bgcolor: palette.mode === 'dark' ? palette.grey[800] : palette.background.paper,
         }}
       >
         <Typography
@@ -61,7 +57,7 @@ const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) => {
             textTransform: 'uppercase',
           }}
         >
-          Other / Manual Input
+          {t('LW.commons.other')} / {t('LW.commons.manual input')}
         </Typography>
       </Box>
       <Box my={1.5} ml={2} pr={2}>
@@ -73,26 +69,26 @@ const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) => {
                 {manualInput !== '' && isUriValid && (
                   <IconButton
                     aria-label="open-manual-uri"
+                    href={manualInput}
                     size="small"
                     target="_blank"
-                    href={manualInput}
                   >
-                    <OpenInNewIcon fontSize="inherit" />
+                    <RxExternalLink fontSize="inherit" />
                   </IconButton>
                 )}
               </InputAdornment>
             }
-            fullWidth
             error={!isUriValid}
+            fullWidth
             id="manual-uri"
-            onClick={handleclick}
-            onChange={handleChange}
+            onClick={() => resetSelected()}
+            onChange={(event) => setManualInput(event.target.value)}
             value={manualInput}
           />
 
           {!isUriValid && (
             <FormHelperText error={!isUriValid} id="uri-error-text">
-              Must be a valid URI
+              {t('LW.commons.must be a valid URI')}
             </FormHelperText>
           )}
         </FormControl>
@@ -100,5 +96,3 @@ const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) => {
     </Box>
   );
 };
-
-export default ManualEntryField;

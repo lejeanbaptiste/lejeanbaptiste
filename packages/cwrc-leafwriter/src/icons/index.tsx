@@ -47,7 +47,7 @@ import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
-import { SvgIconTypeMap, createSvgIcon } from '@mui/material';
+import { SvgIcon, SvgIconProps, SvgIconTypeMap, createSvgIcon } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import {
   CloudSyncOutline,
@@ -220,6 +220,16 @@ export type IconLeafWriter =
 
 export const getIcon = (name: IconLeafWriter) => {
   return icons[name];
+};
+
+export interface IconProps extends SvgIconProps {
+  name: IconLeafWriter;
+}
+
+export const Icon = (props: IconProps) => {
+  const { name, ...rest } = props;
+  const icon = icons[name];
+  return <SvgIcon component={icon} {...rest} />;
 };
 
 const svgs = new Map([

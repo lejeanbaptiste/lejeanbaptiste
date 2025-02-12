@@ -10,6 +10,8 @@ import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import { CodePanel, MarkupPanel, TocPanel } from './panels';
 import type { LeafWriterOptions } from './types';
+import { configureAuthorityServicesAtom } from './jotai/entity-lookup';
+import { useSetAtom } from 'jotai';
 // import { Layout } from './layout';
 
 const CONTAINER = 'lw-layout-container';
@@ -19,6 +21,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const state = useAppState();
   const [writer, setWriter] = useState<Writer | null>(null);
   const { i18n } = useTranslation();
+
+  const configureAuthorityServices = useSetAtom(configureAuthorityServicesAtom);
 
   useDialog();
   useNotifier();
@@ -78,7 +82,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
     if (settings?.locale) actions.ui.switchLocal(settings.locale);
 
-    await actions.lookups.configureAuthorityServices(settings?.authorityServices);
+    configureAuthorityServices(settings?.authorityServices);
 
     actions.user.setUser(user);
 

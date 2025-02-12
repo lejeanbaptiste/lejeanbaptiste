@@ -6,12 +6,10 @@ import type { DialogBarProps, PopupProps } from '../../dialogs';
 import i18n, { Locales, localesSchema } from '../../i18n';
 import type {
   ContextMenuState,
-  EntityLink,
-  EntityLookupDialogProps,
   NotificationProps,
   PaletteMode,
   PanelId,
-  Side,
+  Side
 } from '../../types';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
@@ -103,22 +101,6 @@ export const updateTitle = ({ state }: Context, title: string) => {
 
 export const resetPreferences = ({ effects }: Context) => {
   effects.editor.api.removeFromLocalStorage('themeAppearance');
-};
-
-export const openEntityLookupsDialog = (
-  { state }: Context,
-  props: Omit<EntityLookupDialogProps, 'open'>,
-) => {
-  state.ui.entityLookupDialogProps = { ...props, open: true };
-};
-
-export const closeEntityLookupsDialog = (
-  { state }: Context,
-  link?: EntityLink | Pick<EntityLink, 'query' | 'type'>,
-) => {
-  const dialog = state.ui.entityLookupDialogProps;
-  if (link && dialog.onClose) dialog.onClose(link);
-  state.ui.entityLookupDialogProps = { open: false };
 };
 
 export const switchLocale = ({ state }: Context, locale: string) => {

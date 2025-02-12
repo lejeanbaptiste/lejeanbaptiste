@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import Entity from '../js/entities/Entity';
 
 export const namedEntityTypes = [
   'person',
@@ -34,11 +33,8 @@ export interface AuthorityLookupParams {
 }
 
 export interface AuthorityLookupResult {
-  authority: Authority | (string & {});
   description?: string;
-  entityType: NamedEntityType;
   label: string;
-  query: string;
   uri: string;
 }
 
@@ -46,8 +42,8 @@ export interface AuthorityServiceBase {
   readonly id: string;
   name: string;
   entities: Partial<Record<NamedEntityType, boolean>>;
-  serviceSource: LookupService;
-  serviceType: LookupServiceType;
+  serviceSource?: LookupService;
+  serviceType?: LookupServiceType;
   priority?: number;
   disabled?: boolean;
 }
@@ -60,22 +56,20 @@ export interface LincsAuthorityService extends AuthorityServiceBase {
 
 export interface AuthorityServiceCustom extends AuthorityServiceBase {
   find: (params: AuthorityLookupParams) => Promise<AuthorityLookupResult[]>;
-  serviceSource: 'custom';
 }
 
 export type AuthorityService = LincsAuthorityService | AuthorityServiceCustom;
 
-export type AuthorityServices = Record<string, AuthorityService>;
+export type AuthorityServices = Map<string, AuthorityService>;
 
 export type AuthorityServiceConfig = AuthorityServiceBase['id'] | AuthorityService;
 
-export interface EntityLookupDialogProps {
-  onClose?: (response?: EntityLink | Pick<EntityLink, 'query' | 'type'>) => void;
-  entry?: Entity;
-  open: boolean;
-  query?: string;
-  type?: NamedEntityType;
-}
+export type EntityLookupDialogProps = {
+  isUserAuthenticated: boolean;
+  onClose: (response?: EntityLink) => void;
+  query: string;
+  type: NamedEntityType;
+};
 
 export interface EntryLink {
   authority: Authority | (string & {});
