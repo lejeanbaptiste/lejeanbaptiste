@@ -15,6 +15,7 @@ These changes consolidates internal code making requests to authorities (except 
 - Add localization change types
 - Update indexedDB schema
 - Improve UI
+- Getty: Expand Getty collections (CONA, AAT, TGN, ULAN) and entity types to thing, organization, and work.
 - Move LGPN to an external package to serve as a sample to build add on authority services
 
 BREAKING CHANGE: 🧨 LEAF-Writer settings object changed. It might break for some user (developers), but we won't relaease a major version at this point.
