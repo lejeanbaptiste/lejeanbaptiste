@@ -1,182 +1,182 @@
 {
-  "LWC": {
-    "commons": {
-      "Conversion to HTML failed": "Transformarea documentului în format HTML a eșuat",
-      "about": "Despre",
-      "accept_all": "Accepta toate",
-      "and": "și",
-      "basic_interactions": "interacții simple",
-      "cancel": "anuleaza",
-      "close": "închide",
-      "contact_us": "contact",
-      "conversion failed": "Transformarea a eșuat",
-      "create": "Creaza",
-      "description": "descriere",
-      "discard changes": "renunța la schimbari",
-      "dismiss": "descarcați",
-      "document": "Document",
-      "download": "Descarcați",
-      "editing": "",
-      "export": "Exporta",
-      "export as format": "exporta ca {{format}}",
-      "export_document": "exporta document",
-      "functionalities": "funcționalitați",
-      "identity": "identitate",
-      "language": "limba",
-      "learn_more": "Mai multe",
-      "link_your_account": "",
-      "more_information": "",
-      "name": "",
-      "new": "",
-      "none": "",
-      "not_found": "",
-      "open": "",
-      "open_recent": "",
-      "or": "",
-      "other": "",
-      "please": "",
-      "privacy": "",
-      "privacy_policy": "",
-      "privacy_settings": "",
-      "recent": "",
-      "reject_all": "",
-      "request expired": "",
-      "sample_document": "",
-      "samples": "",
-      "save": "",
-      "save_as": "",
-      "session": "",
-      "settings": "setari",
-      "sign_in": "Autentificare",
-      "sign_out": "",
-      "storage": "",
-      "template": "",
-      "templates": "",
-      "unable to load document": "",
-      "unsaved_changes": "",
-      "viewing": "",
-      "what_would_you_like_to_do": "",
-      "with": "",
-      "xml document": ""
-    },
-    "cookie_consent": {
-      "consent_banner": {
-        "let_me_choose": "",
-        "line1": "",
-        "line2": "",
-        "line3": "",
-        "we_use_cookies": ""
-      },
-      "privacy_settings": "",
-      "remove_consent": "",
-      "settings_modal": {
-        "AUTH_SESSION_description": "",
-        "_ga_description": "",
-        "basic_interactions_description": "",
-        "cc_cookie_description": "",
-        "consent_preferences": "",
-        "cookie_expiration_time": "",
-        "cookie_usage": "",
-        "cookie_usage_description": "",
-        "domain": "",
-        "expiration": "",
-        "indefinitely_until_user_sign_out": "",
-        "lw_description": "",
-        "measurement": "",
-        "measurement_description": "",
-        "more_information_description": "",
-        "strictly_necessary": "",
-        "strictly_necessary_description": ""
-      },
-      "warning": {
-        "must_accept_cookies_message": "",
-        "remove_consent_basic_interactions_message": ""
-      }
-    },
-    "error": {
-      "message404": "",
-      "page_not_Found": "",
-      "something_went_wrong": ""
-    },
-    "home": {
-      "bugReport": {
-        "Open a ticket on GitLab": "",
-        "bugs": "",
-        "email copied to clipboard": "",
-        "or send by email to": "",
-        "requests": ""
-      },
-      "subtitle": "",
-      "team": ""
-    },
-    "importExport": {
-      "convert and open": "",
-      "convert document": "",
-      "message": {
-        "LEAF-Writer needs to convert it to be able to use it": "",
-        "intercept_load_file_format": ""
-      },
-      "try to open it without converting": ""
-    },
-    "languages": {
-      "de": "",
-      "en": "",
-      "es": "",
-      "fr": "",
-      "pt": "",
-      "ro": ""
-    },
-    "messages": {
-      "annotation_need_space": "",
-      "link_to_storage_provider_instructions": "",
-      "rotate_phone": "",
-      "service not available at the moment": "",
-      "try_again": "",
-      "unable_to_upload file": "",
-      "you_must_sign_in_to_open_and_save_document_from_the_cloud": "",
-      "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": ""
-    },
-    "messsages": {
-      "authentication_server_is_currently_unavailable": ""
-    },
-    "profile": {
-      "manage_your_lincs_account": ""
-    },
-    "storage": {
-      "all_changes_salved": "",
-      "click to upload": "",
-      "click_to_save": "",
-      "document_not_saved": "",
-      "document_saved": "",
-      "drag the document here": "",
-      "error": {
-        "xml_not_well-formed_message": ""
-      },
-      "export": "",
-      "export document": "",
-      "from_the_cloud": "",
-      "from_your_device": "",
-      "import": "",
-      "import document": "",
-      "invalid_request": "",
-      "paste_your_XML_here": "",
-      "provider not found": "",
-      "saving": "",
-      "waiting_for_resource": "",
-      "warning": {
-        "check_URL_structure": "",
-        "storage_provider_invalid": ""
-      },
-      "you_will_lose_any_unsaved_changes": ""
-    },
-    "templates": {
-      "choose_a_template": ""
-    },
-    "ui": {
-      "appearance": "",
-      "dark_theme": "",
-      "device_theme": "",
-      "light_theme": ""
+    "LWC": {
+        "commons": {
+            "Conversion to HTML failed": "Transformarea documentului în format HTML a eșuat",
+            "about": "Despre",
+            "accept_all": "Accepta toate",
+            "and": "și",
+            "basic_interactions": "interacții simple",
+            "cancel": "anuleaza",
+            "close": "închide",
+            "contact_us": "contact",
+            "conversion failed": "Transformarea a eșuat",
+            "create": "Creaza",
+            "description": "descriere",
+            "discard changes": "renunța la schimbari",
+            "dismiss": "descarcați",
+            "document": "Document",
+            "download": "Descarcați",
+            "editing": "",
+            "export": "Exporta",
+            "export as format": "exporta ca {{format}}",
+            "export_document": "exporta document",
+            "functionalities": "funcționalitați",
+            "identity": "identitate",
+            "language": "limba",
+            "learn_more": "Mai multe",
+            "link_your_account": "",
+            "more_information": "",
+            "name": "",
+            "new": "",
+            "none": "",
+            "not_found": "",
+            "open": "",
+            "open_recent": "",
+            "or": "",
+            "other": "",
+            "please": "",
+            "privacy": "",
+            "privacy_policy": "",
+            "privacy_settings": "",
+            "recent": "",
+            "reject_all": "",
+            "request expired": "",
+            "sample_document": "",
+            "samples": "",
+            "save": "",
+            "save_as": "",
+            "session": "",
+            "settings": "setari",
+            "sign_in": "Autentificare",
+            "sign_out": "",
+            "storage": "",
+            "template": "",
+            "templates": "",
+            "unable to load document": "",
+            "unsaved_changes": "",
+            "viewing": "",
+            "what_would_you_like_to_do": "",
+            "with": "",
+            "xml document": ""
+        },
+        "cookie_consent": {
+            "consent_banner": {
+                "let_me_choose": "",
+                "line1": "",
+                "line2": "",
+                "line3": "",
+                "we_use_cookies": ""
+            },
+            "privacy_settings": "",
+            "remove_consent": "",
+            "settings_modal": {
+                "AUTH_SESSION_description": "",
+                "_ga_description": "",
+                "basic_interactions_description": "",
+                "cc_cookie_description": "",
+                "consent_preferences": "",
+                "cookie_expiration_time": "",
+                "cookie_usage": "",
+                "cookie_usage_description": "",
+                "domain": "",
+                "expiration": "",
+                "indefinitely_until_user_sign_out": "",
+                "lw_description": "",
+                "measurement": "",
+                "measurement_description": "",
+                "more_information_description": "",
+                "strictly_necessary": "",
+                "strictly_necessary_description": ""
+            },
+            "warning": {
+                "must_accept_cookies_message": "",
+                "remove_consent_basic_interactions_message": ""
+            }
+        },
+        "error": {
+            "message404": "",
+            "page_not_Found": "",
+            "something_went_wrong": ""
+        },
+        "home": {
+            "bugReport": {
+                "Open a ticket on GitLab": "",
+                "bugs": "",
+                "email copied to clipboard": "",
+                "or send by email to": "",
+                "requests": ""
+            },
+            "subtitle": "",
+            "team": ""
+        },
+        "importExport": {
+            "convert and open": "",
+            "convert document": "",
+            "message": {
+                "LEAF-Writer needs to convert it to be able to use it": "",
+                "intercept_load_file_format": ""
+            },
+            "try to open it without converting": ""
+        },
+        "languages": {
+            "de": "",
+            "en": "",
+            "es": "",
+            "fr": "",
+            "pt": "",
+            "ro": ""
+        },
+        "messages": {
+            "annotation_need_space": "",
+            "link_to_storage_provider_instructions": "",
+            "rotate_phone": "",
+            "service not available at the moment": "",
+            "try_again": "",
+            "unable_to_upload file": "",
+            "you_must_sign_in_to_open_and_save_document_from_the_cloud": "",
+            "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": ""
+        },
+        "messsages": {
+            "authentication_server_is_currently_unavailable": ""
+        },
+        "profile": {
+            "manage_your_lincs_account": ""
+        },
+        "storage": {
+            "all_changes_salved": "",
+            "click to upload": "",
+            "click_to_save": "",
+            "document_not_saved": "",
+            "document_saved": "",
+            "drag the document here": "",
+            "error": {
+                "xml_not_well-formed_message": ""
+            },
+            "export": "",
+            "export document": "",
+            "from_the_cloud": "",
+            "from_your_device": "",
+            "import": "",
+            "import document": "",
+            "invalid_request": "",
+            "paste_your_XML_here": "",
+            "provider not found": "",
+            "saving": "",
+            "waiting_for_resource": "",
+            "warning": {
+                "check_URL_structure": "",
+                "storage_provider_invalid": ""
+            },
+            "you_will_lose_any_unsaved_changes": ""
+        },
+        "templates": {
+            "choose_a_template": ""
+        },
+        "ui": {
+            "appearance": "",
+            "dark_theme": "",
+            "device_theme": "",
+            "light_theme": ""
+        }
     }
-  }
 }
