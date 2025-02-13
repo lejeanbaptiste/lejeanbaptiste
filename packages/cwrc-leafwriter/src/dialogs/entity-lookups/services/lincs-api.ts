@@ -69,7 +69,6 @@ export const getAuthoritySources = (
       if (entityType === 'organization') return ['DBpedia-Organisation'];
       if (entityType === 'work') return ['DBpedia-Work'];
       if (entityType === 'thing') return ['DBpedia-All'];
-      // if (entityType === 'concept') return ['DBpedia-All'];
       return ['DBpedia-All'];
 
     case 'geonames':
@@ -81,7 +80,6 @@ export const getAuthoritySources = (
       if (entityType === 'organization') return ['Getty-All'];
       if (entityType === 'work') return ['Getty-AAT', 'Getty-All'];
       if (entityType === 'thing') return ['Getty-AAT', 'Getty-All'];
-      // if (entityType === 'concept') sources = ['Getty-AAT', 'Getty-All'];
       return ['Getty-All'];
 
     case 'gnd':
@@ -90,7 +88,6 @@ export const getAuthoritySources = (
       if (entityType === 'organization') return ['GND-Organisation'];
       if (entityType === 'work') return ['GND-Work'];
       if (entityType === 'thing') return ['GND-Subject'];
-      // if (entityType === 'concept') sources = ['GND-Subject'];
       return ['GND-Subject'];
 
     case 'lincs':
@@ -99,7 +96,6 @@ export const getAuthoritySources = (
       if (entityType === 'organization') return ['LINCS-Group'];
       if (entityType === 'work') return ['LINCS-Work'];
       if (entityType === 'thing') return ['LINCS-All'];
-      // if (entityType === 'concept') sources = ['LINCS-All'];
       return ['LINCS-All'];
 
     case 'viaf':
@@ -108,7 +104,6 @@ export const getAuthoritySources = (
       if (entityType === 'organization') return ['VIAF-Corporate'];
       if (entityType === 'work') return ['VIAF-Bibliographic', 'VIAF-Expressions', 'VIAF-Works'];
       if (entityType === 'thing') return ['VIAF-Expressions', 'VIAF-Works'];
-      // if (entityType === 'concept') return ['VIAF-Expressions', 'VIAF-Works'];
       return ['VIAF-Expressions'];
 
     case 'wikidata':
