@@ -17,6 +17,7 @@ const lincsApiAuthoritySources = [
   'DBpedia-Work',
   'Geonames',
   'Getty-All',
+  'Getty-CONA',
   'Getty-AAT',
   'Getty-TGN',
   'Getty-ULAN',
@@ -78,7 +79,7 @@ export const getAuthoritySources = (
       if (entityType === 'person') return ['Getty-ULAN'];
       if (entityType === 'place') return ['Getty-TGN'];
       if (entityType === 'organization') return ['Getty-All'];
-      if (entityType === 'work') return ['Getty-AAT', 'Getty-All'];
+      if (entityType === 'work') return ['Getty-AAT', 'Getty-CONA', 'Getty-All'];
       if (entityType === 'thing') return ['Getty-AAT', 'Getty-All'];
       return ['Getty-All'];
 
