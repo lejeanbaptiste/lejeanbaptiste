@@ -28,7 +28,7 @@ export const authoritiesInitialConfig: AuthorityService[] = [
   {
     id: 'getty',
     name: 'Getty',
-    entities: { person: true, place: true },
+    entities: { person: true, place: true, organization: true, work: true, thing: true },
     serviceType: 'API',
     serviceSource: 'LINCS',
     priority: 3,
