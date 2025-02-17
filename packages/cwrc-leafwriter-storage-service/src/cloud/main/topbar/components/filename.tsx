@@ -66,7 +66,7 @@ export const Filename = () => {
     setValue(inputValue);
   };
 
-  const handleKeyPress = async (event: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = async (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.code !== 'Enter') return;
     const inputValue = addFileExtension(value);
     setFilename(inputValue);
@@ -79,7 +79,7 @@ export const Filename = () => {
   return (
     <Stack direction="row" pb={0.5}>
       <Box flexGrow={1} />
-      <Paper ref={container} elevation={3} sx={{ p: 0.5, width: isSM ? '100%' : 400 }}>
+      <Paper ref={container} elevation={3} sx={[{ p: 0.5, width: 400 }, isSM && { width: '100%' }]}>
         <InputBase
           endAdornment={
             <InputAdornment position="end">
@@ -98,7 +98,7 @@ export const Filename = () => {
           inputProps={{ 'data-testid': 'save:filename-input' }}
           onBlur={handleBlur}
           onChange={handleChange}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           placeholder={`${t('SS.cloud.breadcrumbs.filename')}`}
           sx={{ px: 1.5, flex: 1 }}
           value={value}

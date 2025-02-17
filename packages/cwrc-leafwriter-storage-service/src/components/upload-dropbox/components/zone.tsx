@@ -1,5 +1,4 @@
 import { Box, LinearProgress, Stack } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { getIcon } from '@src/icons';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { useMemo } from 'react';
@@ -24,7 +23,6 @@ export const Zone = ({
   width = 'auto',
 }: UploadPanelZoneProps) => {
   const { t } = useTranslation();
-  const { palette } = useTheme();
 
   const IconFileText = useMemo(() => getIcon('fileText'), []);
 
@@ -47,23 +45,29 @@ export const Zone = ({
       alignItems="center"
       justifyContent="center"
       spacing={2}
-      sx={{
-        height,
-        width,
-        m: 1,
-        p: 4,
-        overflow: 'hidden',
-        borderRadius: 1,
-        borderWidth: 1,
-        borderStyle: isDragAccept || isDragReject ? 'solid' : 'dashed',
-        borderColor: isDragReject
-          ? palette.error.light
+      sx={[
+        {
+          height,
+          width,
+          m: 1,
+          p: 4,
+          overflow: 'hidden',
+          backgroundColor: (theme) => theme.palette.grey[50],
+          borderRadius: 1,
+          borderWidth: 1,
+          borderStyle: isDragAccept || isDragReject ? 'solid' : 'dashed',
+        },
+        isDragReject
+          ? (theme) => ({ borderColor: theme.palette.error.light })
           : isDragAccept
-            ? palette.success.light
-            : palette.grey[400],
-        bgcolor: palette.mode === 'light' ? palette.grey[50] : palette.grey[800],
-        cursor: isProcessing ? 'default' : 'pointer',
-      }}
+            ? (theme) => ({ borderColor: theme.palette.success.light })
+            : (theme) => ({ borderColor: theme.palette.grey[400] }),
+        isProcessing ? { cursor: 'default' } : { cursor: 'pointer' },
+        (theme) =>
+          theme.applyStyles('dark', {
+            backgroundColor: theme.palette.grey[800],
+          }),
+      ]}
     >
       <IconFileText
         component={motion.svg}

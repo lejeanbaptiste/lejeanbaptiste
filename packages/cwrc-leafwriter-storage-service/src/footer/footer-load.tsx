@@ -1,4 +1,3 @@
-import { LoadingButton } from '@mui/lab';
 import { Button, DialogActions } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
@@ -55,7 +54,7 @@ export const FooterLoad = ({ onCancel }: FooterProps) => {
       <Button onClick={onCancel} size="small" title="cancel">
         {t('SS.commons.cancel')}
       </Button>
-      <LoadingButton
+      <Button
         disabled={source === 'cloud' && !selectedItem}
         loading={isLoading}
         onClick={handleLoad}
@@ -64,7 +63,7 @@ export const FooterLoad = ({ onCancel }: FooterProps) => {
         variant="outlined"
       >
         {selectedItem?.type === 'file' ? t('SS.commons.load') : t('SS.commons.open')}
-      </LoadingButton>
+      </Button>
     </DialogActions>
   );
 };

@@ -1,4 +1,3 @@
-import { LoadingButton } from '@mui/lab';
 import { Box, Button, DialogActions, Icon, IconButton, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
@@ -78,14 +77,14 @@ export const FooterSave = ({ onCancel }: Props) => {
         </Button>
       )}
       {repository && !hasPermission ? (
-        <LoadingButton
+        <Button
           disabled={!saveEnabled || resource?.filename === ''}
           loading={isSaving}
           onClick={() => handleClickSave('forkPullRequest')}
           size="small"
         >
           {t('SS.footer.fork_and_pull_request')}
-        </LoadingButton>
+        </Button>
       ) : (
         <SaveOptions enabled={saveEnabled} onSelect={handleClickSave} />
       )}

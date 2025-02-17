@@ -107,11 +107,10 @@ export const Content = ({ content }: Props) => {
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         selected={selectedItem?.path === path}
-        sx={{
-          color: ({ palette }) => {
-            return dialogType === 'save' ? palette.text.disabled : palette.text.primary;
-          },
-        }}
+        sx={[
+          { color: (theme) => theme.palette.text.primary },
+          dialogType === 'save' && { color: (theme) => theme.palette.text.disabled },
+        ]}
       >
         <ListItemIcon sx={{ minWidth: 40 }}>
           {type === 'folder' || type === 'dir' ? <FolderOpenIcon /> : <DescriptionOutlinedIcon />}

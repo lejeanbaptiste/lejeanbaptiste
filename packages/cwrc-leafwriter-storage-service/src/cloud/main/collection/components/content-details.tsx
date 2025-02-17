@@ -26,11 +26,11 @@ export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
     >
       <Typography sx={{ '&::first-letter': { textTransform: 'uppercase' } }}>
         <Typography variant="caption">{t('SS.commons.last_modified').toString()}: </Typography>
-        <Typography color="text.secondary" title={latestCommit.date} variant="caption">
+        <Typography color="textSecondary" title={latestCommit.date} variant="caption">
           {latestCommit.relativeDate} {t('SS.commons.by')}{' '}
         </Typography>
         <Typography
-          color="text.secondary"
+          color="textSecondary"
           component={Link}
           href={`mailto:${latestCommit.authorEmail}`}
           title={`${latestCommit.authorName} (${latestCommit.authorEmail})`}
@@ -42,11 +42,11 @@ export const ContentDetails = ({ latestCommit }: ContentDetailsProps) => {
       </Typography>
       <Typography sx={{ '&::first-letter': { textTransform: 'uppercase' } }}>
         <Typography variant="caption">{t('SS.commons.message')}: </Typography>
-        <Typography color="text.secondary" data-testid="message" variant="caption">
+        <Typography color="textSecondary" data-testid="message" variant="caption">
           {latestCommit.message}{' '}
         </Typography>
         <Typography
-          color="text.secondary"
+          color="textSecondary"
           component={Link}
           href={latestCommit.html_url}
           rel="noreferrer"

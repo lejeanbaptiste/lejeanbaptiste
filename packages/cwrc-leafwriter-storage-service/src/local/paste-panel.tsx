@@ -32,11 +32,13 @@ export const PastePanel = () => {
         autoFocus
         fullWidth
         inputRef={ref}
-        inputProps={{ 'data-testid': 'paste_panel-input' }}
         multiline
         onChange={onChageOnPastePanel}
         placeholder={`${t('SS.local.paste_document_here')}`}
         rows={mobile ? 0 : 19}
+        slotProps={{
+          htmlInput: { 'data-testid': 'paste_panel-input' },
+        }}
         value={text}
       />
     </Box>

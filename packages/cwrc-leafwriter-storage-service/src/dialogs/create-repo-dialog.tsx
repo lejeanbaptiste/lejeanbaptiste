@@ -1,4 +1,3 @@
-import { LoadingButton } from '@mui/lab';
 import {
   Button,
   Dialog,
@@ -89,11 +88,13 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
             autoFocus
             fullWidth
             id="name"
-            inputProps={{ 'data-testid': 'save:create-repo:name-input' }}
             label={t('SS.commons.name')}
             onChange={handleNameChange}
             placeholder={`${t('SS.cloud.createRepo.repository_name')}`}
             required
+            slotProps={{
+              htmlInput: { 'data-testid': 'save:create-repo:name-input' },
+            }}
             value={name}
             variant="standard"
           />
@@ -102,9 +103,11 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
             fullWidth
             helperText={t('SS.cloud.createRepo.description_help')}
             id="description"
-            inputProps={{ 'data-testid': 'save:create-repo:description-input' }}
             label={t('SS.cloud.createRepo.description')}
             onChange={handleDescriptionChange}
+            slotProps={{
+              htmlInput: { 'data-testid': 'save:create-repo:description-input' },
+            }}
             value={description}
             variant="outlined"
           />
@@ -118,7 +121,7 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCancel}>{t('SS.commons.cancel')}</Button>
-        <LoadingButton
+        <Button
           data-testid="save:create-repo:create-button"
           disabled={name === ''}
           loading={isLoading}
@@ -126,7 +129,7 @@ export const CreateRepoDialog = ({ onCancel, onCreate, open }: CreateRepoDialogP
           variant="contained"
         >
           {t('SS.commons.create')}
-        </LoadingButton>
+        </Button>
       </DialogActions>
     </Dialog>
   );
