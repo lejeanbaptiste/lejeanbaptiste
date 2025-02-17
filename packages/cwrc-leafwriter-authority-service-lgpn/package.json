@@ -1,6 +1,7 @@
 {
   "name": "@cwrc/leafwriter-authority-service-lgpn",
   "version": "1.0.0",
+  "private": true,
   "description": "A custom LGPN authority lookup service for LEAF-Writer",
   "keywords": [
     "entity",
