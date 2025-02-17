@@ -45,7 +45,7 @@
     "build": "npm run clean && tsc && webpack && npm run release-copy-assets",
     "build-documentation": "typedoc --out docs src/index.tsx",
     "release-copy-assets": "node release.js",
-    "clean": "rm -rf .turbo node_modules dist lib",
+    "clean": "rm -rf node_modules dist lib",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
