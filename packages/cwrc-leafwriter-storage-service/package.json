@@ -70,7 +70,7 @@
     "@mui/base": "^5.0.0-beta.68",
     "@mui/icons-material": "^6.4.4",
     "@mui/material": "^6.4.4",
-    "@octokit/rest": "^20.1.1",
+    "@octokit/rest": "^21.1.1",
     "autosuggest-highlight": "^3.3.4",
     "axios": "^1.7.9",
     "buffer": "^6.0.3",
