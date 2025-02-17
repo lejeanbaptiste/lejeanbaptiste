@@ -13,8 +13,8 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { PublicRepository } from '@src/types';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import debounce from 'lodash/debounce';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';

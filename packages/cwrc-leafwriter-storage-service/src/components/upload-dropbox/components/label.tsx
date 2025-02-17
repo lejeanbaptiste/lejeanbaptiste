@@ -1,5 +1,5 @@
 import { Typography, type SxProps } from '@mui/material';
-import { motion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'motion/react';
 
 type LabelProps = {
   children: React.ReactNode;

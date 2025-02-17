@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useAnimate } from 'framer-motion';
+import { useAnimate } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../overmind';
