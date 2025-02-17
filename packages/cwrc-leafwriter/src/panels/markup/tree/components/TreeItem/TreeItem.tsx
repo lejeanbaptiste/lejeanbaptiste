@@ -51,7 +51,7 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
     },
     ref,
   ) => {
-    const { palette } = useTheme();
+    const theme = useTheme();
 
     const itemProps = {
       canAddToMultiselection,
@@ -82,18 +82,20 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
           ghost && styles.ghost,
         )}
         {...props}
-        sx={{
-          boxSizing: 'border-box',
-          mb: '1px',
-          py: 0,
-          pr: 0,
-          pl: `${indentationWidth * depth}px`,
-          '--indicator-bgcolor': alpha(
-            palette.primary[palette.mode],
-            palette.action.selectedOpacity,
-          ),
-          pointerEvents: disableInteraction ? 'none' : 'auto',
-        }}
+        sx={[
+          {
+            boxSizing: 'border-box',
+            mb: '1px',
+            py: 0,
+            pr: 0,
+            pl: `${indentationWidth * depth}px`,
+            '--indicator-backgroundColor': `rgba(${theme.vars.palette.primary.mainChannel},
+             ${theme.vars.palette.action.selectedOpacity},
+            )`,
+            pointerEvents: 'auto',
+          },
+          !disableInteraction && { pointerEvents: 'none' },
+        ]}
       >
         {type === 'text' ? (
           <Text ref={ref} {...itemProps}>

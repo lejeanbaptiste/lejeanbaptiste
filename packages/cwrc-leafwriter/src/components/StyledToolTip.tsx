@@ -5,7 +5,11 @@ export const StyledToolTip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip
     {...props}
     classes={{ popper: className }}
-    componentsProps={{ tooltip: { sx: { '::first-letter': { textTransform: 'uppercase' } } } }}
+    slotProps={{
+      tooltip: {
+        sx: { '::first-letter': { textTransform: 'uppercase' } },
+      },
+    }}
   />
 ))(({ theme }) => ({
   [`& .${tooltipClasses.tooltipPlacementBottom}`]: {

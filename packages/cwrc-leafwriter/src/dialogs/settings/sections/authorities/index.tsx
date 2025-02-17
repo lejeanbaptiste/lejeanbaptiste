@@ -52,7 +52,7 @@ export const Authorities = () => {
         <MdFilterTiltShift style={{ height: 18, width: 18, marginLeft: 8, marginTop: 2 }} />
         <Stack>
           <Typography variant="body2">{t('LW.Entities Lookup Sources')}</Typography>
-          <Typography color="text.secondary" variant="caption">
+          <Typography color="textSecondary" variant="caption">
             {t('LW.Drag authorities to reorder priority')}
           </Typography>
         </Stack>

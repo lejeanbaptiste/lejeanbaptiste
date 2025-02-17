@@ -17,7 +17,7 @@ export const Toggle = ({ icon, onClick, selected, title }: MenuItem) => {
           height: 34,
           borderRadius: 1,
           border: 'none',
-          color: ({ palette }) => palette.primary.main,
+          color: (theme) => theme.vars.palette.primary.main,
         }}
         value="check"
       >

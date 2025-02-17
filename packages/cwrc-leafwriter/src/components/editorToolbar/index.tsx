@@ -256,10 +256,16 @@ export const EditorToolbar = () => {
       ref={container}
       elevation={5}
       square
-      sx={{
-        width: '100%',
-        bgcolor: ({ palette }) => (palette.mode === 'dark' ? palette.background.paper : '#f5f5f5'),
-      }}
+      sx={[
+        {
+          width: '100%',
+          backgroundColor: '#f5f5f5',
+        },
+        (theme) =>
+          theme.applyStyles('dark', {
+            backgroundColor: theme.vars.palette.background.paper,
+          }),
+      ]}
       component={motion.div}
       layout="size"
     >

@@ -9,7 +9,7 @@ import type { LeafWriterOptions } from './types';
 
 const Providers = (props: LeafWriterOptions) => {
   const { setDarkMode } = useActions().ui;
-  const { darkMode, themeAppearance } = useAppState().ui;
+  const { themeAppearance } = useAppState().ui;
 
   const preferDark = useMediaQuery('(prefers-color-scheme: dark)');
 
@@ -18,7 +18,7 @@ const Providers = (props: LeafWriterOptions) => {
   }, [preferDark]);
 
   return (
-    <ThemeProvider theme={theme(darkMode)}>
+    <ThemeProvider theme={theme}>
       <CssBaseline enableColorScheme />
       <ModalProvider>
         <SnackbarProvider>

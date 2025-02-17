@@ -18,7 +18,7 @@ export const ResizeHandle = () => (
         left: '0.5em',
         right: '0.5em',
         borderRadius: '0.25em',
-        bgcolor: 'red',
+        backgroundColor: 'red',
         transition: 'background-color 0.2s linear',
       }}
     ></Box>

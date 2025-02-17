@@ -17,10 +17,16 @@ export const BottomBar = () => {
     <Paper
       elevation={0}
       square
-      sx={{
-        width: '100%',
-        bgcolor: ({ palette }) => (palette.mode === 'dark' ? palette.background.paper : '#f5f5f5'),
-      }}
+      sx={[
+        {
+          width: '100%',
+          backgroundColor: '#f5f5f5',
+        },
+        (theme) =>
+          theme.applyStyles('dark', {
+            backgroundColor: theme.vars.palette.background.paper,
+          }),
+      ]}
     >
       <Stack direction="row" alignItems="center" spacing={2} px={2}>
         {!isReadonly && (
@@ -36,7 +42,7 @@ export const BottomBar = () => {
         <Box flexGrow={1} />
 
         <Link
-          color="text.secondary"
+          color="textSecondary"
           variant="caption"
           href="https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report"
           target="_blank"
@@ -45,7 +51,7 @@ export const BottomBar = () => {
         </Link>
 
         <Link
-          color="text.secondary"
+          color="textSecondary"
           variant="caption"
           href={pck.homepage}
           rel="noopener"
@@ -55,7 +61,7 @@ export const BottomBar = () => {
           {`LEAF-Writer ${version}`}
         </Link>
         <Link
-          color="text.secondary"
+          color="textSecondary"
           variant="caption"
           href="https://www.tiny.cloud"
           target="_blank"

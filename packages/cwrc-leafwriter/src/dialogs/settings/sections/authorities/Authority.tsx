@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Grid, IconButton, Paper, Stack, ToggleButton, Typography } from '@mui/material';
+import { IconButton, Paper, Stack, ToggleButton, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import { useSetAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import { MdAdjust, MdOutlineCircle } from 'react-icons/md';
@@ -39,19 +40,21 @@ export const Authority = ({ authorityService }: AuthorityProps) => {
       ref={setNodeRef}
       square
       style={style}
-      sx={{
-        zIndex: isDragging ? 1 : 0,
-        backgroundColor: isDragging ? ({ palette }) => palette.background.paper : 'transparent',
-        borderRadius: 1,
-        cursor: isDragging ? 'grabbing' : 'default',
-      }}
+      sx={[
+        { borderRadius: 1, backgroundColor: 'transparent', cursor: 'default', zIndex: 0 },
+        isDragging && {
+          zIndex: 1,
+          backgroundColor: (theme) => theme.vars.palette.background.paper,
+          cursor: 'grabbing',
+        },
+      ]}
       onMouseOver={() => setHover(true)}
       onMouseOut={() => setHover(false)}
       onMouseUp={() => setIsDragging(false)}
     >
       <Stack direction="row">
-        <Grid container alignItems="center" sx={{ minHeight: 34, pl: 0.5 }}>
-          <Grid item xs={5}>
+        <Grid container alignItems="center" sx={{ width: '100%', minHeight: 34, pl: 0.5 }}>
+          <Grid size={{ xs: 5 }}>
             <Stack direction="row" spacing={1} alignItems="center">
               <ToggleButton
                 color="primary"
@@ -73,7 +76,7 @@ export const Authority = ({ authorityService }: AuthorityProps) => {
             </Stack>
           </Grid>
           {Object.entries(entities).map(([entityName, entityEnabled]) => (
-            <Grid key={entityName} item sx={{ width: 28 }}>
+            <Grid key={entityName} sx={{ width: 28 }}>
               <EntityType
                 available={!disabled}
                 enabled={entityEnabled}
