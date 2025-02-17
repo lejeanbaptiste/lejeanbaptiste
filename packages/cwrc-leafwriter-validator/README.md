@@ -157,7 +157,7 @@ validator.validate(documentString, (event) => {
 
 While the state is **[1] INCOMPLETE** or **[2] WORKING**, the [WorkingStateData](#workingstatedata) only returns `{ partDone, state }`, which can be used to show a progress bar expressed in percentage.
 
-if the state returns **[3] INVALID** the [WorkingStateData](#workingstatedata) returns the full object `{ errors, partDone, state, valid }`, valid is **false**. This is the last time the callback will be triggered since the validator has completed the process. Error are object type [ValidationError](ValidationError).
+if the state returns **[3] INVALID** the [WorkingStateData](#workingstatedata) returns the full object `{ errors, partDone, state, valid }`, valid is **false**. This is the last time the callback will be triggered since the validator has completed the process. Error are object type [ValidationError](#validationerror).
 
 if the state returns **[4] VALID** the [WorkingStateData](#workingstatedata) only returns `{ partDone, state, valid }`, where valid is **true**. This is the last time the callback will be triggered since the validator has completed the process.
 
