@@ -13,7 +13,7 @@ import { useActions, useAppState } from '@src/overmind';
 import type { Content as ContentProps } from '@src/types';
 import type { LatestCommit } from '@src/types/Provider';
 import { formatDistance } from 'date-fns';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { ContentDetails } from './content-details';
 

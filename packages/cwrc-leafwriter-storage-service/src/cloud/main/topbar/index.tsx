@@ -4,7 +4,7 @@ import { Box, Button, Divider, IconButton, Stack, useMediaQuery } from '@mui/mat
 import { useTheme } from '@mui/material/styles';
 import { useActions, useAppState } from '@src/overmind';
 import type { SearchResults } from '@src/types';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';

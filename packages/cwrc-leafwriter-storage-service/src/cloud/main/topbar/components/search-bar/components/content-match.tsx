@@ -1,6 +1,6 @@
 import { Box, Stack, Typography } from '@mui/material';
 import parse from 'autosuggest-highlight/parse';
-import { motion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'motion/react';
 
 interface ContentMatchProps {
   text_matches: any[];
