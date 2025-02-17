@@ -1,6 +1,6 @@
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
-import { useAnimate } from 'framer-motion';
 import { useAtomValue } from 'jotai';
+import { useAnimate } from 'motion/react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IoMdCheckmark } from 'react-icons/io';

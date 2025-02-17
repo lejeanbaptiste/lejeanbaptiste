@@ -1,6 +1,6 @@
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import { IconButton, useColorScheme, useTheme, type PaletteMode } from '@mui/material';
-import { motion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'motion/react';
 import { MouseEvent, useMemo } from 'react';
 
 type ExpandButtonProps = {

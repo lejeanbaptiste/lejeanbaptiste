@@ -1,5 +1,5 @@
 import { alpha, MenuItem, Stack, useTheme } from '@mui/material';
-import { motion, Variants } from 'framer-motion';
+import { motion, Variants } from 'motion/react';
 import { forwardRef, MouseEvent, useMemo } from 'react';
 import { type IconLeafWriter } from '../../../../icons';
 import { useActions } from '../../../../overmind';

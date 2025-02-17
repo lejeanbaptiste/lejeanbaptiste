@@ -1,6 +1,6 @@
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import { Stack, useTheme } from '@mui/material';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 
 type SelectionBadgeProps = {
   contentsOnly?: boolean;
