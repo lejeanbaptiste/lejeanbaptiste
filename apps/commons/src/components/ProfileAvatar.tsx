@@ -11,7 +11,7 @@ interface ProfileAvatarProps {
 
 export const ProfileAvatar = ({ clickable = true, size = 32 }: ProfileAvatarProps) => {
   const { user } = useAppState().auth;
-  const { palette } = useTheme();
+  const theme = useTheme();
 
   const badgeAnimationControl = useAnimation();
 
@@ -45,8 +45,8 @@ export const ProfileAvatar = ({ clickable = true, size = 32 }: ProfileAvatarProp
   };
 
   const avatarVariant: Variants = {
-    default: { boxShadow: `${palette.primary.main} 0px 0px 0px 0px` },
-    hover: { boxShadow: `${palette.primary.main} 0px 0px 3px 1px` },
+    default: { boxShadow: `${theme.vars.palette.primary.main} 0px 0px 0px 0px` },
+    hover: { boxShadow: `${theme.vars.palette.primary.main} 0px 0px 3px 1px` },
   };
 
   return (
@@ -69,18 +69,21 @@ export const ProfileAvatar = ({ clickable = true, size = 32 }: ProfileAvatarProp
               width={size / 2}
               height={size / 2}
               animate={badgeAnimationControl}
-              sx={{ cursor: clickable ? 'pointer' : 'default' }}
+              sx={[{ cursor: 'default' }, clickable && { cursor: 'pointer' }]}
             >
               <Icon
                 component={getIcon(user.preferredID as IconName)}
-                sx={{
-                  width: size / 2,
-                  height: size / 2,
-                  borderRadius: '50%',
-                  border: `1px solid ${palette.background.paper}`,
-                  bgcolor: palette.background.paper,
-                  cursor: clickable ? 'pointer' : 'default',
-                }}
+                sx={[
+                  (theme) => ({
+                    width: size / 2,
+                    height: size / 2,
+                    backgroundColor: theme.vars.palette.background.paper,
+                    borderRadius: '50%',
+                    border: `1px solid ${theme.vars.palette.background.paper}`,
+                    cursor: 'default',
+                  }),
+                  clickable && { cursor: 'pointer' },
+                ]}
               />
             </Box>
           )
@@ -92,7 +95,14 @@ export const ProfileAvatar = ({ clickable = true, size = 32 }: ProfileAvatarProp
           animate={hover && clickable ? 'hover' : 'default'}
           variants={avatarVariant}
           src={user?.avatar_url}
-          sx={{ width: size, height: size, cursor: clickable ? 'pointer' : 'default' }}
+          sx={[
+            {
+              width: size,
+              height: size,
+              cursor: 'default',
+            },
+            clickable && { cursor: 'pointer' },
+          ]}
         />
       </Badge>
     </Box>

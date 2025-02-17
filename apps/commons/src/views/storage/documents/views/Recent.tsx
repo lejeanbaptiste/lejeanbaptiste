@@ -58,11 +58,14 @@ export const RecentView = ({ layout, width }: RecentViewProps) => {
     <Masonry
       columns={columns}
       spacing={1.5}
-      sx={{
-        width: layout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
-        mx: 1.5,
-        pt: 1.5,
-      }}
+      sx={[
+        {
+          width: 'calc(100% - 32px)',
+          mx: 1.5,
+          pt: 1.5,
+        },
+        layout === 'grid' && { width: widthMasonry },
+      ]}
     >
       <AnimatePresence>
         {recentDocs.map((resource) => (

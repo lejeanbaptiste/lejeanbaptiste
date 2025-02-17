@@ -1,15 +1,15 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckIcon from '@mui/icons-material/Check';
-import { IconButton, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import { IconButton, List, ListItem, ListItemButton, ListItemText, useTheme } from '@mui/material';
 import { useAnalytics, useCookieConsent } from '@src/hooks';
 import { locales } from '@src/i18n';
 import { useActions, useAppState } from '@src/overmind';
-import chroma from 'chroma-js';
 import { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SubMenu } from '../types';
 
 export const Language = ({ onBack, onClose }: SubMenu) => {
+  const theme = useTheme();
   const { currentLocale } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
 
@@ -42,15 +42,14 @@ export const Language = ({ onBack, onClose }: SubMenu) => {
           <ListItemButton
             onPointerDown={(event) => changeLanguage(event, locale)}
             selected={locale === currentLocale}
-            sx={{
-              borderRadius: 1,
-              '&.Mui-selected': {
-                bgcolor: ({ palette }) =>
-                  locale === currentLocale
-                    ? chroma(palette.primary.main).alpha(0.15).css()
-                    : 'inherit',
+            sx={[
+              { borderRadius: 1 },
+              locale === currentLocale && {
+                '&.Mui-selected': {
+                  backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.15)`,
+                },
               },
-            }}
+            ]}
           >
             <ListItemText
               primary={t(`LWC.languages.${locale}`, { lng: locale, fallbackLng: 'en' })}
