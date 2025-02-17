@@ -1,6 +1,6 @@
 import { Avatar, Box, Stack, Typography } from '@mui/material';
-import { motion } from 'framer-motion';
 import md5 from 'md5';
+import { motion } from 'motion/react';
 
 export interface ProfileProps {
   name: string;

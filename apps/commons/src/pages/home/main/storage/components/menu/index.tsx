@@ -4,7 +4,7 @@ import { useMessage } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { ViewType } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { MenuButton } from './MenuButton';
 import { PasteOption } from './PasteOption';

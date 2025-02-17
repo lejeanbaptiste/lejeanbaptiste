@@ -2,7 +2,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { IconButton } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
-import { motion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
 export const DarkMode = () => {

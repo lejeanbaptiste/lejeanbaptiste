@@ -1,9 +1,9 @@
 import ClearIcon from '@mui/icons-material/Clear';
-import { alpha, Box, Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
+import { Box, Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
 import { getIcon, IconName } from '@src/icons';
 import type { Resource } from '@src/types';
 import { formatDistanceToNow } from 'date-fns';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useState, type MouseEvent } from 'react';
 import type { Layout } from '../..';
 import { CoverImage, Footer } from './components';

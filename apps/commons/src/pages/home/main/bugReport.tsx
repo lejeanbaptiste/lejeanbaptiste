@@ -1,7 +1,7 @@
 import { Button, IconButton, Stack, Typography, useTheme } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { useActions } from '@src/overmind';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BiCopyAlt } from 'react-icons/bi';

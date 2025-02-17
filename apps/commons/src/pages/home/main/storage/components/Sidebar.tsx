@@ -1,7 +1,7 @@
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { ProviderButton } from '@src/components';
 import { useAppState } from '@src/overmind';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
 const MAX_WIDTH = 170;

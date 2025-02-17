@@ -3,7 +3,7 @@ import { Box, Button, Menu, MenuItem } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
 import { locales } from '@src/i18n';
 import { useActions, useAppState } from '@src/overmind';
-import { motion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'motion/react';
 import { useState, type PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
