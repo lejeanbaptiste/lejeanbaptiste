@@ -33,7 +33,10 @@
     "lint": "eslint .",
     "dev": "npm run dev -w leafwriter-commons",
     "dev-worker": "npm run dev-worker -w leafwriter-commons",
-    "build-commons": "npm run build -w leafwriter-commons"
+    "build-commons": "npm run build -w leafwriter-commons",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.12",
@@ -52,5 +55,6 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
-  }
+  },
+  "packageManager": "npm@11.1.0"
 }
