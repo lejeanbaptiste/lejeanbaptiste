@@ -1,5 +1,5 @@
 import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useRef } from 'react';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
