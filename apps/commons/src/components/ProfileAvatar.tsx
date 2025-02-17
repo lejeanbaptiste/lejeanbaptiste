@@ -1,7 +1,7 @@
 import { Avatar, Badge, Box, Icon, useTheme } from '@mui/material';
 import { getIcon, type IconName } from '@src/icons';
 import { useAppState } from '@src/overmind';
-import { motion, useAnimation, type Variants } from 'framer-motion';
+import { motion, useAnimation, type Variants } from 'motion/react';
 import { useEffect, useState } from 'react';
 
 interface ProfileAvatarProps {

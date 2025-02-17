@@ -1,7 +1,7 @@
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 import { IconButton } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
-import { motion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
 export const Privacy = () => {

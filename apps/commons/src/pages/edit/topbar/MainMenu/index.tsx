@@ -2,8 +2,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { Box, Divider, IconButton, Stack } from '@mui/material';
 import { Logo } from '@src/components';
 import { useAppState } from '@src/overmind';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { bindFocus, bindMenu, bindTrigger, usePopupState } from 'material-ui-popup-state/hooks';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { createContext } from 'react';
 import { CascadingMenu, Item, SubMenu, type ItemProps, type SubMenuProps } from './components';
 

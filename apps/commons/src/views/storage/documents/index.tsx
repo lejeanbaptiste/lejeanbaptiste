@@ -1,7 +1,7 @@
 import { Stack } from '@mui/material';
 import { useAppState } from '@src/overmind';
 import type { ViewProps, ViewType } from '@src/types';
-import { motion, useAnimation } from 'framer-motion';
+import { motion, useAnimation } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useWindowSize } from 'react-use';
 import { Container, TopBar } from './components';

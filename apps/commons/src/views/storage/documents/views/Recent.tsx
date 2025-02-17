@@ -5,7 +5,7 @@ import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import type { Layout } from '..';
 import { CARD_WIDTH, DocumentCard } from '../components';
