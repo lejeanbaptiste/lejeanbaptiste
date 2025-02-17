@@ -78,7 +78,7 @@
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
     "file-saver": "^2.0.5",
-    "i18next": "^23.16.8",
+    "i18next": "^24.2.2",
     "lodash": "^4.17.21",
     "loglevel": "^1.9.2",
     "mdi-material-ui": "^7.9.3",
