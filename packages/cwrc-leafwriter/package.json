@@ -92,7 +92,7 @@
     "mui-modal-provider": "^2.4.6",
     "nanoid": "^5.0.9",
     "notistack": "^3.0.2",
-    "openseadragon": "^4.1.1",
+    "openseadragon": "^5.0.1",
     "overmind": "^28.0.3",
     "overmind-react": "^29.0.5",
     "progressbar.js": "^1.1.1",
