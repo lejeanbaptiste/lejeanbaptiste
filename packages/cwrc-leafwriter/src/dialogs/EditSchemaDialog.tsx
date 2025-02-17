@@ -230,13 +230,17 @@ export const EditSchemaDialog = ({
                     <TextField
                       fullWidth
                       label="Mapping"
-                      inputProps={{ sx: { textTransform: 'uppercase' } }}
                       margin="dense"
                       name="mapping"
                       onBlur={handleBlur}
                       onChange={handleChange}
                       size="small"
                       select
+                      slotProps={{
+                        htmlInput: {
+                          sx: { textTransform: 'uppercase' },
+                        },
+                      }}
                       sx={{ '::first-letter': { textTransform: 'uppercase' } }}
                       value={values.mapping}
                     >

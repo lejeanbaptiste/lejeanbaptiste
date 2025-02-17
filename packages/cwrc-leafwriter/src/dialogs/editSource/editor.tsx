@@ -1,4 +1,4 @@
-import { useTheme } from '@mui/material';
+import { useColorScheme } from '@mui/material';
 import { useSetAtom } from 'jotai';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useEffect, useRef, useState } from 'react';
@@ -21,13 +21,15 @@ interface EditorProps {
 }
 
 export const Editor = ({ initialContent, type }: EditorProps) => {
-  const { palette } = useTheme();
   const setCurrentContent = useSetAtom(currentContentAtom);
   const setOriginalContent = useSetAtom(originalContentAtom);
   const setType = useSetAtom(contentTypeAtom);
+  const { mode, systemMode } = useColorScheme();
 
   const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
   const divEl = useRef<HTMLDivElement>(null);
+
+  const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
 
   useEditor(editor);
 
@@ -40,7 +42,7 @@ export const Editor = ({ initialContent, type }: EditorProps) => {
       const monacoEditor = monaco.editor.create(divEl.current, {
         lineNumbers: 'on',
         language: 'xml',
-        theme: palette.mode === 'dark' ? 'vs-dark' : 'vs-light',
+        theme: isDarkMode ? 'vs-dark' : 'vs-light',
         value: initialContent,
         wordWrap: 'wordWrapColumn',
         wordWrapColumn: 100,
@@ -58,7 +60,7 @@ export const Editor = ({ initialContent, type }: EditorProps) => {
     return () => {
       editor?.dispose();
     };
-  }, []);
+  }, [mode, systemMode]);
 
   return <div className="Editor" ref={divEl} style={{ minHeight: 600 }} />;
 };

@@ -1,5 +1,12 @@
 import HorizontalRuleRoundedIcon from '@mui/icons-material/HorizontalRuleRounded';
-import { Box, Icon as MuiIcon, SvgIconTypeMap, useTheme, type PaletteMode } from '@mui/material';
+import {
+  Box,
+  Icon as MuiIcon,
+  SvgIconTypeMap,
+  useColorScheme,
+  useTheme,
+  type PaletteMode,
+} from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { useMemo } from 'react';
 
@@ -16,11 +23,12 @@ export const Icon = ({
   isEntity = false,
   selected = false,
 }: IconProps) => {
-  const { palette } = useTheme();
+  const theme = useTheme();
+  const { mode, systemMode } = useColorScheme();
 
   const inverseThemeMode: PaletteMode = useMemo(
-    () => (palette.mode === 'light' ? 'dark' : 'light'),
-    [palette.mode],
+    () => (mode === 'dark' || (mode === 'system' && systemMode === 'dark') ? 'light' : 'dark'),
+    [mode, systemMode],
   );
 
   return (
@@ -33,7 +41,7 @@ export const Icon = ({
           color:
             isEntity && selected
               ? color
-              : palette.primary[selected ? inverseThemeMode : palette.mode],
+              : theme.palette.primary[selected ? inverseThemeMode : theme.palette.mode],
         }}
       />
     </Box>

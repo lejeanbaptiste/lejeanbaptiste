@@ -238,7 +238,7 @@ export const openEditorModeDialog = async (writer: Writer) => {
       <>
         <TextEmphasis color="info">{`Markup ${t('commons.only')}`}</TextEmphasis>
         <Typography>{`${t('Only XML tags No RDF Semantic Web annotations will be created')}.`}</Typography>
-        <Typography paragraph mt={3} variant="caption">
+        <Typography mt={3} variant="caption">
           <b>{`${t('commons.hint')}: `}</b>
           {`${t('You can change the editor mode anytime in the status bar')}`}
         </Typography>
@@ -256,7 +256,7 @@ export const openEditorModeDialog = async (writer: Writer) => {
               'Annotations that overlap will be created in RDF only with no equivalent XML tags',
             )}.`}
           </Typography>
-          <Typography paragraph mt={3} variant="caption">
+          <Typography mt={3} variant="caption">
             <b>{`${t('commons.hint')}: `}</b>
             {`${t('You can change the editor mode anytime in the status bar')}.`}
           </Typography>
@@ -271,7 +271,7 @@ export const openEditorModeDialog = async (writer: Writer) => {
               'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
             )}`}
           </Typography>
-          <Typography paragraph mt={3} variant="caption">
+          <Typography mt={3} variant="caption">
             <b>{`${t('hint')}: `}</b>
             {`${t('You can change the editor mode anytime in the status bar')}.`}
           </Typography>

@@ -26,10 +26,11 @@ export const EntityType = ({ available, enabled, onClick, name }: EntityTypeProp
       <Icon
         name={name}
         fontSize="inherit"
-        sx={{
-          opacity: enabled ? 1 : 0.2,
-          color: hover ? ({ palette }) => palette.text.primary : 'inherit',
-        }}
+        sx={[
+          { opacity: 0.2 },
+          enabled && { opacity: 1 },
+          hover && { color: (theme) => theme.vars.palette.text.primary },
+        ]}
       />
       {(!enabled || !available) && (
         <MdDoDisturb

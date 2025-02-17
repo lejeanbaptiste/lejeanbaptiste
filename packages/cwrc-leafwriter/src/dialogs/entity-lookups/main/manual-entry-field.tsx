@@ -7,7 +7,6 @@ import {
   InputAdornment,
   InputLabel,
   Typography,
-  useTheme,
 } from '@mui/material';
 import { useAtom, useAtomValue } from 'jotai';
 import { useResetAtom } from 'jotai/utils';
@@ -23,7 +22,6 @@ interface ManualEntryFieldProps {
 
 export const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) => {
   const { t } = useTranslation();
-  const { palette } = useTheme();
 
   const isUriValid = useAtomValue(isUriValidAtom);
   const [manualInput, setManualInput] = useAtom(manualInputAtom);
@@ -41,17 +39,23 @@ export const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) 
   return (
     <Box ref={ref} id="other">
       <Box
-        sx={{
-          px: 1,
-          backgroundColor: `light-dark(${palette.background.paper}, ${palette.grey[800]})`,
-          borderBottomWidth: 1,
-          borderBottomStyle: 'solid',
-          borderBottomColor: palette.grey[700],
-        }}
+        sx={[
+          {
+            px: 1,
+            backgroundColor: (theme) => theme.vars.palette.background.paper,
+            borderBottomWidth: 1,
+            borderBottomStyle: 'solid',
+            borderBottomColor: (theme) => theme.vars.palette.grey[700],
+          },
+          (theme) =>
+            theme.applyStyles('dark', {
+              backgroundColor: theme.vars.palette.grey[900],
+            }),
+        ]}
       >
         <Typography
           sx={{
-            color: palette.text.secondary,
+            color: (theme) => theme.vars.palette.text.secondary,
             fontSize: '0.875rem',
             lineHeight: 2.5,
             textTransform: 'uppercase',

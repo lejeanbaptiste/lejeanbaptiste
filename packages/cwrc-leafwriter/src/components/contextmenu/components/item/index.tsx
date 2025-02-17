@@ -58,7 +58,7 @@ export const Item = forwardRef<any, ItemProps>(
     ref,
   ) => {
     const { ui } = useActions();
-    const { entity, palette } = useTheme();
+    const theme = useTheme();
 
     const { anchorEl, isEmpty, isLoading, nestedList, setAnchorEl, showNestedMenu } = useItem({
       active,
@@ -79,7 +79,7 @@ export const Item = forwardRef<any, ItemProps>(
       onClick && onClick();
     };
 
-    const color = id && isEntityType(id) ? entity[id].color.main : palette.primary.main;
+    const color = id && isEntityType(id) ? theme.entity[id].color.main : theme.palette.primary.main;
 
     const rigthIconProps: { icon: IconLeafWriter; size?: number } | null = useMemo(() => {
       if (type === 'collection') {
@@ -107,23 +107,25 @@ export const Item = forwardRef<any, ItemProps>(
         disableRipple
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
-        sx={{
-          mx: 0.5,
-          px: 0.75,
-          borderRadius: 1,
-          bgcolor: showNestedMenu
-            ? alpha(palette.primary.main, palette.action.selectedOpacity)
-            : 'inherit',
-          '&:hover': {
-            color,
-            bgcolor: alpha(color, palette.action.hoverOpacity),
+        sx={[
+          {
+            mx: 0.5,
+            px: 0.75,
+            borderRadius: 1,
+            backgroundColor: 'inherit',
+            '&.Mui-focusVisible': { backgroundColor: 'inherit' },
+            '&:hover': {
+              color,
+              backgroundColor: alpha(color, theme.vars.palette.action.hoverOpacity),
+            },
           },
-          '&.Mui-focusVisible': {
-            bgcolor: showNestedMenu
-              ? alpha(palette.primary.main, palette.action.selectedOpacity)
-              : 'inherit',
+          showNestedMenu && {
+            backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel}, ${theme.vars.palette.action.selectedOpacity})`,
+            '&.Mui-focusVisible': {
+              backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel}, ${theme.vars.palette.action.selectedOpacity})`,
+            },
           },
-        }}
+        ]}
         ref={ref}
       >
         <Stack
@@ -137,7 +139,6 @@ export const Item = forwardRef<any, ItemProps>(
           <Label {...{ documentation, fullName, invalid, name }} />
           {rigthIconProps && <IconRight isLoading={isLoading} {...rigthIconProps} />}
         </Stack>
-
         {showNestedMenu && (
           <Nest
             anchorEl={anchorEl}

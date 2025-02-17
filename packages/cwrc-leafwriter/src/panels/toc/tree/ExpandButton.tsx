@@ -1,5 +1,5 @@
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
-import { IconButton, useTheme, type PaletteMode } from '@mui/material';
+import { IconButton, useColorScheme, useTheme, type PaletteMode } from '@mui/material';
 import { motion, type Variants } from 'framer-motion';
 import { MouseEvent, useMemo } from 'react';
 
@@ -16,7 +16,8 @@ export const ExpandButton = ({
   selected = false,
   onClick,
 }: ExpandButtonProps) => {
-  const { palette } = useTheme();
+  const theme = useTheme();
+  const { mode, systemMode } = useColorScheme();
 
   const variant: Variants = {
     expanded: { transform: 'rotate(0deg)' },
@@ -24,8 +25,8 @@ export const ExpandButton = ({
   };
 
   const inverseThemeMode: PaletteMode = useMemo(
-    () => (palette.mode === 'light' ? 'dark' : 'light'),
-    [palette.mode],
+    () => (mode === 'dark' || (mode === 'system' && systemMode === 'dark') ? 'light' : 'dark'),
+    [mode, systemMode],
   );
 
   return (
@@ -35,12 +36,11 @@ export const ExpandButton = ({
         variants={variant}
         initial="collapsed"
         animate={expanded ? 'expanded' : 'collapse'}
-        sx={{
-          width: 18,
-          height: 18,
-          color: selected ? palette.primary[inverseThemeMode] : palette.primary[palette.mode],
-          opacity: expanded ? 1 : 0.7,
-        }}
+        sx={[
+          { width: 18, height: 18, opacity: 0.7, color: theme.palette.primary[theme.palette.mode] },
+          selected && { color: theme.palette.primary[inverseThemeMode] },
+          expanded && { opacity: 1 },
+        ]}
       />
     </IconButton>
   );

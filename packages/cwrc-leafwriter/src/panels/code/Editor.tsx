@@ -1,4 +1,4 @@
-import { Box, useTheme } from '@mui/material';
+import { Box, useColorScheme } from '@mui/material';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -20,7 +20,7 @@ type UpdateProps = {
 };
 
 export const Editor = ({ showLOD }: EditorProps) => {
-  const { palette } = useTheme();
+  const { mode, systemMode } = useColorScheme();
   const { writer } = window;
 
   const divEl = useRef<HTMLDivElement>(null);
@@ -33,8 +33,9 @@ export const Editor = ({ showLOD }: EditorProps) => {
   const [_showLOD, _setShowLOD] = useState(showLOD);
 
   const editorTheme = useMemo(
-    () => (palette.mode === 'dark' ? 'vs-dark' : 'vs-light'),
-    [palette.mode],
+    () =>
+      mode === 'dark' || (mode === 'system' && systemMode === 'dark') ? 'vs-dark' : 'vs-light',
+    [mode, systemMode],
   );
 
   useEffect(() => {
@@ -126,7 +127,7 @@ export const Editor = ({ showLOD }: EditorProps) => {
 
   useEffect(() => {
     editor?.updateOptions({ theme: editorTheme });
-  }, [palette.mode]);
+  }, [mode, systemMode]);
 
   const updateView = async (useDoc: boolean = false) => {
     if (!enabled) return;

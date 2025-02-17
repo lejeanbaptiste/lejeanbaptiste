@@ -8,12 +8,18 @@ export const MarkupPanel = () => {
       id="markup-panel"
       elevation={5}
       square
-      sx={{
-        overflow: 'auto',
-        height: '100%',
-        p: 1,
-        bgcolor: ({ palette }) => (palette.mode === 'dark' ? palette.background.paper : '#f5f5f5'),
-      }}
+      sx={[
+        {
+          overflow: 'auto',
+          height: '100%',
+          p: 1,
+          backgroundColor: '#f5f5f5',
+        },
+        (theme) =>
+          theme.applyStyles('dark', {
+            backgroundColor: theme.vars.palette.background.paper,
+          }),
+      ]}
     >
       <Provider>
         <Tree />

@@ -1,4 +1,4 @@
-import { useTheme, type PaletteMode } from '@mui/material';
+import { useColorScheme, useTheme, type PaletteMode } from '@mui/material';
 import { useAtom } from 'jotai';
 import { useEffect, useMemo, useState } from 'react';
 import { getIcon, type IconLeafWriter } from '../../../../../icons';
@@ -14,7 +14,8 @@ interface Props {
 const TIME_OUT_SELECT = 350;
 
 export const useItem = ({ content = '', id, isEntity = false, selected = false }: Props) => {
-  const { entity, palette } = useTheme();
+  const theme = useTheme();
+  const { mode, systemMode } = useColorScheme();
 
   const [detailsHoverTimeOut, resetDetailsHoverTimeOut] = useAtom(detailsHoverTimeOutAtom);
 
@@ -25,16 +26,16 @@ export const useItem = ({ content = '', id, isEntity = false, selected = false }
   const [details, setDetails] = useState<string | undefined>(undefined);
 
   const entityType = isEntity ? entitiesManager.getEntity(id)?.getType() : null;
-  const color = entityType ? entity[entityType].color.main : palette.primary[palette.mode];
+  const color = entityType ? theme.entity[entityType].color.main : theme.vars.palette.primary.main;
 
   const icon = useMemo(
-    () => (entityType ? getIcon(entity[entityType].icon) : getIcon(id as IconLeafWriter)),
+    () => (entityType ? getIcon(theme.entity[entityType].icon) : getIcon(id as IconLeafWriter)),
     [id],
   );
 
   const inverseThemeMode: PaletteMode = useMemo(
-    () => (palette.mode === 'light' ? 'dark' : 'light'),
-    [palette.mode],
+    () => (mode === 'dark' || (mode === 'system' && systemMode === 'dark') ? 'light' : 'dark'),
+    [mode, systemMode],
   );
 
   useEffect(() => {
