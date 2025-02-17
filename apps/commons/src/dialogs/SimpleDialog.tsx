@@ -97,13 +97,17 @@ export const SimpleDialog = ({
         </DialogContent>
       )}
       <DialogActions
-        sx={{
-          mx: 1.5,
-          justifyContent: actions.length > 1 ? 'space-between' : 'flex-end',
-          '& :first-of-type': {
-            marginRight: actions.length > 1 ? 'auto' : 0,
+        sx={[
+          {
+            mx: 1.5,
+            justifyContent: 'flex-end',
+            marginRight: 0,
           },
-        }}
+          actions.length > 1 && {
+            justifyContent: 'space-between',
+            marginRight: 'auto',
+          },
+        ]}
       >
         {actions.map(({ action, label, variant }, index) => (
           <Button

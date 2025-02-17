@@ -1,4 +1,4 @@
-import { AppBar, Box, Stack, Toolbar, useTheme } from '@mui/material';
+import { AppBar, Stack, Toolbar, useColorScheme } from '@mui/material';
 import { EditorModeSelector, ProfileAvatar, SigninButton } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence } from 'framer-motion';
@@ -17,15 +17,12 @@ export const TopBar = ({ Center, Left }: TopBarProps) => {
   const { userState } = useAppState().auth;
   const { resource } = useAppState().editor;
   const { page } = useAppState().ui;
+  const { mode, systemMode } = useColorScheme();
 
-  const { palette } = useTheme();
+  const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
 
   return (
-    <AppBar
-      color="inherit"
-      elevation={!resource ? 0 : palette.mode === 'dark' ? 2 : 1}
-      position="relative"
-    >
+    <AppBar color="inherit" elevation={!resource ? 0 : isDarkMode ? 2 : 1} position="relative">
       <Toolbar
         sx={{ flexWrap: 'wrap', justifyContent: 'space-between', maxHeight: '48px' }}
         variant="dense"

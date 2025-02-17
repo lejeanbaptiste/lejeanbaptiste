@@ -78,11 +78,14 @@ export const TemplatesView = ({
             <Masonry
               columns={columns}
               spacing={1.5}
-              sx={{
-                width: layout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
-                mx: 1.5,
-                pt: 1.5,
-              }}
+              sx={[
+                {
+                  width: 'calc(100% - 32px)',
+                  mx: 1.5,
+                  pt: 1.5,
+                },
+                layout === 'grid' && { width: widthMasonry },
+              ]}
             >
               {templates
                 .filter((resource) => resource.category === category)

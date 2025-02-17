@@ -7,7 +7,7 @@ export const BasicLayout = () => {
   useNotifier();
 
   return (
-    <Box sx={{ display: 'flex', width: '100%', bgcolor: 'background.default' }}>
+    <Box sx={{ display: 'flex', width: '100%', backgroundColor: 'background.default' }}>
       <Box sx={{ flex: '1 1 auto' }}>
         <Outlet />
       </Box>

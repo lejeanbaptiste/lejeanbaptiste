@@ -9,6 +9,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  useTheme,
 } from '@mui/material';
 import { StyledToolTip } from '@src/components';
 import { supportedIdentityProviders } from '@src/config';
@@ -22,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import type { SubMenu } from '../types';
 
 export const Identity = ({ onBack, onClose }: SubMenu) => {
+  const theme = useTheme();
   const { user } = useAppState().auth;
   const { setPreferredId, getLinkedAccounts, linkAccount } = useActions().auth;
   const { supportedProviders, storageProviders } = useAppState().providers;
@@ -78,15 +80,22 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
         <ListItemText primary={t('LWC.commons.identity')} sx={{ textTransform: 'capitalize' }} />
       </ListItem>
       {supportedProviders
-        .filter((provider) => supportedIdentityProviders.includes(provider.providerId))
-        .map(({ providerId: id, service }) => (
+        .filter(
+          (provider) =>
+            provider.providerId && supportedIdentityProviders.includes(provider.providerId),
+        )
+        .map(({ providerId, service }) => (
           <ListItem
-            key={id}
+            key={providerId}
             color="primary"
             secondaryAction={
-              !service && (
-                <StyledToolTip arrow title={t('LWC.commons.link_your_account', { provider: id })}>
-                  <IconButton onPointerDown={() => handleConnectAccount(id)} size="small">
+              !service &&
+              providerId && (
+                <StyledToolTip
+                  arrow
+                  title={t('LWC.commons.link_your_account', { provider: providerId })}
+                >
+                  <IconButton onPointerDown={() => handleConnectAccount(providerId)} size="small">
                     <AddLinkIcon color="primary" fontSize="small" />
                   </IconButton>
                 </StyledToolTip>
@@ -96,27 +105,26 @@ export const Identity = ({ onBack, onClose }: SubMenu) => {
           >
             <ListItemButton
               disabled={!service}
-              onPointerDown={(event) => handleSelect(event, id)}
-              selected={id === user?.preferredID}
-              sx={{
-                borderRadius: 1,
-                '&.Mui-selected': {
-                  bgcolor: ({ palette }) =>
-                    user?.preferredID === id
-                      ? chroma(palette.primary.main).alpha(0.15).css()
-                      : 'inherit',
+              onPointerDown={(event) => providerId && handleSelect(event, providerId)}
+              selected={providerId === user?.preferredID}
+              sx={[
+                { borderRadius: 1 },
+                user?.preferredID === providerId && {
+                  '&.Mui-selected': {
+                    backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.15)`,
+                  },
                 },
-              }}
+              ]}
             >
               <ListItemIcon sx={{ minWidth: 32 }}>
                 <Icon
-                  color={user?.preferredID === id ? 'primary' : 'inherit'}
-                  component={getIcon(id as IconName)}
+                  color={user?.preferredID === providerId ? 'primary' : 'inherit'}
+                  component={getIcon(providerId as IconName)}
                   fontSize="small"
                 />
               </ListItemIcon>
-              <ListItemText primary={id} sx={{ textTransform: 'capitalize' }} />
-              {user?.preferredID === id && <CheckIcon color="primary" fontSize="small" />}
+              <ListItemText primary={providerId} sx={{ textTransform: 'capitalize' }} />
+              {user?.preferredID === providerId && <CheckIcon color="primary" fontSize="small" />}
             </ListItemButton>
           </ListItem>
         ))}

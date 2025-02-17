@@ -1,4 +1,5 @@
-import { Paper, Stack, useTheme } from '@mui/material';
+import { Paper, Stack } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import { db } from '@src/db';
 import { useAppState } from '@src/overmind';
 import type { ViewProps, ViewType } from '@src/types';
@@ -10,9 +11,8 @@ import { Menu, Sidebar } from './components';
 
 export const Storage = () => {
   const { userState } = useAppState().auth;
-
+  const { mode, systemMode } = useColorScheme();
   const { t } = useTranslation();
-  const { palette } = useTheme();
 
   const countRecentDocs = useLiveQuery(() => db.recentDocuments.count(), [], 0);
 
@@ -24,6 +24,8 @@ export const Storage = () => {
     samples: { title: `${t('LWC.commons.samples')}`, value: 'samples' },
     templates: { title: `${t('LWC.commons.templates')}`, value: 'templates' },
   };
+
+  const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
 
   useEffect(() => {
     if (userState !== 'AUTHENTICATING') setView();
@@ -51,7 +53,7 @@ export const Storage = () => {
   return (
     <Stack direction="row" justifyContent="center">
       {userState === 'UNAUTHENTICATED' && <Sidebar />}
-      <Paper elevation={palette.mode === 'dark' ? 6 : 1} sx={{ zIndex: 2 }}>
+      <Paper elevation={isDarkMode ? 6 : 1} sx={{ zIndex: 2 }}>
         <Stack direction="row" justifyContent="center">
           <Menu onSelect={handleSelect} selectedMenu={selectedView} />
           <DocumentViews {...view[selectedView]} />

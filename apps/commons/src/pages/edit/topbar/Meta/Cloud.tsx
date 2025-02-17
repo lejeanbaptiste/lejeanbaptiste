@@ -46,11 +46,14 @@ export const Cloud = () => {
           disableRipple={!isDirty}
           onPointerDown={handleClick}
           size="small"
-          sx={{
-            mt: -0.125,
-            ml: 0.5,
-            cursor: isDirty ? 'pointer' : 'default',
-          }}
+          sx={[
+            {
+              mt: -0.125,
+              ml: 0.5,
+              cursor: 'default',
+            },
+            isDirty && { cursor: 'pointer' },
+          ]}
         >
           {isSaving ? (
             <CloudSyncOutline sx={{ width: 16, height: 16 }} />

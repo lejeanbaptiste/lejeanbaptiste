@@ -1,4 +1,5 @@
-import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
+import { CssBaseline, useMediaQuery } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import { Storage } from '@src/dialogs';
 import ModalProvider from 'mui-modal-provider';
 import { SnackbarProvider } from 'notistack';
@@ -47,11 +48,11 @@ export const App = () => {
   }, [currentLocale]);
 
   useEffect(() => {
-    if (themeAppearance === 'auto') setDarkMode(prefersDarkMode);
+    if (themeAppearance === 'system') setDarkMode(prefersDarkMode);
   }, [prefersDarkMode]);
 
   return (
-    <ThemeProvider theme={theme(darkMode)}>
+    <ThemeProvider theme={theme} defaultMode={darkMode ? 'dark' : 'light'}>
       <ModalProvider>
         <SnackbarProvider>
           <CssBaseline enableColorScheme />
