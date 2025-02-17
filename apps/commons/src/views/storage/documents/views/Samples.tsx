@@ -25,6 +25,7 @@ export const SamplesView = ({ layout, width }: SamplesViewProps) => {
 
   const loadSamples = async () => {
     const documents = await getSampleDocuments();
+    if (documents instanceof Error) return;
     setSamples(documents);
   };
 

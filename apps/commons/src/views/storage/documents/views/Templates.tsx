@@ -41,6 +41,7 @@ export const TemplatesView = ({
 
   const loadTemplates = async () => {
     const documents = await getTemplates();
+    if (documents instanceof Error) return;
     setTemplates(documents);
   };
 
