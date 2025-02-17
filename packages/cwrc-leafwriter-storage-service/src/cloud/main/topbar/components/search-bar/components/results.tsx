@@ -51,16 +51,21 @@ export const Results = ({ list, onPrimaryAction, onSecondaryAction, type }: Resu
       {list.length > 0 && (
         <Box>
           <ListSubheader
-            sx={{
-              py: 0.5,
-              px: 3,
-              pr: 1.5,
-              bgcolor: ({ palette }) =>
-                palette.mode === 'dark' ? '#252525' : palette.background.paper,
-              lineHeight: 2,
-              fontSize: '0.775rem',
-              fontWeight: 700,
-            }}
+            sx={[
+              {
+                py: 0.5,
+                px: 3,
+                pr: 1.5,
+                lineHeight: 2,
+                fontSize: '0.775rem',
+                fontWeight: 700,
+                backgroundColor: (theme) => theme.palette.background.paper,
+              },
+              (theme) =>
+                theme.applyStyles('dark', {
+                  backgroundColor: '#252525',
+                }),
+            ]}
           >
             <Divider />
             <Stack direction="row" justifyContent="space-between" alignItems="center" pt={0.5}>

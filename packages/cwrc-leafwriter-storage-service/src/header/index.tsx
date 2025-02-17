@@ -1,4 +1,5 @@
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import { useAnimate } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +34,7 @@ export const Header = ({ label }: Props) => {
 
   return (
     <Grid container alignItems="center" data-testid="header" px={2} py={1} minHeight={49}>
-      <Grid item xs={4}>
+      <Grid size={{ xs: 4 }}>
         <Typography
           ref={scope}
           data-testid="header-source"
@@ -44,7 +45,7 @@ export const Header = ({ label }: Props) => {
         </Typography>
       </Grid>
 
-      <Grid item xs={4}>
+      <Grid size={{ xs: 4 }}>
         <Typography
           color="primary"
           data-testid="header-dialog-title"
@@ -56,7 +57,7 @@ export const Header = ({ label }: Props) => {
         </Typography>
       </Grid>
 
-      <Grid item xs={4}>
+      <Grid size={{ xs: 4 }}>
         <Box flexGrow={1} />
       </Grid>
     </Grid>

@@ -1,5 +1,4 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { LoadingButton } from '@mui/lab';
 import {
   Button,
   ButtonGroup,
@@ -66,7 +65,7 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
   return (
     <>
       <ButtonGroup aria-label="split save button" ref={anchor} size="small" variant="outlined">
-        <LoadingButton
+        <Button
           data-testid="save"
           disabled={!enabled || resource?.filename === ''}
           loading={isSaving}
@@ -76,7 +75,7 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
           variant="outlined"
         >
           {saveOptions.at(selectedIndex)?.label}
-        </LoadingButton>
+        </Button>
         <Button
           aria-controls={open ? 'split-button-menu' : undefined}
           aria-expanded={open ? 'true' : undefined}

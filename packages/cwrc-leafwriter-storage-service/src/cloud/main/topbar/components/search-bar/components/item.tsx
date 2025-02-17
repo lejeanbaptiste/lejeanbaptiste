@@ -141,11 +141,7 @@ export const Item = ({ item, onPrimaryAction, onSecondaryAction }: ItemProps) =>
           }
           secondary={
             <Box width="90%">
-              <Typography
-                color="text.secondary"
-                sx={{ overflowWrap: 'break-word' }}
-                variant="body2"
-              >
+              <Typography color="textSecondary" sx={{ overflowWrap: 'break-word' }} variant="body2">
                 {getPath()}
               </Typography>
               <AnimatePresence>

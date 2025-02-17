@@ -1,5 +1,4 @@
 import { Box, Stack, Typography } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import parse from 'autosuggest-highlight/parse';
 import { motion, type Variants } from 'framer-motion';
 
@@ -27,7 +26,7 @@ export const ContentMatch = ({ text_matches }: ContentMatchProps) => {
         py: 0.25,
         px: 1,
         borderRadius: 1,
-        bgcolor: ({ palette }) => alpha(palette.grey[300], 0.2),
+        backgroundColor: (theme) => `rgba(${theme.palette.grey[300]} / 0.2)`,
       }}
     >
       {text_matches?.map(({ fragment, matches }, index) => {

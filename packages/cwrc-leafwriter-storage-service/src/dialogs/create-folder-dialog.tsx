@@ -1,4 +1,3 @@
-import { LoadingButton } from '@mui/lab';
 import {
   Button,
   Dialog,
@@ -71,19 +70,20 @@ export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialo
           autoFocus
           fullWidth
           id="name"
-          inputProps={{ 'data-testid': 'save:create-folder:name-input' }}
           label={t('SS.commons.name')}
           onChange={handleNameChange}
           placeholder={`${t('SS.cloud.folder_name')}`}
           required
+          slotProps={{
+            htmlInput: { 'data-testid': 'save:create-folder:name-input' },
+          }}
           value={name}
           variant="standard"
         />
       </DialogContent>
-
       <DialogActions>
         <Button onClick={handleCancel}>{t('SS.commons.cancel')}</Button>
-        <LoadingButton
+        <Button
           data-testid="save:create-folder:create-button"
           disabled={name === ''}
           loading={isLoading}
@@ -91,7 +91,7 @@ export const CreateFolderDialog = ({ onCancel, onCreate, open }: CreateRepoDialo
           variant="contained"
         >
           {t('SS.commons.create')}
-        </LoadingButton>
+        </Button>
       </DialogActions>
     </Dialog>
   );
