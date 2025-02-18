@@ -1,4 +1,3 @@
-import { useAutocomplete } from '@mui/base/useAutocomplete';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -10,6 +9,7 @@ import {
   InputBase,
   Paper,
   useMediaQuery,
+  useAutocomplete,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { Content, SearchResults, SearchResultsBlobs } from '@src/types';

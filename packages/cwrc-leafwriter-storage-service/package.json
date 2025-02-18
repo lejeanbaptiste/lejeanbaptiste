@@ -67,7 +67,6 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@mui/base": "^5.0.0-beta.68",
     "@mui/icons-material": "^6.4.4",
     "@mui/material": "^6.4.4",
     "@octokit/rest": "^21.1.1",
