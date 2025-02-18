@@ -1,5 +1,5 @@
 import { Stack } from '@mui/material';
-import { BugReport } from './bugReport';
+import { BugReport } from './bug-report';
 
 export const StatusBar = () => {
   return (

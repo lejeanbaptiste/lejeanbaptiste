@@ -44,7 +44,7 @@ export const BugReport = () => {
       ]}
       component={motion.div}
       animate={{
-        width: open ? 580 : 130,
+        width: open ? 580 : 150,
         height: open ? 170 : 30,
         borderRadius: open ? 4 : 8,
       }}

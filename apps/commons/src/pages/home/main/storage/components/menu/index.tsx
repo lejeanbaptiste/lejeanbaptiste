@@ -30,7 +30,7 @@ export const Menu = ({ onSelect, selectedMenu }: MainMenuProps) => {
 
   return (
     <Stack
-      width={240}
+      width={242}
       px={1}
       py={2}
       sx={[
