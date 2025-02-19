@@ -42,7 +42,7 @@
     "src"
   ],
   "scripts": {
-    "build": "npm run clean && tsc && webpack && npm run release-copy-assets",
+    "build": "NODE_OPTIONS=--max_old_space_size=4096 npm run clean && tsc && webpack && npm run release-copy-assets",
     "build-documentation": "typedoc --out docs src/index.tsx",
     "release-copy-assets": "node release.js",
     "clean": "rm -rf node_modules dist lib",
