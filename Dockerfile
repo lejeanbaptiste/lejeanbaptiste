@@ -5,7 +5,7 @@ WORKDIR /app
 # 1. Build the source code only when needed
 FROM base AS builder
 RUN apk add --no-cache git
-COPY . .
+COPY --chown=node:node . .
 RUN \
   if [ -f package-lock.json ]; then npm ci; \
   else npm install; \
