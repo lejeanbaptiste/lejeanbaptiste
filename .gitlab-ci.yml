@@ -67,7 +67,7 @@ production_manual:
   before_script:
     - apk add --update npm
     - npm i -g changeset typescript webpack shelljs webpack-cli
-    - npm i changeset typescript webpack shelljs webpack-cli
+    - npm ci
     - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
     - npm run release
   <<: *deployment
