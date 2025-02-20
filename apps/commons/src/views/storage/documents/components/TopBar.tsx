@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { AnimationControls, motion, type Variants } from 'framer-motion';
+import { AnimationControls, motion, type Variants } from 'motion/react';
 import { type MouseEvent } from 'react';
 import { Layout } from '..';
 

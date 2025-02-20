@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
 import type { ViewType } from '@src/types';
-import { motion, type AnimationControls, type Variants } from 'framer-motion';
+import { motion, type AnimationControls, type Variants } from 'motion/react';
 import { Layout } from '..';
 import { RecentView, SamplesView, TemplatesView } from '../views';
 import { ShowSkeleton } from './ShowSkeleton';

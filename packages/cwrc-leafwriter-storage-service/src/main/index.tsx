@@ -139,7 +139,7 @@ export const Main = ({
               <Header label={headerLabel} />
               <DialogContent
                 dividers
-                sx={{ p: 0, overflowY: source === 'paste' ? 'auto' : 'hidden' }}
+                sx={[{ p: 0, overflowY: 'hidden' }, source === 'paste' && { overflowY: 'auto' }]}
               >
                 {type === 'save' ? (
                   cloud.providers.length > 0 && <CloudDialog />

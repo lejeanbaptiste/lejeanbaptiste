@@ -1,6 +1,6 @@
 import { Box, Divider } from '@mui/material';
-import { AnimatePresence } from 'framer-motion';
 import { useAtomValue } from 'jotai';
+import { AnimatePresence } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { showOnlyValidAtom } from '../../store';
 import { Item, NoResultItem, type ItemProps } from '../item';

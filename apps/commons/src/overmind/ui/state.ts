@@ -19,5 +19,5 @@ export const state: State = {
   dialogBar: [],
   notifications: [],
   page: 'home',
-  themeAppearance: 'auto',
+  themeAppearance: 'system',
 };

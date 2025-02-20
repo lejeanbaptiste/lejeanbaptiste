@@ -53,22 +53,23 @@ export const SaveSettingsDialog = ({ anchor, onDone, open }: SaveSettingsDialogP
       <DialogTitle id="save-settings-title" sx={{ textAlign: 'center' }}>
         {t('SS.cloud.settings.save_settings')}
       </DialogTitle>
-      <DialogContent sx={{ width: isSM ? 300 : 400 }}>
+      <DialogContent sx={[{ width: 400 }, isSM && { width: 300 }]}>
         <TextField
           autoComplete="off"
           autoFocus
           fullWidth
           id="comit-message"
-          inputProps={{ 'data-testid': 'save:settings:commit-input' }}
           label={t('SS.cloud.settings.comit_message')}
           onBlur={handleComitMessageBlur}
           onChange={handleComitMessageChange}
           placeholder={commitMessage}
+          slotProps={{
+            htmlInput: { 'data-testid': 'save:settings:commit-input' },
+          }}
           value={commitMessageLocal}
           variant="standard"
         />
       </DialogContent>
-
       <DialogActions>
         <Button onClick={handleDone} title="done">
           {t('SS.cloud.settings.done')}

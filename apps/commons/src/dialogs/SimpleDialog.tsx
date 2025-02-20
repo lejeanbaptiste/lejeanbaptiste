@@ -3,7 +3,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Icon } from '@mui/material';
 import { getIcon } from '@src/icons';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import { useActions } from '../overmind';
 import type { SimpleDialogProps } from './type';
@@ -23,7 +22,6 @@ export const SimpleDialog = ({
   children,
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
-  const { t } = useTranslation();
 
   const [data, setData] = useState<{ [key: string]: any }>({});
   const [actionsDisabled, setActionsDisabled] = useState(false);
@@ -99,13 +97,17 @@ export const SimpleDialog = ({
         </DialogContent>
       )}
       <DialogActions
-        sx={{
-          mx: 1.5,
-          justifyContent: actions.length > 1 ? 'space-between' : 'flex-end',
-          '& :first-of-type': {
-            marginRight: actions.length > 1 ? 'auto' : 0,
+        sx={[
+          {
+            mx: 1.5,
+            justifyContent: 'flex-end',
+            marginRight: 0,
           },
-        }}
+          actions.length > 1 && {
+            justifyContent: 'space-between',
+            marginRight: 'auto',
+          },
+        ]}
       >
         {actions.map(({ action, label, variant }, index) => (
           <Button
@@ -114,7 +116,7 @@ export const SimpleDialog = ({
             onPointerDown={() => handleAction(action)}
             variant={variant ?? 'text'}
           >
-            {t(`LWC.commons.${label ?? action}`)}
+            {label ?? action}
           </Button>
         ))}
       </DialogActions>

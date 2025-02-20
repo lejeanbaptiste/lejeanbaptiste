@@ -6,7 +6,7 @@ import { getIcon } from '../../icons';
 import { type MenuItem } from './';
 
 export const IconButton = ({ color, disabled, icon, onClick, title, tooltip }: MenuItem) => {
-  const { palette } = useTheme();
+  const theme = useTheme();
   const { t } = useTranslation();
 
   let tip = `${tooltip ?? title}`;
@@ -25,7 +25,7 @@ export const IconButton = ({ color, disabled, icon, onClick, title, tooltip }: M
             width: 34,
             height: 34,
             borderRadius: 1,
-            '&:hover': { color: color ?? palette.primary.main },
+            '&:hover': { color: color ?? theme.vars.palette.primary.main },
           }}
         >
           <Icon component={getIcon(icon)} fontSize="small" />

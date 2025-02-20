@@ -1,24 +1,24 @@
 import { Button, IconButton, Stack, Typography, useTheme } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import { useActions } from '@src/overmind';
-import chroma from 'chroma-js';
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { motion } from 'motion/react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BiCopyAlt } from 'react-icons/bi';
 import { IoMdClose } from 'react-icons/io';
 import { TbExternalLink } from 'react-icons/tb';
 
 export const BugReport = () => {
-  const { palette } = useTheme();
+  const theme = useTheme();
   const { t } = useTranslation();
+  const { mode, systemMode } = useColorScheme();
 
   const [open, setOpen] = useState(false);
 
-  const baseColor = palette.mode === 'dark' ? palette.grey[900] : palette.grey[50];
-  const bgcolor = palette.mode === 'dark' ? chroma(baseColor).alpha(0.7).css() : palette.grey[50];
-  const bgcolorHover = chroma(bgcolor).alpha(0.3).css();
-
-  const baseBorderColor = palette.mode === 'dark' ? palette.grey[700] : palette.grey[400];
+  const backgroundColor = useMemo(() => {
+    const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
+    return isDarkMode ? theme.vars.palette.grey[900] : theme.vars.palette.grey[50];
+  }, [mode, systemMode]);
 
   return (
     <Stack
@@ -28,21 +28,40 @@ export const BugReport = () => {
       gap={1}
       mb={1}
       p={1}
-      bgcolor={bgcolor}
-      borderColor={baseBorderColor}
       overflow="hidden"
-      sx={{ borderStyle: 'solid', borderWidth: 1 }}
+      sx={[
+        {
+          backgroundColor: theme.vars.palette.grey[50],
+          borderStyle: 'solid',
+          borderWidth: 1,
+          borderColor: theme.vars.palette.grey[400],
+        },
+        (theme) =>
+          theme.applyStyles('dark', {
+            backgroundColor: theme.vars.palette.grey[900],
+            borderColor: theme.vars.palette.grey[700],
+          }),
+      ]}
       component={motion.div}
       animate={{
-        width: open ? 580 : 130,
+        width: open ? 580 : 150,
         height: open ? 170 : 30,
         borderRadius: open ? 4 : 8,
       }}
-      whileHover={{
-        backgroundColor: open ? bgcolor : bgcolorHover,
-        borderColor: open ? baseBorderColor : palette.primary.main,
-        cursor: open ? 'default' : 'pointer',
-      }}
+      whileHover={
+        open
+          ? {
+              backgroundColor: `rgba(${backgroundColor} / 0.3)`,
+              borderColor:
+                mode === 'dark' ? theme.vars.palette.grey[700] : theme.vars.palette.grey[400],
+              cursor: 'default',
+            }
+          : {
+              backgroundColor: `rgba(${backgroundColor} / 0.3)`,
+              borderColor: theme.vars.palette.primary.main,
+              cursor: 'pointer',
+            }
+      }
       onClick={() => !open && setOpen(true)}
     >
       <Typography
@@ -90,7 +109,6 @@ const GitLabTIcket = () => {
 };
 
 const DisplayEmail = () => {
-  const { palette } = useTheme();
   const { t } = useTranslation();
   const { notifyViaSnackbar } = useActions().ui;
 
@@ -111,8 +129,10 @@ const DisplayEmail = () => {
         pl={1}
         pr={0.25}
         py={0.25}
-        bgcolor={chroma(palette.primary.main).alpha(0.1).css()}
         borderRadius={1}
+        sx={(theme) => ({
+          backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.12)`,
+        })}
       >
         <Typography variant="caption">
           contact-project+calincs-cwrc-leaf-writer-leaf-writer-31283590-issue-@incoming.gitlab.com

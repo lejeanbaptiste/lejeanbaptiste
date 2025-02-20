@@ -1,10 +1,8 @@
-import { List, ListItem, ListItemButton, ListItemText, useTheme } from '@mui/material';
+import { List, ListItem, ListItemButton, ListItemText } from '@mui/material';
 import { useAtom, useAtomValue } from 'jotai';
-import { isProcessingAtom, conversionTypesAtom, selectedTypeAtom } from '../store';
+import { conversionTypesAtom, isProcessingAtom, selectedTypeAtom } from '../store';
 
 export const Sidebar = () => {
-  const { palette } = useTheme();
-
   const conversionTypes = useAtomValue(conversionTypesAtom);
   const isProcessing = useAtomValue(isProcessingAtom);
   const [selectedType, setSelectedType] = useAtom(selectedTypeAtom);
@@ -23,12 +21,12 @@ export const Sidebar = () => {
           >
             <ListItemText
               primary={fileType.toLowerCase()}
-              sx={{
-                span: {
-                  color: selectedType === fileType ? palette.primary.light : 'inherit',
-                  textTransform: 'capitalize',
+              sx={[
+                { span: { textTransform: 'capitalize' } },
+                selectedType === fileType && {
+                  span: { color: (theme) => theme.vars.palette.primary.light },
                 },
-              }}
+              ]}
             />
           </ListItemButton>
         </ListItem>

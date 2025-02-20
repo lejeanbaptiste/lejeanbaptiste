@@ -11,12 +11,12 @@ export const Label = ({ documentation, fullName, invalid, name }: LabelProps) =>
   return (
     <Stack sx={{ flexGrow: 1 }}>
       <Tooltip enterDelay={1500} title={documentation}>
-        <Typography color={invalid ? 'text.secondary' : 'text.primary'} variant="body2">
+        <Typography color={invalid ? 'textSecondary' : 'textPrimary'} variant="body2">
           {name}
         </Typography>
       </Tooltip>
       {fullName && (
-        <Typography color="text.secondary" textTransform="capitalize" variant="caption">
+        <Typography color="textSecondary" textTransform="capitalize" variant="caption">
           {fullName}
         </Typography>
       )}

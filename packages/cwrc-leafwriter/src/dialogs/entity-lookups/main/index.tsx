@@ -29,11 +29,14 @@ export const Main = () => {
     <Stack direction="row">
       <DialogContent sx={{ height: '65vh', px: 1, pt: 0, pb: 0.5 }}>
         <List
-          sx={{
-            pb: 0,
-            filter: lookupsBeenFetched === authorities.length ? 'blur(4px)' : 'none',
-            '& ul': { p: 0 },
-          }}
+          sx={[
+            {
+              pb: 0,
+              filter: 'none',
+              '& ul': { p: 0 },
+            },
+            lookupsBeenFetched === authorities.length && { filter: 'blur(4px)' },
+          ]}
           subheader={<li />}
         >
           {authorities.map((authority) => (

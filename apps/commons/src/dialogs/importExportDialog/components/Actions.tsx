@@ -1,4 +1,3 @@
-import { LoadingButton } from '@mui/lab';
 import { Button, DialogActions } from '@mui/material';
 import { useOpenResource } from '@src/hooks';
 import { saveAs } from 'file-saver';
@@ -79,14 +78,14 @@ export const Actions = ({ onAction }: ActionsProps) => {
   return (
     <DialogActions sx={{ justifyContent: 'space-between' }}>
       <Button onPointerDown={handleCancel}>{t('LWC.commons.cancel')}</Button>
-      <LoadingButton
+      <Button
         disabled={dialogAction === 'import' ? !fileDetail : false}
         loading={isProcessing}
         onPointerDown={handleSelect}
         variant="outlined"
       >
         <span>{dialogAction === 'import' ? t('LWC.storage.import') : t('LWC.storage.export')}</span>
-      </LoadingButton>
+      </Button>
     </DialogActions>
   );
 };

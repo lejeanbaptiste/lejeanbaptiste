@@ -60,7 +60,7 @@ export const Repository = ({ repository }: Props) => {
                 }
                 label={owner?.name ?? owner?.username}
                 size="small"
-                sx={{ maxWidth: 200, mt: description ? 1 : 0 }}
+                sx={[{ maxWidth: 200, mt: 0 }, !!description && { mt: 1 }]}
                 variant="outlined"
               />
             )}
@@ -71,7 +71,7 @@ export const Repository = ({ repository }: Props) => {
         {writePermission && (
           <Box mt={1}>
             <Tooltip
-              componentsProps={{
+              slotProps={{
                 tooltip: { sx: { '&::first-letter': { textTransform: 'uppercase' } } },
               }}
               title={t('SS.cloud.shared_with_me')}

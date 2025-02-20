@@ -25,7 +25,7 @@ export const Text = forwardRef<HTMLDivElement, TextProps>(
     },
     ref,
   ) => {
-    const { palette } = useTheme();
+    const theme = useTheme();
 
     const cleanedContent = useMemo(() => {
       // * Ignore tab and line-breaks
@@ -84,12 +84,12 @@ export const Text = forwardRef<HTMLDivElement, TextProps>(
           borderRadius: 1,
           cursor: !multiselectable ? 'not-allowed' : 'pointer',
           '&.Mui-selected': {
-            bgcolor: chroma(palette.primary[palette.mode])
-              .alpha(palette.action.selectedOpacity)
+            backgroundColor: chroma(theme.palette.primary[theme.palette.mode])
+              .alpha(theme.palette.action.selectedOpacity)
               .css(),
             '&:hover': {
-              bgcolor: chroma(palette.primary[palette.mode])
-                .alpha(palette.action.hoverOpacity + palette.action.selectedOpacity)
+              backgroundColor: chroma(theme.palette.primary[theme.palette.mode])
+                .alpha(theme.palette.action.hoverOpacity + theme.palette.action.selectedOpacity)
                 .css(),
             },
           },

@@ -1,5 +1,5 @@
 import { Box, Divider, Popover, Stack } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { Appearance, Identity, Language, Main, Storage, UserCard } from './components';
 import { ViewType } from './types';

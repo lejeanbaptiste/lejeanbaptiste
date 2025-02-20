@@ -55,9 +55,7 @@ export const Crumb = ({
         )}
         {writePermission && (
           <Tooltip
-            componentsProps={{
-              tooltip: { sx: { '&::first-letter': { textTransform: 'uppercase' } } },
-            }}
+            slotProps={{ tooltip: { sx: { '&::first-letter': { textTransform: 'uppercase' } } } }}
             title={t('SS.cloud.shared_with_me')}
           >
             <GppGoodRoundedIcon sx={{ width: 16, height: 16, mb: 0.5 }} />

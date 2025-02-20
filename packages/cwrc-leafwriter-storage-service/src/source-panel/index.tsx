@@ -75,10 +75,10 @@ export const SourcePanel = () => {
           {sources.map(({ value, label, icon }) => (
             <ToggleButton data-testid={`source_panel-${value}`} key={value} value={value}>
               <Tooltip
-                componentsProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
                 enterDelay={1000}
                 placement="right"
                 title={label}
+                slotProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
               >
                 <Icon component={getIcon(icon)} />
               </Tooltip>
@@ -86,10 +86,10 @@ export const SourcePanel = () => {
           ))}
         </ToggleButtonGroup>
         <Tooltip
-          componentsProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
           enterDelay={1000}
           placement="right"
           title={t('SS.commons.settings')}
+          slotProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
         >
           <IconButton
             data-testid="source_panel-settings_button"

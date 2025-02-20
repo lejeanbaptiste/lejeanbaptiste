@@ -49,15 +49,46 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
       <DialogContent>
         <ReactMarkdown
           components={{
-            h1: ({ ...props }) => <Typography component="h1" mb={3} variant="h4" {...props} />,
-            h2: ({ ...props }) => <Typography component="h2" my={2} variant="h5" {...props} />,
-            h3: ({ ...props }) => <Typography component="h3" my={1.5} variant="h6" {...props} />,
-            h4: ({ ...props }) => (
-              <Typography component="h4" my={1} variant="subtitle1" fontWeight={700} {...props} />
+            h1: ({ node, children }) => (
+              <Typography component="h1" mb={3} variant="h4" {...node?.properties}>
+                {children}
+              </Typography>
             ),
-            p: ({ ...props }) => <Typography mb={1} {...props} />,
-            a: ({ ...props }) => (
-              <Link underline="hover" target="_blank" rel="noopener noreferrer" {...props} />
+            h2: ({ node, children }) => (
+              <Typography component="h2" my={2} variant="h5" {...node?.properties}>
+                {children}
+              </Typography>
+            ),
+            h3: ({ node, children }) => (
+              <Typography component="h3" my={1.5} variant="h6" {...node?.properties}>
+                {children}
+              </Typography>
+            ),
+            h4: ({ node, children }) => (
+              <Typography
+                component="h4"
+                fontWeight={700}
+                my={1}
+                variant="subtitle1"
+                {...node?.properties}
+              >
+                {children}
+              </Typography>
+            ),
+            p: ({ node, children }) => (
+              <Typography mb={1} {...node?.properties}>
+                {children}
+              </Typography>
+            ),
+            a: ({ node, children }) => (
+              <Link
+                underline="hover"
+                target="_blank"
+                rel="noopener noreferrer"
+                {...node?.properties}
+              >
+                {children}
+              </Link>
             ),
           }}
         >
@@ -66,7 +97,7 @@ export const PrivacyDialog = ({ id = uuidv4(), open = true }: IDialog) => {
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button onPointerDown={handleOpenSettings}>
-          {t('LWC.cookie_consent.privacy_settings')}
+          {t('LWC.cookie consent.privacy_settings')}
         </Button>
         <Button onPointerDown={handleCancel} variant="outlined">
           {t('LWC.commons.close')}

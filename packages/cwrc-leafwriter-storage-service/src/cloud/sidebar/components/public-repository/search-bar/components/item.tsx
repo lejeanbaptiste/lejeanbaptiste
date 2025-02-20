@@ -39,7 +39,7 @@ export const Item = ({ onSelect, publicRepository }: ItemProps) => {
         <ListItemText
           primary={<Typography>{name === '' ? username : name}</Typography>}
           secondary={
-            <Typography color="text.secondary" variant="body2">
+            <Typography color="textSecondary" variant="body2">
               {username}
             </Typography>
           }

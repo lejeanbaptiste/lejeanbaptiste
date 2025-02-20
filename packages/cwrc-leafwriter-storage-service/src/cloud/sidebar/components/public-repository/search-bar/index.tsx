@@ -1,4 +1,3 @@
-import { useAutocomplete } from '@mui/base/useAutocomplete';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -9,12 +8,13 @@ import {
   InputAdornment,
   InputBase,
   Paper,
+  useAutocomplete,
   useMediaQuery,
 } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import type { PublicRepository } from '@src/types';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import debounce from 'lodash/debounce';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from 'react-use';
@@ -36,8 +36,8 @@ export const SearchBar = ({ collapsible = true, onClear, onChange, onSelect }: S
 
   const [container, { width: containerWidth }] = useMeasure();
 
-  const { breakpoints, palette } = useTheme();
-  const isMD = useMediaQuery(breakpoints.down('md'));
+  const theme = useTheme();
+  const isMD = useMediaQuery(theme.breakpoints.down('md'));
 
   const variants: Variants = {
     initial: { height: 0 },
@@ -84,14 +84,17 @@ export const SearchBar = ({ collapsible = true, onClear, onChange, onSelect }: S
           animate="visible"
           exit="exit"
           elevation={searchFocused ? 3 : 0}
-          sx={{
-            position: 'absolute',
-            zIndex: 100,
-            width: containerWidth,
-            px: 0.25,
-            py: 0.5,
-            bgcolor: searchFocused ? palette.background.paper : alpha(palette.grey[300], 0.2),
-          }}
+          sx={[
+            {
+              position: 'absolute',
+              zIndex: 100,
+              width: containerWidth,
+              px: 0.25,
+              py: 0.5,
+              backgroundColor: `rgba(${theme.palette.grey[300]}, 0.2)`,
+            },
+            searchFocused && { backgroundColor: theme.palette.background.paper },
+          ]}
         >
           <InputBase
             endAdornment={
@@ -119,7 +122,7 @@ export const SearchBar = ({ collapsible = true, onClear, onChange, onSelect }: S
                 <SearchIcon fontSize="small" sx={{ opacity: 0.5 }} />
               </InputAdornment>
             }
-            sx={{ px: 1, flex: 1, fontSize: isMD ? '0.925rem' : '0.950rem' }}
+            sx={[{ px: 1, flex: 1, fontSize: '0.950rem' }, isMD && { fontSize: '0.925rem' }]}
           />
           <AnimatePresence>
             {searchFocused && options.length > 0 && (

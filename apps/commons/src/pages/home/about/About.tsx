@@ -69,7 +69,6 @@ export const About = () => {
           <Typography
             component="h6"
             mb={1}
-            paragraph
             variant={isMobile ? 'subtitle2' : 'subtitle1'}
             sx={{ fontWeight: 700 }}
             {...node?.properties}

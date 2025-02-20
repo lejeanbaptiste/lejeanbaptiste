@@ -111,7 +111,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
         <>
           {t('LWC.ui.appearance')}:{' '}
           <span style={{ textTransform: 'capitalize' }}>
-            {themeAppearance === 'auto'
+            {themeAppearance === 'system'
               ? t('LWC.ui.device_theme')
               : themeAppearance === 'dark'
                 ? t('LWC.ui.dark_theme')
@@ -120,7 +120,7 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
         </>
       ),
       icon:
-        themeAppearance === 'auto'
+        themeAppearance === 'system'
           ? 'brightness4'
           : themeAppearance === 'dark'
             ? 'darkModeIcon'
@@ -183,7 +183,6 @@ export const Main = ({ onChangeView, onClose }: MainProps) => {
             ));
         })}
       </List>
-
       <Footer onClick={onClose} />
     </>
   );

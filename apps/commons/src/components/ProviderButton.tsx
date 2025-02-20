@@ -1,7 +1,7 @@
 import { Button, Tooltip, type ButtonProps, type TooltipProps } from '@mui/material';
 import { getIcon, type IconName } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
 interface ProviderButtonProps extends Omit<ButtonProps, 'onPointerDown'> {
@@ -25,7 +25,7 @@ export const ProviderButton = ({ providerId, tooltipProps, ...props }: ProviderB
     <Tooltip
       title={
         !cookieConsent.includes('interaction')
-          ? t('LWC.cookie_consent.warning.must_accept_cookies_message')
+          ? t('LWC.cookie consent.warning.must_accept_cookies_message')
           : ''
       }
       {...tooltipProps}

@@ -17,7 +17,7 @@ export const useMessage = () => {
     if (!storageProviders.some((provider) => provider.service?.isStorageProvider)) {
       return (
         <>
-          <Typography paragraph variant="caption">
+          <Typography variant="caption">
             {t(
               'LWC.messages.you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud',
             )}

@@ -1,5 +1,5 @@
 import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useRef } from 'react';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
@@ -256,10 +256,16 @@ export const EditorToolbar = () => {
       ref={container}
       elevation={5}
       square
-      sx={{
-        width: '100%',
-        bgcolor: ({ palette }) => (palette.mode === 'dark' ? palette.background.paper : '#f5f5f5'),
-      }}
+      sx={[
+        {
+          width: '100%',
+          backgroundColor: '#f5f5f5',
+        },
+        (theme) =>
+          theme.applyStyles('dark', {
+            backgroundColor: theme.vars.palette.background.paper,
+          }),
+      ]}
       component={motion.div}
       layout="size"
     >

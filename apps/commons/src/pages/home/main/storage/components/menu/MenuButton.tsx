@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 import { getIcon, type IconName } from '@src/icons';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 export interface MenuButtonProps {
   active?: boolean;
@@ -30,9 +30,10 @@ export const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
 ))(({ theme }) => ({
   [`& .${tooltipClasses.tooltip}`]: {
     maxWidth: 220,
-    boxShadow: theme.palette.mode === 'dark' ? 'none' : `0 0 2px ${theme.palette.grey[300]}`,
-    backgroundColor: theme.palette.background.paper,
-    color: theme.palette.text.secondary,
+    boxShadow: `0 0 2px ${theme.vars.palette.grey[300]}`,
+    backgroundColor: theme.vars.palette.background.paper,
+    color: theme.vars.palette.text.secondary,
+    ...theme.applyStyles('dark', { boxShadow: 'none' }),
   },
 }));
 
@@ -64,7 +65,7 @@ export const MenuButton = ({
                 <IconButton aria-label="help" disabled edge="end" size="small">
                   <InfoOutlinedIcon
                     fontSize="small"
-                    sx={{ color: active ? palette.primary.light : 'inherit' }}
+                    sx={[active ? { color: palette.primary.light } : { color: 'inherit' }]}
                   />
                 </IconButton>
               </span>
@@ -83,16 +84,20 @@ export const MenuButton = ({
               <Icon
                 component={getIcon(icon)}
                 fontSize="small"
-                sx={{ color: active ? palette.primary.light : 'inherit' }}
+                sx={[active ? { color: palette.primary.light } : { color: 'inherit' }]}
               />
             </ListItemIcon>
           )}
           <ListItemText
             primary={label}
-            sx={{
-              '::first-letter': { textTransform: 'uppercase' },
-              span: { color: active ? palette.primary.light : 'inherit' },
-            }}
+            sx={[
+              {
+                '::first-letter': { textTransform: 'uppercase' },
+              },
+              active && {
+                span: { color: palette.primary.light },
+              },
+            ]}
           />
         </ListItemButton>
       </ListItem>

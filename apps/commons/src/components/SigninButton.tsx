@@ -34,7 +34,7 @@ export const SigninButton = () => {
     <Tooltip
       title={
         !cookieConsent.includes('interaction')
-          ? t('LWC.cookie_consent.warning.must_accept_cookies_message')
+          ? t('LWC.cookie consent.warning.must_accept_cookies_message')
           : ''
       }
     >

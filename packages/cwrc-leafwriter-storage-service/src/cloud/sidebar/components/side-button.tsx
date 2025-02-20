@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { UserType } from '@src/types';
-import { motion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'motion/react';
 import { useState } from 'react';
 
 interface SideButtonProps {
@@ -38,8 +38,8 @@ export const SideButton = ({
   const handleClick = () => (onClick ? onClick(value) : undefined);
   const handleDelete = () => (onDelete && uuid ? onDelete(uuid) : undefined);
 
-  const { breakpoints, palette } = useTheme();
-  const isSM = useMediaQuery(breakpoints.down('sm'));
+  const theme = useTheme();
+  const isSM = useMediaQuery(theme.breakpoints.down('sm'));
 
   const variation: Variants = {
     show: { height: 'auto', opacity: 1 },
@@ -70,7 +70,7 @@ export const SideButton = ({
           </IconButton>
         )
       }
-      sx={{ whiteSpace: isSM ? 'nowrap' : 'inherit' }}
+      sx={[{ whiteSpace: 'inherit' }, isSM && { whiteSpace: 'nowrap' }]}
       title={label}
     >
       <ListItemButton
@@ -86,20 +86,28 @@ export const SideButton = ({
             <Icon
               component={type === 'organization' ? GroupWorkIcon : AccountCircleIcon}
               fontSize="small"
-              sx={{ color: active ? palette.primary.main : 'inherit' }}
+              sx={[{ color: 'inherit' }, active && { color: theme.palette.primary.main }]}
             />
           </ListItemIcon>
         )}
         <ListItemText
           id={value}
           primary={label}
-          sx={{
-            span: {
-              color: active ? palette.primary.main : 'inherit',
-              fontWeight: active ? 600 : 400,
-              '&::first-letter': { textTransform: 'uppercase' },
+          sx={[
+            {
+              span: {
+                color: 'inherit',
+                fontWeight: 400,
+                '&::first-letter': { textTransform: 'uppercase' },
+              },
             },
-          }}
+            active && {
+              span: {
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+              },
+            },
+          ]}
         />
       </ListItemButton>
     </ListItem>

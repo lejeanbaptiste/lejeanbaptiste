@@ -1,4 +1,12 @@
-import { Box, ListItem, ListItemButton, PaletteMode, Typography, useTheme } from '@mui/material';
+import {
+  Box,
+  ListItem,
+  ListItemButton,
+  PaletteMode,
+  Typography,
+  useColorScheme,
+  useTheme,
+} from '@mui/material';
 import { useMemo, type HTMLAttributes, type MouseEvent } from 'react';
 import { ExpandButton } from './ExpandButton';
 
@@ -38,11 +46,12 @@ export const Item = ({
   wrapperRef,
   ...props
 }: Props) => {
-  const { palette } = useTheme();
+  const theme = useTheme();
+  const { mode, systemMode } = useColorScheme();
 
   const inverseThemeMode: PaletteMode = useMemo(
-    () => (palette.mode === 'light' ? 'dark' : 'light'),
-    [palette.mode],
+    () => (mode === 'dark' || (mode === 'system' && systemMode === 'dark') ? 'light' : 'dark'),
+    [mode, systemMode],
   );
 
   const hanldeSelectItem = () => onSelectItem && onSelectItem(nodeId);
@@ -78,7 +87,7 @@ export const Item = ({
           <Box width={18} height={18} />
         )}
         <Typography
-          color={selected ? palette.primary[inverseThemeMode] : 'inherit'}
+          color={selected ? theme.palette.primary[inverseThemeMode] : 'inherit'}
           fontWeight={selected ? 700 : 500}
           sx={{
             display: '-webkit-box',

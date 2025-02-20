@@ -59,7 +59,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         justifyContent="center"
         mt={-0.5}
         mb={0.5}
-        sx={{ cursor: 'default', bgcolor: ({ palette }) => palette.action.hover }}
+        sx={{ cursor: 'default', backgroundColor: ({ palette }) => palette.action.hover }}
       >
         <Typography sx={{ cursor: 'default' }} variant="caption">
           {t('commons.annotation')}

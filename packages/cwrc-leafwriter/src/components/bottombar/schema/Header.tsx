@@ -17,7 +17,7 @@ export const Header = ({ onClickAdd }: HeaderProps) => {
       mt={-0.5}
       mb={0.5}
       px={0.5}
-      sx={{ cursor: 'default', bgcolor: ({ palette }) => palette.action.hover }}
+      sx={{ cursor: 'default', backgroundColor: ({ palette }) => palette.action.hover }}
     >
       <Box height={1.5} width={1.5} p="3px" />
       <Typography sx={{ cursor: 'default', textTransform: 'capitalize' }} variant="caption">

@@ -25,7 +25,7 @@ import ReportOutlinedIcon from '@mui/icons-material/ReportOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import TranslateIcon from '@mui/icons-material/Translate';
-import { SvgIconTypeMap, createSvgIcon } from '@mui/material';
+import { SvgIcon, type SvgIconProps, type SvgIconTypeMap, createSvgIcon } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { FileExportOutline, Gitlab } from 'mdi-material-ui';
 import type { IconBaseProps, IconType } from 'react-icons';
@@ -102,4 +102,14 @@ export type IconName =
 
 export const getIcon = (name: IconName) => {
   return icons[name];
+};
+
+export interface IconProps extends SvgIconProps {
+  name: IconName;
+}
+
+export const Icon = (props: IconProps) => {
+  const { name, ...rest } = props;
+  const icon = icons[name];
+  return <SvgIcon component={icon} {...rest} />;
 };

@@ -13,7 +13,11 @@ export const Footer = ({ icon, lastDate, path }: FooterProps) => (
     justifyContent="space-between"
     flexWrap="wrap"
     px={1}
-    sx={{ bgcolor: ({ palette }) => palette.action.hover }}
+    sx={[
+      (theme) => ({
+        backgroundColor: theme.vars.palette.action.hover,
+      }),
+    ]}
   >
     <Stack direction="row" alignItems="center" gap={0.5} sx={{ height: 22, overflow: 'hidden' }}>
       <Icon component={getIcon(icon)} sx={{ width: 14, height: 14 }} />

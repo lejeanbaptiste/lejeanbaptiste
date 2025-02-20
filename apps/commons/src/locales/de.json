@@ -59,7 +59,7 @@
       "with": "mit",
       "xml document": "XML Dokument"
     },
-    "cookie_consent": {
+    "cookie consent": {
       "consent_banner": {
         "let_me_choose": "Auswählen",
         "line1": "Diese Seite und ausgewählte Drittanbieter nutzen Cookies oder ähnliche Techniken für bestimmte Zwecke. Das Verweigern der Zustimmung kann dazu führen, dass manchen Funktionen nicht verfügbar sind.",
@@ -68,7 +68,7 @@
         "we_use_cookies": "Wir verwenden Cookies"
       },
       "privacy_settings": "Datenschutzeinstellungen",
-      "remove_consent": "Zustimmung zurückziehen",
+      "remove consent": "Zustimmung zurückziehen",
       "settings_modal": {
         "AUTH_SESSION_description": "Speichert die Login- und Sitzungsdaten.",
         "_ga_description": "Wird von Google Analytics genutzt, um die Anzahl der Besuche der Seite und das Datum des ersten und zuletzt erfolgten Besuchs aufzuzeichnen.",

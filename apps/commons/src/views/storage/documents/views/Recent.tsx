@@ -5,7 +5,7 @@ import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import type { Layout } from '..';
 import { CARD_WIDTH, DocumentCard } from '../components';
@@ -58,11 +58,14 @@ export const RecentView = ({ layout, width }: RecentViewProps) => {
     <Masonry
       columns={columns}
       spacing={1.5}
-      sx={{
-        width: layout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
-        mx: 1.5,
-        pt: 1.5,
-      }}
+      sx={[
+        {
+          width: 'calc(100% - 32px)',
+          mx: 1.5,
+          pt: 1.5,
+        },
+        layout === 'grid' && { width: widthMasonry },
+      ]}
     >
       <AnimatePresence>
         {recentDocs.map((resource) => (

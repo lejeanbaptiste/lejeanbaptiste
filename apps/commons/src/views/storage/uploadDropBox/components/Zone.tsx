@@ -1,6 +1,6 @@
 import { Box, LinearProgress, Stack, useTheme } from '@mui/material';
 import { getIcon } from '@src/icons';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Label } from './Label';
@@ -23,7 +23,7 @@ export const Zone = ({
   width = 'auto',
 }: UploadPanelZoneProps) => {
   const { t } = useTranslation();
-  const { palette } = useTheme();
+  const theme = useTheme();
 
   const IconFileText = useMemo(() => getIcon('fileText'), []);
 
@@ -46,23 +46,27 @@ export const Zone = ({
       alignItems="center"
       justifyContent="center"
       spacing={2}
-      sx={{
-        height,
-        width,
-        m: 1,
-        p: 4,
-        overflow: 'hidden',
-        borderRadius: 1,
-        borderWidth: 1,
-        borderStyle: isDragAccept || isDragReject ? 'solid' : 'dashed',
-        borderColor: isDragReject
-          ? palette.error.light
-          : isDragAccept
-            ? palette.success.light
-            : palette.grey[400],
-        bgcolor: palette.mode === 'light' ? palette.grey[50] : palette.grey[800],
-        cursor: isProcessing ? 'default' : 'pointer',
-      }}
+      sx={[
+        {
+          height,
+          width,
+          m: 1,
+          p: 4,
+          overflow: 'hidden',
+          backgroundColor: theme.vars.palette.grey[50],
+          borderWidth: 1,
+          borderStyle: isDragAccept || isDragReject ? 'solid' : 'dashed',
+          borderColor: theme.vars.palette.grey[400],
+          borderRadius: 1,
+          cursor: 'pointer',
+        },
+        isDragReject && { borderColor: theme.vars.palette.error.light },
+        isDragAccept && { borderColor: theme.vars.palette.success.light },
+        isProcessing && { cursor: 'default' },
+        (theme) => ({
+          ...theme.applyStyles('dark', { backgroundColor: theme.vars.palette.grey[900] }),
+        }),
+      ]}
     >
       <IconFileText
         component={motion.svg}

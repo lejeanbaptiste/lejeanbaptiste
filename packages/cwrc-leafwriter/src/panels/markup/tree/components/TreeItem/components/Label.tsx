@@ -4,10 +4,11 @@ import {
   Theme,
   Typography,
   TypographyProps,
+  useColorScheme,
   useTheme,
   type PaletteMode,
 } from '@mui/material';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useMemo } from 'react';
 
 interface LabelProps extends TypographyProps {
@@ -24,11 +25,12 @@ export const Label = ({
   selected = false,
   ...props
 }: LabelProps) => {
-  const { palette } = useTheme();
+  const theme = useTheme();
+  const { mode, systemMode } = useColorScheme();
 
   const inverseThemeMode: PaletteMode = useMemo(
-    () => (palette.mode === 'light' ? 'dark' : 'light'),
-    [palette.mode],
+    () => (mode === 'dark' || (mode === 'system' && systemMode === 'dark') ? 'light' : 'dark'),
+    [mode, systemMode],
   );
 
   const detailsVariant: Variants = {
@@ -39,7 +41,7 @@ export const Label = ({
   return (
     <Stack direction="row" alignItems="center" gap={1} overflow="hidden">
       <Typography
-        color={selected ? palette.primary[inverseThemeMode] : 'inherit'}
+        color={selected ? theme.palette.primary[inverseThemeMode] : 'inherit'}
         fontWeight={selected ? 700 : 500}
         variant="caption"
         sx={{ flexGrow: 1 }}

@@ -1,12 +1,12 @@
 import { Dialog, DialogContent, Stack } from '@mui/material';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
 import type { IDialog } from '../type';
 import { Header } from './Header';
 import { SideMenu, type MenuItemProps } from './SideMenu';
 import { Section } from './components';
-import { Authorities, Authorities2, Editor, Interface, MarkupPanel, Reset } from './sections';
+import { Authorities, Editor, Interface, MarkupPanel, Reset } from './sections';
 
 export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
   const { isReadonly, settings } = useAppState().editor;
