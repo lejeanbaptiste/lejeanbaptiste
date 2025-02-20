@@ -63,4 +63,11 @@ production_manual:
     KUBE_INGRESS_BASE_DOMAIN: leaf-vre.org
     KUBE_CONTEXT: "calincs/gitlab-agents:leaf-agent"
     KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_PROJECT_ID-production
+    NPM_AUTH_TOKEN: $NPM_AUTH_TOKEN
+  before_script:
+    - apk add --update npm
+    - npm i -g changeset typescript webpack shelljs webpack-cli
+    - npm ci
+    - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
+    - npm run release
   <<: *deployment
