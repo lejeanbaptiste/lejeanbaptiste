@@ -33,7 +33,10 @@
     "lint": "eslint .",
     "dev": "npm run dev -w leafwriter-commons",
     "dev-worker": "npm run dev-worker -w leafwriter-commons",
-    "build-commons": "npm run build -w leafwriter-commons"
+    "build-commons": "npm run build -w leafwriter-commons",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.12",
@@ -42,6 +45,7 @@
     "@testing-library/react": "^16.2.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.1",
+    "changeset": "^0.2.6",
     "commitizen": "^4.3.1",
     "eslint": "^8.57.1",
     "eslint-config-custom": "*",
@@ -49,8 +53,12 @@
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "prettier": "^3.5.0",
+    "shelljs": "^0.8.5",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
-  }
+    "typescript": "^5.7.3",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1"
+  },
+  "packageManager": "npm@11.1.0"
 }
