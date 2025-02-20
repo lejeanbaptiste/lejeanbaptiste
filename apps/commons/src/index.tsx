@@ -6,7 +6,7 @@ import '@fontsource/lato/900.css';
 import { createOvermind } from 'overmind';
 import { Provider } from 'overmind-react';
 import { createRoot } from 'react-dom/client';
-import { HelmetProvider } from 'react-helmet-async';
+// import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router';
 import App from './App';
 import './i18n';
@@ -26,11 +26,11 @@ if (!container) throw new Error(`HTML element id 'app' not found`);
 const root = createRoot(container);
 root.render(
   <Provider value={overmind}>
-    <HelmetProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </HelmetProvider>
+    {/* <HelmetProvider> */}
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+    {/* </HelmetProvider> */}
   </Provider>,
 );
 
