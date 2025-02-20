@@ -1,8 +1,8 @@
 import SettingsIcon from '@mui/icons-material/Settings';
 import { IconButton } from '@mui/material';
 import { leafwriterAtom } from '@src/jotai';
-import { motion, type Variants } from 'framer-motion';
 import { useAtomValue } from 'jotai';
+import { motion, type Variants } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
 export const Settings = () => {

@@ -41,7 +41,7 @@ export const Footer = () => {
         justifyContent: 'space-between',
         borderTopWidth: 1,
         borderTopStyle: 'solid',
-        borderTopColor: ({ palette }) => palette.divider,
+        borderTopColor: (theme) => theme.vars.palette.divider,
       }}
     >
       <Button onClick={() => handleClose()} variant="text">

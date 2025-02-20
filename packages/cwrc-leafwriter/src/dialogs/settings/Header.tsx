@@ -19,7 +19,12 @@ export const Header = ({ onClose }: HeaderProps) => {
       <IconButton
         aria-label="close"
         onClick={onClose}
-        sx={{ position: 'absolute', right: 8, top: 12, color: ({ palette }) => palette.grey[500] }}
+        sx={{
+          position: 'absolute',
+          right: 8,
+          top: 12,
+          color: (theme) => theme.vars.palette.grey[500],
+        }}
       >
         <CloseIcon fontSize="inherit" />
       </IconButton>

@@ -9,6 +9,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  useTheme,
 } from '@mui/material';
 import { StyledToolTip } from '@src/components';
 import { supportedStorageProviders } from '@src/config';
@@ -22,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import type { SubMenu } from '../types';
 
 export const Storage = ({ onBack, onClose }: SubMenu) => {
+  const theme = useTheme();
   const { user } = useAppState().auth;
   const { supportedProviders } = useAppState().providers;
 
@@ -78,15 +80,22 @@ export const Storage = ({ onBack, onClose }: SubMenu) => {
         <ListItemText primary={t('LWC.commons.storage')} sx={{ textTransform: 'capitalize' }} />
       </ListItem>
       {supportedProviders
-        .filter((provider) => supportedStorageProviders.includes(provider.providerId))
-        .map(({ providerId: id, service }) => (
+        .filter(
+          (provider) =>
+            provider.providerId && supportedStorageProviders.includes(provider.providerId),
+        )
+        .map(({ providerId, service }) => (
           <ListItem
-            key={id}
+            key={providerId}
             color="primary"
             secondaryAction={
-              !service && (
-                <StyledToolTip arrow title={t('LWC.commons.link_your_account', { provider: id })}>
-                  <IconButton onPointerDown={() => handleLinkAccount(id)} size="small">
+              !service &&
+              providerId && (
+                <StyledToolTip
+                  arrow
+                  title={t('LWC.commons.link_your_account', { provider: providerId })}
+                >
+                  <IconButton onPointerDown={() => handleLinkAccount(providerId)} size="small">
                     <AddLinkIcon color="primary" fontSize="small" />
                   </IconButton>
                 </StyledToolTip>
@@ -96,27 +105,28 @@ export const Storage = ({ onBack, onClose }: SubMenu) => {
           >
             <ListItemButton
               disabled={!service}
-              onPointerDown={(event) => handleSelect(event, id)}
-              selected={user?.prefStorageProvider === id}
-              sx={{
-                borderRadius: 1,
-                '&.Mui-selected': {
-                  bgcolor: ({ palette }) =>
-                    user?.prefStorageProvider === id
-                      ? chroma(palette.primary.main).alpha(0.15).css()
-                      : 'inherit',
+              onPointerDown={(event) => providerId && handleSelect(event, providerId)}
+              selected={user?.prefStorageProvider === providerId}
+              sx={[
+                { borderRadius: 1 },
+                user?.prefStorageProvider === providerId && {
+                  '&.Mui-selected': {
+                    backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.15)`,
+                  },
                 },
-              }}
+              ]}
             >
               <ListItemIcon sx={{ minWidth: 32 }}>
                 <Icon
-                  color={user?.prefStorageProvider === id ? 'primary' : 'inherit'}
-                  component={getIcon(id as IconName)}
+                  color={user?.prefStorageProvider === providerId ? 'primary' : 'inherit'}
+                  component={getIcon(providerId as IconName)}
                   fontSize="small"
                 />
               </ListItemIcon>
-              <ListItemText primary={id} sx={{ textTransform: 'capitalize' }} />
-              {user?.prefStorageProvider === id && <CheckIcon color="primary" fontSize="small" />}
+              <ListItemText primary={providerId} sx={{ textTransform: 'capitalize' }} />
+              {user?.prefStorageProvider === providerId && (
+                <CheckIcon color="primary" fontSize="small" />
+              )}
             </ListItemButton>
           </ListItem>
         ))}

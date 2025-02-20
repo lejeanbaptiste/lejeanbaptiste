@@ -13,9 +13,10 @@ export const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
   [`& .${tooltipClasses.tooltip}`]: {
     maxWidth: 800,
     marginTop: `0px !important`,
-    boxShadow: theme.palette.mode === 'dark' ? 'none' : `0 0 2px ${theme.palette.grey[300]}`,
-    backgroundColor: theme.palette.background.paper,
-    color: theme.palette.text.secondary,
+    boxShadow: `0 0 2px ${theme.vars.palette.grey[300]}`,
+    backgroundColor: theme.vars.palette.background.paper,
+    color: theme.vars.palette.text.secondary,
+    ...theme.applyStyles('dark', { boxShadow: 'none' }),
   },
 }));
 

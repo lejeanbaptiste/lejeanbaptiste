@@ -15,7 +15,7 @@ export const LateralBar = ({ side }: LateralBarProps) => {
 
   const _side = side.toLowerCase() as Side;
 
-  const handleChange = (event: MouseEvent<HTMLElement>, panelId: PanelId) => {
+  const handleChange = (_event: MouseEvent<HTMLElement>, panelId: PanelId) => {
     changePanel({ side: _side, panelId });
   };
 
@@ -26,11 +26,14 @@ export const LateralBar = ({ side }: LateralBarProps) => {
           <Paper
             elevation={5}
             square
-            sx={{
-              height: '100%',
-              bgcolor: ({ palette }) =>
-                palette.mode === 'dark' ? palette.background.paper : '#f5f5f5',
-            }}
+            sx={[
+              {
+                height: '100%',
+                backgroundColor: '#f5f5f5',
+              },
+              (theme) =>
+                theme.applyStyles('dark', { backgroundColor: theme.vars.palette.background.paper }),
+            ]}
           >
             <ToggleButtonGroup
               exclusive

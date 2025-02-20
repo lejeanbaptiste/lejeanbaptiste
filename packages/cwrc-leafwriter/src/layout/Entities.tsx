@@ -1,5 +1,5 @@
 import { Box, Paper } from '@mui/material';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import EntitiesList from '../js/layout/panels/entitiesList';
 
 const containerID = 'entities-panel';
@@ -17,12 +17,18 @@ export const Entities = () => {
     <Paper
       elevation={5}
       square
-      sx={{
-        overflow: 'auto',
-        height: '100%',
-        p: 1,
-        bgcolor: ({ palette }) => (palette.mode === 'dark' ? palette.background.paper : '#f5f5f5'),
-      }}
+      sx={[
+        {
+          overflow: 'auto',
+          height: '100%',
+          p: 1,
+          backgroundColor: '#f5f5f5',
+        },
+        (theme) =>
+          theme.applyStyles('dark', {
+            backgroundColor: theme.vars.palette.background.paper,
+          }),
+      ]}
     >
       <Box id={containerID}>This is a test</Box>
     </Paper>

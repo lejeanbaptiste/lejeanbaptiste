@@ -1,14 +1,13 @@
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import { Stack, useTheme } from '@mui/material';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 
 type SelectionBadgeProps = {
   contentsOnly?: boolean;
 };
 
 export const SelectionBadge = ({ contentsOnly = false }: SelectionBadgeProps) => {
-  const { palette } = useTheme();
-  const { getContrastText } = palette;
+  const theme = useTheme();
 
   const selectionStateVariant: Variants = {
     show: { x: 0, opacity: 1, display: 'flex' },
@@ -29,7 +28,10 @@ export const SelectionBadge = ({ contentsOnly = false }: SelectionBadgeProps) =>
     <AnimatePresence>
       <Stack
         direction="row"
-        sx={{ bgcolor: palette.primary[palette.mode], borderRadius: 1 }}
+        sx={{
+          backgroundColor: theme.palette.primary[theme.palette.mode],
+          borderRadius: 1,
+        }}
         component={motion.div}
         variants={selectionStateVariant}
         initial="hide"
@@ -39,7 +41,11 @@ export const SelectionBadge = ({ contentsOnly = false }: SelectionBadgeProps) =>
         <ChevronLeftRoundedIcon
           animate={contentsOnly ? 'content' : 'tag'}
           component={motion.svg}
-          sx={{ width: 12, height: 12, color: getContrastText(palette.primary[palette.mode]) }}
+          sx={{
+            width: 12,
+            height: 12,
+            color: theme.palette.getContrastText(theme.palette.primary[theme.palette.mode]),
+          }}
           variants={arrowLeftVariant}
         />
         <ChevronLeftRoundedIcon
@@ -48,8 +54,8 @@ export const SelectionBadge = ({ contentsOnly = false }: SelectionBadgeProps) =>
           sx={{
             width: 12,
             height: 12,
-            color: getContrastText(palette.primary[palette.mode]),
             marginLeft: -0.75,
+            color: theme.palette.getContrastText(theme.palette.primary[theme.palette.mode]),
           }}
           variants={arrowRightVariant}
         />

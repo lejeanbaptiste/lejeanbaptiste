@@ -1,7 +1,7 @@
 import { Box, MenuItem, MenuItemProps } from '@mui/material';
 import { StyledToolTip } from '@src/components';
 import type { IconName } from '@src/icons';
-import { motion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'motion/react';
 import { useCallback, useContext, type PointerEvent } from 'react';
 import { CascadingContext } from '..';
 import type { ItemType } from '../useMenu';

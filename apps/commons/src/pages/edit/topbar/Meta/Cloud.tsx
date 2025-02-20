@@ -5,8 +5,8 @@ import Badge, { type BadgeProps } from '@mui/material/Badge';
 import { styled } from '@mui/material/styles';
 import { useLeafWriter } from '@src/hooks';
 import { useAppState } from '@src/overmind';
-import { motion, type Variants } from 'framer-motion';
 import { CloudSyncOutline } from 'mdi-material-ui';
+import { motion, type Variants } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
 const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
@@ -46,11 +46,14 @@ export const Cloud = () => {
           disableRipple={!isDirty}
           onPointerDown={handleClick}
           size="small"
-          sx={{
-            mt: -0.125,
-            ml: 0.5,
-            cursor: isDirty ? 'pointer' : 'default',
-          }}
+          sx={[
+            {
+              mt: -0.125,
+              ml: 0.5,
+              cursor: 'default',
+            },
+            isDirty && { cursor: 'pointer' },
+          ]}
         >
           {isSaving ? (
             <CloudSyncOutline sx={{ width: 16, height: 16 }} />

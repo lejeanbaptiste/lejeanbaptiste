@@ -41,7 +41,7 @@ export const Header = ({ count, nodeType }: HeaderProps) => {
         justifyContent="center"
         mt={-0.5}
         mb={0.5}
-        sx={{ cursor: 'default', bgcolor: ({ palette }) => palette.action.selected }}
+        sx={{ cursor: 'default', backgroundColor: ({ palette }) => palette.action.selected }}
       >
         {count ? <MultipleTags /> : nodeType === 'text' ? <TextNode /> : <TagName />}
       </Box>

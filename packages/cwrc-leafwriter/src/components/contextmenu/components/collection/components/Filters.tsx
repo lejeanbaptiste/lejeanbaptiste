@@ -1,10 +1,10 @@
 import SearchIcon from '@mui/icons-material/Search';
-import { alpha, Box, Icon, InputBase, Stack, ToggleButton, Tooltip, useTheme } from '@mui/material';
+import { Box, InputBase, Stack, ToggleButton, Tooltip, useTheme } from '@mui/material';
 import { useAtom } from 'jotai';
 import { debounce } from 'lodash';
 import { useMemo, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useContextmenu } from '../../../hooks';
+import { Icon } from '../../../../../icons';
 import { showOnlyValidAtom } from '../../../store';
 
 interface FilterProps {
@@ -12,12 +12,10 @@ interface FilterProps {
 }
 
 export const Filters = ({ onQuery }: FilterProps) => {
-  const { palette, spacing, transitions } = useTheme();
+  const theme = useTheme();
   const { t } = useTranslation();
 
   const [onlyValid, setOnlyValid] = useAtom(showOnlyValidAtom);
-
-  const { getIcon } = useContextmenu();
 
   const [query, setQuery] = useState('');
 
@@ -40,23 +38,27 @@ export const Filters = ({ onQuery }: FilterProps) => {
       alignItems="center"
       position="relative"
       width="100%"
-      bgcolor={
-        palette.mode === 'light'
-          ? alpha(palette.common.white, 0.02)
-          : alpha(palette.common.black, 0.15)
-      }
       borderBottom={2}
-      borderColor={
-        palette.mode === 'light'
-          ? alpha(palette.common.black, 0.02)
-          : alpha(palette.common.black, 0.15)
-      }
-      sx={{
-        transition: transitions.create('border'),
-        '&:hover': {
-          borderColor: query === '' ? alpha(palette.primary.main, 0.5) : palette.primary.main,
+      sx={[
+        {
+          backgroundColor: `rgba(${theme.vars.palette.common.white}/ 0.02)`,
+          borderColor: `rgba(${theme.vars.palette.common.black}/ 0.02)`,
+          transition: theme.transitions.create('border'),
+          '&:hover': {
+            borderColor: theme.vars.palette.primary.mainChannel,
+          },
         },
-      }}
+        query === '' && {
+          '&:hover': {
+            backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel}/ 0.5)`,
+          },
+        },
+        (theme) =>
+          theme.applyStyles('dark', {
+            backgroundColor: `rgba(${theme.vars.palette.common.black}/ 0.15)`,
+            borderColor: `rgba(${theme.vars.palette.common.black}/ 0.15)`,
+          }),
+      ]}
     >
       <Box
         position="absolute"
@@ -64,9 +66,12 @@ export const Filters = ({ onQuery }: FilterProps) => {
         alignItems="center"
         justifyContent="center"
         height="100%"
-        p={spacing(0, 1)}
-        color={query === '' ? 'inherit' : palette.primary.main}
-        sx={{ transition: transitions.create('color'), pointerEvents: 'none' }}
+        py={1}
+        px={0}
+        sx={[
+          { transition: theme.transitions.create('color'), pointerEvents: 'none' },
+          query === '' && { color: theme.vars.palette.primary.mainChannel },
+        ]}
       >
         <SearchIcon fontSize="small" />
       </Box>
@@ -75,37 +80,42 @@ export const Filters = ({ onQuery }: FilterProps) => {
         inputProps={{ 'aria-label': 'search' }}
         onChange={handleQueryChange}
         placeholder={t('LW.commons.search').toString()}
-        sx={{
-          width: '100%',
-          color: query === '' ? 'inherit' : palette.primary.main,
-          '& .MuiInputBase-input': {
-            padding: spacing(0.75, 0.75, 0.75, 0),
-            paddingLeft: `calc(1em + ${spacing(2)})`,
+        sx={[
+          {
+            width: '100%',
+            fontSize: '0.875rem',
+            '& .MuiInputBase-input': {
+              py: 0.75,
+              pr: 0.75,
+              paddingLeft: `calc(1em + ${theme.spacing(2)})`,
+            },
           },
-          fontSize: '0.875rem',
-        }}
+          query === '' && { color: theme.vars.palette.primary.mainChannel },
+        ]}
         value={query}
       />
-
       <Tooltip
-        componentsProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
+        slotProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
         title={t('LW.show only valid tags')}
       >
         <ToggleButton
           onChange={toggleInvalid}
           selected={onlyValid}
           size="small"
-          sx={{
-            width: 26,
-            height: 26,
-            margin: 0.375,
-            borderRadius: 0.5,
-            border: 'none',
-            color: onlyValid ? palette.primary.main : palette.text.disabled,
-          }}
+          sx={[
+            {
+              width: 26,
+              height: 26,
+              margin: 0.375,
+              borderRadius: 0.5,
+              border: 'none',
+              color: theme.vars.palette.text.disabled,
+            },
+            onlyValid && { color: theme.vars.palette.primary.mainChannel },
+          ]}
           value={onlyValid}
         >
-          <Icon component={getIcon('validate')} fontSize="inherit" />
+          <Icon name="validate" fontSize="inherit" />
         </ToggleButton>
       </Tooltip>
     </Stack>

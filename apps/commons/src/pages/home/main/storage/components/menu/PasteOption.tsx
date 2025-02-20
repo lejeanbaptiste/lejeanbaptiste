@@ -1,5 +1,5 @@
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
-import { Stack, TextField, useTheme } from '@mui/material';
+import { Stack, TextField } from '@mui/material';
 import { useActions } from '@src/overmind';
 import { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,6 @@ interface PasteOptionProps {
 
 export const PasteOption = ({ disabled }: PasteOptionProps) => {
   const { t } = useTranslation();
-  const { palette } = useTheme();
 
   const { openStorageDialog } = useActions().storage;
 
@@ -34,34 +33,40 @@ export const PasteOption = ({ disabled }: PasteOptionProps) => {
       onMouseOut={() => setPasteHover(false)}
     >
       <ContentPasteIcon
-        sx={{
-          color: disabled
-            ? palette.action.disabled
-            : pasteHover
-              ? palette.primary.light
-              : 'text.secondary',
-        }}
+        sx={[
+          { color: (theme) => theme.vars.palette.text.secondary },
+          !!disabled && { color: (theme) => theme.vars.palette.action.disabled },
+          pasteHover && { color: (theme) => theme.vars.palette.primary.light },
+        ]}
       />
       <TextField
         color="primary"
         disabled={disabled}
-        InputLabelProps={{ sx: { fontSize: '0.8rem' } }}
-        InputProps={{
-          sx: {
-            fontSize: '0.8rem',
-            fieldset: {
-              borderColor: `light-dark(${palette.grey[300]}, ${palette.grey[800]})`,
-            },
-          },
-        }}
         label={t('LWC.storage.paste_your_XML_here')}
         onChange={onChageTextfield}
         size="small"
-        sx={{
-          '& fieldset': {
-            borderColor: pasteHover ? palette.primary.main : 'inherit',
+        slotProps={{
+          input: {
+            sx: [
+              {
+                fontSize: '0.8rem',
+                fieldset: { borderColor: (theme) => theme.vars.palette.grey[800] },
+              },
+              (theme) =>
+                theme.applyStyles('dark', {
+                  fieldset: { borderColor: theme.vars.palette.grey[300] },
+                }),
+            ],
+          },
+          inputLabel: {
+            sx: { fontSize: '0.8rem' },
           },
         }}
+        sx={[
+          pasteHover && {
+            '& fieldset': { borderColor: (theme) => theme.vars.palette.primary.main },
+          },
+        ]}
       />
     </Stack>
   );

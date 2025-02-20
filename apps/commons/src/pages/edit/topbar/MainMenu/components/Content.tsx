@@ -33,7 +33,7 @@ export const Content = ({
       ) : (
         shortcut &&
         showShortCut && (
-          <Typography color="GrayText" variant="caption">
+          <Typography sx={{ color: 'GrayText' }} variant="caption">
             {shortcut}
           </Typography>
         )

@@ -15,7 +15,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useActions, useAppState } from '@src/overmind';
 import type { Content, SearchResultsBlobs } from '@src/types';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { ContentMatch } from './content-match';
 
@@ -141,11 +141,7 @@ export const Item = ({ item, onPrimaryAction, onSecondaryAction }: ItemProps) =>
           }
           secondary={
             <Box width="90%">
-              <Typography
-                color="text.secondary"
-                sx={{ overflowWrap: 'break-word' }}
-                variant="body2"
-              >
+              <Typography color="textSecondary" sx={{ overflowWrap: 'break-word' }} variant="body2">
                 {getPath()}
               </Typography>
               <AnimatePresence>

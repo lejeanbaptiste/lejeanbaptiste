@@ -1,7 +1,6 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckIcon from '@mui/icons-material/Check';
 import {
-  Icon,
   IconButton,
   List,
   ListItem,
@@ -9,15 +8,17 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { getIcon } from '@src/icons';
+import { useColorScheme } from '@mui/material/styles';
+import { Icon } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import type { PaletteMode } from '@src/types';
-import chroma from 'chroma-js';
 import { type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { OptionProps, SubMenu } from '../types';
 
 export const Appearance = ({ onBack, onClose }: SubMenu) => {
+  const { setMode } = useColorScheme();
+
   const { themeAppearance } = useAppState().ui;
   const { setThemeAppearance } = useActions().ui;
 
@@ -25,12 +26,13 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
 
   const handleSelect = (event: MouseEvent, value: string) => {
     event.stopPropagation();
-    if (value !== themeAppearance) setThemeAppearance(value as PaletteMode);
+    setMode(value as PaletteMode);
+    setThemeAppearance(value as PaletteMode);
     onClose();
   };
 
   const options: OptionProps[] = [
-    { id: 'auto', label: t('LWC.ui.device_theme'), icon: 'brightness4' },
+    { id: 'system', label: t('LWC.ui.device_theme'), icon: 'brightness4' },
     { id: 'dark', label: t('LWC.ui.dark_theme'), icon: 'darkModeIcon' },
     { id: 'light', label: t('LWC.ui.light_theme'), icon: 'brightness7' },
   ];
@@ -48,21 +50,22 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
           <ListItemButton
             onPointerDown={(event) => handleSelect(event, id)}
             selected={id === themeAppearance}
-            sx={{
-              borderRadius: 1,
-              '&.Mui-selected': {
-                bgcolor: ({ palette }) =>
-                  id === themeAppearance
-                    ? chroma(palette.primary.main).alpha(0.15).css()
-                    : 'inherit',
-              },
-            }}
+            sx={[
+              { borderRadius: 1 },
+              id === themeAppearance
+                ? (theme) => ({
+                    '&.Mui-selected': {
+                      backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.15)`,
+                    },
+                  })
+                : { '&.Mui-selected': { backgroundColor: 'inherit' } },
+            ]}
           >
             <ListItemIcon sx={{ minWidth: 32 }}>
               {icon && (
                 <Icon
+                  name={icon}
                   color={id === themeAppearance ? 'primary' : 'inherit'}
-                  component={getIcon(icon)}
                   fontSize="small"
                 />
               )}

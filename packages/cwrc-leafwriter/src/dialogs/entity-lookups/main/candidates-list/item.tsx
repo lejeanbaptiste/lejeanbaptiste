@@ -48,14 +48,17 @@ export const Item = ({ authority, description, label, uri }: Props) => {
           secondary={
             description && (
               <Typography
-                color="text.secondary"
-                sx={{
-                  display: selected?.uri === uri ? 'block' : '-webkit-box',
-                  overflow: selected?.uri === uri ? 'auto' : 'hidden',
-                  transition: '0.4s',
-                  WebkitBoxOrient: 'vertical', // TODO: Still works, but is flagged as deprecated. See: https://developer.mozilla.org/en-US/docs/Web/CSS/box-orient
-                  WebkitLineClamp: '2',
-                }}
+                color="textSecondary"
+                sx={[
+                  {
+                    overflow: 'hidden',
+                    display: '-webkit-box',
+                    WebkitLineClamp: '2',
+                    transition: '0.4s',
+                    WebkitBoxOrient: 'vertical', // TODO: Still works, but is flagged as deprecated. See: https://developer.mozilla.org/en-US/docs/Web/CSS/box-orient
+                  },
+                  selected?.uri === uri && { display: 'block', overflow: 'auto' },
+                ]}
                 variant="body2"
               >
                 {description}

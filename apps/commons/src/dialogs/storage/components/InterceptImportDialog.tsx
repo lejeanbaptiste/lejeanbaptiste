@@ -11,7 +11,7 @@ export const InterceptImportDialog = ({ format }: InterceptImportDialogProps) =>
   const { t } = useTranslation();
   return (
     <Stack alignItems="flex-start">
-      <Typography paragraph lineHeight={1.75}>
+      <Typography lineHeight={1.75}>
         <Trans i18nKey="LWC.importExport.message.intercept_load_file_format" values={{ format }}>
           <Typography component="span">This looks like a </Typography>
           <TextEmphasis color="primary">{format}</TextEmphasis>

@@ -1,9 +1,9 @@
 import ClearIcon from '@mui/icons-material/Clear';
-import { alpha, Box, Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
+import { Box, Card, Icon, IconButton, Stack, Typography, useTheme } from '@mui/material';
 import { getIcon, IconName } from '@src/icons';
 import type { Resource } from '@src/types';
 import { formatDistanceToNow } from 'date-fns';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useState, type MouseEvent } from 'react';
 import type { Layout } from '../..';
 import { CoverImage, Footer } from './components';
@@ -32,7 +32,7 @@ export const DocumentCard = ({
   width = CARD_WIDTH,
   ...resource
 }: DocumentCardProps) => {
-  const { palette } = useTheme();
+  const theme = useTheme();
 
   const [hover, setHover] = useState(false);
 
@@ -73,19 +73,25 @@ export const DocumentCard = ({
       onDoubleClick={handleDoubleClick}
       onMouseOver={() => setHover(true)}
       onMouseOut={() => setHover(false)}
-      sx={{
-        bgcolor: selected
-          ? alpha(palette.primary[palette.mode], 0.15)
-          : hover
-            ? alpha(palette.primary[palette.mode], palette.action.selectedOpacity)
-            : alpha(palette.primary[palette.mode], palette.action.hoverOpacity),
-        borderStyle: 'solid',
-        borderColor: selected ? alpha(palette.primary.main, 0.5) : 'transparent',
-        borderWidth: 1,
-        boxShadow: selected ? `0 0 4px ${alpha(palette.primary.main, 0.5)}` : 'none',
-        cursor: 'pointer',
-        overflow: 'inherit !important',
-      }}
+      sx={[
+        {
+          overflow: 'inherit !important',
+          backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / ${theme.vars.palette.action.hoverOpacity})`,
+          borderStyle: 'solid',
+          borderWidth: 1,
+          borderColor: 'transparent',
+          boxShadow: 'none',
+          cursor: 'pointer',
+        },
+        hover && {
+          backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / ${theme.vars.palette.action.selectedOpacity})`,
+        },
+        !!selected && {
+          backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.15)`,
+          borderColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.15)`,
+          boxShadow: `0 0 4px rgba(${theme.vars.palette.primary.mainChannel} / 0.15)`,
+        },
+      ]}
       component={motion.div}
       variants={cardVariant}
       animate={layout}

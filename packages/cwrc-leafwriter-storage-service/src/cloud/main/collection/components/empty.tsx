@@ -1,6 +1,5 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Stack, Typography } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
 export const Empty = () => {
@@ -11,7 +10,9 @@ export const Empty = () => {
         direction="row"
         justifyContent="center"
         spacing={2}
-        sx={{ color: ({ palette }) => alpha(palette.text.secondary, 0.15) }}
+        sx={(theme) => ({
+          color: `rgba(${theme.palette.text.secondary} / 0.15)`,
+        })}
       >
         <ErrorOutlineIcon sx={{ height: 56, width: 56 }} />
         <Typography variant="h3">{t('SS.commons.empty')}</Typography>

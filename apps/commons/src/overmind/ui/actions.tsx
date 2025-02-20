@@ -22,7 +22,7 @@ export const onInitializeOvermind = async (
 ) => {
   //DARK MODE
   const prefPaletteMode =
-    effects.storage.api.getFromLocalStorage<PaletteMode>('themeAppearance') ?? 'auto';
+    effects.storage.api.getFromLocalStorage<PaletteMode>('themeAppearance') ?? 'system';
 
   actions.ui.setThemeAppearance(prefPaletteMode);
 
@@ -58,7 +58,7 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
   state.ui.themeAppearance = value;
 
   const darkMode =
-    value === 'auto'
+    value === 'system'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
       : value === 'light'
         ? false

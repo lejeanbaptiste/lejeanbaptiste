@@ -1,4 +1,4 @@
-import { Box, ListSubheader, useTheme } from '@mui/material';
+import { Box, ListSubheader } from '@mui/material';
 import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { LookupService } from '../../store';
@@ -10,7 +10,6 @@ interface CandidateListProps {
 }
 
 export const CandidatesList = ({ authority, setAuthorityInView }: CandidateListProps) => {
-  const { palette } = useTheme();
   const { entry, inView, ref } = useInView({ threshold: 0 });
 
   useEffect(() => {
@@ -21,14 +20,20 @@ export const CandidatesList = ({ authority, setAuthorityInView }: CandidateListP
     <Box ref={ref} id={authority.id}>
       <ListSubheader
         id={authority.id}
-        sx={{
-          backgroundColor: `light-dark(${palette.background.paper}, ${palette.grey[800]})`,
-          borderBottomWidth: 1,
-          borderBottomStyle: 'solid',
-          borderBottomColor: 'grey.500',
-          lineHeight: 2.5,
-          textTransform: 'uppercase',
-        }}
+        sx={[
+          {
+            backgroundColor: (theme) => theme.vars.palette.background.paper,
+            borderBottomWidth: 1,
+            borderBottomStyle: 'solid',
+            borderBottomColor: 'grey.500',
+            lineHeight: 2.5,
+            textTransform: 'uppercase',
+          },
+          (theme) =>
+            theme.applyStyles('dark', {
+              backgroundColor: theme.vars.palette.grey[800],
+            }),
+        ]}
       >
         {authority.name}
       </ListSubheader>

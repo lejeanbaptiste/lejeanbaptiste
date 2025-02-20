@@ -13,7 +13,7 @@ import { useActions, useAppState } from '@src/overmind';
 import type { Content as ContentProps } from '@src/types';
 import type { LatestCommit } from '@src/types/Provider';
 import { formatDistance } from 'date-fns';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { ContentDetails } from './content-details';
 
@@ -107,11 +107,10 @@ export const Content = ({ content }: Props) => {
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         selected={selectedItem?.path === path}
-        sx={{
-          color: ({ palette }) => {
-            return dialogType === 'save' ? palette.text.disabled : palette.text.primary;
-          },
-        }}
+        sx={[
+          { color: (theme) => theme.palette.text.primary },
+          dialogType === 'save' && { color: (theme) => theme.palette.text.disabled },
+        ]}
       >
         <ListItemIcon sx={{ minWidth: 40 }}>
           {type === 'folder' || type === 'dir' ? <FolderOpenIcon /> : <DescriptionOutlinedIcon />}

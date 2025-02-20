@@ -25,6 +25,7 @@ export const SamplesView = ({ layout, width }: SamplesViewProps) => {
 
   const loadSamples = async () => {
     const documents = await getSampleDocuments();
+    if (documents instanceof Error) return;
     setSamples(documents);
   };
 
@@ -48,11 +49,14 @@ export const SamplesView = ({ layout, width }: SamplesViewProps) => {
     <Masonry
       columns={columns}
       spacing={1.5}
-      sx={{
-        width: layout === 'grid' ? widthMasonry : 'calc(100% - 32px)',
-        mx: 1.5,
-        pt: 1.5,
-      }}
+      sx={[
+        {
+          width: 'calc(100% - 32px)',
+          mx: 1.5,
+          pt: 1.5,
+        },
+        layout === 'grid' && { width: widthMasonry },
+      ]}
     >
       {samples.map((resource) => (
         <DocumentCard

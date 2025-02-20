@@ -43,7 +43,7 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
     },
     ref,
   ) => {
-    const { palette } = useTheme();
+    const theme = useTheme();
 
     const { onPointerDown, ...handlePropsRest } = handleProps;
 
@@ -136,26 +136,39 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
         {...handlePropsRest}
         onPointerDown={handleOnPointerDown}
         style={style}
-        sx={{
-          py: 0.25,
-          px: 0.5,
-          gap: 0.5,
-          borderRadius: 1,
-          cursor: !multiselectable ? 'not-allowed' : 'pointer',
-          '&.Mui-selected': {
-            bgcolor: isEntity
-              ? alpha(color, palette.action.selectedOpacity)
-              : alpha(palette.primary[palette.mode], palette.action.selectedOpacity),
-            '&:hover': {
-              bgcolor: isEntity
-                ? alpha(color, palette.action.hoverOpacity + palette.action.selectedOpacity)
-                : alpha(
-                    palette.primary[palette.mode],
-                    palette.action.hoverOpacity + palette.action.selectedOpacity,
-                  ),
+        sx={[
+          {
+            py: 0.25,
+            px: 0.5,
+            gap: 0.5,
+            borderRadius: 1,
+            cursor: 'pointer',
+            '&.Mui-selected': {
+              backgroundColor: alpha(
+                theme.palette.primary[theme.palette.mode],
+                theme.palette.action.selectedOpacity,
+              ),
+              '&:hover': {
+                backgroundColor: alpha(
+                  theme.palette.primary[theme.palette.mode],
+                  theme.palette.action.hoverOpacity + theme.palette.action.selectedOpacity,
+                ),
+              },
             },
           },
-        }}
+          isEntity && {
+            '&.Mui-selected': {
+              backgroundColor: alpha(color, theme.palette.action.selectedOpacity),
+              '&:hover': {
+                backgroundColor: alpha(
+                  color,
+                  theme.palette.action.hoverOpacity + theme.palette.action.selectedOpacity,
+                ),
+              },
+            },
+          },
+          !multiselectable && { cursor: 'not-allowed' },
+        ]}
       >
         {onExpand ? (
           <ExpandButton
@@ -167,9 +180,9 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
           <Icon {...{ color, icon, isEntity, selected }} />
         )}
         <Tooltip
-          componentsProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
           enterDelay={1000}
           placement="right"
+          slotProps={{ tooltip: { sx: { textTransform: 'capitalize' } } }}
           title={fullName}
         >
           <Stack
