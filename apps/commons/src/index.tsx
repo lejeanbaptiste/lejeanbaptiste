@@ -33,5 +33,3 @@ root.render(
     {/* </HelmetProvider> */}
   </Provider>,
 );
-
-// if (module.hot) module.hot.accept();
