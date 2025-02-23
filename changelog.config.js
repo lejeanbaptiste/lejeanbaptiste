@@ -9,7 +9,7 @@ module.exports = {
     'leafwriter',
     'storage service',
     'validator',
-    'authority services - LGPN',
+    'custom authority services',
     'eslint',
     'tsconfig',
   ],
