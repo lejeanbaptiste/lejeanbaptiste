@@ -5,7 +5,7 @@ import { useAppState } from '../../overmind';
 import type { IDialog } from '../type';
 import { Section } from './components';
 import { Header } from './header';
-import { Authorities, Editor, EntityLookups, Interface, MarkupPanel, Reset } from './sections';
+import { Authorities, Editor, EntityLookups, MarkupPanel, Reset, UI } from './sections';
 import { SideMenu } from './side-menu';
 
 export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
@@ -38,7 +38,7 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
         <DialogContent>
           <Stack component={motion.div} layout spacing={3}>
             <Section id="interface" title={t('LW.commons.interface')}>
-              <Interface />
+              <UI />
             </Section>
             <Section id="editor" title={t('LW.commons.editor')}>
               <Editor />
