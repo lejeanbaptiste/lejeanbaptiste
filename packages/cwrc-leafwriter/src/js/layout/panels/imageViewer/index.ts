@@ -17,7 +17,7 @@ class ImageViewer {
   readonly attrName: string;
   readonly $parent: JQuery<HTMLElement>;
 
-  osd: any | null;
+  readonly osd: ReturnType<typeof OpenSeaDragon>;
 
   $pageBreaks: any;
   currentIndex = -1;
@@ -141,7 +141,7 @@ class ImageViewer {
   }
 
   private osdReset() {
-    this.osd.drawer.clear();
+    // this.osd.drawer.clear();
     this.osd.close();
     this.osd.tileSources = []; // hack to remove any previously added images
   }
@@ -188,7 +188,7 @@ class ImageViewer {
   }
 
   private setMessage(msg: string) {
-    this.osd.drawer.clear();
+    // this.osd.drawer.clear();
     this.osd._showMessage(msg);
   }
 
@@ -287,7 +287,6 @@ class ImageViewer {
 
   destroy() {
     this.osd.destroy();
-    this.osd = null;
   }
 }
 
