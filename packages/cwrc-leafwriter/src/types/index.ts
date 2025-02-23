@@ -118,7 +118,7 @@ export type EntityType =
   | 'work';
 
 //UI
-export type PaletteMode = 'light' | 'auto' | 'dark';
+export type PaletteMode = 'light' | 'dark' | 'system';
 
 export interface ContextMenuState {
   allowsMerge?: boolean;

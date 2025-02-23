@@ -1,7 +1,7 @@
 import type { DialogBarProps, EditSourceDialogProps, PopupProps } from '../../dialogs';
 import { type Locales } from '../../i18n';
 import { Panel } from '../../layout/Utilities';
-import type { ContextMenuState, LayoutProps, NotificationProps } from '../../types';
+import type { ContextMenuState, LayoutProps, NotificationProps, PaletteMode } from '../../types';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {
@@ -19,8 +19,7 @@ type State = {
   notifications: NotificationProps[];
   popupProps: PopupProps;
   settingsDialogOpen: boolean;
-  themeAppearance: 'light' | 'auto' | 'dark';
-  title: string;
+  themeAppearance: PaletteMode;
 };
 
 export const state: State = {
@@ -51,6 +50,5 @@ export const state: State = {
   notifications: [],
   popupProps: { open: false },
   settingsDialogOpen: false,
-  themeAppearance: 'auto',
-  title: 'LEAF-Writer',
+  themeAppearance: 'system',
 };

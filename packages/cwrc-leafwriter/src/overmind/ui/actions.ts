@@ -16,7 +16,7 @@ import type {
 export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
   //DARK MODE
   const prefPaletteMode: PaletteMode =
-    effects.editor.api.getFromLocalStorage<PaletteMode>('themeAppearance') ?? 'auto';
+    effects.editor.api.getFromLocalStorage<PaletteMode>('themeAppearance') ?? 'system';
 
   actions.ui.setThemeAppearance(prefPaletteMode);
 
@@ -36,7 +36,7 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
   state.ui.themeAppearance = value;
 
   const darkMode =
-    value === 'auto'
+    value === 'system'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
       : value === 'light'
         ? false
@@ -93,10 +93,6 @@ export const closeContextMenu = ({ state }: Context) => {
 
 export const showContextMenu = ({ state }: Context, value: Omit<ContextMenuState, 'show'>) => {
   state.ui.contextMenu = { ...value, show: true };
-};
-
-export const updateTitle = ({ state }: Context, title: string) => {
-  state.ui.title = title;
 };
 
 export const resetPreferences = ({ effects }: Context) => {
