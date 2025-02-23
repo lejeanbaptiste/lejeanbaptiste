@@ -1,6 +1,5 @@
 import {
   Checkbox,
-  Icon,
   ListItem,
   ListItemButton,
   ListItemIcon,
@@ -8,7 +7,7 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import { getIcon, type IconLeafWriter } from '../../../icons';
+import { Icon, type IconLeafWriter } from '../../../icons';
 
 type TogglerProps = {
   description?: string;
@@ -33,28 +32,14 @@ export const Toggler = ({
   return (
     <ListItem dense disableGutters alignItems={description ? 'flex-start' : 'center'}>
       <ListItemButton
+        alignItems="center"
         disabled={disabled}
         disableGutters
         onClick={handleClick}
-        sx={[
-          {
-            py: 1,
-            borderRadius: 1,
-            alignItems: 'center',
-          },
-          !!description && { alignItems: 'flex-start' },
-        ]}
+        sx={[{ py: 1, borderRadius: 1 }, !!description && { alignItems: 'flex-start' }]}
       >
-        <ListItemIcon
-          sx={[
-            {
-              minWidth: 36,
-              mt: 0,
-            },
-            !!description && { mt: 0.25 },
-          ]}
-        >
-          <Icon component={getIcon(icon)} sx={{ mx: 1, height: 18, width: 18 }} />
+        <ListItemIcon sx={[{ minWidth: 36, mt: 0 }, !!description && { mt: 0.25 }]}>
+          <Icon name={icon} sx={{ mx: 1, height: 18, width: 18 }} />
         </ListItemIcon>
         <Stack
           direction="row"

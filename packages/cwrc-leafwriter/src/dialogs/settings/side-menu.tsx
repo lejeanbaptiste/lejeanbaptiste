@@ -1,5 +1,6 @@
 import { Box, MenuItem, MenuList } from '@mui/material';
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type MenuItemProps = {
   id: string;
@@ -12,6 +13,7 @@ interface SideMenuProps {
 }
 
 export const SideMenu = ({ items }: SideMenuProps) => {
+  const { t } = useTranslation();
   const refElemennt = useRef<HTMLDivElement>();
 
   const handleClick = (section: string) => {
@@ -21,7 +23,14 @@ export const SideMenu = ({ items }: SideMenuProps) => {
   };
 
   return (
-    <Box ref={refElemennt} aria-label="Side menu" minWidth={120} mt={2} gap={0.5} ml={-1.5}>
+    <Box
+      ref={refElemennt}
+      aria-label={t('LW.commons.side menu')}
+      minWidth={160}
+      mt={2}
+      gap={0.5}
+      ml={-1.5}
+    >
       <MenuList>
         {items
           .filter(({ hide }) => !hide)
