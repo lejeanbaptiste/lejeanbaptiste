@@ -30,7 +30,9 @@ _Partial Documentation - Working in progress_
     - [Settings](#settings)
       - [AuthorityService](#authorityservice)
         - [NamedEntityType](#namedentitytype)
-        - [NamedEntitySettings](#namedentitysettings)
+        - [AuthorityEntityTypeProps](#authorityentitytypeprops)
+        - [AuthoritySearchParms](#authoritysearchparms)
+        - [AuthoritySearchLookupResult](#authoritysearchlookupresult)
       - [Schemas](#schemas)
     - [Full Config Example](#full-config-example)
   - [Development](#development)
@@ -189,24 +191,20 @@ LEAF-Writer includes 6 authority services supporing 5 types of entities:
 - [VIAF](https://viaf.org/): Person, Place, Organization, Work (book), and Thing.
 - [Wikipedia](https://www.wikidata.org/wiki/Wikidata:Main_Page): Person.
 
-In addition, LEAF-Writer supports a custom authority service that can be used to add new authorities or change the way entities are looked up. We have created a sample custom authority service to show how to create one, effectively adding support to LGPN.
-
-- [LGPN](https://www.lgpn.ox.ac.uk/): Person (Greek names).
-  - The code to this authority service is can be found in this monorepo.
-  - **Note**: Disabled by default since it is not frequently used.
+In addition, LEAF-Writer supports a custom authority service that can be used to add new authorities or change the way entities are looked up. There is an example on the packages folder.
 
 Individual users can turn each authority on and off, as well enable and disabled specific entities in each authority depending on their preferences.
 
 All properties are optional, except for the id.
 
-| Name          | Type                                                                                                                                                     | Default | Description                                                                                                                                                                           |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| id\*          | `string`                                                                                                                                                 |         | The authority's id. Other values will be ignored.                                                                                                                                     |
-| disabled      | `boolean`                                                                                                                                                |         | Disable Authority. **Note**: the user can manually enable the authority in the settings panel.                                                                                        |
-| serviceSource | `LINCS` \| `custom`                                                                                                                                      |         | Indicates how the authority is implemented. LINCS means it is implemented by LINCS-API. Custom means it is implemented by a developer as and addon to LEAF-Writer.                    |
-| serviceType   | `API` \| `TEI-FILE`                                                                                                                                      |         | Indicates how the data will be fetched. API means it is fetched using an external API service. TEI-FILE means the data will be fetched from a TEI file in some external repository.   |
-| entities      | [`NamedEntitySettings`](#namedentitysettings)                                                                                                            |         | An obeject with namedEntity property with boolean values. This object not only defines the entities avialable for the authority, but also if they are enabled or didabled by default. |
-| find          | function({query: string, entityType: [NamedEntityType](#namedentitytype)}) = async () => Promise<{ description?: string; label: string; uri: string;}[]> |         | A ooptional function that takes a query and an entityType and returns a promise that resolves to an array of entities. Use if you want to add a new authority service.                |
+| Name        |                                                                           Type                                                                           | Default |                                                                                        Description                                                                                         |
+| ----------- | :------------------------------------------------------------------------------------------------------------------------------------------------------: | :------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| name\*      |                                                                         `string`                                                                         |         |                                                                                    The authority name.                                                                                     |
+| description |                                                                         `string`                                                                         |         |                                                                              A description for the authority.                                                                              |
+| url         |                                                                         `string`                                                                         |         |                                                                                   URL to the authority.                                                                                    |
+| author      |                                                            { name*: `string`, url: `string` }                                                            |         |                                                                  Author of the code to make authority's lookup function.                                                                   |
+| entityTypes |                          [`NamedEntityType`](#namedentitytype)[] \| [`AuthorityEntityTypesProps`](#authorityentitytypeprops)[]                           |         | An array of entity types or an objects with the name and url for each entity type. This object not only defines the entities avialable for the authority, but also where to look for them. |
+| search*     | function(params: [`AuthoritySearchParms`](#authoritysearchparms)) = async () => Promise<[`AuthoritySearchLookupResult`](#authoritysearchlookupresult)[]> |         |                                        A function that takes a query and an entityType and returns a promise that resolves to an array of entities.                                        |
 
 ##### NamedEntityType
 
@@ -214,27 +212,27 @@ All properties are optional, except for the id.
 type NamedEntity = 'person' | 'place' | 'organization' | 'work' | 'thing' | 'concept' |'citation'
 ```
 
-##### NamedEntitySettings
+##### AuthorityEntityTypeProps
 
-| Name         | Type      | Default | Description |
-| ------------ | --------- | ------- | ----------- |
-| person       | `boolean` | true    |             |
-| place        | `boolean` | true    |             |
-| organization | `boolean` | true    |             |
-| work         | `boolean` | true    |             |
-| thing        | `boolean` | true    |             |
+| Name  | Type                                  | Default | Description |
+| ----- | ------------------------------------- | ------- | ----------- |
+| name* | [`NamedEntityType`](#namedentitytype) |         |             |
+| url   | `string`                              |         |             |
 
-Example:
+##### AuthoritySearchParms
 
-Let’s say you want to enable LGPN and Geonames, disable Getty, and disable lookups for organization, Work, and thing on wikidata.
+| Name       | Type                                  | Default | Description |
+| ---------- | ------------------------------------- | ------- | ----------- |
+| query*     | `string`                              |         |             |
+| entityType | [`NamedEntityType`](#namedentitytype) |         |             |
 
-```ts
-[
-  'geonames',
-  { id: 'getty', enabled: false }
-  { id: 'wikidata', entities: { organization: false, work: false, thing: false }}
-]
-```
+##### AuthoritySearchLookupResult
+
+| Name        | Type     | Default | Description                       |
+| ----------- | -------- | ------- | --------------------------------- |
+| label*      | `string` |         | the entity label, usually a name. |
+| uri*        | `string` |         | the entity URI.                   |
+| description | `string` |         | A description for the entity.     |
 
 #### Schemas
 
@@ -298,10 +296,6 @@ editor.init({
   }
   settings: {
     baseUrl: 'path/to/leafwriter/files/',
-    authorityServices: [
-      'lgpn',
-      { id: 'wikidata', entities: { organization: false, work: false, thing: true }}
-    ],
     locale: 'en',
     readonly: false,
     schemas: [{

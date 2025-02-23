@@ -1,17 +1,5 @@
 import { z } from 'zod';
 
-export const namedEntityTypes = [
-  'person',
-  'place',
-  'organization',
-  'work',
-  'thing',
-  'concept',
-  'citation',
-] as const;
-export const namedEntityTypesSchema = z.enum(namedEntityTypes);
-export type NamedEntityType = z.infer<typeof namedEntityTypesSchema>;
-
 export const authorities = [
   'dbpedia',
   'geonames',
@@ -24,45 +12,88 @@ export const authorities = [
 export const authoritySchema = z.enum(authorities);
 export type Authority = z.infer<typeof authoritySchema>;
 
-export type LookupService = 'LINCS' | 'custom';
-export type LookupServiceType = 'API' | 'TEI-FILE';
+export const namedEntityTypes = [
+  'person',
+  'place',
+  'organization',
+  'work',
+  'thing',
+  'concept',
+  'citation',
+] as const;
+export const namedEntityTypesSchema = z.enum(namedEntityTypes);
+export type NamedEntityType = z.infer<typeof namedEntityTypesSchema>;
 
-export interface AuthorityLookupParams {
-  query: string;
-  type: NamedEntityType;
-}
+export const authorityLookupParamsSchema = z.object({
+  query: z.string(),
+  entityType: namedEntityTypesSchema,
+  options: z.optional(z.record(z.string(), z.any())),
+});
+export type AuthorityLookupParams = z.infer<typeof authorityLookupParamsSchema>;
 
-export interface AuthorityLookupResult {
-  description?: string;
-  label: string;
-  uri: string;
-}
+export const authorityLookupResultSchema = z.object({
+  description: z.string().optional(),
+  label: z.string(),
+  uri: z.string().url(),
+});
+export type AuthorityLookupResult = z.infer<typeof authorityLookupResultSchema>;
 
-export interface AuthorityServiceBase {
-  readonly id: string;
-  name: string;
-  entities: Partial<Record<NamedEntityType, boolean>>;
-  serviceSource?: LookupService;
-  serviceType?: LookupServiceType;
-  priority?: number;
-  disabled?: boolean;
-}
+export const searchFunctionSchema = z
+  .function()
+  .args(authorityLookupParamsSchema)
+  .returns(z.promise(z.array(authorityLookupResultSchema)));
+export type SearchFunction = z.infer<typeof searchFunctionSchema>;
 
-export interface LincsAuthorityService extends AuthorityServiceBase {
-  readonly id: Authority;
-  serviceSource: 'LINCS';
-  serviceType: 'API';
-}
+const entityTypePropsSchema = z.object({
+  name: namedEntityTypesSchema,
+  url: z.string().url().optional(),
+});
+export type EntityTypeProps = z.infer<typeof entityTypePropsSchema>;
 
-export interface AuthorityServiceCustom extends AuthorityServiceBase {
-  find: (params: AuthorityLookupParams) => Promise<AuthorityLookupResult[]>;
-}
+const baseAuthorityServiceConfigSchema = z.object({
+  author: z
+    .object({
+      name: z.string(),
+      url: z.string().url().optional(),
+    })
+    .optional(),
+  description: z.string().optional(),
+  name: z.string(),
+  url: z.string().url().optional(),
+});
 
-export type AuthorityService = LincsAuthorityService | AuthorityServiceCustom;
+export const localAuthorityServiceConfigSchema = baseAuthorityServiceConfigSchema.extend({
+  entityTypes: z.array(entityTypePropsSchema),
+  id: z.string(),
+  searchType: z.literal('TEI-FILE'),
+});
+export type LocalAuthorityServiceConfig = z.infer<typeof localAuthorityServiceConfigSchema>;
+
+export const authorityServiceConfigSchema = baseAuthorityServiceConfigSchema.extend({
+  entityTypes: z
+    .array(entityTypePropsSchema.extend({ priority: z.number().optional() }))
+    .or(z.array(namedEntityTypesSchema)),
+  search: searchFunctionSchema,
+});
+export type AuthorityServiceConfig = z.infer<typeof authorityServiceConfigSchema>;
+
+export const AuthorityServiceSchema = authorityServiceConfigSchema.extend({
+  entityTypes: z.map(namedEntityTypesSchema, entityTypePropsSchema),
+  id: z.string(),
+  isCustom: z.boolean().optional(),
+  isLocal: z.boolean().optional(),
+});
+export type AuthorityService = z.infer<typeof AuthorityServiceSchema>;
 
 export type AuthorityServices = Map<string, AuthorityService>;
 
-export type AuthorityServiceConfig = AuthorityServiceBase['id'] | AuthorityService;
+export interface LookupServicePreference {
+  authorityId: string;
+  entityType: NamedEntityType;
+  disabled?: boolean;
+  id: string;
+  priority: number;
+}
 
 export type EntityLookupDialogProps = {
   isUserAuthenticated: boolean;

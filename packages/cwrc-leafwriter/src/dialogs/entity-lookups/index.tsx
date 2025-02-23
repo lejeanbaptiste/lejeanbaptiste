@@ -1,8 +1,10 @@
 import { Dialog } from '@mui/material';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { getDefaultStore, Provider, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
+import { db } from '../../db';
 import { authorityServicesAtom, entityLookupDialogAtom } from '../../jotai/entity-lookup';
-import { EntityLookupDialogProps } from '../../types';
+import { AuthorityService, EntityLookupDialogProps } from '../../types';
 import { Footer } from './footer';
 import { Header } from './header';
 import { Main } from './main';
@@ -14,7 +16,6 @@ import {
   lookupTypeAtom,
   onCloseAtom,
   queryAtom,
-  resetLookupAtom,
 } from './store';
 import { useEntityLookup } from './useEntityLookup';
 
@@ -57,15 +58,19 @@ export const Wrapper = ({
   const setIsUserAuthenticated = useSetAtom(isUserAuthenticatedAtom);
   const lookupType = useAtomValue(lookupTypeAtom);
   const [query, setQuery] = useAtom(queryAtom);
-  const resetLookup = useSetAtom(resetLookupAtom);
   const setOnClose = useSetAtom(onCloseAtom);
 
   const { search } = useEntityLookup();
 
-  useEffect(() => {
-    const authorities = Array.from(authorityServices.values())
-      .filter((auth) => !auth.disabled && auth.entities[type] === true)
-      .toSorted((authA, authB) => (authA.priority ?? Infinity) - (authB.priority ?? Infinity));
+  const authorities = useLiveQuery(async () => {
+    const prefs = await db.lookupServicePreferences.where({ entityType: type }).sortBy('priority');
+
+    const authorities: AuthorityService[] = [];
+    prefs.forEach((pref) => {
+      if (pref.disabled) return;
+      const authority = authorityServices.get(pref.authorityId);
+      if (authority) authorities.push(authority);
+    });
 
     setAuthorities(authorities);
     setQuery(initialQuery);
@@ -73,12 +78,12 @@ export const Wrapper = ({
     setIsUserAuthenticated(isUserAuthenticated);
     setOnClose(() => onClose);
 
-    return () => resetLookup();
-  }, []);
+    return authorities;
+  }, [type]);
 
   useEffect(() => {
     query !== '' && search({ query, type: lookupType });
-  }, [lookupType]);
+  }, [authorities]);
 
   return <>{children}</>;
 };
