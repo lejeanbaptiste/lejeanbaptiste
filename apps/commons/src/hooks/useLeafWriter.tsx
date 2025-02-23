@@ -8,7 +8,6 @@ import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
-import { lgpn } from '@cwrc/leafwriter-authority-service-lgpn';
 import { LeafWriterOptions, LeafWriterOptionsSettings } from '@cwrc/leafwriter/lib/src/types';
 
 export const useLeafWriter = () => {
@@ -52,7 +51,6 @@ export const useLeafWriter = () => {
     };
 
     const settings: LeafWriterOptionsSettings = {
-      authorityServices: [lgpn],
       locale: currentLocale,
       readonly,
       schemas,
