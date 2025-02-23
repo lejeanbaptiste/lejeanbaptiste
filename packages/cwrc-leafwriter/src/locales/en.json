@@ -1,6 +1,4 @@
 {
-  "Cache cleared": "Cache cleared",
-  "Clear Cache": "Clear Cache",
   "LW": {
     "Accept All": "",
     "Add Entity Annotation": "Add Entity Annotation",
@@ -12,7 +10,6 @@
     "Add Translation": "",
     "After this date": "",
     "All": "",
-    "Allow drag and drop": "Allow drag and drop",
     "Alphabetical": "",
     "Annotation": "",
     "Annotation Mode": "Annotation Mode",
@@ -23,7 +20,6 @@
     "Bugs": "Bugs",
     "Building Document": "",
     "By this date": "",
-    "Cache cleared": "Cache cleared",
     "Candidate Entities": "",
     "Cannot have more than characters": "Cannot have more than {{max}} characters",
     "Categorical": "",
@@ -33,8 +29,6 @@
     "Change Tag": "Change Tag",
     "Circa": "",
     "Citation": "",
-    "Clear Cache": "Clear Cache",
-    "Confirmation dialog preferences have been reset": "Confirmation dialog preferences have been reset",
     "Convert to Entity Annotation": "Convert to Entity Annotation",
     "Converting Entities": "",
     "Copy Content": "Copy Content",
@@ -52,7 +46,6 @@
     "Document not supported": "Document not supported",
     "Documentation": "",
     "Done": "",
-    "Drag authorities to reorder priority": "Drag authorities to reorder priority",
     "Edit Entity Annotation": "Edit Entity Annotation",
     "Edit Header": "Edit Header",
     "Edit Tag": "Edit Tag",
@@ -69,7 +62,6 @@
     "Image Viewer": "",
     "Inserting Entities": "",
     "Invalid XML": "",
-    "It can produce unexpected results or make LEAF-Writer crash": "It can produce unexpected results or make LEAF-Writer crash.",
     "Keyword": "",
     "LEAF-Writer cannot guarantee that the document will work correctly with the selected schema": "LEAF-Writer cannot guarantee that the document will work correctly with the selected schema",
     "LOD Annotation": "",
@@ -112,8 +104,6 @@
     "Remove Tag": "Remove Tag",
     "Requests": "Requests",
     "Research Note": "",
-    "Reset Dialog Warnings": "Reset Dialog Warnings",
-    "Reset Settings": "Reset Settings",
     "Role (optional)": "",
     "Rough certainty": "",
     "Saving Document": "",
@@ -131,14 +121,10 @@
     "Selected Text": "",
     "Sequential": "",
     "Settings": "",
-    "Settings preferences have been reset to default": "Settings preferences have been reset to default",
     "Show": "",
-    "Show Entities": "Show Entities",
     "Show Raw XML": "",
     "Show Tags": "",
-    "Show Text Nodes": "Show Text Nodes",
     "Single Date": "",
-    "Some features are not fully implemented": "Some features are not fully implemented.",
     "Split Tag": "Split Tag",
     "Start date": "",
     "Table of Contents": "",
@@ -155,7 +141,6 @@
     "Tag Title": "",
     "Tag as": "",
     "Tagging might not work as expected": "Tagging might not work as expected",
-    "Text Nodes must be displayed for better accuracy": "Text Nodes must be displayed for better accuracy",
     "The current document is using this schema": "The current document is using this schema",
     "The current documents root element does not match the root elements required by the selected schema": "The current document's root element does not match the root elements required by the selected schema",
     "The existing RDF annotations will be discarded and no RDF will be created when tagging entities": "The existing RDF annotations will be discarded and no RDF will be created when tagging entities",
@@ -167,30 +152,30 @@
     "Type of place": "",
     "Unknown": "",
     "Unknown date": "",
-    "Use with caution": "Use with caution",
     "Validate": "",
     "Validation": "",
     "XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": "XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap",
     "You can change the editor mode anytime in the status bar": "You can change the editor mode anytime in the status bar (bottom left)",
     "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "The document has overlapping entities, and you are attempting to switch to a mode that prohibits them. If you continue, the overlapping entities will be discarded.",
     "You have unsaved changes": "You have unsaved changes",
-    "You might need to reload the document": "You might need to reload the document",
     "You must provide a username to make requests": "You must provide a username to make requests",
     "You will be able to tag and edit the text in the main document": "",
     "add schema": "add schema",
     "address": "",
     "area": "",
-    "beta": "beta",
     "both": "",
     "change anyway": "change anyway",
     "check_well-formedness": "Check well-formedness",
     "commons": {
+      "Entity Lookups": "Entity Lookups",
+      "Learn more": "Learn more",
       "Name": "Name",
       "add": "add",
+      "addon by": "Addon by",
       "annotation": "annotation",
-      "appearance": "appearance",
       "authorities": "authorities",
       "autosave": "autosave",
+      "beta": "beta",
       "cancel": "cancel",
       "change": "change",
       "close": "close",
@@ -198,9 +183,13 @@
       "discard_changes": "discard changes",
       "edit": "edit",
       "editor": "editor",
+      "entity types": "entity types",
+      "experimental": "experimental",
       "hint": "hint",
       "interface": "interface",
+      "language": "language",
       "manual input": "manual input",
+      "markup panel": "markup panel",
       "must be a valid URI": "Must be a valid URI",
       "ok": "ok",
       "only": "only",
@@ -211,6 +200,7 @@
       "search": "search",
       "select": "select",
       "settings": "settings",
+      "side menu": "side menu",
       "undo": "undo",
       "update": "update"
     },
@@ -240,6 +230,8 @@
         "physicalThing_other": "physical things",
         "place_one": "place",
         "place_other": "places",
+        "thing_one": "thing",
+        "thing_other": "things",
         "work_one": "work",
         "work_other": "works"
       },
@@ -255,17 +247,15 @@
       "physicalThing": "physical thing",
       "place": "place",
       "precision": "precision",
+      "thing": "thing",
       "work": "work"
     },
-    "experimental": "experimental",
     "fictional": "",
     "find": "",
-    "font size": "font size",
     "geog": "",
     "high": "",
     "hint": "Hint",
     "invalidXmlMessage": "",
-    "language": "language",
     "languages": {
       "de": "German",
       "en": "English",
@@ -283,11 +273,14 @@
       "tag without linking": "tag without linking"
     },
     "low": "",
-    "markup panel": "markup panel",
     "medium": "",
     "messages": {
       "Failed to fetch": "Failed to fetch",
+      "It can produce unexpected results or make LEAF-Writer crash": "It can produce unexpected results or make LEAF-Writer crash",
       "LEAF-Writer could not find the document schema declaration": "LEAF-Writer could not find the document schema declaration.",
+      "Only you can see this": "Only you can see this",
+      "Some features are not fully implemented": "Some features are not fully implemented",
+      "Use with caution": "Use with caution",
       "delete confirmation message": "<0>Are you sure you want to delete </0><1>{{name}}</1><2> schema?</2>",
       "root element invalid": "<1>LEAF-Writer cannot open this document.</1> Root element <2>{{rootName}}</2> not supported.",
       "schema not loaded": "<0>LEAF-Writer could not load the schema: </0><1>{{rng}}</1>",
@@ -305,6 +298,43 @@
     "region": "",
     "rs": "",
     "select supported schema": "select supported schema",
+    "settings": {
+      "authorities": {
+        "Add Custom Authority": "Add Custom Authority",
+        "messages": {
+          "Deactivated authorities will not be shown in entity lookups": "Deactivated authorities will not be shown in entity lookups",
+          "You can rearrange authorities to prioritize and activate or deactivate them for each entity type": "You can rearrange authorities to prioritize and activate or deactivate them for each entity type"
+        }
+      },
+      "editor": {
+        "Show Entities": "Show Entities",
+        "font size": "font size"
+      },
+      "markupPanel": {
+        "Allow drag and drop": "Allow drag and drop",
+        "Show Text Nodes": "Show Text Nodes",
+        "message": {
+          "Text Nodes must be displayed for better accuracy": "Text Nodes must be displayed for better accuracy"
+        }
+      },
+      "reset": {
+        "Clear Cache": "Clear Cache",
+        "Reset Dialog Warnings": "Reset Dialog Warnings",
+        "Reset Settings": "Reset Settings",
+        "message": {
+          "Cache cleared": "Cache cleared",
+          "Confirmation dialog preferences have been reset": "Confirmation dialog preferences have been reset",
+          "Settings preferences have been reset to default": "Settings preferences have been reset to default",
+          "You might need to reload the document": "You might need to reload the document"
+        }
+      },
+      "theme": {
+        "appearance": "appearance",
+        "dark": "dark",
+        "light": "light",
+        "system": "system"
+      }
+    },
     "settlement": "",
     "show only valid tags": "show only valid tags",
     "show_lod_annotation": "Show Linked Open Data Annotation",
@@ -314,6 +344,5 @@
     "title": "",
     "unknown": "",
     "xml_document_invalid": "XML document invalid"
-  },
-  "You might need to reload the document": "You might need to reload the document"
+  }
 }

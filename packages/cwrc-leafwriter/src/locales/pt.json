@@ -1,6 +1,4 @@
 {
-  "Cache cleared": "Cache limpo",
-  "Clear Cache": "Limpar cache",
   "LW": {
     "Accept All": "",
     "Add Entity Annotation": "Adicionar Anotação de Entidade",
@@ -12,7 +10,6 @@
     "Add Translation": "",
     "After this date": "",
     "All": "",
-    "Allow drag and drop": "Permitir arrastar e solvar",
     "Alphabetical": "",
     "Annotation": "",
     "Annotation Mode": "Modo de Anotação",
@@ -23,7 +20,6 @@
     "Bugs": "Errors",
     "Building Document": "",
     "By this date": "",
-    "Cache cleared": "Cache limpo",
     "Candidate Entities": "",
     "Cannot have more than characters": "Não pode ter mais de {{max}} caracteres",
     "Categorical": "",
@@ -33,8 +29,6 @@
     "Change Tag": "Mudar Tag",
     "Circa": "",
     "Citation": "",
-    "Clear Cache": "Limpar Cache",
-    "Confirmation dialog preferences have been reset": "As preferências do diálogo de confirmação foram resetadas",
     "Convert to Entity Annotation": "Converter para Anotação de Entidade",
     "Converting Entities": "",
     "Copy Content": "Copiar Conteúdo",
@@ -52,7 +46,6 @@
     "Document not supported": "Documento não compatível",
     "Documentation": "",
     "Done": "",
-    "Drag authorities to reorder priority": "Arraste as autoridades para reordenar a prioridade",
     "Edit Entity Annotation": "Editar Anotação de Entidade",
     "Edit Header": "Editar Cabeçalho",
     "Edit Tag": "Editar Tag",
@@ -69,7 +62,6 @@
     "Image Viewer": "",
     "Inserting Entities": "",
     "Invalid XML": "",
-    "It can produce unexpected results or make LEAF-Writer crash": "Isso pode produzir resultados inesperados ou fazer com que o LEAF-Writer falhe.",
     "Keyword": "",
     "LEAF-Writer cannot guarantee that the document will work correctly with the selected schema": "O LEAF-Writer não pode garantir que o documento funcionará corretamente com o esquema selecionado",
     "LOD Annotation": "",
@@ -112,8 +104,6 @@
     "Remove Tag": "Remover Tag",
     "Requests": "Solicitações",
     "Research Note": "",
-    "Reset Dialog Warnings": "Resetar Avisos da Caixa de Diálogo",
-    "Reset Settings": "Resetar Configurações",
     "Role (optional)": "",
     "Rough certainty": "",
     "Saving Document": "",
@@ -131,14 +121,10 @@
     "Selected Text": "",
     "Sequential": "",
     "Settings": "",
-    "Settings preferences have been reset to default": "As preferências de configuração foram resetadas",
     "Show": "",
-    "Show Entities": "Mostar Entidades",
     "Show Raw XML": "",
     "Show Tags": "",
-    "Show Text Nodes": "Mostrar os Nós de Texto",
     "Single Date": "",
-    "Some features are not fully implemented": "Alguns recursos não estão totalmente implementados.",
     "Split Tag": "Dividir Tag",
     "Start date": "",
     "Table of Contents": "",
@@ -155,7 +141,6 @@
     "Tag Title": "",
     "Tag as": "",
     "Tagging might not work as expected": "A marcação pode não funcionar como esperado",
-    "Text Nodes must be displayed for better accuracy": "Os nós de texto devem ser exibidos para melhor precisão",
     "The current document is using this schema": "O documento atual está usando este esquema",
     "The current documents root element does not match the root elements required by the selected schema": "O elemento raiz do documento atual não corresponde aos elementos raiz exigidos pelo esquema selecionado",
     "The existing RDF annotations will be discarded and no RDF will be created when tagging entities": "As anotações RDF existentes serão descartadas e nenhum RDF será criado ao taggear entidades",
@@ -167,30 +152,30 @@
     "Type of place": "",
     "Unknown": "",
     "Unknown date": "",
-    "Use with caution": "Use com precaução",
     "Validate": "",
     "Validation": "",
     "XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": "Tags XML e RDF - Anotações da Web Semântica equivalentes às tags XML serão criadas de acordo com a hierarquia do esquema XML, de modo que as anotações não poderão se sobrepor",
     "You can change the editor mode anytime in the status bar": "Você pode alterar o modo do editor a qualquer momento na barra de status (canto inferior esquerdo)",
     "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "O documento tem entidades sobrepostas e você está tentando alternar para um modo que as proíbe. As entidades sobrepostas serão descartadas se você continuar.",
     "You have unsaved changes": "Você tem alterações não salvas",
-    "You might need to reload the document": "Pode ser necessário recarregar o documento",
     "You must provide a username to make requests": "Você deve fornecer um nome de usuário para fazer solicitações",
     "You will be able to tag and edit the text in the main document": "",
     "add schema": "adicionar esquema",
     "address": "",
     "area": "",
-    "beta": "beta",
     "both": "",
     "change anyway": "mudar de qualquer maneira",
     "check_well-formedness": "Verificar se o documento esta bem formado",
     "commons": {
+      "Entity Lookups": "",
+      "Learn more": "",
       "Name": "Nome",
       "add": "adicionar",
+      "addon by": "",
       "annotation": "anotação",
-      "appearance": "aparência",
       "authorities": "autoridades",
       "autosave": "salvamento automático",
+      "beta": "beta",
       "cancel": "cancelar",
       "change": "mudar",
       "close": "fechar",
@@ -198,9 +183,13 @@
       "discard_changes": "descartar alterações",
       "edit": "editar",
       "editor": "editor",
+      "entity types": "",
+      "experimental": "experimental",
       "hint": "dica",
       "interface": "interface",
+      "language": "idioma",
       "manual input": "",
+      "markup panel": "painel de marcação",
       "must be a valid URI": "",
       "ok": "ok",
       "only": "apenas",
@@ -211,6 +200,7 @@
       "search": "buscar",
       "select": "selecionar",
       "settings": "configurações",
+      "side menu": "",
       "undo": "desfazer",
       "update": "atualizar"
     },
@@ -240,6 +230,8 @@
         "physicalThing_other": "",
         "place_one": "",
         "place_other": "",
+        "thing_one": "",
+        "thing_other": "",
         "work_one": "",
         "work_other": ""
       },
@@ -255,17 +247,15 @@
       "physicalThing": "",
       "place": "",
       "precision": "",
+      "thing": "",
       "work": ""
     },
-    "experimental": "experimental",
     "fictional": "",
     "find": "",
-    "font size": "tamanho da fonte",
     "geog": "",
     "high": "",
     "hint": "Dica",
     "invalidXmlMessage": "",
-    "language": "idioma",
     "languages": {
       "de": "Alemão",
       "en": "Inglês",
@@ -283,11 +273,14 @@
       "tag without linking": ""
     },
     "low": "",
-    "markup panel": "painel de marcação",
     "medium": "",
     "messages": {
       "Failed to fetch": "",
+      "It can produce unexpected results or make LEAF-Writer crash": "Isso pode produzir resultados inesperados ou fazer com que o LEAF-Writer falhe.",
       "LEAF-Writer could not find the document schema declaration": "O LEAF-Writer não conseguiu encontrar a declaração do esquema do documento.",
+      "Only you can see this": "",
+      "Some features are not fully implemented": "Alguns recursos não estão totalmente implementados.",
+      "Use with caution": "Use com precaução",
       "delete confirmation message": "<0>Tem certeza de que deseja excluir o esquema </0><1>{{name}}</1><2>?</2>",
       "root element invalid": "<1>O LEAF-Writer não pode abrir este documento.</1> O elemento raiz <2>{{rootName}}</2> não é compatível.",
       "schema not loaded": "<0>LEAF-Writer não pôde carregar o esquema: </0><1>{{rng}}</1>",
@@ -305,6 +298,43 @@
     "region": "",
     "rs": "",
     "select supported schema": "selecionar esquema compatível",
+    "settings": {
+      "authorities": {
+        "Add Custom Authority": "",
+        "messages": {
+          "Deactivated authorities will not be shown in entity lookups": "",
+          "You can rearrange authorities to prioritize and activate or deactivate them for each entity type": ""
+        }
+      },
+      "editor": {
+        "Show Entities": "Mostar Entidades",
+        "font size": "tamanho da fonte"
+      },
+      "markupPanel": {
+        "Allow drag and drop": "Permitir arrastar e solvar",
+        "Show Text Nodes": "Mostrar os Nós de Texto",
+        "message": {
+          "Text Nodes must be displayed for better accuracy": "Os nós de texto devem ser exibidos para melhor precisão"
+        }
+      },
+      "reset": {
+        "Clear Cache": "Limpar Cache",
+        "Reset Dialog Warnings": "Resetar Avisos da Caixa de Diálogo",
+        "Reset Settings": "Resetar Configurações",
+        "message": {
+          "Cache cleared": "Cache limpo",
+          "Confirmation dialog preferences have been reset": "As preferências do diálogo de confirmação foram resetadas",
+          "Settings preferences have been reset to default": "As preferências de configuração foram resetadas",
+          "You might need to reload the document": "Pode ser necessário recarregar o documento"
+        }
+      },
+      "theme": {
+        "appearance": "aparência",
+        "dark": "",
+        "light": "",
+        "system": ""
+      }
+    },
     "settlement": "",
     "show only valid tags": "mostrar apenas tags validos",
     "show_lod_annotation": "Mostrar anotação de dados abertos vinculados",
@@ -314,6 +344,5 @@
     "title": "",
     "unknown": "",
     "xml_document_invalid": "Documento XML inválido"
-  },
-  "You might need to reload the document": "Pode ser necessário recarregar o documento"
+  }
 }
