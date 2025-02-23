@@ -3,7 +3,7 @@ import $ from 'jquery';
 import Cookies from 'js-cookie';
 import { Context } from '../';
 import { db } from '../../db';
-import { configureAuthorityServicesAtom } from '../../jotai/entity-lookup';
+import { resetLookupPreferences } from '../../jotai/entity-lookup/utilities';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
 
 const defaultJotaiStore = getDefaultStore();
@@ -205,7 +205,7 @@ export const resetDialogWarnings = async ({ actions }: Context) => {
   await actions.ui.resetDoNotDisplayDialogs();
 };
 
-export const resetPreferences = async ({ state, actions, effects }: Context) => {
+export const resetPreferences = async ({ actions }: Context) => {
   actions.editor.setFontSize(11);
   actions.editor.toggleShowTags(false);
   actions.editor.setShowEntities(true);
@@ -213,8 +213,7 @@ export const resetPreferences = async ({ state, actions, effects }: Context) => 
   actions.editor.setAnnotationrMode(3);
   await actions.ui.resetDoNotDisplayDialogs();
 
-  await db.authorityServices.clear();
-  defaultJotaiStore.set(configureAuthorityServicesAtom, undefined);
+  resetLookupPreferences();
 
   actions.ui.resetPreferences();
 };

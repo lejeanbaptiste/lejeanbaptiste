@@ -4,13 +4,7 @@ import { Context } from '../';
 import { db } from '../../db';
 import type { DialogBarProps, PopupProps } from '../../dialogs';
 import i18n, { Locales, localesSchema } from '../../i18n';
-import type {
-  ContextMenuState,
-  NotificationProps,
-  PaletteMode,
-  PanelId,
-  Side
-} from '../../types';
+import type { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
