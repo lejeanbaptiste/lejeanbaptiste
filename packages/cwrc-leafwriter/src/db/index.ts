@@ -3,7 +3,7 @@
 // * We should way a little longer to adopt the new setup
 
 import Dexie, { Table } from 'dexie';
-import type { AuthorityServiceBase, Schema } from '../types';
+import type { LocalAuthorityServiceConfig, LookupServicePreference, Schema } from '../types';
 
 export interface SuspendedDocument {
   content: string;
@@ -15,9 +15,10 @@ export interface DoNotDisplayDialogs {
 }
 
 export class DexieDB extends Dexie {
-  authorityServices!: Table<AuthorityServiceBase>;
+  customAuthorityServices!: Table<LocalAuthorityServiceConfig>;
   customSchemas!: Table<Schema>;
   doNotDisplayDialogs!: Table<DoNotDisplayDialogs>;
+  lookupServicePreferences!: Table<LookupServicePreference>;
   suspendedDocuments!: Table<SuspendedDocument>;
 
   constructor() {
@@ -25,24 +26,13 @@ export class DexieDB extends Dexie {
     this.version(1).stores({
       suspendedDocument: '++id',
     });
-    this.version(2)
-      .stores({
-        authorityServices: 'id, lookupService',
-        customSchemas: 'id, mapping',
-        doNotDisplayDialogs: 'id',
-        suspendedDocuments: 'uuid',
-      })
-      .upgrade((tx) => {
-        return tx
-          .table('suspendedDocuments')
-          .toCollection()
-          .modify((suspendedDocuments) => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            suspendedDocuments.uuid = suspendedDocuments.id;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            delete suspendedDocuments.id;
-          });
-      });
+    this.version(2).stores({
+      authorityServices: 'id, lookupService',
+      customSchemas: 'id, mapping',
+      doNotDisplayDialogs: 'id',
+      suspendedDocuments: 'uuid',
+      suspendedDocument: null,
+    });
     this.version(3)
       .stores({
         authorityServices: 'id',
@@ -55,46 +45,44 @@ export class DexieDB extends Dexie {
         return tx
           .table('authorityServices')
           .toCollection()
-          .modify((authorityServices) => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            delete authorityServices.lookupService;
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            authorityServices.disabled = authorityServices.enabled;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            delete authorityServices.enabled;
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            if (authorityServices.id !== 'lgpn') {
-              authorityServices.serviceSource = 'LINCS';
-            } else {
-              authorityServices.serviceSource = 'custom';
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            authorityServices.serviceType = 'API';
+          .modify((authorityService) => {
+            authorityService.disabled = authorityService.enabled;
+            authorityService.serviceSource = authorityService.id !== 'lgpn' ? 'LINCS' : 'custom';
+            authorityService.serviceType = 'API';
+            delete authorityService.enabled;
+            delete authorityService.lookupService;
           });
       });
+    this.version(4).stores({
+      authorityServices: null,
+      customAuthorityServices: 'id, searchType',
+      customSchemas: 'id, mapping',
+      doNotDisplayDialogs: 'id',
+      lookupServicePreferences: 'id, authorityId, entityType, priority',
+      suspendedDocuments: 'uuid',
+    });
   }
 }
 
 export const db = new DexieDB();
 
 export const clearCache = async () => {
-  await db.suspendedDocuments
+  await db.customAuthorityServices
     .clear()
-    .catch(() => new Error('Clear `suspendedDocuments` table: Something went wrong.'));
+    .catch(() => new Error('Clear `customAuthorityService` table: Something went wrong.'));
   await db.customSchemas
     .clear()
     .catch(() => new Error('Clear `customSchemas` table: Something went wrong.'));
-  await db.authorityServices
-    .clear()
-    .catch(() => new Error('Clear `authorityServices` table: Something went wrong.'));
   await db.doNotDisplayDialogs
     .clear()
     .catch(() => new Error('Clear `doNotDisplayDialogs` table: Something went wrong.'));
+  await db.lookupServicePreferences
+    .clear()
+    .catch(() => new Error('Clear `lookupServices` table: Something went wrong.'));
+  await db.suspendedDocuments
+    .clear()
+    .catch(() => new Error('Clear `suspendedDocuments` table: Something went wrong.'));
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   await window.leafwriterValidator?.clearCache();
 };
 

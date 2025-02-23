@@ -1,4 +1,4 @@
-import { Box, Button, ButtonGroup, CircularProgress, Tooltip } from '@mui/material';
+import { Box, Button, ButtonGroup, CircularProgress, Tooltip, Typography } from '@mui/material';
 import { useAtomValue } from 'jotai';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +20,15 @@ export const SideMenu = ({ authorityInView }: { authorityInView: string[] }) => 
   };
 
   return (
-    <Box ref={refElemennt} minWidth={120} maxWidth={180} mt={2}>
+    <Box
+      ref={refElemennt}
+      display="flex"
+      justifyContent="flex-end"
+      minWidth={120}
+      maxWidth={180}
+      mr={1}
+      mt={2}
+    >
       {authorities.length > 0 && (
         <ButtonGroup
           aria-label="Side menu"
@@ -42,11 +50,10 @@ export const SideMenu = ({ authorityInView }: { authorityInView: string[] }) => 
                   color={authorityInView.includes(id) ? 'primary' : 'inherit'}
                   disabled={results?.status === 'error' || results?.status === 'loading'}
                   endIcon={
-                    results?.status === 'loading' ? (
-                      <CircularProgress size={12} />
-                    ) : results?.status === 'error' ? (
-                      <CiWarning size={12} />
-                    ) : null
+                    <Badge
+                      count={results?.status === 'success' ? results?.candidates.length : undefined}
+                      status={results?.status}
+                    />
                   }
                   size="small"
                   onClick={() => handleClick(id)}
@@ -54,15 +61,13 @@ export const SideMenu = ({ authorityInView }: { authorityInView: string[] }) => 
                   variant="text"
                 >
                   {name}
-                  {results?.status === 'success' && (
-                    <BadgeCount count={results.candidates.length} />
-                  )}
                 </Button>
               </span>
             </Tooltip>
           ))}
           <Button
             color={authorityInView.includes('other') ? 'primary' : 'inherit'}
+            endIcon={<Badge />}
             onClick={() => handleClick('other')}
             sx={{ borderRadius: 1, textTransform: 'capitalize' }}
             variant="text"
@@ -75,19 +80,24 @@ export const SideMenu = ({ authorityInView }: { authorityInView: string[] }) => 
   );
 };
 
-const BadgeCount = ({ count }: { count?: number }) => (
+const Badge = ({ count, status }: { count?: number; status?: 'success' | 'error' | 'loading' }) => (
   <Box
+    display="flex"
+    justifyContent="center"
+    alignItems="center"
+    minWidth={20}
+    borderRadius={1}
     sx={{
-      position: 'relative',
-      minWidth: 16,
-      height: 18,
-      pl: 0.5,
-      px: 0.25,
-      borderRadius: 0.5,
-      lineHeight: '1.2rem',
-      textAlign: 'right',
+      backgroundColor:
+        status === 'success' ? (theme) => theme.vars.palette.action.hover : 'inherit',
     }}
   >
-    {count}
+    {status === 'loading' ? (
+      <CircularProgress size={12} />
+    ) : status === 'error' ? (
+      <CiWarning size={12} />
+    ) : status === 'success' ? (
+      <Typography variant="caption">{count}</Typography>
+    ) : null}
   </Box>
 );

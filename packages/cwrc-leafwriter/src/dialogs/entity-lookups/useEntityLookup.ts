@@ -1,10 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai';
-import type {
-  AuthorityLookupResult,
-  EntityLink,
-  LincsAuthorityService,
-  NamedEntityType,
-} from '../../types/index';
+import type { AuthorityLookupResult, EntityLink, NamedEntityType } from '../../types/index';
 import {
   authoritiesAtom,
   entityTypeAtom,
@@ -15,7 +10,6 @@ import {
   queryAtom,
   selectedAtom,
 } from './store';
-import { reconcile } from './services/lincs-api';
 
 export const useEntityLookup = () => {
   const [authorities, setAuthorities] = useAtom(authoritiesAtom);
@@ -83,26 +77,18 @@ export const useEntityLookup = () => {
     setAuthorities(resetedAuthorities);
 
     for (const authority of authorities) {
-      if (authority.serviceSource === 'LINCS') {
-        reconcile({
+      authority
+        .search({
           query,
           entityType: type,
-          authority: authority as LincsAuthorityService,
-          moreResults: isUserAuthenticated,
+          options: { authority, isUserAuthenticated },
         })
-          .then((results) => onSearchResult(authority, results))
-          .catch((error) => onSearchError(authority, error));
-      } else {
-        authority
-          .find({ query, type })
-          .then((results) => onSearchResult(authority, results))
-          .catch((error) => onSearchError(authority, error));
-      }
+        .then((results) => onSearchResult(authority, results))
+        .catch((error) => onSearchError(authority, error));
     }
   };
 
   return {
-    // initialize,
     processSelected,
     search,
   };

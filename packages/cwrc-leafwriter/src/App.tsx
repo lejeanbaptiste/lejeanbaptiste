@@ -6,12 +6,11 @@ import { BottomBar, ContextMenu, EditorToolbar } from './components';
 import { createConfig } from './config';
 import { EntityLookupDialog } from './dialogs';
 import { useDialog, useNotifier } from './hooks';
+import { configureAuthorityServices } from './jotai/entity-lookup/utilities';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import { CodePanel, MarkupPanel, TocPanel } from './panels';
 import type { LeafWriterOptions } from './types';
-import { configureAuthorityServicesAtom } from './jotai/entity-lookup';
-import { useSetAtom } from 'jotai';
 // import { Layout } from './layout';
 
 const CONTAINER = 'lw-layout-container';
@@ -21,8 +20,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const state = useAppState();
   const [writer, setWriter] = useState<Writer | null>(null);
   const { i18n } = useTranslation();
-
-  const configureAuthorityServices = useSetAtom(configureAuthorityServicesAtom);
 
   useDialog();
   useNotifier();

@@ -10,35 +10,42 @@ export const Reset = () => {
   const { t } = useTranslation();
 
   return (
-    <Stack>
+    <Stack direction="row" gap={2}>
       <Button
         icon="reset"
-        onClick={async () => {
-          await resetDialogWarnings();
-          notifyViaSnackbar(t('LW.Confirmation dialog preferences have been reset').toString());
+        onClick={() => {
+          resetDialogWarnings().then(() => {
+            notifyViaSnackbar(
+              t('LW.settings.reset.message.Confirmation dialog preferences have been reset'),
+            );
+          });
         }}
       >
-        {t('LW.Reset Dialog Warnings')}
+        {t('LW.settings.reset.Reset Dialog Warnings')}
       </Button>
       <Button
         icon="reset"
-        onClick={async () => {
-          await resetPreferences();
-          notifyViaSnackbar(t('LW.Settings preferences have been reset to default').toString());
+        onClick={() => {
+          resetPreferences().then(() => {
+            notifyViaSnackbar(
+              t('LW.settings.reset.message.Settings preferences have been reset to default'),
+            );
+          });
         }}
       >
-        {t('LW.Reset Settings')}
+        {t('LW.settings.reset.Reset Settings')}
       </Button>
       <Button
         icon="reset"
-        onClick={async () => {
-          await clearCache();
-          notifyViaSnackbar(
-            `${t('LW.Cache cleared')}. ${t('LW.You might need to reload the document')}.`,
-          );
+        onClick={() => {
+          clearCache().then(() => {
+            notifyViaSnackbar(
+              `${t('LW.settings.reset.message.Cache cleared')}. ${t('LW.settings.reset.message.You might need to reload the document')}.`,
+            );
+          });
         }}
       >
-        {t('LW.Clear Cache')}
+        {t('LW.settings.reset.Clear Cache')}
       </Button>
     </Stack>
   );

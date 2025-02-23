@@ -3,10 +3,9 @@ import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
 import type { IDialog } from '../type';
-import { Header } from './Header';
-import { SideMenu, type MenuItemProps } from './SideMenu';
 import { Section } from './components';
 import { Header } from './header';
+import { Authorities, Editor, EntityLookups, Interface, MarkupPanel, Reset } from './sections';
 import { SideMenu } from './side-menu';
 
 export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
@@ -46,13 +45,13 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
             </Section>
             {!isReadonly && (
               <>
-                {/* <Section id="authorities" title={t('LW.commons.authorities')}>
-                  <Authorities2 />
-                </Section> */}
                 <Section id="authorities" title={t('LW.commons.authorities')}>
                   <Authorities />
                 </Section>
-                <Section id="markup-panel" title={t('LW.markup panel')}>
+                <Section id="entityLookups" title={t('LW.commons.Entity Lookups')}>
+                  <EntityLookups />
+                </Section>
+                <Section id="markup-panel" title={t('LW.commons.markup panel')}>
                   <MarkupPanel />
                 </Section>
                 <Section id="reset" title={t('LW.commons.reset')}>

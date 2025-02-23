@@ -1,12 +1,7 @@
 import { z } from 'zod';
-import type {
-  Authority,
-  AuthorityLookupResult,
-  LincsAuthorityService,
-  NamedEntityType,
-} from '../../../types';
-import { log } from '../../../utilities';
-import i18n from '../../../i18n';
+import i18n from '../i18n';
+import type { Authority, AuthorityLookupResult, NamedEntityType, SearchFunction } from '../types';
+import { log } from '../utilities';
 
 const lincsApiAuthoritySources = [
   'DBpedia-All',
@@ -115,18 +110,18 @@ export const getAuthoritySources = (
   }
 };
 
-export const reconcile = async ({
-  query,
-  entityType,
-  authority,
-  moreResults = false,
-}: {
-  query: string;
-  entityType: NamedEntityType;
-  authority: LincsAuthorityService;
-  moreResults?: boolean;
-}) => {
-  const authoritiesSources = getAuthoritySources(authority.id, entityType);
+interface Options {
+  authorityId: Authority;
+  isUserAuthenticated?: boolean;
+}
+
+export const reconcile: SearchFunction = async ({ query, entityType, options }) => {
+  if (!options) {
+    throw new Error('No options provided');
+  }
+  const { authorityId, isUserAuthenticated } = options as Options;
+
+  const authoritiesSources = getAuthoritySources(authorityId, entityType);
 
   const response = await fetch('https://lincs-api.lincsproject.ca/api/link/reconcile', {
     method: 'POST',
@@ -134,7 +129,7 @@ export const reconcile = async ({
     body: JSON.stringify({
       entity: query,
       authorities: authoritiesSources,
-      moreResults,
+      moreResults: isUserAuthenticated,
     }),
   });
 
@@ -154,20 +149,14 @@ export const reconcile = async ({
     throw new Error(i18n.t('LW.messages.Failed to fetch'), { cause: validatedData.error });
   }
 
-  // const results: Map<Authority, AuthorityLookupResult[]> = new Map();
   const mapResults: Map<AuthorityLookupResult['uri'], AuthorityLookupResult> = new Map();
 
   validatedData.data.forEach((source) => {
-    // const authorityName = source.authority.split('-')[0].toLowerCase() as Authority;
-
     source.matches.forEach(({ description, label, uri }) => {
       if (mapResults.has(uri)) return;
       const entityReturn: AuthorityLookupResult = {
-        // authority: authorityName,
         description: description,
-        // entityType,
         label,
-        // query,
         uri,
       };
       mapResults.set(uri, entityReturn);
