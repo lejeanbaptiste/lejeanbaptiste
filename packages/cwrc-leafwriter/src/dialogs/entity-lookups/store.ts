@@ -59,10 +59,3 @@ export const onCloseAtom = atom<
   ((response?: EntityLink | Pick<EntityLink, 'query' | 'type'>) => void) | undefined
 >(undefined);
 onCloseAtom.debugLabel = 'onClose.Atom';
-
-export const resetLookupAtom = atom(null, (_get, set) => {
-  set(authoritiesAtom, []);
-  set(manualInputAtom, '');
-  set(queryAtom, '');
-  set(selectedAtom, null);
-});

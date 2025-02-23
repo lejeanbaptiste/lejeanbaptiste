@@ -1,6 +1,4 @@
 {
-  "Cache cleared": "Cache vidé",
-  "Clear Cache": "Vider le cache",
   "LW": {
     "Accept All": "",
     "Add Entity Annotation": "Ajouter une annotation d'entité",
@@ -12,7 +10,6 @@
     "Add Translation": "",
     "After this date": "",
     "All": "",
-    "Allow drag and drop": "Autoriser le glisser-déposer",
     "Alphabetical": "",
     "Annotation": "",
     "Annotation Mode": "Mode d'annotation",
@@ -23,7 +20,6 @@
     "Bugs": "Erreurs",
     "Building Document": "",
     "By this date": "",
-    "Cache cleared": "Cache vidé",
     "Candidate Entities": "",
     "Cannot have more than characters": "Ne peut pas contenir plus de {{max}}caractères",
     "Categorical": "",
@@ -33,8 +29,6 @@
     "Change Tag": "Changer de balise",
     "Circa": "",
     "Citation": "",
-    "Clear Cache": "Vider le cache",
-    "Confirmation dialog preferences have been reset": "Les préférences de la boîte de dialogue de confirmation ont été réinitialisées",
     "Convert to Entity Annotation": "Convertir en annotation d'entité",
     "Converting Entities": "",
     "Copy Content": "Copier le contenu",
@@ -52,7 +46,6 @@
     "Document not supported": "Document non pris en charge",
     "Documentation": "",
     "Done": "",
-    "Drag authorities to reorder priority": "Faire glisser les autorités pour réorganiser la priorité",
     "Edit Entity Annotation": "Modifier l'annotation d'entité",
     "Edit Header": "Modifier l'en-tête",
     "Edit Tag": "Modifier la balise",
@@ -69,7 +62,6 @@
     "Image Viewer": "",
     "Inserting Entities": "",
     "Invalid XML": "",
-    "It can produce unexpected results or make LEAF-Writer crash": "Cela peut produire des résultats inattendus ou faire planter LEAF-Writer.",
     "Keyword": "",
     "LEAF-Writer cannot guarantee that the document will work correctly with the selected schema": "LEAF-Writer ne peut pas garantir que le document fonctionnera correctement avec le schéma sélectionné",
     "LOD Annotation": "",
@@ -112,8 +104,6 @@
     "Remove Tag": "Enlever la balise",
     "Requests": "Demandes",
     "Research Note": "",
-    "Reset Dialog Warnings": "Réinitialiser les avertissements de la boîte de dialogue",
-    "Reset Settings": "Réinitialiser les paramètres",
     "Role (optional)": "",
     "Rough certainty": "",
     "Saving Document": "",
@@ -131,14 +121,10 @@
     "Selected Text": "",
     "Sequential": "",
     "Settings": "",
-    "Settings preferences have been reset to default": "Les préférences de paramètres ont été réinitialisées par défaut",
     "Show": "",
-    "Show Entities": "Afficher les entités",
     "Show Raw XML": "",
     "Show Tags": "",
-    "Show Text Nodes": "Afficher les nœuds de texte",
     "Single Date": "",
-    "Some features are not fully implemented": "Certaines fonctionnalités ne sont pas entièrement implémentées.",
     "Split Tag": "Balise fractionnée",
     "Start date": "",
     "Table of Contents": "",
@@ -155,7 +141,6 @@
     "Tag Title": "",
     "Tag as": "",
     "Tagging might not work as expected": "Le balisage peut ne pas fonctionner comme prévu",
-    "Text Nodes must be displayed for better accuracy": "Les nœuds de texte doivent être affichés pour une meilleure précision",
     "The current document is using this schema": "Le document actuel utilise ce schéma",
     "The current documents root element does not match the root elements required by the selected schema": "L'élément racine du document actuel ne correspond pas aux éléments racine requis par le schéma sélectionné",
     "The existing RDF annotations will be discarded and no RDF will be created when tagging entities": "Les annotations RDF existantes seront supprimées et aucun RDF ne sera créé lors du balisage des entités",
@@ -167,30 +152,30 @@
     "Type of place": "",
     "Unknown": "",
     "Unknown date": "",
-    "Use with caution": "Utiliser avec précaution",
     "Validate": "",
     "Validation": "",
     "XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap": "Balises XML et RDF - Des annotations Web sémantiques équivalentes aux balises XML seront créées conformément à la hiérarchie du schéma XML afin que les annotations ne soient pas autorisées à se chevaucher",
     "You can change the editor mode anytime in the status bar": "Vous pouvez changer le mode édition à tout moment dans la barre d'état (en bas à gauche)",
     "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "Vous avez des entités qui se chevauchent et vous essayez de passer à un mode qui les interdit. Les entités qui se chevauchent seront ignorées si vous continuez.",
     "You have unsaved changes": "Vous avez des modifications non enregistrées",
-    "You might need to reload the document": "Vous devrez peut-être recharger le document",
     "You must provide a username to make requests": "Vous devez fournir un nom d'utilisateur pour faire des demandes",
     "You will be able to tag and edit the text in the main document": "",
     "add schema": "ajouter un schéma",
     "address": "",
     "area": "",
-    "beta": "bêta",
     "both": "",
     "change anyway": "changer quand même",
     "check_well-formedness": "Vérifier que le document soit bien formé",
     "commons": {
+      "Entity Lookups": "",
+      "Learn more": "",
       "Name": "Nom",
       "add": "ajouter",
+      "addon by": "",
       "annotation": "annotation",
-      "appearance": "apparence",
       "authorities": "autorités",
       "autosave": "sauvegarde automatique",
+      "beta": "bêta",
       "cancel": "annuler",
       "change": "changer",
       "close": "fermer",
@@ -198,9 +183,13 @@
       "discard_changes": "annuler les modifications",
       "edit": "modifier",
       "editor": "éditeur",
+      "entity types": "",
+      "experimental": "expérimental",
       "hint": "indice",
       "interface": "interface",
+      "language": "langue",
       "manual input": "",
+      "markup panel": "panneau de balisage",
       "must be a valid URI": "",
       "ok": "d'accord",
       "only": "seul",
@@ -211,6 +200,7 @@
       "search": "recherche",
       "select": "sélectionner",
       "settings": "paramètres",
+      "side menu": "",
       "undo": "annuler",
       "update": "mise à jour"
     },
@@ -240,6 +230,8 @@
         "physicalThing_other": "",
         "place_one": "",
         "place_other": "",
+        "thing_one": "",
+        "thing_other": "",
         "work_one": "",
         "work_other": ""
       },
@@ -255,17 +247,15 @@
       "physicalThing": "",
       "place": "",
       "precision": "",
+      "thing": "",
       "work": ""
     },
-    "experimental": "expérimental",
     "fictional": "",
     "find": "",
-    "font size": "taille de police",
     "geog": "",
     "high": "",
     "hint": "Indice",
     "invalidXmlMessage": "",
-    "language": "langue",
     "languages": {
       "de": "Allemand",
       "en": "Anglais",
@@ -283,11 +273,14 @@
       "tag without linking": ""
     },
     "low": "",
-    "markup panel": "panneau de balisage",
     "medium": "",
     "messages": {
       "Failed to fetch": "",
+      "It can produce unexpected results or make LEAF-Writer crash": "Cela peut produire des résultats inattendus ou faire planter LEAF-Writer.",
       "LEAF-Writer could not find the document schema declaration": "LEAF-Writer n'a pas pu trouver la déclaration de schéma de document.",
+      "Only you can see this": "",
+      "Some features are not fully implemented": "Certaines fonctionnalités ne sont pas entièrement implémentées.",
+      "Use with caution": "Utiliser avec précaution",
       "delete confirmation message": "<0>Voulez-vous vraiment supprimer le schéma </0><1>{{name}}</1><2>?</2>",
       "root element invalid": "<1>LEAF-Writer ne peut pas ouvrir ce document.</1> L'élément racine <2>{{rootName}}</2> n'est pas pris en charge.",
       "schema not loaded": "<0>LEAF-Writer n'a pas pu charger le schéma: </0><1>{{rng}}</1>",
@@ -305,6 +298,43 @@
     "region": "",
     "rs": "",
     "select supported schema": "sélectionner le schéma pris en charge",
+    "settings": {
+      "authorities": {
+        "Add Custom Authority": "",
+        "messages": {
+          "Deactivated authorities will not be shown in entity lookups": "",
+          "You can rearrange authorities to prioritize and activate or deactivate them for each entity type": ""
+        }
+      },
+      "editor": {
+        "Show Entities": "Afficher les entités",
+        "font size": "taille de police"
+      },
+      "markupPanel": {
+        "Allow drag and drop": "Autoriser le glisser-déposer",
+        "Show Text Nodes": "Afficher les nœuds de texte",
+        "message": {
+          "Text Nodes must be displayed for better accuracy": "Les nœuds de texte doivent être affichés pour une meilleure précision"
+        }
+      },
+      "reset": {
+        "Clear Cache": "Vider le cache",
+        "Reset Dialog Warnings": "Réinitialiser les avertissements de la boîte de dialogue",
+        "Reset Settings": "Réinitialiser les paramètres",
+        "message": {
+          "Cache cleared": "Cache vidé",
+          "Confirmation dialog preferences have been reset": "Les préférences de la boîte de dialogue de confirmation ont été réinitialisées",
+          "Settings preferences have been reset to default": "Les préférences de paramètres ont été réinitialisées par défaut",
+          "You might need to reload the document": "Vous devrez peut-être recharger le document"
+        }
+      },
+      "theme": {
+        "appearance": "apparence",
+        "dark": "",
+        "light": "",
+        "system": ""
+      }
+    },
     "settlement": "",
     "show only valid tags": "afficher uniquement les balises valides",
     "show_lod_annotation": "Afficher l'annotation des données ouvertes liées",
@@ -314,6 +344,5 @@
     "title": "",
     "unknown": "",
     "xml_document_invalid": "document XML invalide"
-  },
-  "You might need to reload the document": "Vous devrez peut-être recharger le document"
+  }
 }

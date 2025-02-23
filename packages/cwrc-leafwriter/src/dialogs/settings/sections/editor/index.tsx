@@ -1,7 +1,8 @@
+import { List } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../overmind';
 import { Toggler } from '../../components';
-import { FontSize } from './FontSize';
+import { FontSize } from './font-size';
 
 export const Editor = () => {
   const { autosave, isReadonly, showEntities } = useAppState().editor;
@@ -9,7 +10,7 @@ export const Editor = () => {
   const { t } = useTranslation();
 
   return (
-    <>
+    <List dense>
       <FontSize />
       {autosave !== undefined && !isReadonly && (
         <Toggler
@@ -23,10 +24,10 @@ export const Editor = () => {
       <Toggler
         icon="entitiesTag"
         onChange={setShowEntities}
-        title={t('LW.Show Entities')}
+        title={t('LW.settings.editor.Show Entities')}
         type="toggle"
         value={showEntities}
       />
-    </>
+    </List>
   );
 };

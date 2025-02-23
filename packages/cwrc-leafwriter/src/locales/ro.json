@@ -1,6 +1,4 @@
 {
-  "Cache cleared": "",
-  "Clear Cache": "",
   "LW": {
     "Accept All": "",
     "Add Entity Annotation": "",
@@ -23,7 +21,6 @@
     "Bugs": "",
     "Building Document": "",
     "By this date": "",
-    "Cache cleared": "",
     "Candidate Entities": "",
     "Cannot have more than characters": "",
     "Categorical": "",
@@ -33,8 +30,6 @@
     "Change Tag": "",
     "Circa": "",
     "Citation": "",
-    "Clear Cache": "",
-    "Confirmation dialog preferences have been reset": "",
     "Convert to Entity Annotation": "",
     "Converting Entities": "",
     "Copy Content": "",
@@ -52,7 +47,6 @@
     "Document not supported": "",
     "Documentation": "",
     "Done": "",
-    "Drag authorities to reorder priority": "",
     "Edit Entity Annotation": "",
     "Edit Header": "",
     "Edit Tag": "",
@@ -112,8 +106,6 @@
     "Remove Tag": "",
     "Requests": "",
     "Research Note": "",
-    "Reset Dialog Warnings": "",
-    "Reset Settings": "",
     "Role (optional)": "",
     "Rough certainty": "",
     "Saving Document": "",
@@ -131,7 +123,6 @@
     "Selected Text": "",
     "Sequential": "",
     "Settings": "",
-    "Settings preferences have been reset to default": "",
     "Show": "",
     "Show Entities": "",
     "Show Raw XML": "",
@@ -174,7 +165,6 @@
     "You can change the editor mode anytime in the status bar": "",
     "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "",
     "You have unsaved changes": "",
-    "You might need to reload the document": "",
     "You must provide a username to make requests": "",
     "You will be able to tag and edit the text in the main document": "",
     "add schema": "",
@@ -185,12 +175,16 @@
     "change anyway": "",
     "check_well-formedness": "",
     "commons": {
+      "Entity Lookups": "",
+      "Learn more": "",
       "Name": "",
       "add": "",
+      "addon by": "",
       "annotation": "",
       "appearance": "",
       "authorities": "",
       "autosave": "",
+      "beta": "",
       "cancel": "",
       "change": "",
       "close": "",
@@ -198,9 +192,13 @@
       "discard_changes": "",
       "edit": "",
       "editor": "",
+      "entity types": "",
+      "experimental": "",
       "hint": "",
       "interface": "",
+      "language": "",
       "manual input": "",
+      "markup panel": "",
       "must be a valid URI": "",
       "ok": "",
       "only": "",
@@ -211,6 +209,7 @@
       "search": "",
       "select": "",
       "settings": "",
+      "side menu": "",
       "undo": "",
       "update": ""
     },
@@ -240,6 +239,8 @@
         "physicalThing_other": "",
         "place_one": "",
         "place_other": "",
+        "thing_one": "",
+        "thing_other": "",
         "work_one": "",
         "work_other": ""
       },
@@ -255,6 +256,7 @@
       "physicalThing": "",
       "place": "",
       "precision": "",
+      "thing": "",
       "work": ""
     },
     "experimental": "",
@@ -287,7 +289,11 @@
     "medium": "",
     "messages": {
       "Failed to fetch": "",
+      "It can produce unexpected results or make LEAF-Writer crash": "",
       "LEAF-Writer could not find the document schema declaration": "",
+      "Only you can see this": "",
+      "Some features are not fully implemented": "",
+      "Use with caution": "",
       "delete confirmation message": "",
       "root element invalid": "",
       "schema not loaded": "",
@@ -305,15 +311,50 @@
     "region": "",
     "rs": "",
     "select supported schema": "",
+    "settings": {
+      "authorities": {
+        "Add Custom Authority": "",
+        "messages": {
+          "Deactivated authorities will not be shown in entity lookups": "",
+          "You can rearrange authorities to prioritize and activate or deactivate them for each entity type": ""
+        }
+      },
+      "editor": {
+        "Show Entities": "",
+        "font size": ""
+      },
+      "markupPanel": {
+        "Allow drag and drop": "",
+        "Show Text Nodes": "",
+        "message": {
+          "Text Nodes must be displayed for better accuracy": ""
+        }
+      },
+      "reset": {
+        "Clear Cache": "",
+        "Reset Dialog Warnings": "",
+        "Reset Settings": "",
+        "message": {
+          "Cache cleared": "",
+          "Confirmation dialog preferences have been reset": "",
+          "Settings preferences have been reset to default": "",
+          "You might need to reload the document": ""
+        }
+      },
+      "theme": {
+        "appearance": "",
+        "dark": "",
+        "light": "",
+        "system": ""
+      }
+    },
     "settlement": "",
     "show only valid tags": "",
     "show_lod_annotation": "",
     "source": "",
-    "tag without linking": "",
     "thing": "",
     "title": "",
     "unknown": "",
     "xml_document_invalid": ""
-  },
-  "You might need to reload the document": ""
+  }
 }
