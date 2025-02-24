@@ -985,11 +985,15 @@ class Tagger {
 
   addNoteWrappersForEntities() {
     this.writer.entitiesManager.eachEntity((id: string, entity: Entity) => {
-      if (entity.isNote()) {
-        const note = $(`#${id}`, this.writer.editor?.getBody());
-        //@ts-ignore
-        this.addNoteWrapper(note[0], entity.getType());
+      if (!entity.isNote()) return;
+
+      const note = this.writer.editor?.getBody().querySelector(`#${id}`);
+      if (!note) {
+        console.log(`Element ${id} not found for note tag`);
+        return;
       }
+
+      this.addNoteWrapper(note, entity.getType());
     });
   }
 
