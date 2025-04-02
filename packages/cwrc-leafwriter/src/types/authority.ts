@@ -44,9 +44,9 @@ export const searchFunctionSchema = z
   .returns(z.promise(z.array(authorityLookupResultSchema)));
 export type SearchFunction = z.infer<typeof searchFunctionSchema>;
 
-const entityTypePropsSchema = z.object({
+export const entityTypePropsSchema = z.object({
   name: namedEntityTypesSchema,
-  url: z.string().url().optional(),
+  url: z.string().url().startsWith('https://', { message: 'Must provide secure URL' }).optional(),
 });
 export type EntityTypeProps = z.infer<typeof entityTypePropsSchema>;
 
@@ -58,14 +58,20 @@ const baseAuthorityServiceConfigSchema = z.object({
     })
     .optional(),
   description: z.string().optional(),
-  name: z.string(),
+  name: z
+    .string({ required_error: 'Every authority needs a name' })
+    .min(3, { message: 'Must be at least 3 characters' })
+    .max(20, { message: 'Cannot have more than 20 characters' }),
   url: z.string().url().optional(),
 });
 
 export const localAuthorityServiceConfigSchema = baseAuthorityServiceConfigSchema.extend({
-  entityTypes: z.array(entityTypePropsSchema),
   id: z.string(),
   searchType: z.literal('TEI-FILE'),
+  entityTypes: z
+    .array(entityTypePropsSchema.required())
+    .min(1, { message: 'At least one entity type is required' }),
+  options: z.object({ maxResults: z.number().default(10).optional() }).optional(),
 });
 export type LocalAuthorityServiceConfig = z.infer<typeof localAuthorityServiceConfigSchema>;
 

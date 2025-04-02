@@ -2,6 +2,7 @@ import { Dialog, DialogContent, Stack } from '@mui/material';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
+import { AddCustomAuthority } from '../custom-authority-dialog/add-custom-authority';
 import type { IDialog } from '../type';
 import { Section } from './components';
 import { Header } from './header';
@@ -45,7 +46,11 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
             </Section>
             {!isReadonly && (
               <>
-                <Section id="authorities" title={t('LW.commons.authorities')}>
+                <Section
+                  endDecorator={<AddCustomAuthority />}
+                  id="authorities"
+                  title={t('LW.commons.authorities')}
+                >
                   <Authorities />
                 </Section>
                 <Section id="entityLookups" title={t('LW.commons.Entity Lookups')}>

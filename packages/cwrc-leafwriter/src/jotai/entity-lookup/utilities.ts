@@ -2,6 +2,7 @@ import { getDefaultStore } from 'jotai';
 import { authorityServicesAtom } from '.';
 import { authoritiesInitialConfig } from '../../config/authorities';
 import { db } from '../../db';
+import { teiFileBasedSearch } from '../../services/loader-authority-tei';
 import type {
   AuthorityService,
   AuthorityServiceConfig,
@@ -9,7 +10,7 @@ import type {
   LookupServicePreference,
   NamedEntityType,
 } from '../../types';
-import { authorityServiceConfigSchema } from '../../types';
+import { authorityServiceConfigSchema, localAuthorityServiceConfigSchema } from '../../types';
 import { convertToSlug, log } from '../../utilities';
 
 const defaultStore = getDefaultStore();
@@ -87,31 +88,37 @@ const convertConfigIntoServiceObject = (
 };
 
 const getLocalCustomAuthorityServices = async () => {
-  //TODO - implement
-  // * mockup below
-  // const customAuthorityServices = await db.customAuthorityServices.toArray();
-  // const validatedServices = z
-  //   .array(localAuthorityServiceConfigSchema)
-  //   .safeParse(customAuthorityServices);
-  // if (!validatedServices.success) return [];
+  const services: AuthorityService[] = [];
 
-  // const services: AuthorityService[] = [];
+  const customAuthorityServices = await db.customAuthorityServices.toArray();
 
-  // const TTTTT: SearchFunction = async ({ query, entityType }) => {
-  //   return [{ label: 'Test', uri: 'test' }];
-  // };
+  customAuthorityServices.forEach((customService) => {
+    const validatedService = localAuthorityServiceConfigSchema.safeParse(customService);
+    if (!validatedService.success) return;
 
-  // validatedServices.data.forEach(({ searchType, entityTypes, ...rest }) => {
-  //   if (searchType !== 'TEI-FILE') return;
-  //   const search = TTTTT;
-  //   const entityTypesProp = new Map(
-  //     entityTypes.map((entityType) => [entityType.name, { name: entityType.name, url: 'test' }]),
-  //   );
-  //   services.push({ search, entityTypes: entityTypesProp, ...rest });
-  // });
+    const { searchType, entityTypes, ...rest } = customService;
+    if (searchType !== 'TEI-FILE') return;
 
-  // return services;
-  return new Map();
+    const entityTypesProp = new Map(
+      entityTypes.map((entityType) => [
+        entityType.name,
+        { name: entityType.name, url: entityType.url },
+      ]),
+    );
+
+    //* bind search TEI-file-based functionality to the authority service config
+    const func = teiFileBasedSearch.bind(customService);
+
+    services.push({
+      search: func,
+      entityTypes: entityTypesProp,
+      isCustom: true,
+      isLocal: true,
+      ...rest,
+    });
+  });
+
+  return services;
 };
 
 export const initializeLookupPreferences = async (authorityServices: AuthorityServices) => {
