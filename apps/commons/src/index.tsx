@@ -31,9 +31,9 @@ const root = createRoot(container);
 root.render(
   <Provider value={overmind}>
     <HelmetProvider>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </HelmetProvider>
   </Provider>,
 );
