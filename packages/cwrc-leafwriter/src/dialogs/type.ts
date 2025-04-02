@@ -1,3 +1,4 @@
+import type { ButtonProps } from '@mui/material';
 import { DialogProps as MuiDialogProps } from '@mui/material/Dialog';
 import { Options as ModalProviderOptions } from 'mui-modal-provider';
 import type { Schema, SchemaMappingType } from '../types';
@@ -6,8 +7,8 @@ export declare type ModalComponentProps<P> = Omit<P, 'open'>;
 export type SeverityType = 'error' | 'info' | 'success' | 'warning';
 export interface DialogActionProps {
   action: string;
-  label?: string;
-  variant?: 'contained' | 'outlined' | 'text';
+  label: string;
+  variant?: ButtonProps['variant'];
 }
 
 export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {

@@ -2,13 +2,13 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import { useActions } from '../overmind';
 import { type SimpleDialogProps } from './type';
+import { useTranslation } from 'react-i18next';
 
 export const SimpleDialog = ({
-  actions = [{ action: 'close', label: 'close' }],
+  actions,
   id = uuidv4(),
   maxWidth = 'sm',
   Body,
@@ -22,6 +22,8 @@ export const SimpleDialog = ({
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
   const { t } = useTranslation();
+
+  actions = actions ?? [{ action: 'close', label: t('LW.commons.close') }];
 
   const [data, setData] = useState<{ [key: string]: any }>({});
 
@@ -89,8 +91,8 @@ export const SimpleDialog = ({
         ]}
       >
         {actions.map(({ action, label, variant }, index) => (
-          <Button key={index} onClick={() => handleAction(action)} variant={variant ?? 'text'}>
-            {t(`LW.${label ?? action}`)}
+          <Button key={`${index}-${action}`} onClick={() => handleAction(action)} variant={variant}>
+            {label}
           </Button>
         ))}
       </DialogActions>
