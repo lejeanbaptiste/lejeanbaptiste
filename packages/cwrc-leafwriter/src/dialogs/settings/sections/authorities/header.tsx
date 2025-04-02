@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { db } from '../../../../db';
 import { type AuthorityService } from '../../../../types';
 
-export const Header = ({
-  expanded,
-  id,
-  isLocal,
-  name,
-}: Pick<AuthorityService, 'id' | 'isLocal' | 'name'> & { expanded: boolean }) => {
+interface HeaderProps extends Pick<AuthorityService, 'id' | 'isLocal' | 'name'> {
+  expanded: boolean;
+  onEditClick: () => void;
+}
+
+export const Header = ({ expanded, id, isLocal, name, onEditClick }: HeaderProps) => {
   const { t } = useTranslation();
 
   const isDisabled = useLiveQuery(
@@ -32,6 +32,7 @@ export const Header = ({
         {isLocal && expanded && (
           <Button
             component="div"
+            onClick={onEditClick}
             role="button"
             id={`edit-${id}`}
             size="small"

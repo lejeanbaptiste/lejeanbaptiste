@@ -99,6 +99,7 @@ const CustomInfo = ({
             {t('LW.commons.addon by')}{' '}
             {author.url ? (
               <Link
+                aria-label="navigate to url"
                 display="inline-flex"
                 alignItems="center"
                 gap={0.25}
