@@ -15,14 +15,15 @@ export const Page = forwardRef<PageProps, any>(({ children, title, ...rest }, re
   title = resource?.filename ? `${resource.filename} - ${PAGE_TITLE}` : PAGE_TITLE;
 
   return (
+    //@ts-ignore
     <div ref={ref} {...rest}>
-      {/* <Helmet> */}
-      <title>{title}</title>
-      <meta
-        name="description"
-        content="The XML & RDF online editor of the Linked Editing Academic Framework"
-      />
-      {/* </Helmet> */}
+      <Helmet>
+        <title>{title}</title>
+        <meta
+          name="description"
+          content="The XML & RDF online editor of the Linked Editing Academic Framework"
+        />
+      </Helmet>
       <div>{children}</div>
     </div>
   );
