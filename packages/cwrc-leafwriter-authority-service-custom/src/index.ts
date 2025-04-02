@@ -1,6 +1,6 @@
 import { AuthorityServiceConfig } from '../../cwrc-leafwriter/src/types';
 
-export const lgpn: AuthorityServiceConfig = {
+export const customAuthority: AuthorityServiceConfig = {
   name: 'Custom Authority Service',
   description: 'An example for a custom entity lookup service for LEAF-Writer',
   author: { name: 'CWRC Team', url: 'https://www.cwrc.ca/' },
