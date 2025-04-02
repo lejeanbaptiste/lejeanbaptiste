@@ -26,10 +26,10 @@ if (!container) throw new Error(`HTML element id 'app' not found`);
 const root = createRoot(container);
 root.render(
   <Provider value={overmind}>
-    {/* <HelmetProvider> */}
+    <HelmetProvider>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-    {/* </HelmetProvider> */}
+    </HelmetProvider>
   </Provider>,
 );
