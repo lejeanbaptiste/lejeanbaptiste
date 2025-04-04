@@ -22,7 +22,7 @@ import { namedEntityTypes, type EntityTypeProps, type NamedEntityType } from '..
 import { capitalizeString } from '../../../utilities';
 import { BiError } from 'react-icons/bi';
 
-const DISALLOWED_TYPES: NamedEntityType[] = ['concept', 'citation'];
+const DISALLOWED_TYPES: NamedEntityType[] = ['thing', 'concept', 'citation'];
 
 export const EntityTypes = () => {
   const [fieldCollection, meta, helpers] = useField<EntityTypeProps[]>('entityTypes');
