@@ -1,4 +1,4 @@
-import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
+import { Box, IconButton, Stack, Typography } from '@mui/material';
 import { useField } from 'formik';
 import { FiMinus, FiPlus } from 'react-icons/fi';
 
@@ -10,7 +10,6 @@ export const AdvancedOptions = () => {
       </Typography>
       <Stack gap={2}>
         <MaxResultsControl />
-        {/* <CacheControl /> */}
       </Stack>
     </Box>
   );
@@ -68,21 +67,6 @@ export const MaxResultsControl = () => {
           <FiPlus />
         </IconButton>
       </Stack>
-    </Stack>
-  );
-};
-
-export const CacheControl = () => {
-  return (
-    <Stack direction="row" gap={1} alignItems="center" justifyContent="space-between">
-      <Box>
-        <Typography mb={-0.75} sx={{ textTransform: 'capitalize' }} variant="body1">
-          Cache
-        </Typography>
-      </Box>
-      <Button size="small" variant="outlined">
-        Clear Cache
-      </Button>
     </Stack>
   );
 };
