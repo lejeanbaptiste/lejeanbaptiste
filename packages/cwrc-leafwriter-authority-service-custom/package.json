@@ -32,7 +32,7 @@
   "devDependencies": {
     "eslint": "^8.57.1",
     "eslint-config-custom": "*",
-    "tsup": "^8.3.6",
+    "tsup": "^8.4.0",
     "typescript": "^5.8.2"
   }
 }
