@@ -15,6 +15,9 @@ export type CustomAuthorityDialogProps = {
   onClose: () => void;
 };
 
+//TODO - Guidance... add to the UI
+// https://docs.google.com/document/d/1R5NvSXMZZDMcvNg85fBTCZlAyLUlG7Q_-2KLVqDvpxU/edit?tab=t.0
+
 export const CustomAuthorityDialog = ({
   authorityId,
   open,
