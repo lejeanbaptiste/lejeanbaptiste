@@ -1,53 +1,30 @@
-import {
+import Fuse, { type IFuseOptions } from 'fuse.js';
+import type {
   AuthorityLookupParams,
   AuthorityLookupResult,
   LocalAuthorityServiceConfig,
 } from '../types';
 
-export const catcor: LocalAuthorityServiceConfig = {
-  id: 'catcor',
-  name: 'CatCor',
-  description: 'An example for a custom entity lookup service for LEAF-Writer',
-  author: { name: 'CWRC Team', url: 'https://www.cwrc.ca/' },
-  entityTypes: [
-    {
-      name: 'person',
-      url: 'https://raw.githubusercontent.com/LEAF-VRE/CatCor/refs/heads/main/CatCor_People.xml',
-    },
-    {
-      name: 'place',
-      url: 'https://raw.githubusercontent.com/LEAF-VRE/CatCor/refs/heads/main/CatCor_Places.xml',
-    },
-    {
-      name: 'organization',
-      url: 'https://raw.githubusercontent.com/LEAF-VRE/CatCor/refs/heads/main/CatCor_Orgs.xml',
-    },
-    {
-      name: 'work',
-      url: 'https://raw.githubusercontent.com/LEAF-VRE/CatCor/refs/heads/main/CatCor_Works.xml',
-    },
-  ],
-  searchType: 'TEI-FILE',
-  options: {
-    maxResults: 10,
-  },
+type Entity = {
+  description?: string;
+  id: string;
+  label: string;
 };
 
-//TODO - implement Fuzzy search
-// https://www.fusejs.io/
-//https://www.npmjs.com/package/xml-js
+const fuseOptions: IFuseOptions<Entity> = {
+  includeScore: true,
+  threshold: 0.6,
+  keys: ['label'],
+};
 
-//TODO - Guidance... add to the UI
-// https://docs.google.com/document/d/1R5NvSXMZZDMcvNg85fBTCZlAyLUlG7Q_-2KLVqDvpxU/edit?tab=t.0
+const fuse = new Fuse([], fuseOptions);
 
-const DEFAULT_MAX_RESULTS = 5;
+const DEFAULT_MAX_RESULTS = 10;
 
 export async function teiFileBasedSearch({ query, entityType }: AuthorityLookupParams) {
   // @ts-ignore --  Typescript does not recognise `this` as variable (i.e., of 'any' type).
   // The context `this` must be assigned to the authority at the type it is setup.
   const serviceConfig = this as LocalAuthorityServiceConfig;
-  // console.log(serviceConfig);
-
   //@ts-ignore -- Same as above
   if (!this) {
     throw new Error('No service config provided');
@@ -64,7 +41,6 @@ export async function teiFileBasedSearch({ query, entityType }: AuthorityLookupP
     throw new Error(`Entity type ${entityType} not found in service ${serviceConfig.id}`);
   }
 
-  const matches: AuthorityLookupResult[] = [];
   const maxResults = serviceConfig.options?.maxResults ?? DEFAULT_MAX_RESULTS;
 
   //get file content
@@ -76,49 +52,115 @@ export async function teiFileBasedSearch({ query, entityType }: AuthorityLookupP
     throw new Error('Error parsing XML');
   }
 
-  //Get a list items in the file
-  const list = doc.getElementsByTagName('person');
-  //! instead of geting all childrens of the container, we should get all tags from the container, it doens't matter how deep they are nested.
-  //! Use CSS selector instead
-  //? const list = doc.getElementsByTagName('list container)
-  //? const items = list.querySelectorAll('person')
+  let entities: Entity[] = [];
+  if (entityType === 'person') {
+    entities = getPersons(doc.querySelectorAll('person'));
+  } else if (entityType === 'place') {
+    entities = getPlaces(doc.querySelectorAll('place'));
+  } else if (entityType === 'organization') {
+    entities = getOrganizations(doc.querySelectorAll('org'));
+  } else if (entityType === 'work') {
+    entities = getWorks(doc.querySelectorAll('bibl'));
+  }
 
-  for (let i = 0; i < list.length; i++) {
-    if (matches.length >= maxResults) break;
+  // MATCH
+  fuse.setCollection(entities);
+  const fuseResults = fuse.search(query, { limit: maxResults });
 
-    const person = list.item(i);
-    if (!person) continue;
+  const results: AuthorityLookupResult[] = fuseResults.map(({ item }) => ({
+    label: item.label,
+    description: item.description,
+    uri: `${entityTypeUrl}#${item.id}`,
+  }));
 
+  return results;
+}
+
+const getPersons = (list: NodeListOf<Element>) => {
+  const persons: Entity[] = [];
+
+  list.forEach((person) => {
     const id = person.getAttribute('xml:id');
-    if (!id) continue;
+    if (!id) return;
 
-    const personName = person.getElementsByTagName('persName')[0];
-    const nameChildren = personName?.children;
-    if (nameChildren.length === 0) continue;
+    const personName = person.querySelector('persName');
+    if (!personName) return;
 
-    // Compose name from its parts
     let name = '';
-    for (let j = 0; j < nameChildren.length; j++) {
-      name += nameChildren.item(j)?.textContent + ' ';
+    for (let i = 0; i < personName.children.length; i++) {
+      name += personName.children[i]?.textContent + ' ';
     }
 
-    // Remove trailing whitespace and normalize
     name = name
-      .trimEnd()
+      .trim()
       .replaceAll(/(\r\n|\n|\r|\t)/gm, ' ')
       .replaceAll(/ +(?= )/g, '');
 
-    // Check if name matches with the query
-    // Matches here means if the query string is part of the persons name
-    // It will match if the is anywhere in the name
-    const match = name.includes(query);
+    persons.push({ id, label: name });
+  });
 
-    if (match) {
-      matches.push({ label: name, uri: `${entityTypeUrl}#${id}` });
-    }
-  }
+  return persons;
+};
 
-  // console.log(matches);
+const getPlaces = (list: NodeListOf<Element>) => {
+  const places: Entity[] = [];
 
-  return matches;
-}
+  list.forEach((place) => {
+    const id = place.getAttribute('xml:id');
+    if (!id) return;
+
+    const placeName = place.querySelector('placeName');
+    if (!placeName) return;
+
+    const name = (placeName.textContent ?? '')
+      .trim()
+      .replaceAll(/(\r\n|\n|\r|\t)/gm, ' ')
+      .replaceAll(/ +(?= )/g, '');
+
+    places.push({ id, label: name });
+  });
+
+  return places;
+};
+
+const getOrganizations = (list: NodeListOf<Element>) => {
+  const organizations: Entity[] = [];
+
+  list.forEach((organization) => {
+    const id = organization.getAttribute('xml:id');
+    if (!id) return;
+
+    const orgName = organization.querySelector('orgName');
+    if (!orgName) return;
+
+    const name = (orgName.textContent ?? '')
+      .trim()
+      .replaceAll(/(\r\n|\n|\r|\t)/gm, ' ')
+      .replaceAll(/ +(?= )/g, '');
+
+    organizations.push({ id, label: name });
+  });
+
+  return organizations;
+};
+
+const getWorks = (list: NodeListOf<Element>) => {
+  const works: Entity[] = [];
+
+  list.forEach((work) => {
+    const id = work.getAttribute('xml:id');
+    if (!id) return;
+
+    const workName = work.querySelector('title');
+    if (!workName) return;
+
+    const name = (workName.textContent ?? '')
+      .trim()
+      .replaceAll(/(\r\n|\n|\r|\t)/gm, ' ')
+      .replaceAll(/ +(?= )/g, '');
+
+    works.push({ id, label: name });
+  });
+
+  return works;
+};
