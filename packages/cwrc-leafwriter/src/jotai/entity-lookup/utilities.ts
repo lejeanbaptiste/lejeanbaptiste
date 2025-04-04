@@ -11,7 +11,7 @@ import type {
   NamedEntityType,
 } from '../../types';
 import { authorityServiceConfigSchema, localAuthorityServiceConfigSchema } from '../../types';
-import { convertToSlug, log } from '../../utilities';
+import { log, slugify } from '../../utilities';
 
 const defaultStore = getDefaultStore();
 
@@ -70,7 +70,7 @@ const convertConfigIntoServiceObject = (
 ) => {
   const { entityTypes, ...rest } = config;
 
-  const id = convertToSlug(config.name);
+  const id = slugify(config.name);
   const entityTypesProp = new Map();
   entityTypes?.forEach((entityType) => {
     if (typeof entityType === 'string') {

@@ -7,7 +7,7 @@ import { authorityServicesAtom } from '../../jotai/entity-lookup';
 import { useAppState } from '../../overmind';
 import { teiFileBasedSearch } from '../../services/loader-authority-tei';
 import { type LocalAuthorityServiceConfig } from '../../types';
-import { convertToSlug } from '../../utilities';
+import { slugify } from '../../utilities';
 
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet(alphabet, 21);
@@ -43,7 +43,7 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
 
   const addAuthority = async (values: LocalAuthorityServiceConfig) => {
     //* 1. Generate id based on name and random id
-    values.id = `${convertToSlug(values.name)}_${values.id}`;
+    values.id = `${slugify(values.name, '_')}_${values.id}`;
 
     //* 2. Add authority service to the authorityServices atom
     addAuthorityToAuthorityServicesAtom(values);
