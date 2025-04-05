@@ -12,7 +12,7 @@ export const Header = () => {
     <Box mt={isMobile ? 4 : 0} py={3}>
       <Container maxWidth="md">
         <Stack justifyContent="center" alignItems="center">
-          <Logo height={isMobile ? 140 : 230} variant="vertical" />
+          <Logo height={isMobile ? 140 : 230} mb={2} variant="vertical" />
           <Typography
             align="center"
             component="h2"

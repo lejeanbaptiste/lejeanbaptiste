@@ -1,5 +1,4 @@
-import { Box, Container } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Box, Grid, Container } from '@mui/material';
 import { About } from './About';
 import { Team } from './Team';
 
