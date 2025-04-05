@@ -98,14 +98,14 @@
     "@jest/globals": "^29.7.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.2.0",
+    "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/autosuggest-highlight": "^3.2.3",
     "@types/file-saver": "^2.0.7",
     "@types/jest": "^29.5.14",
     "@types/lodash": "^4.17.16",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^22.13.17",
+    "@types/node": "^22.14.0",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.5",
     "eslint": "^8.57.1",
@@ -115,6 +115,6 @@
     "ts-jest": "^29.3.1",
     "tsup": "^8.4.0",
     "typedoc": "^0.28.1",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   }
 }
