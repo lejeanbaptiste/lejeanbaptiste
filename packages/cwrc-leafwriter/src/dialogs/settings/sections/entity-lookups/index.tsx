@@ -1,5 +1,4 @@
-import { Stack, Typography } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Stack, Grid, Typography } from '@mui/material';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import { IoMdInformationCircleOutline } from 'react-icons/io';
