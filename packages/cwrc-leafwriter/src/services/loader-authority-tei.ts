@@ -36,7 +36,7 @@ export async function teiFileBasedSearch({ query, entityType }: AuthorityLookupP
   }
 
   const entityTypeUrl = serviceConfig.entityTypes.find((et) => et.name === entityType)?.url;
-  // Check if entity type urlis defined in the service config
+  // Check if entity type url is defined in the service config
   if (!entityTypeUrl) {
     throw new Error(`Entity type ${entityType} not found in service ${serviceConfig.id}`);
   }
