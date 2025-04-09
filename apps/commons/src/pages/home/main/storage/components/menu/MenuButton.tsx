@@ -45,7 +45,7 @@ export const MenuButton = ({
   label,
   onClick,
 }: MenuButtonProps) => {
-  const { palette } = useTheme();
+  const { vars } = useTheme();
 
   return (
     <Box
@@ -65,7 +65,7 @@ export const MenuButton = ({
                 <IconButton aria-label="help" disabled edge="end" size="small">
                   <InfoOutlinedIcon
                     fontSize="small"
-                    sx={[active ? { color: palette.primary.light } : { color: 'inherit' }]}
+                    sx={[active ? { color: vars.palette.primary.main } : { color: 'inherit' }]}
                   />
                 </IconButton>
               </span>
@@ -84,7 +84,7 @@ export const MenuButton = ({
               <Icon
                 component={getIcon(icon)}
                 fontSize="small"
-                sx={[active ? { color: palette.primary.light } : { color: 'inherit' }]}
+                sx={[active ? { color: vars.palette.primary.main } : { color: 'inherit' }]}
               />
             </ListItemIcon>
           )}
@@ -95,7 +95,7 @@ export const MenuButton = ({
                 '::first-letter': { textTransform: 'uppercase' },
               },
               active && {
-                span: { color: palette.primary.light },
+                span: { color: vars.palette.primary.main },
               },
             ]}
           />
