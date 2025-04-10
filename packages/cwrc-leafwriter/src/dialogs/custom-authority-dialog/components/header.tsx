@@ -12,7 +12,7 @@ export const Header = ({
   return (
     <Stack direction="row" justifyContent="center" alignItems="center" py={2} spacing={2}>
       <Typography sx={{ textTransform: 'capitalize' }} variant="h5">
-        {type === 'edit' ? 'Edit' : 'Add'} Authority
+        {type === 'edit' ? t('LW.commons.edit') : t('LW.commons.add')} {t('LW.commons.authority')}
       </Typography>
       <IconButton
         aria-label={t('LW.commons.close')}

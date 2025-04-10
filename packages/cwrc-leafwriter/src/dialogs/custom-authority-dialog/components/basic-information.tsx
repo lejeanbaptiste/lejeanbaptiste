@@ -1,8 +1,10 @@
 import { Box, TextField } from '@mui/material';
 import { useField } from 'formik';
+import { useTranslation } from 'react-i18next';
 import type { LocalAuthorityServiceConfig } from '../../../types';
 
 export const BasicInformation = ({ editing = false }: { editing?: boolean }) => {
+  const { t } = useTranslation();
   const [name_field, name_meta] = useField<LocalAuthorityServiceConfig['name']>('name');
   const [description_field] = useField<LocalAuthorityServiceConfig['description']>('description');
 
@@ -14,7 +16,7 @@ export const BasicInformation = ({ editing = false }: { editing?: boolean }) => 
         error={name_meta.touched && Boolean(name_meta.error)}
         helperText={name_meta.error ?? ' '}
         id="name"
-        label="Name"
+        label={t('LW.commons.name')}
         margin="dense"
         name="name"
         onBlur={name_field.onBlur}
@@ -29,7 +31,7 @@ export const BasicInformation = ({ editing = false }: { editing?: boolean }) => 
       <TextField
         fullWidth
         id="description"
-        label="Description"
+        label={t('LW.commons.description')}
         margin="dense"
         minRows={3}
         multiline

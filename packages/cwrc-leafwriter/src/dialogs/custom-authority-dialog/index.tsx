@@ -2,7 +2,7 @@ import { Button, Dialog, DialogActions, DialogContent, Stack, Typography } from 
 import { TextEmphasis } from '@src/components';
 import { Form, Formik } from 'formik';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { localAuthorityServiceConfigSchema } from '../../types';
 import SimpleDialog from '../SimpleDialog';
@@ -64,13 +64,13 @@ export const CustomAuthorityDialog = ({
             <DialogActions sx={{ justifyContent: !!authorityId ? 'space-between' : 'flex-end' }}>
               {!!authorityId && (
                 <Button color="error" onClick={() => setOpenDeleteDialog(true)} variant="outlined">
-                  Delete
+                  {t('LW.commons.delete')}
                 </Button>
               )}
               <Stack direction="row" spacing={2}>
                 <Button onClick={onClose}>Cancel</Button>
                 <Button disabled={!dirty} loading={isSubmitting} type="submit" variant="contained">
-                  {!!authorityId ? 'save' : 'add'}
+                  {!!authorityId ? t('LW.commons.save') : t('LW.commons.add')}
                 </Button>
               </Stack>
             </DialogActions>
@@ -91,13 +91,16 @@ export const CustomAuthorityDialog = ({
             if (action === 'delete') handleDelete();
           }}
         >
-          {/* <Trans i18nKey="LW.messages.delete confirmation message" values={{ name }}> */}
-          <Typography component="span">
-            Are you sure you want to delete the authority{` `}
-          </Typography>
-          <TextEmphasis color="info">{initialValue.name}</TextEmphasis>
-          <Typography component="span">?</Typography>
-          {/* </Trans> */}
+          <Trans
+            i18nKey="LW.messagesAre you sure you want to delete the authority -value"
+            values={{ name: initialValue.name }}
+          >
+            <Typography component="span">
+              Are you sure you want to delete the authority{` `}
+            </Typography>
+            <TextEmphasis color="info">{initialValue.name}</TextEmphasis>
+            <Typography component="span">?</Typography>
+          </Trans>
         </SimpleDialog>
       )}
     </Dialog>

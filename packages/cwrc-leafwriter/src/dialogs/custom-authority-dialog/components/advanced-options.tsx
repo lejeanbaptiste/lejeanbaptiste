@@ -1,12 +1,14 @@
 import { Box, IconButton, Stack, Typography } from '@mui/material';
 import { useField } from 'formik';
+import { useTranslation } from 'react-i18next';
 import { FiMinus, FiPlus } from 'react-icons/fi';
 
 export const AdvancedOptions = () => {
+  const { t } = useTranslation();
   return (
     <Box>
       <Typography borderBottom="1px solid" pb={0.5} mb={1} variant="subtitle1">
-        Advanced Options
+        {t('LW.commons.advanced options')}
       </Typography>
       <Stack gap={2}>
         <MaxResultsControl />
@@ -19,6 +21,7 @@ const MIN_RESULTS = 5;
 const MAX_RESULTS = 20;
 
 export const MaxResultsControl = () => {
+  const { t } = useTranslation();
   const [field, _meta, helpers] = useField<number | undefined>('options.maxResults');
 
   const changeMaxResultBy = (value: number) => {
@@ -43,10 +46,10 @@ export const MaxResultsControl = () => {
     <Stack direction="row" gap={1} alignItems="center" justifyContent="space-between">
       <Box>
         <Typography mb={-0.75} sx={{ textTransform: 'capitalize' }} variant="body1">
-          Max Results
+          {t('LW.commons.max results')}
         </Typography>
         <Typography color="text.secondary" variant="caption">
-          The maximum number of item return in the lookup search
+          {t('LW.messages.The maximum number of item return in the lookup search')}
         </Typography>
       </Box>
       <Stack direction="row" gap={1} alignItems="center">
