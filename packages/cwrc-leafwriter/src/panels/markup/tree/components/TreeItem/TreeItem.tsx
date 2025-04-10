@@ -94,7 +94,7 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
             )`,
             pointerEvents: 'auto',
           },
-          !disableInteraction && { pointerEvents: 'none' },
+          !!disableInteraction && { pointerEvents: 'none' },
         ]}
       >
         {type === 'text' ? (
