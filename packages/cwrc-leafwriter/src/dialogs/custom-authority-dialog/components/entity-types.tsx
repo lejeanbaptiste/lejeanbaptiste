@@ -14,13 +14,13 @@ import {
 import { FieldArray, useField } from 'formik';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BiError } from 'react-icons/bi';
 import { MdKeyboardArrowDown } from 'react-icons/md';
 import { RxExternalLink } from 'react-icons/rx';
 import z from 'zod';
 import { Icon } from '../../../icons';
 import { namedEntityTypes, type EntityTypeProps, type NamedEntityType } from '../../../types';
 import { capitalizeString } from '../../../utilities';
-import { BiError } from 'react-icons/bi';
 
 const DISALLOWED_TYPES: NamedEntityType[] = ['thing', 'concept', 'citation'];
 
@@ -124,11 +124,13 @@ const EntityType = ({
   };
 
   return (
-    <Stack
+    <Grid
+      container
+      spacing={2}
       borderRadius={1}
       my={0.5}
       py={0.75}
-      gap={0.5}
+      px={1}
       sx={[
         {
           transition: 'all 0.4s ease',
@@ -137,68 +139,72 @@ const EntityType = ({
         },
       ]}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" px={1} gap={1}>
+      <Grid size={3}>
         <Stack direction="row" gap={1} sx={{ m: 1, width: 148 }}>
           <Icon name={name} sx={{ height: 18, width: 18 }} />
           <Typography variant="body1">{capitalizeString(t(`LW.entity.${name}`))}</Typography>
         </Stack>
+      </Grid>
+      <Grid size={9}>
         <Stack>
-          <OutlinedInput
-            autoComplete=""
-            error={touched && Boolean(errorUrl)}
-            id="url"
-            margin="dense"
-            name="url"
-            onChange={(event) => {
-              replace(index, { name, url: event.target.value });
-              setIsValidUrl(true);
-            }}
-            onBlur={async (event) => {
-              replace(index, { name, url: event.target.value });
-              await testURL(event.target.value);
-            }}
-            placeholder="URL"
-            required
-            size="small"
-            endAdornment={
-              url &&
-              url !== '' && (
-                <InputAdornment position="end" sx={{ gap: 1 }}>
-                  {!isValidUrl && <BiError />}
-                  <IconButton
-                    aria-label="navigate to url"
-                    color="primary"
-                    disabled={!isValidHttps(url)}
-                    edge="end"
-                    href={url}
-                    size="small"
-                    sx={{ borderRadius: 1, transition: 'all 0.4s ease' }}
-                    target="_blank"
-                  >
-                    <RxExternalLink />
-                  </IconButton>
-                </InputAdornment>
-              )
-            }
-            sx={{ width: 360 }}
-            type="text"
-            value={url ?? ''}
-          />
+          <Stack direction="row" gap={1}>
+            <OutlinedInput
+              autoComplete=""
+              error={touched && Boolean(errorUrl)}
+              id="url"
+              margin="dense"
+              name="url"
+              onChange={(event) => {
+                replace(index, { name, url: event.target.value });
+                setIsValidUrl(true);
+              }}
+              onBlur={async (event) => {
+                replace(index, { name, url: event.target.value });
+                await testURL(event.target.value);
+              }}
+              placeholder="URL"
+              required
+              size="small"
+              endAdornment={
+                url &&
+                url !== '' && (
+                  <InputAdornment position="end" sx={{ gap: 1 }}>
+                    {!isValidUrl && <BiError />}
+                    <IconButton
+                      aria-label={t('LW.messages.navigate to url')}
+                      color="primary"
+                      disabled={!isValidHttps(url)}
+                      edge="end"
+                      href={url}
+                      size="small"
+                      sx={{ borderRadius: 1, transition: 'all 0.4s ease' }}
+                      target="_blank"
+                    >
+                      <RxExternalLink />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }
+              sx={{ width: 360 }}
+              type="text"
+              value={url ?? ''}
+            />
+            <Tooltip title={t('LW.commons.delete')}>
+              <IconButton onClick={() => remove(index)} size="small" sx={{ borderRadius: 1 }}>
+                <Icon name="delete" fontSize="inherit" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+          <Box minHeight={24} pl={2}>
+            {touched && errorUrl && (
+              <FormHelperText error required>
+                {errorUrl}
+              </FormHelperText>
+            )}
+          </Box>
         </Stack>
-        <Tooltip title="Delete">
-          <IconButton onClick={() => remove(index)} size="small" sx={{ borderRadius: 1 }}>
-            <Icon name="delete" fontSize="inherit" />
-          </IconButton>
-        </Tooltip>
-      </Stack>
-      <Box minHeight={24} ml="148px" pl={2}>
-        {touched && errorUrl && (
-          <FormHelperText error required>
-            {errorUrl}
-          </FormHelperText>
-        )}
-      </Box>
-    </Stack>
+      </Grid>
+    </Grid>
   );
 };
 
