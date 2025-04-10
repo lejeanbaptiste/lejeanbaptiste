@@ -2,7 +2,7 @@ import { Button, Stack, Switch, Typography } from '@mui/material';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../../../db';
-import { type AuthorityService } from '../../../../types';
+import type { AuthorityService } from '../../../../types';
 
 interface HeaderProps extends Pick<AuthorityService, 'id' | 'isLocal' | 'name'> {
   expanded: boolean;
