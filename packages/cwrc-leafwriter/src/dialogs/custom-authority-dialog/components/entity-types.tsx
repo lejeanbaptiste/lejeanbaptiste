@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   FormHelperText,
+  Grid,
   IconButton,
   InputAdornment,
   Menu,
@@ -25,13 +26,20 @@ import { capitalizeString } from '../../../utilities';
 const DISALLOWED_TYPES: NamedEntityType[] = ['thing', 'concept', 'citation'];
 
 export const EntityTypes = () => {
+  const { t } = useTranslation();
   const [fieldCollection, meta, helpers] = useField<EntityTypeProps[]>('entityTypes');
   const { setError } = helpers;
 
   return (
     <Box>
-      <Typography borderBottom="1px solid" pb={0.5} mb={1} variant="subtitle1">
-        Entity Types
+      <Typography
+        borderBottom="1px solid"
+        pb={0.5}
+        mb={1}
+        sx={{ textTransform: 'capitalize' }}
+        variant="subtitle1"
+      >
+        {t('LW.commons.entity types')}
       </Typography>
       <FieldArray name="entityTypes">
         {({ push, remove, replace }) => (
@@ -91,15 +99,13 @@ const EntityType = ({
 
   const [isValidUrl, setIsValidUrl] = useState(true);
 
-  const isValidHttps = (url: string) => {
-    return urlValidator.safeParse(url).success;
-  };
+  const isValidHttps = (url: string) => urlValidator.safeParse(url).success;
 
   const testURL = async (url: string) => {
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        setError({ [index]: { url: 'Invalid URL' } });
+        setError({ [index]: { url: t('LW.messages.url invalid') } });
         setIsValidUrl(false);
         return false;
       }
@@ -108,7 +114,7 @@ const EntityType = ({
       const doc = new DOMParser().parseFromString(data, 'application/xml');
       const errorNode = doc.querySelector('parsererror');
       if (errorNode) {
-        setError({ [index]: { url: 'Invalid XML' } });
+        setError({ [index]: { url: t('LW.xml_document_invalid') } });
         setIsValidUrl(false);
         return false;
       }
@@ -117,7 +123,7 @@ const EntityType = ({
       setError(undefined);
       return true;
     } catch (error) {
-      setError({ [index]: { url: 'Failed to fetch URL' } });
+      setError({ [index]: { url: t('LW.messages.failed to fetch URL') } });
       setIsValidUrl(false);
       return false;
     }
