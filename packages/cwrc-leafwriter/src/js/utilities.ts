@@ -44,8 +44,7 @@ class Utilities {
     const doc: XMLDocument = new DOMParser().parseFromString(string, 'text/xml');
     const parsererror = doc.querySelector('parsererror');
     if (parsererror) {
-      //@ts-ignore
-      log.error(`utilities.stringToXML parse error: ${parsererror.innerText}`);
+      log.error(`utilities.stringToXML parse error: ${parsererror.textContent}`);
       return null;
     }
     return doc;
