@@ -1,4 +1,3 @@
-import axios from 'axios';
 import Writer from '../Writer';
 import CWRC2XML from './cwrc2xml';
 import XML2CWRC from './xml2cwrc';
@@ -41,12 +40,13 @@ class Converter {
     this.writer.currentDocId = docUrl;
     this.writer.event('loadingDocument').publish();
 
-    const response = await axios.get(docUrl);
+    const response = await fetch(docUrl);
 
-    if (!response.data) {
+    if (!response.ok) {
       this.writer.currentDocId = null;
       this.writer.dialogManager.show('message', {
         title: 'Error',
+        //TODO - Need better error message here
         msg: `An error occurred and ${docUrl} was not loaded.`,
         type: 'error',
       });
@@ -54,7 +54,23 @@ class Converter {
       return;
     }
 
-    this.processDocument(response.data);
+    const data = await response.text();
+
+    const doc = new DOMParser().parseFromString(data, 'text/xml');
+    const parsererror = doc.querySelector('parsererror');
+    if (parsererror) {
+      this.writer.currentDocId = null;
+      this.writer.dialogManager.show('message', {
+        title: 'Error',
+        //TODO - Need better error message
+        msg: `An error occurred and ${docUrl} was not loaded.`,
+        type: 'error',
+      });
+      this.writer.event('documentLoaded').publish(false, null);
+      return;
+    }
+
+    this.processDocument(doc);
   }
 
   loadDocumentXML(docXml: XMLDocument | string) {
