@@ -1,25 +1,18 @@
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Accordion, AccordionDetails, AccordionSummary, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { Alert, Link } from '@mui/material';
+import { Trans } from 'react-i18next';
+import { TbExternalLink } from 'react-icons/tb';
 
-export const Instructions = () => {
-  const { t } = useTranslation();
-  return (
-    <Accordion>
-      <AccordionSummary
-        aria-controls="instructions-content"
-        expandIcon={<ExpandMoreIcon />}
-        id="instructions-header"
+export const Instructions = () => (
+  <Alert severity="info">
+    <Trans i18nKey="LW.settings.authorities.messages.learn how to set up a custom TEI-based authority file with this guide">
+      Learn how to set up a custom TEI-based authority file with{' '}
+      <Link
+        href="https://docs.google.com/document/d/e/2PACX-1vSzYc9WuNlmEorQpg7e5zO6YO5DHOS9L2ZXcDhZHLTtbOJQty1A-wKtvDCoLjUUyy6n871iXqem1WAP/pub"
+        target="_blank"
       >
-        <Typography component="span">{t('LW.commons.instructions')}</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <Typography variant="body2">
-          The Authority file has to be: TEI XML file formatted in a specific way (ideally, formatted
-          using established TEI practices for Authority Lists) Publicly accessible on the web
-          [ideally on a Git management platform like GitHub or GitLab]
-        </Typography>
-      </AccordionDetails>
-    </Accordion>
-  );
-};
+        this guide
+      </Link>
+    </Trans>
+    <TbExternalLink style={{ marginLeft: '0.1rem', verticalAlign: 'middle' }} />.
+  </Alert>
+);
