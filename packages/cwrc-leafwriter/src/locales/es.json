@@ -232,24 +232,34 @@
     "edit_source": "editar fuente",
     "entity": {
       "_plural": {
+        "citation_many": "",
         "citation_one": "",
         "citation_other": "",
+        "concept_many": "",
         "concept_one": "",
         "concept_other": "",
+        "conceptualObject_many": "",
         "conceptualObject_one": "",
         "conceptualObject_other": "",
+        "event_many": "",
         "event_one": "",
         "event_other": "",
+        "organization_many": "",
         "organization_one": "",
         "organization_other": "",
+        "person_many": "",
         "person_one": "",
         "person_other": "",
+        "physicalThing_many": "",
         "physicalThing_one": "",
         "physicalThing_other": "",
+        "place_many": "",
         "place_one": "",
         "place_other": "",
+        "thing_many": "",
         "thing_one": "",
         "thing_other": "",
+        "work_many": "",
         "work_one": "",
         "work_other": ""
       },
@@ -315,8 +325,6 @@
       "schema not supported": "<0>LEAF-Writer no es compatible con el esquema adjunto al documento: </0><1>{{rng}}</1>",
       "url invalid": ""
     },
-    "messagesAre you sure you want to delete the authority -value": "",
-    "messagesAre you sure you want to delete the authority [value]": "",
     "multiple tags": "etiquetas múltiples",
     "no description available": "",
     "not supported": "No Compatible",
@@ -333,10 +341,10 @@
       "authorities": {
         "Add Custom Authority": "",
         "messages": {
+          "Are you sure you want to delete the authority -value": "",
           "Deactivated authorities will not be shown in entity lookups": "",
-          "You can rearrange authorities to prioritize and activate or deactivate them for each entity type": "",
           "activate or deactivate authorities for each entity type": "",
-          "rearrange authorities to prioritize and activate or deactivate them for each entity type": "",
+          "learn how to set up a custom TEI-based authority file with this guide": "",
           "rearrange authorities to prioritize results": ""
         }
       },

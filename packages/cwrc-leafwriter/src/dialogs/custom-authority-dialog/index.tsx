@@ -92,7 +92,7 @@ export const CustomAuthorityDialog = ({
           }}
         >
           <Trans
-            i18nKey="LW.messagesAre you sure you want to delete the authority -value"
+            i18nKey="LW.settings.authorities.messages.Are you sure you want to delete the authority -value"
             values={{ name: initialValue.name }}
           >
             <Typography component="span">
