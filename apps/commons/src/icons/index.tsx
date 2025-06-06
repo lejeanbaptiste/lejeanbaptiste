@@ -32,6 +32,7 @@ import type { IconBaseProps, IconType } from 'react-icons';
 import { BiArrowToTop, BiDownload } from 'react-icons/bi';
 import { FaFeather, FaOrcid } from 'react-icons/fa';
 import { FiExternalLink } from 'react-icons/fi';
+import { LuDrama } from 'react-icons/lu';
 import { MdOutlineLogout } from 'react-icons/md';
 import { RxFileText } from 'react-icons/rx';
 
@@ -58,6 +59,7 @@ const icons = {
   darkModeIcon: DarkModeIcon,
   description: DescriptionOutlinedIcon,
   download: asMuiIcon(BiDownload, { x: 1, y: 1 }),
+  drama: LuDrama,
   externalLink: asMuiIcon(FiExternalLink, { x: 1, y: 1 }),
   feather: asMuiIcon(FaFeather, { x: 1, y: 1 }),
   fileExportOutline: FileExportOutline,
