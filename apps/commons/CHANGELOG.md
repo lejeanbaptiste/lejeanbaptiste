@@ -7,7 +7,7 @@
 - [f5cd1f0a48fe3d4733afd7f9e2b254274c69fb77] remove logic related to legacy feature: nerve / nssi
 - [4ee3972a01449a8fc8670e6f0e015a1950e94b40] remove endpooint to fetch internal geonames-username
 - [09fcde11fec2412b968e12db9432868a2cbc5f74] add LGPN as a custom authority
-  
+
 ### Patch Changes
 
 - [683c11a97ff8c450b9f9154e49fb33bdb70d2f70] Update LEAF-Writer settings object
