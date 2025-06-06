@@ -6,6 +6,7 @@ export const customAuthority: AuthorityServiceConfig = {
   author: { name: 'CWRC Team', url: 'https://www.cwrc.ca/' },
   entityTypes: ['person', 'place', 'organization', 'work', 'thing'],
   // url: '',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   search: async ({ query, entityType }) => {
     //1. validate and route entityType
 
