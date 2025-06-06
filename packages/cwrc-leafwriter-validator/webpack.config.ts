@@ -2,20 +2,21 @@ import path from 'path';
 
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import { EsbuildPlugin } from 'esbuild-loader';
-import webpack, { EntryObject } from 'webpack';
+import webpack from 'webpack';
 import WebpackBar from 'webpackbar';
 
 const isDev = process.env.NODE_isDev;
 
-const entry: EntryObject = {
-  'leafwriter-validator.worker': path.resolve(__dirname, 'src', 'index.worker.ts'),
+const entry: webpack.EntryObject = {
+  'leafwriter-validator.worker': path.resolve('src', 'index.worker.ts'),
 };
 
 const output = {
-  path: path.resolve(__dirname, 'dist'),
+  path: path.resolve('dist'),
   globalObject: 'this',
   library: 'leafwriter-validator',
   libraryTarget: 'umd',
+  filename: '[name].js',
   umdNamedDefine: true,
 };
 
