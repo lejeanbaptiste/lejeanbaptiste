@@ -588,8 +588,9 @@ class SchemaManager {
     for await (const url of urls) {
       attempt++;
 
-      const response = await fetch(url);
-      if (!response.ok) {
+      const response = await fetch(url).catch(() => null);
+
+      if (!response || response.status !== 200) {
         let message = `A network error occurred while trying to reach ${url}.`;
         message += ' This could be a CORS issue or a dropped internet connection.';
         message += ` ${
@@ -935,8 +936,9 @@ class SchemaManager {
     for await (const url of urls) {
       attempt++;
 
-      const response = await fetch(url);
-      if (!response.ok) {
+      const response = await fetch(url).catch(() => null);
+
+      if (!response || response.status !== 200) {
         let message = `A network error occurred while trying to reach ${url}.`;
         message += ' This could be a CORS issue or a dropped internet connection.';
         message += ` ${
