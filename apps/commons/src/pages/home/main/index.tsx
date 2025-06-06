@@ -11,8 +11,14 @@ export const Main = () => {
     <Container>
       <Stack gap={isMobile ? 0 : 3}>
         <Header />
-        {isMobile ? <SmallScreenMessage /> : <Storage />}
-        <StatusBar />
+        {isMobile ? (
+          <SmallScreenMessage />
+        ) : (
+          <>
+            <Storage />
+            <StatusBar />
+          </>
+        )}
       </Stack>
     </Container>
   );
