@@ -49,7 +49,6 @@
       - eslint@8.57.1
       - ts-jest@29.2.5
 
-
 ## 4.0.0
 
 ### Major Changes
