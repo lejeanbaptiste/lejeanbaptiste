@@ -232,24 +232,34 @@
     "edit_source": "edit source",
     "entity": {
       "_plural": {
+        "citation_many": "citations",
         "citation_one": "citation",
         "citation_other": "citations",
+        "concept_many": "concepts",
         "concept_one": "concept",
         "concept_other": "concepts",
+        "conceptualObject_many": "conceptual objects",
         "conceptualObject_one": "conceptual object",
         "conceptualObject_other": "conceptual objects",
+        "event_many": "events",
         "event_one": "event",
         "event_other": "events",
+        "organization_many": "organizations",
         "organization_one": "organization",
         "organization_other": "organizations",
+        "person_many": "persons",
         "person_one": "person",
         "person_other": "persons",
+        "physicalThing_many": "physical things",
         "physicalThing_one": "physical thing",
         "physicalThing_other": "physical things",
+        "place_many": "places",
         "place_one": "place",
         "place_other": "places",
+        "thing_many": "things",
         "thing_one": "thing",
         "thing_other": "things",
+        "work_many": "works",
         "work_one": "work",
         "work_other": "works"
       },
@@ -315,8 +325,6 @@
       "schema not supported": "<0>LEAF-Writer does not support the schema attached to the document: </0><1>{{rng}}</1>",
       "url invalid": "url invalid"
     },
-    "messagesAre you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
-    "messagesAre you sure you want to delete the authority [value]": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1>",
     "multiple tags": "multiple tags",
     "no description available": "",
     "not supported": "Not Supported",
@@ -333,10 +341,10 @@
       "authorities": {
         "Add Custom Authority": "Add Custom Authority",
         "messages": {
+          "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
           "Deactivated authorities will not be shown in entity lookups": "Deactivated authorities will not be shown in entity lookups",
-          "You can rearrange authorities to prioritize and activate or deactivate them for each entity type": "Activate or deactivate authorities for each entity type",
           "activate or deactivate authorities for each entity type": "Activate or deactivate authorities for each entity type",
-          "rearrange authorities to prioritize and activate or deactivate them for each entity type": "Rearrange authorities to prioritize results",
+          "learn how to set up a custom TEI-based authority file with this guide": "Learn how to set up a custom TEI-based authority file with <2>this guide</2>",
           "rearrange authorities to prioritize results": "Rearrange authorities to prioritize results"
         }
       },
