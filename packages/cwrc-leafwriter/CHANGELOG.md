@@ -29,8 +29,8 @@ Please let us know if you have any problems.
   - [873a2327f6f2d3ec0b86539244ff264692665049]
   - [65b3123062f2201275f7fc81bed7b7502508d051]
   - [b6c17507473bf67cab23cba170e5d1acd8f22ce2]
-(developers), but we won't relaease a major version at this point.
-Please let us know if you have any problems.
+    (developers), but we won't relaease a major version at this point.
+    Please let us know if you have any problems.
 - [60d8a77f92f80c5c15c711af3a107dc73689f7f8] entity type: complete renaming 'rs' as 'thing
 - [63583998a86049d6feb49348ff2568e923575bfb] entity type: rename 'title' as 'work' (Closes: #253)
 - [8e47e6421d53974ab35022138a82bedf5628ef9c] entity lookups: Move requests to VIAF and DBPedia to LINCS-API (Closes: #255)
