@@ -1,18 +1,18 @@
-import path from 'path';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { EsbuildPlugin } from 'esbuild-loader';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
-import webpack, { type EntryObject } from 'webpack';
+import path from 'path';
+import webpack from 'webpack';
 import WebpackBar from 'webpackbar';
 
 const isDev = process.env.NODE_ENV === 'development';
 
 const relPathToPackages = path.resolve(__dirname, '..', '..', 'packages');
 
-const entry: EntryObject = {
+const entry: webpack.EntryObject = {
   app: [path.resolve(__dirname, 'src', 'index.tsx')],
 };
 
