@@ -65,9 +65,6 @@ export const validate = async ({ state, actions }: Context) => {
   if (!writer || !state.validator.hasWorkerValidator) return;
 
   const workerValidator = window.leafwriterValidator;
-  // const hasValidator = await workerValidator.hasValidator();
-  // console.log(hasValidator)
-  // if (!hasValidator) return;
 
   const documentString = await writer.converter.getDocumentContent(false);
 
