@@ -53,7 +53,7 @@ module.exports = {
       files: ['**/*.md'],
       processor: 'markdown/markdown',
       plugins: ['markdown'],
-      extends: ['eslint:recommended', 'plugin:markdown/recommended', 'prettier'],
+      extends: ['eslint:recommended', 'plugin:markdown/recommended-legacy', 'prettier'],
     },
     {
       files: ['**/*.md/*.ts'],
