@@ -21,7 +21,7 @@ export const getEntityTypeLabelLocalized = (entity: EntityType) => {
   return i18n.t(`LW.entity.${entity}`);
 };
 
-export const slugify = (string: string, separator: string = '-') => {
+export const slugify = (string: string, separator = '-') => {
   let text = string.toLowerCase().trim();
 
   const sets = [
