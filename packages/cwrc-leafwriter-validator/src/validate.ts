@@ -129,9 +129,7 @@ const parseErrors = (
     const errorName = error.name as Name;
     target.name = errorName.name;
     target.ns = errorName.ns;
-    target.documentation = errorName.documentation
-      ? errorName.documentation
-      : vEditor.getDocumentation(target.name);
+    target.documentation = errorName.documentation ?? vEditor.getDocumentation(target.name);
     target.fullName = getFullNameFromDocumentation(target.documentation);
   }
 

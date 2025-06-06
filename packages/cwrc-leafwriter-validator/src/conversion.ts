@@ -32,7 +32,7 @@ export const processSchema = async ({ id, url, shouldCache = true }: InitializeP
     };
 
     const cachedSchemaId = await db.cachedSchemas.put(cachedSchema);
-    cachedSchemaId ? log.info('Schema cached: ', cachedSchemaId) : log.info('Schema cache failed');
+    log.info(cachedSchemaId ? `Schema cached: ${cachedSchemaId}` : 'Schema cache failed');
   }
 
   return pattern;
