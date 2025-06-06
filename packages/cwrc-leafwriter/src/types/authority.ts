@@ -101,12 +101,12 @@ export interface LookupServicePreference {
   priority: number;
 }
 
-export type EntityLookupDialogProps = {
+export interface EntityLookupDialogProps {
   isUserAuthenticated: boolean;
   onClose: (response?: EntityLink) => void;
   query: string;
   type: NamedEntityType;
-};
+}
 
 export interface EntryLink {
   authority: Authority | (string & {});

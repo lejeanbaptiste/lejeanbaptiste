@@ -5,11 +5,11 @@ import type {
   LocalAuthorityServiceConfig,
 } from '../types';
 
-type Entity = {
+interface Entity {
   description?: string;
   id: string;
   label: string;
-};
+}
 
 const fuseOptions: IFuseOptions<Entity> = {
   includeScore: true,

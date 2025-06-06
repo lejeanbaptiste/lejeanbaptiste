@@ -1,9 +1,9 @@
 import { Button, Dialog, DialogActions, DialogContent, Stack, Typography } from '@mui/material';
-import { TextEmphasis } from '@src/components';
 import { Form, Formik } from 'formik';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
+import { TextEmphasis } from '../../components';
 import { localAuthorityServiceConfigSchema } from '../../types';
 import SimpleDialog from '../SimpleDialog';
 import { AdvancedOptions, BasicInformation, EntityTypes, Header, Instructions } from './components';

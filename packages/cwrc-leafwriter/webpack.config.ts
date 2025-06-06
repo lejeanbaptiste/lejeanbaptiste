@@ -5,14 +5,14 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { EsbuildPlugin } from 'esbuild-loader';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
-import webpack, { EntryObject } from 'webpack';
+import webpack from 'webpack';
 import WebpackBar from 'webpackbar';
 
 import pkg from './package.json';
 
 const isDev = process.env.NODE_isDev;
 
-const entry: EntryObject = {
+const entry: webpack.EntryObject = {
   index: [path.resolve(__dirname, 'src', 'index.tsx')],
   'index.min': [path.resolve(__dirname, 'src', 'index.tsx')],
 };
