@@ -337,7 +337,7 @@ class AttributeWidget {
    * Collects the data from the attribute widget and performs validation.
    */
   getData() {
-    const attributes: Map<string, string> = new Map();
+    const attributes = new Map<string, string>();
 
     const selectedAttributes = this.$parent?.[0].querySelectorAll(`.attributeSelector li.selected`);
     selectedAttributes?.forEach((el) => {

@@ -1,4 +1,4 @@
-FROM node:22.11-alpine AS base
+FROM node:22.16-alpine AS base
 RUN apk add --no-cache git
 RUN apk add --update npm
 RUN npm i -g changeset typescript webpack shelljs webpack-cli

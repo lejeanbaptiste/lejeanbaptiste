@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## 4.4.2
+
+### Patch Changes
+
+- New build [7f14c17d4a59c83e33ddd22b33cbbd9c654f7585]
+- Better condition checks [ec90edc3e46b941c45141df03ba137100e685b19]
+- Remove unnecessary types [404c895da3adc91b903d510663cca3248d3276c3]
+- Update dependencies
+  - dev:
+    - update:
+      - @typescript-eslint/eslint-plugin@8.29.0 [b1c5d1dd87535f34e4bc26e36156478fb7240f02]
+      - @typescript-eslint/parser@8.29.0 [b1c5d1dd87535f34e4bc26e36156478fb7240f02]
+      - @types/node@22.15.30 [1689ecd48bbdde5427aea239f926280a808329c1]
+      - eslint-config-prettier@10.1.1 [b1c5d1dd87535f34e4bc26e36156478fb7240f02]
+      - eslint-plugin-react-hooks@5.2.0 [b1c5d1dd87535f34e4bc26e36156478fb7240f02]
+      - ts-jest@29.3.4 [1689ecd48bbdde5427aea239f926280a808329c1]
+      - tsup@8.5.0 [1689ecd48bbdde5427aea239f926280a808329c1]
+      - typedoc@0.28.5 [1689ecd48bbdde5427aea239f926280a808329c1]
+      - typescript@5.8.3 [d579e8bb784d2420f5d917d868d364d1acc2b9fe]
+      - webpack@5.99.9 [1689ecd48bbdde5427aea239f926280a808329c1]
+    - bump:
+      - @types/lodash@4.17.17 [1689ecd48bbdde5427aea239f926280a808329c1]
+      - eslint-plugin-prettier@5.2.5 [b1c5d1dd87535f34e4bc26e36156478fb7240f02]
+
 ## 4.4.1
 
 ### Patch Changes

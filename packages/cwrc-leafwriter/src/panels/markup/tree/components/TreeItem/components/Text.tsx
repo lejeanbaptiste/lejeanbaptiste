@@ -15,7 +15,6 @@ export const Text = forwardRef<HTMLDivElement, TextProps>(
       classnames,
       content,
       handleProps,
-      isOver,
       label,
       nodeId,
       onContextMenuOpen,

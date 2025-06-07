@@ -1,5 +1,77 @@
 # CHANGELOG
 
+## 3.7.0
+
+### Minor Changes
+
+- Bring Helmet back [8782b47be3337eb2304b322f87e1e3fea8f7b4c7]
+- Dev: add react-scan [8c92cc29ad011c233f81aac45122df08a824d16b]
+- Replace axios with fetch [76798a7ea7465d585db1bd48d27a7df50d1509a2]
+- Hide bug report on mobile [a7265b1748a45a9ce19c839c2bb56e1c69680a92]
+- Add icon for drama genre [2162632652522b366c25637516629266225c2262]
+
+### Patch Changes
+
+- Sample files: regenerate screenshots [b524c73bf16cda4cfd2e62d11711dcf0c2310645]
+- Templates: update url and regenerate screenshoots [74ce11d1441962672541d8159811c9918902594f]
+- Improve types [2cd06d48e666f3c4ad270b2f95651884dce88178]
+- Theme (mui): use vars instead of palette to correctly render dark mode [8478488b9f5d4647d14cc80381929762ade26e32]
+- Update Mui to v7 [bf571a21fcde0f42a9dbe6f377daae256e3a323d]
+- Remove unused code [09f734adb091ccf05ce31aa19caed553b63cf86c]
+- Remove clean script from build (it was removing essential dependencies) [0b7033bfcbf9ff4644ed7e47726dbeeccc27b02b]
+- Update dependencies
+  - core:
+    - upgrade:
+      - @mui/icons-material@7.1.1 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - @mui/lab@7.0.0-beta.13 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - @mui/material@7.1.1 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - @octokit/rest@21.0.0 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - i18next@25.2.3 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+    - update:
+      - @fontsource/lato@5.2.5 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - axios@1.9.0 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - broadcast-channel@7.1.0 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - @cwrc/leafwriter@3.7.0
+      - @cwrc/leafwriter-storage-service@4.0.1
+      - helmet@8.1.0 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - keycloak-js@26.1.4 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - i18next-browser-languagedetector@8.1.0 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - motion@12.16.0 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - query-string@9.1.1 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - react-icons@5.5.0 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - react-i18next@15.5.2 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - react-markdown@10.1.0 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - react-router@7.6.2 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - zod@3.25.5 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+    - bump:
+      - @ts-rest/core@3.52.1 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - jotai@2.12.5 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - keycloak-js@26.2.0 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - material-ui-popup-state@5.3.6 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - mdi-material-ui@7.9.4 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - overmind@28.0.4 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - overmind-react@29.0.6 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - react-dropzone@14.3.8 [cc11715a7506d6b2d6b01a96dc9bc88bd5f639e8]
+      - react-scan@0.3.4 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - swr@2.3.3 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+  - dev:
+    - upgrade:
+      - @octokit/types@14.1.0 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - @types/webpackbar@5.0.0 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - copy-webpack-plugin@13.0.0 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+    - update:
+      - @types/compression@1.8.0 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - @types/node@22.15.30 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - less@4.3.0 [2b0207767469d416363d8a4481d03f094130bfcc]
+      - tsup@8.5.0 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - typescript@5.8.3 [25ddb8b283c7f907e278b54e926906909202930e]
+      - webpack@5.99.9 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+    - bump:
+      - @types/express@4.17.22 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - @types/react-dom@18.3.7 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+      - css-minimizer-webpack-plugin@7.0.2 [ad769eb60ea2eed69d7a4f1bd7d601a5a3d580c4]
+      - less-loader@12.3.0 [ee07219d0d50a6b90bb5b6072bd346c80dabf221]
+
 ## 3.6.0
 
 ### Minor Changes
@@ -7,7 +79,7 @@
 - [f5cd1f0a48fe3d4733afd7f9e2b254274c69fb77] remove logic related to legacy feature: nerve / nssi
 - [4ee3972a01449a8fc8670e6f0e015a1950e94b40] remove endpooint to fetch internal geonames-username
 - [09fcde11fec2412b968e12db9432868a2cbc5f74] add LGPN as a custom authority
-  
+
 ### Patch Changes
 
 - [683c11a97ff8c450b9f9154e49fb33bdb70d2f70] Update LEAF-Writer settings object

@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-authority-service-custom",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "An examploe for a custom LEAF-Writer authority lookup service",
   "keywords": [
@@ -32,7 +32,7 @@
   "devDependencies": {
     "eslint": "^8.57.1",
     "eslint-config-custom": "*",
-    "tsup": "^8.3.6",
-    "typescript": "^5.7.3"
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3"
   }
 }

@@ -113,9 +113,13 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       anchorOrigin={{ horizontal: 'left', vertical: 'top' }}
       aria-labelledby="schema-select"
       id="schema-menu"
-      MenuListProps={{ sx: { py: 0.5, borderRadius: 1 } }}
       onClose={handleClose}
       open={open}
+      slotProps={{
+        list: {
+          sx: { py: 0.5, borderRadius: 1 },
+        },
+      }}
       transformOrigin={{ horizontal: 'left', vertical: 'bottom' }}
     >
       <Header onClickAdd={handleOpenEditSchemaDialog} />

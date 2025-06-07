@@ -1,5 +1,4 @@
-import { Stack, Typography } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Stack, Grid, Typography } from '@mui/material';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import { IoMdInformationCircleOutline } from 'react-icons/io';
@@ -27,8 +26,9 @@ export const EntityLookups = () => {
           style={{ height: 16, width: 16, marginLeft: 8, marginTop: 2 }}
         />
         <Typography color="textSecondary" variant="body2">
+          {t('LW.settings.authorities.messages.rearrange authorities to prioritize results')}.{' '}
           {t(
-            'LW.settings.authorities.messages.You can rearrange authorities to prioritize and activate or deactivate them for each entity type',
+            'LW.settings.authorities.messages.activate or deactivate authorities for each entity type',
           )}
           .{' '}
           {t(

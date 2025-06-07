@@ -29,7 +29,7 @@ export const getFromLocalStorage = <T = string | Record<string, unknown>>(
   try {
     const object = JSON.parse(value) as Record<string, unknown>;
     return object as T;
-  } catch (error) {
+  } catch {
     return value as T;
   }
 };

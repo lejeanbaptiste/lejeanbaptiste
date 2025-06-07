@@ -197,7 +197,6 @@ export const EditSchemaDialog = ({
         enableReinitialize={true}
         initialValues={initialValues}
         onSubmit={submit}
-        // validationSchema={formValidation}
         validationSchema={toFormikValidationSchema(formValidation)}
       >
         {({ dirty, errors, handleBlur, handleChange, handleSubmit, touched, values }) => (

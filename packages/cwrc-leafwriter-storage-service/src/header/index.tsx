@@ -1,5 +1,4 @@
-import { Box, Typography } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Box, Grid, Typography } from '@mui/material';
 import { useAnimate } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

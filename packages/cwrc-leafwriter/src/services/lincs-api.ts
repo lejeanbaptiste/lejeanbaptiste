@@ -149,7 +149,7 @@ export const reconcile: SearchFunction = async ({ query, entityType, options }) 
     throw new Error(i18n.t('LW.messages.Failed to fetch'), { cause: validatedData.error });
   }
 
-  const mapResults: Map<AuthorityLookupResult['uri'], AuthorityLookupResult> = new Map();
+  const mapResults = new Map<AuthorityLookupResult['uri'], AuthorityLookupResult>();
 
   validatedData.data.forEach((source) => {
     source.matches.forEach(({ description, label, uri }) => {

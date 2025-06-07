@@ -2,11 +2,14 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Accordion, AccordionSummary } from '@mui/material';
 import { useState } from 'react';
 import { type AuthorityService } from '../../../../types';
+import { CustomAuthorityDialog } from '../../../custom-authority-dialog';
 import { Content } from './content';
 import { Header } from './header';
 import { useLookupServicePrefeneces } from './useLookupEntity';
 
 export const Authority = ({ authorityService }: { authorityService: AuthorityService }) => {
+  const [open, setOpen] = useState(false);
+
   const { description, id, name, url, isCustom, isLocal, author } = authorityService;
 
   const { toggleAuthority } = useLookupServicePrefeneces();
@@ -30,37 +33,44 @@ export const Authority = ({ authorityService }: { authorityService: AuthoritySer
   };
 
   return (
-    <Accordion
-      expanded={expanded === `panel-${id}`}
-      onChange={handleChange(`panel-${id}`)}
-      sx={[
-        {
-          position: 'inherit',
-          backgroundImage: 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundColor: 'transparent',
-          boxShadow: 'none',
-        },
-        !expanded && {
-          ':hover': { backgroundColor: (theme) => theme.vars.palette.action.hover },
-        },
-        !!expanded && {
-          backgroundImage: 'var(--Paper-overlay)',
-          backgroundColor: 'var(--mui-overlays-8)',
-          boxShadow: (theme) => theme.vars.shadows[2],
-        },
-      ]}
-    >
-      <AccordionSummary
-        aria-controls={`panel-${id}-content`}
-        expandIcon={<ExpandMoreIcon />}
-        id={`panel-${id}-header`}
-        sx={{ span: { justifyContent: 'space-between' } }}
+    <>
+      <Accordion
+        expanded={expanded === `panel-${id}`}
+        onChange={handleChange(`panel-${id}`)}
+        sx={[
+          {
+            position: 'inherit',
+            backgroundImage: 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundColor: 'transparent',
+            boxShadow: 'none',
+          },
+          !expanded && {
+            ':hover': { backgroundColor: (theme) => theme.vars.palette.action.hover },
+          },
+          !!expanded && {
+            backgroundImage: 'var(--Paper-overlay)',
+            backgroundColor: 'var(--mui-overlays-8)',
+            boxShadow: (theme) => theme.vars.shadows[2],
+          },
+        ]}
       >
-        <Header expanded={!!expanded} {...{ id, isLocal, name }} />
-      </AccordionSummary>
-      <Content {...{ author, description, id, isCustom, isLocal, url }} />
-    </Accordion>
+        <AccordionSummary
+          aria-controls={`panel-${id}-content`}
+          expandIcon={<ExpandMoreIcon />}
+          id={`panel-${id}-header`}
+          sx={{ span: { justifyContent: 'space-between' } }}
+        >
+          <Header
+            expanded={!!expanded}
+            onEditClick={() => setOpen(true)}
+            {...{ id, isLocal, name }}
+          />
+        </AccordionSummary>
+        <Content {...{ author, description, id, isCustom, isLocal, url }} />
+      </Accordion>
+      <CustomAuthorityDialog authorityId={id} open={open} onClose={() => setOpen(false)} />
+    </>
   );
 };
