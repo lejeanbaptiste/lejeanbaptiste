@@ -1,5 +1,112 @@
 # CHANGELOG
 
+## 3.7.0
+
+### What's new
+
+#### Introduce capability to add custom authorities based on a TEI file
+
+User can add custom authorities based on a TEI file. This feature is available in the settings dialog.
+The TEI should be on a public URL to be fetched by LEAF-Writer. The user can define the URL for each entity type. The Custom Authority setup will be saved on the browser local storage and will be available on the next session.
+Once the user defines Custom Authorit, LEAF-Writer will use it for entity lookups. It will fetch the TEI file and parse it to extract the entities. The custom authority lookup uses fuzzy search to find entities based on the user query input.
+
+The TEI file should have the following structure (e.g., for a person entity):
+
+```xml
+<TEI>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title>Authority Name</title>
+            </titleStmt>
+        </fileDesc>
+    </teiHeader>
+    <text>
+        <body>
+            <div type="authority">
+                <persName>
+                    <forename>John</forename>
+                    <surname>Doe</surname>
+                </persName>
+            </div>
+        </body>
+    </text>
+</TEI>
+```
+
+For more information about this features check these documents:
+
+- [Guidance for LEAF-Writer (LW) Project-Specific Authority Files](https://docs.google.com/document/d/1R5NvSXMZZDMcvNg85fBTCZlAyLUlG7Q_-2KLVqDvpxU/edit?tab=t.0#heading=h.lz4sthbsce1b)
+- [LEAF-Writer – CatCor Proposal](https://docs.google.com/document/d/1l5eb2nndtGkvBdQxCd5cikmfAugEVaMGGzoXvtpB8rM/edit?tab=t.0#heading=h.fg8ieafojbsw)
+
+
+### Minor Changes
+
+- Introduce capability to add custom authorities based on a TEI file. New UI/UX [7d530cde78274dd172965410f17df4a9b93ea1b2]
+- Custom authority: add fuzzy search and specific search each entity type [7d530cde78274dd172965410f17df4a9b93ea1b2]
+- Simple dialog: improve types and default [4d9669fa678ef083546fea6a2627e77c68b9f3b4]
+
+### Patch Changes
+
+- Custom authority:
+  - Disallow `thing` until we have a good use case [7d530cde78274dd172965410f17df4a9b93ea1b2]
+  - Fix UI using grid instead of flexbox [3fc596e290b2367cf19c957fd79a41790c2ac098]
+  - Lookup: select persName childnodes instead of children [b8b49139f3192127937c089ae54469b85c52ae6c]
+  - Add link to instructions [7a091b36a41b17842cfd9eb55e29351dcde11a76]
+- Settings: add localization [93e11975e8c6f43a78caa5235727357571530dff]
+- Markup panel: fix css rule preventing interaction with the tree item (closes #268) [2971b6bded35b0119f351593e874854141e0a653]
+- Bottom bar: schemas: fix border radius [1de15ab7648f8e30c3a2f1ae6589a40ba58c081a]
+- Improve slugfy [a948d413ea9ff73ce9367f2a1a13bce64d5d87d9]
+- Remove axios as a dependency. Use fetch instead [573ae04f7d3ee0ca488ed8dd57b001812bff36e8]
+- Regression: replacing axios for fetch prevent load alt schema url. fix cors error [e415765955fc157abae17d77a0ba67756d04c054]
+- Update Mui to v7 [a145b7baf012f1bc9579ea703b52ab10b01a1b2d]
+- Locales: rename translation keys [a22c276d2f39eeff21af4117f9767058a1cccf69]
+- Improve types [5e5047f1d1c5af3babfeabb157453adecc2c93ed]
+- Remove unused component/files/code [68c4ef0ffca9da08e3719bc8b64b06c100db2aae] [9e207be8f75bd43b00a70c3aadee495e307632b4] [61f2ba966a329a49fe9ca06ce38d844be7ca7420] [34aa7014c54c01e00fdc16d1959b9da9ae6174ea]
+- Update dependencies
+  - core:
+    - remove
+      - axios [573ae04f7d3ee0ca488ed8dd57b001812bff36e8]
+    - add:
+      - fuse.js@7.1.0 [209adadb212690194a35aa3d6818183878ef4804]
+    - upgrade:
+      - @mui/icons-material@7.1.1 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - @mui/material@7.1.1 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - i18next@25.2.1 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+    - update:
+      - @cwrc/leafwriter-validator@4.4.2
+      - @fontsource/lato@5.2.5 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - axios@1.8.4 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - luxon@3.6.1 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - motion@12.16.0 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - react-i18next@15.5.2 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - react-intersection-observer@9.16.0 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - zod@3.25.55 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+    - bump:
+      - @mui/icons-material@6.4.10 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - @mui/material@6.4.10 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - jotai@2.12.5 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - mdi-material-ui@7.9.4 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - nanoid@5.1.5 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - overmind@28.0.4 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - overmind-react@29.0.6 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - react-resizable-panels@2.1.9 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - react-virtuoso@4.12.8 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+  - dev:
+    - upgrade:
+      - copy-webpack-plugin@13.0.0 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - @types/openseadragon@4.1.0 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+    - update:
+      - @types/luxon@3.6.2 [209adadb212690194a35aa3d6818183878ef4804]
+      - @types/node@22.15.30 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - shelljs@0.10.0 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - typescript@5.8.3 [4fe688c9e00deec2948d6b5aaa4f0e644ea96f9c]
+      - webpack@5.99.5 [b2b6f36b41e4978e0b4fb303d11a09992520a452]
+    - bump:
+      - @types/react-dom@18.3.7 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+      - @types/jqueryui@1.12.24 [510fcb763e31f622d3a0c313663f6e02bd32ec1c]
+      - @types/shelljs@0.8.16 [e2d1812360320bdb19cdd9ff12b930af8fb2e95e]
+
 ## 3.6.0
 
 ### What's new
