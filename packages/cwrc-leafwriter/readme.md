@@ -202,36 +202,36 @@ All properties are optional, except for the id.
 | name\*      |                                                                         `string`                                                                         |         |                                                                                    The authority name.                                                                                     |
 | description |                                                                         `string`                                                                         |         |                                                                              A description for the authority.                                                                              |
 | url         |                                                                         `string`                                                                         |         |                                                                                   URL to the authority.                                                                                    |
-| author      |                                                            { name*: `string`, url: `string` }                                                            |         |                                                                  Author of the code to make authority's lookup function.                                                                   |
+| author      |                                                           { name\*: `string`, url: `string` }                                                            |         |                                                                  Author of the code to make authority's lookup function.                                                                   |
 | entityTypes |                          [`NamedEntityType`](#namedentitytype)[] \| [`AuthorityEntityTypesProps`](#authorityentitytypeprops)[]                           |         | An array of entity types or an objects with the name and url for each entity type. This object not only defines the entities avialable for the authority, but also where to look for them. |
-| search*     | function(params: [`AuthoritySearchParms`](#authoritysearchparms)) = async () => Promise<[`AuthoritySearchLookupResult`](#authoritysearchlookupresult)[]> |         |                                        A function that takes a query and an entityType and returns a promise that resolves to an array of entities.                                        |
+| search\*    | function(params: [`AuthoritySearchParms`](#authoritysearchparms)) = async () => Promise<[`AuthoritySearchLookupResult`](#authoritysearchlookupresult)[]> |         |                                        A function that takes a query and an entityType and returns a promise that resolves to an array of entities.                                        |
 
 ##### NamedEntityType
 
 ```ts
-type NamedEntity = 'person' | 'place' | 'organization' | 'work' | 'thing' | 'concept' |'citation'
+type NamedEntity = 'person' | 'place' | 'organization' | 'work' | 'thing' | 'concept' | 'citation';
 ```
 
 ##### AuthorityEntityTypeProps
 
-| Name  | Type                                  | Default | Description |
-| ----- | ------------------------------------- | ------- | ----------- |
-| name* | [`NamedEntityType`](#namedentitytype) |         |             |
-| url   | `string`                              |         |             |
+| Name   | Type                                  | Default | Description |
+| ------ | ------------------------------------- | ------- | ----------- |
+| name\* | [`NamedEntityType`](#namedentitytype) |         |             |
+| url    | `string`                              |         |             |
 
 ##### AuthoritySearchParms
 
 | Name       | Type                                  | Default | Description |
 | ---------- | ------------------------------------- | ------- | ----------- |
-| query*     | `string`                              |         |             |
+| query\*    | `string`                              |         |             |
 | entityType | [`NamedEntityType`](#namedentitytype) |         |             |
 
 ##### AuthoritySearchLookupResult
 
 | Name        | Type     | Default | Description                       |
 | ----------- | -------- | ------- | --------------------------------- |
-| label*      | `string` |         | the entity label, usually a name. |
-| uri*        | `string` |         | the entity URI.                   |
+| label\*     | `string` |         | the entity label, usually a name. |
+| uri\*       | `string` |         | the entity URI.                   |
 | description | `string` |         | A description for the entity.     |
 
 #### Schemas

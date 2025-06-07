@@ -96,9 +96,10 @@ const CustomInfo = ({
         <IoExtensionPuzzleOutline style={{ height: 14, width: 14 }} />
         {author && (
           <Typography variant="caption">
-            {t('LW.commons.addon by')}{' '}
+            {t('LW.commons.added by')}{' '}
             {author.url ? (
               <Link
+                aria-label="navigate to url"
                 display="inline-flex"
                 alignItems="center"
                 gap={0.25}
@@ -118,7 +119,9 @@ const CustomInfo = ({
       {isLocal && (
         <Stack direction="row" alignItems="center" gap={1}>
           <MdLockOutline style={{ height: 14, width: 14 }} />
-          <Typography variant="caption">{t('LW.messages.Only you can see this')}</Typography>
+          <Typography variant="caption">
+            {t('LW.messages.Only available on this browser')}
+          </Typography>
         </Stack>
       )}
     </Stack>

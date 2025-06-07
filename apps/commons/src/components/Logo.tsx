@@ -1,8 +1,8 @@
-import { useTheme } from '@mui/material';
 import Box, { BoxProps } from '@mui/material/Box';
+import { useColorScheme } from '@mui/material/styles';
 
 interface LogoProps extends BoxProps {
-  height?: string | number;
+  height?: CSSStyleDeclaration['height'] | number;
   size?: 'large' | 'small';
   variant?: 'horizontal' | 'vertical';
 }
@@ -13,14 +13,16 @@ export const Logo = ({
   variant = 'horizontal',
   ...props
 }: LogoProps) => {
-  const { mode } = useTheme().palette;
+  const { mode, systemMode } = useColorScheme();
+
+  const themeMode = systemMode ?? mode ?? 'light';
 
   return (
     <Box display="flex" {...props}>
       <img
         alt="LEAF-Writer"
         height={height}
-        src={`/assets/logo/logo-${variant}-${size}-${mode ?? 'light'}.png`}
+        src={`/assets/logo/logo-${variant}-${size}-${themeMode}.png`}
       />
     </Box>
   );

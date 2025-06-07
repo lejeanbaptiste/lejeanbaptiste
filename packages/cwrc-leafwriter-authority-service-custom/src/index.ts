@@ -1,11 +1,12 @@
 import { AuthorityServiceConfig } from '../../cwrc-leafwriter/src/types';
 
-export const lgpn: AuthorityServiceConfig = {
+export const customAuthority: AuthorityServiceConfig = {
   name: 'Custom Authority Service',
   description: 'An example for a custom entity lookup service for LEAF-Writer',
   author: { name: 'CWRC Team', url: 'https://www.cwrc.ca/' },
   entityTypes: ['person', 'place', 'organization', 'work', 'thing'],
   // url: '',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   search: async ({ query, entityType }) => {
     //1. validate and route entityType
 

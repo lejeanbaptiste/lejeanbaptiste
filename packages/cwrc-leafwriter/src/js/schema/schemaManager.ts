@@ -1,4 +1,3 @@
-import axios from 'axios';
 import CSS from 'css';
 import $ from 'jquery';
 import { v4 as uuidv4 } from 'uuid';
@@ -585,35 +584,33 @@ class SchemaManager {
 
     let isAltRoute = false;
 
-    let i = 0;
+    let attempt = 0;
     for await (const url of urls) {
-      i++;
-      const response = await axios.get<string>(url).catch((error) => {
-        if (error.response) {
-          const message = `A network error occurred while trying to reach ${url}. This could be a CORS issue or a dropped internet connection. ${
-            i < urls.length
-              ? 'LEAF-Writer will try to load the Schema using an alternative route.'
-              : 'LEAF-Writer could not load a schema for this document.'
-          }`;
-          log.warn(message);
-        } else if (error.request) {
-          log.warn(error.request);
-        } else {
-          log.warn('Error', error.message);
-        }
-        // log.warn(error);
-      });
+      attempt++;
 
-      //if no response, try another url. This is our tactic to deal with CORS in some resoruces
-      if (!response) {
+      const response = await fetch(url).catch(() => null);
+
+      if (!response || response.status !== 200) {
+        let message = `A network error occurred while trying to reach ${url}.`;
+        message += ' This could be a CORS issue or a dropped internet connection.';
+        message += ` ${
+          attempt < urls.length
+            ? ' LEAF-Writer will try to load the Schema using an alternative route.'
+            : ' LEAF-Writer could not load a schema for this document.'
+        }`;
+        log.warn(message);
+
+        //if no response, try another url. This is our tactic to deal with CORS in some resources
         isAltRoute = true;
         continue;
       }
 
+      const data = await response.text();
+
       if (isAltRoute) log.info(`Schema loaded from an alternative route: ${url}`);
 
       // Convert to XML
-      const xml = this.writer.utilities.stringToXML(response.data);
+      const xml = this.writer.utilities.stringToXML(data);
       this.rng = url;
       return xml;
     }
@@ -935,36 +932,33 @@ class SchemaManager {
 
     let isAltRoute = false;
 
-    let i = 0;
+    let attempt = 0;
     for await (const url of urls) {
-      i++;
+      attempt++;
 
-      const response = await axios.get<string>(url).catch((error) => {
-        if (error.response) {
-          const message = `A network error occurred while trying to reach ${url}. This could be a CORS issue or a dropped internet connection. ${
-            i < urls.length
-              ? 'LEAF-Writer will try to load the CSS using an alternative route.'
-              : 'LEAF-Writer could not load a CSS for this document.'
-          }`;
-          log.warn(message);
-        } else if (error.request) {
-          log.warn(error.request);
-        } else {
-          log.warn('Error', error.message);
-        }
-        // log.warn(error);
-      });
+      const response = await fetch(url).catch(() => null);
 
-      //if no response, try another url. This is our tactic to deal with CORS in some resoruces
-      if (!response) {
+      if (!response || response.status !== 200) {
+        let message = `A network error occurred while trying to reach ${url}.`;
+        message += ' This could be a CORS issue or a dropped internet connection.';
+        message += ` ${
+          attempt < urls.length
+            ? 'LEAF-Writer will try to load the CSS using an alternative route.'
+            : 'LEAF-Writer could not load a CSS for this document.'
+        }`;
+        log.warn(message);
+
+        //if no response, try another url. This is our tactic to deal with CORS in some resources
         isAltRoute = true;
         continue;
       }
 
+      const data = await response.text();
+
       //success
       if (isAltRoute) log.info(`CSS loaded from an alternative route: ${url}`);
       this.css = url; // redefine schema manager css based on the available url
-      return response.data;
+      return data;
     }
 
     return;

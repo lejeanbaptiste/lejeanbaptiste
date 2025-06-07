@@ -1,4 +1,3 @@
-// import axios from 'axios';
 import type { AuthenticateProp, ProviderService } from './types';
 
 // const BASE_URL = 'https://api.orcid.org/v3.0';

@@ -26,7 +26,6 @@ export interface StorageDialogConfig {
   allowPaste?: boolean;
   allowUrl?: boolean;
   defaultCommitMessage?: string;
-  // eslint-disable-next-line @typescript-eslint/ban-types
   locale?: Locales | (string & {});
   preferProvider?: string;
   providers?: ProviderAuth[];

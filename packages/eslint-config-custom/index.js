@@ -29,10 +29,10 @@ module.exports = {
       extends: [
         'eslint:recommended',
         //* For more relaxed TS rules, uncommend next 2 lines and comment the following 2.
-        // 'plugin:@typescript-eslint/recommended',
-        // 'plugin:@typescript-eslint/stylistic',
-        'plugin:@typescript-eslint/recommended-type-checked',
-        'plugin:@typescript-eslint/stylistic-type-checked',
+        'plugin:@typescript-eslint/recommended',
+        'plugin:@typescript-eslint/stylistic',
+        // 'plugin:@typescript-eslint/recommended-type-checked',
+        // 'plugin:@typescript-eslint/stylistic-type-checked',
         'prettier',
       ],
       parser: '@typescript-eslint/parser',
@@ -53,7 +53,7 @@ module.exports = {
       files: ['**/*.md'],
       processor: 'markdown/markdown',
       plugins: ['markdown'],
-      extends: ['eslint:recommended', 'plugin:markdown/recommended', 'prettier'],
+      extends: ['eslint:recommended', 'plugin:markdown/recommended-legacy', 'prettier'],
     },
     {
       files: ['**/*.md/*.ts'],

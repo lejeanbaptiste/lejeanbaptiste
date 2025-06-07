@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## 4.0.1
+
+### Patch Changes
+
+- Refactor: use moder js [ff8ccd525224f9510967b8ddb2c299080ea5a507]
+- Upgrade Mui components to v7 [a1a11ab273e3892c9d76db7fe8a197ccbc2dc510]
+- Update dependencies
+  - core:
+    - Upgrade:
+      - @mui/icons-material@7.1.1 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - @mui/material@7.1.1 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - @octokit/rest@22.0.0 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - i18next@25.2.1 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+    - update:
+      - axios@1.9.0 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - motion@12.16.0  [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - react-i18next@15.5.2 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - react-icons@5.5.0 [ab4d58d05b891f84efe7a178f4bfb2e5ea2e4291]
+      - zod@3.25.55 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+    - bump:
+      - mdi-material-ui@7.9.4 [ab4d58d05b891f84efe7a178f4bfb2e5ea2e4291]
+      - overmind@28.0.4 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - overmind-react@29.0.6 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - react-dropzone@14.3.8 [ab4d58d05b891f84efe7a178f4bfb2e5ea2e4291]
+  - dev:
+    - update:
+      - @testing-library/react@16.3.0 [30b02b6552886cec7876f176b0816ac4f78f0bd4]
+      - @types/node@22.15.30 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - ts-jest@29.3.4 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - tsup28.5.0 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - typedoc@0.28.5 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - typescript@5.8.3 [30b02b6552886cec7876f176b0816ac4f78f0bd4]
+    - bump:
+      - @types/lodash@4.17.17 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - @types/react@18.3.23 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - @types/react-dom@18.3.7 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - fake-indexeddb@6.0.1 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+
 ## 4.0.0
 
 ### Patch Changes
@@ -48,7 +86,6 @@
       - @types/react@18.3.5
       - eslint@8.57.1
       - ts-jest@29.2.5
-
 
 ## 4.0.0
 

@@ -11,12 +11,6 @@ export const isValidHttpURL = (value: string) => {
   return res !== null;
 };
 
-export const convertToSlug = (string: string) =>
-  string
-    .toLowerCase()
-    .replace(/ /g, '-')
-    .replace(/[^\w-]+/g, '');
-
 /**
  * Take a string, capitalize the first letter, and lowercase the rest.
  * @param {string} w - string - the string to capitalize
@@ -25,4 +19,57 @@ export const capitalizeString = (w: string) => w.charAt(0).toUpperCase() + w.sli
 
 export const getEntityTypeLabelLocalized = (entity: EntityType) => {
   return i18n.t(`LW.entity.${entity}`);
+};
+
+export const slugify = (string: string, separator = '-') => {
+  let text = string.toLowerCase().trim();
+
+  const sets = [
+    { from: '[ÀÁÂÃÄÅÆĀĂĄẠẢẤẦẨẪẬẮẰẲẴẶ]', to: 'a' },
+    { from: '[ÇĆĈČ]', to: 'c' },
+    { from: '[ÐĎĐÞ]', to: 'd' },
+    { from: '[ÈÉÊËĒĔĖĘĚẸẺẼẾỀỂỄỆ]', to: 'e' },
+    { from: '[ĜĞĢǴ]', to: 'g' },
+    { from: '[ĤḦ]', to: 'h' },
+    { from: '[ÌÍÎÏĨĪĮİỈỊ]', to: 'i' },
+    { from: '[Ĵ]', to: 'j' },
+    { from: '[Ĳ]', to: 'ij' },
+    { from: '[Ķ]', to: 'k' },
+    { from: '[ĹĻĽŁ]', to: 'l' },
+    { from: '[Ḿ]', to: 'm' },
+    { from: '[ÑŃŅŇ]', to: 'n' },
+    { from: '[ÒÓÔÕÖØŌŎŐỌỎỐỒỔỖỘỚỜỞỠỢǪǬƠ]', to: 'o' },
+    { from: '[Œ]', to: 'oe' },
+    { from: '[ṕ]', to: 'p' },
+    { from: '[ŔŖŘ]', to: 'r' },
+    { from: '[ßŚŜŞŠ]', to: 's' },
+    { from: '[ŢŤ]', to: 't' },
+    { from: '[ÙÚÛÜŨŪŬŮŰŲỤỦỨỪỬỮỰƯ]', to: 'u' },
+    { from: '[ẂŴẀẄ]', to: 'w' },
+    { from: '[ẍ]', to: 'x' },
+    { from: '[ÝŶŸỲỴỶỸ]', to: 'y' },
+    { from: '[ŹŻŽ]', to: 'z' },
+    { from: `[·/_,:;']`, to: '-' },
+  ];
+
+  const replaceChar = (set: { from: string; to: string }) => {
+    text = text.replace(new RegExp(set.from, 'gi'), set.to);
+  };
+
+  sets.forEach(replaceChar);
+
+  text = text
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/&/g, '-and-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+
+  if (typeof separator !== 'undefined' && separator !== '-') {
+    text = text.replace(/-/g, separator);
+  }
+
+  return text;
 };
