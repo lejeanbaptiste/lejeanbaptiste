@@ -461,7 +461,7 @@ class AnnotationsManager {
    * @returns {Object|null} Entity config object
    */
   getEntityConfigFromAnnotation(rdfEl: Element) {
-    const isLegacy = rdfEl.parentElement?.hasAttribute('xmlns:cw');
+    const isLegacy = rdfEl.parentElement?.parentElement?.hasAttribute('xmlns:cw');
     if (!isLegacy) return this.getEntityConfigFromJsonAnnotation(rdfEl);
 
     // json-ld
