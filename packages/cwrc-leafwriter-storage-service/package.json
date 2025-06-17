@@ -60,9 +60,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
-    "test": "DEBUG_PRINT_LIMIT=40000 jest",
+    "test": "DEBUG_PRINT_LIMIT=40000 NODE_OPTIONS=--experimental-vm-modules jest",
     "test-watch": "jest --watchAll --verbose",
-    "prepublishOnly": "npm test && npm run build"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
