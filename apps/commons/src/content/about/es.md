@@ -1,27 +1,25 @@
-# About
+# Sobre
 
-LEAF-Writer provides:
+LEAF-Writer proporciona:
 
-- schema-aware document editing, including validation, against web-accessible schemas
-- support for cascading stylesheets (CSS) to provide a WYSIWYG view of documents, as well as a view showing tags
-- the ability to extract references to named entities (persons, places, or organizations) from already tagged XML references within a document in order to generate Web Annotation
-- the ability to look up and select identifiers for named entity tags (persons, organizations, places, or titles) from the following Linked Open Data authorities: DBPedia, Geonames, Getty, LGPN, VIAF, and Wikidata.
-- generation of Linked Data annotations corresponding to newly tagged named entities and document annotations (dates, notes, citations, corrections, links, keywords) in XML-RDF or JSON-LD conforming to the Web Annotation Data Model
-- continuous XML validation
-- Shema-constrained tagging options
+- edición de documentos con reconocimiento de esquema, incluida la validación, en relación con esquemas accesibles por la web
+- soporte para hojas de estilo en cascada (CSS) para proporcionar una vista WYSIWYG de los documentos, así como una vista que muestra las etiquetas
+- la capacidad de extraer referencias a entidades nombradas (personas, lugares o organizaciones) de referencias XML ya marcadas dentro de un documento para generar Anotación Web
+- la capacidad de buscar y seleccionar identificadores para las etiquetas de entidades nombradas (personas, organizaciones, lugares o títulos) de las siguientes autoridades de datos abiertos vinculados: [DBPedia](https://dbpedia.org/), [Geonames](https://www.geonames.org/), [Getty](https://www.getty.edu/), [GND](https://www.dnb.de/EN/Professionell/Standardisierung/GND/gnd_node.html), [LINCS Project](https://lincsproject.ca), [VIAF](https://www.viaf.org/), y [Wikidata](https://www.wikidata.org/), o archivos de autoridad específicos del proyecto.
+- generación de anotaciones de datos vinculados correspondientes a entidades nombradas recién marcadas y anotaciones de documentos (fechas, notas, citas, correcciones, enlaces, palabras clave) en XML-RDF o JSON-LD conforme al Modelo de datos de anotación web
+- validación XML continua
+- opciones de marcado limitadas por esquema
 
-This version of LEAF-Writer uses the GitHub and Gitlab repositories for document storage, versioning, and sharing. To take advantage of these features, you need to be logged into a GitHub or Gitlab account. In addition, you can open documents by pasting an XML or uploading a file from your computer. You can also download the file directly to your device. Optionally, you can use LEAF-Writer without any external account, in which case you will only be able to load from and save to your computer.
+Esta versión de LEAF-Writer utiliza GitHub y Gitlab para el almacenamiento, la gestión de versiones y el intercambio de documentos. Para aprovechar estas características, necesita estar conectado a una cuenta de GitHub o Gitlab. Además, puede abrir documentos pegando un XML o cargando un archivo desde su computadora. También puede descargar el archivo directamente a su dispositivo. Opcionalmente, puede usar LEAF-Writer sin ninguna cuenta externa, en el que solo podrá cargar desde y guardar en su computadora.
 
-LEAF-Writer is designed to work with [customizations of the Text Encoding Initiative (TEI)](https://tei-c.org/guidelines/customization/#section-1) schema provided by the TEI Consortium. Out-of-the-box, LEAF-Writer supports the following schemas: [TEI All](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng), [TEI Corpus](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_corpus.rng), [TEI Drama](https://tei-c.org/release/xml/tei/custom/schema/relaxng/tei_drama.rng), [TEI Manuscript](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_ms.rng), [TEI Speech](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_speech.rng), [TEI LITE](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_lite.rng), [Orlando](https://cwrc.ca/schemas/orlando_entry.rng).
+LEAF-Writer está diseñado para funcionar con [personalizaciones del Text Encoding Initiative (TEI)](https://tei-c.org/guidelines/customization/#section-1) esquema proporcionado por el Consortium TEI. Out-of-the-box, LEAF-Writer soporta los siguientes esquemas: [TEI All](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng), [TEI LITE](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_lite.rng), [TEI Simple Print](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_simplePrint.rng), [jTEI Article](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_jtei.rng), y [Orlando](https://cwrc.ca/schemas/orlando_entry.rng).
 
-LEAF-Writer may also work with custom schemas. When you open a document, LEAF-Writer checks the root element and the schema definition. Currently, LEAF-Writer supports three different root elements: `TEI`, `ORLANDO`, and `CWRCENTRY`. If the root element is supported by the schema is not, you can add it as a personal custom schema. LEAF-Writer saves the schema information on the Browser's localstorage. Then, the schema will be available locally as long as you remain logged in.
+LEAF-Writer puede también funcionar con esquemas personalizados. Cuando abre un documento, LEAF-Writer verifica el elemento raíz y la definición del esquema. Actualmente, LEAF-Writer soporta tres diferentes elementos raíz: `TEI`, `ORLANDO`, y `CWRCENTRY`. Si el elemento raíz no es soportado por el esquema, puede agregarlo como esquema personalizado. LEAF-Writer guarda la información del esquema en el almacenamiento local del navegador. Entonces, el esquema estará disponible localmente mientras permanezca conectado.
 
-You can use LEAF-Writer to edit XML documents or produce new documents from templates. There are templates and sample documents here for getting started.
+Para aprender más sobre cómo usar LEAF-Writer, vea la [documentación](https://www.leaf-vre.org/docs/documentation/leaf-commons/leaf-writer-documentation-basic).
 
-To learn more about how to use LEAF-Writer, see the [documentation](https://www.leaf-vre.org/docs/documentation/leaf-commons/leaf-writer-documentation-basic).
+Si encuentra un error o si hay una característica que le gustaría ver agregada, por favor envíe un ticket a <https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues>.
 
-If you run into a bug or there is a feature you would like to see added, please submit a ticket to <https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues>.
+Si está interesado en adoptar/adaptar Leaf Writer a un entorno diferente, por favor consulte [esta referencia](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer). Puede contactarnos a través de un ticket Gitlab en cualquier repositorio de código LEAF-Writer.
 
-If you are interested in adopting/adapting Leaf Writer to a different environment, please consult [this reference](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer). You can contact us through a Gitlab ticket on any of the LEAF-Writer code repositories.
-
-Finally, if you have found LEAF-Writer useful for your research or teaching, please let us know! We’d love to hear it.
+Finalmente, si ha encontrado útil LEAF-Writer para su investigación o enseñanza, por favor háganos saber! Nos encantaría escucharlo.
