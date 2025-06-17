@@ -72,7 +72,7 @@ export const authoritiesInitialConfig: AuthorityServiceConfig[] = [
     search: reconcile,
   },
   {
-    name: 'LINCS',
+    name: 'LINCS Project',
     author: { name: 'LINCS Project' },
     description:
       'LINCS provides the tools and infrastructure to make humanities data more discoverable, searchable, and shareable. Discover how you can explore, create, and publish cultural data.',
@@ -83,7 +83,7 @@ export const authoritiesInitialConfig: AuthorityServiceConfig[] = [
       { name: 'work', priority: 4 },
       { name: 'thing', priority: 4 },
     ],
-    url: 'https://www.lincs-project.ca',
+    url: 'https://lincsproject.ca',
     search: reconcile,
   },
   {
