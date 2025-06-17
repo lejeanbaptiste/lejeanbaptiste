@@ -87,8 +87,8 @@ const getPersons = (list: NodeListOf<Element>) => {
     if (!personName) return;
 
     let name = '';
-    for (let i = 0; i < personName.childNodes.length; i++) {
-      name += personName.childNodes[i]?.textContent + ' ';
+    for (const child of personName.childNodes) {
+      name += child.textContent + ' ';
     }
 
     name = name
