@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 3.7.1
+
+### Patch Changes
+
+- Fix dark mode when not authenticated
+- Fix icon name type inference
+- Updated dependencies
+  - core: bump: @cwrc/leafwriter@3.7.1
+
 ## 3.7.0
 
 ### Minor Changes
