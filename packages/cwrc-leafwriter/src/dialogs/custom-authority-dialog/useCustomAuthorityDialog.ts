@@ -54,7 +54,7 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
     //* 4. Save each authority service entity types preferences into IndexedDB: lookupServicePreferences table
     for (const entityType of values.entityTypes) {
       await db.lookupServicePreferences.put({
-        id: `${values.id}-${entityType.name}`,
+        id: `${values.id}:${entityType.name}`,
         authorityId: values.id,
         entityType: entityType.name,
         priority: Infinity,
@@ -65,6 +65,7 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
 
   const addAuthorityToAuthorityServicesAtom = (values: LocalAuthorityServiceConfig) => {
     //* 2.1 Transform entityTypes into a Map
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { searchType, entityTypes, ...rest } = values;
 
     const entityTypesProp = new Map(
@@ -128,9 +129,9 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
 
     //* 4. Update each authority service entity types preferences in IndexedDB: lookupServicePreferences table
     for (const entityType of values.entityTypes) {
-      const currentValue = await db.lookupServicePreferences.get(`${values.id}-${entityType.name}`);
+      const currentValue = await db.lookupServicePreferences.get(`${values.id}:${entityType.name}`);
       await db.lookupServicePreferences.put({
-        id: `${values.id}-${entityType.name}`,
+        id: `${values.id}:${entityType.name}`,
         authorityId: values.id,
         entityType: entityType.name,
         priority: currentValue?.priority ?? Infinity,

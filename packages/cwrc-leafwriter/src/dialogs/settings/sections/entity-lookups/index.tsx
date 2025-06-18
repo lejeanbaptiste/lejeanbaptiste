@@ -11,7 +11,7 @@ export const EntityLookups = () => {
 
   const entityTypes = useLiveQuery(() =>
     db.lookupServicePreferences.toCollection().primaryKeys((key: string[]) => {
-      const uniqueTypes = new Set(key.map((key) => key.split('-')[1] as NamedEntityType));
+      const uniqueTypes = new Set(key.map((key) => key.split(':')[1] as NamedEntityType));
       const sortedTypes = Array.from(uniqueTypes).toSorted((a, b) => {
         return namedEntityTypes.indexOf(a) - namedEntityTypes.indexOf(b);
       });

@@ -77,6 +77,7 @@ const convertConfigIntoServiceObject = (
       entityTypesProp.set(entityType, { name: entityType });
       return;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { priority, ...rest } = entityType;
     entityTypesProp.set(entityType.name, rest);
   });
@@ -131,13 +132,13 @@ export const initializeLookupPreferences = async (authorityServices: AuthoritySe
       let priority = Infinity;
 
       intServ?.entityTypes.forEach((type) => {
-        typeof type !== 'string' &&
-          type.name === entityType &&
-          (priority = type.priority ?? Infinity);
+        if (typeof type !== 'string' && type.name === entityType) {
+          priority = type.priority ?? Infinity;
+        }
       });
 
       lookupPreferences.push({
-        id: `${id}-${entityType}`,
+        id: `${id}:${entityType}`,
         authorityId: id,
         entityType,
         priority,
@@ -197,13 +198,13 @@ const updateLookupPreferences = async (authorityServices: AuthorityServices) => 
         let priority = Infinity;
 
         intServ?.entityTypes.forEach((type) => {
-          typeof type !== 'string' &&
-            type.name === entityType &&
-            (priority = type.priority ?? Infinity);
+          if (typeof type !== 'string' && type.name === entityType) {
+            priority = type.priority ?? Infinity;
+          }
         });
 
         lookupPreferences.push({
-          id: `${authorityService.id}-${entityType}`,
+          id: `${authorityService.id}:${entityType}`,
           authorityId: authorityService.id,
           entityType,
           priority,
@@ -231,13 +232,13 @@ const updateLookupPreferences = async (authorityServices: AuthorityServices) => 
         let priority = Infinity;
 
         intServ?.entityTypes.forEach((type) => {
-          typeof type !== 'string' &&
-            type.name === entityType &&
-            (priority = type.priority ?? Infinity);
+          if (typeof type !== 'string' && type.name === entityType) {
+            priority = type.priority ?? Infinity;
+          }
         });
 
         lookupPreferences.push({
-          id: `${authorityService.id}-${entityType}`,
+          id: `${authorityService.id}:${entityType}`,
           authorityId: authorityService.id,
           entityType,
           priority,
