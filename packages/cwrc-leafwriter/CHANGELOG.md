@@ -4,8 +4,9 @@
 
 ### Patch Changes
 
-- Fix Regression: lookupServicePreferences: replace authority-entity id separator from "-" to ":". This allows authorities with 2 or more words (since we use dash — when
+- [1980cfb997aa1902038bc3b083e2ad550a56b726] Fix Regression: lookupServicePreferences: replace authority-entity id separator from "-" to ":". This allows authorities with 2 or more words (since we use dash — when
 creating slugs)
+- [f004e9bbd59773137b8a7ed5d308791c4addc052] upgrade indexedDB:lookupServicePreferences: replace id separator (-) for (:)
 
 ## 3.7.0
 
