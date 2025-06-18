@@ -93,13 +93,10 @@ const icons = {
 };
 
 export type IconName =
-  typeof icons extends Record<
-    infer I,
-    OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & {
-      muiName: string;
-    }
-  >
-    ? I
+  typeof icons extends Record<infer K, unknown>
+    ? K extends keyof typeof icons
+      ? K
+      : never
     : never;
 
 export const getIcon = (name: IconName) => {
