@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.7.1
+
+### Patch Changes
+
+- Fix Regression: lookupServicePreferences: replace authority-entity id separator from "-" to ":". This allows authorities with 2 or more words (since we use dash — when
+creating slugs)
+
 ## 3.7.0
 
 ### What's new
@@ -38,7 +45,6 @@ For more information about this features check these documents:
 
 - [Guidance for LEAF-Writer (LW) Project-Specific Authority Files](https://docs.google.com/document/d/1R5NvSXMZZDMcvNg85fBTCZlAyLUlG7Q_-2KLVqDvpxU/edit?tab=t.0#heading=h.lz4sthbsce1b)
 - [LEAF-Writer – CatCor Proposal](https://docs.google.com/document/d/1l5eb2nndtGkvBdQxCd5cikmfAugEVaMGGzoXvtpB8rM/edit?tab=t.0#heading=h.fg8ieafojbsw)
-
 
 ### Minor Changes
 
