@@ -13,7 +13,7 @@ export const useLookupServicePrefeneces = () => {
 
     db.lookupServicePreferences.bulkUpdate(
       preferencesForAuthority.map((type) => ({
-        key: `${authorityId}-${type.entityType}`,
+        key: `${authorityId}:${type.entityType}`,
         changes: {
           disabled: !isAllEntityTypesDisabled,
           priority: Infinity,

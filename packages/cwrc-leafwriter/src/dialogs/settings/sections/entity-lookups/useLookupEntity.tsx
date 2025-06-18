@@ -4,11 +4,11 @@ import type { LookupServicePreference, NamedEntityType } from '../../../../types
 export const useLookupServicePrefeneces = () => {
   const toggleLookupEntity = async (authorityId: string, entityType: NamedEntityType) => {
     const entityTypePreference = await db.lookupServicePreferences.get(
-      `${authorityId}-${entityType}`,
+      `${authorityId}:${entityType}`,
     );
     if (!entityTypePreference) return;
 
-    db.lookupServicePreferences.update(`${authorityId}-${entityType}`, {
+    db.lookupServicePreferences.update(`${authorityId}:${entityType}`, {
       disabled: !entityTypePreference.disabled,
     });
   };
@@ -16,7 +16,7 @@ export const useLookupServicePrefeneces = () => {
   const reorderLookupPriority = (servicePreferences: LookupServicePreference[]) => {
     db.lookupServicePreferences.bulkUpdate(
       servicePreferences.map((servicePreference, index) => ({
-        key: `${servicePreference.authorityId}-${servicePreference.entityType}`,
+        key: `${servicePreference.authorityId}:${servicePreference.entityType}`,
         changes: { priority: index },
       })),
     );
