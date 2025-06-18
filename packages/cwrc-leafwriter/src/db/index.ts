@@ -61,6 +61,23 @@ export class DexieDB extends Dexie {
       lookupServicePreferences: 'id, authorityId, entityType, priority',
       suspendedDocuments: 'uuid',
     });
+    this.version(5)
+      .stores({
+        authorityServices: null,
+        customAuthorityServices: 'id, searchType',
+        customSchemas: 'id, mapping',
+        doNotDisplayDialogs: 'id',
+        lookupServicePreferences: 'id, authorityId, entityType, priority',
+        suspendedDocuments: 'uuid',
+      })
+      .upgrade((tx) => {
+        return tx
+          .table('lookupServicePreferences')
+          .toCollection()
+          .modify((lookupServicePreference) => {
+            lookupServicePreference.id = `${lookupServicePreference.authorityId}:${lookupServicePreference.entityType}`;
+          });
+      });
   }
 }
 
