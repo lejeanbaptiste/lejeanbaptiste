@@ -69,7 +69,6 @@ class SchemaManager {
     this.writer = writer;
 
     this.mapper = new Mapper(writer);
-    //@ts-ignore
     // this.navigator = new SchemaNavigator();
 
     this.getChildrenForTag = (tag) => schemaNavigator.getChildrenForTag(tag);
@@ -132,7 +131,7 @@ class SchemaManager {
    * @returns The schemaId
    */
   isRootSupported(root: string) {
-    const schemaMapping = Array.from(this.mapper.mappings.entries()).some(([_id, mapping]) =>
+    const schemaMapping = Array.from(this.mapper.mappings.entries()).some(([, mapping]) =>
       mapping.root.includes(root),
     );
 
@@ -145,7 +144,7 @@ class SchemaManager {
    * @returns The schemaId
    */
   getSchemaIdFromRoot(root: string) {
-    const schemaMapping = Array.from(this.mapper.mappings.entries()).find(([_id, mapping]) =>
+    const schemaMapping = Array.from(this.mapper.mappings.entries()).find(([, mapping]) =>
       mapping.root.includes(root),
     );
 
@@ -161,7 +160,7 @@ class SchemaManager {
    * @returns The schemaId
    */
   getMappingIdsFromRoot(root: string) {
-    const schemaMappings = Array.from(this.mapper.mappings.entries()).filter(([_id, mapping]) =>
+    const schemaMappings = Array.from(this.mapper.mappings.entries()).filter(([, mapping]) =>
       mapping.root.includes(root),
     );
 
@@ -388,10 +387,8 @@ class SchemaManager {
    */
   isAttributeValidForTag(attributeName: string, tagName: string) {
     const atts = this.getAttributesForTag(tagName);
-    for (let i = 0; i < atts.length; i++) {
-      if (atts[i].name === attributeName) {
-        return true;
-      }
+    for (const att of atts) {
+      if (att.name === attributeName) return true;
     }
     return false;
   }
