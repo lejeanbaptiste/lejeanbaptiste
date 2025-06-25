@@ -857,8 +857,15 @@ class SchemaManager {
       return;
     }
 
+    // We set the CSS schema entry based on the following priority:
+    // - the document css
+    // - the css assi--ai-size-sm)
+    let CSSset = new Set<string>();
+    if (this.documentCssUrl) CSSset.add(this.documentCssUrl);
+    CSSset = new Set([...CSSset, ...schemaEntry.css]);
+
     //load resource
-    const cssData = await this.loadCSSFile(css ? [css] : schemaEntry.css);
+    const cssData = await this.loadCSSFile([...CSSset]);
     if (!cssData) {
       // this.writer.dialogManager.show('message', {
       //   title: 'Error',
@@ -925,11 +932,6 @@ class SchemaManager {
    * @returns {String} The CSS
    */
   private async loadCSSFile(urls: string[]) {
-    // prioritize the document CSS
-    if (this.documentCssUrl && !urls.includes(this.documentCssUrl)) {
-      urls = [this.documentCssUrl, ...urls];
-    }
-
     let isAltRoute = false;
 
     let attempt = 0;
