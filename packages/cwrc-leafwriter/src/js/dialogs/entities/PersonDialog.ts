@@ -133,10 +133,8 @@ class PersonDialog implements SchemaDialog {
       (event: JQuery.Event, config: any, dialog: DialogForm) => {
         const roleChoices: Role[] = this.roleAtt?.choices ? this.roleAtt.choices : defaultRoles;
         const sortedRoleChoices = roleChoices.sort((a, b) => {
-          const A = a.label.toUpperCase();
-          const B = b.label.toUpperCase();
-          if (A < B) return -1;
-          if (A > B) return 1;
+          if (a.label.toUpperCase() < b.label.toUpperCase()) return -1;
+          if (a.label.toUpperCase() > b.label.toUpperCase()) return 1;
           return 0;
         });
         const choiceOptions = this.generateRoleOptions(sortedRoleChoices);
