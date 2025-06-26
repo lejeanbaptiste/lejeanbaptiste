@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 3.7.2
+
+### Patch Changes
+
+- [9d8744e11e1571b31bddc3b95c335c14eff813ad] Get sample and templates from a new repo: [LEAF-templates](https://github.com/LEAF-VRE/LEAF-templates) (Closes: #273)
+- Updated dependencies
+  - @cwrc/leafwriter@3.8.2
+
 ## 3.7.1
 
 ### Patch Changes
