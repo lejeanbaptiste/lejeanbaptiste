@@ -1,11 +1,25 @@
 # CHANGELOG
 
+## 3.8.0
+
+### Minor Changes
+
+- [c43493148c25229872ae62745ce3996f6238f7fb] Annotation / Entity: Person: Change option type from `both` to `fictionalized` (Closes: #272)
+This change makes the tag more semantically correct, producing `<persName type="fictionalized">` instead of `<persName type="both">`.
+It does not change the JSON-LD output.
+
+### Patch Changes
+
+- [372a4144969b01829f30787f03d2c8e8054a58bb] Ensure load css fallback if document css is not present or failed to load (Closes: #274)
+
+- \_\_
+
 ## 3.7.1
 
 ### Patch Changes
 
 - [1980cfb997aa1902038bc3b083e2ad550a56b726] Fix Regression: lookupServicePreferences: replace authority-entity id separator from "-" to ":". This allows authorities with 2 or more words (since we use dash — when
-creating slugs)
+  creating slugs)
 - [f004e9bbd59773137b8a7ed5d308791c4addc052] upgrade indexedDB:lookupServicePreferences: replace id separator (-) for (:)
 
 ## 3.7.0
