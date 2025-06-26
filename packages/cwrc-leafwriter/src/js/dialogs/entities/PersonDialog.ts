@@ -22,7 +22,7 @@ interface Role {
   value: string;
 }
 
-const personTypeOptions = ['real', 'fictional', 'both'];
+const personTypeOptions = ['real', 'fictional', 'fictionalized'];
 const certaintyOptions = ['high', 'medium', 'low', 'unknown'];
 
 class PersonDialog implements SchemaDialog {
