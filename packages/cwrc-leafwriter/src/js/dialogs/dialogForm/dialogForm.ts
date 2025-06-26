@@ -43,8 +43,8 @@ interface CurrentDataProps {
 }
 
 class DialogForm {
-  static ADD: 0 = 0;
-  static EDIT: 1 = 1;
+  static ADD = 0;
+  static EDIT = 1;
 
   readonly writer: Writer;
   readonly $el: JQuery<HTMLElement>;
