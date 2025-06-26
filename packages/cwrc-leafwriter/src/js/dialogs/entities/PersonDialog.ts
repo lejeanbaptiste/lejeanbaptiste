@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
 import $ from 'jquery';
@@ -30,7 +31,15 @@ class PersonDialog implements SchemaDialog {
 
   readonly id: string;
   readonly mappingID: SchemaMappingType;
-  readonly roleAtt: any;
+  readonly roleAtt?: {
+    choices?: string[];
+    defaultValue?: string;
+    documentation?: string;
+    fullName?: string;
+    level?: number;
+    name: string;
+    required?: boolean;
+  };
 
   entry?: Entity;
   selectedText?: string;
@@ -91,6 +100,7 @@ class PersonDialog implements SchemaDialog {
 
     const $el = $(html).appendTo(parentEl);
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     const $relinkButton = $(`#${this.id}_tagAs .relink-bt`, $el).button();
     $relinkButton.on('click', () => {
@@ -130,8 +140,10 @@ class PersonDialog implements SchemaDialog {
 
     this.dialog.$el.on(
       'buildDynamicFields',
-      (event: JQuery.Event, config: any, dialog: DialogForm) => {
-        const roleChoices: Role[] = this.roleAtt?.choices ? this.roleAtt.choices : defaultRoles;
+      (_event: JQuery.Event, _config: unknown, _dialog: DialogForm) => {
+        const roleChoices =
+          this.roleAtt?.choices?.map((choice) => ({ value: choice, label: choice })) ??
+          defaultRoles;
         const sortedRoleChoices = roleChoices.sort((a, b) => {
           if (a.label.toUpperCase() < b.label.toUpperCase()) return -1;
           if (a.label.toUpperCase() > b.label.toUpperCase()) return 1;
@@ -142,14 +154,18 @@ class PersonDialog implements SchemaDialog {
       },
     );
 
-    this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any, dialog: DialogForm) => {
-      //Roles
-      const typeValue = optionsRoleElement.val();
-      const showOtherTypeTextField = !this.roleAtt?.choices && typeValue === 'other' ? true : false;
-      this.toggleOtherTypeTextField(showOtherTypeTextField);
-    });
+    this.dialog.$el.on(
+      'beforeShow',
+      (_event: JQuery.Event, _config: unknown, _dialog: DialogForm) => {
+        //Roles
+        const typeValue = optionsRoleElement.val();
+        const showOtherTypeTextField =
+          !this.roleAtt?.choices && typeValue === 'other' ? true : false;
+        this.toggleOtherTypeTextField(showOtherTypeTextField);
+      },
+    );
 
-    this.dialog.$el.on('beforeSave', (event: JQuery.Event, dialog: DialogForm) => {
+    this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {
       //replace other type option for custom defined value
       if (!this.roleAtt?.choices && optionsRoleElement.val() === 'other') {
         const otherRoleFieldValue = dialog.$el.find(`#${this.id}_personOtherRole`).val();
@@ -160,7 +176,7 @@ class PersonDialog implements SchemaDialog {
       }
     });
 
-    optionsRoleElement.on('change', (event: any) => {
+    optionsRoleElement.on('change', (event: JQuery.ChangeEvent) => {
       if (this.roleAtt?.choices) return;
       const target = $(event.target);
       const otherRoleSelected = target.val() === 'other' ? true : false;
@@ -398,7 +414,8 @@ class PersonDialog implements SchemaDialog {
     `;
   }
 
-  show(config: { [x: string]: any; entry: Entity; query: string }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  show(config: { entry: Entity; query: string; [x: string]: any }) {
     this.entry = config.entry ? config.entry : undefined;
     this.selectedText = config.entry ? config.entry.content : config.query;
 
