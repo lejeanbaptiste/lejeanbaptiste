@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## 4.0.2
+
+### Patch Changes
+
+- update dependencies [d35ad83b864638755f7d392a97434b6abede99c4]
+  - core:
+    - update:
+      - axios@1.10.0
+      - motion@12.19.2
+    - bump:
+      - @emotion/styled@11.14.1
+      - @mui/icons-material@7.1.2
+      - @mui/material@7.1.2
+      - react-i18next@15.5.3
+      - zod@3.25.67
+  - dev:
+    - update: ts-jest@29.4.0
+    - bump:
+      - @types/lodash@4.17.19
+      - @types/node@22.15.33
+      - typedoc@0.28.6
+
 ## 4.0.1
 
 ### Patch Changes
@@ -15,7 +37,7 @@
       - i18next@25.2.1 [8f0fc3f52e249f8a4116552d484a739cc456912d]
     - update:
       - axios@1.9.0 [8f0fc3f52e249f8a4116552d484a739cc456912d]
-      - motion@12.16.0  [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - motion@12.16.0 [8f0fc3f52e249f8a4116552d484a739cc456912d]
       - react-i18next@15.5.2 [8f0fc3f52e249f8a4116552d484a739cc456912d]
       - react-icons@5.5.0 [ab4d58d05b891f84efe7a178f4bfb2e5ea2e4291]
       - zod@3.25.55 [8f0fc3f52e249f8a4116552d484a739cc456912d]
@@ -171,7 +193,6 @@ See changes below (4.0.0-beta.1 and 4.0.0-beta.0)
 
 - [e95ec8fa930395aee47828a8d5aeeaae38e8e74f]fix i18next call to work with i18ally
 - update dependencies:
-
   - core:
     - upgrade:
       - octokit/rest@20.1.0 [18f68dd9b6b848b580a2836340a801ec96c1365c]
@@ -719,7 +740,6 @@ Add language as an optional property to settings. Now we can explicitly tell the
 - Miscellaneous:
   - Reorganize folder structure. [819bbd13facd761ab304d58964e1a3537a785758]
 - Update Dependencies:
-
   - core: [c250d6e77f3857bb4d53945764c1aedbb52e97db]
     - update:
       - framer-motion@10.10.0
@@ -746,7 +766,6 @@ Add language as an optional property to settings. Now we can explicitly tell the
       - @types/lodash@4.14.192 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
 
   ### Tests
-
   - Refactoring [767dfaeb8657620cf7fca0652c3c7b0977001128]
 
 ## 1.3.9

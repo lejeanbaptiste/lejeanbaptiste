@@ -1,12 +1,33 @@
 # CHANGELOG
 
+## 3.8.1
+
+### Patch Changes
+
+- regression: pass the authority ID to the search (reconcile) function [9efcca82d61dc8f710bcb4f30dec15d5298915e3] (Closes: #275)
+- Update dependencies [311699e1445b5f60d05bba045644391d2e0bf9b3]
+  - core:
+    - update:
+      - motion@12.19.2
+      - react-virtuoso@4.13.0
+    - bump:
+      - @emotion/styled@11.14.1
+      - @fontsource/lato@5.2.6
+      - @mui/icons-material@7.1.2
+      - @mui/material@7.1.2
+      - zod@3.25.67
+  - dev:
+    - bump:
+      - @types/node@22.15.33
+      - webpack@5.99.9
+
 ## 3.8.0
 
 ### Minor Changes
 
 - [c43493148c25229872ae62745ce3996f6238f7fb] Annotation / Entity: Person: Change option type from `both` to `fictionalized` (Closes: #272)
-This change makes the tag more semantically correct, producing `<persName type="fictionalized">` instead of `<persName type="both">`.
-It does not change the JSON-LD output.
+  This change makes the tag more semantically correct, producing `<persName type="fictionalized">` instead of `<persName type="both">`.
+  It does not change the JSON-LD output.
 
 ### Patch Changes
 
@@ -1203,7 +1224,6 @@ Some tasks in LEAF-Writer requires the manipualtion of the document as a way to 
 - User props: remove avatar_url & nick. Add uri. [7b9e9c69587e125b46f829689ab7e3421ae2967d]
 - Rename types [a6affdbdc116b3682ffe4202f0a5e0d00d43f8e1]
 - Update dependencies [91b130e51a7d4fde5fa86e987115f088d120d344]:
-
   - core:
     - update: axios@1.2.0
     - bump up:
@@ -1377,7 +1397,6 @@ More Dialogs are now centralized in a manager making UX more coherent.
 - certify the document comes from https when loading directly from url [01e805f188dedaeb34194dbdcde49a79fb5ebc27]
 - Strucure tree: reduce interference with top menu on commons [b339d0f77d151a2c76daba753866f63bd2c60c9b]
 - Update Dependencies [55f12f4806025fab0d8c39b716ead1d84c870168]:
-
   - core:
     - lock: tinymce@5.10.5
     - bump up:
@@ -1675,14 +1694,12 @@ We also removed mentions to `CWRC` and `NSSI` authorities. Instead of these two,
 ### Patch Changes
 
 - [fix]
-
   - [Settings Panel] Adjust lookups spacing and overall look
   - [Settings Panel] Improve header. Add close button.
   - [Status / bottom bar] Remove box shadow for better external integration
   - [General] Manage main container. Auto-defines the container height if not pre-defined
 
   [chore]
-
   - [webpack] Rename less parent Id to create a scope for leafwriter less generated css
   - [webpack] Unset publicPath. We can later use gloval var `webpack_public_path` to dynamically set the path where the files will be located. This is usuful for external integration where we don't know here the files will be placed.
   - [package] Expose both ts (for impor) and js (for require) on package.json
