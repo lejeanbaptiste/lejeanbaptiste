@@ -85,5 +85,5 @@ export const Wrapper = ({
     query !== '' && search({ query, type: lookupType });
   }, [authorities]);
 
-  return <>{children}</>;
+  return children;
 };
