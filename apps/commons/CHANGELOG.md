@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## 3.7.3
+
+### Patch Changes
+
+- Updated dependencies
+  - core:
+    - update:
+      - @cwrc/leafwriter-storage-service@4.0.2
+      - @cwrc/leafwriter@3.8.1
+      - axios@1.10.0
+      - i18next-browser-languagedetector@8.2.0
+      - motion@12.19.2
+    - bump:
+      - @emotion/styled@11.14.1
+      - @fontsource/lato@5.2.6
+      - @mui/icons-material@7.1.2
+      - @mui/lab@7.0.0-beta.14
+      - @mui/material@7.1.2
+      - query-string@9.2.1
+      - react-i18next@15.5.3
+      - react-router@7.6.3
+      - zod@3.25.67
+  - dev:
+    - bump:
+      - @types/compression@1.8.1
+      - @types/express@4.17.23
+      - @types/node@22.15.33
+
+
 ## 3.7.2
 
 ### Patch Changes
@@ -427,7 +456,6 @@
 - [98f69959de2d8c7e2b16c9482c774e34e48d67e9] simplify webpack config
   - Since it is a mororepo, webpack can get files from sibiling packages instead of navigating through node_modules
 - [c82d5e7c676abd2865de9ffc058ae28d7036bcc8] update dependencies
-
   - core:
     - update: axios@1.6.0
     - bump:
@@ -566,7 +594,6 @@
 - API
   - Update auth-api endpoints [ef91d4da30b8d1ecd242dc8fee92e2183ba622a9] (closes #161)
 - Localization
-
   - Fix localization path [ce5deb9101b46f80527a5529790f14934b936da1]
 
 - Updated dependencies [acb5d910689603b9c1484e81428df63a69a99734]
@@ -1091,7 +1118,6 @@ Add the ability to switch LEAF-Wrirter `readonly` mode on and off.
 - Prevent editor from refresh when saveas dialog opens (#101) [fb2183bfdbb0d64e6caefdb5527c43ca96d6f2d5]
 - autosave: save lastedits instead of the current state of the documents (#105) [fb2183bfdbb0d64e6caefdb5527c43ca96d6f2d5]
 - update dependencies [548baff796c99927631221b24010bd8e579b0323]
-
   - core:
     - upgrade: framer-motion@9.0.0
     - update:
@@ -1835,7 +1861,6 @@ This version brings two new features:
 [924a08a]
 
 - **Update to Reac 18**
-
   - Update dependencies
 
 [924a08a]

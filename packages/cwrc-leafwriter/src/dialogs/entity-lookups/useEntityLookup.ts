@@ -81,7 +81,7 @@ export const useEntityLookup = () => {
         .search({
           query,
           entityType: type,
-          options: { authority, isUserAuthenticated },
+          options: { authorityId: authority.id, isUserAuthenticated },
         })
         .then((results) => onSearchResult(authority, results))
         .catch((error) => onSearchError(authority, error));
