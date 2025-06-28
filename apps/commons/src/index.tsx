@@ -1,4 +1,4 @@
-import { scan } from 'react-scan';
+// import { scan } from 'react-scan';
 
 import '@fontsource/lato/100.css';
 import '@fontsource/lato/300.css';
@@ -16,7 +16,7 @@ import { config } from './overmind';
 import './utilities/devtoolsLog';
 import './utilities/log';
 
-scan({ enabled: true });
+// scan({ enabled: true });
 
 const overmind = createOvermind(config, {
   name: 'Commons',
