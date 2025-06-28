@@ -4,6 +4,7 @@ import type { AnnotationUserProfileProps, User } from '@src/types';
 import Cookies from 'js-cookie';
 import { Context } from '../index';
 import type { LinkedAccount } from './effects';
+import { effects } from '.';
 
 //* INIITIALIZE
 export const onInitializeOvermind = async ({ actions, effects }: Context, overmind: any) => {
@@ -56,7 +57,11 @@ export const getKeycloakAuthToken = async ({ effects }: Context) => {
 
 export const setupMainIdentityProvider = async ({ actions, effects }: Context, token: string) => {
   const identity_provider = effects.auth.api.getIdentityProvider();
-  if (!identity_provider) return log.warn('No identity_provider');
+  if (!identity_provider) {
+    await actions.auth.signOut();
+    log.warn('No identity_provider', 'log user off');
+    return;
+  }
 
   const IDPTokens = await effects.auth.api.getExternalIDPTokens(identity_provider, token);
 
