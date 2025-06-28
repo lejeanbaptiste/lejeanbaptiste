@@ -33,6 +33,7 @@ interface tokenParsed extends KeycloakTokenParsed {
 authenticate the user and get the user's profile data */
 
 const getLincsAuthApi = (baseUrl: string) => initClient(contract.v1, { baseUrl, baseHeaders: {} });
+
 export class Api {
   readonly clientId: string;
   readonly LINK_ACCOUNTS_CALLBACK_URL: string;
