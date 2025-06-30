@@ -1,6 +1,5 @@
 import 'css-tooltip';
 import $ from 'jquery';
-// import Mapper from '../../schema/mapper';
 import { RESERVED_ATTRIBUTES } from '../../schema/mapper';
 import { capitalizeFirstLetter } from '../../utilities';
 import Writer from '../../Writer';
@@ -88,9 +87,11 @@ class AttributeWidget {
     }
 
     //sort attributes
-    atts = this.sortAttributes(atts);
-
-    // const disallowedAttributes = Mapper.reservedAttributes;
+    atts = atts.toSorted((a, b) => {
+      if (a.name > b.name) return 1;
+      if (a.name < b.name) return -1;
+      return 0;
+    });
 
     // build atts
     let attsString = '';
@@ -150,7 +151,12 @@ class AttributeWidget {
       const div = $(`[data-name="form_${name}"]`, this.$el);
 
       $(currentTarget).toggleClass('selected');
-      $(currentTarget).hasClass('selected') ? div.show() : div.hide();
+
+      if ($(currentTarget).hasClass('selected')) {
+        div.show();
+      } else {
+        div.hide();
+      }
     });
 
     //Handle field inputs events
@@ -220,6 +226,7 @@ class AttributeWidget {
     documentation?: string | any[];
     isRequired?: boolean;
   }) {
+    // console.log(displayName);
     // TODO add list support
     // if ($('list', attDef).length > 0) {
     //   currAttString += '<input type="text" name="'+att.name+'" value="'+att.defaultValue+'"/>';
@@ -379,6 +386,7 @@ class AttributeWidget {
     return Object.fromEntries(attributes);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   destroy() {}
 }
 

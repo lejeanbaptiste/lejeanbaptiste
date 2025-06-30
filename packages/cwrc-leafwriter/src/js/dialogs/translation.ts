@@ -49,6 +49,7 @@ class Translation implements LWDialogProps {
         </div>
       </div>`).appendTo(parentEl);
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$el.dialog({
       title: 'Tag Translation',
@@ -62,6 +63,7 @@ class Translation implements LWDialogProps {
         {
           text: 'Cancel',
           role: 'cancel',
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           //@ts-ignore
           click: () => this.$el.dialog('close'),
         },
@@ -70,13 +72,16 @@ class Translation implements LWDialogProps {
           role: 'ok',
           click: () => {
             this.formResult();
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             //@ts-ignore
             this.$el.dialog('close');
           },
         },
       ],
-      open: (event: JQuery.Event) => {},
-      close: (event: JQuery.Event) => {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+      open: (_event: JQuery.Event) => {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+      close: (_event: JQuery.Event) => {},
     });
 
     const langOptions = iso6392.reduce((result: { name: string; value: string }[], lang) => {
@@ -108,16 +113,15 @@ class Translation implements LWDialogProps {
     });
 
     $(`#${this.id}_lang`).on('change', (event) => {
-      //@ts-ignore
-      const value = event.target.value;
+      const value = (event.target as HTMLSelectElement).value;
       this.attributesWidget.setAttribute(this.langAttribute, value);
     });
 
     $(`#${this.id}_resp`).on('change', (event) => {
-      //@ts-ignore
-      event.target.checked
-        ? this.attributesWidget.setAttribute(this.respAttribute, this.writer.getUserInfo().name)
-        : this.attributesWidget.setAttribute(this.respAttribute, undefined);
+      const target = event.target as HTMLInputElement;
+      const checked = target.checked;
+      const responsible = checked ? this.writer.getUserInfo().name : undefined;
+      this.attributesWidget.setAttribute(this.respAttribute, responsible);
     });
   }
 
@@ -181,6 +185,7 @@ class Translation implements LWDialogProps {
 
     const attributes = this.attributesWidget.getData();
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     const currTagId = this.writer.tagger.getCurrentTag().attr('id');
 
@@ -204,6 +209,7 @@ class Translation implements LWDialogProps {
   }
 
   show() {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     const currTag = this.writer.tagger.getCurrentTag().attr('_tag');
     if (currTag !== this.tagName) {
@@ -220,7 +226,12 @@ class Translation implements LWDialogProps {
       this.respAttribute,
       this.tagName,
     );
-    hasResp ? $resp.parent().show() : $resp.parent().hide();
+
+    if (hasResp) {
+      $resp.parent().show();
+    } else {
+      $resp.parent().hide();
+    }
 
     $resp.prop('checked', false);
 
@@ -243,11 +254,13 @@ class Translation implements LWDialogProps {
 
     this.attributesWidget.buildWidget(atts, initVals, this.tagName);
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$el.dialog('open');
   }
 
   destroy() {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$el.dialog('destroy');
   }
