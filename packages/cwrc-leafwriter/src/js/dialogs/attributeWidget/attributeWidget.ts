@@ -124,9 +124,11 @@ class AttributeWidget {
       //required attribute
       const requiredClass = isRequired ? ' required' : '';
 
+      //disable the 'type' attribute for some kind of entities
       const disabledAttributes: string[] = [];
-      if (tagName === 'persName' && isEntity) {
-        disabledAttributes.push('type');
+      if (isEntity) {
+        if (tagName === 'persName') disabledAttributes.push('type');
+        if (tagName === 'rs') disabledAttributes.push('type');
       }
 
       //create selector component
