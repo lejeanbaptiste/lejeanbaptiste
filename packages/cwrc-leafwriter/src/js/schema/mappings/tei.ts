@@ -24,7 +24,7 @@ const person: EntityMappingProps = {
       case 'fictional':
         types = ['schema:Person', 'cwrc:FictionalPerson'];
         break;
-      case 'fictionalized':
+      case 'identifiable':
         types = ['cwrc:NaturalPerson', 'schema:Person', 'cwrc:FictionalPerson'];
         break;
       default:
