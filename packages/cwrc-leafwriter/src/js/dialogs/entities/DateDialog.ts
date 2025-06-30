@@ -221,7 +221,7 @@ class DateDialog implements SchemaDialog {
 
       if (this.schemaMappingMatch(['orlando', 'cwrcEntry'])) {
         const atts = this.writer.schemaManager.getAttributesForTag(type);
-        this.dialog.attributesWidget?.buildWidget(atts);
+        this.dialog.attributesWidget?.buildWidget({ atts, tagName: type });
         this.dialog.attWidgetInit = true;
         this.dialog.attributesWidget?.reset();
       }

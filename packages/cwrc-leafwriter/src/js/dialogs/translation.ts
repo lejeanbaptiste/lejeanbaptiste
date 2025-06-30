@@ -252,7 +252,7 @@ class Translation implements LWDialogProps {
       langAttribute: firstLang,
     };
 
-    this.attributesWidget.buildWidget(atts, initVals, this.tagName);
+    this.attributesWidget.buildWidget({ atts, initialVals: initVals, tagName: this.tagName });
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
