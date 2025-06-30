@@ -368,14 +368,19 @@ class PersonDialog implements SchemaDialog {
           <p class="fieldLabel">${fieldTitle}</p>
         </div>
 
+        <div>
         ${personTypeOptions
           .map((type) => {
             return `
-              <input type="radio" id="${id}_${type}" name="${id}_type_certainty" value="${type}" />
+              <input type="radio" id="${id}_${type}" name="${id}_type" value="${type}" />
               <label for="${id}_${type}" style="text-transform: capitalize;">${type}</label>
             `;
           })
           .join('\n')}
+        </div>
+        <p style="font-size: 0.7rem; color: #666; margin-top: 8px;">
+          Learn more about Person Types <a href="https://vocab.lincsproject.ca/Skosmos/edit/en/page/ModeExistence" target="_blank" style="border: unset; background-color: unset; padding: unset; text-decoration: revert; vertical-align: baseline;">here</a>.
+        </p>
       </div>
     `;
 
