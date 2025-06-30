@@ -300,13 +300,15 @@ class DialogForm {
   }
 
   private initAttributeWidget(dialogInstance: DialogForm, config: DialogFormShowConfig) {
-    const tag = config.entry
+    const tagName = config.entry
       ? config.entry.tag
       : dialogInstance.writer.schemaManager.mapper.getParentTag(dialogInstance.type);
-    if (!tag) return;
+    if (!tagName) return;
 
-    const atts = dialogInstance.writer.schemaManager.getAttributesForTag(tag);
-    if (dialogInstance.attributesWidget) dialogInstance.attributesWidget.buildWidget(atts);
+    const atts = dialogInstance.writer.schemaManager.getAttributesForTag(tagName);
+    if (dialogInstance.attributesWidget) {
+      dialogInstance.attributesWidget.buildWidget({ atts, isEntity: true, tagName });
+    }
     dialogInstance.attWidgetInit = true;
   }
 

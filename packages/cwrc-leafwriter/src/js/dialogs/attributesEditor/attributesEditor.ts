@@ -212,7 +212,7 @@ class AttributesEditor implements LWDialogProps {
       ? this.writer.schemaManager.getAttributesForPath(tagPath)
       : this.writer.schemaManager.getAttributesForTag(tagName);
 
-    this.attributesWidget.buildWidget(atts, attributes, tagName);
+    this.attributesWidget.buildWidget({ atts, initialVals: attributes, tagName });
 
     const title = tagFullname ? `${tagName} ${tagFullname}` : tagName;
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

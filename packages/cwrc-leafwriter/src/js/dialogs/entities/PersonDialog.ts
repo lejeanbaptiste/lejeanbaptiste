@@ -70,7 +70,7 @@ class PersonDialog implements SchemaDialog {
         ${['tei', 'teiLite'].includes(this.mappingID) ? this.certaintyField(this.id) : ''}
         ${this.mappingID === 'tei' ? this.personTypeField(this.id) : ''}
         ${['tei', 'teiLite'].includes(this.mappingID) ? this.personRoleField(this.id) : ''}
-        ${['tei', 'teiLite'].includes(this.mappingID) ? this.otherTypeField(this.id) : ''}
+        ${['tei', 'teiLite'].includes(this.mappingID) ? this.otherRoleField(this.id) : ''}
       </div>
     `;
 
@@ -406,7 +406,7 @@ class PersonDialog implements SchemaDialog {
     return html;
   }
 
-  private otherTypeField(id: string) {
+  private otherRoleField(id: string) {
     const fieldTitle = 'Define Role';
 
     return `
