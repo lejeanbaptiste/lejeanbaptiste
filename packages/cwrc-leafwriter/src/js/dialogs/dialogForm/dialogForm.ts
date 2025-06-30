@@ -43,8 +43,8 @@ interface CurrentDataProps {
 }
 
 class DialogForm {
-  static ADD = 0;
-  static EDIT = 1;
+  static ADD = 0 as const;
+  static EDIT = 1 as const;
 
   readonly writer: Writer;
   readonly $el: JQuery<HTMLElement>;
@@ -55,9 +55,9 @@ class DialogForm {
   // set to false to cancel saving
   isValid = true;
   type: DialogType;
-  mode: 0 | 1 | null = null;
+  mode: typeof DialogForm.ADD | typeof DialogForm.EDIT | null = null;
 
-  currentId: string | null = null; // ADD or EDIT
+  currentId: string | null = null;
 
   currentData: CurrentDataProps = {
     attributes: {},
@@ -83,7 +83,7 @@ class DialogForm {
 
     $('[data-type]', dialogInstance.$el)
       .not('[data-type="attributes"]')
-      .each((index, element) => {
+      .each((_index, element) => {
         const formEl = $(element);
 
         if (formEl.parents('.cwrcDialogWrapper').length === 1) {
@@ -108,6 +108,7 @@ class DialogForm {
             switch (type) {
               case 'radio':
                 val = formEl.find('input:checked').val();
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 //@ts-ignore
                 data[dataKey][mapping] = val;
                 break;
@@ -115,6 +116,7 @@ class DialogForm {
               case 'hidden':
               case 'select':
                 val = formEl.val();
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 //@ts-ignore
                 if (val !== null) data[dataKey][mapping] = val;
                 break;
@@ -134,16 +136,18 @@ class DialogForm {
     const data = dialogInstance.currentData;
 
     $('[data-type]', dialogInstance.$el)
-      .filter((index, element) => {
+      .filter((_index, element) => {
         // don't include form elements from note entity children
         return $(element).parents('.cwrcWrapper').length === 1;
       })
-      .each(function (index, element) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .each(function (_index, _element) {
         const formEl = $(this);
         const type = formEl.data('type');
 
         if (type === 'attributes') {
           if (dialogInstance.attributesWidget) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const showWidget = dialogInstance.attributesWidget.setData(data.attributes);
             // if (showWidget) dialogInstance.attributesWidget.expand();
           }
@@ -170,16 +174,19 @@ class DialogForm {
 
           switch (type) {
             case 'select':
+              // eslint-disable-next-line no-case-declarations
               const selectedOption = $(`option[value="${value}"]`, formEl);
               if (!selectedOption[0]) value = 'other'; //if there is no option for the value, select 'other' option
               formEl.val(value);
 
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               //@ts-ignore
               if (formEl.data('transform') === 'selectmenu') formEl.selectmenu('refresh');
               // formEl.parents('[data-transform="accordion"]').accordion('option', 'active', 0);
               break;
 
             case 'radio':
+              // eslint-disable-next-line no-case-declarations
               let radioOption = $(`input[value="${value}"]`, formEl);
               if (!radioOption[0]) radioOption = $('input[value="other"]', formEl); //if there is no option for the value, check 'other' option
               radioOption.trigger('click');
@@ -211,6 +218,7 @@ class DialogForm {
 
     // this.cwrcWriterConfig = config.cwrcWriterConfig; // the config to use for the leafWriter
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$el.dialog({
       title,
@@ -218,7 +226,8 @@ class DialogForm {
       resizable: true,
       dialogClass: 'splitButtons',
       closeOnEscape: false,
-      open: (event: JQuery.Event, ui: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      open: (_event: JQuery.Event, _ui: unknown) => {
         this.$el.parent().find('.ui-dialog-titlebar-close').hide();
       },
       height,
@@ -232,6 +241,7 @@ class DialogForm {
           click: () => {
             this.$el.trigger('beforeCancel');
             this.$el.trigger('beforeClose');
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             //@ts-ignore
             this.$el.dialog('close');
           },
@@ -244,7 +254,7 @@ class DialogForm {
       ],
     });
 
-    $('[data-transform]', this.$el).each((index, element) => {
+    $('[data-transform]', this.$el).each((_index, element) => {
       const formEl = $(element);
       const transform = formEl.data('transform');
 
@@ -255,6 +265,7 @@ class DialogForm {
         //   formEl.controlgroup({ icon: false });
         //   break;
         case 'controlgroup':
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           //@ts-ignore
           formEl.controlgroup({ icon: false });
           break;
@@ -268,6 +279,7 @@ class DialogForm {
         //   });
         //   break;
         case 'selectmenu':
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           //@ts-ignore
           formEl.selectmenu({
             appendTo: this.writer.layoutManager.getContainer(),
@@ -277,7 +289,7 @@ class DialogForm {
 
     $('[data-type="attributes"]', this.$el)
       .first()
-      .each((index, element) => {
+      .each((_index, element) => {
         this.attributesWidget = new AttributeWidget({
           writer: this.writer,
           $parent: this.$el,
@@ -310,12 +322,13 @@ class DialogForm {
     this.$el.trigger('buildDynamicFields', [config, this]);
 
     // reset the form
-    $('[data-type]', this.$el).each((index, element) => {
+    $('[data-type]', this.$el).each((_index, element) => {
       const formEl = $(element);
       const type = formEl.data('type');
 
       switch (type) {
         case 'radio':
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           //@ts-ignore
           formEl.find('input').checkboxradio({ icon: false });
           formEl.find('input').prop('checked', false); // reset all
@@ -325,6 +338,7 @@ class DialogForm {
         case 'select':
           formEl.val('');
           if (formEl.data('transform') === 'selectmenu') {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             //@ts-ignore
             formEl.selectmenu('refresh');
           }
@@ -404,6 +418,7 @@ class DialogForm {
 
       // copy mapped properties to currentData
       mappedProps?.forEach((propName) => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
         this.currentData.properties[propName] = config.entry?.[propName];
       });
@@ -412,6 +427,7 @@ class DialogForm {
     DialogForm.populateForm(this);
     this.$el.trigger('beforeShow', [config, this]);
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$el.dialog('open');
   }
@@ -424,6 +440,7 @@ class DialogForm {
 
     if (this.isValid) {
       this.$el.trigger('beforeClose');
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       //@ts-ignore
       this.$el.dialog('close');
 
@@ -440,7 +457,7 @@ class DialogForm {
     if (this.attributesWidget) this.attributesWidget.destroy();
     if (this.leafWriter) this.leafWriter.destroy();
 
-    $('[data-transform]', this.$el).each((index, element) => {
+    $('[data-transform]', this.$el).each((_index, element) => {
       const formEl = $(element);
 
       // check to see if the control has been instantiated
@@ -457,6 +474,7 @@ class DialogForm {
           //   formEl.controlgroup('destroy');
           //   break;
           case 'controlgroup':
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             //@ts-ignore
             formEl.controlgroup('destroy');
             break;
@@ -464,6 +482,7 @@ class DialogForm {
           //   formEl.accordion('destroy');
           //   break;
           case 'selectmenu':
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             //@ts-ignore
             formEl.selectmenu('destroy');
             break;

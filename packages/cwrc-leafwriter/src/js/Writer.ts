@@ -249,7 +249,7 @@ class Writer extends EventManager {
     return this.overmindState.document.url;
   }
 
-  getUserInfo = () => {
+  getUserInfo = (): { id: string; name: string } => {
     const { uri, name } = this.overmindState.user;
     return { id: uri, name };
   };

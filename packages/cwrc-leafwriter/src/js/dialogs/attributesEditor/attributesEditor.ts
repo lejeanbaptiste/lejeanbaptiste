@@ -8,6 +8,7 @@ class AttributesEditor implements LWDialogProps {
   readonly $schemaDialog: JQuery<HTMLElement>;
   readonly attributesWidget: AttributeWidget;
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   currentCallback: Function | null = null;
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
@@ -39,6 +40,7 @@ class AttributesEditor implements LWDialogProps {
 
     let dialogOpenTimestamp = 0;
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$schemaDialog.dialog({
       modal: true,
@@ -51,11 +53,13 @@ class AttributesEditor implements LWDialogProps {
       minHeight: 400,
       minWidth: 510,
       autoOpen: false,
-      open: (event: JQuery.Event, ui: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      open: (event: JQuery.Event, _ui: unknown) => {
         dialogOpenTimestamp = event.timeStamp;
         this.$schemaDialog.parent().find('.ui-dialog-titlebar-close').hide();
       },
-      beforeClose: (event: JQuery.Event, ui: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      beforeClose: (event: JQuery.Event, _ui: unknown) => {
         // if the dialog was opened then closed immediately it was unintentional
         if (event.timeStamp - dialogOpenTimestamp < 150) return false;
       },
@@ -107,7 +111,12 @@ class AttributesEditor implements LWDialogProps {
     }
 
     const $hint = $(`.hint`, this.$schemaDialog);
-    show ? $hint.show() : $hint.hide();
+
+    if (show) {
+      $hint.show();
+    } else {
+      $hint.hide();
+    }
   };
 
   private warningAlertComponent = () => {
@@ -129,14 +138,17 @@ class AttributesEditor implements LWDialogProps {
     let attributes = this.attributesWidget.getData();
     if (!attributes) attributes = {}; // let form submit even if invalid (for now)
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$schemaDialog.dialog('close');
 
     // check if beforeClose cancelled or not
     if (this.$schemaDialog.is(':hidden')) {
       try {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
         $('ins', this.$schemaDialog).tooltip('destroy');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         log.info('error destroying tooltip');
       }
@@ -148,6 +160,7 @@ class AttributesEditor implements LWDialogProps {
 
   private cancel() {
     if (!this.writer.editor) return;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$schemaDialog.dialog('close');
 
@@ -156,8 +169,10 @@ class AttributesEditor implements LWDialogProps {
       this.writer.editor.selection.moveToBookmark(this.writer.editor.currentBookmark);
       // // writer.editor.currentBookmark = null;
       try {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
         $('ins', this.$schemaDialog).tooltip('destroy');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         log.info('error destroying tooltip');
       }
@@ -187,9 +202,11 @@ class AttributesEditor implements LWDialogProps {
       if (type) this.$schemaDialog.find('.entityWarning').show();
     }
 
-    $.isEmptyObject(attributes)
-      ? (this.attributesWidget.mode = AttributeWidget.ADD)
-      : (this.attributesWidget.mode = AttributeWidget.EDIT);
+    if ($.isEmptyObject(attributes)) {
+      this.attributesWidget.mode = AttributeWidget.ADD;
+    } else {
+      this.attributesWidget.mode = AttributeWidget.EDIT;
+    }
 
     const atts = tagPath
       ? this.writer.schemaManager.getAttributesForPath(tagPath)
@@ -198,8 +215,10 @@ class AttributesEditor implements LWDialogProps {
     this.attributesWidget.buildWidget(atts, attributes, tagName);
 
     const title = tagFullname ? `${tagName} ${tagFullname}` : tagName;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$schemaDialog.dialog('option', 'title', title);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$schemaDialog.dialog('open');
 
@@ -225,6 +244,7 @@ class AttributesEditor implements LWDialogProps {
     tagPath,
   }: {
     attributes: object;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     callback: Function;
     tagFullname?: string;
     tagName: string;
@@ -246,6 +266,7 @@ class AttributesEditor implements LWDialogProps {
     });
 
     this.attributesWidget.destroy();
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$schemaDialog.dialog('destroy');
   }
