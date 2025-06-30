@@ -25,7 +25,11 @@ const person: EntityMappingProps = {
         types = ['schema:Person', 'cwrc:FictionalPerson'];
         break;
       case 'identifiable':
-        types = ['cwrc:NaturalPerson', 'schema:Person', 'cwrc:FictionalPerson'];
+        types = [
+          'cwrc:NaturalPerson',
+          'schema:Person',
+          'http://id.lincsproject.ca/edit/modeIdentifiable',
+        ];
         break;
       default:
         types = 'cwrc:NaturalPerson';
