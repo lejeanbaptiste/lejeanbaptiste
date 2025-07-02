@@ -1,6 +1,5 @@
 import 'css-tooltip';
 import $ from 'jquery';
-// import Mapper from '../../schema/mapper';
 import { RESERVED_ATTRIBUTES } from '../../schema/mapper';
 import { capitalizeFirstLetter } from '../../utilities';
 import Writer from '../../Writer';
@@ -74,23 +73,35 @@ class AttributeWidget {
     }
   }
 
-  buildWidget(atts: any[], initialVals: any = {}, tag?: string) {
+  buildWidget({
+    atts,
+    initialVals = {},
+    isEntity = false,
+    tagName: tagName,
+  }: {
+    atts: any[];
+    initialVals?: any;
+    isEntity?: boolean;
+    tagName?: string;
+  }) {
     //reset
     $('.attributeSelector ul', this.$parent).empty();
     $('.attsContainer, .schemaHelp', this.$el).empty();
     this.isDirty = false;
 
-    if (this.showSchemaHelp && tag) {
-      const helpText = this.writer.schemaManager.getDocumentationForTag(tag);
+    if (this.showSchemaHelp && tagName) {
+      const helpText = this.writer.schemaManager.getDocumentationForTag(tagName);
       if (helpText !== '') {
         $('.annotationDialog').find('.schemaHelp').html(`${helpText}`);
       }
     }
 
     //sort attributes
-    atts = this.sortAttributes(atts);
-
-    // const disallowedAttributes = Mapper.reservedAttributes;
+    atts = atts.toSorted((a, b) => {
+      if (a.name > b.name) return 1;
+      if (a.name < b.name) return -1;
+      return 0;
+    });
 
     // build atts
     let attsString = '';
@@ -99,7 +110,6 @@ class AttributeWidget {
 
     for (const att of atts) {
       //skip disallowedAttributes
-      // if (disallowedAttributes[att.name]) continue;
       if (RESERVED_ATTRIBUTES.has(att.name)) continue;
 
       let currAttString = '';
@@ -114,21 +124,29 @@ class AttributeWidget {
       //required attribute
       const requiredClass = isRequired ? ' required' : '';
 
+      //disable the 'type' attribute for some kind of entities
+      const disabledAttributes: string[] = [];
+      if (isEntity) {
+        if (tagName === 'persName') disabledAttributes.push('type');
+        if (tagName === 'rs') disabledAttributes.push('type');
+      }
+
       //create selector component
-      attributeSelector += this.createAttributeSelector(
-        att.name,
+      attributeSelector += this.createAttributeSelector({
+        attributeName: att.name,
         displayName,
         requiredClass,
-        initialVals[att.name],
-      );
+        isInitial: initialVals?.[att.name],
+      });
 
       //field component
-      att.defaultValue = initialVals[att.name] ? initialVals[att.name] : '';
-      const display = initialVals[att.name] ? 'flex' : 'none';
+      att.defaultValue = initialVals?.[att.name] ? initialVals[att.name] : '';
+      const display = initialVals?.[att.name] ? 'flex' : 'none';
 
       currAttString = this.createAttributeField({
         attributeName: att.name,
         choices: att.choices,
+        disabled: disabledAttributes.includes(att.name),
         displayCSS: display,
         displayName,
         defaultValue: att.defaultValue,
@@ -150,7 +168,12 @@ class AttributeWidget {
       const div = $(`[data-name="form_${name}"]`, this.$el);
 
       $(currentTarget).toggleClass('selected');
-      $(currentTarget).hasClass('selected') ? div.show() : div.hide();
+
+      if ($(currentTarget).hasClass('selected')) {
+        div.show();
+      } else {
+        div.hide();
+      }
     });
 
     //Handle field inputs events
@@ -163,44 +186,51 @@ class AttributeWidget {
     });
   }
 
-  private sortAttributes(atts: any[]) {
-    const sortedAtts = atts.sort((a, b) => {
-      if (a.name > b.name) {
-        return 1;
-      } else if (a.name < b.name) {
-        return -1;
-      }
-      return 0;
-    });
-
-    return sortedAtts;
-  }
-
-  private addHelpButton(documentation?: string, cssOnly = true) {
-    // if (!documentation) return null;
-    // if (cssOnly) {
-    //   return `<span title="${documentation}"><i class="fas fa-question-circle"></i></span>`;
-    // }
-    // return `
-    //   <span class="tooltip-multiline tooltip-bottom-left" data-tooltip="${documentation}">
-    //     <i class="fas fa-question-circle"></i>
-    //   </span>
-    // `;
-  }
-
-  private addSelectInput(attributeName: string, choices: string[], defaultValue = '') {
+  private addSelectInput({
+    attributeName,
+    choices,
+    defaultValue = '',
+    disabled = false,
+  }: {
+    attributeName: string;
+    choices: string[];
+    defaultValue?: string;
+    disabled?: boolean;
+  }) {
     return `<select name="${attributeName}">
       ${choices
         .map((attVal) => {
           const selected = defaultValue == attVal ? ' selected="selected"' : '';
-          return `<option value="${attVal}"${selected}>${attVal}</option>`;
+          return `
+            <option
+              ${disabled ? 'disabled' : ''}
+              value="${attVal}"${selected}
+            >
+              ${attVal}
+            </option>
+          `;
         })
         .join('\n')}
     </select>`;
   }
 
-  private addTextInput(attributeName: string, defaultValue = '') {
-    return `<input type="text" name="${attributeName}" value="${defaultValue}"/>`;
+  private addTextInput({
+    attributeName,
+    defaultValue = '',
+    disabled = false,
+  }: {
+    attributeName: string;
+    defaultValue?: string;
+    disabled?: boolean;
+  }) {
+    return `
+      <input
+        ${disabled ? 'disabled' : ''}
+        name="${attributeName}"
+        type="text"
+        value="${defaultValue}"
+      />
+    `;
   }
 
   private createAttributeField({
@@ -209,15 +239,17 @@ class AttributeWidget {
     displayCSS = 'flex',
     displayName,
     defaultValue,
+    disabled = false,
     documentation,
     isRequired = false,
   }: {
     attributeName: string;
     choices?: string[];
+    disabled?: boolean;
     displayCSS?: 'flex' | 'none';
     displayName: string;
     defaultValue?: string;
-    documentation?: string | any[];
+    documentation?: string | object[];
     isRequired?: boolean;
   }) {
     // TODO add list support
@@ -227,18 +259,22 @@ class AttributeWidget {
     //input
     const inputHTML =
       choices && choices.length > 0
-        ? this.addSelectInput(attributeName, choices, defaultValue)
-        : this.addTextInput(attributeName, defaultValue);
+        ? this.addSelectInput({ attributeName, choices, defaultValue })
+        : this.addTextInput({ attributeName, defaultValue, disabled });
 
     const documentText: string | string[] = documentation
       ? Array.isArray(documentation)
         ? documentation
             .map((p) => {
-              return p['#text']
-                ? `<span style="display: inline-block; margin-bottom: 4px;">
-                    ${capitalizeFirstLetter(p['#text'])}
-                  </span>`
-                : '';
+              if ('#text' in p) {
+                const text = p as { '#text': string };
+                return text['#text']
+                  ? `<span style="display: inline-block; margin-bottom: 4px;">
+                      ${capitalizeFirstLetter(text['#text'])}
+                    </span>`
+                  : '';
+              }
+              return '';
             })
             .join(' ')
         : capitalizeFirstLetter(documentation)
@@ -266,12 +302,17 @@ class AttributeWidget {
     return htmlPart;
   }
 
-  private createAttributeSelector(
-    attributeName: string,
-    displayName: string,
-    requiredClass: string,
+  private createAttributeSelector({
+    attributeName,
+    displayName,
     isInitial = false,
-  ) {
+    requiredClass,
+  }: {
+    attributeName: string;
+    displayName: string;
+    isInitial?: boolean;
+    requiredClass: string;
+  }) {
     const selected = isInitial ? 'selected' : '';
     return `
       <li data-name="${attributeName}" class="${selected}${requiredClass}">${displayName}</li>
@@ -379,6 +420,7 @@ class AttributeWidget {
     return Object.fromEntries(attributes);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   destroy() {}
 }
 

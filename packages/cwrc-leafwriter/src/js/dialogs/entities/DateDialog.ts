@@ -133,6 +133,7 @@ class DateDialog implements SchemaDialog {
       $(this).css({ borderBottom: '' });
     });
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$dateInput.datepicker({
       dateFormat: 'yy-mm-dd',
@@ -162,8 +163,10 @@ class DateDialog implements SchemaDialog {
       $(this).css({ borderBottom: '' });
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const _this = this;
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.dateRange = $(`#${id}_startDate, #${id}_endDate`).datepicker({
       dateFormat: 'yy-mm-dd',
@@ -181,8 +184,10 @@ class DateDialog implements SchemaDialog {
         const option = this.id.indexOf('startDate') === -1 ? 'maxDate' : 'minDate';
         const instance = $(this).data('datepicker');
 
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
         const date = $.datepicker.parseDate(
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           //@ts-ignore
           instance.settings.dateFormat || $.datepicker._defaults.dateFormat,
           selectedDate,
@@ -216,7 +221,7 @@ class DateDialog implements SchemaDialog {
 
       if (this.schemaMappingMatch(['orlando', 'cwrcEntry'])) {
         const atts = this.writer.schemaManager.getAttributesForTag(type);
-        this.dialog.attributesWidget?.buildWidget(atts);
+        this.dialog.attributesWidget?.buildWidget({ atts, tagName: type });
         this.dialog.attWidgetInit = true;
         this.dialog.attributesWidget?.reset();
       }
@@ -292,7 +297,6 @@ class DateDialog implements SchemaDialog {
       }
 
       //! this breaks initial values on inputs
-      // @ts-ignore
       // $(`#${id}_type input`).button('refresh');
 
       this.$dateInput.css({ borderBottom: '' });
@@ -315,7 +319,6 @@ class DateDialog implements SchemaDialog {
         if (Array.isArray(dateString)) dateString = dateString[0];
         if (typeof dateString === 'number') dateString = dateString.toString();
 
-        //@ts-ignore
         const dateLuxon = DateTime.fromISO(dateString);
 
         if (dateLuxon.isValid) {
@@ -339,8 +342,10 @@ class DateDialog implements SchemaDialog {
         if (typeof startString === 'number') startString = startString.toString();
         if (typeof endString === 'number') endString = endString.toString();
 
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
         const startLuxon = DateTime.fromISO(startString);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         //@ts-ignore
         const endLuxon = DateTime.fromISO(endString);
 
@@ -618,6 +623,7 @@ class DateDialog implements SchemaDialog {
   }
 
   destroy() {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$dateInput.datepicker('destroy');
     this.dateRange.datepicker('destroy');

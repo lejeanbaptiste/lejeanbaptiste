@@ -22,7 +22,7 @@ interface Role {
   value: string;
 }
 
-const personTypeOptions = ['real', 'fictional', 'fictionalized'];
+const personTypeOptions = ['real', 'fictional', 'identifiable'];
 const certaintyOptions = ['high', 'medium', 'low', 'unknown'];
 
 class PersonDialog implements SchemaDialog {
@@ -70,7 +70,7 @@ class PersonDialog implements SchemaDialog {
         ${['tei', 'teiLite'].includes(this.mappingID) ? this.certaintyField(this.id) : ''}
         ${this.mappingID === 'tei' ? this.personTypeField(this.id) : ''}
         ${['tei', 'teiLite'].includes(this.mappingID) ? this.personRoleField(this.id) : ''}
-        ${['tei', 'teiLite'].includes(this.mappingID) ? this.otherTypeField(this.id) : ''}
+        ${['tei', 'teiLite'].includes(this.mappingID) ? this.otherRoleField(this.id) : ''}
       </div>
     `;
 
@@ -368,14 +368,19 @@ class PersonDialog implements SchemaDialog {
           <p class="fieldLabel">${fieldTitle}</p>
         </div>
 
+        <div>
         ${personTypeOptions
           .map((type) => {
             return `
-              <input type="radio" id="${id}_${type}" name="${id}_type_certainty" value="${type}" />
+              <input type="radio" id="${id}_${type}" name="${id}_type" value="${type}" />
               <label for="${id}_${type}" style="text-transform: capitalize;">${type}</label>
             `;
           })
           .join('\n')}
+        </div>
+        <p style="font-size: 0.7rem; color: #666; margin-top: 8px;">
+          Learn more about Person Types <a href="https://vocab.lincsproject.ca/Skosmos/edit/en/page/ModeExistence" target="_blank" style="border: unset; background-color: unset; padding: unset; text-decoration: revert; vertical-align: baseline;">here</a>.
+        </p>
       </div>
     `;
 
@@ -401,7 +406,7 @@ class PersonDialog implements SchemaDialog {
     return html;
   }
 
-  private otherTypeField(id: string) {
+  private otherRoleField(id: string) {
     const fieldTitle = 'Define Role';
 
     return `
