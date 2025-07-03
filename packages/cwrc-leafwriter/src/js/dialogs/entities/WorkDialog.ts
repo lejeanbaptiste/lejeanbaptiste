@@ -9,7 +9,7 @@ import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
-import { getSourceNameFromUrl } from './util';
+import { certaintyOptions, getSourceNameFromUrl } from './util';
 
 const defaultJotaiStore = getDefaultStore();
 
@@ -47,8 +47,6 @@ const workLevels: WorLevel[] = [
     description: 'Unpublished thesis, manuscript, letters or other unpublished material',
   },
 ];
-
-const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
 
 class WorkDialog implements SchemaDialog {
   readonly writer: Writer;

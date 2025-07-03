@@ -10,11 +10,10 @@ import { namedEntityTypesSchema } from '../../../types/authority';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
-import { getSourceNameFromUrl } from './util';
+import { certaintyOptions, getSourceNameFromUrl } from './util';
 
 const defaultJotaiStore = getDefaultStore();
 
-const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
 const cwrcEntryOrgTypeOptions = [
   'labour',
   'club or society',

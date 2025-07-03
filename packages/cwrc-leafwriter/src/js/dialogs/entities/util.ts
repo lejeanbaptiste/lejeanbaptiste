@@ -7,3 +7,5 @@ export const getSourceNameFromUrl = (url: string) => {
     .replace('.org', '');
   return domain;
 };
+
+export const certaintyOptions = ['high', 'medium', 'low', 'unknown'] as const;

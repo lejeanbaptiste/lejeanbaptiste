@@ -128,7 +128,6 @@ class AttributeWidget {
       const disabledAttributes: string[] = [];
       if (isEntity) {
         if (tagName === 'persName') disabledAttributes.push('type');
-        if (tagName === 'rs') disabledAttributes.push('type');
       }
 
       //create selector component
