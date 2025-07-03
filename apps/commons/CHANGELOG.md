@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.4
+
+- [bcb2ffedbee2dcc02f834aa3a8d945f15ac4045a] sign user off if no identity provider is found
+
 ## 3.7.3
 
 ### Patch Changes
