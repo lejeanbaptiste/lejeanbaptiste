@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 3.9.0
+
+### Minor Changes
+
+- [e74fbc06d112f0428d497e5c14fae603ef563dcb] annotation: person: change option type from `fictionalized` to `identifiable`.
+  - This also changes the value of the attribute type in the XML, but does not change the JSON-LD.
+  - BREAKING CHANGE: 🧨 There is not break, but users should be aware of the change in the person type value.
+- [34bb7b0c506b823720c960aa56057e3091a3d7db] Annotation: person: Add link to documentation about person types (mode of existence).
+- [0643693b404ad16c125a8bb12e53650e63b4608f] Replaces `cwrc:FictionalPerson` with `http://id.lincsproject.ca/edit/modeIdentifiable`
+- [1a42dff0f61d0c192aafabfdfd811ef60130e204] Entity Thing Dialog: Remove custom type field
+
+
+### Patch Changes
+
+- [b680047e1d32a5d1ed57a176ca3e425072f6b83e] Disable type attribute input for person entity annotation
+  - Refactor some functions to build the attribute widgets to make it more readable and pass specific attributes, like the tagname.
+- [98a8f0ff81e306ab342fadb124cce323417f9295] Disable type attribute input for thing (rs) entity annotation
+- [c658c6924d39dff0d48425304608b207e3ee0f35] Entity place: certainty: normalize precision options: lowercase 'unknown'
+- [1833d1a51dce2e5c2f05c3fbd72a7251f9470ca4] Centrilize definition for certainty
+
 ## 3.8.1
 
 ### Patch Changes
