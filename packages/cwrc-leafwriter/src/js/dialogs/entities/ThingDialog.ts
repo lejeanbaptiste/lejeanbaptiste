@@ -9,38 +9,37 @@ import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
-import { getSourceNameFromUrl } from './util';
+import { certaintyOptions, getSourceNameFromUrl } from './util';
 
 const defaultJotaiStore = getDefaultStore();
 
-const OTHER_OPTION = '$$$$OTHER$$$$';
-const typeRoot = 'http://sparql.cwrc.ca/ontology/cwrc#';
+//! deprecated
+// const OTHER_OPTION = '$$$$OTHER$$$$';
+// const typeRoot = 'http://sparql.cwrc.ca/ontologies/cwrc#';
 
-const types = [
-  'Award',
-  'BirthPosition',
-  'Certainty',
-  'Credential',
-  'EducationalAward',
-  'Ethnicity',
-  'Gender',
-  'GeographicHeritage',
-  'NationalHeritage',
-  'NationalIdentity',
-  'NaturalPerson',
-  'Occupation',
-  'PoliticalAffiliation',
-  'Precision',
-  'RaceColour',
-  'Religion',
-  'ReproductiveHistory',
-  'Role',
-  'Sexuality',
-  'SocialClass',
-  'TextLabels',
-];
-
-const certaintyOptions = ['high', 'medium', 'low', 'unknown'];
+// const types = [
+//   'Award',
+//   'BirthPosition',
+//   'Certainty',
+//   'Credential',
+//   'EducationalAward',
+//   'Ethnicity',
+//   'Gender',
+//   'GeographicHeritage',
+//   'NationalHeritage',
+//   'NationalIdentity',
+//   'NaturalPerson',
+//   'Occupation',
+//   'PoliticalAffiliation',
+//   'Precision',
+//   'RaceColour',
+//   'Religion',
+//   'ReproductiveHistory',
+//   'Role',
+//   'Sexuality',
+//   'SocialClass',
+//   'TextLabels',
+// ];
 
 class ThingDialog implements SchemaDialog {
   readonly writer: Writer;
@@ -60,10 +59,11 @@ class ThingDialog implements SchemaDialog {
         ${this.selectedTextField(id)}
         ${this.tagAsField(id)}
         ${this.certaintyField(id)}
-        ${this.thingTypeField(id)}
-        ${this.otherTypeField()}
+       
       </div>
     `;
+
+    // ${this.thingTypeField(id)}
 
     this.$el = $(`
       <div class="annotationDialog">
@@ -89,6 +89,7 @@ class ThingDialog implements SchemaDialog {
       </div>
     `).appendTo(parentEl);
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     const $relinkButton = $(`#${id}_tagAs .relink-bt`, this.$el).button();
     $relinkButton.on('click', () => {
@@ -123,62 +124,13 @@ class ThingDialog implements SchemaDialog {
       title: 'Tag Thing',
     });
 
-    const _this = this;
+    //?dialog events
+    // Uncomment tag next line if needed
+    // this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any) => {});
 
-    // select setup
-    this.$el
-      .find('select[name=type]')
-      //@ts-ignore
-      .selectmenu('menuWidget')
-      .addClass('overflow')
-      .height('300px')
-      .css('box-shadow', '0px 1px 8px rgb(0 0 0 / 35%)');
-
-    //select event
-    this.$el
-      .find('select[name=type]')
-      //@ts-ignore
-      .selectmenu('refresh')
-      .on('selectmenuselect', function (event: JQuery.Event, ui: any) {
-        if (ui.item.value === OTHER_OPTION) {
-          _this.$el.find('input[name=otherType]').parent().show();
-          return;
-        }
-
-        // set the other input value to that of the selection and then hide
-        _this.$el.find('input[name=otherType]').val(ui.item.value).parent().hide();
-
-        // manually fire change event in order to update attribute widget
-        //@ts-ignore
-        $(this).trigger('change', { target: this });
-      });
-
-    //dialog evvents
-    this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any) => {
-      // handle type selection
-      const entry = config.entry;
-      let typeValue = '';
-      let otherType = false;
-
-      if (entry !== undefined && entry.getAttribute('type') !== undefined) {
-        typeValue = entry.getAttribute('type');
-        otherType = types.indexOf(typeValue) === -1;
-      }
-
-      if (otherType) {
-        //@ts-ignore
-        this.$el.find('select[name=type]').val(OTHER_OPTION).selectmenu('refresh');
-        this.$el.find('input[name=otherType]').val(typeValue).parent().show();
-      } else {
-        this.$el.find('select[name=type]').val(typeValue);
-        this.$el.find('input[name=otherType]').val(typeValue).parent().hide();
-      }
-    });
-
-    this.dialog.$el.on('beforeSave', (event: JQuery.Event, config: any) => {
-      //@ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    this.dialog.$el.on('beforeSave', (_event: JQuery.Event, config: unknown) => {
       if (this.dialog.currentData.attributes.type === '') {
-        //@ts-ignore
         delete this.dialog.currentData.attributes.type;
       }
     });
@@ -258,7 +210,7 @@ class ThingDialog implements SchemaDialog {
   private certaintyField(id: string) {
     const fieldTitle = 'Level of certainty';
 
-    const html = `
+    return `
       <div
         id="${id}_certainty"
         class="attribute"
@@ -287,40 +239,22 @@ class ThingDialog implements SchemaDialog {
           .join('\n')}
       </div>
     `;
-
-    return html;
   }
 
-  private thingTypeField(id: string) {
-    const fieldTitle = 'Type (optional)';
+  // private thingTypeField(id: string) {
+  //   const fieldTitle = 'Type';
 
-    const html = `
-      <div class="attribute type">
-        <div>
-          <p class="fieldLabel">${fieldTitle}</p>
-        </div>
+  //   return `
+  //     <div id="${id}_type" class="attribute type">
+  //       <div>
+  //         <p class="fieldLabel">${fieldTitle}</p>
+  //       </div>
+  //       <input name="type" type="text" data-mapping="type" data-type="textbox" />
+  //     </div>
+  //   `;
+  // }
 
-        <select name="type" data-mapping="type" data-type="select" data-transform="selectmenu">
-          <option value="">(none)</option>
-          <option value="${OTHER_OPTION}">Other (specify)</option>
-          ${types.map((type) => `<option value="${typeRoot + type}">${type}</option>`).join('\n')}
-        </select>
-      </div>
-    `;
-
-    return html;
-  }
-
-  private otherTypeField() {
-    const fieldTitle = 'Other type';
-    return `
-      <div style="margin-top: 5px">
-        <label>${fieldTitle}</label>
-        <input name="otherType" type="text" data-mapping="type" data-type="textbox" />
-      </div>
-    `;
-  }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   show(config: { [x: string]: any; entry: Entity; query: string }) {
     this.entry = config.entry ? config.entry : undefined;
     this.selectedText = config.entry ? config.entry.content : config.query;
@@ -332,20 +266,7 @@ class ThingDialog implements SchemaDialog {
     this.dialog.show(config);
   }
 
-  /*************  ✨ Codeium Command ⭐  *************/
-  /**
-   * Destroy the dialog.
-   *
-   * This will destroy the dialog, but also manually destroy the selectmenu widget
-   * for the type field because the dialog's destroy method doesn't do this.
-   *
-   * TODO: This should be fixed in the Dialog class so that widgets are
-   * automatically destroyed when the dialog is destroyed.
-   */
-  /******  794c081c-03bc-4fe0-bc33-a86c880a7bac  *******/
   destroy() {
-    //@ts-ignore
-    this.$el.find('select[name=type]').selectmenu('destroy');
     this.dialog.destroy();
   }
 }
