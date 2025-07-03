@@ -15,7 +15,7 @@ const defaultJotaiStore = getDefaultStore();
 
 //! deprecated
 // const OTHER_OPTION = '$$$$OTHER$$$$';
-// const typeRoot = 'http://sparql.cwrc.ca/ontology/cwrc#';
+// const typeRoot = 'http://sparql.cwrc.ca/ontologies/cwrc#';
 
 // const types = [
 //   'Award',
