@@ -9,7 +9,7 @@ import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
-import { getSourceNameFromUrl } from './util';
+import { certaintyOptions, getSourceNameFromUrl } from './util';
 
 const defaultJotaiStore = getDefaultStore();
 

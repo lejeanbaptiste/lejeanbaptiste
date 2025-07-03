@@ -9,12 +9,10 @@ import { EntityType, namedEntityTypesSchema } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
-import { getSourceNameFromUrl } from './util';
+import { certaintyOptions, getSourceNameFromUrl } from './util';
 
 const defaultJotaiStore = getDefaultStore();
 
-const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
-const precisionOptions = ['high', 'medium', 'low', 'Unknown'];
 const placeTypeOptions = ['address', 'area', 'geog', 'placename', 'region', 'settlement'];
 const precisionOptions = ['high', 'medium', 'low', 'unknown'];
 
