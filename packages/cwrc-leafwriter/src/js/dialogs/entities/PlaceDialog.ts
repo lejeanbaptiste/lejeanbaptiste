@@ -16,6 +16,7 @@ const defaultJotaiStore = getDefaultStore();
 const certaintyOptions = ['high', 'medium', 'low', 'Unknown'];
 const precisionOptions = ['high', 'medium', 'low', 'Unknown'];
 const placeTypeOptions = ['address', 'area', 'geog', 'placename', 'region', 'settlement'];
+const precisionOptions = ['high', 'medium', 'low', 'unknown'];
 
 class PlaceDialog implements SchemaDialog {
   readonly writer: Writer;
