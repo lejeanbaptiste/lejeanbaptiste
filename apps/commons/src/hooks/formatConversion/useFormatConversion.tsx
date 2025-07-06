@@ -2,7 +2,7 @@ import { useActions } from '@src/overmind';
 import {
   convertDocument as ServiceConvertDocument,
   listTransformations,
-} from '@src/services/leafTe';
+} from '@src/services/leaf-te';
 import type { Resource } from '@src/types';
 import { renameFileAsCopy } from '@src/utilities';
 import { useTranslation } from 'react-i18next';
@@ -102,7 +102,9 @@ export const useFormatConversion = () => {
 
   const convert = async ({ fromType, resource: { content, filename } }: ConvertDocumentParams) => {
     if (!content) return;
-    const conversion = await ServiceConvertDocument({ content, fromType, toType: 'TEI' });
+    const conversion = await ServiceConvertDocument({ content, fromType, toType: 'TEI' }).catch(
+      (error) => error,
+    );
     if (conversion instanceof Error) {
       notifyConvertError(conversion);
       return;

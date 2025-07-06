@@ -2,7 +2,7 @@ import { loadDocument } from '@cwrc/leafwriter-storage-service/headless';
 import { db } from '@src/db';
 import { useLeafWriter, useMessage, useOpenResource } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
-import { listTransformations } from '@src/services/leafTe';
+import { listTransformations } from '@src/services/leaf-te';
 import { type Resource } from '@src/types';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
