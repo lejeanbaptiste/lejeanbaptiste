@@ -25,7 +25,9 @@ export const listTransformations = async ({ from, to }: { from?: string; to?: st
     Object.entries(data).forEach(([fromType, toType]) => {
       if (toType.includes(to)) possibleType.add(fromType);
     });
-    return [...possibleType];
+
+    const possibleTypes = [...possibleType].sort();
+    return possibleTypes;
   }
 
   throw new Error(`Must provide a property: 'from' | 'to'`);
