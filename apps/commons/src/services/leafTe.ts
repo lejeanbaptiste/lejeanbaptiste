@@ -1,23 +1,29 @@
-import axios from 'axios';
-import { logHttpError } from './utilities';
-
-interface ServiceError {
-  msg: string;
-  type: string;
-  loc: [string, number];
-}
+import { log } from '@src/utilities';
 
 const BASE_URL = 'https://leaf-turning.leaf-vre.org/v1';
+
+const handleResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw { response: { data: errorData, status: response.status } };
+  }
+  return response.json();
+};
 
 export const listTransformations = async ({ from, to }: { from?: string; to?: string }) => {
   if (from && to) {
     throw new Error(`Must provide just one property: 'from' | 'to'`);
   }
 
-  const { data } = await axios.get<Record<string, string[]>>(`${BASE_URL}/list-transformations`);
+  const data = await fetch(`${BASE_URL}/list-transformations`)
+    .then((response) => handleResponse<Record<string, string[]>>(response))
+    .catch((error) => {
+      log.error('Error', error.message);
+      throw error;
+    });
+
   if (from) {
-    const possibleType = data[from] ?? [];
-    return possibleType;
+    return data[from] ?? [];
   }
 
   if (to) {
@@ -25,9 +31,7 @@ export const listTransformations = async ({ from, to }: { from?: string; to?: st
     Object.entries(data).forEach(([fromType, toType]) => {
       if (toType.includes(to)) possibleType.add(fromType);
     });
-
-    const possibleTypes = [...possibleType].sort();
-    return possibleTypes;
+    return [...possibleType].sort();
   }
 
   throw new Error(`Must provide a property: 'from' | 'to'`);
@@ -39,35 +43,46 @@ interface ConversionRequest {
   toType: string;
 }
 
+interface ServiceError {
+  msg: string;
+  type: string;
+  loc: [string, number];
+}
+
 interface ConversionResponse {
   transformed_string: string;
   details?: ServiceError;
 }
 
 export const convertDocument = async ({ content, fromType, toType }: ConversionRequest) => {
-  try {
-    const { data } = await axios.post<ConversionResponse>(`${BASE_URL}/transform-string`, {
+  const response = await fetch(`${BASE_URL}/transform-string`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       input_string: content,
       from_type: fromType,
       to_type: toType,
-    });
-    return data.transformed_string;
-  } catch (error) {
-    logHttpError(error);
+    }),
+  });
 
-    if (axios.isAxiosError(error) && error.response?.data) {
+  const data = await handleResponse<ConversionResponse>(response).catch((error) => {
+    log.error('Error', error.message);
+
+    if (error.response?.data) {
       const data = error.response.data as ConversionResponse;
 
       if (data.details) {
-        const { status } = error.response;
+        const status = error.response.status;
         const { details } = data;
         if (status === 422) {
-          return new Error(`${details.type}: ${details.msg}. Location: ${details.loc.join(',')}`);
+          throw new Error(`${details.type}: ${details.msg}. Location: ${details.loc.join(',')}`);
         }
-        if (status >= 400) return new Error(details.msg);
+        if (status >= 400) throw new Error(details.msg);
       }
-      return new Error(error.message);
+      throw new Error(error.message || 'An error occurred');
     }
-    return new Error('error');
-  }
+    throw new Error('An unexpected error occurred');
+  });
+
+  return data.transformed_string;
 };
