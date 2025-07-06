@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.7.5
+
+### Patch Changes
+
+- [3ea95b34bbbf25934f871e1ff541b9903224ee1f] Import dialog: Add link to documentation
+- [2d93a643a5511f345b2fc481143d57bf3361b3be] Rename files: use lowercase filenames
+
 ## 3.7.4
 
 - [bcb2ffedbee2dcc02f834aa3a8d945f15ac4045a] sign user off if no identity provider is found
@@ -31,7 +38,6 @@
       - @types/compression@1.8.1
       - @types/express@4.17.23
       - @types/node@22.15.33
-
 
 ## 3.7.2
 
