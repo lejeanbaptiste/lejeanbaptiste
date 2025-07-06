@@ -4,8 +4,8 @@ import { Provider } from 'jotai';
 import { useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from '../type';
-import { Main } from './Main';
 import { Actions, Header } from './components';
+import { Main } from './main';
 import { ImportExportStore, dialogActionAtom } from './store';
 
 export type DialogTye = Extract<'import' | 'export', IDialog['type']>;

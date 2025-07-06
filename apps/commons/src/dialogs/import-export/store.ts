@@ -1,6 +1,6 @@
 import type { FileDetail, Resource } from '@src/types';
 import { atom, createStore } from 'jotai';
-import type { DialogTye } from './';
+import type { DialogTye } from '.';
 
 export const ImportExportStore = createStore();
 
