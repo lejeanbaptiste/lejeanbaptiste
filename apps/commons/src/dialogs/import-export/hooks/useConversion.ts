@@ -1,6 +1,6 @@
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
-import { convertDocument } from '@src/services/leafTe';
+import { convertDocument } from '@src/services/leaf-te';
 import { FileDetail, Resource } from '@src/types';
 import { changeFileExtension, renameFileAsCopy } from '@src/utilities';
 import { useAtomValue, useSetAtom } from 'jotai';
@@ -32,7 +32,7 @@ export const useConversion = () => {
       content,
       fromType: selectedType,
       toType: 'TEI',
-    });
+    }).catch((error) => error);
 
     setIsProcessing(false);
 
@@ -59,7 +59,7 @@ export const useConversion = () => {
       content,
       fromType: 'TEI',
       toType: selectedType,
-    });
+    }).catch((error) => error);
 
     setIsProcessing(false);
 

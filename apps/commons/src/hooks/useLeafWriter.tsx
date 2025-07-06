@@ -1,14 +1,14 @@
 import { schemas } from '@src/config/schemas';
 import { leafwriterAtom, leafWriterEventsAtom, tapDocumentTimerAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
-import { convertDocument } from '@src/services/leafTe';
+import { convertDocument } from '@src/services/leaf-te';
 import type { Resource } from '@src/types';
 import { changeFileExtension } from '@src/utilities';
 import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
-import { LeafWriterOptions, LeafWriterOptionsSettings } from '@cwrc/leafwriter/lib/src/types';
+import type { LeafWriterOptionsSettings } from '@cwrc/leafwriter/lib/src/types';
 
 export const useLeafWriter = () => {
   const { analytics } = useAnalytics();
@@ -148,7 +148,7 @@ export const useLeafWriter = () => {
       content,
       fromType: 'TEI',
       toType: format,
-    });
+    }).catch((error: Error) => error);
 
     if (response instanceof Error) {
       notifyViaSnackbar({
