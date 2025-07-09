@@ -8,6 +8,7 @@ type State = {
   rootName?: string;
   schemaId: string;
   schemaName: string;
+  standOffTags?: string[];
   touched: boolean;
   url?: string;
   xml?: string;
