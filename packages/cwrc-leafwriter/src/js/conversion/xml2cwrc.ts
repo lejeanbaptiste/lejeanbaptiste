@@ -41,6 +41,14 @@ class XML2CWRC {
     const { overmindActions, schemaManager } = this.writer;
     const schemaProcess: ProcessSchemaProps = { doc, writer: this.writer };
 
+    //* store and remove standOff tags
+    const standOffTags = doc.querySelectorAll('standOff');
+    if (standOffTags.length > 0) {
+      const tagsString = Array.from(standOffTags).map((tag) => tag.outerHTML);
+      overmindActions.document.storeStandOffTags(tagsString);
+      standOffTags.forEach((tag) => tag.remove());
+    }
+
     // * IS ROOT ELEMENT SUPPORTED?
     schemaProcess.rootName = doc.firstElementChild?.nodeName;
     schemaProcess.rootIsSupported = schemaManager.isRootSupported(schemaProcess.rootName ?? '');
@@ -164,7 +172,7 @@ class XML2CWRC {
    * @returns {Boolean}
    */
   private isLegacyDocument(doc: Document) {
-    const hasRdf = $(doc).find('rdf\\:RDF, RDF').length > 0;
+    const hasRdf = $(doc).find('teiHeader > xenoData').find('rdf\\:RDF, RDF').length > 0;
     const hasOldAnnotationIds = $(doc).find('*[annotationId], *[offsetId]').length > 0;
     const hasOldRdfParent =
       this.writer.utilities.evaluateXPath(
@@ -203,17 +211,131 @@ class XML2CWRC {
     });
   }
 
+  //   /**
+  //  * Get entities from the RDF and then remove all related elements from the document.
+  //  * @param {Document} doc
+  //  * @returns {Boolean} hasRDF
+  //  */
+  //   private processRDF(doc: Document) {
+  //     const $rdfs = $(doc).find('rdf\\:RDF, RDF');
+
+  //     if (!$rdfs.length) return false;
+
+  //     $rdfs.children().each((index, el) => {
+  //       let entityConfig = this.writer.annotationsManager.getEntityConfigFromAnnotation(el);
+  //       if (!entityConfig) return;
+
+  //       const isOverlapping = entityConfig.range?.endXPath !== undefined;
+
+  //       if (!isOverlapping) {
+  //         // find the associated element and do additional processing
+  //         const startXPath = entityConfig.range?.startXPath;
+  //         if (!startXPath) {
+  //           log.warn(`xml2cwrc.processRDF: no matching entity element for ${entityConfig}`);
+  //           return;
+  //         }
+
+  //         const entityEl = this.writer.utilities.evaluateXPath(doc, startXPath);
+  //         if (!entityEl) {
+  //           log.warn(`xml2cwrc.processRDF: no matching entity element for ${entityConfig}`);
+  //           return;
+  //         }
+
+  //         const mappingInfo = this.writer.schemaManager.mapper.getReverseMapping(
+  //           entityEl as Element,
+  //           true,
+  //         );
+
+  //         if (mappingInfo.type !== entityConfig.type) {
+  //           log.warn(
+  //             `xml2cwrc.processRDF: entity type mismatch. RDF = ${entityConfig.type}. Element = ${mappingInfo.type}.`,
+  //           );
+  //         }
+  //         entityConfig = { ...entityConfig, ...mappingInfo };
+  //       } else {
+  //         // TODO review overlapping entities
+  //       }
+
+  //       if (this._isLegacyDocument) {
+  //         // remove legacy attributes
+  //         if (entityConfig.attributes) {
+  //           delete entityConfig.attributes.annotationId;
+  //           delete entityConfig.attributes.offsetId;
+  //         }
+
+  //         // replace annotationId with xpath
+  //         const entityEl = this.writer.utilities.evaluateXPath(
+  //           doc,
+  //           //@ts-ignore
+  //           entityConfig.range.startXPath,
+  //         ) as Element;
+  //         //@ts-ignore
+  //         entityConfig.range.startXPath = this.writer.utilities.getElementXPath(entityEl);
+
+  //         if (isOverlapping) {
+  //           const entityElEnd = this.writer.utilities.evaluateXPath(
+  //             doc,
+  //             //@ts-ignore
+  //             entityConfig.range.endXPath,
+  //           ) as Element;
+  //           //@ts-ignore
+  //           entityConfig.range.endXPath = this.writer.utilities.getElementXPath(entityElEnd);
+  //         }
+  //       }
+
+  //       this.writer.entitiesManager.addEntity(entityConfig as EntityConfig);
+  //     });
+
+  //     $rdfs.remove();
+
+  //     // remove all the nodes between the root or header and the rdf parent (including the rdf parent)
+  //     const rdfParentXpath = this.writer.utilities.evaluateXPath(
+  //       doc,
+  //       this.writer.schemaManager.mapper.getRdfParentSelector(),
+  //     );
+
+  //     let rdfParent =
+  //       rdfParentXpath &&
+  //       typeof rdfParentXpath !== 'string' &&
+  //       typeof rdfParentXpath !== 'number' &&
+  //       typeof rdfParentXpath !== 'boolean'
+  //         ? $(rdfParentXpath)
+  //         : null;
+
+  //     if (rdfParent?.length === 1) {
+  //       let currNode = rdfParent[0]?.nodeName;
+  //       while (
+  //         currNode !== this.writer.schemaManager.getHeader() &&
+  //         currNode !== this.writer.schemaManager.getRoot()
+  //       ) {
+  //         rdfParent = rdfParent.parent();
+  //         if (rdfParent.length === 0) {
+  //           log.warn('xml2cwrc: went beyond doc root');
+  //           break;
+  //         }
+  //         rdfParent.children(currNode).remove();
+  //         currNode = rdfParent[0]?.nodeName;
+  //       }
+  //     } else {
+  //       log.warn("xml2cwrc: couldn't find the rdfParent");
+  //     }
+
+  //     return true;
+  //   }
+
   /**
    * Get entities from the RDF and then remove all related elements from the document.
    * @param {Document} doc
    * @returns {Boolean} hasRDF
    */
   private processRDF(doc: Document) {
-    const $rdfs = $(doc).find('rdf\\:RDF, RDF');
-    if (!$rdfs.length) return false;
+    const rdfs = doc.querySelectorAll('teiHeader > xenoData > rdf\\:RDF');
+    // const rdfs = doc.querySelectorAll('teiHeader > xenoData > RDF');
 
-    $rdfs.children().each((index, el) => {
-      let entityConfig = this.writer.annotationsManager.getEntityConfigFromAnnotation(el);
+    if (!rdfs.length) return false;
+
+    rdfs.forEach((rdf) => {
+      let entityConfig = this.writer.annotationsManager.getEntityConfigFromAnnotation(rdf);
       if (!entityConfig) return;
 
       const isOverlapping = entityConfig.range?.endXPath !== undefined;
@@ -277,7 +399,7 @@ class XML2CWRC {
       this.writer.entitiesManager.addEntity(entityConfig as EntityConfig);
     });
 
-    $rdfs.remove();
+    rdfs.forEach((rdf) => rdf.remove());
 
     // remove all the nodes between the root or header and the rdf parent (including the rdf parent)
     const rdfParentXpath = this.writer.utilities.evaluateXPath(

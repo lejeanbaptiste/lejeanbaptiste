@@ -93,3 +93,7 @@ export const setDocumentTouched = ({ state }: Context, value: boolean) => {
 export const setIsReload = ({ state }: Context, value: boolean) => {
   state.document.isReload = value;
 };
+
+export const storeStandOffTags = ({ state }: Context, value: string[]) => {
+  state.document.standOffTags = value;
+};
