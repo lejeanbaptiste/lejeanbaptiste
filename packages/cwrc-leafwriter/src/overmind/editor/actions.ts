@@ -1,12 +1,9 @@
-import { getDefaultStore } from 'jotai';
 import $ from 'jquery';
 import Cookies from 'js-cookie';
 import { Context } from '../';
 import { db } from '../../db';
 import { resetLookupPreferences } from '../../jotai/entity-lookup/utilities';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
-
-const defaultJotaiStore = getDefaultStore();
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
