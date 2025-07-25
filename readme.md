@@ -10,9 +10,9 @@
 [![version](https://img.shields.io/badge/LEAF--Writer-Storage--Service-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-storage-service)
 [![version](https://img.shields.io/badge/LEAF--Writer-Validator-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-validator)
 
-[The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) has developed the in-browser text markup editor LEAF-Writer (a modular component of the larger LEAF platform) for use by individual scholars and collaborative scholarly editing projects that require a light-weight online editing environment. LEAF-Writer can be found at the Leaf-Writer Commons at [https://leaf-writer.leaf-vre.org/](https://leaf-writer.leaf-vre.org/) where it is open to all with Github accounts.
+LEAF-Writer is an in-browser text markup editor and Web Annotation tool provided as part of the [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. It can be used as a stand-alone tool or as a modular component of a larger stack, such as the [LEAF-VRE platform](https://www.leaf-vre.org/docs/features/about-lw) for use by individual scholars and collaborative scholarly editing projects that require a light-weight online editing environment. LEAF-Writer can be found at the Leaf-Writer Commons at [https://leaf-writer.leaf-vre.org/](https://leaf-writer.leaf-vre.org/) where it is open to all. This version can be used independently, storing files on the desktop, or use Github for storage and collaboration.
 
-LEAF-Writer is an enhancement to the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), which still has some more advanced functionality that is pending incorporation into LEAF-Writer, including the Named Entity Recognition Vetting Environment (NERVE). A version of CWRC-Writer for those who want to check out NERVE is available to anyone with a GitHub account [here](https://cwrc-writer.cwrc.ca/).
+LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the Named Entity Recognition Vetting Environment (NERVE). A revised and improved instance of NERVE is currently [available in beta](https://nerve.lincsproject.ca/en).
 
 ## Table of Contents
 
@@ -35,9 +35,8 @@ The information that follows is drawn from the previous documentation about CWRC
 
 ## Storage and Entity Lookup
 
-If you choose not to use either the default GitHub storage or named entity lookups, then most of the
-work in setting up CWRC-Writer for your project will be in implementing the dialogs to interact with your backend storage
-and/or named entity lookups. We have split these pieces off into their own packages in large part to make it easier to
+If you choose not to use either GitHub storage or the default named entity lookups, then most of the work in setting up CWRC-Writer for your project will be in implementing the dialogs to interact with your backend storage
+and/or alternative named entity lookups. We have split these pieces off into their own packages in large part to make it easier to
 substitute your own dialogs and supporting services.
 
 A good example to follow when creating a new CWRC-Writer project is our public implementation
