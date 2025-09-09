@@ -672,13 +672,19 @@ class SchemaManager {
     let schemaTags = '';
     const elements: string[] = [];
 
-    //@ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+
     $('element', this.schemaXML).each((index, el) => {
-      const tag = $(el).attr('name');
-      if (tag && !elements.includes(tag)) {
-        elements.push(tag);
-        schemaTags += `
-          .showTags *[_tag=${tag}]:before {
+      const tag = $(el);
+      if (!tag) return;
+
+      const tagName = tag.attr('name');
+      if (!tagName || elements.includes(tagName)) return;
+
+      elements.push(tagName);
+      schemaTags += `
+          .showTags *[_tag=${tagName}]:before {
             background-color: white;
             color: #aaa !important;
             padding-left: 2px;
@@ -692,11 +698,11 @@ class SchemaManager {
             font-style: normal !important;
             font-variant: normal !important;
             box-shadow: 0 0 2px #aaaa;
-            content: "<${tag}>";
+            content: "<${tagName}>";
           }
         `;
-        schemaTags += `
-          .showTags *[_tag=${tag}]:after {
+      schemaTags += `
+          .showTags *[_tag=${tagName}]:after {
             background-color: white;
             color: #aaa !important;
             padding-left: 2px;
@@ -710,10 +716,9 @@ class SchemaManager {
             font-style: normal !important;
             font-variant: normal !important;
             box-shadow: 0 0 2px #aaaa;
-            content: "</${tag}>";
+            content: "</${tagName}>";
           }
         `;
-      }
     });
     elements.sort();
 

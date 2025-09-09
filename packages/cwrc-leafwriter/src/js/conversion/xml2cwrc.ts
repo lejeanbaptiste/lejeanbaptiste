@@ -377,22 +377,22 @@ class XML2CWRC {
         }
 
         // replace annotationId with xpath
-        const entityEl = this.writer.utilities.evaluateXPath(
-          doc,
-          //@ts-ignore
-          entityConfig.range.startXPath,
-        ) as Element;
-        //@ts-ignore
-        entityConfig.range.startXPath = this.writer.utilities.getElementXPath(entityEl);
+        if (entityConfig.range?.startXPath) {
+          const entityEl = this.writer.utilities.evaluateXPath(
+            doc,
+            entityConfig.range.startXPath,
+          ) as Element;
+          const startXPath = this.writer.utilities.getElementXPath(entityEl);
+          if (startXPath) entityConfig.range.startXPath = startXPath;
+        }
 
-        if (isOverlapping) {
+        if (isOverlapping && entityConfig.range?.endXPath) {
           const entityElEnd = this.writer.utilities.evaluateXPath(
             doc,
-            //@ts-ignore
             entityConfig.range.endXPath,
           ) as Element;
-          //@ts-ignore
-          entityConfig.range.endXPath = this.writer.utilities.getElementXPath(entityElEnd);
+          const endXPath = this.writer.utilities.getElementXPath(entityElEnd);
+          if (endXPath) entityConfig.range.endXPath = endXPath;
         }
       }
 
