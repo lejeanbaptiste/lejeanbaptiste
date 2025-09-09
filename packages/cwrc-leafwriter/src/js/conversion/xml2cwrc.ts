@@ -329,8 +329,18 @@ class XML2CWRC {
    * @returns {Boolean} hasRDF
    */
   private processRDF(doc: Document) {
-    const rdfs = doc.querySelectorAll('teiHeader > xenoData > rdf\\:RDF');
-    // const rdfs = doc.querySelectorAll('teiHeader > xenoData > RDF');
+    const rootName: string = this.writer.overmindState.document.rootName ?? 'TEI';
+
+    // let query = 'teiHeader > xenoData > rdf\\:RDF > Description';
+    let query = 'teiHeader > xenoData > RDF > Description';
+
+    if (rootName === 'TEI') query = 'teiHeader > xenoData > RDF > Description';
+    if (rootName === 'ENTRY' || rootName === 'EVENT') {
+      query = 'ORLANDOHEADER > XENODATA > RDF > Description';
+    }
+    if (rootName === 'CWRC') query = 'RDF > Description';
+
+    const rdfs = doc.querySelectorAll(query);
 
     if (!rdfs.length) return false;
 
