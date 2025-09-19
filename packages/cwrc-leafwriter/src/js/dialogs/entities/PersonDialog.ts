@@ -1,26 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
-import { defaultRoles } from '../../../config/personRole';
 import { entityLookupDialogAtom } from '../../../jotai/entity-lookup';
 import Writer from '../../../js/Writer';
 import Entity from '../../../js/entities/Entity';
 import type { EntityType, SchemaMappingType } from '../../../types';
 import { namedEntityTypesSchema } from '../../../types/authority';
-import { capitalizeFirstLetter } from '../../utilities';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import { certaintyOptions, getSourceNameFromUrl } from './util';
 
 const defaultJotaiStore = getDefaultStore();
-
-interface Role {
-  label: string;
-  value: string;
-}
 
 const personTypeOptions = ['real', 'fictional', 'identifiable'];
 
@@ -30,15 +22,6 @@ class PersonDialog implements SchemaDialog {
 
   readonly id: string;
   readonly mappingID: SchemaMappingType;
-  readonly roleAtt?: {
-    choices?: string[];
-    defaultValue?: string;
-    documentation?: string;
-    fullName?: string;
-    level?: number;
-    name: string;
-    required?: boolean;
-  };
 
   entry?: Entity;
   selectedText?: string;
@@ -50,10 +33,6 @@ class PersonDialog implements SchemaDialog {
 
     this.writer = writer;
     this.mappingID = mappingID;
-
-    const typeParentTag = writer.schemaManager.mapper.getParentTag('person') ?? '';
-    const atts = writer.schemaManager.getAttributesForTag(typeParentTag);
-    this.roleAtt = atts.find(({ name }) => name === 'role');
 
     const idPrefix =
       this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
@@ -68,8 +47,6 @@ class PersonDialog implements SchemaDialog {
         ${this.tagAsField(this.id)}
         ${['tei', 'teiLite'].includes(this.mappingID) ? this.certaintyField(this.id) : ''}
         ${this.mappingID === 'tei' ? this.personTypeField(this.id) : ''}
-        ${['tei', 'teiLite'].includes(this.mappingID) ? this.personRoleField(this.id) : ''}
-        ${['tei', 'teiLite'].includes(this.mappingID) ? this.otherRoleField(this.id) : ''}
       </div>
     `;
 
@@ -134,112 +111,18 @@ class PersonDialog implements SchemaDialog {
       title: 'Tag Person',
     });
 
-    const optionsRoleElement = this.dialog.$el.find(`#${this.id}_role`);
-    const personOtherRoleElement = this.dialog.$el.find(`#${this.id}_personOtherRole`);
+    // this.dialog.$el.on(
+    //   'buildDynamicFields',
+    //   (_event: JQuery.Event, _config: unknown, _dialog: DialogForm) => {},
+    // );
 
-    this.dialog.$el.on(
-      'buildDynamicFields',
-      (_event: JQuery.Event, _config: unknown, _dialog: DialogForm) => {
-        const roleChoices =
-          this.roleAtt?.choices?.map((choice) => ({ value: choice, label: choice })) ??
-          defaultRoles;
-        const sortedRoleChoices = roleChoices.sort((a, b) => {
-          if (a.label.toUpperCase() < b.label.toUpperCase()) return -1;
-          if (a.label.toUpperCase() > b.label.toUpperCase()) return 1;
-          return 0;
-        });
-        const choiceOptions = this.generateRoleOptions(sortedRoleChoices);
-        optionsRoleElement.html(choiceOptions);
-      },
-    );
+    // this.dialog.$el.on(
+    //   'beforeShow',
+    //   (_event: JQuery.Event, _config: unknown, _dialog: DialogForm) => {},
+    // );
 
-    this.dialog.$el.on(
-      'beforeShow',
-      (_event: JQuery.Event, _config: unknown, _dialog: DialogForm) => {
-        //Roles
-        const typeValue = optionsRoleElement.val();
-        const showOtherTypeTextField =
-          !this.roleAtt?.choices && typeValue === 'other' ? true : false;
-        this.toggleOtherTypeTextField(showOtherTypeTextField);
-      },
-    );
-
-    this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {
-      //replace other type option for custom defined value
-      if (!this.roleAtt?.choices && optionsRoleElement.val() === 'other') {
-        const otherRoleFieldValue = dialog.$el.find(`#${this.id}_personOtherRole`).val();
-        const typeCustomOption = `
-          <option value="${otherRoleFieldValue}" selected>${otherRoleFieldValue}</option>
-        `;
-        optionsRoleElement.html(typeCustomOption);
-      }
-    });
-
-    optionsRoleElement.on('change', (event: JQuery.ChangeEvent) => {
-      if (this.roleAtt?.choices) return;
-      const target = $(event.target);
-      const otherRoleSelected = target.val() === 'other' ? true : false;
-      this.toggleOtherTypeTextField(otherRoleSelected);
-    });
-
-    //transfer value from 'other type 'textfied to 'other' option value on selectbox
-    this.dialog.$el.find(`#${this.id}_personOtherRole`).on('change', () => {
-      let val = this.dialog.$el.find(`#${this.id}_personOtherRole`).val();
-      if (Array.isArray(val)) val = val[0];
-      if (typeof val === 'number') val = val.toString();
-      if (!val) return;
-
-      this.dialog.$el.find(`#${this.id}_other`).attr('value', val);
-    });
-
-    personOtherRoleElement.on('keyup', (event: JQuery.KeyUpEvent) => {
-      if (event.code === 'Space') {
-        writer.dialogManager.confirm({
-          title: 'Warning',
-          msg: `
-            Are you trying to add multiple values for this attribute?
-            If not, remove the "space" you have just added
-          `,
-          height: 250,
-          type: 'info',
-          showConfirmKey: 'confirm-space-in-xml-values',
-        });
-      }
-    });
+    // this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {});
   }
-
-  private generateRoleOptions(choices: Role[]) {
-    let html = '<option value="" disabled selected hidden>Please Choose...</option>';
-
-    //empty choice
-    html += '<option value=""></option>';
-
-    //choices
-    choices.forEach((choice) => {
-      const value = typeof choice === 'string' ? choice : choice.value;
-      const label = typeof choice === 'string' ? choice : choice.label;
-
-      const defaultChoice = this.roleAtt?.defaultValue === value ? true : false;
-      const selected = defaultChoice ? 'selected' : '';
-
-      html += `
-        <option
-          value="${value}"
-          data-default="${defaultChoice}"
-          ${selected}
-        >
-        ${label}
-        </option>
-      `;
-    });
-
-    return html;
-  }
-
-  private toggleOtherTypeTextField = (show: boolean) => {
-    this.dialog.$el.find(`#${this.id}_personOtherRoleSlot`).toggle(show);
-    if (!show) this.dialog.$el.find(`#${this.id}_personOtherRole`).val('');
-  };
 
   private updateLink(lemma: string, uri: string) {
     if (this.entry) {
@@ -384,38 +267,6 @@ class PersonDialog implements SchemaDialog {
     `;
 
     return html;
-  }
-
-  private personRoleField(id: string) {
-    const fieldTitle = 'Role (optional)';
-
-    const documentText: string | undefined =
-      this.roleAtt?.documentation && capitalizeFirstLetter(this.roleAtt.documentation);
-
-    const html = `
-      <div class="attribute" style="display: flex; flex-direction: column; gap: 4px;">
-        <div>
-          <p class="fieldLabel">${fieldTitle}</p>
-        </div>
-        <select id="${id}_role" name="role" data-type="select" data-mapping="role"></select>
-        ${documentText ? `<span style="font-size: 0.7rem; color: #666">${documentText}</span>` : ''}
-      </div>
-    `;
-
-    return html;
-  }
-
-  private otherRoleField(id: string) {
-    const fieldTitle = 'Define Role';
-
-    return `
-      <div id="${id}_personOtherRoleSlot" class="attribute">
-        <div>
-          <p class="fieldLabel">${fieldTitle}</p>
-        </div>
-        <input type="text" id="${id}_personOtherRole" data-type="textbox" data-mapping="otherRole" />
-      </div>
-    `;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
