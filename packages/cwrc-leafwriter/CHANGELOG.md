@@ -15,11 +15,16 @@ If this change breaks your workflow, please let us know by opening an issue on [
 - [8fb75e6c681653d7912c5ebb9311d3b988099748] Only select rdf located in the document header
 - [62641591f6c55df685d5caff451eeeaeb053df21] Prevent LW from parsing NERVE WA (WIP)
 
+### Minor Changes
+
+- [3942c94d16767c50c0641e1d096ad0b88a2e5d98] Remove custom property @role from the person entity dialog
+
 ### Patch Changes
 
 - [8467ac8480d1c11958a1013ed5e4710ca910c2b4] Improve type and remove dead code
 - [8a9c30b34a8772748865739e6175c562530c1250] Slightly improve code for better typing
 - [3ecfc931ff321f30541fdcc95ba8d75f923f7418] Remove commented code
+- [bdd7633b69e253edc42e079dbb1859ab6fba1a7a] Entity type thing: remove depracated code related to thing type
 
 ## 3.9.0
 
