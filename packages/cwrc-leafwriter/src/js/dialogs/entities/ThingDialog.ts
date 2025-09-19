@@ -13,34 +13,6 @@ import { certaintyOptions, getSourceNameFromUrl } from './util';
 
 const defaultJotaiStore = getDefaultStore();
 
-//! deprecated
-// const OTHER_OPTION = '$$$$OTHER$$$$';
-// const typeRoot = 'http://sparql.cwrc.ca/ontologies/cwrc#';
-
-// const types = [
-//   'Award',
-//   'BirthPosition',
-//   'Certainty',
-//   'Credential',
-//   'EducationalAward',
-//   'Ethnicity',
-//   'Gender',
-//   'GeographicHeritage',
-//   'NationalHeritage',
-//   'NationalIdentity',
-//   'NaturalPerson',
-//   'Occupation',
-//   'PoliticalAffiliation',
-//   'Precision',
-//   'RaceColour',
-//   'Religion',
-//   'ReproductiveHistory',
-//   'Role',
-//   'Sexuality',
-//   'SocialClass',
-//   'TextLabels',
-// ];
-
 class ThingDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
@@ -62,8 +34,6 @@ class ThingDialog implements SchemaDialog {
        
       </div>
     `;
-
-    // ${this.thingTypeField(id)}
 
     this.$el = $(`
       <div class="annotationDialog">
@@ -240,19 +210,6 @@ class ThingDialog implements SchemaDialog {
       </div>
     `;
   }
-
-  // private thingTypeField(id: string) {
-  //   const fieldTitle = 'Type';
-
-  //   return `
-  //     <div id="${id}_type" class="attribute type">
-  //       <div>
-  //         <p class="fieldLabel">${fieldTitle}</p>
-  //       </div>
-  //       <input name="type" type="text" data-mapping="type" data-type="textbox" />
-  //     </div>
-  //   `;
-  // }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   show(config: { [x: string]: any; entry: Entity; query: string }) {
