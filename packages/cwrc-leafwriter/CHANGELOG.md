@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 4.0.0
+
+We modify the way LEAF-Writer processes XML files, converting them to HTML and back to XML. The change was necessary to allow LEAF-Writer to handle documents tagged on [NERVE](https://gitlab.com/calincs/conversion/nerve), which has a different way of structuring and storing Web Annotations in JSON-LD. This change restricts LEAF-Writer to handling only RDF annotations stored in the XML file header. NERVE stored RDF annotation in the standOff tag outside of the header (and after the body of text).
+
+This does not enable LEAF-Writer to parse and process annotations made on NERVE documents. It ignores these annotations because the LEAF-Writer's Web Annotation schema is incompatible with NERVE's Web Annotation schema (which follows the [LINCS project's Web Annotation schema](https://github.com/lincsproject/web-annotation)). Yet, since NERVE also tag the document, LEAF-Writer can scrape these tags to create its own version of Web Annotations.
+
+This change shouldn't break anything. We have made a major version release to inform users of a change that may break custom XML schemas supported by LEAF-Writer.
+
+If this change breaks your workflow, please let us know by opening an issue on [LEAF-Writer's GitLab repository](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer).
+
+### Major Changes
+
+- [8fb75e6c681653d7912c5ebb9311d3b988099748] Only select rdf located in the document header
+- [62641591f6c55df685d5caff451eeeaeb053df21] Prevent LW from parsing NERVE WA (WIP)
+
+### Patch Changes
+
+- [8467ac8480d1c11958a1013ed5e4710ca910c2b4] Improve type and remove dead code
+- [8a9c30b34a8772748865739e6175c562530c1250] Slightly improve code for better typing
+- [3ecfc931ff321f30541fdcc95ba8d75f923f7418] Remove commented code
+
 ## 3.9.0
 
 ### Minor Changes
@@ -10,7 +31,6 @@
 - [34bb7b0c506b823720c960aa56057e3091a3d7db] Annotation: person: Add link to documentation about person types (mode of existence).
 - [0643693b404ad16c125a8bb12e53650e63b4608f] Replaces `cwrc:FictionalPerson` with `http://id.lincsproject.ca/edit/modeIdentifiable`
 - [1a42dff0f61d0c192aafabfdfd811ef60130e204] Entity Thing Dialog: Remove custom type field
-
 
 ### Patch Changes
 
