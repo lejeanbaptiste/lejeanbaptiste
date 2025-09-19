@@ -6,7 +6,7 @@ export const setUser = ({ state, actions }: Context, user?: User) => {
   state.user = user;
 };
 
-export const createAnonymoustUser = ({ state }: Context) => {
+export const createAnonymoustUser = () => {
   const user: User = {
     name: 'Anonymous',
     uri: '#anonymous',

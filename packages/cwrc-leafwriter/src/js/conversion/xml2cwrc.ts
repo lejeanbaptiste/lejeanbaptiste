@@ -41,6 +41,14 @@ class XML2CWRC {
     const { overmindActions, schemaManager } = this.writer;
     const schemaProcess: ProcessSchemaProps = { doc, writer: this.writer };
 
+    //* store and remove standOff tags
+    const standOffTags = doc.querySelectorAll('standOff');
+    if (standOffTags.length > 0) {
+      const tagsString = Array.from(standOffTags).map((tag) => tag.outerHTML);
+      overmindActions.document.storeStandOffTags(tagsString);
+      standOffTags.forEach((tag) => tag.remove());
+    }
+
     // * IS ROOT ELEMENT SUPPORTED?
     schemaProcess.rootName = doc.firstElementChild?.nodeName;
     schemaProcess.rootIsSupported = schemaManager.isRootSupported(schemaProcess.rootName ?? '');
@@ -164,7 +172,7 @@ class XML2CWRC {
    * @returns {Boolean}
    */
   private isLegacyDocument(doc: Document) {
-    const hasRdf = $(doc).find('rdf\\:RDF, RDF').length > 0;
+    const hasRdf = $(doc).find('teiHeader > xenoData').find('rdf\\:RDF, RDF').length > 0;
     const hasOldAnnotationIds = $(doc).find('*[annotationId], *[offsetId]').length > 0;
     const hasOldRdfParent =
       this.writer.utilities.evaluateXPath(
@@ -209,11 +217,23 @@ class XML2CWRC {
    * @returns {Boolean} hasRDF
    */
   private processRDF(doc: Document) {
-    const $rdfs = $(doc).find('rdf\\:RDF, RDF');
-    if (!$rdfs.length) return false;
+    const rootName: string = this.writer.overmindState.document.rootName ?? 'TEI';
 
-    $rdfs.children().each((index, el) => {
-      let entityConfig = this.writer.annotationsManager.getEntityConfigFromAnnotation(el);
+    // let query = 'teiHeader > xenoData > rdf\\:RDF > Description';
+    let query = 'teiHeader > xenoData > RDF > Description';
+
+    if (rootName === 'TEI') query = 'teiHeader > xenoData > RDF > Description';
+    if (rootName === 'ENTRY' || rootName === 'EVENT') {
+      query = 'ORLANDOHEADER > XENODATA > RDF > Description';
+    }
+    if (rootName === 'CWRC') query = 'RDF > Description';
+
+    const rdfs = doc.querySelectorAll(query);
+
+    if (!rdfs.length) return false;
+
+    rdfs.forEach((rdf) => {
+      let entityConfig = this.writer.annotationsManager.getEntityConfigFromAnnotation(rdf);
       if (!entityConfig) return;
 
       const isOverlapping = entityConfig.range?.endXPath !== undefined;
@@ -255,29 +275,29 @@ class XML2CWRC {
         }
 
         // replace annotationId with xpath
-        const entityEl = this.writer.utilities.evaluateXPath(
-          doc,
-          //@ts-ignore
-          entityConfig.range.startXPath,
-        ) as Element;
-        //@ts-ignore
-        entityConfig.range.startXPath = this.writer.utilities.getElementXPath(entityEl);
+        if (entityConfig.range?.startXPath) {
+          const entityEl = this.writer.utilities.evaluateXPath(
+            doc,
+            entityConfig.range.startXPath,
+          ) as Element;
+          const startXPath = this.writer.utilities.getElementXPath(entityEl);
+          if (startXPath) entityConfig.range.startXPath = startXPath;
+        }
 
-        if (isOverlapping) {
+        if (isOverlapping && entityConfig.range?.endXPath) {
           const entityElEnd = this.writer.utilities.evaluateXPath(
             doc,
-            //@ts-ignore
             entityConfig.range.endXPath,
           ) as Element;
-          //@ts-ignore
-          entityConfig.range.endXPath = this.writer.utilities.getElementXPath(entityElEnd);
+          const endXPath = this.writer.utilities.getElementXPath(entityElEnd);
+          if (endXPath) entityConfig.range.endXPath = endXPath;
         }
       }
 
       this.writer.entitiesManager.addEntity(entityConfig as EntityConfig);
     });
 
-    $rdfs.remove();
+    rdfs.forEach((rdf) => rdf.remove());
 
     // remove all the nodes between the root or header and the rdf parent (including the rdf parent)
     const rdfParentXpath = this.writer.utilities.evaluateXPath(

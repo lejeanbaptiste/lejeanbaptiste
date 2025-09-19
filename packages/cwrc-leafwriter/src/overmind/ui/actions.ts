@@ -54,7 +54,6 @@ export const listenChangeLanguage = async ({ state, effects }: Context) => {
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export const switchLocal = ({ state }: Context, locale: Locales | (string & {})) => {
   const supportedLocaled = localesSchema.safeParse(locale).success ? (locale as Locales) : 'en';
   state.ui.currentLocale = supportedLocaled;

@@ -1,12 +1,9 @@
-import { getDefaultStore } from 'jotai';
 import $ from 'jquery';
 import Cookies from 'js-cookie';
 import { Context } from '../';
 import { db } from '../../db';
 import { resetLookupPreferences } from '../../jotai/entity-lookup/utilities';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
-
-const defaultJotaiStore = getDefaultStore();
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 
@@ -222,7 +219,7 @@ export const setIsAnnotator = ({ state }: Context, value: boolean) => {
   state.editor.isAnnotator = value;
 };
 
-export const getContent = async ({ state }: Context) => {
+export const getContent = async ({ state, actions }: Context) => {
   if (state.editor.LWChangeEventSuspended) {
     if (!window.writer?.editor) return;
 
@@ -232,7 +229,15 @@ export const getContent = async ({ state }: Context) => {
 
     return suspended.content;
   }
-  return await window.writer.getContent();
+
+  let content = await window.writer.getContent();
+  if (!content) return;
+
+  if (state.document.standOffTags) {
+    content = actions.editor.restoreStandOff(content);
+  }
+
+  return content;
 };
 
 export const setContentHasChanged = ({ state }: Context, value: boolean) => {
@@ -241,6 +246,19 @@ export const setContentHasChanged = ({ state }: Context, value: boolean) => {
 
 export const closeEditor = ({ state }: Context) => {
   state.editor.latestEvent = 'close';
+};
+
+export const restoreStandOff = ({ state }: Context, content: string) => {
+  const xml = new DOMParser().parseFromString(content, 'application/xml');
+
+  const standOffTags = state.document.standOffTags;
+  if (standOffTags) {
+    standOffTags.forEach((tag) => {
+      const standOffTag = new DOMParser().parseFromString(tag.toString(), 'application/xml');
+      xml.documentElement.append(standOffTag.documentElement);
+    });
+  }
+  return new XMLSerializer().serializeToString(xml);
 };
 
 export const clear = ({ state }: Context) => {
