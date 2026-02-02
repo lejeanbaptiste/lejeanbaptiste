@@ -49,7 +49,7 @@ export const schemas: Types.Schema[] = isLocalDev
         mapping: 'tei',
         rng: [
           'https://cwrc.ca/islandora/object/cwrc%3A5d5159ce-8710-4717-b977-cc528dedc25e/datastream/SCHEMA/view',
-          'https://raw.githubusercontent.com/LEAF-VRE/schemas/main/reed/out/reed.rng',
+          'https://raw.githubusercontent.com/LEAF-VRE/schemas/refs/heads/main/reed/out/reed.rng',
         ],
         css: ['https://cwrc.ca/templates/css/tei.css'],
       },
