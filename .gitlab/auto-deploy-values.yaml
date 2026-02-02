@@ -12,3 +12,4 @@ readinessProbe:
 ingress:
   annotations:
     nginx.ingress.kubernetes.io/enable-cors: "true"
+    cert-manager.io/cluster-issuer: letsencrypt
