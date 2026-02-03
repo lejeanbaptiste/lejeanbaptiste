@@ -54,7 +54,7 @@ const baseAuthorityServiceConfigSchema = z.object({
   author: z
     .object({
       name: z.string(),
-      url: z.string().url().optional(),
+      url: z.string().optional(),
     })
     .optional(),
   description: z.string().optional(),
