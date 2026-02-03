@@ -7,6 +7,7 @@ import { EntityType } from '../../types';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { Toggle } from './Toggle';
+import { useTranslation } from 'react-i18next';
 
 type ItemType = 'button' | 'divider' | 'iconButton' | 'toggle';
 type ItemGroup = 'action' | 'ui' | 'panel' | 'general';
@@ -29,6 +30,7 @@ export interface MenuItem extends Item {
 }
 
 export const EditorToolbar = () => {
+  const { t } = useTranslation();
   const { schemaId } = useAppState().document;
   const { isReadonly, showTags } = useAppState().editor;
   const { fullscreen } = useAppState().ui;
@@ -194,7 +196,7 @@ export const EditorToolbar = () => {
       icon: showTags ? 'showTagsOn' : 'showTagsOff',
       onClick: () => toggleShowTags(),
       selected: showTags,
-      title: 'Show Tags',
+      title: showTags ? t('LW.editorToolbar.Hide Tags') : t('LW.editorToolbar.Show Tags'),
       type: 'toggle',
     },
     {
