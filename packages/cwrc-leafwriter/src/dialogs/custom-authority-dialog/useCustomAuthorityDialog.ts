@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useSetAtom } from 'jotai';
 import { customAlphabet } from 'nanoid';
@@ -49,18 +50,35 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
     addAuthorityToAuthorityServicesAtom(values);
 
     //* 3. Save authority service into IndexedDB: customAuthorityServices table
-    await db.customAuthorityServices.put(values, values.id);
+    const id = await db.customAuthorityServices.put(values, values.id).catch((error: unknown) => {
+      console.error(error);
+      Sentry.logger.error('Operation failed', {
+        operation: 'Adding authority service',
+        reason: 'Failed to save authority service to IndexedDB',
+        error: error,
+      });
+    });
+
+    if (!id) {
+      throw new Error('Failed to add authority service');
+    }
 
     //* 4. Save each authority service entity types preferences into IndexedDB: lookupServicePreferences table
     for (const entityType of values.entityTypes) {
-      await db.lookupServicePreferences.put({
-        id: `${values.id}:${entityType.name}`,
-        authorityId: values.id,
-        entityType: entityType.name,
-        priority: Infinity,
-        disabled: false,
-      });
+      await db.lookupServicePreferences
+        .put({
+          id: `${values.id}:${entityType.name}`,
+          authorityId: values.id,
+          entityType: entityType.name,
+          priority: Infinity,
+          disabled: false,
+        })
+        .catch((e) => {
+          console.error(e);
+        });
     }
+
+    return id;
   };
 
   const addAuthorityToAuthorityServicesAtom = (values: LocalAuthorityServiceConfig) => {
@@ -114,7 +132,17 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
     });
 
     //* 2. Update authority service in IndexedDB: customAuthorityServices table
-    await db.customAuthorityServices.put(values, values.id);
+    const id = await db.customAuthorityServices.put(values, values.id).catch((error) => {
+      Sentry.logger.error('Operation failed', {
+        operation: 'Updating authority service',
+        reason: 'Failed to update authority service to IndexedDB',
+        error: error,
+      });
+    });
+
+    if (!id) {
+      throw new Error('Failed to update authority service');
+    }
 
     //* 3. Remove authority service entity types preferences from IndexedDB: lookupServicePreferences table
     const currentLookupServicePreferences = await db.lookupServicePreferences
@@ -123,21 +151,29 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
     for (const service of currentLookupServicePreferences) {
       const serviceEstablished = values.entityTypes.some((e) => e.name === service.entityType);
       if (!serviceEstablished) {
-        await db.lookupServicePreferences.delete(service.id);
+        await db.lookupServicePreferences.delete(service.id).catch((e) => {
+          console.error(e);
+        });
       }
     }
 
     //* 4. Update each authority service entity types preferences in IndexedDB: lookupServicePreferences table
     for (const entityType of values.entityTypes) {
       const currentValue = await db.lookupServicePreferences.get(`${values.id}:${entityType.name}`);
-      await db.lookupServicePreferences.put({
-        id: `${values.id}:${entityType.name}`,
-        authorityId: values.id,
-        entityType: entityType.name,
-        priority: currentValue?.priority ?? Infinity,
-        disabled: currentValue?.disabled ?? false,
-      });
+      await db.lookupServicePreferences
+        .put({
+          id: `${values.id}:${entityType.name}`,
+          authorityId: values.id,
+          entityType: entityType.name,
+          priority: currentValue?.priority ?? Infinity,
+          disabled: currentValue?.disabled ?? false,
+        })
+        .catch((e) => {
+          console.error(e);
+        });
     }
+
+    return id;
   };
 
   const deleteAuthority = async () => {

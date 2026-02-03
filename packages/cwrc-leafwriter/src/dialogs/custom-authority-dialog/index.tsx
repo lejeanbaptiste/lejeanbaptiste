@@ -1,9 +1,11 @@
 import { Button, Dialog, DialogActions, DialogContent, Stack, Typography } from '@mui/material';
+import * as Sentry from '@sentry/react';
 import { Form, Formik } from 'formik';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { TextEmphasis } from '../../components';
+import { useActions } from '../../overmind';
 import { localAuthorityServiceConfigSchema } from '../../types';
 import SimpleDialog from '../SimpleDialog';
 import { AdvancedOptions, BasicInformation, EntityTypes, Header, Instructions } from './components';
@@ -24,6 +26,7 @@ export const CustomAuthorityDialog = ({
   onClose,
 }: CustomAuthorityDialogProps) => {
   const { t } = useTranslation();
+  const { notifyViaSnackbar } = useActions().ui;
   const { deleteAuthority, initialValue, addAuthority, updateAuthority } =
     useCustomAuthorityDialog(authorityId);
 
@@ -31,6 +34,9 @@ export const CustomAuthorityDialog = ({
 
   const handleDelete = async () => {
     await deleteAuthority();
+    notifyViaSnackbar({
+      message: t('LW.settings.authorities.messages.Authority deleted successfully'),
+    });
     onClose();
   };
 
@@ -44,7 +50,31 @@ export const CustomAuthorityDialog = ({
         enableReinitialize={true}
         initialValues={initialValue}
         onSubmit={async (values) => {
-          authorityId ? await updateAuthority(values) : await addAuthority(values);
+          //!problem with LEAF maybe here. The button works as "submit" type. Drupal code might be intervening here. So, perhaps the solution is to put the action in a "onClick" event.
+          console.log('processing custom authority', values);
+          try {
+            authorityId ? await updateAuthority(values) : await addAuthority(values);
+            Sentry.logger.info('Operation successful', {
+              operation: 'Add or update authority service',
+              values,
+            });
+            notifyViaSnackbar({
+              message: t('LW.settings.authorities.messages.Authority saved successfully'),
+            });
+          } catch (error: unknown) {
+            console.error(error);
+            Sentry.logger.error('Operation failed', {
+              operation: 'Add or update authority service',
+              values,
+              error,
+            });
+            notifyViaSnackbar({
+              message: `error: ${(error as Error)?.message}`,
+            });
+            throw new Error('Error processing custom authority');
+          }
+
+          //?add feedback here
           onClose();
         }}
         validationSchema={toFormikValidationSchema(localAuthorityServiceConfigSchema)}
