@@ -230,6 +230,10 @@
     "edit_header": "edit_header",
     "edit_raw_xml": "Edit Raw XML",
     "edit_source": "edit source",
+    "editorToolbar": {
+      "Hide Tags": "Hide Tags",
+      "Show Tags": "Show Tags",
+    },
     "entity": {
       "_plural": {
         "citation_many": "citations",
