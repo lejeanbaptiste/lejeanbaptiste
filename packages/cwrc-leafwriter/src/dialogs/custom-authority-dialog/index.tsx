@@ -50,8 +50,6 @@ export const CustomAuthorityDialog = ({
         enableReinitialize={true}
         initialValues={initialValue}
         onSubmit={async (values) => {
-          //!problem with LEAF maybe here. The button works as "submit" type. Drupal code might be intervening here. So, perhaps the solution is to put the action in a "onClick" event.
-          console.log('processing custom authority', values);
           try {
             authorityId ? await updateAuthority(values) : await addAuthority(values);
             Sentry.logger.info('Operation successful', {
@@ -62,7 +60,6 @@ export const CustomAuthorityDialog = ({
               message: t('LW.settings.authorities.messages.Authority saved successfully'),
             });
           } catch (error: unknown) {
-            console.error(error);
             Sentry.logger.error('Operation failed', {
               operation: 'Add or update authority service',
               values,
