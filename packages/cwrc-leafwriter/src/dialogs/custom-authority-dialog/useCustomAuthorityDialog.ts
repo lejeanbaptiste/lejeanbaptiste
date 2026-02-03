@@ -73,8 +73,12 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
           priority: Infinity,
           disabled: false,
         })
-        .catch((e) => {
-          console.error(e);
+        .catch((error) => {
+          Sentry.logger.error('Operation failed', {
+            operation: 'Adding authority service',
+            reason: 'Failed to save authority service to IndexedDB',
+            error: error,
+          });
         });
     }
 
@@ -151,8 +155,12 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
     for (const service of currentLookupServicePreferences) {
       const serviceEstablished = values.entityTypes.some((e) => e.name === service.entityType);
       if (!serviceEstablished) {
-        await db.lookupServicePreferences.delete(service.id).catch((e) => {
-          console.error(e);
+        await db.lookupServicePreferences.delete(service.id).catch((error) => {
+          Sentry.logger.error('Operation failed', {
+            operation: 'Removing authority service',
+            reason: 'Failed to remove authority service to IndexedDB',
+            error: error,
+          });
         });
       }
     }
@@ -168,8 +176,12 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
           priority: currentValue?.priority ?? Infinity,
           disabled: currentValue?.disabled ?? false,
         })
-        .catch((e) => {
-          console.error(e);
+        .catch((error) => {
+          Sentry.logger.error('Operation failed', {
+            operation: 'Updating authority service',
+            reason: 'Failed to update authority service to IndexedDB',
+            error: error,
+          });
         });
     }
 
