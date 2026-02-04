@@ -1,3 +1,5 @@
+import './sentry-config';
+
 import '@fontsource/lato/100.css';
 import '@fontsource/lato/300.css';
 import '@fontsource/lato/400.css';
@@ -22,6 +24,7 @@ import Providers from './Providers';
 import { JotaiProvider } from './providers/jotai-provider';
 import type { LeafWriterOptions, LWDocument, ScreenshotParams } from './types';
 import './utilities/log';
+import * as Sentry from '@sentry/react';
 
 declare global {
   interface Window {
@@ -110,13 +113,15 @@ export class Leafwriter {
     if (!this.reactReact || !this.options) return;
 
     this.reactReact.render(
-      <JotaiProvider>
-        <Provider value={overmind}>
-          <I18nextProvider i18n={i18next}>
-            <Providers {...this.options} />
-          </I18nextProvider>
-        </Provider>
-      </JotaiProvider>,
+      <Sentry.ErrorBoundary fallback={<p>An error has occurred</p>}>
+        <JotaiProvider>
+          <Provider value={overmind}>
+            <I18nextProvider i18n={i18next}>
+              <Providers {...this.options} />
+            </I18nextProvider>
+          </Provider>
+        </JotaiProvider>
+      </Sentry.ErrorBoundary>,
     );
   }
 

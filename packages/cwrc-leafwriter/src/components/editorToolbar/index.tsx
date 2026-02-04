@@ -7,6 +7,7 @@ import { EntityType } from '../../types';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { Toggle } from './Toggle';
+import { useTranslation } from 'react-i18next';
 
 type ItemType = 'button' | 'divider' | 'iconButton' | 'toggle';
 type ItemGroup = 'action' | 'ui' | 'panel' | 'general';
@@ -29,6 +30,7 @@ export interface MenuItem extends Item {
 }
 
 export const EditorToolbar = () => {
+  const { t } = useTranslation();
   const { schemaId } = useAppState().document;
   const { isReadonly, showTags } = useAppState().editor;
   const { fullscreen } = useAppState().ui;
@@ -64,8 +66,8 @@ export const EditorToolbar = () => {
           useSelection: true,
         });
       },
-      title: 'Tag',
-      tooltip: 'Add Tag',
+      title: t('LW.editorToolbar.Tag'),
+      tooltip: t('LW.editorToolbar.Add Tag'),
       type: 'button',
     },
     { group: 'action', type: 'divider', hide: isReadonly },
@@ -76,7 +78,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.person.icon,
       onClick: () => window.writer.tagger.addEntityDialog('person'),
-      title: 'Tag Person',
+      title: t('LW.editorToolbar.Tag Person'),
       type: 'iconButton',
     },
     {
@@ -86,7 +88,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.place.icon,
       onClick: () => window.writer.tagger.addEntityDialog('place'),
-      title: 'Tag Place',
+      title: t('LW.editorToolbar.Tag Place'),
       type: 'iconButton',
     },
     {
@@ -96,7 +98,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.organization.icon,
       onClick: () => window.writer.tagger.addEntityDialog('organization'),
-      title: 'Tag Organization',
+      title: t('LW.editorToolbar.Tag Organization'),
       type: 'iconButton',
     },
     {
@@ -106,7 +108,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.work.icon,
       onClick: () => window.writer.tagger.addEntityDialog('work'),
-      title: 'Tag Work',
+      title: t('LW.editorToolbar.Tag Work'),
       type: 'iconButton',
     },
     {
@@ -116,7 +118,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.thing.icon,
       onClick: () => window.writer.tagger.addEntityDialog('thing'),
-      title: 'Tag Thing',
+      title: t('LW.editorToolbar.Tag Thing'),
       type: 'iconButton',
     },
     {
@@ -126,7 +128,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.citation.icon,
       onClick: () => window.writer.tagger.addEntityDialog('citation'),
-      title: 'Tag Citation',
+      title: t('LW.editorToolbar.Tag Citation'),
       type: 'iconButton',
     },
     {
@@ -136,7 +138,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.note.icon,
       onClick: () => window.writer.tagger.addEntityDialog('note'),
-      title: 'Tag Note',
+      title: t('LW.editorToolbar.Tag Note'),
       type: 'iconButton',
     },
     {
@@ -146,7 +148,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.date.icon,
       onClick: () => window.writer.tagger.addEntityDialog('date'),
-      title: 'Tag Date',
+      title: t('LW.editorToolbar.Tag Date'),
       type: 'iconButton',
     },
     {
@@ -156,7 +158,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.correction.icon,
       onClick: () => window.writer.tagger.addEntityDialog('correction'),
-      title: 'Tag Correction',
+      title: t('LW.editorToolbar.Tag Correction'),
       type: 'iconButton',
     },
     {
@@ -166,7 +168,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.keyword.icon,
       onClick: () => window.writer.tagger.addEntityDialog('keyword'),
-      title: 'Tag Keyword',
+      title: t('LW.editorToolbar.Tag Keyword'),
       type: 'iconButton',
     },
     {
@@ -176,7 +178,7 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: entity.link.icon,
       onClick: () => window.writer.tagger.addEntityDialog('link'),
-      title: 'Tag Link',
+      title: t('LW.editorToolbar.Tag Link'),
       type: 'iconButton',
     },
     { group: 'action', type: 'divider', hide: isReadonly },
@@ -185,7 +187,7 @@ export const EditorToolbar = () => {
       group: 'action',
       hide: isReadonly,
       onClick: () => window.writer.dialogManager.show('translation'),
-      title: 'Add Translation',
+      title: t('LW.editorToolbar.Add Translation'),
       type: 'iconButton',
     },
     { group: 'action', type: 'divider', hide: isReadonly },
@@ -194,7 +196,7 @@ export const EditorToolbar = () => {
       icon: showTags ? 'showTagsOn' : 'showTagsOff',
       onClick: () => toggleShowTags(),
       selected: showTags,
-      title: 'Show Tags',
+      title: showTags ? t('LW.editorToolbar.Hide Tags') : t('LW.editorToolbar.Show Tags'),
       type: 'toggle',
     },
     {
@@ -202,7 +204,7 @@ export const EditorToolbar = () => {
       icon: fullscreen ? 'fullscreenExit' : 'fullscreen',
       onClick: () => toggleFullscreen(),
       selected: fullscreen,
-      title: 'Toggle Fullscreen',
+      title: t('LW.editorToolbar.Toggle Fullscreen'),
       type: 'toggle',
     },
     { group: 'ui', type: 'divider', hide: isReadonly },
@@ -214,7 +216,7 @@ export const EditorToolbar = () => {
         window.writer.layoutManager.showModule('validation');
         window.writer.validate();
       },
-      title: 'Validate',
+      title: t('LW.editorToolbar.Validate'),
       type: 'iconButton',
     },
     { group: 'ui', type: 'divider', hide: isReadonly },
@@ -222,7 +224,7 @@ export const EditorToolbar = () => {
       group: 'ui',
       icon: 'settings',
       onClick: () => openDialog({ type: 'settings' }),
-      title: 'Settings',
+      title: t('LW.editorToolbar.Settings'),
       type: 'iconButton',
     },
 
@@ -232,7 +234,7 @@ export const EditorToolbar = () => {
       onClick: () => {
         window.open('https://www.leaf-vre.org/docs/documentation/leaf-writer-documentation');
       },
-      title: 'Documentation',
+      title: t('LW.editorToolbar.Documentation'),
       type: 'iconButton',
     },
   ];

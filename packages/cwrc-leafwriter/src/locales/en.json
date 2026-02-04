@@ -230,6 +230,28 @@
     "edit_header": "edit_header",
     "edit_raw_xml": "Edit Raw XML",
     "edit_source": "edit source",
+    "editorToolbar": {
+      "Add Tag": "Add Tag",
+      "Add Translation": "Add Translation",
+      "Documentation": "Documentation",
+      "Hide Tags": "Hide Tags",
+      "Settings": "Settings",
+      "Show Tags": "Show Tags",
+      "Tag": "Tag",
+      "Tag Citation": "Tag Citation",
+      "Tag Correction": "Tag Correction",
+      "Tag Date": "Tag Date",
+      "Tag Keyword": "Tag Keyword",
+      "Tag Link": "Tag Link",
+      "Tag Note": "Tag Note",
+      "Tag Organization": "Tag Organization",
+      "Tag Person": "Tag Person",
+      "Tag Place": "Tag Place",
+      "Tag Thing": "Tag Thing",
+      "Tag Work": "Tag Work",
+      "Toggle Fullscreen": "Toggle Fullscreen",
+      "Validate": "Validate"
+    },
     "entity": {
       "_plural": {
         "citation_many": "citations",
@@ -342,6 +364,8 @@
         "Add Custom Authority": "Add Custom Authority",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
+          "Authority deleted successfully": "Authority deleted successfully",
+          "Authority saved successfully": "Authority saved successfully",
           "Deactivated authorities will not be shown in entity lookups": "Deactivated authorities will not be shown in entity lookups",
           "activate or deactivate authorities for each entity type": "Activate or deactivate authorities for each entity type",
           "learn how to set up a custom TEI-based authority file with this guide": "Learn how to set up a custom TEI-based authority file with <2>this guide</2>",
