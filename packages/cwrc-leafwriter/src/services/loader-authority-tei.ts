@@ -22,10 +22,12 @@ const fuse = new Fuse([], fuseOptions);
 const DEFAULT_MAX_RESULTS = 10;
 
 export async function teiFileBasedSearch({ query, entityType }: AuthorityLookupParams) {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore --  Typescript does not recognise `this` as variable (i.e., of 'any' type).
   // The context `this` must be assigned to the authority at the type it is setup.
   const serviceConfig = this as LocalAuthorityServiceConfig;
-  //@ts-ignore -- Same as above
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //@ts-ignore -- Same as abov`e
   if (!this) {
     throw new Error('No service config provided');
   }
