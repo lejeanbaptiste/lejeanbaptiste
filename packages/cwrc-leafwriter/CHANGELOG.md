@@ -18,6 +18,8 @@ If this change breaks your workflow, please let us know by opening an issue on [
 ### Minor Changes
 
 - [3942c94d16767c50c0641e1d096ad0b88a2e5d98] Remove custom property @role from the person entity dialog
+- [e5ad961312b14f052d7f22413dbe3ec5ad75422b] add localization to toolbar buttons
+- [00b0a2f77f56830b12239f47cda4454845009725] Add connection to Sentry
 
 ### Patch Changes
 
@@ -25,6 +27,9 @@ If this change breaks your workflow, please let us know by opening an issue on [
 - [8a9c30b34a8772748865739e6175c562530c1250] Slightly improve code for better typing
 - [3ecfc931ff321f30541fdcc95ba8d75f923f7418] Remove commented code
 - [bdd7633b69e253edc42e079dbb1859ab6fba1a7a] Entity type thing: remove depracated code related to thing type
+- [451c8a67861e4ccb7cfb52cdd0a7e8268241ffe8] Toggle tooltip show/hide
+- [702950f2b78e13bf80f554f91b05b8e0bb83c431] custom authoritiy: relax validation for user uri
+
 
 ## 3.9.0
 
