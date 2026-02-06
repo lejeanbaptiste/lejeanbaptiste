@@ -10,7 +10,8 @@ const person: EntityMappingProps = {
   },
   parentTag: 'NAME',
   types: ['foaf:Person'],
-  annotation: (annotationsManager, entity, format) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'foaf:Person');
   },
 };
@@ -23,7 +24,8 @@ const place: EntityMappingProps = {
   },
   parentTag: 'PLACE',
   types: ['geo:SpatialThing'],
-  annotation: (annotationsManager, entity, format) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'geo:SpatialThing');
   },
 };
@@ -36,7 +38,8 @@ const organization: EntityMappingProps = {
   },
   parentTag: 'ORGNAME',
   types: ['foaf:Organization'],
-  annotation: (annotationsManager, entity, format) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'foaf:Organization');
   },
 };
@@ -49,14 +52,15 @@ const work: EntityMappingProps = {
   },
   parentTag: 'TITLE',
   types: ['dcterms:BibliographicResource', 'dcterms:title'],
-  annotation: (annotationsManager, entity, format) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     const anno = annotationsManager.commonAnnotation(
       entity,
       ['dcterms:BibliographicResource', 'dcterms:title'],
       'oa:identifying',
     );
 
-    if (format === 'xml') {
+    if (_format === 'xml') {
       // const titleType = entity.getAttribute('TITLETYPE');
       // const levelXml = $.parseXML(
       //   `<cw:pubType xmlns:cw="http://cwrc.ca/ns/cw#">${titleType}</cw:pubType>`
@@ -82,7 +86,8 @@ const citation: EntityMappingProps = {
   },
   parentTag: 'BIBCIT',
   types: ['dcterms:BibliographicResource'],
-  annotation: (annotationsManager, entity, format) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(
       entity,
       'dcterms:BibliographicResource',
@@ -101,7 +106,8 @@ const note: EntityMappingProps = {
   parentTag: ['RESEARCHNOTE', 'SCHOLARNOTE'],
   xpathSelector: 'self::cwrcEntry:RESEARCHNOTE|self::cwrcEntry:SCHOLARNOTE',
   types: ['bibo:Note'],
-  annotation: (annotationsManager, entity) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'bibo:Note', 'oa:commenting');
   },
 };
@@ -114,14 +120,15 @@ const date: EntityMappingProps = {
   parentTag: ['DATE', 'DATERANGE'],
   types: ['time:Interval', 'time:Instant', 'time:TemporalEntity'],
   xpathSelector: 'self::cwrcEntry:DATE|self::cwrcEntry:DATERANGE',
-  annotation: (annotationsManager, entity, format) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     const types: string[] = [];
-    entity.getAttribute('FROM') ? types.push('time:Interval') : types.push('time:Instant');
+    types.push(entity.getAttribute('FROM') ? 'time:Interval' : 'time:Instant');
     types.push('time:TemporalEntity');
 
     const anno = annotationsManager.commonAnnotation(entity, types);
 
-    if (format === 'xml') {
+    if (_format === 'xml') {
       // let dateXml;
       // if (entity.getAttribute('VALUE') !== undefined) {
       //   const valueAttr = entity.getAttribute('VALUE');
@@ -160,10 +167,11 @@ const correction: EntityMappingProps = {
   label: 'Correction',
   parentTag: 'SIC',
   types: ['cnt:ContentAsText'],
-  annotation: (annotationsManager, entity, format) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     const anno = annotationsManager.commonAnnotation(entity, 'cnt:ContentAsText', 'oa:editing');
 
-    if (format === 'xml') {
+    if (_format === 'xml') {
       // const corrAttr = entity.getAttribute('CORR');
       // const corrXml = $.parseXML(
       //   `<cnt:chars xmlns:cnt="http://www.w3.org/2011/content#">${corrAttr}</cnt:chars>`
@@ -185,7 +193,8 @@ const keyword: EntityMappingProps = {
   label: 'Keyword',
   parentTag: 'KEYWORDCLASS',
   types: ['oa:Tag', 'cnt:ContentAsText', 'skos:Concept'],
-  annotation: (annotationsManager, entity, format) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     const anno = annotationsManager.commonAnnotation(
       entity,
       ['oa:Tag', 'cnt:ContentAsText', 'skos:Concept'],
@@ -193,7 +202,7 @@ const keyword: EntityMappingProps = {
     );
 
     const keyword = entity.getAttribute('KEYWORDTYPE');
-    if (format === 'xml') {
+    if (_format === 'xml') {
       // const body = $(`[rdf\\:about="${entity.getUris().entityId}"]`, anno);
       // const keywordXml = $.parseXML(
       //   `<cnt:chars xmlns:cnt="http://www.w3.org/2011/content#">${keyword}</cnt:chars>`
@@ -213,7 +222,8 @@ const link: EntityMappingProps = {
   label: 'Link',
   parentTag: 'XREF',
   types: ['cnt:ContentAsText'],
-  annotation: (annotationsManager, entity, format) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'cnt:ContentAsText', 'oa:linking');
   },
 };
@@ -242,16 +252,16 @@ export const cwrcEntry: SchemaMappingProps = {
   listeners: {
     tagAdded: (tag) => {
       const $tag = $(tag);
-      if ($tag.attr('_tag') === 'GRAPHIC') handleGraphics($tag);
+      if ($tag.attr('_tag') === 'GRAPHIC') handleGraphics($tag as JQuery<HTMLSpanElement>);
     },
     tagEdited: (tag) => {
       const $tag = $(tag);
-      if ($tag.attr('_tag') === 'GRAPHIC') handleGraphics($tag);
+      if ($tag.attr('_tag') === 'GRAPHIC') handleGraphics($tag as JQuery<HTMLSpanElement>);
     },
-    documentLoaded: (success, body) => {
+    documentLoaded: (_success, body) => {
       $(body)
         .find('*[_tag="GRAPHIC"]')
-        .each((index, element) => handleGraphics($(element)));
+        .each((_index, element) => handleGraphics($(element) as JQuery<HTMLSpanElement>));
     },
   },
 };
