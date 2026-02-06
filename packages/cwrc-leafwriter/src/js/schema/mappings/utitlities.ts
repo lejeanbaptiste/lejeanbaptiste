@@ -12,7 +12,7 @@ export const handleGraphics = ($tag: JQuery<HTMLSpanElement>) => {
 
   $img.hide();
   $img.on('load', function () {
-    $tag.width($(this).height() ?? 0);
+    $tag.width($(this).width() ?? 0);
     $tag.height($(this).height() ?? 0);
     $img.remove();
   });
