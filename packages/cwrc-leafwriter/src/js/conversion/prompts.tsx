@@ -24,6 +24,12 @@ export interface ProcessSchemaProps {
 // useTranslation(['leafwriter']);
 const { t } = i18next;
 
+const getPossibleSupportedSchemas = (writer: Writer, rootName: string) => {
+  const mappingIds = writer.schemaManager.getMappingIdsFromRoot(rootName);
+  const { schemasList } = writer.overmindState.editor as { schemasList: Schema[] };
+  return schemasList.filter((schema) => mappingIds.includes(schema.mapping));
+};
+
 export const openProcessIssueDialog = (params: ProcessSchemaProps, action?: string) => {
   window.writer.dialogManager.getDialog('loadingindicator')?.hide?.();
 
@@ -62,6 +68,20 @@ export const promptRootNotSupported = ({ rootName, writer }: ProcessSchemaProps)
 
 export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
   const { writer } = params;
+  const possibleSchemas = getPossibleSupportedSchemas(writer, params.rootName!);
+
+  const actions = [
+    { action: 'cancel', label: t('LW.commons.cancel') },
+    { action: 'addSchema', label: t('LW.add schema'), variant: 'outlined' },
+  ];
+
+  if (possibleSchemas.length > 0) {
+    actions.splice(1, 0, {
+      action: 'selectSchema',
+      label: t('LW.select supported schema'),
+      variant: 'outlined',
+    });
+  }
 
   writer.overmindActions.ui.openDialog({
     props: {
@@ -74,15 +94,7 @@ export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
           {t(`messages.LEAF-Writer could not find the document schema declaration`)}
         </Typography>
       ),
-      actions: [
-        { action: 'cancel', label: t('commons.cancel') },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
-        {
-          action: 'selectSchema',
-          label: t('select supported schema'),
-          variant: 'outlined',
-        },
-      ],
+      actions,
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
         openProcessIssueDialog(params, action);
@@ -93,6 +105,20 @@ export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
 
 export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
   const { writer } = params;
+  const possibleSchemas = getPossibleSupportedSchemas(writer, params.rootName!);
+
+  const actions = [
+    { action: 'cancel', label: t('LW.commons.cancel') },
+    { action: 'addSchema', label: t('LW.add schema'), variant: 'outlined' },
+  ];
+
+  if (possibleSchemas.length > 0) {
+    actions.splice(1, 0, {
+      action: 'selectSchema',
+      label: t('LW.select supported schema'),
+      variant: 'outlined',
+    });
+  }
 
   writer.overmindActions.ui.openDialog({
     props: {
@@ -113,15 +139,7 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
           </TextEmphasis>
         </Trans>
       ),
-      actions: [
-        { action: 'cancel', label: t('commons.cancel') },
-        {
-          action: 'selectSchema',
-          label: t('select supported schema'),
-          variant: 'outlined',
-        },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
-      ],
+      actions,
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
         openProcessIssueDialog(params, action);
@@ -132,6 +150,21 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
 
 export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
   const { docSchema, selectedSchema, writer } = params;
+
+  const possibleSchemas = getPossibleSupportedSchemas(writer, params.rootName!);
+
+  const actions = [
+    { action: 'cancel', label: t('LW.commons.cancel') },
+    { action: 'addSchema', label: t('LW.add schema'), variant: 'outlined' },
+  ];
+
+  if (possibleSchemas.length > 0) {
+    actions.splice(1, 0, {
+      action: 'selectSchema',
+      label: t('LW.select supported schema'),
+      variant: 'outlined',
+    });
+  }
 
   writer.overmindActions.ui.openDialog({
     props: {
@@ -152,15 +185,7 @@ export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
           </TextEmphasis>
         </Trans>
       ),
-      actions: [
-        { action: 'cancel', label: t('commons.cancel') },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
-        {
-          action: 'selectSchema',
-          label: t('select supported schema'),
-          variant: 'outlined',
-        },
-      ],
+      actions,
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
         openProcessIssueDialog(params, action);
