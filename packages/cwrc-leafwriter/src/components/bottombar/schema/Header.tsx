@@ -21,7 +21,7 @@ export const Header = ({ onClickAdd }: HeaderProps) => {
     >
       <Box height={1.5} width={1.5} p="3px" />
       <Typography sx={{ cursor: 'default', textTransform: 'capitalize' }} variant="caption">
-        {t('commons.schemas')}
+        {t('LW.commons.schemas')}
       </Typography>
       <IconButton
         aria-label={t('LW.commons.add').toString()}

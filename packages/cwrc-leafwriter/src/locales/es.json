@@ -88,9 +88,6 @@
     "Paste Tag": "Pegar Etiqueta",
     "Person": "",
     "Place": "",
-    "Please Choose": {
-      "": ""
-    },
     "Please select a {tagName} tag to translate": "",
     "Please select some text before adding an entity": "",
     "Powered by": "Desarrollado por",
@@ -156,6 +153,7 @@
     "Translation": "",
     "Type": "",
     "Type of place": "",
+    "URL must start with HTTPS secured connection": "",
     "Unknown": "",
     "Unknown date": "",
     "Use with caution": "",
@@ -392,6 +390,12 @@
           "Confirmation dialog preferences have been reset": "Las preferencias de mensajes de confirmación se han restablecido",
           "Settings preferences have been reset to default": "Las preferencias de configuración se han restablecido a los valores predeterminados",
           "You might need to reload the document": "Es posible que necesites recargar el documento"
+        }
+      },
+      "schemas": {
+        "messages": {
+          "Schema deleted successfully": "",
+          "Schema saved successfully": ""
         }
       },
       "theme": {
