@@ -88,11 +88,8 @@
     "Paste Tag": "Paste Tag",
     "Person": "",
     "Place": "",
-    "Please Choose": {
-      "": ""
-    },
-    "Please select a {tagName} tag to translate": "",
-    "Please select some text before adding an entity": "",
+    "Please select a {tagName} tag to translate": "Please select a {{tagName}} tag to translate",
+    "Please select some text before adding an entity": "Please select some text before adding an entity",
     "Powered by": "Powered by",
     "Precision of location of place name": "",
     "Raw XML": "",
@@ -167,7 +164,7 @@
     "You have overlapping entities and are attemping to switch to a mode which prohibits them The overlapping entities will be discarded if you continue": "The document has overlapping entities, and you are attempting to switch to a mode that prohibits them. If you continue, the overlapping entities will be discarded.",
     "You have unsaved changes": "You have unsaved changes",
     "You must provide a username to make requests": "You must provide a username to make requests",
-    "You will be able to tag and edit the text in the main document": "",
+    "You will be able to tag and edit the text in the main document": "You will be able to tag and edit the text in the main document",
     "add schema": "add schema",
     "address": "",
     "area": "",

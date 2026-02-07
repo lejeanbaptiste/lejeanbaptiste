@@ -62,7 +62,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         sx={{ cursor: 'default', backgroundColor: ({ palette }) => palette.action.hover }}
       >
         <Typography sx={{ cursor: 'default' }} variant="caption">
-          {t('commons.annotation')}
+          {t('LW.commons.annotation')}
         </Typography>
       </Box>
       {annotationModes.map(({ disabled, label, value }) => (

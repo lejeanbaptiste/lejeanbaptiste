@@ -88,9 +88,6 @@
     "Paste Tag": "Coller la balise",
     "Person": "LW.Personne",
     "Place": "LW.Place",
-    "Please Choose": {
-      "": ""
-    },
     "Please select a {tagName} tag to translate": "",
     "Please select some text before adding an entity": "",
     "Powered by": "Alimenté par",
@@ -156,6 +153,7 @@
     "Translation": "LW.Traduction",
     "Type": "Type LW",
     "Type of place": "LW.Type de lieu",
+    "URL must start with HTTPS secured connection": "L'URL doit commencer par HTTPS (connexion sécurisée)",
     "Unknown": "LW.Inconnu",
     "Unknown date": "LW.Date inconnue",
     "Use with caution": "LW.À utiliser avec prudence",
@@ -392,6 +390,12 @@
           "Confirmation dialog preferences have been reset": "Les préférences de la boîte de dialogue de confirmation ont été réinitialisées",
           "Settings preferences have been reset to default": "Les préférences de paramètres ont été réinitialisées par défaut",
           "You might need to reload the document": "Vous devrez peut-être recharger le document"
+        }
+      },
+      "schemas": {
+        "messages": {
+          "Schema deleted successfully": "Schéma supprimé avec succès",
+          "Schema saved successfully": "Schéma enregistré avec succès"
         }
       },
       "theme": {
