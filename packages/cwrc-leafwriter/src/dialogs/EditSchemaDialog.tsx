@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { Formik } from 'formik';
 import { useModal } from 'mui-modal-provider';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
@@ -48,19 +48,37 @@ export const EditSchemaDialog = ({
   const { schemas } = useAppState().editor;
 
   const { addSchema, deleteSchema, updateSchema } = useActions().editor;
-  const { closeDialog, openDialog } = useActions().ui;
+  const { closeDialog, notifyViaSnackbar, openDialog } = useActions().ui;
 
   const { destroyModal } = useModal();
 
   const { t } = useTranslation();
 
-  const [initialValues, setInitialValues] = useState<SchemaForm>(defaultValue);
+  const schema = schemaId ? schemas[schemaId] : undefined;
+
+  const initVal: SchemaForm = schema
+    ? {
+        name: schema.name,
+        mapping: schema.mapping,
+        rng: schema.rng[0],
+        css: schema.css[0],
+      }
+    : {
+        ...defaultValue,
+        rng: docSchema?.rng ?? '',
+        css: docSchema?.css ?? '',
+      };
+
+  const [initialValues, setInitialValues] = useState<SchemaForm>(initVal);
 
   const preventEscape = actionType === 'add';
 
   const urlValidation = z
     .string({ required_error: t('LW.Schema URL is required').toString() })
-    .url({ message: t('LW.Must be a valid URL').toString() });
+    .url({ message: t('LW.Must be a valid URL').toString() })
+    .startsWith('https://', {
+      message: t('LW.URL must start with HTTPS secured connection').toString(),
+    });
 
   const formValidation = z
     .object({
@@ -75,22 +93,6 @@ export const EditSchemaDialog = ({
       css: urlValidation,
     })
     .partial({ css: true });
-
-  useEffect(() => {
-    if (schemaId) {
-      const schema = schemas[schemaId];
-      if (!schema) return;
-
-      const { name, mapping, rng, css } = schema;
-      if (!rng[0] || !css[0]) return;
-
-      setInitialValues({ name, mapping, rng: rng[0], css: css[0] });
-      return;
-    }
-    if (docSchema) {
-      setInitialValues({ ...initialValues, rng: docSchema.rng ?? '', css: docSchema.css ?? '' });
-    }
-  }, [schemaId]);
 
   const handleBeforeClose = () => {
     setInitialValues(defaultValue);
@@ -147,6 +149,11 @@ export const EditSchemaDialog = ({
 
           handleBeforeClose();
           onDelete && (await onDelete(schemaId));
+
+          notifyViaSnackbar({
+            message: t('LW.settings.schemas.messages.Schema deleted successfully'),
+          });
+
           closeDialog(id);
           onClose && onClose('delete', schemaId);
         },
@@ -164,8 +171,6 @@ export const EditSchemaDialog = ({
       editable: true,
     };
 
-    if (!schemaToSubmit) return;
-
     const schema = schemaId
       ? await updateSchema(schemaToSubmit as Schema)
       : await addSchema(schemaToSubmit);
@@ -174,9 +179,13 @@ export const EditSchemaDialog = ({
     if (schemaId) schema.id = schemaId;
 
     handleBeforeClose();
-    onAcceptChanges && (await onAcceptChanges(schema));
+
+    await onAcceptChanges?.(schema);
+
+    notifyViaSnackbar({ message: t('LW.settings.schemas.messages.Schema saved successfully') });
+
     closeDialog(id);
-    onClose && onClose(actionType, schema);
+    onClose?.(actionType, schema);
   };
 
   return (
@@ -194,7 +203,6 @@ export const EditSchemaDialog = ({
         {actionType === 'add' ? t('LW.add schema') : t('LW.Change Schema')}
       </DialogTitle>
       <Formik
-        enableReinitialize={true}
         initialValues={initialValues}
         onSubmit={submit}
         validationSchema={toFormikValidationSchema(formValidation)}

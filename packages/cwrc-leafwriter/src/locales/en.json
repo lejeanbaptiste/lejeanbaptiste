@@ -156,6 +156,7 @@
     "Translation": "",
     "Type": "",
     "Type of place": "",
+    "URL must start with HTTPS secured connection": "URL must start with HTTPS (secured connection)",
     "Unknown": "",
     "Unknown date": "",
     "Use with caution": "",
@@ -392,6 +393,12 @@
           "Confirmation dialog preferences have been reset": "Confirmation dialog preferences have been reset",
           "Settings preferences have been reset to default": "Settings preferences have been reset to default",
           "You might need to reload the document": "You might need to reload the document"
+        }
+      },
+      "schemas": {
+        "messages": {
+          "Schema deleted successfully": "Schema deleted successfully",
+          "Schema saved successfully": "Schema saved successfully"
         }
       },
       "theme": {
