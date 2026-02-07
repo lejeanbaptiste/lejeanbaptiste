@@ -380,7 +380,7 @@ const getChildrenJSON = (
           //@ts-ignore
           childObj.required = !refParentProps.optional;
         } else {
-          if (child.$parent.$key === 'element' || child.$parent.$key === 'oneOrMore') {
+          if (child.$parent?.$key === 'element' || child.$parent?.$key === 'oneOrMore') {
             //@ts-ignore
             childObj.required = true;
           } else {
