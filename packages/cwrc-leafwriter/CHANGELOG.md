@@ -32,8 +32,8 @@ If this change breaks your workflow, please let us know by opening an issue on [
 - [451c8a67861e4ccb7cfb52cdd0a7e8268241ffe8] Toggle tooltip show/hide
 - [702950f2b78e13bf80f554f91b05b8e0bb83c431] custom authoritiy: relax validation for user uri
 - [a3721af9ef587c385aa033dc18385508d5282a7a] import jquery and refactor function that were preventing figure image to load on cwrc-entry and orlando schemas
+- [20bdedd238e3f1d807ea9da721188a6364b51fd6] Fix selector trying to access property from a possible undefined element. This bug was preventing some tags from being deleted.
 - [1e3cb9e8ffe2543057b9d8ab1997db5d9b25966a] improve localization
-
 
 ## 3.9.0
 
