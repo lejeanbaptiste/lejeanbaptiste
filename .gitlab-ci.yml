@@ -26,6 +26,10 @@ variables:
   K8S_SECRET_KEYCLOAK_URL: $KEYCLOAK_URL
   K8S_SECRET_AUTH_API_URL: $AUTH_API_URL
 
+  # Disable the le-<project-id> host
+  # https://gitlab.com/gitlab-org/cluster-integration/auto-deploy-image/-/blob/381abf6d6bffe46c6f88ca995920a5ca9ddd2a49/src/bin/auto-deploy#L354
+  AUTO_DEVOPS_COMMON_NAME: ""
+
 # Only rebuild node_modules if package.json changes
 cache:
   key:
@@ -59,15 +63,21 @@ staging:
 
 # override some production parameters
 production_manual:
+  environment:
+    name: production
+  id_tokens:
+    NPM_ID_TOKEN:
+      aud: "npm:registry.npmjs.org"
+    SIGSTORE_ID_TOKEN:
+      aud: sigstore
   variables:
     KUBE_INGRESS_BASE_DOMAIN: leaf-vre.org
     KUBE_CONTEXT: "calincs/gitlab-agents:leaf-agent"
     KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_PROJECT_ID-production
-    NPM_AUTH_TOKEN: $NPM_AUTH_TOKEN
   before_script:
     - apk add --update npm
+    - npm ping
     - npm i -g changeset typescript webpack shelljs webpack-cli
     - npm ci
-    - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
     - npm run release
   <<: *deployment
