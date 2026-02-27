@@ -54,6 +54,7 @@ export const useLeafWriter = () => {
       locale: currentLocale,
       readonly,
       schemas,
+      // Telemetry is handled by the LWC. If want to test it on LW, you must disabled it on LWC (just do not initialize it)
     };
 
     leafWriter.init({
