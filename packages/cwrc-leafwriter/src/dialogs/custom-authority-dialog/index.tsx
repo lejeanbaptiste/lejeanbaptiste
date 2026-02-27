@@ -52,20 +52,12 @@ export const CustomAuthorityDialog = ({
         onSubmit={async (values) => {
           try {
             authorityId ? await updateAuthority(values) : await addAuthority(values);
-            Sentry.logger.info('Operation successful', {
-              operation: 'Add or update custom authority service',
-              reason: authorityId ? 'update authority service' : 'add authority service',
-              name: values.name,
-              data: values,
-            });
             notifyViaSnackbar({
               message: t('LW.settings.authorities.messages.Authority saved successfully'),
             });
           } catch (error: unknown) {
             Sentry.logger.error('Operation failed', {
               operation: 'Add or update authority service',
-              name: values.name,
-              data: values,
               error,
             });
             notifyViaSnackbar({

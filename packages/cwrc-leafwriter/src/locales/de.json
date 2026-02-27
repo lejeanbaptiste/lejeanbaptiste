@@ -157,6 +157,7 @@
     "Translation": "Übersetzung",
     "Type": "Typ",
     "Type of place": "Art des Ortes",
+    "URL must start with HTTPS secured connection": "",
     "Unknown": "Unbekannt",
     "Unknown date": "Unbekanntes Datum",
     "Use with caution": "",
@@ -394,6 +395,12 @@
           "Confirmation dialog preferences have been reset": "Einstellung für den Bestätigungsdialog wurden zurückgesetzt",
           "Settings preferences have been reset to default": "Einstellungen wurden auf Standardwerte zurückgesetzt",
           "You might need to reload the document": "Sie müssen eventuell das Dokument neu laden"
+        }
+      },
+      "schemas": {
+        "messages": {
+          "Schema deleted successfully": "",
+          "Schema saved successfully": ""
         }
       },
       "theme": {

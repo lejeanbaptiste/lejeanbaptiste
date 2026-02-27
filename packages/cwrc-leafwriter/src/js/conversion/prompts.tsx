@@ -24,6 +24,12 @@ export interface ProcessSchemaProps {
 // useTranslation(['leafwriter']);
 const { t } = i18next;
 
+const getPossibleSupportedSchemas = (writer: Writer, rootName: string) => {
+  const mappingIds = writer.schemaManager.getMappingIdsFromRoot(rootName);
+  const { schemasList } = writer.overmindState.editor as { schemasList: Schema[] };
+  return schemasList.filter((schema) => mappingIds.includes(schema.mapping));
+};
+
 export const openProcessIssueDialog = (params: ProcessSchemaProps, action?: string) => {
   window.writer.dialogManager.getDialog('loadingindicator')?.hide?.();
 
@@ -45,9 +51,9 @@ export const promptRootNotSupported = ({ rootName, writer }: ProcessSchemaProps)
       maxWidth: 'xs',
       preventEscape: true,
       severity: 'error',
-      title: t('Document not supported'),
+      title: t('LW.Document not supported'),
       Body: () => (
-        <Trans i18nKey="messages.root element invalid" ns="leafwriter" values={{ rootName }}>
+        <Trans i18nKey="LW.messages.root element invalid" ns="leafwriter" values={{ rootName }}>
           <Typography>LEAF-Writer cannot open this document.</Typography>
           <Typography>Root element</Typography>
           <TextEmphasis color="error">{rootName}</TextEmphasis>
@@ -62,27 +68,33 @@ export const promptRootNotSupported = ({ rootName, writer }: ProcessSchemaProps)
 
 export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
   const { writer } = params;
+  const possibleSchemas = getPossibleSupportedSchemas(writer, params.rootName!);
+
+  const actions = [
+    { action: 'cancel', label: t('LW.commons.cancel') },
+    { action: 'addSchema', label: t('LW.add schema'), variant: 'outlined' },
+  ];
+
+  if (possibleSchemas.length > 0) {
+    actions.splice(1, 0, {
+      action: 'selectSchema',
+      label: t('LW.select supported schema'),
+      variant: 'outlined',
+    });
+  }
 
   writer.overmindActions.ui.openDialog({
     props: {
       maxWidth: 'sm',
       preventEscape: true,
       severity: 'warning',
-      title: t('Schema not found'),
+      title: t('LW.Schema not found'),
       Body: () => (
         <Typography>
-          {t(`messages.LEAF-Writer could not find the document schema declaration`)}
+          {t(`LW.messages.LEAF-Writer could not find the document schema declaration`)}
         </Typography>
       ),
-      actions: [
-        { action: 'cancel', label: t('commons.cancel') },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
-        {
-          action: 'selectSchema',
-          label: t('select supported schema'),
-          variant: 'outlined',
-        },
-      ],
+      actions,
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
         openProcessIssueDialog(params, action);
@@ -93,16 +105,30 @@ export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
 
 export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
   const { writer } = params;
+  const possibleSchemas = getPossibleSupportedSchemas(writer, params.rootName!);
+
+  const actions = [
+    { action: 'cancel', label: t('LW.commons.cancel') },
+    { action: 'addSchema', label: t('LW.add schema'), variant: 'outlined' },
+  ];
+
+  if (possibleSchemas.length > 0) {
+    actions.splice(1, 0, {
+      action: 'selectSchema',
+      label: t('LW.select supported schema'),
+      variant: 'outlined',
+    });
+  }
 
   writer.overmindActions.ui.openDialog({
     props: {
       maxWidth: 'sm',
       preventEscape: true,
       severity: 'warning',
-      title: t('Schema not supported'),
+      title: t('LW.Schema not supported'),
       Body: () => (
         <Trans
-          i18nKey="messages.schema not supported"
+          i18nKey="LW.messages.schema not supported"
           ns="leafwriter"
           shouldUnescape={true}
           values={{ rng: params.docSchema?.rng }}
@@ -113,15 +139,7 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
           </TextEmphasis>
         </Trans>
       ),
-      actions: [
-        { action: 'cancel', label: t('commons.cancel') },
-        {
-          action: 'selectSchema',
-          label: t('select supported schema'),
-          variant: 'outlined',
-        },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
-      ],
+      actions,
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
         openProcessIssueDialog(params, action);
@@ -133,15 +151,30 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
 export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
   const { docSchema, selectedSchema, writer } = params;
 
+  const possibleSchemas = getPossibleSupportedSchemas(writer, params.rootName!);
+
+  const actions = [
+    { action: 'cancel', label: t('LW.commons.cancel') },
+    { action: 'addSchema', label: t('LW.add schema'), variant: 'outlined' },
+  ];
+
+  if (possibleSchemas.length > 0) {
+    actions.splice(1, 0, {
+      action: 'selectSchema',
+      label: t('LW.select supported schema'),
+      variant: 'outlined',
+    });
+  }
+
   writer.overmindActions.ui.openDialog({
     props: {
       maxWidth: 'sm',
       preventEscape: true,
       severity: 'warning',
-      title: t('Schema not loaded'),
+      title: t('LW.Schema not loaded'),
       Body: () => (
         <Trans
-          i18nKey="messages.schema not loaded"
+          i18nKey="LW.messages.schema not loaded"
           ns="leafwriter"
           shouldUnescape={true}
           values={{ rng: docSchema?.rng }}
@@ -152,15 +185,7 @@ export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
           </TextEmphasis>
         </Trans>
       ),
-      actions: [
-        { action: 'cancel', label: t('commons.cancel') },
-        { action: 'addSchema', label: t('add schema'), variant: 'outlined' },
-        {
-          action: 'selectSchema',
-          label: t('select supported schema'),
-          variant: 'outlined',
-        },
-      ],
+      actions,
       onClose: (action: string) => {
         if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
         openProcessIssueDialog(params, action);
@@ -236,11 +261,11 @@ export const openEditorModeDialog = async (writer: Writer) => {
   if (mode === writer.XML) {
     Body = () => (
       <>
-        <TextEmphasis color="info">{`Markup ${t('commons.only')}`}</TextEmphasis>
-        <Typography>{`${t('Only XML tags No RDF Semantic Web annotations will be created')}.`}</Typography>
+        <TextEmphasis color="info">{`Markup ${t('LW.commons.only')}`}</TextEmphasis>
+        <Typography>{`${t('LW.Only XML tags No RDF Semantic Web annotations will be created')}.`}</Typography>
         <Typography mt={3} variant="caption">
-          <b>{`${t('commons.hint')}: `}</b>
-          {`${t('You can change the editor mode anytime in the status bar')}`}
+          <b>{`${t('LW.commons.hint')}: `}</b>
+          {`${t('LW.You can change the editor mode anytime in the status bar')}`}
         </Typography>
       </>
     );
@@ -251,14 +276,14 @@ export const openEditorModeDialog = async (writer: Writer) => {
           <TextEmphasis color="info">{`Markup & Linking with overlap`}</TextEmphasis>
           <Typography>
             {`${t(
-              'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
+              'LW.XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
             )} ${t(
-              'Annotations that overlap will be created in RDF only with no equivalent XML tags',
+              'LW.Annotations that overlap will be created in RDF only with no equivalent XML tags',
             )}.`}
           </Typography>
           <Typography mt={3} variant="caption">
-            <b>{`${t('commons.hint')}: `}</b>
-            {`${t('You can change the editor mode anytime in the status bar')}.`}
+            <b>{`${t('LW.commons.hint')}: `}</b>
+            {`${t('LW.You can change the editor mode anytime in the status bar')}.`}
           </Typography>
         </>
       );
@@ -268,12 +293,12 @@ export const openEditorModeDialog = async (writer: Writer) => {
           <TextEmphasis color="info">{`Markup & Linking`}</TextEmphasis>
           <Typography>
             {`${t(
-              'XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
+              'LW.XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
             )}`}
           </Typography>
           <Typography mt={3} variant="caption">
-            <b>{`${t('hint')}: `}</b>
-            {`${t('You can change the editor mode anytime in the status bar')}.`}
+            <b>{`${t('LW.commons.hint')}: `}</b>
+            {`${t('LW.You can change the editor mode anytime in the status bar')}.`}
           </Typography>
         </>
       );
@@ -283,11 +308,11 @@ export const openEditorModeDialog = async (writer: Writer) => {
   overmindActions.ui.openDialog({
     props: {
       severity: 'info',
-      title: t('Editor Mode'),
+      title: t('LW.Editor Mode'),
       Body,
       actions: [
-        { action: 'notShowAgain', label: t('dont show again') },
-        { action: 'ok', label: t('commons.ok') },
+        { action: 'notShowAgain', label: t('LW.dont show again') },
+        { action: 'ok', label: t('LW.commons.ok') },
       ],
       onClose: async (action: string) => {
         if (action === 'notShowAgain') await overmindActions.ui.doNotDisplayDialog(dialogTitle);
