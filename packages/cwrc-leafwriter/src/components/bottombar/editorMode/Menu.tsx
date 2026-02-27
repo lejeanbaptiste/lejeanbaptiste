@@ -44,7 +44,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
         title: `${t('LW.Change Editor Mode')}?`,
         Body: () => <>{text}</>,
         actions: [
-          { action: 'cancel', label: t('commons.cancel').toString(), variant: 'outlined' },
+          { action: 'cancel', label: t('LW.commons.cancel').toString(), variant: 'outlined' },
           {
             action: 'change',
             label:
