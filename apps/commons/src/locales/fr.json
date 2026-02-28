@@ -25,6 +25,7 @@
       "language": "langue",
       "learn_more": "Apprendre encore plus",
       "link_your_account": "Associer votre compte {{fournisseur}}",
+      "months": "",
       "more_information": "Plus d'information",
       "name": "nom",
       "new": "nouveau",
@@ -73,6 +74,7 @@
         "AUTH_SESSION_description": "Stocke les données de connexion et de session de l'utilisateur.",
         "_ga_description": "Utilisé par Google Analytics pour collecter des données sur le nombre de fois qu'un utilisateur a visité le site Web ainsi que les dates de la première et de la plus récente visite.",
         "basic_interactions_description": "Ces trackers sont utilisés pour les fonctionnalités de base de LEAF-Writer, qui incluent l'insertion d'un identifiant d'utilisateur (par exemple, le nom de compte Github ou ORCID) dans toutes les annotations Web créées, et la prise en charge du chargement, de l'enregistrement et du partage de fichiers via les référentiels Git d'un utilisateur. LEAF-Writer ne peut fournir que des fonctionnalités limitées sans ces cookies.",
+        "basic_interactions_description2": "",
         "cc_cookie_description": "Stocke les préférences de consentement des cookies.",
         "consent_preferences": "Préférences de consentement",
         "cookie_expiration_time": "{{valeur}} {{période}}",
@@ -81,6 +83,7 @@
         "domain": "domaine",
         "expiration": "expiration",
         "indefinitely_until_user_sign_out": "indéfiniment jusqu'à la déconnexion de l'utilisateur",
+        "list of cookies used by GitHub": "",
         "lw_description": "Stocke les données d'utilisation sur le stockage local du navigateur: fournisseurs d'identité et de stockage préférés, langue et couleur de thème préférées, référentiels et documents récents, schémas XML, etc.",
         "measurement": "la mesure",
         "measurement_description": "Ces cookies collectent des informations sur la façon dont vous utilisez le site Web, les pages que vous avez visitées et les liens sur lesquels vous avez cliqués. Toutes les données sont anonymisées et ne peuvent pas être utilisées pour vous identifier.",
@@ -140,6 +143,7 @@
     "messsages": {
       "authentication_server_is_currently_unavailable": "Le serveur d'authentification n'est pas disponible en ce moment"
     },
+    "on this page": "",
     "profile": {
       "manage_your_lincs_account": "Gérer votre compte LINCS"
     },

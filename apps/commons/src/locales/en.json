@@ -3,9 +3,9 @@
     "commons": {
       "Conversion to HTML failed": "Conversion to HTML failed",
       "about": "About",
-      "accept_all": "accept all",
+      "accept_all": "Accept all",
       "and": "and",
-      "basic_interactions": "basic interactions",
+      "basic_interactions": "Basic Interactions",
       "cancel": "cancel",
       "close": "close",
       "contact_us": "contact us",
@@ -25,7 +25,8 @@
       "language": "language",
       "learn_more": "Learn more",
       "link_your_account": "Link your {{provider}} account",
-      "more_information": "More information",
+      "months": "months",
+      "more_information": "More Information",
       "name": "name",
       "new": "new",
       "none": "none",
@@ -39,7 +40,7 @@
       "privacy_policy": "Privacy Policy",
       "privacy_settings": "Privacy Settings",
       "recent": "recent",
-      "reject_all": "reject all",
+      "reject_all": "Reject all",
       "request expired": "request expired",
       "sample_document": "sample document",
       "samples": "samples",
@@ -61,7 +62,7 @@
     },
     "cookie consent": {
       "consent_banner": {
-        "let_me_choose": "let me choose",
+        "let_me_choose": "Let me choose",
         "line1": "We and selected third parties use cookies or similar technologies for technical purposes and, with your consent, for measurement. Denying consent may make related features unavailable.",
         "line2": "You can freely give, deny, or withdraw your consent at any time.",
         "line3": "Use the 'Accept' button to consent to the use of such technologies. Use the 'Reject' button or close this notice to continue without accepting.",
@@ -72,21 +73,23 @@
       "settings_modal": {
         "AUTH_SESSION_description": "Stores user login and session data.",
         "_ga_description": "Used by Google Analytics to collect data on the number of times a user has visited the website as well as dates for the first and most recent visit.",
-        "basic_interactions_description": "These trackers are used for LEAF-Writer basic functionalities, which include inserting a user's identifier (e.g., Github account name or ORCID) in any Web Annotations that are created, and supporting loading, saving, and sharing files through a user's Git repositories. LEAF-Writer can only provide limited functionalities without these cookies.",
+        "basic_interactions_description": "These trackers are used for LEAF-Writer Commons's basic functionality, including inserting a user's identifier (e.g., GitHub account name or ORCID) into any Web Annotations created. It supports loading, saving, and sharing files through a user's Git repositories. LEAF-Writer Commons can only provide limited functionalities without these cookies.",
+        "basic_interactions_description2": "If you log in using your GitHub account, GitHub will store several cookies with expiration dates varying from your current session to 1 year. Since the number and names of cookies may change, we invite you to check the",
         "cc_cookie_description": "Stores cookies consent preferences.",
         "consent_preferences": "Consent Preferences",
         "cookie_expiration_time": "{{value}} {{period}}",
         "cookie_usage": "Cookies usage",
-        "cookie_usage_description": "The following panel allows you to customize your consent preferences for the usage of cookies technology to help us achieve the features and activities described below. You may review and change your choices at any time. Please be aware that denying consent for a particular purpose may make related features unavailable. For more details relative to cookies and other sensitive data, please read the full.",
+        "cookie_usage_description": "This panel allows you to customize your consent preferences for the usage of third-party services and cookie technology to help us achieve the features and activities described below. You may review and change your choices at any time. Please be aware that denying consent for a particular purpose may make related features unavailable. For more details relative to cookies and other sensitive data, please read the",
         "domain": "domain",
         "expiration": "expiration",
         "indefinitely_until_user_sign_out": "indefinitely until user sign out",
+        "list of cookies used by GitHub": "list of cookies used by GitHub",
         "lw_description": "Stores usage data on the browser's local storage: preferred identity and storage providers, preferred language and colour theme, recent repositories and documents, XML schemas, etc.",
-        "measurement": "measurement",
-        "measurement_description": "These cookies collect information about how you use the website, which pages you visited and which links you clicked on. All the data is anonymized and cannot be used to identify you.",
+        "measurement": "Measurement",
+        "measurement_description": "These cookies collect information about how you use the website, which pages you visit, and which links you click. All the data is anonymized and cannot be used to identify you.",
         "more_information_description": "For any queries about our policy on cookies and your choices.",
-        "strictly_necessary": "strictly necessary",
-        "strictly_necessary_description": "Necessary cookies help make a website usable by enabling basic functions like page navigation and access to secure areas of the website. The website cannot function properly without these cookies."
+        "strictly_necessary": "Strictly Necessary",
+        "strictly_necessary_description": "Necessary cookies are required to make a website usable by enabling basic functions such as page navigation and access to secure areas. The website cannot function properly without these cookies. Third-party error-monitoring service does not use cookies, but is essential for the proper use of this site."
       },
       "warning": {
         "must_accept_cookies_message": "You must accept our cookie policies to be able to sign in. Click on the shield icon at the top.",
@@ -140,6 +143,7 @@
     "messsages": {
       "authentication_server_is_currently_unavailable": "Authentication server is currently unavailable"
     },
+    "on this page": "On this page",
     "profile": {
       "manage_your_lincs_account": "Manage your LINCS account"
     },

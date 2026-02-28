@@ -25,6 +25,7 @@
       "language": "limba",
       "learn_more": "Mai multe",
       "link_your_account": "",
+      "months": "",
       "more_information": "",
       "name": "",
       "new": "",
@@ -73,6 +74,7 @@
         "AUTH_SESSION_description": "",
         "_ga_description": "",
         "basic_interactions_description": "",
+        "basic_interactions_description2": "",
         "cc_cookie_description": "",
         "consent_preferences": "",
         "cookie_expiration_time": "",
@@ -81,6 +83,7 @@
         "domain": "",
         "expiration": "",
         "indefinitely_until_user_sign_out": "",
+        "list of cookies used by GitHub": "",
         "lw_description": "",
         "measurement": "",
         "measurement_description": "",
@@ -140,6 +143,7 @@
     "messsages": {
       "authentication_server_is_currently_unavailable": ""
     },
+    "on this page": "",
     "profile": {
       "manage_your_lincs_account": ""
     },
