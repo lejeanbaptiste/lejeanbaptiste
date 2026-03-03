@@ -79,7 +79,7 @@
     "tsup": "^8.5.0",
     "typedoc": "^0.28.6",
     "typescript": "^5.9.3",
-    "webpack": "^5.99.9",
+    "webpack": "^5.105.4",
     "webpackbar": "^7.0.0"
   },
   "peerDependencies": {
