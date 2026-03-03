@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/types/**/*.d.ts"],
   "exclude": ["node_modules", "lib"],
   "ts-node": {
     "files": true,
@@ -24,7 +24,7 @@
     "outDir": "lib",
     "lib": ["esnext", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
@@ -36,6 +36,6 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
-    "types": ["node"]
+    "types": ["node", "mdx"]
   }
 }

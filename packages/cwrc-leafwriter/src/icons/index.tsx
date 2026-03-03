@@ -33,6 +33,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import PhotoLibraryRoundedIcon from '@mui/icons-material/PhotoLibraryRounded';
 import PlaceIcon from '@mui/icons-material/Place';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
+import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import QuizRoundedIcon from '@mui/icons-material/QuizRounded';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
@@ -171,6 +172,7 @@ const icons = {
   PlaceIcon: PlaceIcon,
   PlaceOutlinedIcon: PlaceOutlinedIcon,
   PlaylistCheck: PlaylistCheck,
+  Privacy: PrivacyTipOutlinedIcon,
   QuizRoundedIcon: QuizRoundedIcon,
   reject: ClearIcon,
   remove: RemoveCircleOutlineIcon,

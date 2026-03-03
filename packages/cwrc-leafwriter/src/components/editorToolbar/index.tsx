@@ -1,13 +1,14 @@
 import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { PrivacyDialog } from '../../dialogs/privacy-dialog';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
 import { EntityType } from '../../types';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { Toggle } from './Toggle';
-import { useTranslation } from 'react-i18next';
 
 type ItemType = 'button' | 'divider' | 'iconButton' | 'toggle';
 type ItemGroup = 'action' | 'ui' | 'panel' | 'general';
@@ -46,6 +47,8 @@ export const EditorToolbar = () => {
     (name: EntityType) => window.writer.schemaManager.mapper.getEntitiesMapping().has(name),
     [schemaId],
   );
+
+  const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
 
   const items: (MenuItem | Item)[] = [
     {
@@ -227,7 +230,13 @@ export const EditorToolbar = () => {
       title: t('LW.editorToolbar.Settings'),
       type: 'iconButton',
     },
-
+    {
+      group: 'ui',
+      icon: 'Privacy',
+      onClick: () => setPrivacyDialogOpen(true),
+      title: t('LW.commons.Privacy Policy'),
+      type: 'iconButton',
+    },
     {
       group: 'ui',
       icon: 'documentation',
@@ -271,6 +280,7 @@ export const EditorToolbar = () => {
       component={motion.div}
       layout="size"
     >
+      <PrivacyDialog onClose={() => setPrivacyDialogOpen(false)} open={privacyDialogOpen} />
       <Stack
         direction="row"
         flexWrap="wrap"
