@@ -62,19 +62,21 @@ export const MdxComponents = (override?: MDXComponents): MDXComponents => {
     code: ({ children }) => (
       <Typography
         component="code"
-        sx={{
-          px: 0.5,
-          borderRadius: 1,
-          borderWidth: 1,
-          borderStyle: 'solid',
-          borderColor: 'grey.400',
-          backgroundColor: 'color-mix(in srgb, var(--mui-palette-grey-200) 50%, transparent)',
-          fontFamily: 'monospace',
-          '[data-mui-color-scheme="dark"] &': {
-            borderColor: 'grey.600',
-            backgroundColor: 'color-mix(in srgb, var(--mui-palette-grey-800) 50%, transparent)',
+        sx={[
+          {
+            borderRadius: 1,
+            borderWidth: 1,
+            borderStyle: 'solid',
+            borderColor: 'grey.400',
+            backgroundColor: 'color-mix(in srgb, var(--mui-palette-grey-200) 80%, transparent)',
+            fontFamily: 'monospace',
           },
-        }}
+          (theme) =>
+            theme.applyStyles('dark', {
+              borderColor: 'grey.600',
+              backgroundColor: 'color-mix(in srgb, var(--mui-palette-grey-800) 30%, transparent)',
+            }),
+        ]}
         variant="body2"
       >
         {children}
