@@ -1,6 +1,8 @@
 import { Box, Link, Paper, Stack } from '@mui/material';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import pck from '../../../package.json';
+import { PrivacyDialog } from '../../dialogs/privacy-dialog';
 import { useAppState } from '../../overmind';
 import { ValdidationErrors } from './ValdidationErrors';
 import AnnotationMode from './annotationMode';
@@ -12,6 +14,8 @@ export const BottomBar = () => {
   const { validationErrors } = useAppState().validator;
   const { t } = useTranslation();
   const version = pck.version;
+
+  const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
 
   return (
     <Paper
@@ -28,6 +32,7 @@ export const BottomBar = () => {
           }),
       ]}
     >
+      <PrivacyDialog onClose={() => setPrivacyDialogOpen(false)} open={privacyDialogOpen} />
       <Stack direction="row" alignItems="center" spacing={2} px={2}>
         {!isReadonly && (
           <>
@@ -40,6 +45,15 @@ export const BottomBar = () => {
         {validationErrors > 0 && !isReadonly && <ValdidationErrors />}
 
         <Box flexGrow={1} />
+
+        <Link
+          component="button"
+          color="textSecondary"
+          onClick={() => setPrivacyDialogOpen(true)}
+          variant="caption"
+        >
+          {t('LW.commons.Privacy Policy')}
+        </Link>
 
         <Link
           color="textSecondary"
