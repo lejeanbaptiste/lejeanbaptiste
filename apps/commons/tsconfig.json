@@ -1,5 +1,12 @@
 {
-  "include": ["**/*.ts", "**/*.tsx", "src/**/*.json", "./package.json", "./.env-cmdrc.js"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "src/**/*.json",
+    "src/types/**/*.d.ts",
+    "./package.json",
+    "./.env-cmdrc.js"
+  ],
   "exclude": ["node_modules", "server", "public"],
   "ts-node": {
     "files": true,
@@ -24,7 +31,7 @@
     "jsx": "react-jsx",
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noEmit": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
@@ -35,6 +42,7 @@
     "preserveWatchOutput": true,
     "resolveJsonModule": true,
     "strict": true,
-    "target": "ESNext"
+    "target": "ESNext",
+    "types": ["node", "react", "react-dom"]
   }
 }

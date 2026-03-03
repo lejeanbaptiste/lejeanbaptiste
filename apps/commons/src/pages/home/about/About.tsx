@@ -1,101 +1,29 @@
-import { Link, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { ContainerCompiledMdxContent } from '@src/components/mdx';
 import { useAppState } from '@src/overmind';
-import { useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+
+import * as en from '@src/content/about/en.mdx';
+import * as es from '@src/content/about/es.mdx';
+import * as fr from '@src/content/about/fr.mdx';
+import * as pt from '@src/content/about/pt.mdx';
+import * as ro from '@src/content/about/ro.mdx';
+
+// Static mapping of content by locale
+const aboutContentMap = {
+  //@ts-ignore
+  en: { content: en.default, tableOfContents: en.tableOfContents },
+  //@ts-ignore
+  es: { content: es.default, tableOfContents: es.tableOfContents },
+  //@ts-ignore
+  fr: { content: fr.default, tableOfContents: fr.tableOfContents },
+  //@ts-ignore
+  pt: { content: pt.default, tableOfContents: pt.tableOfContents },
+  //@ts-ignore
+  ro: { content: ro.default, tableOfContents: ro.tableOfContents },
+};
 
 export const About = () => {
-  const { breakpoints } = useTheme();
-
   const { currentLocale } = useAppState().ui;
+  const aboutContent = aboutContentMap[currentLocale as keyof typeof aboutContentMap];
 
-  const [content, setContent] = useState('');
-
-  useEffect(() => {
-    loadContent();
-  }, []);
-
-  useEffect(() => {
-    loadContent();
-  }, [currentLocale]);
-
-  const isMobile = useMediaQuery(breakpoints.down('sm'));
-
-  const loadContent = async () => {
-    const response = await fetch(`./content/about/${currentLocale}.md`);
-    const text = await response.text();
-    setContent(text);
-  };
-
-  return (
-    <ReactMarkdown
-      components={{
-        h1: ({ node, children }) => (
-          <Typography
-            component="h1"
-            mb={4}
-            sx={{ fontWeight: 300 }}
-            variant={isMobile ? 'h3' : 'h2'}
-            {...node?.properties}
-          >
-            {children}
-          </Typography>
-        ),
-        h2: ({ node, children }) => (
-          <Typography component="h2" mb={3} variant={isMobile ? 'h4' : 'h3'} {...node?.properties}>
-            {children}
-          </Typography>
-        ),
-        h3: ({ node, children }) => (
-          <Typography
-            component="h3"
-            mb={2.5}
-            variant={isMobile ? 'h5' : 'h4'}
-            {...node?.properties}
-          >
-            {children}
-          </Typography>
-        ),
-        h4: ({ node, children }) => (
-          <Typography component="h4" mb={2} variant={isMobile ? 'h6' : 'h5'} {...node?.properties}>
-            {children}
-          </Typography>
-        ),
-        h5: ({ node, children }) => (
-          <Typography mb={1.5} variant={isMobile ? 'subtitle1' : 'h6'} {...node?.properties}>
-            {children}
-          </Typography>
-        ),
-        h6: ({ node, children }) => (
-          <Typography
-            component="h6"
-            mb={1}
-            variant={isMobile ? 'subtitle2' : 'subtitle1'}
-            sx={{ fontWeight: 700 }}
-            {...node?.properties}
-          >
-            {children}
-          </Typography>
-        ),
-        p: ({ node, children }) => (
-          <Typography my={1} {...node?.properties}>
-            {children}
-          </Typography>
-        ),
-        a: ({ node, href, children }) => (
-          <Link
-            aria-label={`${children?.toString()} (opens in new window)`}
-            href={href}
-            underline="hover"
-            target="_blank"
-            rel="noopener noreferrer"
-            {...node?.properties}
-          >
-            {children}
-          </Link>
-        ),
-      }}
-    >
-      {content}
-    </ReactMarkdown>
-  );
+  return <ContainerCompiledMdxContent content={aboutContent.content} />;
 };
