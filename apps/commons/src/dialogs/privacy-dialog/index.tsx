@@ -1,6 +1,6 @@
 import { Button, Container, Dialog, DialogContent, Grid, Link, Typography } from '@mui/material';
 import { useAppState } from '@src/overmind';
-import { extractMarkdownHeadings, slugfy } from '@src/utilities';
+import { extractMarkdownHeadings, slugify } from '@src/utilities';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
@@ -49,7 +49,7 @@ export const PrivacyDialog = ({ id = uuidv4() }: IDialog) => {
                   h1: ({ children }) => (
                     <Typography
                       component="h1"
-                      id={typeof children === 'string' ? slugfy(children) : ''}
+                      id={typeof children === 'string' ? slugify(children) : ''}
                       mb={2}
                       variant="h5"
                       sx={{
@@ -67,7 +67,7 @@ export const PrivacyDialog = ({ id = uuidv4() }: IDialog) => {
                   h2: ({ children }) => (
                     <Typography
                       component="h2"
-                      id={typeof children === 'string' ? slugfy(children) : ''}
+                      id={typeof children === 'string' ? slugify(children) : ''}
                       my={1.5}
                       variant="h6"
                     >
@@ -77,7 +77,7 @@ export const PrivacyDialog = ({ id = uuidv4() }: IDialog) => {
                   h3: ({ children }) => (
                     <Typography
                       component="h3"
-                      id={typeof children === 'string' ? slugfy(children) : ''}
+                      id={typeof children === 'string' ? slugify(children) : ''}
                       my={1}
                       variant="subtitle1"
                       fontWeight={700}
@@ -88,7 +88,7 @@ export const PrivacyDialog = ({ id = uuidv4() }: IDialog) => {
                   h4: ({ children }) => (
                     <Typography
                       component="h4"
-                      id={typeof children === 'string' ? slugfy(children) : ''}
+                      id={typeof children === 'string' ? slugify(children) : ''}
                       my={0.5}
                       variant="subtitle1"
                     >
