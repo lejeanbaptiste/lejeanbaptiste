@@ -18,7 +18,7 @@ export const changeFileExtension = (filename: string, newExternsion: string) => 
   return `${name}.${newExternsion}`;
 };
 
-export const slugfy = (content: string) => {
+export const slugify = (content: string) => {
   return content
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
@@ -48,7 +48,7 @@ export const extractMarkdownHeadings = (content: string) => {
     const id = Math.floor(Math.random() * 900000) + 100000;
     const level = match[1].length;
     const title = match[2].trim();
-    const slug = slugfy(title);
+    const slug = slugify(title);
 
     headings.push({ id, slug, title, level });
     match = headingMatcher.exec(content);

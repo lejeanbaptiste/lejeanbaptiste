@@ -1,4 +1,4 @@
-# Terms of Services and Privacy Policy
+# LEAF-Writer Commons Terms of Services and Privacy Policy
 
 _Last updated: February 26, 2026_
 
