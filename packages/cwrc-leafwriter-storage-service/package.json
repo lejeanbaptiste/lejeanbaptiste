@@ -56,7 +56,6 @@
   "scripts": {
     "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration",
     "clean": "rm -rf .turbo node_modules lib coverage",
-    "build-documentation": "typedoc --out docs src/index.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
@@ -114,7 +113,6 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.4.0",
     "tsup": "^8.5.0",
-    "typedoc": "^0.28.6",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   }
 }
