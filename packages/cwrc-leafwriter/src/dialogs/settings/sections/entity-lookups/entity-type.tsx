@@ -82,7 +82,9 @@ export const EntityType = ({ entityType }: { entityType: NamedEntityType }) => {
           sensors={sensors}
         >
           <SortableContext items={items} strategy={verticalListSortingStrategy}>
-            {items?.map((item) => <Authority key={item.id} servicePreference={item} />)}
+            {items?.map((item) => (
+              <Authority key={item.id} servicePreference={item} />
+            ))}
           </SortableContext>
         </DndContext>
       </Stack>

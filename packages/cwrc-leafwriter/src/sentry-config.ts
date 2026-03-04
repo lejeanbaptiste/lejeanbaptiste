@@ -21,7 +21,7 @@ const sentryConfig: Sentry.BrowserOptions = {
 export const getSentryConfig = (settings: {
   dsn: string;
   enableReplay?: boolean;
-  tags?: { [key: string]: string };
+  tags?: Record<string, string>;
 }) => {
   sentryConfig.dsn = settings.dsn;
   if (settings.enableReplay) sentryConfig.integrations = [Sentry.replayIntegration()];

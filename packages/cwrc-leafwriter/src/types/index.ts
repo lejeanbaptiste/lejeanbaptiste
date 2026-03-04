@@ -59,7 +59,7 @@ export interface LeafWriterOptionsSettings {
     sentryConfig?: {
       dsn: string;
       enableReplay?: boolean;
-      tags?: { [key: string]: string };
+      tags?: Record<string, string>;
     };
   };
 }
