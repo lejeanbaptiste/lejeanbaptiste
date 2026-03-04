@@ -12,24 +12,9 @@ export const mdxComponents: MDXComponents = {
       position="sticky"
       py={2}
       top={0}
-      variant="h5"
+      variant="h4"
       zIndex={1}
     >
-      {children}
-    </Typography>
-  ),
-  h2: ({ children, id }) => (
-    <Typography component="h2" id={id} mt={1.5} variant="h6">
-      {children}
-    </Typography>
-  ),
-  h3: ({ children, id }) => (
-    <Typography component="h3" fontWeight={700} id={id} mt={0.5} variant="subtitle1">
-      {children}
-    </Typography>
-  ),
-  h4: ({ children, id }) => (
-    <Typography component="h4" id={id} variant="subtitle1">
       {children}
     </Typography>
   ),

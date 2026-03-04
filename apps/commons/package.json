@@ -124,6 +124,8 @@
     "monaco-editor-webpack-plugin": "^7.1.0",
     "process": "^0.11.10",
     "rehype-slug": "^6.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-mdx-frontmatter": "^5.2.0",
     "rimraf": "^6.0.1",
     "svg-inline-loader": "^0.8.2",
     "tsup": "^8.5.1",
