@@ -1,14 +1,14 @@
 import { Button, Dialog, DialogActions, DialogTitle } from '@mui/material';
-import { TemplatesView, TopBar, type Layout } from '@src/views/storage/documents';
 import { useOpenResource } from '@src/hooks';
 import { useActions } from '@src/overmind';
 import type { Resource } from '@src/types';
+import { TemplatesView, TopBar, type Layout } from '@src/views/storage/documents';
+import { nanoid } from 'nanoid';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from './type';
 
-export const TemplateDialog = ({ id = uuidv4(), open = true }: IDialog) => {
+export const TemplateDialog = ({ id = nanoid(), open = true }: IDialog) => {
   const { closeDialog } = useActions().ui;
 
   const { t } = useTranslation();

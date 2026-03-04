@@ -2,8 +2,8 @@ import { Button, Container, Dialog, DialogContent, Grid } from '@mui/material';
 import { ContainerCompiledMdxContent } from '@src/components/mdx';
 import { Toc } from '@src/components/toc';
 import { useActions, useAppState } from '@src/overmind';
+import { nanoid } from 'nanoid';
 import { useTranslation } from 'react-i18next';
-import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from '../type';
 import { mdxComponents } from './mdx-components';
 
@@ -32,7 +32,7 @@ const privacyContentMap = {
   ro: { content: ro.default, tableOfContents: ro.tableOfContents, frontmatter: ro.frontmatter },
 };
 
-export const PrivacyDialog = ({ id = uuidv4() }: IDialog) => {
+export const PrivacyDialog = ({ id = nanoid() }: IDialog) => {
   const { currentLocale } = useAppState().ui;
   const { closeDialog } = useActions().ui;
   const { t } = useTranslation();
