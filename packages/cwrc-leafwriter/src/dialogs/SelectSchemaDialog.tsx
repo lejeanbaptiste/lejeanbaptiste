@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { useActions, useAppState } from '../overmind';
 import type { Schema, SchemaMappingType } from '../types';
 import { type IDialog } from './type';
@@ -25,7 +25,7 @@ export interface SelectSchemaDialogProps extends IDialog {
 }
 
 export const SelectSchemaDialog = ({
-  id = uuidv4(),
+  id = nanoid(),
   maxWidth = 'xs',
   mappingIds = [],
   onClose,

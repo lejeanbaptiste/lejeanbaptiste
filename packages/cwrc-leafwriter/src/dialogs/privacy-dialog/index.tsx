@@ -56,8 +56,6 @@ export const PrivacyDialog = ({ open, onClose }: PrivacyDialogProps) => {
 
   const privacyContent = privacyContentMap[currentLocale as keyof typeof privacyContentMap];
 
-  console.log(privacyContent);
-
   return (
     <Dialog
       maxWidth="md"
