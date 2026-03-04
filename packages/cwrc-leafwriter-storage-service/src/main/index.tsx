@@ -125,7 +125,7 @@ export const Main = ({
       maxWidth="md"
       onClose={handleClose}
       open={open}
-      TransitionComponent={Transition}
+      slots={{ transition: Transition }}
     >
       <Box role="panel" height={isMD ? '100vh' : HEIGHT}>
         <Stack direction="row" height="100%">
