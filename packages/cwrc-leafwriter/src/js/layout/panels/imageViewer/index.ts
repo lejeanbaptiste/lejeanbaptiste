@@ -68,6 +68,7 @@ class ImageViewer {
     // openseadragon instance
     this.osd = OpenSeaDragon({
       id: `${this.id}_osd`,
+      crossOriginPolicy: 'Anonymous',
       sequenceMode: true,
       autoHideControls: false,
       showFullPageControl: false,
@@ -81,7 +82,6 @@ class ImageViewer {
     this.writer.event('loadingDocument').subscribe(() => this.reset());
     this.writer.event('documentLoaded').subscribe((success: boolean, body: HTMLElement) => {
       if (!success) return;
-
       this.processDocument(body, true);
       setTimeout(this.cssHack, 50);
     });
@@ -117,12 +117,10 @@ class ImageViewer {
     this.osd.addHandler('open-failed', (event: any) => {
       let msg = event.message;
       if (event.source.url === true) msg = `No URI found for @${this.attrName}.`;
-      this.setMessage(msg);
     });
 
     this.osd.addHandler('reset-size', (event: any) => {
       if (event.contentFactor !== 0) return;
-      this.setMessage(`No URI found for @${this.attrName}.`);
     });
 
     this.osd.addHandler('page', (event: any) => {
@@ -141,14 +139,10 @@ class ImageViewer {
   }
 
   private osdReset() {
-    // this.osd.drawer.clear();
     this.osd.close();
-    this.osd.tileSources = []; // hack to remove any previously added images
   }
 
   private processDocument(doc: HTMLElement, docLoaded: any) {
-    this.setMessage('');
-
     this.$pageBreaks = $(doc).find(`*[_tag=${this.tagName}]`);
 
     if (this.$pageBreaks.length === 0) {
@@ -165,42 +159,14 @@ class ImageViewer {
       tileSources.push({ type: 'image', url });
     });
 
-    let needUpdate = docLoaded || tileSources.length !== this.osd.tileSources.length;
-
-    if (!needUpdate) {
-      for (let i = 0; i < tileSources.length; i++) {
-        if (tileSources[i].url !== this.osd.tileSources[i].url) {
-          needUpdate = true;
-          break;
-        }
-      }
-    }
-
     this.osd.open(tileSources);
-
-    // tileSources.length === 0
-    //   ? this.writer.layoutManager.hideModule('imageViewer')
-    //   : this.writer.layoutManager.showModule('imageViewer');
 
     this.$parent.find('.totalPages').html(this.$pageBreaks.length);
     this.currentIndex = -1;
     this.handleScroll();
   }
 
-  private setMessage(msg: string) {
-    // this.osd.drawer.clear();
-    this.osd._showMessage(msg);
-  }
-
   private hideViewer() {
-    const msg = `
-      Provide page breaks (${this.tagName}) with ${this.attrName} attributes
-      pointing to image URLs in order to
-      display the corresponding images/scans
-      for pages in this doument.
-    `;
-
-    this.setMessage(msg);
     this.writer.layoutManager.hideModule('imageViewer');
   }
 
@@ -289,25 +255,5 @@ class ImageViewer {
     this.osd.destroy();
   }
 }
-
-// export const hasPBImages = (writer: any) => {
-
-//   const .$pageBreaks = $(doc).find(`*[_tag=${this.tagName}]`);
-
-//   if (this.$pageBreaks.length === 0) {
-//     this.hideViewer();
-//     return;
-//   }
-
-//   const tileSources: any[] = [];
-
-//   this.$pageBreaks.each((index: any, el: any) => {
-//     const url = $(el).attr(this.attrName);
-//     if (!url || url === '') return;
-
-//     tileSources.push({ type: 'image', url });
-//   });
-
-// }
 
 export default ImageViewer;
