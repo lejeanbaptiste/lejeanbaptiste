@@ -1,4 +1,4 @@
-import { ListItemButton, Stack, Tooltip, alpha, useTheme } from '@mui/material';
+import { ListItemButton, Stack, Tooltip, useTheme } from '@mui/material';
 import classNames from 'classnames';
 import {
   forwardRef,
@@ -144,12 +144,12 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
             borderRadius: 1,
             cursor: 'pointer',
             '&.Mui-selected': {
-              backgroundColor: alpha(
+              backgroundColor: theme.alpha(
                 theme.palette.primary[theme.palette.mode],
                 theme.palette.action.selectedOpacity,
               ),
               '&:hover': {
-                backgroundColor: alpha(
+                backgroundColor: theme.alpha(
                   theme.palette.primary[theme.palette.mode],
                   theme.palette.action.hoverOpacity + theme.palette.action.selectedOpacity,
                 ),
@@ -158,9 +158,9 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
           },
           isEntity && {
             '&.Mui-selected': {
-              backgroundColor: alpha(color, theme.palette.action.selectedOpacity),
+              backgroundColor: theme.alpha(color, theme.palette.action.selectedOpacity),
               '&:hover': {
-                backgroundColor: alpha(
+                backgroundColor: theme.alpha(
                   color,
                   theme.palette.action.hoverOpacity + theme.palette.action.selectedOpacity,
                 ),
