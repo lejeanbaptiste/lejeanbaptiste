@@ -6,8 +6,9 @@ declare module '*.mdx' {
   const tableOfContents: Toc;
   const MDXContent: ComponentType<MDXProps>;
 
-  export default MDXContent;
   export { tableOfContents };
+  export const frontmatter: Record<string, any>;
+  export default MDXContent;
 }
 
 declare module '*.svg' {

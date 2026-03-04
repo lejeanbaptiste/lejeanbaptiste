@@ -11,13 +11,38 @@ import * as fr from '../../content/privacy/fr.mdx';
 import * as pt from '../../content/privacy/pt.mdx';
 import * as ro from '../../content/privacy/ro.mdx';
 
+interface PrivacyFrontmatter {
+  lastUpdated?: string;
+  [key: string]: any;
+}
+
 // Static mapping of content by locale
 const privacyContentMap = {
-  en: { content: en.default, tableOfContents: en.tableOfContents },
-  es: { content: es.default, tableOfContents: es.tableOfContents },
-  fr: { content: fr.default, tableOfContents: fr.tableOfContents },
-  pt: { content: pt.default, tableOfContents: pt.tableOfContents },
-  ro: { content: ro.default, tableOfContents: ro.tableOfContents },
+  en: {
+    content: en.default,
+    tableOfContents: en.tableOfContents,
+    frontMatter: en.frontmatter as PrivacyFrontmatter,
+  },
+  es: {
+    content: es.default,
+    tableOfContents: es.tableOfContents,
+    frontMatter: es.frontmatter as PrivacyFrontmatter,
+  },
+  fr: {
+    content: fr.default,
+    tableOfContents: fr.tableOfContents,
+    frontMatter: fr.frontmatter as PrivacyFrontmatter,
+  },
+  pt: {
+    content: pt.default,
+    tableOfContents: pt.tableOfContents,
+    frontMatter: pt.frontmatter as PrivacyFrontmatter,
+  },
+  ro: {
+    content: ro.default,
+    tableOfContents: ro.tableOfContents,
+    frontMatter: ro.frontmatter as PrivacyFrontmatter,
+  },
 };
 
 interface PrivacyDialogProps {
@@ -30,6 +55,8 @@ export const PrivacyDialog = ({ open, onClose }: PrivacyDialogProps) => {
   const { t } = useTranslation();
 
   const privacyContent = privacyContentMap[currentLocale as keyof typeof privacyContentMap];
+
+  console.log(privacyContent);
 
   return (
     <Dialog

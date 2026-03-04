@@ -139,6 +139,8 @@
     "mini-css-extract-plugin": "^2.9.2",
     "monaco-editor-webpack-plugin": "^7.1.0",
     "rehype-slug": "^6.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-mdx-frontmatter": "^5.2.0",
     "shelljs": "^0.10.0",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.1",
