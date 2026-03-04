@@ -1,4 +1,4 @@
-import { alpha, MenuItem, Stack, useTheme } from '@mui/material';
+import { MenuItem, Stack, useTheme } from '@mui/material';
 import { motion, Variants } from 'motion/react';
 import { forwardRef, MouseEvent, useMemo } from 'react';
 import { type IconLeafWriter } from '../../../../icons';
@@ -116,7 +116,7 @@ export const Item = forwardRef<any, ItemProps>(
             '&.Mui-focusVisible': { backgroundColor: 'inherit' },
             '&:hover': {
               color,
-              backgroundColor: alpha(color, theme.vars.palette.action.hoverOpacity),
+              backgroundColor: theme.alpha(color, theme.vars.palette.action.hoverOpacity),
             },
           },
           showNestedMenu && {
