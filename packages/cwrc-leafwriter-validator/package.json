@@ -46,7 +46,6 @@
     "lint": "eslint .",
     "test": "jest",
     "test-watch": "jest --watchAll --verbose",
-    "build-documentation": "typedoc src/index.worker.ts",
     "cm": "git-cz",
     "prepublishOnly": "npm test && npm run build && npm run build-documentation"
   },
@@ -76,8 +75,7 @@
     "jsdom": "21.1.2",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
-    "tsup": "^8.5.0",
-    "typedoc": "^0.28.6",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "webpack": "^5.105.4",
     "webpackbar": "^7.0.0"
