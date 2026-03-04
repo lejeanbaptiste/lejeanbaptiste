@@ -1,6 +1,6 @@
 import CSS from 'css';
 import $ from 'jquery';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import type { Schema, SchemaMappingType } from '../../types';
 import { log } from '../../utilities';
 import Writer from '../Writer';
@@ -493,8 +493,8 @@ class SchemaManager {
    * @returns The new schema that was added.
    */
   addSchema({ name, rng, css, mapping, editable }: Omit<Schema, 'id'>) {
-    let id = name ? name.replaceAll(' ', '_').toLowerCase() : `schema_${uuidv4()}`;
-    if (name && this.schemas.some((sch) => sch.id === id)) id = `${id}_${uuidv4()}`;
+    let id = name ? name.replaceAll(' ', '_').toLowerCase() : `schema_${nanoid()}`;
+    if (name && this.schemas.some((sch) => sch.id === id)) id = `${id}_${nanoid()}`;
 
     const newSchema: Schema = { id, name, rng, css, mapping, editable };
 

@@ -15,7 +15,7 @@ import { Formik } from 'formik';
 import { useModal } from 'mui-modal-provider';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { TextEmphasis } from '../components';
@@ -35,7 +35,7 @@ const defaultValue: SchemaForm = { name: '', mapping: 'tei', rng: '', css: '' };
 export const EditSchemaDialog = ({
   actionType = 'add',
   docSchema,
-  id = uuidv4(),
+  id = nanoid(),
   mappingIds = [],
   maxWidth = 'md',
   onAcceptChanges,
@@ -74,7 +74,6 @@ export const EditSchemaDialog = ({
   const preventEscape = actionType === 'add';
 
   const urlValidation = z
-    .string({ required_error: t('LW.Schema URL is required').toString() })
     .url({ message: t('LW.Must be a valid URL').toString() })
     .startsWith('https://', {
       message: t('LW.URL must start with HTTPS secured connection').toString(),
@@ -83,7 +82,9 @@ export const EditSchemaDialog = ({
   const formValidation = z
     .object({
       name: z
-        .string({ required_error: t('LW.Every schema needs a name').toString() })
+        .string({
+          error: (issue) => (issue.input === undefined ? undefined : undefined),
+        })
         .min(3, { message: t('LW.Must be at least characters', { min: 3 }).toString() })
         .max(20, {
           message: t('LW.Cannot have more than characters', { max: 20 }).toString(),

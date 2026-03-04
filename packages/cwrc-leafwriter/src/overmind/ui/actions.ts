@@ -1,5 +1,5 @@
 // import i18n from 'i18next';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { Context } from '../';
 import { db } from '../../db';
 import type { DialogBarProps, PopupProps } from '../../dialogs';
@@ -102,7 +102,7 @@ export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
   const dialogOpened = state.ui.dialogBar.some(({ props }) => props?.id === dialogBar.props?.id);
   if (dialogOpened) return;
 
-  if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
+  if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: nanoid() };
   if (!dialogBar.type) dialogBar.type = 'simple';
   state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
   return dialogBar.props.id;
