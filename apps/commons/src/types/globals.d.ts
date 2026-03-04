@@ -6,7 +6,7 @@ declare module '*.mdx' {
   const tableOfContents: Toc;
   const MDXContent: ComponentType<MDXProps>;
 
-  export { tableOfContents };
   export const frontmatter: Record<string, any>;
+  export { tableOfContents };
   export default MDXContent;
 }

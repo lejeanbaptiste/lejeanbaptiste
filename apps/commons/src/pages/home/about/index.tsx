@@ -1,4 +1,4 @@
-import { Box, Container, Grid, Stack, Typography } from '@mui/material';
+import { Container, Grid, Stack, Typography } from '@mui/material';
 import { ContainerCompiledMdxContent } from '@src/components/mdx';
 import { useAppState } from '@src/overmind';
 import { useTranslation } from 'react-i18next';

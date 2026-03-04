@@ -7,24 +7,29 @@ import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from '../type';
 import { mdxComponents } from './mdx-components';
 
-import * as ro from '@src/content/privacy/ro.mdx';
 import * as en from '@src/content/privacy/en.mdx';
 import * as es from '@src/content/privacy/es.mdx';
 import * as fr from '@src/content/privacy/fr.mdx';
 import * as pt from '@src/content/privacy/pt.mdx';
+import * as ro from '@src/content/privacy/ro.mdx';
+
+interface PrivacyFrontmatter {
+  lastUpdated: string;
+  [key: string]: any;
+}
 
 // Static mapping of content by locale
 const privacyContentMap = {
   //@ts-ignore
-  en: { content: en.default, tableOfContents: en.tableOfContents },
+  en: { content: en.default, tableOfContents: en.tableOfContents, frontmatter: en.frontmatter },
   //@ts-ignore
-  es: { content: es.default, tableOfContents: es.tableOfContents },
+  es: { content: es.default, tableOfContents: es.tableOfContents, frontmatter: es.frontmatter },
   //@ts-ignore
-  fr: { content: fr.default, tableOfContents: fr.tableOfContents },
+  fr: { content: fr.default, tableOfContents: fr.tableOfContents, frontmatter: fr.frontmatter },
   //@ts-ignore
-  pt: { content: pt.default, tableOfContents: pt.tableOfContents },
+  pt: { content: pt.default, tableOfContents: pt.tableOfContents, frontmatter: pt.frontmatter },
   //@ts-ignore
-  ro: { content: ro.default, tableOfContents: ro.tableOfContents },
+  ro: { content: ro.default, tableOfContents: ro.tableOfContents, frontmatter: ro.frontmatter },
 };
 
 export const PrivacyDialog = ({ id = uuidv4() }: IDialog) => {
