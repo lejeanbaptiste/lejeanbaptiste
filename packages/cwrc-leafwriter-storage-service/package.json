@@ -82,16 +82,14 @@
     "mdi-material-ui": "^7.9.4",
     "motion": "^12.19.2",
     "mui-modal-provider": "^2.4.6",
-    "overmind": "^28.0.4",
-    "overmind-react": "^29.0.6",
+    "nanoid": "^5.1.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-dropzone": "^14.3.8",
     "react-i18next": "^15.5.3",
     "react-icons": "^5.5.0",
     "react-use": "^17.6.0",
-    "uuid": "^11.1.0",
-    "zod": "^3.25.67"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
