@@ -25,5 +25,6 @@ void i18next
     nsSeparator: '.',
     resources,
     returnEmptyString: false,
+    showSupportNotice: false,
     supportedLngs: locales,
   });
