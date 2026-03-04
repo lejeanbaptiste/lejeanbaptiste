@@ -4,22 +4,22 @@ import type { MDXComponents } from 'mdx/types';
 export const MdxComponents = (override?: MDXComponents): MDXComponents => {
   return {
     h1: ({ children, id }) => (
-      <Typography component="h1" id={id} mb={3} variant="h1">
+      <Typography component="h1" id={id} mb={2} variant="h4">
         {children}
       </Typography>
     ),
     h2: ({ children, id }) => (
-      <Typography component="h2" id={id} my={2} variant="h2">
+      <Typography component="h2" id={id} mt={1.5} variant="h5">
         {children}
       </Typography>
     ),
     h3: ({ children, id }) => (
-      <Typography component="h3" id={id} my={1} variant="h3">
+      <Typography component="h3" fontWeight={700} id={id} mt={0.5} variant="h6">
         {children}
       </Typography>
     ),
     h4: ({ children, id }) => (
-      <Typography component="h4" id={id} variant="h4">
+      <Typography component="h4" id={id} variant="subtitle1">
         {children}
       </Typography>
     ),

@@ -1,4 +1,4 @@
-import { Button, Stack } from '@mui/material';
+import { Box, Button, Stack } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
@@ -71,8 +71,28 @@ export const HomePage = () => {
       />
       <Stack>
         <Main />
-        <AboutSection />
-        <Footer />
+        <Box
+          // id="about"
+          // py={10}
+          // px={2}
+          sx={[
+            {
+              // backgroundColor: (theme) => `rgba(${theme.vars.palette.primary.mainChannel} / 0.02)`,
+              backgroundImage:
+                'linear-gradient(to bottom, #ffffff, #f7f8f9, #edf1f4, #e3eaed, #d9e4e4)',
+              scrollMarginBlockStart: 300,
+            },
+            (theme) =>
+              theme.applyStyles('dark', {
+                // backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.02)`,
+                backgroundImage:
+                  'linear-gradient(to bottom, #121212, #111213, #101214, #0d1215, #091315)',
+              }),
+          ]}
+        >
+          <AboutSection />
+          <Footer />
+        </Box>
       </Stack>
     </Page>
   );
