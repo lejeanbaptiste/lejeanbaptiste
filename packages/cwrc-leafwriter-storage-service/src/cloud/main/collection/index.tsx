@@ -1,6 +1,6 @@
 import { Box, List } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
 import { useActions, useAppState } from '@src/overmind';
+import { useEffect, useRef, useState } from 'react';
 import { useScrollSpy } from '../../hooks/useScrollSpy';
 import { Content, Empty, LoadMore, Organization, Repository, Skeletons } from './components';
 
@@ -52,7 +52,9 @@ export const Collection = ({ height = '100%' }: Collection) => {
         ) : collectionType === 'content' ? (
           <>
             {repositoryContent.tree?.length === 0 && <Empty />}
-            {repositoryContent.tree?.map((item, i) => <Content key={i} content={item} />)}
+            {repositoryContent.tree?.map((item, i) => (
+              <Content key={i} content={item} />
+            ))}
           </>
         ) : null}
       </List>
