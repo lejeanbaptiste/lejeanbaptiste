@@ -12,7 +12,7 @@ export const mdxComponents: MDXComponents = {
       minHeight={24}
       position="sticky"
       py={2}
-      variant="h5"
+      variant="h4"
       top={0}
       zIndex={1}
     >
@@ -24,7 +24,7 @@ export const mdxComponents: MDXComponents = {
       component="h2"
       id={typeof children === 'string' ? slugify(children) : ''}
       mt={1.5}
-      variant="h6"
+      variant="h5"
     >
       {children}
     </Typography>
@@ -35,7 +35,7 @@ export const mdxComponents: MDXComponents = {
       fontWeight={700}
       id={typeof children === 'string' ? slugify(children) : ''}
       mt={0.5}
-      variant="subtitle1"
+      variant="h6"
     >
       {children}
     </Typography>
