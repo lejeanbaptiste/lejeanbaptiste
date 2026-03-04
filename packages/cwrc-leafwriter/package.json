@@ -82,7 +82,7 @@
     "jotai": "^2.18.0",
     "jotai-devtools": "^0.13.0",
     "jquery": "3.7.1",
-    "jquery-ui": "^1.14.1",
+    "jquery-ui": "^1.14.2",
     "js-cookie": "^3.0.5",
     "layout-jquery3": "^1.8.5",
     "lodash": "^4.17.23",
