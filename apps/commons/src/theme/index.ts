@@ -1,30 +1,22 @@
 import { createTheme } from '@mui/material/styles';
 import type {} from '@mui/material/themeCssVarsAugmentation';
-import chroma from 'chroma-js';
 
 export const theme = createTheme({
   cssVariables: {
     colorSchemeSelector: 'class',
+    nativeColor: true,
   },
   colorSchemes: {
     light: {
       palette: {
-        primary: {
-          main: chroma.rgb(28, 64, 69).hex(),
-        },
-        secondary: {
-          main: chroma.rgb(255, 114, 0).hex(),
-        },
+        primary: { main: 'rgb(28, 64, 69)' },
+        secondary: { main: 'rgb(255, 114, 0)' },
       },
     },
     dark: {
       palette: {
-        primary: {
-          main: chroma.rgb(191, 213, 213).hex(),
-        },
-        secondary: {
-          main: chroma.rgb(255, 114, 0).hex(),
-        },
+        primary: { main: 'rgb(191, 213, 213)' },
+        secondary: { main: 'rgb(255, 114, 0)' },
       },
     },
   },
