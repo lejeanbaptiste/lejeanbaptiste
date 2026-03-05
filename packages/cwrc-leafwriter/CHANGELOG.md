@@ -42,6 +42,7 @@ LEAF-Writer has now its own Privay Policy. The text of the policy is implemented
 
 ### Patch Changes
 
+- Remove mention to "powered by tiny". No reason to showcase them and other libs. [2a5264394840738f96cf2149e0a62cc5f808b10d]
 - MDX: Incorporate frontmatter [5742c1a9839f364353cd808e28a553e1d786237f]
 - MUI
   - Replace alpha [85c7f25364886c8a9fed0612a7b93a4949af3a0f]
