@@ -1,8 +1,7 @@
 import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PrivacyDialog } from '../../dialogs/privacy-dialog';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
 import { EntityType } from '../../types';
@@ -47,8 +46,6 @@ export const EditorToolbar = () => {
     (name: EntityType) => window.writer.schemaManager.mapper.getEntitiesMapping().has(name),
     [schemaId],
   );
-
-  const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
 
   const items: (MenuItem | Item)[] = [
     {
@@ -232,13 +229,6 @@ export const EditorToolbar = () => {
     },
     {
       group: 'ui',
-      icon: 'Privacy',
-      onClick: () => setPrivacyDialogOpen(true),
-      title: t('LW.commons.Privacy Policy'),
-      type: 'iconButton',
-    },
-    {
-      group: 'ui',
       icon: 'documentation',
       onClick: () => {
         window.open('https://www.leaf-vre.org/docs/documentation/leaf-writer-documentation');
@@ -280,7 +270,6 @@ export const EditorToolbar = () => {
       component={motion.div}
       layout="size"
     >
-      <PrivacyDialog onClose={() => setPrivacyDialogOpen(false)} open={privacyDialogOpen} />
       <Stack
         direction="row"
         flexWrap="wrap"
