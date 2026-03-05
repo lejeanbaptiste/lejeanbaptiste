@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 4.4.3
+
+### Patch Changes
+
+- Generate new build [68d6a9eaac757fe469d448c6deaf625b04375fcd]
+- Update dependencies
+  - core:
+    - update:
+      - dexie@4.3.0 [68d6a9eaac757fe469d448c6deaf625b04375fcd]
+  - dev:
+    - remove: typdoc [2b8ce457b56829e2067a7fa4f7db828192721c62]
+    - upgrade:
+      - @jest/globals@30.2.0 [68d6a9eaac757fe469d448c6deaf625b04375fcd]
+      - @types/jest@30.0.0 [68d6a9eaac757fe469d448c6deaf625b04375fcd]
+      - jest@30.2.0 [68d6a9eaac757fe469d448c6deaf625b04375fcd]
+      - jest-environment-jsdom@30.2.0 [68d6a9eaac757fe469d448c6deaf625b04375fcd]
+    - update:
+      - @types/node@25.3.3 [047533bc3f3f81bb4ed1c90b28d996c56aac9ef5]
+      - esbuild-loader@4.2.2 [0c618556aefe398d5a2a6c07d8063990db49e2bd]
+      - ts-jest@29.4.0 [c13eb7523dee6ca8daa46e7bfb989a19009476bd]
+      - typescript@5.9.3 [d78532b3d4563fd3bb34d2c26dc27fe0adc85076]
+      - webpack@5.105.4 [ff9e196ab6a43ebbe8171d0ea4478ef3110f95c2]
+    - bump:
+      - @types/lodash@4.17.24 [b3dc845310345d119ad823ff790f9c0db8acb593]
+      - lodash@4.17.23 [b3dc845310345d119ad823ff790f9c0db8acb593]
+      - ts-jest@29.4.6 [68d6a9eaac757fe469d448c6deaf625b04375fcd]
+
 ## 4.4.2
 
 ### Patch Changes
