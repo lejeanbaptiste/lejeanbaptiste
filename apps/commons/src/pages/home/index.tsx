@@ -14,7 +14,7 @@ export const HomePage = () => {
   const { userState } = useAppState().auth;
 
   const { openStorageDialog } = useActions().storage;
-  const { setPage } = useActions().ui;
+  const { openDialog, setPage } = useActions().ui;
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ export const HomePage = () => {
     if (!resource.filename) openStorageDialog({ source: 'cloud', type: 'load', resource });
   };
 
-  const handleClickTopBar = (id: string) => {
+  const handleClickAbout = (id: string) => {
     navigate(`#${id}`);
     scrollToElement(id);
   };
@@ -66,25 +66,27 @@ export const HomePage = () => {
     <Page>
       <TopBar
         Left={
-          <Button onPointerDown={() => handleClickTopBar('about')}>{t('LWC.commons.about')}</Button>
+          <>
+            <Button onPointerDown={() => handleClickAbout('about')} size="small">
+              {t('LWC.commons.about')}
+            </Button>
+            <Button onPointerDown={() => openDialog({ type: 'privacy' })} size="small">
+              {t('LWC.commons.privacy')}
+            </Button>
+          </>
         }
       />
       <Stack>
         <Main />
         <Box
-          // id="about"
-          // py={10}
-          // px={2}
           sx={[
             {
-              // backgroundColor: (theme) => `rgba(${theme.vars.palette.primary.mainChannel} / 0.02)`,
               backgroundImage:
                 'linear-gradient(to bottom, #ffffff, #f7f8f9, #edf1f4, #e3eaed, #d9e4e4)',
               scrollMarginBlockStart: 300,
             },
             (theme) =>
               theme.applyStyles('dark', {
-                // backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.02)`,
                 backgroundImage:
                   'linear-gradient(to bottom, #121212, #111213, #101214, #0d1215, #091315)',
               }),
