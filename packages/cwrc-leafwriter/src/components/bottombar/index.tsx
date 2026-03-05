@@ -22,14 +22,9 @@ export const BottomBar = () => {
       elevation={0}
       square
       sx={[
-        {
-          width: '100%',
-          backgroundColor: '#f5f5f5',
-        },
+        { width: '100%', backgroundColor: '#f5f5f5' },
         (theme) =>
-          theme.applyStyles('dark', {
-            backgroundColor: theme.vars.palette.background.paper,
-          }),
+          theme.applyStyles('dark', { backgroundColor: theme.vars.palette.background.paper }),
       ]}
     >
       <PrivacyDialog onClose={() => setPrivacyDialogOpen(false)} open={privacyDialogOpen} />
@@ -72,17 +67,7 @@ export const BottomBar = () => {
           target="_blank"
           title="Repository"
         >
-          {`LEAF-Writer ${version}`}
-        </Link>
-        <Link
-          color="textSecondary"
-          variant="caption"
-          href="https://www.tiny.cloud"
-          target="_blank"
-          rel="noopener"
-          title={t('LW.Powered by').toString()}
-        >
-          {t('LW.Powered by')} Tiny
+          {`v${version}`}
         </Link>
       </Stack>
     </Paper>
