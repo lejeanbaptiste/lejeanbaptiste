@@ -18,6 +18,7 @@ Covers the site and LEAF-Writer. [7c5efdfe16099782c483a9bdc1205078a1b07399]
 
 ### Patch Changes
 
+- Move link to privacy policy from page bottom to page top bar [30963cfd8f2eff34bc0194b0841e8c9dd13d20e8]
 - Replace uuid with nanoid@5.1.6 [3e3ddd0a05904741a4b0d4b00b4d5811a04c120c]
 - MUI: Use native colors [3b8ae985da5656e6c69a1fdbf9a13e0ed8f39ed5]
 - Code format [7985b66ada70dbb4ff51bce2fd12a0c64da7e62d]
