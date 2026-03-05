@@ -10,6 +10,7 @@
       "close": "închide",
       "contact_us": "contact",
       "conversion failed": "Transformarea a eșuat",
+      "cookies settings": "",
       "create": "Creaza",
       "description": "descriere",
       "discard changes": "renunța la schimbari",
@@ -183,5 +184,9 @@
       "device_theme": "",
       "light_theme": ""
     }
-  }
+  },
+  "main": "",
+  "module": "",
+  "type": "",
+  "types": ""
 }

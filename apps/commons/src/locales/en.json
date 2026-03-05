@@ -10,6 +10,7 @@
       "close": "close",
       "contact_us": "contact us",
       "conversion failed": "Conversion failed",
+      "cookies settings": "Cookies settings",
       "create": "create",
       "description": "description",
       "discard changes": "discard changes",
@@ -183,5 +184,9 @@
       "device_theme": "Device theme",
       "light_theme": "Light theme"
     }
-  }
+  },
+  "main": "",
+  "module": "",
+  "type": "",
+  "types": ""
 }

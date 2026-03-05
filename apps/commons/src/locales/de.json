@@ -10,6 +10,7 @@
       "close": "Schließen",
       "contact_us": "kontaktieren Sie uns",
       "conversion failed": "Konvertierung fehlgeschlagen",
+      "cookies settings": "",
       "create": "Erstellen",
       "description": "Beschreibung",
       "discard changes": "Änderungen verwerfen",
@@ -183,5 +184,9 @@
       "device_theme": "Browser Design",
       "light_theme": "Helles Design"
     }
-  }
+  },
+  "main": "",
+  "module": "",
+  "type": "",
+  "types": ""
 }

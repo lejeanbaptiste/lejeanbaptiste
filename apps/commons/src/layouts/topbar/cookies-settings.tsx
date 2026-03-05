@@ -1,32 +1,28 @@
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 import { IconButton } from '@mui/material';
 import { useCookieConsent } from '@src/hooks';
-import { motion, type Variants } from 'motion/react';
+import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
-export const Privacy = () => {
+export const CookiesSettings = () => {
   const { t } = useTranslation();
   const { showSettings } = useCookieConsent();
-
-  const handleClick = () => showSettings();
-
-  const optionVariants: Variants = {
-    initial: { y: -100 },
-    visible: { y: 0 },
-    exit: { y: -100 },
-  };
 
   return (
     <IconButton
       key="darkMode"
-      aria-label={t('LWC.commons.privacy')}
+      aria-label={t('LWC.commons.cookies settings')}
       component={motion.button}
-      variants={optionVariants}
+      onClick={() => showSettings()}
+      size="small"
       initial="initial"
       animate="visible"
+      variants={{
+        initial: { y: -100 },
+        visible: { y: 0 },
+        exit: { y: -100 },
+      }}
       exit="exit"
-      onClick={handleClick}
-      size="small"
     >
       <PrivacyTipIcon fontSize="inherit" />
     </IconButton>
