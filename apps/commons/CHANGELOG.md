@@ -1,5 +1,111 @@
 # CHANGELOG
 
+## 3.9.0
+
+### Integrate with [Sentry](https://sentry.io)
+
+Covers the site and LEAF-Writer. [7c5efdfe16099782c483a9bdc1205078a1b07399]
+
+#### Update Privacy Policy
+
+- Update the content [911353918cc2c38d940148f5dcca48e58047be89]
+- Reimplement in MDX including TOC and Frontmatter
+  - [911353918cc2c38d940148f5dcca48e58047be89]
+  - [0dc46dbf882518134498a7c4b1a106a2bc6e72d7]
+  - [060d95c6a445c598b93af2b4ef6e130b8e7f6c28]
+  - [7d1500602245d37f82ef944186bd747cca57ba5c]
+  - [0146bd7d9edf6ad2a737d8ad0829fb864ca7c28c]
+
+### Patch Changes
+
+- Replace uuid with nanoid@5.1.6 [3e3ddd0a05904741a4b0d4b00b4d5811a04c120c]
+- MUI: Use native colors [3b8ae985da5656e6c69a1fdbf9a13e0ed8f39ed5]
+- Code format [7985b66ada70dbb4ff51bce2fd12a0c64da7e62d]
+- update dependencies
+  - core
+    - add: @sentry/react@10.42.0 [f462e07f3e23b00da4160b75937868b2b192c408]
+    - fixed
+      - env-cmd@10.1.0 (Cannot update with necessairy changes) [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - overmind@28.0.4 (Cannot update with necessairy changes) [c763a1879b814327c09c1fbc1fbf9fe93c8512eb]
+      - overmind-react@29.0.6 (Cannot update with necessairy changes) [c763a1879b814327c09c1fbc1fbf9fe93c8512eb]
+    - upgrade:
+      - dexie-react-hooks@4.2.0 [63184423420ca00968d587f9e9f60d63f4d8b0d0]
+      - express@v5.2.1 [711924d94eeeeb913cd2e9ee3f65884fd32f4241]
+      - react-dropzone@15.0.0 [c763a1879b814327c09c1fbc1fbf9fe93c8512eb]
+      - react-i18next@16.5.4 [c763a1879b814327c09c1fbc1fbf9fe93c8512eb]
+      - react-helmet-async@3.0.0 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - zod@4.3.6 [c763a1879b814327c09c1fbc1fbf9fe93c8512eb]
+    - update:
+      - @cwrc/leafwriter-storage-service@4.1.0
+      - @cwrc/leafwriter@4.1.0
+      - @mui/icons-material@7.3.8 [7d3725f164a10644c3805427baa7d4f4607ac61d]
+      - @mui/lab@7.0.1-beta.22 [7d3725f164a10644c3805427baa7d4f4607ac61d]
+      - @mui/material@7.3.8 [7d3725f164a10644c3805427baa7d4f4607ac61d]
+      - axios@1.13.6 [7d3725f164a10644c3805427baa7d4f4607ac61d]
+      - broadcast-channel@7.3.0 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - chroma-js@3.2.0 jotai@2.18.0[f462e07f3e23b00da4160b75937868b2b192c408]
+      - dexie@4.30 [63184423420ca00968d587f9e9f60d63f4d8b0d0]
+      - i18next@25.8.14 [c763a1879b814327c09c1fbc1fbf9fe93c8512eb]
+      - motion@12.35.0 [c763a1879b814327c09c1fbc1fbf9fe93c8512eb]
+      - query-string@9.3.1 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - react-icons@5.6.0 [c763a1879b814327c09c1fbc1fbf9fe93c8512eb]
+      - react-router@7.13.1 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - react-scan@0.5.3 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - swr@2.4.1 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+    - bump:
+      - analytics@0.8.19
+      - @octokit/rest@22.0.1 [63184423420ca00968d587f9e9f60d63f4d8b0d0]
+      - @fontsource/lato@5.2.7[f462e07f3e23b00da4160b75937868b2b192c408]
+      - @analytics/cookie-utils@0.2.14 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - compression@1.8.1 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - i18next-browser-languagedetector@8.2.1 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - keycloak-js@26.2.3 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+  - dev:
+    - fixed: monaco-editor-webpack-plugin@7.1.0 (Cannot update with necessairy changes) [f462e07f3e23b00da4160b75937868b2b192c408]
+    - upgrade:
+      - @octokit/types@16.0.0 [63184423420ca00968d587f9e9f60d63f4d8b0d0]
+      - @types/express@5.0.6 [711924d94eeeeb913cd2e9ee3f65884fd32f4241]
+      - @types/node@25.3.3 [000e192f112daa0c45f246a4117b1cd7333ecffe]
+      - copy-webpack-plugin@14.0.0 [14479c4be173a0bb6ec5a7aeb5a5dddb2df272cd]
+      - css-minimizer-webpack-plugin@8.0.0 [14479c4be173a0bb6ec5a7aeb5a5dddb2df272cd]
+    - update:
+      - esbuild-loader@4.4.2 [14479c4be173a0bb6ec5a7aeb5a5dddb2df272cd]
+      - less@4.5.1 [14479c4be173a0bb6ec5a7aeb5a5dddb2df272cd]
+      - mini-css-extract-plugin@2.10.0 [14479c4be173a0bb6ec5a7aeb5a5dddb2df272cd]
+      - rimraf@6.1.3 [14479c4be173a0bb6ec5a7aeb5a5dddb2df272cd]
+      - typescript@5.9.3 [b337ff7465ee2348f94d466ffe13c3eb85e1aa73]
+      - webpack@5.105.4 [f2d34c4c30033f8655c20e22eb51ed590324b749]
+    - bump:
+      - @types/chroma-js@3.1.2 [f462e07f3e23b00da4160b75937868b2b192c408]
+      - @types/md5@2.3.6 [dda805f8867e1937bb2f5ee5f9bc44bd66037863]
+      - css-loader@7.1.4 [14479c4be173a0bb6ec5a7aeb5a5dddb2df272cd]
+      - less-loader@12.3.1 [14479c4be173a0bb6ec5a7aeb5a5dddb2df272cd]
+      - html-webpack-plugin@5.6.6 [66ee68a3b0dae9458a4ce19ac08440a003759add]
+      - tsup@8.5.1 [66ee68a3b0dae9458a4ce19ac08440a003759add]
+
+## 3.8.1
+
+### Patch Changes
+
+- fix schema url (reed) [72926fdd389fc998a52f81bb33f98de6475dc89a]
+
+## 3.8.0
+
+### Minor Changes
+
+#### Sample files
+
+Add Dante Alighieri, The Inferno: Canto IV (poem) [3e64fca1a32903aee312b8e510791279176d4659]
+
+#### LEAF-TE
+
+- Reorder list of tranformation in alphabetical order [ca43faa6329f503d3f3a25a57775c56a18657349]
+- Replace axios with native fetch [cd397657b1424347a0f8ac8bc316fb7d4be3dfef]
+
+### Patch Changes
+
+- Rename files using lowercase [c259a97ebaf447726fbaa829a40a18f817e7dbc7]
+
 ## 3.7.5
 
 ### Patch Changes
