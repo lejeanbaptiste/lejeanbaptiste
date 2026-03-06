@@ -2,14 +2,14 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { useActions } from '../overmind';
 import { type SimpleDialogProps } from './type';
 import { useTranslation } from 'react-i18next';
 
 export const SimpleDialog = ({
   actions,
-  id = uuidv4(),
+  id = nanoid(),
   maxWidth = 'sm',
   Body,
   onBeforeClose,

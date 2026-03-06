@@ -5,14 +5,14 @@
   "license": "MIT",
   "main": "index.js",
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.35.0",
-    "@typescript-eslint/parser": "^8.35.0",
-    "eslint-config-prettier": "^10.1.5",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-markdown": "^5.1.0",
-    "eslint-plugin-prettier": "^5.5.1",
+    "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-yml": "^1.18.0"
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-yml": "1.19.1"
   },
   "publishConfig": {
     "access": "public"

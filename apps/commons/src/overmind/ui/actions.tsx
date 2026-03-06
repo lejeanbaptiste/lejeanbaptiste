@@ -3,8 +3,8 @@ import type { DialogBarProps } from '@src/dialogs';
 import { localesSchema, type Locales } from '@src/i18n';
 import type { NotificationProps, PaletteMode } from '@src/types';
 import i18next from 'i18next';
+import { nanoid } from 'nanoid';
 import type { VariantType } from 'notistack';
-import { v4 as uuidv4 } from 'uuid';
 import { Context } from '../index';
 
 // * The following line is need for VSC extension i18n ally to work
@@ -162,7 +162,7 @@ export const emitNotification = async (
 // * Dialog
 
 export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
-  if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
+  if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: nanoid() };
   if (!dialogBar.type) dialogBar.type = 'simple';
   state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
 };

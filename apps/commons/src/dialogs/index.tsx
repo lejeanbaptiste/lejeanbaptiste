@@ -1,5 +1,5 @@
 export * from './import-export';
-export * from './PrivacyDialog';
+export * from './privacy-dialog';
 export * from './SignInDialog';
 export * from './SimpleDialog';
 export * from './storage';

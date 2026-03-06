@@ -10,6 +10,7 @@
       "close": "Schließen",
       "contact_us": "kontaktieren Sie uns",
       "conversion failed": "Konvertierung fehlgeschlagen",
+      "cookies settings": "",
       "create": "Erstellen",
       "description": "Beschreibung",
       "discard changes": "Änderungen verwerfen",
@@ -25,6 +26,7 @@
       "language": "Sprache",
       "learn_more": "Mehr erfahren",
       "link_your_account": "Den {{provider}} Zugang verbinden",
+      "months": "",
       "more_information": "Mehr Informationen",
       "name": "Name",
       "new": "Neu",
@@ -73,6 +75,7 @@
         "AUTH_SESSION_description": "Speichert die Login- und Sitzungsdaten.",
         "_ga_description": "Wird von Google Analytics genutzt, um die Anzahl der Besuche der Seite und das Datum des ersten und zuletzt erfolgten Besuchs aufzuzeichnen.",
         "basic_interactions_description": "Diese Cookies werden für grundlegende LEAF-Writer-Funktionalitäten genutzt, inklusive des Speicherns der Identität (z. B. Github-Konto oder ORCID) in erstellten Annotationen und des Ladens, Speicherns und Teilens von Dateien über das Git-Repositorium des Nutzers. Ohne diese Cookies kann LEAF-Writer nur eingeschränkt genutzt werden.",
+        "basic_interactions_description2": "",
         "cc_cookie_description": "Speichert die Cookie Präferenzen.",
         "consent_preferences": "Cookie Einstellungen",
         "cookie_expiration_time": "{{value}} {{period}}",
@@ -81,6 +84,7 @@
         "domain": "Domain",
         "expiration": "Ablaufdatum",
         "indefinitely_until_user_sign_out": "Unbegrenzt, bis sich der Nutzer abmeldet",
+        "list of cookies used by GitHub": "",
         "lw_description": "Speichert Nutzungsdaten in dem lokalen Speicher des Browsers: Bevorzugte Identität und Speicheranbieter, gewählte Sprache und Darstellung, zuletzt genutzte Repositorien und Dokumente, XML-Schemata etc.",
         "measurement": "Messungen",
         "measurement_description": "Diese Cookies werden genutzt, um Informationen darüber zu sammeln, wie Sie diese Webseite nutzen, welche Seiten Sie aufgerufen haben und auf welche Links sie geklickt haben. Alle Daten sind anonymisiert und können nicht dazu genutzt werden, Sie zu identifizieren.",
@@ -140,6 +144,7 @@
     "messsages": {
       "authentication_server_is_currently_unavailable": "Authentifizierungsserver ist momentan nicht erreichbar"
     },
+    "on this page": "",
     "profile": {
       "manage_your_lincs_account": "Verwalten Sie Ihren LINCS Konto"
     },
@@ -179,5 +184,9 @@
       "device_theme": "Browser Design",
       "light_theme": "Helles Design"
     }
-  }
+  },
+  "main": "",
+  "module": "",
+  "type": "",
+  "types": ""
 }

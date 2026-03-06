@@ -1,4 +1,4 @@
-import { Button, Stack } from '@mui/material';
+import { Box, Button, Stack } from '@mui/material';
 import { usePermalink } from '@src/hooks';
 import { Page, TopBar } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
@@ -14,7 +14,7 @@ export const HomePage = () => {
   const { userState } = useAppState().auth;
 
   const { openStorageDialog } = useActions().storage;
-  const { setPage } = useActions().ui;
+  const { openDialog, setPage } = useActions().ui;
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ export const HomePage = () => {
     if (!resource.filename) openStorageDialog({ source: 'cloud', type: 'load', resource });
   };
 
-  const handleClickTopBar = (id: string) => {
+  const handleClickAbout = (id: string) => {
     navigate(`#${id}`);
     scrollToElement(id);
   };
@@ -66,13 +66,35 @@ export const HomePage = () => {
     <Page>
       <TopBar
         Left={
-          <Button onPointerDown={() => handleClickTopBar('about')}>{t('LWC.commons.about')}</Button>
+          <>
+            <Button onPointerDown={() => handleClickAbout('about')} size="small">
+              {t('LWC.commons.about')}
+            </Button>
+            <Button onPointerDown={() => openDialog({ type: 'privacy' })} size="small">
+              {t('LWC.commons.privacy')}
+            </Button>
+          </>
         }
       />
       <Stack>
         <Main />
-        <AboutSection />
-        <Footer />
+        <Box
+          sx={[
+            {
+              backgroundImage:
+                'linear-gradient(to bottom, #ffffff, #f7f8f9, #edf1f4, #e3eaed, #d9e4e4)',
+              scrollMarginBlockStart: 300,
+            },
+            (theme) =>
+              theme.applyStyles('dark', {
+                backgroundImage:
+                  'linear-gradient(to bottom, #121212, #111213, #101214, #0d1215, #091315)',
+              }),
+          ]}
+        >
+          <AboutSection />
+          <Footer />
+        </Box>
       </Stack>
     </Page>
   );

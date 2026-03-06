@@ -55,6 +55,13 @@ export interface LeafWriterOptionsSettings {
   annotator?: boolean;
   mode?: string;
   allowOverlap?: boolean;
+  telemetry?: {
+    sentryConfig?: {
+      dsn: string;
+      enableReplay?: boolean;
+      tags?: Record<string, string>;
+    };
+  };
 }
 
 export type SupportedSchemasId = 'orlando' | 'teiAll' | 'teiLite' | 'teiSimplePrint' | 'jTei';

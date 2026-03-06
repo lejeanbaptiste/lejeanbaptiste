@@ -1,5 +1,124 @@
 # CHANGELOG
 
+## 4.1.0
+
+### Minor changes
+
+#### Integrate with [Sentry](https://sentry.io)
+
+Integration is done via configuration during instatiation passing an extra property `telemetry` (please check the readme file for more infot)
+
+```js
+telemetry?: {
+    sentryConfig?: {
+      dsn: string;
+      enableReplay?: boolean;
+      tags?: { [key: string]: string };
+    };
+  };
+}
+```
+
+- [360466ee894c2f1b664d35c880a7a53ff0280695]
+- [3e3803278152d39bce08c9fc1dc73b85ed7160ce]
+
+#### Implement Privacy Policy
+
+LEAF-Writer has now its own Privay Policy. The text of the policy is implemented in MDX.
+
+- [d708989ce58868bd395d73ad57deef55775e78d3]
+- [6d14b7437f7f32f00358924ac66d42fd95898961]
+- [5742c1a9839f364353cd808e28a553e1d786237f]
+
+# Custom Schema
+
+- Improve UI feedback when error occurs [dc2f609d15af652c8900f9fc64ca777055a727dc]
+- Avoid showing user options to select supported schema if no options are available [bb60b78683aa4332968edbfad1ee4e255a84d24c]
+
+#### Editor bar
+
+- Show/Hide tags: show contextual tooltip text when tags are being displaed or hidden [451c8a67861e4ccb7cfb52cdd0a7e8268241ffe8]. Closes (#302)
+- Add localization to all buttons [e5ad961312b14f052d7f22413dbe3ec5ad75422b]
+
+### Patch Changes
+
+- Remove mention to "powered by tiny". No reason to showcase them and other libs. [2a5264394840738f96cf2149e0a62cc5f808b10d]
+- MDX: Incorporate frontmatter [5742c1a9839f364353cd808e28a553e1d786237f]
+- MUI
+  - Replace alpha [85c7f25364886c8a9fed0612a7b93a4949af3a0f]
+  - Theme uses native colors (CSS) [8cde2632ad2e970b3c1f901cae2840ad15158226] [965a7c08144c2925f4afdc25668f2cc8d8f0b193]
+  - Update legacy component attribute [8b76a742993c9923ffacb528e5f92371a96140a0]
+- Fix selector trying to access property from a possible undefined element [20bdedd238e3f1d807ea9da721188a6364b51fd6]
+- Improve localization [1e3cb9e8ffe2543057b9d8ab1997db5d9b25966a]
+- Schema mappings: Import jquery and refactor function that was preventing image to load
+  - [a3721af9ef587c385aa033dc18385508d5282a7a]
+  - [1534977b37bb87cd6fdb51f46830a117540edf53]
+- Custom authority: relax validation for user uri [702950f2b78e13bf80f554f91b05b8e0bb83c431]
+- Chore: clean tsconfig file [6a6b84c9ccfc1856a7e0c6f533100dd118fedda8]
+- Typing
+  - [360466ee894c2f1b664d35c880a7a53ff0280695]
+  - [2a09bf866794eedb1028cfff524f5dda9bf62cbd]
+  - [ce6305ed7cc82c2970d2d1c35e75cdf728d6a40e]
+- update dependencies
+  - core
+    - add:
+      - nanoid@5.1.6 [2253d090ec2d8284f404887d7de893d423f7f748]
+      - @sentry/react@10.42.0 [ee64350716ed7993876326020a753cf9c9567d2c]
+    - remove: uuid [2253d090ec2d8284f404887d7de893d423f7f748]
+    - Fixed:
+      - jquery@3.7.1 (Cannot update with necessairy changes) [3f20c21110f9680daacfe64fbccaae5411e306a6]
+      - monaco-editor@0.52.2 (Cannot update with necessairy changes) [3e33e9473e2c6a9efeae7ee88415d4b3dce5f106]
+      - overmind@28.0.4 (Cannot update with necessairy changes) [c3fea0489e72dd27c414f3d629029af0029db34f]
+      - overmind-react@29.0.6 (Cannot update with necessairy changes) [c3fea0489e72dd27c414f3d629029af0029db34f]
+      - react-resizable-panels@2.1.9 (Cannot update with necessairy changes) [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+    - upgrade:
+      - @fortawesome/fontawesome-free@7.2.0 [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+      - dexie-react-hooks@4.2.0 [18bb42e72d19bfa03cd0c96d7d54b4ca6068ef38]
+      - openseadragon to v6.0.1 [f4a73388f716fcff98917c8e3b2fe9e7ba12c33f]
+      - react-i18next@16.5.4 [c3fea0489e72dd27c414f3d629029af0029db34f]
+      - react-intersection-observer@10.0.3 [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+      - zod@4.3.6 [2253d090ec2d8284f404887d7de893d423f7f748]
+      - zod-formik-adapter@2.0.0 [2253d090ec2d8284f404887d7de893d423f7f748]
+    - update:
+      - @mui/icons-material@7.3.8 [e7fb80db6387112f33bb4b85bf288820e6bbc9fa]
+      - @mui/material@7.3.8 [e7fb80db6387112f33bb4b85bf288820e6bbc9fa]
+      - chroma-js@3.2.0 [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+      - dexie@4.3.0 [18bb42e72d19bfa03cd0c96d7d54b4ca6068ef38]
+      - jotai@2.18.0 [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+      - jotai-devtools@0.13.0 [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+      - luxon@3.7.2 [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+      - i18next@25.8.14 [c3fea0489e72dd27c414f3d629029af0029db34f]
+      - motion@12.35.0 [c3fea0489e72dd27c414f3d629029af0029db34f]
+      - rdflib@2.3.5 [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+      - react-icons@5.6.0 [c3fea0489e72dd27c414f3d629029af0029db34f]
+      - react-virtuoso@4.18.3
+    - bump:
+      - @cwrc/leafwriter-validator@4.4.3
+      - @fontsource/lato@5.2.7 [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+      - formik@2.4.9 [c1e127941d87f9bcf4e58dcb907402b9d398bd20]
+      - jquery-ui@1.14.2 [4378b553191284992da835213d9724fe4ce731e2]
+      - lodash@4.17.23 [e7fb80db6387112f33bb4b85bf288820e6bbc9fa]
+  - dev
+    - fixed:
+      - @types/jquery@3.5.32 (Cannot update with necessairy changes) [3f20c21110f9680daacfe64fbccaae5411e306a6]
+      - monaco-editor-webpack-plugin@7.1.0 (Cannot update with necessairy changes) [3e33e9473e2c6a9efeae7ee88415d4b3dce5f106]
+    - upgrade:
+      - @types/openseadragon to v5.0.2 [f4a73388f716fcff98917c8e3b2fe9e7ba12c33f]
+      - copy-webpack-plugin@14.0.0 [f8be5e4594241c333bb61401e79ceab2ea766faa]
+    - update:
+      - @types/chroma-js@3.1.2
+      - @types/luxon@3.7.1
+      - @types/node@25.3.3 [10d5dd28b27f89bf8deff2051f4970621e9c2715]
+      - @types/shelljs@0.10.0 [f6d4a63d06ccb894a0ffa4154e74c5321fc7107d]
+      - esbuild-loader@4.4.2 [f8be5e4594241c333bb61401e79ceab2ea766faa]
+      - mini-css-extract-plugin@2.10.0 [f8be5e4594241c333bb61401e79ceab2ea766faa]
+      - tsup@8.5.1 [1083b0a96c2e9f16e107ff8a5c9afc31399b576d]
+      - typescript@5.9.3 [9297a1adfd5ac4349b8ea5ac2bdbd66883090d60]
+      - typescript-plugin-css-modules@5.2.0 [f8be5e4594241c333bb61401e79ceab2ea766faa]
+      - webpack@5.105.3 [4508c1d17d0d29ba7c1d54dbd4fcdff0769135a9]
+    - bump:
+      - css-loader@7.1.4 [f8be5e4594241c333bb61401e79ceab2ea766faa]
+
 ## 4.0.0
 
 We modify the way LEAF-Writer processes XML files, converting them to HTML and back to XML. The change was necessary to allow LEAF-Writer to handle documents tagged on [NERVE](https://gitlab.com/calincs/conversion/nerve), which has a different way of structuring and storing Web Annotations in JSON-LD. This change restricts LEAF-Writer to handling only RDF annotations stored in the XML file header. NERVE stored RDF annotation in the standOff tag outside of the header (and after the body of text).

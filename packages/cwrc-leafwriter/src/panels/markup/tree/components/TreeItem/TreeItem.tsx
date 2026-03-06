@@ -1,4 +1,4 @@
-import { alpha, ListItem, useTheme } from '@mui/material';
+import { ListItem, useTheme } from '@mui/material';
 import classNames from 'classnames';
 import { forwardRef, type HTMLAttributes } from 'react';
 import type { TreeItemType } from '../../types';

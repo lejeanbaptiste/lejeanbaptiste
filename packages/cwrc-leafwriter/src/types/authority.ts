@@ -34,19 +34,19 @@ export type AuthorityLookupParams = z.infer<typeof authorityLookupParamsSchema>;
 export const authorityLookupResultSchema = z.object({
   description: z.string().optional(),
   label: z.string(),
-  uri: z.string().url(),
+  uri: z.url(),
 });
 export type AuthorityLookupResult = z.infer<typeof authorityLookupResultSchema>;
 
 export const searchFunctionSchema = z
-  .function()
-  .args(authorityLookupParamsSchema)
-  .returns(z.promise(z.array(authorityLookupResultSchema)));
+  .function({ input: [authorityLookupParamsSchema], output: z.promise(z.array(authorityLookupResultSchema)) });
 export type SearchFunction = z.infer<typeof searchFunctionSchema>;
 
 export const entityTypePropsSchema = z.object({
   name: namedEntityTypesSchema,
-  url: z.string().url().startsWith('https://', { message: 'Must provide secure URL' }).optional(),
+  url: z.url().startsWith('https://', {
+      error: 'Must provide secure URL'
+}).optional(),
 });
 export type EntityTypeProps = z.infer<typeof entityTypePropsSchema>;
 
@@ -59,10 +59,16 @@ const baseAuthorityServiceConfigSchema = z.object({
     .optional(),
   description: z.string().optional(),
   name: z
-    .string({ required_error: 'Every authority needs a name' })
-    .min(3, { message: 'Must be at least 3 characters' })
-    .max(20, { message: 'Cannot have more than 20 characters' }),
-  url: z.string().url().optional(),
+    .string({
+        error: (issue) => issue.input === undefined ? 'Every authority needs a name' : undefined
+    })
+    .min(3, {
+        error: 'Must be at least 3 characters'
+    })
+    .max(20, {
+        error: 'Cannot have more than 20 characters'
+    }),
+  url: z.url().optional(),
 });
 
 export const localAuthorityServiceConfigSchema = baseAuthorityServiceConfigSchema.extend({
@@ -70,8 +76,10 @@ export const localAuthorityServiceConfigSchema = baseAuthorityServiceConfigSchem
   searchType: z.literal('TEI-FILE'),
   entityTypes: z
     .array(entityTypePropsSchema.required())
-    .min(1, { message: 'At least one entity type is required' }),
-  options: z.object({ maxResults: z.number().default(10).optional() }).optional(),
+    .min(1, {
+        error: 'At least one entity type is required'
+    }),
+  options: z.object({ maxResults: z.number().prefault(10).optional() }).optional(),
 });
 export type LocalAuthorityServiceConfig = z.infer<typeof localAuthorityServiceConfigSchema>;
 

@@ -1,6 +1,8 @@
 import { Box, Link, Paper, Stack } from '@mui/material';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import pck from '../../../package.json';
+import { PrivacyDialog } from '../../dialogs/privacy-dialog';
 import { useAppState } from '../../overmind';
 import { ValdidationErrors } from './ValdidationErrors';
 import AnnotationMode from './annotationMode';
@@ -13,21 +15,19 @@ export const BottomBar = () => {
   const { t } = useTranslation();
   const version = pck.version;
 
+  const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
+
   return (
     <Paper
       elevation={0}
       square
       sx={[
-        {
-          width: '100%',
-          backgroundColor: '#f5f5f5',
-        },
+        { width: '100%', backgroundColor: '#f5f5f5' },
         (theme) =>
-          theme.applyStyles('dark', {
-            backgroundColor: theme.vars.palette.background.paper,
-          }),
+          theme.applyStyles('dark', { backgroundColor: theme.vars.palette.background.paper }),
       ]}
     >
+      <PrivacyDialog onClose={() => setPrivacyDialogOpen(false)} open={privacyDialogOpen} />
       <Stack direction="row" alignItems="center" spacing={2} px={2}>
         {!isReadonly && (
           <>
@@ -40,6 +40,15 @@ export const BottomBar = () => {
         {validationErrors > 0 && !isReadonly && <ValdidationErrors />}
 
         <Box flexGrow={1} />
+
+        <Link
+          component="button"
+          color="textSecondary"
+          onClick={() => setPrivacyDialogOpen(true)}
+          variant="caption"
+        >
+          {t('LW.commons.Privacy Policy')}
+        </Link>
 
         <Link
           color="textSecondary"
@@ -58,17 +67,7 @@ export const BottomBar = () => {
           target="_blank"
           title="Repository"
         >
-          {`LEAF-Writer ${version}`}
-        </Link>
-        <Link
-          color="textSecondary"
-          variant="caption"
-          href="https://www.tiny.cloud"
-          target="_blank"
-          rel="noopener"
-          title={t('LW.Powered by').toString()}
-        >
-          {t('LW.Powered by')} Tiny
+          {`v${version}`}
         </Link>
       </Stack>
     </Paper>

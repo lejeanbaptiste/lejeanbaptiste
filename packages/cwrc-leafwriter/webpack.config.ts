@@ -1,10 +1,14 @@
-import path from 'path';
-
+import rehypeExtractToc from '@stefanprobst/rehype-extract-toc';
+import rehypeExtractTocExport from '@stefanprobst/rehype-extract-toc/mdx';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { EsbuildPlugin } from 'esbuild-loader';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
+import path from 'path';
+import rehypeSlug from 'rehype-slug';
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 import webpack from 'webpack';
 import WebpackBar from 'webpackbar';
 
@@ -90,6 +94,28 @@ const webpackConfig: webpack.Configuration = {
                 relativeUrls: 'local',
                 globalVars: { parentId: '#leaf-writer-container' },
               },
+            },
+          },
+        ],
+      },
+      {
+        test: /\.mdx?$/,
+        use: [
+          {
+            loader: '@mdx-js/loader',
+            /** @type {Options} */
+            options: {
+              /* jsxImportSource: …, otherOptions… */
+              providerImportSource: '@mdx-js/react',
+              remarkPlugins: [
+                remarkFrontmatter, // Parses frontmatter blocks
+                remarkMdxFrontmatter, // Exports frontmatter as named export
+              ],
+              rehypePlugins: [
+                rehypeSlug, // Generates IDs for headings
+                rehypeExtractToc, // Extracts ToC data
+                rehypeExtractTocExport, // Default exports "tableOfContents"
+              ],
             },
           },
         ],

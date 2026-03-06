@@ -2,7 +2,7 @@ import { db } from '@src/db';
 import type { Resource, StorageDialogState } from '@src/types';
 import { log } from '@src/utilities';
 import { saveAs } from 'file-saver';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { Context } from '../index';
 
 //* INIITIALIZE
@@ -63,7 +63,7 @@ export const addToRecentDocument = async (_context: Context, document: Resource)
 
   if (!resource.id) {
     const item = await db.recentDocuments.get({ url: resource.url });
-    resource.id = item?.id ?? uuidv4();
+    resource.id = item?.id ?? nanoid();
   }
 
   resource.modifiedAt = new Date();
@@ -92,7 +92,7 @@ export const updateRecentDocument = async ({ state }: Context) => {
 
   if (!resource.id) {
     const item = await db.recentDocuments.get({ url: resource.url });
-    resource.id = item?.id ?? uuidv4();
+    resource.id = item?.id ?? nanoid();
   }
 
   resource.modifiedAt = new Date();

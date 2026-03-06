@@ -1,15 +1,6 @@
 {
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/types/**/*.d.ts"],
   "exclude": ["node_modules", "lib"],
-  "ts-node": {
-    "files": true,
-    "compilerOptions": {
-      "lib": ["esnext"],
-      "module": "commonjs",
-      "target": "ESNext",
-      "types": ["node"]
-    }
-  },
   "compilerOptions": {
     "allowJs": true,
     "composite": false,
@@ -24,7 +15,7 @@
     "outDir": "lib",
     "lib": ["esnext", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {

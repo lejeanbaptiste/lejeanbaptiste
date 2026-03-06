@@ -27,6 +27,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "types": ["node", "jest", "mocha", "@testing-library/jest-dom"]
+    "types": ["node", "jest", "mocha", "@testing-library/jest-dom", "mdx"]
   }
 }

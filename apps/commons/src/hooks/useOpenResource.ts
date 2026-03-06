@@ -2,9 +2,9 @@ import { db } from '@src/db';
 import { useAppState } from '@src/overmind';
 import type { DocumentRequested, Resource } from '@src/types';
 import { add } from 'date-fns';
+import { nanoid } from 'nanoid';
 import queryString from 'query-string';
 import { useNavigate } from 'react-router';
-import { v4 as uuidv4 } from 'uuid';
 import { usePermalink } from './usePermalink';
 
 interface ResourceMeta {
@@ -35,7 +35,7 @@ export const useOpenResource = () => {
   const openLocalResource = async (resource: Resource) => {
     const { content, filename } = resource;
     const expires = add(new Date(), { minutes: 5 });
-    const id = uuidv4();
+    const id = nanoid();
 
     const documentRequested: DocumentRequested = { content, filename, expires, id };
     await db.documentRequested.add(documentRequested);

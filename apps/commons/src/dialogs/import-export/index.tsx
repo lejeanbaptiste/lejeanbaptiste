@@ -1,8 +1,8 @@
 import { Dialog, DialogContent } from '@mui/material';
 import { useActions } from '@src/overmind';
 import { Provider } from 'jotai';
+import { nanoid } from 'nanoid';
 import { useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import type { IDialog } from '../type';
 import { Actions, Header } from './components';
 import { Main } from './main';
@@ -11,7 +11,7 @@ import { ImportExportStore, dialogActionAtom } from './store';
 export type DialogTye = Extract<'import' | 'export', IDialog['type']>;
 
 export const ImportDialog = ({
-  id = uuidv4(),
+  id = nanoid(),
   maxWidth,
   open = true,
   type = 'import',
