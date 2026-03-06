@@ -28,6 +28,7 @@ const i18n = i18next.createInstance(
     // debug: true,
     resources,
     returnEmptyString: false,
+    showSupportNotice: false,
     supportedLngs: locales,
   },
   // We must provide a function as second parameter, otherwise i18next errors

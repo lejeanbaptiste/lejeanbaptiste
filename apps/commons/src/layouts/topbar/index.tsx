@@ -2,9 +2,9 @@ import { AppBar, Stack, Toolbar, useColorScheme } from '@mui/material';
 import { EditorModeSelector, ProfileAvatar, SigninButton } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence } from 'motion/react';
+import { CookiesSettings } from './cookies-settings';
 import { DarkMode } from './DarkMode';
 import { LanguageMenu } from './LanguageMenu';
-import { Privacy } from './Privacy';
 import { ProfileAnchor } from './ProfileAnchor';
 import { Settings } from './Settings';
 
@@ -48,7 +48,7 @@ export const TopBar = ({ Center, Left }: TopBarProps) => {
               </>
             ) : userState === 'UNAUTHENTICATED' ? (
               <>
-                <Privacy />
+                <CookiesSettings />
                 <DarkMode />
                 <LanguageMenu />
                 {page !== 'home' && (

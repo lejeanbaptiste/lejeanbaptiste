@@ -114,7 +114,7 @@ export const useCookieConsent = () => {
           transition: 'slide',
         },
         settings_modal: {
-          layout: 'bar',
+          layout: 'box',
           transition: 'slide',
         },
       },
@@ -146,7 +146,7 @@ export const useCookieConsent = () => {
     <p style="${pStyle}">${t('LWC.cookie consent.consent_banner.line1', { lng })}</p>
     <p style="${pStyle}">${t('LWC.cookie consent.consent_banner.line2', { lng })}</p>
     <p style="${pStyle}">${t('LWC.cookie consent.consent_banner.line3', { lng })}</p>
-    <button type="button" data-cc="c-settings" class="cc-link" style="text-transform: capitalize">${t(
+    <button type="button" data-cc="c-settings" class="cc-link">${t(
       'LWC.cookie consent.consent_banner.let_me_choose',
     )}</button>`,
       primary_btn: {
@@ -175,11 +175,11 @@ export const useCookieConsent = () => {
     blocks: [
       {
         title: `${t('LWC.cookie consent.settings_modal.cookie_usage', { lng })}  📢`,
-        description: `<p> ${t('LWC.cookie consent.settings_modal.cookie_usage_description', {
+        description: `<span> ${t('LWC.cookie consent.settings_modal.cookie_usage_description', {
           lng,
         })} <span id="linkToPrivacyPolicy" class="cc-link">${t('LWC.commons.privacy_policy', {
           lng,
-        })}</span>.</p>`,
+        })}</span>.</span>`,
       },
       {
         title: t('LWC.cookie consent.settings_modal.strictly_necessary', { lng }),
@@ -207,17 +207,16 @@ export const useCookieConsent = () => {
       {
         title: `${t('LWC.commons.basic_interactions', { lng })} & ${t(
           'LWC.commons.functionalities',
-          {
-            lng,
-          },
+          { lng },
         )}`,
         //e.g., Contacting the User, Interaction with live chat platforms Managing web conferencing and online telephony, Managing support and contact requests, Interaction with support and feedback platforms, Tag Management, Registration and authentication, User database management
-        description: t('LWC.cookie consent.settings_modal.basic_interactions_description', { lng }),
-        toggle: {
-          value: 'interaction',
-          enabled: true,
-          readonly: false,
-        },
+        description: `<span>${t('LWC.cookie consent.settings_modal.basic_interactions_description', { lng })}</span> 
+        <span>${t('LWC.cookie consent.settings_modal.basic_interactions_description2', { lng })} <a href="https://docs.github.com/en/site-policy/privacy-policies/github-cookies" target="_blank" rel="noopener noreferrer" class="cc-link">${t(
+          'LWC.cookie consent.settings_modal.list of cookies used by GitHub',
+          { lng },
+        )}</a>.</span>
+        `,
+        toggle: { value: 'interaction', enabled: true, readonly: false },
         cookie_table: [
           // list of all expected cookies
           {
@@ -228,10 +227,21 @@ export const useCookieConsent = () => {
             is_regex: true,
           },
           {
-            col1: 'lw_',
-            col2: location.hostname,
-            col3: t('LWC.cookie consent.settings_modal.indefinitely_until_user_sign_out', { lng }),
-            col4: t('LWC.cookie consent.settings_modal.lw_description', { lng }),
+            col1: 'KEYCLOAK_IDENTITY*',
+            col2: 'lincsproject.ca',
+            col3: t('LWC.cookie consent.settings_modal.cookie_expiration_time', {
+              lng,
+              value: 1,
+              period: 'year',
+            }),
+            col4: t('LWC.cookie consent.settings_modal.AUTH_SESSION_description', { lng }),
+            is_regex: true,
+          },
+          {
+            col1: 'KEYCLOAK_SESION*',
+            col2: 'lincsproject.ca',
+            col3: t('LWC.commons.session', { lng }),
+            col4: t('LWC.cookie consent.settings_modal.AUTH_SESSION_description', { lng }),
             is_regex: true,
           },
         ],

@@ -26,6 +26,7 @@ const i18n = createInstance(
     react: { useSuspense: false },
     resources,
     returnEmptyString: false,
+    showSupportNotice: false,
     supportedLngs: locales,
   },
   // We must provide a function as second parameter, otherwise i18next errors

@@ -2,15 +2,15 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Icon } from '@mui/material';
 import { getIcon } from '@src/icons';
+import { nanoid } from 'nanoid';
 import { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { useActions } from '../overmind';
 import type { SimpleDialogProps } from './type';
 
 export const SimpleDialog = ({
   actions = [{ action: 'close', label: 'close' }],
   Body,
-  id = uuidv4(),
+  id = nanoid(),
   icon,
   maxWidth = 'sm',
   onBeforeClose,

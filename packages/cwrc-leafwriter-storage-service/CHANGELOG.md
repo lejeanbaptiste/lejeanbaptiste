@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## 4.1.0
+
+### Minor changes
+
+- Replace `uuid` with `nanoid`
+
+### Patch Changes
+
+- Code format [da4f418871454fc8e3d3397aecdd9c7438e68012]
+- Testing config [8f0fc3f52e249f8a4116552d484a739cc456912d]
+- update dependencies
+  - core:
+    - add: nanoid@5.1.6 [2137ca00c133d2c1e792eec638e076351b6fc24a]
+    - remove: uuid [2137ca00c133d2c1e792eec638e076351b6fc24a]
+    - fixed version:
+      - overmind@28.0.4 (No update without making changes to source code) [eeb6ffc32b6a9478fb577d7ae48c4cbbfde5f1ce]
+      - overmind-react@29.0.6 (No update without making changes to source code) [eeb6ffc32b6a9478fb577d7ae48c4cbbfde5f1ce]
+    - upgrade:
+      - dexie-react-hooks@4.2.0 [75b3b1c62aa28a93207eff0cf703cf11787ac489]
+      - react-dropzone@15.0.0 [eeb6ffc32b6a9478fb577d7ae48c4cbbfde5f1ce]
+      - react-i18next@16.5.4 [eeb6ffc32b6a9478fb577d7ae48c4cbbfde5f1ce]
+      - zod@4.3.6 [2137ca00c133d2c1e792eec638e076351b6fc24a]
+    - update:
+      - @mui/icons-material@7.3.8 [b680b8239677565fe52bf82dc75e5c30bf120392]
+      - @mui/material@7.3.8 [b680b8239677565fe52bf82dc75e5c30bf120392]
+      - axios@1.13.6 [b680b8239677565fe52bf82dc75e5c30bf120392]
+      - dexie@4.3.0 [75b3b1c62aa28a93207eff0cf703cf11787ac489]
+      - i18next@25.8.13 [eeb6ffc32b6a9478fb577d7ae48c4cbbfde5f1ce]
+      - lodash@4.17.23 [b680b8239677565fe52bf82dc75e5c30bf120392]
+      - motion@12.35.0 [eeb6ffc32b6a9478fb577d7ae48c4cbbfde5f1ce]
+      - react-icons@5.6.0 [eeb6ffc32b6a9478fb577d7ae48c4cbbfde5f1ce]
+    - bump: @octokit/rest@22.0.1 [75b3b1c62aa28a93207eff0cf703cf11787ac489]
+  - dev:
+    - remove: typedoc [85d33f2510d88e9eaebc71ff8ae4930acb4efcdf]
+    - upgrade:
+      - @jest/globals@30.2.0 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - @types/jest@30.0.0 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - @types/node@25.3.3 [c3d1af1547eb71c7d3253df3c81a8a54a25f9e29]
+      - jest@30.2.0 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+    - update:
+      - @testing-library/jest-dom@6.9.1 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - fake-indexeddb@6.2.5 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+    - bump:
+      - @testing-library/dom@10.4.1 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - @testing-library/react@16.3.2 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - @types/lodash@4.17.24 [b680b8239677565fe52bf82dc75e5c30bf120392]
+      - @types/react@18.3.28 [72ce0cb599292aabd24f01d34ed2a4e1063f964b]
+      - ts-jest@29.4.5 [8f0fc3f52e249f8a4116552d484a739cc456912d]
+      - tsup@8.5.1 [f0d7fddb63966b656713afdf98cb60473f06a217]
+
 ## 4.0.2
 
 ### Patch Changes

@@ -34,6 +34,7 @@ _Partial Documentation - Working in progress_
         - [AuthoritySearchParms](#authoritysearchparms)
         - [AuthoritySearchLookupResult](#authoritysearchlookupresult)
       - [Schemas](#schemas)
+      - [SentryConfig](#sentryconfig)
     - [Full Config Example](#full-config-example)
   - [Development](#development)
     - [Localization](#localization)
@@ -171,12 +172,13 @@ The user object has three properties, exclusively used to assign a creator to We
 The settings object has three main properties used to set up and customize LEAF-Writer. (more to come).
 
 | Name              | Type                                                      | Default | Description                                                                                                                                                                                                                                                                                                                                            |
-| ----------------- | --------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ----------------- | --------------------------------------------------------- | :-----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | authorityServices | ([`AuthorityService`](#authorityservice) \| `string`)`[]` |         | An list of authority services or their id's seting up the authority services. If you pass a string, it will enable the corresponding authority service. Use the object AuthorityService to fine tune the set up.                                                                                                                                       |
-| baseUrl           | `string`                                                  | `.`     | **Important**: By default, LEAF-Writer will load its dependencies (web workers, on-demand modules, extra CSS files) from the root folder. If these files are not on the root, you should define the path to these dependencies here. For instance, set this property to `/path/to/project/addons/` if you put LEAF-Writer dependencies in this folder. |
-| locales           | `string`                                                  | `en`    | Localize the UI and the messages. Must be valid and supported language code. E.g., `en`                                                                                                                                                                                                                                                                |
+| baseUrl           | `string`                                                  |   `.`   | **Important**: By default, LEAF-Writer will load its dependencies (web workers, on-demand modules, extra CSS files) from the root folder. If these files are not on the root, you should define the path to these dependencies here. For instance, set this property to `/path/to/project/addons/` if you put LEAF-Writer dependencies in this folder. |
+| locales           | `string`                                                  |  `en`   | Localize the UI and the messages. Must be valid and supported language code. E.g., `en`                                                                                                                                                                                                                                                                |
 | readonly          | `boolean`                                                 | `false` | Set LEAF-Writer readonly (prevent editing functionalities)                                                                                                                                                                                                                                                                                             |
 | schemas           | [`Schema`](#schemas)`[]`                                  |         | An array of schemas to be included as supported by default.                                                                                                                                                                                                                                                                                            |
+| telemetry         | { sentryConfig: [`SentryConfig`](#sentryconfig) }         |         | Optional config for telemetry                                                                                                                                                                                                                                                                                                                          |
 
 #### AuthorityService
 
@@ -277,6 +279,14 @@ Example:
 },
 ```
 
+#### SentryConfig
+
+| Name         | Type                        | Default | Description                                                    |
+| ------------ | --------------------------- | :-----: | -------------------------------------------------------------- |
+| dsn          | `string`                    |         | (Required) The DSN (Data Source Name) for your Sentry project. |
+| enableReplay | `boolean`                   | `false` | Whether to enable replay functionality.                        |
+| tags         | `{ [key: string]: string }` |         | Optional tags to be added to the Sentry event.                 |
+
 ### Full Config Example
 
 ```ts
@@ -310,9 +320,17 @@ editor.init({
         'https://cwrc.ca/templates/css/tei.css',
         'https://raw.githubusercontent.com/cwrc/CWRC-Schema/master/templates/css/tei.css',
       ],
-    }]
+    }],
+    telemetry: {
+      sentryConfig: {
+        dsn: 'https://...',
+        enableReplay: true,
+        tags: {
+          site: 'site name',
+        },
+      }
+    }
   },
-
 });
 ```
 

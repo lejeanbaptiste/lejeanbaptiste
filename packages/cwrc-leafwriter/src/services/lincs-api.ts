@@ -46,7 +46,7 @@ const LINCS_API_ReconcileResultSchema = z.array(
       z.object({
         description: z.string().optional(),
         label: z.string(),
-        uri: z.string().url(),
+        uri: z.url(),
       }),
     ),
   }),
@@ -144,7 +144,7 @@ export const reconcile: SearchFunction = async ({ query, entityType, options }) 
   const validatedData = LINCS_API_ReconcileResultSchema.safeParse(data);
 
   if (!validatedData.success) {
-    const message = `Data return is invalid or not compatible with LEAF-Writer. Error: ${validatedData.error.errors[0].message}`;
+    const message = `Data return is invalid or not compatible with LEAF-Writer. Error: ${validatedData.error.issues[0].message}`;
     log.warn(message, validatedData.error);
     throw new Error(i18n.t('LW.messages.Failed to fetch'), { cause: validatedData.error });
   }

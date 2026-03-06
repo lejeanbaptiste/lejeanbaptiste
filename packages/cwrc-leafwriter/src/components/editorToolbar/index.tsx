@@ -1,13 +1,13 @@
 import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
 import { EntityType } from '../../types';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { Toggle } from './Toggle';
-import { useTranslation } from 'react-i18next';
 
 type ItemType = 'button' | 'divider' | 'iconButton' | 'toggle';
 type ItemGroup = 'action' | 'ui' | 'panel' | 'general';
@@ -227,7 +227,6 @@ export const EditorToolbar = () => {
       title: t('LW.editorToolbar.Settings'),
       type: 'iconButton',
     },
-
     {
       group: 'ui',
       icon: 'documentation',

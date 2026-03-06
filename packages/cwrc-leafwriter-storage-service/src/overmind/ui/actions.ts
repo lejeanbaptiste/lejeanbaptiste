@@ -1,12 +1,12 @@
-import { v4 as uuidv4 } from 'uuid';
-import { Context } from '../';
 import type { DialogBarProps } from '@src/dialogs';
+import { nanoid } from 'nanoid';
+import { Context } from '../';
 
 export const openDialog = ({ state }: Context, dialogBar: DialogBarProps) => {
   const isDisplayed = state.ui.dialogBar.some(({ props }) => props?.id === dialogBar.props?.id);
   if (isDisplayed) return;
 
-  if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: uuidv4() };
+  if (!dialogBar.props?.id) dialogBar.props = { ...dialogBar.props, id: nanoid() };
   if (!dialogBar.type) dialogBar.type = 'simple';
   state.ui.dialogBar = [...state.ui.dialogBar, dialogBar];
 };

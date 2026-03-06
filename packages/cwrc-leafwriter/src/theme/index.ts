@@ -1,7 +1,6 @@
 import { createTheme } from '@mui/material';
 import { SimplePaletteColorOptions } from '@mui/material/styles';
 import type {} from '@mui/material/themeCssVarsAugmentation';
-import chroma from 'chroma-js';
 import { IconLeafWriter } from '../icons';
 
 interface Entity {
@@ -38,80 +37,73 @@ declare module '@mui/material/styles' {
 const theme = createTheme({
   cssVariables: {
     colorSchemeSelector: 'class',
+    nativeColor: true,
   },
   entity: {
     person: {
-      color: { main: chroma.rgb(46, 134, 222).hex() },
+      color: { main: 'rgb(46, 134, 222)' },
       icon: 'person',
     },
     place: {
-      color: { main: chroma.rgb(255, 159, 67).hex() },
+      color: { main: 'rgb(255, 159, 67)' },
       icon: 'place',
     },
     organization: {
-      color: { main: chroma.rgb(176, 185, 122).hex() },
+      color: { main: 'rgb(176, 185, 122)' },
       icon: 'organization',
     },
     org: {
-      color: { main: chroma.rgb(176, 185, 122).hex() },
+      color: { main: 'rgb(176, 185, 122)' },
       icon: 'organization',
     },
     work: {
-      color: { main: chroma.rgb(175, 70, 240).hex() },
+      color: { main: 'rgb(175, 70, 240)' },
       icon: 'work',
     },
     concept: {
-      color: { main: chroma.rgb(70, 101, 240).hex() },
+      color: { main: 'rgb(70, 101, 240)' },
       icon: 'concept',
     },
     thing: {
-      color: { main: chroma.rgb(131, 149, 167).hex() },
+      color: { main: 'rgb(131, 149, 167)' },
       icon: 'thing',
     },
     citation: {
-      color: { main: chroma.rgb(0, 128, 64).hex() },
+      color: { main: 'rgb(0, 128, 64)' },
       icon: 'citation',
     },
     note: {
-      color: { main: chroma.rgb(224, 190, 0).hex() },
+      color: { main: 'rgb(224, 190, 0)' },
       icon: 'note',
     },
     date: {
-      color: { main: chroma.rgb(253, 119, 170).hex() },
+      color: { main: 'rgb(253, 119, 170)' },
       icon: 'date',
     },
     correction: {
-      color: { main: chroma.rgb(191, 4, 4).hex() },
+      color: { main: 'rgb(191, 4, 4)' },
       icon: 'correction',
     },
     keyword: {
-      color: { main: chroma.rgb(16, 172, 132).hex() },
+      color: { main: 'rgb(16, 172, 132)' },
       icon: 'keyword',
     },
     link: {
-      color: { main: chroma.rgb(70, 130, 180).hex() },
+      color: { main: 'rgb(70, 130, 180)' },
       icon: 'link',
     },
   },
   colorSchemes: {
     light: {
       palette: {
-        primary: {
-          main: chroma.rgb(28, 64, 69).hex(),
-        },
-        secondary: {
-          main: chroma.rgb(255, 114, 0).hex(),
-        },
+        primary: { main: 'rgb(28, 64, 69)' },
+        secondary: { main: 'rgb(255, 114, 0)' },
       },
     },
     dark: {
       palette: {
-        primary: {
-          main: chroma.rgb(191, 213, 213).hex(),
-        },
-        secondary: {
-          main: chroma.rgb(255, 114, 0).hex(),
-        },
+        primary: { main: 'rgb(191, 213, 213)' },
+        secondary: { main: 'rgb(255, 114, 0)' },
       },
     },
   },

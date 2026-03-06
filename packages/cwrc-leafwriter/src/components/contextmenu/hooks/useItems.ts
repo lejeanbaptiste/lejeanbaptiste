@@ -4,7 +4,7 @@ import type {
   TargetSelection as PossibleNodesAtTargetSelection,
 } from '@cwrc/leafwriter-validator';
 import { useTranslation } from 'react-i18next';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { IconLeafWriter } from '../../../icons';
 import type { Action } from '../../../js/tagger';
 import { useActions, useAppState } from '../../../overmind';
@@ -188,7 +188,7 @@ export const useItems = (ctx: State) => {
         documentation,
         fullName,
         name,
-        id: uuidv4(),
+        id: nanoid(),
         onClick: () => {
           if (!writer.editor) return;
 
@@ -223,7 +223,7 @@ export const useItems = (ctx: State) => {
     if (ctx.isHeader) {
       const items: ItemProps[] = [
         {
-          id: uuidv4(),
+          id: nanoid(),
           type: 'action',
           name: t('LW.Edit Header'),
           icon: 'edit',
@@ -249,7 +249,7 @@ export const useItems = (ctx: State) => {
     if (ctx.isRoot) {
       const items: ItemProps[] = [
         {
-          id: uuidv4(),
+          id: nanoid(),
           name: t('LW.commons.edit'),
           type: 'action',
           onClick: () => ctx.tagId && writer.tagger.editTagDialog(ctx.tagId),
