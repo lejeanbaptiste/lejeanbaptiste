@@ -17,12 +17,12 @@ import pkg from './package.json' with { type: 'json' };
 const isDev = process.env.NODE_isDev;
 
 const entry: webpack.EntryObject = {
-  index: [path.resolve(__dirname, 'src', 'index.tsx')],
-  'index.min': [path.resolve(__dirname, 'src', 'index.tsx')],
+  index: [path.resolve(import.meta.dirname, 'src', 'index.tsx')],
+  'index.min': [path.resolve(import.meta.dirname, 'src', 'index.tsx')],
 };
 
 const output = {
-  path: path.resolve(__dirname, 'dist'),
+  path: path.resolve(import.meta.dirname, 'dist'),
   pathinfo: isDev ? true : false,
   library: {
     name: 'Leafwriter',
@@ -44,13 +44,19 @@ const plugins = [
   new CopyWebpackPlugin({
     patterns: [
       //images
-      { from: path.resolve(__dirname, 'src', 'images'), to: 'images' },
+      { from: path.resolve(import.meta.dirname, 'src', 'images'), to: 'images' },
       //pre-compiled CSS required by tinyMCE
-      { from: path.resolve(__dirname, 'src', 'css', 'tinymce', 'skins'), to: 'css/tinymce/skins' },
+      {
+        from: path.resolve(import.meta.dirname, 'src', 'css', 'tinymce', 'skins'),
+        to: 'css/tinymce/skins',
+      },
       //pre-compiled CSS to stylize the editor
-      { from: path.resolve(__dirname, 'src', 'css', 'build', 'editor.css'), to: 'css/[name][ext]' },
+      {
+        from: path.resolve(import.meta.dirname, 'src', 'css', 'build', 'editor.css'),
+        to: 'css/[name][ext]',
+      },
       //pre-compiled worker
-      { from: path.resolve(__dirname, '..', 'cwrc-leafwriter-validator', 'dist') },
+      { from: path.resolve(import.meta.dirname, '..', 'cwrc-leafwriter-validator', 'dist') },
     ],
   }),
 
@@ -140,7 +146,7 @@ const webpackConfig: webpack.Configuration = {
   },
   performance: { hints: isDev ? false : 'warning' },
   resolve: {
-    // alias: { '@src': path.resolve(__dirname, 'src/') },
+    // alias: { '@src': path.resolve(import.meta.dirname, 'src/') },
     extensions: ['.tsx', '.ts', '.js', '.json'],
     fallback: {
       buffer: false,
