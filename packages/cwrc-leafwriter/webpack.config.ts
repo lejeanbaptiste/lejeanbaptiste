@@ -12,7 +12,7 @@ import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 import webpack from 'webpack';
 import WebpackBar from 'webpackbar';
 
-import pkg from './package.json';
+import pkg from './package.json' with { type: 'json' };
 
 const isDev = process.env.NODE_isDev;
 
