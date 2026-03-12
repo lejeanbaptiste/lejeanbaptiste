@@ -29,6 +29,7 @@ LEAF-Writer has now its own Privay Policy. The text of the policy is implemented
 - [d708989ce58868bd395d73ad57deef55775e78d3]
 - [6d14b7437f7f32f00358924ac66d42fd95898961]
 - [5742c1a9839f364353cd808e28a553e1d786237f]
+- [8246dd65821a95ced0e46654243571f814d379fe]
 
 # Custom Schema
 
@@ -42,6 +43,8 @@ LEAF-Writer has now its own Privay Policy. The text of the policy is implemented
 
 ### Patch Changes
 
+- Disable editor mode markup and linking with overlap [c833ab038f0026006ac758b07129533a9fe41030]. Closes (#307)
+  - This mode is not working properly. We are disabling until we revise it and fix bugs.
 - Remove mention to "powered by tiny". No reason to showcase them and other libs. [2a5264394840738f96cf2149e0a62cc5f808b10d]
 - MDX: Incorporate frontmatter [5742c1a9839f364353cd808e28a553e1d786237f]
 - MUI
