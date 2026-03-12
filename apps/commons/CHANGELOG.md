@@ -15,9 +15,14 @@ Covers the site and LEAF-Writer. [7c5efdfe16099782c483a9bdc1205078a1b07399]
   - [060d95c6a445c598b93af2b4ef6e130b8e7f6c28]
   - [7d1500602245d37f82ef944186bd747cca57ba5c]
   - [0146bd7d9edf6ad2a737d8ad0829fb864ca7c28c]
+  - Update ToS [f4d0c1e9f265893d2f93e573cba387d8ad4a400f]
+
+Note: ToS is in English only now until we have a proper translation to all supported languages.
 
 ### Patch Changes
 
+- Transate about content [83e71c1a0c18435bc3981dc6a0112cf7ead759be]
+- Add support to German on ToS and about content [e7803455fc6f5451e9277e6c5e3958a08fdca5bf]
 - Move link to privacy policy from page bottom to page top bar [30963cfd8f2eff34bc0194b0841e8c9dd13d20e8]
 - Replace uuid with nanoid@5.1.6 [3e3ddd0a05904741a4b0d4b00b4d5811a04c120c]
 - MUI: Use native colors [3b8ae985da5656e6c69a1fdbf9a13e0ed8f39ed5]
