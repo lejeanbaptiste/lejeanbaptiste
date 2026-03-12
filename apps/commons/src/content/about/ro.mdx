@@ -3,63 +3,88 @@ team:
   - name: Susan Brown
     email: sbrown@uoguelph.ca
     positions:
-      - Project Director (2011 - present)
+      - Director de proiect (2011 - prezent)
   - name: James Chartrand
     positions:
-      - Lead Developer (2011 - 2018)
+      - Dezvoltator principal (2011 - 2018)
   - name: James Cummings
     email: james.cummings@newcastle.ac.uk
     positions:
-      - Scoping and Direction (2020 - present)
+      - Domeniu de aplicare și direcție (2020 - prezent)
   - name: Luciano Frizzera
     email: lucaju@gmail.com
     positions:
-      - Lead Developer (2020 - present)
-      - Developer (2019 - 2020)
+      - Dezvoltator principal (2020 - prezent)
+      - Dezvoltator (2019 - 2020)
   - name: Mihaela Ilovan
     email: ilovan@ualberta.ca
     positions:
-      - Project Manager (2014 - present)
+      - Manager de proiect (2014 - prezent)
   - name: Diane Jakacki
     email: diane.jakacki@bucknell.edu
     positions:
-      - Scoping and Direction (2020 - present)
+      - Domeniu de aplicare și direcție (2020 - prezent)
   - name: Andrew MacDonald
     positions:
-      - Lead Developer (2018 - 2020)
-      - Developer (2013 - 2018)
+      - Dezvoltator principal (2018 - 2020)
+      - Dezvoltator (2013 - 2018)
   - name: Geoffrey Rockwell
     positions:
-      - Scoping and Direction (2011 - 2014)
+      - Domeniu de aplicare și direcție (2011 - 2014)
   - name: Megan Sellmer
     positions:
-      - Testing and Documentation (2011 - 2016)
+      - Testare și documentație (2011 - 2016)
 ---
 
-# About
+# Despre
 
-LEAF-Writer provides:
+LEAF-Writer-Commons face parte din [suita de instrumente LEAF Commons](https://www.leaf-vre.org/docs/about-leaf/leaf-commons), un set de instrumente modulare, ușor de utilizat, bazate pe web, care acceptă codificarea textului, recunoașterea entităților denumite, adnotarea web, analiza textului și publicarea fără ca utilizatorii să fie nevoiți să învețe limbaje de marcare/codare și facilitează trecerea între instrumente interoperabile. Această suită de instrumente disponibilă gratuit acceptă fluxuri de lucru academice digitale pentru producția și publicarea colaborativă a edițiilor și colecțiilor academice și documentare pe web, fără a fi nevoie de instalarea de software. Suita LEAF Commons permite utilizarea instrumentelor individuale în scopuri specifice sau acceptă un flux de lucru complet, de la transcriere la publicare, permițându-i să deservească o gamă largă de utilizări în cercetare și pedagogie.
 
-- schema-aware document editing, including validation, against web-accessible schemas
-- support for cascading stylesheets (CSS) to provide a WYSIWYG view of documents, as well as a view showing tags
-- the ability to extract references to named entities (persons, places, or organizations) from already tagged XML references within a document in order to generate Web Annotation
-- the ability to look up and select identifiers for named entity tags (persons, organizations, places, or titles) from the following Linked Open Data authorities: DBPedia, Geonames, Getty, LGPN, VIAF, and Wikidata.
-- generation of Linked Data annotations corresponding to newly tagged named entities and document annotations (dates, notes, citations, corrections, links, keywords) in XML-RDF or JSON-LD conforming to the Web Annotation Data Model
-- continuous XML validation
-- Shema-constrained tagging options
+[LEAF](https://www.leaf-vre.org/) reprezintă Linked Editing Academic Framework, o suită de software colaborativă care oferă un set de instrumente modulare pentru editarea și publicarea de texte. Instrumentele LEAF Commons constituie o infrastructură accesibilă, fără bariere și fără costuri pentru cercetători, care permite producerea de texte, ediții sau colecții online, fie în scopuri didactice, fie pentru cercetare și colaborare în mod sustenabil. Instrumentele LEAF Commons sunt disponibile gratuit în browser, permițând colaborarea și publicarea prin Github, pe lângă stocarea locală sau instalarea într-un stack local. Instrumentele LEAF Commons promovează reutilizarea metodologiilor de date în conformitate cu principiile datelor [FAIR](https://www.go-fair.org/fair-principles/) (Findă, Accesibilă, Interoperabilă și Reutilizabilă). LEAF utilizează software open-source, platforme cu acces liber și standarde internaționale deschise pentru cele mai bune practici în codificarea textului ([TEI-XML](https://tei-c.org)) și adnotarea web ([RDF](https://www.w3.org/RDF/)).
 
-This version of LEAF-Writer uses the GitHub and Gitlab repositories for document storage, versioning, and sharing. To take advantage of these features, you need to be logged into a GitHub or Gitlab account. In addition, you can open documents by pasting an XML or uploading a file from your computer. You can also download the file directly to your device. Optionally, you can use LEAF-Writer without any external account, in which case you will only be able to load from and save to your computer.
+## LEAF-Writer
 
-LEAF-Writer is designed to work with [customizations of the Text Encoding Initiative (TEI)](https://tei-c.org/guidelines/customization/#section-1) schema provided by the TEI Consortium. Out-of-the-box, LEAF-Writer supports the following schemas: [TEI All](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng), [TEI Corpus](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_corpus.rng), [TEI Drama](https://tei-c.org/release/xml/tei/custom/schema/relaxng/tei_drama.rng), [TEI Manuscript](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_ms.rng), [TEI Speech](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_speech.rng), [TEI LITE](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_lite.rng), [Orlando](https://cwrc.ca/schemas/orlando_entry.rng).
+LEAF-Writer este un editor XML (Extensible Markup Language) multilingv, open-source și cu acces liber, care rulează într-un browser web și oferă elevilor și studenților lor o experiență bogată de editare textuală, fără a fi nevoie să descarce, să instaleze și să configureze software proprietar, să plătească taxe de abonament permanente sau să învețe limbaje de codare complexe. Acest mediu de editare ușor de utilizat încorporează standardele Text Encoding Initiatives (TEI) și Resource Description Framework (RDF). Acesta încorporează reconcilierea cu identificatori de date deschise legați și autorități specifice proiectului ca parte a procesului de codare. LEAF-Writer este deosebit de valoros în contexte pedagogice, permițând instructorilor să îi învețe pe studenți bune practici de codare fără a fi nevoie să îi învețe și să programeze sau să instaleze software local.
 
-LEAF-Writer may also work with custom schemas. When you open a document, LEAF-Writer checks the root element and the schema definition. Currently, LEAF-Writer supports three different root elements: `TEI`, `ORLANDO`, and `CWRCENTRY`. If the root element is supported by the schema is not, you can add it as a personal custom schema. LEAF-Writer saves the schema information on the Browser's localstorage. Then, the schema will be available locally as long as you remain logged in.
+### Caracteristici principale
 
-You can use LEAF-Writer to edit XML documents or produce new documents from templates. There are templates and sample documents here for getting started.
+- Editare a documentelor bazată pe scheme, inclusiv validare, în raport cu scheme accesibile web
+- Suport pentru foi de stil în cascadă (CSS) pentru a oferi o vizualizare WYSIWYG a documentelor, precum și o vizualizare care arată etichetele
+- Capacitatea de a extrage referințe la entități denumite (persoane, locuri sau organizații) din referințe XML deja etichetate dintr-un document pentru a genera adnotări web
+- Capacitatea de a căuta și selecta identificatori pentru etichetele entităților denumite (persoane, organizații, locuri sau titluri) din următoarele autorități Linked Open Data: [DBPedia](https://dbpedia.org/), [Geonames](https://www.geonames.org/), [Getty](https://www.getty.edu/), [GND](https://www.dnb.de/EN/Professionell/Standardisierung/GND/gnd_node.html), [LINCS Project](https://lincsproject.ca), [VIAF](https://www.viaf.org/) și [Wikidata](https://www.wikidata.org/) sau fișiere de autoritate specifice proiectului.
+- Generarea de adnotări Linked Data corespunzătoare entităților denumite recent etichetate și adnotărilor documentelor (date, note, citări, corecții, linkuri, cuvinte cheie) în XML-RDF sau JSON-LD, conforme cu Modelul de date pentru adnotări web
+- Validare XML continuă
+- Opțiuni de etichetare constrânse de shema
 
-To learn more about how to use LEAF-Writer, see the [documentation](https://www.leaf-vre.org/docs/documentation/leaf-commons/leaf-writer-documentation-basic).
+### Suport TEI
 
-If you run into a bug or there is a feature you would like to see added, please submit a ticket to [https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues).
+LEAF-Writer este conceput să funcționeze cu [personalizări ale schemei Text Encoding Initiative (TEI)](https://tei-c.org/guidelines/customization/#section-1) furnizate de Consorțiul TEI. LEAF-Writer acceptă următoarele scheme implicite: [TEI All](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng), [TEI LITE](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_lite.rng), [TEI Simple Print](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_simplePrint.rng), [jTEI Article](https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_jtei.rng) și [Orlando](https://cwrc.ca/schemas/orlando_entry.rng).
 
-If you are interested in adopting/adapting Leaf Writer to a different environment, please consult [this reference](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer). You can contact us through a Gitlab ticket on any of the LEAF-Writer code repositories.
+### Scheme personalizate
 
-Finally, if you have found LEAF-Writer useful for your research or teaching, please let us know! We’d love to hear it.
+LEAF-Writer poate funcționa și cu scheme personalizate. Când deschideți un document, LEAF-Writer verifică elementul rădăcină și definiția schemei. În prezent, LEAF-Writer acceptă trei elemente rădăcină diferite: `TEI`, `ORLANDO` și `CWRCENTRY`. Dacă elementul rădăcină este acceptat de schemă nu, îl puteți adăuga ca o schemă personalizată personală. LEAF-Writer salvează informațiile schemei în memoria locală a browserului. Apoi, schema va fi disponibilă local atâta timp cât rămâneți conectat.
+
+## Stocare documente
+
+LEAF-Writer Commons utilizează GitHub pentru stocarea, versionarea și partajarea documentelor. Pentru a profita de aceste funcții, trebuie să fiți conectat la un cont GitHub. În plus, puteți deschide documente lipind un XML sau încărcând un fișier de pe computer. De asemenea, puteți descărca fișierul direct pe dispozitiv. Opțional, puteți utiliza LEAF-Writer fără niciun cont extern, caz în care veți putea încărca și salva documente doar de pe computer.
+
+Puteți utiliza LEAF-Writer pentru a edita documente XML sau pentru a produce documente noi din șabloane. Există șabloane și documente exemplu aici pentru a începe.
+
+## Aflați mai multe
+
+Pentru a afla mai multe despre cum să utilizați LEAF-Writer, consultați [documentația](https://www.leaf-vre.org/docs/documentation/leaf-commons/leaf-writer-documentation-basic).
+
+Consultați jurnalele de modificări pentru [LEAF-Writer Commons](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/blob/main/apps/commons/CHANGELOG.md?ref_type=heads) și [LEAF-Writer](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/blob/main/packages/cwrc-leafwriter/CHANGELOG.md?ref_type=heads) pentru actualizări recente.
+
+Dacă întâmpinați o eroare sau există o funcționalitate pe care doriți să o vedeți adăugată, vă rugăm să trimiteți un tichet la [https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues).
+
+Dacă sunteți interesați să adoptați/adaptați Leaf Writer la un mediu diferit, vă rugăm să consultați [această referință](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer). Ne puteți contacta printr-un tichet Gitlab în oricare dintre depozitele de cod LEAF-Writer.
+
+În cele din urmă, dacă ați găsit LEAF-Writer util pentru cercetarea sau predarea dvs., vă rugăm să ne spuneți! Ne-ar plăcea să aflăm.
+
+## Mai multe instrumente
+
+- [NERVE](https://nerve.lincsproject.ca)
+- [DToC](https://dtoc.leaf-vre.org/)
+- [LINCS Context Explorer](https://lincsproject.ca/docs/tools/context-explorer/)
+- [LEAF-TE](https://www.leaf-vre.org/docs/features/leaf-te)
