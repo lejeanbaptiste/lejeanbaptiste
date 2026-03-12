@@ -239,20 +239,6 @@ Module ID: `imageViewer`
 
 Displays images linked from within the current document. Useful for OCR'd documents.
 
-### [Relations](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/layout/modules/relations/relations.js)
-
-Module ID: `relations`
-
-Displays the list of entity relationships (i.e. RDF triples) in the current document. Uses [triple](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/dialogs/triple.js) to add new relationships.
-
-## Development
-
-[CWRC-Writer-Dev-Docs](https://github.com/cwrc/CWRC-Writer-Dev-Docs) explains how to work with CWRC-Writer GitHub repositories, including this one.
-
-## Lerna
-
-The Leaf writer project follows a strategy called _monorepo_ where multiple projects or packages are contained in the same source repository. Build order and dependencies are managed with _Lerna_ and an introduction is written up [here](https://www.linkedin.com/pulse/things-i-have-learned-while-maintaining-javascript-monorepo-gorej/).
-
 ## Running Leaf-Writer
 
 Docker and Docker Compose is required. Easiest is to install [Docker Desktop](https://www.docker.com/products/docker-desktop).
