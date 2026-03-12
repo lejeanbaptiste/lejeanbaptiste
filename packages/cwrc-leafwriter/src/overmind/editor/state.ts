@@ -63,7 +63,7 @@ export const state: EditorStateType = {
   editorModes: [
     { key: 1, value: 'xml', label: 'Markup only' },
     { key: 0, value: 'xmlrdf', label: 'Markup & Linking' },
-    { key: 0, value: 'xmlrdfoverlap', label: 'Markup & Linking with overlap' },
+    { key: 0, value: 'xmlrdfoverlap', label: 'Markup & Linking with overlap', disabled: true },
     { key: 2, value: 'rdf', label: 'Linking Only', disabled: true },
   ],
   fontSize: 11,
