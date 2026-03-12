@@ -47,7 +47,7 @@
     "test": "jest",
     "test-watch": "jest --watchAll --verbose",
     "cm": "git-cz",
-    "prepublishOnly": "npm test && npm run build && npm run build-documentation"
+    "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {
     "@cwrc/salve-dom-leafwriter": "^6.0.3",
