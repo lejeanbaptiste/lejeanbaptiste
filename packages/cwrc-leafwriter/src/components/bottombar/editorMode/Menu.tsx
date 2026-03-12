@@ -90,9 +90,13 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       anchorOrigin={{ horizontal: 'left', vertical: 'top' }}
       aria-labelledby="editor-mode-select"
       id="editor-mode-menu"
-      MenuListProps={{ sx: { py: 0.5, borderRadius: 1 } }}
       onClose={handleClose}
       open={openMenu}
+      slotProps={{
+        list: {
+          sx: { py: 0.5, borderRadius: 1 },
+        },
+      }}
       transformOrigin={{ horizontal: 'left', vertical: 'bottom' }}
     >
       <Box
