@@ -1,3 +1,4 @@
+import * as de from '@src/content/about/de.mdx';
 import * as en from '@src/content/about/en.mdx';
 import * as es from '@src/content/about/es.mdx';
 import * as fr from '@src/content/about/fr.mdx';
@@ -18,6 +19,8 @@ const aboutContentMap: Record<
   Locales,
   { content: ComponentType<MDXProps>; frontmatter: AboutFrontmatter }
 > = {
+  //@ts-ignore
+  de: { content: de.default, frontmatter: de.frontmatter },
   //@ts-ignore
   en: { content: en.default, frontmatter: en.frontmatter },
   //@ts-ignore

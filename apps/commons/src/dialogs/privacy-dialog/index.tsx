@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { IDialog } from '../type';
 import { mdxComponents } from './mdx-components';
 
+import * as de from '@src/content/privacy/de.mdx';
 import * as en from '@src/content/privacy/en.mdx';
 import * as es from '@src/content/privacy/es.mdx';
 import * as fr from '@src/content/privacy/fr.mdx';
@@ -20,6 +21,8 @@ interface PrivacyFrontmatter {
 
 // Static mapping of content by locale
 const privacyContentMap = {
+  //@ts-ignore
+  de: { content: de.default, tableOfContents: de.tableOfContents, frontmatter: de.frontmatter },
   //@ts-ignore
   en: { content: en.default, tableOfContents: en.tableOfContents, frontmatter: en.frontmatter },
   //@ts-ignore
