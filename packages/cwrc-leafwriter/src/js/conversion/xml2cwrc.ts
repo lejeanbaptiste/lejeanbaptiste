@@ -398,14 +398,8 @@ class XML2CWRC {
             continue;
           }
 
-          //@ts-ignore
           jsonAttrs[attName] = attValue;
 
-          // if (Mapper.reservedAttributes[attName] === true) {
-          //   continue;
-          // }
-
-          //@ts-ignore
           if (RESERVED_ATTRIBUTES.has(attName)) continue;
 
           openingTagString += ` ${attName}="${attValue}"`;
