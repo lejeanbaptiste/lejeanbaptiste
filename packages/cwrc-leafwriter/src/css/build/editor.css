@@ -382,3 +382,9 @@ span[data-mce-bogus] {
 * {
   scroll-margin-top: 1rem;
 }
+
+span[rend='superscript'] {
+  vertical-align: super;
+  font-size: 0.8em;
+  line-height: 0.8;
+}
