@@ -1,6 +1,6 @@
 import $ from 'jquery';
 
-export const handleGraphics = ($tag: JQuery<HTMLSpanElement>) => {
+export const handleGraphics = ($tag: JQuery<Element>) => {
   const url = $tag.attr('url');
   if (!url) return;
 
