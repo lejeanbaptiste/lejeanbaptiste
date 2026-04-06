@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 4.2.0
+
+### Minor Changes
+
+- [c4b7d3a30ae8c258e87bece34e33dc761a4b0836] render tag with attr rend="superscript" as superscript
+
+### Patch Changes
+
+- [af6483731ee0dbcf48514ec8a435dabbe8502a80] Remove commented code
+- [b54eb90054703c6a4da4c78af0c0f856fe3879f0] Fix typing
+
 ## 4.1.0
 
 ### Minor changes
