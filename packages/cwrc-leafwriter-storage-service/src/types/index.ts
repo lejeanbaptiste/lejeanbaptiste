@@ -55,7 +55,7 @@ export interface SelectedItem {
   type?: 'file' | 'folder' | 'repo' | 'org' | 'dir';
 }
 
-export type Validate = (content: string) => { valid: boolean; error?: string };
+export type Validate = ({content, filename}: {content: string, filename?: string}) => { valid: boolean; error?: string };
 
 export type SuportedProviders = 'github' | 'gitlab';
 
