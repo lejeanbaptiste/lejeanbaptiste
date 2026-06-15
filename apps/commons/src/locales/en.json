@@ -156,7 +156,8 @@
       "document_saved": "Document saved",
       "drag the document here": "drag the document here",
       "error": {
-        "xml_not_well-formed_message": "The document you are trying to upload is not well-formed. Check that it has the XML extension and follows the correct XML grammar."
+        "document_not_supported": "The document you are trying to load is not supported. Please check that it has the correct extension and is well-formed.",
+        "xml_not_well-formed_message": "The document you are trying to load is not well-formed. Check that it has the XML extension and follows the correct XML grammar."
       },
       "export": "export",
       "export document": "export document",

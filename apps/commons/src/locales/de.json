@@ -156,6 +156,7 @@
       "document_saved": "Dokument gespeichert",
       "drag the document here": "ziehen Sie das Dokument hier hin",
       "error": {
+        "document_not_supported": "Das Dokument, das Sie laden möchten, wird nicht unterstützt. \nBitte überprüfen Sie, ob es die richtige Erweiterung hat und wohlgeformt ist",
         "xml_not_well-formed_message": "Das Dokument, das Sie versuchen hochzuladen, ist nicht wohlgeformt. Überprüfen Sie, dass es in der richtigen XML-Erweiterung formatiert ist und der korrekten XML-Grammatik folgt."
       },
       "export": "Exportieren",

@@ -1,13 +1,13 @@
 import { Stack } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
-import type { AllowedMimeType, FileDetail } from '@src/types';
+import type { MimeTypeSupported, FileDetail } from '@src/types';
 import { createRef, useMemo } from 'react';
 import Dropzone, { type DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
 import { Zone } from './components/zone';
 
 interface UploadDropBoxProps {
-  allowedMimeTypes?: AllowedMimeType[];
+  allowedMimeTypes?: MimeTypeSupported[];
   filename?: string;
   height?: number;
   isProcessing?: boolean;

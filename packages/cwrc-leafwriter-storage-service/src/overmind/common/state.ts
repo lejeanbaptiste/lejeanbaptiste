@@ -1,6 +1,6 @@
 import type {
   AlertDialog,
-  AllowedMimeType,
+  MimeTypeSupported,
   DialogType,
   MessageDialog,
   Resource,
@@ -17,7 +17,7 @@ type State = {
   allowAllFileTypes: boolean;
   allowedFileTypes?: string[];
   allowLocalFiles?: boolean;
-  allowedMimeTypes?: AllowedMimeType[];
+  allowedMimeTypes?: MimeTypeSupported[];
   allowPaste?: boolean;
   allowUrl?: boolean;
   contentToSave?: string;
@@ -39,7 +39,8 @@ export const state: State = {
     if (!state.allowedMimeTypes) return;
     return state.allowedMimeTypes.map((mimeType) => {
       const parts = mimeType.split('/');
-      if (parts[1] === 'plain') return '';
+      if (parts[1] === 'plain') return 'txt';
+      if (parts[1] === 'markdown') return 'md';
       return parts[1];
     });
   }),
