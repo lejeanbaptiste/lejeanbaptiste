@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 3.9.1
+
+### Patch Changes
+
+- Update validation fn to use filename to route content validation [989234d420706cc543f3ec78aec41fc725983199]
+- Add support to markdown but do not make available yet [45f2f94be49bba6ec709aa6ffa5d0fe6484281e5]
+- Add translation term [259b1d069086ab0b6c7caa3224e8c2ed24d89bd8]
+- Updated dependencies
+  - @cwrc/leafwriter-storage-service@4.2.0
+
 ## 3.9.0
 
 ### Integrate with [Sentry](https://sentry.io)
@@ -1551,7 +1561,7 @@ Users can also trigger the save function by themselves, which, in this case, wil
 
 The timer resets and stops after the file are saved.
 
-If the storage provider responds with a conflict (error 409), LEAF-Writer will make `5 subsequent attempts to save the file in `10s interval`. If the error persists, it continues to try to save the file every `60s`.
+If the storage provider responds with a conflict (error 409), LEAF-Writer will make `5 subsequent attempts to save the file in`10s interval`. If the error persists, it continues to try to save the file every`60s`.
 
 ### Get language from the URL
 

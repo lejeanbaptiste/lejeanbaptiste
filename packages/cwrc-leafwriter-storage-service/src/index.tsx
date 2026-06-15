@@ -11,7 +11,7 @@ export { clearCache, deleteDb } from './db';
 export { loadDocument, saveDocument } from './headless';
 export type { Locales } from './i18n';
 export type {
-  AllowedMimeType,
+  MimeTypeSupported,
   DialogType,
   Resource,
   StorageDialogProps,

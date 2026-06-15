@@ -22,7 +22,7 @@ export type StorageSource = 'cloud' | 'local' | 'paste' | 'url';
 
 export interface StorageDialogConfig {
   allowLocalFiles?: boolean;
-  allowedMimeTypes?: AllowedMimeType[];
+  allowedMimeTypes?: MimeTypeSupported[];
   allowPaste?: boolean;
   allowUrl?: boolean;
   defaultCommitMessage?: string;
@@ -33,12 +33,13 @@ export interface StorageDialogConfig {
   validate?: Validate;
 }
 
-export type AllowedMimeType =
+export type MimeTypeSupported =
   | 'application/json'
   | 'application/pdf'
   | 'application/xml'
   | 'text/csv'
   | 'text/html'
+  | 'text/markdown'
   | 'text/plain'
   | 'text/xml';
 
@@ -54,7 +55,7 @@ export interface SelectedItem {
   type?: 'file' | 'folder' | 'repo' | 'org' | 'dir';
 }
 
-export type Validate = (content: string) => { valid: boolean; error?: string };
+export type Validate = ({content, filename}: {content: string, filename?: string}) => { valid: boolean; error?: string };
 
 export type SuportedProviders = 'github' | 'gitlab';
 

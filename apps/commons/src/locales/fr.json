@@ -156,6 +156,7 @@
       "document_saved": "Document enregistré",
       "drag the document here": "faire glisser le document ici",
       "error": {
+        "document_not_supported": "Le document que vous essayez de charger n'est pas pris en charge. \nVeuillez vérifier qu'il a la bonne extension et qu'il est bien formé.",
         "xml_not_well-formed_message": "Le document que vous essayez de télécharger n'est pas bien formé. Vérifiez qu'il a l'extension XML et suit la grammaire XML correcte."
       },
       "export": "exporter",

@@ -6,17 +6,18 @@ import Dropzone, { type DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
 import { Zone } from './components';
 
-export type AllowedMimeType =
+export type MimeTypeSupported =
   | 'application/json'
   | 'application/pdf'
   | 'application/xml'
   | 'text/csv'
   | 'text/html'
+  | 'text/markdown'
   | 'text/plain'
   | 'text/xml';
 
 interface UploadDropBoxProps {
-  allowedMimeTypes?: AllowedMimeType[];
+  allowedMimeTypes?: MimeTypeSupported[];
   filename?: string;
   height?: number;
   isProcessing?: boolean;
