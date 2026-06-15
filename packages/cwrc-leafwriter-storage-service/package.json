@@ -55,7 +55,7 @@
   ],
   "scripts": {
     "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration",
-    "clean": "rm -rf .turbo node_modules lib coverage",
+    "clean": "rm -rf node_modules lib coverage",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
