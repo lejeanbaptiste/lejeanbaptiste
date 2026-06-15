@@ -82,11 +82,20 @@ export const Storage = () => {
     setPermalink('/');
   };
 
-  const validXML = (content: string) => {
-    const isContentValid = isValidXml(content);
-    return isContentValid
+  const validateContent = ({ content, filename }: { content: string; filename?: string }) => {
+    //is filename extension supported?
+    if (filename?.endsWith('.xml')) {
+      const isContentValid = isValidXml(content);
+      return isContentValid
+        ? { valid: true }
+        : { valid: false, error: t('LWC.storage.error.xml_not_well-formed_message') };
+    }
+
+    //Try to determine file type from content
+    const contentIsXml = isValidXml(content);
+    return contentIsXml
       ? { valid: true }
-      : { valid: false, error: t('LWC.storage.error.xml_not_well-formed_message') };
+      : { valid: false, error: t('LWC.storage.error.document_not_supported') };
   };
 
   const preferProvider = useMemo(() => {
@@ -112,7 +121,7 @@ export const Storage = () => {
               locale: currentLocale,
               providers,
               preferProvider,
-              validate: validXML,
+              validate: validateContent,
             }}
             onBackdropClick={type === 'load' ? clickAway : undefined}
             onCancel={close}
