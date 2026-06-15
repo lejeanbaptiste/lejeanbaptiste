@@ -145,7 +145,7 @@ export const load = async ({ state, actions }: Context, resource?: Resource) => 
   if (!resource) return;
 
   if (resource.content && state.common.validate) {
-    const { valid, error } = state.common.validate(resource.content);
+    const { valid, error } = state.common.validate({ content: resource.content, filename: resource.filename });
 
     if (!valid) {
       actions.ui.openDialog({
