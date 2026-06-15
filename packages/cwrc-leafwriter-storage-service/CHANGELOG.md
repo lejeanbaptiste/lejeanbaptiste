@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 4.2.0
+
+### Minor Changes
+
+- Add support to markdown and plain text (text/markdown) mietype - (.md & .txt) files [2d66688e91322525630259a2babe7007a9353cc9]
+- Improve validation fn params: an object with content optionally filename [47d9986b22a0b8afcec7c640faca32a5df65479c]
+
+### Patch Changes
+
+- Change type name from AllowedMimeType to MimeTypeSupported [2d66688e91322525630259a2babe7007a9353cc9]
+- Fix how this package is exported as esm [5f07af60a0e7edce1f22b6a05d8e01ae25f9b350]
+- add a separate script to run in dev [a72db28aea8da41fe68618b9a36897e2dad20a03]
+
 ## 4.1.0
 
 ### Minor changes
@@ -816,6 +829,7 @@ Add language as an optional property to settings. Now we can explicitly tell the
       - @types/lodash@4.14.192 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
 
   ### Tests
+
   - Refactoring [767dfaeb8657620cf7fca0652c3c7b0977001128]
 
 ## 1.3.9
