@@ -1,5 +1,5 @@
 import type {
-  AllowedMimeType,
+  MimeTypeSupported,
   DialogType,
   Resource,
   SelectedItem,
@@ -73,7 +73,7 @@ export const setAllowedAllFileTypes = ({ state }: Context, value: boolean) => {
   state.common.selectedItem = undefined;
 };
 
-export const setAllowedMimeTypes = ({ state }: Context, value: AllowedMimeType[]) => {
+export const setAllowedMimeTypes = ({ state }: Context, value: MimeTypeSupported[]) => {
   state.common.allowedMimeTypes = value;
 };
 

@@ -9,7 +9,7 @@ import type { StorageDialogProps } from './types';
 
 export type { Locales } from './i18n';
 export type {
-  AllowedMimeType,
+  MimeTypeSupported,
   DialogType,
   Resource,
   StorageDialogProps,
