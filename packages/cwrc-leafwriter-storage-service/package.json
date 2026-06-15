@@ -25,29 +25,29 @@
   "exports": {
     ".": {
       "import": [
-        "./src/index.tsx",
-        "./lib/index.js"
+        "./lib/index.js",
+        "./src/index.tsx"
       ],
       "types": "./lib/index.d.ts"
     },
     "./dialog": {
       "import": [
-        "./src/StorageDialog.tsx",
-        "./lib/StorageDialog.js"
+        "./lib/StorageDialog.js",
+        "./src/StorageDialog.tsx"
       ],
       "types": "./lib/StorageDialog.d.ts"
     },
     "./headless": {
       "import": [
-        "./src/headless.ts",
-        "./lib/headless.js"
+        "./lib/headless.js",
+        "./src/headless.ts"
       ],
       "types": "./lib/headless.d.ts"
     }
   },
   "types": "lib/index.d.ts",
   "main": "./lib/index.js",
-  "module": "src/index.tsx",
+  "module": "./lib/index.js",
   "files": [
     "lib",
     "headless.d.ts",
