@@ -156,6 +156,7 @@
       "document_saved": "Documento salvo",
       "drag the document here": "arraste o document aqui",
       "error": {
+        "document_not_supported": "O documento que você está tentando carregar não é compatível. \nVerifique se ele tem a extensão correta e está bem formado",
         "xml_not_well-formed_message": "O documento que você está tentando carregar não está bem formado. Verifique se ele tem a extensão XML e segue a gramática XML correta."
       },
       "export": "exportar",

@@ -156,6 +156,7 @@
       "document_saved": "",
       "drag the document here": "",
       "error": {
+        "document_not_supported": "",
         "xml_not_well-formed_message": ""
       },
       "export": "",
