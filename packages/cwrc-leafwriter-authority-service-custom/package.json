@@ -25,7 +25,7 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration",
-    "clean": "rm -rf .turbo node_modules lib",
+    "clean": "rm -rf node_modules lib",
     "lint": "eslint .",
     "cm": "git-cz"
   },
