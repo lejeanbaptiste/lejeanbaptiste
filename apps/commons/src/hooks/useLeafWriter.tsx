@@ -1,10 +1,17 @@
+import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
 import { schemas } from '@src/config/schemas';
-import { leafwriterAtom, leafWriterEventsAtom, tapDocumentTimerAtom } from '@src/jotai';
+import {
+  leafwriterAtom,
+  leafWriterEventsAtom,
+  leafWriterSessionKeyAtom,
+  tapDocumentTimerAtom,
+} from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { convertDocument } from '@src/services/leaf-te';
 import type { Resource } from '@src/types';
+import { isDesktop } from '@src/types/desktop';
 import { changeFileExtension } from '@src/utilities';
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
@@ -16,14 +23,17 @@ export const useLeafWriter = () => {
   const { t } = useTranslation();
 
   const { user } = useAppState().auth;
+  const { rootPath } = useAppState().project;
   const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
   const { currentLocale } = useAppState().ui;
 
   const {
     close,
     loadLeafWriter,
+    resetLibLoaded,
     save,
     saveAs,
+    setResource,
     setAutosave,
     setContentLastSaved,
     setContentHasChanged,
@@ -31,11 +41,13 @@ export const useLeafWriter = () => {
     unsubscribeFromTimerService,
   } = useActions().editor;
   const { addToRecentDocument, download } = useActions().storage;
+  const { updateTabContent } = useActions().project;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
 
   const [leafWriter, setLeafWriter] = useAtom(leafwriterAtom);
   const [leafWriterEvent, setLeafWriterEvents] = useAtom(leafWriterEventsAtom);
   const [tapDocumentTimer, setTapDocumentTimer] = useAtom(tapDocumentTimerAtom);
+  const bumpEditorSession = useSetAtom(leafWriterSessionKeyAtom);
 
   const loadLib = async (element: HTMLElement) => {
     const lw = await loadLeafWriter(element);
@@ -50,17 +62,30 @@ export const useLeafWriter = () => {
       uri: user?.identities.get(user.preferredID)?.uri ?? '',
     };
 
+    let xml = resource.content ?? '';
+    let documentSchemas = schemas;
+
+    if (isDesktop() && resource.filePath) {
+      const prepared = await prepareDesktopDocument(resource.filePath, xml, rootPath);
+      xml = prepared.content;
+      documentSchemas = [...schemas, ...prepared.schemas];
+      if (xml !== resource.content) {
+        await setResource({ ...resource, content: xml });
+        updateTabContent({ filePath: resource.filePath, content: xml });
+      }
+    }
+
     const settings: LeafWriterOptionsSettings = {
       locale: currentLocale,
       readonly,
-      schemas,
+      schemas: documentSchemas,
       // Telemetry is handled by the LWC. If want to test it on LW, you must disabled it on LWC (just do not initialize it)
     };
 
     leafWriter.init({
       document: {
-        url: resource.url,
-        xml: resource.content ?? '',
+        url: resource.filePath ?? resource.url,
+        xml,
       },
       settings,
       user: author,
@@ -72,6 +97,23 @@ export const useLeafWriter = () => {
       analytics.track('editor', { opened: true });
       analytics.page();
     }
+  };
+
+  /** Load a different project file into an already-running editor (tab switch / second file). */
+  const loadDocumentInWriter = async (filePath: string, content: string) => {
+    if (!window.writer) return;
+
+    let xml = content;
+    if (isDesktop() && filePath) {
+      const prepared = await prepareDesktopDocument(filePath, xml, rootPath);
+      xml = prepared.content;
+      if (xml !== content && resource) {
+        await setResource({ ...resource, content: xml, filePath });
+        updateTabContent({ filePath, content: xml });
+      }
+    }
+
+    window.writer.loadDocumentXML(xml);
   };
 
   const setEditorEvents = () => {
@@ -111,6 +153,26 @@ export const useLeafWriter = () => {
 
     const onCloseEvent = leafWriter.onClose.subscribe(() => {
       unsubscribeFromTimerService();
+
+      if (isDesktop()) {
+        const editor = leafWriter;
+        removeSubscribers();
+        timerService.stop();
+        if (tapDocumentTimer) clearTimeout(tapDocumentTimer);
+
+        void (async () => {
+          editor.dispose();
+          setLeafWriter(null);
+          resetLibLoaded();
+          bumpEditorSession((key) => key + 1);
+          notifyViaSnackbar({
+            message: 'Could not open this document.',
+            options: { variant: 'warning' },
+          });
+        })();
+        return;
+      }
+
       disposeLeafWriter();
       navigate('/', { replace: true });
     });
@@ -274,6 +336,7 @@ export const useLeafWriter = () => {
     handleDownload,
     handleSave,
     initLeafWriter,
+    loadDocumentInWriter,
     loadLib,
     saveFeedback,
     setEditorEvents,

@@ -7,6 +7,7 @@ import {
   SelectSchemaDialog,
   SettingsDialog,
   SimpleDialog,
+  XPathSearchDialog,
   type DialogProps,
   type DialogType,
 } from '../dialogs';
@@ -70,5 +71,6 @@ export const useDialog = () => {
     if (type === 'editSource') return EditSourceDialog;
     if (type === 'settings') return SettingsDialog;
     if (type === 'popup') return Popup;
+    if (type === 'xpathSearch') return XPathSearchDialog;
   };
 };

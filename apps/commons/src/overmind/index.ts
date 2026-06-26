@@ -8,6 +8,7 @@ import {
 import { namespaced } from 'overmind/config';
 import * as auth from './auth';
 import * as editor from './editor';
+import * as project from './project';
 import * as providers from './providers';
 import * as storage from './storage';
 import * as ui from './ui';
@@ -15,6 +16,7 @@ import * as ui from './ui';
 export const config = namespaced({
   auth,
   editor,
+  project,
   providers,
   storage,
   ui,

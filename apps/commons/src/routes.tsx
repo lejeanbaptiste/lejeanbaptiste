@@ -1,5 +1,5 @@
 import { BasicLayout } from './layouts';
-import { EditPage, HomePage, LinkAccountsPage, NotFoundPage } from './pages';
+import { EditPage, HomePage, LinkAccountsPage, NotFoundPage, ProjectEditPage } from './pages';
 
 export const routes = [
   {
@@ -10,6 +10,7 @@ export const routes = [
       { path: '/link-accounts', element: <LinkAccountsPage /> },
       { path: '/edit', element: <EditPage /> },
       { path: '/view', element: <EditPage /> },
+      { path: '/project', element: <ProjectEditPage /> },
       { index: true, element: <HomePage /> },
     ],
   },

@@ -6,3 +6,4 @@ export * from './entity-lookups';
 export * from './popup';
 export * from './settings';
 export * from './type';
+export * from './xpathSearch';

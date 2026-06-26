@@ -1,0 +1,50 @@
+# CRCAO Editor (Desktop)
+
+Electron desktop shell for LEAF-Writer Commons.
+
+## Prerequisites
+
+- Node.js 20+
+- npm workspaces installed from the repo root: `npm install`
+
+## Development
+
+Run the web app and Electron window together (from repo root):
+
+```bash
+npm run dev:desktop
+```
+
+Or in two terminals:
+
+```bash
+npm run dev -w leafwriter-commons
+npm run dev -w crcao-desktop
+```
+
+The Electron window opens at `http://localhost:3000/project`.
+
+**First launch can take ~30 seconds** while webpack compiles; the desktop shell waits for the dev server and `js/app.js` before opening the window. If you still see an error, wait until the terminal shows `Compiled successfully`, then reload the window (Cmd+R).
+
+Optional: set `CRCAO_OPEN_DEVTOOLS=1` to open Chromium DevTools in development.
+
+## Production build (Mac)
+
+```bash
+npm run build:desktop
+```
+
+This builds Commons, compiles the Electron main/preload scripts, and produces a `.dmg` in `apps/desktop/release/`.
+
+### Notes
+
+- **Mac-first:** Phase 1 packaging is tested on macOS. Linux (AppImage) and Windows (NSIS) targets are configured in `package.json` but not CI-validated yet.
+- **No code signing:** Unsigned builds may require right-click → Open on first launch.
+- The packaged app starts a local Express server and loads the `/project` route.
+
+## Features (Phase 1)
+
+- Open a project folder and browse `.xml` files in a sidebar tree
+- Multiple document tabs in one window
+- Save to disk (Cmd+S)
+- XPath search on the current file (toolbar button)

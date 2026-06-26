@@ -31,8 +31,19 @@ const container = document.getElementById('app');
 if (!container) throw new Error(`HTML element id 'app' not found`);
 
 const root = createRoot(container);
+const errorFallback = ({ error }: { error: unknown }) => (
+  <div style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem' }}>
+    <h1>Something went wrong</h1>
+    <p>{error instanceof Error ? error.message : 'An unknown error occurred.'}</p>
+    <p style={{ color: '#666', fontSize: '0.9rem' }}>
+      If you just started the desktop app, wait for webpack to finish compiling and reload the
+      window.
+    </p>
+  </div>
+);
+
 root.render(
-  <Sentry.ErrorBoundary fallback={<p>An error has occurred</p>}>
+  <Sentry.ErrorBoundary fallback={errorFallback}>
     <Provider value={overmind}>
       <HelmetProvider>
         <BrowserRouter>

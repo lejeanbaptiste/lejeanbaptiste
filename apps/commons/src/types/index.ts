@@ -99,6 +99,9 @@ export interface Resource {
 
   isLocal?: boolean;
   blob?: Blob;
+
+  /** Absolute path on disk (desktop app only; not URL-serializable) */
+  filePath?: string;
 }
 
 export const ErrorTypes = ['info', 'warning', 'error'] as const;

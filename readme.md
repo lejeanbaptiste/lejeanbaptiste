@@ -250,3 +250,13 @@ git clone https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer
 cd leaf-writer
 docker compose up
 ```
+
+## CRCAO Editor (desktop)
+
+The `apps/desktop` package wraps LEAF-Writer Commons in an Electron shell for local project editing (folder tree, tabs, save to disk, XPath search).
+
+```bash
+npm run dev:desktop
+```
+
+See [apps/desktop/README.md](apps/desktop/README.md) for build and packaging instructions.

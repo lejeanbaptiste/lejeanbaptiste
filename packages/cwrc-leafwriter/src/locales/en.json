@@ -252,6 +252,15 @@
       "Toggle Fullscreen": "Toggle Fullscreen",
       "Validate": "Validate"
     },
+    "xpathSearch": {
+      "title": "XPath Search",
+      "queryLabel": "XPath expression",
+      "search": "Search",
+      "hint": "Use LEAF-Writer paths (e.g. TEI/text/body//p), not validator-style /TEI/text[1]/... paths.",
+      "noResults": "No matches found.",
+      "invalidXPath": "Invalid XPath expression.",
+      "editorNotReady": "Editor is not ready yet."
+    },
     "entity": {
       "_plural": {
         "citation_many": "citations",

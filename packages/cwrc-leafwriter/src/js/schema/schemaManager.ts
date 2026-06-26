@@ -2,7 +2,7 @@ import CSS from 'css';
 import $ from 'jquery';
 import { nanoid } from 'nanoid';
 import type { Schema, SchemaMappingType } from '../../types';
-import { log } from '../../utilities';
+import { fetchResourceText, log } from '../../utilities';
 import Writer from '../Writer';
 import Mapper from './mapper';
 import * as schemaNavigator from './schemaNavigator';
@@ -174,12 +174,15 @@ class SchemaManager {
    * @returns {String|undefined} The schemaId
    */
   getSchemaIdFromUrl(url: string) {
+    const exact = this.schemas.find((schema) => schema.rng.some((rngUrl) => rngUrl === url));
+    if (exact) return exact.id;
+
     // remove the protocol in order to disregard http/https for improved chances of matching below
     const urlNoProtocol = url.split(/^.*?\/\//)[1] ?? '';
 
     // search the known schemas, if the url matches it must be the same one
     const schema = this.schemas.find((schema) => {
-      const match = schema.rng.find((url) => url.includes(urlNoProtocol));
+      const match = schema.rng.find((rngUrl) => rngUrl.includes(urlNoProtocol));
       if (match) return schema;
     });
 
@@ -585,9 +588,9 @@ class SchemaManager {
     for await (const url of urls) {
       attempt++;
 
-      const response = await fetch(url).catch(() => null);
+      const data = await fetchResourceText(url);
 
-      if (!response || response.status !== 200) {
+      if (!data) {
         let message = `A network error occurred while trying to reach ${url}.`;
         message += ' This could be a CORS issue or a dropped internet connection.';
         message += ` ${
@@ -597,12 +600,9 @@ class SchemaManager {
         }`;
         log.warn(message);
 
-        //if no response, try another url. This is our tactic to deal with CORS in some resources
         isAltRoute = true;
         continue;
       }
-
-      const data = await response.text();
 
       if (isAltRoute) log.info(`Schema loaded from an alternative route: ${url}`);
 
@@ -940,9 +940,9 @@ class SchemaManager {
     for await (const url of urls) {
       attempt++;
 
-      const response = await fetch(url).catch(() => null);
+      const data = await fetchResourceText(url);
 
-      if (!response || response.status !== 200) {
+      if (!data) {
         let message = `A network error occurred while trying to reach ${url}.`;
         message += ' This could be a CORS issue or a dropped internet connection.';
         message += ` ${
@@ -952,12 +952,9 @@ class SchemaManager {
         }`;
         log.warn(message);
 
-        //if no response, try another url. This is our tactic to deal with CORS in some resources
         isAltRoute = true;
         continue;
       }
-
-      const data = await response.text();
 
       //success
       if (isAltRoute) log.info(`CSS loaded from an alternative route: ${url}`);

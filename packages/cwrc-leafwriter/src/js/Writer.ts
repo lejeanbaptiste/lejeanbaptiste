@@ -183,13 +183,14 @@ class Writer extends EventManager {
     this.utilities = new Utilities(this);
 
     this.editorId = this.getUniqueId('editor_');
-    $(`#${this.containerId}`).empty();
+    const $layoutHost = $(`#${this.containerId}`);
+    $layoutHost.empty();
 
     this.layoutManager = new LayoutManager(this);
     this.layoutManager.init({
       editorId: this.editorId,
       modules: config.modules,
-      container: $(`#${this.containerId}`),
+      container: $layoutHost,
     });
 
     this.schemaManager = new SchemaManager(this, config.schemas ?? []);
