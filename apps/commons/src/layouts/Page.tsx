@@ -1,18 +1,27 @@
 import { useAppState } from '@src/overmind';
-import { forwardRef } from 'react';
+import { isDesktop } from '@src/types/desktop';
+import { forwardRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 interface PageProps {
   title?: string;
 }
 
-const PAGE_TITLE = 'LEAF-Writer Commons';
+const WEB_PAGE_TITLE = 'LEAF-Writer Commons';
+const DESKTOP_PAGE_TITLE = 'Le Jean-Baptiste';
 
 export const Page = forwardRef<PageProps, any>(({ children, title, ...rest }, ref) => {
   const { resource } = useAppState().editor;
 
-  title = title ? title : PAGE_TITLE;
-  title = resource?.filename ? `${resource.filename} - ${PAGE_TITLE}` : PAGE_TITLE;
+  const appTitle = isDesktop() ? DESKTOP_PAGE_TITLE : WEB_PAGE_TITLE;
+  title = title ?? appTitle;
+  title = resource?.filename ? `${resource.filename} — ${appTitle}` : title;
+
+  useEffect(() => {
+    if (isDesktop()) {
+      void window.electronAPI?.setWindowTitle(title);
+    }
+  }, [title]);
 
   return (
     //@ts-ignore

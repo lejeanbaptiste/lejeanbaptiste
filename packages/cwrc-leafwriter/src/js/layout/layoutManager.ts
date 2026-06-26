@@ -240,6 +240,13 @@ class LayoutManager {
   }
 
   showModule(moduleId: ISettingsModuleName) {
+    const westModules: ISettingsModuleName[] = ['toc', 'markup', 'entities'];
+    if (!this.modulesLayout.has('west') && westModules.includes(moduleId)) {
+      window.__desktopLeftPanel?.showTab(moduleId);
+      window.__desktopLeftPanel?.expand();
+      return;
+    }
+
     this.modulesLayout.forEach((modules, region) => {
       if (!Array.isArray(modules)) {
         if (modules.id === moduleId) this.showRegion(region);

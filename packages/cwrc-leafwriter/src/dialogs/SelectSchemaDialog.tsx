@@ -12,7 +12,7 @@ import {
   Typography,
   type SelectChangeEvent,
 } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'nanoid';
 import { useActions, useAppState } from '../overmind';
@@ -46,6 +46,10 @@ export const SelectSchemaDialog = ({
 
   const [schema, setSchema] = useState<Schema | undefined>(defaultSchema);
 
+  useEffect(() => {
+    setSchema(defaultSchema);
+  }, [defaultSchema?.id, mappingIds.join('|')]);
+
   const handleSchemaSelect = (event: SelectChangeEvent) => {
     const schemaId = event.target.value;
     const selectedChema = possibleSchemas.find(({ id }) => id === schemaId);
@@ -68,9 +72,10 @@ export const SelectSchemaDialog = ({
   };
 
   const handleSelect = () => {
+    if (!schema) return;
     closeDialog(id);
-    onSchemaSelect && schema && onSchemaSelect(schema);
-    onClose && onClose<Schema>('select', schema);
+    onSchemaSelect?.(schema);
+    onClose?.('select', schema);
   };
 
   return (
@@ -99,7 +104,8 @@ export const SelectSchemaDialog = ({
               labelId="select-schema-label"
               onChange={handleSchemaSelect}
               size="small"
-              value={schema?.id}
+              value={schema?.id ?? ''}
+              disabled={possibleSchemas.length === 0}
             >
               {schemasList
                 .filter((schema) => mappingIds.includes(schema.mapping))
@@ -126,7 +132,7 @@ export const SelectSchemaDialog = ({
 
       <DialogActions sx={{ justifyContent: 'space-between' }}>
         <Button onClick={handleCancel}>{t('LW.commons.cancel')}</Button>
-        <Button color="primary" onClick={handleSelect} variant="outlined">
+        <Button color="primary" disabled={!schema} onClick={handleSelect} variant="outlined">
           {t('LW.commons.select')}
         </Button>
       </DialogActions>

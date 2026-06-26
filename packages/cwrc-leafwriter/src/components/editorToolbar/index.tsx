@@ -12,6 +12,10 @@ import { Toggle } from './Toggle';
 type ItemType = 'button' | 'divider' | 'iconButton' | 'toggle';
 type ItemGroup = 'action' | 'ui' | 'panel' | 'general';
 
+const isDesktopApp = () =>
+  typeof window !== 'undefined' &&
+  !!(window as Window & { electronAPI?: unknown }).electronAPI;
+
 export interface Item {
   disabled?: boolean;
   hide?: boolean;
@@ -210,7 +214,7 @@ export const EditorToolbar = () => {
     { group: 'ui', type: 'divider', hide: isReadonly },
     {
       group: 'ui',
-      hide: isReadonly,
+      hide: isReadonly || isDesktopApp(),
       icon: 'xpathSearch',
       onClick: () => openDialog({ type: 'xpathSearch' }),
       title: t('LW.xpathSearch.title'),

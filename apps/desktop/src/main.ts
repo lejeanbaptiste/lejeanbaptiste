@@ -1,7 +1,38 @@
-import { app, BrowserWindow, dialog, ipcMain, net, protocol } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, protocol } from 'electron';
 import { fork, type ChildProcess } from 'child_process';
+import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
+import {
+  closeAllNativeDialogs,
+  initNativeDialogs,
+  registerNativeDialogIpc,
+} from './nativeDialogs';
+import { getValidLastProjectFile, writeLastProjectFile } from './projectPrefs';
+import { loadOrCreateProject, loadProjectFile } from './projectFile';
+
+const APP_NAME = 'Le Jean-Baptiste';
+
+// Must run before app.ready so macOS uses this name in the menu bar (dev and packaged).
+app.setName(APP_NAME);
+
+const getIconPath = () => {
+  const base = app.isPackaged
+    ? process.resourcesPath
+    : path.join(__dirname, '../../../design');
+  const pngPath = path.join(base, 'icon.png');
+  const svgPath = path.join(base, 'icon.svg');
+
+  // nativeImage loads PNG reliably; SVG often returns empty on macOS.
+  if (existsSync(pngPath)) return pngPath;
+  if (existsSync(svgPath)) return svgPath;
+  return pngPath;
+};
+
+const getAppIcon = () => {
+  const icon = nativeImage.createFromPath(getIconPath());
+  return icon.isEmpty() ? undefined : icon;
+};
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -31,6 +62,10 @@ const DEV_COMMONS_URL = process.env.COMMONS_URL ?? 'http://localhost:3000';
 const PROD_SERVER_PORT = process.env.CRCAO_SERVER_PORT ?? '3847';
 const DEV_READY_TIMEOUT_MS = 120_000;
 const DEV_READY_POLL_MS = 1_000;
+
+if (isDev) {
+  app.setPath('userData', path.join(app.getPath('appData'), APP_NAME));
+}
 
 let mainWindow: BrowserWindow | null = null;
 let serverProcess: ChildProcess | null = null;
@@ -122,13 +157,13 @@ const waitForDevCommons = async () => {
   await waitForUrl(`${DEV_COMMONS_URL}/js/app.js`);
 };
 
-const getAppUrl = async (): Promise<string> => {
+const getAppUrl = async (routePath = '/project'): Promise<string> => {
   if (isDev) {
     await waitForDevCommons();
-    return `${DEV_COMMONS_URL}/project`;
+    return `${DEV_COMMONS_URL}${routePath}`;
   }
   await startCommonsServer();
-  return `http://127.0.0.1:${PROD_SERVER_PORT}/project`;
+  return `http://127.0.0.1:${PROD_SERVER_PORT}${routePath}`;
 };
 
 const sortEntries = (
@@ -139,14 +174,113 @@ const sortEntries = (
   return a.name.localeCompare(b.name);
 };
 
+const sendMenuAction = (action: string) => {
+  mainWindow?.webContents.send('app:menu-action', action);
+};
+
+const buildApplicationMenu = () => {
+  const settingsItem: Electron.MenuItemConstructorOptions = {
+    label: 'Settings…',
+    accelerator: 'CommandOrControl+,',
+    click: () => sendMenuAction('open-settings'),
+  };
+
+  const openProjectItem: Electron.MenuItemConstructorOptions = {
+    label: 'Open Project…',
+    accelerator: 'CommandOrControl+O',
+    click: () => sendMenuAction('open-project'),
+  };
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    ...(process.platform === 'darwin'
+      ? [
+          {
+            label: APP_NAME,
+            submenu: [
+              {
+                label: `About ${APP_NAME}`,
+                click: () => sendMenuAction('open-about'),
+              },
+              { type: 'separator' },
+              settingsItem,
+              { type: 'separator' },
+              { role: 'services' },
+              { type: 'separator' },
+              { role: 'hide' },
+              { role: 'hideOthers' },
+              { role: 'unhide' },
+              { type: 'separator' },
+              { role: 'quit' },
+            ],
+          } satisfies Electron.MenuItemConstructorOptions,
+        ]
+      : []),
+    {
+      label: 'File',
+      submenu: [
+        openProjectItem,
+        { type: 'separator' },
+        process.platform === 'darwin' ? { role: 'close' } : { role: 'quit' },
+      ],
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'About Le Jean-Baptiste',
+          click: () => sendMenuAction('open-about'),
+        },
+      ],
+    },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+};
+
+const setMainWindowTitle = (title?: string) => {
+  mainWindow?.setTitle(title?.trim() ? title : APP_NAME);
+};
+
+const openProjectFromDialog = async () => {
+  if (!mainWindow) return null;
+
+  mainWindow.focus();
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory', 'createDirectory'],
+    title: 'Open project folder',
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+
+  try {
+    const bundle = await loadOrCreateProject(result.filePaths[0]);
+    await writeLastProjectFile(bundle.projectFilePath);
+    return bundle;
+  } catch (error) {
+    console.error('[crcao-desktop] openProject failed:', error);
+    if (!mainWindow.isDestroyed()) {
+      await dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        title: APP_NAME,
+        message: 'Could not open this project folder.',
+        detail: error instanceof Error ? error.message : String(error),
+      });
+    }
+    throw error;
+  }
+};
+
 const registerIpcHandlers = () => {
-  ipcMain.handle('openProjectFolder', async () => {
-    if (!mainWindow) return null;
-    const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openDirectory'],
-    });
-    if (result.canceled || result.filePaths.length === 0) return null;
-    return { rootPath: result.filePaths[0] };
+  ipcMain.handle('openProject', openProjectFromDialog);
+  ipcMain.handle('openProjectFolder', openProjectFromDialog);
+
+  ipcMain.handle('restoreLastProject', async () => {
+    const projectFilePath = await getValidLastProjectFile();
+    if (!projectFilePath) return null;
+    return loadProjectFile(projectFilePath);
   });
 
   ipcMain.handle(
@@ -174,18 +308,33 @@ const registerIpcHandlers = () => {
   ipcMain.handle('writeFile', async (_event, filePath: string, content: string) => {
     await fs.writeFile(filePath, content, 'utf-8');
   });
+
+  ipcMain.handle('setWindowTitle', (_event, title: string) => {
+    setMainWindowTitle(title);
+  });
 };
 
 const createWindow = async () => {
+  const icon = getAppIcon();
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    icon,
+    title: APP_NAME,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
-    title: 'CRCAO Editor',
+  });
+
+  mainWindow.on('page-title-updated', (event) => {
+    event.preventDefault();
+  });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    setMainWindowTitle(APP_NAME);
   });
 
   try {
@@ -195,7 +344,7 @@ const createWindow = async () => {
     console.error('[crcao-desktop] Failed to load app URL:', error);
     await dialog.showMessageBox(mainWindow, {
       type: 'error',
-      title: 'CRCAO Editor',
+      title: APP_NAME,
       message: 'Could not connect to the LEAF-Writer dev server.',
       detail:
         'Make sure leafwriter-commons is running on port 3000, then restart the desktop app.\n\nFrom the repo root: npm run dev -w leafwriter-commons',
@@ -209,13 +358,28 @@ const createWindow = async () => {
   }
 
   mainWindow.on('closed', () => {
+    closeAllNativeDialogs();
     mainWindow = null;
   });
 };
 
+initNativeDialogs({
+  getAppUrl,
+  getParentWindow: () => mainWindow,
+  getAppIcon,
+  getPreloadPath: () => path.join(__dirname, 'preload.js'),
+});
+
 app.whenReady().then(() => {
+  if (process.platform === 'darwin') {
+    const icon = getAppIcon();
+    if (icon) app.dock?.setIcon(icon);
+  }
+
+  buildApplicationMenu();
   registerCrcaoProtocol();
   registerIpcHandlers();
+  registerNativeDialogIpc();
   void createWindow();
 
   app.on('activate', () => {

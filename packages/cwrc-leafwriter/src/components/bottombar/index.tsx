@@ -9,13 +9,17 @@ import AnnotationMode from './annotationMode';
 import EditorMode from './editorMode';
 import { Schema } from './schema';
 
+const isDesktopApp = () =>
+  typeof window !== 'undefined' &&
+  !!(window as Window & { electronAPI?: unknown }).electronAPI;
+
 export const BottomBar = () => {
   const { isReadonly } = useAppState().editor;
   const { validationErrors } = useAppState().validator;
   const { t } = useTranslation();
   const version = pck.version;
-
   const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
+  const desktop = isDesktopApp();
 
   return (
     <Paper
@@ -27,7 +31,9 @@ export const BottomBar = () => {
           theme.applyStyles('dark', { backgroundColor: theme.vars.palette.background.paper }),
       ]}
     >
-      <PrivacyDialog onClose={() => setPrivacyDialogOpen(false)} open={privacyDialogOpen} />
+      {!desktop && (
+        <PrivacyDialog onClose={() => setPrivacyDialogOpen(false)} open={privacyDialogOpen} />
+      )}
       <Stack direction="row" alignItems="center" spacing={2} px={2}>
         {!isReadonly && (
           <>
@@ -41,34 +47,38 @@ export const BottomBar = () => {
 
         <Box flexGrow={1} />
 
-        <Link
-          component="button"
-          color="textSecondary"
-          onClick={() => setPrivacyDialogOpen(true)}
-          variant="caption"
-        >
-          {t('LW.commons.Privacy Policy')}
-        </Link>
+        {!desktop && (
+          <>
+            <Link
+              component="button"
+              color="textSecondary"
+              onClick={() => setPrivacyDialogOpen(true)}
+              variant="caption"
+            >
+              {t('LW.commons.Privacy Policy')}
+            </Link>
 
-        <Link
-          color="textSecondary"
-          variant="caption"
-          href="https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report"
-          target="_blank"
-        >
-          {t('LW.Bugs')} / {t('LW.Requests')}
-        </Link>
+            <Link
+              color="textSecondary"
+              variant="caption"
+              href="https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report"
+              target="_blank"
+            >
+              {t('LW.Bugs')} / {t('LW.Requests')}
+            </Link>
 
-        <Link
-          color="textSecondary"
-          variant="caption"
-          href={pck.homepage}
-          rel="noopener"
-          target="_blank"
-          title="Repository"
-        >
-          {`v${version}`}
-        </Link>
+            <Link
+              color="textSecondary"
+              variant="caption"
+              href={pck.homepage}
+              rel="noopener"
+              target="_blank"
+              title="Repository"
+            >
+              {`v${version}`}
+            </Link>
+          </>
+        )}
       </Stack>
     </Paper>
   );

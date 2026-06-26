@@ -36,6 +36,7 @@
     "build-commons": "npm run build -w @cwrc/leafwriter-storage-service && npm run build -w leafwriter-commons",
     "dev:desktop": "npm run dev -w leafwriter-commons & npm run dev -w crcao-desktop",
     "build:desktop": "npm run build-commons && npm run build -w crcao-desktop && npm run package -w crcao-desktop",
+    "icon:export": "node design/export-icon.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"

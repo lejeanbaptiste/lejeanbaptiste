@@ -9,24 +9,25 @@ export const createConfig = async (settings: LeafWriterOptionsSettings = {}) => 
   const supportedSchemas = configSchemas ? [...configSchemas, ...defaultSchemas] : defaultSchemas;
   const schemas = await setupSchemas(supportedSchemas);
 
+  const defaultModules = {
+    west: [
+      { id: 'toc' as const, title: 'Table of Contents' },
+      { id: 'markup' as const, title: 'Markup' },
+      { id: 'entities' as const, title: 'Entities' },
+    ],
+    east: [
+      { id: 'code' as const, title: 'Raw XML' },
+      { id: 'imageViewer' as const, title: 'Image Viewer' },
+      { id: 'validation' as const, title: 'Validation' },
+    ],
+  };
+
   const config: LeafWriterOptionsSettings = {
     container: 'leaft-writer-app',
     baseUrl: baseUrl ?? '.',
     readonly,
     schemas,
-    modules: {
-      west: [
-        { id: 'toc', title: 'Table of Contents' },
-        { id: 'markup', title: 'Markup' },
-        { id: 'entities', title: 'Entities' },
-      ],
-      east: [
-        // { id: 'selection', title: 'Raw XML' },
-        { id: 'code', title: 'Raw XML' },
-        { id: 'imageViewer', title: 'Image Viewer' },
-        { id: 'validation', title: 'Validation' },
-      ],
-    },
+    modules: settings.modules ?? defaultModules,
   };
 
   return config;

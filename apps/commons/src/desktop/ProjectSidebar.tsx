@@ -1,81 +1,13 @@
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
-import {
-  Box,
-  Button,
-  Collapse,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-} from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
-import type { FileTreeNode } from '@src/overmind/project/state';
+import { Box, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
+import { SidebarExplorerTab } from './sidebar/SidebarExplorerTab';
+import { SidebarFindTab } from './sidebar/SidebarFindTab';
+import { SidebarXPathTab } from './sidebar/SidebarXPathTab';
 
-interface TreeNodeProps {
-  depth: number;
-  node: FileTreeNode;
-  onOpenFile: (filePath: string) => void;
-}
-
-const TreeNode = ({ depth, node, onOpenFile }: TreeNodeProps) => {
-  const { loadDirectoryChildren } = useActions().project;
-  const [open, setOpen] = useState(depth === 0);
-
-  const handleClick = async () => {
-    if (node.isDirectory) {
-      if (!node.childrenLoaded) {
-        await loadDirectoryChildren(node.path);
-        setOpen(true);
-        return;
-      }
-      setOpen((value) => !value);
-      return;
-    }
-    onOpenFile(node.path);
-  };
-
-  const handleDoubleClick = () => {
-    if (!node.isDirectory) onOpenFile(node.path);
-  };
-
-  return (
-    <>
-      <ListItemButton
-        onClick={() => void handleClick()}
-        onDoubleClick={handleDoubleClick}
-        sx={{ pl: 1 + depth * 1.5 }}
-      >
-        <ListItemIcon sx={{ minWidth: 32 }}>
-          {node.isDirectory ? (
-            <FolderOpenIcon fontSize="small" />
-          ) : (
-            <InsertDriveFileOutlinedIcon fontSize="small" />
-          )}
-        </ListItemIcon>
-        <ListItemText
-          primary={node.name}
-          primaryTypographyProps={{ noWrap: true, fontSize: '0.875rem' }}
-        />
-      </ListItemButton>
-      {node.isDirectory && node.children && (
-        <Collapse in={open} timeout="auto" unmountOnExit>
-          <List disablePadding>
-            {node.children.map((child) => (
-              <TreeNode key={child.path} depth={depth + 1} node={child} onOpenFile={onOpenFile} />
-            ))}
-          </List>
-        </Collapse>
-      )}
-    </>
-  );
-};
+type SidebarTab = 'explorer' | 'find' | 'xpath';
 
 export const ProjectSidebar = () => {
-  const { rootPath, tree } = useAppState().project;
-  const { openFile, openProjectFolder } = useActions().project;
+  const [activeTab, setActiveTab] = useState<SidebarTab>('explorer');
 
   return (
     <Box
@@ -90,43 +22,22 @@ export const ProjectSidebar = () => {
         bgcolor: 'background.paper',
       }}
     >
-      <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
-        <Button
-          fullWidth
-          size="small"
-          startIcon={<FolderOpenIcon />}
-          variant="outlined"
-          onClick={() => void openProjectFolder()}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_event, value) => setActiveTab(value as SidebarTab)}
+          variant="fullWidth"
+          sx={{ minHeight: 36 }}
         >
-          Open folder
-        </Button>
-        {rootPath && (
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: 'block', mt: 1, wordBreak: 'break-all' }}
-          >
-            {rootPath}
-          </Typography>
-        )}
+          <Tab label="Explorer" value="explorer" sx={{ minHeight: 36, py: 0.5, fontSize: '0.75rem', textTransform: 'none' }} />
+          <Tab label="Find" value="find" sx={{ minHeight: 36, py: 0.5, fontSize: '0.75rem', textTransform: 'none' }} />
+          <Tab label="XPath" value="xpath" sx={{ minHeight: 36, py: 0.5, fontSize: '0.75rem', textTransform: 'none' }} />
+        </Tabs>
       </Box>
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
-        {tree.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-            Open a folder to browse XML files.
-          </Typography>
-        ) : (
-          <List dense disablePadding>
-            {tree.map((node) => (
-              <TreeNode
-                key={node.path}
-                depth={0}
-                node={node}
-                onOpenFile={(filePath) => void openFile(filePath)}
-              />
-            ))}
-          </List>
-        )}
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        {activeTab === 'explorer' && <SidebarExplorerTab />}
+        {activeTab === 'find' && <SidebarFindTab />}
+        {activeTab === 'xpath' && <SidebarXPathTab />}
       </Box>
     </Box>
   );

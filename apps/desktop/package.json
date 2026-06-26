@@ -2,12 +2,19 @@
   "name": "crcao-desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "CRCAO Editor — desktop shell for LEAF-Writer",
+  "description": "Le Jean-Baptiste — desktop XML editor",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch --onSuccess \"electron .\"",
-    "start": "electron .",
+    "icon:export": "node ../../design/export-icon.mjs",
+    "brand-electron": "node scripts/brand-electron-dev.mjs",
+    "predev": "npm run icon:export",
+    "prestart": "npm run icon:export",
+    "prebuild": "npm run icon:export",
+    "prepackage": "npm run icon:export",
+    "prepackage:dir": "npm run icon:export",
+    "dev": "node scripts/brand-electron-dev.mjs && tsup --watch --onSuccess \"node scripts/run-electron-dev.mjs\"",
+    "start": "node scripts/brand-electron-dev.mjs && node scripts/run-electron-dev.mjs",
     "package": "npm run build && electron-builder --mac",
     "package:dir": "npm run build && electron-builder --mac --dir"
   },
@@ -19,8 +26,8 @@
     "typescript": "^5.9.3"
   },
   "build": {
-    "appId": "fr.huma-num.crcao.editor",
-    "productName": "CRCAO Editor",
+    "appId": "fr.huma-num.le-jean-baptiste",
+    "productName": "Le Jean-Baptiste",
     "directories": {
       "output": "release"
     },
@@ -29,6 +36,14 @@
       "package.json"
     ],
     "extraResources": [
+      {
+        "from": "../../design/icon.svg",
+        "to": "icon.svg"
+      },
+      {
+        "from": "../../design/icon.png",
+        "to": "icon.png"
+      },
       {
         "from": "../commons/public",
         "to": "commons/public"
@@ -40,13 +55,20 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": ["dmg"]
+      "icon": "../../design/icon.svg",
+      "target": [
+        "dmg"
+      ]
     },
     "linux": {
-      "target": ["AppImage"]
+      "target": [
+        "AppImage"
+      ]
     },
     "win": {
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     }
   }
 }

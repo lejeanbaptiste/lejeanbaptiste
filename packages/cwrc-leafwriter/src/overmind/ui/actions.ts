@@ -1,5 +1,7 @@
 // import i18n from 'i18next';
+import { getDefaultStore } from 'jotai';
 import { nanoid } from 'nanoid';
+import { entityLookupDialogAtom } from '../../jotai/entity-lookup';
 import { Context } from '../';
 import { db } from '../../db';
 import type { DialogBarProps, PopupProps } from '../../dialogs';
@@ -124,6 +126,41 @@ export const closeDialog = ({ state }: Context, id: string) => {
       return dialogBar;
     }),
   ];
+};
+
+export const closeForegroundPopup = ({ state, actions }: Context): boolean => {
+  if (state.ui.contextMenu.show) {
+    actions.ui.closeContextMenu();
+    return true;
+  }
+
+  const entityLookup = getDefaultStore().get(entityLookupDialogAtom);
+  if (entityLookup) {
+    getDefaultStore().set(entityLookupDialogAtom, null);
+    entityLookup.onClose?.();
+    return true;
+  }
+
+  const openDialogs = state.ui.dialogBar.filter((dialog) => !dialog.dismissed && dialog.props?.id);
+  if (openDialogs.length > 0) {
+    const top = openDialogs[openDialogs.length - 1];
+    actions.ui.closeDialog(top.props!.id!);
+    top.props?.onClose?.('escapeKeyDown');
+    return true;
+  }
+
+  const messageDialog = window.writer?.dialogManager?.getDialog('message') as
+    | { openDialogs?: unknown[] }
+    | undefined;
+  if (messageDialog?.openDialogs?.length) {
+    const $message = messageDialog.openDialogs[messageDialog.openDialogs.length - 1] as {
+      dialog: (command: string) => void;
+    };
+    $message.dialog('close');
+    return true;
+  }
+
+  return false;
 };
 
 export const removeDialog = ({ state }: Context, id: string) => {

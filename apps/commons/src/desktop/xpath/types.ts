@@ -1,0 +1,23 @@
+export type XPathScope = 'currentFile' | 'openTabs' | 'project' | 'custom';
+
+export interface XPathMatch {
+  filePath: string;
+  matchIndex: number;
+  id?: string;
+  label: string;
+  xpath: string;
+}
+
+export interface XPathFileResult {
+  filePath: string;
+  filename: string;
+  matches: Omit<XPathMatch, 'filePath'>[];
+}
+
+export interface PendingXPathJump {
+  filePath: string;
+  query: string;
+  matchIndex: number;
+  id?: string;
+  xpath?: string;
+}
