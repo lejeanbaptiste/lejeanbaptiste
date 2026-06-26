@@ -1,5 +1,7 @@
 import type { Context } from '../';
+import { buildProjectSchemas, type ProjectBundle } from '@src/desktop/projectFile';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
+import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
 import type { FileTreeNode } from './state';
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
@@ -14,15 +16,81 @@ const loadTreeLevel = async (dirPath: string): Promise<FileTreeNode[]> => {
   }));
 };
 
-export const openProjectFolder = async ({ state }: Context) => {
-  if (!window.electronAPI) return;
-
-  const result = await window.electronAPI.openProjectFolder();
-  if (!result) return;
-
-  state.project.rootPath = result.rootPath;
-  state.project.tree = await loadTreeLevel(result.rootPath);
+const invokeOpenProjectDialog = async (): Promise<ProjectBundle | null> => {
+  const api = window.electronAPI;
+  if (!api) return null;
+  if (api.openProject) return api.openProject();
+  // Backward compat with older preload builds.
+  const legacy = api as typeof api & {
+    openProjectFolder?: () => Promise<ProjectBundle | null>;
+  };
+  if (legacy.openProjectFolder) return legacy.openProjectFolder();
+  return null;
 };
+
+const loadProjectBundle = async ({ state }: Context, bundle: ProjectBundle) => {
+  state.project.rootPath = bundle.rootPath;
+  state.project.projectFilePath = bundle.projectFilePath;
+  state.project.config = bundle.config;
+  state.project.projectSchemas = buildProjectSchemas(bundle.rootPath, bundle.config);
+  state.project.tree = await loadTreeLevel(bundle.rootPath);
+  state.project.isProjectReady = true;
+
+  if (window.writer) {
+    registerDesktopSchemas(state.project.projectSchemas);
+  }
+};
+
+export const openProject = async (context: Context) => {
+  const { notifyViaSnackbar } = context.actions.ui;
+
+  if (!window.electronAPI) {
+    notifyViaSnackbar('Desktop file access is unavailable. Restart the desktop app.');
+    return;
+  }
+
+  try {
+    const bundle = await invokeOpenProjectDialog();
+    if (!bundle) return;
+
+    context.state.project.openTabs = [];
+    context.state.project.activeTabPath = null;
+    await context.actions.editor.clearResource();
+    await loadProjectBundle(context, bundle);
+  } catch (error) {
+    console.error('[project] openProject failed:', error);
+    notifyViaSnackbar('Could not open the project folder. Check the console for details.');
+    context.state.project.isProjectReady = true;
+  }
+};
+
+export const restoreLastProject = async (context: Context) => {
+  if (!window.electronAPI?.restoreLastProject) {
+    context.state.project.isProjectReady = true;
+    return;
+  }
+
+  if (context.state.project.rootPath) {
+    context.state.project.isProjectReady = true;
+    return;
+  }
+
+  try {
+    const bundle = await window.electronAPI.restoreLastProject();
+    if (!bundle) {
+      context.state.project.isProjectReady = true;
+      return;
+    }
+
+    await loadProjectBundle(context, bundle);
+  } catch (error) {
+    console.error('[project] restoreLastProject failed:', error);
+    context.state.project.isProjectReady = true;
+  }
+};
+
+/** @deprecated Use openProject */
+export const openProjectFolder = openProject;
 
 export const loadDirectoryChildren = async ({ state }: Context, dirPath: string) => {
   const updateTree = async (nodes: FileTreeNode[]): Promise<FileTreeNode[]> => {
@@ -43,17 +111,29 @@ export const loadDirectoryChildren = async ({ state }: Context, dirPath: string)
   state.project.tree = await updateTree(state.project.tree);
 };
 
-const patchDesktopContent = async (
+const prepareFileContent = async (
+  { state }: Context,
   filePath: string,
   content: string,
-  projectRoot: string | null,
 ) => {
-  const prepared = await prepareDesktopDocument(filePath, content, projectRoot);
+  if (!window.electronAPI || !state.project.rootPath || !state.project.isProjectReady) {
+    return content;
+  }
+
+  const prepared = await prepareDesktopDocument(
+    filePath,
+    content,
+    state.project.rootPath,
+    state.project.config?.schema,
+  );
+
+  registerDesktopSchemas([...state.project.projectSchemas, ...prepared.schemas]);
+
   return prepared.content;
 };
 
 export const openFile = async ({ state, actions }: Context, filePath: string) => {
-  if (!window.electronAPI) return;
+  if (!window.electronAPI || !state.project.isProjectReady || !state.project.rootPath) return;
 
   const existing = state.project.openTabs.find((tab) => tab.filePath === filePath);
   if (existing) {
@@ -62,9 +142,9 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
   }
 
   let content = await window.electronAPI.readFile(filePath);
-  content = await patchDesktopContent(filePath, content, state.project.rootPath);
+  content = await prepareFileContent({ state, actions } as Context, filePath, content);
   const filename = getFilename(filePath);
-  const tab = { content, dirty: false, filePath, filename };
+  const tab = { content, dirty: false, editorReady: true, filePath, filename };
 
   state.project.openTabs = [...state.project.openTabs, tab];
   state.project.activeTabPath = filePath;
@@ -89,21 +169,25 @@ export const switchTab = async (
     if (currentTab) {
       let savedContent = content;
       if (window.electronAPI) {
-        savedContent = await patchDesktopContent(
+        savedContent = await prepareFileContent(
+          { state, actions } as Context,
           currentTab.filePath,
           content,
-          state.project.rootPath,
         );
       }
       currentTab.content = savedContent;
       currentTab.dirty = savedContent !== state.editor.contentLastSaved;
+      currentTab.editorReady = true;
     }
   }
 
   const tab = state.project.openTabs.find((item) => item.filePath === filePath);
   if (!tab) return;
 
-  tab.content = await patchDesktopContent(tab.filePath, tab.content, state.project.rootPath);
+  if (!tab.editorReady) {
+    tab.content = await prepareFileContent({ state, actions } as Context, tab.filePath, tab.content);
+    tab.editorReady = true;
+  }
 
   state.project.activeTabPath = filePath;
   state.editor.contentHasChanged = tab.dirty;

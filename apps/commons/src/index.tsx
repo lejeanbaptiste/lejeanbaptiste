@@ -21,10 +21,13 @@ import './utilities/log';
 
 // scan({ enabled: true });
 
+const isNativeDialogRoute =
+  typeof window !== 'undefined' && window.location.pathname.startsWith('/project/native/');
+
 const overmind = createOvermind(config, {
-  name: 'Commons',
-  devtools: true, // defaults to 'localhost:3031'
-  logProxies: true,
+  name: isNativeDialogRoute ? 'Commons-NativeDialog' : 'Commons',
+  devtools: !isNativeDialogRoute,
+  logProxies: !isNativeDialogRoute,
 });
 
 const container = document.getElementById('app');

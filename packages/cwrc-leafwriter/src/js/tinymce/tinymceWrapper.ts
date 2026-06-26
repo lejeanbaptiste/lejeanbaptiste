@@ -297,6 +297,16 @@ export const tinymceWrapperInit = function ({
     writer.event('writerKeydown').publish(event);
   };
 
+  const isTextEntryAttempt = (event: KeyboardEvent): boolean => {
+    if (event.isComposing) return false;
+    if (event.ctrlKey || event.metaKey || event.altKey) return false;
+
+    // Printable character (letter, number, punctuation, space, etc.)
+    if (event.key.length === 1) return true;
+
+    return event.code === 'Enter' || event.code === 'NumpadEnter';
+  };
+
   const onKeyUpHandler = (event: KeyboardEvent) => {
     // nav keys and backspace check
     switch (event.code) {
@@ -374,7 +384,7 @@ export const tinymceWrapperInit = function ({
             if (node[0]) rng.selectNodeContents(node[0]);
             rng.collapse(true);
             writer.editor?.selection.setRng(rng);
-          } else {
+          } else if (isTextEntryAttempt(event)) {
             if (currentNode.getAttribute('_entity') !== 'true') {
               // exception for entities since the entity parent tag can actually encapsulate several tags
               const currentTag = currentNode.getAttribute('_tag');

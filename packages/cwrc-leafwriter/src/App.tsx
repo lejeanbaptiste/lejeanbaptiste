@@ -10,10 +10,13 @@ import { configureAuthorityServices } from './jotai/entity-lookup/utilities';
 import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import { CodePanel, MarkupPanel, TocPanel } from './panels';
+import { DesktopEntitiesPanel } from './panels/entities/DesktopEntitiesPanel';
 import type { LeafWriterOptions } from './types';
 // import { Layout } from './layout';
 
 const CONTAINER = 'lw-layout-container';
+
+const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI;
 
 const waitForElement = (selector: string, timeoutMs = 5000): Promise<Element> =>
   new Promise((resolve, reject) => {
@@ -48,6 +51,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const [structureTreePanelContainer, setStructureTreePanelContainer] = useState<Element | null>(
     null,
   );
+  const [entitiesPanelReady, setEntitiesPanelReady] = useState(false);
 
   const [initialized, setInitialized] = useState(false);
   const [docLoaded, setDocLoaded] = useState(false);
@@ -129,15 +133,36 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
       const toolbarContainer = window.document.querySelector('#editor-toolbar');
       const _codePanelContainer = window.document.querySelector(`#${_writer.editorId}-code`);
-      const _tocPanelContainer = window.document.querySelector(`#${_writer.editorId}-toc`);
-      const _structureTreePanelContainer = window.document.querySelector(
-        `#${_writer.editorId}-markup`,
-      );
 
       setEditorToobarContainer(toolbarContainer);
-      setTocPanelContainer(_tocPanelContainer);
       setCodePanelContainer(_codePanelContainer);
-      setStructureTreePanelContainer(_structureTreePanelContainer);
+
+      if (isDesktopApp()) {
+        void (async () => {
+          try {
+            const [_tocPanelContainer, _structureTreePanelContainer, _entitiesPanelContainer] =
+              await Promise.all([
+                waitForElement('#desktop-panel-toc'),
+                waitForElement('#desktop-panel-markup'),
+                waitForElement('#desktop-panel-entities'),
+              ]);
+
+            setTocPanelContainer(_tocPanelContainer);
+            setStructureTreePanelContainer(_structureTreePanelContainer);
+            setEntitiesPanelReady(!!_entitiesPanelContainer);
+          } catch {
+            console.warn('Desktop left panel mount points not found');
+          }
+        })();
+      } else {
+        const _tocPanelContainer = window.document.querySelector(`#${_writer.editorId}-toc`);
+        const _structureTreePanelContainer = window.document.querySelector(
+          `#${_writer.editorId}-markup`,
+        );
+
+        setTocPanelContainer(_tocPanelContainer);
+        setStructureTreePanelContainer(_structureTreePanelContainer);
+      }
 
       setTimeout(() => _writer.layoutManager.resizeEditor(), 50);
     });
@@ -156,8 +181,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   };
 
   return (
-    <>
-      <Box id={CONTAINER} sx={{ height: 'calc(100% - 32px)', width: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, width: '100%' }}>
+      <Box id={CONTAINER} sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         {writer && <ContextMenu />}
         <EntityLookupDialog />
         <div>
@@ -169,11 +194,12 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
           {codePanelContainer &&
             !state.editor.isReadonly &&
             createPortal(<CodePanel />, codePanelContainer)}
+          {entitiesPanelReady && isDesktopApp() && <DesktopEntitiesPanel />}
         </div>
       </Box>
       {/* //* WIP {docLoaded && <Layout />} */}
       <BottomBar />
-    </>
+    </Box>
   );
 };
 

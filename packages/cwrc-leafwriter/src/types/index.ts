@@ -67,8 +67,8 @@ export interface LeafWriterOptionsSettings {
 export type SupportedSchemasId = 'orlando' | 'teiAll' | 'teiLite' | 'teiSimplePrint' | 'jTei';
 
 interface ISettingsModules {
-  west: ISettingsModulesPanel[];
   east: ISettingsModulesPanel[];
+  west?: ISettingsModulesPanel[];
 }
 
 interface ISettingsModulesPanel {

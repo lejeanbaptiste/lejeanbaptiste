@@ -2,7 +2,7 @@ import CSS from 'css';
 import $ from 'jquery';
 import { nanoid } from 'nanoid';
 import type { Schema, SchemaMappingType } from '../../types';
-import { fetchResourceText, log } from '../../utilities';
+import { fetchResourceText, filterResourceUrls, fromLocalFileUrl, log } from '../../utilities';
 import Writer from '../Writer';
 import Mapper from './mapper';
 import * as schemaNavigator from './schemaNavigator';
@@ -176,6 +176,14 @@ class SchemaManager {
   getSchemaIdFromUrl(url: string) {
     const exact = this.schemas.find((schema) => schema.rng.some((rngUrl) => rngUrl === url));
     if (exact) return exact.id;
+
+    const localUrl = fromLocalFileUrl(url);
+    if (localUrl) {
+      const localMatch = this.schemas.find((schema) =>
+        schema.rng.some((rngUrl) => fromLocalFileUrl(rngUrl) === localUrl),
+      );
+      if (localMatch) return localMatch.id;
+    }
 
     // remove the protocol in order to disregard http/https for improved chances of matching below
     const urlNoProtocol = url.split(/^.*?\/\//)[1] ?? '';
@@ -577,9 +585,11 @@ class SchemaManager {
    * @returns {Document} The XML
    */
   private async loadSchemaFile(urls: string[]) {
+    urls = filterResourceUrls(urls);
+
     // prioritize the document schema
     if (this.documentSchemaUrl && !urls.includes(this.documentSchemaUrl)) {
-      urls = [this.documentSchemaUrl, ...urls];
+      urls = filterResourceUrls([this.documentSchemaUrl, ...urls]);
     }
 
     let isAltRoute = false;
@@ -620,18 +630,33 @@ class SchemaManager {
    * @param {String} schemaEntry The Schchema object, including the Schema URL
    * @param {String} include The schema to include
    */
-  private async loadIncludes(schemaEntry: any, include: JQuery<HTMLElement>) {
-    let schemaFile;
+  private async loadIncludes(schemaEntry: { rng?: string[] }, include: JQuery<HTMLElement>) {
     const includeHref = include.attr('href');
+    if (!includeHref) return;
 
-    if (includeHref?.includes('/')) {
-      schemaFile = includeHref.match(/(.*\/)(.*)/)?.[2]; // grab the filename
+    const includeFile = includeHref.includes('/')
+      ? (includeHref.match(/(.*\/)(.*)/)?.[2] ?? includeHref)
+      : includeHref;
+
+    const baseRng = this.rng ?? schemaEntry.rng?.[0];
+    if (!baseRng) return;
+
+    let url: string;
+    const localBase = fromLocalFileUrl(baseRng);
+    if (localBase) {
+      const separator = localBase.includes('\\') ? '\\' : '/';
+      const dir = localBase.slice(
+        0,
+        Math.max(localBase.lastIndexOf('/'), localBase.lastIndexOf('\\')),
+      );
+      const includePath = `${dir}${separator}${includeFile}`;
+      url = `crcao://${encodeURIComponent(includePath)}`;
+    } else if (/^https?:\/\//i.test(baseRng)) {
+      const schemaBase = baseRng.match(/(.*\/)(.*)/)?.[1];
+      url = schemaBase ? schemaBase + includeFile : `schema/${includeFile}`;
     } else {
-      schemaFile = includeHref;
+      return;
     }
-
-    const schemaBase = schemaEntry.url.match(/(.*\/)(.*)/)[1];
-    const url = schemaBase !== null ? schemaBase + schemaFile : `schema/${schemaFile}`;
 
     //load resource
     const includesXML = await this.loadSchemaFile([url]);
@@ -934,6 +959,8 @@ class SchemaManager {
    * @returns {String} The CSS
    */
   private async loadCSSFile(urls: string[]) {
+    urls = filterResourceUrls(urls);
+
     let isAltRoute = false;
 
     let attempt = 0;

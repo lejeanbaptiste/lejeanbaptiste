@@ -1,9 +1,11 @@
 import { Box, Typography } from '@mui/material';
-import { LoadingMask } from '@src/components';
-import { DocumentTabBar, ProjectSidebar, useProjectMenu } from '@src/desktop';
+import { DocumentTabBar, UnifiedLeftPanel, useNativeDialogBridge, useProjectMenu } from '@src/desktop';
+import { AboutDialog } from '@src/desktop/AboutDialog';
+import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
 import { useLeafWriter } from '@src/hooks';
 import { leafwriterAtom, leafWriterSessionKeyAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
+import { isDesktop } from '@src/types/desktop';
 import { useAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 
@@ -17,15 +19,25 @@ export const ProjectEditor = () => {
   const loadLibStartedForRef = useRef<number | null>(null);
 
   const { initLeafWriter, loadDocumentInWriter, loadLib } = useLeafWriter();
-  const { onKeydownHandle } = useProjectMenu();
+  const { aboutOpen, onKeydownHandle, setAboutOpen } = useProjectMenu();
+  useNativeDialogBridge();
+
+  useEffect(() => {
+    if (!isDesktop()) return;
+
+    window.__ljbOpenNativeSchemaPicker = openNativeSchemaPicker;
+    return () => {
+      delete window.__ljbOpenNativeSchemaPicker;
+    };
+  }, []);
 
   const [leafWriter, setLeafWriter] = useAtom(leafwriterAtom);
   const [sessionKey] = useAtom(leafWriterSessionKeyAtom);
 
   useEffect(() => {
-    window.addEventListener('keydown', onKeydownHandle);
+    window.addEventListener('keydown', onKeydownHandle, true);
     return () => {
-      window.removeEventListener('keydown', onKeydownHandle);
+      window.removeEventListener('keydown', onKeydownHandle, true);
     };
   }, [onKeydownHandle]);
 
@@ -39,6 +51,7 @@ export const ProjectEditor = () => {
   useEffect(() => {
     if (divEl.current && resource && !leafWriter && loadLibStartedForRef.current !== sessionKey) {
       loadLibStartedForRef.current = sessionKey;
+      divEl.current.style.height = '100%';
       void loadLib(divEl.current);
     }
   }, [resource, leafWriter, loadLib, sessionKey]);
@@ -88,7 +101,8 @@ export const ProjectEditor = () => {
 
   return (
     <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
-      <ProjectSidebar />
+      <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />
+      <UnifiedLeftPanel />
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
         <DocumentTabBar />
         <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
@@ -106,13 +120,18 @@ export const ProjectEditor = () => {
               </Typography>
             </Box>
           )}
-          {resource && !leafWriter && <LoadingMask />}
           {resource && (
             <Box
               key={sessionKey}
               ref={divEl}
               id="leaf-writer-container"
-              sx={{ height: '100%', minHeight: 0, width: '100%' }}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                minHeight: 0,
+                width: '100%',
+              }}
             />
           )}
         </Box>

@@ -176,6 +176,16 @@ export const closeDialog = ({ state }: Context, id: string) => {
   ];
 };
 
+export const closeForegroundPopup = ({ state, actions }: Context): boolean => {
+  const openDialogs = state.ui.dialogBar.filter((dialog) => !dialog.dismissed && dialog.props?.id);
+  if (openDialogs.length === 0) return false;
+
+  const top = openDialogs[openDialogs.length - 1];
+  actions.ui.closeDialog(top.props!.id!);
+  top.props?.onClose?.('escapeKeyDown');
+  return true;
+};
+
 export const removeDialog = ({ state }: Context, id: string) => {
   state.ui.dialogBar = state.ui.dialogBar.filter((dialogBar) => dialogBar.props?.id !== id);
 };

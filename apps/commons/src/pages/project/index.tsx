@@ -1,29 +1,45 @@
-import { AppBar, Box, Toolbar, Typography } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { Page } from '@src/layouts';
-import { useActions } from '@src/overmind';
+import { useActions, useAppState } from '@src/overmind';
+import { isDesktop } from '@src/types/desktop';
 import { useEffect } from 'react';
 import { ProjectEditor } from './ProjectEditor';
 
 export const ProjectEditPage = () => {
   const { setPage } = useActions().ui;
+  const { restoreLastProject } = useActions().project;
+  const { isProjectReady } = useAppState().project;
 
   useEffect(() => {
     setPage('project');
   }, [setPage]);
 
-  return (
-    <Page title="CRCAO Editor">
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <AppBar position="static" color="default" elevation={1}>
-          <Toolbar variant="dense">
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              CRCAO Editor
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          <ProjectEditor />
+  useEffect(() => {
+    if (!isDesktop()) return;
+    void restoreLastProject();
+  }, [restoreLastProject]);
+
+  if (isDesktop() && !isProjectReady) {
+    return (
+      <Page>
+        <Box
+          sx={{
+            alignItems: 'center',
+            display: 'flex',
+            height: '100vh',
+            justifyContent: 'center',
+          }}
+        >
+          <CircularProgress size={32} />
         </Box>
+      </Page>
+    );
+  }
+
+  return (
+    <Page>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+        <ProjectEditor />
       </Box>
     </Page>
   );

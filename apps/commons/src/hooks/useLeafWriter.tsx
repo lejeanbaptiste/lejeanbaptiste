@@ -1,4 +1,5 @@
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
+import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
 import { schemas } from '@src/config/schemas';
 import {
   leafwriterAtom,
@@ -23,7 +24,7 @@ export const useLeafWriter = () => {
   const { t } = useTranslation();
 
   const { user } = useAppState().auth;
-  const { rootPath } = useAppState().project;
+  const { config, projectSchemas, rootPath } = useAppState().project;
   const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
   const { currentLocale } = useAppState().ui;
 
@@ -65,10 +66,16 @@ export const useLeafWriter = () => {
     let xml = resource.content ?? '';
     let documentSchemas = schemas;
 
-    if (isDesktop() && resource.filePath) {
-      const prepared = await prepareDesktopDocument(resource.filePath, xml, rootPath);
+    if (isDesktop() && resource.filePath && rootPath) {
+      const prepared = await prepareDesktopDocument(
+        resource.filePath,
+        xml,
+        rootPath,
+        config?.schema,
+      );
       xml = prepared.content;
-      documentSchemas = [...schemas, ...prepared.schemas];
+      documentSchemas = [...schemas, ...projectSchemas, ...prepared.schemas];
+      registerDesktopSchemas([...projectSchemas, ...prepared.schemas]);
       if (xml !== resource.content) {
         await setResource({ ...resource, content: xml });
         updateTabContent({ filePath: resource.filePath, content: xml });
@@ -79,6 +86,18 @@ export const useLeafWriter = () => {
       locale: currentLocale,
       readonly,
       schemas: documentSchemas,
+      ...(isDesktop()
+        ? {
+            baseUrl: `${window.location.origin}/`,
+            modules: {
+              east: [
+                { id: 'code', title: 'Raw XML' },
+                { id: 'imageViewer', title: 'Image Viewer' },
+                { id: 'validation', title: 'Validation' },
+              ],
+            },
+          }
+        : {}),
       // Telemetry is handled by the LWC. If want to test it on LW, you must disabled it on LWC (just do not initialize it)
     };
 
@@ -102,18 +121,7 @@ export const useLeafWriter = () => {
   /** Load a different project file into an already-running editor (tab switch / second file). */
   const loadDocumentInWriter = async (filePath: string, content: string) => {
     if (!window.writer) return;
-
-    let xml = content;
-    if (isDesktop() && filePath) {
-      const prepared = await prepareDesktopDocument(filePath, xml, rootPath);
-      xml = prepared.content;
-      if (xml !== content && resource) {
-        await setResource({ ...resource, content: xml, filePath });
-        updateTabContent({ filePath, content: xml });
-      }
-    }
-
-    window.writer.loadDocumentXML(xml);
+    window.writer.loadDocumentXML(content);
   };
 
   const setEditorEvents = () => {

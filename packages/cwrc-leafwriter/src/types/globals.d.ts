@@ -20,3 +20,16 @@ declare module '*.module.css' {
   const classes: { [key: string]: string };
   export = classes;
 }
+
+type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup' | 'entities';
+
+interface DesktopLeftPanelBridge {
+  expand: () => void;
+  showTab: (tab: DesktopLeftPanelTab) => void;
+}
+
+declare global {
+  interface Window {
+    __desktopLeftPanel?: DesktopLeftPanelBridge;
+  }
+}

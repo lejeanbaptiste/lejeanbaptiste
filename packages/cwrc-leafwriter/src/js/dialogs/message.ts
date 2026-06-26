@@ -16,6 +16,18 @@ interface ConfigProps {
   yesText?: string;
 }
 
+const stripHtml = (html: string) => {
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  return el.textContent ?? html;
+};
+
+const nativeMessageType = (type: string): 'error' | 'info' | 'none' | 'question' | 'warning' => {
+  if (type === 'error') return 'error';
+  if (type === 'info') return 'info';
+  return 'none';
+};
+
 class Message implements LWDialogProps {
   readonly writer: Writer;
   readonly $parentEl: JQuery<HTMLElement>;
@@ -90,6 +102,19 @@ class Message implements LWDialogProps {
   }
 
   show(config: ConfigProps) {
+    if (typeof window !== 'undefined' && window.electronAPI?.showNativeMessageBox) {
+      void window.electronAPI
+        .showNativeMessageBox({
+          title: config.title ?? '',
+          message: stripHtml(config.msg),
+          type: nativeMessageType(config.type),
+        })
+        .then(() => {
+          if (config.callback) setTimeout(config.callback, 0);
+        });
+      return;
+    }
+
     config.dialogType = 'message';
     const $message = this.createMessageDialog(config);
 
@@ -117,6 +142,24 @@ class Message implements LWDialogProps {
         if (callback) callback(true);
         return;
       }
+    }
+
+    if (
+      !showConfirmKey &&
+      typeof window !== 'undefined' &&
+      window.electronAPI?.showNativeMessageBox
+    ) {
+      void window.electronAPI
+        .showNativeMessageBox({
+          title: config.title ?? '',
+          message: stripHtml(config.msg),
+          type: nativeMessageType(config.type === 'error' ? 'error' : 'question'),
+          buttons: [yesText, noText],
+        })
+        .then(({ response }) => {
+          if (callback) setTimeout(() => callback(response === 0), 0);
+        });
+      return;
     }
 
     config.dialogType = 'confirm';

@@ -1,6 +1,7 @@
 import type { Types } from '@cwrc/leafwriter';
 import { DEFAULT_TEI_CSS } from './defaultTeiCss';
-import { toLocalFileUrl } from './localFileUrl';
+import { joinProjectPath, type ProjectSchemaConfig } from './projectFile';
+import { fromLocalFileUrl, isLocalFileUrl, toLocalFileUrl } from './localFileUrl';
 
 const parsePiAttributes = (data: string): Record<string, string> => {
   const attrs: Record<string, string> = {};
@@ -56,11 +57,30 @@ const prioritizeSchemaPaths = (paths: string[]) => {
 };
 
 const getLocalSchemaCandidates = (filePath: string, href: string, projectRoot?: string | null) => {
-  const candidates: string[] = [];
+  const existingLocal = fromLocalFileUrl(href);
+  if (existingLocal) return [existingLocal];
 
-  if (!/^https?:\/\//i.test(href)) {
-    candidates.push(resolveRelativePath(filePath, href));
+  if (/^https?:\/\//i.test(href)) {
+    // Remote schema declaration — only try project-local fallbacks below.
+    const candidates: string[] = [];
+    if (projectRoot) {
+      const filename = href.split('/').pop();
+      if (filename) {
+        if (/\.rnc$/i.test(filename)) {
+          candidates.push(joinPath(projectRoot, 'schema', filename.replace(/\.rnc$/i, '.rng')));
+        }
+        candidates.push(joinPath(projectRoot, 'schema', filename));
+        candidates.push(joinPath(projectRoot, 'schemas', filename));
+      }
+      if (href.includes('cbeta-org/xml-p5') || href.includes('cbeta-p5')) {
+        candidates.push(joinPath(projectRoot, 'schema', 'cbeta-p5.rng'));
+        candidates.push(joinPath(projectRoot, 'schema', 'cbeta-p5.rnc'));
+      }
+    }
+    return prioritizeSchemaPaths(candidates);
   }
+
+  const candidates: string[] = [resolveRelativePath(filePath, href)];
 
   if (!projectRoot) return prioritizeSchemaPaths(candidates);
 
@@ -143,16 +163,26 @@ const findLocalCssUrl = async (
   const cssMatch = content.match(/<\?xml-stylesheet\s+([^?]+)\?>/i);
   if (cssMatch) {
     const cssHref = parsePiAttributes(cssMatch[1]).href;
-    if (cssHref && !/^https?:\/\//i.test(cssHref)) {
-      try {
-        const cssPath = resolveRelativePath(filePath, cssHref);
-        await window.electronAPI!.readFile(cssPath);
-        return toLocalFileUrl(cssPath);
-      } catch {
-        // fall through
+    if (cssHref) {
+      const existingCss = fromLocalFileUrl(cssHref);
+      if (existingCss) {
+        try {
+          await window.electronAPI!.readFile(existingCss);
+          return cssHref;
+        } catch {
+          // fall through
+        }
+      } else if (!/^https?:\/\//i.test(cssHref)) {
+        try {
+          const cssPath = resolveRelativePath(filePath, cssHref);
+          await window.electronAPI!.readFile(cssPath);
+          return toLocalFileUrl(cssPath);
+        } catch {
+          // fall through
+        }
+      } else {
+        return cssHref;
       }
-    } else if (cssHref) {
-      return cssHref;
     }
   }
 
@@ -170,14 +200,12 @@ const ensureStylesheetPi = (content: string, cssUrl: string) => {
   return `${pi}\n${content}`;
 };
 
-const buildSchemaFromFile = async (
+const makeProjectSchema = async (
   schemaPath: string,
   content: string,
   filePath: string,
-  href: string,
-  modelMatch: RegExpMatchArray,
   projectRoot?: string | null,
-) => {
+): Promise<Types.Schema> => {
   await window.electronAPI!.readFile(schemaPath);
   const rngUrl = toLocalFileUrl(schemaPath);
   const cssUrl = await findLocalCssUrl(projectRoot, filePath, content, schemaPath);
@@ -188,7 +216,7 @@ const buildSchemaFromFile = async (
       .pop()
       ?.replace(/\.(rng|rnc|xsd)$/i, '') ?? 'Project schema';
 
-  const schema: Types.Schema = {
+  return {
     id: toSchemaId(schemaPath),
     name: schemaName.slice(0, 20),
     mapping: 'tei',
@@ -196,6 +224,19 @@ const buildSchemaFromFile = async (
     css: [cssUrl],
     editable: true,
   };
+};
+
+const buildSchemaFromFile = async (
+  schemaPath: string,
+  content: string,
+  filePath: string,
+  href: string,
+  modelMatch: RegExpMatchArray,
+  projectRoot?: string | null,
+) => {
+  const schema = await makeProjectSchema(schemaPath, content, filePath, projectRoot);
+  const rngUrl = schema.rng[0];
+  const cssUrl = schema.css[0];
 
   let updated = content.replace(modelMatch[0], replacePiHref(modelMatch[0], href, rngUrl));
 
@@ -214,20 +255,134 @@ const buildSchemaFromFile = async (
   return { content: updated, schemas: [schema] };
 };
 
+const discoverProjectSchema = async (
+  projectRoot: string,
+  content: string,
+  filePath: string,
+): Promise<{ content: string; schemas: Types.Schema[] } | null> => {
+  const schemaDir = joinPath(projectRoot, 'schema');
+
+  try {
+    const entries = await window.electronAPI!.readDirectory(schemaDir, { allFiles: true });
+    const rngFiles = prioritizeSchemaPaths(
+      entries
+        .filter((entry) => !entry.isDirectory && /\.(rng|rnc)$/i.test(entry.name))
+        .map((entry) => entry.path),
+    );
+
+    for (const schemaPath of rngFiles) {
+      try {
+        const schema = await makeProjectSchema(schemaPath, content, filePath, projectRoot);
+        const pi = `<?xml-model href="${schema.rng[0]}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>`;
+        const xmlDecl = content.match(/<\?xml[^?]*\?>/i);
+        const updated = xmlDecl
+          ? content.replace(xmlDecl[0], `${xmlDecl[0]}\n${pi}`)
+          : `${pi}\n${content}`;
+        const modelMatch = updated.match(/<\?xml-model\s+([^?]+)\?>/i);
+        if (!modelMatch) continue;
+
+        return buildSchemaFromFile(
+          schemaPath,
+          updated,
+          filePath,
+          schema.rng[0],
+          modelMatch,
+          projectRoot,
+        );
+      } catch {
+        // try next schema file
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
+const applyProjectSchemaConfig = async (
+  projectRoot: string,
+  projectSchema: ProjectSchemaConfig,
+  content: string,
+  filePath: string,
+): Promise<{ content: string; schemas: Types.Schema[] } | null> => {
+  const schemaPath = joinProjectPath(projectRoot, projectSchema.rng);
+
+  try {
+    await window.electronAPI!.readFile(schemaPath);
+  } catch {
+    return null;
+  }
+
+  const schema = await makeProjectSchema(schemaPath, content, filePath, projectRoot);
+  const rngUrl = schema.rng[0];
+  let updated = content;
+  let modelMatch = content.match(/<\?xml-model\s+([^?]+)\?>/i);
+
+  if (!modelMatch) {
+    const pi = `<?xml-model href="${rngUrl}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>`;
+    const xmlDecl = content.match(/<\?xml[^?]*\?>/i);
+    updated = xmlDecl
+      ? content.replace(xmlDecl[0], `${xmlDecl[0]}\n${pi}`)
+      : `${pi}\n${content}`;
+    modelMatch = updated.match(/<\?xml-model\s+([^?]+)\?>/i);
+  }
+
+  if (modelMatch) {
+    const href = parsePiAttributes(modelMatch[1]).href ?? '';
+    if (href !== rngUrl) {
+      updated = updated.replace(modelMatch[0], replacePiHref(modelMatch[0], href, rngUrl));
+    }
+    updated = ensureStylesheetPi(updated, schema.css[0] ?? DEFAULT_TEI_CSS);
+  }
+
+  return { content: updated, schemas: [schema] };
+};
+
 /** Resolve xml-model / xml-stylesheet paths against the open file and register local schemas. */
 export const prepareDesktopDocument = async (
   filePath: string,
   content: string,
   projectRoot?: string | null,
+  projectSchema?: ProjectSchemaConfig | null,
 ): Promise<{ content: string; schemas: Types.Schema[] }> => {
   if (!window.electronAPI) return { content, schemas: [] };
 
+  if (projectRoot && projectSchema?.rng) {
+    const fromProject = await applyProjectSchemaConfig(
+      projectRoot,
+      projectSchema,
+      content,
+      filePath,
+    );
+    if (fromProject) return fromProject;
+  }
+
   const modelMatch = content.match(/<\?xml-model\s+([^?]+)\?>/i);
-  if (!modelMatch) return { content, schemas: [] };
+  if (!modelMatch) {
+    if (projectRoot) {
+      const discovered = await discoverProjectSchema(projectRoot, content, filePath);
+      if (discovered) return discovered;
+    }
+    return { content, schemas: [] };
+  }
 
   const modelAttrs = parsePiAttributes(modelMatch[1]);
   const href = modelAttrs.href;
   if (!href) return { content, schemas: [] };
+
+  if (isLocalFileUrl(href)) {
+    const localPath = fromLocalFileUrl(href);
+    if (localPath) {
+      try {
+        await window.electronAPI.readFile(localPath);
+        const schema = await makeProjectSchema(localPath, content, filePath, projectRoot);
+        return { content, schemas: [schema] };
+      } catch {
+        // Fall through and try to re-resolve if the file moved.
+      }
+    }
+  }
 
   const candidates = getLocalSchemaCandidates(filePath, href, projectRoot);
 
@@ -237,6 +392,11 @@ export const prepareDesktopDocument = async (
     } catch {
       // try next candidate
     }
+  }
+
+  if (projectRoot) {
+    const discovered = await discoverProjectSchema(projectRoot, content, filePath);
+    if (discovered) return discovered;
   }
 
   return { content, schemas: [] };

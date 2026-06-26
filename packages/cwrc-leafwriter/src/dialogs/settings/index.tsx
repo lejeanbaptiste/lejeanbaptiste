@@ -13,12 +13,20 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
   const { isReadonly, settings } = useAppState().editor;
   const { t } = useTranslation();
 
-  const handleClose = () => onClose && onClose(id);
+  const handleClose = () => onClose && onClose('close');
+
+  const isDesktop =
+    typeof window !== 'undefined' &&
+    !!(window as Window & { electronAPI?: unknown }).electronAPI;
+
+  const dialogContainer = isDesktop
+    ? undefined
+    : (document.getElementById(`${settings?.container}`) ?? undefined);
 
   return (
     <Dialog
       aria-labelledby="settings-title"
-      container={document.getElementById(`${settings?.container}`)}
+      container={dialogContainer}
       fullWidth
       maxWidth="md"
       onClose={handleClose}

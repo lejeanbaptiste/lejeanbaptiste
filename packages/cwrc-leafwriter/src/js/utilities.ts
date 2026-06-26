@@ -200,7 +200,7 @@ class Utilities {
    * @param {boolean} [selectContentsOnly=false] - boolean = false
    * @returns The node that is being returned is the node that is being selected.
    */
-  selectNode(selectedNode: SelectNodeParams, selectContentsOnly = false) {
+  selectNode(selectedNode: SelectNodeParams, selectContentsOnly = false, focusEditor = true) {
     if (!this.writer.editor) return;
 
     const { editor, entitiesManager } = this.writer;
@@ -243,7 +243,7 @@ class Utilities {
     //* Focus and public Event
     // need focus to happen after timeout, otherwise it doesn't always work (in FF)
     window.setTimeout(() => {
-      this.writer.editor?.focus();
+      if (focusEditor) this.writer.editor?.focus();
       this.writer.event('tagSelected').publish(selectedNode);
     }, 0);
   }
@@ -293,7 +293,7 @@ class Utilities {
    * @param id The id of the element to select
    * @param selectContentsOnly Whether to select only the contents of the element (defaults to false)
    */
-  selectElementById(id: string, selectContentsOnly = false) {
+  selectElementById(id: string, selectContentsOnly = false, focusEditor = true) {
     if (!this.writer.editor) return;
     const { editor, entitiesManager } = this.writer;
     entitiesManager.removeHighlights();
@@ -328,7 +328,7 @@ class Utilities {
     //* Focus and public Event
     // need focus to happen after timeout, otherwise it doesn't always work (in FF)
     window.setTimeout(() => {
-      this.writer.editor?.focus();
+      if (focusEditor) this.writer.editor?.focus();
       this.writer.event('tagSelected').publish(id, selectContentsOnly);
     }, 0);
   }

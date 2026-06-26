@@ -67,9 +67,17 @@ export class Leafwriter {
     this._onClose = new Subject();
     this._onEditorStateChange = new Subject();
 
-    //container height
-    const containerHeight = domElement.style.height ? domElement.style.height : DEFAULT_HEIGHT;
-    domElement.style.height = `clamp(400px, ${containerHeight}, 100vh)`;
+    // Container height: use 100% when embedded in a flex parent (desktop shell); otherwise default.
+    if (domElement.style.height) {
+      domElement.style.height = `clamp(400px, ${domElement.style.height}, 100vh)`;
+    } else if (domElement.parentElement && domElement.parentElement.clientHeight > 0) {
+      domElement.style.height = '100%';
+      domElement.style.minHeight = '0';
+      domElement.style.display = 'flex';
+      domElement.style.flexDirection = 'column';
+    } else {
+      domElement.style.height = `clamp(400px, ${DEFAULT_HEIGHT}, 100vh)`;
+    }
 
     if (!this.reactReact) this.reactReact = createRoot(this.domElement);
 
@@ -305,6 +313,10 @@ export class Leafwriter {
 
   async showSettingsDialog() {
     overmind.actions.ui.openDialog({ type: 'settings' });
+  }
+
+  closeForegroundPopup(): boolean {
+    return overmind.actions.ui.closeForegroundPopup();
   }
 
   dispose() {

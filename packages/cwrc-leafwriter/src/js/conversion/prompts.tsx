@@ -211,23 +211,45 @@ export const promptSelectSchema = (params: ProcessSchemaProps) => {
 
   const mappingIds = schemaManager.getMappingIdsFromRoot(rootName);
 
+  const onSchemaSelect = async (schema: Schema) => {
+    const { xml2cwrc } = writer.converter;
+
+    if (schema.id === schemaManager.schemaId) return xml2cwrc.doProcessing(doc);
+
+    params.schemaLoaded = await schemaManager.loadSchema(schema.id);
+    if (!params.schemaLoaded) return openProcessIssueDialog(params);
+
+    xml2cwrc.doProcessing(doc);
+  };
+
+  const onClose = (action: string) => {
+    if (action === 'cancel') {
+      if (isDesktopApp()) return;
+      openProcessIssueDialog(params);
+    }
+  };
+
+  const openNativeSchemaPicker = (
+    window as Window & {
+      __ljbOpenNativeSchemaPicker?: (options: {
+        mappingIds: typeof mappingIds;
+        onSchemaSelect: (schema: Schema) => void | Promise<void>;
+        onClose: (action: string) => void;
+      }) => Promise<void>;
+    }
+  ).__ljbOpenNativeSchemaPicker;
+
+  if (isDesktopApp() && openNativeSchemaPicker) {
+    void openNativeSchemaPicker({ mappingIds, onSchemaSelect, onClose });
+    return;
+  }
+
   writer.overmindActions.ui.openDialog({
     type: 'selectSchema',
     props: {
       mappingIds,
-      onSchemaSelect: async (schema: Schema) => {
-        const { xml2cwrc } = writer.converter;
-
-        if (schema.id === schemaManager.schemaId) return xml2cwrc.doProcessing(doc);
-
-        params.schemaLoaded = await schemaManager.loadSchema(schema.id);
-        if (!params.schemaLoaded) return openProcessIssueDialog(params);
-
-        xml2cwrc.doProcessing(doc);
-      },
-      onClose: (action: string) => {
-        if (action === 'cancel') openProcessIssueDialog(params);
-      },
+      onSchemaSelect,
+      onClose,
     },
   });
 };

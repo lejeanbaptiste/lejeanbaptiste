@@ -56,7 +56,8 @@ build/Release
 node_modules/
 jspm_packages/
 
-# Snowpack dependency directory (https://snowpack.dev/)
+# Desktop dev bundle (generated from Electron.app)
+apps/desktop/.dev/
 web_modules/
 
 # TypeScript cache
