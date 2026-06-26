@@ -1,6 +1,7 @@
 import { Typography } from '@mui/material';
 import { TextEmphasis } from '@src/components';
 import { useActions, useAppState } from '@src/overmind';
+import { isDesktop } from '@src/types/desktop';
 import { useEffect } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAnalytics } from '..';
@@ -21,11 +22,14 @@ export const useCookieConsent = () => {
   const { stopAnalytics } = useAnalytics();
 
   const handleClickPrivacyPolicy = () => {
+    if (!cookieConsent) return;
     cookieConsent.hideSettings();
     openDialog({ type: 'privacy' });
   };
 
   useEffect(() => {
+    if (isDesktop()) return;
+
     if (!cookieConsent) {
       cookieConsent = window.initCookieConsent();
       initialize();
@@ -283,20 +287,24 @@ export const useCookieConsent = () => {
   });
 
   const clearCookieConsent = () => {
+    if (!cookieConsent) return;
     stopAnalytics();
     cookieConsent.eraseCookies(['cc_cookie']);
     setCookieConsent();
   };
 
   const eraseCookies = (cookies: string[]) => {
+    if (!cookieConsent) return;
     cookieConsent.eraseCookies(cookies);
   };
 
   const showSettings = () => {
+    if (!cookieConsent) return;
     cookieConsent.showSettings(0);
   };
 
   const switchLanguage = (locale: string) => {
+    if (!cookieConsent) return;
     cookieConsent.updateLanguage(locale, true);
   };
 

@@ -38,6 +38,7 @@ import QuizRoundedIcon from '@mui/icons-material/QuizRounded';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import ReplayIcon from '@mui/icons-material/Replay';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import SearchIcon from '@mui/icons-material/Search';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import ShortTextIcon from '@mui/icons-material/ShortText';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
@@ -199,6 +200,7 @@ const icons = {
   thingDraft: BoxOutlinedIcon,
   work: asMuiIcon(ImBook),
   workDraft: BookOutlinedIcon,
+  xpathSearch: SearchIcon,
   toc: FormatListBulletedIcon,
   translate: TranslateRoundedIcon,
   TranslateRoundedIcon: TranslateRoundedIcon,

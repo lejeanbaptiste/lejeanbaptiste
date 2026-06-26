@@ -34,6 +34,8 @@
     "dev": "npm run dev -w @cwrc/leafwriter-storage-service & npm run dev -w leafwriter-commons",
     "dev-worker": "npm run dev -w @cwrc/leafwriter-storage-service & npm run dev-worker -w leafwriter-commons",
     "build-commons": "npm run build -w @cwrc/leafwriter-storage-service && npm run build -w leafwriter-commons",
+    "dev:desktop": "npm run dev -w leafwriter-commons & npm run dev -w crcao-desktop",
+    "build:desktop": "npm run build-commons && npm run build -w crcao-desktop && npm run package -w crcao-desktop",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"

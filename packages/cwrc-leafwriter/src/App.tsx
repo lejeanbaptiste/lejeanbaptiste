@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { BottomBar, ContextMenu, EditorToolbar } from './components';
@@ -14,6 +14,24 @@ import type { LeafWriterOptions } from './types';
 // import { Layout } from './layout';
 
 const CONTAINER = 'lw-layout-container';
+
+const waitForElement = (selector: string, timeoutMs = 5000): Promise<Element> =>
+  new Promise((resolve, reject) => {
+    const started = Date.now();
+    const check = () => {
+      const element = document.querySelector(selector);
+      if (element) {
+        resolve(element);
+        return;
+      }
+      if (Date.now() - started > timeoutMs) {
+        reject(new Error(`Element not found: ${selector}`));
+        return;
+      }
+      requestAnimationFrame(check);
+    };
+    check();
+  });
 
 const App = ({ document, settings, user }: LeafWriterOptions) => {
   const actions = useActions();
@@ -34,6 +52,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const [initialized, setInitialized] = useState(false);
   const [docLoaded, setDocLoaded] = useState(false);
   const [ready, setReady] = useState(false);
+  const setupInProgressRef = useRef(false);
 
   useEffect(() => {
     i18n.changeLanguage(state.ui.currentLocale);
@@ -51,15 +70,17 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   }, []);
 
   useEffect(() => {
-    if (document.url === undefined || state.document.url !== document.url) {
-      // if (writer) writer.destroy();
-      actions.document.setDocumentTouched(false);
-      actions.document.setLoaded(false);
-      // window.writer = null;
-      setWriter(null);
-      setup();
-    }
-  }, [document]);
+    if (document.url === undefined) return;
+
+    const alreadyLoaded = state.document.url === document.url && !!window.writer;
+    const shouldSetup = !alreadyLoaded;
+    if (!shouldSetup) return;
+
+    actions.document.setDocumentTouched(false);
+    actions.document.setLoaded(false);
+    setWriter(null);
+    setup();
+  }, [document.url]);
 
   useEffect(() => {
     if (ready) actions.ui.updateReadonly();
@@ -68,6 +89,11 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const fullscreenchanged = () => actions.ui.setFullscreen(!!window.document.fullscreenElement);
 
   const setup = async () => {
+    if (setupInProgressRef.current) {
+      return;
+    }
+    setupInProgressRef.current = true;
+    try {
     const config = await createConfig(settings);
 
     config.container = CONTAINER;
@@ -82,6 +108,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     configureAuthorityServices(settings?.authorityServices);
 
     actions.user.setUser(user);
+
+    await waitForElement(`#${CONTAINER}`);
 
     const _writer = new Writer(config);
 
@@ -122,6 +150,9 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     });
 
     setReady(true);
+    } finally {
+      setupInProgressRef.current = false;
+    }
   };
 
   return (

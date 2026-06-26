@@ -146,7 +146,7 @@ class XML2CWRC {
       if (!('href' in attributes)) return;
 
       const url: string = attributes.href;
-      if (!isValidHttpURL(url)) return;
+      if (!isValidHttpURL(url) && !url.startsWith('blob:') && !url.startsWith('crcao://')) return;
 
       return url;
     };
@@ -202,13 +202,16 @@ class XML2CWRC {
 
     const hasRDF = this.processRDF(doc);
 
-    this.buildDocumentAndInsertEntities(doc).then(() => {
-      // we need loading indicator to close before showing another modal dialog, so publish event before showMessage
-      this.writer.event('documentLoaded').publish(true, this.writer.editor?.getBody());
+    this.buildDocumentAndInsertEntities(doc)
+      .then(() => {
+        this.writer.event('documentLoaded').publish(true, this.writer.editor?.getBody());
 
-      if (this.writer.isReadOnly) return;
-      openEditorModeDialog(this.writer);
-    });
+        if (this.writer.isReadOnly) return;
+        openEditorModeDialog(this.writer);
+      })
+      .catch((error: unknown) => {
+        log.error('xml2cwrc.doProcessing failed', error);
+      });
   }
 
   /**

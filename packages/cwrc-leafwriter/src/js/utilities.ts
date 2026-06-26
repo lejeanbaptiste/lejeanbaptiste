@@ -552,6 +552,95 @@ class Utilities {
   }
 
   /**
+   * Returns all nodes matching an XPath on the specified context node.
+   */
+  evaluateXPathAll(contextNode: Document | Element, xpath: string): Node[] {
+    const doc = contextNode.ownerDocument ? contextNode.ownerDocument : contextNode;
+
+    const isCWRC = doc === this.writer.editor?.getDoc();
+
+    const regex = /(\/{0,2})([\w-]+::|@)?(\w+?:)?([\w-(\.\*)]+)(\[.+?\])?/g;
+
+    let nsResolver = null;
+    const defaultNamespace =
+      doc instanceof Document ? doc.documentElement.getAttribute('xmlns') : null;
+
+    if (!isCWRC && doc instanceof Document) {
+      const nsr = doc.createNSResolver(doc.documentElement);
+      //@ts-ignore
+      nsResolver = (prefix) => nsr.lookupNamespaceURI(prefix) || defaultNamespace;
+
+      if (defaultNamespace !== null) {
+        xpath = xpath.replace(regex, (match, p1, p2, p3, p4, p5) => {
+          if (p3 !== undefined) return match;
+          if (
+            (p2 !== undefined && (p2.indexOf('attribute') === 0 || p2.indexOf('@') === 0)) ||
+            p4.match(/\(.*?\)/) !== null
+          ) {
+            return [p1, p2, p3, p4, p5].join('');
+          }
+          return [p1, p2, 'foo:', p4, p5].join('');
+        });
+      }
+    }
+
+    if (defaultNamespace === null) {
+      xpath = xpath.replace(regex, (match, p1, p2, p3, p4, p5) => {
+        return [p1, p2, p4, p5].join('');
+      });
+    }
+
+    if (isCWRC) {
+      if (doc === contextNode) contextNode = doc.documentElement;
+      if (
+        //@ts-ignore
+        contextNode.getAttribute('_tag') === this.writer.schemaManager.getRoot() &&
+        !xpath.startsWith('@')
+      ) {
+        if (xpath.charAt(1) !== '/') {
+          xpath = `/${xpath}`;
+          if (xpath.charAt(1) !== '/') {
+            xpath = `/${xpath}`;
+          }
+        }
+      }
+
+      xpath = xpath.replace(regex, (match, p1, p2, p3, p4, p5) => {
+        if (
+          (p2 !== undefined && (p2.indexOf('attribute') === 0 || p2.indexOf('@') === 0)) ||
+          p4.match(/\(.*?\)/) !== null
+        ) {
+          return [p1, p2, p3, p4, p5].join('');
+        }
+        return [p1, p2, p3, '*[@_tag="' + p4 + '"]', p5].join('');
+      });
+    }
+
+    let evalResult: XPathResult;
+    try {
+      evalResult = doc.evaluate(
+        xpath,
+        contextNode,
+        nsResolver,
+        XPathResult.ORDERED_NODE_ITERATOR_TYPE,
+        null,
+      );
+    } catch (error) {
+      log.warn(`utilities.evaluateXPathAll: there was an error evaluating the xpath ${error}`);
+      return [];
+    }
+
+    const nodes: Node[] = [];
+    let node = evalResult.iterateNext();
+    while (node) {
+      nodes.push(node);
+      node = evalResult.iterateNext();
+    }
+
+    return nodes;
+  }
+
+  /**
    * Used to processes a large array incrementally, in order to not freeze the browser.
    * @param {Array} array An array of values
    * @param {Function} processFunc The function that accepts a value from the array

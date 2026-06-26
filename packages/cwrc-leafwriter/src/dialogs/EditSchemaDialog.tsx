@@ -32,6 +32,23 @@ interface SchemaForm {
 
 const defaultValue: SchemaForm = { name: '', mapping: 'tei', rng: '', css: '' };
 
+const DEFAULT_TEI_CSS = 'https://cwrc.ca/templates/css/tei.css';
+
+const deriveSchemaName = (rng?: string): string => {
+  if (!rng) return '';
+
+  try {
+    if (rng.startsWith('crcao://')) {
+      const path = decodeURIComponent(rng.slice('crcao://'.length));
+      return path.split(/[/\\]/).pop()?.replace(/\.(rng|rnc|xsd)$/i, '') ?? '';
+    }
+    const filename = rng.split('/').pop() ?? '';
+    return filename.replace(/\.(rng|rnc|xsd)$/i, '');
+  } catch {
+    return '';
+  }
+};
+
 export const EditSchemaDialog = ({
   actionType = 'add',
   docSchema,
@@ -64,34 +81,52 @@ export const EditSchemaDialog = ({
         css: schema.css[0],
       }
     : {
-        ...defaultValue,
+        name: deriveSchemaName(docSchema?.rng),
+        mapping: 'tei',
         rng: docSchema?.rng ?? '',
-        css: docSchema?.css ?? '',
+        css: docSchema?.css ?? DEFAULT_TEI_CSS,
       };
 
   const [initialValues, setInitialValues] = useState<SchemaForm>(initVal);
 
   const preventEscape = actionType === 'add';
 
-  const urlValidation = z
-    .url({ message: t('LW.Must be a valid URL').toString() })
-    .startsWith('https://', {
-      message: t('LW.URL must start with HTTPS secured connection').toString(),
-    });
+  const isDesktop = typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
+
+  const urlValidation = isDesktop
+    ? z
+        .string()
+        .min(1, { message: t('LW.Must be a valid URL').toString() })
+        .refine((val) => val.startsWith('crcao://') || val.startsWith('https://'), {
+          message: t('LW.URL must start with HTTPS secured connection').toString(),
+        })
+    : z
+        .url({ message: t('LW.Must be a valid URL').toString() })
+        .startsWith('https://', {
+          message: t('LW.URL must start with HTTPS secured connection').toString(),
+        });
+
+  const cssValidation = isDesktop
+    ? z
+        .string()
+        .refine((val) => !val || val.startsWith('crcao://') || val.startsWith('https://'), {
+          message: t('LW.URL must start with HTTPS secured connection').toString(),
+        })
+        .optional()
+    : urlValidation.optional();
 
   const formValidation = z
     .object({
       name: z
-        .string({
-          error: (issue) => (issue.input === undefined ? undefined : undefined),
-        })
+        .string()
+        .default('')
         .min(3, { message: t('LW.Must be at least characters', { min: 3 }).toString() })
         .max(20, {
           message: t('LW.Cannot have more than characters', { max: 20 }).toString(),
         }),
       mapping: z.string(),
       rng: urlValidation,
-      css: urlValidation,
+      css: cssValidation,
     })
     .partial({ css: true });
 

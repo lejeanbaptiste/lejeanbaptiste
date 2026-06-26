@@ -24,6 +24,15 @@ export interface ProcessSchemaProps {
 // useTranslation(['leafwriter']);
 const { t } = i18next;
 
+const isDesktopApp = () =>
+  typeof window !== 'undefined' &&
+  !!(window as Window & { electronAPI?: unknown }).electronAPI;
+
+const handleSchemaCancel = (writer: Writer) => {
+  if (isDesktopApp()) return;
+  writer.overmindActions.editor.closeEditor();
+};
+
 const getPossibleSupportedSchemas = (writer: Writer, rootName: string) => {
   const mappingIds = writer.schemaManager.getMappingIdsFromRoot(rootName);
   const { schemasList } = writer.overmindState.editor as { schemasList: Schema[] };
@@ -61,7 +70,7 @@ export const promptRootNotSupported = ({ rootName, writer }: ProcessSchemaProps)
         </Trans>
       ),
 
-      onClose: () => writer.overmindActions.editor.closeEditor(),
+      onClose: () => handleSchemaCancel(writer),
     },
   });
 };
@@ -96,7 +105,7 @@ export const promptSchemaNotFound = (params: ProcessSchemaProps) => {
       ),
       actions,
       onClose: (action: string) => {
-        if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
+        if (action === 'cancel') return handleSchemaCancel(writer);
         openProcessIssueDialog(params, action);
       },
     },
@@ -141,7 +150,7 @@ export const promptSchemaNotSupported = (params: ProcessSchemaProps) => {
       ),
       actions,
       onClose: (action: string) => {
-        if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
+        if (action === 'cancel') return handleSchemaCancel(writer);
         openProcessIssueDialog(params, action);
       },
     },
@@ -187,7 +196,7 @@ export const promptSchemaNotLoaded = (params: ProcessSchemaProps) => {
       ),
       actions,
       onClose: (action: string) => {
-        if (action === 'cancel') return writer.overmindActions.editor.closeEditor();
+        if (action === 'cancel') return handleSchemaCancel(writer);
         openProcessIssueDialog(params, action);
       },
     },
@@ -230,11 +239,16 @@ export const promptAddSchema = (params: ProcessSchemaProps) => {
   if (!rootName) return;
 
   const mappingIds = schemaManager.getMappingIdsFromRoot(rootName);
+  const DEFAULT_TEI_CSS = 'https://cwrc.ca/templates/css/tei.css';
+  const enrichedDocSchema = {
+    rng: docSchema?.rng,
+    css: docSchema?.css ?? DEFAULT_TEI_CSS,
+  };
 
   overmindActions.ui.openDialog({
     type: 'editSchema',
     props: {
-      docSchema,
+      docSchema: enrichedDocSchema,
       mappingIds,
       onAcceptChanges: async (newSchema: Schema) => {
         params.schemaLoaded = await schemaManager.loadSchema(newSchema.id);

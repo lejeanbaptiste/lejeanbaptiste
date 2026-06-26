@@ -12,10 +12,15 @@ import { Context } from '../';
 const { t } = i18next;
 
 export const loadLeafWriter = async ({ state }: Context, container: HTMLElement) => {
+  container.replaceChildren();
   const LW = (await import('@cwrc/leafwriter')).Leafwriter;
   const leafWriter = new LW(container);
   state.editor.libLoaded = true;
   return leafWriter;
+};
+
+export const resetLibLoaded = ({ state }: Context) => {
+  state.editor.libLoaded = false;
 };
 
 export const setResource = async ({ state }: Context, resource?: Resource) => {

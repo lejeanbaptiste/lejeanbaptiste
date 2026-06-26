@@ -211,6 +211,14 @@ export const EditorToolbar = () => {
     {
       group: 'ui',
       hide: isReadonly,
+      icon: 'xpathSearch',
+      onClick: () => openDialog({ type: 'xpathSearch' }),
+      title: t('LW.xpathSearch.title'),
+      type: 'iconButton',
+    },
+    {
+      group: 'ui',
+      hide: isReadonly,
       icon: 'validate',
       onClick: () => {
         window.writer.layoutManager.showModule('validation');

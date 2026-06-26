@@ -308,13 +308,21 @@ export class Leafwriter {
   }
 
   dispose() {
-    //todo
     this.onContentHasChanged.complete();
+
+    if (window.writer) {
+      window.writer.destroy();
+      window.writer = undefined as unknown as Writer;
+    }
+
+    if (this.reactReact) {
+      this.reactReact.unmount();
+      this.reactReact = undefined;
+    }
+
     overmind.actions.document.clear();
     overmind.actions.editor.clear();
     overmind.actions.user.clear();
-    window.writer?.destroy();
-    // window.writer = null;
   }
 }
 

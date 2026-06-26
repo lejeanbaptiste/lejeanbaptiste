@@ -7,7 +7,13 @@ import type { LinkedAccount } from './effects';
 import { effects } from '.';
 
 //* INIITIALIZE
-export const onInitializeOvermind = async ({ actions, effects }: Context, overmind: any) => {
+export const onInitializeOvermind = async ({ actions, effects, state }: Context, overmind: any) => {
+  // Desktop app: skip cloud auth (Keycloak silent SSO is unreliable in Electron).
+  if (window.electronAPI) {
+    state.auth.userState = 'UNAUTHENTICATED';
+    return;
+  }
+
   // Setup API
   await effects.auth.api.setup();
 

@@ -28,7 +28,8 @@ export type DialogType =
   | 'popup'
   | 'selectSchema'
   | 'simple'
-  | 'settings';
+  | 'settings'
+  | 'xpathSearch';
 
 export interface SimpleDialogMessageProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

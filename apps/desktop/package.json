@@ -1,0 +1,52 @@
+{
+  "name": "crcao-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CRCAO Editor — desktop shell for LEAF-Writer",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch --onSuccess \"electron .\"",
+    "start": "electron .",
+    "package": "npm run build && electron-builder --mac",
+    "package:dir": "npm run build && electron-builder --mac --dir"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "build": {
+    "appId": "fr.huma-num.crcao.editor",
+    "productName": "CRCAO Editor",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../commons/public",
+        "to": "commons/public"
+      },
+      {
+        "from": "../commons/server",
+        "to": "commons/server"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg"]
+    },
+    "linux": {
+      "target": ["AppImage"]
+    },
+    "win": {
+      "target": ["nsis"]
+    }
+  }
+}

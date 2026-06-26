@@ -48,10 +48,12 @@ export const setupSchemas = async (schemas: Schema[]) => {
     if (!name || typeof name !== 'string' || name.length < 3 || name.length > 20) continue;
     if (!mapping || !SchemaMappings.includes(mapping)) continue;
 
-    const validRng = rng.filter((url) => isValidHttpURL(url));
+    const isSchemaLocator = (url: string) =>
+      isValidHttpURL(url) || url.startsWith('blob:') || url.startsWith('crcao://');
+    const validRng = rng.filter((url) => isSchemaLocator(url));
     if (validRng.length === 0) continue;
 
-    const validCss = css.filter((url) => isValidHttpURL(url));
+    const validCss = css.filter((url) => isSchemaLocator(url));
     if (validCss.length === 0) continue;
 
     supportedSchemas = [
