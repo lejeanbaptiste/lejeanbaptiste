@@ -27,6 +27,11 @@ export interface SchemaPickerOpenerOptions {
   onClose: (action: string) => void;
 }
 
+export interface FileStat {
+  mtimeMs: number;
+  size: number;
+}
+
 export interface ElectronAPI {
   openProject: () => Promise<ProjectBundle | null>;
   /** @deprecated Use openProject */
@@ -35,9 +40,13 @@ export interface ElectronAPI {
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) => Promise<FileEntry[]>;
   readFile: (filePath: string) => Promise<string>;
   writeFile: (filePath: string, content: string) => Promise<void>;
+  statFile: (filePath: string) => Promise<FileStat>;
+  syncWatchedFiles: (paths: string[]) => Promise<void>;
+  ignoreFileChange: (filePath: string, mtimeMs: number) => Promise<void>;
   saveFileAs: (defaultPath?: string) => Promise<string | null>;
   setWindowTitle: (title: string) => Promise<void>;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
+  onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (
     options: NativeMessageBoxOptions,
   ) => Promise<{ response: number; checkboxChecked: boolean }>;

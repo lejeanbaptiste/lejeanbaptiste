@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { DocumentTabBar, UnifiedLeftPanel, useNativeDialogBridge, useProjectMenu } from '@src/desktop';
+import { DocumentTabBar, UnifiedLeftPanel, useExternalFileWatcher, useNativeDialogBridge, useProjectMenu } from '@src/desktop';
 import { AboutDialog } from '@src/desktop/AboutDialog';
 import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
@@ -22,6 +22,7 @@ export const ProjectEditor = () => {
   const { initLeafWriter, loadDocumentInWriter, loadLib } = useLeafWriter();
   const { aboutOpen, onKeydownHandle, setAboutOpen } = useProjectMenu();
   useNativeDialogBridge();
+  useExternalFileWatcher();
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -81,15 +82,14 @@ export const ProjectEditor = () => {
     if (!leafWriter || !resource?.content) return;
 
     if (!window.writer) {
-      initStartedForRef.current = null;
-      previousTabRef.current = null;
-    }
-
-    if (previousTabRef.current === null || !window.writer) {
       if (initStartedForRef.current === leafWriter.id) return;
       initStartedForRef.current = leafWriter.id;
       void initLeafWriter();
-    } else if (previousTabRef.current !== resource.filePath && window.writer) {
+      previousTabRef.current = resource.filePath;
+      return;
+    }
+
+    if (previousTabRef.current !== resource.filePath) {
       void loadDocumentInWriter(resource.filePath, resource.content);
     }
 
@@ -119,9 +119,13 @@ export const ProjectEditor = () => {
             <Box
               sx={{
                 alignItems: 'center',
+                bgcolor: 'background.default',
                 display: 'flex',
                 height: '100%',
                 justifyContent: 'center',
+                inset: 0,
+                position: 'absolute',
+                zIndex: 1,
               }}
             >
               <Typography color="text.secondary" variant="body1">
@@ -129,20 +133,19 @@ export const ProjectEditor = () => {
               </Typography>
             </Box>
           )}
-          {resource && (
-            <Box
-              key={sessionKey}
-              ref={divEl}
-              id="leaf-writer-container"
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-                minHeight: 0,
-                width: '100%',
-              }}
-            />
-          )}
+          <Box
+            key={sessionKey}
+            ref={divEl}
+            id="leaf-writer-container"
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              minHeight: 0,
+              width: '100%',
+              visibility: resource ? 'visible' : 'hidden',
+            }}
+          />
         </Box>
       </Box>
     </Box>

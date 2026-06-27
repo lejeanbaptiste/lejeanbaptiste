@@ -13,6 +13,7 @@ export interface OpenTab {
   content: string;
   dirty: boolean;
   editorReady: boolean;
+  externalChangePending?: boolean;
   filePath: string;
   filename: string;
 }

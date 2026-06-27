@@ -10,6 +10,7 @@ import {
 } from './nativeDialogs';
 import { getValidLastProjectFile, writeLastProjectFile } from './projectPrefs';
 import { loadOrCreateProject, loadProjectFile } from './projectFile';
+import { OpenFileWatcher } from './openFileWatcher';
 
 const APP_NAME = 'Le Jean-Baptiste';
 
@@ -75,6 +76,7 @@ if (isDev) {
 
 let mainWindow: BrowserWindow | null = null;
 let serverProcess: ChildProcess | null = null;
+let openFileWatcher: OpenFileWatcher | null = null;
 
 const getCommonsPaths = () => {
   if (isDev) {
@@ -374,6 +376,19 @@ const registerIpcHandlers = () => {
     await fs.writeFile(filePath, content, 'utf-8');
   });
 
+  ipcMain.handle('statFile', async (_event, filePath: string) => {
+    const stat = await fs.stat(filePath);
+    return { mtimeMs: stat.mtimeMs, size: stat.size };
+  });
+
+  ipcMain.handle('syncWatchedFiles', (_event, paths: string[]) => {
+    openFileWatcher?.sync(Array.isArray(paths) ? paths : []);
+  });
+
+  ipcMain.handle('ignoreFileChange', (_event, filePath: string, mtimeMs: number) => {
+    openFileWatcher?.ignoreChange(filePath, mtimeMs);
+  });
+
   ipcMain.handle('saveFileAs', async (_event, defaultPath?: string) => {
     if (!mainWindow) return null;
 
@@ -394,7 +409,6 @@ const registerIpcHandlers = () => {
 
 const createWindow = async () => {
   const icon = getAppIcon();
-
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -450,9 +464,13 @@ const createWindow = async () => {
   }
 
   mainWindow.on('closed', () => {
+    openFileWatcher?.dispose();
+    openFileWatcher = null;
     closeAllNativeDialogs();
     mainWindow = null;
   });
+
+  openFileWatcher = new OpenFileWatcher(() => mainWindow);
 };
 
 initNativeDialogs({

@@ -184,6 +184,19 @@
       "dark_theme": "Dark theme",
       "device_theme": "Device theme",
       "light_theme": "Light theme"
+    },
+    "desktop": {
+      "external_file_changed": {
+        "title": "File changed on disk",
+        "message": "{{filename}} was modified outside the app.",
+        "message_with_unsaved": "{{filename}} was modified outside the app.\n\nYou will lose any unsaved changes if you reload.",
+        "reload": "Reload",
+        "keep_editing": "Keep editing"
+      },
+      "close_unsaved": {
+        "title": "Unsaved changes",
+        "message": "{{filename}} has unsaved changes. Close without saving?"
+      }
     }
   },
   "main": "",
