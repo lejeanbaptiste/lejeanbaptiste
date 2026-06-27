@@ -1,4 +1,4 @@
-export type XPathScope = 'currentFile' | 'openTabs' | 'project' | 'custom';
+export type { SearchScope as XPathScope } from '../shared/searchScope';
 
 export interface XPathMatch {
   filePath: string;

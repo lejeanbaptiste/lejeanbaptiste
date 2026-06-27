@@ -1,3 +1,5 @@
+import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
+import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
 import { leafwriterAtom } from '@src/jotai';
 import { openNativeSettings } from '@src/desktop/openNativeSettings';
 import { useActions } from '@src/overmind';
@@ -70,6 +72,13 @@ export const useProjectMenu = () => {
         return;
       }
 
+      if ((event.metaKey || event.ctrlKey) && event.code === 'KeyF') {
+        event.preventDefault();
+        event.stopPropagation();
+        openFindPanel();
+        return;
+      }
+
       if (event.metaKey && event.code === 'Comma') {
         event.preventDefault();
         event.stopPropagation();
@@ -87,6 +96,7 @@ export const useProjectMenu = () => {
         event.preventDefault();
         event.stopPropagation();
         if (!leafWriter) return;
+        clearFindHighlights();
         const content = await leafWriter.getContent();
         await saveActiveTab({ content });
         return;
