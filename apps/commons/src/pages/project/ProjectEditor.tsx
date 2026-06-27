@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { DocumentTabBar, UnifiedLeftPanel, useExternalFileWatcher, useNativeDialogBridge, useProjectMenu } from '@src/desktop';
+import { DocumentTabBar, UnifiedLeftPanel, useExternalFileWatcher, useProjectMenu } from '@src/desktop';
 import { AboutDialog } from '@src/desktop/AboutDialog';
 import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
@@ -21,7 +21,6 @@ export const ProjectEditor = () => {
 
   const { initLeafWriter, loadDocumentInWriter, loadLib } = useLeafWriter();
   const { aboutOpen, onKeydownHandle, setAboutOpen } = useProjectMenu();
-  useNativeDialogBridge();
   useExternalFileWatcher();
 
   useEffect(() => {

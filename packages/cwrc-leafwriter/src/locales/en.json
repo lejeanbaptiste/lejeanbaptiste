@@ -417,6 +417,11 @@
         "dark": "dark",
         "light": "light",
         "system": "system"
+      },
+      "warnings": {
+        "skip_copy_paste_help": "Don't show copy and paste help",
+        "skip_delete_confirm": "Delete files and folders without asking",
+        "title": "Warnings"
       }
     },
     "settlement": "",

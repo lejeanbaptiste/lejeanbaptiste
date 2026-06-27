@@ -49,8 +49,10 @@ const getWriterSchemasList = (): Array<{
 };
 
 export const useNativeDialogBridge = () => {
-  const { currentLocale, themeAppearance } = useAppState().ui;
-  const { switchLanguage, setThemeAppearance } = useActions().ui;
+  const { currentLocale, skipCopyPasteHelp, skipExplorerDeleteConfirm, themeAppearance } =
+    useAppState().ui;
+  const { setSkipCopyPasteHelp, setSkipExplorerDeleteConfirm, setThemeAppearance, switchLanguage } =
+    useActions().ui;
   const [leafWriter] = useAtom(leafwriterAtom);
 
   useEffect(() => {
@@ -68,6 +70,8 @@ export const useNativeDialogBridge = () => {
           case 'getInterfaceSettings':
             return {
               currentLocale,
+              skipCopyPasteHelp,
+              skipExplorerDeleteConfirm,
               themeAppearance,
             };
           case 'setThemeAppearance':
@@ -78,6 +82,14 @@ export const useNativeDialogBridge = () => {
             const locale = args as Locales;
             switchLanguage(locale);
             leafWriter?.switchLocale?.(locale);
+            return true;
+          }
+          case 'setSkipExplorerDeleteConfirm': {
+            setSkipExplorerDeleteConfirm(Boolean(args));
+            return true;
+          }
+          case 'setSkipCopyPasteHelp': {
+            setSkipCopyPasteHelp(Boolean(args));
             return true;
           }
           case 'getSchemaPickerState': {
@@ -133,5 +145,15 @@ export const useNativeDialogBridge = () => {
     return () => {
       delete window.__ljbNativeBridge;
     };
-  }, [currentLocale, leafWriter, setThemeAppearance, switchLanguage, themeAppearance]);
+  }, [
+    currentLocale,
+    leafWriter,
+    setSkipCopyPasteHelp,
+    setSkipExplorerDeleteConfirm,
+    setThemeAppearance,
+    skipCopyPasteHelp,
+    skipExplorerDeleteConfirm,
+    switchLanguage,
+    themeAppearance,
+  ]);
 };

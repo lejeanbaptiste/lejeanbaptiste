@@ -79,6 +79,13 @@ class CopyPaste implements LWDialogProps {
   }
 
   show({ modal = false, type }: { modal?: boolean; type: ActionType }) {
+    if (
+      typeof localStorage !== 'undefined' &&
+      localStorage.getItem('skipCopyPasteHelp') === 'true'
+    ) {
+      return;
+    }
+
     const msg = type === 'copy' ? this.copyMsg : this.pasteMsg;
 
     //@ts-ignore

@@ -2,32 +2,39 @@ import {
   Box,
   Button,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Switch,
   Typography,
 } from '@mui/material';
 import { locales, type Locales } from '@src/i18n';
+import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import type { PaletteMode } from '@src/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
-
-interface InterfaceSettings {
-  currentLocale: Locales;
-  themeAppearance: PaletteMode;
-}
 
 export const NativeSettingsPage = () => {
   const [searchParams] = useSearchParams();
   const dialogId = searchParams.get('dialogId') ?? 'settings';
-  const [settings, setSettings] = useState<InterfaceSettings | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
+  const { currentLocale, skipCopyPasteHelp, skipExplorerDeleteConfirm, themeAppearance } =
+    useAppState().ui;
+  const {
+    setSkipCopyPasteHelp,
+    setSkipExplorerDeleteConfirm,
+    setThemeAppearance,
+    switchLanguage,
+  } = useActions().ui;
 
-  const invoke = useCallback(
+  const syncParent = useCallback(
     async (method: string, args?: unknown) => {
-      return window.electronAPI?.nativeDialogInvoke({ dialogId, method, args });
+      if (!window.electronAPI?.nativeDialogInvoke) return;
+      await window.electronAPI.nativeDialogInvoke({ dialogId, method, args });
     },
     [dialogId],
   );
@@ -46,24 +53,24 @@ export const NativeSettingsPage = () => {
     return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [dialogId]);
 
-  useEffect(() => {
-    if (!isDesktop()) return;
-
-    void (async () => {
-      const state = (await invoke('getInterfaceSettings')) as InterfaceSettings | null;
-      if (state) setSettings(state);
-      setLoading(false);
-    })();
-  }, [dialogId, invoke]);
-
   const handleThemeChange = async (value: PaletteMode) => {
-    setSettings((current) => (current ? { ...current, themeAppearance: value } : current));
-    await invoke('setThemeAppearance', value);
+    setThemeAppearance(value);
+    await syncParent('setThemeAppearance', value);
   };
 
   const handleLocaleChange = async (value: Locales) => {
-    setSettings((current) => (current ? { ...current, currentLocale: value } : current));
-    await invoke('setLocale', value);
+    switchLanguage(value);
+    await syncParent('setLocale', value);
+  };
+
+  const handleSkipDeleteConfirmChange = async (checked: boolean) => {
+    setSkipExplorerDeleteConfirm(checked);
+    await syncParent('setSkipExplorerDeleteConfirm', checked);
+  };
+
+  const handleSkipCopyPasteHelpChange = async (checked: boolean) => {
+    setSkipCopyPasteHelp(checked);
+    await syncParent('setSkipCopyPasteHelp', checked);
   };
 
   const handleClose = () => {
@@ -89,50 +96,65 @@ export const NativeSettingsPage = () => {
           WebkitAppRegion: 'drag',
         }}
       >
-        <Typography variant="h6">Settings</Typography>
+        <Typography variant="h6">{t('LWC.desktop.settings.title')}</Typography>
       </Box>
 
-      <Stack spacing={3} sx={{ flex: 1, p: 2, WebkitAppRegion: 'no-drag' }}>
-        {loading || !settings ? (
-          <Typography color="text.secondary">Loading…</Typography>
-        ) : (
-          <>
-            <FormControl fullWidth size="small">
-              <InputLabel id="native-theme-label">Appearance</InputLabel>
-              <Select
-                labelId="native-theme-label"
-                label="Appearance"
-                value={settings.themeAppearance}
-                onChange={(event) => void handleThemeChange(event.target.value as PaletteMode)}
-              >
-                <MenuItem value="system">System</MenuItem>
-                <MenuItem value="light">Light</MenuItem>
-                <MenuItem value="dark">Dark</MenuItem>
-              </Select>
-            </FormControl>
+      <Stack spacing={3} sx={{ flex: 1, p: 2, WebkitAppRegion: 'no-drag', overflow: 'auto' }}>
+        <FormControl fullWidth size="small">
+          <InputLabel id="native-theme-label">{t('LWC.ui.appearance')}</InputLabel>
+          <Select
+            labelId="native-theme-label"
+            label={t('LWC.ui.appearance')}
+            value={themeAppearance}
+            onChange={(event) => void handleThemeChange(event.target.value as PaletteMode)}
+          >
+            <MenuItem value="system">{t('LWC.ui.device_theme')}</MenuItem>
+            <MenuItem value="light">{t('LWC.ui.light_theme')}</MenuItem>
+            <MenuItem value="dark">{t('LWC.ui.dark_theme')}</MenuItem>
+          </Select>
+        </FormControl>
 
-            <FormControl fullWidth size="small">
-              <InputLabel id="native-language-label">Language</InputLabel>
-              <Select
-                labelId="native-language-label"
-                label="Language"
-                value={settings.currentLocale}
-                onChange={(event) => void handleLocaleChange(event.target.value as Locales)}
-              >
-                {locales.map((locale) => (
-                  <MenuItem key={locale} value={locale}>
-                    {locale}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+        <FormControl fullWidth size="small">
+          <InputLabel id="native-language-label">{t('LWC.commons.language')}</InputLabel>
+          <Select
+            labelId="native-language-label"
+            label={t('LWC.commons.language')}
+            value={currentLocale}
+            onChange={(event) => void handleLocaleChange(event.target.value as Locales)}
+          >
+            {locales.map((locale) => (
+              <MenuItem key={locale} value={locale}>
+                {locale}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-            <Typography variant="body2" color="text.secondary">
-              Schema, authorities, and other editor options are available from the ⚙ toolbar
-              while a document is open.
-            </Typography>
-          </>
-        )}
+        <Typography variant="subtitle2">{t('LWC.desktop.settings.warnings')}</Typography>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={skipExplorerDeleteConfirm}
+              onChange={(event) => void handleSkipDeleteConfirmChange(event.target.checked)}
+            />
+          }
+          label={t('LWC.desktop.settings.skip_delete_confirm')}
+        />
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={skipCopyPasteHelp}
+              onChange={(event) => void handleSkipCopyPasteHelpChange(event.target.checked)}
+            />
+          }
+          label={t('LWC.desktop.settings.skip_copy_paste_help')}
+        />
+
+        <Typography variant="body2" color="text.secondary">
+          {t('LWC.desktop.settings.editor_options_hint')}
+        </Typography>
       </Stack>
 
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', WebkitAppRegion: 'no-drag' }}>

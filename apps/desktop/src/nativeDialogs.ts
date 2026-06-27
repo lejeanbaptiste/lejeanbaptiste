@@ -69,19 +69,30 @@ export const registerNativeDialogIpc = () => {
       _event,
       options: {
         buttons?: string[];
+        cancelId?: number;
+        defaultId?: number;
         message: string;
         title: string;
         type?: 'error' | 'info' | 'none' | 'question' | 'warning';
       },
     ) => {
       const parent = getParentWindow();
+      const buttons = options.buttons?.length ? options.buttons : ['OK'];
+      const defaultId = options.defaultId ?? 0;
+      const cancelId =
+        options.cancelId ??
+        (buttons.length > 1
+          ? buttons.findIndex((label) => /cancel|no$/i.test(label.trim()))
+          : 0);
+      const resolvedCancelId = cancelId >= 0 ? cancelId : buttons.length > 1 ? buttons.length - 1 : 0;
+
       const messageOptions: MessageBoxOptions = {
         type: options.type ?? 'none',
         title: options.title,
         message: options.message,
-        buttons: options.buttons?.length ? options.buttons : ['OK'],
-        defaultId: 0,
-        cancelId: 0,
+        buttons,
+        defaultId,
+        cancelId: resolvedCancelId,
         noLink: true,
       };
 

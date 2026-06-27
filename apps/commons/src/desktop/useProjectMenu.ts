@@ -1,15 +1,15 @@
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
 import { leafwriterAtom } from '@src/jotai';
-import { openNativeSettings } from '@src/desktop/openNativeSettings';
 import { useActions } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useState } from 'react';
 
-const openSettings = async (leafWriter: { showSettingsDialog: () => Promise<void> } | null) => {
-  if (await openNativeSettings()) return;
-
+const openSettings = async (
+  leafWriter: { showSettingsDialog: () => Promise<void> } | null,
+  notify: (message: string) => void,
+) => {
   if (leafWriter) {
     await leafWriter.showSettingsDialog();
     return;
@@ -17,7 +17,10 @@ const openSettings = async (leafWriter: { showSettingsDialog: () => Promise<void
 
   if (window.writer) {
     window.writer.overmindActions.ui.openDialog({ type: 'settings' });
+    return;
   }
+
+  notify('Open an XML file to change settings.');
 };
 
 const getEditorContent = async (
@@ -116,13 +119,8 @@ export const useProjectMenu = () => {
       }
 
       if (action === 'open-settings') {
-        void (async () => {
-          if (leafWriter || window.writer) {
-            await openSettings(leafWriter);
-          } else {
-            notifyViaSnackbar('Open an XML file to access editor settings.');
-          }
-        })();
+        void openSettings(leafWriter, (message) => notifyViaSnackbar(message));
+        return;
       }
     });
   }, [leafWriter, notifyViaSnackbar, openProject, saveCurrentDocument, saveCurrentDocumentAs]);
@@ -157,11 +155,7 @@ export const useProjectMenu = () => {
       if (event.metaKey && event.code === 'Comma') {
         event.preventDefault();
         event.stopPropagation();
-        if (leafWriter || window.writer) {
-          await openSettings(leafWriter);
-        } else {
-          notifyViaSnackbar('Open an XML file to access editor settings.');
-        }
+        await openSettings(leafWriter, (message) => notifyViaSnackbar(message));
         return;
       }
 

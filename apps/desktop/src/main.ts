@@ -10,6 +10,13 @@ import {
 } from './nativeDialogs';
 import { getValidLastProjectFile, writeLastProjectFile } from './projectPrefs';
 import { loadOrCreateProject, loadProjectFile } from './projectFile';
+import {
+  createDirectory,
+  deletePath,
+  findXmlFilesByName,
+  movePath,
+  renamePath,
+} from './explorerFileOps';
 import { OpenFileWatcher } from './openFileWatcher';
 
 const APP_NAME = 'Le Jean-Baptiste';
@@ -387,6 +394,39 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('ignoreFileChange', (_event, filePath: string, mtimeMs: number) => {
     openFileWatcher?.ignoreChange(filePath, mtimeMs);
+  });
+
+  ipcMain.handle('findXmlFilesByName', async (_event, rootPath: string, query: string) => {
+    return findXmlFilesByName(rootPath, query);
+  });
+
+  ipcMain.handle('renamePath', async (_event, oldPath: string, newPath: string) => {
+    await renamePath(oldPath, newPath);
+  });
+
+  ipcMain.handle('movePath', async (_event, sourcePath: string, destDir: string) => {
+    return movePath(sourcePath, destDir);
+  });
+
+  ipcMain.handle('deletePath', async (_event, targetPath: string) => {
+    await deletePath(targetPath);
+  });
+
+  ipcMain.handle('createDirectory', async (_event, parentDir: string, folderName: string) => {
+    return createDirectory(parentDir, folderName);
+  });
+
+  ipcMain.handle('pickMoveDestination', async (_event, defaultDir?: string) => {
+    if (!mainWindow) return null;
+
+    mainWindow.focus();
+    const result = await dialog.showOpenDialog(mainWindow, {
+      defaultPath: defaultDir,
+      properties: ['openDirectory', 'createDirectory'],
+    });
+
+    if (result.canceled || !result.filePaths[0]) return null;
+    return result.filePaths[0];
   });
 
   ipcMain.handle('saveFileAs', async (_event, defaultPath?: string) => {

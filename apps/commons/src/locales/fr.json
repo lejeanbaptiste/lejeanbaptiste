@@ -196,6 +196,36 @@
       "close_unsaved": {
         "title": "Modifications non enregistrées",
         "message": "{{filename}} contient des modifications non enregistrées. Fermer sans enregistrer ?"
+      },
+      "settings": {
+        "editor_options_hint": "Les schémas, autorités et autres options d’édition sont disponibles via la barre d’outils ⚙ lorsqu’un document est ouvert.",
+        "skip_copy_paste_help": "Ne pas afficher l’aide copier-coller",
+        "skip_delete_confirm": "Supprimer fichiers et dossiers sans confirmation",
+        "title": "Paramètres",
+        "warnings": "Avertissements"
+      },
+      "explorer": {
+        "delete": "Supprimer",
+        "delete_confirm_file": "Supprimer « {{name}} » ? Cette action est irréversible.",
+        "delete_confirm_file_open": "Supprimer « {{name}} » ? L’onglet ouvert sera fermé.",
+        "delete_confirm_folder": "Supprimer le dossier « {{name}} » et tout son contenu ? Cette action est irréversible.",
+        "delete_confirm_folder_open": "Supprimer le dossier « {{name}} » et tout son contenu ? Les onglets ouverts seront fermés.",
+        "delete_title": "Supprimer l’élément",
+        "drop_invalid": "Impossible de déplacer l’élément vers ce dossier.",
+        "error_exists": "Un élément portant ce nom existe déjà.",
+        "error_failed": "Échec de l’opération : {{detail}}",
+        "error_into_self": "Impossible de déplacer un dossier dans lui-même.",
+        "error_invalid_name": "Entrez un nom valide sans barres obliques.",
+        "filter_no_results": "Aucun fichier ne correspond à « {{query}} ».",
+        "filter_placeholder": "Filtrer les fichiers…",
+        "move": "Déplacer vers…",
+        "new_folder": "Nouveau dossier",
+        "new_folder_placeholder": "Nom du dossier",
+        "new_folder_title": "Nouveau dossier",
+        "open_project_hint": "Ouvrez un projet via Fichier → Ouvrir un projet (⌘O).",
+        "rename": "Renommer",
+        "rename_placeholder": "Nouveau nom",
+        "rename_title": "Renommer"
       }
     }
   },
