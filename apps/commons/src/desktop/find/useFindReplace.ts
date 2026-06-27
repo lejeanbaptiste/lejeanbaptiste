@@ -118,7 +118,6 @@ export const useFindReplace = ({
   const replaceCurrentHit = useCallback(async () => {
     if (!selectedHit || !findQuery.trim()) return;
 
-    const startedAt = Date.now();
     const content = await loadFileContent(selectedHit.filePath);
     if (content === null) {
       notifyViaSnackbar('Could not read file for replace.');
@@ -199,10 +198,6 @@ export const useFindReplace = ({
       jumpToSelection: totalMatches > 0,
       selectedIndex: nextIndex,
     });
-
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'useFindReplace.ts:replaceCurrentHit',message:'replace complete',data:{durationMs:Date.now()-startedAt,nextIndex,totalMatches,useRegex},timestamp:Date.now(),hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
   }, [
     activeTabPath,
     findQuery,

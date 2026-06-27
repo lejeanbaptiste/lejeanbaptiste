@@ -35,6 +35,7 @@ export const XmlMonacoEditor = ({
   const divEl = useRef<HTMLDivElement>(null);
   const onChangeRef = useRef(onChange);
   const onEditorInstanceRef = useRef(onEditorInstance);
+  const lastEditorValueRef = useRef(value);
   const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
   const [decorations, setDecorations] = useState<
     monaco.editor.IEditorDecorationsCollection | undefined
@@ -65,7 +66,17 @@ export const XmlMonacoEditor = ({
     });
 
     monacoEditor.getModel()?.onDidChangeContent(() => {
-      onChangeRef.current(monacoEditor.getValue());
+      const nextValue = monacoEditor.getValue();
+      lastEditorValueRef.current = nextValue;
+      onChangeRef.current(nextValue);
+    });
+
+    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyZ, () => {
+      void monacoEditor.getAction('editor.action.redo')?.run();
+    });
+
+    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY, () => {
+      void monacoEditor.getAction('editor.action.redo')?.run();
     });
 
     monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
@@ -73,6 +84,7 @@ export const XmlMonacoEditor = ({
     });
 
     registerSourceFindEditor(monacoEditor);
+    lastEditorValueRef.current = value;
     setEditor(monacoEditor);
     onEditorInstanceRef.current?.(monacoEditor);
 
@@ -91,13 +103,19 @@ export const XmlMonacoEditor = ({
 
   useEffect(() => {
     if (!editor) return;
-    if (editor.getValue() !== value) {
-      const scrollTop = editor.getScrollTop();
-      const scrollLeft = editor.getScrollLeft();
-      editor.setValue(value);
-      editor.setScrollTop(scrollTop);
-      editor.setScrollLeft(scrollLeft);
+    if (value === lastEditorValueRef.current) return;
+
+    const model = editor.getModel();
+    if (!model || model.getValue() === value) {
+      lastEditorValueRef.current = value;
+      return;
     }
+
+    // executeEdits preserves undo/redo; setValue clears the stack.
+    editor.executeEdits('external-sync', [
+      { range: model.getFullModelRange(), text: value, forceMoveMarkers: true },
+    ]);
+    lastEditorValueRef.current = value;
   }, [editor, value]);
 
   useEffect(() => {

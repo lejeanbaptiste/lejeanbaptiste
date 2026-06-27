@@ -58,6 +58,101 @@ const locateCharacterRange = (
   return { startNode, startOff, endNode, endOff };
 };
 
+let activeFindHighlightSpan: HTMLSpanElement | null = null;
+
+const STYLE_ELEMENT_ID = 'lw-find-highlight-styles';
+
+const runWithoutEditorUndo = (fn: () => void) => {
+  const editor = window.writer?.editor;
+  if (editor?.undoManager?.ignore) {
+    editor.undoManager.ignore(fn);
+    return;
+  }
+  fn();
+};
+
+const ensureHighlightStyles = (doc: Document) => {
+  if (doc.getElementById(STYLE_ELEMENT_ID)) return;
+
+  const style = doc.createElement('style');
+  style.id = STYLE_ELEMENT_ID;
+  style.textContent = `
+    .lw-find-hit-active {
+      background-color: #ffb74d;
+      box-shadow: 0 0 0 1px #f57c00;
+      border-radius: 1px;
+    }
+  `;
+  doc.head.appendChild(style);
+};
+
+const unwrapActiveFindHighlight = () => {
+  if (!activeFindHighlightSpan) return;
+
+  const span = activeFindHighlightSpan;
+  const parent = span.parentNode;
+  if (!parent) {
+    activeFindHighlightSpan = null;
+    return;
+  }
+
+  while (span.firstChild) {
+    parent.insertBefore(span.firstChild, span);
+  }
+  parent.removeChild(span);
+  parent.normalize?.();
+  activeFindHighlightSpan = null;
+};
+
+export const clearActiveFindHighlightInEditor = () => {
+  runWithoutEditorUndo(unwrapActiveFindHighlight);
+};
+
+/** Highlight the matched characters in WYSIWYG without polluting the undo stack. */
+export const highlightTextHitInEditor = (resolved: ResolvedTextHit): boolean => {
+  const editor = window.writer?.editor;
+  const body = editor?.getBody();
+  if (!editor || !body) return false;
+
+  const element = findEditorNodeByTeiXPath(body, resolved.teiXPath);
+  if (!element) return false;
+
+  unhideNotes(element);
+
+  const range = locateCharacterRange(
+    element,
+    resolved.startInElementText,
+    resolved.endInElementText,
+  );
+  if (!range || range.startNode !== range.endNode) return false;
+
+  runWithoutEditorUndo(() => {
+    unwrapActiveFindHighlight();
+
+    const doc = range.startNode.ownerDocument;
+    ensureHighlightStyles(doc);
+
+    let matchNode = range.startNode;
+    if (range.startOff > 0) {
+      matchNode = range.startNode.splitText(range.startOff);
+    }
+
+    const matchLen = range.endOff - range.startOff;
+    if (matchLen < (matchNode.textContent?.length ?? 0)) {
+      matchNode.splitText(matchLen);
+    }
+
+    const span = doc.createElement('span');
+    span.className = 'lw-find-hit-active';
+    span.setAttribute('data-lw-find-active', '1');
+    matchNode.parentNode?.insertBefore(span, matchNode);
+    span.appendChild(matchNode);
+    activeFindHighlightSpan = span;
+  });
+
+  return true;
+};
+
 /** Patch matched text in the WYSIWYG editor without reloading the whole document. */
 export const replaceTextHitInEditor = (
   resolved: ResolvedTextHit,
@@ -86,12 +181,18 @@ export const replaceTextHitInEditor = (
   const text = range.startNode.textContent ?? '';
   const nextText = text.slice(0, range.startOff) + replacement + text.slice(range.endOff);
 
-  // Bookend with add() so TinyMCE records one undo step for the text change.
-  editor.undoManager.add();
-  range.startNode.textContent = nextText;
-  editor.undoManager.add();
-  editor.nodeChanged();
-  editor.fire('change');
+  // Bookend with transact so TinyMCE records one undo step for the text change.
+  if (typeof editor.undoManager.transact === 'function') {
+    editor.undoManager.transact(() => {
+      range.startNode.textContent = nextText;
+      editor.nodeChanged();
+    });
+  } else {
+    editor.undoManager.add();
+    range.startNode.textContent = nextText;
+    editor.nodeChanged();
+    editor.undoManager.add();
+  }
   editor.focus();
   return true;
 };
@@ -99,8 +200,23 @@ export const replaceTextHitInEditor = (
 export const undoWysiwygEditor = (): boolean => {
   const editor = window.writer?.editor;
   if (!editor?.undoManager.hasUndo()) return false;
+
   editor.focus();
   editor.undoManager.undo();
+  return true;
+};
+
+export const redoWysiwygEditor = (): boolean => {
+  const editor = window.writer?.editor;
+  const hasRedo = editor?.undoManager.hasRedo() ?? false;
+
+  if (!editor || !hasRedo) {
+    return false;
+  }
+
+  editor.focus();
+  editor.undoManager.redo();
+
   return true;
 };
 

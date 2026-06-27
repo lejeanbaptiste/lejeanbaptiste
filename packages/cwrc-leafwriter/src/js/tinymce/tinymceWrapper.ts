@@ -431,9 +431,15 @@ export const tinymceWrapperInit = function ({
           // empty tag check
           // insert zero-width non-breaking space so empty tag takes up space
           const $node = $(node);
-          if ($node.text() === '') $node.text('\uFEFF');
-          if (isElement(node)) writer.tagger.processNewContent(node);
-          writer.editor?.undoManager.add();
+          if (typeof writer.editor?.undoManager.transact === 'function') {
+            writer.editor.undoManager.transact(() => {
+              if ($node.text() === '') $node.text('\uFEFF');
+              if (isElement(node)) writer.tagger.processNewContent(node);
+            });
+          } else {
+            if ($node.text() === '') $node.text('\uFEFF');
+            if (isElement(node)) writer.tagger.processNewContent(node);
+          }
           writer.event('contentChanged').publish();
         }
       }

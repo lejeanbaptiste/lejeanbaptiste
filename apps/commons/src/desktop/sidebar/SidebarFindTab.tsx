@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { useFindPanelUndo } from '@src/desktop/find/findPanelUndo';
-import { DESKTOP_FIND_FOCUS_EVENT } from '@src/desktop/desktopLeftPanelBridge';
+import { DESKTOP_EDITOR_VIEW_MODE_EVENT, DESKTOP_FIND_FOCUS_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { FindSnippetLine, formatSnippetLabel } from '@src/desktop/find/snippetDisplay';
 import { searchText } from '@src/desktop/find/searchText';
 import type { FindFileResult, FindHighlightMode } from '@src/desktop/find/types';
@@ -123,7 +123,7 @@ export const SidebarFindTab = () => {
       void jumpToHit({
         contentForJump: options?.contentForJump,
         filePath: item.filePath,
-        highlightMode: options?.highlightMode ?? 'scroll-only',
+        highlightMode: options?.highlightMode ?? 'active-only',
         line: item.line,
         column: item.column,
         matchIndexInFile: item.matchIndexInFile,
@@ -184,18 +184,13 @@ export const SidebarFindTab = () => {
         if (jumpToSelection || refreshHighlight) {
           const item = flat[idx];
           if (item) {
-            const isSourceMode =
-              window.writer?.overmindState?.ui?.editorViewMode === 'source';
-            // #region agent log
-            fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'SidebarFindTab.tsx:jumpAfterReplace',message:'jump after replace/search',data:{idx,start:item.start,end:item.end,hasContentForJump:!!contentForJump},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-            // #endregion
+            const highlightMode: FindHighlightMode = 'active-only';
             void jumpToHit({
               column: item.column,
               contentForJump,
               end: item.end,
               filePath: item.filePath,
-              highlightMode:
-                refreshHighlight && isSourceMode ? 'active-only' : 'full',
+              highlightMode,
               line: item.line,
               matchIndexInFile: item.matchIndexInFile,
               query: findQuery.trim(),
@@ -215,7 +210,7 @@ export const SidebarFindTab = () => {
           column: first.column,
           end: first.end,
           filePath: first.filePath,
-          highlightMode: 'full',
+          highlightMode: 'active-only',
           line: first.line,
           matchIndexInFile: first.matchIndexInFile,
           query: findQuery.trim(),
@@ -273,6 +268,26 @@ export const SidebarFindTab = () => {
     },
     [flatResults.length, jumpToFlatResult],
   );
+
+  const resetFindOnEditorViewModeChange = useCallback(() => {
+    clearFindHighlights();
+    lastSearchKeyRef.current = '';
+    setFindQuery('');
+    setReplaceQuery('');
+    setResults([]);
+    setTotalMatches(0);
+    setCollapsedFilePaths(new Set());
+    setSelectedIndex(-1);
+    selectedIndexRef.current = -1;
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(DESKTOP_EDITOR_VIEW_MODE_EVENT, resetFindOnEditorViewModeChange);
+    return () => {
+      window.removeEventListener(DESKTOP_EDITOR_VIEW_MODE_EVENT, resetFindOnEditorViewModeChange);
+    };
+  }, [resetFindOnEditorViewModeChange]);
 
   useEffect(() => {
     const focusFindField = () => {
@@ -404,9 +419,6 @@ export const SidebarFindTab = () => {
               : selectedIndex - 1
             : (selectedIndex + 1) % flatResults.length;
 
-      // #region agent log
-      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'SidebarFindTab.tsx:cycleFind',message:'cycle find',data:{selectedIndex,next,backwards,total:flatResults.length},timestamp:Date.now(),hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
       navigateToIndex(next);
     },
     [

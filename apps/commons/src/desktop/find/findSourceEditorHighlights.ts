@@ -17,7 +17,8 @@ declare global {
       }) => boolean;
       revealRange: (params: { content: string; end: number; start: number }) => boolean;
       scrollToHit: (params: { content: string; end: number; start: number }) => boolean;
-      undo: () => string | null;
+      undo: () => Promise<string | null>;
+      redo?: () => Promise<string | null>;
     };
   }
 }

@@ -197,8 +197,16 @@ const sendMenuAction = (action: string) => {
 const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
   label: 'Edit',
   submenu: [
-    { role: 'undo' },
-    { role: 'redo' },
+    {
+      label: 'Undo',
+      accelerator: 'CommandOrControl+Z',
+      click: () => sendMenuAction('undo'),
+    },
+    {
+      label: 'Redo',
+      accelerator: 'CommandOrControl+Shift+Z',
+      click: () => sendMenuAction('redo'),
+    },
     { type: 'separator' },
     { role: 'cut' },
     { role: 'copy' },
