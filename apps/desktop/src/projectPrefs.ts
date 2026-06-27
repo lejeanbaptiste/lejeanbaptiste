@@ -2,41 +2,52 @@ import { app } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
 
-interface ProjectPrefs {
+interface AppPrefs {
   lastProjectFile: string | null;
+  encoderName?: string;
 }
 
 const PREFS_FILENAME = 'project-prefs.json';
 
 const getPrefsPath = () => path.join(app.getPath('userData'), PREFS_FILENAME);
 
-const readProjectPrefs = async (): Promise<ProjectPrefs> => {
+const readAppPrefs = async (): Promise<AppPrefs> => {
   try {
     const raw = await fs.readFile(getPrefsPath(), 'utf-8');
-    const parsed = JSON.parse(raw) as ProjectPrefs & { lastRootPath?: string | null };
+    const parsed = JSON.parse(raw) as AppPrefs & { lastRootPath?: string | null };
 
     if (typeof parsed.lastProjectFile === 'string') {
-      return { lastProjectFile: parsed.lastProjectFile };
+      return {
+        lastProjectFile: parsed.lastProjectFile,
+        encoderName: typeof parsed.encoderName === 'string' ? parsed.encoderName : '',
+      };
     }
 
-    // Migrate from older builds that only stored the folder path.
     if (typeof parsed.lastRootPath === 'string') {
-      return { lastProjectFile: path.join(parsed.lastRootPath, 'jean-baptiste.project.json') };
+      return {
+        lastProjectFile: path.join(parsed.lastRootPath, 'jean-baptiste.project.json'),
+        encoderName: typeof parsed.encoderName === 'string' ? parsed.encoderName : '',
+      };
     }
 
-    return { lastProjectFile: null };
+    return { lastProjectFile: null, encoderName: '' };
   } catch {
-    return { lastProjectFile: null };
+    return { lastProjectFile: null, encoderName: '' };
   }
 };
 
-export const writeLastProjectFile = async (projectFilePath: string) => {
-  const prefs: ProjectPrefs = { lastProjectFile: projectFilePath };
+const writeAppPrefs = async (prefs: AppPrefs) => {
   await fs.writeFile(getPrefsPath(), JSON.stringify(prefs, null, 2), 'utf-8');
 };
 
+export const writeLastProjectFile = async (projectFilePath: string) => {
+  const prefs = await readAppPrefs();
+  prefs.lastProjectFile = projectFilePath;
+  await writeAppPrefs(prefs);
+};
+
 export const getValidLastProjectFile = async (): Promise<string | null> => {
-  const prefs = await readProjectPrefs();
+  const prefs = await readAppPrefs();
   if (!prefs.lastProjectFile) return null;
 
   try {
@@ -47,4 +58,15 @@ export const getValidLastProjectFile = async (): Promise<string | null> => {
   }
 
   return null;
+};
+
+export const getEncoderName = async (): Promise<string> => {
+  const prefs = await readAppPrefs();
+  return prefs.encoderName?.trim() ?? '';
+};
+
+export const setEncoderName = async (encoderName: string) => {
+  const prefs = await readAppPrefs();
+  prefs.encoderName = encoderName.trim();
+  await writeAppPrefs(prefs);
 };

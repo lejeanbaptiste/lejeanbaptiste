@@ -206,7 +206,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
             !isReadonly &&
             editorViewMode === 'source' &&
             createPortal(
-              <SourceEditorPane key={state.document.url ?? 'source'} />,
+              <SourceEditorPane key={state.document.url ?? state.document.schemaId ?? 'source'} />,
               sourceEditorPaneContainer,
             )}
           {tocPanelContainer && createPortal(<TocPanel />, tocPanelContainer)}

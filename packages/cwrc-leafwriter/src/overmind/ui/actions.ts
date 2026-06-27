@@ -282,6 +282,46 @@ export const resetSourceEditor = ({ state }: Context) => {
   }
 };
 
+const resolveSourceEditorContent = async (state: Context['state']): Promise<string> => {
+  const writer = window.writer;
+
+  if (writer) {
+    const fromEditor =
+      (await writer.converter.getDocumentContent(false)) ||
+      (await writer.converter.getDocumentContent(true)) ||
+      (await writer.getContent()) ||
+      '';
+
+    if (fromEditor) {
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'ui/actions.ts:resolveSourceEditorContent',message:'used live editor',data:{documentUrl:state.document.url,fromEditorLength:fromEditor.length,documentXmlLength:state.document.xml?.length??0,contentHasChanged:state.editor.contentHasChanged},timestamp:Date.now(),hypothesisId:'S6'})}).catch(()=>{});
+      // #endregion
+      return fromEditor;
+    }
+  }
+
+  if (state.document.xml) {
+    // #region agent log
+    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'ui/actions.ts:resolveSourceEditorContent',message:'fallback document.xml',data:{documentUrl:state.document.url,documentXmlLength:state.document.xml.length},timestamp:Date.now(),hypothesisId:'S6'})}).catch(()=>{});
+    // #endregion
+    return state.document.xml;
+  }
+
+  return '';
+};
+
+/** Keep Monaco source buffer aligned with the active document (tab switch / project switch). */
+export const syncSourceEditorFromDocument = async ({ state }: Context) => {
+  const content = await resolveSourceEditorContent(state);
+  if (!content) return;
+
+  state.ui.sourceOriginalContent = content;
+  state.ui.sourceCurrentContent = content;
+  // #region agent log
+  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'ui/actions.ts:syncSourceEditorFromDocument',message:'synced source from document',data:{documentUrl:state.document.url,contentLength:content.length,inSourceMode:state.ui.editorViewMode==='source'},timestamp:Date.now(),hypothesisId:'S4'})}).catch(()=>{});
+  // #endregion
+};
+
 export const setSourceCurrentContent = ({ state }: Context, content: string) => {
   state.ui.sourceCurrentContent = content;
   if (content !== state.ui.sourceOriginalContent) {
@@ -294,33 +334,18 @@ export const markSourceSaved = ({ state }: Context, content: string) => {
 };
 
 export const enterSourceMode = async ({ state, actions }: Context) => {
-  if (state.ui.editorViewMode === 'source') return;
-
-  const writer = window.writer;
-  let content = '';
-
-  if (!state.editor.contentHasChanged && state.document.xml) {
-    content = state.document.xml;
-  } else {
-    content =
-      (await writer?.converter.getDocumentContent(false)) ||
-      (await writer?.converter.getDocumentContent(true)) ||
-      '';
-
-    if (!content) {
-      content = (await writer?.getContent()) || '';
-    }
-
-    if (!content && state.document.xml) {
-      content = state.document.xml;
-    }
-  }
-
+  const content = await resolveSourceEditorContent(state);
   if (!content) return;
 
   state.ui.sourceOriginalContent = content;
   state.ui.sourceCurrentContent = content;
-  actions.ui.setEditorViewMode('source');
+  // #region agent log
+  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'ui/actions.ts:enterSourceMode',message:'enter source mode',data:{documentUrl:state.document.url,contentLength:content.length,wasAlreadySource:state.ui.editorViewMode==='source'},timestamp:Date.now(),hypothesisId:'S4'})}).catch(()=>{});
+  // #endregion
+
+  if (state.ui.editorViewMode !== 'source') {
+    actions.ui.setEditorViewMode('source');
+  }
 };
 
 export const exitSourceMode = async ({ state, actions }: Context): Promise<boolean> => {

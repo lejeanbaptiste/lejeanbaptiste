@@ -1,7 +1,8 @@
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
+import { openEditionMetadataDialog } from '@src/desktop/projectOnboarding';
 import { leafwriterAtom } from '@src/jotai';
-import { useActions } from '@src/overmind';
+import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useState } from 'react';
@@ -31,9 +32,11 @@ const getEditorContent = async (
 };
 
 export const useProjectMenu = () => {
-  const { openProject, saveActiveTab, saveActiveTabAs, markTabDirty } = useActions().project;
+  const { newFile, openProject, saveActiveTab, saveActiveTabAs, markTabDirty } =
+    useActions().project;
   const { setContentHasChanged } = useActions().editor;
   const { closeForegroundPopup: closeCommonsPopup, notifyViaSnackbar } = useActions().ui;
+  const { isProjectReady, projectFilePath } = useAppState().project;
   const [leafWriter] = useAtom(leafwriterAtom);
   const [aboutOpen, setAboutOpen] = useState(false);
 
@@ -98,8 +101,17 @@ export const useProjectMenu = () => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
 
     return window.electronAPI.onAppMenuAction((action) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'useProjectMenu.ts:onAppMenuAction',message:'menu action',data:{action},timestamp:Date.now(),hypothesisId:'K1'})}).catch(()=>{});
+      // #endregion
+
       if (action === 'open-project') {
         void openProject();
+        return;
+      }
+
+      if (action === 'new-file') {
+        void newFile();
         return;
       }
 
@@ -122,8 +134,26 @@ export const useProjectMenu = () => {
         void openSettings(leafWriter, (message) => notifyViaSnackbar(message));
         return;
       }
+
+      if (action === 'edition-metadata') {
+        if (!isProjectReady || !projectFilePath) {
+          notifyViaSnackbar('Open a project first.');
+          return;
+        }
+
+        void openEditionMetadataDialog(projectFilePath);
+      }
     });
-  }, [leafWriter, notifyViaSnackbar, openProject, saveCurrentDocument, saveCurrentDocumentAs]);
+  }, [
+    isProjectReady,
+    leafWriter,
+    newFile,
+    notifyViaSnackbar,
+    openProject,
+    projectFilePath,
+    saveCurrentDocument,
+    saveCurrentDocumentAs,
+  ]);
 
   const onKeydownHandle = useCallback(
     async (event: KeyboardEvent) => {
@@ -159,32 +189,14 @@ export const useProjectMenu = () => {
         return;
       }
 
-      if (!(event.metaKey || event.ctrlKey)) return;
-
-      if (event.code === 'KeyS') {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.shiftKey) {
-          await saveCurrentDocumentAs();
-        } else {
-          await saveCurrentDocument();
-        }
-        return;
-      }
-
-      if (event.code === 'KeyO') {
-        event.preventDefault();
-        event.stopPropagation();
-        await openProject();
-      }
+      // File menu shortcuts (Save, Save As, Open Project, New File) are handled by the
+      // Electron application menu accelerators via onAppMenuAction. Handling them here too
+      // caused duplicate actions (e.g. Cmd+O firing openProject twice, Cmd+S racing saves).
     },
     [
       closeCommonsPopup,
       leafWriter,
       notifyViaSnackbar,
-      openProject,
-      saveCurrentDocument,
-      saveCurrentDocumentAs,
     ],
   );
 

@@ -5,6 +5,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import {
   closeAllNativeDialogs,
+  getTopNativeDialogWindow,
   initNativeDialogs,
   registerNativeDialogIpc,
 } from './nativeDialogs';
@@ -14,11 +15,14 @@ import {
   createDirectory,
   deletePath,
   findXmlFilesByName,
+  listProjectXmlFiles,
   movePath,
   renamePath,
 } from './explorerFileOps';
 import { OpenFileWatcher } from './openFileWatcher';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
+import { getEncoderName, setEncoderName } from './projectPrefs';
+import { installCatalogSchema, installLocalSchema } from './schemaSetup';
 
 const APP_NAME = 'Le Jean-Baptiste';
 
@@ -271,6 +275,17 @@ const buildApplicationMenu = () => {
     click: () => sendMenuAction('save-as'),
   };
 
+  const editionMetadataItem: Electron.MenuItemConstructorOptions = {
+    label: 'Edition metadata…',
+    click: () => sendMenuAction('edition-metadata'),
+  };
+
+  const newFileItem: Electron.MenuItemConstructorOptions = {
+    label: 'New File',
+    accelerator: 'CommandOrControl+N',
+    click: () => sendMenuAction('new-file'),
+  };
+
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin'
       ? [
@@ -298,10 +313,12 @@ const buildApplicationMenu = () => {
     {
       label: 'File',
       submenu: [
-        openProjectItem,
-        { type: 'separator' },
+        newFileItem,
         saveItem,
         saveAsItem,
+        { type: 'separator' },
+        openProjectItem,
+        editionMetadataItem,
         { type: 'separator' },
         ...(process.platform !== 'darwin'
           ? [
@@ -407,6 +424,76 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('findXmlFilesByName', async (_event, rootPath: string, query: string) => {
     return findXmlFilesByName(rootPath, query);
+  });
+
+  ipcMain.handle('listProjectXmlFiles', async (_event, rootPath: string) => {
+    return listProjectXmlFiles(rootPath);
+  });
+
+  ipcMain.handle('reloadProjectBundle', async (_event, projectFilePath: string) => {
+    return loadProjectFile(projectFilePath);
+  });
+
+  ipcMain.handle(
+    'installCatalogSchema',
+    async (_event, projectFilePath: string, catalogId: string) => {
+      return installCatalogSchema(projectFilePath, catalogId);
+    },
+  );
+
+  ipcMain.handle(
+    'installLocalSchema',
+    async (_event, projectFilePath: string, rngPath: string, cssPath?: string | null) => {
+      return installLocalSchema(projectFilePath, rngPath, cssPath);
+    },
+  );
+
+  ipcMain.handle('pickSchemaFiles', async () => {
+    const dialogParent = getTopNativeDialogWindow() ?? mainWindow;
+    if (!dialogParent) return null;
+
+    // #region agent log
+    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'main.ts:pickSchemaFiles',message:'opening rng picker',data:{usesNativeDialog:!!getTopNativeDialogWindow(),parentTitle:dialogParent.getTitle()},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion
+
+    dialogParent.focus();
+    const rngResult = await dialog.showOpenDialog(dialogParent, {
+      properties: ['openFile'],
+      filters: [{ name: 'RelaxNG schema', extensions: ['rng', 'rnc'] }],
+      title: 'Choose schema file (.rng)',
+    });
+    if (rngResult.canceled || !rngResult.filePaths[0]) return null;
+
+    const cssResult = await dialog.showOpenDialog(dialogParent, {
+      properties: ['openFile'],
+      filters: [{ name: 'CSS stylesheet', extensions: ['css'] }],
+      title: 'Choose CSS file (optional)',
+      message: 'Optional: choose a CSS file for this schema, or Cancel to skip.',
+    });
+
+    // #region agent log
+    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'main.ts:pickSchemaFiles',message:'pick complete',data:{rngBasename:path.basename(rngResult.filePaths[0]),hasCss:!cssResult.canceled},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
+    // #endregion
+
+    return {
+      rngPath: rngResult.filePaths[0],
+      cssPath:
+        cssResult.canceled || !cssResult.filePaths[0] ? null : cssResult.filePaths[0],
+    };
+  });
+
+  ipcMain.handle('createTempDocument', async (_event, content: string) => {
+    const dir = path.join(app.getPath('temp'), 'le-jean-baptiste', `${Date.now()}`);
+    await fs.mkdir(dir, { recursive: true });
+    const filePath = path.join(dir, 'untitled.xml');
+    await fs.writeFile(filePath, content, 'utf-8');
+    return { filePath, filename: 'untitled.xml' };
+  });
+
+  ipcMain.handle('getEncoderName', async () => getEncoderName());
+
+  ipcMain.handle('setEncoderName', async (_event, name: string) => {
+    await setEncoderName(name);
   });
 
   ipcMain.handle('renamePath', async (_event, oldPath: string, newPath: string) => {

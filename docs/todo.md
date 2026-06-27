@@ -2,13 +2,18 @@
 
 See **`docs/project-schema-planning.md`** for Open Project, project metadata, New File (⌘N), schema setup, and skeleton design.
 
+Interface:
+- [x] Dark mode icons
+- [ ] Clean out their icons from the top once those functions are moved.
+- [ ] Add a very thin bar below/in their place indicating xpath tree location.
+
 Menu
-- [ ] Open Project — schema setup when folder has no schema (download or copy local); then project metadata dialog (required Save)
-- [ ] Project → Edition metadata… — edit `schema/project-metadata.json`; optional apply to existing XML files
-- [ ] New File (⌘N) — temp file + Save As; skeleton merges project metadata defaults; prompt on close if unsaved
+- [x] Open Project — schema setup when folder has no schema (download or copy local); then project metadata dialog (required Save)
+- [x] Project → Edition metadata… — edit `schema/project-metadata.json`; optional apply to existing XML files
+- [x] New File (⌘N) — temp file + Save As; skeleton merges project metadata defaults; prompt on close if unsaved (temp file + skeleton done; close prompt still TODO)
 
 Settings
-- [ ] Encoder name — pre-fill `titleStmt/principal` in project metadata dialog on new setup (see planning doc)
+- [x] Encoder name — pre-fill `titleStmt/principal` in project metadata dialog on new setup (see planning doc)
 
 Editor / right rail
 - [ ] Right panel icon strip (icons instead of text labels where space is tight)
@@ -40,6 +45,7 @@ Editor
 - [ ] Improve fixed layout of things in find and replace
 - [ ] Make find and replace super efficient to use with keyboard only
 - [ ] Keyboard shortcuts for all side panels
+- [ ] In source mode, changing name of tag, closing tag should be updated in real time.
 
 4. “New document” + metadata (medium priority, very TEI-relevant)
 Project-wide metadata: planning doc Phase 1–2. Per-file metadata: right-rail panel Phase 3 (default on open).

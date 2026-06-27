@@ -1,3 +1,7 @@
+# Schema handling
+
+**Phase 1 (Open Project schema wizard + project metadata) is implemented** — see `docs/project-schema-planning.md`.
+
 Your idea is **excellent** and aligns perfectly with the needs of **TEI (Text Encoding Initiative) users**, especially in digital humanities. It would make your editor **far more user-friendly** for scholars who want to work with TEI but don’t want to manually handle schemas, namespaces, or boilerplate. Here’s a breakdown of the **strengths, potential challenges, and implementation considerations** for your approach:
 
 ---

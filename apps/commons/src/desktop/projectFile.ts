@@ -1,24 +1,19 @@
 import type { Types } from '@cwrc/leafwriter';
 import { toLocalFileUrl } from './localFileUrl';
+import {
+  type ProjectBundle,
+  type ProjectFileConfig,
+  type ProjectSchemaConfig,
+} from './projectTypes';
 
-export const PROJECT_FILE_NAME = 'jean-baptiste.project.json';
-
-export interface ProjectSchemaConfig {
-  rng: string;
-  css?: string;
-}
-
-export interface ProjectFileConfig {
-  version: 1;
-  name: string;
-  schema?: ProjectSchemaConfig;
-}
-
-export interface ProjectBundle {
-  config: ProjectFileConfig;
-  projectFilePath: string;
-  rootPath: string;
-}
+export {
+  DEFAULT_METADATA_PATH,
+  PROJECT_FILE_NAME,
+  type ProjectBundle,
+  type ProjectFileConfig,
+  type ProjectMetadataFile,
+  type ProjectSchemaConfig,
+} from './projectTypes';
 
 export const joinProjectPath = (rootPath: string, relativePath: string) => {
   const separator = rootPath.includes('\\') ? '\\' : '/';
@@ -52,16 +47,29 @@ export const buildProjectSchemas = (
       .pop()
       ?.replace(/\.(rng|rnc|xsd)$/i, '') ?? config.name;
 
+  const mapping =
+    config.schema.catalogId === 'teiLite' || schemaName.toLowerCase().includes('lite')
+      ? 'teiLite'
+      : config.schema.catalogId === 'orlando' || schemaName.toLowerCase().includes('orlando')
+        ? 'orlando'
+        : 'tei';
+
   const cssUrl = cssPath ? toLocalFileUrl(cssPath) : 'https://cwrc.ca/templates/css/tei.css';
 
   return [
     {
       id: toSchemaId(rngPath),
       name: schemaName.slice(0, 20),
-      mapping: 'tei',
+      mapping,
       rng: [toLocalFileUrl(rngPath)],
       css: [cssUrl],
       editable: true,
     },
   ];
 };
+
+export const getMetadataRelativePath = (config: ProjectFileConfig): string =>
+  config.metadata ?? 'schema/project-metadata.json';
+
+export const getMetadataAbsolutePath = (bundle: ProjectBundle): string =>
+  joinProjectPath(bundle.rootPath, getMetadataRelativePath(bundle.config));

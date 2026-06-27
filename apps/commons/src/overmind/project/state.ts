@@ -16,6 +16,7 @@ export interface OpenTab {
   externalChangePending?: boolean;
   filePath: string;
   filename: string;
+  isTemp?: boolean;
 }
 
 export interface ProjectState {

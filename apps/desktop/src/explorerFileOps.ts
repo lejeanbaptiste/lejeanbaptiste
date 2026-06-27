@@ -11,6 +11,29 @@ export const isPathInside = (parent: string, child: string): boolean => {
   return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
 };
 
+export const listProjectXmlFiles = async (rootPath: string): Promise<NamedPath[]> => {
+  const results: NamedPath[] = [];
+  const schemaDir = path.join(rootPath, 'schema');
+
+  const walk = async (dirPath: string) => {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        if (path.normalize(fullPath) === path.normalize(schemaDir)) continue;
+        await walk(fullPath);
+        continue;
+      }
+      if (entry.name.toLowerCase().endsWith('.xml')) {
+        results.push({ name: entry.name, path: fullPath });
+      }
+    }
+  };
+
+  await walk(rootPath);
+  return results.sort((a, b) => a.path.localeCompare(b.path));
+};
+
 export const findXmlFilesByName = async (
   rootPath: string,
   query: string,

@@ -21,6 +21,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
   const displayTextNodes = useAtomValue(displayTextNodesAtom);
 
   const setExpandedItems = useSetAtom(expandedItemsAtom);
+  const setItems = useSetAtom(itemsAtom);
 
   const [enabled, setEnabled] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -69,7 +70,16 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
     }
   }, [nodeChanged]);
 
-  const handleDocumentLoaded = () => {
+  const handleDocumentLoaded = (success?: boolean) => {
+    if (success === false) {
+      setInitialized(false);
+      setEnabled(false);
+      setItems([]);
+      setExpandedItems([]);
+      setSelectedItems([]);
+      return;
+    }
+
     if (initialized && enabled) {
       // This will force a rebuild of the tree after manual XML editing.
       setTimeout(() => setUpdatePending(true), 1);
