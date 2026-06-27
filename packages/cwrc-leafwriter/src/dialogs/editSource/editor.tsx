@@ -1,6 +1,6 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { XmlMonacoEditor } from '../../components/sourceEditor/XmlMonacoEditor';
 import type { EditSourceDialogProps } from '../type';
 import { useEditor } from './hooks/useEditor';
@@ -18,6 +18,24 @@ export const Editor = ({ initialContent, type }: EditorProps) => {
   const setType = useSetAtom(contentTypeAtom);
   const xmlValidity = useAtomValue(xmlValidityAtom);
   const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
+
+  const lspOptions = useMemo(() => {
+    const bridge = (
+      window as Window & {
+        __ljbLspProject?: { defaultSchemaRng?: string; projectRoot?: string };
+      }
+    ).__ljbLspProject;
+
+    return {
+      defaultSchemaRng: bridge?.defaultSchemaRng,
+      projectRoot: bridge?.projectRoot,
+    };
+  }, []);
+
+  const documentPath = useMemo(() => {
+    const resourcePath = window.writer?.overmindState?.editor?.resource?.filePath;
+    return resourcePath ?? null;
+  }, []);
 
   useEditor(editor);
 
@@ -37,6 +55,8 @@ export const Editor = ({ initialContent, type }: EditorProps) => {
       onEditorInstance={setEditor}
       errorPositions={errorPositions}
       minHeight={600}
+      documentPath={documentPath}
+      lspOptions={lspOptions}
     />
   );
 };

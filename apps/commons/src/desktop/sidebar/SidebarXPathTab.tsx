@@ -21,10 +21,9 @@ import { useXPathJump } from '../xpath/useXPathJump';
 
 interface FlatXPathResult {
   filePath: string;
-  id?: string;
   key: string;
   label: string;
-  matchIndex: number;
+  resultIndex: number;
   xpath: string;
 }
 
@@ -39,10 +38,9 @@ const flattenResults = (
     for (const match of fileResult.matches) {
       flat.push({
         filePath: fileResult.filePath,
-        id: match.id,
-        key: `${fileResult.filePath}-${match.matchIndex}-${match.xpath}`,
+        key: `${fileResult.filePath}-${match.resultIndex}-${match.xpath}`,
         label: match.label,
-        matchIndex: match.matchIndex,
+        resultIndex: match.resultIndex,
         xpath: match.xpath,
       });
     }
@@ -111,8 +109,7 @@ export const SidebarXPathTab = () => {
       jumpToMatch({
         filePath: item.filePath,
         query: query.trim(),
-        matchIndex: item.matchIndex,
-        id: item.id,
+        resultIndex: item.resultIndex,
         xpath: item.xpath,
       });
     },
@@ -194,7 +191,6 @@ export const SidebarXPathTab = () => {
       const { results: nextResults, error: searchError } = await searchXPath({
         activeTabPath,
         customPath,
-        editorFilePath: resource?.filePath ?? null,
         openTabs,
         query,
         rootPath,
@@ -322,7 +318,7 @@ export const SidebarXPathTab = () => {
 
                         return (
                           <ListItemButton
-                            key={`${fileResult.filePath}-${match.matchIndex}-${match.xpath}`}
+                            key={`${fileResult.filePath}-${match.resultIndex}-${match.xpath}`}
                             id={`xpath-result-${currentIndex}`}
                             ref={(element) => {
                               if (element) {

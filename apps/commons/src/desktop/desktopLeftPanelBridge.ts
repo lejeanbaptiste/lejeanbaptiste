@@ -34,4 +34,5 @@ export const openFindPanel = (attempt = 0) => {
   }
 
   bridge.showTab('find');
+  window.dispatchEvent(new CustomEvent(DESKTOP_FIND_FOCUS_EVENT));
 };

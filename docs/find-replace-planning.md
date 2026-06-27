@@ -1,6 +1,6 @@
 # Find & Replace — planning notes
 
-**Status:** Phase 1 shipped (find + hits list + tab navigation + editor scroll/select). Replace actions not yet implemented.  
+**Status:** Find shipped. Replace phase 2a (raw XML text-run replace) shipped. Replace phase 2b (WYSIWYG visible-text) not yet started.  
 **Scope:** Desktop sidebar **Find** tab (`Explorer | Find | XPath`)
 
 ---
@@ -45,32 +45,42 @@
 
 ---
 
-## Phase 2 — Replace actions
+## Phase 2a — Source raw XML replace (done)
+
+Raw XML replace on **single text-run** matches only (no `<`/`>` in matched slice; `resolveTextHitInXml` succeeds). Works from sidebar regardless of view mode; syncs Source Monaco or reloads WYSIWYG when the active file changes.
 
 ### UI
 
-- Enable **Replace** field
-- Buttons: **Replace** (current hit), **Replace all** (scope), optional **Find next** / skip
-- After replace: advance cursor; re-search or adjust offsets
-- Mark tabs dirty; call `updateTabContent`; reload writer if active file changed
+- **Replace** field + **Replace** / **Replace all** buttons
+- Caption when selected hit crosses markup: not replaceable in this mode
+- After replace: re-run search; advance selection
 
-### Replace logic (`replaceText.ts`)
+### Replace logic
 
-```typescript
-// Pseudocode
-replaceHit(content, hit, replacement) → newContent
-replaceAllInContent(content, query, replacement, useRegex) → { content, count }
-```
+| File | Role |
+|------|------|
+| `find/replaceText.ts` | `isReplaceableTextHit`, `replaceHitAtOffset`, `replaceAllInContent`, regex `$1` substitution |
+| `find/replaceValidation.ts` | `validateAndReplaceHit`, `validateAndReplaceAll`, `parseXmlDocument` |
+| `find/applyReplaceToEditor.ts` | Tab/source/visual/disk sync |
+| `find/useFindReplace.ts` | Hook wired from `SidebarFindTab` |
 
 - Single replace: splice `[hit.start, hit.end)` with replacement string
-- Regex replace: use `String.replace` / `replaceAll` with captured groups (`$1`, etc.)
-- After each replace in UI: re-run search on that file **or** adjust following hit offsets by `(replacement.length - match.length)`
+- Regex replace: `$1`, `$2`, `$$` in replacement string
+- Replace all: open tabs → `updateTabContent` + dirty; closed files → `electronAPI.writeFile`
+- Reject if `parseXmlDocument(newContent)` fails
 
 ### Sync with editor
 
 1. Update `openTabs[].content` via `updateTabContent`
-2. `markTabDirty(true)`
-3. If active tab: reload document in LEAF-Writer (`loadDocumentInWriter` or writer API)
+2. `markTabDirty(true)` for open tabs
+3. Active file in Source mode → `setSourceCurrentContent`
+4. Active file in WYSIWYG → `loadDocumentInWriter`
+
+---
+
+## Phase 2b — WYSIWYG visible-text replace (future)
+
+Find/replace on **visible text** only (tags invisible), preserving inline markup. Example: find `中国` in `中<place>国</place>`, replace with `泰国` → `泰<place>国</place>`. Requires a visible-text index shared by find and replace; not part of phase 2a.
 
 ---
 
@@ -185,10 +195,10 @@ Find **does not** reuse `useXPathJump` — text hits use line/column, not xpath/
 
 1. Should find be case-sensitive by default, with a “Match case” checkbox?
 2. Persist last find/replace/scope in session or project file?
-3. For replace-all on disk-only files (not open), write via `electronAPI.writeFile` without opening tab?
+3. ~~For replace-all on disk-only files (not open), write via `electronAPI.writeFile` without opening tab?~~ **Yes** — phase 2a writes closed files directly.
 
 ---
 
 ## Summary
 
-Phase 1 delivers **find across scopes** with a **hits list** and **tab navigation**, searching raw XML only. Phase 2 adds **replace / replace all** with **DOMParser well-formedness checks** after each change (especially for regex and markup-touching replacements). Phase 3 adds **editor highlight** at line/column.
+Phase 1 delivers **find across scopes** with a **hits list** and **tab navigation**, searching raw XML only. Phase 2a adds **raw XML replace / replace all** with **DOMParser well-formedness checks**. Phase 2b adds **WYSIWYG visible-text replace**. Phase 3 adds **editor highlight** at line/column.

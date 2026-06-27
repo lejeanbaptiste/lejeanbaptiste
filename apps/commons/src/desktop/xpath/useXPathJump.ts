@@ -1,65 +1,50 @@
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useEffect, useRef } from 'react';
+import { findEditorNodeByMatchingTeiXPath } from './editorTeiXPath';
 import { findEditorNodeByTeiXPath } from './teiXPathWalker';
 import type { PendingXPathJump } from './types';
+import { applyXPathHighlight, clearXPathHighlights } from './xpathEditorHighlights';
 import { performXPathJumpInSourceEditor } from './xpathSourceJump';
-
-const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
 
 const isSourceEditorMode = () =>
   window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
-const normalizeXPathForEditor = (xpath: string) => xpath.replace(/^\/+/, '');
+const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
 
 const selectEditorElement = (element: Element, focusEditor: boolean) => {
   if (!window.writer?.editor) return false;
+
+  applyXPathHighlight(element);
+
   const xpath = window.writer.utilities.getElementXPath(element);
-  if (!xpath) return false;
-  window.writer.utilities.selectNode({ xpath }, false, focusEditor);
+  if (xpath) {
+    window.writer.utilities.selectNode({ xpath }, false, focusEditor);
+  }
+
   return true;
 };
 
 const performVisualJump = (jump: PendingXPathJump, focusEditor = false): boolean => {
-  if (!window.writer?.editor) return false;
+  if (!window.writer?.editor || !jump.xpath) return false;
 
   const body = window.writer.editor.getBody();
 
-  if (jump.id) {
-    const element = body.querySelector(`#${CSS.escape(jump.id)}`);
-    if (element && selectEditorElement(element, focusEditor)) {
-      return true;
+  let target = findEditorNodeByTeiXPath(body, jump.xpath);
+
+  if (!target) {
+    target = findEditorNodeByMatchingTeiXPath(body, jump.xpath, jump.query);
+  }
+
+  if (!target && jump.query) {
+    const nodes = window.writer.utilities.evaluateXPathAll(body, jump.query);
+    const node = nodes[jump.resultIndex];
+    if (node && isElement(node)) {
+      target = node;
     }
   }
 
-  if (jump.xpath) {
-    const byTeiWalk = findEditorNodeByTeiXPath(body, jump.xpath);
-    if (byTeiWalk && selectEditorElement(byTeiWalk, focusEditor)) {
-      return true;
-    }
-
-    const cwrcXpath = normalizeXPathForEditor(jump.xpath);
-    window.writer.utilities.selectNode({ xpath: cwrcXpath }, false, focusEditor);
-    const selected = window.writer.editor.selection.getNode();
-    if (selected && isElement(selected) && body.contains(selected)) {
-      return true;
-    }
-
-    const node = window.writer.utilities.evaluateXPath(body, cwrcXpath);
-    if (node && typeof node !== 'boolean' && typeof node !== 'number' && typeof node !== 'string') {
-      if (isElement(node) && selectEditorElement(node, focusEditor)) {
-        return true;
-      }
-    }
-  }
-
-  const nodes = window.writer.utilities.evaluateXPathAll(body, jump.query);
-  const node = nodes[jump.matchIndex];
-  if (node && isElement(node)) {
-    const xpath = window.writer.utilities.getElementXPath(node);
-    if (xpath) {
-      window.writer.utilities.selectNode({ xpath }, false, focusEditor);
-      return true;
-    }
+  if (target && selectEditorElement(target, focusEditor)) {
+    return true;
   }
 
   return false;
@@ -85,6 +70,11 @@ export const useXPathJump = (onAfterJump?: () => void) => {
   onAfterJumpRef.current = onAfterJump;
   resourceFilePathRef.current = resource?.filePath;
   activeTabPathRef.current = activeTabPath;
+
+  useEffect(() => {
+    resourceFilePathRef.current = resource?.filePath;
+    activeTabPathRef.current = activeTabPath;
+  }, [activeTabPath, resource?.filePath]);
 
   const completeJump = useCallback(() => {
     pendingJumpRef.current = null;
@@ -112,7 +102,7 @@ export const useXPathJump = (onAfterJump?: () => void) => {
   }, [completeJump]);
 
   const schedulePendingJumpRetries = useCallback(() => {
-    for (const delay of [0, 100, 350, 800, 1500]) {
+    for (const delay of [0, 100, 350, 800, 1500, 2500]) {
       setTimeout(() => {
         if (pendingJumpRef.current) tryPerformPendingJump();
       }, delay);
@@ -133,6 +123,8 @@ export const useXPathJump = (onAfterJump?: () => void) => {
       writer.event('documentLoaded').unsubscribe(onDocumentLoaded);
     };
   }, [schedulePendingJumpRetries]);
+
+  useEffect(() => () => clearXPathHighlights(), []);
 
   const jumpToMatch = useCallback(
     (jump: PendingXPathJump) => {

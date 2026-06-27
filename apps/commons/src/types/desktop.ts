@@ -71,6 +71,13 @@ export interface ElectronAPI {
     args?: unknown;
   }) => Promise<unknown>;
   onNativeDialogClosed: (callback: (id: string) => void) => () => void;
+  lspStart: (options?: {
+    defaultSchemaRng?: string;
+    projectRoot?: string;
+  }) => Promise<{ ok: boolean; error?: string; initializationOptions?: unknown }>;
+  lspStop: () => Promise<{ ok: boolean }>;
+  lspSend: (message: unknown) => Promise<{ ok: boolean }>;
+  onLspMessage: (callback: (message: unknown) => void) => () => void;
 }
 
 declare global {

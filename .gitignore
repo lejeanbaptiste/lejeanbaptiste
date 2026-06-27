@@ -3,7 +3,9 @@
 notes.md
 Makefile
 
-#packages
+# Desktop bundled binaries (downloaded via npm run lemminx:download)
+apps/desktop/resources/lemminx/lemminx-*
+
 **/node_modules
 **/packates/dist
 **/packates/docs

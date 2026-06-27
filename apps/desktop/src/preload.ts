@@ -65,6 +65,13 @@ export interface ElectronAPI {
     args?: unknown;
   }) => Promise<unknown>;
   onNativeDialogClosed: (callback: (id: string) => void) => () => void;
+  lspStart: (options?: {
+    defaultSchemaRng?: string;
+    projectRoot?: string;
+  }) => Promise<{ ok: boolean; error?: string; initializationOptions?: unknown }>;
+  lspStop: () => Promise<{ ok: boolean }>;
+  lspSend: (message: unknown) => Promise<{ ok: boolean }>;
+  onLspMessage: (callback: (message: unknown) => void) => () => void;
 }
 
 const electronAPI: ElectronAPI = {
@@ -113,6 +120,14 @@ const electronAPI: ElectronAPI = {
     const listener = (_event: Electron.IpcRendererEvent, id: string) => callback(id);
     ipcRenderer.on('native-dialog:closed', listener);
     return () => ipcRenderer.removeListener('native-dialog:closed', listener);
+  },
+  lspStart: (options) => ipcRenderer.invoke('lsp:start', options),
+  lspStop: () => ipcRenderer.invoke('lsp:stop'),
+  lspSend: (message) => ipcRenderer.invoke('lsp:send', message),
+  onLspMessage: (callback: (message: unknown) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, message: unknown) => callback(message);
+    ipcRenderer.on('lsp:message', listener);
+    return () => ipcRenderer.removeListener('lsp:message', listener);
   },
 };
 

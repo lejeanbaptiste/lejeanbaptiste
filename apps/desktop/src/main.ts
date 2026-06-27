@@ -18,6 +18,7 @@ import {
   renamePath,
 } from './explorerFileOps';
 import { OpenFileWatcher } from './openFileWatcher';
+import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
 
 const APP_NAME = 'Le Jean-Baptiste';
 
@@ -507,6 +508,7 @@ const createWindow = async () => {
     openFileWatcher?.dispose();
     openFileWatcher = null;
     closeAllNativeDialogs();
+    disposeLemminx();
     mainWindow = null;
   });
 
@@ -530,6 +532,7 @@ app.whenReady().then(() => {
   registerCrcaoProtocol();
   registerIpcHandlers();
   registerNativeDialogIpc();
+  registerLemminxIpc(() => mainWindow);
   void createWindow();
 
   app.on('activate', () => {
@@ -542,5 +545,6 @@ app.on('window-all-closed', () => {
     serverProcess.kill();
     serverProcess = null;
   }
+  disposeLemminx();
   if (process.platform !== 'darwin') app.quit();
 });

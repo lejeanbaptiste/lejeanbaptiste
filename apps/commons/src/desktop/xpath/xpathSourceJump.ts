@@ -17,8 +17,9 @@ export const performXPathJumpInSourceEditor = (jump: PendingXPathJump): boolean 
   return (
     window.__leafWriterSourceFind?.revealRange({
       content,
-      start: position.start,
       end: position.end,
+      focusEditor: false,
+      start: position.start,
     }) ?? false
   );
 };

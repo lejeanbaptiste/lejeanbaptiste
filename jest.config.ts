@@ -1,4 +1,7 @@
+import { createRequire } from 'module';
 import type { Config } from '@jest/types';
+
+const require = createRequire(import.meta.url);
 
 const config: Config.InitialOptions = {
   // collectCoverage: true,
@@ -61,7 +64,10 @@ const config: Config.InitialOptions = {
       displayName: { name: 'commons', color: 'red' },
       clearMocks: true,
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
-      moduleNameMapper: { '^dexie$': require.resolve('dexie') },
+      moduleNameMapper: {
+        '^@src/(.*)$': '<rootDir>/apps/commons/src/$1',
+        '^dexie$': require.resolve('dexie'),
+      },
       resetMocks: false,
       setupFiles: ['fake-indexeddb/auto'],
       testEnvironment: 'jsdom',
