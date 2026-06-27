@@ -1,3 +1,4 @@
+import { focusFirstBodyParagraph } from '@src/desktop/focusFirstBodyParagraph';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
 import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
 import { schemas } from '@src/config/schemas';
@@ -122,9 +123,16 @@ export const useLeafWriter = () => {
   const loadDocumentInWriter = async (filePath: string, content: string) => {
     if (!window.writer) return;
     window.writer.overmindActions?.ui?.resetSourceEditor?.();
+    window.writer.overmindActions?.document?.setDocumentUrl?.(filePath);
     window.writer.loadDocumentXML(content);
+    window.writer.overmindActions?.document?.setDocumentXml?.(content);
+    window.writer.overmindActions?.editor?.setContentHasChanged?.(false);
+    // #region agent log
+    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'useLeafWriter.tsx:loadDocumentInWriter',message:'loaded document in writer',data:{filePath,contentLength:content.length},timestamp:Date.now(),hypothesisId:'S6'})}).catch(()=>{});
+    // #endregion
     window.writer.layoutManager?.resizeEditor?.();
     window.writer.layoutManager?.resizeAll?.();
+    focusFirstBodyParagraph();
   };
 
   const setEditorEvents = () => {
@@ -158,6 +166,7 @@ export const useLeafWriter = () => {
       leafWriter.autosave = autosave;
       tapDocument(resource, schemaName);
       subscribeToTimerService(leafWriter);
+      if (isDesktop()) focusFirstBodyParagraph();
     });
     // leafWriterEvents.push(onLoadEvent);
     setLeafWriterEvents((prev) => [...prev, onLoadEvent]);

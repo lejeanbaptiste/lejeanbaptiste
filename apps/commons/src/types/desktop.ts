@@ -15,7 +15,12 @@ export interface NativeMessageBoxOptions {
   type?: 'error' | 'info' | 'none' | 'question' | 'warning';
 }
 
-export type NativeDialogType = 'settings' | 'schemaPicker';
+export type NativeDialogType = 'settings' | 'schemaPicker' | 'schemaSetup' | 'projectMetadata';
+
+export interface PickSchemaFilesResult {
+  rngPath: string;
+  cssPath: string | null;
+}
 
 export interface NativeDialogOptions {
   id: string;
@@ -51,6 +56,18 @@ export interface ElectronAPI {
   syncWatchedFiles: (paths: string[]) => Promise<void>;
   ignoreFileChange: (filePath: string, mtimeMs: number) => Promise<void>;
   findXmlFilesByName: (rootPath: string, query: string) => Promise<NamedPath[]>;
+  listProjectXmlFiles: (rootPath: string) => Promise<NamedPath[]>;
+  reloadProjectBundle: (projectFilePath: string) => Promise<ProjectBundle | null>;
+  installCatalogSchema: (projectFilePath: string, catalogId: string) => Promise<ProjectBundle>;
+  installLocalSchema: (
+    projectFilePath: string,
+    rngPath: string,
+    cssPath?: string | null,
+  ) => Promise<ProjectBundle>;
+  pickSchemaFiles: () => Promise<PickSchemaFilesResult | null>;
+  createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
+  getEncoderName: () => Promise<string>;
+  setEncoderName: (name: string) => Promise<void>;
   renamePath: (oldPath: string, newPath: string) => Promise<void>;
   movePath: (sourcePath: string, destDir: string) => Promise<string>;
   deletePath: (targetPath: string) => Promise<void>;
@@ -84,8 +101,10 @@ declare global {
   interface Window {
     electronAPI?: ElectronAPI;
     __ljbCommonsUi?: {
+      encoderName: string;
       skipCopyPasteHelp: boolean;
       skipExplorerDeleteConfirm: boolean;
+      setEncoderName: (name: string) => void | Promise<void>;
       setSkipCopyPasteHelp: (value: boolean) => void;
       setSkipExplorerDeleteConfirm: (value: boolean) => void;
     };

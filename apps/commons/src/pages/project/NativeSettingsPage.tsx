@@ -8,13 +8,14 @@ import {
   Select,
   Stack,
   Switch,
+  TextField,
   Typography,
 } from '@mui/material';
 import { locales, type Locales } from '@src/i18n';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import type { PaletteMode } from '@src/types';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 
@@ -31,6 +32,8 @@ export const NativeSettingsPage = () => {
     switchLanguage,
   } = useActions().ui;
 
+  const [encoderName, setEncoderName] = useState('');
+
   const syncParent = useCallback(
     async (method: string, args?: unknown) => {
       if (!window.electronAPI?.nativeDialogInvoke) return;
@@ -38,6 +41,15 @@ export const NativeSettingsPage = () => {
     },
     [dialogId],
   );
+
+  useEffect(() => {
+    if (!isDesktop()) return;
+
+    void (async () => {
+      const name = (await syncParent('getEncoderName')) as string;
+      if (typeof name === 'string') setEncoderName(name);
+    })();
+  }, [dialogId, syncParent]);
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -71,6 +83,10 @@ export const NativeSettingsPage = () => {
   const handleSkipCopyPasteHelpChange = async (checked: boolean) => {
     setSkipCopyPasteHelp(checked);
     await syncParent('setSkipCopyPasteHelp', checked);
+  };
+
+  const handleEncoderNameBlur = async () => {
+    await syncParent('setEncoderName', encoderName);
   };
 
   const handleClose = () => {
@@ -129,6 +145,16 @@ export const NativeSettingsPage = () => {
             ))}
           </Select>
         </FormControl>
+
+        <TextField
+          fullWidth
+          label="Encoder name"
+          helperText="Pre-fills Principal on first project metadata setup only."
+          onBlur={() => void handleEncoderNameBlur()}
+          onChange={(event) => setEncoderName(event.target.value)}
+          size="small"
+          value={encoderName}
+        />
 
         <Typography variant="subtitle2">{t('LWC.desktop.settings.warnings')}</Typography>
 

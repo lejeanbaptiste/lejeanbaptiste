@@ -1,6 +1,6 @@
 import { BrowserWindow, dialog, ipcMain, type MessageBoxOptions } from 'electron';
 
-export type NativeDialogType = 'settings' | 'schemaPicker';
+export type NativeDialogType = 'settings' | 'schemaPicker' | 'schemaSetup' | 'projectMetadata';
 
 interface NativeDialogConfig {
   route: string;
@@ -27,6 +27,22 @@ const NATIVE_DIALOG_CONFIG: Record<NativeDialogType, NativeDialogConfig> = {
     minWidth: 360,
     minHeight: 280,
     modal: false,
+  },
+  schemaSetup: {
+    route: '/project/native/schema-setup',
+    width: 520,
+    height: 420,
+    minWidth: 400,
+    minHeight: 320,
+    modal: true,
+  },
+  projectMetadata: {
+    route: '/project/native/project-metadata',
+    width: 640,
+    height: 720,
+    minWidth: 480,
+    minHeight: 480,
+    modal: true,
   },
 };
 
@@ -145,9 +161,26 @@ export const registerNativeDialogIpc = () => {
         }
       });
 
-      await dialogWindow.loadURL(`${url}?dialogId=${encodeURIComponent(payload.id)}`);
-      dialogWindow.show();
-      dialogWindow.focus();
+      const loadUrl = `${url}?dialogId=${encodeURIComponent(payload.id)}`;
+      const openStarted = Date.now();
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'nativeDialogs.ts:openNativeDialog',message:'dialog open started',data:{type:payload.type,dialogId:payload.id},timestamp:Date.now(),hypothesisId:'S1'})}).catch(()=>{});
+      // #endregion
+
+      await new Promise<void>((resolve, reject) => {
+        dialogWindow.once('ready-to-show', () => {
+          // #region agent log
+          fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'nativeDialogs.ts:openNativeDialog',message:'dialog ready-to-show',data:{type:payload.type,dialogId:payload.id,elapsedMs:Date.now()-openStarted},timestamp:Date.now(),hypothesisId:'S2'})}).catch(()=>{});
+          // #endregion
+          dialogWindow.show();
+          dialogWindow.focus();
+          resolve();
+        });
+        dialogWindow.webContents.once('did-fail-load', (_event, _code, description) => {
+          reject(new Error(description));
+        });
+        void dialogWindow.loadURL(loadUrl).catch(reject);
+      });
       return { ok: true };
     },
   );
@@ -175,4 +208,12 @@ export const closeAllNativeDialogs = () => {
   for (const id of [...nativeDialogWindows.keys()]) {
     closeNativeDialog(id);
   }
+};
+
+/** Prefer an open native dialog as parent for nested system dialogs (e.g. file picker). */
+export const getTopNativeDialogWindow = (): BrowserWindow | null => {
+  for (const entry of nativeDialogWindows.values()) {
+    if (!entry.window.isDestroyed()) return entry.window;
+  }
+  return null;
 };

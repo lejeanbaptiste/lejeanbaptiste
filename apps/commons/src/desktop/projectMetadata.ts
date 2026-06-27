@@ -1,0 +1,301 @@
+import {
+  getMetadataAbsolutePath,
+  getMetadataRelativePath,
+  joinProjectPath,
+  type ProjectBundle,
+} from './projectFile';
+import {
+  BULK_APPLY_EXCLUDED_PATHS,
+  getAllManagedPaths,
+  type MetadataFieldDefinition,
+} from './schemaMetadataFields';
+import type { ProjectMetadataFile } from './projectTypes';
+
+const TEI_NS = 'http://www.tei-c.org/ns/1.0';
+
+const emptyMetadata = (catalogId?: string): ProjectMetadataFile => ({
+  version: 1,
+  catalogId,
+  fields: {},
+  custom: [],
+});
+
+export const readProjectMetadata = async (
+  bundle: ProjectBundle,
+): Promise<ProjectMetadataFile | null> => {
+  if (!window.electronAPI?.readFile) return null;
+  const filePath = getMetadataAbsolutePath(bundle);
+
+  try {
+    const raw = await window.electronAPI.readFile(filePath);
+    const parsed = JSON.parse(raw) as ProjectMetadataFile;
+    return {
+      version: 1,
+      catalogId: parsed.catalogId,
+      fields: parsed.fields ?? {},
+      custom: Array.isArray(parsed.custom) ? parsed.custom : [],
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const metadataFileExists = async (bundle: ProjectBundle): Promise<boolean> => {
+  if (!window.electronAPI?.readFile) return false;
+  try {
+    await window.electronAPI.readFile(getMetadataAbsolutePath(bundle));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const sanitizeMetadataForSave = (
+  draft: ProjectMetadataFile,
+): ProjectMetadataFile => {
+  const fields: Record<string, string> = {};
+  for (const [key, value] of Object.entries(draft.fields ?? {})) {
+    const trimmed = value?.trim();
+    if (trimmed) fields[key] = trimmed;
+  }
+
+  const custom = (draft.custom ?? [])
+    .map((row) => ({
+      path: row.path?.trim() ?? '',
+      label: row.label?.trim() || row.path?.trim() || 'Custom field',
+      value: row.value?.trim() ?? '',
+    }))
+    .filter((row) => row.path);
+
+  return {
+    version: 1,
+    catalogId: draft.catalogId,
+    fields,
+    custom,
+  };
+};
+
+export const writeProjectMetadata = async (
+  bundle: ProjectBundle,
+  draft: ProjectMetadataFile,
+): Promise<void> => {
+  if (!window.electronAPI?.writeFile) {
+    throw new Error('File write unavailable');
+  }
+
+  const sanitized = sanitizeMetadataForSave(draft);
+  const filePath = getMetadataAbsolutePath(bundle);
+  const schemaDir = joinProjectPath(bundle.rootPath, 'schema');
+
+  if (window.electronAPI.createDirectory) {
+    try {
+      await window.electronAPI.createDirectory(bundle.rootPath, 'schema');
+    } catch {
+      // may already exist
+    }
+  }
+
+  await window.electronAPI.writeFile(filePath, JSON.stringify(sanitized, null, 2));
+
+  if (!bundle.config.metadata) {
+    bundle.config.metadata = getMetadataRelativePath(bundle.config);
+  }
+};
+
+export const createInitialMetadata = (
+  bundle: ProjectBundle,
+  encoderName?: string,
+): ProjectMetadataFile => {
+  const base = emptyMetadata(bundle.config.schema?.catalogId);
+  if (encoderName?.trim()) {
+    base.fields['titleStmt/principal'] = encoderName.trim();
+  }
+  return base;
+};
+
+const findTeiHeader = (doc: Document): Element | null => {
+  const tei = doc.documentElement;
+  if (!tei) return null;
+  const header =
+    tei.getElementsByTagNameNS(TEI_NS, 'teiHeader')[0] ??
+    tei.getElementsByTagName('teiHeader')[0];
+  return header ?? null;
+};
+
+const ensurePath = (root: Element, parts: string[]): Element => {
+  let current: Element = root;
+  for (const part of parts) {
+    let child =
+      current.getElementsByTagNameNS(TEI_NS, part)[0] ??
+      current.getElementsByTagName(part)[0];
+    if (!child) {
+      child = root.ownerDocument!.createElementNS(TEI_NS, part);
+      current.appendChild(child);
+    }
+    current = child;
+  }
+  return current;
+};
+
+const setHeaderPathValue = (header: Element, teiPath: string, value: string) => {
+  const parts = teiPath.split('/').filter(Boolean);
+  const leaf = parts.pop();
+  if (!leaf) return;
+  const parent = parts.length ? ensurePath(header, parts) : header;
+  let node =
+    parent.getElementsByTagNameNS(TEI_NS, leaf)[0] ??
+    parent.getElementsByTagName(leaf)[0];
+  if (!node) {
+    node = header.ownerDocument!.createElementNS(TEI_NS, leaf);
+    parent.appendChild(node);
+  }
+  node.textContent = value;
+};
+
+const clearHeaderPath = (header: Element, teiPath: string) => {
+  const parts = teiPath.split('/').filter(Boolean);
+  const leaf = parts.pop();
+  if (!leaf) return;
+  let current: Element = header;
+  for (const part of parts) {
+    const next =
+      current.getElementsByTagNameNS(TEI_NS, part)[0] ??
+      current.getElementsByTagName(part)[0];
+    if (!next) return;
+    current = next;
+  }
+  const node =
+    current.getElementsByTagNameNS(TEI_NS, leaf)[0] ??
+    current.getElementsByTagName(leaf)[0];
+  node?.parentNode?.removeChild(node);
+};
+
+const applyMetadataToXml = (
+  xml: string,
+  entries: Array<{ path: string; value: string }>,
+  options: { clearRemovedPaths?: string[] },
+): string => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'application/xml');
+  if (doc.querySelector('parsererror')) return xml;
+
+  const header = findTeiHeader(doc);
+  if (!header) return xml;
+
+  for (const { path, value } of entries) {
+    if (BULK_APPLY_EXCLUDED_PATHS.has(path)) continue;
+    if (value.trim()) {
+      setHeaderPathValue(header, path, value.trim());
+    }
+  }
+
+  for (const path of options.clearRemovedPaths ?? []) {
+    if (BULK_APPLY_EXCLUDED_PATHS.has(path)) continue;
+    clearHeaderPath(header, path);
+  }
+
+  return new XMLSerializer().serializeToString(doc);
+};
+
+export interface ApplyMetadataResult {
+  updated: number;
+  skipped: number;
+  errors: string[];
+}
+
+export const applyMetadataToProjectFiles = async (
+  bundle: ProjectBundle,
+  metadata: ProjectMetadataFile,
+  options: { clearRemovedFromFiles?: boolean; previous?: ProjectMetadataFile | null },
+): Promise<ApplyMetadataResult> => {
+  if (!window.electronAPI?.listProjectXmlFiles || !window.electronAPI.readFile) {
+    throw new Error('Desktop file APIs unavailable');
+  }
+
+  const entries: Array<{ path: string; value: string }> = [];
+
+  for (const [path, value] of Object.entries(metadata.fields)) {
+    entries.push({ path, value });
+  }
+  for (const row of metadata.custom) {
+    entries.push({ path: row.path, value: row.value });
+  }
+
+  const clearRemovedPaths: string[] = [];
+  if (options.clearRemovedFromFiles && options.previous) {
+    const prevPaths = new Set([
+      ...Object.keys(options.previous.fields ?? {}),
+      ...(options.previous.custom ?? []).map((row) => row.path),
+    ]);
+    const nextPaths = new Set(entries.map((entry) => entry.path));
+    for (const path of prevPaths) {
+      if (!nextPaths.has(path)) clearRemovedPaths.push(path);
+    }
+  }
+
+  const files = await window.electronAPI.listProjectXmlFiles(bundle.rootPath);
+  let updated = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (const file of files) {
+    try {
+      const original = await window.electronAPI.readFile(file.path);
+      const next = applyMetadataToXml(original, entries, { clearRemovedPaths });
+      if (next === original) {
+        skipped += 1;
+        continue;
+      }
+      await window.electronAPI.writeFile(file.path, next);
+      updated += 1;
+    } catch (error) {
+      skipped += 1;
+      errors.push(
+        `${file.name}: ${error instanceof Error ? error.message : 'Failed to update'}`,
+      );
+    }
+  }
+
+  return { updated, skipped, errors };
+};
+
+export const mergeMetadataIntoHeader = (
+  skeletonXml: string,
+  metadata: ProjectMetadataFile,
+): string => {
+  const entries: Array<{ path: string; value: string }> = [];
+  for (const [path, value] of Object.entries(metadata.fields ?? {})) {
+    if (value.trim()) entries.push({ path, value });
+  }
+  for (const row of metadata.custom ?? []) {
+    if (row.path.trim() && row.value.trim()) {
+      entries.push({ path: row.path, value: row.value });
+    }
+  }
+  if (entries.length === 0) return skeletonXml;
+  return applyMetadataToXml(skeletonXml, entries, {});
+};
+
+export const metadataEntriesFromFile = (metadata: ProjectMetadataFile) => {
+  const entries: Array<{ path: string; value: string; label: string }> = [];
+  for (const [path, value] of Object.entries(metadata.fields)) {
+    entries.push({ path, value, label: path });
+  }
+  for (const row of metadata.custom) {
+    entries.push({ path: row.path, value: row.value, label: row.label });
+  }
+  return entries;
+};
+
+export const getManagedFieldValues = (
+  metadata: ProjectMetadataFile | null,
+  fieldDefinitions: MetadataFieldDefinition[],
+): Record<string, string> => {
+  const values: Record<string, string> = {};
+  for (const field of fieldDefinitions) {
+    values[field.path] = metadata?.fields?.[field.path] ?? '';
+  }
+  return values;
+};
+
+export { getAllManagedPaths, emptyMetadata };

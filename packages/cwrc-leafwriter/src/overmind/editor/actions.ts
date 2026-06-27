@@ -150,6 +150,50 @@ export const setAnnotationrMode = ({ state }: Context, value: number) => {
   return state.editor.annotationModes.find((annotationMode) => annotationMode.value === value);
 };
 
+const isProjectSchemaId = (id: string) => id.startsWith('project-');
+
+/** Drop project-local schemas when switching projects (ids are filename-based, not project-unique). */
+export const clearProjectSchemas = ({ state }: Context) => {
+  if (!window.writer) return;
+
+  window.writer.schemaManager.schemas = window.writer.schemaManager.schemas.filter(
+    (schema) => !isProjectSchemaId(schema.id),
+  );
+
+  const kept: Record<string, Schema> = {};
+  for (const [id, schema] of Object.entries(state.editor.schemas)) {
+    if (!isProjectSchemaId(id)) {
+      kept[id] = schema;
+    }
+  }
+  state.editor.schemas = kept;
+  // #region agent log
+  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'editor/actions.ts:clearProjectSchemas',message:'cleared project schemas',data:{remainingIds:Object.keys(kept),writerSchemaCount:window.writer.schemaManager.schemas.length},timestamp:Date.now(),hypothesisId:'K3'})}).catch(()=>{});
+  // #endregion
+};
+
+const cloneSchema = (schema: Schema): Schema => ({
+  css: [...schema.css],
+  editable: schema.editable ?? true,
+  id: schema.id,
+  mapping: schema.mapping,
+  name: schema.name,
+  rng: [...schema.rng],
+});
+
+/** Register project-local schemas (desktop) without persisting to customSchemas DB. */
+export const registerProjectSchemas = ({ state }: Context, schemas: Schema[]) => {
+  if (!window.writer) return;
+
+  for (const schema of schemas) {
+    const entry = cloneSchema(schema);
+    state.editor.schemas[entry.id] = entry;
+  }
+  // #region agent log
+  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'editor/actions.ts:registerProjectSchemas',message:'registered in leafwriter editor state',data:{schemaIds:schemas.map(s=>s.id),editorSchemaCount:Object.keys(state.editor.schemas).length},timestamp:Date.now(),hypothesisId:'K5'})}).catch(()=>{});
+  // #endregion
+};
+
 /**
  * It adds a new schema to the list of schemas
  * @param schema - Omit<Schema, 'id'>

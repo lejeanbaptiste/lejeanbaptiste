@@ -19,8 +19,13 @@ export interface NativeMessageBoxOptions {
 
 export interface NativeDialogOptions {
   id: string;
-  type: 'settings' | 'schemaPicker';
+  type: 'settings' | 'schemaPicker' | 'schemaSetup' | 'projectMetadata';
   title?: string;
+}
+
+export interface PickSchemaFilesResult {
+  rngPath: string;
+  cssPath: string | null;
 }
 
 export interface NamedPath {
@@ -45,6 +50,18 @@ export interface ElectronAPI {
   syncWatchedFiles: (paths: string[]) => Promise<void>;
   ignoreFileChange: (filePath: string, mtimeMs: number) => Promise<void>;
   findXmlFilesByName: (rootPath: string, query: string) => Promise<NamedPath[]>;
+  listProjectXmlFiles: (rootPath: string) => Promise<NamedPath[]>;
+  reloadProjectBundle: (projectFilePath: string) => Promise<ProjectBundle | null>;
+  installCatalogSchema: (projectFilePath: string, catalogId: string) => Promise<ProjectBundle>;
+  installLocalSchema: (
+    projectFilePath: string,
+    rngPath: string,
+    cssPath?: string | null,
+  ) => Promise<ProjectBundle>;
+  pickSchemaFiles: () => Promise<PickSchemaFilesResult | null>;
+  createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
+  getEncoderName: () => Promise<string>;
+  setEncoderName: (name: string) => Promise<void>;
   renamePath: (oldPath: string, newPath: string) => Promise<void>;
   movePath: (sourcePath: string, destDir: string) => Promise<string>;
   deletePath: (targetPath: string) => Promise<void>;
@@ -89,6 +106,18 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('ignoreFileChange', filePath, mtimeMs),
   findXmlFilesByName: (rootPath: string, query: string) =>
     ipcRenderer.invoke('findXmlFilesByName', rootPath, query),
+  listProjectXmlFiles: (rootPath: string) =>
+    ipcRenderer.invoke('listProjectXmlFiles', rootPath),
+  reloadProjectBundle: (projectFilePath: string) =>
+    ipcRenderer.invoke('reloadProjectBundle', projectFilePath),
+  installCatalogSchema: (projectFilePath: string, catalogId: string) =>
+    ipcRenderer.invoke('installCatalogSchema', projectFilePath, catalogId),
+  installLocalSchema: (projectFilePath: string, rngPath: string, cssPath?: string | null) =>
+    ipcRenderer.invoke('installLocalSchema', projectFilePath, rngPath, cssPath),
+  pickSchemaFiles: () => ipcRenderer.invoke('pickSchemaFiles'),
+  createTempDocument: (content: string) => ipcRenderer.invoke('createTempDocument', content),
+  getEncoderName: () => ipcRenderer.invoke('getEncoderName'),
+  setEncoderName: (name: string) => ipcRenderer.invoke('setEncoderName', name),
   renamePath: (oldPath: string, newPath: string) =>
     ipcRenderer.invoke('renamePath', oldPath, newPath),
   movePath: (sourcePath: string, destDir: string) =>

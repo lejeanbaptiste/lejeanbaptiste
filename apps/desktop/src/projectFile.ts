@@ -1,35 +1,34 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-export const PROJECT_FILE_NAME = 'jean-baptiste.project.json';
+import {
+  DEFAULT_METADATA_PATH,
+  PROJECT_FILE_NAME,
+  type ProjectBundle,
+  type ProjectFileConfig,
+  type ProjectSchemaConfig,
+} from './projectTypes';
 
-export interface ProjectSchemaConfig {
-  rng: string;
-  css?: string;
-}
-
-export interface ProjectFileConfig {
-  version: 1;
-  name: string;
-  schema?: ProjectSchemaConfig;
-}
-
-export interface ProjectBundle {
-  config: ProjectFileConfig;
-  projectFilePath: string;
-  rootPath: string;
-}
+export {
+  DEFAULT_METADATA_PATH,
+  PROJECT_FILE_NAME,
+  type ProjectBundle,
+  type ProjectFileConfig,
+  type ProjectMetadataFile,
+  type ProjectSchemaConfig,
+} from './projectTypes';
 
 const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): ProjectFileConfig => ({
   version: 1,
   name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : path.basename(rootPath),
   schema:
     raw.schema && typeof raw.schema.rng === 'string' && raw.schema.rng.trim()
-      ? {
-          rng: raw.schema.rng,
-          css: typeof raw.schema.css === 'string' ? raw.schema.css : undefined,
-        }
+      ? { ...raw.schema, rng: raw.schema.rng.trim() }
       : undefined,
+  metadata:
+    typeof raw.metadata === 'string' && raw.metadata.trim()
+      ? raw.metadata.trim()
+      : DEFAULT_METADATA_PATH,
 });
 
 const detectSchema = async (rootPath: string): Promise<ProjectSchemaConfig | undefined> => {
@@ -86,6 +85,7 @@ export const loadOrCreateProject = async (rootPath: string): Promise<ProjectBund
       version: 1,
       name: path.basename(rootPath),
       schema: await detectSchema(rootPath),
+      metadata: DEFAULT_METADATA_PATH,
     };
     await fs.writeFile(projectFilePath, JSON.stringify(config, null, 2), 'utf-8');
     return { rootPath, projectFilePath, config };

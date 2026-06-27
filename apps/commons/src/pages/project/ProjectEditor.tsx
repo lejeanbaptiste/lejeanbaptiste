@@ -12,6 +12,7 @@ import { useEffect, useRef } from 'react';
 
 export const ProjectEditor = () => {
   const { contentHasChanged, readonly, resource } = useAppState().editor;
+  const { projectFilePath } = useAppState().project;
   const { markTabDirty } = useActions().project;
 
   const divEl = useRef<HTMLDivElement>(null);
@@ -21,6 +22,8 @@ export const ProjectEditor = () => {
 
   const { initLeafWriter, loadDocumentInWriter, loadLib } = useLeafWriter();
   const { aboutOpen, onKeydownHandle, setAboutOpen } = useProjectMenu();
+  const [leafWriter] = useAtom(leafwriterAtom);
+  const [sessionKey] = useAtom(leafWriterSessionKeyAtom);
   useExternalFileWatcher();
 
   useEffect(() => {
@@ -31,9 +34,6 @@ export const ProjectEditor = () => {
       delete window.__ljbOpenNativeSchemaPicker;
     };
   }, []);
-
-  const [leafWriter, setLeafWriter] = useAtom(leafwriterAtom);
-  const [sessionKey] = useAtom(leafWriterSessionKeyAtom);
 
   useEffect(() => {
     window.addEventListener('keydown', onKeydownHandle, true);
@@ -71,6 +71,11 @@ export const ProjectEditor = () => {
       initStartedForRef.current = null;
     }
   }, [leafWriter]);
+
+  useEffect(() => {
+    initStartedForRef.current = null;
+    previousTabRef.current = null;
+  }, [projectFilePath]);
 
   useEffect(() => {
     if (!resource?.filePath) {

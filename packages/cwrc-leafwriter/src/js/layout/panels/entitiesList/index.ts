@@ -189,7 +189,14 @@ class EntitiesList {
       this.handleDone();
       this.disable();
     });
-    this.writer.event('documentLoaded').subscribe(() => this.enable(true));
+    this.writer.event('documentLoaded').subscribe((success: boolean) => {
+      if (success) {
+        this.enable(true);
+        return;
+      }
+      this.clear();
+      this.disable();
+    });
     this.writer.event('schemaLoaded').subscribe(() => this.update());
     this.writer.event('contentChanged').subscribe(() => this.update());
     this.writer.event('contentPasted').subscribe(() => this.update());

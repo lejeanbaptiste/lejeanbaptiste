@@ -46,10 +46,10 @@ Modern TEI P5 RelaxNG releases ship **monolithic** `.rng` files (~1 MB each), so
 | Resolve local schemas when opening files | Done | `resolveDocumentSchemas.ts` |
 | RelaxNG validation | Done | `@cwrc/leafwriter-validator` |
 | SHA-256 hash for remote schema changes | Done | `cwrc-leafwriter-validator/src/conversion.ts` |
-| Desktop Settings (locale, theme, warnings) | Done | `NativeSettingsPage` — **no encoder name yet** |
-| **Open Project + schema setup wizard** | **Not done** | — |
-| **Project metadata dialog + JSON** | **Not done** | — |
-| **Apply metadata to existing files** | **Not done** | — |
+| Desktop Settings (locale, theme, warnings, encoder name) | Done | `NativeSettingsPage`, `project-prefs.json` |
+| **Open Project + schema setup wizard** | **Done (Phase 1)** | `NativeSchemaSetupPage`, `schemaSetup.ts`, `openProject` onboarding |
+| **Project metadata dialog + JSON** | **Done (Phase 1)** | `NativeProjectMetadataPage`, `projectMetadata.ts` |
+| **Apply metadata to existing files** | **Done (Phase 1)** | Edition metadata → Save and update documents… |
 | **New File (⌘N) + skeleton merge** | **Not done** | — |
 | **Temp file + Save As flow** | **Not done** | — |
 | **Schema update alert** | **Not done** | — |

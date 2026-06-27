@@ -1,3 +1,5 @@
+export * from './focusFirstBodyParagraph';
+export * from './clearWriterSession';
 export * from './DocumentTabBar';
 export * from './UnifiedLeftPanel';
 export * from './ProjectSidebar';
@@ -8,5 +10,10 @@ export * from './useLspProjectBridge';
 export * from './useCommonsUiBridge';
 export * from './useNativeDialogBridge';
 export * from './openNativeSettings';
-export * from './openNativeSchemaPicker';
 export * from './schemaPickerSession';
+export * from './openNativeSchemaPicker';
+export * from './openNativeSchemaSetup';
+export * from './openNativeProjectMetadata';
+export * from './projectOnboarding';
+export * from './schemaSetupSession';
+export * from './projectMetadataSession';

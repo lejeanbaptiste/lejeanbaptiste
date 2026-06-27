@@ -13,12 +13,14 @@ export const SourceView = () => {
     _event: MouseEvent<HTMLElement>,
     value: EditorViewMode | null,
   ) => {
-    if (!value || value === editorViewMode) return;
+    if (!value) return;
 
     if (value === 'source') {
       await actions.ui.enterSourceMode();
       return;
     }
+
+    if (value === editorViewMode) return;
 
     await actions.ui.exitSourceMode();
   };
