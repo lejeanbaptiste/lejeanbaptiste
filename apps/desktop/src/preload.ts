@@ -10,6 +10,8 @@ export interface FileEntry {
 
 export interface NativeMessageBoxOptions {
   buttons?: string[];
+  cancelId?: number;
+  defaultId?: number;
   message: string;
   title: string;
   type?: 'error' | 'info' | 'none' | 'question' | 'warning';
@@ -19,6 +21,11 @@ export interface NativeDialogOptions {
   id: string;
   type: 'settings' | 'schemaPicker';
   title?: string;
+}
+
+export interface NamedPath {
+  name: string;
+  path: string;
 }
 
 export interface FileStat {
@@ -37,6 +44,12 @@ export interface ElectronAPI {
   statFile: (filePath: string) => Promise<FileStat>;
   syncWatchedFiles: (paths: string[]) => Promise<void>;
   ignoreFileChange: (filePath: string, mtimeMs: number) => Promise<void>;
+  findXmlFilesByName: (rootPath: string, query: string) => Promise<NamedPath[]>;
+  renamePath: (oldPath: string, newPath: string) => Promise<void>;
+  movePath: (sourcePath: string, destDir: string) => Promise<string>;
+  deletePath: (targetPath: string) => Promise<void>;
+  createDirectory: (parentDir: string, folderName: string) => Promise<string>;
+  pickMoveDestination: (defaultDir?: string) => Promise<string | null>;
   saveFileAs: (defaultPath?: string) => Promise<string | null>;
   setWindowTitle: (title: string) => Promise<void>;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
@@ -67,6 +80,17 @@ const electronAPI: ElectronAPI = {
   syncWatchedFiles: (paths: string[]) => ipcRenderer.invoke('syncWatchedFiles', paths),
   ignoreFileChange: (filePath: string, mtimeMs: number) =>
     ipcRenderer.invoke('ignoreFileChange', filePath, mtimeMs),
+  findXmlFilesByName: (rootPath: string, query: string) =>
+    ipcRenderer.invoke('findXmlFilesByName', rootPath, query),
+  renamePath: (oldPath: string, newPath: string) =>
+    ipcRenderer.invoke('renamePath', oldPath, newPath),
+  movePath: (sourcePath: string, destDir: string) =>
+    ipcRenderer.invoke('movePath', sourcePath, destDir),
+  deletePath: (targetPath: string) => ipcRenderer.invoke('deletePath', targetPath),
+  createDirectory: (parentDir: string, folderName: string) =>
+    ipcRenderer.invoke('createDirectory', parentDir, folderName),
+  pickMoveDestination: (defaultDir?: string) =>
+    ipcRenderer.invoke('pickMoveDestination', defaultDir),
   saveFileAs: (defaultPath?: string) => ipcRenderer.invoke('saveFileAs', defaultPath),
   setWindowTitle: (title: string) => ipcRenderer.invoke('setWindowTitle', title),
   onAppMenuAction: (callback: (action: string) => void) => {

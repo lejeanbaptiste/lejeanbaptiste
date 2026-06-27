@@ -196,6 +196,36 @@
       "close_unsaved": {
         "title": "Nicht gespeicherte Änderungen",
         "message": "{{filename}} enthält nicht gespeicherte Änderungen. Ohne Speichern schließen?"
+      },
+      "settings": {
+        "editor_options_hint": "Schema, Autoritäten und andere Editoroptionen sind über die ⚙-Symbolleiste verfügbar, wenn ein Dokument geöffnet ist.",
+        "skip_copy_paste_help": "Kopieren-Einfügen-Hilfe nicht anzeigen",
+        "skip_delete_confirm": "Dateien und Ordner ohne Rückfrage löschen",
+        "title": "Einstellungen",
+        "warnings": "Warnungen"
+      },
+      "explorer": {
+        "delete": "Löschen",
+        "delete_confirm_file": "„{{name}}“ löschen? Dies kann nicht rückgängig gemacht werden.",
+        "delete_confirm_file_open": "„{{name}}“ löschen? Der geöffnete Tab wird geschlossen.",
+        "delete_confirm_folder": "Ordner „{{name}}“ und gesamten Inhalt löschen? Dies kann nicht rückgängig gemacht werden.",
+        "delete_confirm_folder_open": "Ordner „{{name}}“ und gesamten Inhalt löschen? Geöffnete Tabs darin werden geschlossen.",
+        "delete_title": "Element löschen",
+        "drop_invalid": "Das Element kann nicht in diesen Ordner verschoben werden.",
+        "error_exists": "Ein Element mit diesem Namen existiert bereits.",
+        "error_failed": "Vorgang fehlgeschlagen: {{detail}}",
+        "error_into_self": "Ein Ordner kann nicht in sich selbst verschoben werden.",
+        "error_invalid_name": "Geben Sie einen gültigen Namen ohne Schrägstriche ein.",
+        "filter_no_results": "Keine Dateien entsprechen „{{query}}“.",
+        "filter_placeholder": "Dateien filtern…",
+        "move": "Verschieben nach…",
+        "new_folder": "Neuer Ordner",
+        "new_folder_placeholder": "Ordnername",
+        "new_folder_title": "Neuer Ordner",
+        "open_project_hint": "Öffnen Sie ein Projekt über Datei → Projekt öffnen (⌘O).",
+        "rename": "Umbenennen",
+        "rename_placeholder": "Neuer Name",
+        "rename_title": "Umbenennen"
       }
     }
   },

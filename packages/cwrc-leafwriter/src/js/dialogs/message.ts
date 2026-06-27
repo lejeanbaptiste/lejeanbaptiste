@@ -155,6 +155,8 @@ class Message implements LWDialogProps {
           message: stripHtml(config.msg),
           type: nativeMessageType(config.type === 'error' ? 'error' : 'question'),
           buttons: [yesText, noText],
+          defaultId: 0,
+          cancelId: 1,
         })
         .then(({ response }) => {
           if (callback) setTimeout(() => callback(response === 0), 0);

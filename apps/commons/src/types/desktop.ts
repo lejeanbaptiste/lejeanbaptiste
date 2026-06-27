@@ -8,6 +8,8 @@ export interface FileEntry {
 
 export interface NativeMessageBoxOptions {
   buttons?: string[];
+  cancelId?: number;
+  defaultId?: number;
   message: string;
   title: string;
   type?: 'error' | 'info' | 'none' | 'question' | 'warning';
@@ -27,6 +29,11 @@ export interface SchemaPickerOpenerOptions {
   onClose: (action: string) => void;
 }
 
+export interface NamedPath {
+  name: string;
+  path: string;
+}
+
 export interface FileStat {
   mtimeMs: number;
   size: number;
@@ -43,6 +50,12 @@ export interface ElectronAPI {
   statFile: (filePath: string) => Promise<FileStat>;
   syncWatchedFiles: (paths: string[]) => Promise<void>;
   ignoreFileChange: (filePath: string, mtimeMs: number) => Promise<void>;
+  findXmlFilesByName: (rootPath: string, query: string) => Promise<NamedPath[]>;
+  renamePath: (oldPath: string, newPath: string) => Promise<void>;
+  movePath: (sourcePath: string, destDir: string) => Promise<string>;
+  deletePath: (targetPath: string) => Promise<void>;
+  createDirectory: (parentDir: string, folderName: string) => Promise<string>;
+  pickMoveDestination: (defaultDir?: string) => Promise<string | null>;
   saveFileAs: (defaultPath?: string) => Promise<string | null>;
   setWindowTitle: (title: string) => Promise<void>;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
@@ -63,6 +76,12 @@ export interface ElectronAPI {
 declare global {
   interface Window {
     electronAPI?: ElectronAPI;
+    __ljbCommonsUi?: {
+      skipCopyPasteHelp: boolean;
+      skipExplorerDeleteConfirm: boolean;
+      setSkipCopyPasteHelp: (value: boolean) => void;
+      setSkipExplorerDeleteConfirm: (value: boolean) => void;
+    };
     __ljbOpenNativeSchemaPicker?: (options: SchemaPickerOpenerOptions) => Promise<void>;
   }
 }

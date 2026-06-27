@@ -43,6 +43,8 @@ export const DocumentTabBar = () => {
           filename: tab?.filename ?? filePath,
         }),
         buttons: [t('LWC.commons.discard changes'), t('LWC.commons.cancel')],
+        defaultId: 0,
+        cancelId: 1,
       });
 
       if (response !== 0) return;

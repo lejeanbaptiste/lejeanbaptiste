@@ -1,5 +1,14 @@
 import type { Context } from '../';
 import { buildProjectSchemas, type ProjectBundle } from '@src/desktop/projectFile';
+import {
+  getParentPath,
+  getPathBasename,
+  joinPath,
+  removeTreeNode,
+  repathFilePath,
+  repathTreeSubtree,
+  updateTreeNode,
+} from '@src/desktop/explorer/treeUtils';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
 import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
 import type { FileTreeNode } from './state';
@@ -357,6 +366,9 @@ export const saveActiveTabAs = async (
     state.editor.contentLastSaved = content;
     state.editor.contentHasChanged = false;
     await ignoreSavedFileChange(filePath);
+    if (state.project.rootPath) {
+      await reloadDirectoryInTree({ state } as Context, getParentPath(filePath));
+    }
     return { success: true };
   } catch (error) {
     return {
@@ -440,4 +452,185 @@ export const updateTabContent = (
   if (state.project.activeTabPath === filePath && state.editor.resource?.filePath === filePath) {
     state.editor.resource = { ...state.editor.resource, content };
   }
+};
+
+export const reloadDirectoryInTree = async ({ state }: Context, dirPath: string) => {
+  const children = await loadTreeLevel(dirPath);
+  state.project.tree = updateTreeNode(state.project.tree, dirPath, (node) => ({
+    ...node,
+    children,
+    childrenLoaded: true,
+  }));
+};
+
+const repathOpenTabsForMove = (
+  { state, actions }: Context,
+  oldPath: string,
+  newPath: string,
+) => {
+  let nextActiveTabPath = state.project.activeTabPath;
+
+  state.project.openTabs = state.project.openTabs.map((tab) => {
+    const repathed = repathFilePath(tab.filePath, oldPath, newPath);
+    if (!repathed) return tab;
+    return { ...tab, filePath: repathed, filename: getPathBasename(repathed) };
+  });
+
+  if (nextActiveTabPath) {
+    const repathedActive = repathFilePath(nextActiveTabPath, oldPath, newPath);
+    if (repathedActive) nextActiveTabPath = repathedActive;
+  }
+
+  state.project.activeTabPath = nextActiveTabPath;
+
+  if (
+    nextActiveTabPath &&
+    state.editor.resource?.filePath &&
+    repathFilePath(state.editor.resource.filePath, oldPath, newPath)
+  ) {
+    const tab = state.project.openTabs.find((item) => item.filePath === nextActiveTabPath);
+    if (tab) {
+      void actions.editor.setResource({
+        content: tab.content,
+        filePath: tab.filePath,
+        filename: tab.filename,
+        isLocal: true,
+      });
+    }
+  }
+};
+
+export const createExplorerFolder = async (
+  { state }: Context,
+  { folderName, parentPath }: { folderName: string; parentPath: string },
+): Promise<{ success: boolean; error?: string }> => {
+  if (!window.electronAPI?.createDirectory) {
+    return { success: false, error: 'Unavailable' };
+  }
+
+  const trimmed = folderName.trim();
+  if (!trimmed || trimmed.includes('/') || trimmed.includes('\\')) {
+    return { success: false, error: 'invalid_name' };
+  }
+
+  try {
+    await window.electronAPI.createDirectory(parentPath, trimmed);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to create folder';
+    if (message.includes('exists')) return { success: false, error: 'exists' };
+    if (message.includes('Invalid')) return { success: false, error: 'invalid_name' };
+    return { success: false, error: message };
+  }
+
+  await reloadDirectoryInTree({ state } as Context, parentPath);
+  return { success: true };
+};
+
+export const renameExplorerItem = async (
+  { state, actions }: Context,
+  { oldPath, newName }: { oldPath: string; newName: string },
+): Promise<{ success: boolean; error?: string }> => {
+  if (!window.electronAPI?.renamePath || !state.project.rootPath) {
+    return { success: false, error: 'Unavailable' };
+  }
+
+  const trimmed = newName.trim();
+  if (!trimmed || trimmed.includes('/') || trimmed.includes('\\')) {
+    return { success: false, error: 'invalid_name' };
+  }
+
+  const parentDir = getParentPath(oldPath);
+  const newPath = joinPath(parentDir, trimmed);
+
+  if (newPath === oldPath) return { success: true };
+
+  try {
+    await window.electronAPI.renamePath(oldPath, newPath);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to rename';
+    if (message.includes('exists')) return { success: false, error: 'exists' };
+    return { success: false, error: message };
+  }
+
+  state.project.tree = repathTreeSubtree(state.project.tree, oldPath, newPath);
+  repathOpenTabsForMove({ state, actions } as Context, oldPath, newPath);
+  await reloadDirectoryInTree({ state } as Context, parentDir);
+  await ignoreSavedFileChange(newPath);
+  return { success: true };
+};
+
+export const moveExplorerItem = async (
+  { state, actions }: Context,
+  { sourcePath, destDir }: { sourcePath: string; destDir: string },
+): Promise<{ success: boolean; error?: string }> => {
+  if (!window.electronAPI?.movePath) {
+    return { success: false, error: 'Unavailable' };
+  }
+
+  try {
+    const newPath = await window.electronAPI.movePath(sourcePath, destDir);
+    const oldParent = getParentPath(sourcePath);
+
+    state.project.tree = removeTreeNode(state.project.tree, sourcePath);
+    repathOpenTabsForMove({ state, actions } as Context, sourcePath, newPath);
+    await reloadDirectoryInTree({ state } as Context, destDir);
+    if (oldParent !== destDir) {
+      await reloadDirectoryInTree({ state } as Context, oldParent);
+    }
+    await ignoreSavedFileChange(newPath);
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to move';
+    if (message.includes('itself')) return { success: false, error: 'into_self' };
+    if (message.includes('exists')) return { success: false, error: 'exists' };
+    return { success: false, error: message };
+  }
+};
+
+export const deleteExplorerItem = async (
+  { state, actions }: Context,
+  targetPath: string,
+): Promise<{ success: boolean; error?: string }> => {
+  if (!window.electronAPI?.deletePath) {
+    return { success: false, error: 'Unavailable' };
+  }
+
+  const parentDir = getParentPath(targetPath);
+  const tabsToClose = state.project.openTabs.filter((tab) => {
+    if (tab.filePath === targetPath) return true;
+    const prefix = targetPath.endsWith('/') ? targetPath : `${targetPath}/`;
+    return tab.filePath.startsWith(prefix);
+  });
+
+  try {
+    await window.electronAPI.deletePath(targetPath);
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete',
+    };
+  }
+
+  state.project.tree = removeTreeNode(state.project.tree, targetPath);
+
+  const pathsToClose = new Set(tabsToClose.map((tab) => tab.filePath));
+  const remaining = state.project.openTabs.filter((tab) => !pathsToClose.has(tab.filePath));
+  state.project.openTabs = remaining;
+
+  if (state.project.activeTabPath && pathsToClose.has(state.project.activeTabPath)) {
+    if (remaining.length === 0) {
+      state.project.activeTabPath = null;
+      window.writer?.overmindActions?.ui?.resetSourceEditor?.();
+      await actions.editor.clearResource();
+    } else {
+      const nextTab = remaining[remaining.length - 1];
+      await actions.project.switchTab({ filePath: nextTab.filePath });
+    }
+  }
+
+  if (parentDir && parentDir !== '/') {
+    await reloadDirectoryInTree({ state } as Context, parentDir);
+  }
+
+  return { success: true };
 };

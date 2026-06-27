@@ -196,6 +196,36 @@
       "close_unsaved": {
         "title": "Unsaved changes",
         "message": "{{filename}} has unsaved changes. Close without saving?"
+      },
+      "settings": {
+        "editor_options_hint": "Schema, authorities, and other editor options are available from the ⚙ toolbar while a document is open.",
+        "skip_copy_paste_help": "Don't show copy and paste help",
+        "skip_delete_confirm": "Delete files and folders without asking",
+        "title": "Settings",
+        "warnings": "Warnings"
+      },
+      "explorer": {
+        "delete": "Delete",
+        "delete_confirm_file": "Delete “{{name}}”? This cannot be undone.",
+        "delete_confirm_file_open": "Delete “{{name}}”? The open tab will be closed.",
+        "delete_confirm_folder": "Delete folder “{{name}}” and all its contents? This cannot be undone.",
+        "delete_confirm_folder_open": "Delete folder “{{name}}” and all its contents? Open tabs inside will be closed.",
+        "delete_title": "Delete item",
+        "drop_invalid": "Cannot move the item to that folder.",
+        "error_exists": "An item with that name already exists.",
+        "error_failed": "Operation failed: {{detail}}",
+        "error_into_self": "Cannot move a folder into itself.",
+        "error_invalid_name": "Enter a valid name without slashes.",
+        "filter_no_results": "No files match “{{query}}”.",
+        "filter_placeholder": "Filter files…",
+        "move": "Move to…",
+        "new_folder": "New folder",
+        "new_folder_placeholder": "Folder name",
+        "new_folder_title": "New folder",
+        "open_project_hint": "Open a project with File → Open Project (⌘O).",
+        "rename": "Rename",
+        "rename_placeholder": "New name",
+        "rename_title": "Rename"
       }
     }
   },

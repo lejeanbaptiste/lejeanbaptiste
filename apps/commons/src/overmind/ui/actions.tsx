@@ -33,6 +33,11 @@ export const onInitializeOvermind = async (
       ? (prefLocale as Locales)
       : 'en';
   }
+
+  state.ui.skipExplorerDeleteConfirm =
+    effects.storage.api.getFromLocalStorage<boolean>('skipExplorerDeleteConfirm') ?? false;
+  state.ui.skipCopyPasteHelp =
+    effects.storage.api.getFromLocalStorage<boolean>('skipCopyPasteHelp') ?? false;
 };
 
 /**
@@ -70,6 +75,19 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
 
   // Propagate the changes to other modules that might be listening in the page
   setTimeout(() => window.dispatchEvent(new Event('changeTheme')), 0);
+};
+
+export const setSkipExplorerDeleteConfirm = (
+  { state, effects }: Context,
+  value: boolean,
+) => {
+  state.ui.skipExplorerDeleteConfirm = value;
+  effects.storage.api.saveToLocalStorage('skipExplorerDeleteConfirm', value);
+};
+
+export const setSkipCopyPasteHelp = ({ state, effects }: Context, value: boolean) => {
+  state.ui.skipCopyPasteHelp = value;
+  effects.storage.api.saveToLocalStorage('skipCopyPasteHelp', value);
 };
 
 export const setDarkMode = ({ state }: Context, value: boolean) => {
