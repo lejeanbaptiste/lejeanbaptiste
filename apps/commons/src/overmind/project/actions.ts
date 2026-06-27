@@ -213,16 +213,82 @@ export const saveActiveTab = async (
 
   try {
     await window.electronAPI.writeFile(filePath, content);
-    const tab = state.project.openTabs.find((item) => item.filePath === filePath);
-    if (tab) {
-      tab.content = content;
-      tab.dirty = false;
-    }
+    state.project.openTabs = state.project.openTabs.map((tab) =>
+      tab.filePath === filePath ? { ...tab, content, dirty: false } : tab,
+    );
     state.editor.contentLastSaved = content;
     state.editor.contentHasChanged = false;
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to save file' };
+  }
+};
+
+export const saveActiveTabAs = async (
+  { state, actions }: Context,
+  { content }: { content: string },
+): Promise<{ success: boolean; cancelled?: boolean; error?: string }> => {
+  if (!window.electronAPI) {
+    return { success: false, error: 'Save is only available in the desktop app' };
+  }
+
+  if (typeof window.electronAPI.saveFileAs !== 'function') {
+    return {
+      success: false,
+      error: 'Save As is unavailable. Quit and restart the desktop app.',
+    };
+  }
+
+  const previousPath = state.project.activeTabPath ?? undefined;
+
+  let filePath: string | null;
+  try {
+    filePath = await window.electronAPI.saveFileAs(previousPath);
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Save As failed',
+    };
+  }
+
+  if (!filePath) {
+    return { success: false, cancelled: true };
+  }
+
+  try {
+    await window.electronAPI.writeFile(filePath, content);
+    const filename = getFilename(filePath);
+
+    if (previousPath) {
+      state.project.openTabs = state.project.openTabs.map((tab) =>
+        tab.filePath === previousPath
+          ? { ...tab, filePath, filename, content, dirty: false }
+          : tab,
+      );
+      state.project.activeTabPath = filePath;
+    } else {
+      state.project.openTabs = [
+        ...state.project.openTabs,
+        { content, dirty: false, editorReady: true, filePath, filename },
+      ];
+      state.project.activeTabPath = filePath;
+    }
+
+    await actions.editor.setResource({
+      content,
+      filePath,
+      filename,
+      isLocal: true,
+    });
+
+    state.editor.contentLastSaved = content;
+    state.editor.contentHasChanged = false;
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to save file',
+    };
   }
 };
 
@@ -252,8 +318,9 @@ export const closeTab = async (
 
 export const markTabDirty = ({ state }: Context, dirty: boolean) => {
   if (!state.project.activeTabPath) return;
-  const tab = state.project.openTabs.find((item) => item.filePath === state.project.activeTabPath);
-  if (tab) tab.dirty = dirty;
+  state.project.openTabs = state.project.openTabs.map((tab) =>
+    tab.filePath === state.project.activeTabPath ? { ...tab, dirty } : tab,
+  );
 };
 
 export const updateTabContent = (

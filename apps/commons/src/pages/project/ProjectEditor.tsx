@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import { DocumentTabBar, UnifiedLeftPanel, useNativeDialogBridge, useProjectMenu } from '@src/desktop';
 import { AboutDialog } from '@src/desktop/AboutDialog';
+import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
 import { useLeafWriter } from '@src/hooks';
 import { leafwriterAtom, leafWriterSessionKeyAtom } from '@src/jotai';
@@ -40,6 +41,14 @@ export const ProjectEditor = () => {
       window.removeEventListener('keydown', onKeydownHandle, true);
     };
   }, [onKeydownHandle]);
+
+  useEffect(() => {
+    if (!isDesktop()) return;
+
+    const onOpenFind = () => openFindPanel();
+    window.addEventListener(DESKTOP_OPEN_FIND_EVENT, onOpenFind);
+    return () => window.removeEventListener(DESKTOP_OPEN_FIND_EVENT, onOpenFind);
+  }, []);
 
   useEffect(() => {
     if (loadLibStartedForRef.current !== sessionKey) {

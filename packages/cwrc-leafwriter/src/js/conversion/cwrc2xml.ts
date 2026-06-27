@@ -41,13 +41,13 @@ class CWRC2XML {
       $rootEl = $body.find('[_tag]:eq(0)'); // fallback
     }
 
-    // remove previous namespaces
+    // Reset default namespace on export; preserve other xmlns declarations from the document.
     //@ts-ignore
     const rootAttributes = this.writer.tagger.getAttributesForTag($rootEl[0]);
-    for (const attributeName in rootAttributes) {
-      if (attributeName.startsWith('xmlns')) {
-        delete rootAttributes[attributeName];
-      }
+    const hadDocumentRdfNamespace = 'xmlns:rdf' in rootAttributes;
+    delete rootAttributes.xmlns;
+    if (!includeRDF && !hadDocumentRdfNamespace) {
+      delete rootAttributes['xmlns:rdf'];
     }
 
     // namespaces

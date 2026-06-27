@@ -4,6 +4,7 @@ import 'tinymce/plugins/paste';
 import 'tinymce/themes/silver';
 import tinymce, { type TinyMCE } from 'tinymce/tinymce';
 import type { LeafWriterEditor } from '../../types';
+import { dispatchDesktopOpenFind } from '../../sourceEditor/findInSourceEditor';
 import { isElement, log } from '../../utilities';
 import './plugins/prevent_delete';
 //TODO: Reassess plugins on tinymce 5.0
@@ -138,7 +139,18 @@ export const tinymceWrapperInit = function ({
 
         // attach mouseUp to doc because body doesn't always extend to full height of editor panel
         if (editor.iframeElement?.contentDocument) {
-          editor.iframeElement.contentDocument.addEventListener('mouseup', onMouseUpHandler);
+          const iframeDoc = editor.iframeElement.contentDocument;
+          iframeDoc.addEventListener('mouseup', onMouseUpHandler);
+          iframeDoc.addEventListener(
+            'keydown',
+            (event: KeyboardEvent) => {
+              if ((event.metaKey || event.ctrlKey) && event.code === 'KeyF') {
+                event.preventDefault();
+                dispatchDesktopOpenFind();
+              }
+            },
+            true,
+          );
         }
 
         writer.event('tinymceInitialized').publish(writer);

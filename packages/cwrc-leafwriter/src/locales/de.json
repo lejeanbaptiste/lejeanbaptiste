@@ -381,6 +381,7 @@
       },
       "editor": {
         "Show Entities": "Zeige Entitäten",
+        "Show Raw XML panel": "Rohes-XML-Panel anzeigen",
         "font size": "Schriftgröße"
       },
       "markupPanel": {

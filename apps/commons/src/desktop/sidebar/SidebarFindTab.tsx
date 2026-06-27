@@ -150,12 +150,24 @@ export const SidebarFindTab = () => {
 
   useEffect(() => {
     const focusFindField = () => {
-      requestAnimationFrame(() => {
+      const tryFocus = (attempt = 0) => {
         const input = findInputRef.current;
-        if (!input) return;
-        input.focus();
+        if (!input) {
+          if (attempt < 20) {
+            requestAnimationFrame(() => tryFocus(attempt + 1));
+          }
+          return;
+        }
+
+        input.focus({ preventScroll: true });
         input.select();
-      });
+
+        if (document.activeElement !== input && attempt < 20) {
+          requestAnimationFrame(() => tryFocus(attempt + 1));
+        }
+      };
+
+      requestAnimationFrame(() => tryFocus());
     };
 
     window.addEventListener(DESKTOP_FIND_FOCUS_EVENT, focusFindField);
@@ -288,6 +300,7 @@ export const SidebarFindTab = () => {
           label="Find"
           placeholder="Search text"
           value={findQuery}
+          inputRef={findInputRef}
           onChange={(event) => setFindQuery(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
@@ -301,7 +314,6 @@ export const SidebarFindTab = () => {
             }
           }}
           slotProps={{
-            htmlInput: { ref: findInputRef },
             input: { sx: { fontSize: '0.8125rem' } },
           }}
         />

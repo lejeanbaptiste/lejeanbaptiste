@@ -13,7 +13,8 @@ export const matchesTeiTag = (attrTag: string | null, wanted: string): boolean =
   return attrLocal === wantedLocal || attrTag.toLowerCase() === wanted.toLowerCase();
 };
 
-const parseTeiXPathSegments = (xpath: string): TeiSegment[] => {
+/** Parse TEI-style xpath segments (1-based indices in xpath become 0-based here). */
+export const parseTeiXPathSegments = (xpath: string): TeiSegment[] => {
   return xpath
     .replace(/^\/+/, '')
     .split('/')

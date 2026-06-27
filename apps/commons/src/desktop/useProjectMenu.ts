@@ -20,11 +20,76 @@ const openSettings = async (leafWriter: { showSettingsDialog: () => Promise<void
   }
 };
 
+const getEditorContent = async (
+  leafWriter: { getContent: () => Promise<string | undefined> } | null,
+) => {
+  if (leafWriter) return leafWriter.getContent();
+  return window.writer?.getContent();
+};
+
 export const useProjectMenu = () => {
-  const { openProject, saveActiveTab } = useActions().project;
+  const { openProject, saveActiveTab, saveActiveTabAs, markTabDirty } = useActions().project;
+  const { setContentHasChanged } = useActions().editor;
   const { closeForegroundPopup: closeCommonsPopup, notifyViaSnackbar } = useActions().ui;
   const [leafWriter] = useAtom(leafwriterAtom);
   const [aboutOpen, setAboutOpen] = useState(false);
+
+  const finalizeSavedDocument = useCallback(
+    (content: string) => {
+      setContentHasChanged(false);
+      markTabDirty(false);
+      leafWriter?.setContentHasChanged(false);
+      window.writer?.overmindActions?.document?.setDocumentXml(content);
+      window.writer?.overmindActions?.ui?.markSourceSaved?.(content);
+    },
+    [leafWriter, markTabDirty, setContentHasChanged],
+  );
+
+  const saveCurrentDocument = useCallback(async () => {
+    if (!isDesktop()) return;
+
+    clearFindHighlights();
+    const content = await getEditorContent(leafWriter);
+    if (!content) {
+      notifyViaSnackbar('Open an XML file before saving.');
+      return;
+    }
+
+    const result = await saveActiveTab({ content });
+    if (result.success) {
+      finalizeSavedDocument(content);
+      notifyViaSnackbar({ message: 'Document saved.', options: { variant: 'success' } });
+      return;
+    }
+
+    if (result.error) {
+      notifyViaSnackbar({ message: result.error, options: { variant: 'error' } });
+    }
+  }, [finalizeSavedDocument, leafWriter, notifyViaSnackbar, saveActiveTab]);
+
+  const saveCurrentDocumentAs = useCallback(async () => {
+    if (!isDesktop()) return;
+
+    clearFindHighlights();
+    const content = await getEditorContent(leafWriter);
+    if (!content) {
+      notifyViaSnackbar('Open an XML file before saving.');
+      return;
+    }
+
+    const result = await saveActiveTabAs({ content });
+    if (result.cancelled) return;
+
+    if (result.success) {
+      finalizeSavedDocument(content);
+      notifyViaSnackbar({ message: 'Document saved.', options: { variant: 'success' } });
+      return;
+    }
+
+    if (result.error) {
+      notifyViaSnackbar({ message: result.error, options: { variant: 'error' } });
+    }
+  }, [finalizeSavedDocument, leafWriter, notifyViaSnackbar, saveActiveTabAs]);
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
@@ -32,6 +97,16 @@ export const useProjectMenu = () => {
     return window.electronAPI.onAppMenuAction((action) => {
       if (action === 'open-project') {
         void openProject();
+        return;
+      }
+
+      if (action === 'save') {
+        void saveCurrentDocument();
+        return;
+      }
+
+      if (action === 'save-as') {
+        void saveCurrentDocumentAs();
         return;
       }
 
@@ -50,7 +125,7 @@ export const useProjectMenu = () => {
         })();
       }
     });
-  }, [leafWriter, notifyViaSnackbar, openProject]);
+  }, [leafWriter, notifyViaSnackbar, openProject, saveCurrentDocument, saveCurrentDocumentAs]);
 
   const onKeydownHandle = useCallback(
     async (event: KeyboardEvent) => {
@@ -90,15 +165,16 @@ export const useProjectMenu = () => {
         return;
       }
 
-      if (!event.metaKey) return;
+      if (!(event.metaKey || event.ctrlKey)) return;
 
       if (event.code === 'KeyS') {
         event.preventDefault();
         event.stopPropagation();
-        if (!leafWriter) return;
-        clearFindHighlights();
-        const content = await leafWriter.getContent();
-        await saveActiveTab({ content });
+        if (event.shiftKey) {
+          await saveCurrentDocumentAs();
+        } else {
+          await saveCurrentDocument();
+        }
         return;
       }
 
@@ -108,7 +184,14 @@ export const useProjectMenu = () => {
         await openProject();
       }
     },
-    [closeCommonsPopup, leafWriter, notifyViaSnackbar, openProject, saveActiveTab],
+    [
+      closeCommonsPopup,
+      leafWriter,
+      notifyViaSnackbar,
+      openProject,
+      saveCurrentDocument,
+      saveCurrentDocumentAs,
+    ],
   );
 
   return { aboutOpen, onKeydownHandle, setAboutOpen };

@@ -2,6 +2,7 @@ import { Box } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import type { SidebarTabId } from '@src/icons/tab';
 import {
+  DESKTOP_FIND_FOCUS_EVENT,
   DESKTOP_LEFT_PANEL_EVENT,
   type DesktopLeftPanelShowDetail,
 } from './desktopLeftPanelBridge';
@@ -75,6 +76,11 @@ export const UnifiedLeftPanel = () => {
       window.removeEventListener(DESKTOP_LEFT_PANEL_EVENT, onShowEvent);
     };
   }, [expand, showTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'find') return;
+    window.dispatchEvent(new CustomEvent(DESKTOP_FIND_FOCUS_EVENT));
+  }, [activeTab]);
 
   useEffect(() => {
     const id = requestAnimationFrame(resizeEditor);

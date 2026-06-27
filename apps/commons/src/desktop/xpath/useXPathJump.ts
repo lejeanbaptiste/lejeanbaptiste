@@ -1,11 +1,13 @@
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useEffect, useRef } from 'react';
-import {
-  findEditorNodeByTeiXPath,
-} from './teiXPathWalker';
+import { findEditorNodeByTeiXPath } from './teiXPathWalker';
 import type { PendingXPathJump } from './types';
+import { performXPathJumpInSourceEditor } from './xpathSourceJump';
 
 const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
+
+const isSourceEditorMode = () =>
+  window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 const normalizeXPathForEditor = (xpath: string) => xpath.replace(/^\/+/, '');
 
@@ -17,7 +19,7 @@ const selectEditorElement = (element: Element, focusEditor: boolean) => {
   return true;
 };
 
-const performJump = (jump: PendingXPathJump, focusEditor = false): boolean => {
+const performVisualJump = (jump: PendingXPathJump, focusEditor = false): boolean => {
   if (!window.writer?.editor) return false;
 
   const body = window.writer.editor.getBody();
@@ -63,6 +65,14 @@ const performJump = (jump: PendingXPathJump, focusEditor = false): boolean => {
   return false;
 };
 
+const performJump = (jump: PendingXPathJump, focusEditor = false): boolean => {
+  if (isSourceEditorMode()) {
+    return performXPathJumpInSourceEditor(jump);
+  }
+
+  return performVisualJump(jump, focusEditor);
+};
+
 export const useXPathJump = (onAfterJump?: () => void) => {
   const { activeTabPath } = useAppState().project;
   const { resource } = useAppState().editor;
@@ -83,7 +93,10 @@ export const useXPathJump = (onAfterJump?: () => void) => {
 
   const tryPerformPendingJump = useCallback(() => {
     const jump = pendingJumpRef.current;
-    if (!jump || !window.writer?.editor) return false;
+    if (!jump || !window.writer) return false;
+
+    const isSourceMode = isSourceEditorMode();
+    if (!isSourceMode && !window.writer.editor) return false;
 
     const currentPath = resourceFilePathRef.current ?? activeTabPathRef.current;
     if (currentPath !== jump.filePath) {
@@ -125,8 +138,9 @@ export const useXPathJump = (onAfterJump?: () => void) => {
     (jump: PendingXPathJump) => {
       const currentFilePath = resource?.filePath ?? activeTabPath;
       const isActive = currentFilePath === jump.filePath;
+      const isSourceMode = isSourceEditorMode();
 
-      if (isActive && window.writer?.editor) {
+      if (isActive && window.writer && (isSourceMode || window.writer.editor)) {
         if (performJump(jump, false)) {
           pendingJumpRef.current = null;
           onAfterJumpRef.current?.();

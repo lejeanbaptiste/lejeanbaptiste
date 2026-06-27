@@ -41,7 +41,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const actions = useActions();
   const state = useAppState();
   const { editorViewMode } = state.ui;
-  const { isReadonly } = state.editor;
+  const { isReadonly, showRawXmlPanel } = state.editor;
   const [writer, setWriter] = useState<Writer | null>(null);
   const { i18n } = useTranslation();
 
@@ -215,6 +215,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
             createPortal(<MarkupPanel />, structureTreePanelContainer)}
           {codePanelContainer &&
             !isReadonly &&
+            showRawXmlPanel &&
             createPortal(<CodePanel />, codePanelContainer)}
           {entitiesPanelReady && isDesktopApp() && <DesktopEntitiesPanel />}
         </div>

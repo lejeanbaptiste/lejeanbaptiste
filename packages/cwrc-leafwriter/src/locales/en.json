@@ -385,6 +385,7 @@
       },
       "editor": {
         "Show Entities": "Show Entities",
+        "Show Raw XML panel": "Show Raw XML panel",
         "font size": "font size"
       },
       "markupPanel": {

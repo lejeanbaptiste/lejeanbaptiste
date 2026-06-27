@@ -29,6 +29,7 @@ export interface ElectronAPI {
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) => Promise<FileEntry[]>;
   readFile: (filePath: string) => Promise<string>;
   writeFile: (filePath: string, content: string) => Promise<void>;
+  saveFileAs: (defaultPath?: string) => Promise<string | null>;
   setWindowTitle: (title: string) => Promise<void>;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
   showNativeMessageBox: (
@@ -53,6 +54,7 @@ const electronAPI: ElectronAPI = {
   readFile: (filePath: string) => ipcRenderer.invoke('readFile', filePath),
   writeFile: (filePath: string, content: string) =>
     ipcRenderer.invoke('writeFile', filePath, content),
+  saveFileAs: (defaultPath?: string) => ipcRenderer.invoke('saveFileAs', defaultPath),
   setWindowTitle: (title: string) => ipcRenderer.invoke('setWindowTitle', title),
   onAppMenuAction: (callback: (action: string) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, action: string) => callback(action);

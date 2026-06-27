@@ -1,3 +1,5 @@
+import { clearFindHighlightsInSourceEditor } from './findSourceEditorHighlights';
+
 const FIND_HIT_CLASS = 'lw-find-hit';
 const FIND_HIT_ACTIVE_CLASS = 'lw-find-hit-active';
 const STYLE_ELEMENT_ID = 'lw-find-highlight-styles';
@@ -58,6 +60,8 @@ interface HighlightSpan {
 }
 
 export const clearFindHighlights = () => {
+  clearFindHighlightsInSourceEditor();
+
   const body = window.writer?.editor?.getBody();
   if (!body) return;
 

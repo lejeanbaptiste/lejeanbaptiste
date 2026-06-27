@@ -28,6 +28,9 @@ export const onInitializeOvermind = ({ state, actions, effects }: Context, overm
     state.ui.currentLocale = supportedLocaled;
     void i18n.changeLanguage(supportedLocaled);
   }
+
+  const showRawXmlPanel = effects.editor.api.getFromLocalStorage<boolean>('showRawXmlPanel');
+  state.editor.showRawXmlPanel = showRawXmlPanel === true;
 };
 
 export const setThemeAppearance = ({ state, actions, effects }: Context, value: PaletteMode) => {
@@ -275,21 +278,31 @@ export const setSourceCurrentContent = ({ state }: Context, content: string) => 
   }
 };
 
+export const markSourceSaved = ({ state }: Context, content: string) => {
+  state.ui.sourceOriginalContent = content;
+};
+
 export const enterSourceMode = async ({ state, actions }: Context) => {
   if (state.ui.editorViewMode === 'source') return;
 
   const writer = window.writer;
-  let content =
-    (await writer?.converter.getDocumentContent(false)) ||
-    (await writer?.converter.getDocumentContent(true)) ||
-    '';
+  let content = '';
 
-  if (!content) {
-    content = (await writer?.getContent()) || '';
-  }
-
-  if (!content && state.document.xml) {
+  if (!state.editor.contentHasChanged && state.document.xml) {
     content = state.document.xml;
+  } else {
+    content =
+      (await writer?.converter.getDocumentContent(false)) ||
+      (await writer?.converter.getDocumentContent(true)) ||
+      '';
+
+    if (!content) {
+      content = (await writer?.getContent()) || '';
+    }
+
+    if (!content && state.document.xml) {
+      content = state.document.xml;
+    }
   }
 
   if (!content) return;

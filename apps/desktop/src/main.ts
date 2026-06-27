@@ -193,6 +193,12 @@ const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
     { role: 'cut' },
     { role: 'copy' },
     { role: 'paste' },
+    { type: 'separator' },
+    {
+      label: 'Find…',
+      accelerator: 'CommandOrControl+F',
+      click: () => sendMenuAction('open-find'),
+    },
     ...(process.platform === 'darwin'
       ? ([
           { role: 'pasteAndMatchStyle' },
@@ -235,6 +241,18 @@ const buildApplicationMenu = () => {
     click: () => sendMenuAction('open-project'),
   };
 
+  const saveItem: Electron.MenuItemConstructorOptions = {
+    label: 'Save',
+    accelerator: 'CommandOrControl+S',
+    click: () => sendMenuAction('save'),
+  };
+
+  const saveAsItem: Electron.MenuItemConstructorOptions = {
+    label: 'Save As…',
+    accelerator: 'CommandOrControl+Shift+S',
+    click: () => sendMenuAction('save-as'),
+  };
+
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin'
       ? [
@@ -263,6 +281,9 @@ const buildApplicationMenu = () => {
       label: 'File',
       submenu: [
         openProjectItem,
+        { type: 'separator' },
+        saveItem,
+        saveAsItem,
         { type: 'separator' },
         ...(process.platform !== 'darwin'
           ? [
@@ -353,6 +374,19 @@ const registerIpcHandlers = () => {
     await fs.writeFile(filePath, content, 'utf-8');
   });
 
+  ipcMain.handle('saveFileAs', async (_event, defaultPath?: string) => {
+    if (!mainWindow) return null;
+
+    mainWindow.focus();
+    const result = await dialog.showSaveDialog(mainWindow, {
+      defaultPath,
+      filters: [{ name: 'XML Documents', extensions: ['xml'] }],
+    });
+
+    if (result.canceled || !result.filePath) return null;
+    return result.filePath;
+  });
+
   ipcMain.handle('setWindowTitle', (_event, title: string) => {
     setMainWindowTitle(title);
   });
@@ -379,6 +413,20 @@ const createWindow = async () => {
 
   mainWindow.webContents.on('did-finish-load', () => {
     setMainWindowTitle(APP_NAME);
+  });
+
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    const isFindShortcut =
+      input.type === 'keyDown' &&
+      (input.meta || input.control) &&
+      !input.shift &&
+      !input.alt &&
+      (input.code === 'KeyF' || input.key?.toLowerCase() === 'f');
+
+    if (!isFindShortcut) return;
+
+    event.preventDefault();
+    sendMenuAction('open-find');
   });
 
   try {
