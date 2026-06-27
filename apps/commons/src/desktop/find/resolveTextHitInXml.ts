@@ -1,0 +1,146 @@
+export interface ResolvedTextHit {
+  endInElementText: number;
+  startInElementText: number;
+  teiXPath: string;
+}
+
+const parseOpenTag = (tagInner: string): { name: string; selfClosing: boolean } | null => {
+  const trimmed = tagInner.trim();
+  if (trimmed.startsWith('/')) return null;
+
+  const selfClosing = trimmed.endsWith('/');
+  const withoutSlash = selfClosing ? trimmed.slice(0, -1).trim() : trimmed;
+  const nameMatch = withoutSlash.match(/^([\w:-]+)/);
+  if (!nameMatch) return null;
+
+  return { name: nameMatch[1], selfClosing };
+};
+
+const findTagEnd = (content: string, tagStart: number) => {
+  let quote: '"' | "'" | null = null;
+
+  for (let j = tagStart + 1; j < content.length; j++) {
+    const ch = content[j];
+    if (quote) {
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      continue;
+    }
+    if (ch === '>') return j;
+  }
+
+  return -1;
+};
+
+/** Map a character offset in raw XML source to a TEI xpath + offsets within that element's text. */
+export const resolveTextHitInXml = (
+  content: string,
+  start: number,
+  end: number,
+): ResolvedTextHit | null => {
+  if (start < 0 || end <= start || end > content.length) return null;
+
+  interface StackEntry {
+    index: number;
+    name: string;
+  }
+  const stack: StackEntry[] = [];
+  const siblingCounts = new Map<string, number>();
+  let elementTextOffset = 0;
+
+  const xpathForStack = () => `/${stack.map((entry) => `${entry.name}[${entry.index + 1}]`).join('/')}`;
+
+  const parentPathKey = () =>
+    stack.length === 0 ? '' : stack.map((entry) => `${entry.name}[${entry.index + 1}]`).join('/');
+
+  const pushTag = (name: string) => {
+    const key = `${parentPathKey()}/${name}`;
+    const index = siblingCounts.get(key) ?? 0;
+    siblingCounts.set(key, index + 1);
+    stack.push({ name, index });
+    elementTextOffset = 0;
+  };
+
+  const popTag = (name: string) => {
+    const top = stack[stack.length - 1];
+    if (top?.name === name) {
+      stack.pop();
+      elementTextOffset = 0;
+    }
+  };
+
+  const hitInTextRun = (textStart: number, textEnd: number): ResolvedTextHit | null => {
+    if (stack.length === 0 || start < textStart || end > textEnd) return null;
+
+    return {
+      teiXPath: xpathForStack(),
+      startInElementText: elementTextOffset + (start - textStart),
+      endInElementText: elementTextOffset + (end - textStart),
+    };
+  };
+
+  let i = 0;
+  while (i < content.length) {
+    if (content[i] !== '<') {
+      const nextTag = content.indexOf('<', i);
+      const textEnd = nextTag === -1 ? content.length : nextTag;
+      const hit = hitInTextRun(i, textEnd);
+      if (hit) return hit;
+
+      if (stack.length > 0) {
+        elementTextOffset += textEnd - i;
+      }
+      i = textEnd;
+      continue;
+    }
+
+    const tagEnd = findTagEnd(content, i);
+    if (tagEnd === -1) break;
+
+    const inner = content.slice(i + 1, tagEnd);
+
+    if (inner.startsWith('?') || inner.startsWith('!--')) {
+      i = tagEnd + 1;
+      continue;
+    }
+
+    if (inner.startsWith('![CDATA[')) {
+      const cdataContentStart = i + '<![CDATA['.length;
+      const cdataEnd = content.indexOf(']]>', cdataContentStart);
+      if (cdataEnd === -1) break;
+
+      const hit = hitInTextRun(cdataContentStart, cdataEnd);
+      if (hit) return hit;
+
+      if (stack.length > 0) {
+        elementTextOffset += cdataEnd - cdataContentStart;
+      }
+      i = cdataEnd + 3;
+      continue;
+    }
+
+    if (inner.startsWith('!')) {
+      i = tagEnd + 1;
+      continue;
+    }
+
+    if (inner.startsWith('/')) {
+      const nameMatch = inner.slice(1).trim().match(/^([\w:-]+)/);
+      if (nameMatch) popTag(nameMatch[1]);
+      i = tagEnd + 1;
+      continue;
+    }
+
+    const parsed = parseOpenTag(inner);
+    if (parsed && !parsed.selfClosing) {
+      pushTag(parsed.name);
+    }
+
+    i = tagEnd + 1;
+  }
+
+  return null;
+};

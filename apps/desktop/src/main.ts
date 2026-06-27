@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, protocol } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, protocol, systemPreferences } from 'electron';
 import { fork, type ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
 import fs from 'fs/promises';
@@ -12,6 +12,12 @@ import { getValidLastProjectFile, writeLastProjectFile } from './projectPrefs';
 import { loadOrCreateProject, loadProjectFile } from './projectFile';
 
 const APP_NAME = 'Le Jean-Baptiste';
+
+// Hide macOS-injected Edit menu items (Emoji & Symbols, Start Dictation).
+if (process.platform === 'darwin') {
+  systemPreferences.setUserDefault('NSDisabledDictationMenuItem', 'boolean', true);
+  systemPreferences.setUserDefault('NSDisabledCharacterPaletteMenuItem', 'boolean', true);
+}
 
 // Must run before app.ready so macOS uses this name in the menu bar (dev and packaged).
 app.setName(APP_NAME);
@@ -178,6 +184,44 @@ const sendMenuAction = (action: string) => {
   mainWindow?.webContents.send('app:menu-action', action);
 };
 
+const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
+  label: 'Edit',
+  submenu: [
+    { role: 'undo' },
+    { role: 'redo' },
+    { type: 'separator' },
+    { role: 'cut' },
+    { role: 'copy' },
+    { role: 'paste' },
+    ...(process.platform === 'darwin'
+      ? ([
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+        ] as Electron.MenuItemConstructorOptions[])
+      : ([
+          { role: 'delete' },
+          { type: 'separator' },
+          { role: 'selectAll' },
+        ] as Electron.MenuItemConstructorOptions[])),
+  ],
+});
+
+const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
+  label: 'View',
+  submenu: [
+    { role: 'reload' },
+    { role: 'forceReload' },
+    { role: 'toggleDevTools' },
+    { type: 'separator' },
+    { role: 'resetZoom' },
+    { role: 'zoomIn' },
+    { role: 'zoomOut' },
+    { type: 'separator' },
+    { role: 'togglefullscreen' },
+  ],
+});
+
 const buildApplicationMenu = () => {
   const settingsItem: Electron.MenuItemConstructorOptions = {
     label: 'Settings…',
@@ -220,20 +264,20 @@ const buildApplicationMenu = () => {
       submenu: [
         openProjectItem,
         { type: 'separator' },
+        ...(process.platform !== 'darwin'
+          ? [
+              {
+                label: 'About Le Jean-Baptiste',
+                click: () => sendMenuAction('open-about'),
+              },
+              { type: 'separator' },
+            ]
+          : []),
         process.platform === 'darwin' ? { role: 'close' } : { role: 'quit' },
       ],
     },
-    {
-      label: 'Help',
-      submenu: [
-        {
-          label: 'About Le Jean-Baptiste',
-          click: () => sendMenuAction('open-about'),
-        },
-      ],
-    },
-    { role: 'editMenu' },
-    { role: 'viewMenu' },
+    buildEditMenu(),
+    buildViewMenu(),
     { role: 'windowMenu' },
   ];
 

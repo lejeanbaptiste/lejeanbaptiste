@@ -1,3 +1,4 @@
+import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import CloseIcon from '@mui/icons-material/Close';
 import { Box, IconButton, Tab, Tabs, Typography } from '@mui/material';
 import { leafwriterAtom } from '@src/jotai';
@@ -13,12 +14,14 @@ export const DocumentTabBar = () => {
 
   const handleChange = async (_event: React.SyntheticEvent, filePath: string) => {
     if (filePath === activeTabPath) return;
+    clearFindHighlights();
     const content = leafWriter ? await leafWriter.getContent() : undefined;
     await switchTab({ content, filePath });
   };
 
   const handleClose = async (event: React.MouseEvent, filePath: string) => {
     event.stopPropagation();
+    clearFindHighlights();
     const content =
       filePath === activeTabPath && leafWriter ? await leafWriter.getContent() : undefined;
     await closeTab({ content, filePath });

@@ -4,21 +4,19 @@ import {
   Box,
   CircularProgress,
   Collapse,
-  FormControl,
-  InputLabel,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  MenuItem,
-  Select,
   TextField,
   Typography,
 } from '@mui/material';
 import { useAppState } from '@src/overmind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { searchXPath } from '../xpath/searchXPath';
-import type { XPathFileResult, XPathScope } from '../xpath/types';
+import type { XPathFileResult } from '../xpath/types';
+import { ScopeFields } from '../shared/ScopeFields';
+import type { SearchScope } from '../shared/searchScope';
 import { useXPathJump } from '../xpath/useXPathJump';
 
 interface FlatXPathResult {
@@ -52,19 +50,12 @@ const flattenResults = (
   return flat;
 };
 
-const scopeLabels: Record<XPathScope, string> = {
-  currentFile: 'Current file',
-  openTabs: 'Open tabs',
-  project: 'Project',
-  custom: 'Custom',
-};
-
 export const SidebarXPathTab = () => {
   const { activeTabPath, openTabs, rootPath } = useAppState().project;
   const { resource } = useAppState().editor;
 
   const [query, setQuery] = useState('');
-  const [scope, setScope] = useState<XPathScope>('currentFile');
+  const [scope, setScope] = useState<SearchScope>('currentFile');
   const [customPath, setCustomPath] = useState('');
   const [results, setResults] = useState<XPathFileResult[]>([]);
   const [collapsedFilePaths, setCollapsedFilePaths] = useState<Set<string>>(() => new Set());
@@ -246,35 +237,14 @@ export const SidebarXPathTab = () => {
           }}
           slotProps={{ input: { sx: { fontSize: '0.8125rem' } } }}
         />
-        <FormControl fullWidth size="small">
-          <InputLabel id="xpath-scope-label">Scope</InputLabel>
-          <Select
-            labelId="xpath-scope-label"
-            label="Scope"
-            value={scope}
-            onChange={(event) => setScope(event.target.value as XPathScope)}
-            sx={{ fontSize: '0.8125rem' }}
-          >
-            {(Object.keys(scopeLabels) as XPathScope[]).map((value) => (
-              <MenuItem key={value} value={value} sx={{ fontSize: '0.8125rem' }}>
-                {scopeLabels[value]}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {scope === 'custom' && (
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="/path/to/folder"
-            value={customPath}
-            onChange={(event) => setCustomPath(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') void handleSearch();
-            }}
-            slotProps={{ input: { sx: { fontSize: '0.8125rem' } } }}
-          />
-        )}
+        <ScopeFields
+          scope={scope}
+          onScopeChange={setScope}
+          customPath={customPath}
+          onCustomPathChange={setCustomPath}
+          onEnter={() => void handleSearch()}
+          scopeLabelId="xpath-scope-label"
+        />
       </Box>
 
       <Box
