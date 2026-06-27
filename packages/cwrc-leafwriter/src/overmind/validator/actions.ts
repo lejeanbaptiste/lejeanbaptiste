@@ -7,6 +7,11 @@ import * as Comlink from 'comlink';
 import { Context } from '../';
 import Writer from '../../js/Writer';
 import { webpackEnv } from '../../types';
+import { checkWellFormedness } from '../../utilities/checkWellFormedness';
+
+export type SourceValidationResult = ValidationResponse & {
+  parseError?: Extract<ReturnType<typeof checkWellFormedness>, { valid: false }>['error'];
+};
 
 declare global {
   interface Window {
@@ -62,11 +67,34 @@ export const initialize = async ({ state }: Context) => {
 
 export const validate = async ({ state, actions }: Context) => {
   const writer = window.writer;
-  if (!writer || !state.validator.hasWorkerValidator) return;
+  if (!writer) return;
+
+  const documentString =
+    state.ui.editorViewMode === 'source'
+      ? state.ui.sourceCurrentContent
+      : await writer.converter.getDocumentContent(false);
+
+  if (!documentString) return;
+
+  const wellFormed = checkWellFormedness(documentString);
+  if (!wellFormed.valid) {
+    const parseErrorCount = wellFormed.error.positions?.length ?? 1;
+    await actions.validator.updateValidationError(parseErrorCount);
+    writer.event('documentValidated').publish(
+      false,
+      { valid: false, errors: [], parseError: wellFormed.error } satisfies SourceValidationResult,
+      documentString,
+    );
+    return;
+  }
+
+  if (!state.validator.hasWorkerValidator || !state.validator.hasSchema) {
+    await actions.validator.updateValidationError(0);
+    writer.event('documentValidated').publish(true, { valid: true }, documentString);
+    return;
+  }
 
   const workerValidator = window.leafwriterValidator;
-
-  const documentString = await writer.converter.getDocumentContent(false);
 
   const validationProgress = async ({ partDone, state, valid, errors }: ValidationResponse) => {
     if (state.valueOf() <= 2) {
@@ -80,10 +108,8 @@ export const validate = async ({ state, actions }: Context) => {
     writer.event('documentValidated').publish(valid, { valid, errors }, documentString);
   };
 
-  if (documentString) {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    await workerValidator.validate(documentString, Comlink.proxy(validationProgress));
-  }
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  await workerValidator.validate(documentString, Comlink.proxy(validationProgress));
 };
 
 export const updateValidationError = async ({ state }: Context, value: number) => {

@@ -1,6 +1,7 @@
 export * from './DocumentTabBar';
 export * from './UnifiedLeftPanel';
 export * from './ProjectSidebar';
+export * from './useDesktopAppMenuBridge';
 export * from './useProjectMenu';
 export * from './useNativeDialogBridge';
 export * from './openNativeSettings';

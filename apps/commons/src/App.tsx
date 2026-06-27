@@ -6,12 +6,14 @@ import { SnackbarProvider } from 'notistack';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useRoutes } from 'react-router';
+import { useDesktopAppMenuBridge } from './desktop/useDesktopAppMenuBridge';
 import { useAnalytics, useCookieConsent, usePermalink } from './hooks';
 import { useActions, useAppState } from './overmind';
 import { routes } from './routes';
 import { theme } from './theme';
 
 export const App = () => {
+  useDesktopAppMenuBridge();
   const { cookieConsent, darkMode, currentLocale, themeAppearance } = useAppState().ui;
   const { storageDialogState } = useAppState().storage;
 

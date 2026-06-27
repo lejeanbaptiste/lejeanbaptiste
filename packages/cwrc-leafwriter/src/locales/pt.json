@@ -374,6 +374,7 @@
       },
       "editor": {
         "Show Entities": "Mostar Entidades",
+        "Show Raw XML panel": "Mostrar painel de XML bruto",
         "font size": "tamanho da fonte"
       },
       "markupPanel": {

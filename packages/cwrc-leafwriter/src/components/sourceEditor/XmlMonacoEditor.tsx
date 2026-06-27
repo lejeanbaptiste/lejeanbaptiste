@@ -1,12 +1,17 @@
 import { Box, useColorScheme } from '@mui/material';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useEffect, useRef, useState } from 'react';
+import {
+  dispatchDesktopOpenFind,
+  registerSourceFindEditor,
+} from '../../sourceEditor/findInSourceEditor';
 
 export interface XmlMonacoEditorProps {
   value: string;
   onChange: (value: string) => void;
   onEditorInstance?: (editor: monaco.editor.IStandaloneCodeEditor | null) => void;
   errorPositions?: { line: number; col: number }[];
+  markers?: monaco.editor.IMarkerData[];
   minHeight?: number | string;
 }
 
@@ -15,6 +20,7 @@ export const XmlMonacoEditor = ({
   onChange,
   onEditorInstance,
   errorPositions,
+  markers,
   minHeight = 600,
 }: XmlMonacoEditorProps) => {
   const { mode, systemMode } = useColorScheme();
@@ -50,10 +56,16 @@ export const XmlMonacoEditor = ({
       onChangeRef.current(monacoEditor.getValue());
     });
 
+    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
+      dispatchDesktopOpenFind();
+    });
+
+    registerSourceFindEditor(monacoEditor);
     setEditor(monacoEditor);
     onEditorInstanceRef.current?.(monacoEditor);
 
     return () => {
+      registerSourceFindEditor(null);
       onEditorInstanceRef.current?.(null);
       monacoEditor.dispose();
       setEditor(null);
@@ -70,6 +82,14 @@ export const XmlMonacoEditor = ({
       editor.setValue(value);
     }
   }, [editor, value]);
+
+  useEffect(() => {
+    if (!editor) return;
+    const model = editor.getModel();
+    if (!model) return;
+
+    monaco.editor.setModelMarkers(model, 'leafwriter-validation', markers ?? []);
+  }, [editor, markers]);
 
   useEffect(() => {
     decorations?.clear();

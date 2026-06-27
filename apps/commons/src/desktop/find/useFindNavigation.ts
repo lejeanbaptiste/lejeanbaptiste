@@ -28,14 +28,31 @@ export const useFindNavigation = (onAfterJump?: () => void) => {
     onAfterJumpRef.current?.();
   }, []);
 
+  const getContentForJump = useCallback(
+    (filePath: string) => {
+      if (window.writer?.overmindState?.ui?.editorViewMode === 'source') {
+        const currentPath = resourceFilePathRef.current ?? activeTabPathRef.current;
+        if (currentPath === filePath) {
+          return window.writer.overmindState.ui.sourceCurrentContent;
+        }
+      }
+
+      return getTabContent(filePath);
+    },
+    [getTabContent],
+  );
+
   const tryPerformPendingJump = useCallback(() => {
     const jump = pendingJumpRef.current;
-    if (!jump || !window.writer?.editor) return false;
+    if (!jump || !window.writer) return false;
+
+    const isSourceMode = window.writer.overmindState?.ui?.editorViewMode === 'source';
+    if (!isSourceMode && !window.writer.editor) return false;
 
     const currentPath = resourceFilePathRef.current ?? activeTabPathRef.current;
     if (currentPath !== jump.filePath) return false;
 
-    const content = getTabContent(jump.filePath);
+    const content = getContentForJump(jump.filePath);
     if (!content) return false;
 
     if (
@@ -53,7 +70,7 @@ export const useFindNavigation = (onAfterJump?: () => void) => {
     }
 
     return false;
-  }, [completeJump, getTabContent]);
+  }, [completeJump, getContentForJump]);
 
   const schedulePendingJumpRetries = useCallback(() => {
     for (const delay of [0, 100, 350, 800, 1500]) {
@@ -82,9 +99,10 @@ export const useFindNavigation = (onAfterJump?: () => void) => {
     (jump: PendingFindJump) => {
       const currentFilePath = resource?.filePath ?? activeTabPath;
       const isActive = currentFilePath === jump.filePath;
-      const content = getTabContent(jump.filePath);
+      const isSourceMode = window.writer?.overmindState?.ui?.editorViewMode === 'source';
+      const content = getContentForJump(jump.filePath);
 
-      if (isActive && window.writer?.editor && content) {
+      if (isActive && window.writer && content && (isSourceMode || window.writer.editor)) {
         if (
           performFindJump({
             content,
@@ -110,7 +128,7 @@ export const useFindNavigation = (onAfterJump?: () => void) => {
         schedulePendingJumpRetries();
       })();
     },
-    [activeTabPath, getTabContent, openFile, resource?.filePath, schedulePendingJumpRetries],
+    [activeTabPath, getContentForJump, openFile, resource?.filePath, schedulePendingJumpRetries],
   );
 
   return { jumpToHit };

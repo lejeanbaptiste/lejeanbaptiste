@@ -35,6 +35,7 @@ export interface ElectronAPI {
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) => Promise<FileEntry[]>;
   readFile: (filePath: string) => Promise<string>;
   writeFile: (filePath: string, content: string) => Promise<void>;
+  saveFileAs: (defaultPath?: string) => Promise<string | null>;
   setWindowTitle: (title: string) => Promise<void>;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
   showNativeMessageBox: (

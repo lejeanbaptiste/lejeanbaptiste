@@ -11,7 +11,20 @@ import type { XPathFileResult, XPathScope } from './types';
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
 
+const isSourceEditorMode = () =>
+  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+
+const getContentForSearch = (tab: OpenTab, activeTabPath: string | null) => {
+  if (isSourceEditorMode() && tab.filePath === activeTabPath) {
+    return window.writer?.overmindState?.ui?.sourceCurrentContent || tab.content;
+  }
+  return tab.content;
+};
+
 const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
+
+const canUseEditor = (filePath: string, editorFilePath: string | null) =>
+  editorFilePath === filePath && !!window.writer?.editor && !isSourceEditorMode();
 
 const buildMatchesFromNodes = (
   filePath: string,
@@ -107,11 +120,11 @@ export const searchXPath = async ({
       return { results: [], error: 'No file is open.' };
     }
 
-    const canUseEditor = editorFilePath === activeTabPath && window.writer?.editor;
+    const canUseEditorDom = canUseEditor(activeTabPath, editorFilePath);
     addResult(
-      canUseEditor
+      canUseEditorDom
         ? searchInEditor(activeTabPath, trimmed)
-        : searchInXmlContent(activeTabPath, tab.content, trimmed),
+        : searchInXmlContent(activeTabPath, getContentForSearch(tab, activeTabPath), trimmed),
     );
 
     return { results };
@@ -123,11 +136,11 @@ export const searchXPath = async ({
     }
 
     for (const tab of openTabs) {
-      const canUseEditor = editorFilePath === tab.filePath && window.writer?.editor;
+      const canUseEditorDom = canUseEditor(tab.filePath, editorFilePath);
       addResult(
-        canUseEditor
+        canUseEditorDom
           ? searchInEditor(tab.filePath, trimmed)
-          : searchInXmlContent(tab.filePath, tab.content, trimmed),
+          : searchInXmlContent(tab.filePath, getContentForSearch(tab, activeTabPath), trimmed),
       );
     }
 

@@ -288,8 +288,12 @@ class LayoutManager {
 
     if (toolbar) toolbar.style.display = '';
     if (tox) tox.style.display = '';
-    if (textarea) textarea.style.display = '';
-    if (sourcePane) sourcePane.style.display = 'none';
+    // TinyMCE keeps the raw textarea hidden; never restore display or it appears as a stray resizable box.
+    if (textarea) textarea.style.display = 'none';
+    if (sourcePane) {
+      sourcePane.style.display = 'none';
+      sourcePane.style.height = '';
+    }
     this.resizeEditor();
   }
 
@@ -354,6 +358,34 @@ class LayoutManager {
       //@ts-ignore
       this.$outerLayout.panes[region].tabs('option', 'active', tabIndex);
     }
+  }
+
+  applyRawXmlPanelVisibility(show: boolean) {
+    const tab = document.querySelector('.ui-layout-east > ul > li#code') as HTMLElement | null;
+    if (tab) tab.style.display = show ? '' : 'none';
+
+    if (show || !this.$outerLayout) return;
+
+    //@ts-ignore
+    const $east = this.$outerLayout.panes?.east;
+    if (!$east) return;
+
+    //@ts-ignore
+    const $codeTab = $east.find('> ul > li#code');
+    if (!$codeTab.hasClass('ui-tabs-active')) return;
+
+    //@ts-ignore
+    const $visibleTabs = $east.find('> ul > li').filter(function (this: HTMLElement) {
+      return this.style.display !== 'none';
+    });
+
+    if ($visibleTabs.length > 0) {
+      //@ts-ignore
+      $east.tabs('option', 'active', $visibleTabs.first().index());
+      return;
+    }
+
+    this.hideRegion('east');
   }
 
   hideRegion(region: LayoutLocation) {

@@ -36,6 +36,7 @@ export type EditorStateType = {
   proxyLoaderCssEndpoint?: string;
   settings?: any;
   showEntities: boolean;
+  showRawXmlPanel: boolean;
   showTags: boolean;
 };
 
@@ -72,6 +73,7 @@ export const state: EditorStateType = {
   LWChangeEventSuspended: false,
   mode: 0,
   showEntities: true,
+  showRawXmlPanel: false,
   showTags: false,
   schemas: {},
   schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),

@@ -6,6 +6,7 @@ import { resetLookupPreferences } from '../../jotai/entity-lookup/utilities';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
+const SHOW_RAW_XML_PANEL_KEY = 'showRawXmlPanel';
 
 export const writerInitSettings = async (
   { state: { editor }, actions }: Context,
@@ -32,6 +33,7 @@ export const applyInitialSettings = ({ state, actions }: Context) => {
   const body = window.writer.editor.getBody();
   if (state.editor.showEntities) $(body).addClass('showEntities');
   if (state.editor.showTags) $(body).addClass('showTags');
+  window.writer.layoutManager.applyRawXmlPanelVisibility(state.editor.showRawXmlPanel);
 };
 
 export const setAutosave = ({ state }: Context, value?: boolean) => {
@@ -75,6 +77,12 @@ export const setShowEntities = ({ state }: Context, value: boolean) => {
 
   $('body', window.writer.editor.getDoc()).toggleClass('showEntities');
   state.editor.showEntities = value;
+};
+
+export const setShowRawXmlPanel = ({ state, effects }: Context, value: boolean) => {
+  state.editor.showRawXmlPanel = value;
+  effects.editor.api.saveToLocalStorage(SHOW_RAW_XML_PANEL_KEY, value);
+  window.writer?.layoutManager?.applyRawXmlPanelVisibility(value);
 };
 
 export const toggleAdvancedSettings = ({ state }: Context, value: boolean) => {
@@ -202,10 +210,11 @@ export const resetDialogWarnings = async ({ actions }: Context) => {
   await actions.ui.resetDoNotDisplayDialogs();
 };
 
-export const resetPreferences = async ({ actions }: Context) => {
+export const resetPreferences = async ({ actions, effects }: Context) => {
   actions.editor.setFontSize(11);
   actions.editor.toggleShowTags(false);
   actions.editor.setShowEntities(true);
+  actions.editor.setShowRawXmlPanel(false);
   actions.editor.setEditorMode('xmlrdf');
   actions.editor.setAnnotationrMode(3);
   await actions.ui.resetDoNotDisplayDialogs();

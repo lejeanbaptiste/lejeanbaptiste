@@ -5,8 +5,8 @@ import { Toggler } from '../../components';
 import { FontSize } from './font-size';
 
 export const Editor = () => {
-  const { autosave, isReadonly, showEntities } = useAppState().editor;
-  const { setAutosave, setShowEntities } = useActions().editor;
+  const { autosave, isReadonly, showEntities, showRawXmlPanel } = useAppState().editor;
+  const { setAutosave, setShowEntities, setShowRawXmlPanel } = useActions().editor;
   const { t } = useTranslation();
 
   return (
@@ -28,6 +28,15 @@ export const Editor = () => {
         type="toggle"
         value={showEntities}
       />
+      {!isReadonly && (
+        <Toggler
+          icon="code"
+          onChange={setShowRawXmlPanel}
+          title={t('LW.settings.editor.Show Raw XML panel')}
+          type="toggle"
+          value={showRawXmlPanel}
+        />
+      )}
     </List>
   );
 };

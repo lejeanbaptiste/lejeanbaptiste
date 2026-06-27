@@ -12,6 +12,7 @@ import 'jquery-ui/ui/widgets/tooltip';
 import ProgressBar from 'progressbar.js';
 import Circle from 'progressbar.js/circle';
 import Writer from '../../../Writer';
+import type { XMLParseErrorPosition } from '../../../../utilities/checkWellFormedness';
 
 interface ValidationProps {
   parentId: string;
@@ -86,10 +87,10 @@ class Validation {
 
     this.writer
       .event('documentValidated')
-      .subscribe((valid: boolean, result: ValidationResponse) => {
+      .subscribe((valid: boolean, result: ValidationResponse & { parseError?: { message: string; positions?: XMLParseErrorPosition[] } }) => {
         $(`#${this.id}_indicator`).hide();
         this.showValidationResult(result);
-        if (result.errors) this.writer.layoutManager.showModule('validation');
+        if (result.errors?.length || result.parseError) this.writer.layoutManager.showModule('validation');
       });
 
     this.writer.event('documentValidating').subscribe((partDone: number) => {
@@ -113,7 +114,13 @@ class Validation {
    * @param result.valid {boolean} Whether the document is valid or not
    * @param result.errors {array} List of errors
    */
-  showValidationResult({ valid, errors }: ValidationResponse) {
+  showValidationResult({
+    valid,
+    errors,
+    parseError,
+  }: ValidationResponse & {
+    parseError?: { message: string; positions?: XMLParseErrorPosition[] };
+  }) {
     const list = $(`#${this.id} > div.validationList`);
     list.empty();
 
@@ -129,6 +136,49 @@ class Validation {
       // Make sure validation error counter get's removed if it has been shown before
       const $stats = $('.moduleFooter > div.stats');
       $stats.empty();
+
+      return;
+    }
+
+    if (parseError) {
+      this.writer.layoutManager.showModule('validation');
+
+      const parseErrors: { message: string }[] = parseError.positions?.length
+        ? parseError.positions.map((pos: XMLParseErrorPosition) => ({
+            message:
+              pos.message ??
+              `Line ${pos.line}, column ${pos.col}: ${parseError.message}`,
+          }))
+        : [{ message: parseError.message }];
+
+      parseErrors.forEach(({ message }) => {
+        list.append(`
+        <li>
+          <div id="header">
+            <div id="headerIcon">
+              <i class="fas fa-exclamation-circle" />
+            </div>
+            <div style="flex-grow: 1;">
+              ${message}
+            </div>
+          </div>
+        </li>
+      `);
+      });
+
+      const $stats = $(`.moduleFooter > div.stats`);
+      $stats.empty();
+      $stats.append(`
+        <div id="stats-container">
+          <div id="info" title="Rerun validator">
+            <i class="fas fa-exclamation-circle"></i>
+            ${parseErrors.length}
+          </div>
+        </div>
+      `);
+
+      //@ts-ignore
+      $stats.find('#info').button().on('click', () => this.writer.validate());
 
       return;
     }
