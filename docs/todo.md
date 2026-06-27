@@ -1,26 +1,40 @@
 # Todo
 
+See **`docs/project-schema-planning.md`** for Open Project, project metadata, New File (⌘N), schema setup, and skeleton design.
+
 Menu
-- [ ] New project
-- [ ] New document (creates not a blank, but an empty schema-formatted file)
+- [ ] Open Project — schema setup when folder has no schema (download or copy local); then project metadata dialog (required Save)
+- [ ] Project → Edition metadata… — edit `schema/project-metadata.json`; optional apply to existing XML files
+- [ ] New File (⌘N) — temp file + Save As; skeleton merges project metadata defaults; prompt on close if unsaved
+
+Settings
+- [ ] Encoder name — pre-fill `titleStmt/principal` in project metadata dialog on new setup (see planning doc)
+
+Editor / right rail
+- [ ] Right panel icon strip (icons instead of text labels where space is tight)
+- [ ] File metadata panel — first icon; default panel when a file opens (title, sourceDesc, …)
+- [ ] Attributes panel — tag attrs + Lookup… + per-type colours; see **`docs/tagging-planning.md`** Phase 2
 
 Editor
-- [ ] Fast add tag
-- [ ] Fast add attributes
+- [ ] Fast add tag — see **`docs/tagging-planning.md`** (Enter-tag popup, Phase 1)
+- [ ] Fast add attributes — see **`docs/tagging-planning.md`** (Phase 3+; separate from identify path)
 - [ ] AI api integration for tagging without modifying the language (?).
-- [ ] Attribute panel
+- [ ] Attribute panel — see **`docs/tagging-planning.md`** (Attributes panel, Phase 2)
 - [ ] SQL integration (?)
-- [ ] Versioning files
+- [ ] Versioning files — see **`docs/versioning-planning.md`** (local history on save, rollback; medium priority)
 
-**Tagging**
-- [ ] Completely rethink the tagging paradigm
+**Tagging** — see **`docs/tagging-planning.md`**
+- [ ] Enter-tag popup + F2 rename + insert/split (Phase 1)
+- [ ] Alt+Enter attribute popup + right attributes panel + Lookup + per-type colours (Phase 2)
+- [ ] Tag/attr usage stats + customisable keybindings
+- [ ] Disambiguation queue + resolution-file attribute propagation (later phases)
+- [ ] Completely rethink the tagging paradigm (umbrella — tracked in planning doc)
 
 **Metadata**
-- [ ] Metadata popup (?) with suggested fields, and you can add your own. (maybe there should be a json recording project defaults and ideals...)
-- [ ] Saving in the editor should leave a 'last edited' timestamp with the user name.
+- [ ] Saving in the editor should leave a 'last edited' timestamp with the user name (see planning doc Phase 6)
 
 **CSS**
-- [ ] Css colour schemes + Schema entities settings.
+- [ ] Per-type tag highlight + text colours — attributes panel → `schema/tag-colors.json` + CSS; see **`docs/tagging-planning.md`**
 
 **Refinement**
 - [ ] Improve fixed layout of things in find and replace
@@ -28,8 +42,4 @@ Editor
 - [ ] Keyboard shortcuts for all side panels
 
 4. “New document” + metadata (medium priority, very TEI-relevant)
-For a scholarly editor, these are high value:
-
-New document — empty but schema-valid TEI skeleton, not a blank file
-Metadata button — TEI header dialog
-That’s often what people need before they start tagging body text.
+Project-wide metadata: planning doc Phase 1–2. Per-file metadata: right-rail panel Phase 3 (default on open).
