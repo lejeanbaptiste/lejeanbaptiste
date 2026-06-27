@@ -31,8 +31,11 @@ export const setDocumentUrl = ({ state }: Context, url?: string) => {
   state.document.url = url;
 };
 
+export const setDocumentXml = ({ state }: Context, content: string) => {
+  state.document.xml = content;
+};
+
 export const updateContent = ({ state }: Context, content: string) => {
-  if (!state.document.xml) return;
   state.document.xml = content;
 };
 
@@ -70,7 +73,7 @@ export const updateXMLHeader = ({ state }: Context, content: string) => {
   state.editor.contentHasChanged = true;
 };
 
-export const clear = ({ state }: Context) => {
+export const clear = ({ state, actions }: Context) => {
   state.document.loaded = false;
   state.document.rootName = undefined;
   state.document.schemaId = '';
@@ -78,11 +81,12 @@ export const clear = ({ state }: Context) => {
   state.document.url = undefined;
   state.document.xml = undefined;
   state.document.isReload = false;
+  actions.ui.resetSourceEditor();
 };
 
 export const loadDocumentXML = ({ actions, state }: Context, content: string) => {
   window.writer?.loadDocumentXML(content);
-  actions.document.updateContent(content);
+  actions.document.setDocumentXml(content);
   if (state.document.isReload) state.editor.contentHasChanged = true;
 };
 

@@ -3,6 +3,8 @@ import { type Locales } from '../../i18n';
 import { Panel } from '../../layout/Utilities';
 import type { ContextMenuState, LayoutProps, NotificationProps, PaletteMode } from '../../types';
 
+export type EditorViewMode = 'visual' | 'source';
+
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {
   contextMenu: ContextMenuState;
@@ -10,6 +12,9 @@ type State = {
   darkMode: boolean;
   dialogBar: DialogBarProps[];
   editSourceProps: EditSourceDialogProps;
+  editorViewMode: EditorViewMode;
+  sourceCurrentContent: string;
+  sourceOriginalContent: string;
   fullscreen: boolean;
   layout: LayoutProps;
   markupPanel: {
@@ -28,6 +33,9 @@ export const state: State = {
   darkMode: false,
   dialogBar: [],
   editSourceProps: { open: false },
+  editorViewMode: 'visual',
+  sourceCurrentContent: '',
+  sourceOriginalContent: '',
   fullscreen: false,
   layout: {
     outerLeft: { id: 'left', items: [Panel.toc, Panel.markup, Panel.entities] },

@@ -230,6 +230,17 @@ export const getContent = async ({ state, actions }: Context) => {
     return suspended.content;
   }
 
+  if (state.ui.editorViewMode === 'source') {
+    let content = state.ui.sourceCurrentContent;
+    if (!content) return;
+
+    if (state.document.standOffTags) {
+      content = actions.editor.restoreStandOff(content);
+    }
+
+    return content;
+  }
+
   let content = await window.writer.getContent();
   if (!content) return;
 

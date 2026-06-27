@@ -8,6 +8,7 @@ import { ValdidationErrors } from './ValdidationErrors';
 import AnnotationMode from './annotationMode';
 import EditorMode from './editorMode';
 import { Schema } from './schema';
+import { SourceView } from './sourceView';
 
 const isDesktopApp = () =>
   typeof window !== 'undefined' &&
@@ -40,6 +41,7 @@ export const BottomBar = () => {
             <EditorMode />
             <AnnotationMode />
             <Schema />
+            <SourceView />
           </>
         )}
 

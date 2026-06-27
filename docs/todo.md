@@ -5,6 +5,10 @@
 - [ ] AI api integration for tagging without modifying the language (?).
 - [ ] Attribute panel
 - [ ] SQL integration (?)
+- [ ] New document (creates not a blank, but an empty schema-formatted file)
+- [ ] Metadata button, opens dialogue to fill out TEI metadata
+- [ ] make sure that we can move and rename documents in the explorer.
+- [ ] Use gold standard for autocomplete (redhat-developer/vscode-xml)
 
 Menu
 - [ ] New project

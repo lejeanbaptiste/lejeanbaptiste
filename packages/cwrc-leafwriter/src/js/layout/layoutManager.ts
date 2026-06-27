@@ -40,6 +40,7 @@ class LayoutManager {
 
   name = 'Leaf-Writer';
   editorId = '';
+  editorViewMode: 'visual' | 'source' = 'visual';
 
   readonly PANEL_MIN_WIDTH = 320;
 
@@ -103,9 +104,10 @@ class LayoutManager {
 
     //CENTRAL
     html += `
-      <div class="ui-layout-center ui-widget ui-widget-content" style="background-color: #f6f6f6">
+      <div class="ui-layout-center ui-widget ui-widget-content" style="background-color: #f6f6f6; display: flex; flex-direction: column; min-height: 0; height: 100%;">
         <div id="editor-toolbar" />
-          <textarea id="${this.editorId}" name="editor" class="tinymce"></textarea>
+        <div id="source-editor-pane" style="display: none; flex: 1; min-height: 0; overflow: hidden; width: 100%;" />
+        <textarea id="${this.editorId}" name="editor" class="tinymce"></textarea>
       </div>
     `;
 
@@ -180,7 +182,13 @@ class LayoutManager {
         fxName: 'none',
       },
       center: {
-        onresize_end: () => this.resizeEditor(),
+        onresize_end: () => {
+          if (this.editorViewMode === 'source') {
+            this.resizeSourceEditor();
+          } else {
+            this.resizeEditor();
+          }
+        },
       },
     };
 
@@ -231,12 +239,58 @@ class LayoutManager {
     if (!this.writer.editor) return;
 
     const toolbar = document.querySelector('#editor-toolbar');
-    const tox: HTMLElement = document.querySelector('.tox')!;
+    const tox: HTMLElement | null = document.querySelector('.tox');
     if (!toolbar || !tox) return;
 
     const toolbarHeight = toolbar.getBoundingClientRect().height;
 
     tox.style.height = `calc(100% - ${toolbarHeight}px)`;
+  }
+
+  resizeSourceEditor() {
+    const sourcePane = document.querySelector('#source-editor-pane') as HTMLElement | null;
+    if (!sourcePane || sourcePane.style.display === 'none') return;
+
+    const layoutPane = sourcePane.closest('.ui-layout-pane-center') as HTMLElement | null;
+    const centralColumn = sourcePane.parentElement as HTMLElement | null;
+
+    if (centralColumn) {
+      centralColumn.style.height = '100%';
+    }
+
+    const paneHeight = layoutPane?.clientHeight ?? centralColumn?.clientHeight ?? 0;
+
+    if (paneHeight > 0) {
+      sourcePane.style.height = `${paneHeight}px`;
+    }
+
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+  }
+
+  setEditorViewMode(mode: 'visual' | 'source') {
+    this.editorViewMode = mode;
+    const toolbar = document.querySelector('#editor-toolbar') as HTMLElement | null;
+    const sourcePane = document.querySelector('#source-editor-pane') as HTMLElement | null;
+    const tox = document.querySelector('.tox') as HTMLElement | null;
+    const textarea = document.querySelector(`#${this.editorId}`) as HTMLElement | null;
+
+    if (mode === 'source') {
+      if (toolbar) toolbar.style.display = 'none';
+      if (tox) tox.style.display = 'none';
+      if (textarea) textarea.style.display = 'none';
+      if (sourcePane) sourcePane.style.display = 'flex';
+      setTimeout(() => this.resizeSourceEditor(), 0);
+      setTimeout(() => this.resizeSourceEditor(), 50);
+      return;
+    }
+
+    if (toolbar) toolbar.style.display = '';
+    if (tox) tox.style.display = '';
+    if (textarea) textarea.style.display = '';
+    if (sourcePane) sourcePane.style.display = 'none';
+    this.resizeEditor();
   }
 
   showModule(moduleId: ISettingsModuleName) {

@@ -1,19 +1,10 @@
-import { useColorScheme } from '@mui/material';
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { XmlMonacoEditor } from '../../components/sourceEditor/XmlMonacoEditor';
 import type { EditSourceDialogProps } from '../type';
 import { useEditor } from './hooks/useEditor';
-import { contentTypeAtom, currentContentAtom, originalContentAtom } from './store';
-
-// * Intellisense for XML: https://mono.software/2017/04/11/custom-intellisense-with-monaco-editor/
-
-// @ts-ignore
-// self.MonacoEnvironment = {
-//   getWorkerUrl: function (_moduleId: any, label: string) {
-//     return './editor.worker.bundle.js';
-//   },
-// };
+import { contentTypeAtom, currentContentAtom, originalContentAtom, xmlValidityAtom } from './store';
 
 interface EditorProps {
   initialContent: string;
@@ -21,46 +12,31 @@ interface EditorProps {
 }
 
 export const Editor = ({ initialContent, type }: EditorProps) => {
+  const currentContent = useAtomValue(currentContentAtom);
   const setCurrentContent = useSetAtom(currentContentAtom);
   const setOriginalContent = useSetAtom(originalContentAtom);
   const setType = useSetAtom(contentTypeAtom);
-  const { mode, systemMode } = useColorScheme();
-
+  const xmlValidity = useAtomValue(xmlValidityAtom);
   const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const divEl = useRef<HTMLDivElement>(null);
-
-  const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
 
   useEditor(editor);
 
   useEffect(() => {
     setOriginalContent(initialContent);
     setType(type);
+    setCurrentContent(initialContent);
+  }, [initialContent, setCurrentContent, setOriginalContent, setType, type]);
 
-    if (divEl.current) {
-      setCurrentContent(initialContent);
-      const monacoEditor = monaco.editor.create(divEl.current, {
-        lineNumbers: 'on',
-        language: 'xml',
-        theme: isDarkMode ? 'vs-dark' : 'vs-light',
-        value: initialContent,
-        wordWrap: 'wordWrapColumn',
-        wordWrapColumn: 100,
-        wrappingIndent: 'indent',
-      });
+  const errorPositions =
+    xmlValidity.valid || !xmlValidity.error.positions ? undefined : xmlValidity.error.positions;
 
-      monacoEditor.getModel()?.onDidChangeContent(() => {
-        const content = monacoEditor.getValue();
-        setCurrentContent(content);
-      });
-
-      setEditor(monacoEditor);
-    }
-
-    return () => {
-      editor?.dispose();
-    };
-  }, [mode, systemMode]);
-
-  return <div className="Editor" ref={divEl} style={{ minHeight: 600 }} />;
+  return (
+    <XmlMonacoEditor
+      value={currentContent}
+      onChange={setCurrentContent}
+      onEditorInstance={setEditor}
+      errorPositions={errorPositions}
+      minHeight={600}
+    />
+  );
 };

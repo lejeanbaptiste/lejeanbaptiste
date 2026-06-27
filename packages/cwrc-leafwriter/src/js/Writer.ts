@@ -236,6 +236,9 @@ class Writer extends EventManager {
    */
   loadDocumentXML(docXml: string) {
     this.converter.loadDocumentXML(docXml);
+    if (typeof docXml === 'string') {
+      this.overmindActions?.document.setDocumentXml(docXml);
+    }
   }
 
   async getContent() {
