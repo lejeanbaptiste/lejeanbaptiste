@@ -58,6 +58,52 @@ const locateCharacterRange = (
   return { startNode, startOff, endNode, endOff };
 };
 
+/** Patch matched text in the WYSIWYG editor without reloading the whole document. */
+export const replaceTextHitInEditor = (
+  resolved: ResolvedTextHit,
+  replacement: string,
+): boolean => {
+  const editor = window.writer?.editor;
+  if (!editor) return false;
+
+  const body = editor.getBody();
+  if (!body) return false;
+
+  const element = findEditorNodeByTeiXPath(body, resolved.teiXPath);
+  if (!element) return false;
+
+  unhideNotes(element);
+
+  const range = locateCharacterRange(
+    element,
+    resolved.startInElementText,
+    resolved.endInElementText,
+  );
+  if (!range) return false;
+
+  if (range.startNode !== range.endNode) return false;
+
+  const text = range.startNode.textContent ?? '';
+  const nextText = text.slice(0, range.startOff) + replacement + text.slice(range.endOff);
+
+  // Bookend with add() so TinyMCE records one undo step for the text change.
+  editor.undoManager.add();
+  range.startNode.textContent = nextText;
+  editor.undoManager.add();
+  editor.nodeChanged();
+  editor.fire('change');
+  editor.focus();
+  return true;
+};
+
+export const undoWysiwygEditor = (): boolean => {
+  const editor = window.writer?.editor;
+  if (!editor?.undoManager.hasUndo()) return false;
+  editor.focus();
+  editor.undoManager.undo();
+  return true;
+};
+
 /** Scroll to a resolved hit without changing the editor text selection. */
 export const scrollToTextHitInEditor = (resolved: ResolvedTextHit): boolean => {
   if (!window.writer?.editor) return false;
@@ -77,6 +123,6 @@ export const scrollToTextHitInEditor = (resolved: ResolvedTextHit): boolean => {
   );
 
   const scrollEl = range?.startNode.parentElement ?? element;
-  scrollEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  scrollEl.scrollIntoView({ block: 'nearest', behavior: 'auto' });
   return true;
 };

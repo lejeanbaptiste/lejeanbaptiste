@@ -5,6 +5,9 @@ import {
   dispatchDesktopOpenFind,
   registerSourceFindEditor,
 } from '../../sourceEditor/findInSourceEditor';
+import { registerClosingTagCompletion } from './closingTagCompletion';
+import { useXmlLanguageClient } from './useXmlLanguageClient';
+import type { LspStartOptions } from './lsp/ipcLspClient';
 
 export interface XmlMonacoEditorProps {
   value: string;
@@ -13,6 +16,9 @@ export interface XmlMonacoEditorProps {
   errorPositions?: { line: number; col: number }[];
   markers?: monaco.editor.IMarkerData[];
   minHeight?: number | string;
+  /** On-disk path for LSP document URI (desktop Source mode autofill). */
+  documentPath?: string | null;
+  lspOptions?: LspStartOptions;
 }
 
 export const XmlMonacoEditor = ({
@@ -22,6 +28,8 @@ export const XmlMonacoEditor = ({
   errorPositions,
   markers,
   minHeight = 600,
+  documentPath,
+  lspOptions,
 }: XmlMonacoEditorProps) => {
   const { mode, systemMode } = useColorScheme();
   const divEl = useRef<HTMLDivElement>(null);
@@ -38,8 +46,12 @@ export const XmlMonacoEditor = ({
   const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
   const theme = isDarkMode ? 'vs-dark' : 'vs-light';
 
+  useXmlLanguageClient({ documentPath, editor, lspOptions, value });
+
   useEffect(() => {
     if (!divEl.current) return;
+
+    const closingTagDisposable = registerClosingTagCompletion();
 
     const monacoEditor = monaco.editor.create(divEl.current, {
       automaticLayout: true,
@@ -65,6 +77,7 @@ export const XmlMonacoEditor = ({
     onEditorInstanceRef.current?.(monacoEditor);
 
     return () => {
+      closingTagDisposable.dispose();
       registerSourceFindEditor(null);
       onEditorInstanceRef.current?.(null);
       monacoEditor.dispose();
@@ -79,7 +92,11 @@ export const XmlMonacoEditor = ({
   useEffect(() => {
     if (!editor) return;
     if (editor.getValue() !== value) {
+      const scrollTop = editor.getScrollTop();
+      const scrollLeft = editor.getScrollLeft();
       editor.setValue(value);
+      editor.setScrollTop(scrollTop);
+      editor.setScrollLeft(scrollLeft);
     }
   }, [editor, value]);
 

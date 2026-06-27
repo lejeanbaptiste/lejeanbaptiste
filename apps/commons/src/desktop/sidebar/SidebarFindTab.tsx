@@ -1,4 +1,6 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -13,14 +15,19 @@ import {
   ListItemIcon,
   ListItemText,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
+import { useFindPanelUndo } from '@src/desktop/find/findPanelUndo';
 import { DESKTOP_FIND_FOCUS_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { FindSnippetLine, formatSnippetLabel } from '@src/desktop/find/snippetDisplay';
 import { searchText } from '@src/desktop/find/searchText';
-import type { FindFileResult } from '@src/desktop/find/types';
+import type { FindFileResult, FindHighlightMode } from '@src/desktop/find/types';
 import { useFindNavigation } from '@src/desktop/find/useFindNavigation';
+import { useFindReplace } from '@src/desktop/find/useFindReplace';
 import { ScopeFields } from '@src/desktop/shared/ScopeFields';
 import type { SearchScope } from '@src/desktop/shared/searchScope';
 import { useAppState } from '@src/overmind';
@@ -34,6 +41,7 @@ interface FlatFindResult {
   label: string;
   line: number;
   matchIndexInFile: number;
+  replaceable?: boolean;
   start: number;
 }
 
@@ -54,6 +62,7 @@ const flattenResults = (
         line: match.line,
         column: match.column,
         matchIndexInFile: match.matchIndex,
+        replaceable: match.replaceable,
         start: match.start,
         end: match.end,
       });
@@ -71,18 +80,21 @@ export const SidebarFindTab = () => {
   const [scope, setScope] = useState<SearchScope>('currentFile');
   const [customPath, setCustomPath] = useState('');
   const [useRegex, setUseRegex] = useState(false);
+  const [searchBackwards, setSearchBackwards] = useState(false);
   const [results, setResults] = useState<FindFileResult[]>([]);
   const [totalMatches, setTotalMatches] = useState(0);
   const [collapsedFilePaths, setCollapsedFilePaths] = useState<Set<string>>(() => new Set());
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [replacing, setReplacing] = useState(false);
 
   const resultsContainerRef = useRef<HTMLDivElement>(null);
   const findInputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const keyboardNavRef = useRef(false);
   const selectedIndexRef = useRef(selectedIndex);
+  const lastSearchKeyRef = useRef('');
   selectedIndexRef.current = selectedIndex;
 
   const refocusSelectedItem = useCallback(() => {
@@ -93,11 +105,144 @@ export const SidebarFindTab = () => {
   }, []);
 
   const { jumpToHit } = useFindNavigation(refocusSelectedItem);
+  const { handleFindPanelUndoKeyDown } = useFindPanelUndo();
 
   const flatResults = useMemo(
     () => flattenResults(results, collapsedFilePaths),
     [results, collapsedFilePaths],
   );
+
+  const jumpToFlatResult = useCallback(
+    (
+      index: number,
+      options?: { contentForJump?: string; highlightMode?: FindHighlightMode },
+    ) => {
+      const item = flatResults[index];
+      if (!item) return;
+
+      void jumpToHit({
+        contentForJump: options?.contentForJump,
+        filePath: item.filePath,
+        highlightMode: options?.highlightMode ?? 'scroll-only',
+        line: item.line,
+        column: item.column,
+        matchIndexInFile: item.matchIndexInFile,
+        query: findQuery.trim(),
+        start: item.start,
+        end: item.end,
+        useRegex,
+      });
+    },
+    [flatResults, findQuery, jumpToHit, useRegex],
+  );
+
+  const buildSearchKey = useCallback(
+    () =>
+      JSON.stringify({
+        customPath,
+        findQuery: findQuery.trim(),
+        scope,
+        useRegex,
+      }),
+    [customPath, findQuery, scope, useRegex],
+  );
+
+  const handleSearchComplete = useCallback(
+    ({
+      contentForJump,
+      error: searchError,
+      jumpToSelection,
+      refreshHighlight,
+      results: nextResults,
+      selectedIndex: nextSelectedIndex,
+      totalMatches: count,
+    }: {
+      contentForJump?: string;
+      error?: string | null;
+      jumpToSelection?: boolean;
+      refreshHighlight?: boolean;
+      results: FindFileResult[];
+      selectedIndex?: number;
+      totalMatches: number;
+    }) => {
+      lastSearchKeyRef.current = buildSearchKey();
+      setResults(nextResults);
+      setTotalMatches(count);
+      setError(searchError ?? (count === 0 ? 'No results.' : null));
+
+      if (count === 0) {
+        setSelectedIndex(-1);
+        return;
+      }
+
+      const flat = flattenResults(nextResults, collapsedFilePaths);
+
+      if (typeof nextSelectedIndex === 'number') {
+        const idx = Math.min(Math.max(0, nextSelectedIndex), flat.length - 1);
+        setSelectedIndex(idx);
+        selectedIndexRef.current = idx;
+        if (jumpToSelection || refreshHighlight) {
+          const item = flat[idx];
+          if (item) {
+            const isSourceMode =
+              window.writer?.overmindState?.ui?.editorViewMode === 'source';
+            // #region agent log
+            fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'SidebarFindTab.tsx:jumpAfterReplace',message:'jump after replace/search',data:{idx,start:item.start,end:item.end,hasContentForJump:!!contentForJump},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
+            void jumpToHit({
+              column: item.column,
+              contentForJump,
+              end: item.end,
+              filePath: item.filePath,
+              highlightMode:
+                refreshHighlight && isSourceMode ? 'active-only' : 'full',
+              line: item.line,
+              matchIndexInFile: item.matchIndexInFile,
+              query: findQuery.trim(),
+              start: item.start,
+              useRegex,
+            });
+          }
+        }
+        return;
+      }
+
+      setSelectedIndex(0);
+      selectedIndexRef.current = 0;
+      const first = flat[0];
+      if (first) {
+        void jumpToHit({
+          column: first.column,
+          end: first.end,
+          filePath: first.filePath,
+          highlightMode: 'full',
+          line: first.line,
+          matchIndexInFile: first.matchIndexInFile,
+          query: findQuery.trim(),
+          start: first.start,
+          useRegex,
+        });
+      }
+    },
+    [buildSearchKey, collapsedFilePaths, findQuery, jumpToHit, useRegex],
+  );
+
+  const selectedHit = selectedIndex >= 0 ? flatResults[selectedIndex] ?? null : null;
+
+  const { replaceAllInScope, replaceCurrentHit } = useFindReplace({
+    activeTabPath,
+    customPath,
+    findQuery,
+    onSearchComplete: handleSearchComplete,
+    openTabs,
+    replaceQuery,
+    results,
+    rootPath,
+    scope,
+    selectedHit,
+    selectedIndex,
+    useRegex,
+  });
 
   const toggleFileCollapsed = useCallback(
     (filePath: string) => {
@@ -117,25 +262,6 @@ export const SidebarFindTab = () => {
       });
     },
     [flatResults, results, selectedIndex],
-  );
-
-  const jumpToFlatResult = useCallback(
-    (index: number) => {
-      const item = flatResults[index];
-      if (!item) return;
-
-      void jumpToHit({
-        filePath: item.filePath,
-        line: item.line,
-        column: item.column,
-        matchIndexInFile: item.matchIndexInFile,
-        query: findQuery.trim(),
-        start: item.start,
-        end: item.end,
-        useRegex,
-      });
-    },
-    [flatResults, findQuery, jumpToHit, useRegex],
   );
 
   const navigateToIndex = useCallback(
@@ -176,10 +302,6 @@ export const SidebarFindTab = () => {
 
   useEffect(() => {
     itemRefs.current.clear();
-    if (results.length > 0) {
-      keyboardNavRef.current = true;
-      setSelectedIndex(0);
-    }
   }, [results]);
 
   useEffect(() => {
@@ -252,35 +374,92 @@ export const SidebarFindTab = () => {
         useRegex,
       });
 
-      setResults(nextResults);
-      setTotalMatches(count);
-
-      if (searchError) {
-        setError(searchError);
-      } else if (count === 0) {
-        setError('No results.');
-      } else {
-        const firstFile = nextResults[0];
-        const firstMatch = firstFile?.matches[0];
-        if (firstFile && firstMatch) {
-          void jumpToHit({
-            column: firstMatch.column,
-            end: firstMatch.end,
-            filePath: firstFile.filePath,
-            line: firstMatch.line,
-            matchIndexInFile: firstMatch.matchIndex,
-            query: findQuery.trim(),
-            start: firstMatch.start,
-            useRegex,
-          });
-        }
-      }
+      handleSearchComplete({
+        results: nextResults,
+        totalMatches: count,
+        error: searchError,
+      });
     } catch {
       setError('Search failed.');
     } finally {
       setLoading(false);
     }
-  }, [activeTabPath, customPath, findQuery, jumpToHit, openTabs, rootPath, scope, useRegex]);
+  }, [activeTabPath, customPath, findQuery, handleSearchComplete, openTabs, rootPath, scope, useRegex]);
+
+  const cycleFind = useCallback(
+    (backwards = searchBackwards) => {
+      if (loading || replacing) return;
+
+      if (flatResults.length === 0) {
+        if (findQuery.trim()) void handleSearch();
+        return;
+      }
+
+      const next =
+        selectedIndex < 0
+          ? 0
+          : backwards
+            ? selectedIndex <= 0
+              ? flatResults.length - 1
+              : selectedIndex - 1
+            : (selectedIndex + 1) % flatResults.length;
+
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'SidebarFindTab.tsx:cycleFind',message:'cycle find',data:{selectedIndex,next,backwards,total:flatResults.length},timestamp:Date.now(),hypothesisId:'H'})}).catch(()=>{});
+      // #endregion
+      navigateToIndex(next);
+    },
+    [
+      findQuery,
+      flatResults.length,
+      handleSearch,
+      loading,
+      navigateToIndex,
+      replacing,
+      searchBackwards,
+      selectedIndex,
+    ],
+  );
+
+  const runFindOrNext = useCallback(() => {
+    if (loading || replacing || !findQuery.trim()) return;
+
+    const searchKey = buildSearchKey();
+    if (lastSearchKeyRef.current === searchKey && flatResults.length > 0) {
+      cycleFind();
+      return;
+    }
+
+    void handleSearch();
+  }, [buildSearchKey, cycleFind, findQuery, flatResults.length, handleSearch, loading, replacing]);
+
+  const handleReplace = useCallback(async () => {
+    setReplacing(true);
+    try {
+      await replaceCurrentHit();
+    } finally {
+      setReplacing(false);
+    }
+  }, [replaceCurrentHit]);
+
+  const handleReplaceAll = useCallback(async () => {
+    setReplacing(true);
+    try {
+      await replaceAllInScope();
+    } finally {
+      setReplacing(false);
+    }
+  }, [replaceAllInScope]);
+
+  const canReplace =
+    !loading &&
+    !replacing &&
+    !!findQuery.trim() &&
+    totalMatches > 0 &&
+    selectedIndex >= 0 &&
+    selectedHit?.replaceable !== false;
+
+  const canReplaceAll = !loading && !replacing && !!findQuery.trim() && totalMatches > 0;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -303,8 +482,26 @@ export const SidebarFindTab = () => {
           inputRef={findInputRef}
           onChange={(event) => setFindQuery(event.target.value)}
           onKeyDown={(event) => {
+            handleFindPanelUndoKeyDown(event);
             if (event.key === 'Enter') {
-              void handleSearch();
+              event.preventDefault();
+              runFindOrNext();
+              return;
+            }
+            if (
+              event.key === 'F3' ||
+              (event.key === 'g' && (event.metaKey || event.ctrlKey) && !event.shiftKey)
+            ) {
+              event.preventDefault();
+              cycleFind(false);
+              return;
+            }
+            if (
+              (event.key === 'F3' && event.shiftKey) ||
+              (event.key === 'g' && (event.metaKey || event.ctrlKey) && event.shiftKey)
+            ) {
+              event.preventDefault();
+              cycleFind(true);
               return;
             }
             if (event.key === 'ArrowDown' && flatResults.length > 0) {
@@ -324,7 +521,19 @@ export const SidebarFindTab = () => {
           placeholder="Replacement text"
           value={replaceQuery}
           onChange={(event) => setReplaceQuery(event.target.value)}
-          helperText="Replace buttons will be added in the next phase."
+          onKeyDown={(event) => {
+            handleFindPanelUndoKeyDown(event);
+            if (event.key === 'Enter' && canReplace) {
+              void handleReplace();
+            }
+          }}
+          helperText={
+            selectedHit?.replaceable === false
+              ? 'This match crosses XML markup and cannot be replaced in Source mode.'
+              : useRegex
+                ? 'Capture groups: $1 or \\1'
+                : undefined
+          }
           slotProps={{ input: { sx: { fontSize: '0.8125rem' } } }}
         />
         <ScopeFields
@@ -332,29 +541,68 @@ export const SidebarFindTab = () => {
           onScopeChange={setScope}
           customPath={customPath}
           onCustomPathChange={setCustomPath}
-          onEnter={() => void handleSearch()}
+          onEnter={() => runFindOrNext()}
           scopeLabelId="find-scope-label"
         />
-        <FormControlLabel
-          control={
-            <Checkbox
-              size="small"
-              checked={useRegex}
-              onChange={(event) => setUseRegex(event.target.checked)}
-            />
-          }
-          label="Use regular expression"
-          sx={{ ml: 0, '& .MuiFormControlLabel-label': { fontSize: '0.8125rem' } }}
-        />
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<SearchIcon fontSize="small" />}
-          onClick={() => void handleSearch()}
-          disabled={loading || !findQuery.trim()}
-        >
-          Find
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                size="small"
+                checked={useRegex}
+                onChange={(event) => setUseRegex(event.target.checked)}
+              />
+            }
+            label="Regex"
+            sx={{ ml: 0, mr: 0, '& .MuiFormControlLabel-label': { fontSize: '0.8125rem' } }}
+          />
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={searchBackwards ? 'back' : 'forward'}
+            onChange={(_event, value: 'back' | 'forward' | null) => {
+              if (value) setSearchBackwards(value === 'back');
+            }}
+          >
+            <ToggleButton value="forward" aria-label="Search forward">
+              <Tooltip title="Forward">
+                <ArrowDownwardIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="back" aria-label="Search backward">
+              <Tooltip title="Backward">
+                <ArrowUpwardIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<SearchIcon fontSize="small" />}
+            onClick={runFindOrNext}
+            disabled={loading || replacing || !findQuery.trim()}
+          >
+            Find
+          </Button>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => void handleReplace()}
+            disabled={!canReplace}
+          >
+            Replace
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => void handleReplaceAll()}
+            disabled={!canReplaceAll}
+          >
+            Replace all
+          </Button>
+        </Box>
       </Box>
 
       <Box

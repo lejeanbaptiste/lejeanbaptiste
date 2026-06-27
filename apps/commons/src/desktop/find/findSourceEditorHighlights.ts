@@ -9,7 +9,15 @@ declare global {
         useRegex: boolean;
       }) => boolean;
       clear: () => void;
+      replaceRange: (params: {
+        content: string;
+        end: number;
+        replacement: string;
+        start: number;
+      }) => boolean;
       revealRange: (params: { content: string; end: number; start: number }) => boolean;
+      scrollToHit: (params: { content: string; end: number; start: number }) => boolean;
+      undo: () => string | null;
     };
   }
 }
@@ -30,6 +38,25 @@ export const applyFindJumpInSourceEditor = (params: {
 }): boolean => {
   if (!isSourceEditorMode()) return false;
   return window.__leafWriterSourceFind?.applyJump(params) ?? false;
+};
+
+export const revealRangeInSourceEditor = (params: {
+  content: string;
+  end: number;
+  focusEditor?: boolean;
+  start: number;
+}): boolean => {
+  if (!isSourceEditorMode()) return false;
+  return window.__leafWriterSourceFind?.revealRange(params) ?? false;
+};
+
+export const scrollToSourceFindHit = (params: {
+  content: string;
+  end: number;
+  start: number;
+}): boolean => {
+  if (!isSourceEditorMode()) return false;
+  return window.__leafWriterSourceFind?.scrollToHit(params) ?? false;
 };
 
 export const getActiveEditorContent = (fallbackContent?: string) => {

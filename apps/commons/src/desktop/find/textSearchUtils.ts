@@ -1,4 +1,5 @@
 import type { TextHit, VisibleSnippet } from './types';
+import { isReplaceableTextHit } from './replaceText';
 
 const SNIPPET_RADIUS = 36;
 const SNIPPET_VISIBLE_RADIUS = 16;
@@ -187,6 +188,7 @@ export const searchLiteralInContent = (content: string, needle: string): TextHit
       line,
       column,
       snippet: buildVisibleSnippet(content, index, end),
+      replaceable: isReplaceableTextHit(content, index, end),
     });
 
     matchIndex += 1;
@@ -223,6 +225,7 @@ export const searchRegexInContent = (content: string, pattern: string): TextHit[
       line,
       column,
       snippet: buildVisibleSnippet(content, start, end),
+      replaceable: isReplaceableTextHit(content, start, end),
     });
 
     matchIndex += 1;

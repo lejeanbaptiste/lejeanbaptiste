@@ -109,6 +109,8 @@
     "rxjs": "^7.8.2",
     "sax": "^1.4.1",
     "tinymce": "5.10.9",
+    "vscode-jsonrpc": "^8.2.1",
+    "vscode-languageserver-protocol": "^3.18.1",
     "zod": "^4.3.6",
     "zod-formik-adapter": "^2.0.0"
   },

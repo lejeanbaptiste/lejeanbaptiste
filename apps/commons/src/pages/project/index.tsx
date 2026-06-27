@@ -1,5 +1,5 @@
 import { Box, CircularProgress } from '@mui/material';
-import { useCommonsUiBridge, useNativeDialogBridge } from '@src/desktop';
+import { useCommonsUiBridge, useLspProjectBridge, useNativeDialogBridge } from '@src/desktop';
 import { Page } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
@@ -13,6 +13,7 @@ export const ProjectEditPage = () => {
 
   useNativeDialogBridge();
   useCommonsUiBridge();
+  useLspProjectBridge();
 
   useEffect(() => {
     setPage('project');

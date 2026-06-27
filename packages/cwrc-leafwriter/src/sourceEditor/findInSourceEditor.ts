@@ -5,6 +5,36 @@ const FIND_ACTIVE_DECORATION_CLASS = 'lw-source-find-hit-active';
 
 let decorationCollection: monaco.editor.IEditorDecorationsCollection | undefined;
 let registeredEditor: monaco.editor.IStandaloneCodeEditor | null = null;
+let cachedHitRanges: { end: number; start: number }[] = [];
+
+const revealFindHitRange = (
+  editor: monaco.editor.IStandaloneCodeEditor,
+  range: monaco.IRange,
+) => {
+  editor.revealRangeInCenterIfOutsideViewport(range, monaco.editor.ScrollType.Immediate);
+};
+
+const applyDecorationsForHits = (
+  editor: monaco.editor.IStandaloneCodeEditor,
+  content: string,
+  hits: { end: number; start: number }[],
+  activeStart: number,
+  activeEnd: number,
+) => {
+  const decorations: monaco.editor.IModelDeltaDecoration[] = hits.map(({ start, end }) => {
+    const isActive = start === activeStart && end === activeEnd;
+    return {
+      range: offsetToRange(content, start, end),
+      options: {
+        className: isActive ? FIND_ACTIVE_DECORATION_CLASS : FIND_DECORATION_CLASS,
+        inlineClassName: isActive ? FIND_ACTIVE_DECORATION_CLASS : FIND_DECORATION_CLASS,
+      },
+    };
+  });
+
+  decorationCollection?.clear();
+  decorationCollection = editor.createDecorationsCollection(decorations);
+};
 
 const buildSearchRegex = (query: string, useRegex: boolean) => {
   if (useRegex) {
@@ -50,16 +80,19 @@ export const registerSourceFindEditor = (editor: monaco.editor.IStandaloneCodeEd
 export const clearFindHighlightsInSourceEditor = () => {
   decorationCollection?.clear();
   decorationCollection = undefined;
+  cachedHitRanges = [];
 };
 
 export const revealRangeInSourceEditor = ({
   content,
   start,
   end,
+  focusEditor = true,
 }: {
   content: string;
-  start: number;
   end: number;
+  focusEditor?: boolean;
+  start: number;
 }): boolean => {
   const editor = registeredEditor;
   if (!editor) return false;
@@ -79,9 +112,42 @@ export const revealRangeInSourceEditor = ({
     },
   ]);
 
-  editor.revealRangeInCenter(range);
-  editor.setSelection(range);
+  revealFindHitRange(editor, range);
+  if (focusEditor) {
+    editor.setSelection(range);
+    editor.focus();
+  }
+  return true;
+};
+
+/** Scroll to a hit during cycling without re-scanning the file or forcing center scroll. */
+export const scrollToSourceFindHit = ({
+  content,
+  end,
+  start,
+}: {
+  content: string;
+  end: number;
+  start: number;
+}): boolean => {
+  const editor = registeredEditor;
+  if (!editor) return false;
+
+  ensureHighlightStyles();
+
+  if (cachedHitRanges.length > 0) {
+    applyDecorationsForHits(editor, content, cachedHitRanges, start, end);
+  }
+
+  const jumpRange = offsetToRange(content, start, end);
+  revealFindHitRange(editor, jumpRange);
+  editor.setSelection(jumpRange);
   editor.focus();
+
+  // #region agent log
+  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'findInSourceEditor.ts:scrollToSourceFindHit',message:'scroll-only source jump',data:{start,end,cachedHits:cachedHitRanges.length},timestamp:Date.now(),hypothesisId:'G'})}).catch(()=>{});
+  // #endregion
+
   return true;
 };
 
@@ -107,53 +173,29 @@ export const applyFindJumpInSourceEditor = ({
   const regex = buildSearchRegex(query.trim(), useRegex);
   if (!regex) return false;
 
-  const decorations: monaco.editor.IModelDeltaDecoration[] = [];
-  let activeDecorationIndex = -1;
+  const hits: { end: number; start: number }[] = [];
 
   for (const match of content.matchAll(regex)) {
     if (match.index === undefined) continue;
 
     const matchStart = match.index;
     const matchEnd = matchStart + match[0].length;
-    const isActive = matchStart === start && matchEnd === end;
-
-    decorations.push({
-      range: offsetToRange(content, matchStart, matchEnd),
-      options: {
-        className: isActive ? FIND_ACTIVE_DECORATION_CLASS : FIND_DECORATION_CLASS,
-        inlineClassName: isActive ? FIND_ACTIVE_DECORATION_CLASS : FIND_DECORATION_CLASS,
-      },
-    });
-
-    if (isActive) {
-      activeDecorationIndex = decorations.length - 1;
-    }
+    hits.push({ start: matchStart, end: matchEnd });
 
     if (match[0].length === 0) {
       regex.lastIndex += 1;
     }
   }
 
-  if (decorations.length === 0) {
-    decorations.push({
-      range: offsetToRange(content, start, end),
-      options: {
-        className: FIND_ACTIVE_DECORATION_CLASS,
-        inlineClassName: FIND_ACTIVE_DECORATION_CLASS,
-      },
-    });
-    activeDecorationIndex = 0;
-  } else if (activeDecorationIndex < 0) {
-    decorations[0].options = {
-      className: FIND_ACTIVE_DECORATION_CLASS,
-      inlineClassName: FIND_ACTIVE_DECORATION_CLASS,
-    };
+  if (hits.length === 0) {
+    hits.push({ start, end });
   }
 
-  decorationCollection = editor.createDecorationsCollection(decorations);
+  cachedHitRanges = hits;
+  applyDecorationsForHits(editor, content, hits, start, end);
 
   const jumpRange = offsetToRange(content, start, end);
-  editor.revealRangeInCenter(jumpRange);
+  revealFindHitRange(editor, jumpRange);
   editor.setSelection(jumpRange);
   editor.focus();
 
@@ -179,6 +221,50 @@ const ensureHighlightStyles = () => {
   document.head.appendChild(style);
 };
 
+export const replaceRangeInSourceEditor = ({
+  content,
+  end,
+  replacement,
+  start,
+}: {
+  content: string;
+  end: number;
+  replacement: string;
+  start: number;
+}): boolean => {
+  const editor = registeredEditor;
+  if (!editor) return false;
+
+  const range = offsetToRange(content, start, end);
+  const ok = editor.executeEdits('find-replace', [
+    {
+      range,
+      text: replacement,
+      forceMoveMarkers: true,
+    },
+  ]);
+
+  if (ok) {
+    cachedHitRanges = [];
+    const newEnd = start + replacement.length;
+    const selectionRange = offsetToRange(editor.getValue(), start, newEnd);
+    editor.setSelection(selectionRange);
+    editor.focus();
+  }
+
+  return ok;
+};
+
+export const undoSourceEditor = (): string | null => {
+  const editor = registeredEditor;
+  if (!editor) return null;
+  editor.focus();
+  editor.trigger('find-replace', 'undo', null);
+  const content = editor.getValue();
+  window.writer?.overmindActions?.ui?.setSourceCurrentContent?.(content);
+  return content;
+};
+
 export const DESKTOP_OPEN_FIND_EVENT = 'desktop:open-find';
 
 declare global {
@@ -186,7 +272,10 @@ declare global {
     __leafWriterSourceFind?: {
       applyJump: typeof applyFindJumpInSourceEditor;
       clear: typeof clearFindHighlightsInSourceEditor;
+      replaceRange: typeof replaceRangeInSourceEditor;
       revealRange: typeof revealRangeInSourceEditor;
+      scrollToHit: typeof scrollToSourceFindHit;
+      undo: typeof undoSourceEditor;
     };
   }
 }
@@ -194,7 +283,10 @@ declare global {
 window.__leafWriterSourceFind = {
   applyJump: applyFindJumpInSourceEditor,
   clear: clearFindHighlightsInSourceEditor,
+  replaceRange: replaceRangeInSourceEditor,
   revealRange: revealRangeInSourceEditor,
+  scrollToHit: scrollToSourceFindHit,
+  undo: undoSourceEditor,
 };
 
 export const dispatchDesktopOpenFind = () => {

@@ -6,6 +6,17 @@ import type { FindFileResult } from './types';
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
 
+const isSourceEditorMode = () =>
+  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+
+/** Live buffer for the active tab in Source mode; otherwise the tab snapshot. */
+const getContentForSearch = (tab: OpenTab, activeTabPath: string | null) => {
+  if (isSourceEditorMode() && tab.filePath === activeTabPath) {
+    return window.writer?.overmindState?.ui?.sourceCurrentContent || tab.content;
+  }
+  return tab.content;
+};
+
 const buildFileResult = (filePath: string, content: string, query: string, useRegex: boolean) => {
   const matches = searchInContent(content, query, useRegex);
   if (matches.length === 0) return null;
@@ -78,14 +89,14 @@ export const searchText = async ({
         return { results: [], totalMatches: 0, error: 'No file is open.' };
       }
 
-      addResult(buildFileResult(activeTabPath, tab.content, trimmed, useRegex));
+      addResult(buildFileResult(activeTabPath, getContentForSearch(tab, activeTabPath), trimmed, useRegex));
     } else if (scope === 'openTabs') {
       if (openTabs.length === 0) {
         return { results: [], totalMatches: 0, error: 'No files are open.' };
       }
 
       for (const tab of openTabs) {
-        addResult(buildFileResult(tab.filePath, tab.content, trimmed, useRegex));
+        addResult(buildFileResult(tab.filePath, getContentForSearch(tab, activeTabPath), trimmed, useRegex));
       }
     } else if (scope === 'project') {
       if (!rootPath) {

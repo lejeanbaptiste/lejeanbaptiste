@@ -58,7 +58,9 @@ export const useFindNavigation = (onAfterJump?: () => void) => {
     if (
       performFindJump({
         content,
+        contentForJump: jump.contentForJump,
         end: jump.end,
+        highlightMode: jump.highlightMode,
         matchIndexInFile: jump.matchIndexInFile,
         query: jump.query,
         start: jump.start,
@@ -106,7 +108,9 @@ export const useFindNavigation = (onAfterJump?: () => void) => {
         if (
           performFindJump({
             content,
+            contentForJump: jump.contentForJump,
             end: jump.end,
+            highlightMode: jump.highlightMode,
             matchIndexInFile: jump.matchIndexInFile,
             query: jump.query,
             start: jump.start,

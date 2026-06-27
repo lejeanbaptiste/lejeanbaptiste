@@ -142,6 +142,32 @@ export const applyFindHighlightsInEditor = (
   const activeSpan = spans[activeIndex];
   activeSpan.element.classList.remove(FIND_HIT_CLASS);
   activeSpan.element.classList.add(FIND_HIT_ACTIVE_CLASS);
-  activeSpan.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  activeSpan.element.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+  return true;
+};
+
+/** Move the active highlight during cycling without rebuilding every match. */
+export const scrollToFindHitInEditor = (activeMatchIndex: number): boolean => {
+  const body = window.writer?.editor?.getBody();
+  if (!body) return false;
+
+  const spans = [
+    ...body.querySelectorAll<HTMLElement>(`.${FIND_HIT_CLASS}, .${FIND_HIT_ACTIVE_CLASS}`),
+  ];
+  if (spans.length === 0) return false;
+
+  const activeIndex = Math.min(Math.max(activeMatchIndex, 0), spans.length - 1);
+
+  spans.forEach((span, index) => {
+    span.classList.toggle(FIND_HIT_CLASS, index !== activeIndex);
+    span.classList.toggle(FIND_HIT_ACTIVE_CLASS, index === activeIndex);
+  });
+
+  spans[activeIndex]?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+
+  // #region agent log
+  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'findEditorHighlights.ts:scrollToFindHitInEditor',message:'scroll-only wysiwyg jump',data:{activeIndex,total:spans.length},timestamp:Date.now(),hypothesisId:'G'})}).catch(()=>{});
+  // #endregion
+
   return true;
 };

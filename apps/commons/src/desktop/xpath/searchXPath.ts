@@ -2,7 +2,6 @@ import type { OpenTab } from '@src/overmind/project/state';
 import { collectXmlFiles } from './collectXmlFiles';
 import {
   evaluateXPathAll,
-  getNodeId,
   getNodeLabel,
   getXPathForElement,
   parseXmlDocument,
@@ -14,6 +13,7 @@ const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? fileP
 const isSourceEditorMode = () =>
   window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
+/** Raw XML content for search — always the on-disk / tab snapshot, not the editor DOM. */
 const getContentForSearch = (tab: OpenTab, activeTabPath: string | null) => {
   if (isSourceEditorMode() && tab.filePath === activeTabPath) {
     return window.writer?.overmindState?.ui?.sourceCurrentContent || tab.content;
@@ -21,20 +21,13 @@ const getContentForSearch = (tab: OpenTab, activeTabPath: string | null) => {
   return tab.content;
 };
 
-const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
-
-const canUseEditor = (filePath: string, editorFilePath: string | null) =>
-  editorFilePath === filePath && !!window.writer?.editor && !isSourceEditorMode();
-
 const buildMatchesFromNodes = (
   filePath: string,
   nodes: Node[],
   getXpath: (node: Node) => string,
-  includeIds = false,
 ) => {
-  const matches = nodes.map((node, matchIndex) => ({
-    matchIndex,
-    id: includeIds ? getNodeId(node) : undefined,
+  const matches = nodes.map((node, resultIndex) => ({
+    resultIndex,
     label: getNodeLabel(node),
     xpath: getXpath(node),
   }));
@@ -56,27 +49,9 @@ const searchInXmlContent = (filePath: string, content: string, query: string) =>
   return buildMatchesFromNodes(filePath, nodes, (node) => getXPathForElement(node, doc));
 };
 
-const searchInEditor = (filePath: string, query: string) => {
-  if (!window.writer?.editor) return null;
-
-  const nodes = window.writer.utilities.evaluateXPathAll(window.writer.editor.getBody(), query);
-  return buildMatchesFromNodes(
-    filePath,
-    nodes,
-    (node) => {
-      if (isElement(node)) {
-        return window.writer.utilities.getElementXPath(node) ?? '';
-      }
-      return window.writer.utilities.getNodeXpath(node) ?? '';
-    },
-    true,
-  );
-};
-
 export interface SearchXPathParams {
   activeTabPath: string | null;
   customPath?: string;
-  editorFilePath: string | null;
   openTabs: OpenTab[];
   query: string;
   rootPath: string | null;
@@ -91,7 +66,6 @@ export interface SearchXPathResult {
 export const searchXPath = async ({
   activeTabPath,
   customPath,
-  editorFilePath,
   openTabs,
   query,
   rootPath,
@@ -120,13 +94,7 @@ export const searchXPath = async ({
       return { results: [], error: 'No file is open.' };
     }
 
-    const canUseEditorDom = canUseEditor(activeTabPath, editorFilePath);
-    addResult(
-      canUseEditorDom
-        ? searchInEditor(activeTabPath, trimmed)
-        : searchInXmlContent(activeTabPath, getContentForSearch(tab, activeTabPath), trimmed),
-    );
-
+    addResult(searchInXmlContent(activeTabPath, getContentForSearch(tab, activeTabPath), trimmed));
     return { results };
   }
 
@@ -136,11 +104,8 @@ export const searchXPath = async ({
     }
 
     for (const tab of openTabs) {
-      const canUseEditorDom = canUseEditor(tab.filePath, editorFilePath);
       addResult(
-        canUseEditorDom
-          ? searchInEditor(tab.filePath, trimmed)
-          : searchInXmlContent(tab.filePath, getContentForSearch(tab, activeTabPath), trimmed),
+        searchInXmlContent(tab.filePath, getContentForSearch(tab, activeTabPath), trimmed),
       );
     }
 

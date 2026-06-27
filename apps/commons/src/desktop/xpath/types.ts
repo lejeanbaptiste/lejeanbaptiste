@@ -2,10 +2,10 @@ export type { SearchScope as XPathScope } from '../shared/searchScope';
 
 export interface XPathMatch {
   filePath: string;
-  matchIndex: number;
-  id?: string;
   label: string;
   xpath: string;
+  /** Index within the file's result list (UI navigation only). */
+  resultIndex: number;
 }
 
 export interface XPathFileResult {
@@ -17,7 +17,6 @@ export interface XPathFileResult {
 export interface PendingXPathJump {
   filePath: string;
   query: string;
-  matchIndex: number;
-  id?: string;
-  xpath?: string;
+  resultIndex: number;
+  xpath: string;
 }
