@@ -260,15 +260,26 @@ export const changePanel = (
 };
 
 export const setEditorViewMode = ({ state }: Context, mode: EditorViewMode) => {
+  if (state.ui.editorViewMode === mode) return;
+
   state.ui.editorViewMode = mode;
   window.writer?.layoutManager?.setEditorViewMode(mode);
+  window.dispatchEvent(
+    new CustomEvent('desktop:editor-view-mode-changed', { detail: { mode } }),
+  );
 };
 
 export const resetSourceEditor = ({ state }: Context) => {
+  const wasSource = state.ui.editorViewMode === 'source';
   state.ui.editorViewMode = 'visual';
   state.ui.sourceOriginalContent = '';
   state.ui.sourceCurrentContent = '';
   window.writer?.layoutManager?.setEditorViewMode('visual');
+  if (wasSource) {
+    window.dispatchEvent(
+      new CustomEvent('desktop:editor-view-mode-changed', { detail: { mode: 'visual' } }),
+    );
+  }
 };
 
 export const setSourceCurrentContent = ({ state }: Context, content: string) => {

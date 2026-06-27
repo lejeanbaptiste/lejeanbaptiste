@@ -21,6 +21,13 @@ export type DesktopLeftPanelShowDetail = {
 
 export const DESKTOP_OPEN_FIND_EVENT = 'desktop:open-find';
 
+/** Fired when the user switches Visual ↔ Source in the editor. */
+export const DESKTOP_EDITOR_VIEW_MODE_EVENT = 'desktop:editor-view-mode-changed';
+
+export type DesktopEditorViewModeDetail = {
+  mode: 'source' | 'visual';
+};
+
 const MAX_OPEN_FIND_RETRIES = 30;
 
 export const openFindPanel = (attempt = 0) => {

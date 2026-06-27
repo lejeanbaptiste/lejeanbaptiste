@@ -1,10 +1,12 @@
-import { applyFindHighlightsInEditor, scrollToFindHitInEditor } from './findEditorHighlights';
+import { clearFindHighlights } from './findEditorHighlights';
+import { resolveTextHitInXml } from './resolveTextHitInXml';
 import {
   applyFindJumpInSourceEditor,
   getActiveEditorContent,
   revealRangeInSourceEditor,
   scrollToSourceFindHit,
 } from './findSourceEditorHighlights';
+import { clearWysiwygActiveFindHighlight, jumpToWysiwygFindHit } from './wysiwygFindJump';
 import type { FindHighlightMode } from './types';
 
 export interface PerformFindJumpParams {
@@ -35,10 +37,18 @@ export const performFindJump = ({
 
   if (isSourceEditorMode()) {
     if (highlightMode === 'scroll-only') {
-      return scrollToSourceFindHit({
+      const scrolled = scrollToSourceFindHit({
         content: editorContent,
         end,
         start,
+      });
+      if (scrolled) return true;
+
+      return revealRangeInSourceEditor({
+        content: editorContent,
+        end,
+        start,
+        focusEditor: false,
       });
     }
 
@@ -60,11 +70,16 @@ export const performFindJump = ({
     });
   }
 
-  if (highlightMode === 'scroll-only') {
-    return scrollToFindHitInEditor(matchIndexInFile);
+  const resolved = resolveTextHitInXml(editorContent, start, end);
+  if (!resolved) {
+    return false;
   }
 
-  const highlighted = applyFindHighlightsInEditor(query, useRegex, matchIndexInFile);
+  if (highlightMode === 'full') {
+    clearFindHighlights();
+  } else {
+    clearWysiwygActiveFindHighlight();
+  }
 
-  return highlighted;
+  return jumpToWysiwygFindHit(resolved, highlightMode);
 };

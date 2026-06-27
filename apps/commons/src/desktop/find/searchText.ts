@@ -1,6 +1,7 @@
 import type { OpenTab } from '@src/overmind/project/state';
 import { collectXmlFiles } from '../xpath/collectXmlFiles';
 import type { SearchScope } from '../shared/searchScope';
+import { filterHitsForWysiwygEditor } from './wysiwygVisibleHits';
 import { searchInContent } from './textSearchUtils';
 import type { FindFileResult } from './types';
 
@@ -18,7 +19,10 @@ const getContentForSearch = (tab: OpenTab, activeTabPath: string | null) => {
 };
 
 const buildFileResult = (filePath: string, content: string, query: string, useRegex: boolean) => {
-  const matches = searchInContent(content, query, useRegex);
+  let matches = searchInContent(content, query, useRegex);
+  if (!isSourceEditorMode()) {
+    matches = filterHitsForWysiwygEditor(content, matches);
+  }
   if (matches.length === 0) return null;
 
   return {

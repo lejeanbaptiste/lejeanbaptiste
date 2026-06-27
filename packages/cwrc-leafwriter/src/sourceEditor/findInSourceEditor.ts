@@ -114,7 +114,6 @@ export const revealRangeInSourceEditor = ({
 
   revealFindHitRange(editor, range);
   if (focusEditor) {
-    editor.setSelection(range);
     editor.focus();
   }
   return true;
@@ -137,16 +136,14 @@ export const scrollToSourceFindHit = ({
 
   if (cachedHitRanges.length > 0) {
     applyDecorationsForHits(editor, content, cachedHitRanges, start, end);
+  } else {
+    const jumpRange = offsetToRange(content, start, end);
+    revealFindHitRange(editor, jumpRange);
+    return false;
   }
 
   const jumpRange = offsetToRange(content, start, end);
   revealFindHitRange(editor, jumpRange);
-  editor.setSelection(jumpRange);
-  editor.focus();
-
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'findInSourceEditor.ts:scrollToSourceFindHit',message:'scroll-only source jump',data:{start,end,cachedHits:cachedHitRanges.length},timestamp:Date.now(),hypothesisId:'G'})}).catch(()=>{});
-  // #endregion
 
   return true;
 };
@@ -196,8 +193,6 @@ export const applyFindJumpInSourceEditor = ({
 
   const jumpRange = offsetToRange(content, start, end);
   revealFindHitRange(editor, jumpRange);
-  editor.setSelection(jumpRange);
-  editor.focus();
 
   return true;
 };
@@ -255,14 +250,49 @@ export const replaceRangeInSourceEditor = ({
   return ok;
 };
 
-export const undoSourceEditor = (): string | null => {
+export const undoSourceEditor = async (): Promise<string | null> => {
   const editor = registeredEditor;
   if (!editor) return null;
+
+  const before = editor.getValue();
   editor.focus();
-  editor.trigger('find-replace', 'undo', null);
-  const content = editor.getValue();
-  window.writer?.overmindActions?.ui?.setSourceCurrentContent?.(content);
-  return content;
+  const action = editor.getAction('editor.action.undo');
+  if (action) {
+    await Promise.resolve(action.run());
+  } else {
+    editor.trigger('keyboard', 'editor.action.undo', null);
+  }
+
+  const after = editor.getValue();
+  if (after === before) return null;
+
+  window.writer?.overmindActions?.ui?.setSourceCurrentContent?.(after);
+
+  return after;
+};
+
+export const redoSourceEditor = async (): Promise<string | null> => {
+  const editor = registeredEditor;
+  if (!editor) return null;
+
+  const before = editor.getValue();
+  editor.focus();
+  const action = editor.getAction('editor.action.redo');
+  if (action) {
+    await Promise.resolve(action.run());
+  } else {
+    editor.trigger('keyboard', 'editor.action.redo', null);
+  }
+
+  const after = editor.getValue();
+
+  if (after === before) {
+    return null;
+  }
+
+  window.writer?.overmindActions?.ui?.setSourceCurrentContent?.(after);
+
+  return after;
 };
 
 export const DESKTOP_OPEN_FIND_EVENT = 'desktop:open-find';
@@ -276,6 +306,7 @@ declare global {
       revealRange: typeof revealRangeInSourceEditor;
       scrollToHit: typeof scrollToSourceFindHit;
       undo: typeof undoSourceEditor;
+      redo: typeof redoSourceEditor;
     };
   }
 }
@@ -287,6 +318,7 @@ window.__leafWriterSourceFind = {
   revealRange: revealRangeInSourceEditor,
   scrollToHit: scrollToSourceFindHit,
   undo: undoSourceEditor,
+  redo: redoSourceEditor,
 };
 
 export const dispatchDesktopOpenFind = () => {

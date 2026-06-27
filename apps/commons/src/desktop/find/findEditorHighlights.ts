@@ -1,8 +1,35 @@
 import { clearFindHighlightsInSourceEditor } from './findSourceEditorHighlights';
+import { clearActiveFindHighlightInEditor } from './selectTextInEditor';
 
 const FIND_HIT_CLASS = 'lw-find-hit';
 const FIND_HIT_ACTIVE_CLASS = 'lw-find-hit-active';
 const STYLE_ELEMENT_ID = 'lw-find-highlight-styles';
+
+/** Run DOM/highlight changes without adding TinyMCE undo steps. */
+const runWithoutEditorUndo = (fn: () => void) => {
+  const editor = window.writer?.editor;
+  if (editor?.undoManager?.ignore) {
+    editor.undoManager.ignore(fn);
+    return;
+  }
+  fn();
+};
+
+const clearWysiwygFindHighlights = () => {
+  const body = window.writer?.editor?.getBody();
+  if (!body) return;
+
+  body.querySelectorAll(`.${FIND_HIT_CLASS}, .${FIND_HIT_ACTIVE_CLASS}`).forEach((element) => {
+    const parent = element.parentNode;
+    if (!parent) return;
+    while (element.firstChild) {
+      parent.insertBefore(element.firstChild, element);
+    }
+    parent.removeChild(element);
+  });
+
+  body.normalize();
+};
 
 const ensureHighlightStyles = (doc: Document) => {
   if (doc.getElementById(STYLE_ELEMENT_ID)) return;
@@ -61,20 +88,8 @@ interface HighlightSpan {
 
 export const clearFindHighlights = () => {
   clearFindHighlightsInSourceEditor();
-
-  const body = window.writer?.editor?.getBody();
-  if (!body) return;
-
-  body.querySelectorAll(`.${FIND_HIT_CLASS}, .${FIND_HIT_ACTIVE_CLASS}`).forEach((element) => {
-    const parent = element.parentNode;
-    if (!parent) return;
-    while (element.firstChild) {
-      parent.insertBefore(element.firstChild, element);
-    }
-    parent.removeChild(element);
-  });
-
-  body.normalize();
+  runWithoutEditorUndo(clearWysiwygFindHighlights);
+  clearActiveFindHighlightInEditor();
 };
 
 const wrapMatchesInTextNode = (textNode: Text, regex: RegExp, spans: HighlightSpan[]) => {
@@ -122,28 +137,35 @@ export const applyFindHighlightsInEditor = (
   const body = editor?.getBody();
   if (!editor || !body || !query.trim()) return false;
 
-  clearFindHighlights();
+  let applied = false;
 
-  const regex = buildSearchRegex(query.trim(), useRegex);
-  if (!regex) return false;
+  runWithoutEditorUndo(() => {
+    clearFindHighlightsInSourceEditor();
+    clearWysiwygFindHighlights();
 
-  ensureHighlightStyles(editor.getDoc());
+    const regex = buildSearchRegex(query.trim(), useRegex);
+    if (!regex) return;
 
-  const textNodes = collectTextNodes(body);
-  const spans: HighlightSpan[] = [];
+    ensureHighlightStyles(editor.getDoc());
 
-  for (const textNode of textNodes) {
-    wrapMatchesInTextNode(textNode, regex, spans);
-  }
+    const textNodes = collectTextNodes(body);
+    const spans: HighlightSpan[] = [];
 
-  if (spans.length === 0) return false;
+    for (const textNode of textNodes) {
+      wrapMatchesInTextNode(textNode, regex, spans);
+    }
 
-  const activeIndex = Math.min(Math.max(activeMatchIndex, 0), spans.length - 1);
-  const activeSpan = spans[activeIndex];
-  activeSpan.element.classList.remove(FIND_HIT_CLASS);
-  activeSpan.element.classList.add(FIND_HIT_ACTIVE_CLASS);
-  activeSpan.element.scrollIntoView({ block: 'nearest', behavior: 'auto' });
-  return true;
+    if (spans.length === 0) return;
+
+    const activeIndex = Math.min(Math.max(activeMatchIndex, 0), spans.length - 1);
+    const activeSpan = spans[activeIndex];
+    activeSpan.element.classList.remove(FIND_HIT_CLASS);
+    activeSpan.element.classList.add(FIND_HIT_ACTIVE_CLASS);
+    activeSpan.element.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+    applied = true;
+  });
+
+  return applied;
 };
 
 /** Move the active highlight during cycling without rebuilding every match. */
@@ -158,16 +180,14 @@ export const scrollToFindHitInEditor = (activeMatchIndex: number): boolean => {
 
   const activeIndex = Math.min(Math.max(activeMatchIndex, 0), spans.length - 1);
 
-  spans.forEach((span, index) => {
-    span.classList.toggle(FIND_HIT_CLASS, index !== activeIndex);
-    span.classList.toggle(FIND_HIT_ACTIVE_CLASS, index === activeIndex);
+  runWithoutEditorUndo(() => {
+    spans.forEach((span, index) => {
+      span.classList.toggle(FIND_HIT_CLASS, index !== activeIndex);
+      span.classList.toggle(FIND_HIT_ACTIVE_CLASS, index === activeIndex);
+    });
+
+    spans[activeIndex]?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
   });
-
-  spans[activeIndex]?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
-
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'findEditorHighlights.ts:scrollToFindHitInEditor',message:'scroll-only wysiwyg jump',data:{activeIndex,total:spans.length},timestamp:Date.now(),hypothesisId:'G'})}).catch(()=>{});
-  // #endregion
 
   return true;
 };

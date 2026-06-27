@@ -86,9 +86,6 @@ export const validateAndReplaceHit = (
     }
 
     nextReplacement = applyRegexReplacement(match, replacement);
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'replaceValidation.ts:regexReplace',message:'regex replacement applied',data:{template:replacement,result:nextReplacement,matchText:match[0]},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
   }
 
   const nextContent = replaceHitAtOffset(content, start, end, nextReplacement);

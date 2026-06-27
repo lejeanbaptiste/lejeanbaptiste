@@ -1,6 +1,9 @@
-import { offsetToLineColumn } from './textSearchUtils';
-import { searchInContent } from './textSearchUtils';
+import { offsetToLineColumn, searchInContent } from './textSearchUtils';
+import { filterHitsForWysiwygEditor } from './wysiwygVisibleHits';
 import type { FindFileResult } from './types';
+
+const isSourceEditorMode = () =>
+  window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 /** Adjust one file's match list after a single replace without re-scanning the whole file. */
 const updateFileMatchesAfterReplace = (
@@ -76,7 +79,10 @@ export const updateResultsAfterSingleReplace = (
     }
   }
 
-  const matches = searchInContent(fileContent, query, useRegex);
+  let matches = searchInContent(fileContent, query, useRegex);
+  if (!isSourceEditorMode()) {
+    matches = filterHitsForWysiwygEditor(fileContent, matches);
+  }
 
   const nextResults = results
     .map((fileResult) => {

@@ -1,4 +1,4 @@
-import { clearFindHighlights } from './findEditorHighlights';
+import { clearActiveFindHighlightInEditor } from './selectTextInEditor';
 import { resolveTextHitInXml } from './resolveTextHitInXml';
 import { replaceTextHitInEditor } from './selectTextInEditor';
 import type { ResolvedTextHit } from './resolveTextHitInXml';
@@ -57,9 +57,6 @@ export const syncReplacedContent = async ({
         start: sourcePatch.start,
       })
     ) {
-      // #region agent log
-      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'applyReplaceToEditor.ts:sourcePatch',message:'replace sync path',data:{path:'sourcePatch',replacementLen:sourcePatch.replacement.length},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       return;
     }
 
@@ -71,11 +68,8 @@ export const syncReplacedContent = async ({
     // Find highlight spans can break text-node patching; markup in replacement needs a full reload.
     const canPatchInPlace = !/[<>]/.test(visualPatch.replacement);
     if (canPatchInPlace) {
-      clearFindHighlights();
+      clearActiveFindHighlightInEditor();
       const patched = replaceTextHitInEditor(visualPatch.resolved, visualPatch.replacement);
-      // #region agent log
-      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'applyReplaceToEditor.ts:visualPatch',message:'replace sync path',data:{path:patched?'visualPatch':'visualPatchFailed',canPatchInPlace,replacementHasMarkup:/[<>]/.test(visualPatch.replacement)},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       if (patched) {
         window.writer?.overmindActions?.editor?.setContentHasChanged?.(true);
         window.writer?.editor?.focus();
@@ -83,10 +77,6 @@ export const syncReplacedContent = async ({
       }
     }
   }
-
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdf07b'},body:JSON.stringify({sessionId:'cdf07b',location:'applyReplaceToEditor.ts:reload',message:'replace sync path',data:{path:'loadDocumentInWriter',hasVisualPatch:!!visualPatch},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
 
   if (loadDocumentInWriter) {
     await loadDocumentInWriter(filePath, content);
