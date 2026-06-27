@@ -21,6 +21,11 @@ export interface NativeDialogOptions {
   title?: string;
 }
 
+export interface FileStat {
+  mtimeMs: number;
+  size: number;
+}
+
 export interface ElectronAPI {
   openProject: () => Promise<ProjectBundle | null>;
   /** @deprecated Use openProject */
@@ -29,9 +34,13 @@ export interface ElectronAPI {
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) => Promise<FileEntry[]>;
   readFile: (filePath: string) => Promise<string>;
   writeFile: (filePath: string, content: string) => Promise<void>;
+  statFile: (filePath: string) => Promise<FileStat>;
+  syncWatchedFiles: (paths: string[]) => Promise<void>;
+  ignoreFileChange: (filePath: string, mtimeMs: number) => Promise<void>;
   saveFileAs: (defaultPath?: string) => Promise<string | null>;
   setWindowTitle: (title: string) => Promise<void>;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
+  onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (
     options: NativeMessageBoxOptions,
   ) => Promise<{ response: number; checkboxChecked: boolean }>;
@@ -54,12 +63,23 @@ const electronAPI: ElectronAPI = {
   readFile: (filePath: string) => ipcRenderer.invoke('readFile', filePath),
   writeFile: (filePath: string, content: string) =>
     ipcRenderer.invoke('writeFile', filePath, content),
+  statFile: (filePath: string) => ipcRenderer.invoke('statFile', filePath),
+  syncWatchedFiles: (paths: string[]) => ipcRenderer.invoke('syncWatchedFiles', paths),
+  ignoreFileChange: (filePath: string, mtimeMs: number) =>
+    ipcRenderer.invoke('ignoreFileChange', filePath, mtimeMs),
   saveFileAs: (defaultPath?: string) => ipcRenderer.invoke('saveFileAs', defaultPath),
   setWindowTitle: (title: string) => ipcRenderer.invoke('setWindowTitle', title),
   onAppMenuAction: (callback: (action: string) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, action: string) => callback(action);
     ipcRenderer.on('app:menu-action', listener);
     return () => ipcRenderer.removeListener('app:menu-action', listener);
+  },
+  onExternalFileChange: (callback: (filePath: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: { filePath: string }) => {
+      if (payload?.filePath) callback(payload.filePath);
+    };
+    ipcRenderer.on('file:external-change', listener);
+    return () => ipcRenderer.removeListener('file:external-change', listener);
   },
   showNativeMessageBox: (options) => ipcRenderer.invoke('showNativeMessageBox', options),
   openNativeDialog: (options) => ipcRenderer.invoke('openNativeDialog', options),

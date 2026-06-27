@@ -121,7 +121,10 @@ export const useLeafWriter = () => {
   /** Load a different project file into an already-running editor (tab switch / second file). */
   const loadDocumentInWriter = async (filePath: string, content: string) => {
     if (!window.writer) return;
+    window.writer.overmindActions?.ui?.resetSourceEditor?.();
     window.writer.loadDocumentXML(content);
+    window.writer.layoutManager?.resizeEditor?.();
+    window.writer.layoutManager?.resizeAll?.();
   };
 
   const setEditorEvents = () => {

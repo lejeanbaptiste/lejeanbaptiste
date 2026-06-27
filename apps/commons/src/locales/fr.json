@@ -184,6 +184,19 @@
       "dark_theme": "Thème sombre",
       "device_theme": "Thème de l'appareil",
       "light_theme": "Thème lumière"
+    },
+    "desktop": {
+      "external_file_changed": {
+        "title": "Fichier modifié sur le disque",
+        "message": "{{filename}} a été modifié en dehors de l'application.",
+        "message_with_unsaved": "{{filename}} a été modifié en dehors de l'application.\n\nVous perdrez toutes les modifications non enregistrées si vous rechargez.",
+        "reload": "Recharger",
+        "keep_editing": "Continuer l'édition"
+      },
+      "close_unsaved": {
+        "title": "Modifications non enregistrées",
+        "message": "{{filename}} contient des modifications non enregistrées. Fermer sans enregistrer ?"
+      }
     }
   },
   "main": "",

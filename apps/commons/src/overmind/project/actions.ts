@@ -6,6 +6,32 @@ import type { FileTreeNode } from './state';
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
 
+const isSourceEditorMode = () =>
+  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+
+const ignoreSavedFileChange = async (filePath: string) => {
+  if (!window.electronAPI?.statFile || !window.electronAPI?.ignoreFileChange) return;
+
+  try {
+    const { mtimeMs } = await window.electronAPI.statFile(filePath);
+    await window.electronAPI.ignoreFileChange(filePath, mtimeMs);
+  } catch {
+    // ignore
+  }
+};
+
+const pushContentToEditor = (content: string) => {
+  if (!window.writer) return;
+
+  if (isSourceEditorMode()) {
+    window.writer.overmindActions?.ui?.markSourceSaved?.(content);
+    window.writer.overmindActions?.ui?.setSourceCurrentContent?.(content);
+    return;
+  }
+
+  window.writer.loadDocumentXML(content);
+};
+
 const loadTreeLevel = async (dirPath: string): Promise<FileTreeNode[]> => {
   if (!window.electronAPI) return [];
   const entries = await window.electronAPI.readDirectory(dirPath);
@@ -218,9 +244,56 @@ export const saveActiveTab = async (
     );
     state.editor.contentLastSaved = content;
     state.editor.contentHasChanged = false;
+    await ignoreSavedFileChange(filePath);
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to save file' };
+  }
+};
+
+export const setExternalChangePending = (
+  { state }: Context,
+  { filePath, pending }: { filePath: string; pending: boolean },
+) => {
+  state.project.openTabs = state.project.openTabs.map((tab) =>
+    tab.filePath === filePath ? { ...tab, externalChangePending: pending } : tab,
+  );
+};
+
+export const reloadTabFromDisk = async ({ state, actions }: Context, filePath: string) => {
+  if (!window.electronAPI || !state.project.isProjectReady) return false;
+
+  const tab = state.project.openTabs.find((item) => item.filePath === filePath);
+  if (!tab) return false;
+
+  try {
+    let content = await window.electronAPI.readFile(filePath);
+    content = await prepareFileContent({ state, actions } as Context, filePath, content);
+
+    state.project.openTabs = state.project.openTabs.map((item) =>
+      item.filePath === filePath
+        ? { ...item, content, dirty: false, externalChangePending: false }
+        : item,
+    );
+
+    if (state.project.activeTabPath === filePath) {
+      state.editor.contentHasChanged = false;
+      state.editor.contentLastSaved = content;
+
+      await actions.editor.setResource({
+        content,
+        filePath,
+        filename: tab.filename,
+        isLocal: true,
+      });
+
+      pushContentToEditor(content);
+    }
+
+    await ignoreSavedFileChange(filePath);
+    return true;
+  } catch {
+    return false;
   }
 };
 
@@ -283,12 +356,46 @@ export const saveActiveTabAs = async (
 
     state.editor.contentLastSaved = content;
     state.editor.contentHasChanged = false;
+    await ignoreSavedFileChange(filePath);
     return { success: true };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to save file',
     };
+  }
+};
+
+export const isTabContentStaleOnDisk = async (
+  { state, actions }: Context,
+  filePath: string,
+): Promise<boolean> => {
+  const tab = state.project.openTabs.find((item) => item.filePath === filePath);
+  if (!tab || !window.electronAPI) return false;
+
+  try {
+    let diskContent = await window.electronAPI.readFile(filePath);
+    diskContent = await prepareFileContent({ state, actions } as Context, filePath, diskContent);
+
+    let baseline = tab.content;
+    const isSourceActive =
+      state.project.activeTabPath === filePath &&
+      window.writer?.overmindState?.ui?.editorViewMode === 'source';
+
+    if (isSourceActive) {
+      const sourceOriginal = window.writer?.overmindState?.ui?.sourceOriginalContent;
+      if (sourceOriginal) {
+        baseline = await prepareFileContent(
+          { state, actions } as Context,
+          filePath,
+          sourceOriginal,
+        );
+      }
+    }
+
+    return diskContent !== baseline;
+  } catch {
+    return false;
   }
 };
 
@@ -308,6 +415,7 @@ export const closeTab = async (
 
   if (remaining.length === 0) {
     state.project.activeTabPath = null;
+    window.writer?.overmindActions?.ui?.resetSourceEditor?.();
     await actions.editor.clearResource();
     return;
   }

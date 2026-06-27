@@ -184,6 +184,19 @@
       "dark_theme": "Dunkles Design",
       "device_theme": "Browser Design",
       "light_theme": "Helles Design"
+    },
+    "desktop": {
+      "external_file_changed": {
+        "title": "Datei auf der Festplatte geändert",
+        "message": "{{filename}} wurde außerhalb der Anwendung geändert.",
+        "message_with_unsaved": "{{filename}} wurde außerhalb der Anwendung geändert.\n\nNicht gespeicherte Änderungen gehen beim Neuladen verloren.",
+        "reload": "Neu laden",
+        "keep_editing": "Weiter bearbeiten"
+      },
+      "close_unsaved": {
+        "title": "Nicht gespeicherte Änderungen",
+        "message": "{{filename}} enthält nicht gespeicherte Änderungen. Ohne Speichern schließen?"
+      }
     }
   },
   "main": "",
