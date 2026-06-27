@@ -6,17 +6,14 @@ import { useActions } from '../../overmind';
 import { Editor } from './Editor';
 
 export const CodePanel = () => {
-  const { openDialog } = useActions().ui;
-  const { writer } = window;
+  const actions = useActions();
 
   const { t } = useTranslation();
 
   const [showLOD, setShowLOD] = useState(false);
 
   const handleClickEditXml = async () => {
-    const docText = await writer.converter.getDocumentContent(true);
-    if (!docText) return;
-    openDialog({ type: 'editSource', props: { content: docText } });
+    await actions.ui.enterSourceMode();
   };
 
   const handleClickShowLODAnnotation = () => setShowLOD(!showLOD);

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { BottomBar, ContextMenu, EditorToolbar } from './components';
+import { SourceEditorPane } from './components/sourceEditor';
 import { createConfig } from './config';
 import { EntityLookupDialog } from './dialogs';
 import { useDialog, useNotifier } from './hooks';
@@ -39,6 +40,8 @@ const waitForElement = (selector: string, timeoutMs = 5000): Promise<Element> =>
 const App = ({ document, settings, user }: LeafWriterOptions) => {
   const actions = useActions();
   const state = useAppState();
+  const { editorViewMode } = state.ui;
+  const { isReadonly } = state.editor;
   const [writer, setWriter] = useState<Writer | null>(null);
   const { i18n } = useTranslation();
 
@@ -46,6 +49,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   useNotifier();
 
   const [editorToobarContainer, setEditorToobarContainer] = useState<Element | null>(null);
+  const [sourceEditorPaneContainer, setSourceEditorPaneContainer] = useState<Element | null>(null);
   const [codePanelContainer, setCodePanelContainer] = useState<Element | null>(null);
   const [tocPanelContainer, setTocPanelContainer] = useState<Element | null>(null);
   const [structureTreePanelContainer, setStructureTreePanelContainer] = useState<Element | null>(
@@ -127,14 +131,20 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     _writer.event('writerInitialized').subscribe(() => {
       actions.document.setDocumentUrl(document.url);
 
+      if (document.xml) {
+        actions.document.setDocumentXml(document.xml);
+      }
+
       _writer.setDocument(document.xml);
 
       setWriter(window.writer);
 
       const toolbarContainer = window.document.querySelector('#editor-toolbar');
+      const sourceEditorPane = window.document.querySelector('#source-editor-pane');
       const _codePanelContainer = window.document.querySelector(`#${_writer.editorId}-code`);
 
       setEditorToobarContainer(toolbarContainer);
+      setSourceEditorPaneContainer(sourceEditorPane);
       setCodePanelContainer(_codePanelContainer);
 
       if (isDesktopApp()) {
@@ -169,6 +179,9 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
     _writer.event('documentLoaded').subscribe((success: boolean) => {
       if (!success) return;
+      if (document.xml) {
+        actions.document.setDocumentXml(document.xml);
+      }
       actions.document.setLoaded(true);
       setInitialized(true);
       setDocLoaded(true);
@@ -186,13 +199,22 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
         {writer && <ContextMenu />}
         <EntityLookupDialog />
         <div>
-          {editorToobarContainer && createPortal(<EditorToolbar />, editorToobarContainer)}
+          {editorToobarContainer &&
+            editorViewMode === 'visual' &&
+            createPortal(<EditorToolbar />, editorToobarContainer)}
+          {sourceEditorPaneContainer &&
+            !isReadonly &&
+            editorViewMode === 'source' &&
+            createPortal(
+              <SourceEditorPane key={state.document.url ?? 'source'} />,
+              sourceEditorPaneContainer,
+            )}
           {tocPanelContainer && createPortal(<TocPanel />, tocPanelContainer)}
           {structureTreePanelContainer &&
-            !state.editor.isReadonly &&
+            !isReadonly &&
             createPortal(<MarkupPanel />, structureTreePanelContainer)}
           {codePanelContainer &&
-            !state.editor.isReadonly &&
+            !isReadonly &&
             createPortal(<CodePanel />, codePanelContainer)}
           {entitiesPanelReady && isDesktopApp() && <DesktopEntitiesPanel />}
         </div>

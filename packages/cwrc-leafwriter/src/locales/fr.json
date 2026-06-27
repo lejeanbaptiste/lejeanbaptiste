@@ -230,6 +230,8 @@
     "edit_header": "modifier_l'en-tête",
     "edit_raw_xml": "Modifier le XML brut",
     "edit_source": "modifier la source",
+    "view_mode_source": "Source",
+    "view_mode_visual": "Visuel",
     "editorToolbar": {
       "Add Tag": "Ajouter une balise",
       "Add Translation": "Ajouter une traduction",

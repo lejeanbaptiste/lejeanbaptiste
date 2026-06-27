@@ -7,6 +7,8 @@ import { db } from '../../db';
 import type { DialogBarProps, PopupProps } from '../../dialogs';
 import i18n, { Locales, localesSchema } from '../../i18n';
 import type { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
+import type { EditorViewMode } from './state';
+import { checkWellFormedness } from '../../utilities/checkWellFormedness';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
@@ -252,4 +254,95 @@ export const changePanel = (
   const sidePanel = state.ui.layout[side];
   if (!sidePanel) return;
   sidePanel.activePanel = panelId;
+};
+
+export const setEditorViewMode = ({ state }: Context, mode: EditorViewMode) => {
+  state.ui.editorViewMode = mode;
+  window.writer?.layoutManager?.setEditorViewMode(mode);
+};
+
+export const resetSourceEditor = ({ state }: Context) => {
+  state.ui.editorViewMode = 'visual';
+  state.ui.sourceOriginalContent = '';
+  state.ui.sourceCurrentContent = '';
+  window.writer?.layoutManager?.setEditorViewMode('visual');
+};
+
+export const setSourceCurrentContent = ({ state }: Context, content: string) => {
+  state.ui.sourceCurrentContent = content;
+  if (content !== state.ui.sourceOriginalContent) {
+    state.editor.contentHasChanged = true;
+  }
+};
+
+export const enterSourceMode = async ({ state, actions }: Context) => {
+  if (state.ui.editorViewMode === 'source') return;
+
+  const writer = window.writer;
+  let content =
+    (await writer?.converter.getDocumentContent(false)) ||
+    (await writer?.converter.getDocumentContent(true)) ||
+    '';
+
+  if (!content) {
+    content = (await writer?.getContent()) || '';
+  }
+
+  if (!content && state.document.xml) {
+    content = state.document.xml;
+  }
+
+  if (!content) return;
+
+  state.ui.sourceOriginalContent = content;
+  state.ui.sourceCurrentContent = content;
+  actions.ui.setEditorViewMode('source');
+};
+
+export const exitSourceMode = async ({ state, actions }: Context): Promise<boolean> => {
+  const { sourceOriginalContent, sourceCurrentContent } = state.ui;
+
+  if (sourceCurrentContent === sourceOriginalContent) {
+    actions.ui.setEditorViewMode('visual');
+    return true;
+  }
+
+  const validity = checkWellFormedness(sourceCurrentContent);
+
+  if (validity.valid) {
+    actions.document.setIsReload(true);
+    actions.document.loadDocumentXML(sourceCurrentContent);
+    actions.ui.setEditorViewMode('visual');
+    return true;
+  }
+
+  const shouldDiscard = await new Promise<boolean>((resolve) => {
+    actions.ui.openDialog({
+      type: 'simple',
+      props: {
+        maxWidth: 'xs',
+        severity: 'warning',
+        title: i18n.t('LW.xml_document_invalid'),
+        Body: () => validity.error.message,
+        actions: [
+          { action: 'cancel', label: i18n.t('LW.commons.cancel') },
+          {
+            action: 'discard',
+            label: i18n.t('LW.commons.discard_changes'),
+            variant: 'outlined',
+          },
+        ],
+        onClose: async (action) => {
+          resolve(action === 'discard');
+        },
+      },
+    });
+  });
+
+  if (shouldDiscard) {
+    actions.ui.setEditorViewMode('visual');
+    return true;
+  }
+
+  return false;
 };

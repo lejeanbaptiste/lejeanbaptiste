@@ -235,6 +235,8 @@
     "edit_header": "Header bearbeiten",
     "edit_raw_xml": "Editiere XML",
     "edit_source": "Quelle bearbeiten",
+    "view_mode_source": "Quelltext",
+    "view_mode_visual": "Visuell",
     "editorToolbar": {
       "Add Tag": "",
       "Add Translation": "",
