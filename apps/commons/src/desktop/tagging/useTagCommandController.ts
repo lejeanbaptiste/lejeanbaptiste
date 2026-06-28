@@ -39,33 +39,9 @@ import {
 } from './tagSuggestions';
 import { findParagraphAncestor } from './tagInsert';
 import { getProjectTagCounts, loadTagStats, updateTagStatsForFile } from './tagStats';
+import { getCaretScreenPosition } from './editorAnchor';
 
 const LAST_USED_TAG_KEY = 'ljb:lastUsedTag';
-
-const getCaretScreenPosition = (): { left: number; top: number } | null => {
-  const editor = window.writer?.editor;
-  if (!editor) return null;
-
-  const iframe =
-    (editor as { iframeElement?: HTMLIFrameElement }).iframeElement ??
-    (editor.getContentAreaContainer()?.querySelector('iframe') as HTMLIFrameElement | null);
-  const iframeRect = iframe?.getBoundingClientRect();
-
-  const rng = editor.selection.getRng();
-  let rect = rng.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) {
-    const marker = editor.dom.create('span', { 'data-mce-bogus': '1' }, '\u200b');
-    rng.insertNode(marker);
-    rect = marker.getBoundingClientRect();
-    editor.dom.remove(marker);
-  }
-
-  const offsetLeft = iframeRect?.left ?? 0;
-  const offsetTop = iframeRect?.top ?? 0;
-
-  const position = { left: rect.left + offsetLeft, top: rect.bottom + offsetTop };
-  return position;
-};
 
 const isVisualEditorActive = (): boolean =>
   Boolean(window.writer?.editor) &&

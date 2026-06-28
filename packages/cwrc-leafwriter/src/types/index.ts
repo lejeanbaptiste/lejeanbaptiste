@@ -85,6 +85,7 @@ export type ISettingsModuleName =
   | 'markup'
   | 'entities'
   | 'fileMetadata'
+  | 'attributes'
   | 'imageViewer'
   | 'validation'
   | 'code';

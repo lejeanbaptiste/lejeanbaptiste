@@ -90,7 +90,11 @@ class Validation {
       .subscribe((valid: boolean, result: ValidationResponse & { parseError?: { message: string; positions?: XMLParseErrorPosition[] } }) => {
         $(`#${this.id}_indicator`).hide();
         this.showValidationResult(result);
-        if (result.errors?.length || result.parseError) this.writer.layoutManager.showModule('validation');
+        if (result.errors?.length || result.parseError) {
+          if (!window.__desktopTagging) {
+            this.writer.layoutManager.showModule('validation');
+          }
+        }
       });
 
     this.writer.event('documentValidating').subscribe((partDone: number) => {
@@ -141,7 +145,9 @@ class Validation {
     }
 
     if (parseError) {
-      this.writer.layoutManager.showModule('validation');
+      if (!window.__desktopTagging) {
+        this.writer.layoutManager.showModule('validation');
+      }
 
       const parseErrors: { message: string }[] = parseError.positions?.length
         ? parseError.positions.map((pos: XMLParseErrorPosition) => ({
@@ -185,7 +191,9 @@ class Validation {
 
     const _this = this;
 
-    this.writer.layoutManager.showModule('validation');
+    if (!window.__desktopTagging) {
+      this.writer.layoutManager.showModule('validation');
+    }
 
     this.writer.tagger.removeNoteWrappersForEntities();
 

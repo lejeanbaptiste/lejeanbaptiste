@@ -146,7 +146,7 @@ class ImageViewer {
     this.$pageBreaks = $(doc).find(`*[_tag=${this.tagName}]`);
 
     if (this.$pageBreaks.length === 0) {
-      this.hideViewer();
+      this.osdReset();
       return;
     }
 
@@ -164,10 +164,6 @@ class ImageViewer {
     this.$parent.find('.totalPages').html(this.$pageBreaks.length);
     this.currentIndex = -1;
     this.handleScroll();
-  }
-
-  private hideViewer() {
-    this.writer.layoutManager.hideModule('imageViewer');
   }
 
   private handleScroll() {

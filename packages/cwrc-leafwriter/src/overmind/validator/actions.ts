@@ -92,7 +92,7 @@ export const validate = async ({ state, actions }: Context) => {
 
   const mergeForValidation = window.__desktopMergeHeaderForValidation;
   const validationString =
-    state.ui.editorViewMode !== 'source' && typeof mergeForValidation === 'function'
+    typeof mergeForValidation === 'function'
       ? mergeForValidation(documentString ?? '')
       : documentString;
 

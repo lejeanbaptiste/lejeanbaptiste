@@ -1,4 +1,5 @@
 export interface DesktopTaggingBridge {
+  changeTag?: (tagId: string, newTagName: string) => void;
   handleEditorKeyDown: (event: KeyboardEvent) => boolean;
 }
 

@@ -83,6 +83,34 @@ export const clearFindHighlightsInSourceEditor = () => {
   cachedHitRanges = [];
 };
 
+export const setCursorOffsetInSourceEditor = ({
+  offset,
+  focusEditor = true,
+}: {
+  focusEditor?: boolean;
+  offset: number;
+}): boolean => {
+  const editor = registeredEditor;
+  if (!editor) return false;
+
+  const model = editor.getModel();
+  if (!model) return false;
+
+  const clamped = Math.max(0, Math.min(offset, model.getValueLength()));
+  const position = model.getPositionAt(clamped);
+  editor.setPosition(position);
+  editor.revealPositionInCenterIfOutsideViewport(position, monaco.editor.ScrollType.Immediate);
+  if (focusEditor) {
+    editor.focus();
+  }
+
+  window.dispatchEvent(
+    new CustomEvent('lw:source-cursor-moved', { detail: { offset: clamped } }),
+  );
+
+  return true;
+};
+
 export const revealRangeInSourceEditor = ({
   content,
   start,
@@ -305,6 +333,7 @@ declare global {
       replaceRange: typeof replaceRangeInSourceEditor;
       revealRange: typeof revealRangeInSourceEditor;
       scrollToHit: typeof scrollToSourceFindHit;
+      setCursorOffset: typeof setCursorOffsetInSourceEditor;
       undo: typeof undoSourceEditor;
       redo: typeof redoSourceEditor;
     };
@@ -317,6 +346,7 @@ window.__leafWriterSourceFind = {
   replaceRange: replaceRangeInSourceEditor,
   revealRange: revealRangeInSourceEditor,
   scrollToHit: scrollToSourceFindHit,
+  setCursorOffset: setCursorOffsetInSourceEditor,
   undo: undoSourceEditor,
   redo: redoSourceEditor,
 };

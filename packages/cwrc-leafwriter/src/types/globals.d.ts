@@ -32,8 +32,10 @@ declare global {
   interface Window {
     __desktopLeftPanel?: DesktopLeftPanelBridge;
     __desktopTagging?: {
+      changeTag?: (tagId: string, newTagName: string) => void;
       handleEditorKeyDown: (event: KeyboardEvent) => boolean;
     };
     __desktopMergeHeaderForValidation?: (editorXml: string) => string;
+    __desktopStoredDocumentXml?: string;
   }
 }

@@ -12,6 +12,7 @@ import {
 } from '../editorLocationBar';
 import { registerClosingTagCompletion } from './closingTagCompletion';
 import { registerLinkedTagEditing } from './linkedTagEditing';
+import { registerPairedTagUnwrap } from './pairedTagUnwrap';
 import { useXmlLanguageClient } from './useXmlLanguageClient';
 import type { LspStartOptions } from './lsp/ipcLspClient';
 
@@ -103,6 +104,7 @@ export const XmlMonacoEditor = ({
     });
 
     registerSourceFindEditor(monacoEditor);
+    const pairedTagUnwrapDisposable = registerPairedTagUnwrap(monacoEditor);
     lastEditorValueRef.current = value;
     const model = monacoEditor.getModel();
     if (model) {
@@ -119,6 +121,7 @@ export const XmlMonacoEditor = ({
     return () => {
       closingTagDisposable.dispose();
       linkedTagDisposable.dispose();
+      pairedTagUnwrapDisposable.dispose();
       registerSourceFindEditor(null);
       onEditorInstanceRef.current?.(null);
       monacoEditor.dispose();

@@ -1,3 +1,4 @@
+import { loadAndInjectTagColors } from '@src/desktop/tagging/tagColors';
 import { DESKTOP_APP_DISPLAY_NAME } from '@src/desktop/desktopBranding';
 import { focusFirstBodyParagraph } from '@src/desktop/focusFirstBodyParagraph';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
@@ -16,6 +17,7 @@ import type { Resource } from '@src/types';
 import { isDesktop } from '@src/types/desktop';
 import { changeFileExtension } from '@src/utilities';
 import { useAtom, useSetAtom } from 'jotai';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
@@ -76,6 +78,23 @@ export const useLeafWriter = () => {
   const [tapDocumentTimer, setTapDocumentTimer] = useAtom(tapDocumentTimerAtom);
   const bumpEditorSession = useSetAtom(leafWriterSessionKeyAtom);
 
+  useEffect(() => {
+    if (!isDesktop() || !rootPath || !leafWriter) return;
+
+    const injectColors = () => {
+      void loadAndInjectTagColors(rootPath);
+    };
+
+    injectColors();
+    window.writer?.event('documentLoaded').subscribe(injectColors);
+    window.writer?.event('tinymceInitialized').subscribe(injectColors);
+
+    return () => {
+      window.writer?.event('documentLoaded').unsubscribe(injectColors);
+      window.writer?.event('tinymceInitialized').unsubscribe(injectColors);
+    };
+  }, [leafWriter, rootPath]);
+
   const loadLib = async (element: HTMLElement) => {
     const lw = await loadLeafWriter(element);
     setLeafWriter(lw);
@@ -120,6 +139,7 @@ export const useLeafWriter = () => {
             modules: {
               east: [
                 { id: 'fileMetadata', title: 'File metadata' },
+                { id: 'attributes', title: 'Attributes' },
                 { id: 'imageViewer', title: 'Image Viewer' },
                 { id: 'validation', title: 'Validation' },
               ],

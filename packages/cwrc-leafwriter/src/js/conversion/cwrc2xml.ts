@@ -59,8 +59,13 @@ class CWRC2XML {
     this.writer.tagger.setAttributesForTag($rootEl[0], rootAttributes);
 
     let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xmlString += `<?xml-model href="${this.writer.schemaManager.getCurrentDocumentSchemaUrl()}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>\n`;
-    xmlString += `<?xml-stylesheet type="text/css" href="${this.writer.schemaManager.getDocumentCssUrl()}"?>\n`;
+    const schemaUrl = this.writer.schemaManager.getCurrentDocumentSchemaUrl();
+    const cssUrl =
+      this.writer.schemaManager.getDocumentCssUrl() ??
+      this.writer.schemaManager.getCss() ??
+      'https://cwrc.ca/templates/css/tei.css';
+    xmlString += `<?xml-model href="${schemaUrl}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>\n`;
+    xmlString += `<?xml-stylesheet type="text/css" href="${cssUrl}"?>\n`;
 
     // if (logEnabledFor('DEBUG')) console.time('buildXMLString');
     xmlString += this.buildXMLString($rootEl, includeRDF);
@@ -231,9 +236,15 @@ class CWRC2XML {
       } else {
         let openingTag = `<${tag}`;
         const attributes = _this.writer.tagger.getAttributesForTag(currNode[0]);
+        const schemaIdAttr = _this.writer.schemaManager.getIdName() ?? 'xml:id';
         for (const attName in attributes) {
           const attValue = attributes[attName];
-          // attValue = this.writer.utilities.convertTextForExport(attValue); TODO is this necessary?
+          if (attName === 'id' && schemaIdAttr !== 'id') {
+            if (attributes[schemaIdAttr]) continue;
+            if (typeof attValue === 'string' && attValue.startsWith('dom_')) continue;
+            openingTag += ` ${schemaIdAttr}="${attValue}"`;
+            continue;
+          }
           openingTag += ` ${attName}="${attValue}"`;
         }
 

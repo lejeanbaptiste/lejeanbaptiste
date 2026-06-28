@@ -1,6 +1,6 @@
 # Tagging infrastructure — implementation plan
 
-**Status:** Phase 1 implemented (Enter-tag popup, F2 rename, insert/split, propagate, queue-walk, tag stats). Phase 2+ planned.  
+**Status:** Phase 1 implemented (Enter-tag popup, F2 rename, insert/split, propagate, queue-walk, tag stats). Phase 2 implemented (Alt+Enter attribute popup, attributes panel, Lookup, tag colours, attr stats).  
 **Scope:** Desktop app — fast structural/semantic tagging, attributes, later disambiguation and bulk ID propagation  
 **Related:** `docs/todo.md`, `docs/project-schema-planning.md`, `docs/schema_handling.md`
 

@@ -15,6 +15,7 @@ type State = {
   editorViewMode: EditorViewMode;
   sourceCurrentContent: string;
   sourceOriginalContent: string;
+  sourcePendingCursorOffset: number | null;
   fullscreen: boolean;
   layout: LayoutProps;
   markupPanel: {
@@ -36,6 +37,7 @@ export const state: State = {
   editorViewMode: 'visual',
   sourceCurrentContent: '',
   sourceOriginalContent: '',
+  sourcePendingCursorOffset: null,
   fullscreen: false,
   layout: {
     outerLeft: { id: 'left', items: [Panel.toc, Panel.markup, Panel.entities] },

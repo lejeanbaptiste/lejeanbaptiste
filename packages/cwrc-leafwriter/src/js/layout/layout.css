@@ -191,7 +191,8 @@
     min-height: 0;
 }
 
-.cwrc-east-icon-tabs > .ui-layout-content > [id$="-fileMetadata"] {
+.cwrc-east-icon-tabs > .ui-layout-content > [id$="-fileMetadata"],
+.cwrc-east-icon-tabs > .ui-layout-content > [id$="-attributes"] {
     height: 100%;
     min-height: 0;
     display: flex;

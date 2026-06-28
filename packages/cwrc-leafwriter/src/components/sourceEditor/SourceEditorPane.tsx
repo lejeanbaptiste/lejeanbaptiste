@@ -1,12 +1,13 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useActions, useAppState } from '../../overmind';
+import { setCursorOffsetInSourceEditor } from '../../sourceEditor/findInSourceEditor';
 import { XmlMonacoEditor } from './XmlMonacoEditor';
 import { useSourceValidation } from './useSourceValidation';
 
 export const SourceEditorPane = () => {
-  const { sourceCurrentContent } = useAppState().ui;
+  const { editorViewMode, sourceCurrentContent, sourcePendingCursorOffset } = useAppState().ui;
   const { resource } = useAppState().editor;
-  const { setSourceCurrentContent } = useActions().ui;
+  const { clearSourcePendingCursorOffset, setSourceCurrentContent } = useActions().ui;
   const { markers } = useSourceValidation();
 
   const lspOptions = useMemo(() => {
@@ -22,11 +23,40 @@ export const SourceEditorPane = () => {
     };
   }, [resource?.filePath]);
 
+  const applyPendingCursor = useCallback(() => {
+    if (sourcePendingCursorOffset === null) return true;
+
+    const applied = setCursorOffsetInSourceEditor({
+      offset: sourcePendingCursorOffset,
+      focusEditor: true,
+    });
+    if (applied) {
+      clearSourcePendingCursorOffset();
+    }
+    return applied;
+  }, [clearSourcePendingCursorOffset, sourcePendingCursorOffset]);
+
   useEffect(() => {
     window.writer?.layoutManager?.resizeSourceEditor();
     const timer = setTimeout(() => window.writer?.layoutManager?.resizeSourceEditor(), 50);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (editorViewMode !== 'source' || sourcePendingCursorOffset === null) return;
+
+    if (applyPendingCursor()) return;
+
+    const timers = [0, 50, 150, 350].map((delay) =>
+      setTimeout(() => {
+        applyPendingCursor();
+      }, delay),
+    );
+
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [applyPendingCursor, editorViewMode, sourceCurrentContent, sourcePendingCursorOffset]);
 
   return (
     <XmlMonacoEditor

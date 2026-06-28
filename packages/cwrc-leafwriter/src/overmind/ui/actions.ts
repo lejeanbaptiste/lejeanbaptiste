@@ -9,6 +9,10 @@ import i18n, { Locales, localesSchema } from '../../i18n';
 import type { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 import type { EditorViewMode } from './state';
 import { checkWellFormedness } from '../../utilities/checkWellFormedness';
+import {
+  getVisualCaretForSourceSync,
+  mapVisualCaretToSourceOffset,
+} from '../../utilities/sourceCursorSync';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
@@ -274,6 +278,7 @@ export const resetSourceEditor = ({ state }: Context) => {
   state.ui.editorViewMode = 'visual';
   state.ui.sourceOriginalContent = '';
   state.ui.sourceCurrentContent = '';
+  state.ui.sourcePendingCursorOffset = null;
   window.writer?.layoutManager?.setEditorViewMode('visual');
   if (wasSource) {
     window.dispatchEvent(
@@ -293,11 +298,19 @@ const resolveSourceEditorContent = async (state: Context['state']): Promise<stri
       '';
 
     if (fromEditor) {
+      const mergeForValidation = window.__desktopMergeHeaderForValidation;
+      if (typeof mergeForValidation === 'function') {
+        return mergeForValidation(fromEditor);
+      }
       return fromEditor;
     }
   }
 
   if (state.document.xml) {
+    const mergeForValidation = window.__desktopMergeHeaderForValidation;
+    if (typeof mergeForValidation === 'function') {
+      return mergeForValidation(state.document.xml);
+    }
     return state.document.xml;
   }
 
@@ -324,12 +337,20 @@ export const markSourceSaved = ({ state }: Context, content: string) => {
   state.ui.sourceOriginalContent = content;
 };
 
+export const clearSourcePendingCursorOffset = ({ state }: Context) => {
+  state.ui.sourcePendingCursorOffset = null;
+};
+
 export const enterSourceMode = async ({ state, actions }: Context) => {
+  const visualCaret = getVisualCaretForSourceSync();
   const content = await resolveSourceEditorContent(state);
   if (!content) return;
 
   state.ui.sourceOriginalContent = content;
   state.ui.sourceCurrentContent = content;
+  state.ui.sourcePendingCursorOffset =
+    visualCaret !== null ? mapVisualCaretToSourceOffset(content, visualCaret) : null;
+
   if (state.ui.editorViewMode !== 'source') {
     actions.ui.setEditorViewMode('source');
   }

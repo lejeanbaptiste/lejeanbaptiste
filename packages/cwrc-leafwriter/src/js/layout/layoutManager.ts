@@ -343,15 +343,49 @@ class LayoutManager {
 
   hideModule(moduleId: string) {
     this.modulesLayout.forEach((modules, region) => {
-      if (!Array.isArray(modules)) {
-        if (modules.id === moduleId) this.hideRegion(region);
-        return;
-      }
+      const moduleList = Array.isArray(modules) ? modules : [modules];
+      if (!moduleList.some((module) => module.id === moduleId)) return;
 
-      modules.forEach((module) => {
-        if (module.id === moduleId) this.hideRegion(region);
-      });
+      // Only affect layout when this module's tab is active. Otherwise a background
+      // module (e.g. imageViewer with no page breaks) would collapse the whole east pane.
+      if (!this.isModuleTabActive(region, moduleId)) return;
+
+      this.switchAwayFromModuleTab(region, moduleId);
     });
+  }
+
+  private isModuleTabActive(region: LayoutLocation, moduleId: string): boolean {
+    if (region !== 'east' && region !== 'west') return true;
+
+    //@ts-ignore
+    const $pane = this.$outerLayout?.panes?.[region];
+    if (!$pane?.length) return false;
+
+    //@ts-ignore
+    return $pane.find(`> ul > li#${moduleId}`).hasClass('ui-tabs-active');
+  }
+
+  private switchAwayFromModuleTab(region: LayoutLocation, moduleId: string) {
+    if (region !== 'east' && region !== 'west') {
+      this.hideRegion(region);
+      return;
+    }
+
+    //@ts-ignore
+    const $pane = this.$outerLayout?.panes?.[region];
+    if (!$pane?.length) return;
+
+    //@ts-ignore
+    const $alternate = $pane.find('> ul > li').filter(function (this: HTMLElement) {
+      return this.style.display !== 'none' && this.id !== moduleId;
+    });
+
+    if ($alternate.length > 0) {
+      this.showRegion(region, $alternate.first().index());
+      return;
+    }
+
+    this.hideRegion(region);
   }
 
   showRegion(region: LayoutLocation, tabIndex?: number) {

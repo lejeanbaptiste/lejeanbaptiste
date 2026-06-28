@@ -1,5 +1,40 @@
 export const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
+/** Header leaf paths stored as attributes rather than text content (TEI P5). */
+const HEADER_ATTRIBUTE_PATHS: Record<string, string> = {
+  'profileDesc/langUsage/language': 'ident',
+};
+
+const LANGUAGE_NAME_TO_IDENT: Record<string, string> = {
+  english: 'eng',
+  french: 'fre',
+  fran: 'fre',
+  german: 'deu',
+  deutsch: 'deu',
+  spanish: 'spa',
+  italian: 'ita',
+  latin: 'lat',
+  greek: 'grc',
+  arabic: 'ara',
+  chinese: 'chi',
+  japanese: 'jpn',
+  portuguese: 'por',
+  dutch: 'nld',
+  russian: 'rus',
+};
+
+export const normalizeLanguageIdent = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  if (/^[a-z]{2,3}$/i.test(trimmed)) return trimmed.toLowerCase();
+
+  const mapped = LANGUAGE_NAME_TO_IDENT[trimmed.toLowerCase()];
+  if (mapped) return mapped;
+
+  return trimmed.toLowerCase().slice(0, 3);
+};
+
 export const findTeiHeader = (doc: Document): Element | null => {
   const tei = doc.documentElement;
   if (!tei) return null;
@@ -9,8 +44,28 @@ export const findTeiHeader = (doc: Document): Element | null => {
   return header ?? null;
 };
 
+/** TEI fileDesc paths — stored relative to teiHeader for UI/metadata. */
+const FILE_DESC_CONTAINER_PATHS = new Set(['titleStmt', 'sourceDesc', 'publicationStmt']);
+
+/** Leaf paths that must stay as an empty <p/> rather than being removed when cleared. */
+const TEI_PARAGRAPH_PATHS = new Set([
+  'sourceDesc/p',
+  'publicationStmt/p',
+  'encodingDesc/projectDesc/p',
+]);
+
+const findFileDesc = (header: Element): Element | null =>
+  header.getElementsByTagNameNS(TEI_NS, 'fileDesc')[0] ??
+  header.getElementsByTagName('fileDesc')[0] ??
+  null;
+
 export const ensurePath = (root: Element, parts: string[]): Element => {
   let current: Element = root;
+  if (parts.length > 0 && FILE_DESC_CONTAINER_PATHS.has(parts[0]!)) {
+    const fileDesc = findFileDesc(root);
+    if (fileDesc) current = fileDesc;
+  }
+
   for (const part of parts) {
     let child =
       current.getElementsByTagNameNS(TEI_NS, part)[0] ??
@@ -41,7 +96,14 @@ export const getHeaderPathValue = (header: Element, teiPath: string): string => 
   const node =
     current.getElementsByTagNameNS(TEI_NS, leaf)[0] ??
     current.getElementsByTagName(leaf)[0];
-  return node?.textContent ?? '';
+  if (!node) return '';
+
+  const attrName = HEADER_ATTRIBUTE_PATHS[teiPath];
+  if (attrName) {
+    return node.getAttribute(attrName) ?? '';
+  }
+
+  return node.textContent ?? '';
 };
 
 export const setHeaderPathValue = (header: Element, teiPath: string, value: string) => {
@@ -56,7 +118,97 @@ export const setHeaderPathValue = (header: Element, teiPath: string, value: stri
     node = header.ownerDocument!.createElementNS(TEI_NS, leaf);
     parent.appendChild(node);
   }
+
+  const attrName = HEADER_ATTRIBUTE_PATHS[teiPath];
+  if (attrName) {
+    const attrValue =
+      teiPath === 'profileDesc/langUsage/language'
+        ? normalizeLanguageIdent(value)
+        : value.trim();
+    if (attrValue) {
+      node.setAttribute(attrName, attrValue);
+    } else {
+      node.removeAttribute(attrName);
+    }
+    node.textContent = '';
+    return;
+  }
+
   node.textContent = value;
+};
+
+export const normalizeLanguageElementsInHeader = (header: Element) => {
+  const languages = [
+    ...header.getElementsByTagNameNS(TEI_NS, 'language'),
+    ...header.getElementsByTagName('language'),
+  ];
+
+  for (const lang of languages) {
+    const text = lang.textContent?.trim() ?? '';
+    const ident = lang.getAttribute('ident');
+    if (!text || ident) continue;
+    lang.setAttribute('ident', normalizeLanguageIdent(text));
+    lang.textContent = '';
+  }
+};
+
+/** TEI sourceDesc/publicationStmt cannot contain raw text — wrap in <p> and keep a valid empty <p/>. */
+export const normalizeParagraphContainersInHeader = (header: Element) => {
+  for (const name of ['sourceDesc', 'publicationStmt'] as const) {
+    const container =
+      header.getElementsByTagNameNS(TEI_NS, name)[0] ??
+      header.getElementsByTagName(name)[0];
+    if (!container) continue;
+
+    const looseParts: string[] = [];
+    const textNodesToRemove: Node[] = [];
+    for (const child of Array.from(container.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const text = child.textContent?.trim();
+        if (text) looseParts.push(text);
+        textNodesToRemove.push(child);
+      }
+    }
+    for (const node of textNodesToRemove) {
+      container.removeChild(node);
+    }
+
+    if (looseParts.length > 0) {
+      let paragraph =
+        container.getElementsByTagNameNS(TEI_NS, 'p')[0] ??
+        container.getElementsByTagName('p')[0];
+      if (!paragraph) {
+        paragraph = header.ownerDocument!.createElementNS(TEI_NS, 'p');
+        container.appendChild(paragraph);
+      }
+      const existing = paragraph.textContent?.trim() ?? '';
+      paragraph.textContent = [existing, ...looseParts].filter(Boolean).join(' ').trim();
+    }
+
+    const hasElementChild = Array.from(container.childNodes).some(
+      (node) => node.nodeType === Node.ELEMENT_NODE,
+    );
+    if (!hasElementChild) {
+      container.appendChild(header.ownerDocument!.createElementNS(TEI_NS, 'p'));
+    }
+  }
+};
+
+export const normalizeTeiHeaderElementsInHeader = (header: Element) => {
+  normalizeLanguageElementsInHeader(header);
+  normalizeParagraphContainersInHeader(header);
+};
+
+export const normalizeTeiHeaderLanguageElements = (xml: string): string => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'application/xml');
+  if (doc.querySelector('parsererror')) return xml;
+
+  const header = findTeiHeader(doc);
+  if (!header) return xml;
+
+  normalizeTeiHeaderElementsInHeader(header);
+  return new XMLSerializer().serializeToString(doc);
 };
 
 export const clearHeaderPath = (header: Element, teiPath: string) => {
@@ -95,6 +247,8 @@ export const applyHeaderPathUpdates = (
     if (skipPaths?.has(path)) continue;
     if (value.trim()) {
       setHeaderPathValue(header, path, value.trim());
+    } else if (TEI_PARAGRAPH_PATHS.has(path)) {
+      setHeaderPathValue(header, path, '');
     } else {
       clearHeaderPath(header, path);
     }
@@ -102,8 +256,14 @@ export const applyHeaderPathUpdates = (
 
   for (const path of options?.clearPaths ?? []) {
     if (skipPaths?.has(path)) continue;
-    clearHeaderPath(header, path);
+    if (TEI_PARAGRAPH_PATHS.has(path)) {
+      setHeaderPathValue(header, path, '');
+    } else {
+      clearHeaderPath(header, path);
+    }
   }
+
+  normalizeTeiHeaderElementsInHeader(header);
 
   return new XMLSerializer().serializeToString(doc);
 };
@@ -246,5 +406,5 @@ export const mergeStoredHeaderForValidation = (
   if (!storedXml || !/<teiHeader[\s>]/i.test(storedXml)) return editorXml;
   const editorBody = stripTeiHeaderForVisualEditor(editorXml);
   const merged = mergeEditorBodyWithStoredHeader(editorBody, storedXml);
-  return stripEncodingDescFromHeader(merged);
+  return normalizeTeiHeaderLanguageElements(stripEncodingDescFromHeader(merged));
 };
