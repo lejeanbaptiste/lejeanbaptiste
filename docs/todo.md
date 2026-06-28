@@ -2,6 +2,8 @@
 
 See **`docs/project-schema-planning.md`** for Open Project, project metadata, New File (⌘N), schema setup, and skeleton design.
 
+**Phase 1 smoke test:** complete — see **`docs/smoke_test.md`**.
+
 Interface:
 - [x] Dark mode icons
 - [ ] Clean out their icons from the top once those functions are moved.
@@ -10,7 +12,7 @@ Interface:
 Menu
 - [x] Open Project — schema setup when folder has no schema (download or copy local); then project metadata dialog (required Save)
 - [x] Project → Edition metadata… — edit `schema/project-metadata.json`; optional apply to existing XML files
-- [x] New File (⌘N) — temp file + Save As; skeleton merges project metadata defaults; prompt on close if unsaved (temp file + skeleton done; close prompt still TODO)
+- [x] New File (⌘N) — temp file + Save As; skeleton merges project metadata defaults; prompt on close if unsaved (temp + skeleton done; close prompt still TODO)
 
 Settings
 - [x] Encoder name — pre-fill `titleStmt/principal` in project metadata dialog on new setup (see planning doc)

@@ -88,6 +88,9 @@ export interface ElectronAPI {
     args?: unknown;
   }) => Promise<unknown>;
   onNativeDialogClosed: (callback: (id: string) => void) => () => void;
+  onNativeDialogOpen: (
+    callback: (payload: { dialogId: string; title?: string }) => void,
+  ) => () => void;
   lspStart: (options?: {
     defaultSchemaRng?: string;
     projectRoot?: string;

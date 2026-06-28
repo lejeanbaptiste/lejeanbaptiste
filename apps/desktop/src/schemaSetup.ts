@@ -119,10 +119,6 @@ export const installLocalSchema = async (
   rngPath: string,
   cssPath?: string | null,
 ): Promise<ProjectBundle> => {
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'schemaSetup.ts:installLocalSchema',message:'entry',data:{rngBasename:path.basename(rngPath),hasCss:!!cssPath},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
-  // #endregion
-
   const bundle = await loadProjectFile(projectFilePath);
   if (!bundle) throw new Error('Project file not found');
 
@@ -166,14 +162,8 @@ export const installLocalSchema = async (
 
     const updated = await loadProjectFile(projectFilePath);
     if (!updated) throw new Error('Failed to reload project after local schema install');
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'schemaSetup.ts:installLocalSchema',message:'success',data:{rng:updated.config.schema?.rng},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
-    // #endregion
     return updated;
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'schemaSetup.ts:installLocalSchema',message:'error',data:{error:error instanceof Error ? error.message : String(error)},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
-    // #endregion
     await fs.writeFile(projectFilePath, priorConfigRaw, 'utf-8');
     for (const filePath of writtenFiles) {
       try {

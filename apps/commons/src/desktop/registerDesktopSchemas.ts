@@ -31,8 +31,5 @@ export const registerDesktopSchemas = (schemas: Types.Schema[]) => {
   const editorActions = window.writer.overmindActions?.editor;
   if (editorActions?.registerProjectSchemas) {
     editorActions.registerProjectSchemas(detached);
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'registerDesktopSchemas.ts',message:'registered detached schemas',data:{schemaIds:detached.map(s=>s.id),sameRefAsInput:detached[0]===schemas[0]},timestamp:Date.now(),hypothesisId:'K5'})}).catch(()=>{});
-    // #endregion
   }
 };

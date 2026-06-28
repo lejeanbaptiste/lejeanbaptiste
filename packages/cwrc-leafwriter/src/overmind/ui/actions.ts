@@ -293,17 +293,11 @@ const resolveSourceEditorContent = async (state: Context['state']): Promise<stri
       '';
 
     if (fromEditor) {
-      // #region agent log
-      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'ui/actions.ts:resolveSourceEditorContent',message:'used live editor',data:{documentUrl:state.document.url,fromEditorLength:fromEditor.length,documentXmlLength:state.document.xml?.length??0,contentHasChanged:state.editor.contentHasChanged},timestamp:Date.now(),hypothesisId:'S6'})}).catch(()=>{});
-      // #endregion
       return fromEditor;
     }
   }
 
   if (state.document.xml) {
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'ui/actions.ts:resolveSourceEditorContent',message:'fallback document.xml',data:{documentUrl:state.document.url,documentXmlLength:state.document.xml.length},timestamp:Date.now(),hypothesisId:'S6'})}).catch(()=>{});
-    // #endregion
     return state.document.xml;
   }
 
@@ -317,9 +311,6 @@ export const syncSourceEditorFromDocument = async ({ state }: Context) => {
 
   state.ui.sourceOriginalContent = content;
   state.ui.sourceCurrentContent = content;
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'ui/actions.ts:syncSourceEditorFromDocument',message:'synced source from document',data:{documentUrl:state.document.url,contentLength:content.length,inSourceMode:state.ui.editorViewMode==='source'},timestamp:Date.now(),hypothesisId:'S4'})}).catch(()=>{});
-  // #endregion
 };
 
 export const setSourceCurrentContent = ({ state }: Context, content: string) => {
@@ -339,10 +330,6 @@ export const enterSourceMode = async ({ state, actions }: Context) => {
 
   state.ui.sourceOriginalContent = content;
   state.ui.sourceCurrentContent = content;
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'ui/actions.ts:enterSourceMode',message:'enter source mode',data:{documentUrl:state.document.url,contentLength:content.length,wasAlreadySource:state.ui.editorViewMode==='source'},timestamp:Date.now(),hypothesisId:'S4'})}).catch(()=>{});
-  // #endregion
-
   if (state.ui.editorViewMode !== 'source') {
     actions.ui.setEditorViewMode('source');
   }

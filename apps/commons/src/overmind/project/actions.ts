@@ -217,9 +217,6 @@ const showExplorerLeftPanel = () => {
       detail: { tab: 'explorer' },
     }),
   );
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'project/actions.ts:showExplorerLeftPanel',message:'default left panel to explorer',data:{hasBridge:!!window.__desktopLeftPanel},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
-  // #endregion
 };
 
 const loadProjectBundle = async ({ state }: Context, bundle: ProjectBundle) => {
@@ -268,9 +265,6 @@ export const openProject = async (context: Context) => {
     await loadProjectBundle(context, onboarded);
   } catch (error) {
     console.error('[project] openProject failed:', error);
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'project/actions.ts:openProject',message:'openProject failed',data:{error:error instanceof Error ? error.message : String(error)},timestamp:Date.now(),hypothesisId:'K3'})}).catch(()=>{});
-    // #endregion
     notifyViaSnackbar('Could not open the project folder. Check the console for details.');
     context.state.project.isProjectReady = true;
   }
@@ -425,11 +419,6 @@ const prepareFileContent = async (
 
 export const openFile = async ({ state, actions }: Context, filePath: string) => {
   if (!window.electronAPI || !state.project.isProjectReady || !state.project.rootPath) return;
-
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'project/actions.ts:openFile',message:'open file',data:{filePath,hasWriter:!!window.writer,projectSchemaIds:state.project.projectSchemas.map(s=>s.id)},timestamp:Date.now(),hypothesisId:'K4'})}).catch(()=>{});
-  // #endregion
-
   const existing = state.project.openTabs.find((tab) => tab.filePath === filePath);
   if (existing) {
     await actions.project.switchTab({ filePath });
@@ -508,9 +497,6 @@ export const saveActiveTab = async (
   const filePath = state.project.activeTabPath;
   const tab = state.project.openTabs.find((item) => item.filePath === filePath);
   if (tab && isTempTab(tab)) {
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'project/actions.ts:saveActiveTab',message:'temp save redirected to save as',data:{filePath},timestamp:Date.now(),hypothesisId:'K2'})}).catch(()=>{});
-    // #endregion
     return saveActiveTabAs(context, { content });
   }
 
@@ -614,11 +600,6 @@ export const saveActiveTabAs = async (
 
   const previousPath = state.project.activeTabPath ?? undefined;
   const defaultSavePath = getDefaultSaveAsPath(state.project, previousPath);
-
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'project/actions.ts:saveActiveTabAs',message:'save as default path',data:{previousPath,defaultSavePath,isTemp:!!state.project.openTabs.find(t=>t.filePath===previousPath)?.isTemp},timestamp:Date.now(),hypothesisId:'SA1'})}).catch(()=>{});
-  // #endregion
-
   let filePath: string | null;
   try {
     filePath = await window.electronAPI.saveFileAs(defaultSavePath);
@@ -763,11 +744,6 @@ export const reloadDirectoryInTree = async ({ state }: Context, dirPath: string)
   const children = await loadTreeLevel(dirPath);
   const isProjectRoot = Boolean(state.project.rootPath && dirPath === state.project.rootPath);
   const nodeFoundBefore = treeContainsPath(state.project.tree, dirPath);
-
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'project/actions.ts:reloadDirectoryInTree',message:'reload explorer directory',data:{dirPath,rootPath:state.project.rootPath,isProjectRoot,nodeFoundBefore,childCount:children.length},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
-
   if (isProjectRoot) {
     state.project.tree = children;
     return;
