@@ -140,6 +140,13 @@ export const useExplorerContextMenu = () => {
     setRenameOpen(true);
   };
 
+  const openRenameForItem = (item: ExplorerTarget) => {
+    if (isExplorerItemProtected(item, rootPath, schemaDirPath)) return;
+    setTarget(item);
+    setRenameValue(item.name);
+    setRenameOpen(true);
+  };
+
   const handleNewFolderClick = () => {
     if (!target?.isDirectory) return;
     closeMenu();
@@ -206,6 +213,7 @@ export const useExplorerContextMenu = () => {
     menuOpen: Boolean(anchorPos),
     newFolderOpen,
     newFolderValue,
+    openRenameForItem,
     renameOpen,
     renameValue,
     setNewFolderOpen,

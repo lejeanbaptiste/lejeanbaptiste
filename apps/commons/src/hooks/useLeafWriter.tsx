@@ -2,6 +2,7 @@ import { DESKTOP_APP_DISPLAY_NAME } from '@src/desktop/desktopBranding';
 import { focusFirstBodyParagraph } from '@src/desktop/focusFirstBodyParagraph';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
 import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
+import { stripTeiHeaderForVisualEditor, mergeStoredHeaderForValidation } from '@src/desktop/teiHeaderXml';
 import { ENABLED_CATALOG_IDS, getEnabledCatalogSchemas } from '@src/desktop/schemaCatalog';
 import {
   leafwriterAtom,
@@ -36,6 +37,17 @@ export const useLeafWriter = () => {
   const { analytics } = useAnalytics();
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  if (isDesktop() && typeof window !== 'undefined') {
+    window.__desktopStripTeiHeaderForVisualEditor = stripTeiHeaderForVisualEditor;
+    window.__desktopMergeHeaderForValidation = (editorXml: string) => {
+      const stored =
+        window.__desktopStoredDocumentXml ??
+        window.writer?.overmindState?.document?.xml ??
+        '';
+      return mergeStoredHeaderForValidation(editorXml, stored);
+    };
+  }
 
   const { user } = useAppState().auth;
   const { config, projectSchemas, rootPath } = useAppState().project;
@@ -117,14 +129,20 @@ export const useLeafWriter = () => {
       // Telemetry is handled by the LWC. If want to test it on LW, you must disabled it on LWC (just do not initialize it)
     };
 
+    const visualXml = isDesktop() ? stripTeiHeaderForVisualEditor(xml) : xml;
+
     leafWriter.init({
       document: {
         url: resource.filePath ?? resource.url,
-        xml,
+        xml: visualXml,
       },
       settings,
       user: author,
     });
+
+    if (isDesktop()) {
+      window.writer?.overmindActions?.document?.setDocumentXml?.(xml);
+    }
 
     setEditorEvents();
 
@@ -156,7 +174,6 @@ export const useLeafWriter = () => {
     window.writer.overmindActions?.ui?.resetSourceEditor?.();
     window.writer.overmindActions?.document?.setDocumentUrl?.(filePath);
     window.writer.loadDocumentXML(content);
-    window.writer.overmindActions?.document?.setDocumentXml?.(content);
     window.writer.overmindActions?.editor?.setContentHasChanged?.(false);
     window.writer.layoutManager?.resizeEditor?.();
     window.writer.layoutManager?.resizeAll?.();

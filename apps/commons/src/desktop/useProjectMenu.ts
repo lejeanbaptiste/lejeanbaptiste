@@ -48,6 +48,7 @@ export const useProjectMenu = () => {
       leafWriter?.setContentHasChanged(false);
       window.writer?.overmindActions?.document?.setDocumentXml(content);
       window.writer?.overmindActions?.ui?.markSourceSaved?.(content);
+      void window.writer?.overmindActions?.validator?.validate();
     },
     [leafWriter, markTabDirty, setContentHasChanged],
   );

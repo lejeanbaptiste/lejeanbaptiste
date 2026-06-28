@@ -1,3 +1,4 @@
+import { isDesktop } from '@src/types/desktop';
 import {
   applyOrlandoHeaderPathUpdates,
   hasOrlandoHeader,
@@ -106,6 +107,12 @@ export const pushXmlToActiveEditor = ({
 
   if (isSourceEditorMode()) {
     window.writer?.overmindActions?.ui?.setSourceCurrentContent?.(content);
+    return;
+  }
+
+  // Header is file-only on desktop — injecting it into WYSIWYG adds invisible text in
+  // structural elements like publicationStmt/sourceDesc and fails TEI validation.
+  if (isDesktop()) {
     return;
   }
 

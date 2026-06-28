@@ -31,5 +31,9 @@ interface DesktopLeftPanelBridge {
 declare global {
   interface Window {
     __desktopLeftPanel?: DesktopLeftPanelBridge;
+    __desktopTagging?: {
+      handleEditorKeyDown: (event: KeyboardEvent) => boolean;
+    };
+    __desktopMergeHeaderForValidation?: (editorXml: string) => string;
   }
 }

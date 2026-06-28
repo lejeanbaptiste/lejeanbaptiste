@@ -160,3 +160,21 @@ Prerequisites: catalog-installed TEI project with edition metadata; encoder name
 - [ ] Orlando file → Save → `REVISIONDESC/RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` updated with encoder name and date; other `RESPONSIBILITY` entries unchanged
 - [ ] Edition metadata → bulk apply → change one file’s managed field in file metadata panel → change edition default → bulk apply again → edited file keeps its value; others update
 - [ ] After bulk apply, `schema/project-metadata.json` contains `lastApplied` snapshot
+
+
+
+## O. Tagging Phase 1 (Enter popup, F2, split)
+
+Prerequisites: desktop dev build; TEI project open; **Visual** mode; **Show tags** on (optional, for visibility).
+
+- [x] Select text + **Enter** → tag popup opens; last-used tag highlighted; **Enter** in popup wraps selection
+- [ ] Collapsed caret + **Enter** → insert popup; `p` highlighted; must confirm with **Enter**
+- [x] **F2** on tagged element → rename popup with current tag name; **Enter** commits rename
+- [x] **F2** on explorer file/folder → rename dialog opens
+- [ ] F2 walk
+- [ ] **Shift+Enter** in inline tag → line break / parent splits when schema allows
+- [x] Tag popup **Shift+Enter** → all exact untagged matches in file wrapped; one undo
+- [x] Tag popup **Alt+Enter** → queue-walk through untagged matches
+- [x] Invalid tag greyed in popup; apply refused with snackbar
+- [ ] Save file → `schema/tag-stats.json` updated with element counts
+- [x] **Source** mode: Enter/F2 do not open tag popup (linked rename in source still works)

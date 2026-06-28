@@ -38,6 +38,90 @@ export const filterResourceUrls = (urls: string[]): string[] => {
   return filtered;
 };
 
+const resolveIncludeUrl = (baseSchemaUrl: string, href: string): string => {
+  const localBase = fromLocalFileUrl(baseSchemaUrl);
+  if (localBase) {
+    const includeFile = href.includes('/')
+      ? (href.match(/(.*\/)(.*)/)?.[2] ?? href)
+      : href;
+    const separator = localBase.includes('\\') ? '\\' : '/';
+    const dir = localBase.slice(
+      0,
+      Math.max(localBase.lastIndexOf('/'), localBase.lastIndexOf('\\')),
+    );
+    return `${CRCAO_PREFIX}${encodeURIComponent(`${dir}${separator}${includeFile}`)}`;
+  }
+
+  if (/^https?:\/\//i.test(baseSchemaUrl)) {
+    const schemaBase = baseSchemaUrl.match(/(.*\/)(.*)/)?.[1];
+    const includeFile = href.includes('/')
+      ? (href.match(/(.*\/)(.*)/)?.[2] ?? href)
+      : href;
+    return schemaBase ? schemaBase + includeFile : href;
+  }
+
+  return href;
+};
+
+const mergeRngIncludes = async (rngText: string, baseUrl: string): Promise<string> => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(rngText, 'application/xml');
+  if (doc.querySelector('parsererror')) return rngText;
+
+  const grammar = doc.querySelector('grammar');
+  if (!grammar) return rngText;
+
+  const includes = Array.from(grammar.children).filter(
+    (el) => el.tagName.toLowerCase() === 'include',
+  );
+
+  for (const includeEl of includes) {
+    const href = includeEl.getAttribute('href');
+    if (!href) continue;
+
+    const includeUrl = resolveIncludeUrl(baseUrl, href);
+    const includeText = await fetchResourceText(includeUrl);
+    if (!includeText) continue;
+
+    const mergedIncludeText = await mergeRngIncludes(includeText, includeUrl);
+    const includeDoc = parser.parseFromString(mergedIncludeText, 'application/xml');
+    const includeGrammar = includeDoc.querySelector('grammar');
+    if (!includeGrammar) continue;
+
+    for (const child of Array.from(includeGrammar.children)) {
+      const tag = child.tagName.toLowerCase();
+      if (tag === 'start') {
+        const existing = Array.from(grammar.children).find(
+          (el) => el.tagName.toLowerCase() === 'start',
+        );
+        if (existing) existing.replaceWith(child.cloneNode(true));
+        else grammar.appendChild(child.cloneNode(true));
+      } else if (tag === 'define') {
+        const name = child.getAttribute('name');
+        const existing = name
+          ? Array.from(grammar.children).find(
+              (el) => el.tagName.toLowerCase() === 'define' && el.getAttribute('name') === name,
+            )
+          : null;
+        if (existing) existing.replaceWith(child.cloneNode(true));
+        else grammar.appendChild(child.cloneNode(true));
+      }
+    }
+
+    includeEl.remove();
+  }
+
+  return new XMLSerializer().serializeToString(doc);
+};
+
+/** Read a desktop/local RNG (with includes inlined) and return a worker-safe blob URL. */
+export async function localSchemaToBlobUrl(schemaURL: string): Promise<string | null> {
+  const text = await fetchResourceText(schemaURL);
+  if (!text) return null;
+  const merged = await mergeRngIncludes(text, schemaURL);
+  return URL.createObjectURL(new Blob([merged], { type: 'application/xml' }));
+}
+
 /** Load text from a remote URL or a desktop crcao:// project file. */
 export async function fetchResourceText(url: string): Promise<string | null> {
   const localPath = fromLocalFileUrl(url);

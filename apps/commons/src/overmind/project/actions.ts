@@ -19,6 +19,7 @@ import {
   updateTreeNode,
 } from '@src/desktop/explorer/treeUtils';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
+import { updateTagStatsForFile } from '@src/desktop/tagging/tagStats';
 import { clearWriterSession, resetDesktopEditorSession } from '@src/desktop/clearWriterSession';
 import {
   DESKTOP_LEFT_PANEL_EVENT,
@@ -29,6 +30,10 @@ import { getEnabledCatalogSchemas } from '@src/desktop/schemaCatalog';
 import { warmMetadataDialogStateCache } from '@src/desktop/projectMetadataDialogState';
 import { maybeCheckSchemaUpdateOnOpen } from '@src/desktop/schemaUpdateCheck';
 import { stampContentBeforeSave } from '@src/desktop/revisionDescXml';
+import {
+  mergeEditorBodyWithStoredHeader,
+  stripTeiHeaderForVisualEditor,
+} from '@src/desktop/teiHeaderXml';
 import { isDesktop } from '@src/types/desktop';
 import { buildSkeletonForCatalog } from '@src/desktop/schemaTemplates';
 import type { FileTreeNode } from './state';
@@ -545,21 +550,25 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
     return;
   }
 
-  let content = await window.electronAPI.readFile(filePath);
-  content = await prepareFileContent({ state, actions } as Context, filePath, content);
-  const filename = getFilename(filePath);
-  const tab = { content, dirty: false, editorReady: true, filePath, filename };
+  try {
+    let content = await window.electronAPI.readFile(filePath);
+    content = await prepareFileContent({ state, actions } as Context, filePath, content);
+    const filename = getFilename(filePath);
+    const tab = { content, dirty: false, editorReady: true, filePath, filename };
 
-  state.project.openTabs = [...state.project.openTabs, tab];
-  state.project.activeTabPath = filePath;
+    state.project.openTabs = [...state.project.openTabs, tab];
+    state.project.activeTabPath = filePath;
 
-  await actions.editor.setResource({
-    content,
-    filePath,
-    filename,
-    isLocal: true,
-  });
-  state.editor.contentLastSaved = content;
+    await actions.editor.setResource({
+      content,
+      filePath,
+      filename,
+      isLocal: true,
+    });
+    state.editor.contentLastSaved = content;
+  } catch (error) {
+    throw error;
+  }
 };
 
 export const switchTab = async (
@@ -621,11 +630,17 @@ export const saveActiveTab = async (
   }
 
   try {
+    const baseXml = tab?.content ?? content;
+    const editorBody = stripTeiHeaderForVisualEditor(content);
+    const merged = mergeEditorBodyWithStoredHeader(editorBody, baseXml);
     const stamped = await stampContentBeforeSave(
-      content,
+      merged,
       state.project.config?.schema?.catalogId,
     );
     await window.electronAPI.writeFile(filePath, stamped);
+    if (state.project.rootPath) {
+      void updateTagStatsForFile(state.project.rootPath, filePath, stamped);
+    }
     state.project.openTabs = state.project.openTabs.map((tab) =>
       tab.filePath === filePath ? { ...tab, content: stamped, dirty: false } : tab,
     );
@@ -748,8 +763,14 @@ export const saveActiveTabAs = async (
   }
 
   try {
+    const sourceTab = previousPath
+      ? state.project.openTabs.find((item) => item.filePath === previousPath)
+      : state.project.openTabs.find((item) => item.filePath === state.project.activeTabPath);
+    const baseXml = sourceTab?.content ?? content;
+    const editorBody = stripTeiHeaderForVisualEditor(content);
+    const merged = mergeEditorBodyWithStoredHeader(editorBody, baseXml);
     const stamped = await stampContentBeforeSave(
-      content,
+      merged,
       state.project.config?.schema?.catalogId,
     );
     await window.electronAPI.writeFile(filePath, stamped);
@@ -879,6 +900,9 @@ export const updateTabContent = (
   if (tab) tab.content = content;
   if (state.project.activeTabPath === filePath && state.editor.resource?.filePath === filePath) {
     state.editor.resource = { ...state.editor.resource, content };
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      window.__desktopStoredDocumentXml = content;
+    }
   }
 };
 

@@ -239,7 +239,12 @@ class Writer extends EventManager {
    * @param {Document|String} docXml An XML document or a string representation of such.
    */
   loadDocumentXML(docXml: string) {
-    this.converter.loadDocumentXML(docXml);
+    const stripHeader = window.__desktopStripTeiHeaderForVisualEditor;
+    const visualXml =
+      typeof stripHeader === 'function' && typeof docXml === 'string'
+        ? stripHeader(docXml)
+        : docXml;
+    this.converter.loadDocumentXML(visualXml);
     if (typeof docXml === 'string') {
       this.overmindActions?.document.setDocumentXml(docXml);
     }

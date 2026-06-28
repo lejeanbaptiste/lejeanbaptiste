@@ -126,6 +126,12 @@ declare global {
       setSkipExplorerDeleteConfirm: (value: boolean) => void;
     };
     __ljbOpenNativeSchemaPicker?: (options: SchemaPickerOpenerOptions) => Promise<void>;
+    /** Desktop: strip teiHeader before WYSIWYG load (registered by useLeafWriter). */
+    __desktopStripTeiHeaderForVisualEditor?: (xml: string) => string;
+    /** Desktop: canonical tab XML with header (for validation merge). */
+    __desktopStoredDocumentXml?: string;
+    /** Desktop: merge stored header into editor XML before validation. */
+    __desktopMergeHeaderForValidation?: (editorXml: string) => string;
   }
 }
 

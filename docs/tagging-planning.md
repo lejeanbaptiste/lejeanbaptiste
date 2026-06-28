@@ -1,6 +1,6 @@
 # Tagging infrastructure — implementation plan
 
-**Status:** Planning in progress (**keyboard model**, **Enter-tag popup**, **F2 rename**, **Alt+Enter attributes**, **attributes panel**, **per-type tag colours** locked)  
+**Status:** Phase 1 implemented (Enter-tag popup, F2 rename, insert/split, propagate, queue-walk, tag stats). Phase 2+ planned.  
 **Scope:** Desktop app — fast structural/semantic tagging, attributes, later disambiguation and bulk ID propagation  
 **Related:** `docs/todo.md`, `docs/project-schema-planning.md`, `docs/schema_handling.md`
 
@@ -333,7 +333,7 @@ Schema validity remains authoritative; settings tune **behaviour**, not RelaxNG 
 | Attributes editor | Done (replace UX) | `attributesEditor`, `AttributeWidget` |
 | Explorer rename | Done | `renameExplorerItem`, `renamePath` |
 | Enter = paragraph | **Replace** | `tinymceWrapper.ts` |
-| Enter / F2 / Alt+Enter popups | **Not done** | — |
+| Enter / F2 / Alt+Enter popups | **Phase 1 done** (Enter + F2); Alt+Enter Phase 2 | `apps/commons/src/desktop/tagging/` |
 | Attributes panel | **Not done** | — |
 | Per-type tag colours (project CSS) | **Not done** | defaults in `editor.less` (entity types only) |
 | Tag + attr stats | **Not done** | — |
