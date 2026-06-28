@@ -127,9 +127,6 @@ export const useLeafWriter = () => {
     window.writer.loadDocumentXML(content);
     window.writer.overmindActions?.document?.setDocumentXml?.(content);
     window.writer.overmindActions?.editor?.setContentHasChanged?.(false);
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'useLeafWriter.tsx:loadDocumentInWriter',message:'loaded document in writer',data:{filePath,contentLength:content.length},timestamp:Date.now(),hypothesisId:'S6'})}).catch(()=>{});
-    // #endregion
     window.writer.layoutManager?.resizeEditor?.();
     window.writer.layoutManager?.resizeAll?.();
     focusFirstBodyParagraph();

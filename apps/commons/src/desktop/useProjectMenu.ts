@@ -101,10 +101,6 @@ export const useProjectMenu = () => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
 
     return window.electronAPI.onAppMenuAction((action) => {
-      // #region agent log
-      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'useProjectMenu.ts:onAppMenuAction',message:'menu action',data:{action},timestamp:Date.now(),hypothesisId:'K1'})}).catch(()=>{});
-      // #endregion
-
       if (action === 'open-project') {
         void openProject();
         return;

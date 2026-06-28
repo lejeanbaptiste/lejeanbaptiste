@@ -234,11 +234,6 @@ export const useNativeDialogBridge = () => {
             if (!session || !window.electronAPI?.pickSchemaFiles) {
               return { ok: false, error: 'Invalid schema setup session.' };
             }
-
-            // #region agent log
-            fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'useNativeDialogBridge.ts:installLocalSchema',message:'before pickSchemaFiles',data:{dialogId},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-            // #endregion
-
             const picked = await window.electronAPI.pickSchemaFiles();
             if (!picked) return { ok: false, error: 'cancelled' };
 
@@ -251,14 +246,8 @@ export const useNativeDialogBridge = () => {
               registerDesktopSchemas(buildProjectSchemas(bundle.rootPath, bundle.config));
               clearSchemaSetupSession(dialogId);
               session.onComplete(bundle);
-              // #region agent log
-              fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'useNativeDialogBridge.ts:installLocalSchema',message:'install complete',data:{rng:bundle.config.schema?.rng},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-              // #endregion
               return { ok: true };
             } catch (error) {
-              // #region agent log
-              fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'useNativeDialogBridge.ts:installLocalSchema',message:'install error',data:{error:error instanceof Error ? error.message : String(error)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-              // #endregion
               return {
                 ok: false,
                 error: error instanceof Error ? error.message : 'Could not copy schema file.',
@@ -270,7 +259,6 @@ export const useNativeDialogBridge = () => {
             const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
             if (!session) return null;
 
-            const metadataLoadStarted = Date.now();
             const activeBundle = getActiveProjectBundle();
             const usedInMemoryBundle =
               activeBundle?.projectFilePath === session.projectFilePath;
@@ -278,10 +266,6 @@ export const useNativeDialogBridge = () => {
               ? activeBundle
               : await window.electronAPI?.reloadProjectBundle?.(session.projectFilePath);
             if (!bundle) return null;
-            // #region agent log
-            fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'useNativeDialogBridge.ts:getProjectMetadataState',message:'metadata state loaded',data:{usedInMemoryBundle,elapsedMs:Date.now()-metadataLoadStarted},timestamp:Date.now(),hypothesisId:'S3'})}).catch(()=>{});
-            // #endregion
-
             const catalogKind = getCatalogKind(
               bundle.config.schema?.catalogId,
               bundle.config.schema?.rng,
@@ -389,7 +373,6 @@ export const useNativeDialogBridge = () => {
 
             clearProjectMetadataSession(dialogId);
             session.onSave();
-
             if (!applyToDocuments && session.mode === 'edition') {
               notifyViaSnackbar({
                 message: 'Edition metadata saved.',

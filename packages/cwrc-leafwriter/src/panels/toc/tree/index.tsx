@@ -147,9 +147,6 @@ export const Tree = () => {
           focusEditor: true,
           start: position.start,
         });
-      // #region agent log
-      fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'toc/tree/index.tsx:handSelectItem',message:'TOC source jump',data:{id,hasPosition:!!position,jumped:!!jumped,contentLength:content.length},timestamp:Date.now(),hypothesisId:'H6'})}).catch(()=>{});
-      // #endregion
       if (jumped) return;
     }
 

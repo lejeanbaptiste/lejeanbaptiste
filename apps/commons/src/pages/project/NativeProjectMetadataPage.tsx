@@ -26,34 +26,53 @@ interface MetadataDialogState {
 
 export const NativeProjectMetadataPage = () => {
   const [searchParams] = useSearchParams();
-  const dialogId = searchParams.get('dialogId') ?? '';
+  const initialDialogId = searchParams.get('dialogId') ?? '';
+  const [activeDialogId, setActiveDialogId] = useState(initialDialogId);
   const [state, setState] = useState<MetadataDialogState | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialDialogId !== '__prewarm__' && Boolean(initialDialogId));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const invoke = useCallback(
     async (method: string, args?: unknown) => {
-      return window.electronAPI?.nativeDialogInvoke({ dialogId, method, args });
+      return window.electronAPI?.nativeDialogInvoke({ dialogId: activeDialogId, method, args });
     },
-    [dialogId],
+    [activeDialogId],
   );
 
   const closeDialog = useCallback(() => {
-    void window.electronAPI?.closeNativeDialog(dialogId);
-  }, [dialogId]);
+    void window.electronAPI?.closeNativeDialog(activeDialogId);
+  }, [activeDialogId]);
 
   useEffect(() => {
-    if (!isDesktop() || !dialogId) return;
+    if (!isDesktop()) return;
+    return window.electronAPI?.onNativeDialogOpen?.((payload) => {
+      setActiveDialogId(payload.dialogId);
+      setState(null);
+      setError(null);
+      setLoading(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop() || !activeDialogId || activeDialogId === '__prewarm__') {
+      setLoading(false);
+      return;
+    }
 
     void (async () => {
-      const dialogState = (await invoke('getProjectMetadataState', { dialogId })) as
+      const dialogState = (await invoke('getProjectMetadataState', { dialogId: activeDialogId })) as
         | MetadataDialogState
         | null;
-      if (dialogState) setState(dialogState);
+      if (dialogState) {
+        setState(dialogState);
+        setError(null);
+      } else {
+        setError('Could not load edition metadata.');
+      }
       setLoading(false);
     })();
-  }, [dialogId, invoke]);
+  }, [activeDialogId, invoke]);
 
   const updateField = (path: string, value: string) => {
     setState((prev) =>
@@ -100,7 +119,6 @@ export const NativeProjectMetadataPage = () => {
     setError(null);
     try {
       const result = (await invoke('saveProjectMetadata', {
-        dialogId,
         values: state.values,
         custom: state.custom,
         applyToDocuments,
@@ -118,7 +136,7 @@ export const NativeProjectMetadataPage = () => {
   };
 
   const handleCancel = async () => {
-    await invoke('cancelProjectMetadata', { dialogId });
+    await invoke('cancelProjectMetadata', {});
     closeDialog();
   };
 
@@ -146,8 +164,12 @@ export const NativeProjectMetadataPage = () => {
       </Box>
 
       <Stack spacing={2} sx={{ flex: 1, p: 2, WebkitAppRegion: 'no-drag', overflow: 'auto' }}>
-        {loading || !state ? (
+        {loading ? (
           <Typography color="text.secondary">Loading…</Typography>
+        ) : !state ? (
+          <Typography color="error" variant="body2">
+            {error ?? 'Could not load edition metadata.'}
+          </Typography>
         ) : (
           <>
             {state.note && (

@@ -82,6 +82,9 @@ export interface ElectronAPI {
     args?: unknown;
   }) => Promise<unknown>;
   onNativeDialogClosed: (callback: (id: string) => void) => () => void;
+  onNativeDialogOpen: (
+    callback: (payload: { dialogId: string; title?: string }) => void,
+  ) => () => void;
   lspStart: (options?: {
     defaultSchemaRng?: string;
     projectRoot?: string;
@@ -149,6 +152,14 @@ const electronAPI: ElectronAPI = {
     const listener = (_event: Electron.IpcRendererEvent, id: string) => callback(id);
     ipcRenderer.on('native-dialog:closed', listener);
     return () => ipcRenderer.removeListener('native-dialog:closed', listener);
+  },
+  onNativeDialogOpen: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      payload: { dialogId: string; title?: string },
+    ) => callback(payload);
+    ipcRenderer.on('native-dialog:open', listener);
+    return () => ipcRenderer.removeListener('native-dialog:open', listener);
   },
   lspStart: (options) => ipcRenderer.invoke('lsp:start', options),
   lspStop: () => ipcRenderer.invoke('lsp:stop'),

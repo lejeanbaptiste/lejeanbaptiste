@@ -7,6 +7,7 @@ import {
   closeAllNativeDialogs,
   getTopNativeDialogWindow,
   initNativeDialogs,
+  prewarmNativeDialog,
   registerNativeDialogIpc,
 } from './nativeDialogs';
 import { getValidLastProjectFile, writeLastProjectFile } from './projectPrefs';
@@ -451,11 +452,6 @@ const registerIpcHandlers = () => {
   ipcMain.handle('pickSchemaFiles', async () => {
     const dialogParent = getTopNativeDialogWindow() ?? mainWindow;
     if (!dialogParent) return null;
-
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'main.ts:pickSchemaFiles',message:'opening rng picker',data:{usesNativeDialog:!!getTopNativeDialogWindow(),parentTitle:dialogParent.getTitle()},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-    // #endregion
-
     dialogParent.focus();
     const rngResult = await dialog.showOpenDialog(dialogParent, {
       properties: ['openFile'],
@@ -470,11 +466,6 @@ const registerIpcHandlers = () => {
       title: 'Choose CSS file (optional)',
       message: 'Optional: choose a CSS file for this schema, or Cancel to skip.',
     });
-
-    // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'main.ts:pickSchemaFiles',message:'pick complete',data:{rngBasename:path.basename(rngResult.filePaths[0]),hasCss:!cssResult.canceled},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
-    // #endregion
-
     return {
       rngPath: rngResult.filePaths[0],
       cssPath:
@@ -563,6 +554,7 @@ const createWindow = async () => {
 
   mainWindow.webContents.on('did-finish-load', () => {
     setMainWindowTitle(APP_NAME);
+    prewarmNativeDialog('projectMetadata');
   });
 
   mainWindow.webContents.on('before-input-event', (event, input) => {

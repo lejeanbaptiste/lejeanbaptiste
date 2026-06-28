@@ -50,8 +50,9 @@ Modern TEI P5 RelaxNG releases ship **monolithic** `.rng` files (~1 MB each), so
 | **Open Project + schema setup wizard** | **Done (Phase 1)** | `NativeSchemaSetupPage`, `schemaSetup.ts`, `openProject` onboarding |
 | **Project metadata dialog + JSON** | **Done (Phase 1)** | `NativeProjectMetadataPage`, `projectMetadata.ts` |
 | **Apply metadata to existing files** | **Done (Phase 1)** | Edition metadata → Save and update documents… |
-| **New File (⌘N) + skeleton merge** | **Not done** | — |
-| **Temp file + Save As flow** | **Not done** | — |
+| **New File (⌘N) + skeleton merge** | **Done (Phase 1)** | `project/actions.ts` `newFile`, `createTempDocument`, skeleton in `projectMetadata.ts` |
+| **Temp file + Save As flow** | **Done (Phase 1)** | Save redirects temp tabs to Save As; explorer default directory |
+| **Phase 1 smoke test** | **Done (June 2026)** | `docs/smoke_test.md` |
 | **Schema update alert** | **Not done** | — |
 
 ---
@@ -323,6 +324,8 @@ Current built-in catalog entries:
 ## Implementation phases
 
 ### Phase 1 — Open Project + schema + metadata
+
+**Shipped and smoke-tested (June 2026).** See `docs/smoke_test.md`.
 
 - Schema wizard (tiered catalog from `schemasList`; local file copy); rollback on failure
 - `schemaCatalog.ts` or shared filter — `enabledCatalogIds`: `teiAll`, `teiLite` for v1

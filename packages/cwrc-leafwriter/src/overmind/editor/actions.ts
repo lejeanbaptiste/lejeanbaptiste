@@ -167,9 +167,6 @@ export const clearProjectSchemas = ({ state }: Context) => {
     }
   }
   state.editor.schemas = kept;
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'editor/actions.ts:clearProjectSchemas',message:'cleared project schemas',data:{remainingIds:Object.keys(kept),writerSchemaCount:window.writer.schemaManager.schemas.length},timestamp:Date.now(),hypothesisId:'K3'})}).catch(()=>{});
-  // #endregion
 };
 
 const cloneSchema = (schema: Schema): Schema => ({
@@ -189,9 +186,6 @@ export const registerProjectSchemas = ({ state }: Context, schemas: Schema[]) =>
     const entry = cloneSchema(schema);
     state.editor.schemas[entry.id] = entry;
   }
-  // #region agent log
-  fetch('http://127.0.0.1:7253/ingest/aae22f38-d876-4045-816e-e95acef3f779',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'dfd93a'},body:JSON.stringify({sessionId:'dfd93a',location:'editor/actions.ts:registerProjectSchemas',message:'registered in leafwriter editor state',data:{schemaIds:schemas.map(s=>s.id),editorSchemaCount:Object.keys(state.editor.schemas).length},timestamp:Date.now(),hypothesisId:'K5'})}).catch(()=>{});
-  // #endregion
 };
 
 /**
