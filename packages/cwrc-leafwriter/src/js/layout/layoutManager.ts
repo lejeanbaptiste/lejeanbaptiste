@@ -230,6 +230,11 @@ class LayoutManager {
         activate: (event: any, ui: any) => $.layout.callbacks.resizeTabLayout(event, ui),
         create: () => {
           $region.parent().find('.ui-corner-all:not(button)').removeClass('ui-corner-all');
+          if (region === 'east') {
+            window.dispatchEvent(
+              new CustomEvent('lw:east-tabs-ready', { detail: { editorId: this.editorId } }),
+            );
+          }
         },
       });
     });
@@ -487,8 +492,11 @@ class LayoutManager {
     }
 
     //multiple modules
+    const iconTabsClass =
+      panelRegion === 'east' ? ' cwrc-east-icon-tabs' : '';
+    const panelDivClass = panelRegion === 'east' ? ' class="cwrc-east-panel"' : '';
     return `
-      <div class="cwrc tabs ui-layout-${panelRegion}">
+      <div class="cwrc tabs ui-layout-${panelRegion}${iconTabsClass}">
         <ul>
           ${panelConfig
             .map(
@@ -502,7 +510,7 @@ class LayoutManager {
             .join('\n')}
         </ul>
         <div class="ui-layout-content">
-          ${panelConfig.map(({ id }) => `<div id="${this.editorId}-${id}"/>`).join('\n')}
+          ${panelConfig.map(({ id }) => `<div id="${this.editorId}-${id}"${panelDivClass}/>`).join('\n')}
         </div>
       </div>
     `;

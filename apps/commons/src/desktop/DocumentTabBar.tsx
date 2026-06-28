@@ -5,14 +5,12 @@ import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useAtom } from 'jotai';
-import { useTranslation } from 'react-i18next';
 
 export const DocumentTabBar = () => {
   const { activeTabPath, openTabs } = useAppState().project;
   const { contentHasChanged } = useAppState().editor;
-  const { switchTab, closeTab } = useActions().project;
+  const { closeTab, promptCloseDirtyTab, switchTab } = useActions().project;
   const [leafWriter] = useAtom(leafwriterAtom);
-  const { t } = useTranslation();
 
   if (openTabs.length === 0) return null;
 
@@ -28,26 +26,24 @@ export const DocumentTabBar = () => {
     clearFindHighlights();
 
     const tab = openTabs.find((item) => item.filePath === filePath);
+    if (!tab) return;
+
     const isActive = filePath === activeTabPath;
-    const isDirty = isActive ? contentHasChanged : tab?.dirty;
+    const isDirty = isActive ? contentHasChanged : tab.dirty;
 
-    if (
-      isDirty &&
-      isDesktop() &&
-      window.electronAPI?.showNativeMessageBox
-    ) {
-      const { response } = await window.electronAPI.showNativeMessageBox({
-        type: 'warning',
-        title: t('LWC.desktop.close_unsaved.title'),
-        message: t('LWC.desktop.close_unsaved.message', {
-          filename: tab?.filename ?? filePath,
-        }),
-        buttons: [t('LWC.commons.discard changes'), t('LWC.commons.cancel')],
-        defaultId: 0,
-        cancelId: 1,
+    if (isDirty && isDesktop()) {
+      const contentOverride =
+        isActive && leafWriter ? await leafWriter.getContent() : tab.content;
+      const result = await promptCloseDirtyTab({
+        tab: {
+          content: tab.content,
+          filePath: tab.filePath,
+          filename: tab.filename,
+          isTemp: tab.isTemp,
+        },
+        contentOverride,
       });
-
-      if (response !== 0) return;
+      if (result === 'abort' || result === 'handled') return;
     }
 
     const content =

@@ -10,8 +10,7 @@ import {
   type MetadataFieldDefinition,
 } from './schemaMetadataFields';
 import type { ProjectMetadataFile } from './projectTypes';
-
-const TEI_NS = 'http://www.tei-c.org/ns/1.0';
+import { applyHeaderPathUpdates } from './teiHeaderXml';
 
 const emptyMetadata = (catalogId?: string): ProjectMetadataFile => ({
   version: 1,
@@ -113,88 +112,21 @@ export const createInitialMetadata = (
   return base;
 };
 
-const findTeiHeader = (doc: Document): Element | null => {
-  const tei = doc.documentElement;
-  if (!tei) return null;
-  const header =
-    tei.getElementsByTagNameNS(TEI_NS, 'teiHeader')[0] ??
-    tei.getElementsByTagName('teiHeader')[0];
-  return header ?? null;
-};
-
-const ensurePath = (root: Element, parts: string[]): Element => {
-  let current: Element = root;
-  for (const part of parts) {
-    let child =
-      current.getElementsByTagNameNS(TEI_NS, part)[0] ??
-      current.getElementsByTagName(part)[0];
-    if (!child) {
-      child = root.ownerDocument!.createElementNS(TEI_NS, part);
-      current.appendChild(child);
-    }
-    current = child;
-  }
-  return current;
-};
-
-const setHeaderPathValue = (header: Element, teiPath: string, value: string) => {
-  const parts = teiPath.split('/').filter(Boolean);
-  const leaf = parts.pop();
-  if (!leaf) return;
-  const parent = parts.length ? ensurePath(header, parts) : header;
-  let node =
-    parent.getElementsByTagNameNS(TEI_NS, leaf)[0] ??
-    parent.getElementsByTagName(leaf)[0];
-  if (!node) {
-    node = header.ownerDocument!.createElementNS(TEI_NS, leaf);
-    parent.appendChild(node);
-  }
-  node.textContent = value;
-};
-
-const clearHeaderPath = (header: Element, teiPath: string) => {
-  const parts = teiPath.split('/').filter(Boolean);
-  const leaf = parts.pop();
-  if (!leaf) return;
-  let current: Element = header;
-  for (const part of parts) {
-    const next =
-      current.getElementsByTagNameNS(TEI_NS, part)[0] ??
-      current.getElementsByTagName(part)[0];
-    if (!next) return;
-    current = next;
-  }
-  const node =
-    current.getElementsByTagNameNS(TEI_NS, leaf)[0] ??
-    current.getElementsByTagName(leaf)[0];
-  node?.parentNode?.removeChild(node);
-};
-
 const applyMetadataToXml = (
   xml: string,
   entries: Array<{ path: string; value: string }>,
   options: { clearRemovedPaths?: string[] },
 ): string => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'application/xml');
-  if (doc.querySelector('parsererror')) return xml;
+  const updates = entries
+    .filter(({ path, value }) => !BULK_APPLY_EXCLUDED_PATHS.has(path) && value.trim())
+    .map(({ path, value }) => ({ path, value }));
 
-  const header = findTeiHeader(doc);
-  if (!header) return xml;
-
-  for (const { path, value } of entries) {
-    if (BULK_APPLY_EXCLUDED_PATHS.has(path)) continue;
-    if (value.trim()) {
-      setHeaderPathValue(header, path, value.trim());
-    }
-  }
-
-  for (const path of options.clearRemovedPaths ?? []) {
-    if (BULK_APPLY_EXCLUDED_PATHS.has(path)) continue;
-    clearHeaderPath(header, path);
-  }
-
-  return new XMLSerializer().serializeToString(doc);
+  return applyHeaderPathUpdates(xml, updates, {
+    clearPaths: (options.clearRemovedPaths ?? []).filter(
+      (path) => !BULK_APPLY_EXCLUDED_PATHS.has(path),
+    ),
+    skipPaths: BULK_APPLY_EXCLUDED_PATHS,
+  });
 };
 
 export interface ApplyMetadataResult {

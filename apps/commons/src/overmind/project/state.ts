@@ -22,6 +22,8 @@ export interface OpenTab {
 export interface ProjectState {
   activeTabPath: string | null;
   config: ProjectFileConfig | null;
+  explorerFocusedIsDirectory: boolean;
+  explorerFocusedPath: string | null;
   isProjectReady: boolean;
   openTabs: OpenTab[];
   projectFilePath: string | null;
@@ -33,6 +35,8 @@ export interface ProjectState {
 export const state: ProjectState = {
   activeTabPath: null,
   config: null,
+  explorerFocusedIsDirectory: false,
+  explorerFocusedPath: null,
   isProjectReady: false,
   openTabs: [],
   projectFilePath: null,

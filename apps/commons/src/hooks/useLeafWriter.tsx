@@ -19,6 +19,17 @@ import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
 import type { LeafWriterOptionsSettings } from '@cwrc/leafwriter/lib/src/types';
 
+const showDefaultEastPanel = () => {
+  if (!isDesktop()) return;
+  window.writer?.layoutManager?.showModule('fileMetadata');
+  const editorId = window.writer?.editorId;
+  if (editorId) {
+    window.dispatchEvent(
+      new CustomEvent('lw:east-tabs-ready', { detail: { editorId } }),
+    );
+  }
+};
+
 export const useLeafWriter = () => {
   const { analytics } = useAnalytics();
   const navigate = useNavigate();
@@ -92,7 +103,7 @@ export const useLeafWriter = () => {
             baseUrl: `${window.location.origin}/`,
             modules: {
               east: [
-                { id: 'code', title: 'Raw XML' },
+                { id: 'fileMetadata', title: 'File metadata' },
                 { id: 'imageViewer', title: 'Image Viewer' },
                 { id: 'validation', title: 'Validation' },
               ],
@@ -130,6 +141,7 @@ export const useLeafWriter = () => {
     window.writer.layoutManager?.resizeEditor?.();
     window.writer.layoutManager?.resizeAll?.();
     focusFirstBodyParagraph();
+    showDefaultEastPanel();
   };
 
   const setEditorEvents = () => {
@@ -163,7 +175,10 @@ export const useLeafWriter = () => {
       leafWriter.autosave = autosave;
       tapDocument(resource, schemaName);
       subscribeToTimerService(leafWriter);
-      if (isDesktop()) focusFirstBodyParagraph();
+      if (isDesktop()) {
+        focusFirstBodyParagraph();
+        showDefaultEastPanel();
+      }
     });
     // leafWriterEvents.push(onLoadEvent);
     setLeafWriterEvents((prev) => [...prev, onLoadEvent]);

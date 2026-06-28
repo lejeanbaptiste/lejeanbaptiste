@@ -2,6 +2,41 @@
 
 **Phase 1 (Open Project schema wizard + project metadata) is implemented** — see `docs/project-schema-planning.md`.
 
+**Phase 2 (New File polish) is implemented** — temp file lifecycle, skeleton + metadata merge, Save As defaults, tab-close prompt. Manual checklist: `docs/smoke_test.md` section I.
+
+**Phase 3 (Per-file metadata panel) is implemented** — east-rail icon strip, file metadata panel (title + source), sync to editor. Manual checklist: `docs/smoke_test.md` section J.
+
+---
+
+## New File (⌘N) — desktop behavior
+
+When a project is open (schema + `schema/project-metadata.json` present):
+
+1. **File → New File** (⌘N) creates a temp document on disk and opens it as **`untitled.xml`**.
+2. The XML skeleton is built from **`schemaTemplates.ts`**: minimal `<teiHeader>`, non-blank edition metadata merged from **`project-metadata.json`**, shared `text/body/div/p` for TEI All and TEI Lite, relative `xml-model` / `xml-stylesheet` PIs, per-file title **`Untitled`**. Caret lands in the first `<p>`.
+3. **Save** (⌘S) on a temp tab opens **Save As**. The dialog defaults to the **explorer-focused folder** (or the parent of a focused file); otherwise **project root**.
+4. After Save As, the tab is no longer temp; subsequent saves write to that path and the file appears in the explorer.
+5. Closing a **dirty temp tab** prompts **Save…**, **Don't Save**, or **Cancel**. **Don't Save** deletes the temp file; **Save…** runs Save As then closes on success.
+
+Without a project open, ⌘N prompts to open a project first.
+
+Automated coverage: `apps/commons/src/desktop/newFileSkeleton.test.ts` (unit) and `newFileSkeleton.validation.test.ts` (RelaxNG against live TEI catalog URLs; requires network).
+
+---
+
+## Per-file metadata (east rail)
+
+Edition-wide defaults live in **`schema/project-metadata.json`** (edited via **Project → Edition metadata…**). Per-file fields live in each XML file’s `<teiHeader>` and are edited in the **File metadata** panel on the right (east) rail — the first icon; this panel opens by default when a file loads.
+
+| Field | TEI path | Notes |
+|-------|----------|--------|
+| Title | `titleStmt/title` | Per-file; not overwritten by edition bulk apply |
+| Source | `sourceDesc/p` | First paragraph under `sourceDesc`; excluded from bulk apply |
+
+Implementation: `apps/commons/src/desktop/FileMetadataPanel.tsx`, `fileMetadata.ts`, `teiHeaderXml.ts`. East tab icons are rendered by `DesktopEastPanels.tsx`.
+
+---
+
 Your idea is **excellent** and aligns perfectly with the needs of **TEI (Text Encoding Initiative) users**, especially in digital humanities. It would make your editor **far more user-friendly** for scholars who want to work with TEI but don’t want to manually handle schemas, namespaces, or boilerplate. Here’s a breakdown of the **strengths, potential challenges, and implementation considerations** for your approach:
 
 ---

@@ -6,7 +6,7 @@ import {
   metadataFileExists,
   readProjectMetadata,
 } from '@src/desktop/projectMetadata';
-import { buildTeiSkeletonXml } from '@src/desktop/schemaTemplates';
+import { getDefaultSaveAsPath as buildDefaultSaveAsPath } from '@src/desktop/saveAsDefaults';
 import {
   getParentPath,
   getPathBasename,
@@ -23,6 +23,7 @@ import {
   type DesktopLeftPanelShowDetail,
 } from '@src/desktop/desktopLeftPanelBridge';
 import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
+import { buildTeiSkeletonXml } from '@src/desktop/schemaTemplates';
 import type { FileTreeNode } from './state';
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
@@ -32,6 +33,80 @@ const isTempDocumentPath = (filePath: string): boolean =>
 
 const isTempTab = (tab: { filePath: string; isTemp?: boolean }) =>
   tab.isTemp || isTempDocumentPath(tab.filePath);
+
+export const deleteTempDocumentAt = async (filePath: string): Promise<void> => {
+  if (!isTempDocumentPath(filePath) || !window.electronAPI?.deletePath) return;
+  const tempDir = getParentPath(filePath);
+  if (!tempDir) return;
+  try {
+    await window.electronAPI.deletePath(tempDir);
+  } catch {
+    // temp dir may already be gone
+  }
+};
+
+export type PromptCloseDirtyTabResult = 'proceed' | 'abort' | 'handled';
+
+export const promptCloseDirtyTab = async (
+  context: Context,
+  payload: {
+    tab: { filePath: string; filename: string; content: string; isTemp?: boolean };
+    contentOverride?: string | null;
+  },
+): Promise<PromptCloseDirtyTabResult> => {
+  const { tab, contentOverride } = payload;
+  if (!window.electronAPI?.showNativeMessageBox) return 'proceed';
+
+  if (isTempTab(tab)) {
+    const response = await window.electronAPI.showNativeMessageBox({
+      type: 'warning',
+      title: 'Unsaved new document',
+      message: `Save "${tab.filename}" to your project folder before closing?`,
+      buttons: ['Save…', "Don't Save", 'Cancel'],
+      cancelId: 2,
+      defaultId: 0,
+    });
+
+    if (response.response === 2) return 'abort';
+    if (response.response === 1) {
+      await deleteTempDocumentAt(tab.filePath);
+      return 'proceed';
+    }
+
+    const content =
+      contentOverride ??
+      (await getActiveEditorContent()) ??
+      tab.content ??
+      context.state.editor.resource?.content ??
+      null;
+
+    if (!content) {
+      context.actions.ui.notifyViaSnackbar('Could not read document content.');
+      return 'abort';
+    }
+
+    const saveResult = await saveActiveTabAs(context, { content });
+    if (!saveResult.success) return 'abort';
+
+    const savedPath = context.state.project.activeTabPath;
+    if (savedPath) {
+      await closeTab(context, { content, filePath: savedPath });
+    }
+    return 'handled';
+  }
+
+  const response = await window.electronAPI.showNativeMessageBox({
+    type: 'warning',
+    title: 'Unsaved changes',
+    message: `${tab.filename} has unsaved changes. Close without saving?`,
+    buttons: ['Discard changes', 'Cancel'],
+    defaultId: 0,
+    cancelId: 1,
+  });
+
+  if (response.response !== 0) return 'abort';
+  return 'proceed';
+};
 
 const isSourceEditorMode = () =>
   window.writer?.overmindState?.ui?.editorViewMode === 'source';
@@ -226,6 +301,8 @@ const loadProjectBundle = async ({ state }: Context, bundle: ProjectBundle) => {
   state.project.projectSchemas = buildProjectSchemas(bundle.rootPath, bundle.config);
   state.project.tree = await loadTreeLevel(bundle.rootPath);
   state.project.isProjectReady = true;
+  state.project.explorerFocusedPath = null;
+  state.project.explorerFocusedIsDirectory = false;
 
   if (window.writer) {
     window.writer.overmindActions?.editor?.clearProjectSchemas?.();
@@ -560,27 +637,36 @@ export const reloadTabFromDisk = async ({ state, actions }: Context, filePath: s
   }
 };
 
-/** Save As default: project folder for temp/new files, not the app temp directory. */
+/** Save As default: explorer focus, else project root (never app temp dir). */
 const getDefaultSaveAsPath = (
   state: Context['state']['project'],
   previousPath?: string,
 ): string | undefined => {
-  if (!state.rootPath) return previousPath;
-
   const tab = previousPath
     ? state.openTabs.find((item) => item.filePath === previousPath)
     : undefined;
   const filename = tab?.filename ?? (previousPath ? getFilename(previousPath) : 'untitled.xml');
+  const isTempFile = Boolean(
+    tab?.isTemp || (previousPath && isTempDocumentPath(previousPath)),
+  );
 
-  if (tab?.isTemp || (previousPath && isTempDocumentPath(previousPath))) {
-    return joinProjectPath(state.rootPath, filename);
-  }
+  return buildDefaultSaveAsPath({
+    rootPath: state.rootPath,
+    explorerFocusedPath: state.explorerFocusedPath,
+    explorerFocusedIsDirectory: state.explorerFocusedIsDirectory,
+    filename,
+    previousPath,
+    isTempFile,
+  });
+};
 
-  if (previousPath && previousPath.startsWith(state.rootPath)) {
-    return previousPath;
-  }
-
-  return joinProjectPath(state.rootPath, filename);
+export const setExplorerFocusedPath = (
+  { state }: Context,
+  payload: { path: string; isDirectory: boolean },
+) => {
+  if (!state.project.rootPath || !payload.path.startsWith(state.project.rootPath)) return;
+  state.project.explorerFocusedPath = payload.path;
+  state.project.explorerFocusedIsDirectory = payload.isDirectory;
 };
 
 export const saveActiveTabAs = async (
@@ -695,6 +781,11 @@ export const closeTab = async (
   if (content) {
     const tab = state.project.openTabs.find((item) => item.filePath === filePath);
     if (tab) tab.content = content;
+  }
+
+  const closingTab = state.project.openTabs.find((tab) => tab.filePath === filePath);
+  if (closingTab && isTempTab(closingTab)) {
+    await deleteTempDocumentAt(filePath);
   }
 
   const remaining = state.project.openTabs.filter((tab) => tab.filePath !== filePath);

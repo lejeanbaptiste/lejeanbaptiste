@@ -80,6 +80,7 @@ export type ISettingsModuleName =
   | 'toc'
   | 'markup'
   | 'entities'
+  | 'fileMetadata'
   | 'imageViewer'
   | 'validation'
   | 'code';
