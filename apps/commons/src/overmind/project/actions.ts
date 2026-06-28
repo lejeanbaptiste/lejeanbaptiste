@@ -19,6 +19,7 @@ import {
   updateTreeNode,
 } from '@src/desktop/explorer/treeUtils';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
+import { normalizeTeiHeaderLanguageElements } from '@src/desktop/teiHeaderXml';
 import { updateTagStatsForFile } from '@src/desktop/tagging/tagStats';
 import { clearWriterSession, resetDesktopEditorSession } from '@src/desktop/clearWriterSession';
 import {
@@ -539,7 +540,7 @@ const prepareFileContent = async (
 
   registerDesktopSchemas([...state.project.projectSchemas, ...prepared.schemas]);
 
-  return prepared.content;
+  return normalizeTeiHeaderLanguageElements(prepared.content);
 };
 
 export const openFile = async ({ state, actions }: Context, filePath: string) => {

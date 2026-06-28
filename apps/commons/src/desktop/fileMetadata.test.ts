@@ -60,7 +60,8 @@ describe('applyFileHeaderFields', () => {
     expect(updated).toContain('<title>Chapter One</title>');
     expect(updated).toContain('<p>From the archive</p>');
     expect(updated).toContain('<div type="text">');
-    expect(updated).toMatch(/<div type="text">\s*<p>/);
+    expect(updated).toContain('<head>Section heading</head>');
+    expect(updated).toContain('<p>Paragraph text</p>');
   });
 
   test('creates TEI sourceDesc paragraph when missing', () => {
@@ -81,7 +82,7 @@ describe('applyFileHeaderFields', () => {
     expect(updated).toContain('<p>Body</p>');
   });
 
-  test('clears TEI source when value is empty', () => {
+  test('clears TEI source when value is empty but keeps empty paragraph', () => {
     const xml = applyFileHeaderFields(
       teiSampleXml(),
       { 'sourceDesc/p': 'Temporary source' },
@@ -90,6 +91,21 @@ describe('applyFileHeaderFields', () => {
     const cleared = applyFileHeaderFields(xml, { 'sourceDesc/p': '' }, 'teiLite');
 
     expect(readFileMetadataFromXml(cleared, 'teiLite')['sourceDesc/p']).toBe('');
+    expect(cleared).toMatch(/<sourceDesc>\s*<p\s*\/?>\s*<\/sourceDesc>/);
+  });
+
+  test('updating title only does not leave loose text in sourceDesc', () => {
+    const updated = applyFileHeaderFields(
+      teiSampleXml(),
+      {
+        'titleStmt/title': 'My Document Title',
+        'sourceDesc/p': '',
+      },
+      'teiLite',
+    );
+
+    expect(updated).toContain('<title>My Document Title</title>');
+    expect(updated).toMatch(/<sourceDesc>\s*<p\s*\/?>\s*<\/sourceDesc>/);
   });
 
   test('updates Orlando title and source', () => {

@@ -149,6 +149,22 @@ Prerequisites: desktop dev build; TEI file open in **Source** mode.
 
 
 
+## Source paired tag unwrap
+
+Prerequisites: desktop dev build; TEI file open in **Source** mode.
+
+- [x] Select `<p>` and delete → `</p>` gone, paragraph text kept
+- [x] Select `</p>` and delete → `<p>` gone, paragraph text kept
+- [x] Backspace through `<cat>` char-by-char → `</cat>` shrinks in sync; final result is bare content
+- [x] Type `<pb` inside `<cat>卷</cat>` → `</cat>` must not change
+- [x] Undo restores both tags in one step
+
+Prerequisites: same as above; **Visual** mode with caret in a paragraph.
+
+- [ ] Switch to **Source** → Monaco caret is at the same paragraph/character (location bar xpath matches)
+
+
+
 ## N. Phase 6 polish
 
 Prerequisites: catalog-installed TEI project with edition metadata; encoder name set in Settings.
@@ -168,7 +184,7 @@ Prerequisites: catalog-installed TEI project with edition metadata; encoder name
 Prerequisites: desktop dev build; TEI project open; **Visual** mode; **Show tags** on (optional, for visibility).
 
 - [x] Select text + **Enter** → tag popup opens; last-used tag highlighted; **Enter** in popup wraps selection
-- [ ] Collapsed caret + **Enter** → insert popup; `p` highlighted; must confirm with **Enter**
+- [x] Collapsed caret + **Enter** → insert popup; `p` highlighted; must confirm with **Enter**
 - [x] **F2** on tagged element → rename popup with current tag name; **Enter** commits rename
 - [x] **F2** on explorer file/folder → rename dialog opens
 - [ ] F2 walk
@@ -178,3 +194,21 @@ Prerequisites: desktop dev build; TEI project open; **Visual** mode; **Show tags
 - [x] Invalid tag greyed in popup; apply refused with snackbar
 - [ ] Save file → `schema/tag-stats.json` updated with element counts
 - [x] **Source** mode: Enter/F2 do not open tag popup (linked rename in source still works)
+
+
+
+## P. Tagging Phase 2 (Attributes)
+
+Prerequisites: desktop dev build; TEI project open; **Visual** mode; caret inside a tagged element (e.g. `persName`).
+
+- [x] **Alt+Enter** in editor (not in tag popup) → attribute popup at caret; attribute name list from schema + stats
+- [x] **Tab** → value field; **Enter** commits attribute on current tag; popup stays open for next attribute
+- [x] **Esc** closes attribute popup without further commits
+- [x] East panel **Attributes** icon → panel shows element name, schema attributes, editable values
+- [x] Edit attribute in panel → debounced commit; **Remove** clears attribute
+- [x] **Lookup…** on linkable tag (e.g. `persName`) → authority dialog; fills `ref` and `key` on tag
+- [x] Colour swatches in panel header → updates all tags of that type project-wide (`schema/tag-colors.json` + generated CSS)
+- [x] **Reset** on colours → reverts type to catalog default
+- [x] Context menu **Edit Tag** on desktop → opens Attributes panel (not legacy modal)
+- [ ] Save file → `schema/tag-stats.json` includes attribute and value counts
+- [x] Tag popup **Alt+Enter** still queue-walks (unchanged from Phase 1)

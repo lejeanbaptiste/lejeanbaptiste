@@ -190,7 +190,14 @@ const findLocalCssUrl = async (
 };
 
 const ensureStylesheetPi = (content: string, cssUrl: string) => {
-  if (/<\?xml-stylesheet/i.test(content)) return content;
+  const cssMatch = content.match(/<\?xml-stylesheet\s+([^?]+)\?>/i);
+  if (cssMatch) {
+    const cssHref = parsePiAttributes(cssMatch[1]).href ?? '';
+    if (cssHref !== cssUrl && cssUrl) {
+      return content.replace(cssMatch[0], replacePiHref(cssMatch[0], cssHref, cssUrl));
+    }
+    return content;
+  }
 
   const pi = `<?xml-stylesheet href="${cssUrl}" type="text/css"?>`;
   const modelMatch = content.match(/<\?xml-model\s+[^?]+\?>/i);

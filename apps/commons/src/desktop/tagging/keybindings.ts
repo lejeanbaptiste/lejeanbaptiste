@@ -10,6 +10,9 @@ export const matchesTagPopupPropagate = (event: KeyboardEvent): boolean =>
 export const matchesTagPopupQueueWalk = (event: KeyboardEvent): boolean =>
   (event.code === 'Enter' || event.code === 'NumpadEnter') && event.altKey;
 
+export const matchesEditorAttribute = (event: KeyboardEvent): boolean =>
+  (event.code === 'Enter' || event.code === 'NumpadEnter') && event.altKey && !event.shiftKey;
+
 export const matchesEditorTagPopup = (event: KeyboardEvent): boolean =>
   (event.code === 'Enter' || event.code === 'NumpadEnter') && !event.shiftKey && !event.altKey;
 

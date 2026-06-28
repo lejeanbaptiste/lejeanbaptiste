@@ -32,6 +32,7 @@ declare global {
 }
 
 export { clearCache, deleteDb } from './db';
+export { entityLookupDialogAtom } from './jotai/entity-lookup';
 export * as Types from './types';
 
 const overmind = createOvermind(config, {

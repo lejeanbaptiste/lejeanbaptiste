@@ -1,7 +1,10 @@
 import {
+  applyHeaderPathUpdates,
   inspectHeaderLooseText,
   mergeEditorBodyWithStoredHeader,
   mergeStoredHeaderForValidation,
+  readHeaderPathValues,
+  normalizeTeiHeaderLanguageElements,
   stripTeiHeaderForVisualEditor,
 } from './teiHeaderXml';
 
@@ -70,6 +73,29 @@ describe('mergeStoredHeaderForValidation', () => {
   });
 });
 
+describe('language metadata path', () => {
+  test('stores language as ident attribute without text content', () => {
+    const updated = applyHeaderPathUpdates(skeleton, [
+      { path: 'profileDesc/langUsage/language', value: 'English' },
+    ]);
+    expect(updated).toContain('ident="eng"');
+    expect(updated).not.toMatch(/<language[^>]*>English<\/language>/);
+
+    const values = readHeaderPathValues(updated, ['profileDesc/langUsage/language']);
+    expect(values['profileDesc/langUsage/language']).toBe('eng');
+  });
+
+  test('migrates legacy language text content to ident attribute', () => {
+    const legacy = skeleton.replace(
+      '</fileDesc>',
+      '</fileDesc><profileDesc><langUsage><language>English</language></langUsage></profileDesc>',
+    );
+    const fixed = normalizeTeiHeaderLanguageElements(legacy);
+    expect(fixed).toContain('ident="eng"');
+    expect(fixed).not.toMatch(/<language[^>]*>English<\/language>/);
+  });
+});
+
 describe('inspectHeaderLooseText', () => {
   test('detects loose text in publicationStmt', () => {
     const bad = skeleton.replace(
@@ -81,5 +107,27 @@ describe('inspectHeaderLooseText', () => {
       publicationStmt: true,
       sourceDesc: false,
     });
+  });
+});
+
+describe('sourceDesc paragraph normalization', () => {
+  test('migrates loose text in sourceDesc into a paragraph', () => {
+    const legacy = skeleton.replace(
+      '<sourceDesc><p/></sourceDesc>',
+      '<sourceDesc>Born digital</sourceDesc>',
+    );
+    const fixed = normalizeTeiHeaderLanguageElements(legacy);
+    expect(fixed).toContain('<sourceDesc><p>Born digital</p></sourceDesc>');
+    expect(inspectHeaderLooseText(fixed).sourceDesc).toBe(false);
+  });
+
+  test('keeps an empty paragraph when sourceDesc/p is cleared', () => {
+    const updated = applyHeaderPathUpdates(skeleton, [
+      { path: 'titleStmt/title', value: 'Chapter One' },
+      { path: 'sourceDesc/p', value: '' },
+    ]);
+    expect(updated).toContain('<title>Chapter One</title>');
+    expect(updated).toMatch(/<sourceDesc>\s*<p\s*\/?>\s*<\/sourceDesc>/);
+    expect(inspectHeaderLooseText(updated).sourceDesc).toBe(false);
   });
 });

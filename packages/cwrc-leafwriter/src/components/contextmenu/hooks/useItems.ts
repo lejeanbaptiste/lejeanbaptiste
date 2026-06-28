@@ -196,6 +196,10 @@ export const useItems = (ctx: State) => {
           writer.editor.currentBookmark = writer.editor?.selection.getBookmark(1);
 
           if (action === 'change') {
+            if (window.__desktopTagging?.changeTag && ctx.tagId && typeof ctx.tagId === 'string') {
+              window.__desktopTagging.changeTag(ctx.tagId, name);
+              return;
+            }
             writer.tagger.changeTagDialog(name, ctx.tagId);
             return;
           }
@@ -252,7 +256,14 @@ export const useItems = (ctx: State) => {
           id: nanoid(),
           name: t('LW.commons.edit'),
           type: 'action',
-          onClick: () => ctx.tagId && writer.tagger.editTagDialog(ctx.tagId),
+          onClick: () => {
+            if (!ctx.tagId) return;
+            if (window.__desktopTagging) {
+              writer.layoutManager?.showModule('attributes');
+              return;
+            }
+            writer.tagger.editTagDialog(ctx.tagId);
+          },
         },
       ];
       return items;
@@ -398,7 +409,14 @@ export const useItems = (ctx: State) => {
         type: 'action',
         name: ctx.isEntity ? t('LW.Edit Entity Annotation') : t('LW.Edit Tag'),
         icon: 'edit',
-        onClick: () => ctx.tagId && writer.tagger.editTagDialog(ctx.tagId),
+        onClick: () => {
+          if (!ctx.tagId) return;
+          if (window.__desktopTagging && !ctx.isEntity) {
+            writer.layoutManager?.showModule('attributes');
+            return;
+          }
+          writer.tagger.editTagDialog(ctx.tagId);
+        },
       });
     }
 

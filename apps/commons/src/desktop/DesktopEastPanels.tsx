@@ -1,19 +1,27 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import { Box } from '@mui/material';
 import { leafwriterAtom } from '@src/jotai';
 import { isDesktop } from '@src/types/desktop';
 import { useAtom } from 'jotai';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { createRoot } from 'react-dom/client';
+import { AttributesPanel } from './tagging/AttributesPanel';
 import { FileMetadataPanel } from './FileMetadataPanel';
 
 const EAST_TAB_ICONS: Record<string, { label: string; icon: ReactNode }> = {
   fileMetadata: { label: 'File metadata', icon: <DescriptionIcon fontSize="inherit" /> },
+  attributes: { label: 'Attributes', icon: <LabelOutlinedIcon fontSize="inherit" /> },
   imageViewer: { label: 'Image Viewer', icon: <ImageOutlinedIcon fontSize="inherit" /> },
   validation: { label: 'Validation', icon: <CheckCircleOutlineIcon fontSize="inherit" /> },
+};
+
+const EAST_PANELS: Record<string, ComponentType> = {
+  fileMetadata: FileMetadataPanel,
+  attributes: AttributesPanel,
 };
 
 const waitForElement = (selector: string, timeoutMs = 5000): Promise<Element> =>
@@ -57,39 +65,47 @@ const decorateEastTabIcons = () => {
 
 export const DesktopEastPanels = () => {
   const [leafWriter] = useAtom(leafwriterAtom);
-  const [panelContainer, setPanelContainer] = useState<Element | null>(null);
+  const [panelContainers, setPanelContainers] = useState<Record<string, Element>>({});
 
-  const mountFileMetadataPanel = useCallback(async (editorId?: string) => {
+  const mountEastPanels = useCallback(async (editorId?: string) => {
     const id = editorId ?? window.writer?.editorId;
     if (!isDesktop() || !id) return;
 
-    try {
-      const container = await waitForElement(`#${id}-fileMetadata`);
-      setPanelContainer(container);
-    } catch {
-      // Writer layout may not be ready yet; lw:east-tabs-ready or retry will try again.
+    const next: Record<string, Element> = {};
+    await Promise.all(
+      Object.keys(EAST_PANELS).map(async (moduleId) => {
+        try {
+          next[moduleId] = await waitForElement(`#${id}-${moduleId}`);
+        } catch {
+          // Writer layout may not be ready yet.
+        }
+      }),
+    );
+
+    if (Object.keys(next).length > 0) {
+      setPanelContainers((current) => ({ ...current, ...next }));
     }
   }, []);
 
   useEffect(() => {
     if (!isDesktop() || !leafWriter) {
-      setPanelContainer(null);
+      setPanelContainers({});
       return;
     }
 
     const onEastTabsReady = (event: Event) => {
       const detail = (event as CustomEvent<{ editorId: string }>).detail;
       decorateEastTabIcons();
-      void mountFileMetadataPanel(detail?.editorId);
+      void mountEastPanels(detail?.editorId);
     };
 
     window.addEventListener('lw:east-tabs-ready', onEastTabsReady);
     decorateEastTabIcons();
-    void mountFileMetadataPanel();
+    void mountEastPanels();
 
     const retryId = window.setInterval(() => {
       if (window.writer?.editorId) {
-        void mountFileMetadataPanel();
+        void mountEastPanels();
         window.clearInterval(retryId);
       }
     }, 200);
@@ -98,14 +114,23 @@ export const DesktopEastPanels = () => {
       window.removeEventListener('lw:east-tabs-ready', onEastTabsReady);
       window.clearInterval(retryId);
     };
-  }, [leafWriter, mountFileMetadataPanel]);
+  }, [leafWriter, mountEastPanels]);
 
-  if (!isDesktop() || !panelContainer) return null;
+  if (!isDesktop()) return null;
 
-  return createPortal(
-    <Box sx={{ bgcolor: 'background.paper', height: '100%', minHeight: 0, width: '100%' }}>
-      <FileMetadataPanel />
-    </Box>,
-    panelContainer,
+  return (
+    <>
+      {Object.entries(EAST_PANELS).map(([moduleId, PanelComponent]) => {
+        const container = panelContainers[moduleId];
+        if (!container) return null;
+        return createPortal(
+          <Box sx={{ bgcolor: 'background.paper', height: '100%', minHeight: 0, width: '100%' }}>
+            <PanelComponent />
+          </Box>,
+          container,
+          moduleId,
+        );
+      })}
+    </>
   );
 };
