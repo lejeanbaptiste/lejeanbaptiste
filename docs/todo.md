@@ -4,6 +4,10 @@ See **`docs/project-schema-planning.md`** for Open Project, project metadata, Ne
 
 **Phase 1 smoke test:** complete — see **`docs/smoke_test.md`**.
 
+**Phase 2 smoke test:** section I (New File) — run manually in desktop dev build; automated skeleton tests in `apps/commons/src/desktop/newFileSkeleton*.test.ts`.
+
+**Phase 3 smoke test:** section J (File metadata panel) — run manually in desktop dev build; automated tests in `apps/commons/src/desktop/fileMetadata.test.ts`.
+
 Interface:
 - [x] Dark mode icons
 - [ ] Clean out their icons from the top once those functions are moved.
@@ -12,14 +16,14 @@ Interface:
 Menu
 - [x] Open Project — schema setup when folder has no schema (download or copy local); then project metadata dialog (required Save)
 - [x] Project → Edition metadata… — edit `schema/project-metadata.json`; optional apply to existing XML files
-- [x] New File (⌘N) — temp file + Save As; skeleton merges project metadata defaults; prompt on close if unsaved (temp + skeleton done; close prompt still TODO)
+- [x] New File (⌘N) — temp file + Save As; skeleton merges project metadata defaults; Save As defaults from explorer focus; prompt on close if unsaved (Save / Don't save / Cancel) + temp cleanup
 
 Settings
 - [x] Encoder name — pre-fill `titleStmt/principal` in project metadata dialog on new setup (see planning doc)
 
 Editor / right rail
-- [ ] Right panel icon strip (icons instead of text labels where space is tight)
-- [ ] File metadata panel — first icon; default panel when a file opens (title, sourceDesc, …)
+- [x] Right panel icon strip (icons instead of text labels where space is tight)
+- [x] File metadata panel — first icon; default panel when a file opens (title, sourceDesc, …)
 - [ ] Attributes panel — tag attrs + Lookup… + per-type colours; see **`docs/tagging-planning.md`** Phase 2
 
 Editor
@@ -48,6 +52,9 @@ Editor
 - [ ] Make find and replace super efficient to use with keyboard only
 - [ ] Keyboard shortcuts for all side panels
 - [ ] In source mode, changing name of tag, closing tag should be updated in real time.
+- [ ] When copy and pasting into WYSIWYG, at the very least convert paragraph breaks to <p>
+- [ ] Make fuller list of project and file metadata to act as norm.
 
-4. “New document” + metadata (medium priority, very TEI-relevant)
-Project-wide metadata: planning doc Phase 1–2. Per-file metadata: right-rail panel Phase 3 (default on open).
+**Testing**
+- [ ] Test on Linux
+- [ ] Test on Windows

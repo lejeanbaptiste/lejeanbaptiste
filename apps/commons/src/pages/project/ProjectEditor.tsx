@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { DocumentTabBar, UnifiedLeftPanel, useExternalFileWatcher, useProjectMenu } from '@src/desktop';
+import { DocumentTabBar, DesktopEastPanels, UnifiedLeftPanel, useExternalFileWatcher, useProjectMenu } from '@src/desktop';
 import { AboutDialog } from '@src/desktop/AboutDialog';
 import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
@@ -116,6 +116,7 @@ export const ProjectEditor = () => {
     <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
       <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />
       <UnifiedLeftPanel />
+      <DesktopEastPanels />
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
         <DocumentTabBar />
         <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>

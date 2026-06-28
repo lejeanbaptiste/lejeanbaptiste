@@ -69,8 +69,12 @@ const config: Config.InitialOptions = {
         '^dexie$': require.resolve('dexie'),
       },
       resetMocks: false,
-      setupFiles: ['fake-indexeddb/auto'],
-      testEnvironment: 'jsdom',
+      setupFiles: [
+        'fake-indexeddb/auto',
+        '<rootDir>/apps/commons/test/setup/index.ts',
+      ],
+      testEnvironment:
+        '<rootDir>/packages/cwrc-leafwriter-validator/test/setup/FixJSDOMEnvironment.ts',
       testMatch: ['<rootDir>/apps/commons/**/?(*.)+(spec|test).[jt]s?(x)'],
       preset: 'ts-jest',
     },

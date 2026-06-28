@@ -37,6 +37,9 @@ export const tinymceWrapperInit = function ({
   const toolbar = document.querySelector('#editor-toolbar');
   const toolbarHeight = toolbar?.getBoundingClientRect().height ?? 0;
 
+  const visualBodyStyle =
+    'body { margin: 8px !important; max-width: none !important; width: auto !important; }';
+
   void tinymce.init({
     selector: `#${editorId}`,
     ui_container: `#${layoutContainerId}`,
@@ -55,6 +58,7 @@ export const tinymceWrapperInit = function ({
           `${writer.baseUrl}/css/tinymce/skins/content/writer/content.min.css`,
           `${writer.baseUrl}/css/editor.css`,
         ],
+    content_style: visualBodyStyle,
     doctype: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">`,
     element_format: 'xhtml',
 

@@ -169,7 +169,7 @@ const TreeNode = ({
 
 export const SidebarExplorerTab = () => {
   const { activeTabPath, isProjectReady, rootPath, tree } = useAppState().project;
-  const { loadDirectoryChildren, openFile } = useActions().project;
+  const { loadDirectoryChildren, openFile, setExplorerFocusedPath } = useActions().project;
   const { t } = useTranslation();
   const treePaneRef = useRef<HTMLDivElement>(null);
   const focusedRowRef = useRef<HTMLDivElement>(null);
@@ -219,6 +219,12 @@ export const SidebarExplorerTab = () => {
   useEffect(() => {
     focusedRowRef.current?.scrollIntoView({ block: 'nearest' });
   }, [treeKeyboard.focusedPath]);
+
+  useEffect(() => {
+    const item = treeKeyboard.getFocusedItem();
+    if (!item || !rootPath) return;
+    setExplorerFocusedPath({ path: item.path, isDirectory: item.isDirectory });
+  }, [rootPath, setExplorerFocusedPath, treeKeyboard.focusedPath]);
 
   const handleTreeKeyDown = async (event: React.KeyboardEvent) => {
     if (event.key === 'Delete' || event.key === 'Backspace') {

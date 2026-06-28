@@ -97,6 +97,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@cwrc/leafwriter-validator": "*",
+    "jest-fetch-mock": "^3.0.3",
     "@mdx-js/loader": "^3.1.1",
     "@octokit/types": "^16.0.0",
     "@stefanprobst/rehype-extract-toc": "^3.0.0",

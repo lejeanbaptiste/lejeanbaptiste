@@ -1,3 +1,5 @@
+export * from './DesktopEastPanels';
+export * from './FileMetadataPanel';
 export * from './focusFirstBodyParagraph';
 export * from './clearWriterSession';
 export * from './DocumentTabBar';

@@ -50,9 +50,10 @@ Modern TEI P5 RelaxNG releases ship **monolithic** `.rng` files (~1 MB each), so
 | **Open Project + schema setup wizard** | **Done (Phase 1)** | `NativeSchemaSetupPage`, `schemaSetup.ts`, `openProject` onboarding |
 | **Project metadata dialog + JSON** | **Done (Phase 1)** | `NativeProjectMetadataPage`, `projectMetadata.ts` |
 | **Apply metadata to existing files** | **Done (Phase 1)** | Edition metadata → Save and update documents… |
-| **New File (⌘N) + skeleton merge** | **Done (Phase 1)** | `project/actions.ts` `newFile`, `createTempDocument`, skeleton in `projectMetadata.ts` |
-| **Temp file + Save As flow** | **Done (Phase 1)** | Save redirects temp tabs to Save As; explorer default directory |
+| **New File (⌘N) + skeleton merge** | **Done (Phase 2)** | `project/actions.ts` `newFile`, `schemaTemplates.ts`, `mergeMetadataIntoHeader` |
+| **Temp file + Save As flow** | **Done (Phase 2)** | Save redirects temp tabs to Save As; explorer default directory; temp close prompt + cleanup |
 | **Phase 1 smoke test** | **Done (June 2026)** | `docs/smoke_test.md` |
+| **Phase 2 smoke test** | **Ready for manual pass** | `docs/smoke_test.md` section I |
 | **Schema update alert** | **Not done** | — |
 
 ---
@@ -266,8 +267,8 @@ Current built-in catalog entries:
 |----|------|---------|-----------------|
 | `teiAll` | TEI All | tei | **Enabled** |
 | `teiLite` | TEI Lite | teiLite | **Enabled** |
-| `teiSimplePrint` | TEI Simple Print | tei | More… (phase 2) |
-| `jTei` | jTEI Article | tei | More… (phase 2) |
+| `teiSimplePrint` | TEI Simple Print | tei | More… (Phase 4) |
+| `jTei` | jTEI Article | tei | More… (Phase 4) |
 | `orlando` | Orlando | orlando | More… (phase 3; non-TEI skeleton) |
 
 ### Technical
@@ -339,12 +340,16 @@ Current built-in catalog entries:
 
 ### Phase 2 — New File + temp + Save As
 
+**Shipped (June 2026).** Automated tests in `apps/commons/src/desktop/newFileSkeleton.test.ts` and `newFileSkeleton.validation.test.ts` (RelaxNG cases require network). Manual checklist: `docs/smoke_test.md` section I.
+
 - ⌘N; skeleton merge from metadata + minimal header
 - `schemaTemplates.ts` — **one shared TEI body** for **`teiAll`** and **`teiLite`**
-- Save As default directory from explorer; temp tab close prompt
-- Validator tests: skeleton validates against **both** v1 schemas
+- Save As default directory from explorer focus; temp tab close prompt (Save / Don't save / Cancel) + temp cleanup
+- Validator tests: skeleton validates against **both** v1 schemas (live TEI RNG URLs)
 
 ### Phase 3 — Per-file metadata panel + right-rail icons
+
+**Shipped (June 2026).** Automated tests in `apps/commons/src/desktop/fileMetadata.test.ts`. Manual checklist: `docs/smoke_test.md` section J.
 
 - Right-rail **icon strip** (text labels → icons where needed)
 - **File metadata panel** — first icon; **default on file open**
