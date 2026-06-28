@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { BottomBar, ContextMenu, EditorToolbar } from './components';
+import { BottomBar, ContextMenu, EditorLocationBar, EditorToolbar } from './components';
 import { SourceEditorPane } from './components/sourceEditor';
 import { createConfig } from './config';
 import { EntityLookupDialog } from './dialogs';
@@ -49,6 +49,9 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   useNotifier();
 
   const [editorToobarContainer, setEditorToobarContainer] = useState<Element | null>(null);
+  const [editorLocationBarContainer, setEditorLocationBarContainer] = useState<Element | null>(
+    null,
+  );
   const [sourceEditorPaneContainer, setSourceEditorPaneContainer] = useState<Element | null>(null);
   const [codePanelContainer, setCodePanelContainer] = useState<Element | null>(null);
   const [tocPanelContainer, setTocPanelContainer] = useState<Element | null>(null);
@@ -140,10 +143,12 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       setWriter(window.writer);
 
       const toolbarContainer = window.document.querySelector('#editor-toolbar');
+      const locationBarContainer = window.document.querySelector('#editor-location-bar');
       const sourceEditorPane = window.document.querySelector('#source-editor-pane');
       const _codePanelContainer = window.document.querySelector(`#${_writer.editorId}-code`);
 
       setEditorToobarContainer(toolbarContainer);
+      setEditorLocationBarContainer(locationBarContainer);
       setSourceEditorPaneContainer(sourceEditorPane);
       setCodePanelContainer(_codePanelContainer);
 
@@ -199,6 +204,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
         {writer && <ContextMenu />}
         <EntityLookupDialog />
         <div>
+          {editorLocationBarContainer &&
+            createPortal(<EditorLocationBar />, editorLocationBarContainer)}
           {editorToobarContainer &&
             editorViewMode === 'visual' &&
             createPortal(<EditorToolbar />, editorToobarContainer)}

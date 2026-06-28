@@ -20,10 +20,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { getRelativeFolderLabel } from '@src/desktop/explorer/treeUtils';
+import { getProjectSchemaDirPath, getRelativeFolderLabel, isPathUnder } from '@src/desktop/explorer/treeUtils';
 import { useActions, useAppState } from '@src/overmind';
 import type { FileTreeNode } from '@src/overmind/project/state';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type ExplorerTarget,
@@ -168,7 +168,7 @@ const TreeNode = ({
 };
 
 export const SidebarExplorerTab = () => {
-  const { activeTabPath, isProjectReady, rootPath, tree } = useAppState().project;
+  const { activeTabPath, config, isProjectReady, rootPath, tree } = useAppState().project;
   const { loadDirectoryChildren, openFile, setExplorerFocusedPath } = useActions().project;
   const { t } = useTranslation();
   const treePaneRef = useRef<HTMLDivElement>(null);
@@ -203,6 +203,19 @@ export const SidebarExplorerTab = () => {
     target,
   } = useExplorerContextMenu();
 
+  const schemaDirPath = useMemo(
+    () => (rootPath && config?.schema ? getProjectSchemaDirPath(rootPath, config.schema) : null),
+    [config?.schema, rootPath],
+  );
+
+  const visibleFilterMatches = useMemo(
+    () =>
+      matches.filter(
+        (match) => !schemaDirPath || !isPathUnder(match.path, schemaDirPath),
+      ),
+    [matches, schemaDirPath],
+  );
+
   const handleOpenFile = (filePath: string) => {
     void openFile(filePath);
   };
@@ -229,7 +242,7 @@ export const SidebarExplorerTab = () => {
   const handleTreeKeyDown = async (event: React.KeyboardEvent) => {
     if (event.key === 'Delete' || event.key === 'Backspace') {
       const item = treeKeyboard.getFocusedItem();
-      if (!item || isExplorerItemProtected(item, rootPath)) return;
+      if (!item || isExplorerItemProtected(item, rootPath, schemaDirPath)) return;
       event.preventDefault();
       await deleteTargetItem(item);
       return;
@@ -293,13 +306,13 @@ export const SidebarExplorerTab = () => {
             {t('LWC.desktop.explorer.open_project_hint')}
           </Typography>
         ) : isFiltering ? (
-          matches.length === 0 ? (
+          visibleFilterMatches.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
               {t('LWC.desktop.explorer.filter_no_results', { query: filterQuery.trim() })}
             </Typography>
           ) : (
             <List dense disablePadding>
-              {matches.map((match) => {
+              {visibleFilterMatches.map((match) => {
                 const folderLabel = rootPath
                   ? getRelativeFolderLabel(match.path, rootPath)
                   : '';

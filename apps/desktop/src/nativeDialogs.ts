@@ -192,6 +192,7 @@ const openPooledNativeDialog = async (payload: {
   id: string;
   type: NativeDialogType;
   title?: string;
+  initialState?: unknown;
 }) => {
   closeOpenDialogsOfType(payload.type);
 
@@ -208,6 +209,7 @@ const openPooledNativeDialog = async (payload: {
   dialogWindow.webContents.send('native-dialog:open', {
     dialogId: payload.id,
     title: payload.title,
+    initialState: payload.initialState,
   });
 
   if (pooled) pooled.shown = true;
@@ -309,7 +311,10 @@ export const registerNativeDialogIpc = () => {
 
   ipcMain.handle(
     'openNativeDialog',
-    async (_event, payload: { id: string; type: NativeDialogType; title?: string }) => {
+    async (
+      _event,
+      payload: { id: string; type: NativeDialogType; title?: string; initialState?: unknown },
+    ) => {
       const parent = getParentWindow();
       if (!parent) return { ok: false };
       if (POOLED_DIALOG_TYPES.has(payload.type)) {
@@ -323,6 +328,19 @@ export const registerNativeDialogIpc = () => {
     closeNativeDialog(id);
     return { ok: true };
   });
+
+  ipcMain.handle(
+    'updateNativeDialogState',
+    (_event, payload: { dialogId: string; initialState: unknown }) => {
+      const entry = nativeDialogWindows.get(payload.dialogId);
+      if (!entry || entry.window.isDestroyed()) return { ok: false };
+      entry.window.webContents.send('native-dialog:state-update', {
+        dialogId: payload.dialogId,
+        initialState: payload.initialState,
+      });
+      return { ok: true };
+    },
+  );
 
   ipcMain.handle(
     'nativeDialog:invoke',

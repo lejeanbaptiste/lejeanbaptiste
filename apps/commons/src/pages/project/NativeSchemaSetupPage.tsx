@@ -7,7 +7,6 @@ import {
   MenuItem,
   Select,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import { getTieredCatalogForSetup } from '@src/desktop/schemaCatalog';
@@ -120,7 +119,7 @@ export const NativeSchemaSetupPage = () => {
       <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', WebkitAppRegion: 'drag' }}>
         <Typography variant="h6">Project schema setup</Typography>
         <Typography color="text.secondary" variant="body2">
-          Choose a TEI schema for this project. Files are copied into the project folder.
+          Choose a schema for this project. Files are copied into the project folder.
         </Typography>
       </Box>
 
@@ -142,21 +141,13 @@ export const NativeSchemaSetupPage = () => {
                     {entry.name}
                   </MenuItem>
                 ))}
+                {state.more.map((entry) => (
+                  <MenuItem key={entry.id} value={entry.id}>
+                    {entry.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
-
-            {state.more.length > 0 && (
-              <Box>
-                <Typography color="text.secondary" sx={{ mb: 1 }} variant="subtitle2">
-                  More schemas…
-                </Typography>
-                {state.more.map((entry) => (
-                  <Typography color="text.disabled" key={entry.id} variant="body2">
-                    {entry.name} (coming soon)
-                  </Typography>
-                ))}
-              </Box>
-            )}
 
             {error && (
               <Typography color="error" variant="body2">

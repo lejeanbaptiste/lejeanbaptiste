@@ -7,9 +7,15 @@ import {
 import {
   BULK_APPLY_EXCLUDED_PATHS,
   getAllManagedPaths,
+  isOrlandoCatalog,
   type MetadataFieldDefinition,
 } from './schemaMetadataFields';
 import type { ProjectMetadataFile } from './projectTypes';
+import {
+  buildLastAppliedSnapshot,
+  filterEntriesForFile,
+} from './metadataApplyOverrides';
+import { applyOrlandoHeaderPathUpdates } from './orlandoHeaderXml';
 import { applyHeaderPathUpdates } from './teiHeaderXml';
 
 const emptyMetadata = (catalogId?: string): ProjectMetadataFile => ({
@@ -33,6 +39,7 @@ export const readProjectMetadata = async (
       catalogId: parsed.catalogId,
       fields: parsed.fields ?? {},
       custom: Array.isArray(parsed.custom) ? parsed.custom : [],
+      lastApplied: parsed.lastApplied,
     };
   } catch {
     return null;
@@ -71,6 +78,7 @@ export const sanitizeMetadataForSave = (
     catalogId: draft.catalogId,
     fields,
     custom,
+    lastApplied: draft.lastApplied,
   };
 };
 
@@ -107,7 +115,13 @@ export const createInitialMetadata = (
 ): ProjectMetadataFile => {
   const base = emptyMetadata(bundle.config.schema?.catalogId);
   if (encoderName?.trim()) {
-    base.fields['titleStmt/principal'] = encoderName.trim();
+    if (isOrlandoCatalog(bundle.config.schema?.catalogId)) {
+      base.fields['REVISIONDESC/RESPONSIBILITY'] = encoderName.trim();
+    } else if (bundle.config.schema?.catalogId === 'teiSimplePrint') {
+      base.fields['publicationStmt/distributor'] = encoderName.trim();
+    } else if (bundle.config.schema?.catalogId !== 'jTei') {
+      base.fields['titleStmt/principal'] = encoderName.trim();
+    }
   }
   return base;
 };
@@ -115,16 +129,25 @@ export const createInitialMetadata = (
 const applyMetadataToXml = (
   xml: string,
   entries: Array<{ path: string; value: string }>,
-  options: { clearRemovedPaths?: string[] },
+  options: { clearRemovedPaths?: string[]; catalogId?: string | null },
 ): string => {
   const updates = entries
     .filter(({ path, value }) => !BULK_APPLY_EXCLUDED_PATHS.has(path) && value.trim())
     .map(({ path, value }) => ({ path, value }));
 
+  const clearPaths = (options.clearRemovedPaths ?? []).filter(
+    (path) => !BULK_APPLY_EXCLUDED_PATHS.has(path),
+  );
+
+  if (isOrlandoCatalog(options.catalogId)) {
+    return applyOrlandoHeaderPathUpdates(xml, updates, {
+      clearPaths,
+      skipPaths: BULK_APPLY_EXCLUDED_PATHS,
+    });
+  }
+
   return applyHeaderPathUpdates(xml, updates, {
-    clearPaths: (options.clearRemovedPaths ?? []).filter(
-      (path) => !BULK_APPLY_EXCLUDED_PATHS.has(path),
-    ),
+    clearPaths,
     skipPaths: BULK_APPLY_EXCLUDED_PATHS,
   });
 };
@@ -132,6 +155,7 @@ const applyMetadataToXml = (
 export interface ApplyMetadataResult {
   updated: number;
   skipped: number;
+  overridesSkipped: number;
   errors: string[];
 }
 
@@ -168,12 +192,24 @@ export const applyMetadataToProjectFiles = async (
   const files = await window.electronAPI.listProjectXmlFiles(bundle.rootPath);
   let updated = 0;
   let skipped = 0;
+  let overridesSkipped = 0;
   const errors: string[] = [];
 
   for (const file of files) {
     try {
       const original = await window.electronAPI.readFile(file.path);
-      const next = applyMetadataToXml(original, entries, { clearRemovedPaths });
+      const { entries: fileEntries, overridesSkipped: fileOverrides } = filterEntriesForFile(
+        original,
+        entries,
+        metadata.lastApplied,
+        metadata.catalogId,
+      );
+      overridesSkipped += fileOverrides;
+
+      const next = applyMetadataToXml(original, fileEntries, {
+        clearRemovedPaths,
+        catalogId: metadata.catalogId,
+      });
       if (next === original) {
         skipped += 1;
         continue;
@@ -188,10 +224,10 @@ export const applyMetadataToProjectFiles = async (
     }
   }
 
-  return { updated, skipped, errors };
+  return { updated, skipped, overridesSkipped, errors };
 };
 
-export const mergeMetadataIntoHeader = (
+export const mergeMetadataIntoSkeleton = (
   skeletonXml: string,
   metadata: ProjectMetadataFile,
 ): string => {
@@ -205,8 +241,11 @@ export const mergeMetadataIntoHeader = (
     }
   }
   if (entries.length === 0) return skeletonXml;
-  return applyMetadataToXml(skeletonXml, entries, {});
+  return applyMetadataToXml(skeletonXml, entries, { catalogId: metadata.catalogId });
 };
+
+/** @deprecated Use mergeMetadataIntoSkeleton */
+export const mergeMetadataIntoHeader = mergeMetadataIntoSkeleton;
 
 export const metadataEntriesFromFile = (metadata: ProjectMetadataFile) => {
   const entries: Array<{ path: string; value: string; label: string }> = [];
@@ -230,4 +269,4 @@ export const getManagedFieldValues = (
   return values;
 };
 
-export { getAllManagedPaths, emptyMetadata };
+export { buildLastAppliedSnapshot, getAllManagedPaths, emptyMetadata };

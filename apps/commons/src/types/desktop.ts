@@ -1,4 +1,5 @@
 import type { ProjectBundle } from '@src/desktop/projectFile';
+import type { SchemaUpdateApplyResult, SchemaUpdateCheckOptions, SchemaUpdateCheckResult } from '@src/desktop/schemaUpdateTypes';
 
 export interface FileEntry {
   name: string;
@@ -26,6 +27,7 @@ export interface NativeDialogOptions {
   id: string;
   type: NativeDialogType;
   title?: string;
+  initialState?: unknown;
 }
 
 export interface SchemaPickerOpenerOptions {
@@ -64,6 +66,11 @@ export interface ElectronAPI {
     rngPath: string,
     cssPath?: string | null,
   ) => Promise<ProjectBundle>;
+  checkSchemaUpdate: (
+    projectFilePath: string,
+    options?: SchemaUpdateCheckOptions,
+  ) => Promise<SchemaUpdateCheckResult>;
+  applyCatalogSchemaUpdate: (projectFilePath: string) => Promise<SchemaUpdateApplyResult>;
   pickSchemaFiles: () => Promise<PickSchemaFilesResult | null>;
   createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
   getEncoderName: () => Promise<string>;
@@ -82,6 +89,10 @@ export interface ElectronAPI {
   ) => Promise<{ response: number; checkboxChecked: boolean }>;
   openNativeDialog: (options: NativeDialogOptions) => Promise<{ ok: boolean }>;
   closeNativeDialog: (id: string) => Promise<{ ok: boolean }>;
+  updateNativeDialogState: (payload: {
+    dialogId: string;
+    initialState: unknown;
+  }) => Promise<{ ok: boolean }>;
   nativeDialogInvoke: (payload: {
     dialogId: string;
     method: string;
@@ -89,7 +100,10 @@ export interface ElectronAPI {
   }) => Promise<unknown>;
   onNativeDialogClosed: (callback: (id: string) => void) => () => void;
   onNativeDialogOpen: (
-    callback: (payload: { dialogId: string; title?: string }) => void,
+    callback: (payload: { dialogId: string; title?: string; initialState?: unknown }) => void,
+  ) => () => void;
+  onNativeDialogStateUpdate: (
+    callback: (payload: { dialogId: string; initialState: unknown }) => void,
   ) => () => void;
   lspStart: (options?: {
     defaultSchemaRng?: string;

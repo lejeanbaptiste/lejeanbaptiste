@@ -47,6 +47,8 @@ export interface LeafWriterOptionsSettings {
   authorityServices?: AuthorityServiceConfig[];
   schemas?: Schema[];
   schemasId?: SupportedSchemasId[];
+  /** When true, use only `schemas` from settings (no built-in catalog merge). Desktop projects. */
+  schemasExclusive?: boolean;
 
   modules?: ISettingsModules;
   services?: any;
@@ -55,6 +57,8 @@ export interface LeafWriterOptionsSettings {
   annotator?: boolean;
   mode?: string;
   allowOverlap?: boolean;
+  /** Product name shown in loading UI (default: LEAF-Writer). */
+  appDisplayName?: string;
   telemetry?: {
     sentryConfig?: {
       dsn: string;

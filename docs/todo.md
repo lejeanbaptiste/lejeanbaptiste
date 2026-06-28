@@ -8,14 +8,16 @@ See **`docs/project-schema-planning.md`** for Open Project, project metadata, Ne
 
 **Phase 3 smoke test:** section J (File metadata panel) — run manually in desktop dev build; automated tests in `apps/commons/src/desktop/fileMetadata.test.ts`.
 
-Interface:
-- [x] Dark mode icons
-- [ ] Clean out their icons from the top once those functions are moved.
-- [ ] Add a very thin bar below/in their place indicating xpath tree location.
+**Phase 4 smoke test:** section K (Expanded catalog) — run manually in desktop dev build; automated skeleton tests cover `teiSimplePrint`, `jTei`, and `orlando` in `apps/commons/src/desktop/newFileSkeleton*.test.ts`.
+
+**Phase 5 smoke test:** section L (Schema update check) — run manually in desktop dev build; automated tests in `apps/commons/src/desktop/schemaUpdateLogic.test.ts`.
+
+**Phase 6 smoke test:** section N (Polish) — run manually in desktop dev build; automated tests in `apps/commons/src/desktop/revisionDescXml.test.ts` and `metadataApplyOverrides.test.ts`.
 
 Menu
 - [x] Open Project — schema setup when folder has no schema (download or copy local); then project metadata dialog (required Save)
 - [x] Project → Edition metadata… — edit `schema/project-metadata.json`; optional apply to existing XML files
+- [x] File → Check for schema updates… — on-demand catalog hash check (bypasses 24h throttle)
 - [x] New File (⌘N) — temp file + Save As; skeleton merges project metadata defaults; Save As defaults from explorer focus; prompt on close if unsaved (Save / Don't save / Cancel) + temp cleanup
 
 Settings
@@ -42,18 +44,23 @@ Editor
 - [ ] Completely rethink the tagging paradigm (umbrella — tracked in planning doc)
 
 **Metadata**
-- [ ] Saving in the editor should leave a 'last edited' timestamp with the user name (see planning doc Phase 6)
+- [x] Saving in the editor leaves a last-edited timestamp with the encoder name in `encodingDesc/appInfo` (TEI) or Orlando `RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` — separate from scholarly `revisionDesc`
 
 **CSS**
 - [ ] Per-type tag highlight + text colours — attributes panel → `schema/tag-colors.json` + CSS; see **`docs/tagging-planning.md`**
 
 **Refinement**
+- [x] In source mode, changing name of tag, closing tag should be updated in real time.
+- [x] When copy and pasting into WYSIWYG, at the very least convert paragraph breaks to `<p>`
+- [ ] Make fuller list of project and file metadata to act as norm.
+
+**UI**
+- [x] Dark mode icons
+- [x] Add a very thin bar below/in their place indicating xpath tree location (`/TEI/text/body/...` format).
+- [ ] Clean out their icons from the top once those functions are moved.
 - [ ] Improve fixed layout of things in find and replace
 - [ ] Make find and replace super efficient to use with keyboard only
 - [ ] Keyboard shortcuts for all side panels
-- [ ] In source mode, changing name of tag, closing tag should be updated in real time.
-- [ ] When copy and pasting into WYSIWYG, at the very least convert paragraph breaks to <p>
-- [ ] Make fuller list of project and file metadata to act as norm.
 
 **Testing**
 - [ ] Test on Linux

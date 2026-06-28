@@ -9,21 +9,21 @@ import { useEffect } from 'react';
 import { buildProjectSchemas, type ProjectBundle } from './projectFile';
 import {
   applyMetadataToProjectFiles,
-  createInitialMetadata,
-  emptyMetadata,
-  getManagedFieldValues,
+  buildLastAppliedSnapshot,
   readProjectMetadata,
   sanitizeMetadataForSave,
   writeProjectMetadata,
 } from './projectMetadata';
+import { invalidateMetadataDialogStateCache, warmMetadataDialogStateCache } from './projectMetadataDialogState';
 import {
   clearProjectMetadataSession,
   getProjectMetadataSession,
   subscribeProjectMetadataDialogClosed,
 } from './projectMetadataSession';
+import { setActiveProjectBundle, resolveProjectBundleByPath } from './activeProjectBundle';
+import { buildProjectMetadataDialogState } from './projectMetadataDialogState';
 import { registerDesktopSchemas } from './registerDesktopSchemas';
 import { getTieredCatalogForSetup } from './schemaCatalog';
-import { getMetadataFieldsForCatalog } from './schemaMetadataFields';
 import {
   clearSchemaPickerSession,
   getSchemaPickerSession,
@@ -72,12 +72,6 @@ const getWriterSchemasList = (): Array<{
   return schemasList;
 };
 
-const getCatalogKind = (catalogId?: string, rngPath?: string): string | undefined => {
-  if (catalogId) return catalogId;
-  if (rngPath?.toLowerCase().includes('tei')) return 'local-tei';
-  return 'custom';
-};
-
 export const useNativeDialogBridge = () => {
   const { currentLocale, skipCopyPasteHelp, skipExplorerDeleteConfirm, themeAppearance } =
     useAppState().ui;
@@ -102,20 +96,23 @@ export const useNativeDialogBridge = () => {
   }, []);
 
   useEffect(() => {
-    if (!isDesktop()) return;
+    if (!isDesktop()) {
+      setActiveProjectBundle(null);
+      return;
+    }
+    if (!rootPath || !projectFilePath || !config) {
+      setActiveProjectBundle(null);
+      return;
+    }
+    setActiveProjectBundle({ rootPath, projectFilePath, config });
+  }, [rootPath, projectFilePath, config]);
 
-    const getActiveProjectBundle = (): ProjectBundle | null => {
-      if (!rootPath || !projectFilePath || !config) return null;
-      return { rootPath, projectFilePath, config };
-    };
+  useEffect(() => {
+    if (!isDesktop()) return;
 
     const resolveProjectBundle = async (
       sessionProjectFilePath: string,
-    ): Promise<ProjectBundle | null> => {
-      const active = getActiveProjectBundle();
-      if (active?.projectFilePath === sessionProjectFilePath) return active;
-      return window.electronAPI?.reloadProjectBundle?.(sessionProjectFilePath) ?? null;
-    };
+    ): Promise<ProjectBundle | null> => resolveProjectBundleByPath(sessionProjectFilePath);
 
     window.__ljbNativeBridge = {
       invoke: async (method: string, args: unknown) => {
@@ -258,40 +255,11 @@ export const useNativeDialogBridge = () => {
             const { dialogId } = (args ?? {}) as { dialogId?: string };
             const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
             if (!session) return null;
+            if (session.initialState) return session.initialState;
 
-            const activeBundle = getActiveProjectBundle();
-            const usedInMemoryBundle =
-              activeBundle?.projectFilePath === session.projectFilePath;
-            const bundle = usedInMemoryBundle
-              ? activeBundle
-              : await window.electronAPI?.reloadProjectBundle?.(session.projectFilePath);
+            const bundle = await resolveProjectBundle(session.projectFilePath);
             if (!bundle) return null;
-            const catalogKind = getCatalogKind(
-              bundle.config.schema?.catalogId,
-              bundle.config.schema?.rng,
-            );
-            const fieldDef = getMetadataFieldsForCatalog(catalogKind);
-
-            let metadata = await readProjectMetadata(bundle);
-            if (!metadata && session.mode === 'firstSetup') {
-              const encoderName = await window.electronAPI.getEncoderName?.();
-              metadata = createInitialMetadata(bundle, encoderName);
-            }
-            if (!metadata) {
-              metadata = emptyMetadata(bundle.config.schema?.catalogId);
-            }
-
-            return {
-              mode: session.mode,
-              note: fieldDef.note,
-              fields: fieldDef.fields,
-              values: getManagedFieldValues(metadata, fieldDef.fields),
-              custom: metadata.custom.map((row) => ({
-                path: row.path,
-                label: row.label,
-                value: row.value,
-              })),
-            };
+            return buildProjectMetadataDialogState(bundle, session.mode);
           }
           case 'saveProjectMetadata': {
             const { dialogId, values, custom, applyToDocuments } = (args ?? {}) as {
@@ -322,6 +290,8 @@ export const useNativeDialogBridge = () => {
 
             try {
               await writeProjectMetadata(bundle, draft);
+              invalidateMetadataDialogStateCache(bundle.projectFilePath);
+              void warmMetadataDialogStateCache(bundle, session.mode);
             } catch (error) {
               return {
                 ok: false,
@@ -353,11 +323,22 @@ export const useNativeDialogBridge = () => {
                 clearRemovedFromFiles: false,
               });
 
+              const withLastApplied = {
+                ...sanitized,
+                lastApplied: buildLastAppliedSnapshot(sanitized),
+              };
+              await writeProjectMetadata(bundle, withLastApplied);
+              invalidateMetadataDialogStateCache(bundle.projectFilePath);
+              void warmMetadataDialogStateCache(bundle, session.mode);
+
               for (const tab of openTabs) {
                 await reloadTabFromDisk(tab.filePath);
               }
 
               summary = `Updated ${result.updated} file(s); ${result.skipped} unchanged.`;
+              if (result.overridesSkipped > 0) {
+                summary += ` ${result.overridesSkipped} field(s) left unchanged due to per-file edits.`;
+              }
               if (result.errors.length > 0) {
                 notifyViaSnackbar({
                   message: result.errors[0],

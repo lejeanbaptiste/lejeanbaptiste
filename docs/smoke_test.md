@@ -7,7 +7,7 @@ Run the desktop app from a dev build. Use a fresh empty folder and a folder with
 ## A. First-time project (empty folder)
 
 - [x] Open Project (⌘O) → create/select empty folder → schema setup wizard appears
-- [x] Wizard shows TEI All and TEI Lite as selectable; “More schemas…” entries visible but disabled
+- [x] Wizard shows TEI All and TEI Lite as selectable; “More schemas…” lists TEI Simple Print, jTEI, and Orlando (selectable)
 - [x] Download TEI Lite → schema/tei_lite.rng (+ CSS) on disk; jean-baptiste.project.json updated with catalogId, hashes, version
 - [x] Project metadata dialog opens after schema install; cannot dismiss without Save
 - [x] Leave most fields blank → Save → schema/project-metadata.json exists with empty/minimal fields
@@ -100,5 +100,63 @@ Prerequisites: TEI project open (TEI All or TEI Lite); at least one XML file wit
 - [x] Edit **Source** in panel → same
 - [x] Switch to another open tab → panel reloads values for that file
 - [x] **Project → Edition metadata…** → Save and update documents… still skips title and sourceDesc in files (section E regression)
-- [ ] Read-only mode → panel fields disabled
+- [ ] Read-only mode → panel fields disabled (There is no read-only mode)
 - [x] East rail tabs show icons with tooltips (File metadata, Image Viewer, Validation)
+
+
+
+## K. Expanded catalog (Phase 4)
+
+Prerequisites: fresh empty folders (one per schema type below).
+
+- [x] Schema wizard **More schemas…** — TEI Simple Print, jTEI, and Orlando are selectable and download
+- [x] TEI Simple Print: metadata dialog → Save → `schema/project-metadata.json` with `catalogId: "teiSimplePrint"`
+- [x] jTEI: metadata dialog → Save → `catalogId: "jTei"`
+- [x] Orlando: metadata dialog → Save → `catalogId: "orlando"`; edition fields use Orlando header paths (Authority, Encoder)
+- [x] ⌘N on TEI Simple Print project → valid skeleton; caret in first body paragraph
+- [x] ⌘N on jTEI project → valid skeleton; caret in first body paragraph
+- [x] ⌘N on Orlando project → valid `ENTRY` skeleton with biography + writing starters; caret in first `<p>` (Author summary)
+- [x] File metadata panel on TEI Simple Print / jTEI file → Title + Source (TEI paths)
+- [x] File metadata panel on Orlando file → Title (`DOCTITLE`) + Source (`SOURCEDESC`)
+- [x] **Project → Edition metadata…** → Save and update documents… still skips per-file title/source fields (section E regression)
+
+
+
+## L. Schema update check
+
+Prerequisites: catalog-installed project (e.g. TEI Lite from schema wizard) with `sourceHash` / `sourceCssHash` in `jean-baptiste.project.json`. Online.
+
+- [x] Open project with current upstream hashes → no update dialog
+- [x] Tamper `sourceHash` in project JSON and **save the file** (or wait for real upstream change) → **Schema update available** dialog appears after project loads
+- [ ] Choose **Not now** → project stays on current schema; no files changed
+- [x] Choose **Update now** → previous `.rng` / `.css` copied to `schema/_archive/`; project JSON hashes and `installedVersion` refreshed
+- [x] Project with a custom metadata row → after update, snackbar warns to review custom path(s)
+- [ ] Local-schema project (no `catalogId`) → no update check / dialog
+- [ ] Re-open same project within 24h after a check → no second network check (`lastCheckedAt` throttle)
+
+
+
+## M. Source linked tag editing
+
+Prerequisites: desktop dev build; TEI file open in **Source** mode.
+
+- [x] Place caret in an opening tag name (e.g. `<p>`) and rename it → matching `</p>` updates in real time
+- [x] Place caret in a closing tag name (e.g. `</p>`) and rename it → opening tag updates in real time
+- [x] Prefixed tag (e.g. `<cb:div>…</cb:div>`) renames both sides together
+- [x] Nested same-name tags (e.g. `<div><div>…</div></div>`) link only the innermost pair at the caret
+- [x] Self-closing tag (e.g. `<pb/>`) does not trigger linked rename
+- [ ] Edit Source dialog (if used) behaves the same as main Source pane
+
+
+
+## N. Phase 6 polish
+
+Prerequisites: catalog-installed TEI project with edition metadata; encoder name set in Settings.
+
+- [x] **File → Check for schema updates…** on up-to-date project → “Schema is up to date.” snackbar (no 24h wait)
+- [x] Tamper `sourceHash` in project JSON, save, then **File → Check for schema updates…** → update dialog appears
+- [x] Local-schema project → menu check shows “local schema” snackbar
+- [x] TEI file → edit body → Save → `encodingDesc/appInfo/application[@ident="le-jean-baptiste"]` with encoder name and date; re-save updates same entry; `revisionDesc` unchanged
+- [ ] Orlando file → Save → `REVISIONDESC/RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` updated with encoder name and date; other `RESPONSIBILITY` entries unchanged
+- [ ] Edition metadata → bulk apply → change one file’s managed field in file metadata panel → change edition default → bulk apply again → edited file keeps its value; others update
+- [ ] After bulk apply, `schema/project-metadata.json` contains `lastApplied` snapshot

@@ -12,20 +12,50 @@ export const TEI_V1_METADATA_FIELDS: MetadataFieldDefinition[] = [
   { label: 'Default language', path: 'profileDesc/langUsage/language' },
 ];
 
+export const TEI_SIMPLE_PRINT_METADATA_FIELDS: MetadataFieldDefinition[] =
+  TEI_V1_METADATA_FIELDS.filter((field) => field.path !== 'titleStmt/principal');
+
+export const JTEI_METADATA_FIELDS: MetadataFieldDefinition[] = [
+  { label: 'Publisher / distributor', path: 'publicationStmt/distributor' },
+  { label: 'Encoding project description', path: 'encodingDesc/projectDesc/p' },
+  { label: 'Default language', path: 'profileDesc/langUsage/language' },
+];
+
+export const ORLANDO_METADATA_FIELDS: MetadataFieldDefinition[] = [
+  { label: 'Authority', path: 'FILEDESC/PUBLICATIONSTMT/AUTHORITY' },
+  { label: 'Encoder', path: 'REVISIONDESC/RESPONSIBILITY' },
+];
+
 /** Paths excluded from bulk apply to existing files by default. */
 export const BULK_APPLY_EXCLUDED_PATHS = new Set([
   'titleStmt/title',
   'sourceDesc',
   'fileDesc/sourceDesc',
+  'FILEDESC/TITLESTMT/DOCTITLE',
+  'FILEDESC/SOURCEDESC',
+  'ORLANDOHEADER/FILEDESC/TITLESTMT/DOCTITLE',
+  'ORLANDOHEADER/FILEDESC/SOURCEDESC',
 ]);
 
-export type MetadataFieldSetKind = 'tei' | 'custom';
+export type MetadataFieldSetKind = 'tei' | 'orlando' | 'custom';
 
 export const getMetadataFieldsForCatalog = (
   catalogId?: string | null,
 ): { fields: MetadataFieldDefinition[]; kind: MetadataFieldSetKind; note?: string } => {
   if (!catalogId || catalogId === 'teiAll' || catalogId === 'teiLite') {
     return { fields: TEI_V1_METADATA_FIELDS, kind: 'tei' };
+  }
+
+  if (catalogId === 'teiSimplePrint') {
+    return { fields: TEI_SIMPLE_PRINT_METADATA_FIELDS, kind: 'tei' };
+  }
+
+  if (catalogId === 'jTei') {
+    return { fields: JTEI_METADATA_FIELDS, kind: 'tei' };
+  }
+
+  if (catalogId === 'orlando') {
+    return { fields: ORLANDO_METADATA_FIELDS, kind: 'orlando' };
   }
 
   if (catalogId === 'local-tei') {
@@ -53,3 +83,5 @@ export const getAllManagedPaths = (
   }
   return paths;
 };
+
+export const isOrlandoCatalog = (catalogId?: string | null): boolean => catalogId === 'orlando';

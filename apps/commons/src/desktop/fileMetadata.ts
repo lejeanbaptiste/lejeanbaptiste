@@ -1,4 +1,10 @@
 import {
+  applyOrlandoHeaderPathUpdates,
+  hasOrlandoHeader,
+  readOrlandoHeaderPathValues,
+} from './orlandoHeaderXml';
+import { isOrlandoCatalog } from './schemaMetadataFields';
+import {
   applyHeaderPathUpdates,
   hasTeiHeader,
   readHeaderPathValues,
@@ -9,34 +15,67 @@ export interface FileMetadataFieldDefinition {
   path: string;
 }
 
-export const FILE_METADATA_FIELDS: FileMetadataFieldDefinition[] = [
+export const TEI_FILE_METADATA_FIELDS: FileMetadataFieldDefinition[] = [
   { label: 'Title', path: 'titleStmt/title' },
   { label: 'Source', path: 'sourceDesc/p' },
 ];
 
-const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'local-tei']);
+export const ORLANDO_FILE_METADATA_FIELDS: FileMetadataFieldDefinition[] = [
+  { label: 'Title', path: 'FILEDESC/TITLESTMT/DOCTITLE' },
+  { label: 'Source', path: 'FILEDESC/SOURCEDESC' },
+];
+
+/** @deprecated Use getFileMetadataFieldsForCatalog */
+export const FILE_METADATA_FIELDS = TEI_FILE_METADATA_FIELDS;
+
+const TEI_CATALOG_IDS = new Set([
+  'teiAll',
+  'teiLite',
+  'teiSimplePrint',
+  'jTei',
+  'local-tei',
+]);
 
 export const isTeiCatalogForFileMetadata = (catalogId?: string | null): boolean =>
   !catalogId || TEI_CATALOG_IDS.has(catalogId);
 
-export const readFileMetadataFromXml = (xml: string): Record<string, string> =>
-  readHeaderPathValues(
-    xml,
-    FILE_METADATA_FIELDS.map((field) => field.path),
-  );
+export const getFileMetadataFieldsForCatalog = (
+  catalogId?: string | null,
+): FileMetadataFieldDefinition[] =>
+  isOrlandoCatalog(catalogId) ? ORLANDO_FILE_METADATA_FIELDS : TEI_FILE_METADATA_FIELDS;
+
+export const readFileMetadataFromXml = (
+  xml: string,
+  catalogId?: string | null,
+): Record<string, string> => {
+  const fields = getFileMetadataFieldsForCatalog(catalogId);
+  const paths = fields.map((field) => field.path);
+  if (isOrlandoCatalog(catalogId)) {
+    return readOrlandoHeaderPathValues(xml, paths);
+  }
+  return readHeaderPathValues(xml, paths);
+};
 
 export const applyFileHeaderFields = (
   xml: string,
   updates: Record<string, string>,
+  catalogId?: string | null,
 ): string => {
   const entries = Object.entries(updates).map(([path, value]) => ({ path, value }));
+  if (isOrlandoCatalog(catalogId)) {
+    return applyOrlandoHeaderPathUpdates(xml, entries);
+  }
   return applyHeaderPathUpdates(xml, entries);
 };
 
 export const documentSupportsFileMetadata = (
   xml: string,
   catalogId?: string | null,
-): boolean => isTeiCatalogForFileMetadata(catalogId) && hasTeiHeader(xml);
+): boolean => {
+  if (isOrlandoCatalog(catalogId)) return hasOrlandoHeader(xml);
+  if (isTeiCatalogForFileMetadata(catalogId)) return hasTeiHeader(xml);
+  return false;
+};
 
 const isSourceEditorMode = () =>
   window.writer?.overmindState?.ui?.editorViewMode === 'source';

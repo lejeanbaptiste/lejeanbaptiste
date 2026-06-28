@@ -1,7 +1,8 @@
+import { DESKTOP_APP_DISPLAY_NAME } from '@src/desktop/desktopBranding';
 import { focusFirstBodyParagraph } from '@src/desktop/focusFirstBodyParagraph';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
 import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
-import { schemas } from '@src/config/schemas';
+import { ENABLED_CATALOG_IDS, getEnabledCatalogSchemas } from '@src/desktop/schemaCatalog';
 import {
   leafwriterAtom,
   leafWriterEventsAtom,
@@ -18,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
 import type { LeafWriterOptionsSettings } from '@cwrc/leafwriter/lib/src/types';
+import { schemas } from '@src/config/schemas';
 
 const showDefaultEastPanel = () => {
   if (!isDesktop()) return;
@@ -86,8 +88,8 @@ export const useLeafWriter = () => {
         config?.schema,
       );
       xml = prepared.content;
-      documentSchemas = [...schemas, ...projectSchemas, ...prepared.schemas];
-      registerDesktopSchemas([...projectSchemas, ...prepared.schemas]);
+      documentSchemas = [...projectSchemas, ...prepared.schemas];
+      registerDesktopSchemas([...getEnabledCatalogSchemas(), ...projectSchemas, ...prepared.schemas]);
       if (xml !== resource.content) {
         await setResource({ ...resource, content: xml });
         updateTabContent({ filePath: resource.filePath, content: xml });
@@ -101,6 +103,8 @@ export const useLeafWriter = () => {
       ...(isDesktop()
         ? {
             baseUrl: `${window.location.origin}/`,
+            schemasId: [...ENABLED_CATALOG_IDS],
+            appDisplayName: DESKTOP_APP_DISPLAY_NAME,
             modules: {
               east: [
                 { id: 'fileMetadata', title: 'File metadata' },
@@ -133,6 +137,22 @@ export const useLeafWriter = () => {
   /** Load a different project file into an already-running editor (tab switch / second file). */
   const loadDocumentInWriter = async (filePath: string, content: string) => {
     if (!window.writer) return;
+
+    if (isDesktop() && rootPath && config?.schema) {
+      const prepared = await prepareDesktopDocument(
+        filePath,
+        content,
+        rootPath,
+        config.schema,
+      );
+      content = prepared.content;
+      registerDesktopSchemas([
+        ...getEnabledCatalogSchemas(),
+        ...projectSchemas,
+        ...prepared.schemas,
+      ]);
+    }
+
     window.writer.overmindActions?.ui?.resetSourceEditor?.();
     window.writer.overmindActions?.document?.setDocumentUrl?.(filePath);
     window.writer.loadDocumentXML(content);

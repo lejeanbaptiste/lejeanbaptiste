@@ -38,7 +38,7 @@ class LayoutManager {
   $outerLayout: JQuery<HTMLElement> | null = null;
   $innerLayout: JQuery<HTMLElement> | null = null;
 
-  name = 'Leaf-Writer';
+  name = 'LEAF-Writer';
   editorId = '';
   editorViewMode: 'visual' | 'source' = 'visual';
 
@@ -106,6 +106,7 @@ class LayoutManager {
     html += `
       <div class="ui-layout-center ui-widget ui-widget-content" style="background-color: #f6f6f6; display: flex; flex-direction: column; min-height: 0; height: 100%;">
         <div id="editor-toolbar" />
+        <div id="editor-location-bar" />
         <div id="source-editor-pane" style="display: none; flex: 1; min-height: 0; overflow: hidden; width: 100%;" />
         <textarea id="${this.editorId}" name="editor" class="tinymce"></textarea>
       </div>
@@ -240,16 +241,33 @@ class LayoutManager {
     });
   }
 
+  getEditorChromeHeight() {
+    const toolbar = document.querySelector('#editor-toolbar') as HTMLElement | null;
+    const locationBar = document.querySelector('#editor-location-bar') as HTMLElement | null;
+
+    const toolbarHeight =
+      toolbar && toolbar.style.display !== 'none' ? toolbar.getBoundingClientRect().height : 0;
+    const locationBarHeight = locationBar?.getBoundingClientRect().height ?? 0;
+
+    return toolbarHeight + locationBarHeight;
+  }
+
+  resizeEditorChrome() {
+    if (this.editorViewMode === 'source') {
+      this.resizeSourceEditor();
+      return;
+    }
+    this.resizeEditor();
+  }
+
   resizeEditor() {
     if (!this.writer.editor) return;
 
-    const toolbar = document.querySelector('#editor-toolbar');
     const tox: HTMLElement | null = document.querySelector('.tox');
-    if (!toolbar || !tox) return;
+    if (!tox) return;
 
-    const toolbarHeight = toolbar.getBoundingClientRect().height;
-
-    tox.style.height = `calc(100% - ${toolbarHeight}px)`;
+    const chromeHeight = this.getEditorChromeHeight();
+    tox.style.height = `calc(100% - ${chromeHeight}px)`;
   }
 
   resizeSourceEditor() {
@@ -264,9 +282,10 @@ class LayoutManager {
     }
 
     const paneHeight = layoutPane?.clientHeight ?? centralColumn?.clientHeight ?? 0;
+    const chromeAbove = this.getEditorChromeHeight();
 
     if (paneHeight > 0) {
-      sourcePane.style.height = `${paneHeight}px`;
+      sourcePane.style.height = `${Math.max(0, paneHeight - chromeAbove)}px`;
     }
 
     requestAnimationFrame(() => {

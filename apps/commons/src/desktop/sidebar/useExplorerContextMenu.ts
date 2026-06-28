@@ -1,5 +1,5 @@
 import { deleteExplorerTarget } from '@src/desktop/explorer/explorerDeleteTarget';
-import { getParentPath, getPathBasename } from '@src/desktop/explorer/treeUtils';
+import { getParentPath, getPathBasename, getProjectSchemaDirPath, isPathUnder } from '@src/desktop/explorer/treeUtils';
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,15 +15,17 @@ export const PROJECT_JSON = 'jean-baptiste.project.json';
 export const isExplorerItemProtected = (
   target: ExplorerTarget,
   rootPath: string | null,
+  schemaDirPath?: string | null,
 ): boolean => {
   if (!rootPath) return true;
   if (target.path === rootPath) return true;
   if (target.name === PROJECT_JSON) return true;
+  if (schemaDirPath && isPathUnder(target.path, schemaDirPath)) return true;
   return false;
 };
 
 export const useExplorerContextMenu = () => {
-  const { activeTabPath, openTabs, rootPath } = useAppState().project;
+  const { activeTabPath, openTabs, rootPath, config } = useAppState().project;
   const { contentHasChanged } = useAppState().editor;
   const { skipExplorerDeleteConfirm } = useAppState().ui;
   const { createExplorerFolder, deleteExplorerItem, moveExplorerItem, renameExplorerItem } =
@@ -38,7 +40,10 @@ export const useExplorerContextMenu = () => {
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [newFolderValue, setNewFolderValue] = useState('');
 
-  const isProtected = target ? isExplorerItemProtected(target, rootPath) : true;
+  const schemaDirPath =
+    rootPath && config?.schema ? getProjectSchemaDirPath(rootPath, config.schema) : null;
+
+  const isProtected = target ? isExplorerItemProtected(target, rootPath, schemaDirPath) : true;
 
   const closeMenu = () => setAnchorPos(null);
 
@@ -77,7 +82,7 @@ export const useExplorerContextMenu = () => {
 
   const deleteTargetItem = useCallback(
     async (item: ExplorerTarget) => {
-      if (isExplorerItemProtected(item, rootPath)) return false;
+      if (isExplorerItemProtected(item, rootPath, schemaDirPath)) return false;
 
       const result = await deleteExplorerTarget({
         activeTabPath,
@@ -102,6 +107,7 @@ export const useExplorerContextMenu = () => {
       deleteExplorerItem,
       openTabs,
       rootPath,
+      schemaDirPath,
       showError,
       skipExplorerDeleteConfirm,
       t,

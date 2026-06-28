@@ -11,6 +11,7 @@ import './plugins/prevent_delete';
 // import './tinymce_plugins/cwrc_path';
 import fscreen from 'fscreen';
 import Writer from '../Writer';
+import { normalizePastedParagraphs, fixNestedPastedParagraphs, removeEmptyParagraphs } from './normalizePastedParagraphs';
 import './plugins/treepaste';
 
 declare global {
@@ -66,8 +67,14 @@ export const tinymceWrapperInit = function ({
     keep_styles: false, // false, otherwise tinymce interprets our spans as style elements
 
     paste_postprocess: (plugin: any, args: any) => {
+      normalizePastedParagraphs(writer, args.node);
       writer.tagger.processNewContent(args.node);
       setTimeout(() => {
+        if (writer.editor) {
+          const body = writer.editor.getBody();
+          fixNestedPastedParagraphs(body);
+          removeEmptyParagraphs(body, writer.schemaManager.getBlockTag());
+        }
         // need to fire contentPasted here, after the content is actually within the document
         writer.event('contentPasted').publish();
       }, 0);

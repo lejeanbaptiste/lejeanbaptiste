@@ -6,6 +6,51 @@
 
 **Phase 3 (Per-file metadata panel) is implemented** — east-rail icon strip, file metadata panel (title + source), sync to editor. Manual checklist: `docs/smoke_test.md` section J.
 
+**Phase 4 (Expanded schema catalog) is implemented** — TEI Simple Print, jTEI, and Orlando enabled in the schema wizard; catalog-specific skeletons and metadata field maps. Manual checklist: `docs/smoke_test.md` section K.
+
+**Phase 5 (Schema update alerts) is implemented** — throttled upstream hash check on project open; optional one-click upgrade with `schema/_archive/` backup; metadata path warnings after upgrade. Manual checklist: `docs/smoke_test.md` section L.
+
+**Phase 6 (Polish) is implemented** — manual schema update check menu item; `revisionDesc` stamping on save; override-aware bulk metadata apply. Manual checklist: `docs/smoke_test.md` section N.
+
+---
+
+## Schema update alerts (catalog projects)
+
+When a project schema was installed from the catalog (`catalogId` + `sourceHash` in `jean-baptiste.project.json`):
+
+1. On **project open** (after onboarding), the app checks upstream RNG/CSS hashes (throttled to once per 24 hours via `lastCheckedAt`).
+2. If upstream files changed, a native dialog offers **Update now** or **Not now**.
+3. **Update now** archives the current `.rng` / `.css` under `schema/_archive/`, downloads fresh copies, and updates provenance fields in the project JSON.
+4. After upgrade, non-empty **custom metadata paths** (and any managed paths no longer in the field map) trigger a snackbar warning — review via **Project → Edition metadata…**.
+
+Local (non-catalog) schemas are not auto-checked. Use **File → Check for schema updates…** for an on-demand check (bypasses the 24-hour throttle).
+
+Implementation: `apps/desktop/src/checkSchemaUpdate.ts`, `apps/commons/src/desktop/schemaUpdateCheck.ts`, `apps/commons/src/desktop/schemaUpdateLogic.ts`.
+
+---
+
+## Phase 6 polish
+
+### Manual schema update check
+
+**File → Check for schema updates…** runs the same upstream hash compare as the automatic open check, but **always** contacts the catalog (no 24-hour throttle). Shows a snackbar when the schema is current, skipped (local schema / offline), or after a successful update.
+
+### Last-edited stamp on save
+
+On **Save** and **Save As**, the app stamps the document header before writing to disk:
+
+- **TEI:** `teiHeader/encodingDesc/appInfo/application[@ident="le-jean-baptiste"]` with encoder `name` and `date/@when` (last save only — does not modify `revisionDesc`)
+- **Orlando:** `REVISIONDESC/RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` with `DATE/@when` and encoder name (does not modify other `RESPONSIBILITY` entries)
+- **Orlando:** `ORLANDOHEADER/REVISIONDESC/RESPONSIBILITY/DATE` updated to the current year
+
+Implementation: [`apps/commons/src/desktop/revisionDescXml.ts`](apps/commons/src/desktop/revisionDescXml.ts).
+
+### Override-aware bulk metadata apply
+
+When **Edition metadata → Save and update documents…** runs, the app compares each file’s current header values to the **`lastApplied`** snapshot from the previous bulk apply. Fields a user edited per-file (diverged from the last-applied default) are **not overwritten**. After a successful bulk apply, `lastApplied` is refreshed in `schema/project-metadata.json`.
+
+Implementation: [`apps/commons/src/desktop/metadataApplyOverrides.ts`](apps/commons/src/desktop/metadataApplyOverrides.ts).
+
 ---
 
 ## New File (⌘N) — desktop behavior
@@ -13,27 +58,33 @@
 When a project is open (schema + `schema/project-metadata.json` present):
 
 1. **File → New File** (⌘N) creates a temp document on disk and opens it as **`untitled.xml`**.
-2. The XML skeleton is built from **`schemaTemplates.ts`**: minimal `<teiHeader>`, non-blank edition metadata merged from **`project-metadata.json`**, shared `text/body/div/p` for TEI All and TEI Lite, relative `xml-model` / `xml-stylesheet` PIs, per-file title **`Untitled`**. Caret lands in the first `<p>`.
+2. The XML skeleton is built from **`schemaTemplates.ts`** via **`buildSkeletonForCatalog`**. Each catalog gets starter placeholder text in its key structural elements (not blank nodes):
+   - **TEI** (`teiAll`, `teiLite`, `teiSimplePrint`): `<head>Section heading</head>` + `<p>Paragraph text</p>`
+   - **jTEI**: header author/keywords; `<front>` abstract; body section; `<back>` bibliography
+   - **Orlando**: `STANDARD` (author name), `AUTHORSUMMARY`, `BIOGRAPHY` life-event sections (Birth, Death, Education), `WRITING` sections (Production, Textual features, Reception), `WORKSCITED`
+   Non-blank edition metadata is merged from **`project-metadata.json`**. Per-file title defaults to **`Untitled`**. Caret lands in the first `<p>`.
 3. **Save** (⌘S) on a temp tab opens **Save As**. The dialog defaults to the **explorer-focused folder** (or the parent of a focused file); otherwise **project root**.
 4. After Save As, the tab is no longer temp; subsequent saves write to that path and the file appears in the explorer.
 5. Closing a **dirty temp tab** prompts **Save…**, **Don't Save**, or **Cancel**. **Don't Save** deletes the temp file; **Save…** runs Save As then closes on success.
 
 Without a project open, ⌘N prompts to open a project first.
 
-Automated coverage: `apps/commons/src/desktop/newFileSkeleton.test.ts` (unit) and `newFileSkeleton.validation.test.ts` (RelaxNG against live TEI catalog URLs; requires network).
+Automated coverage: `apps/commons/src/desktop/newFileSkeleton.test.ts` (unit) and `newFileSkeleton.validation.test.ts` (RelaxNG against live catalog RNG URLs for `teiAll`, `teiLite`, `teiSimplePrint`, `jTei`, and `orlando`; requires network).
 
 ---
 
 ## Per-file metadata (east rail)
 
-Edition-wide defaults live in **`schema/project-metadata.json`** (edited via **Project → Edition metadata…**). Per-file fields live in each XML file’s `<teiHeader>` and are edited in the **File metadata** panel on the right (east) rail — the first icon; this panel opens by default when a file loads.
+Edition-wide defaults live in **`schema/project-metadata.json`** (edited via **Project → Edition metadata…**). Per-file fields live in each XML file’s header and are edited in the **File metadata** panel on the right (east) rail — the first icon; this panel opens by default when a file loads.
 
-| Field | TEI path | Notes |
-|-------|----------|--------|
-| Title | `titleStmt/title` | Per-file; not overwritten by edition bulk apply |
-| Source | `sourceDesc/p` | First paragraph under `sourceDesc`; excluded from bulk apply |
+| Catalog | Field | Path | Notes |
+|---------|-------|------|--------|
+| TEI (`teiAll`, `teiLite`, `teiSimplePrint`, `jTei`, local TEI) | Title | `titleStmt/title` | Per-file; not overwritten by edition bulk apply |
+| TEI | Source | `sourceDesc/p` | First paragraph under `sourceDesc`; excluded from bulk apply |
+| Orlando | Title | `ORLANDOHEADER/FILEDESC/TITLESTMT/DOCTITLE` | Per-file; excluded from bulk apply |
+| Orlando | Source | `ORLANDOHEADER/FILEDESC/SOURCEDESC` | Excluded from bulk apply |
 
-Implementation: `apps/commons/src/desktop/FileMetadataPanel.tsx`, `fileMetadata.ts`, `teiHeaderXml.ts`. East tab icons are rendered by `DesktopEastPanels.tsx`.
+Implementation: `apps/commons/src/desktop/FileMetadataPanel.tsx`, `fileMetadata.ts`, `teiHeaderXml.ts`, `orlandoHeaderXml.ts`. East tab icons are rendered by `DesktopEastPanels.tsx`.
 
 ---
 

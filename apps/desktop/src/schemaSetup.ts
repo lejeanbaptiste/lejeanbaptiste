@@ -1,8 +1,14 @@
-import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
 import { getCatalogEntry } from './schemaCatalog';
+import {
+  ensureSchemaDir,
+  fetchText,
+  parseInstalledVersion,
+  sha256Hex,
+  writeProjectConfig,
+} from './schemaSetupHelpers';
 import {
   loadProjectFile,
   type ProjectBundle,
@@ -12,43 +18,7 @@ import {
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
-const sha256Hex = (content: string): string =>
-  crypto.createHash('sha256').update(content, 'utf8').digest('hex');
-
-export const parseInstalledVersion = (rngContent: string): string | undefined => {
-  const match = rngContent.match(/TEI Edition:\s*P5 Version\s+([\d.]+)/i);
-  return match?.[1];
-};
-
-const fetchText = async (urls: string[]): Promise<{ text: string; url: string }> => {
-  let lastError: Error | undefined;
-
-  for (const url of urls) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        lastError = new Error(`HTTP ${response.status} for ${url}`);
-        continue;
-      }
-      const text = await response.text();
-      if (text.trim()) return { text, url };
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-    }
-  }
-
-  throw lastError ?? new Error('Failed to download schema resource');
-};
-
-const writeProjectConfig = async (projectFilePath: string, config: ProjectFileConfig) => {
-  await fs.writeFile(projectFilePath, JSON.stringify(config, null, 2), 'utf-8');
-};
-
-const ensureSchemaDir = async (rootPath: string) => {
-  const schemaDir = path.join(rootPath, 'schema');
-  await fs.mkdir(schemaDir, { recursive: true });
-  return schemaDir;
-};
+export { parseInstalledVersion } from './schemaSetupHelpers';
 
 export const installCatalogSchema = async (
   projectFilePath: string,
@@ -142,14 +112,12 @@ export const installLocalSchema = async (
     }
 
     const rngContent = await fs.readFile(destRng, 'utf-8');
-    const isTeiLike = /<TEI\b/i.test(rngContent) || rngName.toLowerCase().includes('tei');
 
     const schema: ProjectSchemaConfig = {
       rng: `schema/${rngName}`,
       css: relativeCss,
       installedVersion: parseInstalledVersion(rngContent),
       installedAt: new Date().toISOString(),
-      ...(isTeiLike ? {} : {}),
     };
 
     const config: ProjectFileConfig = {

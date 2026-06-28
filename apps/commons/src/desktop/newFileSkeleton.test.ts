@@ -1,6 +1,10 @@
 import { mergeMetadataIntoHeader } from './projectMetadata';
 import { getDefaultSaveAsPath, resolveSaveAsDirectory } from './saveAsDefaults';
-import { buildTeiSkeletonXml } from './schemaTemplates';
+import {
+  buildOrlandoSkeletonXml,
+  buildSkeletonForCatalog,
+  buildTeiSkeletonXml,
+} from './schemaTemplates';
 import type { ProjectMetadataFile } from './projectTypes';
 
 const sampleMetadata: ProjectMetadataFile = {
@@ -23,7 +27,8 @@ describe('buildTeiSkeletonXml', () => {
     expect(xml).toContain('href="schema/tei.css"');
     expect(xml).toContain('<title>Untitled</title>');
     expect(xml).toContain('<div type="text">');
-    expect(xml).toContain('<p>&#8203;</p>');
+    expect(xml).toContain('<head>Section heading</head>');
+    expect(xml).toContain('<p>Paragraph text</p>');
   });
 
   test('teiLite skeleton uses tei_lite.rng path', () => {
@@ -32,6 +37,68 @@ describe('buildTeiSkeletonXml', () => {
     });
 
     expect(xml).toContain('href="schema/tei_lite.rng"');
+  });
+
+  test('teiSimplePrint skeleton uses tei_simplePrint.rng path', () => {
+    const xml = buildTeiSkeletonXml({
+      schema: {
+        catalogId: 'teiSimplePrint',
+        rng: 'schema/tei_simplePrint.rng',
+        css: 'schema/tei.css',
+      },
+    });
+
+    expect(xml).toContain('href="schema/tei_simplePrint.rng"');
+  });
+
+  test('jTei skeleton uses tei_jtei.rng path', () => {
+    const xml = buildTeiSkeletonXml({
+      schema: { catalogId: 'jTei', rng: 'schema/tei_jtei.rng', css: 'schema/tei.css' },
+    });
+
+    expect(xml).toContain('href="schema/tei_jtei.rng"');
+  });
+});
+
+describe('buildOrlandoSkeletonXml', () => {
+  test('orlando skeleton uses orlando_entry.rng and minimal ENTRY structure', () => {
+    const xml = buildOrlandoSkeletonXml({
+      schema: {
+        catalogId: 'orlando',
+        rng: 'schema/orlando_entry.rng',
+        css: 'schema/orlando.css',
+      },
+    });
+
+    expect(xml).toContain('href="schema/orlando_entry.rng"');
+    expect(xml).toContain('<DOCTITLE>Untitled</DOCTITLE>');
+    expect(xml).toContain('ID="UNTITL"');
+    expect(xml).toContain('<DIV0>');
+    expect(xml).toContain('<STANDARD>Author name</STANDARD>');
+    expect(xml).toContain('<BIOGRAPHY>');
+    expect(xml).toContain('<BIRTH>');
+    expect(xml).toContain('<WRITING>');
+    expect(xml).toContain('<PRODUCTION>');
+  });
+});
+
+describe('buildSkeletonForCatalog', () => {
+  test('routes orlando to Orlando skeleton', () => {
+    const xml = buildSkeletonForCatalog({
+      schema: { catalogId: 'orlando', rng: 'schema/orlando_entry.rng', css: 'schema/orlando.css' },
+    });
+    expect(xml).toContain('<ENTRY ID=');
+    expect(xml).toContain('<ORLANDOHEADER>');
+  });
+
+  test('routes jTei to jTEI skeleton with article structure', () => {
+    const xml = buildSkeletonForCatalog({
+      schema: { catalogId: 'jTei', rng: 'schema/tei_jtei.rng', css: 'schema/tei.css' },
+    });
+    expect(xml).toContain('<front>');
+    expect(xml).toContain('type="abstract"');
+    expect(xml).toContain('type="bibliography"');
+    expect(xml).not.toContain('type="text"');
   });
 });
 
@@ -54,6 +121,26 @@ describe('mergeMetadataIntoHeader', () => {
     });
     const empty: ProjectMetadataFile = { version: 1, fields: {}, custom: [] };
     expect(mergeMetadataIntoHeader(skeleton, empty)).toBe(skeleton);
+  });
+
+  test('merges Orlando edition metadata into Orlando skeleton', () => {
+    const skeleton = buildOrlandoSkeletonXml({
+      schema: { catalogId: 'orlando', rng: 'schema/orlando_entry.rng', css: 'schema/orlando.css' },
+    });
+    const xml = mergeMetadataIntoHeader(skeleton, {
+      version: 1,
+      catalogId: 'orlando',
+      fields: {
+        'FILEDESC/PUBLICATIONSTMT/AUTHORITY': 'CWRC',
+        'REVISIONDESC/RESPONSIBILITY': 'Test Encoder',
+      },
+      custom: [],
+    });
+
+    expect(xml).toContain('<AUTHORITY>CWRC</AUTHORITY>');
+    expect(xml).toContain('RESPONSIBILITY');
+    expect(xml).toContain('Test Encoder');
+    expect(xml).toContain('<DOCTITLE>Untitled</DOCTITLE>');
   });
 });
 

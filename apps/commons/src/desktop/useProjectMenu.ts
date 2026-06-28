@@ -1,6 +1,7 @@
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
 import { openEditionMetadataDialog } from '@src/desktop/projectOnboarding';
+import { checkSchemaUpdateManually } from '@src/desktop/schemaUpdateCheck';
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
@@ -32,7 +33,7 @@ const getEditorContent = async (
 };
 
 export const useProjectMenu = () => {
-  const { newFile, openProject, saveActiveTab, saveActiveTabAs, markTabDirty } =
+  const { newFile, openProject, refreshProjectSchemaConfig, saveActiveTab, saveActiveTabAs, markTabDirty } =
     useActions().project;
   const { setContentHasChanged } = useActions().editor;
   const { closeForegroundPopup: closeCommonsPopup, notifyViaSnackbar } = useActions().ui;
@@ -63,7 +64,7 @@ export const useProjectMenu = () => {
 
     const result = await saveActiveTab({ content });
     if (result.success) {
-      finalizeSavedDocument(content);
+      finalizeSavedDocument(result.content ?? content);
       notifyViaSnackbar({ message: 'Document saved.', options: { variant: 'success' } });
       return;
     }
@@ -87,7 +88,7 @@ export const useProjectMenu = () => {
     if (result.cancelled) return;
 
     if (result.success) {
-      finalizeSavedDocument(content);
+      finalizeSavedDocument(result.content ?? content);
       notifyViaSnackbar({ message: 'Document saved.', options: { variant: 'success' } });
       return;
     }
@@ -138,6 +139,19 @@ export const useProjectMenu = () => {
         }
 
         void openEditionMetadataDialog(projectFilePath);
+        return;
+      }
+
+      if (action === 'check-schema-update') {
+        if (!isProjectReady || !projectFilePath) {
+          notifyViaSnackbar('Open a project first.');
+          return;
+        }
+
+        void checkSchemaUpdateManually(projectFilePath, {
+          notify: (message) => notifyViaSnackbar(message),
+          onBundleUpdated: (bundle) => refreshProjectSchemaConfig(bundle),
+        });
       }
     });
   }, [
@@ -147,6 +161,7 @@ export const useProjectMenu = () => {
     notifyViaSnackbar,
     openProject,
     projectFilePath,
+    refreshProjectSchemaConfig,
     saveCurrentDocument,
     saveCurrentDocumentAs,
   ]);

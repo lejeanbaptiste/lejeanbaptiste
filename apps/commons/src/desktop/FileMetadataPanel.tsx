@@ -2,7 +2,7 @@ import { Box, Paper, Stack, TextField, Typography } from '@mui/material';
 import {
   applyFileHeaderFields,
   documentSupportsFileMetadata,
-  FILE_METADATA_FIELDS,
+  getFileMetadataFieldsForCatalog,
   pushXmlToActiveEditor,
   readFileMetadataFromXml,
 } from '@src/desktop/fileMetadata';
@@ -35,6 +35,7 @@ export const FileMetadataPanel = () => {
 
   const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
   const catalogId = config?.schema?.catalogId;
+  const metadataFields = getFileMetadataFieldsForCatalog(catalogId);
   const xml = activeTabPath ? getActiveXmlContent(activeTabPath, openTabs, activeTabPath) : '';
   const supported = Boolean(activeTabPath && xml && documentSupportsFileMetadata(xml, catalogId));
 
@@ -53,8 +54,8 @@ export const FileMetadataPanel = () => {
       return;
     }
 
-    setValues(readFileMetadataFromXml(xml));
-  }, [activeTabPath, activeTab?.content, xml]);
+    setValues(readFileMetadataFromXml(xml, catalogId));
+  }, [activeTabPath, activeTab?.content, catalogId, xml]);
 
   const commitChanges = useCallback(
     (nextValues: Record<string, string>) => {
@@ -63,7 +64,7 @@ export const FileMetadataPanel = () => {
       const currentXml = getActiveXmlContent(activeTabPath, openTabs, activeTabPath);
       if (!currentXml) return;
 
-      const nextXml = applyFileHeaderFields(currentXml, nextValues);
+      const nextXml = applyFileHeaderFields(currentXml, nextValues, catalogId);
       if (nextXml === currentXml) return;
 
       skipNextSyncRef.current = true;
@@ -74,7 +75,7 @@ export const FileMetadataPanel = () => {
         updateTabContent,
       });
     },
-    [activeTabPath, markTabDirty, openTabs, readonly, updateTabContent],
+    [activeTabPath, catalogId, markTabDirty, openTabs, readonly, updateTabContent],
   );
 
   const handleFieldChange = (path: string, value: string) => {
@@ -107,8 +108,8 @@ export const FileMetadataPanel = () => {
     return (
       <Paper elevation={0} square sx={{ height: '100%', p: 2 }}>
         <Typography color="text.secondary" variant="body2">
-          Per-file metadata is available for TEI documents with a header. Edition-wide defaults are
-          in Project → Edition metadata….
+          Per-file metadata is available for TEI and Orlando documents with a header. Edition-wide
+          defaults are in Project → Edition metadata….
         </Typography>
       </Paper>
     );
@@ -128,14 +129,14 @@ export const FileMetadataPanel = () => {
     >
       <Stack spacing={2}>
         <Typography variant="subtitle2">File metadata</Typography>
-        {FILE_METADATA_FIELDS.map((field) => (
+        {metadataFields.map((field) => (
           <TextField
             key={field.path}
             disabled={readonly}
             fullWidth
             label={field.label}
-            minRows={field.path === 'sourceDesc/p' ? 3 : undefined}
-            multiline={field.path === 'sourceDesc/p'}
+            minRows={field.label === 'Source' ? 3 : undefined}
+            multiline={field.label === 'Source'}
             onChange={(event) => handleFieldChange(field.path, event.target.value)}
             size="small"
             value={values[field.path] ?? ''}
