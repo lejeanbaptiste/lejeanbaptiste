@@ -69,6 +69,8 @@ class Writer extends EventManager {
   annotationMode: number = this.JSON; //format to produce annotations in (XML or JSON)
   allowOverlap = false; // can entities overlap?
 
+  readonly appDisplayName: string;
+
   // entityLookupDialogs: EntityLookupDialogsLegacy
 
   _settings: {
@@ -99,6 +101,7 @@ class Writer extends EventManager {
     this.uuid = nanoid();
 
     this.initialConfig = config;
+    this.appDisplayName = config.appDisplayName?.trim() || 'LEAF-Writer';
 
     //html container
     if (!config.container) throw Error('no container supplied for LeafWriter!');
@@ -191,6 +194,7 @@ class Writer extends EventManager {
       editorId: this.editorId,
       modules: config.modules,
       container: $layoutHost,
+      name: this.appDisplayName,
     });
 
     this.schemaManager = new SchemaManager(this, config.schemas ?? []);

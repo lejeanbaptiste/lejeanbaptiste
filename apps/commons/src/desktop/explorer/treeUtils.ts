@@ -79,5 +79,33 @@ export const getRelativeFolderLabel = (filePath: string, rootPath: string): stri
   return relative ? `${relative}/` : '';
 };
 
+/** Absolute path of the project schema directory (default `schema/`). */
+export const getProjectSchemaDirPath = (
+  rootPath: string,
+  schema?: { rng?: string } | null,
+): string => {
+  const rng = schema?.rng?.trim();
+  if (rng) {
+    const parts = rng.split(/[/\\]/).filter(Boolean);
+    if (parts.length > 1) {
+      return joinPath(rootPath, ...parts.slice(0, -1));
+    }
+  }
+  return joinPath(rootPath, 'schema');
+};
+
+export const isPathUnder = (targetPath: string, parentPath: string): boolean => {
+  if (targetPath === parentPath) return true;
+  const prefix = parentPath.endsWith('/') ? parentPath : `${parentPath}/`;
+  const winPrefix = parentPath.endsWith('\\') ? parentPath : `${parentPath}\\`;
+  return targetPath.startsWith(prefix) || targetPath.startsWith(winPrefix);
+};
+
+/** Omit the project schema directory from explorer listings (children load only if expanded). */
+export const shouldHideExplorerDirectoryEntry = (
+  entryPath: string,
+  schemaDirPath: string | null | undefined,
+): boolean => Boolean(schemaDirPath && entryPath === schemaDirPath);
+
 export const repathFilePath = (filePath: string, oldPath: string, newPath: string): string | null =>
   repathSingle(filePath, oldPath, newPath);

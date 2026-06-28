@@ -415,6 +415,15 @@
         "title": "Avertissements"
       }
     },
+    "copyPasteHelp": {
+      "title": "Aide copier-coller",
+      "ok": "Ok",
+      "documentationLink": "Documentation copier-coller",
+      "copyIntro": "Il semble que vous essayiez de copier du contenu.",
+      "pasteIntro": "Il semble que vous essayiez de coller depuis l’extérieur de LEAF-Writer.",
+      "pasteParagraphNote": "La plupart de la mise en forme est supprimée. Les sauts de paragraphe sont convertis en éléments TEI &lt;p&gt;.",
+      "considerReading": "Consultez la"
+    },
     "settlement": "LW.règlement",
     "show only valid tags": "afficher uniquement les balises valides",
     "show_lod_annotation": "Afficher l'annotation des données ouvertes liées",

@@ -10,20 +10,27 @@ import { getDefaultSaveAsPath as buildDefaultSaveAsPath } from '@src/desktop/sav
 import {
   getParentPath,
   getPathBasename,
+  getProjectSchemaDirPath,
   joinPath,
   removeTreeNode,
   repathFilePath,
   repathTreeSubtree,
+  shouldHideExplorerDirectoryEntry,
   updateTreeNode,
 } from '@src/desktop/explorer/treeUtils';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
-import { clearWriterSession } from '@src/desktop/clearWriterSession';
+import { clearWriterSession, resetDesktopEditorSession } from '@src/desktop/clearWriterSession';
 import {
   DESKTOP_LEFT_PANEL_EVENT,
   type DesktopLeftPanelShowDetail,
 } from '@src/desktop/desktopLeftPanelBridge';
 import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
-import { buildTeiSkeletonXml } from '@src/desktop/schemaTemplates';
+import { getEnabledCatalogSchemas } from '@src/desktop/schemaCatalog';
+import { warmMetadataDialogStateCache } from '@src/desktop/projectMetadataDialogState';
+import { maybeCheckSchemaUpdateOnOpen } from '@src/desktop/schemaUpdateCheck';
+import { stampContentBeforeSave } from '@src/desktop/revisionDescXml';
+import { isDesktop } from '@src/types/desktop';
+import { buildSkeletonForCatalog } from '@src/desktop/schemaTemplates';
 import type { FileTreeNode } from './state';
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
@@ -134,14 +141,22 @@ const pushContentToEditor = (content: string) => {
   window.writer.loadDocumentXML(content);
 };
 
-const loadTreeLevel = async (dirPath: string): Promise<FileTreeNode[]> => {
+const getExplorerSchemaDirPath = (rootPath: string | null, schema?: { rng?: string } | null) =>
+  rootPath ? getProjectSchemaDirPath(rootPath, schema) : null;
+
+const loadTreeLevel = async (
+  dirPath: string,
+  schemaDirPath: string | null = null,
+): Promise<FileTreeNode[]> => {
   if (!window.electronAPI) return [];
   const entries = await window.electronAPI.readDirectory(dirPath);
-  return entries.map((entry) => ({
-    ...entry,
-    children: entry.isDirectory ? [] : undefined,
-    childrenLoaded: !entry.isDirectory,
-  }));
+  return entries
+    .filter((entry) => !shouldHideExplorerDirectoryEntry(entry.path, schemaDirPath))
+    .map((entry) => ({
+      ...entry,
+      children: entry.isDirectory ? [] : undefined,
+      childrenLoaded: !entry.isDirectory,
+    }));
 };
 
 const invokeOpenProjectDialog = async (): Promise<ProjectBundle | null> => {
@@ -294,19 +309,46 @@ const showExplorerLeftPanel = () => {
   );
 };
 
-const loadProjectBundle = async ({ state }: Context, bundle: ProjectBundle) => {
+const loadProjectBundle = async (context: Context, bundle: ProjectBundle) => {
+  const { state, actions } = context;
   state.project.rootPath = bundle.rootPath;
   state.project.projectFilePath = bundle.projectFilePath;
   state.project.config = bundle.config;
   state.project.projectSchemas = buildProjectSchemas(bundle.rootPath, bundle.config);
-  state.project.tree = await loadTreeLevel(bundle.rootPath);
+  state.project.tree = await loadTreeLevel(
+    bundle.rootPath,
+    getExplorerSchemaDirPath(bundle.rootPath, bundle.config?.schema),
+  );
   state.project.isProjectReady = true;
   state.project.explorerFocusedPath = null;
   state.project.explorerFocusedIsDirectory = false;
 
   if (window.writer) {
     window.writer.overmindActions?.editor?.clearProjectSchemas?.();
-    registerDesktopSchemas(state.project.projectSchemas);
+    registerDesktopSchemas([
+      ...getEnabledCatalogSchemas(),
+      ...state.project.projectSchemas,
+    ]);
+  }
+
+  if (isDesktop()) {
+    void warmMetadataDialogStateCache(bundle, 'edition');
+    void maybeCheckSchemaUpdateOnOpen(bundle.projectFilePath, {
+      notify: (message) => actions.ui.notifyViaSnackbar(message),
+      onBundleUpdated: (updatedBundle) => {
+        state.project.config = updatedBundle.config;
+        state.project.projectSchemas = buildProjectSchemas(
+          updatedBundle.rootPath,
+          updatedBundle.config,
+        );
+        if (window.writer) {
+          registerDesktopSchemas([
+            ...getEnabledCatalogSchemas(),
+            ...state.project.projectSchemas,
+          ]);
+        }
+      },
+    });
   }
 
   showExplorerLeftPanel();
@@ -338,7 +380,7 @@ export const openProject = async (context: Context) => {
     context.state.editor.contentLastSaved = undefined;
     window.writer?.overmindActions?.ui?.resetSourceEditor?.();
     await context.actions.editor.clearResource();
-    clearWriterSession();
+    resetDesktopEditorSession();
     await loadProjectBundle(context, onboarded);
   } catch (error) {
     console.error('[project] openProject failed:', error);
@@ -412,7 +454,7 @@ export const newFile = async (context: Context) => {
     return;
   }
 
-  let content = buildTeiSkeletonXml(state.project.config);
+  let content = buildSkeletonForCatalog(state.project.config);
   const metadata = await readProjectMetadata(bundle);
   if (metadata) {
     content = mergeMetadataIntoHeader(content, metadata);
@@ -455,11 +497,12 @@ export const newFile = async (context: Context) => {
 };
 
 export const loadDirectoryChildren = async ({ state }: Context, dirPath: string) => {
+  const schemaDirPath = getExplorerSchemaDirPath(state.project.rootPath, state.project.config?.schema);
   const updateTree = async (nodes: FileTreeNode[]): Promise<FileTreeNode[]> => {
     return Promise.all(
       nodes.map(async (node) => {
         if (node.path === dirPath && node.isDirectory && !node.childrenLoaded) {
-          const children = await loadTreeLevel(dirPath);
+          const children = await loadTreeLevel(dirPath, schemaDirPath);
           return { ...node, children, childrenLoaded: true };
         }
         if (node.children) {
@@ -565,7 +608,7 @@ export const switchTab = async (
 export const saveActiveTab = async (
   context: Context,
   { content }: { content: string },
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<{ success: boolean; content?: string; error?: string }> => {
   const { state } = context;
   if (!window.electronAPI || !state.project.activeTabPath) {
     return { success: false, error: 'No active file' };
@@ -578,14 +621,18 @@ export const saveActiveTab = async (
   }
 
   try {
-    await window.electronAPI.writeFile(filePath, content);
-    state.project.openTabs = state.project.openTabs.map((tab) =>
-      tab.filePath === filePath ? { ...tab, content, dirty: false } : tab,
+    const stamped = await stampContentBeforeSave(
+      content,
+      state.project.config?.schema?.catalogId,
     );
-    state.editor.contentLastSaved = content;
+    await window.electronAPI.writeFile(filePath, stamped);
+    state.project.openTabs = state.project.openTabs.map((tab) =>
+      tab.filePath === filePath ? { ...tab, content: stamped, dirty: false } : tab,
+    );
+    state.editor.contentLastSaved = stamped;
     state.editor.contentHasChanged = false;
     await ignoreSavedFileChange(filePath);
-    return { success: true };
+    return { success: true, content: stamped };
   } catch {
     return { success: false, error: 'Failed to save file' };
   }
@@ -672,7 +719,7 @@ export const setExplorerFocusedPath = (
 export const saveActiveTabAs = async (
   { state, actions }: Context,
   { content }: { content: string },
-): Promise<{ success: boolean; cancelled?: boolean; error?: string }> => {
+): Promise<{ success: boolean; cancelled?: boolean; content?: string; error?: string }> => {
   if (!window.electronAPI) {
     return { success: false, error: 'Save is only available in the desktop app' };
   }
@@ -701,38 +748,49 @@ export const saveActiveTabAs = async (
   }
 
   try {
-    await window.electronAPI.writeFile(filePath, content);
+    const stamped = await stampContentBeforeSave(
+      content,
+      state.project.config?.schema?.catalogId,
+    );
+    await window.electronAPI.writeFile(filePath, stamped);
     const filename = getFilename(filePath);
 
     if (previousPath) {
       state.project.openTabs = state.project.openTabs.map((tab) =>
         tab.filePath === previousPath
-          ? { ...tab, filePath, filename, content, dirty: false, isTemp: false }
+          ? { ...tab, filePath, filename, content: stamped, dirty: false, isTemp: false }
           : tab,
       );
       state.project.activeTabPath = filePath;
     } else {
       state.project.openTabs = [
         ...state.project.openTabs,
-        { content, dirty: false, editorReady: true, filePath, filename, isTemp: false },
+        {
+          content: stamped,
+          dirty: false,
+          editorReady: true,
+          filePath,
+          filename,
+          isTemp: false,
+        },
       ];
       state.project.activeTabPath = filePath;
     }
 
     await actions.editor.setResource({
-      content,
+      content: stamped,
       filePath,
       filename,
       isLocal: true,
     });
 
-    state.editor.contentLastSaved = content;
+    state.editor.contentLastSaved = stamped;
     state.editor.contentHasChanged = false;
     await ignoreSavedFileChange(filePath);
     if (state.project.rootPath) {
       await reloadDirectoryInTree({ state } as Context, getParentPath(filePath));
     }
-    return { success: true };
+    return { success: true, content: stamped };
   } catch (error) {
     return {
       success: false,
@@ -832,7 +890,8 @@ const treeContainsPath = (nodes: FileTreeNode[], targetPath: string): boolean =>
   );
 
 export const reloadDirectoryInTree = async ({ state }: Context, dirPath: string) => {
-  const children = await loadTreeLevel(dirPath);
+  const schemaDirPath = getExplorerSchemaDirPath(state.project.rootPath, state.project.config?.schema);
+  const children = await loadTreeLevel(dirPath, schemaDirPath);
   const isProjectRoot = Boolean(state.project.rootPath && dirPath === state.project.rootPath);
   const nodeFoundBefore = treeContainsPath(state.project.tree, dirPath);
   if (isProjectRoot) {
@@ -1017,4 +1076,17 @@ export const deleteExplorerItem = async (
   }
 
   return { success: true };
+};
+
+export const refreshProjectSchemaConfig = ({ state }: Context, bundle: ProjectBundle) => {
+  state.project.config = bundle.config;
+  state.project.projectSchemas = buildProjectSchemas(bundle.rootPath, bundle.config);
+
+  if (window.writer) {
+    window.writer.overmindActions?.editor?.clearProjectSchemas?.();
+    registerDesktopSchemas([
+      ...getEnabledCatalogSchemas(),
+      ...state.project.projectSchemas,
+    ]);
+  }
 };

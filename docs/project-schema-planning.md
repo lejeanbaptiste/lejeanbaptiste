@@ -54,7 +54,7 @@ Modern TEI P5 RelaxNG releases ship **monolithic** `.rng` files (~1 MB each), so
 | **Temp file + Save As flow** | **Done (Phase 2)** | Save redirects temp tabs to Save As; explorer default directory; temp close prompt + cleanup |
 | **Phase 1 smoke test** | **Done (June 2026)** | `docs/smoke_test.md` |
 | **Phase 2 smoke test** | **Ready for manual pass** | `docs/smoke_test.md` section I |
-| **Schema update alert** | **Not done** | — |
+| **Schema update alert** | **Done (June 2026)** | `docs/smoke_test.md` section L |
 
 ---
 
@@ -118,6 +118,12 @@ export interface ProjectMetadataFile {
   fields: Record<string, string>;
   /** User-added rows from dialog footer */
   custom: Array<{ path: string; label: string; value: string }>;
+  /** Written after bulk apply to existing files; used to detect per-file overrides. */
+  lastApplied?: {
+    at: string;
+    fields: Record<string, string>;
+    custom: Array<{ path: string; value: string }>;
+  };
 }
 ```
 
@@ -255,11 +261,11 @@ Non-blank entries from `project-metadata.json` are **merged** into this structur
 |---|----------|
 | — | **Single source of truth:** `packages/cwrc-leafwriter/src/config/schemas.ts`, exposed as editor `schemasList` (same list as `SelectSchemaDialog` / `NativeSchemaPickerPage`). Do not maintain a separate project-only catalog. |
 | — | **`apps/commons/src/config/schemas.ts`** (CWRC Event, CWRC Lite, REED, etc.) remains **localhost dev only** for now; optional desktop merge later. |
-| — | **v1 enabled for full project flow** (download + metadata field map + New File skeleton): **`teiAll`**, **`teiLite`**. |
-| — | **Tiered picker UI:** show TEI All + TEI Lite prominently; **More schemas…** lists `teiSimplePrint`, `jTei`, `orlando` (disabled or “coming soon” until skeleton + `schemaMetadataFields` exist for each). |
+| — | **v1 enabled for full project flow** (download + metadata field map + New File skeleton): **`teiAll`**, **`teiLite`**, **`teiSimplePrint`**, **`jTei`**, **`orlando`**. |
+| — | **Tiered picker UI:** show TEI All + TEI Lite prominently; **More schemas…** lists `teiSimplePrint`, `jTei`, `orlando` (all selectable). |
 | — | **Use local schema file…** always available — copy into `schema/` **keeping original filenames** (`.rng`, `.css`, etc.); no `sourceUrl`; metadata field set per TEI vs custom rules above. |
 | — | Reuse **`NativeSchemaPickerPage`** / **`SelectSchemaDialog`** patterns where possible; pass `enabledCatalogIds` or filter for project setup. |
-| — | **Phased delivery:** add `teiSimplePrint`, `jTei`, then `orlando` (separate non-TEI header field map) as templates and metadata maps are implemented. |
+| — | **Phased delivery:** `teiSimplePrint`, `jTei`, and `orlando` shipped in Phase 4 (Orlando uses separate non-TEI header field map). |
 
 Current built-in catalog entries:
 
@@ -267,9 +273,9 @@ Current built-in catalog entries:
 |----|------|---------|-----------------|
 | `teiAll` | TEI All | tei | **Enabled** |
 | `teiLite` | TEI Lite | teiLite | **Enabled** |
-| `teiSimplePrint` | TEI Simple Print | tei | More… (Phase 4) |
-| `jTei` | jTEI Article | tei | More… (Phase 4) |
-| `orlando` | Orlando | orlando | More… (phase 3; non-TEI skeleton) |
+| `teiSimplePrint` | TEI Simple Print | tei | **Enabled** (More…) |
+| `jTei` | jTEI Article | tei | **Enabled** (More…) |
+| `orlando` | Orlando | orlando | **Enabled** (More…) |
 
 ### Technical
 
@@ -356,7 +362,9 @@ Current built-in catalog entries:
 - Bind panel fields to current file `<teiHeader>` (title, sourceDesc, …)
 - Sync edits to WYSIWYG / tab content
 
-### Phase 4 — Expand catalog (after core ships)
+### Phase 4 — Expand catalog
+
+**Shipped (June 2026).** Automated tests in `apps/commons/src/desktop/newFileSkeleton.test.ts`, `newFileSkeleton.validation.test.ts`, and `fileMetadata.test.ts`. Manual checklist: `docs/smoke_test.md` section K.
 
 - Enable `teiSimplePrint`, `jTei` in picker + skeletons + metadata field maps
 - Enable `orlando` (non-TEI skeleton + field map)
@@ -364,13 +372,17 @@ Current built-in catalog entries:
 
 ### Phase 5 — Schema update alerts
 
+**Shipped (June 2026).** Manual checklist: `docs/smoke_test.md` section L.
+
 - Throttled check; bundled RNG+CSS update; metadata path validation after upgrade
 
 ### Phase 6 — Polish
 
-- Override tracking before bulk apply (v2)
-- Manual “Check for schema updates” menu item
-- Per-file `revisionDesc` / last-edited timestamp (`docs/todo.md`)
+**Shipped (June 2026).** Manual checklist: `docs/smoke_test.md` section N.
+
+- Manual **Check for schema updates…** menu item (bypasses throttle)
+- Per-file last-saved stamp on save (`encodingDesc/appInfo` for TEI; Orlando `RESPONSIBILITY[@RESP="Le Jean-Baptiste"]`) — separate from scholarly `revisionDesc`
+- Override tracking before bulk apply via `lastApplied` snapshot in `project-metadata.json`
 
 ---
 

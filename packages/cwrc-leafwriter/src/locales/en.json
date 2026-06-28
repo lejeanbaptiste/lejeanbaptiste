@@ -424,6 +424,15 @@
         "title": "Warnings"
       }
     },
+    "copyPasteHelp": {
+      "title": "Copy & Paste Help",
+      "ok": "Ok",
+      "documentationLink": "Copy & Paste Documentation",
+      "copyIntro": "It looks like you are trying to copy content.",
+      "pasteIntro": "It looks like you are trying to paste from outside LEAF-Writer.",
+      "pasteParagraphNote": "Most formatting is removed. Paragraph breaks are converted to TEI &lt;p&gt; elements.",
+      "considerReading": "Consider having a look at the"
+    },
     "settlement": "",
     "show only valid tags": "show only valid tags",
     "show_lod_annotation": "Show Linked Open Data Annotation",

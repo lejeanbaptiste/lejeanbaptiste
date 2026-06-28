@@ -19,17 +19,20 @@ class LoadingIndicator implements LWDialogProps {
 
     //@ts-ignore
     this.$loadingIndicator.dialog({
-      title: 'LEAF-Writer',
+      title: writer.appDisplayName,
       modal: true,
       resizable: false,
       closeOnEscape: false,
-      height: 160,
-      width: 300,
+      width: 260,
+      height: 'auto',
       position: { my: 'center', at: 'center', of: writer.layoutManager.getContainer() },
       buttons: {},
       autoOpen: false,
       //@ts-ignore
-      open: (event: JQuery.Event, ui) => $('.ui-dialog-titlebar-close', ui.dialog).hide(),
+      open: (event: JQuery.Event, ui) => {
+        $('.ui-dialog-titlebar-close', ui.dialog).hide();
+        $(ui.dialog).find('.ui-dialog-content').css({ padding: '8px 12px 10px', overflow: 'hidden' });
+      },
     });
 
     this.$progressBar = this.$loadingIndicator.find('.progressBar');

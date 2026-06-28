@@ -605,8 +605,8 @@ class SchemaManager {
         message += ' This could be a CORS issue or a dropped internet connection.';
         message += ` ${
           attempt < urls.length
-            ? ' LEAF-Writer will try to load the Schema using an alternative route.'
-            : ' LEAF-Writer could not load a schema for this document.'
+            ? ` ${this.writer.appDisplayName} will try to load the Schema using an alternative route.`
+            : ` ${this.writer.appDisplayName} could not load a schema for this document.`
         }`;
         log.warn(message);
 
@@ -974,8 +974,8 @@ class SchemaManager {
         message += ' This could be a CORS issue or a dropped internet connection.';
         message += ` ${
           attempt < urls.length
-            ? 'LEAF-Writer will try to load the CSS using an alternative route.'
-            : 'LEAF-Writer could not load a CSS for this document.'
+            ? `${this.writer.appDisplayName} will try to load the CSS using an alternative route.`
+            : `${this.writer.appDisplayName} could not load a CSS for this document.`
         }`;
         log.warn(message);
 

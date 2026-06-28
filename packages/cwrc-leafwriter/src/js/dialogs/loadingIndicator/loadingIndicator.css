@@ -1,11 +1,23 @@
+.loadingIndicatorDialog {
+  margin: 0;
+  padding: 4px 0 2px;
+}
+
 .loadingIndicatorDialog .progressBar {
   position: relative;
+  height: 1.4rem;
+  margin: 0;
 }
 
 .loadingIndicatorDialog .progressLabel {
   position: absolute;
-  left: 30%;
-  top: 4px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .loadingIndicatorDialog .ui-progressbar-value {

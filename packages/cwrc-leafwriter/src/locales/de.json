@@ -420,6 +420,15 @@
         "title": "Warnungen"
       }
     },
+    "copyPasteHelp": {
+      "title": "Hilfe zum Kopieren und Einfügen",
+      "ok": "Ok",
+      "documentationLink": "Dokumentation zum Kopieren und Einfügen",
+      "copyIntro": "Es sieht so aus, als ob Sie Inhalte kopieren möchten.",
+      "pasteIntro": "Es sieht so aus, als ob Sie von außerhalb von LEAF-Writer einfügen.",
+      "pasteParagraphNote": "Die meiste Formatierung wird entfernt. Absatzumbrüche werden in TEI-&lt;p&gt;-Elemente umgewandelt.",
+      "considerReading": "Sehen Sie sich die"
+    },
     "settlement": "Siedlung",
     "show only valid tags": "zeige nur gültige Tags",
     "show_lod_annotation": "Zeige Linked Open Data Annotation",

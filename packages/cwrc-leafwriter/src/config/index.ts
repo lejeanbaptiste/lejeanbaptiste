@@ -5,9 +5,23 @@ import { isValidHttpURL } from '../utilities';
 import { schemas as defaultSchemas } from './schemas';
 
 export const createConfig = async (settings: LeafWriterOptionsSettings = {}) => {
-  const { baseUrl, readonly, schemas: configSchemas } = settings;
-  const supportedSchemas = configSchemas ? [...configSchemas, ...defaultSchemas] : defaultSchemas;
-  const schemas = await setupSchemas(supportedSchemas);
+  const { baseUrl, readonly, schemas: configSchemas, schemasId, schemasExclusive } = settings;
+
+  let catalogDefaults = defaultSchemas;
+  if (schemasId?.length) {
+    const allowed = new Set(schemasId);
+    catalogDefaults = defaultSchemas.filter((schema) =>
+      allowed.has(schema.id as (typeof schemasId)[number]),
+    );
+  }
+
+  const supportedSchemas =
+    schemasExclusive && configSchemas
+      ? configSchemas
+      : configSchemas
+        ? [...configSchemas, ...catalogDefaults]
+        : catalogDefaults;
+  const schemas = await setupSchemas(supportedSchemas, { skipUserCustomSchemas: schemasExclusive });
 
   const defaultModules = {
     west: [
@@ -28,14 +42,20 @@ export const createConfig = async (settings: LeafWriterOptionsSettings = {}) => 
     readonly,
     schemas,
     modules: settings.modules ?? defaultModules,
+    appDisplayName: settings.appDisplayName,
   };
 
   return config;
 };
 
-export const setupSchemas = async (schemas: Schema[]) => {
-  const customSchemas = await db.customSchemas.toArray();
-  if (customSchemas) schemas = [...schemas, ...customSchemas];
+export const setupSchemas = async (
+  schemas: Schema[],
+  options?: { skipUserCustomSchemas?: boolean },
+) => {
+  if (!options?.skipUserCustomSchemas) {
+    const customSchemas = await db.customSchemas.toArray();
+    if (customSchemas) schemas = [...schemas, ...customSchemas];
+  }
 
   let supportedSchemas: Schema[] = [];
 

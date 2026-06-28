@@ -1,4 +1,4 @@
-import { getParentPath } from '@src/desktop/explorer/treeUtils';
+import { getParentPath, getProjectSchemaDirPath } from '@src/desktop/explorer/treeUtils';
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,22 +41,34 @@ export const canDropOnFolder = (
   source: ExplorerDragPayload,
   destDir: string,
   rootPath: string | null,
+  schemaDirPath?: string | null,
 ): boolean => {
   if (!destDir) return false;
   if (source.path === destDir) return false;
   if (getParentPath(source.path) === destDir) return false;
-  if (isExplorerItemProtected(source, rootPath)) return false;
+  if (isExplorerItemProtected(source, rootPath, schemaDirPath)) return false;
+  if (
+    isExplorerItemProtected(
+      { isDirectory: true, name: '', path: destDir },
+      rootPath,
+      schemaDirPath,
+    )
+  ) {
+    return false;
+  }
   if (source.isDirectory && isPathInside(source.path, destDir)) return false;
   return true;
 };
 
 export const useExplorerDragDrop = (enabled: boolean) => {
-  const { rootPath } = useAppState().project;
+  const { config, rootPath } = useAppState().project;
   const { moveExplorerItem } = useActions().project;
   const { notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation();
   const [dropTargetPath, setDropTargetPath] = useState<string | null>(null);
   const dragSourceRef = useRef<ExplorerDragPayload | null>(null);
+  const schemaDirPath =
+    rootPath && config?.schema ? getProjectSchemaDirPath(rootPath, config.schema) : null;
 
   const showMoveError = useCallback(
     (error?: string) => {
@@ -86,7 +98,7 @@ export const useExplorerDragDrop = (enabled: boolean) => {
 
   const getDragProps = useCallback(
     (item: ExplorerTarget) => {
-      if (!enabled || isExplorerItemProtected(item, rootPath)) {
+      if (!enabled || isExplorerItemProtected(item, rootPath, schemaDirPath)) {
         return { draggable: false as const };
       }
 
@@ -112,7 +124,7 @@ export const useExplorerDragDrop = (enabled: boolean) => {
         },
       };
     },
-    [enabled, rootPath],
+    [enabled, rootPath, schemaDirPath],
   );
 
   const getDropProps = useCallback(
@@ -134,7 +146,7 @@ export const useExplorerDragDrop = (enabled: boolean) => {
           const source = dragSourceRef.current;
           if (!source) return;
 
-          if (canDropOnFolder(source, folder.path, rootPath)) {
+          if (canDropOnFolder(source, folder.path, rootPath, schemaDirPath)) {
             event.dataTransfer.dropEffect = 'move';
             setDropTargetPath(folder.path);
             return;
@@ -161,7 +173,7 @@ export const useExplorerDragDrop = (enabled: boolean) => {
 
           if (!source) return;
 
-          if (!canDropOnFolder(source, folder.path, rootPath)) {
+          if (!canDropOnFolder(source, folder.path, rootPath, schemaDirPath)) {
             notifyViaSnackbar({
               message: t('LWC.desktop.explorer.drop_invalid'),
               options: { variant: 'error' },
@@ -177,7 +189,7 @@ export const useExplorerDragDrop = (enabled: boolean) => {
         },
       };
     },
-    [enabled, moveExplorerItem, notifyViaSnackbar, rootPath, showMoveError, t],
+    [enabled, moveExplorerItem, notifyViaSnackbar, rootPath, schemaDirPath, showMoveError, t],
   );
 
   const isDropTarget = useCallback(

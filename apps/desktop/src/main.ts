@@ -24,6 +24,7 @@ import { OpenFileWatcher } from './openFileWatcher';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
 import { getEncoderName, setEncoderName } from './projectPrefs';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
+import { applyCatalogSchemaUpdate, checkCatalogSchemaUpdate } from './checkSchemaUpdate';
 
 const APP_NAME = 'Le Jean-Baptiste';
 
@@ -281,6 +282,11 @@ const buildApplicationMenu = () => {
     click: () => sendMenuAction('edition-metadata'),
   };
 
+  const checkSchemaUpdateItem: Electron.MenuItemConstructorOptions = {
+    label: 'Check for schema updates…',
+    click: () => sendMenuAction('check-schema-update'),
+  };
+
   const newFileItem: Electron.MenuItemConstructorOptions = {
     label: 'New File',
     accelerator: 'CommandOrControl+N',
@@ -320,6 +326,7 @@ const buildApplicationMenu = () => {
         { type: 'separator' },
         openProjectItem,
         editionMetadataItem,
+        checkSchemaUpdateItem,
         { type: 'separator' },
         ...(process.platform !== 'darwin'
           ? [
@@ -390,6 +397,7 @@ const registerIpcHandlers = () => {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
       return entries
         .filter((entry) => {
+          if (entry.name.startsWith('.')) return false;
           if (options?.allFiles) return true;
           return entry.isDirectory() || entry.name.toLowerCase().endsWith('.xml');
         })
@@ -448,6 +456,17 @@ const registerIpcHandlers = () => {
       return installLocalSchema(projectFilePath, rngPath, cssPath);
     },
   );
+
+  ipcMain.handle(
+    'checkSchemaUpdate',
+    async (_event, projectFilePath: string, options?: { force?: boolean }) => {
+      return checkCatalogSchemaUpdate(projectFilePath, options);
+    },
+  );
+
+  ipcMain.handle('applyCatalogSchemaUpdate', async (_event, projectFilePath: string) => {
+    return applyCatalogSchemaUpdate(projectFilePath);
+  });
 
   ipcMain.handle('pickSchemaFiles', async () => {
     const dialogParent = getTopNativeDialogWindow() ?? mainWindow;

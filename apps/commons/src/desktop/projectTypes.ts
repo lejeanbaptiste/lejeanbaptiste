@@ -27,6 +27,12 @@ export interface ProjectMetadataFile {
   catalogId?: string;
   fields: Record<string, string>;
   custom: Array<{ path: string; label: string; value: string }>;
+  /** Snapshot written after bulk apply to existing files. */
+  lastApplied?: {
+    at: string;
+    fields: Record<string, string>;
+    custom: Array<{ path: string; value: string }>;
+  };
 }
 
 export interface ProjectBundle {

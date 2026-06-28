@@ -9,27 +9,17 @@ import {
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { isDesktop } from '@src/types/desktop';
+import type { ProjectMetadataDialogState } from '@src/desktop/projectMetadataDialogState';
 import { useCallback, useEffect, useState } from 'react';
-
-interface MetadataFieldRow {
-  path: string;
-  label: string;
-}
-
-interface MetadataDialogState {
-  mode: 'firstSetup' | 'edition';
-  note?: string;
-  fields: MetadataFieldRow[];
-  values: Record<string, string>;
-  custom: Array<{ path: string; label: string; value: string }>;
-}
 
 export const NativeProjectMetadataPage = () => {
   const [searchParams] = useSearchParams();
   const initialDialogId = searchParams.get('dialogId') ?? '';
   const [activeDialogId, setActiveDialogId] = useState(initialDialogId);
-  const [state, setState] = useState<MetadataDialogState | null>(null);
-  const [loading, setLoading] = useState(initialDialogId !== '__prewarm__' && Boolean(initialDialogId));
+  const [state, setState] = useState<ProjectMetadataDialogState | null>(null);
+  const [loading, setLoading] = useState(
+    initialDialogId !== '__prewarm__' && Boolean(initialDialogId),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,35 +34,50 @@ export const NativeProjectMetadataPage = () => {
     void window.electronAPI?.closeNativeDialog(activeDialogId);
   }, [activeDialogId]);
 
+  const applyDialogState = useCallback((dialogState: ProjectMetadataDialogState | null) => {
+    if (dialogState) {
+      setState(dialogState);
+      setError(null);
+    } else {
+      setError('Could not load edition metadata.');
+    }
+    setLoading(false);
+  }, []);
+
+  const loadDialogState = useCallback(
+    async (dialogId: string, prefetched?: ProjectMetadataDialogState) => {
+      if (prefetched) {
+        applyDialogState(prefetched);
+        return;
+      }
+      setLoading(true);
+      const dialogState = (await window.electronAPI?.nativeDialogInvoke({
+        dialogId,
+        method: 'getProjectMetadataState',
+        args: { dialogId },
+      })) as ProjectMetadataDialogState | null;
+      applyDialogState(dialogState);
+    },
+    [applyDialogState],
+  );
+
   useEffect(() => {
     if (!isDesktop()) return;
-    return window.electronAPI?.onNativeDialogOpen?.((payload) => {
+    const unsubOpen = window.electronAPI?.onNativeDialogOpen?.((payload) => {
       setActiveDialogId(payload.dialogId);
       setState(null);
       setError(null);
-      setLoading(true);
+      const prefetched = payload.initialState as ProjectMetadataDialogState | undefined;
+      void loadDialogState(payload.dialogId, prefetched);
     });
-  }, []);
-
-  useEffect(() => {
-    if (!isDesktop() || !activeDialogId || activeDialogId === '__prewarm__') {
-      setLoading(false);
-      return;
-    }
-
-    void (async () => {
-      const dialogState = (await invoke('getProjectMetadataState', { dialogId: activeDialogId })) as
-        | MetadataDialogState
-        | null;
-      if (dialogState) {
-        setState(dialogState);
-        setError(null);
-      } else {
-        setError('Could not load edition metadata.');
-      }
-      setLoading(false);
-    })();
-  }, [activeDialogId, invoke]);
+    const unsubState = window.electronAPI?.onNativeDialogStateUpdate?.((payload) => {
+      applyDialogState(payload.initialState as ProjectMetadataDialogState);
+    });
+    return () => {
+      unsubOpen?.();
+      unsubState?.();
+    };
+  }, [applyDialogState, loadDialogState]);
 
   const updateField = (path: string, value: string) => {
     setState((prev) =>

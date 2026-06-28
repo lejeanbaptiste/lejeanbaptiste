@@ -1,9 +1,12 @@
+import type { ProjectMetadataDialogState } from './projectMetadataDialogState';
+
 export type ProjectMetadataDialogMode = 'firstSetup' | 'edition';
 
 export interface ProjectMetadataSession {
   dialogId: string;
   mode: ProjectMetadataDialogMode;
   projectFilePath: string;
+  initialState?: ProjectMetadataDialogState;
   onSave: () => void;
   onCancel: () => void;
 }

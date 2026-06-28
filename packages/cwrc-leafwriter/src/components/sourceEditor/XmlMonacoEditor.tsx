@@ -1,11 +1,17 @@
 import { Box, useColorScheme } from '@mui/material';
+import 'monaco-editor/esm/vs/editor/contrib/linkedEditing/browser/linkedEditing.js';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useEffect, useRef, useState } from 'react';
 import {
   dispatchDesktopOpenFind,
   registerSourceFindEditor,
 } from '../../sourceEditor/findInSourceEditor';
+import {
+  SOURCE_CURSOR_MOVED_EVENT,
+  type SourceCursorMovedDetail,
+} from '../editorLocationBar';
 import { registerClosingTagCompletion } from './closingTagCompletion';
+import { registerLinkedTagEditing } from './linkedTagEditing';
 import { useXmlLanguageClient } from './useXmlLanguageClient';
 import type { LspStartOptions } from './lsp/ipcLspClient';
 
@@ -53,11 +59,13 @@ export const XmlMonacoEditor = ({
     if (!divEl.current) return;
 
     const closingTagDisposable = registerClosingTagCompletion();
+    const linkedTagDisposable = registerLinkedTagEditing();
 
     const monacoEditor = monaco.editor.create(divEl.current, {
       automaticLayout: true,
       lineNumbers: 'on',
       language: 'xml',
+      linkedEditing: true,
       theme,
       value,
       wordWrap: 'wordWrapColumn',
@@ -69,6 +77,17 @@ export const XmlMonacoEditor = ({
       const nextValue = monacoEditor.getValue();
       lastEditorValueRef.current = nextValue;
       onChangeRef.current(nextValue);
+    });
+
+    monacoEditor.onDidChangeCursorSelection(() => {
+      const model = monacoEditor.getModel();
+      if (!model) return;
+      const offset = model.getOffsetAt(monacoEditor.getPosition() ?? { lineNumber: 1, column: 1 });
+      window.dispatchEvent(
+        new CustomEvent<SourceCursorMovedDetail>(SOURCE_CURSOR_MOVED_EVENT, {
+          detail: { offset },
+        }),
+      );
     });
 
     monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyZ, () => {
@@ -85,11 +104,21 @@ export const XmlMonacoEditor = ({
 
     registerSourceFindEditor(monacoEditor);
     lastEditorValueRef.current = value;
+    const model = monacoEditor.getModel();
+    if (model) {
+      const offset = model.getOffsetAt(monacoEditor.getPosition() ?? { lineNumber: 1, column: 1 });
+      window.dispatchEvent(
+        new CustomEvent<SourceCursorMovedDetail>(SOURCE_CURSOR_MOVED_EVENT, {
+          detail: { offset },
+        }),
+      );
+    }
     setEditor(monacoEditor);
     onEditorInstanceRef.current?.(monacoEditor);
 
     return () => {
       closingTagDisposable.dispose();
+      linkedTagDisposable.dispose();
       registerSourceFindEditor(null);
       onEditorInstanceRef.current?.(null);
       monacoEditor.dispose();

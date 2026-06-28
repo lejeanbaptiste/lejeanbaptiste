@@ -37,10 +37,10 @@ export const EditorToolbar = () => {
   const { t } = useTranslation();
   const { schemaId } = useAppState().document;
   const { isReadonly, showTags } = useAppState().editor;
-  const { fullscreen } = useAppState().ui;
+  // const { fullscreen } = useAppState().ui;
 
   const { toggleShowTags } = useActions().editor;
-  const { openDialog, showContextMenu, toggleFullscreen } = useActions().ui;
+  const { openDialog, showContextMenu /* , toggleFullscreen */ } = useActions().ui;
 
   const { entity, spacing } = useTheme();
 
@@ -203,14 +203,14 @@ export const EditorToolbar = () => {
       title: showTags ? t('LW.editorToolbar.Hide Tags') : t('LW.editorToolbar.Show Tags'),
       type: 'toggle',
     },
-    {
-      group: 'ui',
-      icon: fullscreen ? 'fullscreenExit' : 'fullscreen',
-      onClick: () => toggleFullscreen(),
-      selected: fullscreen,
-      title: t('LW.editorToolbar.Toggle Fullscreen'),
-      type: 'toggle',
-    },
+    // {
+    //   group: 'ui',
+    //   icon: fullscreen ? 'fullscreenExit' : 'fullscreen',
+    //   onClick: () => toggleFullscreen(),
+    //   selected: fullscreen,
+    //   title: t('LW.editorToolbar.Toggle Fullscreen'),
+    //   type: 'toggle',
+    // },
     { group: 'ui', type: 'divider', hide: isReadonly },
     {
       group: 'ui',
@@ -220,25 +220,25 @@ export const EditorToolbar = () => {
       title: t('LW.xpathSearch.title'),
       type: 'iconButton',
     },
-    {
-      group: 'ui',
-      hide: isReadonly,
-      icon: 'validate',
-      onClick: () => {
-        window.writer.layoutManager.showModule('validation');
-        window.writer.validate();
-      },
-      title: t('LW.editorToolbar.Validate'),
-      type: 'iconButton',
-    },
-    { group: 'ui', type: 'divider', hide: isReadonly },
-    {
-      group: 'ui',
-      icon: 'settings',
-      onClick: () => openDialog({ type: 'settings' }),
-      title: t('LW.editorToolbar.Settings'),
-      type: 'iconButton',
-    },
+    // {
+    //   group: 'ui',
+    //   hide: isReadonly,
+    //   icon: 'validate',
+    //   onClick: () => {
+    //     window.writer.layoutManager.showModule('validation');
+    //     window.writer.validate();
+    //   },
+    //   title: t('LW.editorToolbar.Validate'),
+    //   type: 'iconButton',
+    // },
+    // { group: 'ui', type: 'divider', hide: isReadonly },
+    // {
+    //   group: 'ui',
+    //   icon: 'settings',
+    //   onClick: () => openDialog({ type: 'settings' }),
+    //   title: t('LW.editorToolbar.Settings'),
+    //   type: 'iconButton',
+    // },
     {
       group: 'ui',
       icon: 'documentation',
