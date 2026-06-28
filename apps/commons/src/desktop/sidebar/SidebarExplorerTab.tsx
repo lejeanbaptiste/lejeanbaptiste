@@ -194,6 +194,7 @@ export const SidebarExplorerTab = () => {
     menuOpen,
     newFolderOpen,
     newFolderValue,
+    openRenameForItem,
     renameOpen,
     renameValue,
     setNewFolderOpen,
@@ -240,6 +241,13 @@ export const SidebarExplorerTab = () => {
   }, [rootPath, setExplorerFocusedPath, treeKeyboard.focusedPath]);
 
   const handleTreeKeyDown = async (event: React.KeyboardEvent) => {
+    if (event.key === 'F2') {
+      const item = treeKeyboard.getFocusedItem();
+      if (!item || isExplorerItemProtected(item, rootPath, schemaDirPath)) return;
+      event.preventDefault();
+      openRenameForItem(item);
+      return;
+    }
     if (event.key === 'Delete' || event.key === 'Backspace') {
       const item = treeKeyboard.getFocusedItem();
       if (!item || isExplorerItemProtected(item, rootPath, schemaDirPath)) return;

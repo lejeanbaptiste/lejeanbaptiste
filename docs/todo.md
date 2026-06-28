@@ -14,6 +14,8 @@ See **`docs/project-schema-planning.md`** for Open Project, project metadata, Ne
 
 **Phase 6 smoke test:** section N (Polish) — run manually in desktop dev build; automated tests in `apps/commons/src/desktop/revisionDescXml.test.ts` and `metadataApplyOverrides.test.ts`.
 
+**Tagging Phase 1 smoke test:** section O — run manually in desktop dev build; automated tests in `apps/commons/src/desktop/tagging/*.test.ts`.
+
 Menu
 - [x] Open Project — schema setup when folder has no schema (download or copy local); then project metadata dialog (required Save)
 - [x] Project → Edition metadata… — edit `schema/project-metadata.json`; optional apply to existing XML files
@@ -29,7 +31,7 @@ Editor / right rail
 - [ ] Attributes panel — tag attrs + Lookup… + per-type colours; see **`docs/tagging-planning.md`** Phase 2
 
 Editor
-- [ ] Fast add tag — see **`docs/tagging-planning.md`** (Enter-tag popup, Phase 1)
+- [x] Fast add tag — Enter-tag popup, F2 rename, Shift+Enter line break (Phase 1); see **`docs/tagging-planning.md`**
 - [ ] Fast add attributes — see **`docs/tagging-planning.md`** (Phase 3+; separate from identify path)
 - [ ] AI api integration for tagging without modifying the language (?).
 - [ ] Attribute panel — see **`docs/tagging-planning.md`** (Attributes panel, Phase 2)
@@ -37,11 +39,13 @@ Editor
 - [ ] Versioning files — see **`docs/versioning-planning.md`** (local history on save, rollback; medium priority)
 
 **Tagging** — see **`docs/tagging-planning.md`**
-- [ ] Enter-tag popup + F2 rename + insert/split (Phase 1)
+- [x] Enter-tag popup + F2 rename + insert/split (Phase 1)
 - [ ] Alt+Enter attribute popup + right attributes panel + Lookup + per-type colours (Phase 2)
-- [ ] Tag/attr usage stats + customisable keybindings
+- [x] Tag usage stats (element counts in `schema/tag-stats.json`; attr stats Phase 2)
+- [ ] Customisable keybindings (Phase 6)
 - [ ] Disambiguation queue + resolution-file attribute propagation (later phases)
-- [ ] Completely rethink the tagging paradigm (umbrella — tracked in planning doc)
+- [ ] Method for deleting tags in WYSIWYG.
+- [ ] In source, deleting open tag deletes the closing tag, and vice versa.
 
 **Metadata**
 - [x] Saving in the editor leaves a last-edited timestamp with the encoder name in `encodingDesc/appInfo` (TEI) or Orlando `RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` — separate from scholarly `revisionDesc`

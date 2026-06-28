@@ -19,3 +19,5 @@ export * from './openNativeProjectMetadata';
 export * from './projectOnboarding';
 export * from './schemaSetupSession';
 export * from './projectMetadataSession';
+export * from './tagging/TagCommandProvider';
+export * from './tagging/desktopTaggingBridge';

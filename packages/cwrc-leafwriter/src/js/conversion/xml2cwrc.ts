@@ -415,7 +415,9 @@ class XML2CWRC {
 
       if (node.childNodes.length === 0) {
         openingTagString += '>';
-        closingTagString = `\uFEFF</${htmlTag}>`;
+        closingTagString = canContainText
+          ? `\uFEFF</${htmlTag}>`
+          : `</${htmlTag}>`;
       } else {
         openingTagString += '>';
         closingTagString = `</${htmlTag}>`;

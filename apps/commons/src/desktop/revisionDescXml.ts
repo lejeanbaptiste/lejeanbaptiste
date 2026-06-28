@@ -24,13 +24,15 @@ const findTeiApplication = (appInfo: Element): Element | null => {
   return apps.find((app) => app.getAttribute('ident') === DESKTOP_APP_IDENT) ?? null;
 };
 
-const setTeiChildText = (parent: Element, name: string, text: string) => {
-  let child = findTeiChild(parent, name);
-  if (!child) {
-    child = parent.ownerDocument!.createElementNS(TEI_NS, name);
-    parent.appendChild(child);
-  }
-  child.textContent = text;
+const stampTeiApplication = (application: Element, who: string, when: string) => {
+  application.setAttribute('when', when);
+  Array.from(application.childNodes).forEach((child) => {
+    application.removeChild(child);
+  });
+
+  const label = application.ownerDocument!.createElementNS(TEI_NS, 'label');
+  label.textContent = `${DESKTOP_APP_DISPLAY_NAME} (${who})`;
+  application.appendChild(label);
 };
 
 const stampTeiLastSaved = (xml: string, encoderName: string, savedAt: Date): string => {
@@ -68,16 +70,7 @@ const stampTeiLastSaved = (xml: string, encoderName: string, savedAt: Date): str
     appInfo.appendChild(application);
   }
 
-  setTeiChildText(application, 'label', DESKTOP_APP_DISPLAY_NAME);
-  setTeiChildText(application, 'name', who);
-
-  let date = findTeiChild(application, 'date');
-  if (!date) {
-    date = doc.createElementNS(TEI_NS, 'date');
-    application.appendChild(date);
-  }
-  date.setAttribute('when', when);
-  date.textContent = '';
+  stampTeiApplication(application, who, when);
 
   return new XMLSerializer().serializeToString(doc);
 };

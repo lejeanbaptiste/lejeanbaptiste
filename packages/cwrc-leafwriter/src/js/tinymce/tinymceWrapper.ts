@@ -145,7 +145,7 @@ export const tinymceWrapperInit = function ({
         const body = editor.getBody();
 
         // highlight tracking
-        body.addEventListener('keydown', onKeyDownHandler);
+        body.addEventListener('keydown', onKeyDownHandler, true);
         body.addEventListener('keyup', onKeyUpHandler);
 
         // attach mouseUp to doc because body doesn't always extend to full height of editor panel
@@ -314,6 +314,14 @@ export const tinymceWrapperInit = function ({
 
     if (writer.isReadOnly === true) return;
 
+    const desktopTagging = window.__desktopTagging;
+    const taggingHandled = Boolean(desktopTagging?.handleEditorKeyDown(event));
+    if (taggingHandled) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     writer.overmindActions.editor.setContentHasChanged(true);
     writer.editor.isNotDirty = false;
 
@@ -428,8 +436,8 @@ export const tinymceWrapperInit = function ({
       }
     }
 
-    // enter key
-    if (event.code === 'Enter') {
+    // enter key — legacy paragraph insert (web LEAF-Writer only; desktop uses tag popup)
+    if (event.code === 'Enter' && !window.__desktopTagging) {
       const node = writer.editor?.currentNode; // the new element inserted by tinymce
       if (!node) {
         log.warn('tinymceWrapper: user pressed enter but no new node found');
@@ -460,7 +468,9 @@ export const tinymceWrapperInit = function ({
   };
 
   const onChangeHandler = () => {
-    $('br', writer.editor?.getBody()).remove(); // remove br tags that get added by shift+enter
+    if (!window.__desktopTagging) {
+      $('br', writer.editor?.getBody()).remove(); // remove br tags that get added by shift+enter
+    }
     writer.event('contentChanged').publish();
   };
 

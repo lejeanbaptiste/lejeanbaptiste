@@ -8,6 +8,7 @@ import { Context } from '../';
 import Writer from '../../js/Writer';
 import { webpackEnv } from '../../types';
 import { checkWellFormedness } from '../../utilities/checkWellFormedness';
+import { isLocalFileUrl, localSchemaToBlobUrl } from '../../utilities/fetchResource';
 
 export type SourceValidationResult = ValidationResponse & {
   parseError?: Extract<ReturnType<typeof checkWellFormedness>, { valid: false }>['error'];
@@ -46,6 +47,14 @@ const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<ValidatorType
   });
 };
 
+const resolveSchemaUrlForWorker = async (schemaURL: string): Promise<string> => {
+  if (isLocalFileUrl(schemaURL)) {
+    const blobUrl = await localSchemaToBlobUrl(schemaURL);
+    if (blobUrl) return blobUrl;
+  }
+  return schemaURL;
+};
+
 export const initialize = async ({ state }: Context) => {
   const writer = window.writer;
   if (!writer) return;
@@ -59,7 +68,14 @@ export const initialize = async ({ state }: Context) => {
   const schemaURL = writer.schemaManager.getRng();
   if (!schemaId || !schemaURL) return;
 
-  const schemaWorker = await workerValidator.initialize({ id: schemaId, url: schemaURL });
+  const workerUrl = await resolveSchemaUrlForWorker(schemaURL);
+  let schemaWorker = { success: false };
+  try {
+    schemaWorker = await workerValidator.initialize({ id: schemaId, url: workerUrl });
+  } catch {
+    schemaWorker = { success: false };
+  }
+
   if (schemaWorker.success) state.validator.hasSchema = true;
 
   window.writer?.event('workerValidatorLoaded').publish(schemaWorker);
@@ -74,23 +90,29 @@ export const validate = async ({ state, actions }: Context) => {
       ? state.ui.sourceCurrentContent
       : await writer.converter.getDocumentContent(false);
 
-  if (!documentString) return;
+  const mergeForValidation = window.__desktopMergeHeaderForValidation;
+  const validationString =
+    state.ui.editorViewMode !== 'source' && typeof mergeForValidation === 'function'
+      ? mergeForValidation(documentString ?? '')
+      : documentString;
 
-  const wellFormed = checkWellFormedness(documentString);
+  if (!validationString) return;
+
+  const wellFormed = checkWellFormedness(validationString);
   if (!wellFormed.valid) {
     const parseErrorCount = wellFormed.error.positions?.length ?? 1;
     await actions.validator.updateValidationError(parseErrorCount);
     writer.event('documentValidated').publish(
       false,
       { valid: false, errors: [], parseError: wellFormed.error } satisfies SourceValidationResult,
-      documentString,
+      validationString,
     );
     return;
   }
 
   if (!state.validator.hasWorkerValidator || !state.validator.hasSchema) {
     await actions.validator.updateValidationError(0);
-    writer.event('documentValidated').publish(true, { valid: true }, documentString);
+    writer.event('documentValidated').publish(true, { valid: true }, validationString);
     return;
   }
 
@@ -105,11 +127,11 @@ export const validate = async ({ state, actions }: Context) => {
     const totalError = valid ? 0 : (errors?.length ?? 0);
     await actions.validator.updateValidationError(totalError);
 
-    writer.event('documentValidated').publish(valid, { valid, errors }, documentString);
+    writer.event('documentValidated').publish(valid, { valid, errors }, validationString);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
-  await workerValidator.validate(documentString, Comlink.proxy(validationProgress));
+  await workerValidator.validate(validationString, Comlink.proxy(validationProgress));
 };
 
 export const updateValidationError = async ({ state }: Context, value: number) => {

@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { DocumentTabBar, DesktopEastPanels, UnifiedLeftPanel, useExternalFileWatcher, useProjectMenu } from '@src/desktop';
+import { DocumentTabBar, DesktopEastPanels, TagCommandProvider, UnifiedLeftPanel, useExternalFileWatcher, useProjectMenu } from '@src/desktop';
 import { AboutDialog } from '@src/desktop/AboutDialog';
 import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
@@ -34,6 +34,11 @@ export const ProjectEditor = () => {
       delete window.__ljbOpenNativeSchemaPicker;
     };
   }, []);
+
+  useEffect(() => {
+    if (!isDesktop() || !resource?.content) return;
+    window.__desktopStoredDocumentXml = resource.content;
+  }, [resource?.content]);
 
   useEffect(() => {
     window.addEventListener('keydown', onKeydownHandle, true);
@@ -115,6 +120,7 @@ export const ProjectEditor = () => {
   return (
     <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
       <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />
+      <TagCommandProvider />
       <UnifiedLeftPanel />
       <DesktopEastPanels />
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>

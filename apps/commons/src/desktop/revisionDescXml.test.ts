@@ -16,8 +16,11 @@ describe('stampLastEditedInXml', () => {
 
     expect(stamped).toContain('<encodingDesc>');
     expect(stamped).toContain(`<application ident="${DESKTOP_APP_IDENT}"`);
-    expect(stamped).toContain('<name>Ada Lovelace</name>');
     expect(stamped).toContain('when="2026-06-28"');
+    expect(stamped).toContain(`<label>${DESKTOP_APP_DISPLAY_NAME} (Ada Lovelace)</label>`);
+    expect(stamped).not.toContain('<name>');
+    expect(stamped).not.toContain('<date');
+    expect(stamped).not.toContain('<version');
     expect(stamped).not.toContain('<revisionDesc>');
   });
 
@@ -39,9 +42,9 @@ describe('stampLastEditedInXml', () => {
       savedAt: new Date('2026-06-28T00:00:00.000Z'),
     });
 
-    expect(restamped).toContain('<name>Second</name>');
+    expect(restamped).toContain(`<label>${DESKTOP_APP_DISPLAY_NAME} (Second)</label>`);
     expect(restamped).toContain('when="2026-06-28"');
-    expect(restamped).not.toContain('<name>First</name>');
+    expect(restamped).not.toContain('(First)');
     expect((restamped.match(new RegExp(`ident="${DESKTOP_APP_IDENT}"`, 'g')) ?? []).length).toBe(1);
   });
 
@@ -69,7 +72,7 @@ describe('stampLastEditedInXml', () => {
     expect(stamped).toContain('P4 to P5 conversion');
     expect(stamped).toContain('Created initial TEI XML version');
     expect(stamped).toContain(`<application ident="${DESKTOP_APP_IDENT}"`);
-    expect(stamped).toContain('<name>Potato</name>');
+    expect(stamped).toContain(`<label>${DESKTOP_APP_DISPLAY_NAME} (Potato)</label>`);
     expect(stamped).not.toContain('Last saved');
   });
 
