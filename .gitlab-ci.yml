@@ -13,6 +13,7 @@ variables:
   SECRET_DETECTION_DISABLED: 1
   DAST_DISABLED: 1
   PERFORMANCE_DISABLED: 1
+  CONTAINER_SCANNING_DISABLED: 1
 
   # GitLab CI configuration
   # TEST_DISABLED: 1
@@ -53,7 +54,7 @@ build:
       echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf '%s:%s' "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}"
       > /kaniko/.docker/config.json
   script:
-    - export CI_APPLICATION_REPOSITORY="${CI_REGISTRY_IMAGE}"
+    - export CI_APPLICATION_REPOSITORY="${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}"
     - export CI_APPLICATION_TAG="${CI_COMMIT_SHA}"
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
