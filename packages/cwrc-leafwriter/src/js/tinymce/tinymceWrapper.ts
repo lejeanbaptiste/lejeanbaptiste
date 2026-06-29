@@ -123,18 +123,20 @@ export const tinymceWrapperInit = function ({
           editor.mode.set('readonly');
         }
 
-        // Strip transient highlight classes before any content snapshot so they never
-        // appear in undo history.
-        editor.serializer.addAttributeFilter('class', (nodes) => {
-          for (const node of nodes) {
-            const cls = node.attr('class');
-            if (!cls) continue;
-            const cleaned = cls
-              .replace(/\btag-cursor-active\b/g, '')
-              .replace(/\btag-at-boundary\b/g, '')
-              .replace(/\s{2,}/g, ' ')
-              .trim();
-            node.attr('class', cleaned || null);
+        // Undo levels are captured via getContent({ format: 'raw' }), which bypasses
+        // the serializer entirely. BeforeAddUndo is the only reliable intercept point.
+        // Strip our transient classes from the level content, then cancel the level
+        // entirely if the stripped content is identical to the previous level.
+        const stripLWClasses = (s: string) => s
+          .replace(/\s*\btag-cursor-active\b/g, '')
+          .replace(/\s*\btag-at-boundary\b/g, '');
+
+        editor.on('BeforeAddUndo', (e: any) => {
+          if (!e.level?.content) return;
+          e.level.content = stripLWClasses(e.level.content);
+          const lastClean = e.lastLevel?.content ? stripLWClasses(e.lastLevel.content) : null;
+          if (lastClean !== null && e.level.content === lastClean) {
+            e.preventDefault();
           }
         });
 
