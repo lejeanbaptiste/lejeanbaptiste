@@ -14,9 +14,6 @@ variables:
   DAST_DISABLED: 1
   PERFORMANCE_DISABLED: 1
 
-  # Use Cloud Native Buildpacks instead of Docker-in-Docker for the build job
-  AUTO_BUILD_IMAGE_CNB_ENABLED: "1"
-
   # GitLab CI configuration
   # TEST_DISABLED: 1
   POSTGRES_ENABLED: "false"
@@ -40,6 +37,34 @@ cache:
       - package.json
   paths:
     - node_modules
+
+# Override the Auto DevOps build job to use Kaniko instead of Docker-in-Docker.
+# The in2p3.fr runner does not allow privileged containers, so docker:dind cannot start.
+# Kaniko builds OCI images without a Docker daemon and without privileged mode.
+build:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  services: []
+  before_script:
+    - mkdir -p /kaniko/.docker
+    - >
+      echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf '%s:%s' "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}"
+      > /kaniko/.docker/config.json
+  script:
+    - export CI_APPLICATION_REPOSITORY="${CI_REGISTRY_IMAGE}"
+    - export CI_APPLICATION_TAG="${CI_COMMIT_SHA}"
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_APPLICATION_REPOSITORY}:${CI_APPLICATION_TAG}"
+      --destination "${CI_APPLICATION_REPOSITORY}:latest"
+    - echo "CI_APPLICATION_REPOSITORY=${CI_APPLICATION_REPOSITORY}" > gl-auto-build-variables.env
+    - echo "CI_APPLICATION_TAG=${CI_APPLICATION_TAG}" >> gl-auto-build-variables.env
+  artifacts:
+    reports:
+      dotenv: gl-auto-build-variables.env
 
 # Overwrite test job
 test:
