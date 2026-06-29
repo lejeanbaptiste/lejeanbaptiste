@@ -101,7 +101,7 @@ const ensureCollapsedTextRange = (): boolean => {
   return true;
 };
 
-/** Split paragraph at caret; also splits any open inline tags at the caret first. */
+/** Split paragraph at caret using Range extraction, preserving inline elements as children. */
 export const splitParagraphAtCaret = (): ApplyTagResult => {
   const writer = getWriter();
   if (!writer?.editor || !writer.tagger) return { applied: false };
@@ -111,33 +111,66 @@ export const splitParagraphAtCaret = (): ApplyTagResult => {
   }
 
   const body = writer.editor.getBody();
-  const paragraph = findParagraphAncestor(writer.editor.selection.getRng(true).startContainer, body);
+  const rng0 = writer.editor.selection.getRng(true);
+  const paragraph = findParagraphAncestor(rng0.startContainer, body);
   if (!paragraph) {
     return { applied: false, error: 'Caret is not inside a paragraph.' };
   }
 
+  const doc = writer.editor.getDoc();
+
   writer.editor.undoManager.transact(() => {
-    let safety = 24;
-    while (safety-- > 0) {
-      const rng = writer.editor!.selection.getRng(true);
-      if (rng.startContainer.nodeType !== Node.TEXT_NODE) break;
+    const caretRng = writer.editor!.selection.getRng(true);
 
-      const parent = rng.startContainer.parentNode as Element | null;
-      if (!parent?.hasAttribute('_tag')) break;
-      if (parent.getAttribute('_entity') === 'true') break;
-      if (parent.getAttribute('_tag') === DEFAULT_INSERT_TAG) break;
+    // Extract everything from the caret to the end of the paragraph into a new <p>
+    const afterRng = doc.createRange();
+    afterRng.setStart(caretRng.startContainer, caretRng.startOffset);
+    afterRng.setEnd(paragraph, paragraph.childNodes.length);
+    const afterContent = afterRng.extractContents();
 
-      runSplitAtCaret();
+    // Build the new paragraph with the same _tag attributes but a fresh id
+    const newPara = doc.createElement(paragraph.nodeName);
+    for (let i = 0; i < paragraph.attributes.length; i++) {
+      const attr = paragraph.attributes[i];
+      if (!attr || attr.name === 'id') continue;
+      newPara.setAttribute(attr.name, attr.value);
     }
+    newPara.setAttribute('id', writer.getUniqueId('dom_'));
 
-    const rng = writer.editor!.selection.getRng(true);
-    if (
-      rng.startContainer.nodeType === Node.TEXT_NODE &&
-      (rng.startContainer.parentNode as Element | null)?.getAttribute('_tag') ===
-        DEFAULT_INSERT_TAG
-    ) {
-      runSplitAtCaret();
+    // Give any extracted element children fresh ids so there are no duplicate ids
+    const assignIds = (fragment: Node) => {
+      fragment.childNodes.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          (child as Element).setAttribute('id', writer.getUniqueId('dom_'));
+          assignIds(child);
+        }
+      });
+    };
+    assignIds(afterContent);
+
+    newPara.appendChild(afterContent);
+    paragraph.parentNode?.insertBefore(newPara, paragraph.nextSibling);
+
+    // Place cursor at start of the new paragraph's first text node
+    const firstText = (function findFirstText(n: Node): Text | null {
+      if (n.nodeType === Node.TEXT_NODE) return n as Text;
+      for (let i = 0; i < n.childNodes.length; i++) {
+        const found = findFirstText(n.childNodes[i]!);
+        if (found) return found;
+      }
+      return null;
+    })(newPara);
+
+    const cursorRng = doc.createRange();
+    if (firstText) {
+      cursorRng.setStart(firstText, 0);
+    } else {
+      const placeholder = doc.createTextNode('﻿');
+      newPara.appendChild(placeholder);
+      cursorRng.setStart(placeholder, 0);
     }
+    cursorRng.collapse(true);
+    writer.editor!.selection.setRng(cursorRng);
   });
 
   writer.event('contentChanged').publish();
