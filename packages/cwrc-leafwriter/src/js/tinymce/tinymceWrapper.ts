@@ -303,23 +303,34 @@ export const tinymceWrapperInit = function ({
 
   let currentActiveElement: Element | null = null;
   let currentBoundaryElement: Element | null = null;
+  // true when cursor is outside the element (in parent/sibling), false when at end-of-text inside
+  let currentBoundaryIsExternal = false;
 
-  const applyBoundaryClasses = (activeEl: Element | null, boundaryEl: Element | null) => {
+  const applyBoundaryClasses = (activeEl: Element | null, boundaryEl: Element | null, externalBoundary = false) => {
     if (currentActiveElement) {
       currentActiveElement.classList.remove('tag-cursor-active', 'tag-at-boundary');
     }
     currentActiveElement = activeEl;
     currentBoundaryElement = boundaryEl;
+    currentBoundaryIsExternal = externalBoundary;
     if (activeEl) activeEl.classList.add('tag-cursor-active');
     if (boundaryEl) boundaryEl.classList.add('tag-at-boundary');
   };
 
   const clearTagBoundaryState = () => applyBoundaryClasses(null, null);
 
+  // Pure structural tag (no entity marker) — used for sibling detection.
   const isTagEl = (n: Node | null): n is Element =>
     isElement(n) &&
     (n as Element).hasAttribute('_tag') &&
     !(n as Element).hasAttribute('_entity') &&
+    (n as Element).getAttribute('_tag') !== 'pb';
+
+  // Also matches combined _entity+_tag spans (xml2cwrc stamps _entity onto existing structural tags).
+  // Used when the cursor is INSIDE the element (parent checks), not for sibling detection.
+  const isTagOrCombinedEl = (n: Node | null): n is Element =>
+    isElement(n) &&
+    (n as Element).hasAttribute('_tag') &&
     (n as Element).getAttribute('_tag') !== 'pb';
 
   const updateTagBoundaryState = () => {
@@ -343,37 +354,37 @@ export const tinymceWrapperInit = function ({
     const tagElThroughEntity = (n: Node | null): Element | null => {
       if (!n || !isElement(n)) return null;
       const el = n as Element;
-      // Direct [_tag] element (not entity wrapper, not pb)
-      if (el.hasAttribute('_tag') && !el.hasAttribute('_entity') && el.getAttribute('_tag') !== 'pb') {
-        return el;
-      }
-      // Entity wrapper — look for a [_tag] descendant inside it
-      if (el.hasAttribute('_entity')) {
-        const inner = el.querySelector('[_tag]:not([_entity])') as Element | null;
-        return inner && inner.getAttribute('_tag') !== 'pb' ? inner : null;
-      }
-      return null;
+      const tag = el.getAttribute('_tag');
+      // Plain structural tag (no entity marker)
+      if (tag && tag !== 'pb' && !el.hasAttribute('_entity')) return el;
+      if (!el.hasAttribute('_entity')) return null;
+      // Combined entity+tag span: xml2cwrc stamps _entity onto the existing structural tag in-place
+      if (tag && tag !== 'pb') return el;
+      // Pure entity wrapper (has _entity, no _tag): look for a structural child
+      const inner = el.querySelector('[_tag]:not([_entity])') as Element | null;
+      return inner && inner.getAttribute('_tag') !== 'pb' ? inner : null;
     };
+
+    // externalBoundary = cursor is in parent/sibling rather than inside the element's own text.
+    // Only external boundaries trigger backspace-to-remove; internal ones allow normal text editing.
+    let externalBoundary = false;
 
     if (container.nodeType === Node.TEXT_NODE) {
       const textLen = (container as Text).length;
       const parent = container.parentElement;
 
       if (offset === 0) {
-        // Cursor at start of text — check left sibling (may be entity wrapper)
         const prevSib = container.previousSibling;
         const via = tagElThroughEntity(prevSib);
-        if (via) { tagEl = via; atBoundary = true; }
-        else if (isTagEl(parent)) { tagEl = parent; atBoundary = true; }
+        if (via) { tagEl = via; atBoundary = true; externalBoundary = true; }
+        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
       } else if (offset >= textLen) {
-        // Cursor at end of text — check right sibling (may be entity wrapper)
         const nextSib = container.nextSibling;
         const via = tagElThroughEntity(nextSib);
-        if (via) { tagEl = via; atBoundary = true; }
-        else if (isTagEl(parent)) { tagEl = parent; atBoundary = true; }
+        if (via) { tagEl = via; atBoundary = true; externalBoundary = true; }
+        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
       } else {
-        // Middle of text — underline only, no pill
-        if (isTagEl(parent)) tagEl = parent;
+        if (isTagOrCombinedEl(parent)) tagEl = parent;
       }
     } else if (isElement(container)) {
       const el = container as Element;
@@ -383,9 +394,9 @@ export const tinymceWrapperInit = function ({
       const viaAfter = tagElThroughEntity(childAfter);
       const viaBefore = tagElThroughEntity(childBefore);
 
-      if (viaAfter) { tagEl = viaAfter; atBoundary = true; }
-      else if (viaBefore) { tagEl = viaBefore; atBoundary = true; }
-      else if (isTagEl(el)) {
+      if (viaAfter) { tagEl = viaAfter; atBoundary = true; externalBoundary = true; }
+      else if (viaBefore) { tagEl = viaBefore; atBoundary = true; externalBoundary = true; }
+      else if (isTagOrCombinedEl(el)) {
         tagEl = el;
         atBoundary = offset === 0 || offset >= el.childNodes.length;
       }
@@ -393,7 +404,7 @@ export const tinymceWrapperInit = function ({
 
     if (!tagEl) { applyBoundaryClasses(null, null); return; }
 
-    applyBoundaryClasses(tagEl, atBoundary ? tagEl : null);
+    applyBoundaryClasses(tagEl, atBoundary ? tagEl : null, externalBoundary);
   };
 
   // === End tag boundary visualization ===
@@ -422,9 +433,24 @@ export const tinymceWrapperInit = function ({
 
     writer.editor.lastKeyPress = event.code; // store the last key press
 
-    // Backspace/Delete at a tag boundary: unwrap the tag
+    // At an internal end-boundary (cursor inside _tag element at end of its text), block Delete
+    // so the browser doesn't merge content from after the tag into the element.
     if (
       currentBoundaryElement &&
+      !currentBoundaryIsExternal &&
+      event.code === 'Delete' &&
+      !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey
+    ) {
+      event.preventDefault();
+      return;
+    }
+
+    // Backspace/Delete at a tag boundary: unwrap the tag.
+    // Only fires when cursor is external to the element (in parent/sibling), not inside its text,
+    // so backspace at end-of-text still deletes characters normally.
+    if (
+      currentBoundaryElement &&
+      currentBoundaryIsExternal &&
       (event.code === 'Backspace' || event.code === 'Delete') &&
       !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
       writer.isReadOnly !== true
@@ -703,7 +729,12 @@ export const tinymceWrapperInit = function ({
           range.setEnd(prevNode, prevNode.length);
         }
       } else {
-        const nextNode = writer.utilities.getNextTextNode(parent);
+        // When cursor is at or past the end of the entity element's own children, we need the
+        // text node AFTER the entity in the DOM — not the first text node inside it.
+        // getNextTextNode(parent) would depth-first-enter parent and find its own content first.
+        const pastEnd = range.startOffset >= parent.childNodes.length;
+        const startFrom = pastEnd && parent.lastChild ? parent.lastChild : parent;
+        const nextNode = writer.utilities.getNextTextNode(startFrom);
         if (nextNode) {
           range.setStart(nextNode, 0);
           range.setEnd(nextNode, 0);

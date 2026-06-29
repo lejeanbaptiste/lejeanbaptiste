@@ -18,7 +18,6 @@
 - [x] Fast add tag — Enter-tag popup, F2 rename, Shift+Enter line break (Phase 1); see **`docs/tagging-planning.md`**
 - [x] Fast add attributes — Alt+Enter attribute popup (Phase 2); see **`docs/tagging-planning.md`**
 - [x] Attribute panel — see **`docs/tagging-planning.md`** (Attributes panel, Phase 2)
-- [ ] Versioning files — see **`docs/versioning-planning.md`** (local history on save, rollback; medium priority)
 
 **Tagging** — see **`docs/tagging-planning.md`**
 - [x] Enter-tag popup + F2 rename + insert/split (Phase 1)
@@ -26,13 +25,6 @@
 - [x] Tag usage stats (element + attribute counts in `schema/tag-stats.json`)
 - [x] Method for deleting tags in WYSIWYG.
 - [x] In source, deleting open tag deletes the closing tag, and vice versa (unwrap).
-- [ ] Attribute propagation.
-- [ ] Customisable keybindings (Phase 6)
-- [ ] Disambiguation queue + resolution-file attribute propagation (later phases)
-
-**Auto-tagging**
-- [ ] AI api integration for tagging without modifying the language (?).
-- [ ] SQL integration (?)
 
 **Metadata**
 - [x] Saving in the editor leaves a last-edited timestamp with the encoder name in `encodingDesc/appInfo` (TEI) or Orlando `RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` — separate from scholarly `revisionDesc`
@@ -43,20 +35,42 @@
 **Refinement**
 - [x] In source mode, changing name of tag, closing tag should be updated in real time.
 - [x] When copy and pasting into WYSIWYG, at the very least convert paragraph breaks to `<p>`
-- [ ] Make fuller list of project and file metadata to act as norm.
 
 **UI**
 - [x] Dark mode icons
 - [x] Add a very thin bar below/in their place indicating xpath tree location (`/TEI/text/body/...` format).
 - [x] Clean out their icons from the top once those functions are moved.
 - [x] Source opens with cursor where you were in WYSIWYG
-- [ ] Harmonise icon size, left and right.
 - [x] Navigating with tagging highlighting still counts as changes to undo.
 - [x] enter -> p -> enter should do what
+- [x] Get good highlighting on 'hybrid mode'
+- [x] Harmonise icon size, left and right.
+- [ ] Fix build error problem
+- [ ] Get hybrid mode closing tag keyboard navigation working 
+- [ ] Reflect on whether 'hybrid mode' should be its own, third mode.
+
+---
+
+**Later**
 - [ ] Improve fixed layout of things in find and replace
 - [ ] Make find and replace super efficient to use with keyboard only
-- [ ] Keyboard shortcuts for all side panels
+- [ ] Keyboard shortcuts for all side panels + everything useful
 - [ ] Rethink context menu
+- [ ] Make fuller list of project and file metadata to act as norm.
+- [ ] Customisable keybindings (Phase 6)
+- [ ] Redo icon insignia OR splash?
+- [ ] Splash?
+
+**Auto-tagging**
+- [ ] AI api integration for tagging without modifying the language (?).
+- [ ] SQL integration (?)
+
+**Disambiguation**
+- [ ] Attribute propagation.
+- [ ] Disambiguation queue + resolution-file attribute propagation (later phases)
+
+**Versioning**
+- [ ] Versioning files — see **`docs/versioning-planning.md`** (local history on save, rollback; medium priority)
 
 **Testing**
 - [ ] Debug auto metadata validation errors. 

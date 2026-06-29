@@ -406,12 +406,12 @@ span[data-mce-bogus] {
   border-radius: 2px;
 }
 
-/* Pill — only for inline spans; block elements have full-width positioning issues */
-span[_tag].tag-at-boundary {
+/* Pill — only for inline spans in visual mode; show-tags uses ::after for </tag> brackets */
+body:not(.showTags) span[_tag].tag-at-boundary {
   position: relative;
 }
 
-span[_tag].tag-at-boundary::after {
+body:not(.showTags) span[_tag].tag-at-boundary::after {
   content: attr(_tag);
   position: absolute;
   bottom: calc(100% + 4px);
@@ -439,6 +439,48 @@ span[_tag].tag-at-boundary::after {
   }
   span[_tag].tag-at-boundary::after {
     background: rgba(100, 150, 240, 0.9);
+  }
+}
+
+/* === Show-tags mode overrides ===
+   Suppress visual-mode effects; highlight brackets instead. */
+
+.showTags *[_tag].tag-cursor-active {
+  text-decoration: none;
+}
+
+.showTags *[_tag].tag-at-boundary {
+  background-color: transparent;
+}
+
+/* Cursor inside element: both brackets go from grey to readable */
+.showTags *[_tag].tag-cursor-active::before,
+.showTags *[_tag].tag-cursor-active::after {
+  color: #444 !important;
+  background-color: rgba(90, 130, 210, 0.12) !important;
+  box-shadow: 0 0 0 1px rgba(90, 130, 210, 0.25) !important;
+}
+
+/* Cursor at boundary: stronger highlight on both brackets */
+.showTags *[_tag].tag-at-boundary::before,
+.showTags *[_tag].tag-at-boundary::after {
+  color: #1a1a1a !important;
+  background-color: rgba(90, 130, 210, 0.32) !important;
+  box-shadow: 0 0 0 1px rgba(90, 130, 210, 0.55) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .showTags *[_tag].tag-cursor-active::before,
+  .showTags *[_tag].tag-cursor-active::after {
+    color: #ccc !important;
+    background-color: rgba(130, 170, 255, 0.15) !important;
+    box-shadow: 0 0 0 1px rgba(130, 170, 255, 0.3) !important;
+  }
+  .showTags *[_tag].tag-at-boundary::before,
+  .showTags *[_tag].tag-at-boundary::after {
+    color: #f0f0f0 !important;
+    background-color: rgba(130, 170, 255, 0.38) !important;
+    box-shadow: 0 0 0 1px rgba(130, 170, 255, 0.6) !important;
   }
 }
 
