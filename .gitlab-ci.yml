@@ -14,6 +14,9 @@ variables:
   DAST_DISABLED: 1
   PERFORMANCE_DISABLED: 1
 
+  # Use Cloud Native Buildpacks instead of Docker-in-Docker for the build job
+  AUTO_BUILD_IMAGE_CNB_ENABLED: "1"
+
   # GitLab CI configuration
   # TEST_DISABLED: 1
   POSTGRES_ENABLED: "false"
