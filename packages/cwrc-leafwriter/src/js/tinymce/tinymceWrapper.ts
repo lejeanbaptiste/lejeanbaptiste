@@ -305,19 +305,43 @@ export const tinymceWrapperInit = function ({
   let currentBoundaryElement: Element | null = null;
   // true when cursor is outside the element (in parent/sibling), false when at end-of-text inside
   let currentBoundaryIsExternal = false;
+  // true when user has pressed through the first stop — same DOM position, tag-removal behavior
+  let currentVirtualExternal = false;
+
+  // Cursor position saved at keydown — used in keyup to detect whether the key actually moved
+  // the cursor or whether TinyMCE bounced it back to the same place.
+  let _keydownContainer: Node | null = null;
+  let _keydownOffset = -1;
+  // Whether currentVirtualExternal was set when keydown fired — needed in keyup to distinguish
+  // "enter virtual external" from "advance past tag".
+  let _keydownBoundaryWasVirtualExternal = false;
 
   const applyBoundaryClasses = (activeEl: Element | null, boundaryEl: Element | null, externalBoundary = false) => {
     if (currentActiveElement) {
-      currentActiveElement.classList.remove('tag-cursor-active', 'tag-at-boundary');
+      currentActiveElement.classList.remove('tag-cursor-active', 'tag-at-boundary', 'tag-external-active');
     }
+    // Clear virtual external when boundary element changes (cursor moved away from the tag)
+    if (boundaryEl !== currentBoundaryElement) currentVirtualExternal = false;
     currentActiveElement = activeEl;
     currentBoundaryElement = boundaryEl;
     currentBoundaryIsExternal = externalBoundary;
     if (activeEl) activeEl.classList.add('tag-cursor-active');
-    if (boundaryEl) boundaryEl.classList.add('tag-at-boundary');
+    if (boundaryEl) {
+      boundaryEl.classList.add('tag-at-boundary');
+      if (currentVirtualExternal) boundaryEl.classList.add('tag-external-active');
+    }
   };
 
   const clearTagBoundaryState = () => applyBoundaryClasses(null, null);
+
+  // Manages the second cursor stop — same DOM position but tag-removal behavior.
+  const setVirtualExternal = (active: boolean) => {
+    currentVirtualExternal = active;
+    if (currentBoundaryElement) {
+      if (active) currentBoundaryElement.classList.add('tag-external-active');
+      else currentBoundaryElement.classList.remove('tag-external-active');
+    }
+  };
 
   // Pure structural tag (no entity marker) — used for sibling detection.
   const isTagEl = (n: Node | null): n is Element =>
@@ -433,36 +457,68 @@ export const tinymceWrapperInit = function ({
 
     writer.editor.lastKeyPress = event.code; // store the last key press
 
-    // At an internal end-boundary (cursor inside _tag element at end of its text), block Delete
-    // so the browser doesn't merge content from after the tag into the element.
-    if (
-      currentBoundaryElement &&
-      !currentBoundaryIsExternal &&
-      event.code === 'Delete' &&
-      !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey
-    ) {
-      event.preventDefault();
-      return;
-    }
+    // Snapshot cursor position so keyup can detect whether the key actually moved the cursor.
+    const _kd = writer.editor.selection.getRng();
+    _keydownContainer = _kd.startContainer;
+    _keydownOffset = _kd.startOffset;
 
-    // Backspace/Delete at a tag boundary: unwrap the tag.
-    // Only fires when cursor is external to the element (in parent/sibling), not inside its text,
-    // so backspace at end-of-text still deletes characters normally.
+    // === Tag boundary two-stop keyboard handling ===
+    // First stop (tag-at-boundary): Backspace/Delete delete chars normally; arrow blocks at boundary.
+    // Second stop (tag-external-active): Backspace/Delete remove the tag; arrow advances past it.
     if (
       currentBoundaryElement &&
-      currentBoundaryIsExternal &&
-      (event.code === 'Backspace' || event.code === 'Delete') &&
       !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
-      writer.isReadOnly !== true
+      writer.editor &&
+      (event.code === 'ArrowRight' || event.code === 'ArrowLeft' ||
+       event.code === 'Backspace' || event.code === 'Delete')
     ) {
-      const id = currentBoundaryElement.getAttribute('id');
-      if (id) {
-        event.preventDefault();
-        clearTagBoundaryState();
-        writer.tagger.removeTag(id);
-        return;
+      _keydownBoundaryWasVirtualExternal = currentVirtualExternal;
+      if (currentVirtualExternal) setVirtualExternal(false);
+
+      // Second stop: Backspace/Delete removes the tag.
+      if (
+        _keydownBoundaryWasVirtualExternal &&
+        (event.code === 'Backspace' || event.code === 'Delete') &&
+        writer.isReadOnly !== true
+      ) {
+        const id = currentBoundaryElement.getAttribute('id');
+        if (id) {
+          event.preventDefault();
+          clearTagBoundaryState();
+          writer.tagger.removeTag(id);
+          return;
+        }
+      }
+
+      const rng = writer.editor.selection.getRng();
+      const c = rng.startContainer;
+      const o = rng.startOffset;
+      const textLen = c.nodeType === Node.TEXT_NODE ? (c as Text).length : 0;
+      const isAtTextEnd = c.nodeType === Node.TEXT_NODE && o >= textLen;
+      const isAtTextStart = o === 0;
+
+      if (event.code === 'ArrowRight' || event.code === 'ArrowLeft') {
+        // DOM-external position: first "toward-tag" press enters virtual external (second stop).
+        // Second press (virtual external already set, now cleared above) allows movement.
+        if (currentBoundaryIsExternal) {
+          const towardTag =
+            (isAtTextEnd && event.code === 'ArrowRight') ||
+            (isAtTextStart && event.code === 'ArrowLeft');
+          if (towardTag && !_keydownBoundaryWasVirtualExternal) {
+            event.preventDefault();
+            setVirtualExternal(true);
+            return;
+          }
+        }
+      }
+
+      // First stop: block Backspace/Delete from crossing the tag boundary.
+      if (!_keydownBoundaryWasVirtualExternal) {
+        if (isAtTextEnd && event.code === 'Delete') { event.preventDefault(); return; }
+        if (isAtTextStart && event.code === 'Backspace') { event.preventDefault(); return; }
       }
     }
+    // === End tag boundary handling ===
 
     if (tinymce.isMac ? event.metaKey : event.ctrlKey) return;
 
@@ -512,6 +568,61 @@ export const tinymceWrapperInit = function ({
       case 'Backspace': {
         doHighlightCheck(event);
         updateTagBoundaryState();
+
+        // Internal boundary: TinyMCE bounces ArrowRight/Left back into the entity element.
+        // On first bounce → enter virtual external (second stop, strong bracket highlight).
+        // On second bounce (was virtual external) → advance cursor past the tag.
+        if (
+          (event.code === 'ArrowRight' || event.code === 'ArrowLeft') &&
+          currentBoundaryElement &&
+          !currentBoundaryIsExternal &&
+          !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
+          writer.editor
+        ) {
+          const rng2 = writer.editor.selection.getRng();
+          const c2 = rng2.startContainer;
+          const o2 = rng2.startOffset;
+          const isAtEnd2 =
+            c2.nodeType === Node.TEXT_NODE
+              ? o2 >= (c2 as Text).length
+              : isElement(c2) && o2 >= c2.childNodes.length;
+          const isAtStart2 = o2 === 0;
+          const cursorMoved = c2 !== _keydownContainer || o2 !== _keydownOffset;
+
+          if (!cursorMoved && event.code === 'ArrowRight' && isAtEnd2) {
+            if (!_keydownBoundaryWasVirtualExternal) {
+              // First stop → second stop
+              setVirtualExternal(true);
+            } else {
+              // Second stop → advance past tag
+              const startFrom = currentBoundaryElement.lastChild ?? currentBoundaryElement;
+              const nextText = writer.utilities.getNextTextNode(startFrom);
+              if (nextText) {
+                const nr = writer.editor.getDoc().createRange();
+                nr.setStart(nextText, 0);
+                nr.setEnd(nextText, 0);
+                writer.editor.selection.setRng(nr);
+                updateTagBoundaryState();
+              }
+            }
+          } else if (!cursorMoved && event.code === 'ArrowLeft' && isAtStart2) {
+            if (!_keydownBoundaryWasVirtualExternal) {
+              // First stop → second stop
+              setVirtualExternal(true);
+            } else {
+              // Second stop → advance past tag
+              const startFrom = currentBoundaryElement.firstChild ?? currentBoundaryElement;
+              const prevText = writer.utilities.getPreviousTextNode(startFrom);
+              if (prevText) {
+                const nr = writer.editor.getDoc().createRange();
+                nr.setStart(prevText, (prevText as Text).length);
+                nr.setEnd(prevText, (prevText as Text).length);
+                writer.editor.selection.setRng(nr);
+                updateTagBoundaryState();
+              }
+            }
+          }
+        }
       }
     }
 

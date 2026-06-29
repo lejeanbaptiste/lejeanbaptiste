@@ -469,6 +469,19 @@ body:not(.showTags) span[_tag].tag-at-boundary::after {
   box-shadow: 0 0 0 1px rgba(90, 130, 210, 0.55) !important;
 }
 
+/* Second cursor stop: user has explicitly aimed at the tag — brackets fully lit, tag removable */
+body:not(.showTags) span[_tag].tag-external-active::after {
+  background: rgba(40, 90, 200, 1);
+  box-shadow: 0 0 0 2px rgba(40, 90, 200, 0.6);
+}
+
+.showTags *[_tag].tag-external-active::before,
+.showTags *[_tag].tag-external-active::after {
+  color: #fff !important;
+  background-color: rgba(50, 100, 210, 0.9) !important;
+  box-shadow: 0 0 0 2px rgba(50, 100, 210, 1) !important;
+}
+
 @media (prefers-color-scheme: dark) {
   .showTags *[_tag].tag-cursor-active::before,
   .showTags *[_tag].tag-cursor-active::after {
@@ -481,6 +494,12 @@ body:not(.showTags) span[_tag].tag-at-boundary::after {
     color: #f0f0f0 !important;
     background-color: rgba(130, 170, 255, 0.38) !important;
     box-shadow: 0 0 0 1px rgba(130, 170, 255, 0.6) !important;
+  }
+  .showTags *[_tag].tag-external-active::before,
+  .showTags *[_tag].tag-external-active::after {
+    color: #fff !important;
+    background-color: rgba(110, 150, 255, 0.95) !important;
+    box-shadow: 0 0 0 2px rgba(110, 150, 255, 1) !important;
   }
 }
 

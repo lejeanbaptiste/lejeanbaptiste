@@ -45,9 +45,14 @@
 - [x] enter -> p -> enter should do what
 - [x] Get good highlighting on 'hybrid mode'
 - [x] Harmonise icon size, left and right.
-- [ ] Fix build error problem
+- [x] Fix build error problem
 - [ ] Get hybrid mode closing tag keyboard navigation working 
 - [ ] Reflect on whether 'hybrid mode' should be its own, third mode.
+
+**Presentation**
+- [ ] Figure out what to do about external documentation
+- [ ] Website
+- [ ] clean up branding in docs
 
 ---
 
