@@ -498,13 +498,26 @@ export const tinymceWrapperInit = function ({
       const isAtTextStart = o === 0;
 
       if (event.code === 'ArrowRight' || event.code === 'ArrowLeft') {
-        // DOM-external position: first "toward-tag" press enters virtual external (second stop).
-        // Second press (virtual external already set, now cleared above) allows movement.
         if (currentBoundaryIsExternal) {
+          // DOM-external: first "toward-tag" press enters virtual external (second stop).
+          // Second press (virtual external already set, now cleared above) allows movement.
           const towardTag =
             (isAtTextEnd && event.code === 'ArrowRight') ||
             (isAtTextStart && event.code === 'ArrowLeft');
           if (towardTag && !_keydownBoundaryWasVirtualExternal) {
+            event.preventDefault();
+            setVirtualExternal(true);
+            return;
+          }
+        } else {
+          // Internal boundary: first press at end/start → enter virtual external, prevent movement.
+          // Second press (was virtual external, cleared above) → allow movement; keyup advances.
+          if (isAtTextEnd && event.code === 'ArrowRight' && !_keydownBoundaryWasVirtualExternal) {
+            event.preventDefault();
+            setVirtualExternal(true);
+            return;
+          }
+          if (isAtTextStart && event.code === 'ArrowLeft' && !_keydownBoundaryWasVirtualExternal) {
             event.preventDefault();
             setVirtualExternal(true);
             return;

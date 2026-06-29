@@ -50,8 +50,6 @@
 - [ ] Reflect on whether 'hybrid mode' should be its own, third mode.
 
 **Presentation**
-- [ ] Figure out what to do about external documentation
-- [ ] Website
 - [ ] clean up branding in docs
 
 ---
@@ -65,6 +63,8 @@
 - [ ] Customisable keybindings (Phase 6)
 - [ ] Redo icon insignia OR splash?
 - [ ] Splash?
+- [ ] Figure out what to do about external documentation
+- [ ] Website
 
 **Auto-tagging**
 - [ ] AI api integration for tagging without modifying the language (?).
