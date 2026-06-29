@@ -46,7 +46,7 @@
 - [x] Get good highlighting on 'hybrid mode'
 - [x] Harmonise icon size, left and right.
 - [x] Fix build error problem
-- [ ] Get hybrid mode closing tag keyboard navigation working 
+- [ ] Get hybrid mode closing tag keyboard navigation working _from the left_.
 - [ ] Reflect on whether 'hybrid mode' should be its own, third mode.
 
 **Presentation**

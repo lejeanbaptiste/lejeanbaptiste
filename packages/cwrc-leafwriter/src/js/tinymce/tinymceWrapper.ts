@@ -315,6 +315,12 @@ export const tinymceWrapperInit = function ({
   // Whether currentVirtualExternal was set when keydown fired — needed in keyup to distinguish
   // "enter virtual external" from "advance past tag".
   let _keydownBoundaryWasVirtualExternal = false;
+  // The boundary element at keydown time — preserved in keyup even after updateTagBoundaryState
+  // clears currentBoundaryElement (e.g. when TinyMCE bounces cursor to a non-boundary position).
+  let _keydownBoundaryElement: Element | null = null;
+  // Advance target decided in keydown but applied in keyup, after TinyMCE's own keyup handler
+  // has already run (and possibly bounced cursor). Applied before updateTagBoundaryState.
+  let _pendingAdvance: { node: Node; offset: number } | null = null;
 
   const applyBoundaryClasses = (activeEl: Element | null, boundaryEl: Element | null, externalBoundary = false) => {
     if (currentActiveElement) {
@@ -462,6 +468,24 @@ export const tinymceWrapperInit = function ({
     _keydownContainer = _kd.startContainer;
     _keydownOffset = _kd.startOffset;
 
+    // === DEBUG: log arrow key state near tag boundaries ===
+    if ((event.code === 'ArrowRight' || event.code === 'ArrowLeft') &&
+        !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const sel = (writer.editor.getDoc().defaultView ?? window).getSelection();
+      console.log(`[boundary KD] ${event.code}`, {
+        anchorNode: sel?.anchorNode,
+        anchorNodeType: sel?.anchorNode?.nodeType === 3 ? 'TEXT' : sel?.anchorNode?.nodeType === 1 ? 'ELEMENT' : sel?.anchorNode?.nodeType,
+        anchorOffset: sel?.anchorOffset,
+        anchorNodeValue: sel?.anchorNode?.nodeType === 3 ? JSON.stringify((sel.anchorNode as Text).data) : null,
+        anchorNodeLen: sel?.anchorNode?.nodeType === 3 ? (sel.anchorNode as Text).length : null,
+        parentEl: (sel?.anchorNode as any)?.parentElement?.tagName + '[' + (sel?.anchorNode as any)?.parentElement?.getAttribute('_tag') + ']',
+        currentBoundaryElement: currentBoundaryElement?.getAttribute('id') ?? null,
+        currentBoundaryIsExternal,
+        currentVirtualExternal,
+      });
+    }
+    // === END DEBUG ===
+
     // === Tag boundary two-stop keyboard handling ===
     // First stop (tag-at-boundary): Backspace/Delete delete chars normally; arrow blocks at boundary.
     // Second stop (tag-external-active): Backspace/Delete remove the tag; arrow advances past it.
@@ -473,6 +497,7 @@ export const tinymceWrapperInit = function ({
        event.code === 'Backspace' || event.code === 'Delete')
     ) {
       _keydownBoundaryWasVirtualExternal = currentVirtualExternal;
+      _keydownBoundaryElement = currentBoundaryElement;
       if (currentVirtualExternal) setVirtualExternal(false);
 
       // Second stop: Backspace/Delete removes the tag.
@@ -497,27 +522,49 @@ export const tinymceWrapperInit = function ({
       const isAtTextEnd = c.nodeType === Node.TEXT_NODE && o >= textLen;
       const isAtTextStart = o === 0;
 
+      // Whether the arrow is pointing "outward" from the current boundary position.
+      // For both internal and DOM-external, this direction enters/exits the tag.
+      const outwardArrow =
+        (isAtTextEnd && event.code === 'ArrowRight') ||
+        (isAtTextStart && event.code === 'ArrowLeft');
+
       if (event.code === 'ArrowRight' || event.code === 'ArrowLeft') {
-        if (currentBoundaryIsExternal) {
-          // DOM-external: first "toward-tag" press enters virtual external (second stop).
-          // Second press (virtual external already set, now cleared above) allows movement.
-          const towardTag =
-            (isAtTextEnd && event.code === 'ArrowRight') ||
-            (isAtTextStart && event.code === 'ArrowLeft');
-          if (towardTag && !_keydownBoundaryWasVirtualExternal) {
+        if (outwardArrow) {
+          if (_keydownBoundaryWasVirtualExternal) {
+            // Second stop → advance cursor past/into the tag.
+            // We compute the target here (before TinyMCE moves cursor) but apply it in keyup,
+            // AFTER TinyMCE's own keyup handler has run — otherwise TinyMCE's entity-navigation
+            // keyup fires after our setRng and bounces cursor back out.
             event.preventDefault();
-            setVirtualExternal(true);
+            if (!currentBoundaryIsExternal) {
+              // Internal: advance PAST the tag (exit to adjacent text)
+              if (event.code === 'ArrowRight') {
+                const nextText = writer.utilities.getNextTextNode(
+                  currentBoundaryElement.lastChild ?? currentBoundaryElement
+                );
+                if (nextText) _pendingAdvance = { node: nextText, offset: 0 };
+              } else {
+                const prevText = writer.utilities.getPreviousTextNode(
+                  currentBoundaryElement.firstChild ?? currentBoundaryElement
+                );
+                if (prevText) _pendingAdvance = { node: prevText, offset: (prevText as Text).length };
+              }
+            } else {
+              // DOM-external: advance INTO the tag
+              if (event.code === 'ArrowRight') {
+                const firstText = writer.utilities.getNextTextNode(currentBoundaryElement);
+                if (firstText) _pendingAdvance = { node: firstText, offset: 0 };
+              } else {
+                const lastChild = currentBoundaryElement.lastChild;
+                if (lastChild?.nodeType === Node.TEXT_NODE) {
+                  const lt = lastChild as Text;
+                  _pendingAdvance = { node: lt, offset: lt.length };
+                }
+              }
+            }
             return;
-          }
-        } else {
-          // Internal boundary: first press at end/start → enter virtual external, prevent movement.
-          // Second press (was virtual external, cleared above) → allow movement; keyup advances.
-          if (isAtTextEnd && event.code === 'ArrowRight' && !_keydownBoundaryWasVirtualExternal) {
-            event.preventDefault();
-            setVirtualExternal(true);
-            return;
-          }
-          if (isAtTextStart && event.code === 'ArrowLeft' && !_keydownBoundaryWasVirtualExternal) {
+          } else {
+            // First stop → enter virtual external (no cursor movement).
             event.preventDefault();
             setVirtualExternal(true);
             return;
@@ -579,63 +626,33 @@ export const tinymceWrapperInit = function ({
       case 'ArrowRight':
       case 'ArrowLeft':
       case 'Backspace': {
+        // Apply a pending advance computed in keydown. TinyMCE's keyup entity-navigation fires
+        // before ours and may bounce cursor; applying here lets us override it cleanly.
+        if (_pendingAdvance && writer.editor) {
+          const { node, offset } = _pendingAdvance;
+          _pendingAdvance = null;
+          const nr = writer.editor.getDoc().createRange();
+          nr.setStart(node, offset);
+          nr.collapse(true);
+          writer.editor.selection.setRng(nr);
+        }
         doHighlightCheck(event);
         updateTagBoundaryState();
 
-        // Internal boundary: TinyMCE bounces ArrowRight/Left back into the entity element.
-        // On first bounce → enter virtual external (second stop, strong bracket highlight).
-        // On second bounce (was virtual external) → advance cursor past the tag.
-        if (
-          (event.code === 'ArrowRight' || event.code === 'ArrowLeft') &&
-          currentBoundaryElement &&
-          !currentBoundaryIsExternal &&
-          !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
-          writer.editor
-        ) {
-          const rng2 = writer.editor.selection.getRng();
-          const c2 = rng2.startContainer;
-          const o2 = rng2.startOffset;
-          const isAtEnd2 =
-            c2.nodeType === Node.TEXT_NODE
-              ? o2 >= (c2 as Text).length
-              : isElement(c2) && o2 >= c2.childNodes.length;
-          const isAtStart2 = o2 === 0;
-          const cursorMoved = c2 !== _keydownContainer || o2 !== _keydownOffset;
-
-          if (!cursorMoved && event.code === 'ArrowRight' && isAtEnd2) {
-            if (!_keydownBoundaryWasVirtualExternal) {
-              // First stop → second stop
-              setVirtualExternal(true);
-            } else {
-              // Second stop → advance past tag
-              const startFrom = currentBoundaryElement.lastChild ?? currentBoundaryElement;
-              const nextText = writer.utilities.getNextTextNode(startFrom);
-              if (nextText) {
-                const nr = writer.editor.getDoc().createRange();
-                nr.setStart(nextText, 0);
-                nr.setEnd(nextText, 0);
-                writer.editor.selection.setRng(nr);
-                updateTagBoundaryState();
-              }
-            }
-          } else if (!cursorMoved && event.code === 'ArrowLeft' && isAtStart2) {
-            if (!_keydownBoundaryWasVirtualExternal) {
-              // First stop → second stop
-              setVirtualExternal(true);
-            } else {
-              // Second stop → advance past tag
-              const startFrom = currentBoundaryElement.firstChild ?? currentBoundaryElement;
-              const prevText = writer.utilities.getPreviousTextNode(startFrom);
-              if (prevText) {
-                const nr = writer.editor.getDoc().createRange();
-                nr.setStart(prevText, (prevText as Text).length);
-                nr.setEnd(prevText, (prevText as Text).length);
-                writer.editor.selection.setRng(nr);
-                updateTagBoundaryState();
-              }
-            }
-          }
+        // === DEBUG: log keyup cursor state ===
+        if (event.code === 'ArrowRight' || event.code === 'ArrowLeft') {
+          const sel2 = (writer.editor?.getDoc().defaultView ?? window).getSelection();
+          console.log(`[boundary KU] ${event.code}`, {
+            anchorNode: sel2?.anchorNode,
+            anchorNodeType: sel2?.anchorNode?.nodeType === 3 ? 'TEXT' : sel2?.anchorNode?.nodeType === 1 ? 'ELEMENT' : sel2?.anchorNode?.nodeType,
+            anchorOffset: sel2?.anchorOffset,
+            anchorNodeValue: sel2?.anchorNode?.nodeType === 3 ? JSON.stringify((sel2.anchorNode as Text).data) : null,
+            currentBoundaryElement: currentBoundaryElement?.getAttribute('id') ?? null,
+            currentBoundaryIsExternal,
+            currentVirtualExternal,
+          });
         }
+        // === END DEBUG ===
       }
     }
 
