@@ -51,7 +51,8 @@
 - [x] Clean out their icons from the top once those functions are moved.
 - [x] Source opens with cursor where you were in WYSIWYG
 - [ ] Harmonise icon size, left and right.
-- [ ] Navigating with tagging highlighting still counts as changes to undo.
+- [x] Navigating with tagging highlighting still counts as changes to undo.
+- [x] enter -> p -> enter should do what
 - [ ] Improve fixed layout of things in find and replace
 - [ ] Make find and replace super efficient to use with keyboard only
 - [ ] Keyboard shortcuts for all side panels

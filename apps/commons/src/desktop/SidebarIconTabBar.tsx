@@ -57,6 +57,25 @@ export const SidebarIconTabBar = ({
             }),
       }}
     >
+      {/* Collapse/expand button first — top in vertical (collapsed), left in horizontal (expanded) */}
+      <Tooltip
+        placement={tooltipPlacement}
+        title={collapsed ? 'Expand panel' : 'Collapse panel'}
+      >
+        <IconButton
+          size="small"
+          onClick={onToggleCollapse}
+          aria-label="Toggle sidebar panel"
+          sx={{ width: SIDEBAR_TAB_BUTTON_SIZE, height: SIDEBAR_TAB_BUTTON_SIZE, flexShrink: 0 }}
+        >
+          {collapsed ? (
+            <ChevronRightIcon fontSize="small" />
+          ) : (
+            <ChevronLeftIcon fontSize="small" />
+          )}
+        </IconButton>
+      </Tooltip>
+
       <ToggleButtonGroup
         exclusive
         orientation={orientation}
@@ -97,24 +116,6 @@ export const SidebarIconTabBar = ({
       </ToggleButtonGroup>
 
       {isVertical && <Box sx={{ flex: 1 }} />}
-
-      <Tooltip
-        placement={tooltipPlacement}
-        title={collapsed ? 'Expand panel' : 'Collapse panel'}
-      >
-        <IconButton
-          size="small"
-          onClick={onToggleCollapse}
-          aria-label="Toggle sidebar panel"
-          sx={{ width: SIDEBAR_TAB_BUTTON_SIZE, height: SIDEBAR_TAB_BUTTON_SIZE, flexShrink: 0 }}
-        >
-          {collapsed ? (
-            <ChevronRightIcon fontSize="small" />
-          ) : (
-            <ChevronLeftIcon fontSize="small" />
-          )}
-        </IconButton>
-      </Tooltip>
     </Box>
   );
 };
