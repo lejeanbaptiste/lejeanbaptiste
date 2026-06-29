@@ -1,7 +1,4 @@
-import { createRequire } from 'module';
 import type { Config } from '@jest/types';
-
-const require = createRequire(import.meta.url);
 
 const config: Config.InitialOptions = {
   // collectCoverage: true,
