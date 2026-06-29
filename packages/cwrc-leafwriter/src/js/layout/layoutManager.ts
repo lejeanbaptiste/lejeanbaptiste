@@ -329,6 +329,16 @@ class LayoutManager {
       return;
     }
 
+    if (window.__desktopRightPanel) {
+      const eastConfig = this.modulesLayout.get('east');
+      const eastList = eastConfig ? (Array.isArray(eastConfig) ? eastConfig : [eastConfig]) : [];
+      if (eastList.some((m) => m.id === moduleId)) {
+        window.__desktopRightPanel.showTab(moduleId as DesktopRightPanelTab);
+        window.__desktopRightPanel.expand();
+        return;
+      }
+    }
+
     this.modulesLayout.forEach((modules, region) => {
       if (!Array.isArray(modules)) {
         if (modules.id === moduleId) this.showRegion(region);

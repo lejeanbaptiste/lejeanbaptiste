@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { DocumentTabBar, DesktopEastPanels, TagCommandProvider, UnifiedLeftPanel, useExternalFileWatcher, useProjectMenu } from '@src/desktop';
+import { TagCommandProvider, UnifiedLeftPanel, UnifiedRightPanel, useExternalFileWatcher, useProjectMenu } from '@src/desktop';
 import { AboutDialog } from '@src/desktop/AboutDialog';
 import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
@@ -122,9 +122,19 @@ export const ProjectEditor = () => {
       <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />
       <TagCommandProvider />
       <UnifiedLeftPanel />
-      <DesktopEastPanels />
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-        <DocumentTabBar />
+        <Box
+          id="desktop-toolbar-row"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0,
+            minHeight: 28,
+            borderBottom: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+          }}
+        />
         <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
           {!resource && (
             <Box
@@ -159,6 +169,7 @@ export const ProjectEditor = () => {
           />
         </Box>
       </Box>
+      <UnifiedRightPanel />
     </Box>
   );
 };

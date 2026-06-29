@@ -31,7 +31,7 @@ export const ProjectEditPage = () => {
           sx={{
             alignItems: 'center',
             display: 'flex',
-            height: '100vh',
+            height: 'calc(100vh - var(--titlebar-height, 0px))',
             justifyContent: 'center',
           }}
         >
@@ -43,7 +43,7 @@ export const ProjectEditPage = () => {
 
   return (
     <Page>
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--titlebar-height, 0px))' }}>
         <ProjectEditor />
       </Box>
     </Page>

@@ -551,6 +551,14 @@ const registerIpcHandlers = () => {
   ipcMain.handle('setWindowTitle', (_event, title: string) => {
     setMainWindowTitle(title);
   });
+
+  ipcMain.handle('window-minimize', () => mainWindow?.minimize());
+  ipcMain.handle('window-maximize', () => {
+    if (mainWindow?.isMaximized()) mainWindow.unmaximize();
+    else mainWindow?.maximize();
+  });
+  ipcMain.handle('window-close', () => mainWindow?.close());
+  ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false);
 };
 
 const createWindow = async () => {
@@ -560,12 +568,17 @@ const createWindow = async () => {
     height: 900,
     icon,
     title: APP_NAME,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    ...(process.platform === 'darwin' ? { trafficLightPosition: { x: 12, y: 10 } } : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+
+  mainWindow.on('maximize', () => mainWindow?.webContents.send('window-maximized', true));
+  mainWindow.on('unmaximize', () => mainWindow?.webContents.send('window-maximized', false));
 
   mainWindow.on('page-title-updated', (event) => {
     event.preventDefault();

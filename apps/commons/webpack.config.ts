@@ -157,7 +157,10 @@ const webpackConfig: webpack.Configuration = {
     usedExports: isDev ? false : true,
   },
   resolve: {
-    alias: { '@src': path.resolve(__dirname, 'src/') },
+    alias: {
+      '@src': path.resolve(__dirname, 'src/'),
+      '@cwrc/leafwriter': path.resolve(relPathToPackages, 'cwrc-leafwriter', 'src', 'index.tsx'),
+    },
     extensions: ['.tsx', '.ts', '.js', '.json'],
     fallback: {
       buffer: false,

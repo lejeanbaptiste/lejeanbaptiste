@@ -389,6 +389,59 @@ span[data-mce-bogus] {
   scroll-margin-top: 1rem;
 }
 
+/* === Tag boundary visualization (LJB) ===
+   Classes are applied via JS wrapped in undoManager.ignore() so undo stays clean. */
+
+/* Layer 2: cursor is inside a tagged element */
+*[_tag].tag-cursor-active {
+  text-decoration: underline;
+  text-decoration-color: rgba(90, 130, 210, 0.45);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* Layer 3: cursor is at a tag boundary — glow on all tag types */
+*[_tag].tag-at-boundary {
+  background-color: rgba(90, 130, 210, 0.1);
+  border-radius: 2px;
+}
+
+/* Pill — only for inline spans; block elements have full-width positioning issues */
+span[_tag].tag-at-boundary {
+  position: relative;
+}
+
+span[_tag].tag-at-boundary::after {
+  content: attr(_tag);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  width: max-content;
+  background: rgba(70, 120, 200, 0.88);
+  color: #fff;
+  font-size: 10px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 8px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 100;
+  letter-spacing: 0.03em;
+}
+
+@media (prefers-color-scheme: dark) {
+  *[_tag].tag-cursor-active {
+    text-decoration-color: rgba(130, 170, 255, 0.5);
+  }
+  *[_tag].tag-at-boundary {
+    background-color: rgba(130, 170, 255, 0.12);
+  }
+  span[_tag].tag-at-boundary::after {
+    background: rgba(100, 150, 240, 0.9);
+  }
+}
+
 span[rend='superscript'] {
   vertical-align: super;
   font-size: 0.8em;

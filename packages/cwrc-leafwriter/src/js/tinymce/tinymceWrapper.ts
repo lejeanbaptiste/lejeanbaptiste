@@ -123,6 +123,21 @@ export const tinymceWrapperInit = function ({
           editor.mode.set('readonly');
         }
 
+        // Strip transient highlight classes before any content snapshot so they never
+        // appear in undo history.
+        editor.serializer.addAttributeFilter('class', (nodes) => {
+          for (const node of nodes) {
+            const cls = node.attr('class');
+            if (!cls) continue;
+            const cleaned = cls
+              .replace(/\btag-cursor-active\b/g, '')
+              .replace(/\btag-at-boundary\b/g, '')
+              .replace(/\s{2,}/g, ' ')
+              .trim();
+            node.attr('class', cleaned || null);
+          }
+        });
+
         // modify isBlock method to check _tag attributes
         editor.dom.isBlock = (node) => {
           if (!node) return false;
@@ -281,9 +296,110 @@ export const tinymceWrapperInit = function ({
     writer.editor?.fire('NodeChange', { element, parents });
   };
 
+  // === Tag boundary visualization ===
+  // Class mutations are wrapped in undoManager.ignore() so they never enter the undo stack.
+
+  let currentActiveElement: Element | null = null;
+  let currentBoundaryElement: Element | null = null;
+
+  const applyBoundaryClasses = (activeEl: Element | null, boundaryEl: Element | null) => {
+    if (currentActiveElement) {
+      currentActiveElement.classList.remove('tag-cursor-active', 'tag-at-boundary');
+    }
+    currentActiveElement = activeEl;
+    currentBoundaryElement = boundaryEl;
+    if (activeEl) activeEl.classList.add('tag-cursor-active');
+    if (boundaryEl) boundaryEl.classList.add('tag-at-boundary');
+  };
+
+  const clearTagBoundaryState = () => applyBoundaryClasses(null, null);
+
+  const isTagEl = (n: Node | null): n is Element =>
+    isElement(n) &&
+    (n as Element).hasAttribute('_tag') &&
+    !(n as Element).hasAttribute('_entity') &&
+    (n as Element).getAttribute('_tag') !== 'pb';
+
+  const updateTagBoundaryState = () => {
+    if (!writer.editor) return;
+
+    const rng = writer.editor.selection.getRng();
+    if (!rng.collapsed) {
+      applyBoundaryClasses(null, null);
+      return;
+    }
+
+    const container = rng.startContainer;
+    const offset = rng.startOffset;
+
+    let tagEl: Element | null = null;
+    let atBoundary = false;
+
+    // doHighlightCheck() moves the cursor out of entity wrappers, so "end of persName"
+    // lands at offset=0 in the next text node with the entity wrapper as previousSibling.
+    // This helper looks through an entity wrapper to find the [_tag] span inside it.
+    const tagElThroughEntity = (n: Node | null): Element | null => {
+      if (!n || !isElement(n)) return null;
+      const el = n as Element;
+      // Direct [_tag] element (not entity wrapper, not pb)
+      if (el.hasAttribute('_tag') && !el.hasAttribute('_entity') && el.getAttribute('_tag') !== 'pb') {
+        return el;
+      }
+      // Entity wrapper — look for a [_tag] descendant inside it
+      if (el.hasAttribute('_entity')) {
+        const inner = el.querySelector('[_tag]:not([_entity])') as Element | null;
+        return inner && inner.getAttribute('_tag') !== 'pb' ? inner : null;
+      }
+      return null;
+    };
+
+    if (container.nodeType === Node.TEXT_NODE) {
+      const textLen = (container as Text).length;
+      const parent = container.parentElement;
+
+      if (offset === 0) {
+        // Cursor at start of text — check left sibling (may be entity wrapper)
+        const prevSib = container.previousSibling;
+        const via = tagElThroughEntity(prevSib);
+        if (via) { tagEl = via; atBoundary = true; }
+        else if (isTagEl(parent)) { tagEl = parent; atBoundary = true; }
+      } else if (offset >= textLen) {
+        // Cursor at end of text — check right sibling (may be entity wrapper)
+        const nextSib = container.nextSibling;
+        const via = tagElThroughEntity(nextSib);
+        if (via) { tagEl = via; atBoundary = true; }
+        else if (isTagEl(parent)) { tagEl = parent; atBoundary = true; }
+      } else {
+        // Middle of text — underline only, no pill
+        if (isTagEl(parent)) tagEl = parent;
+      }
+    } else if (isElement(container)) {
+      const el = container as Element;
+      const childAfter = el.childNodes[offset] ?? null;
+      const childBefore = el.childNodes[offset - 1] ?? null;
+
+      const viaAfter = tagElThroughEntity(childAfter);
+      const viaBefore = tagElThroughEntity(childBefore);
+
+      if (viaAfter) { tagEl = viaAfter; atBoundary = true; }
+      else if (viaBefore) { tagEl = viaBefore; atBoundary = true; }
+      else if (isTagEl(el)) {
+        tagEl = el;
+        atBoundary = offset === 0 || offset >= el.childNodes.length;
+      }
+    }
+
+    if (!tagEl) { applyBoundaryClasses(null, null); return; }
+
+    applyBoundaryClasses(tagEl, atBoundary ? tagEl : null);
+  };
+
+  // === End tag boundary visualization ===
+
   const onMouseUpHandler = (event: MouseEvent) => {
     if (!writer.editor) return;
     doHighlightCheck(event);
+    updateTagBoundaryState();
 
     writer.event('selectionChanged').publish();
   };
@@ -303,6 +419,22 @@ export const tinymceWrapperInit = function ({
     // if (writer.isReadOnly === true) return
 
     writer.editor.lastKeyPress = event.code; // store the last key press
+
+    // Backspace/Delete at a tag boundary: unwrap the tag
+    if (
+      currentBoundaryElement &&
+      (event.code === 'Backspace' || event.code === 'Delete') &&
+      !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
+      writer.isReadOnly !== true
+    ) {
+      const id = currentBoundaryElement.getAttribute('id');
+      if (id) {
+        event.preventDefault();
+        clearTagBoundaryState();
+        writer.tagger.removeTag(id);
+        return;
+      }
+    }
 
     if (tinymce.isMac ? event.metaKey : event.ctrlKey) return;
 
@@ -351,6 +483,7 @@ export const tinymceWrapperInit = function ({
       case 'ArrowLeft':
       case 'Backspace': {
         doHighlightCheck(event);
+        updateTagBoundaryState();
       }
     }
 
@@ -534,6 +667,7 @@ export const tinymceWrapperInit = function ({
     writer.editor.currentBookmark = writer.editor.selection.getBookmark(1);
 
     writer.event('nodeChanged').publish(writer.editor.currentNode);
+    updateTagBoundaryState();
   };
 
   const onCopyHandler = (event: any) => {

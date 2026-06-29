@@ -28,9 +28,17 @@ interface DesktopLeftPanelBridge {
   showTab: (tab: DesktopLeftPanelTab) => void;
 }
 
+type DesktopRightPanelTab = 'fileMetadata' | 'attributes' | 'imageViewer' | 'validation';
+
+interface DesktopRightPanelBridge {
+  expand: () => void;
+  showTab: (tab: DesktopRightPanelTab) => void;
+}
+
 declare global {
   interface Window {
     __desktopLeftPanel?: DesktopLeftPanelBridge;
+    __desktopRightPanel?: DesktopRightPanelBridge;
     __desktopTagging?: {
       changeTag?: (tagId: string, newTagName: string) => void;
       handleEditorKeyDown: (event: KeyboardEvent) => boolean;

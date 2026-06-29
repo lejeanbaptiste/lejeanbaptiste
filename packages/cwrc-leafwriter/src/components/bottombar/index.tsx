@@ -35,7 +35,7 @@ export const BottomBar = () => {
       {!desktop && (
         <PrivacyDialog onClose={() => setPrivacyDialogOpen(false)} open={privacyDialogOpen} />
       )}
-      <Stack direction="row" alignItems="center" spacing={2} px={2}>
+      <Stack direction="row" alignItems="center" spacing={1} px={1}>
         {!isReadonly && (
           <>
             <EditorMode />
