@@ -9,3 +9,10 @@ export const LEFT_PANEL_MAX_WIDTH = 520;
 export const LEFT_PANEL_COLLAPSED_WIDTH = 48;
 
 export const LEFT_PANEL_WIDTH_STORAGE_KEY = 'ljb-left-panel-width';
+
+export const RIGHT_PANEL_MIN_WIDTH = 240;
+export const RIGHT_PANEL_DEFAULT_WIDTH = 280;
+export const RIGHT_PANEL_MAX_WIDTH = 520;
+export const RIGHT_PANEL_COLLAPSED_WIDTH = 48;
+
+export const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'ljb-right-panel-width';

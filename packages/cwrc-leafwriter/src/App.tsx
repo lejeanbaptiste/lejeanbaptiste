@@ -142,7 +142,15 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
       setWriter(window.writer);
 
-      const toolbarContainer = window.document.querySelector('#editor-toolbar');
+      const desktopToolbarRow = isDesktopApp()
+        ? window.document.querySelector('#desktop-toolbar-row')
+        : null;
+      const legacyToolbarEl = window.document.querySelector('#editor-toolbar');
+      if (desktopToolbarRow && legacyToolbarEl instanceof HTMLElement) {
+        legacyToolbarEl.style.display = 'none';
+      }
+
+      const toolbarContainer = desktopToolbarRow ?? legacyToolbarEl;
       const locationBarContainer = window.document.querySelector('#editor-location-bar');
       const sourceEditorPane = window.document.querySelector('#source-editor-pane');
       const _codePanelContainer = window.document.querySelector(`#${_writer.editorId}-code`);

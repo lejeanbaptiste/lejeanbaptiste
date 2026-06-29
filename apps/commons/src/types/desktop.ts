@@ -82,6 +82,11 @@ export interface ElectronAPI {
   pickMoveDestination: (defaultDir?: string) => Promise<string | null>;
   saveFileAs: (defaultPath?: string) => Promise<string | null>;
   setWindowTitle: (title: string) => Promise<void>;
+  minimizeWindow: () => Promise<void>;
+  maximizeWindow: () => Promise<void>;
+  closeWindow: () => Promise<void>;
+  isWindowMaximized: () => Promise<boolean>;
+  onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
   onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (
@@ -117,6 +122,10 @@ export interface ElectronAPI {
 declare global {
   interface Window {
     electronAPI?: ElectronAPI;
+    __desktopRightPanel?: {
+      expand: () => void;
+      showTab: (tab: string) => void;
+    };
     __ljbCommonsUi?: {
       encoderName: string;
       skipCopyPasteHelp: boolean;

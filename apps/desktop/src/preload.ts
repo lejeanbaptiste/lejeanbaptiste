@@ -76,6 +76,11 @@ export interface ElectronAPI {
   pickMoveDestination: (defaultDir?: string) => Promise<string | null>;
   saveFileAs: (defaultPath?: string) => Promise<string | null>;
   setWindowTitle: (title: string) => Promise<void>;
+  minimizeWindow: () => Promise<void>;
+  maximizeWindow: () => Promise<void>;
+  closeWindow: () => Promise<void>;
+  isWindowMaximized: () => Promise<boolean>;
+  onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
   onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (
@@ -150,6 +155,15 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('pickMoveDestination', defaultDir),
   saveFileAs: (defaultPath?: string) => ipcRenderer.invoke('saveFileAs', defaultPath),
   setWindowTitle: (title: string) => ipcRenderer.invoke('setWindowTitle', title),
+  minimizeWindow: () => ipcRenderer.invoke('window-minimize'),
+  maximizeWindow: () => ipcRenderer.invoke('window-maximize'),
+  closeWindow: () => ipcRenderer.invoke('window-close'),
+  isWindowMaximized: () => ipcRenderer.invoke('window-is-maximized'),
+  onWindowMaximized: (callback: (maximized: boolean) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, maximized: boolean) => callback(maximized);
+    ipcRenderer.on('window-maximized', listener);
+    return () => ipcRenderer.removeListener('window-maximized', listener);
+  },
   onAppMenuAction: (callback: (action: string) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, action: string) => callback(action);
     ipcRenderer.on('app:menu-action', listener);

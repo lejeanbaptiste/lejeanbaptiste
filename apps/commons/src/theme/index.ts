@@ -22,6 +22,7 @@ export const theme = createTheme({
   },
   typography: {
     fontFamily: 'Lato, Helvetica, Arial, sans-serif',
+    fontSize: 12
   },
   components: {
     MuiCssBaseline: {
@@ -36,5 +37,12 @@ export const theme = createTheme({
         }
       `,
     },
+    MuiButton: { defaultProps: { size: 'small' } },
+    MuiIconButton: { defaultProps: { size: 'small' } },
+    MuiInputBase: { defaultProps: { size: 'small' } },
+    MuiTextField: { defaultProps: { size: 'small' } },
+    MuiSelect: { defaultProps: { size: 'small' } },
+    MuiToolbar: { defaultProps: { variant: 'dense' } },
   },
+  spacing: 6,
 });

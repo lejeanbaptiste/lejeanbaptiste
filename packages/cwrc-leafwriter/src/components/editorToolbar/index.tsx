@@ -257,6 +257,62 @@ export const EditorToolbar = () => {
 
   const groups: ItemGroup[] = ['action', 'ui'];
 
+  const toolbarItems = (
+    <AnimatePresence mode="popLayout">
+      {groups.map((group) => (
+        <Stack key={group} direction="row" flexWrap="nowrap" gap={0.5}>
+          {items
+            .filter((item) => !item.hide)
+            .filter((item) => item.group === group)
+            .map((item, index) => (
+              <Box
+                layout
+                key={'title' in item ? item.title : index}
+                component={motion.div}
+                initial={{ scale: 0, opacity: 0 }}
+                exit={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+              >
+                <ItemComponent {...item} />
+              </Box>
+            ))}
+        </Stack>
+      ))}
+    </AnimatePresence>
+  );
+
+  if (isDesktopApp()) {
+    const flatItems = items.filter((item) => !item.hide && item.type !== 'divider');
+    return (
+      <Stack
+        ref={container}
+        direction="row"
+        flexWrap="nowrap"
+        gap={0.25}
+        px={0.5}
+        alignItems="center"
+        component={motion.div}
+        layout="size"
+        sx={{ height: '100%' }}
+      >
+        <AnimatePresence mode="popLayout">
+          {flatItems.map((item, index) => (
+            <Box
+              layout
+              key={'title' in item ? item.title : index}
+              component={motion.div}
+              initial={{ scale: 0, opacity: 0 }}
+              exit={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+            >
+              <ItemComponent {...item} />
+            </Box>
+          ))}
+        </AnimatePresence>
+      </Stack>
+    );
+  }
+
   return (
     <Paper
       ref={container}
@@ -285,27 +341,7 @@ export const EditorToolbar = () => {
         layout
         justifyContent="space-between"
       >
-        <AnimatePresence mode="popLayout">
-          {groups.map((group) => (
-            <Stack key={group} direction="row" flexWrap="wrap">
-              {items
-                .filter((item) => !item.hide)
-                .filter((item) => item.group === group)
-                .map((item, index) => (
-                  <Box
-                    layout
-                    key={'title' in item ? item.title : index}
-                    component={motion.div}
-                    initial={{ scale: 0, opacity: 0 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                  >
-                    <ItemComponent {...item} />
-                  </Box>
-                ))}
-            </Stack>
-          ))}
-        </AnimatePresence>
+        {toolbarItems}
       </Stack>
     </Paper>
   );
