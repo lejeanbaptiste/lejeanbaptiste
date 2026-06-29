@@ -1,9 +1,8 @@
 # Le Jean-Baptiste
 
+<img src="design/splash_new.png" alt="splash" height="300">
 
-![](design/splash_new.png)
-
-================
+Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). Le Jean-Baptiste offers an Electron wrapper for the web app for offline, individual desktop use as well as a variety of modifications to improve efficiency and functionality, aimed particularly at East Asian documents. 
 
 ![GPL-2.0](https://img.shields.io/badge/license-GLP--2.0-orange)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
@@ -13,19 +12,12 @@
 [![version](https://img.shields.io/badge/LEAF--Writer-Storage--Service-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-storage-service)
 [![version](https://img.shields.io/badge/LEAF--Writer-Validator-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-validator)
 
-LEAF-Writer is an in-browser text markup editor and Web Annotation tool provided as part of the [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. It can be used as a stand-alone tool or as a modular component of a larger stack, such as the [LEAF-VRE platform](https://www.leaf-vre.org/docs/features/about-lw) for use by individual scholars and collaborative scholarly editing projects that require a light-weight online editing environment. LEAF-Writer can be found at the Leaf-Writer Commons at [https://leaf-writer.leaf-vre.org/](https://leaf-writer.leaf-vre.org/) where it is open to all. This version can be used independently, storing files on the desktop, or use Github for storage and collaboration.
 
-LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the Named Entity Recognition Vetting Environment (NERVE). A revised and improved instance of NERVE is currently [available in beta](https://nerve.lincsproject.ca/en).
+## Desktop paradigm
 
-## Table of Contents
+LEAF-Writer is designed for server deployment, connecting XML corpora via Git, which provides file versioning and easy group access for teams. The disadvantages of this model are that it requires internet access, running one's own server – if one wants to use a modified version – and using Git for corpus sharing, backup, and versioning. It is also necessarily slower and clunkier when working with local files. Le Jean-Baptiste is designed to work quickly and naturally with local files, with or without internet connection.
 
-[Overview](#overview)
-[Storage and Entity Lookup](#storage-and-entity-lookup)
-[API](#api)
-[Managers](#managers)
-[Modules](#modules)
-[Development](#development)
-[Lerna](#lerna)
+LEAF-Writer is also wired to connect to five authorities – VIAF, Wikidata, Getty, DBpedia, and GeoNames – to pull identifiers and data about the named entities therein. Le Jean-Baptiste maintains this functionality but intends to implement auto-tagging from personal SQL databases and CSV tables at a later date, following the model of [MARKUS](https://dh.chinese-empires.eu/markus/).
 
 ## Overview
 
@@ -36,230 +28,69 @@ A LEAF-Writer installation is a bundling of the main LEAF-WriterBase (the code i
 
 The information that follows is drawn from the previous documentation about CWRC-Writer and how to use it with GitHub. This information will be updated soon.
 
-## Storage and Entity Lookup
+## Enhanced functions
 
-If you choose not to use either GitHub storage or the default named entity lookups, then most of the work in setting up CWRC-Writer for your project will be in implementing the dialogs to interact with your backend storage
-and/or alternative named entity lookups. We have split these pieces off into their own packages in large part to make it easier to
-substitute your own dialogs and supporting services.
 
-A good example to follow when creating a new CWRC-Writer project is our public implementation
-[CWRC-GitWriter](https://github.com/cwrc/CWRC-GitWriter). You might also choose to use either the
-[GitHub storage dialogs](https://github.com/cwrc/cwrc-git-dialogs) or the [named entity lookups](https://github.com/cwrc/CWRC-PublicEntityDialogs), both of which are used by the CWRC-GitWriter,
-and replace just one of the two. To help understand how we've developed the CWRC-Writer, you could also
-look at our [development docs](https://github.com/cwrc/CWRC-Writer-Dev-Docs).
 
-To replace either of the storage and entity dialogs, you'll need to create modules with the following APIs:
+### Window bar
 
-### Storage Object API
+- File tabs
 
-To see the methods that need to be provided by your own storage implementation, you can view the [cwrc-git-dialogs API](https://github.com/cwrc/cwrc-git-dialogs#methods-used-by-cwrc-writerbase).
 
-Note that because the `load(writer)` and `save(writer)` methods are passed an instance of the CWRC-WriterBase, all of the methods defined below in the [API](#writer-object) are available, in order to allow getting and setting of XML in the editor.
 
-#### Entity Lookup API
+### Left panel
 
-You have at least two choices here:
+- Fully functional file explorer to manage a project
+- Find and replace covering file, open tabs, selected resources, and project. Also includes regular expressions.
+- Xpath query, also for file, open tabs, selected resources, and project.
+- Table of contents (inherited)
+- XML tree (inheritend)
+- Entities (inherited)
 
-1. You can implement your own dialog for entity lookup, following the model in
-   [CWRC-PublicEntityDialogs](https://github.com/cwrc/CWRC-PublicEntityDialogs)
 
-2. You can use [CWRC-PublicEntityDialogs](https://github.com/cwrc/CWRC-PublicEntityDialogs) and configure it with different
-   sources. We provide five sources: VIAF, Wikidata, Getty, DBpedia, and GeoNames.
 
-You can use any of these sources, and supplement them with your own sources. [CWRC-PublicEntityDialogs](https://github.com/cwrc/CWRC-PublicEntityDialogs) fully explains how to add your own sources.
+### Right panel
 
-## API
+- File metadata
+- Tag attributes
+- Image viewer (inherited)
+- Schema validation (inherited)
 
-### Constructor
 
-The CWRC-WriterBase exports a single constructor function that takes one argument, a configuration object.
 
-See [CWRC-GitWriter/src/js/config.js](https://github.com/cwrc/CWRC-GitWriter/blob/master/src/js/config.js) for an example of a base configuration file, and  
-[CWRC-GitWriter/src/js/app.js](https://github.com/cwrc/CWRC-GitWriter/blob/master/src/js/app.js) to see the configuration file loaded, extended, and passed into the constructor.
+### Bottom bar
 
-### Configuration Object
+- Markup & linking (inherited)
+- Annotation mode (inherited)
+- XML schema (inherited)
+- Visual (WYSIWYG) or source XML viewer.
 
-Options that can be set on the configuration object:
 
-#### Required Options
 
-- `config.container`: String. The ID of the element that should contain the CWRC-Writer.
-- `config.storageDialogs`: Object. Storage dialogs, see [cwrc-git-dialogs](https://github.com/cwrc/cwrc-git-dialogs) for example and API definition.
-- `config.entityLookupDialogs`: Object. Entity lookup, see [cwrc-public-entity-dialogs](https://github.com/cwrc/CWRC-PublicEntityDialogs) for example and API definition.
+### Keyboard shortcuts
 
-##### Other Options
+- `enter`, nothing selected: insert tag OR split `<p>` paragraph.
+- `enter`, on selection: wrap in tag
+  - `enter`: commit
+  - `shift+enter`: tag all identical strings the same way
+  - `alt+enter`: walk through all identical strings to decide case-by-case
+- `alt+enter`, on selection: add attribute
+- `shift+enter`, in `<p>`: immediately split paragraph.
+- `F2`: rename element
+  - `enter`: commit
+  - `shift+enter`: rename all `<tag>` elements wrapping the identical string
+  - `alt+enter`: walk
 
-- `config.cwrcRootUrl`: String. An absolute URL that should point to the root of the CWRC-Writer directory. If blank, the browser URL will be used.
-- `config.modules`: Object. The internal CWRC-WriterBase [modules](#modules) to load, grouped by their locations relative to the CWRC-Writer. A module ID must be provided. An optional display title can be specified. Certain modules require additional configuration.
-
-  For example:
-
-  ```js
-  config.modules = {
-    west: [{ id: 'structure', title: 'Markup' }, { id: 'entities' }],
-    east: [{ id: 'selection' }],
-    south: [
-      {
-        id: 'validation',
-        config: { validationUrl: 'https://validator.services.cwrc.ca/validator/validate.html' },
-      },
-    ],
-  };
-  ```
-
-- `config.annotator`: Boolean. If true, the user may only add annotations to the document.
-- `config.readonly`: Boolean. If true, the user may not edit nor annotate the document.
-- `config.mode`: String. The mode in which to start the CWRC-Writer: `xml` or `xmlrdf`.
-- `config.allowOverlap`: Boolean. Should overlapping entities be allowed initially?
-- `config.schemas`: Object. A map of schema objects that can be used in the CWRC-Writer. Each entry should contain the following:
-  - `id`: String. The schema id.
-  - `name`: String. The schema title.
-  - `schemaMappingsId`: String. The directory name in the [schema directory](src/js/schema) from which to load mapping and dialogs files for the schema.
-  - `xmlUrl`: Array. A list of URLs that links to the schema (RELAX NG) file. CWRC-Griter will load the first in the list. Alternative URL can be used in the rare case that you want to match against a particular schema URL, but load the schema from another location (e.g. to avoid CORS errors).
-  - `cssUrl`: Array. A list of URLs that links to the CSS associated with this schema.
-- `config.buttons1`, `config.buttons2`, `config.buttons3`: String. A comma separated list of buttons to display in the CWRC-Writer toolbars. Possible values: `schematags, addperson, addplace, adddate, addorg, addcitation, addnote, addtitle, addcorrection, addkeyword, addlink, editTag, removeTag, addtriple, toggletags, viewmarkup, editsource, validate, savebutton, loadbutton, logoutbutton, fullscreen`.
-
-### Writer object
-
-The object returned by the constructor is defined here: [writer.js](src/js/writer.js). The typical properties and methods you'd want to use when implementing your own storage and/or entity dialogs are:
-
-#### Properties
-
-##### isInitialized
-
-boolean  
- _Has the editor been initialized._
-
-##### isDocLoaded
-
-boolean  
- _Is there a document loaded in the editor._
-
-##### isReadOnly
-
-boolean  
- _Is the editor in `readonly` mode._
-
-##### isAnnotator
-
-boolean  
-_Is the editor in annotate (entities) only mode._
-
-#### Methods
-
-##### loadDocumentURL(docUrl)
-
-_Loads an XML document from a URL into the editor._
-
-##### loadDocumentXML(docXml)
-
-_Loads an XML document (either a [XML Document](https://developer.mozilla.org/en-US/docs/Web/API/XMLDocument) or a stringified version of such) into the editor._
-
-##### setDocument(docUrl|docXml)
-
-_A convenience method which calls either `loadDocumentURL` or `loadDocumentXML` based on the parameter provided._
-
-##### getDocument(asString)
-
-_Returns the parsed XML document from the editor. If `asString` is true, then a stringified version of the document is returned._
-
-##### getDocRawContent()
-
-_Returns the raw, un-parsed HTML content from the editor._
-
-##### showLoadDialog()
-
-_Convenience method to call the `load` method of the object set in the `storageDialogs` property of the config object passed to the writer._
-
-##### showSaveDialog()
-
-_Convenience method to call the `save` method of the object set in the `storageDialogs` property of the config object passed to the writer._
-
-##### validate(callback)
-
-_Validates the current document_
-
-callback(w, valid): function where w is the writer and valid is true/false.
-Fires a `documentValidated` event if validation is successful.
-
-## Managers
-
-Tasks within CWRC-Writer are handled by specific managers.
-
-### [AnnotationsManager](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/entities/annotationsManager.js)
-
-Handles conversion of entities to annotations and vice-versa.
-
-### [SchemaManager](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/schema/schemaManager.js)
-
-Handles schema loading and schema CSS processing. Stores the list of available schemas, as well as the current schema. Handles the creation of schema-appropriate entities, via the [Mapper](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/schema/mapper.js).
-
-### [EntitiesManager](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/entities/entitiesManager.js)
-
-Handles the creation and modification of [entities](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/entities/entity.js). Stores the list of entities in the current document.
-
-### [EventManager](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/eventManager.js)
-
-Handles the dissemination of events through the CWRC-Writer using a publication-subscribe pattern. See the [code](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/eventManager.js) for the full list of events.
-
-### [LayoutManager](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/layout/layoutManager.js)
-
-Handles the initialization and display of the modules specified in the `modules` property of the config object. Also handles browser resizing and fullscreen functionality.
-
-### [DialogManager](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/dialogManager.js)
-
-Handles the initialization and display of dialogs.
-
-## Modules
-
-Modules are self-contained components that add extra functionality to CWRC-Writer. These can be specified in the configuration object using the proper module ID.
-
-### [StructureTree](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/layout/modules/structureTree/structureTree.js)
-
-Module ID: `structure`
-
-Displays the markup of the current document in a tree format. Useful for navigating and modifying the document.
-
-### [EntitiesList](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/layout/modules/entitiesList/entitiesList.js)
-
-Module ID: `entities`
-
-Displays the list of entities in the current document. Allows for modifying, copying, scraping, and deleting of entities.
-
-### [Selection](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/layout/modules/selection/selection.js)
-
-Module ID: `selection`
-
-Displays the markup of the text that's selected in the current document.
-
-### [Validation](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/layout/modules/validation/validation.js)
-
-Module ID: `validation`
-
-### [ImageViewer](https://github.com/cwrc/CWRC-WriterBase/blob/master/src/js/layout/modules/imageViewer/imageViewer.js)
-
-Module ID: `imageViewer`
-
-Displays images linked from within the current document. Useful for OCR'd documents.
-
-## Running Leaf-Writer
+## Running Le Jean-Baptiste
 
 Docker and Docker Compose is required. Easiest is to install [Docker Desktop](https://www.docker.com/products/docker-desktop).
 
-Clone this repo and run with Docker Compose:
-
+Clone this repo:
 ```bash
-git clone https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer
-cd leaf-writer
-docker compose up
+git clone https://gitlab.huma-num.fr/dmorgan1/leaf-writer-crcao
 ```
-
-## CRCAO Editor (desktop)
-
-The `apps/desktop` package wraps LEAF-Writer Commons in an Electron shell for local project editing (folder tree, tabs, save to disk, XPath search).
-
+The `apps/desktop` package wraps our modified LEAF-Writer Commons in an Electron shell for local project editing (folder tree, tabs, save to disk, XPath search).
 ```bash
 npm run dev:desktop
 ```
-
 See [apps/desktop/README.md](apps/desktop/README.md) for build and packaging instructions.

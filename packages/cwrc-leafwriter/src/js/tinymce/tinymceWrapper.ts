@@ -532,41 +532,53 @@ export const tinymceWrapperInit = function ({
         if (outwardArrow) {
           if (_keydownBoundaryWasVirtualExternal) {
             // Second stop → advance cursor past/into the tag.
-            // We compute the target here (before TinyMCE moves cursor) but apply it in keyup,
-            // AFTER TinyMCE's own keyup handler has run — otherwise TinyMCE's entity-navigation
-            // keyup fires after our setRng and bounces cursor back out.
-            event.preventDefault();
+            // Target is computed here (before TinyMCE moves cursor) and applied in keyup,
+            // after TinyMCE's entity-navigation keyup has already run.
+            let advNode: Node | null = null;
+            let advOffset = 0;
             if (!currentBoundaryIsExternal) {
-              // Internal: advance PAST the tag (exit to adjacent text)
+              // Internal boundary: advance PAST the tag into adjacent text.
               if (event.code === 'ArrowRight') {
-                const nextText = writer.utilities.getNextTextNode(
+                const n = writer.utilities.getNextTextNode(
                   currentBoundaryElement.lastChild ?? currentBoundaryElement
                 );
-                if (nextText) _pendingAdvance = { node: nextText, offset: 0 };
+                if (n) { advNode = n; advOffset = 0; }
               } else {
-                const prevText = writer.utilities.getPreviousTextNode(
+                const n = writer.utilities.getPreviousTextNode(
                   currentBoundaryElement.firstChild ?? currentBoundaryElement
                 );
-                if (prevText) _pendingAdvance = { node: prevText, offset: (prevText as Text).length };
+                if (n) { advNode = n; advOffset = (n as Text).length; }
               }
             } else {
-              // DOM-external: advance INTO the tag
+              // DOM-external boundary.
               if (event.code === 'ArrowRight') {
-                const firstText = writer.utilities.getNextTextNode(currentBoundaryElement);
-                if (firstText) _pendingAdvance = { node: firstText, offset: 0 };
+                // Opening bracket: enter tag at its first text node.
+                const n = writer.utilities.getNextTextNode(currentBoundaryElement);
+                if (n) { advNode = n; advOffset = 0; }
               } else {
-                const lastChild = currentBoundaryElement.lastChild;
-                if (lastChild?.nodeType === Node.TEXT_NODE) {
-                  const lt = lastChild as Text;
-                  _pendingAdvance = { node: lt, offset: lt.length };
-                }
+                // Closing bracket: jump PAST the tag to text before it.
+                // Must start from firstChild so previousNode() crosses the opening boundary
+                // rather than landing inside the tag's own subtree.
+                const n = writer.utilities.getPreviousTextNode(
+                  currentBoundaryElement.firstChild ?? currentBoundaryElement
+                );
+                if (n) { advNode = n; advOffset = (n as Text).length; }
               }
             }
+            if (advNode) {
+              event.preventDefault();
+              _pendingAdvance = { node: advNode, offset: advOffset };
+            }
+            // If no advance target (e.g. tag at document boundary), fall through without
+            // preventDefault so cursor can move naturally and avoid an infinite stop loop.
             return;
           } else {
             // First stop → enter virtual external (no cursor movement).
+            // Also pin cursor via _pendingAdvance: TinyMCE's keyup may move cursor into the entity
+            // even when default is prevented (e.g. cursor at offset=0 adjacent to entity).
             event.preventDefault();
             setVirtualExternal(true);
+            _pendingAdvance = { node: c, offset: o };
             return;
           }
         }
@@ -579,6 +591,28 @@ export const tinymceWrapperInit = function ({
       }
     }
     // === End tag boundary handling ===
+
+    // TinyMCE entity-navigation exits the entity when ArrowLeft fires from offset=1 inside
+    // entity text (browser moves cursor to offset=0, then TinyMCE keyup bounces it outside).
+    // Intercept here (before browser moves cursor) so we can land at offset=0 (first stop).
+    if (
+      !currentBoundaryElement &&
+      event.code === 'ArrowLeft' &&
+      !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
+      writer.editor
+    ) {
+      const rng = writer.editor.selection.getRng();
+      const cont = rng.startContainer;
+      const off = rng.startOffset;
+      if (
+        cont.nodeType === Node.TEXT_NODE &&
+        off === 1 &&
+        isTagOrCombinedEl((cont as Text).parentElement)
+      ) {
+        event.preventDefault();
+        _pendingAdvance = { node: cont, offset: 0 };
+      }
+    }
 
     if (tinymce.isMac ? event.metaKey : event.ctrlKey) return;
 
@@ -630,6 +664,7 @@ export const tinymceWrapperInit = function ({
         // before ours and may bounce cursor; applying here lets us override it cleanly.
         if (_pendingAdvance && writer.editor) {
           const { node, offset } = _pendingAdvance;
+          console.log(`[pendingAdvance KU] ${event.code}`, { node, offset, nodeValue: node.nodeType === 3 ? JSON.stringify((node as Text).data) : null });
           _pendingAdvance = null;
           const nr = writer.editor.getDoc().createRange();
           nr.setStart(node, offset);
