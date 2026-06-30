@@ -425,12 +425,12 @@ body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active::after {
   font-size: 10px;
   font-family: 'Lato', sans-serif;
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 8px;
+  padding: 2px 5px;
+  border-radius: 4px;
   pointer-events: none;
   white-space: nowrap;
   z-index: 100;
-  letter-spacing: 0.03em;
+  text-indent: 0;
 }
 
 @media (prefers-color-scheme: dark) {
