@@ -294,6 +294,7 @@ export const sortTagSuggestions = (
   preferredName?: string,
 ): NodeDetail[] => {
   const sorted = [...tags].sort((a, b) => {
+    if (a.invalid !== b.invalid) return a.invalid ? 1 : -1;
     const aCount = tagCounts[a.name] ?? 0;
     const bCount = tagCounts[b.name] ?? 0;
     if (aCount !== bCount) return bCount - aCount;
