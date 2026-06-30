@@ -123,10 +123,11 @@ All default chords are **customisable** in Settings (Tagging section) to avoid O
 
 ## Block: F2 rename tag
 
-- **F2** in the **editor** renames the **innermost tag containing the caret** (not the selected text string).
+- **F2** in the **visual editor** renames the **innermost tag containing the caret** (not the selected text string).
 - Opens the **same tag suggestion popup** as Enter, pre-filled with current `_tag`; **Enter** commits rename via `editStructureTag` / `changeTagDialog` logic.
 - **Keep attributes** valid on the new element; drop invalid ones with brief feedback.
 - Changing entity-like tags (`persName` → `placeName`): warn if link attrs (`@ref`, …) will be removed — confirm once.
+- **F2** in the **source editor (Monaco)** navigates to and selects the tag name in the opening tag of the element at the cursor, enabling inline rename. Monaco's `linkedEditing` mode then renames the closing tag simultaneously as the user types. Works whether the cursor is in element content, inside an opening tag, or inside a closing tag (in the last case, it finds and navigates to the matching opening tag).
 - **F2** in the **explorer** renames file/folder (existing `renameExplorerItem` / `renamePath`) — same chord, focus-dependent (standard IDE pattern).
 - **Attributes panel** shows current element name with “F2 to rename” hint.
 - **Backspacing away** a tag (unwrap when empty) remains supported — do not trap the user in `prevent_delete` logic.
@@ -139,15 +140,31 @@ When user confirms insert from the tag popup (collapsed caret):
 
 | Intended insert | Parent context | Behaviour |
 |-----------------|----------------|-----------|
-| Inline in inline (e.g. empty `note` in `persName`) | Valid per schema | Insert/wrap at caret |
-| Block or break in **inline** parent (`p`, `lb`, line break) | e.g. caret in `persName` | **Split parent** at caret into two sibling tags with same attrs; insert new element between |
-| Self-closing empty (`pb`, `lb`) | varies | Per validator action |
+| Same tag as parent (e.g. `p` inside `p`) | Block | **Split parent** at caret into two sibling tags |
+| Inline tag valid `inside` current element | e.g. `label` inside `p` | Insert `<tag/>` at caret via `editor.insertContent` — never wraps parent content |
+| Block tag valid `after` current element | e.g. `desc` after `p` | Insert empty sibling after current element |
+| `p` anywhere inside a `p` ancestor | — | Split the `p` at caret (fast path, no popup confirmation needed) |
 | Invalid | any | Greyed in popup or refuse with one-line message |
+
+**Key rule:** with no selection, insertion *never wraps existing content*. The validator's `resolveInsertAction` resolves to `inside`, `after`, or `add`; the first two route to insert-at-caret or insert-as-sibling; `add` also routes to insert-at-caret (inline empty tag). The pre-existing `cleanRange` path in `isSelectionValid` is bypassed for no-selection inserts to prevent it from silently expanding the range in the wrong direction.
 
 **Shift+Enter** outside popups (line break) uses the **same split/insert engine** as choosing `lb` from the popup — one code path.
 
+### Wrapping with a cross-boundary selection
+
+When the user selects text that spans element boundaries (e.g. from inside `<persName>` through trailing plain text), the normal `isSelectionValid` check fails. Instead of erroring:
+
+1. Save the original range **before** calling `isSelectionValid` (which runs `cleanRange` and distorts the range).
+2. On failure, restore the original range and call `expandSelectionToElementBoundaries`: walk up from both ends of the range to the LCA, then extend to cover complete child elements of the LCA.
+3. Re-validate the expanded range. If it passes, wrap it.
+
+Result: selecting `<persName>Jeff</persName> is a cute` and wrapping with `<label>` yields `<label><persName>Jeff</persName> is a cute</label>` rather than an error.
+
 Implementation notes:
 
+- `resolveInsertAction` in `tagCommand.ts` — three-step: `inside` → `after` → `add` (wrap).
+- `insertEmptyTagAtCaret` uses `editor.insertContent` with a `﻿` placeholder and `utilities.selectElementById` to place cursor inside the new tag.
+- `applyWrapTag` in `tagCommand.ts` handles `expandSelectionToElementBoundaries` before `addStructureTag`.
 - Extend or replace `tagger.splitTag` (today skips `_entity` tags; LJB bare tags should not use full entity wrapper).
 - Use validator **`getPossibleNodesAt`** with actions `addInside`, `addAfter`, speculative validate, to choose split vs nest vs reject.
 - Reference: Oxygen Author — paragraph break inside inline splits the inline element.

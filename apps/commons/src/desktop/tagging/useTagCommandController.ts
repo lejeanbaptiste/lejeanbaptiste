@@ -273,6 +273,8 @@ export const useTagCommandController = () => {
   const applyQueueWalkRef = useRef<() => void>(() => {});
 
   const resolveTagForApply = useCallback((): NodeDetail | null => {
+    if (highlightedTag && !highlightedTag.invalid) return highlightedTag;
+
     const ctx = getEditorTagContext();
     const body = window.writer?.editor?.getBody();
     if (
@@ -289,8 +291,6 @@ export const useTagCommandController = () => {
         invalid: false,
       };
     }
-
-    if (highlightedTag && !highlightedTag.invalid) return highlightedTag;
     const name =
       filter.trim() ||
       ((mode === 'insert' || mode === 'lineBreak') ? DEFAULT_INSERT_TAG : '');

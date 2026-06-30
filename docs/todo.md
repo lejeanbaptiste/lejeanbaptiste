@@ -25,16 +25,29 @@
 - [x] Tag usage stats (element + attribute counts in `schema/tag-stats.json`)
 - [x] Method for deleting tags in WYSIWYG.
 - [x] In source, deleting open tag deletes the closing tag, and vice versa (unwrap).
+- [x] Wrap everything within tag
+- [x] Insert empty tag at caret (no selection → `<tag/>` placed at cursor, not wrapping parent content)
+- [x] Source: F2 — jumps to opening tag name and selects it for inline rename (linked editing renames closing tag simultaneously)
+- [x] Source: select+enter adds tag
+- [x] Command/ctrl+. hides and shows tags
+- [x] Tag popup: invalid/"not valid here" tags sorted below valid ones
+- [x] Tag popup: ↑↓ arrow keys skip invalid items; selected item scrolls into view; page does not scroll
+- [x] Tag popup: Enter applies highlighted tag (not overridden by paragraph fast-path when user has navigated to a different tag)
+- [x] Wrap selection spanning element boundaries: auto-expand to complete element boundaries within LCA
+- [x] Tag bubble (pill): shown above `span[_tag]` when cursor is inside; also works for block `div[_tag]` leaf elements
+- [x] Tag bubble: aligns with text start (accounts for `text-indent`) via `--lw-bubble-left` CSS custom property
+- [x] Validation panel: no crash when panel is not mounted (container guard in `validationRequested` handler)
+- [ ] Wrap around tag
+- [ ] delete current tag (shift+backspace or shift+delete)
+- [x] choose which tag to delete in case of tight nesting — click a tag's own bracket in show-tags mode to move the cursor to that tag's boundary (reuses existing boundary highlight + Backspace/Delete-to-unwrap); each nesting level's brackets are pixel-distinct so nested tags are independently selectable
+- [ ] Source: alt + enter ?
+- [ ] See hidden tags to edit...
 
-
-**The wrapping vs. inside question** — this is the genuinely hard design problem. A few angles:
-
-The distinction already exists implicitly: _selection determines relationship_. If you select "Jeff" while inside `<persName>Jeff</persName>`, the new tag wraps the selection and becomes a child of persName. If you select across the persName boundary, you get a parent or sibling. The schema validates the result either way. So for most cases, the user's selection _is_ the intent signal — no disambiguation needed.
-
-Where it breaks down is **whole-tag operations**: cursor inside persName, you want to wrap the entire persName in something, or you want to replace persName with a different tag. Text selection can't express "select this entire element including its boundaries." The bubble is the natural answer here — clicking it could surface: _Edit attributes / Change tag / Wrap in… / Unwrap_. This covers the "structural" operations that selection-based tagging can't reach.
-
-A possible clean model: **selection = always text/content tagging; bubble = structural operations on the element itself.** Users who understand the distinction will reach for the right tool instinctively. The one ambiguous case is selecting all the text inside a tag — does that mean "retag this content" or "wrap this element"? That might need a schema-aware heuristic or a simple one-click disambiguation in the bubble.
-
+**Translation**
+- [ ] separate mode, shrinks side panels, opens parallel editing panel
+- [ ] Research how to link translations to source material
+- [ ] Maybe language recognition runs on document and on translation?
+- [ ] Xpath, find, etc. will be sensitive to source vs translation.
 
 **Metadata**
 - [x] Saving in the editor leaves a last-edited timestamp with the encoder name in `encodingDesc/appInfo` (TEI) or Orlando `RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` — separate from scholarly `revisionDesc`
@@ -55,38 +68,22 @@ A possible clean model: **selection = always text/content tagging; bubble = str
 - [x] enter -> p -> enter should do what
 - [x] Get good highlighting on 'hybrid mode'
 - [x] Harmonise icon size, left and right.
-- [x] Make find and replace super efficient to use with keyboard only
 - [x] Fix build error problem
 - [ ] Fix cursor position navigating tags in WYSIWGY mode.
 - [ ] Reflect on whether 'hybrid mode' should be its own, third mode.
 
 **Presentation**
 - [ ] clean up branding in docs
-- [ ] change repo name
-
-**Tools**
-- [ ] Manual 'Time machine' w/ indexing (?), very efficient protocol.
-- [ ] Method to add tag types and create custom schema.
-- [ ] Export automated report of structure, number of tags, etc.
-
-**Workshop invitees**
-- JB
-- Laetitia (transcriptions)
-- Emanuella Garatti (talked to me about doing a database)
-- Armelle Jammet (has an SQL database)
-- Chao (prosopographie)
-- Marie [assistant teacher?]
-- Johan (knows everything)
 
 ---
 
 **Later**
-- [ ] Wrap paragraphs and other big things in larger wrappers
-- [ ] Verify that we can stack tags inside AND outside of smaller elements.
-- [ ] Improve Find and replace button layout
+- [ ] Improve fixed layout of things in find and replace
+- [ ] Make find and replace super efficient to use with keyboard only
 - [ ] Keyboard shortcuts for all side panels + everything useful
 - [ ] Rethink context menu
 - [ ] Make fuller list of project and file metadata to act as norm.
+- [ ] Customisable keybindings (Phase 6)
 - [ ] Redo icon insignia OR splash?
 - [ ] Splash?
 - [ ] Figure out what to do about external documentation
