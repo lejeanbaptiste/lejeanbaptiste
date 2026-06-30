@@ -407,9 +407,11 @@ span[data-mce-bogus] {
 }
 
 /* Pill bubble — shown when showTagBubble body class is set and tags are hidden.
-   Only inline span[_tag] elements; block div[_tag] elements cannot safely use
-   position:relative or border/padding without breaking TinyMCE's layout. */
-body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active {
+   Block div[_tag] elements use a tighter selector: exclude the outermost body child
+   and any structural wrapper that contains nested block tags, to avoid breaking
+   TinyMCE's scroll-width calculation. */
+body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active,
+body.showTagBubble:not(.showTags) div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active {
   position: relative;
 }
 
@@ -433,6 +435,26 @@ body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active::after {
   text-indent: 0;
 }
 
+body.showTagBubble:not(.showTags) div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active::after {
+  content: attr(_tag);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: var(--lw-bubble-left, 0);
+  top: auto;
+  width: max-content;
+  background: rgba(70, 120, 200, 0.88);
+  color: #fff;
+  font-size: 10px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 100;
+  text-indent: 0;
+}
+
 @media (prefers-color-scheme: dark) {
   *[_tag].tag-cursor-active {
     text-decoration-color: rgba(130, 170, 255, 0.5);
@@ -440,7 +462,8 @@ body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active::after {
   *[_tag].tag-at-boundary {
     background-color: rgba(130, 170, 255, 0.12);
   }
-  body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active::after {
+  body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active::after,
+  body.showTagBubble:not(.showTags) div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active::after {
     background: rgba(100, 150, 240, 0.88);
   }
 }

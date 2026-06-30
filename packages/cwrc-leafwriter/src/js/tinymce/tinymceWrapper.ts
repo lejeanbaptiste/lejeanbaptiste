@@ -311,11 +311,20 @@ export const tinymceWrapperInit = function ({
   const applyBoundaryClasses = (activeEl: Element | null, boundaryEl: Element | null, externalBoundary = false) => {
     if (currentActiveElement) {
       currentActiveElement.classList.remove('tag-cursor-active', 'tag-at-boundary');
+      (currentActiveElement as HTMLElement).style.removeProperty('--lw-bubble-left');
     }
     currentActiveElement = activeEl;
     currentBoundaryElement = boundaryEl;
     currentBoundaryIsExternal = externalBoundary;
-    if (activeEl) activeEl.classList.add('tag-cursor-active');
+    if (activeEl) {
+      activeEl.classList.add('tag-cursor-active');
+      if (activeEl.tagName === 'DIV') {
+        const indent = getComputedStyle(activeEl).textIndent;
+        if (indent && indent !== '0px') {
+          (activeEl as HTMLElement).style.setProperty('--lw-bubble-left', indent);
+        }
+      }
+    }
     if (boundaryEl) boundaryEl.classList.add('tag-at-boundary');
   };
 
