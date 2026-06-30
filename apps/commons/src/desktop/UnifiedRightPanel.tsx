@@ -112,11 +112,9 @@ export const UnifiedRightPanel = () => {
         validationSlotRef.current.appendChild(validationSrc);
       }
 
-      // Hide the now-empty jQuery east pane so it doesn't overlap anything
+      // Hide the now-empty east pane (unmanaged by jQuery layout in desktop mode)
       const eastPane = document.querySelector<HTMLElement>('.ui-layout-east');
-      if (eastPane) {
-        eastPane.style.display = 'none';
-      }
+      if (eastPane) eastPane.style.display = 'none';
 
       if (imageViewerSrc || validationSrc) {
         migratedRef.current = true;
