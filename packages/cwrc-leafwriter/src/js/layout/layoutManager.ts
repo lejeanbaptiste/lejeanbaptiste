@@ -161,7 +161,7 @@ class LayoutManager {
       };
     }
 
-    if (this.modulesLayout.get('east')) {
+    if (this.modulesLayout.get('east') && !window.__desktopRightPanel) {
       //@ts-ignore
       outerLayoutConfig.east = {
         size: 'auto',

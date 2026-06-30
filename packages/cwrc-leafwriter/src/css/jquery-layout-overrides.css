@@ -4,6 +4,11 @@
     background: #f5f5f5 !important;
 }
 
+.ui-layout-resizer-east,
+.ui-layout-toggler-east {
+    display: none !important;
+}
+
 .ui-layout-toggler-east-closed,
 .ui-layout-toggler-west-open {
     background: url("../images/layout_arrow_left.png") no-repeat scroll center center !important;

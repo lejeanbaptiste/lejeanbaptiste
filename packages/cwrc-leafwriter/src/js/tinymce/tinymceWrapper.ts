@@ -164,6 +164,7 @@ export const tinymceWrapperInit = function ({
         // highlight tracking
         body.addEventListener('keydown', onKeyDownHandler, true);
         body.addEventListener('keyup', onKeyUpHandler);
+        body.addEventListener('beforeinput', onBeforeInputHandler as EventListener, true);
 
         // attach mouseUp to doc because body doesn't always extend to full height of editor panel
         if (editor.iframeElement?.contentDocument) {
@@ -320,7 +321,13 @@ export const tinymceWrapperInit = function ({
   let _keydownBoundaryElement: Element | null = null;
   // Advance target decided in keydown but applied in keyup, after TinyMCE's own keyup handler
   // has already run (and possibly bounced cursor). Applied before updateTagBoundaryState.
-  let _pendingAdvance: { node: Node; offset: number } | null = null;
+  let _pendingAdvance: { node: Node; offset: number; isExit?: boolean; isSuppressBoundary?: boolean } | null = null;
+  // When a deliberate entry advance lands inside an entity (L2R at offset 0, R2L at textLen),
+  // record the exact position here. updateTagBoundaryState will suppress the atBoundary flag
+  // while cursor stays at that position, preventing the boundary-stop machinery from re-engaging
+  // immediately after entry (including via async NodeChange from setRng). Cleared automatically
+  // the first time updateTagBoundaryState sees cursor at any other position.
+  let _suppressedBoundaryPosition: { node: Node; offset: number } | null = null;
 
   const applyBoundaryClasses = (activeEl: Element | null, boundaryEl: Element | null, externalBoundary = false) => {
     if (currentActiveElement) {
@@ -407,12 +414,12 @@ export const tinymceWrapperInit = function ({
         const prevSib = container.previousSibling;
         const via = tagElThroughEntity(prevSib);
         if (via) { tagEl = via; atBoundary = true; externalBoundary = true; }
-        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
+        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; /* internal start: stop ArrowLeft exit (symmetric with internal end) */ }
       } else if (offset >= textLen) {
         const nextSib = container.nextSibling;
         const via = tagElThroughEntity(nextSib);
         if (via) { tagEl = via; atBoundary = true; externalBoundary = true; }
-        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
+        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; /* internal end: stop ArrowRight exit */ }
       } else {
         if (isTagOrCombinedEl(parent)) tagEl = parent;
       }
@@ -433,6 +440,18 @@ export const tinymceWrapperInit = function ({
     }
 
     if (!tagEl) { applyBoundaryClasses(null, null); return; }
+
+    // Suppress the boundary stop at the exact position where a deliberate entry advance landed
+    // (L2R pos 3 at offset 0, R2L pos 3 at textLen). The flag self-clears when cursor moves away.
+    if (_suppressedBoundaryPosition) {
+      const r = writer.editor.selection.getRng();
+      if (r.startContainer === _suppressedBoundaryPosition.node &&
+          r.startOffset === _suppressedBoundaryPosition.offset) {
+        atBoundary = false;
+      } else {
+        _suppressedBoundaryPosition = null;
+      }
+    }
 
     applyBoundaryClasses(tagEl, atBoundary ? tagEl : null, externalBoundary);
   };
@@ -536,38 +555,43 @@ export const tinymceWrapperInit = function ({
             // after TinyMCE's entity-navigation keyup has already run.
             let advNode: Node | null = null;
             let advOffset = 0;
+            let isExitAdvance = false;
             if (!currentBoundaryIsExternal) {
               // Internal boundary: advance PAST the tag into adjacent text.
               if (event.code === 'ArrowRight') {
                 const n = writer.utilities.getNextTextNode(
                   currentBoundaryElement.lastChild ?? currentBoundaryElement
                 );
-                if (n) { advNode = n; advOffset = 0; }
+                if (n) { advNode = n; advOffset = 0; isExitAdvance = true; }
               } else {
                 const n = writer.utilities.getPreviousTextNode(
                   currentBoundaryElement.firstChild ?? currentBoundaryElement
                 );
-                if (n) { advNode = n; advOffset = (n as Text).length; }
+                if (n) { advNode = n; advOffset = (n as Text).length; isExitAdvance = true; }
               }
             } else {
               // DOM-external boundary.
               if (event.code === 'ArrowRight') {
                 // Opening bracket: enter tag at its first text node.
                 const n = writer.utilities.getNextTextNode(currentBoundaryElement);
-                if (n) { advNode = n; advOffset = 0; }
+                if (n) { advNode = n; advOffset = 0; isExitAdvance = false; }
               } else {
-                // Closing bracket: jump PAST the tag to text before it.
-                // Must start from firstChild so previousNode() crosses the opening boundary
-                // rather than landing inside the tag's own subtree.
+                // Closing bracket: enter tag at its last text node (symmetric with the
+                // opening-bracket ArrowRight case above). Start search from the node AFTER
+                // the tag so previousNode() lands on the tag's own last text descendant
+                // instead of skipping past it.
                 const n = writer.utilities.getPreviousTextNode(
-                  currentBoundaryElement.firstChild ?? currentBoundaryElement
+                  currentBoundaryElement.nextSibling ?? currentBoundaryElement
                 );
-                if (n) { advNode = n; advOffset = (n as Text).length; }
+                if (n) { advNode = n; advOffset = (n as Text).length; isExitAdvance = false; }
               }
             }
             if (advNode) {
               event.preventDefault();
-              _pendingAdvance = { node: advNode, offset: advOffset };
+              // isSuppressBoundary: entry advances (not exits) land at offset 0 or textLen inside
+              // the entity, which updateTagBoundaryState would normally treat as a boundary stop.
+              // Suppress that so normal editing resumes immediately after entering.
+              _pendingAdvance = { node: advNode, offset: advOffset, isExit: isExitAdvance, isSuppressBoundary: !isExitAdvance };
             }
             // If no advance target (e.g. tag at document boundary), fall through without
             // preventDefault so cursor can move naturally and avoid an infinite stop loop.
@@ -594,7 +618,8 @@ export const tinymceWrapperInit = function ({
 
     // TinyMCE entity-navigation exits the entity when ArrowLeft fires from offset=1 inside
     // entity text (browser moves cursor to offset=0, then TinyMCE keyup bounces it outside).
-    // Intercept here (before browser moves cursor) so we can land at offset=0 (first stop).
+    // Intercept here (before browser moves cursor) so we can land at offset=0 (first stop),
+    // letting the normal boundary-advance machinery take over from there.
     if (
       !currentBoundaryElement &&
       event.code === 'ArrowLeft' &&
@@ -604,11 +629,14 @@ export const tinymceWrapperInit = function ({
       const rng = writer.editor.selection.getRng();
       const cont = rng.startContainer;
       const off = rng.startOffset;
+      const contParent = (cont as Text).parentElement;
       if (
         cont.nodeType === Node.TEXT_NODE &&
         off === 1 &&
-        isTagOrCombinedEl((cont as Text).parentElement)
+        isTagOrCombinedEl(contParent) &&
+        (contParent?.tagName === 'SPAN' || !!$(cont).closest('[_entity]')[0])
       ) {
+        // Pin at offset=0 (entity start) rather than bouncing out.
         event.preventDefault();
         _pendingAdvance = { node: cont, offset: 0 };
       }
@@ -648,6 +676,42 @@ export const tinymceWrapperInit = function ({
     return event.code === 'Enter' || event.code === 'NumpadEnter';
   };
 
+  // Intercept character insertion at position 3 (cursor at textNode offset=0 inside entity).
+  // TinyMCE normalizes (textNode, 0) to "before entity element" before processing input, so
+  // typed characters land before the tag. We insert directly via DOM and bypass TinyMCE routing.
+  const onBeforeInputHandler = (event: InputEvent) => {
+    if (!writer.editor) return;
+    if (event.inputType !== 'insertText' || !event.data) return;
+
+    const rng = writer.editor.selection.getRng();
+    const container = rng.startContainer;
+    const offset = rng.startOffset;
+    const parentEl = (container as Text).parentElement;
+    if (currentBoundaryElement !== null) return;
+    if (!rng.collapsed) return;
+
+    // Inline entities are <span _tag="..."> with no _entity attr; combined entities are <div _entity>.
+    const isInsideInlineEntity = parentEl?.tagName === 'SPAN' && parentEl.hasAttribute('_tag');
+    const isInsideCombinedEntity = !!parentEl?.closest('[_entity]');
+    if (
+      container.nodeType !== Node.TEXT_NODE ||
+      offset !== 0 ||
+      (!isInsideInlineEntity && !isInsideCombinedEntity)
+    ) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const textNode = container as Text;
+    textNode.insertData(0, event.data);
+
+    const newRng = writer.editor.getDoc().createRange();
+    newRng.setStart(textNode, event.data.length);
+    newRng.collapse(true);
+    writer.editor.selection.setRng(newRng);
+
+    writer.editor.undoManager.add();
+  };
+
   const onKeyUpHandler = (event: KeyboardEvent) => {
     // nav keys and backspace check
     switch (event.code) {
@@ -662,17 +726,78 @@ export const tinymceWrapperInit = function ({
       case 'Backspace': {
         // Apply a pending advance computed in keydown. TinyMCE's keyup entity-navigation fires
         // before ours and may bounce cursor; applying here lets us override it cleanly.
+        let advancedInsideEntity = false;
+        let advancedExit = false;
         if (_pendingAdvance && writer.editor) {
-          const { node, offset } = _pendingAdvance;
+          const { node, offset, isExit, isSuppressBoundary } = _pendingAdvance;
+          advancedExit = !!isExit;
           console.log(`[pendingAdvance KU] ${event.code}`, { node, offset, nodeValue: node.nodeType === 3 ? JSON.stringify((node as Text).data) : null });
           _pendingAdvance = null;
+
+          // Compute entity-membership BEFORE setRng so we can gate the suppression flag
+          // and the doHighlightCheck skip correctly, even if setRng triggers a sync NodeChange.
+          const nodeParent = (node as Text).parentElement;
+          const isInlineEntity = nodeParent?.tagName === 'SPAN' && nodeParent.hasAttribute('_tag');
+          const isCombinedEntity = !!$(node).closest('[_entity]')[0];
+          if (isInlineEntity || isCombinedEntity) advancedInsideEntity = true;
+
+          // Entry advances (L2R pos 3 at offset 0, R2L pos 3 at textLen) land at positions that
+          // updateTagBoundaryState treats as atBoundary=true (to support natural approach from
+          // inside). Set suppression BEFORE setRng so any sync NodeChange is already covered.
+          if (isSuppressBoundary && advancedInsideEntity) {
+            _suppressedBoundaryPosition = { node, offset };
+          }
+
           const nr = writer.editor.getDoc().createRange();
           nr.setStart(node, offset);
           nr.collapse(true);
           writer.editor.selection.setRng(nr);
         }
-        doHighlightCheck(event);
+        // Detect TinyMCE entity-bounce: cursor moved from external text into entity text without
+        // a deliberate _pendingAdvance. Reverse it by restoring cursor to the pre-keydown position
+        // (adjusted by one for the arrow direction) so boundary state can be computed correctly.
+        const kdParent = (_keydownContainer as Text | null)?.parentElement;
+        const kdIsInsideEntity =
+          kdParent?.tagName === 'SPAN' && kdParent.hasAttribute('_tag')
+            ? true
+            : !!kdParent?.closest('[_entity]');
+        if (
+          !advancedInsideEntity &&
+          (event.code === 'ArrowLeft' || event.code === 'ArrowRight') &&
+          writer.editor &&
+          _keydownContainer?.nodeType === Node.TEXT_NODE &&
+          !kdIsInsideEntity
+        ) {
+          const rng = writer.editor.selection.getRng();
+          const cur = rng.startContainer;
+          const curParent = (cur as Text).parentElement;
+          const curIsInsideEntity =
+            curParent?.tagName === 'SPAN' && curParent.hasAttribute('_tag')
+              ? true
+              : !!curParent?.closest('[_entity]');
+          if (cur.nodeType === Node.TEXT_NODE && curIsInsideEntity) {
+            // Cursor bounced into entity from external text — restore to adjacent external position.
+            const targetOffset = event.code === 'ArrowLeft' ? 0 : (_keydownContainer as Text).length;
+            const nr = writer.editor.getDoc().createRange();
+            nr.setStart(_keydownContainer, targetOffset);
+            nr.collapse(true);
+            writer.editor.selection.setRng(nr);
+          }
+        }
+
+        if (!advancedInsideEntity) {
+          doHighlightCheck(event);
+        }
         updateTagBoundaryState();
+        // Deliberate advance into/past a tag (entry to position 3, or exit past the boundary)
+        // lands at the same offsets (0 / textLen) that updateTagBoundaryState also treats as
+        // "natural approach" boundaries needing a highlight. Suppress it here so editing
+        // resumes normally instead of re-showing the highlight we just navigated through.
+        // Only clear boundary state for exits (cursor landed in adjacent external text).
+        // Entry advances rely on _suppressedBoundaryPosition instead; the "first stop pin"
+        // advance that enters virtual-external mode must NOT be cleared here or the vivid
+        // highlight it just set will be wiped.
+        if (advancedExit) clearTagBoundaryState();
 
         // === DEBUG: log keyup cursor state ===
         if (event.code === 'ArrowRight' || event.code === 'ArrowLeft') {

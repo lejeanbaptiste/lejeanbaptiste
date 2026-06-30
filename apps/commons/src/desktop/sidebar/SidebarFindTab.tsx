@@ -88,9 +88,12 @@ export const SidebarFindTab = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [replacing, setReplacing] = useState(false);
+  const [walkMode, setWalkMode] = useState<'find' | 'replace' | null>(null);
 
   const resultsContainerRef = useRef<HTMLDivElement>(null);
   const findInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const walkOriginRef = useRef<HTMLInputElement | null>(null);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const keyboardNavRef = useRef(false);
   const selectedIndexRef = useRef(selectedIndex);
@@ -343,25 +346,37 @@ export const SidebarFindTab = () => {
   }, [selectedIndex]);
 
   const handleResultsKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setWalkMode(null);
+      walkOriginRef.current?.focus();
+      return;
+    }
+
     if (flatResults.length === 0) return;
 
-    if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
       event.preventDefault();
-      const next = selectedIndex < 0 ? 0 : Math.min(selectedIndex + 1, flatResults.length - 1);
+      const next = selectedIndex < 0 ? 0 : (selectedIndex + 1) % flatResults.length;
       navigateToIndex(next);
       return;
     }
 
-    if (event.key === 'ArrowUp') {
+    if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
       event.preventDefault();
-      const next = selectedIndex < 0 ? 0 : Math.max(selectedIndex - 1, 0);
+      const next = selectedIndex <= 0 ? flatResults.length - 1 : selectedIndex - 1;
       navigateToIndex(next);
       return;
     }
 
-    if (event.key === 'Enter' && selectedIndex >= 0) {
+    if (event.key === 'Enter') {
       event.preventDefault();
-      jumpToFlatResult(selectedIndex);
+      if (event.shiftKey && walkMode === 'replace') {
+        void handleReplaceAll();
+      } else if (!event.shiftKey && walkMode === 'replace' && selectedIndex >= 0) {
+        void handleReplace();
+      }
+      // In find walk mode, Enter is consumed (signals we are not in replace mode)
     }
   };
 
@@ -433,6 +448,21 @@ export const SidebarFindTab = () => {
     ],
   );
 
+  const enterWalkMode = useCallback(
+    (mode: 'find' | 'replace', origin: HTMLInputElement | null) => {
+      if (loading || replacing || !findQuery.trim()) return;
+      walkOriginRef.current = origin;
+      setWalkMode(mode);
+      const searchKey = buildSearchKey();
+      if (lastSearchKeyRef.current === searchKey && flatResults.length > 0) {
+        cycleFind();
+      } else {
+        void handleSearch();
+      }
+    },
+    [buildSearchKey, cycleFind, findQuery, flatResults.length, handleSearch, loading, replacing],
+  );
+
   const runFindOrNext = useCallback(() => {
     if (loading || replacing || !findQuery.trim()) return;
 
@@ -497,7 +527,10 @@ export const SidebarFindTab = () => {
             handleFindPanelUndoKeyDown(event);
             if (event.key === 'Enter') {
               event.preventDefault();
-              runFindOrNext();
+              if (!event.shiftKey && !event.altKey) {
+                enterWalkMode('find', findInputRef.current);
+              }
+              // Shift+Enter, Alt+Enter: nothing
               return;
             }
             if (
@@ -532,11 +565,19 @@ export const SidebarFindTab = () => {
           label="Replace"
           placeholder="Replacement text"
           value={replaceQuery}
+          inputRef={replaceInputRef}
           onChange={(event) => setReplaceQuery(event.target.value)}
           onKeyDown={(event) => {
             handleFindPanelUndoKeyDown(event);
-            if (event.key === 'Enter' && canReplace) {
-              void handleReplace();
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              if (event.shiftKey) {
+                if (canReplaceAll) void handleReplaceAll();
+              } else if (!event.altKey) {
+                enterWalkMode('replace', replaceInputRef.current);
+              }
+              // Alt+Enter: nothing
+              return;
             }
           }}
           helperText={

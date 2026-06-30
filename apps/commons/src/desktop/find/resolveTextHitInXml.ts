@@ -35,6 +35,29 @@ const findTagEnd = (content: string, tagStart: number) => {
   return -1;
 };
 
+/**
+ * Count decoded Unicode characters in content[from..to).
+ * Each XML entity reference (e.g. &ndash; &#8211;) counts as 1 character,
+ * matching how the browser DOM presents the text.
+ */
+const decodedCharCount = (content: string, from: number, to: number): number => {
+  let count = 0;
+  let i = from;
+  while (i < to) {
+    if (content[i] === '&') {
+      const semi = content.indexOf(';', i + 1);
+      if (semi !== -1 && semi < to && semi - i <= 12) {
+        count += 1;
+        i = semi + 1;
+        continue;
+      }
+    }
+    count += 1;
+    i += 1;
+  }
+  return count;
+};
+
 /** Map a character offset in raw XML source to a TEI xpath + offsets within that element's text. */
 export const resolveTextHitInXml = (
   content: string,
@@ -49,7 +72,22 @@ export const resolveTextHitInXml = (
   }
   const stack: StackEntry[] = [];
   const siblingCounts = new Map<string, number>();
-  let elementTextOffset = 0;
+
+  /**
+   * Accumulated decoded-character count for each level in the stack.
+   * Index 0 = text accumulated in the root element (stack[0]).
+   * When a child is popped, its total is added to the parent's entry,
+   * so the parent's offset correctly reflects all preceding text (including
+   * text inside child elements).
+   */
+  const textOffsetAtLevel: number[] = [];
+
+  const currentOffset = () => textOffsetAtLevel[textOffsetAtLevel.length - 1] ?? 0;
+  const addToCurrentOffset = (n: number) => {
+    if (textOffsetAtLevel.length > 0) {
+      textOffsetAtLevel[textOffsetAtLevel.length - 1] += n;
+    }
+  };
 
   const xpathForStack = () => `/${stack.map((entry) => `${entry.name}[${entry.index + 1}]`).join('/')}`;
 
@@ -61,24 +99,32 @@ export const resolveTextHitInXml = (
     const index = siblingCounts.get(key) ?? 0;
     siblingCounts.set(key, index + 1);
     stack.push({ name, index });
-    elementTextOffset = 0;
+    textOffsetAtLevel.push(0);
   };
 
   const popTag = (name: string) => {
     const top = stack[stack.length - 1];
     if (top?.name === name) {
       stack.pop();
-      elementTextOffset = 0;
+      const childTotal = textOffsetAtLevel.pop() ?? 0;
+      // Merge child's decoded-text count into the parent's running total so
+      // subsequent text in the parent element is offset correctly.
+      if (textOffsetAtLevel.length > 0) {
+        textOffsetAtLevel[textOffsetAtLevel.length - 1] += childTotal;
+      }
     }
   };
 
   const hitInTextRun = (textStart: number, textEnd: number): ResolvedTextHit | null => {
     if (stack.length === 0 || start < textStart || end > textEnd) return null;
 
+    const startInElementText = currentOffset() + decodedCharCount(content, textStart, start);
+    const endInElementText = currentOffset() + decodedCharCount(content, textStart, end);
+
     return {
       teiXPath: xpathForStack(),
-      startInElementText: elementTextOffset + (start - textStart),
-      endInElementText: elementTextOffset + (end - textStart),
+      startInElementText,
+      endInElementText,
     };
   };
 
@@ -90,9 +136,7 @@ export const resolveTextHitInXml = (
       const hit = hitInTextRun(i, textEnd);
       if (hit) return hit;
 
-      if (stack.length > 0) {
-        elementTextOffset += textEnd - i;
-      }
+      addToCurrentOffset(decodedCharCount(content, i, textEnd));
       i = textEnd;
       continue;
     }
@@ -115,9 +159,8 @@ export const resolveTextHitInXml = (
       const hit = hitInTextRun(cdataContentStart, cdataEnd);
       if (hit) return hit;
 
-      if (stack.length > 0) {
-        elementTextOffset += cdataEnd - cdataContentStart;
-      }
+      // CDATA content is literal — no entity encoding, count raw chars
+      addToCurrentOffset(cdataEnd - cdataContentStart);
       i = cdataEnd + 3;
       continue;
     }
