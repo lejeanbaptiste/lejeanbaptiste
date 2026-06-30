@@ -16,6 +16,92 @@ import { registerPairedTagUnwrap } from './pairedTagUnwrap';
 import { useXmlLanguageClient } from './useXmlLanguageClient';
 import type { LspStartOptions } from './lsp/ipcLspClient';
 
+const TAG_NAME_RE = /^([a-zA-Z_:][\w:.-]*)/;
+
+/**
+ * Given raw XML text and a cursor offset, returns the start offset and length
+ * of the tag name in the nearest enclosing opening tag.
+ * Works whether the cursor is in content, inside an opening tag, or in a closing tag.
+ */
+const findOpeningTagNameAt = (text: string, offset: number): { start: number; length: number } | null => {
+  // Determine if cursor is inside a tag by scanning forward for > vs <
+  let insideTag = false;
+  for (let i = offset; i < text.length; i++) {
+    if (text[i] === '>') { insideTag = true; break; }
+    if (text[i] === '<') break;
+  }
+
+  let ltPos = -1;
+
+  if (insideTag) {
+    // Find the < that opens the tag the cursor is in
+    for (let i = offset; i >= 0; i--) {
+      if (text[i] === '<') { ltPos = i; break; }
+    }
+  } else {
+    // Cursor is in element content — find the nearest enclosing opening tag
+    // by scanning backward and tracking depth (closing tags increase depth,
+    // non-self-closing opening tags decrease it; at depth 0 we have our tag).
+    let depth = 0;
+    let i = offset - 1;
+    while (i >= 0) {
+      if (text[i] !== '<') { i--; continue; }
+
+      const isClose = text[i + 1] === '/';
+      const isProc = text[i + 1] === '!' || text[i + 1] === '?';
+      if (isProc) { i--; continue; }
+
+      if (isClose) {
+        depth++;
+        i--;
+        continue;
+      }
+
+      // Opening or self-closing tag — check for self-close
+      let j = i + 1;
+      while (j < text.length && text[j] !== '>') j++;
+      const selfClose = text[j - 1] === '/';
+
+      if (!selfClose) {
+        if (depth === 0) { ltPos = i; break; }
+        depth--;
+      }
+      i--;
+    }
+  }
+
+  if (ltPos === -1) return null;
+
+  const isClose = text[ltPos + 1] === '/';
+  let nameStart = ltPos + (isClose ? 2 : 1);
+
+  if (isClose) {
+    // Cursor is on a closing tag — walk back to the matching opening tag
+    const closeNameMatch = TAG_NAME_RE.exec(text.slice(nameStart));
+    if (!closeNameMatch) return null;
+    const closeName = closeNameMatch[1];
+
+    let depth = 1;
+    let i = ltPos - 1;
+    while (i >= 0 && depth > 0) {
+      if (text[i] !== '<') { i--; continue; }
+      const inner = text[i + 1] === '/' ? i + 2 : i + 1;
+      const m = TAG_NAME_RE.exec(text.slice(inner));
+      if (m && m[1] === closeName) {
+        if (text[i + 1] === '/') depth++;
+        else depth--;
+        if (depth === 0) { nameStart = inner; break; }
+      }
+      i--;
+    }
+    if (depth !== 0) return null;
+  }
+
+  const nameMatch = TAG_NAME_RE.exec(text.slice(nameStart));
+  if (!nameMatch) return null;
+  return { start: nameStart, length: nameMatch[1].length };
+};
+
 export interface XmlMonacoEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -101,6 +187,51 @@ export const XmlMonacoEditor = ({
 
     monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
       dispatchDesktopOpenFind();
+    });
+
+    monacoEditor.addAction({
+      id: 'wrap-selection-in-tag',
+      label: 'Wrap selection in tag',
+      keybindings: [monaco.KeyCode.Enter],
+      precondition: 'editorHasSelection',
+      run: (editor) => {
+        const selection = editor.getSelection();
+        const model = editor.getModel();
+        if (!selection || selection.isEmpty() || !model) return;
+
+        const selectedText = model.getValueInRange(selection);
+        const wrapped = `<tag>${selectedText}</tag>`;
+
+        editor.executeEdits('wrap-tag', [{ range: selection, text: wrapped }]);
+
+        // Place cursor selecting "tag" in the opening tag so linked editing propagates
+        const tagNameStart = model.getOffsetAt({
+          lineNumber: selection.startLineNumber,
+          column: selection.startColumn,
+        }) + 1; // step past '<'
+        const startPos = model.getPositionAt(tagNameStart);
+        editor.setSelection(new monaco.Range(
+          startPos.lineNumber, startPos.column,
+          startPos.lineNumber, startPos.column + 3, // length of "tag"
+        ));
+      },
+    });
+
+    monacoEditor.addCommand(monaco.KeyCode.F2, () => {
+      const model = monacoEditor.getModel();
+      const position = monacoEditor.getPosition();
+      if (!model || !position) return;
+
+      const text = model.getValue();
+      const offset = model.getOffsetAt(position);
+      const nameRange = findOpeningTagNameAt(text, offset);
+      if (!nameRange) return;
+
+      const start = model.getPositionAt(nameRange.start);
+      const end = model.getPositionAt(nameRange.start + nameRange.length);
+      const range = new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column);
+      monacoEditor.setSelection(range);
+      monacoEditor.revealRangeInCenterIfOutsideViewport(range);
     });
 
     registerSourceFindEditor(monacoEditor);

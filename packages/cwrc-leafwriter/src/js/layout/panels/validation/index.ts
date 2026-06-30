@@ -71,16 +71,18 @@ class Validation {
 
     this.writer.event('validationRequested').subscribe(() => {
       const list = $(`#${this.id} > div.validationList`);
-      list.empty();
+      if (list.length) {
+        list.empty();
 
-      const loader = `
-        <div id="validation-progress">
-          <div id="validation-progress-bar"/>
-        </div>
-      `;
-      list.append(loader);
+        const loader = `
+          <div id="validation-progress">
+            <div id="validation-progress-bar"/>
+          </div>
+        `;
+        list.append(loader);
 
-      this.progressBar = new ProgressBar.Circle('#validation-progress-bar');
+        this.progressBar = new ProgressBar.Circle('#validation-progress-bar');
+      }
 
       void this.validate();
     });

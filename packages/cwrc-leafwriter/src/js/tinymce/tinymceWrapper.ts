@@ -176,6 +176,13 @@ export const tinymceWrapperInit = function ({
                 event.preventDefault();
                 dispatchDesktopOpenFind();
               }
+              // Use event.key (layout-aware) rather than event.code/keyCode
+              // (physical position) so this fires on Dvorak and other
+              // non-QWERTY layouts too.
+              if ((event.metaKey || event.ctrlKey) && event.key === '.') {
+                event.preventDefault();
+                writer.overmindActions.editor.toggleShowTags();
+              }
             },
             true,
           );
@@ -420,8 +427,85 @@ export const tinymceWrapperInit = function ({
 
   // === End tag boundary visualization ===
 
+  // === Click-to-select a tag via its bracket (show-tags mode) ===
+  // Brackets are CSS ::before/::after generated content (schemaManager.ts), not real DOM
+  // nodes, so a click on one always reports event.target as the bracket's host element.
+  // We distinguish "clicked the bracket" from "clicked the real content" by comparing the
+  // click position against a zero-width Range placed at the start/end of the host's actual
+  // children — generated content always renders outside that point.
+  const getContentEdgeRect = (el: Element, edge: 'start' | 'end'): DOMRect | null => {
+    const doc = el.ownerDocument;
+    const range = doc.createRange();
+    if (edge === 'start') {
+      if (el.firstChild) range.setStart(el.firstChild, 0);
+      else return el.getBoundingClientRect();
+    } else {
+      const last = el.lastChild;
+      if (last) {
+        if (last.nodeType === Node.TEXT_NODE) range.setStart(last, (last as Text).length);
+        else range.setStartAfter(last);
+      } else {
+        return el.getBoundingClientRect();
+      }
+    }
+    range.collapse(true);
+    return range.getClientRects()[0] ?? null;
+  };
+
+  const findClickedTagBracket = (event: MouseEvent): { tagEl: Element; edge: 'open' | 'close' } | null => {
+    if (!writer.editor) return null;
+    const body = writer.editor.getBody();
+    if (!body.classList.contains('showTags')) return null;
+
+    const target = event.target;
+    if (!isElement(target) || !target.hasAttribute('_tag')) return null;
+    const tagEl = target as Element;
+
+    const startRect = getContentEdgeRect(tagEl, 'start');
+    if (
+      startRect &&
+      event.clientX < startRect.left &&
+      event.clientY >= startRect.top &&
+      event.clientY <= startRect.bottom
+    ) {
+      return { tagEl, edge: 'open' };
+    }
+
+    const endRect = getContentEdgeRect(tagEl, 'end');
+    if (
+      endRect &&
+      event.clientX > endRect.right &&
+      event.clientY >= endRect.top &&
+      event.clientY <= endRect.bottom
+    ) {
+      return { tagEl, edge: 'close' };
+    }
+
+    return null;
+  };
+
+  // Mirrors the node/offset position that arrow-key navigation lands on at a tag boundary
+  // (see updateTagBoundaryState's ELEMENT_NODE branch), so the existing boundary highlight
+  // and Backspace/Delete-to-unwrap logic apply identically regardless of how the cursor got there.
+  const placeCursorAtTagBoundary = (tagEl: Element, edge: 'open' | 'close') => {
+    if (!writer.editor) return;
+    const parent = tagEl.parentNode;
+    if (!parent) return;
+    const index = Array.prototype.indexOf.call(parent.childNodes, tagEl);
+    const range = tagEl.ownerDocument.createRange();
+    range.setStart(parent, edge === 'open' ? index : index + 1);
+    range.collapse(true);
+    writer.editor.selection.setRng(range);
+  };
+
   const onMouseUpHandler = (event: MouseEvent) => {
     if (!writer.editor) return;
+
+    const bracketHit = findClickedTagBracket(event);
+    if (bracketHit) {
+      placeCursorAtTagBoundary(bracketHit.tagEl, bracketHit.edge);
+    }
+
     doHighlightCheck(event);
     updateTagBoundaryState();
 
