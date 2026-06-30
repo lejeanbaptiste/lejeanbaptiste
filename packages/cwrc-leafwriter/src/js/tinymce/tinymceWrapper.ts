@@ -164,7 +164,6 @@ export const tinymceWrapperInit = function ({
         // highlight tracking
         body.addEventListener('keydown', onKeyDownHandler, true);
         body.addEventListener('keyup', onKeyUpHandler);
-        body.addEventListener('beforeinput', onBeforeInputHandler as EventListener, true);
 
         // attach mouseUp to doc because body doesn't always extend to full height of editor panel
         if (editor.iframeElement?.contentDocument) {
@@ -187,6 +186,8 @@ export const tinymceWrapperInit = function ({
         editor.on('Change', onChangeHandler);
         editor.on('Undo', onUndoHandler);
         editor.on('Redo', onRedoHandler);
+        editor.on('focus', () => console.log('[focus-dbg] TinyMCE editor GAINED focus'));
+        editor.on('blur', () => console.log('[focus-dbg] TinyMCE editor LOST focus; activeElement:', document.activeElement));
         editor.on('BeforeAddUndo', () => {
           /*log.info('before add undo'); */
         });
@@ -306,55 +307,19 @@ export const tinymceWrapperInit = function ({
   let currentBoundaryElement: Element | null = null;
   // true when cursor is outside the element (in parent/sibling), false when at end-of-text inside
   let currentBoundaryIsExternal = false;
-  // true when user has pressed through the first stop — same DOM position, tag-removal behavior
-  let currentVirtualExternal = false;
-
-  // Cursor position saved at keydown — used in keyup to detect whether the key actually moved
-  // the cursor or whether TinyMCE bounced it back to the same place.
-  let _keydownContainer: Node | null = null;
-  let _keydownOffset = -1;
-  // Whether currentVirtualExternal was set when keydown fired — needed in keyup to distinguish
-  // "enter virtual external" from "advance past tag".
-  let _keydownBoundaryWasVirtualExternal = false;
-  // The boundary element at keydown time — preserved in keyup even after updateTagBoundaryState
-  // clears currentBoundaryElement (e.g. when TinyMCE bounces cursor to a non-boundary position).
-  let _keydownBoundaryElement: Element | null = null;
-  // Advance target decided in keydown but applied in keyup, after TinyMCE's own keyup handler
-  // has already run (and possibly bounced cursor). Applied before updateTagBoundaryState.
-  let _pendingAdvance: { node: Node; offset: number; isExit?: boolean; isSuppressBoundary?: boolean } | null = null;
-  // When a deliberate entry advance lands inside an entity (L2R at offset 0, R2L at textLen),
-  // record the exact position here. updateTagBoundaryState will suppress the atBoundary flag
-  // while cursor stays at that position, preventing the boundary-stop machinery from re-engaging
-  // immediately after entry (including via async NodeChange from setRng). Cleared automatically
-  // the first time updateTagBoundaryState sees cursor at any other position.
-  let _suppressedBoundaryPosition: { node: Node; offset: number } | null = null;
 
   const applyBoundaryClasses = (activeEl: Element | null, boundaryEl: Element | null, externalBoundary = false) => {
     if (currentActiveElement) {
-      currentActiveElement.classList.remove('tag-cursor-active', 'tag-at-boundary', 'tag-external-active');
+      currentActiveElement.classList.remove('tag-cursor-active', 'tag-at-boundary');
     }
-    // Clear virtual external when boundary element changes (cursor moved away from the tag)
-    if (boundaryEl !== currentBoundaryElement) currentVirtualExternal = false;
     currentActiveElement = activeEl;
     currentBoundaryElement = boundaryEl;
     currentBoundaryIsExternal = externalBoundary;
     if (activeEl) activeEl.classList.add('tag-cursor-active');
-    if (boundaryEl) {
-      boundaryEl.classList.add('tag-at-boundary');
-      if (currentVirtualExternal) boundaryEl.classList.add('tag-external-active');
-    }
+    if (boundaryEl) boundaryEl.classList.add('tag-at-boundary');
   };
 
   const clearTagBoundaryState = () => applyBoundaryClasses(null, null);
-
-  // Manages the second cursor stop — same DOM position but tag-removal behavior.
-  const setVirtualExternal = (active: boolean) => {
-    currentVirtualExternal = active;
-    if (currentBoundaryElement) {
-      if (active) currentBoundaryElement.classList.add('tag-external-active');
-      else currentBoundaryElement.classList.remove('tag-external-active');
-    }
-  };
 
   // Pure structural tag (no entity marker) — used for sibling detection.
   const isTagEl = (n: Node | null): n is Element =>
@@ -414,12 +379,12 @@ export const tinymceWrapperInit = function ({
         const prevSib = container.previousSibling;
         const via = tagElThroughEntity(prevSib);
         if (via) { tagEl = via; atBoundary = true; externalBoundary = true; }
-        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; /* internal start: stop ArrowLeft exit (symmetric with internal end) */ }
+        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
       } else if (offset >= textLen) {
         const nextSib = container.nextSibling;
         const via = tagElThroughEntity(nextSib);
         if (via) { tagEl = via; atBoundary = true; externalBoundary = true; }
-        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; /* internal end: stop ArrowRight exit */ }
+        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
       } else {
         if (isTagOrCombinedEl(parent)) tagEl = parent;
       }
@@ -440,18 +405,6 @@ export const tinymceWrapperInit = function ({
     }
 
     if (!tagEl) { applyBoundaryClasses(null, null); return; }
-
-    // Suppress the boundary stop at the exact position where a deliberate entry advance landed
-    // (L2R pos 3 at offset 0, R2L pos 3 at textLen). The flag self-clears when cursor moves away.
-    if (_suppressedBoundaryPosition) {
-      const r = writer.editor.selection.getRng();
-      if (r.startContainer === _suppressedBoundaryPosition.node &&
-          r.startOffset === _suppressedBoundaryPosition.offset) {
-        atBoundary = false;
-      } else {
-        _suppressedBoundaryPosition = null;
-      }
-    }
 
     applyBoundaryClasses(tagEl, atBoundary ? tagEl : null, externalBoundary);
   };
@@ -482,163 +435,34 @@ export const tinymceWrapperInit = function ({
 
     writer.editor.lastKeyPress = event.code; // store the last key press
 
-    // Snapshot cursor position so keyup can detect whether the key actually moved the cursor.
-    const _kd = writer.editor.selection.getRng();
-    _keydownContainer = _kd.startContainer;
-    _keydownOffset = _kd.startOffset;
-
-    // === DEBUG: log arrow key state near tag boundaries ===
-    if ((event.code === 'ArrowRight' || event.code === 'ArrowLeft') &&
-        !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
-      const sel = (writer.editor.getDoc().defaultView ?? window).getSelection();
-      console.log(`[boundary KD] ${event.code}`, {
-        anchorNode: sel?.anchorNode,
-        anchorNodeType: sel?.anchorNode?.nodeType === 3 ? 'TEXT' : sel?.anchorNode?.nodeType === 1 ? 'ELEMENT' : sel?.anchorNode?.nodeType,
-        anchorOffset: sel?.anchorOffset,
-        anchorNodeValue: sel?.anchorNode?.nodeType === 3 ? JSON.stringify((sel.anchorNode as Text).data) : null,
-        anchorNodeLen: sel?.anchorNode?.nodeType === 3 ? (sel.anchorNode as Text).length : null,
-        parentEl: (sel?.anchorNode as any)?.parentElement?.tagName + '[' + (sel?.anchorNode as any)?.parentElement?.getAttribute('_tag') + ']',
-        currentBoundaryElement: currentBoundaryElement?.getAttribute('id') ?? null,
-        currentBoundaryIsExternal,
-        currentVirtualExternal,
-      });
-    }
-    // === END DEBUG ===
-
-    // === Tag boundary two-stop keyboard handling ===
-    // First stop (tag-at-boundary): Backspace/Delete delete chars normally; arrow blocks at boundary.
-    // Second stop (tag-external-active): Backspace/Delete remove the tag; arrow advances past it.
+    // At an internal end-boundary (cursor inside _tag element at end of its text), block Delete
+    // so the browser doesn't merge content from after the tag into the element.
     if (
       currentBoundaryElement &&
-      !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
-      writer.editor &&
-      (event.code === 'ArrowRight' || event.code === 'ArrowLeft' ||
-       event.code === 'Backspace' || event.code === 'Delete')
+      !currentBoundaryIsExternal &&
+      event.code === 'Delete' &&
+      !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey
     ) {
-      _keydownBoundaryWasVirtualExternal = currentVirtualExternal;
-      _keydownBoundaryElement = currentBoundaryElement;
-      if (currentVirtualExternal) setVirtualExternal(false);
-
-      // Second stop: Backspace/Delete removes the tag.
-      if (
-        _keydownBoundaryWasVirtualExternal &&
-        (event.code === 'Backspace' || event.code === 'Delete') &&
-        writer.isReadOnly !== true
-      ) {
-        const id = currentBoundaryElement.getAttribute('id');
-        if (id) {
-          event.preventDefault();
-          clearTagBoundaryState();
-          writer.tagger.removeTag(id);
-          return;
-        }
-      }
-
-      const rng = writer.editor.selection.getRng();
-      const c = rng.startContainer;
-      const o = rng.startOffset;
-      const textLen = c.nodeType === Node.TEXT_NODE ? (c as Text).length : 0;
-      const isAtTextEnd = c.nodeType === Node.TEXT_NODE && o >= textLen;
-      const isAtTextStart = o === 0;
-
-      // Whether the arrow is pointing "outward" from the current boundary position.
-      // For both internal and DOM-external, this direction enters/exits the tag.
-      const outwardArrow =
-        (isAtTextEnd && event.code === 'ArrowRight') ||
-        (isAtTextStart && event.code === 'ArrowLeft');
-
-      if (event.code === 'ArrowRight' || event.code === 'ArrowLeft') {
-        if (outwardArrow) {
-          if (_keydownBoundaryWasVirtualExternal) {
-            // Second stop → advance cursor past/into the tag.
-            // Target is computed here (before TinyMCE moves cursor) and applied in keyup,
-            // after TinyMCE's entity-navigation keyup has already run.
-            let advNode: Node | null = null;
-            let advOffset = 0;
-            let isExitAdvance = false;
-            if (!currentBoundaryIsExternal) {
-              // Internal boundary: advance PAST the tag into adjacent text.
-              if (event.code === 'ArrowRight') {
-                const n = writer.utilities.getNextTextNode(
-                  currentBoundaryElement.lastChild ?? currentBoundaryElement
-                );
-                if (n) { advNode = n; advOffset = 0; isExitAdvance = true; }
-              } else {
-                const n = writer.utilities.getPreviousTextNode(
-                  currentBoundaryElement.firstChild ?? currentBoundaryElement
-                );
-                if (n) { advNode = n; advOffset = (n as Text).length; isExitAdvance = true; }
-              }
-            } else {
-              // DOM-external boundary.
-              if (event.code === 'ArrowRight') {
-                // Opening bracket: enter tag at its first text node.
-                const n = writer.utilities.getNextTextNode(currentBoundaryElement);
-                if (n) { advNode = n; advOffset = 0; isExitAdvance = false; }
-              } else {
-                // Closing bracket: enter tag at its last text node (symmetric with the
-                // opening-bracket ArrowRight case above). Start search from the node AFTER
-                // the tag so previousNode() lands on the tag's own last text descendant
-                // instead of skipping past it.
-                const n = writer.utilities.getPreviousTextNode(
-                  currentBoundaryElement.nextSibling ?? currentBoundaryElement
-                );
-                if (n) { advNode = n; advOffset = (n as Text).length; isExitAdvance = false; }
-              }
-            }
-            if (advNode) {
-              event.preventDefault();
-              // isSuppressBoundary: entry advances (not exits) land at offset 0 or textLen inside
-              // the entity, which updateTagBoundaryState would normally treat as a boundary stop.
-              // Suppress that so normal editing resumes immediately after entering.
-              _pendingAdvance = { node: advNode, offset: advOffset, isExit: isExitAdvance, isSuppressBoundary: !isExitAdvance };
-            }
-            // If no advance target (e.g. tag at document boundary), fall through without
-            // preventDefault so cursor can move naturally and avoid an infinite stop loop.
-            return;
-          } else {
-            // First stop → enter virtual external (no cursor movement).
-            // Also pin cursor via _pendingAdvance: TinyMCE's keyup may move cursor into the entity
-            // even when default is prevented (e.g. cursor at offset=0 adjacent to entity).
-            event.preventDefault();
-            setVirtualExternal(true);
-            _pendingAdvance = { node: c, offset: o };
-            return;
-          }
-        }
-      }
-
-      // First stop: block Backspace/Delete from crossing the tag boundary.
-      if (!_keydownBoundaryWasVirtualExternal) {
-        if (isAtTextEnd && event.code === 'Delete') { event.preventDefault(); return; }
-        if (isAtTextStart && event.code === 'Backspace') { event.preventDefault(); return; }
-      }
+      event.preventDefault();
+      return;
     }
-    // === End tag boundary handling ===
 
-    // TinyMCE entity-navigation exits the entity when ArrowLeft fires from offset=1 inside
-    // entity text (browser moves cursor to offset=0, then TinyMCE keyup bounces it outside).
-    // Intercept here (before browser moves cursor) so we can land at offset=0 (first stop),
-    // letting the normal boundary-advance machinery take over from there.
+    // Backspace/Delete at a tag boundary: unwrap the tag.
+    // Only fires when cursor is external to the element (in parent/sibling), not inside its text,
+    // so backspace at end-of-text still deletes characters normally.
     if (
-      !currentBoundaryElement &&
-      event.code === 'ArrowLeft' &&
+      currentBoundaryElement &&
+      currentBoundaryIsExternal &&
+      (event.code === 'Backspace' || event.code === 'Delete') &&
       !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
-      writer.editor
+      writer.isReadOnly !== true
     ) {
-      const rng = writer.editor.selection.getRng();
-      const cont = rng.startContainer;
-      const off = rng.startOffset;
-      const contParent = (cont as Text).parentElement;
-      if (
-        cont.nodeType === Node.TEXT_NODE &&
-        off === 1 &&
-        isTagOrCombinedEl(contParent) &&
-        (contParent?.tagName === 'SPAN' || !!$(cont).closest('[_entity]')[0])
-      ) {
-        // Pin at offset=0 (entity start) rather than bouncing out.
+      const id = currentBoundaryElement.getAttribute('id');
+      if (id) {
         event.preventDefault();
-        _pendingAdvance = { node: cont, offset: 0 };
+        clearTagBoundaryState();
+        writer.tagger.removeTag(id);
+        return;
       }
     }
 
@@ -653,7 +477,14 @@ export const tinymceWrapperInit = function ({
     if (writer.isReadOnly === true) return;
 
     const desktopTagging = window.__desktopTagging;
-    const taggingHandled = Boolean(desktopTagging?.handleEditorKeyDown(event));
+    // Suppress Enter/NumpadEnter briefly after a jQuery UI dialog closes.
+    // The key used to confirm the dialog (Enter) can leak into TinyMCE once focus returns,
+    // which would unintentionally open the tag command popup via matchesEditorTagPopup.
+    // dialogManager.ts sets writer._suppressEnterUntil on dialogclose.
+    const isEnter = event.code === 'Enter' || event.code === 'NumpadEnter';
+    const suppressUntil = (writer as any)._suppressEnterUntil ?? 0;
+    const enterSuppressed = isEnter && Date.now() < suppressUntil;
+    const taggingHandled = !enterSuppressed && Boolean(desktopTagging?.handleEditorKeyDown(event));
     if (taggingHandled) {
       event.preventDefault();
       event.stopPropagation();
@@ -676,42 +507,6 @@ export const tinymceWrapperInit = function ({
     return event.code === 'Enter' || event.code === 'NumpadEnter';
   };
 
-  // Intercept character insertion at position 3 (cursor at textNode offset=0 inside entity).
-  // TinyMCE normalizes (textNode, 0) to "before entity element" before processing input, so
-  // typed characters land before the tag. We insert directly via DOM and bypass TinyMCE routing.
-  const onBeforeInputHandler = (event: InputEvent) => {
-    if (!writer.editor) return;
-    if (event.inputType !== 'insertText' || !event.data) return;
-
-    const rng = writer.editor.selection.getRng();
-    const container = rng.startContainer;
-    const offset = rng.startOffset;
-    const parentEl = (container as Text).parentElement;
-    if (currentBoundaryElement !== null) return;
-    if (!rng.collapsed) return;
-
-    // Inline entities are <span _tag="..."> with no _entity attr; combined entities are <div _entity>.
-    const isInsideInlineEntity = parentEl?.tagName === 'SPAN' && parentEl.hasAttribute('_tag');
-    const isInsideCombinedEntity = !!parentEl?.closest('[_entity]');
-    if (
-      container.nodeType !== Node.TEXT_NODE ||
-      offset !== 0 ||
-      (!isInsideInlineEntity && !isInsideCombinedEntity)
-    ) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-
-    const textNode = container as Text;
-    textNode.insertData(0, event.data);
-
-    const newRng = writer.editor.getDoc().createRange();
-    newRng.setStart(textNode, event.data.length);
-    newRng.collapse(true);
-    writer.editor.selection.setRng(newRng);
-
-    writer.editor.undoManager.add();
-  };
-
   const onKeyUpHandler = (event: KeyboardEvent) => {
     // nav keys and backspace check
     switch (event.code) {
@@ -724,95 +519,8 @@ export const tinymceWrapperInit = function ({
       case 'ArrowRight':
       case 'ArrowLeft':
       case 'Backspace': {
-        // Apply a pending advance computed in keydown. TinyMCE's keyup entity-navigation fires
-        // before ours and may bounce cursor; applying here lets us override it cleanly.
-        let advancedInsideEntity = false;
-        let advancedExit = false;
-        if (_pendingAdvance && writer.editor) {
-          const { node, offset, isExit, isSuppressBoundary } = _pendingAdvance;
-          advancedExit = !!isExit;
-          console.log(`[pendingAdvance KU] ${event.code}`, { node, offset, nodeValue: node.nodeType === 3 ? JSON.stringify((node as Text).data) : null });
-          _pendingAdvance = null;
-
-          // Compute entity-membership BEFORE setRng so we can gate the suppression flag
-          // and the doHighlightCheck skip correctly, even if setRng triggers a sync NodeChange.
-          const nodeParent = (node as Text).parentElement;
-          const isInlineEntity = nodeParent?.tagName === 'SPAN' && nodeParent.hasAttribute('_tag');
-          const isCombinedEntity = !!$(node).closest('[_entity]')[0];
-          if (isInlineEntity || isCombinedEntity) advancedInsideEntity = true;
-
-          // Entry advances (L2R pos 3 at offset 0, R2L pos 3 at textLen) land at positions that
-          // updateTagBoundaryState treats as atBoundary=true (to support natural approach from
-          // inside). Set suppression BEFORE setRng so any sync NodeChange is already covered.
-          if (isSuppressBoundary && advancedInsideEntity) {
-            _suppressedBoundaryPosition = { node, offset };
-          }
-
-          const nr = writer.editor.getDoc().createRange();
-          nr.setStart(node, offset);
-          nr.collapse(true);
-          writer.editor.selection.setRng(nr);
-        }
-        // Detect TinyMCE entity-bounce: cursor moved from external text into entity text without
-        // a deliberate _pendingAdvance. Reverse it by restoring cursor to the pre-keydown position
-        // (adjusted by one for the arrow direction) so boundary state can be computed correctly.
-        const kdParent = (_keydownContainer as Text | null)?.parentElement;
-        const kdIsInsideEntity =
-          kdParent?.tagName === 'SPAN' && kdParent.hasAttribute('_tag')
-            ? true
-            : !!kdParent?.closest('[_entity]');
-        if (
-          !advancedInsideEntity &&
-          (event.code === 'ArrowLeft' || event.code === 'ArrowRight') &&
-          writer.editor &&
-          _keydownContainer?.nodeType === Node.TEXT_NODE &&
-          !kdIsInsideEntity
-        ) {
-          const rng = writer.editor.selection.getRng();
-          const cur = rng.startContainer;
-          const curParent = (cur as Text).parentElement;
-          const curIsInsideEntity =
-            curParent?.tagName === 'SPAN' && curParent.hasAttribute('_tag')
-              ? true
-              : !!curParent?.closest('[_entity]');
-          if (cur.nodeType === Node.TEXT_NODE && curIsInsideEntity) {
-            // Cursor bounced into entity from external text — restore to adjacent external position.
-            const targetOffset = event.code === 'ArrowLeft' ? 0 : (_keydownContainer as Text).length;
-            const nr = writer.editor.getDoc().createRange();
-            nr.setStart(_keydownContainer, targetOffset);
-            nr.collapse(true);
-            writer.editor.selection.setRng(nr);
-          }
-        }
-
-        if (!advancedInsideEntity) {
-          doHighlightCheck(event);
-        }
+        doHighlightCheck(event);
         updateTagBoundaryState();
-        // Deliberate advance into/past a tag (entry to position 3, or exit past the boundary)
-        // lands at the same offsets (0 / textLen) that updateTagBoundaryState also treats as
-        // "natural approach" boundaries needing a highlight. Suppress it here so editing
-        // resumes normally instead of re-showing the highlight we just navigated through.
-        // Only clear boundary state for exits (cursor landed in adjacent external text).
-        // Entry advances rely on _suppressedBoundaryPosition instead; the "first stop pin"
-        // advance that enters virtual-external mode must NOT be cleared here or the vivid
-        // highlight it just set will be wiped.
-        if (advancedExit) clearTagBoundaryState();
-
-        // === DEBUG: log keyup cursor state ===
-        if (event.code === 'ArrowRight' || event.code === 'ArrowLeft') {
-          const sel2 = (writer.editor?.getDoc().defaultView ?? window).getSelection();
-          console.log(`[boundary KU] ${event.code}`, {
-            anchorNode: sel2?.anchorNode,
-            anchorNodeType: sel2?.anchorNode?.nodeType === 3 ? 'TEXT' : sel2?.anchorNode?.nodeType === 1 ? 'ELEMENT' : sel2?.anchorNode?.nodeType,
-            anchorOffset: sel2?.anchorOffset,
-            anchorNodeValue: sel2?.anchorNode?.nodeType === 3 ? JSON.stringify((sel2.anchorNode as Text).data) : null,
-            currentBoundaryElement: currentBoundaryElement?.getAttribute('id') ?? null,
-            currentBoundaryIsExternal,
-            currentVirtualExternal,
-          });
-        }
-        // === END DEBUG ===
       }
     }
 

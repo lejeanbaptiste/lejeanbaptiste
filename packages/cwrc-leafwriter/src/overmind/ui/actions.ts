@@ -35,6 +35,10 @@ export const onInitializeOvermind = ({ state, actions, effects }: Context, overm
 
   const showRawXmlPanel = effects.editor.api.getFromLocalStorage<boolean>('showRawXmlPanel');
   state.editor.showRawXmlPanel = showRawXmlPanel === true;
+
+  const showTagBubble = effects.editor.api.getFromLocalStorage<boolean>('showTagBubble');
+  // Default true (only false if explicitly saved as false)
+  state.editor.showTagBubble = showTagBubble !== false;
 };
 
 export const setThemeAppearance = ({ state, actions, effects }: Context, value: PaletteMode) => {
