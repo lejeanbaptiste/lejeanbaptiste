@@ -39,7 +39,7 @@
 - [x] Validation panel: no crash when panel is not mounted (container guard in `validationRequested` handler)
 - [ ] Wrap around tag
 - [ ] delete current tag (shift+backspace or shift+delete)
-- [x] choose which tag to delete in case of tight nesting — click a tag's own bracket in show-tags mode to move the cursor to that tag's boundary (reuses existing boundary highlight + Backspace/Delete-to-unwrap); each nesting level's brackets are pixel-distinct so nested tags are independently selectable
+- [ ] choose which tag to delete in case of tight nesting — tried click-to-select via bracket geometry; reverted (couldn't suppress/control the native cursor reliably on click, see tag-boundary-navigation-planning.md)
 - [ ] Source: alt + enter ?
 - [ ] See hidden tags to edit...
 

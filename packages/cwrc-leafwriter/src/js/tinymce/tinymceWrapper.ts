@@ -314,8 +314,18 @@ export const tinymceWrapperInit = function ({
   let currentBoundaryElement: Element | null = null;
   // true when cursor is outside the element (in parent/sibling), false when at end-of-text inside
   let currentBoundaryIsExternal = false;
+  // Which side of the tag an external boundary sits on — 'before' means the tag is the next
+  // thing to the right (Delete should unwrap it, Backspace should act on preceding text
+  // normally); 'after' means the tag is the next thing to the left (Backspace should unwrap
+  // it, Delete should act on following text normally). null when not at an external boundary.
+  let currentBoundarySide: 'before' | 'after' | null = null;
 
-  const applyBoundaryClasses = (activeEl: Element | null, boundaryEl: Element | null, externalBoundary = false) => {
+  const applyBoundaryClasses = (
+    activeEl: Element | null,
+    boundaryEl: Element | null,
+    externalBoundary = false,
+    boundarySide: 'before' | 'after' | null = null,
+  ) => {
     if (currentActiveElement) {
       currentActiveElement.classList.remove('tag-cursor-active', 'tag-at-boundary');
       (currentActiveElement as HTMLElement).style.removeProperty('--lw-bubble-left');
@@ -323,6 +333,7 @@ export const tinymceWrapperInit = function ({
     currentActiveElement = activeEl;
     currentBoundaryElement = boundaryEl;
     currentBoundaryIsExternal = externalBoundary;
+    currentBoundarySide = externalBoundary ? boundarySide : null;
     if (activeEl) {
       activeEl.classList.add('tag-cursor-active');
       if (activeEl.tagName === 'DIV') {
@@ -386,6 +397,9 @@ export const tinymceWrapperInit = function ({
     // externalBoundary = cursor is in parent/sibling rather than inside the element's own text.
     // Only external boundaries trigger backspace-to-remove; internal ones allow normal text editing.
     let externalBoundary = false;
+    // 'before' = tag is the next sibling (cursor sits right before it); 'after' = tag is the
+    // previous sibling (cursor sits right after it). See currentBoundarySide above.
+    let boundarySide: 'before' | 'after' | null = null;
 
     if (container.nodeType === Node.TEXT_NODE) {
       const textLen = (container as Text).length;
@@ -394,12 +408,12 @@ export const tinymceWrapperInit = function ({
       if (offset === 0) {
         const prevSib = container.previousSibling;
         const via = tagElThroughEntity(prevSib);
-        if (via) { tagEl = via; atBoundary = true; externalBoundary = true; }
+        if (via) { tagEl = via; atBoundary = true; externalBoundary = true; boundarySide = 'after'; }
         else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
       } else if (offset >= textLen) {
         const nextSib = container.nextSibling;
         const via = tagElThroughEntity(nextSib);
-        if (via) { tagEl = via; atBoundary = true; externalBoundary = true; }
+        if (via) { tagEl = via; atBoundary = true; externalBoundary = true; boundarySide = 'before'; }
         else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
       } else {
         if (isTagOrCombinedEl(parent)) tagEl = parent;
@@ -412,8 +426,8 @@ export const tinymceWrapperInit = function ({
       const viaAfter = tagElThroughEntity(childAfter);
       const viaBefore = tagElThroughEntity(childBefore);
 
-      if (viaAfter) { tagEl = viaAfter; atBoundary = true; externalBoundary = true; }
-      else if (viaBefore) { tagEl = viaBefore; atBoundary = true; externalBoundary = true; }
+      if (viaAfter) { tagEl = viaAfter; atBoundary = true; externalBoundary = true; boundarySide = 'before'; }
+      else if (viaBefore) { tagEl = viaBefore; atBoundary = true; externalBoundary = true; boundarySide = 'after'; }
       else if (isTagOrCombinedEl(el)) {
         tagEl = el;
         atBoundary = offset === 0 || offset >= el.childNodes.length;
@@ -422,90 +436,13 @@ export const tinymceWrapperInit = function ({
 
     if (!tagEl) { applyBoundaryClasses(null, null); return; }
 
-    applyBoundaryClasses(tagEl, atBoundary ? tagEl : null, externalBoundary);
+    applyBoundaryClasses(tagEl, atBoundary ? tagEl : null, externalBoundary, boundarySide);
   };
 
   // === End tag boundary visualization ===
 
-  // === Click-to-select a tag via its bracket (show-tags mode) ===
-  // Brackets are CSS ::before/::after generated content (schemaManager.ts), not real DOM
-  // nodes, so a click on one always reports event.target as the bracket's host element.
-  // We distinguish "clicked the bracket" from "clicked the real content" by comparing the
-  // click position against a zero-width Range placed at the start/end of the host's actual
-  // children — generated content always renders outside that point.
-  const getContentEdgeRect = (el: Element, edge: 'start' | 'end'): DOMRect | null => {
-    const doc = el.ownerDocument;
-    const range = doc.createRange();
-    if (edge === 'start') {
-      if (el.firstChild) range.setStart(el.firstChild, 0);
-      else return el.getBoundingClientRect();
-    } else {
-      const last = el.lastChild;
-      if (last) {
-        if (last.nodeType === Node.TEXT_NODE) range.setStart(last, (last as Text).length);
-        else range.setStartAfter(last);
-      } else {
-        return el.getBoundingClientRect();
-      }
-    }
-    range.collapse(true);
-    return range.getClientRects()[0] ?? null;
-  };
-
-  const findClickedTagBracket = (event: MouseEvent): { tagEl: Element; edge: 'open' | 'close' } | null => {
-    if (!writer.editor) return null;
-    const body = writer.editor.getBody();
-    if (!body.classList.contains('showTags')) return null;
-
-    const target = event.target;
-    if (!isElement(target) || !target.hasAttribute('_tag')) return null;
-    const tagEl = target as Element;
-
-    const startRect = getContentEdgeRect(tagEl, 'start');
-    if (
-      startRect &&
-      event.clientX < startRect.left &&
-      event.clientY >= startRect.top &&
-      event.clientY <= startRect.bottom
-    ) {
-      return { tagEl, edge: 'open' };
-    }
-
-    const endRect = getContentEdgeRect(tagEl, 'end');
-    if (
-      endRect &&
-      event.clientX > endRect.right &&
-      event.clientY >= endRect.top &&
-      event.clientY <= endRect.bottom
-    ) {
-      return { tagEl, edge: 'close' };
-    }
-
-    return null;
-  };
-
-  // Mirrors the node/offset position that arrow-key navigation lands on at a tag boundary
-  // (see updateTagBoundaryState's ELEMENT_NODE branch), so the existing boundary highlight
-  // and Backspace/Delete-to-unwrap logic apply identically regardless of how the cursor got there.
-  const placeCursorAtTagBoundary = (tagEl: Element, edge: 'open' | 'close') => {
-    if (!writer.editor) return;
-    const parent = tagEl.parentNode;
-    if (!parent) return;
-    const index = Array.prototype.indexOf.call(parent.childNodes, tagEl);
-    const range = tagEl.ownerDocument.createRange();
-    range.setStart(parent, edge === 'open' ? index : index + 1);
-    range.collapse(true);
-    writer.editor.selection.setRng(range);
-  };
-
   const onMouseUpHandler = (event: MouseEvent) => {
     if (!writer.editor) return;
-
-    const bracketHit = findClickedTagBracket(event);
-    if (bracketHit) {
-      placeCursorAtTagBoundary(bracketHit.tagEl, bracketHit.edge);
-    }
-
     doHighlightCheck(event);
     updateTagBoundaryState();
 
@@ -540,13 +477,17 @@ export const tinymceWrapperInit = function ({
       return;
     }
 
-    // Backspace/Delete at a tag boundary: unwrap the tag.
-    // Only fires when cursor is external to the element (in parent/sibling), not inside its text,
-    // so backspace at end-of-text still deletes characters normally.
+    // Backspace/Delete at a tag boundary: unwrap the tag — but only the key that actually
+    // points "into" the tag. Cursor sitting right before a tag (boundarySide 'before') means
+    // Delete (forward) should unwrap it, while Backspace (backward) should act on whatever
+    // precedes the cursor normally; mirror image for 'after'. Without this check both keys
+    // unwrapped the tag regardless of direction, making it impossible to e.g. backspace a
+    // space immediately preceding a tag without first stepping away from the boundary.
     if (
       currentBoundaryElement &&
       currentBoundaryIsExternal &&
-      (event.code === 'Backspace' || event.code === 'Delete') &&
+      ((event.code === 'Delete' && currentBoundarySide === 'before') ||
+        (event.code === 'Backspace' && currentBoundarySide === 'after')) &&
       !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
       writer.isReadOnly !== true
     ) {

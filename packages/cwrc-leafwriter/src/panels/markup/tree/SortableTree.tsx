@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useAtom, useAtomValue } from 'jotai';
-import { MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { useActions } from '../../../overmind';
@@ -73,6 +73,7 @@ export const SortableTree = () => {
   });
 
   const virtuoso = useRef<VirtuosoHandle>(null);
+  const treeContainerRef = useRef<HTMLDivElement>(null);
 
   const activeItem = activeId ? visibleTree.find(({ id }) => id === activeId) : null;
 
@@ -172,7 +173,54 @@ export const SortableTree = () => {
       { id: id as string, nodeIndex, parentId: parentId as string, xpath },
       contentOnly,
     );
+
+    // Keep keyboard focus on the (non-virtualized) container rather than the clicked/selected
+    // row's own button, since that row can unmount when scrolled out of the virtualized list.
+    treeContainerRef.current?.focus({ preventScroll: true });
     return;
+  };
+
+  const moveSelection = (direction: 1 | -1) => {
+    const currentId = selectedItems[0];
+    const currentIndex = visibleTree.findIndex(({ id }) => id === currentId);
+
+    const nextIndex =
+      currentIndex === -1
+        ? direction === 1
+          ? 0
+          : visibleTree.length - 1
+        : Math.min(Math.max(currentIndex + direction, 0), visibleTree.length - 1);
+
+    const nextItem = visibleTree[nextIndex];
+    if (nextItem) selectItem(nextItem.id);
+  };
+
+  const handleTreeKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const currentId = selectedItems[0];
+    const currentItem = visibleTree.find(({ id }) => id === currentId);
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        moveSelection(1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        moveSelection(-1);
+        break;
+      case 'ArrowRight':
+        if (currentItem?.children.length && !expandedItems.includes(currentId)) {
+          event.preventDefault();
+          handleExpand(currentId, true);
+        }
+        break;
+      case 'ArrowLeft':
+        if (currentItem?.children.length && expandedItems.includes(currentId)) {
+          event.preventDefault();
+          handleExpand(currentId, false);
+        }
+        break;
+    }
   };
 
   //* expand selection from first to last
@@ -353,6 +401,12 @@ export const SortableTree = () => {
       sensors={sensors}
     >
       <SortableContext items={sortedIds} strategy={verticalListSortingStrategy}>
+        <div
+          ref={treeContainerRef}
+          tabIndex={0}
+          onKeyDown={handleTreeKeyDown}
+          style={{ height: '100%', outline: 'none' }}
+        >
         <Virtuoso
           ref={virtuoso}
           overscan={1000}
@@ -387,6 +441,7 @@ export const SortableTree = () => {
           }}
           style={{ height: '100%' }}
         />
+        </div>
         {createPortal(
           <DragOverlay dropAnimation={dropAnimationConfig} modifiers={[adjustTranslate]}>
             {activeId && activeItem ? (

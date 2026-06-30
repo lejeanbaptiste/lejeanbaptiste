@@ -400,6 +400,11 @@ span[data-mce-bogus] {
   text-underline-offset: 3px;
 }
 
+/* Redundant in show-tags mode — the visible <tagname>/</tagname> brackets already convey it. */
+.showTags *[_tag].tag-cursor-active {
+  text-decoration: none;
+}
+
 /* Layer 3: cursor is at a tag boundary — glow on all tag types */
 *[_tag].tag-at-boundary {
   background-color: rgba(90, 130, 210, 0.1);
@@ -465,48 +470,6 @@ body.showTagBubble:not(.showTags) div[_tag]:not(body > div[_tag]):not(:has(> div
   body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active::after,
   body.showTagBubble:not(.showTags) div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active::after {
     background: rgba(100, 150, 240, 0.88);
-  }
-}
-
-/* === Show-tags mode overrides ===
-   Suppress visual-mode effects; highlight brackets instead. */
-
-.showTags *[_tag].tag-cursor-active {
-  text-decoration: none;
-}
-
-.showTags *[_tag].tag-at-boundary {
-  background-color: transparent;
-}
-
-/* Cursor inside element: both brackets go from grey to readable */
-.showTags *[_tag].tag-cursor-active::before,
-.showTags *[_tag].tag-cursor-active::after {
-  color: #444 !important;
-  background-color: rgba(90, 130, 210, 0.12) !important;
-  box-shadow: 0 0 0 1px rgba(90, 130, 210, 0.25) !important;
-}
-
-/* Cursor at boundary: stronger highlight on both brackets */
-.showTags *[_tag].tag-at-boundary::before,
-.showTags *[_tag].tag-at-boundary::after {
-  color: #1a1a1a !important;
-  background-color: rgba(90, 130, 210, 0.32) !important;
-  box-shadow: 0 0 0 1px rgba(90, 130, 210, 0.55) !important;
-}
-
-@media (prefers-color-scheme: dark) {
-  .showTags *[_tag].tag-cursor-active::before,
-  .showTags *[_tag].tag-cursor-active::after {
-    color: #ccc !important;
-    background-color: rgba(130, 170, 255, 0.15) !important;
-    box-shadow: 0 0 0 1px rgba(130, 170, 255, 0.3) !important;
-  }
-  .showTags *[_tag].tag-at-boundary::before,
-  .showTags *[_tag].tag-at-boundary::after {
-    color: #f0f0f0 !important;
-    background-color: rgba(130, 170, 255, 0.38) !important;
-    box-shadow: 0 0 0 1px rgba(130, 170, 255, 0.6) !important;
   }
 }
 
