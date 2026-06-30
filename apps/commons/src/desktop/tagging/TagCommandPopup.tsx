@@ -50,12 +50,17 @@ export const TagCommandPopup = ({
   suggestions,
 }: TagCommandPopupProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const selectedItemRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) {
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
+
+  useEffect(() => {
+    selectedItemRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [highlightedIndex]);
 
   if (!open || !anchor) return null;
 
@@ -113,6 +118,7 @@ export const TagCommandPopup = ({
           suggestions.map((tag, index) => (
             <ListItemButton
               key={`${tag.name}-${tag.fullName ?? ''}`}
+              ref={index === highlightedIndex ? selectedItemRef : undefined}
               selected={index === highlightedIndex}
               disabled={Boolean(tag.invalid)}
               onClick={() => {

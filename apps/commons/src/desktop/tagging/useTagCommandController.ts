@@ -584,13 +584,21 @@ export const useTagCommandController = () => {
 
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setHighlightedIndex((current) => Math.min(current + 1, visibleSuggestions.length - 1));
+        event.stopPropagation();
+        setHighlightedIndex((current) => {
+          const next = visibleSuggestions.findIndex((t, i) => i > current && !t.invalid);
+          return next === -1 ? current : next;
+        });
         return;
       }
 
       if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setHighlightedIndex((current) => Math.max(current - 1, 0));
+        event.stopPropagation();
+        setHighlightedIndex((current) => {
+          const validBelow = visibleSuggestions.map((t, i) => i).filter((i) => i < current && !visibleSuggestions[i].invalid);
+          return validBelow.length ? validBelow[validBelow.length - 1] : current;
+        });
       }
     },
     [applyHighlighted, applyPropagate, closePopup, visibleSuggestions.length],
