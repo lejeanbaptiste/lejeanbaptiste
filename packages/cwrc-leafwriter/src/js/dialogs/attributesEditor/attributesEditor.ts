@@ -138,9 +138,16 @@ class AttributesEditor implements LWDialogProps {
     let attributes = this.attributesWidget.getData();
     if (!attributes) attributes = {}; // let form submit even if invalid (for now)
 
+    const t0 = performance.now();
+    const focusLog = (label: string) =>
+      console.log(`[focus-dbg +${(performance.now() - t0).toFixed(1)}ms] ${label}`, document.activeElement);
+
+    focusLog('attributesEditor: before dialog(close)');
+
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$schemaDialog.dialog('close');
+    focusLog('attributesEditor: after dialog(close) — synchronous');
 
     // check if beforeClose cancelled or not
     if (this.$schemaDialog.is(':hidden')) {
@@ -153,7 +160,9 @@ class AttributesEditor implements LWDialogProps {
         log.info('error destroying tooltip');
       }
 
+      focusLog('attributesEditor: before callback (addStructureTag)');
       this.currentCallback?.call(this.writer, attributes);
+      focusLog('attributesEditor: after callback');
       this.currentCallback = null;
     }
   }

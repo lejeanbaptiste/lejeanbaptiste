@@ -37,6 +37,7 @@ export type EditorStateType = {
   settings?: any;
   showEntities: boolean;
   showRawXmlPanel: boolean;
+  showTagBubble: boolean;
   showTags: boolean;
 };
 
@@ -74,6 +75,7 @@ export const state: EditorStateType = {
   mode: 0,
   showEntities: true,
   showRawXmlPanel: false,
+  showTagBubble: true,
   showTags: false,
   schemas: {},
   schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),

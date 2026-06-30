@@ -33,6 +33,7 @@ export const applyInitialSettings = ({ state, actions }: Context) => {
   const body = window.writer.editor.getBody();
   if (state.editor.showEntities) $(body).addClass('showEntities');
   if (state.editor.showTags) $(body).addClass('showTags');
+  if (state.editor.showTagBubble) $(body).addClass('showTagBubble');
   window.writer.layoutManager.applyRawXmlPanelVisibility(state.editor.showRawXmlPanel);
 };
 
@@ -70,6 +71,14 @@ export const toggleShowTags = ({ state }: Context, value?: boolean) => {
 
   $('body', window.writer.editor.getDoc()).toggleClass('showTags');
   state.editor.showTags = value;
+};
+
+export const toggleShowTagBubble = ({ state, effects }: Context, value?: boolean) => {
+  if (!window.writer?.editor) return;
+  const next = value ?? !state.editor.showTagBubble;
+  $('body', window.writer.editor.getDoc()).toggleClass('showTagBubble', next);
+  state.editor.showTagBubble = next;
+  effects.editor.api.saveToLocalStorage<boolean>('showTagBubble', next);
 };
 
 export const setShowEntities = ({ state }: Context, value: boolean) => {
