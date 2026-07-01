@@ -280,6 +280,99 @@ export const findUnwrapTagPair = (content: string, offset: number): UnwrapTagPai
   return null;
 };
 
+/**
+ * Return the innermost tag whose full span (open delimiter through close delimiter, or the
+ * whole self-closing delimiter) contains offset — unlike findUnwrapTagPair, offset does not
+ * need to sit directly on a delimiter; it can be anywhere in the tag's content or attributes.
+ * Used for "delete current tag" (shift+Backspace/shift+Delete), not incidental unwrap-on-delete.
+ */
+export const findEnclosingTagPair = (content: string, offset: number): UnwrapTagPair | null => {
+  if (offset < 0 || offset > content.length) return null;
+
+  const stack: UnwrapStackEntry[] = [];
+  let i = 0;
+
+  while (i < content.length) {
+    if (content[i] !== '<') {
+      i += 1;
+      continue;
+    }
+
+    const tagStart = i;
+    const tagEnd = findTagEnd(content, tagStart);
+    if (tagEnd === null) {
+      i += 1;
+      continue;
+    }
+
+    const inner = content.slice(i + 1, tagEnd);
+
+    if (inner.startsWith('![CDATA[')) {
+      const cdataEnd = content.indexOf(']]>', i);
+      i = cdataEnd === -1 ? content.length : cdataEnd + 3;
+      continue;
+    }
+
+    if (isIgnorableTagInner(inner)) {
+      i = tagEnd + 1;
+      continue;
+    }
+
+    if (inner.startsWith('/')) {
+      const closing = parseClosingTagName(tagStart, inner);
+      if (closing && stack.length > 0) {
+        const open = stack[stack.length - 1]!;
+        const closeName = { start: closing.nameStart, end: closing.nameEnd };
+
+        if (offset >= open.openTagStart && offset <= tagEnd + 1) {
+          const pair = buildUnwrapPair(
+            content,
+            open,
+            open.openTagStart,
+            open.openTagEnd,
+            tagStart,
+            tagEnd + 1,
+            closeName,
+          );
+          if (pair) return pair;
+        }
+
+        stack.pop();
+      }
+      i = tagEnd + 1;
+      continue;
+    }
+
+    const selfClosing = inner.trimEnd().endsWith('/');
+    const opening = parseOpeningTagName(tagStart, inner);
+    if (opening) {
+      if (selfClosing && offsetInDelimiter(offset, tagStart, tagEnd)) {
+        const openName = { start: opening.nameStart, end: opening.nameEnd };
+        return {
+          openDelimiter: { start: tagStart, end: tagEnd + 1 },
+          closeDelimiter: { start: tagEnd + 1, end: tagEnd + 1 },
+          openName,
+          closeName: openName,
+        };
+      }
+
+      if (!selfClosing) {
+        stack.push({
+          name: opening.name,
+          openTagStart: tagStart,
+          openTagEnd: tagEnd + 1,
+          openNameStart: opening.nameStart,
+          openNameEnd: opening.nameEnd,
+        });
+      }
+    }
+
+    i = tagEnd + 1;
+  }
+
+  return null;
+};
+
 export const getUnwrapEdits = (pair: UnwrapTagPair): TextDeleteRange[] =>
   [pair.openDelimiter, pair.closeDelimiter].sort((a, b) => b.start - a.start);
 

@@ -11,6 +11,7 @@ import {
   type SourceCursorMovedDetail,
 } from '../editorLocationBar';
 import { registerClosingTagCompletion } from './closingTagCompletion';
+import { findEnclosingTagPair, getUnwrapEdits } from './closingTagParser';
 import { registerLinkedTagEditing } from './linkedTagEditing';
 import { registerPairedTagUnwrap } from './pairedTagUnwrap';
 import { useXmlLanguageClient } from './useXmlLanguageClient';
@@ -214,6 +215,45 @@ export const XmlMonacoEditor = ({
           startPos.lineNumber, startPos.column,
           startPos.lineNumber, startPos.column + 3, // length of "tag"
         ));
+      },
+    });
+
+    monacoEditor.addAction({
+      id: 'delete-enclosing-tag',
+      label: 'Delete enclosing tag',
+      keybindings: [
+        monaco.KeyMod.Shift | monaco.KeyCode.Backspace,
+        monaco.KeyMod.Shift | monaco.KeyCode.Delete,
+      ],
+      run: (editor) => {
+        const model = editor.getModel();
+        const selection = editor.getSelection();
+        if (!model || !selection) return;
+
+        const content = model.getValue();
+        const offset = model.getOffsetAt(selection.getStartPosition());
+        const pair = findEnclosingTagPair(content, offset);
+        if (!pair) return;
+
+        const tagName = content.slice(pair.openName.start, pair.openName.end);
+        if (tagName === window.writer?.schemaManager?.getRoot()) return;
+
+        editor.executeEdits(
+          'delete-enclosing-tag',
+          getUnwrapEdits(pair).map((range) => {
+            const start = model.getPositionAt(range.start);
+            const end = model.getPositionAt(range.end);
+            return {
+              range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
+              text: '',
+              forceMoveMarkers: true,
+            };
+          }),
+        );
+
+        // pair.openDelimiter.start is unaffected by either deletion (both removed ranges sit
+        // at or after it), so it's valid as-is against the post-edit model.
+        editor.setPosition(model.getPositionAt(pair.openDelimiter.start));
       },
     });
 

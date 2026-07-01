@@ -477,6 +477,34 @@ export const tinymceWrapperInit = function ({
       return;
     }
 
+    // Shift+Backspace / Shift+Delete: delete the innermost tag at the cursor, regardless of
+    // exact cursor position within it (not just at a boundary). To delete an outer wrapper,
+    // either press this twice (innermost first, then its parent) or use the markup tree panel.
+    if (
+      event.shiftKey &&
+      (event.code === 'Backspace' || event.code === 'Delete') &&
+      !event.ctrlKey && !event.metaKey && !event.altKey &&
+      writer.isReadOnly !== true
+    ) {
+      const node = writer.editor.selection.getNode();
+      const tagEl = isElement(node) ? node.closest('[_tag]') : null;
+      const tagName = tagEl?.getAttribute('_tag');
+      if (
+        tagEl &&
+        tagName &&
+        tagName !== writer.schemaManager.getRoot() &&
+        tagName !== writer.schemaManager.getHeader()
+      ) {
+        const id = tagEl.getAttribute('id');
+        if (id) {
+          event.preventDefault();
+          clearTagBoundaryState();
+          writer.tagger.removeTag(id);
+          return;
+        }
+      }
+    }
+
     // Backspace/Delete at a tag boundary: unwrap the tag — but only the key that actually
     // points "into" the tag. Cursor sitting right before a tag (boundarySide 'before') means
     // Delete (forward) should unwrap it, while Backspace (backward) should act on whatever
