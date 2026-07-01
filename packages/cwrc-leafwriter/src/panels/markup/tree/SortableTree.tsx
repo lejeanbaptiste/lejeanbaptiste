@@ -223,6 +223,50 @@ export const SortableTree = () => {
           handleExpand(currentId, false);
         }
         break;
+      case 'Backspace':
+      case 'Delete': {
+        if (!currentItem) break;
+        if ([writer.schemaManager.getRoot(), writer.schemaManager.getHeader()].includes(currentItem.label)) {
+          break;
+        }
+        event.preventDefault();
+        const parentId = currentItem.parentId;
+        if (event.shiftKey) {
+          // delete tag and contents
+          writer.tagger.removeStructureTag(currentId as string, true);
+        } else {
+          // unwrap — remove tag, keep contents
+          writer.tagger.removeTag(currentId as string);
+        }
+        // let the tree data re-sync to the mutated DOM before moving selection up to the parent
+        if (parentId) window.setTimeout(() => selectItem(parentId), 0);
+        break;
+      }
+      case 'F2':
+      case 'Enter': {
+        if (!currentItem || currentItem.type === 'text') break;
+        if ([writer.schemaManager.getRoot(), writer.schemaManager.getHeader()].includes(currentItem.label)) {
+          break;
+        }
+
+        // Anchor the popup near the selected tree row instead of an (absent) editor caret.
+        // The editor's own selection already reflects this node (selectItem/utilities.selectNode
+        // set it), which is what the popup's tag/attribute resolution actually reads from.
+        const rowEl = treeContainerRef.current?.querySelector('.Mui-selected');
+        const rect = rowEl?.getBoundingClientRect();
+        if (!rect) break;
+        const anchor = { left: rect.left, top: rect.bottom };
+
+        event.preventDefault();
+        if (event.key === 'F2') {
+          void window.__desktopTagging?.openTagPopup?.('rename', anchor);
+        } else if (event.altKey) {
+          void window.__desktopTagging?.openAttributePopup?.(anchor);
+        } else {
+          void window.__desktopTagging?.openTagPopup?.('wrap', anchor);
+        }
+        break;
+      }
     }
   };
 

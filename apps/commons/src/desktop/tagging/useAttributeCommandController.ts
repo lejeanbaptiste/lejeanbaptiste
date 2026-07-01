@@ -27,6 +27,7 @@ export interface AttributeCommandController {
   highlightedIndex: number;
   nameFilter: string;
   open: boolean;
+  openPopup: (anchorOverride?: { left: number; top: number } | null) => Promise<boolean>;
   schemaAttributes: SchemaAttributeDetail[];
   setFocusedField: (field: 'name' | 'value') => void;
   setHighlightedIndex: (index: number) => void;
@@ -110,7 +111,7 @@ export const useAttributeCommandController = (): AttributeCommandController => {
     setHighlightedIndex(0);
   }, [stats]);
 
-  const openPopup = useCallback(async () => {
+  const openPopup = useCallback(async (anchorOverride?: { left: number; top: number } | null) => {
     if (!isVisualEditorActive()) return false;
 
     const ctx = getEditorTagContext();
@@ -130,7 +131,7 @@ export const useAttributeCommandController = (): AttributeCommandController => {
     setValueFilter('');
     setFocusedField('name');
     setHighlightedIndex(0);
-    setAnchor(getCaretScreenPosition());
+    setAnchor(getCaretScreenPosition(anchorOverride));
     setOpen(true);
     await loadSchemaForTag(element);
     window.writer?.layoutManager?.showModule('attributes');
@@ -255,6 +256,7 @@ export const useAttributeCommandController = (): AttributeCommandController => {
     highlightedIndex,
     nameFilter,
     open,
+    openPopup,
     schemaAttributes: visibleAttributes,
     setFocusedField,
     setHighlightedIndex,

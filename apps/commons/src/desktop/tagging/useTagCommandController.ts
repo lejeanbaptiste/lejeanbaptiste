@@ -184,7 +184,7 @@ export const useTagCommandController = () => {
   );
 
   const openPopup = useCallback(
-    async (nextMode: TagCommandMode) => {
+    async (nextMode: TagCommandMode, anchorOverride?: { left: number; top: number } | null) => {
       if (!isVisualEditorActive()) return false;
 
       const ctx = getEditorTagContext();
@@ -219,7 +219,7 @@ export const useTagCommandController = () => {
       setSuggestions([]);
       setHighlightedIndex(0);
       setFilter(nextMode === 'rename' ? ctx.tagElement?.getAttribute('_tag') ?? '' : '');
-      setAnchor(getCaretScreenPosition());
+      setAnchor(getCaretScreenPosition(anchorOverride));
       if (nextMode === 'rename') {
         const oldName = ctx.tagElement?.getAttribute('_tag') ?? '';
         setMatchCount(text ? countRenamableMatches(oldName, text) : 0);
@@ -708,6 +708,7 @@ export const useTagCommandController = () => {
     onApplyTag: (tag) => void applyTag(tag),
     onSkipWalkStep: skipWalkStep,
     open,
+    openPopup,
     selectedText,
     setFilter,
     setHighlightedIndex,

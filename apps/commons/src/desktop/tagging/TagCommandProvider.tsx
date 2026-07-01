@@ -69,10 +69,15 @@ export const TagCommandProvider = () => {
   useEffect(() => {
     if (!isDesktop()) return;
 
-    registerDesktopTaggingBridge({ changeTag, handleEditorKeyDown });
+    registerDesktopTaggingBridge({
+      changeTag,
+      handleEditorKeyDown,
+      openTagPopup: (mode, anchorOverride) => tagController.openPopup(mode, anchorOverride),
+      openAttributePopup: (anchorOverride) => attrController.openPopup(anchorOverride),
+    });
 
     return () => unregisterDesktopTaggingBridge();
-  }, [changeTag, handleEditorKeyDown]);
+  }, [changeTag, handleEditorKeyDown, tagController.openPopup, attrController.openPopup]);
 
   return (
     <>

@@ -1466,6 +1466,50 @@ class Tagger {
   }
 
   /**
+   * When a wrap selection crosses into/out of an existing element (e.g. selecting from inside
+   * `<persName>Jeff</persName>` through trailing sibling text), expand just the side(s) that
+   * actually crossed a boundary out to that element's own edge — a pure DOM read against the
+   * final Range at commit time (invoked once, when the wrap is invoked; not live during a
+   * drag), so the corrected range still reflects exactly where the user's selection already
+   * sits on any side that didn't cross a boundary. Mutates `range` in place.
+   * @returns true if the range was successfully (and safely) snapped; false if the crossing
+   * can't be resolved this way (e.g. it spans a block-level element like a paragraph), in
+   * which case the caller should fall back to its existing "no common parent" error.
+   */
+  private snapRangeToElementBoundaries(range: Range): boolean {
+    const lca = range.commonAncestorContainer;
+    if (!isElement(lca)) return false;
+
+    const findDirectChildOfLCA = (node: Node): Node | null => {
+      let current: Node | null = node;
+      while (current && current.parentNode !== lca) {
+        current = current.parentNode;
+      }
+      return current;
+    };
+
+    const startAncestor =
+      range.startContainer.parentNode !== lca ? findDirectChildOfLCA(range.startContainer) : null;
+    const endAncestor =
+      range.endContainer.parentNode !== lca ? findDirectChildOfLCA(range.endContainer) : null;
+
+    if (range.startContainer.parentNode !== lca && !startAncestor) return false;
+    if (range.endContainer.parentNode !== lca && !endAncestor) return false;
+
+    // Don't silently expand across a block-level boundary (e.g. a whole paragraph) — that's a
+    // genuinely different, larger selection the user should make deliberately, not something
+    // to auto-correct.
+    const isBlockAncestor = (node: Node | null) =>
+      !!node && isElement(node) && !!this.writer.editor?.dom.isBlock(node);
+    if (isBlockAncestor(startAncestor) || isBlockAncestor(endAncestor)) return false;
+
+    if (startAncestor) range.setStartBefore(startAncestor);
+    if (endAncestor) range.setEndAfter(endAncestor);
+
+    return true;
+  }
+
+  /**
    * Checks the user selection for overlap issues and entity markers.
    * @param {Boolean} isStructTag Is the tag a structure tag
    * @param {Boolean} cleanRange True to remove extra whitespace and fix text range that spans multiple parents
@@ -1605,6 +1649,12 @@ class Tagger {
         // fix for when the user double-clicks a word that's already been tagged
         //@ts-ignore
         range.setEnd(range.startContainer, range.startContainer.length);
+      } else if (this.snapRangeToElementBoundaries(range)) {
+        sel?.setRng(range);
+        // Skip the same-parent-assuming entity-overlap walk below — after snapping, start/end
+        // may sit at different nesting depths (only the side(s) that actually crossed a
+        // boundary were expanded), which that walk isn't safe to assume.
+        return this.VALID;
       } else {
         return isStructTag ? this.NO_COMMON_PARENT : this.OVERLAP;
       }
