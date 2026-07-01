@@ -257,7 +257,7 @@ class Utilities {
    * - parentId?: string;
    * - xpath?: string;
    */
-  selectAdjacentNodes([startNode, endNode]: [SelectNodeParams, SelectNodeParams]) {
+  selectAdjacentNodes([startNode, endNode]: [SelectNodeParams, SelectNodeParams], focusEditor = true) {
     if (!this.writer.editor) return;
     const { editor, entitiesManager } = this.writer;
     entitiesManager.removeHighlights();
@@ -283,7 +283,7 @@ class Utilities {
     //* Focus and public Event
     // need focus to happen after timeout, otherwise it doesn't always work (in FF)
     window.setTimeout(() => {
-      this.writer.editor?.focus();
+      if (focusEditor) this.writer.editor?.focus();
       this.writer.event('tagSelected').publish([startNode, endNode]);
     }, 0);
   }

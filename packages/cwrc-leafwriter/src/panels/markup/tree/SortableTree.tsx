@@ -169,9 +169,12 @@ export const SortableTree = () => {
 
     if (itemSelected.type === 'text') contentOnly = false;
 
+    // focusEditor: false — keep keyboard focus on the tree panel so arrow-key navigation can
+    // continue uninterrupted; the editor's selection/scroll still updates to follow along.
     utilities.selectNode(
       { id: id as string, nodeIndex, parentId: parentId as string, xpath },
       contentOnly,
+      false,
     );
 
     // Keep keyboard focus on the (non-virtualized) container rather than the clicked/selected
@@ -252,20 +255,25 @@ export const SortableTree = () => {
     const endItem = visibleTree.find((visibled) => visibled.id === expandedSelection.at(-1));
     if (!startItem || !endItem) return;
 
-    utilities.selectAdjacentNodes([
-      {
-        id: startItem.id as string,
-        nodeIndex: startItem.nodeIndex,
-        parentId: startItem.parentId as string,
-        xpath: startItem.xpath,
-      },
-      {
-        id: endItem.id as string,
-        nodeIndex: endItem.nodeIndex,
-        parentId: endItem.parentId as string,
-        xpath: endItem.xpath,
-      },
-    ]);
+    utilities.selectAdjacentNodes(
+      [
+        {
+          id: startItem.id as string,
+          nodeIndex: startItem.nodeIndex,
+          parentId: startItem.parentId as string,
+          xpath: startItem.xpath,
+        },
+        {
+          id: endItem.id as string,
+          nodeIndex: endItem.nodeIndex,
+          parentId: endItem.parentId as string,
+          xpath: endItem.xpath,
+        },
+      ],
+      false,
+    );
+
+    treeContainerRef.current?.focus({ preventScroll: true });
   };
 
   const handleContextMenu = (
