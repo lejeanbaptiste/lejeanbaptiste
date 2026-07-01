@@ -38,10 +38,18 @@
 - [x] Tag bubble: aligns with text start (accounts for `text-indent`) via `--lw-bubble-left` CSS custom property
 - [x] Validation panel: no crash when panel is not mounted (container guard in `validationRequested` handler)
 - [ ] Wrap around tag
-- [ ] delete current tag (shift+backspace or shift+delete)
 - [ ] choose which tag to delete in case of tight nesting — tried click-to-select via bracket geometry; reverted (couldn't suppress/control the native cursor reliably on click, see tag-boundary-navigation-planning.md)
 - [ ] Source: alt + enter ?
 - [ ] See hidden tags to edit...
+
+**New deletion/wrapping paradigm (2026-07-01)** — context menu + keyboard shortcuts only; no click-to-select-tag.
+- [x] Markup panel: panel→editor sync no longer steals keyboard focus from the panel — `utilities.selectNode`/`selectAdjacentNodes` already had a `focusEditor` param (unused by callers); SortableTree.tsx's `selectItem`/`addToselectItems` now pass `focusEditor: false` and explicitly keep focus on `treeContainerRef`. Editor→panel sync (`useEditor.ts`) was already working and is untouched. Lets arrow-key tree nav (added earlier) continue working after a selection updates the editor.
+- [ ] shift+Backspace / shift+Delete deletes the *innermost* tag at cursor (same target as existing `getCurrentTag()`), if valid per schema — WYSIWYG mode.
+- [ ] Same shift+Backspace behavior in source mode (Monaco).
+- [ ] To delete an *outer* wrapper tag: either two shift+Backspace presses (peel innermost first) or select it in the markup tree panel and delete from there — no other path. This depends on the markup panel becoming a real deletion surface (next item).
+- [ ] Markup panel: support deleting the currently-selected node directly from the panel (keyboard shortcut and/or context menu), so it can reach tags that aren't easily reachable from WYSIWYG (deeply nested, or invisible self-closing tags). Loop-guard between editor↔panel sync is currently weak (`useEditor.ts`'s `if (selectedItems.includes(item.id)) return` doesn't protect multi-selection from being silently collapsed by an editor-driven single-cursor update) — worth hardening before panel-driven deletion leans on it.
+- [ ] Wrapping: commit-time boundary snap — on Enter/wrap invocation, take the final (possibly sloppy) Range, compute the nearest valid element boundary via a pure DOM read (no live-drag fighting), and use the corrected range for `surroundContents()`. Decided against live-snap-during-drag and against two-step preview/confirm.
+- [ ] Remove/disable any remaining click-to-wrap or click-to-delete-tag entry points in WYSIWYG once the above keyboard/context-menu/panel paths exist, per the "context menu + keyboard only" paradigm.
 
 **Translation**
 - [ ] separate mode, shrinks side panels, opens parallel editing panel
