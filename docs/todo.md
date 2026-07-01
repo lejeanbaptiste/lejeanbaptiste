@@ -32,16 +32,9 @@
 - [x] Command/crtrl+. hides and shows tags
 - [x] delete current tag (shift+backspace or shift+delete)
 - [x] Keyboard navigate markup panel
-- [ ] Wrap around tag
-- [ ] choose which tag to delete in case of tight nesting
-- [ ] Intelligent wrap.
-
-
-**Translation**
-- [ ] separate mode, shrinks side panels, opens parallel editing panel
-- [ ] Research how to link translations to source material
-- [ ] Maybe language recognition runs on document and on translation?
-- [ ] Xpath, find, etc. will be sensitive to source vs translation.
+- [x] Wrap around tag / Intelligent wrap — commit-time boundary snap in `tagger.ts`'s `isSelectionValid` (`snapRangeToElementBoundaries`): when a wrap selection crosses into/out of an existing element, expand just the side(s) that crossed a boundary out to that element's edge; refuses to snap across a block-level boundary (falls back to existing error).
+- [x] choose which tag to delete in case of tight nesting
+- [x] Markup panel keyboard shortcuts: Backspace/Delete unwrap, shift+Backspace/Delete delete incl. contents (`SortableTree.tsx`), F2/Enter/Alt+Enter reuse the same rename/wrap/attribute popups as the editor, anchored to the selected tree row instead of a text caret — required threading an optional anchor override through `useTagCommandController`/`useAttributeCommandController`'s `openPopup` and exposing `openTagPopup`/`openAttributePopup` on the `window.__desktopTagging` bridge (apps/commons).
 
 **Metadata**
 - [x] Saving in the editor leaves a last-edited timestamp with the encoder name in `encodingDesc/appInfo` (TEI) or Orlando `RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` — separate from scholarly `revisionDesc`
@@ -63,8 +56,13 @@
 - [x] Get good highlighting on 'hybrid mode'
 - [x] Harmonise icon size, left and right.
 - [x] Fix build error problem
-- [ ] Fix cursor position navigating tags in WYSIWGY mode.
-- [ ] Reflect on whether 'hybrid mode' should be its own, third mode.
+- [x] Reflect on whether 'hybrid mode' should be its own, third mode.
+
+**Translation**
+- [ ] separate mode, shrinks side panels, opens parallel editing panel
+- [ ] Research how to link translations to source material
+- [ ] Maybe language recognition runs on document and on translation?
+- [ ] Xpath, find, etc. will be sensitive to source vs translation.
 
 **Presentation**
 - [ ] clean up branding in docs

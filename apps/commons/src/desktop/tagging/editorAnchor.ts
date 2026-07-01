@@ -1,5 +1,9 @@
 /** Screen position for caret-anchored popups (tag + attribute). */
-export const getCaretScreenPosition = (): { left: number; top: number } | null => {
+export const getCaretScreenPosition = (
+  override?: { left: number; top: number } | null,
+): { left: number; top: number } | null => {
+  if (override) return override;
+
   const editor = window.writer?.editor;
   if (!editor) return null;
 
