@@ -11,6 +11,8 @@ export interface TranslationModeState {
   sourcePath: string | null;
   translationPath: string | null;
   alignmentUnit: 'div' | 'p' | null;
+  /** CSL style id for footnote citations (null → app default). */
+  citationStyle: string | null;
   selectedUnitId: string | null;
 }
 
@@ -51,6 +53,7 @@ export const state: State = {
     sourcePath: null,
     translationPath: null,
     alignmentUnit: null,
+    citationStyle: null,
     selectedUnitId: null,
   },
   sourceCurrentContent: '',

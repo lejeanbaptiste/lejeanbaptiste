@@ -1,3 +1,4 @@
+import { carryOverStandOff, garbageCollectBibl } from './citations/zoteroBibliography';
 import { TEI_NS } from './teiHeaderXml';
 
 /** Matches elements by local name whether the document is TEI-namespaced or plain (e.g. Orlando). */
@@ -246,6 +247,12 @@ export const resyncTranslationShell = (
     const existingContent = corresp ? existingContentByCorresp.get(corresp) : undefined;
     if (existingContent) unit.innerHTML = existingContent;
   }
+
+  // The fresh shell is built from the source only, so document-level content like the
+  // citation bibliography must be migrated explicitly; GC drops entries whose citing
+  // footnotes did not survive the resync.
+  carryOverStandOff(existingTranslationDoc, freshShell);
+  garbageCollectBibl(freshShell);
 
   return freshShell;
 };

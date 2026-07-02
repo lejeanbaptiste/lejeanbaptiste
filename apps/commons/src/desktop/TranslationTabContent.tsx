@@ -3,6 +3,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useEffect, useRef, useState } from 'react';
 import { getActiveProjectBundle } from './activeProjectBundle';
+import { installCitationBridge } from './citations/citationBridge';
 import { startTranslationForLang } from './translationEntry';
 import { readTranslationSettings } from './translationSettings';
 import type { TranslationLanguage } from './translationTypes';
@@ -43,6 +44,11 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
   const [selectedLang, setSelectedLang] = useState<string>('');
   const [indexing, setIndexing] = useState(false);
   const resolvedKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isDesktop()) return;
+    return installCitationBridge();
+  }, []);
 
   // Let the save flow know whether it's worth doing any reindex work at all — automatic
   // reindexing only runs while this tab is actually open, to avoid extra cost on every save

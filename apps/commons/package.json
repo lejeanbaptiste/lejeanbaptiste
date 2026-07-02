@@ -57,6 +57,7 @@
     "axios": "^1.13.6",
     "broadcast-channel": "^7.3.0",
     "chroma-js": "^3.2.0",
+    "citeproc": "^2.4.63",
     "compression": "^1.8.1",
     "date-fns": "^4.1.0",
     "dexie": "^4.3.0",
@@ -98,7 +99,6 @@
   },
   "devDependencies": {
     "@cwrc/leafwriter-validator": "*",
-    "jest-fetch-mock": "^3.0.3",
     "@mdx-js/loader": "^3.1.1",
     "@octokit/types": "^16.0.0",
     "@stefanprobst/rehype-extract-toc": "^3.0.0",
@@ -120,6 +120,7 @@
     "eslint": "^8.57.1",
     "eslint-config-custom": "*",
     "html-webpack-plugin": "^5.6.6",
+    "jest-fetch-mock": "^3.0.3",
     "less": "^4.5.1",
     "less-loader": "^12.3.1",
     "mini-css-extract-plugin": "^2.10.0",

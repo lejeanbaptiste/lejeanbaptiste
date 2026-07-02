@@ -147,6 +147,12 @@ const webpackConfig: webpack.Configuration = {
         generator: { filename: 'images/[name][ext][query]' },
         options: { removeSVGTagAttrs: false },
       },
+      {
+        // Bundled CSL citation styles and locales, imported as raw strings.
+        test: /\.(csl|xml)$/,
+        include: path.resolve(__dirname, 'src', 'desktop', 'citations', 'styles'),
+        type: 'asset/source',
+      },
     ],
   },
   optimization: {

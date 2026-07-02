@@ -38,6 +38,7 @@ import type { ProjectMetadataFile } from './projectTypes';
 import {
   addTranslationLanguage,
   readTranslationSettings,
+  setCitationStyle,
   writeTranslationSettings,
 } from './translationSettings';
 
@@ -290,6 +291,7 @@ export const useNativeDialogBridge = () => {
               applyToDocuments,
               translationAlignmentUnit,
               translationLanguages,
+              translationCitationStyle,
             } = (args ?? {}) as {
               dialogId?: string;
               values?: Record<string, string>;
@@ -297,6 +299,7 @@ export const useNativeDialogBridge = () => {
               applyToDocuments?: boolean;
               translationAlignmentUnit?: 'div' | 'p';
               translationLanguages?: Array<{ code: string; label: string }>;
+              translationCitationStyle?: string;
             };
             const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
             if (!session) {
@@ -349,6 +352,21 @@ export const useNativeDialogBridge = () => {
                       // eslint-disable-next-line no-await-in-loop
                       await addTranslationLanguage(bundle, lang);
                     }
+                  }
+                }
+
+                if (translationCitationStyle) {
+                  const styleChanged =
+                    (existingTranslationSettings?.citationStyle ?? undefined) !==
+                    translationCitationStyle;
+                  await setCitationStyle(bundle, translationCitationStyle);
+                  if (styleChanged && existingTranslationSettings) {
+                    // Open translation panes re-render their footnote citations.
+                    window.dispatchEvent(
+                      new CustomEvent('desktop:translation-citation-style-changed', {
+                        detail: { citationStyle: translationCitationStyle },
+                      }),
+                    );
                   }
                 }
               } catch (error) {

@@ -9,7 +9,6 @@ import {
   DialogTitle,
   Divider,
   IconButton,
-  InputBase,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -25,6 +24,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatClearIcon from '@mui/icons-material/FormatClear';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import LinkIcon from '@mui/icons-material/Link';
@@ -94,6 +94,56 @@ interface TranslationLanguageState {
   setSelectedLang: (lang: string) => void;
 }
 
+interface CslJsonItem {
+  id: string | number;
+  type: string;
+  title?: string;
+  author?: { family?: string; given?: string; literal?: string }[];
+  issued?: { 'date-parts'?: (string | number)[][]; literal?: string };
+  [key: string]: unknown;
+}
+
+interface BiblEntry {
+  id: string;
+  uri: string;
+  csl: CslJsonItem;
+}
+
+interface ZoteroCaywPick {
+  uri: string;
+  csl: CslJsonItem;
+  locator?: string;
+  label?: string;
+  prefix?: string;
+  suffix?: string;
+}
+
+type ZoteroCaywResult =
+  | { ok: true; picks: ZoteroCaywPick[] }
+  | { ok: false; cancelled: boolean; error?: string };
+
+interface DesktopCitationBridge {
+  chipLabel: (item: CslJsonItem) => string;
+  renderCitation: (options: {
+    item: CslJsonItem;
+    styleId?: string;
+    lang?: string;
+    locator?: string;
+    locatorType?: string;
+    prefix?: string;
+    suffix?: string;
+  }) => string;
+  upsertBiblEntry: (doc: Document, item: CslJsonItem, uri: string) => string;
+  readBiblEntries: (doc: Document) => Map<string, BiblEntry>;
+  garbageCollectBibl: (doc: Document) => void;
+  pickZoteroCitation: () => Promise<ZoteroCaywResult>;
+  getCitationStyleOptions: () => Promise<{
+    defaultStyleId: string;
+    options: Array<{ id: string; label: string }>;
+  }>;
+  setCitationStyle: (styleId: string) => Promise<boolean>;
+}
+
 declare global {
   interface Window {
     __leafWriterTranslationPane?: {
@@ -115,6 +165,18 @@ const getTranslationLanguageState = (): TranslationLanguageState | null =>
       __desktopTranslationLanguageState?: TranslationLanguageState;
     }
   ).__desktopTranslationLanguageState ?? null;
+
+const getCitationBridge = (): DesktopCitationBridge | null =>
+  (window as Window & { __desktopCitationBridge?: DesktopCitationBridge })
+    .__desktopCitationBridge ?? null;
+
+const prepareAtomicCitationFields = (root: ParentNode): void => {
+  for (const bibl of Array.from(root.querySelectorAll('bibl[type="zotero-ref"]'))) {
+    bibl.setAttribute('contenteditable', 'false');
+    bibl.setAttribute('data-leaf-citation-field', 'true');
+    bibl.setAttribute('title', 'Zotero citation');
+  }
+};
 
 const findUnitById = (doc: Document, alignmentUnit: 'div' | 'p', unitId: string): Element | null =>
   getElementsByLocalName(doc, alignmentUnit).find((element) => {
@@ -278,6 +340,12 @@ export const TranslationPane = () => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [footnotes, setFootnotes] = useState<string[]>([]);
+  const [citationStylePickerOpen, setCitationStylePickerOpen] = useState(false);
+  const [citationStyleChoices, setCitationStyleChoices] = useState<
+    Array<{ id: string; label: string }>
+  >([]);
+  const [pendingCitationStyle, setPendingCitationStyle] = useState('');
+  const citationStyleResolveRef = useRef<((styleId: string | null) => void) | null>(null);
   const docRef = useRef<Document | null>(null);
   docRef.current = translationDoc;
   const pendingHighlightRef = useRef<{
@@ -292,6 +360,7 @@ export const TranslationPane = () => {
   translationPathRef.current = translationPath ?? null;
   const focusedRef = useRef(false);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeCitationStyle = pendingCitationStyle || translationMode.citationStyle || undefined;
 
   const setTranslationDocument = useCallback((doc: Document) => {
     docRef.current = doc;
@@ -479,9 +548,38 @@ export const TranslationPane = () => {
       return;
     }
     const notes = Array.from(editable.querySelectorAll('note'));
-    for (const note of notes) note.setAttribute('contenteditable', 'false');
-    setFootnotes(notes.map((note) => note.textContent ?? ''));
+    for (const note of notes) {
+      note.setAttribute('contenteditable', 'false');
+      prepareAtomicCitationFields(note);
+    }
+    setFootnotes(notes.map((note) => note.innerHTML));
   }, []);
+
+  const renderCitationRefs = useCallback(
+    (doc: Document, styleId = activeCitationStyle) => {
+      const bridge = getCitationBridge();
+      if (!bridge) return;
+
+      const entries = bridge.readBiblEntries(doc);
+      for (const bibl of Array.from(doc.getElementsByTagName('bibl'))) {
+        if (bibl.getAttribute('type') !== 'zotero-ref') continue;
+        const corresp = bibl.getAttribute('corresp') ?? '';
+        if (!corresp.startsWith('#')) continue;
+        const entry = entries.get(corresp.slice(1));
+        if (!entry) continue;
+        bibl.innerHTML = bridge.renderCitation({
+          item: entry.csl,
+          styleId,
+          lang: translationMode.lang ?? undefined,
+          locator: bibl.getAttribute('data-locator') ?? undefined,
+          locatorType: bibl.getAttribute('data-locator-type') ?? undefined,
+          prefix: bibl.getAttribute('data-prefix') ?? undefined,
+          suffix: bibl.getAttribute('data-suffix') ?? undefined,
+        });
+      }
+    },
+    [activeCitationStyle, translationMode.lang],
+  );
 
   useEffect(() => {
     if (editableRef.current && editableRef.current.innerHTML !== unitHtml) {
@@ -509,10 +607,80 @@ export const TranslationPane = () => {
     for (const note of Array.from(clone.querySelectorAll('note'))) {
       note.removeAttribute('contenteditable');
     }
+    for (const bibl of Array.from(clone.querySelectorAll('bibl[type="zotero-ref"]'))) {
+      bibl.removeAttribute('contenteditable');
+      bibl.removeAttribute('data-leaf-citation-field');
+      bibl.removeAttribute('title');
+    }
     unit.innerHTML = clone.innerHTML;
+    getCitationBridge()?.garbageCollectBibl(doc);
     const nextXml = new XMLSerializer().serializeToString(doc);
     await getDesktopApi()?.writeFile?.(translationPath, nextXml);
   }, [alignmentUnit, sourcePath, selectedUnitId, translationPath]);
+
+  const refreshCurrentCitationFields = useCallback(
+    async (styleId = activeCitationStyle) => {
+      const doc = docRef.current;
+      if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) return;
+
+      renderCitationRefs(doc, styleId);
+
+      const unit = findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), selectedUnitId);
+      const nextHtml = unit?.innerHTML ?? '';
+      setUnitHtml(nextHtml);
+      if (editableRef.current) editableRef.current.innerHTML = nextHtml;
+      refreshFootnotes();
+      await getDesktopApi()?.writeFile?.(
+        translationPath,
+        new XMLSerializer().serializeToString(doc),
+      );
+    },
+    [
+      activeCitationStyle,
+      alignmentUnit,
+      refreshFootnotes,
+      renderCitationRefs,
+      selectedUnitId,
+      sourcePath,
+      translationPath,
+    ],
+  );
+
+  useEffect(() => {
+    const onCitationStyleChanged = async (event: Event) => {
+      const citationStyle = (event as CustomEvent<{ citationStyle?: string }>).detail
+        ?.citationStyle;
+      if (citationStyle) setPendingCitationStyle(citationStyle);
+      await refreshCurrentCitationFields(citationStyle ?? activeCitationStyle);
+    };
+
+    const onZoteroRefresh = async () => {
+      await refreshCurrentCitationFields();
+    };
+
+    const onZoteroOpenStylePicker = async () => {
+      const bridge = getCitationBridge();
+      if (!bridge) {
+        setAiStatus({ severity: 'error', message: 'Zotero preferences are not available.' });
+        return;
+      }
+
+      const styleId = await openCitationStylePicker(bridge);
+      if (styleId) await refreshCurrentCitationFields(styleId);
+    };
+
+    window.addEventListener('desktop:translation-citation-style-changed', onCitationStyleChanged);
+    window.addEventListener('desktop:zotero-refresh-citations', onZoteroRefresh);
+    window.addEventListener('desktop:zotero-open-style-picker', onZoteroOpenStylePicker);
+    return () => {
+      window.removeEventListener(
+        'desktop:translation-citation-style-changed',
+        onCitationStyleChanged,
+      );
+      window.removeEventListener('desktop:zotero-refresh-citations', onZoteroRefresh);
+      window.removeEventListener('desktop:zotero-open-style-picker', onZoteroOpenStylePicker);
+    };
+  }, [activeCitationStyle, refreshCurrentCitationFields]);
 
   useEffect(() => {
     const runHistoryCommand = async (command: 'redo' | 'undo'): Promise<boolean> => {
@@ -735,8 +903,9 @@ export const TranslationPane = () => {
     }
 
     // Selection contains small-caps <hi> elements: unwrap those.
-    const contained = Array.from(editableRef.current?.querySelectorAll('hi[rend="small-caps"]') ?? [])
-      .filter((hi) => range.intersectsNode(hi));
+    const contained = Array.from(
+      editableRef.current?.querySelectorAll('hi[rend="small-caps"]') ?? [],
+    ).filter((hi) => range.intersectsNode(hi));
     if (contained.length > 0) {
       for (const hi of contained) unwrapElement(hi);
       return;
@@ -861,10 +1030,148 @@ export const TranslationPane = () => {
     refreshFootnotes();
   };
 
-  const updateFootnote = (index: number, value: string) => {
+  const chooseCitationStyleForFirstReference = async (
+    bridge: DesktopCitationBridge,
+  ): Promise<string | null> => {
+    if (translationMode.citationStyle) return translationMode.citationStyle;
+    if (pendingCitationStyle) return pendingCitationStyle;
+
+    return openCitationStylePicker(bridge);
+  };
+
+  const openCitationStylePicker = async (
+    bridge: DesktopCitationBridge,
+    initialStyleId = pendingCitationStyle || translationMode.citationStyle || undefined,
+  ): Promise<string | null> => {
+    const { defaultStyleId, options } = await bridge.getCitationStyleOptions();
+    const fallbackStyleId = options[0]?.id ?? defaultStyleId;
+    setCitationStyleChoices(options);
+    setPendingCitationStyle(initialStyleId ?? fallbackStyleId);
+    setCitationStylePickerOpen(true);
+
+    const styleId = await new Promise<string | null>((resolve) => {
+      citationStyleResolveRef.current = resolve;
+    });
+    citationStyleResolveRef.current = null;
+    setCitationStylePickerOpen(false);
+
+    if (!styleId) {
+      setPendingCitationStyle('');
+      return null;
+    }
+
+    const saved = await bridge.setCitationStyle(styleId);
+    if (!saved) {
+      setAiStatus({ severity: 'error', message: 'Could not save citation style.' });
+      setPendingCitationStyle('');
+      return null;
+    }
+
+    setPendingCitationStyle(styleId);
+    return styleId;
+  };
+
+  const createRenderedCitation = (
+    pick: ZoteroCaywPick,
+    biblId: string,
+    styleId: string | undefined,
+  ): HTMLElement | null => {
+    const bridge = getCitationBridge();
+    if (!bridge) return null;
+
+    const bibl = document.createElement('bibl');
+    bibl.setAttribute('type', 'zotero-ref');
+    bibl.setAttribute('contenteditable', 'false');
+    bibl.setAttribute('data-leaf-citation-field', 'true');
+    bibl.setAttribute('title', 'Zotero citation');
+    bibl.setAttribute('corresp', `#${biblId}`);
+    if (pick.locator) bibl.setAttribute('data-locator', pick.locator);
+    if (pick.label) bibl.setAttribute('data-locator-type', pick.label);
+    if (pick.prefix) bibl.setAttribute('data-prefix', pick.prefix);
+    if (pick.suffix) bibl.setAttribute('data-suffix', pick.suffix);
+    bibl.innerHTML = bridge.renderCitation({
+      item: pick.csl,
+      styleId,
+      lang: translationMode.lang ?? undefined,
+      locator: pick.locator,
+      locatorType: pick.label,
+      prefix: pick.prefix,
+      suffix: pick.suffix,
+    });
+    return bibl;
+  };
+
+  const insertZoteroCitation = async () => {
+    const bridge = getCitationBridge();
+    if (!bridge) {
+      setAiStatus({ severity: 'error', message: 'Zotero citations are not available.' });
+      return;
+    }
+    if (locked) {
+      setAiStatus({ severity: 'error', message: 'This translation unit is locked.' });
+      return;
+    }
+
+    const doc = docRef.current;
+    if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) {
+      setAiStatus({ severity: 'error', message: 'Select a translation unit first.' });
+      return;
+    }
+
+    const range = getEditableRange();
+    if (!range) return;
+
+    setAiStatus({ severity: 'info', message: 'Waiting for Zotero citation...' });
+    const result = await bridge.pickZoteroCitation();
+    if (!result.ok) {
+      if (!result.cancelled) {
+        setAiStatus({ severity: 'error', message: result.error ?? 'Zotero citation failed.' });
+      } else {
+        setAiStatus(null);
+      }
+      return;
+    }
+
+    const styleId = await chooseCitationStyleForFirstReference(bridge);
+    if (!styleId) {
+      setAiStatus(null);
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    result.picks.forEach((pick, index) => {
+      const biblId = bridge.upsertBiblEntry(doc, pick.csl, pick.uri);
+      const bibl = createRenderedCitation(pick, biblId, styleId);
+      if (!bibl) return;
+      if (index > 0) fragment.appendChild(document.createTextNode('; '));
+      fragment.appendChild(bibl);
+    });
+
+    range.deleteContents();
+    const lastInserted = fragment.lastChild;
+    range.insertNode(fragment);
+
+    const selection = window.getSelection();
+    if (lastInserted) {
+      const after = document.createRange();
+      after.setStartAfter(lastInserted);
+      after.collapse(true);
+      selection?.removeAllRanges();
+      selection?.addRange(after);
+    }
+
+    renderCitationRefs(doc);
+    refreshFootnotes();
+    await persist();
+    setAiStatus(null);
+  };
+
+  const updateFootnote = (index: number, html: string) => {
     const note = editableRef.current?.querySelectorAll('note')[index];
-    if (note) note.textContent = value;
-    setFootnotes((previous) => previous.map((text, i) => (i === index ? value : text)));
+    if (note) {
+      note.innerHTML = html;
+      prepareAtomicCitationFields(note);
+    }
   };
 
   const removeFootnote = (index: number) => {
@@ -886,7 +1193,8 @@ export const TranslationPane = () => {
       | 'smallCaps'
       | 'removeFormat'
       | 'link'
-      | 'footnote',
+      | 'footnote'
+      | 'citation',
   ) => {
     editableRef.current?.focus();
     if (command === 'smallCaps') {
@@ -905,6 +1213,10 @@ export const TranslationPane = () => {
       insertFootnote();
       return;
     }
+    if (command === 'citation') {
+      void insertZoteroCitation();
+      return;
+    }
     document.execCommand(command);
   };
 
@@ -914,7 +1226,6 @@ export const TranslationPane = () => {
 
   const languageOptions = languageState?.languages ?? [];
   const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
-
   const formatItems: Array<{
     command:
       | 'bold'
@@ -926,7 +1237,8 @@ export const TranslationPane = () => {
       | 'subscript'
       | 'removeFormat'
       | 'link'
-      | 'footnote';
+      | 'footnote'
+      | 'citation';
     icon: ReactNode;
     label: string;
     shortcut: string;
@@ -984,6 +1296,12 @@ export const TranslationPane = () => {
       icon: <StickyNote2Icon fontSize="small" />,
       label: 'Footnote',
       shortcut: 'Cmd/Ctrl+Alt+F',
+    },
+    {
+      command: 'citation',
+      icon: <FormatQuoteIcon fontSize="small" />,
+      label: 'Zotero citation',
+      shortcut: 'Zotero picker',
     },
     {
       command: 'removeFormat',
@@ -1150,6 +1468,44 @@ export const TranslationPane = () => {
           </DialogActions>
         </Dialog>
 
+        <Dialog
+          fullWidth
+          maxWidth="xs"
+          onClose={() => citationStyleResolveRef.current?.(null)}
+          open={citationStylePickerOpen}
+        >
+          <DialogTitle>Citation style</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              fullWidth
+              helperText="Stored with this project's translation metadata."
+              label="Style"
+              margin="dense"
+              onChange={(event) => setPendingCitationStyle(event.target.value)}
+              select
+              SelectProps={{ native: true }}
+              size="small"
+              value={pendingCitationStyle}
+            >
+              {citationStyleChoices.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </TextField>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => citationStyleResolveRef.current?.(null)}>Cancel</Button>
+            <Button
+              onClick={() => citationStyleResolveRef.current?.(pendingCitationStyle)}
+              variant="contained"
+            >
+              Use Style
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <Typography
           color="text.secondary"
           noWrap
@@ -1176,134 +1532,161 @@ export const TranslationPane = () => {
             flexDirection: 'column',
           }}
         >
-        <Box
-          ref={editableRef}
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={() => {
-            void persist();
-            blurTimeoutRef.current = setTimeout(() => {
-              focusedRef.current = false;
-            }, 200);
-          }}
-          onFocus={() => {
-            if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
-            focusedRef.current = true;
-          }}
-          onInput={refreshFootnotes}
-          onKeyDown={(event) => {
-            if (!(event.metaKey || event.ctrlKey)) return;
-            const key = event.key.toLowerCase();
-            let command:
-              | 'smallCaps'
-              | 'superscript'
-              | 'subscript'
-              | 'removeFormat'
-              | 'link'
-              | 'footnote'
-              | null = null;
-            if (event.shiftKey && key === 'k') command = 'smallCaps';
-            else if (!event.shiftKey && !event.altKey && key === 'k') command = 'link';
-            // With Alt held, macOS reports the Option-layer character in `key`
-            // (Option+F = 'ƒ' on any layout, since the Option layer follows the
-            // logical letter). Match it too, plus a physical-key fallback.
-            else if (
-              event.altKey &&
-              !event.shiftKey &&
-              (key === 'f' || key === 'ƒ' || event.code === 'KeyF')
-            )
-              command = 'footnote';
-            else if (key === '.') command = 'superscript';
-            else if (key === ',') command = 'subscript';
-            else if (key === 'm') command = 'removeFormat';
-            if (!command) return;
-            event.preventDefault();
-            event.stopPropagation();
-            applyFormat(command);
-          }}
-          sx={{
-            flex: '1 0 auto',
-            p: 1.5,
-            outline: 'none',
-            textAlign: 'justify',
-            counterReset: 'footnote',
-            // <hi> is a TEI element unknown to HTML, so its rend values need
-            // explicit styling to be visible while editing.
-            '& hi[rend="small-caps"]': { fontVariant: 'small-caps' },
-            '& hi[rend="bold"]': { fontWeight: 'bold' },
-            '& hi[rend="italic"]': { fontStyle: 'italic' },
-            '& hi[rend="underline"]': { textDecoration: 'underline' },
-            '& hi[rend="strikethrough"]': { textDecoration: 'line-through' },
-            '& ref': { color: 'primary.main', textDecoration: 'underline' },
-            // Footnotes render as numbered superscript anchors; their text is
-            // collapsed here and edited in the numbered list below the text.
-            '& note': {
-              counterIncrement: 'footnote',
-              fontSize: '0px',
-              userSelect: 'none',
-            },
-            '& note::after': {
-              content: 'counter(footnote)',
-              fontSize: '0.7rem',
-              lineHeight: 0,
-              // vertical-align: super is relative to the parent's font metrics,
-              // which are 0px here (the note text is collapsed) — raise manually.
-              position: 'relative',
-              top: '-0.5em',
-              fontWeight: 600,
-              color: 'primary.main',
-              px: '1px',
-            },
-            '&:empty::before': {
-              content: '"Start typing the translation for this unit…"',
-              color: 'text.disabled',
-            },
-          }}
-        />
+          <Box
+            ref={editableRef}
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={() => {
+              void persist();
+              blurTimeoutRef.current = setTimeout(() => {
+                focusedRef.current = false;
+              }, 200);
+            }}
+            onFocus={() => {
+              if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+              focusedRef.current = true;
+            }}
+            onInput={refreshFootnotes}
+            onKeyDown={(event) => {
+              if (!(event.metaKey || event.ctrlKey)) return;
+              const key = event.key.toLowerCase();
+              let command:
+                | 'smallCaps'
+                | 'superscript'
+                | 'subscript'
+                | 'removeFormat'
+                | 'link'
+                | 'footnote'
+                | null = null;
+              if (event.shiftKey && key === 'k') command = 'smallCaps';
+              else if (!event.shiftKey && !event.altKey && key === 'k') command = 'link';
+              // With Alt held, macOS reports the Option-layer character in `key`
+              // (Option+F = 'ƒ' on any layout, since the Option layer follows the
+              // logical letter). Match it too, plus a physical-key fallback.
+              else if (
+                event.altKey &&
+                !event.shiftKey &&
+                (key === 'f' || key === 'ƒ' || event.code === 'KeyF')
+              )
+                command = 'footnote';
+              else if (key === '.') command = 'superscript';
+              else if (key === ',') command = 'subscript';
+              else if (key === 'm') command = 'removeFormat';
+              if (!command) return;
+              event.preventDefault();
+              event.stopPropagation();
+              applyFormat(command);
+            }}
+            sx={{
+              flex: '1 0 auto',
+              p: 1.5,
+              outline: 'none',
+              textAlign: 'justify',
+              counterReset: 'footnote',
+              // <hi> is a TEI element unknown to HTML, so its rend values need
+              // explicit styling to be visible while editing.
+              '& hi[rend="small-caps"]': { fontVariant: 'small-caps' },
+              '& hi[rend="bold"]': { fontWeight: 'bold' },
+              '& hi[rend="italic"]': { fontStyle: 'italic' },
+              '& hi[rend="underline"]': { textDecoration: 'underline' },
+              '& hi[rend="strikethrough"]': { textDecoration: 'line-through' },
+              '& ref': { color: 'primary.main', textDecoration: 'underline' },
+              // Footnotes render as numbered superscript anchors; their text is
+              // collapsed here and edited in the numbered list below the text.
+              '& note': {
+                counterIncrement: 'footnote',
+                fontSize: '0px',
+                userSelect: 'none',
+              },
+              '& note::after': {
+                content: 'counter(footnote)',
+                fontSize: '0.7rem',
+                lineHeight: 0,
+                // vertical-align: super is relative to the parent's font metrics,
+                // which are 0px here (the note text is collapsed) — raise manually.
+                position: 'relative',
+                top: '-0.5em',
+                fontWeight: 600,
+                color: 'primary.main',
+                px: '1px',
+              },
+              '&:empty::before': {
+                content: '"Start typing the translation for this unit…"',
+                color: 'text.disabled',
+              },
+            }}
+          />
 
-        {footnotes.length > 0 && (
-          <Box sx={{ px: 1.5, pb: 1.5 }}>
-            <Divider sx={{ width: 120, mb: 1 }} />
-            <Stack spacing={0.5}>
-              {footnotes.map((text, index) => (
-                <Stack alignItems="baseline" direction="row" key={index} spacing={1}>
-                  <Typography
-                    color="text.secondary"
-                    sx={{ minWidth: 16, textAlign: 'right', flexShrink: 0 }}
-                    variant="caption"
-                  >
-                    {index + 1}.
-                  </Typography>
-                  <InputBase
-                    fullWidth
-                    inputRef={(el: HTMLTextAreaElement | null) => {
-                      if (el && focusFootnoteIndexRef.current === index) {
-                        focusFootnoteIndexRef.current = null;
-                        el.focus();
-                      }
-                    }}
-                    multiline
-                    onBlur={() => void persist()}
-                    onChange={(event) => updateFootnote(index, event.target.value)}
-                    placeholder="Footnote text…"
-                    sx={{ fontSize: '0.85rem', p: 0, lineHeight: 1.4 }}
-                    value={text}
-                  />
-                  <Tooltip title="Remove footnote">
-                    <IconButton
-                      aria-label="Remove footnote"
-                      onClick={() => removeFootnote(index)}
-                      size="small"
-                      sx={{ flexShrink: 0, alignSelf: 'center' }}
+          {footnotes.length > 0 && (
+            <Box sx={{ px: 1.5, pb: 1.5 }}>
+              <Divider sx={{ width: 120, mb: 1 }} />
+              <Stack spacing={0.5}>
+                {footnotes.map((text, index) => (
+                  <Stack alignItems="baseline" direction="row" key={index} spacing={1}>
+                    <Typography
+                      color="text.secondary"
+                      sx={{ minWidth: 16, textAlign: 'right', flexShrink: 0 }}
+                      variant="caption"
                     >
-                      <CloseIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              ))}
-            </Stack>
-          </Box>
-        )}
+                      {index + 1}.
+                    </Typography>
+                    <Box
+                      contentEditable
+                      dangerouslySetInnerHTML={{ __html: text }}
+                      onBlur={(event) => {
+                        updateFootnote(index, event.currentTarget.innerHTML);
+                        void persist();
+                      }}
+                      onInput={(event) => {
+                        prepareAtomicCitationFields(event.currentTarget);
+                        updateFootnote(index, event.currentTarget.innerHTML);
+                      }}
+                      ref={(el: HTMLDivElement | null) => {
+                        if (el) prepareAtomicCitationFields(el);
+                        if (el && focusFootnoteIndexRef.current === index) {
+                          focusFootnoteIndexRef.current = null;
+                          el.focus();
+                        }
+                      }}
+                      suppressContentEditableWarning
+                      sx={{
+                        flex: 1,
+                        fontSize: '0.85rem',
+                        lineHeight: 1.4,
+                        minHeight: 22,
+                        outline: 'none',
+                        py: 0.25,
+                        '&:empty::before': {
+                          content: '"Footnote text..."',
+                          color: 'text.disabled',
+                        },
+                        '& bibl[data-leaf-citation-field="true"]': {
+                          bgcolor: 'action.hover',
+                          border: 1,
+                          borderColor: 'divider',
+                          borderRadius: 0.75,
+                          cursor: 'default',
+                          px: 0.5,
+                          userSelect: 'all',
+                          whiteSpace: 'break-spaces',
+                        },
+                      }}
+                    />
+                    <Tooltip title="Remove footnote">
+                      <IconButton
+                        aria-label="Remove footnote"
+                        onClick={() => removeFootnote(index)}
+                        size="small"
+                        sx={{ flexShrink: 0, alignSelf: 'center' }}
+                      >
+                        <CloseIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          )}
         </Box>
       ) : (
         <Box sx={{ flex: 1, p: 1.5 }}>

@@ -241,6 +241,27 @@ export const useProjectMenu = () => {
         return;
       }
 
+      if (action === 'zotero-preferences') {
+        if (!isProjectReady || !projectFilePath) {
+          notifyViaSnackbar('Open a project first.');
+          return;
+        }
+
+        if (!(window as Window & { __desktopCitationBridge?: unknown }).__desktopCitationBridge) {
+          notifyViaSnackbar('Open the Translation tab to choose Zotero citation style.');
+          return;
+        }
+
+        window.dispatchEvent(new CustomEvent('desktop:zotero-open-style-picker'));
+        return;
+      }
+
+      if (action === 'zotero-refresh') {
+        window.dispatchEvent(new CustomEvent('desktop:zotero-refresh-citations'));
+        notifyViaSnackbar('Refreshing Zotero citations.');
+        return;
+      }
+
       if (action === 'check-schema-update') {
         if (!isProjectReady || !projectFilePath) {
           notifyViaSnackbar('Open a project first.');
