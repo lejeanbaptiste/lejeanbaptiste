@@ -12,6 +12,9 @@
     'use strict';
 
     var tinymce = require('tinymce');
+    var $ = require('jquery');
+    var XML2CWRC = require('../../conversion/xml2cwrc').default;
+    var pasteSpecial = require('../pasteSpecial');
     
     var each = tinymce.each,
         defs = {
@@ -77,6 +80,258 @@
 
             // Initialize plain text flag
             ed.pasteAsPlainText = getParam(ed, 'paste_text_sticky_default');
+
+            function getClipboardText(e) {
+                var clipboard = e.clipboardData || ed.dom.doc.dataTransfer;
+                if (!clipboard?.getData) return '';
+                return clipboard.getData('text/plain') || clipboard.getData('Text') || '';
+            }
+
+            function getTextFromHtml(html) {
+                if (!html) return '';
+                var container = ed.getDoc().createElement('div');
+                container.innerHTML = html
+                    .replace(/<br\s*\/?>/gi, '\n')
+                    .replace(/<\/(?:p|div|li|h[1-6]|tr)>/gi, '\n');
+                return container.textContent || '';
+            }
+
+            function isLeafWriterClipboard(e) {
+                var clipboard = e.clipboardData || ed.dom.doc.dataTransfer;
+                if (!clipboard?.getData) return false;
+                return pasteSpecial.isLeafWriterClipboardPayload(
+                    clipboard.getData(pasteSpecial.LEAF_WRITER_CLIPBOARD_MIME)
+                );
+            }
+
+            function getInsertionParentTag() {
+                var body = ed.getBody();
+                var node = ed.selection.getNode();
+                while (node && node !== body) {
+                    if (node.nodeType === 1 && node.hasAttribute('_tag')) {
+                        return node.getAttribute('_tag');
+                    }
+                    node = node.parentNode;
+                }
+                return null;
+            }
+
+            function fragmentElements(fragmentDocument) {
+                return Array.prototype.slice.call(fragmentDocument.documentElement.childNodes)
+                    .filter(function(node) {
+                        return node.nodeType === 1;
+                    });
+            }
+
+            function canImportXmlFragment(fragmentDocument) {
+                var parentTag = getInsertionParentTag();
+                if (!parentTag) return false;
+
+                return fragmentElements(fragmentDocument).every(function(node) {
+                    return ed.writer.schemaManager.isTagValidChildOfParent(node.nodeName, parentTag);
+                });
+            }
+
+            function buildEditorFragmentFromXml(xml) {
+                var parsed = pasteSpecial.parseXmlFragment(xml);
+                if (parsed.error) return { error: parsed.error };
+                if (!canImportXmlFragment(parsed.document)) {
+                    return { error: 'This XML is well formed, but not valid in this location.' };
+                }
+
+                var converter = new XML2CWRC(ed.writer);
+                var html = '';
+                Array.prototype.slice.call(parsed.document.documentElement.childNodes).forEach(function(node) {
+                    if (node.nodeType === 1) {
+                        html += converter.buildEditorString(node);
+                    } else if (node.nodeType === 3) {
+                        html += pasteSpecial.escapeHtml(node.data || '');
+                    }
+                });
+                return { content: html };
+            }
+
+            function getSavedPasteDefault(ambiguity, fallback) {
+                try {
+                    var saved = window.localStorage.getItem('leafwriter.pasteSpecial.default.' + ambiguity);
+                    return saved || fallback;
+                } catch (error) {
+                    return fallback;
+                }
+            }
+
+            function savePasteDefault(ambiguity, mode) {
+                try {
+                    window.localStorage.setItem('leafwriter.pasteSpecial.default.' + ambiguity, mode);
+                } catch (error) {
+                    // localStorage may be unavailable; ignore.
+                }
+            }
+
+            function buildModeContent(mode, text, originalHtml) {
+                var blockTag = ed.writer.schemaManager.getBlockTag();
+
+                if (mode === 'paragraphs') {
+                    return { content: pasteSpecial.textToParagraphHtml(text, blockTag) || originalHtml };
+                }
+
+                if (mode === 'line-breaks') {
+                    var lineBreakResult = buildEditorFragmentFromXml(pasteSpecial.textToLineBreakXml(text));
+                    if (lineBreakResult.content) return lineBreakResult;
+                    return { content: pasteSpecial.textToParagraphHtml(text, blockTag) || originalHtml };
+                }
+
+                if (mode === 'plain') {
+                    return { content: pasteSpecial.textToParagraphHtml(text, blockTag) || pasteSpecial.escapeHtml(text) };
+                }
+
+                if (mode === 'xml') {
+                    return buildEditorFragmentFromXml(text);
+                }
+
+                return { content: originalHtml };
+            }
+
+            function choosePasteMode(ambiguity, text, originalHtml, done) {
+                var xmlStatus = buildEditorFragmentFromXml(text);
+                var defaultMode = getSavedPasteDefault(
+                    ambiguity,
+                    ambiguity === 'xml' && xmlStatus.content ? 'xml' : 'paragraphs'
+                );
+                var selectedMode = defaultMode;
+                var modes = [
+                    { mode: 'paragraphs', label: 'Paragraphs', description: 'Blank lines create new paragraphs.' },
+                    { mode: 'line-breaks', label: 'Line breaks', description: 'Single line breaks become lb elements.' },
+                    {
+                        mode: 'xml',
+                        label: 'XML fragment',
+                        description: xmlStatus.content
+                            ? 'Import well-formed XML as document structure.'
+                            : xmlStatus.error || 'XML is not importable here.',
+                        disabled: !xmlStatus.content
+                    },
+                    { mode: 'plain', label: 'Plain text', description: 'Paste markup characters as text.' }
+                ];
+
+                if (modes.some(function(option) { return option.mode === selectedMode && option.disabled; })) {
+                    selectedMode = 'paragraphs';
+                }
+
+                var $dialog = $('<div class="ljb-paste-special" />');
+                var $list = $('<div role="listbox" aria-label="Paste options" />').appendTo($dialog);
+                modes.forEach(function(option) {
+                    var $button = $('<button type="button" class="ljb-paste-special-option" />')
+                        .attr('data-mode', option.mode)
+                        .prop('disabled', option.disabled === true)
+                        .css({
+                            display: 'block',
+                            width: '100%',
+                            textAlign: 'left',
+                            margin: '0 0 8px',
+                            padding: '8px'
+                        })
+                        .append($('<strong />').text(option.label))
+                        .append($('<div />').css({ fontSize: '12px', opacity: 0.75 }).text(option.description))
+                        .appendTo($list);
+                    if (option.mode === selectedMode) $button.addClass('selected');
+                });
+
+                function updateSelection(nextMode) {
+                    var option = modes.find(function(item) { return item.mode === nextMode && !item.disabled; });
+                    if (!option) return;
+                    selectedMode = option.mode;
+                    $list.find('button').removeClass('selected').css({ outline: '' });
+                    $list.find('button[data-mode="' + selectedMode + '"]')
+                        .addClass('selected')
+                        .css({ outline: '2px solid currentColor' })
+                        .trigger('focus');
+                }
+
+                function finish(saveDefault) {
+                    if (saveDefault) savePasteDefault(ambiguity, selectedMode);
+                    var result = buildModeContent(selectedMode, text, originalHtml);
+                    $dialog.dialog('destroy').remove();
+                    done(result.content || originalHtml);
+                }
+
+                $dialog.on('click', 'button[data-mode]', function() {
+                    updateSelection($(this).attr('data-mode'));
+                });
+
+                $dialog.on('dblclick', 'button[data-mode]', function() {
+                    if (!$(this).prop('disabled')) finish(false);
+                });
+
+                $dialog.on('keydown', function(event) {
+                    var available = modes.filter(function(option) { return !option.disabled; });
+                    var index = available.findIndex(function(option) { return option.mode === selectedMode; });
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+                        event.preventDefault();
+                        updateSelection(available[(index + 1) % available.length].mode);
+                    }
+                    if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+                        event.preventDefault();
+                        updateSelection(available[(index - 1 + available.length) % available.length].mode);
+                    }
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        finish(false);
+                    }
+                });
+
+                $dialog.dialog({
+                    title: 'Paste Special',
+                    modal: true,
+                    resizable: false,
+                    width: 420,
+                    close: function() {
+                        $dialog.dialog('destroy').remove();
+                    },
+                    buttons: [
+                        {
+                            text: 'Paste',
+                            click: function() {
+                                finish(false);
+                            }
+                        },
+                        {
+                            text: 'Save as default',
+                            click: function() {
+                                finish(true);
+                            }
+                        },
+                        {
+                            text: 'Cancel',
+                            click: function() {
+                                $dialog.dialog('destroy').remove();
+                            }
+                        }
+                    ]
+                });
+                updateSelection(selectedMode);
+            }
+
+            function processWithPasteSpecial(e, html, text, processContent, restoreSelection) {
+                var fromLeafWriter = isLeafWriterClipboard(e);
+                var normalizedText = pasteSpecial.normalizeClipboardText(text || '');
+                var ambiguity = pasteSpecial.detectPasteAmbiguity({
+                    fromLeafWriter: fromLeafWriter,
+                    text: normalizedText
+                });
+
+                function insert(content) {
+                    ed._leafWriterLastPasteFromLeafWriter = fromLeafWriter;
+                    if (restoreSelection) restoreSelection();
+                    processContent({ content: content });
+                }
+
+                if (!ambiguity) {
+                    insert(html);
+                    return;
+                }
+
+                choosePasteMode(ambiguity, normalizedText, html, insert);
+            }
 
             // This function executes the process handlers and inserts the contents
             // force_rich overrides plain text mode set by user, important for pasting with execCommand
@@ -156,7 +411,7 @@
 
                 // Check if browser supports direct plaintext access
                 if (e.clipboardData || dom.doc.dataTransfer) {
-                    textContent = (e.clipboardData || dom.doc.dataTransfer).getData('Text');
+                    textContent = getClipboardText(e);
 
                     if (ed.pasteAsPlainText) {
                         e.preventDefault();
@@ -309,7 +564,10 @@
                         if (or)
                             sel.setRng(or);
 
-                        process({content : h});
+                        processWithPasteSpecial(e, h, textContent || getTextFromHtml(h), process, function() {
+                            if (or)
+                                sel.setRng(or);
+                        });
 
                         // Unblock events ones we got the contents
                         dom.unbind(ed.getDoc(), 'mousedown', block);

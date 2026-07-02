@@ -377,6 +377,10 @@
       "editor": {
         "Show Entities": "Afficher les entités",
         "Show Raw XML panel": "Afficher le panneau XML brut",
+        "asian font": "Police asiatique",
+        "default fonts": "polices par défaut",
+        "latin font": "Police latine",
+        "refresh system fonts": "Actualiser les polices système",
         "font size": "taille de police"
       },
       "markupPanel": {

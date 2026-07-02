@@ -25,19 +25,16 @@ export const NativeSettingsPage = () => {
   const { t } = useTranslation();
   const { currentLocale, skipCopyPasteHelp, skipExplorerDeleteConfirm, themeAppearance } =
     useAppState().ui;
-  const {
-    setSkipCopyPasteHelp,
-    setSkipExplorerDeleteConfirm,
-    setThemeAppearance,
-    switchLanguage,
-  } = useActions().ui;
+  const { setSkipCopyPasteHelp, setSkipExplorerDeleteConfirm, setThemeAppearance, switchLanguage } =
+    useActions().ui;
 
   const [encoderName, setEncoderName] = useState('');
+  const [rememberWorkspaceOnStartup, setRememberWorkspaceOnStartup] = useState(true);
 
   const syncParent = useCallback(
     async (method: string, args?: unknown) => {
-      if (!window.electronAPI?.nativeDialogInvoke) return;
-      await window.electronAPI.nativeDialogInvoke({ dialogId, method, args });
+      if (!window.electronAPI?.nativeDialogInvoke) return null;
+      return window.electronAPI.nativeDialogInvoke({ dialogId, method, args });
     },
     [dialogId],
   );
@@ -48,6 +45,9 @@ export const NativeSettingsPage = () => {
     void (async () => {
       const name = (await syncParent('getEncoderName')) as string;
       if (typeof name === 'string') setEncoderName(name);
+
+      const remember = (await syncParent('getRememberWorkspaceOnStartup')) as boolean;
+      if (typeof remember === 'boolean') setRememberWorkspaceOnStartup(remember);
     })();
   }, [dialogId, syncParent]);
 
@@ -85,6 +85,11 @@ export const NativeSettingsPage = () => {
     await syncParent('setSkipCopyPasteHelp', checked);
   };
 
+  const handleRememberWorkspaceOnStartupChange = async (checked: boolean) => {
+    setRememberWorkspaceOnStartup(checked);
+    await syncParent('setRememberWorkspaceOnStartup', checked);
+  };
+
   const handleEncoderNameBlur = async () => {
     await syncParent('setEncoderName', encoderName);
   };
@@ -102,7 +107,14 @@ export const NativeSettingsPage = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
       <Box
         sx={{
           px: 2,
@@ -154,6 +166,20 @@ export const NativeSettingsPage = () => {
           onChange={(event) => setEncoderName(event.target.value)}
           size="small"
           value={encoderName}
+        />
+
+        <Typography variant="subtitle2">{t('LWC.desktop.settings.startup')}</Typography>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={rememberWorkspaceOnStartup}
+              onChange={(event) =>
+                void handleRememberWorkspaceOnStartupChange(event.target.checked)
+              }
+            />
+          }
+          label={t('LWC.desktop.settings.remember_workspace_on_startup')}
         />
 
         <Typography variant="subtitle2">{t('LWC.desktop.settings.warnings')}</Typography>

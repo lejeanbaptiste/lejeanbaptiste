@@ -1,7 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type { ProjectBundle } from './projectFile';
-import type { SchemaUpdateApplyResult, SchemaUpdateCheckOptions, SchemaUpdateCheckResult } from '../../commons/src/desktop/schemaUpdateTypes';
+import type {
+  SchemaUpdateApplyResult,
+  SchemaUpdateCheckOptions,
+  SchemaUpdateCheckResult,
+} from '../../commons/src/desktop/schemaUpdateTypes';
 
 export interface FileEntry {
   name: string;
@@ -40,11 +44,71 @@ export interface FileStat {
   size: number;
 }
 
+export interface TimeMachineSnapshotSummary {
+  app: 'le-jean-baptiste';
+  createdAt: string;
+  fileCount: number;
+  id: string;
+  path: string;
+  projectName: string;
+  projectRootPath: string;
+  sizeBytes: number;
+  version: 1;
+}
+
+export interface AiApiSettings {
+  apiKey: string;
+  baseUrl: string;
+  customInstructions: string;
+  model: string;
+  temperature: number;
+}
+
+export interface AiConnectionResult {
+  error?: string;
+  models?: string[];
+  ok: boolean;
+}
+
+export interface AiTranslationRequest {
+  alignmentUnit: 'div' | 'p';
+  sourceUnitXml: string;
+  targetLanguage: string;
+}
+
+export interface AiTranslationResult {
+  error?: string;
+  ok: boolean;
+  translationXml?: string;
+}
+
+export interface WorkspaceSession {
+  activeFilePath: string | null;
+  cursorPositions?: Record<string, WorkspaceCursorPosition>;
+  openFilePaths: string[];
+  projectFilePath: string | null;
+}
+
+export type WorkspaceCursorPosition =
+  | { mode: 'source'; offset: number }
+  | { mode: 'visual'; offsetInElementText: number; teiXPath: string };
+
+export interface WorkspaceSessionRestore {
+  activeFilePath: string | null;
+  bundle: ProjectBundle;
+  cursorPositions?: Record<string, WorkspaceCursorPosition>;
+  openFilePaths: string[];
+}
+
 export interface ElectronAPI {
   openProject: () => Promise<ProjectBundle | null>;
   /** @deprecated Use openProject */
   openProjectFolder: () => Promise<ProjectBundle | null>;
   restoreLastProject: () => Promise<ProjectBundle | null>;
+  getRememberWorkspaceOnStartup: () => Promise<boolean>;
+  setRememberWorkspaceOnStartup: (remember: boolean) => Promise<void>;
+  saveWorkspaceSession: (session: WorkspaceSession) => Promise<void>;
+  restoreWorkspaceSession: () => Promise<WorkspaceSessionRestore | null>;
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) => Promise<FileEntry[]>;
   readFile: (filePath: string) => Promise<string>;
   writeFile: (filePath: string, content: string) => Promise<void>;
@@ -65,10 +129,29 @@ export interface ElectronAPI {
     options?: SchemaUpdateCheckOptions,
   ) => Promise<SchemaUpdateCheckResult>;
   applyCatalogSchemaUpdate: (projectFilePath: string) => Promise<SchemaUpdateApplyResult>;
+  listTimeMachineSnapshots: (projectRootPath: string) => Promise<TimeMachineSnapshotSummary[]>;
+  createTimeMachineSnapshot: (
+    projectRootPath: string,
+    projectName: string,
+  ) => Promise<TimeMachineSnapshotSummary>;
+  pickTimeMachineRestoreDestination: (
+    projectRootPath: string,
+    snapshotId: string,
+  ) => Promise<string | null>;
+  restoreTimeMachineSnapshot: (snapshotPath: string, destinationPath: string) => Promise<void>;
+  restoreTimeMachineSnapshotToProject: (
+    projectRootPath: string,
+    projectName: string,
+    snapshotPath: string,
+  ) => Promise<{ beforeRestoreSnapshot: TimeMachineSnapshotSummary }>;
   pickSchemaFiles: () => Promise<PickSchemaFilesResult | null>;
   createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
+  getAiApiSettings: () => Promise<AiApiSettings>;
+  setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
+  testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
+  generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
   renamePath: (oldPath: string, newPath: string) => Promise<void>;
   movePath: (sourcePath: string, destDir: string) => Promise<string>;
   deletePath: (targetPath: string) => Promise<void>;
@@ -117,6 +200,12 @@ const electronAPI: ElectronAPI = {
   openProject: () => ipcRenderer.invoke('openProject'),
   openProjectFolder: () => ipcRenderer.invoke('openProject'),
   restoreLastProject: () => ipcRenderer.invoke('restoreLastProject'),
+  getRememberWorkspaceOnStartup: () => ipcRenderer.invoke('getRememberWorkspaceOnStartup'),
+  setRememberWorkspaceOnStartup: (remember: boolean) =>
+    ipcRenderer.invoke('setRememberWorkspaceOnStartup', remember),
+  saveWorkspaceSession: (session: WorkspaceSession) =>
+    ipcRenderer.invoke('saveWorkspaceSession', session),
+  restoreWorkspaceSession: () => ipcRenderer.invoke('restoreWorkspaceSession'),
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) =>
     ipcRenderer.invoke('readDirectory', dirPath, options),
   readFile: (filePath: string) => ipcRenderer.invoke('readFile', filePath),
@@ -128,8 +217,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('ignoreFileChange', filePath, mtimeMs),
   findXmlFilesByName: (rootPath: string, query: string) =>
     ipcRenderer.invoke('findXmlFilesByName', rootPath, query),
-  listProjectXmlFiles: (rootPath: string) =>
-    ipcRenderer.invoke('listProjectXmlFiles', rootPath),
+  listProjectXmlFiles: (rootPath: string) => ipcRenderer.invoke('listProjectXmlFiles', rootPath),
   reloadProjectBundle: (projectFilePath: string) =>
     ipcRenderer.invoke('reloadProjectBundle', projectFilePath),
   installCatalogSchema: (projectFilePath: string, catalogId: string) =>
@@ -140,10 +228,36 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('checkSchemaUpdate', projectFilePath, options),
   applyCatalogSchemaUpdate: (projectFilePath: string) =>
     ipcRenderer.invoke('applyCatalogSchemaUpdate', projectFilePath),
+  listTimeMachineSnapshots: (projectRootPath: string) =>
+    ipcRenderer.invoke('timeMachine:listSnapshots', projectRootPath),
+  createTimeMachineSnapshot: (projectRootPath: string, projectName: string) =>
+    ipcRenderer.invoke('timeMachine:createSnapshot', projectRootPath, projectName),
+  pickTimeMachineRestoreDestination: (projectRootPath: string, snapshotId: string) =>
+    ipcRenderer.invoke('timeMachine:pickRestoreDestination', projectRootPath, snapshotId),
+  restoreTimeMachineSnapshot: (snapshotPath: string, destinationPath: string) =>
+    ipcRenderer.invoke('timeMachine:restoreSnapshot', snapshotPath, destinationPath),
+  restoreTimeMachineSnapshotToProject: (
+    projectRootPath: string,
+    projectName: string,
+    snapshotPath: string,
+  ) =>
+    ipcRenderer.invoke(
+      'timeMachine:restoreSnapshotToProject',
+      projectRootPath,
+      projectName,
+      snapshotPath,
+    ),
   pickSchemaFiles: () => ipcRenderer.invoke('pickSchemaFiles'),
   createTempDocument: (content: string) => ipcRenderer.invoke('createTempDocument', content),
   getEncoderName: () => ipcRenderer.invoke('getEncoderName'),
   setEncoderName: (name: string) => ipcRenderer.invoke('setEncoderName', name),
+  getAiApiSettings: () => ipcRenderer.invoke('getAiApiSettings'),
+  setAiApiSettings: (settings: Partial<AiApiSettings>) =>
+    ipcRenderer.invoke('setAiApiSettings', settings),
+  testAiConnection: (settings: Partial<AiApiSettings>) =>
+    ipcRenderer.invoke('testAiConnection', settings),
+  generateAiTranslation: (request: AiTranslationRequest) =>
+    ipcRenderer.invoke('generateAiTranslation', request),
   renamePath: (oldPath: string, newPath: string) =>
     ipcRenderer.invoke('renamePath', oldPath, newPath),
   movePath: (sourcePath: string, destDir: string) =>

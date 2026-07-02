@@ -4,6 +4,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
+import TranslateIcon from '@mui/icons-material/Translate';
 import { Box, IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
 import { leafwriterAtom } from '@src/jotai';
 import { useAtom } from 'jotai';
@@ -11,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileMetadataPanel } from './FileMetadataPanel';
 import { AttributesPanel } from './tagging/AttributesPanel';
 import { RightPanelResizeHandle } from './RightPanelResizeHandle';
+import { TranslationTabContent } from './TranslationTabContent';
 import {
   RIGHT_PANEL_COLLAPSED_WIDTH,
   RIGHT_PANEL_DEFAULT_WIDTH,
@@ -19,9 +21,10 @@ import {
   RIGHT_PANEL_WIDTH_STORAGE_KEY,
   SIDEBAR_TAB_BUTTON_SIZE,
   SIDEBAR_TAB_ICON_SIZE,
+  TOOLBAR_ROW_HEIGHT,
 } from './sidebarConstants';
 
-type RightTabId = 'fileMetadata' | 'attributes' | 'imageViewer' | 'validation';
+type RightTabId = 'fileMetadata' | 'attributes' | 'imageViewer' | 'validation' | 'translation';
 
 const TAB_CONFIG: Record<RightTabId, { label: string; icon: React.ReactNode }> = {
   fileMetadata: {
@@ -40,9 +43,19 @@ const TAB_CONFIG: Record<RightTabId, { label: string; icon: React.ReactNode }> =
     label: 'Validation',
     icon: <CheckCircleOutlineIcon sx={{ fontSize: SIDEBAR_TAB_ICON_SIZE }} />,
   },
+  translation: {
+    label: 'Translation',
+    icon: <TranslateIcon sx={{ fontSize: SIDEBAR_TAB_ICON_SIZE }} />,
+  },
 };
 
-const TAB_ORDER: RightTabId[] = ['fileMetadata', 'attributes', 'imageViewer', 'validation'];
+const TAB_ORDER: RightTabId[] = [
+  'fileMetadata',
+  'attributes',
+  'imageViewer',
+  'validation',
+  'translation',
+];
 
 const JQUERY_TABS: RightTabId[] = ['imageViewer', 'validation'];
 
@@ -72,10 +85,19 @@ export const UnifiedRightPanel = () => {
 
   const imageViewerSlotRef = useRef<HTMLDivElement>(null);
   const validationSlotRef = useRef<HTMLDivElement>(null);
-  const migratedRef = useRef(false);
+  const migratedNodesRef = useRef<{ node: HTMLElement; originalParent: HTMLElement | null }[]>([]);
 
-  const showTab = useCallback((tab: RightTabId) => {
-    setActiveTab(tab);
+  const showTab = useCallback((tab: string) => {
+    if (!TAB_ORDER.includes(tab as RightTabId)) return;
+    const tabId = tab as RightTabId;
+    // Programmatic resets to the default panel (fired on every document load via
+    // showDefaultEastPanel) must not steal the panel away from the Translation tab —
+    // first-time translation indexing rewrites the source file and reloads it from disk,
+    // which would otherwise hop the user back to File Metadata mid-flow. Explicit user
+    // clicks go through the icon strip's own handler, not this bridge.
+    setActiveTab((current) =>
+      tabId === 'fileMetadata' && current === 'translation' ? current : tabId,
+    );
     setCollapsed(false);
   }, []);
 
@@ -90,35 +112,43 @@ export const UnifiedRightPanel = () => {
     };
   }, [showTab, expand]);
 
-  // After jQuery east tabs are ready, migrate the jQuery-rendered containers into our slots
+  // After jQuery east tabs are ready, migrate the jQuery-rendered containers into our slots.
+  // Migration must be idempotent (re-attempted on every ready event) and reversible: the
+  // jQuery modules render into these nodes by id forever, so if React ever destroys a slot
+  // that holds one, the module keeps appending results into a detached node and the panel
+  // goes permanently blank. On cleanup we hand the nodes back to their original parent.
   useEffect(() => {
-    if (!leafWriter) {
-      migratedRef.current = false;
-      return;
-    }
+    if (!leafWriter) return;
 
-    const migrate = () => {
-      if (migratedRef.current) return;
+    const migrate = (): boolean => {
       const editorId = window.writer?.editorId;
-      if (!editorId) return;
+      if (!editorId) return false;
 
-      const imageViewerSrc = document.getElementById(`${editorId}-imageViewer`);
-      const validationSrc = document.getElementById(`${editorId}-validation`);
+      const pairs: [HTMLElement | null, HTMLDivElement | null][] = [
+        [document.getElementById(`${editorId}-imageViewer`), imageViewerSlotRef.current],
+        [document.getElementById(`${editorId}-validation`), validationSlotRef.current],
+      ];
 
-      if (imageViewerSrc && imageViewerSlotRef.current) {
-        imageViewerSlotRef.current.appendChild(imageViewerSrc);
+      let migratedAny = false;
+      let foundAll = true;
+      for (const [src, slot] of pairs) {
+        if (!src || !slot) {
+          foundAll = false;
+          continue;
+        }
+        if (slot.contains(src)) continue;
+        migratedNodesRef.current.push({ node: src, originalParent: src.parentElement });
+        slot.appendChild(src);
+        migratedAny = true;
       }
-      if (validationSrc && validationSlotRef.current) {
-        validationSlotRef.current.appendChild(validationSrc);
+
+      if (migratedAny) {
+        // Hide the now-empty east pane (unmanaged by jQuery layout in desktop mode)
+        const eastPane = document.querySelector<HTMLElement>('.ui-layout-east');
+        if (eastPane) eastPane.style.display = 'none';
       }
 
-      // Hide the now-empty east pane (unmanaged by jQuery layout in desktop mode)
-      const eastPane = document.querySelector<HTMLElement>('.ui-layout-east');
-      if (eastPane) eastPane.style.display = 'none';
-
-      if (imageViewerSrc || validationSrc) {
-        migratedRef.current = true;
-      }
+      return foundAll;
     };
 
     const onEastTabsReady = () => {
@@ -127,8 +157,22 @@ export const UnifiedRightPanel = () => {
     };
 
     window.addEventListener('lw:east-tabs-ready', onEastTabsReady);
+    // The ready event may already have fired before this effect ran (e.g. this panel
+    // remounted after a route change while the editor instance survived). The validation
+    // and image viewer modules can also appear shortly after the React panel, so retry
+    // briefly rather than leaving an empty slot if the timing is unlucky.
+    const initialAttempt = requestAnimationFrame(migrate);
+    const retryId = window.setInterval(() => {
+      if (migrate()) window.clearInterval(retryId);
+    }, 200);
     return () => {
       window.removeEventListener('lw:east-tabs-ready', onEastTabsReady);
+      cancelAnimationFrame(initialAttempt);
+      window.clearInterval(retryId);
+      for (const { node, originalParent } of migratedNodesRef.current) {
+        if (originalParent?.isConnected) originalParent.appendChild(node);
+      }
+      migratedNodesRef.current = [];
     };
   }, [leafWriter]);
 
@@ -175,7 +219,7 @@ export const UnifiedRightPanel = () => {
             ? { width: '100%', height: '100%' }
             : {
                 width: '100%',
-                minHeight: SIDEBAR_TAB_BUTTON_SIZE + 4,
+                height: TOOLBAR_ROW_HEIGHT,
                 borderBottom: 1,
                 borderColor: 'divider',
                 flexWrap: 'nowrap',
@@ -266,30 +310,16 @@ export const UnifiedRightPanel = () => {
     );
   };
 
-  if (collapsed) {
-    return (
-      <Box
-        sx={{
-          width: RIGHT_PANEL_COLLAPSED_WIDTH,
-          minWidth: RIGHT_PANEL_COLLAPSED_WIDTH,
-          flexShrink: 0,
-          height: '100%',
-          bgcolor: 'background.paper',
-          borderLeft: 1,
-          borderColor: 'divider',
-        }}
-      >
-        {iconTabBar('vertical')}
-      </Box>
-    );
-  }
-
+  // The collapsed state must not unmount the tab content: the imageViewer/validation slots
+  // hold migrated jQuery-rendered nodes that cannot be re-created if React destroys them
+  // (the modules render into them by id for the lifetime of the editor). So collapse only
+  // narrows the panel and hides the content Box.
   return (
     <Box
       sx={{
-        width: panelWidth,
-        minWidth: RIGHT_PANEL_MIN_WIDTH,
-        maxWidth: RIGHT_PANEL_MAX_WIDTH,
+        width: collapsed ? RIGHT_PANEL_COLLAPSED_WIDTH : panelWidth,
+        minWidth: collapsed ? RIGHT_PANEL_COLLAPSED_WIDTH : RIGHT_PANEL_MIN_WIDTH,
+        maxWidth: collapsed ? RIGHT_PANEL_COLLAPSED_WIDTH : RIGHT_PANEL_MAX_WIDTH,
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
@@ -300,14 +330,14 @@ export const UnifiedRightPanel = () => {
         position: 'relative',
       }}
     >
-      {iconTabBar('horizontal')}
+      {collapsed ? iconTabBar('vertical') : iconTabBar('horizontal')}
 
       <Box
         sx={{
           flex: 1,
           minHeight: 0,
           overflow: 'hidden',
-          display: 'flex',
+          display: collapsed ? 'none' : 'flex',
           flexDirection: 'column',
         }}
       >
@@ -316,6 +346,9 @@ export const UnifiedRightPanel = () => {
         </Box>
         <Box sx={panelSx('attributes')}>
           <AttributesPanel />
+        </Box>
+        <Box sx={panelSx('translation')}>
+          <TranslationTabContent active={activeTab === 'translation'} />
         </Box>
         {/* jQuery-rendered modules are migrated into these slots after east-tabs-ready */}
         {JQUERY_TABS.map((tabId) => (
@@ -331,7 +364,9 @@ export const UnifiedRightPanel = () => {
         ))}
       </Box>
 
-      <RightPanelResizeHandle panelWidth={panelWidth} onWidthChange={handleWidthChange} />
+      {!collapsed && (
+        <RightPanelResizeHandle panelWidth={panelWidth} onWidthChange={handleWidthChange} />
+      )}
     </Box>
   );
 };

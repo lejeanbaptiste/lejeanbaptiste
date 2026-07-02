@@ -16,7 +16,6 @@ import type { SchemaDialog } from './entities/types';
 import LoadingIndicator from './loadingIndicator/loadingIndicator';
 import Message from './message';
 import Popup from './popup';
-import Translation from './translation';
 import type { LWDialogProps } from './types';
 
 const defaultJotaiStore = getDefaultStore();
@@ -169,7 +168,6 @@ const defaultDialogs = new Map<string, DefaultDialogConfig>([
   ['loadingindicator', { dialogClass: LoadingIndicator }],
   ['message', { dialogClass: Message }],
   ['popup', { dialogClass: Popup }],
-  ['translation', { dialogClass: Translation }],
 ]);
 
 /**

@@ -12,7 +12,9 @@ import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import { CodePanel, MarkupPanel, TocPanel } from './panels';
 import { DesktopEntitiesPanel } from './panels/entities/DesktopEntitiesPanel';
+import { TranslationPane } from './layout/TranslationPane';
 import type { LeafWriterOptions } from './types';
+import './utilities/cursorSession';
 // import { Layout } from './layout';
 
 const CONTAINER = 'lw-layout-container';
@@ -59,6 +61,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     null,
   );
   const [entitiesPanelReady, setEntitiesPanelReady] = useState(false);
+  const [translationPaneContainer, setTranslationPaneContainer] = useState<Element | null>(null);
 
   const [initialized, setInitialized] = useState(false);
   const [docLoaded, setDocLoaded] = useState(false);
@@ -96,6 +99,29 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   useEffect(() => {
     if (ready) actions.ui.updateReadonly();
   }, [ready, state.editor.isReadonly]);
+
+  // The translation tab's mount point only exists once at least one language is
+  // configured, which can happen at any point during the session (via Edition
+  // metadata) — so keep retrying rather than waiting once at startup.
+  useEffect(() => {
+    if (!isDesktopApp()) return;
+    let cancelled = false;
+
+    const tryFind = () => {
+      const el = window.document.querySelector('#desktop-panel-translation');
+      if (el) {
+        console.log('[translation] found #desktop-panel-translation, portaling TranslationPane');
+        if (!cancelled) setTranslationPaneContainer(el);
+        return;
+      }
+      if (!cancelled) setTimeout(tryFind, 1000);
+    };
+    tryFind();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const fullscreenchanged = () => actions.ui.setFullscreen(!!window.document.fullscreenElement);
 
@@ -233,6 +259,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
             showRawXmlPanel &&
             createPortal(<CodePanel />, codePanelContainer)}
           {entitiesPanelReady && isDesktopApp() && <DesktopEntitiesPanel />}
+          {translationPaneContainer &&
+            createPortal(<TranslationPane />, translationPaneContainer)}
         </div>
       </Box>
       {/* //* WIP {docLoaded && <Layout />} */}

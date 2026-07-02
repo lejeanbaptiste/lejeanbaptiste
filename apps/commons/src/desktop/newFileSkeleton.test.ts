@@ -115,6 +115,26 @@ describe('mergeMetadataIntoHeader', () => {
     expect(xml).toContain('<title>Untitled</title>');
   });
 
+  test('writes structured TEI publication metadata without the paragraph fallback', () => {
+    const skeleton = buildTeiSkeletonXml({
+      schema: { catalogId: 'teiLite', rng: 'schema/tei_lite.rng', css: 'schema/tei.css' },
+    });
+    const xml = mergeMetadataIntoHeader(skeleton, {
+      version: 1,
+      catalogId: 'teiLite',
+      fields: {
+        'publicationStmt/availability/licence': 'CC BY',
+        'publicationStmt/distributor': 'CNRS',
+      },
+      custom: [],
+    });
+
+    expect(xml).toContain(
+      '<publicationStmt><distributor>CNRS</distributor><availability><licence>CC BY</licence></availability></publicationStmt>',
+    );
+    expect(xml).not.toContain('<publicationStmt><p/>');
+  });
+
   test('returns skeleton unchanged when metadata is empty', () => {
     const skeleton = buildTeiSkeletonXml({
       schema: { catalogId: 'teiLite', rng: 'schema/tei_lite.rng', css: 'schema/tei.css' },

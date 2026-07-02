@@ -58,6 +58,15 @@ const config: Config.InitialOptions = {
       preset: 'ts-jest',
     },
     {
+      displayName: { name: 'desktop', color: 'green' },
+      clearMocks: true,
+      coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm'],
+      resetMocks: false,
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/apps/desktop/**/?(*.)+(spec|test).[jt]s?(x)'],
+      preset: 'ts-jest',
+    },
+    {
       displayName: { name: 'commons', color: 'red' },
       clearMocks: true,
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],

@@ -101,6 +101,91 @@ const ensureCollapsedTextRange = (): boolean => {
   return true;
 };
 
+/**
+ * True when a collapsed range sits at the very end of `element`'s content, including inside
+ * nested inline tags (e.g. an entity right before the closing tag) — walks up from the range
+ * position checking that nothing follows at each level.
+ */
+export const isAtEndOfElement = (range: Range, element: Element): boolean => {
+  if (!range.collapsed) return false;
+  let container: Node = range.startContainer;
+  let offset = range.startOffset;
+
+  while (true) {
+    const length =
+      container.nodeType === Node.TEXT_NODE
+        ? (container as Text).length
+        : container.childNodes.length;
+    if (offset < length) return false;
+    if (container === element) return true;
+
+    const parent: Node | null = container.parentNode;
+    if (!parent) return false;
+    offset = Array.prototype.indexOf.call(parent.childNodes, container) + 1;
+    container = parent;
+  }
+};
+
+/**
+ * Copies a paragraph's attributes onto a new split-off element, excluding every form the
+ * schema id takes in the editor's tagged DOM: the literal `xml:id`/`id` attributes AND the
+ * copy embedded in the JSON-encoded `_attributes` blob (which is what the tagger, the
+ * serializer, and the translation pane actually read — leaving it there means the new
+ * paragraph inherits the original's identity until the next save repairs it).
+ */
+export const copyAttributesWithoutSchemaId = (from: Element, to: Element) => {
+  const schemaId = getWriter()?.schemaManager?.getIdName?.() ?? 'xml:id';
+
+  for (let i = 0; i < from.attributes.length; i++) {
+    const attr = from.attributes[i];
+    if (!attr || attr.name === 'id' || attr.name === 'xml:id' || attr.name === schemaId) continue;
+
+    if (attr.name === '_attributes') {
+      try {
+        const parsed = JSON.parse(attr.value) as Record<string, unknown>;
+        delete parsed['xml:id'];
+        delete parsed.id;
+        delete parsed[schemaId];
+        to.setAttribute('_attributes', JSON.stringify(parsed));
+      } catch {
+        // unparseable blob — safer to drop it than to duplicate an identity
+      }
+      continue;
+    }
+
+    to.setAttribute(attr.name, attr.value);
+  }
+};
+
+/**
+ * Insert a fresh empty sibling paragraph after `paragraph` and move the cursor into it.
+ * Used at the very end of a paragraph instead of extracting an (empty) split — avoids
+ * relying on Range extraction exactly at the boundary, and since the new paragraph is
+ * genuinely new content (not part of the original), it gets a fresh xml:id rather than a
+ * copy of the original's, so no duplicate-id reindex is ever needed for this case.
+ */
+const insertEmptySiblingParagraph = (writer: NonNullable<ReturnType<typeof getWriter>>, paragraph: Element): ApplyTagResult => {
+  const doc = writer.editor!.getDoc();
+
+  writer.editor!.undoManager.transact(() => {
+    const newPara = doc.createElement(paragraph.nodeName);
+    copyAttributesWithoutSchemaId(paragraph, newPara);
+    newPara.setAttribute('id', writer.getUniqueId('dom_'));
+
+    const placeholder = doc.createTextNode('﻿');
+    newPara.appendChild(placeholder);
+    paragraph.parentNode?.insertBefore(newPara, paragraph.nextSibling);
+
+    const cursorRng = doc.createRange();
+    cursorRng.setStart(placeholder, 0);
+    cursorRng.collapse(true);
+    writer.editor!.selection.setRng(cursorRng);
+  });
+
+  writer.event('contentChanged').publish();
+  return { applied: true, tagName: DEFAULT_INSERT_TAG };
+};
+
 /** Split paragraph at caret using Range extraction, preserving inline elements as children. */
 export const splitParagraphAtCaret = (): ApplyTagResult => {
   const writer = getWriter();
@@ -117,6 +202,10 @@ export const splitParagraphAtCaret = (): ApplyTagResult => {
     return { applied: false, error: 'Caret is not inside a paragraph.' };
   }
 
+  if (isAtEndOfElement(rng0, paragraph)) {
+    return insertEmptySiblingParagraph(writer, paragraph);
+  }
+
   const doc = writer.editor.getDoc();
 
   writer.editor.undoManager.transact(() => {
@@ -128,13 +217,11 @@ export const splitParagraphAtCaret = (): ApplyTagResult => {
     afterRng.setEnd(paragraph, paragraph.childNodes.length);
     const afterContent = afterRng.extractContents();
 
-    // Build the new paragraph with the same _tag attributes but a fresh id
+    // Build the new paragraph with the same _tag attributes but a fresh identity — the
+    // first half keeps the original xml:id (and its translation); the split-off half is
+    // new content and starts without one.
     const newPara = doc.createElement(paragraph.nodeName);
-    for (let i = 0; i < paragraph.attributes.length; i++) {
-      const attr = paragraph.attributes[i];
-      if (!attr || attr.name === 'id') continue;
-      newPara.setAttribute(attr.name, attr.value);
-    }
+    copyAttributesWithoutSchemaId(paragraph, newPara);
     newPara.setAttribute('id', writer.getUniqueId('dom_'));
 
     // Give any extracted element children fresh ids so there are no duplicate ids

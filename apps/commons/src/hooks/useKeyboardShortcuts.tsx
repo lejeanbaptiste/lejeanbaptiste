@@ -24,20 +24,25 @@ export const useKeyboardShortcut = () => {
   };
 
   useKey(
-    (event: KeyboardEvent) => event.metaKey && event.code === 'KeyS',
+    (event: KeyboardEvent) => event.metaKey && event.key.toLowerCase() === 's',
     (event) => shorcutEventAction(event, '⌘S'),
     { event: 'keydown' },
   );
 
   useKey(
     (event: KeyboardEvent) =>
-      event.metaKey && event.altKey && event.shiftKey && event.code === 'KeyS',
+      // With Alt held, macOS reports a transformed character in `key`, so keep a
+      // physical-key fallback for this combo only.
+      event.metaKey &&
+      event.altKey &&
+      event.shiftKey &&
+      (event.key.toLowerCase() === 's' || event.code === 'KeyS'),
     (event) => shorcutEventAction(event, '⌘⌥⇧S'),
     { event: 'keydown' },
   );
 
   useKey(
-    (event: KeyboardEvent) => event.metaKey && event.code === 'KeyO',
+    (event: KeyboardEvent) => event.metaKey && event.key.toLowerCase() === 'o',
     (event) => shorcutEventAction(event, '⌘O'),
     { event: 'keydown' },
   );

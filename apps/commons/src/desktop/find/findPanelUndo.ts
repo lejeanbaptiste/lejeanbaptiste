@@ -5,9 +5,9 @@ export const useFindPanelUndo = () => {
   const handleFindPanelUndoKeyDown = (event: React.KeyboardEvent): void => {
     if (!(event.metaKey || event.ctrlKey)) return;
 
-    const isUndo = event.code === 'KeyZ' && !event.shiftKey;
-    const isRedo =
-      (event.code === 'KeyZ' && event.shiftKey) || event.code === 'KeyY';
+    const key = event.key.toLowerCase();
+    const isUndo = key === 'z' && !event.shiftKey;
+    const isRedo = (key === 'z' && event.shiftKey) || key === 'y';
 
     if (!isUndo && !isRedo) return;
 

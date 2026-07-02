@@ -79,8 +79,9 @@ class CopyPaste implements LWDialogProps {
       }
     });
 
-    writer.event('contentPasted').subscribe(() => {
-      if (firstPaste && !cwrcCopy) {
+    writer.event('contentPasted').subscribe((payload?: { fromLeafWriter?: boolean }) => {
+      const fromLeafWriter = payload?.fromLeafWriter === true || cwrcCopy;
+      if (firstPaste && !fromLeafWriter) {
         firstPaste = false;
         this.show({ type: 'paste' });
       }

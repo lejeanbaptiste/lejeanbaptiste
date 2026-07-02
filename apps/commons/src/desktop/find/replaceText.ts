@@ -36,17 +36,22 @@ export const applyRegexReplacement = (
   });
 };
 
-const buildSearchRegex = (query: string, useRegex: boolean): RegExp | null => {
+const buildSearchRegex = (
+  query: string,
+  useRegex: boolean,
+  ignoreCase = false,
+): RegExp | null => {
+  const flags = ignoreCase ? 'giu' : 'gu';
   if (useRegex) {
     try {
-      return new RegExp(query, 'gu');
+      return new RegExp(query, flags);
     } catch {
       return null;
     }
   }
 
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(escaped, 'gu');
+  return new RegExp(escaped, flags);
 };
 
 export interface ReplaceAllResult {
@@ -60,8 +65,9 @@ export const replaceAllInContent = (
   query: string,
   replacement: string,
   useRegex: boolean,
+  ignoreCase = false,
 ): ReplaceAllResult => {
-  const hits = searchInContent(content, query, useRegex);
+  const hits = searchInContent(content, query, useRegex, ignoreCase);
   if (hits.length === 0) {
     return { content, count: 0, skippedNonReplaceable: 0 };
   }
@@ -82,7 +88,7 @@ export const replaceAllInContent = (
 
     let nextReplacement = replacement;
     if (useRegex) {
-      const regex = buildSearchRegex(query, true);
+      const regex = buildSearchRegex(query, true, ignoreCase);
       if (!regex) break;
       regex.lastIndex = start;
       const match = regex.exec(nextContent);

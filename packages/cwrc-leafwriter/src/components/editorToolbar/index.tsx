@@ -182,8 +182,8 @@ export const EditorToolbar = () => {
     {
       icon: 'translate',
       group: 'action',
-      hide: isReadonly,
-      onClick: () => window.writer.dialogManager.show('translation'),
+      hide: isReadonly || !isDesktopApp(),
+      onClick: () => window.__desktopRightPanel?.showTab?.('translation'),
       title: t('LW.editorToolbar.Add Translation'),
       type: 'iconButton',
     },

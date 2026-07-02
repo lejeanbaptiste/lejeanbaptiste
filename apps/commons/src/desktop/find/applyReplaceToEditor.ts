@@ -3,10 +3,13 @@ import { resolveTextHitInXml } from './resolveTextHitInXml';
 import { replaceTextHitInEditor } from './selectTextInEditor';
 import type { ResolvedTextHit } from './resolveTextHitInXml';
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
-const isActiveFile = (filePath: string, activeTabPath: string | null, resourceFilePath?: string | null) => {
+const isActiveFile = (
+  filePath: string,
+  activeTabPath: string | null,
+  resourceFilePath?: string | null,
+) => {
   const currentPath = resourceFilePath ?? activeTabPath;
   return currentPath === filePath;
 };
@@ -102,6 +105,9 @@ export const writeReplacedContentToDisk = async (
   }
 };
 
+export const syncTranslationPaneReplacedContent = (filePath: string, content: string): boolean =>
+  window.__leafWriterTranslationPane?.replaceContent(filePath, content) ?? false;
+
 export const getContentForReplace = (
   filePath: string,
   openTabs: { content: string; filePath: string }[],
@@ -125,9 +131,7 @@ export const readFileContentForReplace = async (filePath: string): Promise<strin
   }
 };
 
-export const isFileOpenInTabs = (
-  filePath: string,
-  openTabs: { filePath: string }[],
-): boolean => openTabs.some((tab) => tab.filePath === filePath);
+export const isFileOpenInTabs = (filePath: string, openTabs: { filePath: string }[]): boolean =>
+  openTabs.some((tab) => tab.filePath === filePath);
 
 export { resolveTextHitInXml };

@@ -314,10 +314,17 @@ export const XmlMonacoEditor = ({
       return;
     }
 
-    // executeEdits preserves undo/redo; setValue clears the stack.
-    editor.executeEdits('external-sync', [
-      { range: model.getFullModelRange(), text: value, forceMoveMarkers: true },
-    ]);
+    // executeEdits preserves undo/redo; setValue clears the stack. Reindex/reload syncs
+    // request a stack reset via the one-shot flag so translation indexing writes can never
+    // be reverted with Cmd+Z (matching the visual editor, which clears undo on reload).
+    if (window.__leafWriterNextSourceSyncResetsUndo) {
+      window.__leafWriterNextSourceSyncResetsUndo = false;
+      model.setValue(value);
+    } else {
+      editor.executeEdits('external-sync', [
+        { range: model.getFullModelRange(), text: value, forceMoveMarkers: true },
+      ]);
+    }
     lastEditorValueRef.current = value;
   }, [editor, value]);
 

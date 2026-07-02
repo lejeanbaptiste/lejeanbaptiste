@@ -28,7 +28,12 @@ interface DesktopLeftPanelBridge {
   showTab: (tab: DesktopLeftPanelTab) => void;
 }
 
-type DesktopRightPanelTab = 'fileMetadata' | 'attributes' | 'imageViewer' | 'validation';
+type DesktopRightPanelTab =
+  | 'fileMetadata'
+  | 'attributes'
+  | 'imageViewer'
+  | 'validation'
+  | 'translation';
 
 interface DesktopRightPanelBridge {
   expand: () => void;
@@ -45,5 +50,12 @@ declare global {
     };
     __desktopMergeHeaderForValidation?: (editorXml: string) => string;
     __desktopStoredDocumentXml?: string;
+    __leafWriterTranslationPane?: {
+      filePath: string | null;
+      isActive: () => boolean;
+      redo: () => Promise<boolean>;
+      replaceContent: (filePath: string, content: string) => boolean;
+      undo: () => Promise<boolean>;
+    };
   }
 }

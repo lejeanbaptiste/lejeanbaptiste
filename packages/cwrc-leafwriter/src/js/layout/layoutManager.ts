@@ -167,6 +167,10 @@ class LayoutManager {
         size: 'auto',
         minSize: this.PANEL_MIN_WIDTH,
         initClosed: true,
+        // The east resizer is hidden via CSS; without zero spacing the layout
+        // still reserves a blank strip along the editor's right edge.
+        spacing_open: 0,
+        spacing_closed: 0,
       };
     }
 

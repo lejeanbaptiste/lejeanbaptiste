@@ -10,6 +10,7 @@ import {
 import {
   SIDEBAR_TAB_BUTTON_SIZE,
   SIDEBAR_TAB_ICON_SIZE,
+  TOOLBAR_ROW_HEIGHT,
 } from './sidebarConstants';
 import { TabIcon, sidebarTabLabels, sidebarTabOrder, type SidebarTabId } from '@src/icons/tab';
 
@@ -49,7 +50,7 @@ export const SidebarIconTabBar = ({
             }
           : {
               width: '100%',
-              minHeight: SIDEBAR_TAB_BUTTON_SIZE + 4,
+              height: TOOLBAR_ROW_HEIGHT,
               borderBottom: 1,
               borderColor: 'divider',
               flexWrap: 'nowrap',

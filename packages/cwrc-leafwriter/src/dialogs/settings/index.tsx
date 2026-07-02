@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, Stack } from '@mui/material';
+import { Dialog, DialogContent, List, Stack } from '@mui/material';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
@@ -7,6 +7,7 @@ import type { IDialog } from '../type';
 import { Section } from './components';
 import { Header } from './header';
 import { Authorities, Editor, EntityLookups, MarkupPanel, Reset, UI } from './sections';
+import { DesktopAiApi } from './sections/ui/desktop-ai-api';
 import { SideMenu } from './side-menu';
 
 export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
@@ -16,8 +17,7 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
   const handleClose = () => onClose && onClose('close');
 
   const isDesktop =
-    typeof window !== 'undefined' &&
-    !!(window as Window & { electronAPI?: unknown }).electronAPI;
+    typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
   const dialogContainer = isDesktop
     ? undefined
@@ -37,6 +37,7 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
         <SideMenu
           items={[
             { id: 'interface', label: t('LW.commons.interface') },
+            { id: 'ai-api', label: 'AI API', hide: !isDesktop },
             { id: 'editor', label: t('LW.commons.editor') },
             { id: 'authorities', label: t('LW.commons.authorities'), hide: isReadonly },
             { id: 'entityLookups', label: t('LW.commons.Entity Lookups'), hide: isReadonly },
@@ -49,6 +50,13 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
             <Section id="interface" title={t('LW.commons.interface')}>
               <UI />
             </Section>
+            {isDesktop && (
+              <Section id="ai-api" title="AI API">
+                <List dense>
+                  <DesktopAiApi />
+                </List>
+              </Section>
+            )}
             <Section id="editor" title={t('LW.commons.editor')}>
               <Editor />
             </Section>

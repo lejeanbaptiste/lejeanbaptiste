@@ -73,3 +73,13 @@ export const getMetadataRelativePath = (config: ProjectFileConfig): string =>
 
 export const getMetadataAbsolutePath = (bundle: ProjectBundle): string =>
   joinProjectPath(bundle.rootPath, getMetadataRelativePath(bundle.config));
+
+export const getTranslationSettingsRelativePath = (config: ProjectFileConfig): string =>
+  config.translationSettings ?? 'schema/translation-settings.json';
+
+export const getTranslationSettingsAbsolutePath = (bundle: ProjectBundle): string =>
+  joinProjectPath(bundle.rootPath, getTranslationSettingsRelativePath(bundle.config));
+
+/** Recovery snapshot of alignment-unit ids/content hashes (derived data, never source of truth). */
+export const getTranslationIndexAbsolutePath = (bundle: ProjectBundle): string =>
+  joinProjectPath(bundle.rootPath, 'schema/translation-index.json');

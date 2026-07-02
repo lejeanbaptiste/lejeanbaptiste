@@ -1,6 +1,8 @@
 import { Box, Typography } from '@mui/material';
 import { TagCommandProvider, UnifiedLeftPanel, UnifiedRightPanel, useExternalFileWatcher, useProjectMenu } from '@src/desktop';
+import { TOOLBAR_ROW_HEIGHT } from '@src/desktop/sidebarConstants';
 import { AboutDialog } from '@src/desktop/AboutDialog';
+import { TimeMachineDialog } from '@src/desktop/TimeMachineDialog';
 import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
 import { useLeafWriter } from '@src/hooks';
@@ -21,7 +23,8 @@ export const ProjectEditor = () => {
   const loadLibStartedForRef = useRef<number | null>(null);
 
   const { initLeafWriter, loadDocumentInWriter, loadLib } = useLeafWriter();
-  const { aboutOpen, onKeydownHandle, setAboutOpen } = useProjectMenu();
+  const { aboutOpen, onKeydownHandle, setAboutOpen, setTimeMachineOpen, timeMachineOpen } =
+    useProjectMenu();
   const [leafWriter] = useAtom(leafwriterAtom);
   const [sessionKey] = useAtom(leafWriterSessionKeyAtom);
   useExternalFileWatcher();
@@ -120,6 +123,10 @@ export const ProjectEditor = () => {
   return (
     <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
       <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />
+      <TimeMachineDialog
+        onClose={() => setTimeMachineOpen(false)}
+        open={timeMachineOpen}
+      />
       <TagCommandProvider />
       <UnifiedLeftPanel />
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
@@ -129,7 +136,8 @@ export const ProjectEditor = () => {
             display: 'flex',
             alignItems: 'center',
             flexShrink: 0,
-            minHeight: 28,
+            height: TOOLBAR_ROW_HEIGHT,
+            overflow: 'hidden',
             borderBottom: 1,
             borderColor: 'divider',
             bgcolor: 'background.paper',

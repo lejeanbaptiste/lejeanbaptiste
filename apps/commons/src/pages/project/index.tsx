@@ -8,8 +8,8 @@ import { ProjectEditor } from './ProjectEditor';
 
 export const ProjectEditPage = () => {
   const { setPage } = useActions().ui;
-  const { restoreLastProject } = useActions().project;
-  const { isProjectReady } = useAppState().project;
+  const { restoreLastProject, saveWorkspaceSession } = useActions().project;
+  const { activeTabPath, isProjectReady, openTabs, projectFilePath } = useAppState().project;
 
   useNativeDialogBridge();
   useCommonsUiBridge();
@@ -23,6 +23,16 @@ export const ProjectEditPage = () => {
     if (!isDesktop()) return;
     void restoreLastProject();
   }, [restoreLastProject]);
+
+  useEffect(() => {
+    if (!isDesktop() || !isProjectReady || !projectFilePath) return;
+
+    const timeout = window.setTimeout(() => {
+      void saveWorkspaceSession();
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [activeTabPath, isProjectReady, openTabs, projectFilePath, saveWorkspaceSession]);
 
   if (isDesktop() && !isProjectReady) {
     return (

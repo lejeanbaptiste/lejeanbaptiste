@@ -272,9 +272,55 @@ export const setEditorViewMode = ({ state }: Context, mode: EditorViewMode) => {
 
   state.ui.editorViewMode = mode;
   window.writer?.layoutManager?.setEditorViewMode(mode);
+  window.dispatchEvent(new CustomEvent('desktop:editor-view-mode-changed', { detail: { mode } }));
+};
+
+export const enterTranslationMode = (
+  { state }: Context,
+  payload: {
+    lang: string;
+    sourcePath: string;
+    translationPath: string;
+    alignmentUnit: 'div' | 'p';
+  },
+) => {
+  console.log('[translation] enterTranslationMode action called with', payload);
+  state.ui.translationMode = {
+    active: true,
+    lang: payload.lang,
+    sourcePath: payload.sourcePath,
+    translationPath: payload.translationPath,
+    alignmentUnit: payload.alignmentUnit,
+    selectedUnitId: null,
+  };
   window.dispatchEvent(
-    new CustomEvent('desktop:editor-view-mode-changed', { detail: { mode } }),
+    new CustomEvent('desktop:translation-mode-changed', { detail: state.ui.translationMode }),
   );
+};
+
+export const exitTranslationMode = ({ state }: Context) => {
+  console.log(
+    '[translation] exitTranslationMode action called, was active?',
+    state.ui.translationMode.active,
+  );
+  if (!state.ui.translationMode.active) return;
+
+  state.ui.translationMode = {
+    active: false,
+    lang: null,
+    sourcePath: null,
+    translationPath: null,
+    alignmentUnit: null,
+    selectedUnitId: null,
+  };
+  window.dispatchEvent(
+    new CustomEvent('desktop:translation-mode-changed', { detail: state.ui.translationMode }),
+  );
+};
+
+export const setSelectedTranslationUnit = ({ state }: Context, unitId: string | null) => {
+  if (!state.ui.translationMode.active) return;
+  state.ui.translationMode.selectedUnitId = unitId;
 };
 
 export const resetSourceEditor = ({ state }: Context) => {
@@ -371,11 +417,28 @@ export const exitSourceMode = async ({ state, actions }: Context): Promise<boole
   const validity = checkWellFormedness(sourceCurrentContent);
 
   if (validity.valid) {
+    const filePath = state.document.url;
+    if (filePath) {
+      window.writer?.overmindActions?.project?.updateTabContent?.({
+        filePath,
+        content: sourceCurrentContent,
+      });
+      window.writer?.overmindActions?.project?.markTabDirty?.(true);
+    }
+    window.__desktopStoredDocumentXml = sourceCurrentContent;
+
     actions.document.setIsReload(true);
     actions.document.loadDocumentXML(sourceCurrentContent);
     actions.ui.setEditorViewMode('visual');
     return true;
   }
+
+  const parseErrorCount = validity.error.positions?.length ?? 1;
+  await actions.validator.updateValidationError(parseErrorCount);
+  window.writer
+    ?.event('documentValidated')
+    .publish(false, { valid: false, errors: [], parseError: validity.error }, sourceCurrentContent);
+  window.writer?.layoutManager?.showModule('validation');
 
   const shouldDiscard = await new Promise<boolean>((resolve) => {
     actions.ui.openDialog({

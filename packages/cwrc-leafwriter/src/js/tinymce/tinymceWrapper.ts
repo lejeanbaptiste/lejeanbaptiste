@@ -12,6 +12,16 @@ import './plugins/prevent_delete';
 import fscreen from 'fscreen';
 import Writer from '../Writer';
 import { normalizePastedParagraphs, fixNestedPastedParagraphs, removeEmptyParagraphs } from './normalizePastedParagraphs';
+import {
+  buildLeafWriterClipboardPayload,
+  detectPasteAmbiguity,
+  escapeHtml,
+  isLeafWriterClipboardPayload,
+  LEAF_WRITER_CLIPBOARD_MIME,
+  normalizeClipboardText,
+  parseXmlFragment,
+  textToLineBreakXml,
+} from './pasteSpecial';
 import './plugins/treepaste';
 
 declare global {
@@ -40,6 +50,459 @@ export const tinymceWrapperInit = function ({
 
   const visualBodyStyle =
     'body { margin: 8px !important; max-width: none !important; width: auto !important; }';
+
+  const isNodeInEditorBody = (editor: LeafWriterEditor, node: Node | null | undefined) => {
+    if (!node) return false;
+    const body = editor.getBody();
+    return node === body || body.contains(node);
+  };
+
+  const isPasteBinNode = (node: Node | null | undefined) => {
+    let current: Node | null | undefined = node;
+    while (current) {
+      if (current.nodeType === Node.TEXT_NODE && current.textContent?.includes('%MCEPASTEBIN%')) {
+        return true;
+      }
+      if (current.nodeType === Node.ELEMENT_NODE) {
+        const element = current as Element;
+        if (
+          element.id === 'mcepastebin' ||
+          element.getAttribute('id') === 'mcepastebin' ||
+          element.getAttribute('data-mce-bogus') === 'all'
+        ) {
+          return true;
+        }
+      }
+      current = current.parentNode;
+    }
+    return false;
+  };
+
+  const escapeAttribute = (value: string) =>
+    escapeHtml(value).replace(/'/g, '&apos;');
+
+  const buildEditorTagAttributes = (node: Element) => {
+    const attrs: Record<string, string> = {};
+    let html = '';
+
+    Array.from(node.attributes).forEach((attr) => {
+      attrs[attr.name] = attr.value;
+      if (attr.name === 'id') return;
+      html += ` ${attr.name}="${escapeAttribute(attr.value)}"`;
+    });
+
+    const jsonAttrsString = JSON.stringify(attrs).replace(/"/g, '&quot;');
+    return `${html} _attributes="${jsonAttrsString}"`;
+  };
+
+  const findTagNameFromNode = (node: Node | null, stopAt: Node): string | null => {
+    let current: Node | null = node;
+    while (current && current !== stopAt) {
+      if (current.nodeType === Node.ELEMENT_NODE && (current as Element).hasAttribute('_tag')) {
+        return (current as Element).getAttribute('_tag');
+      }
+      current = current.parentNode;
+    }
+    return null;
+  };
+
+  const getInsertionParentTag = (editor: LeafWriterEditor): string | null => {
+    const body = editor.getBody();
+    const selectionTag = findTagNameFromNode(editor.selection.getNode(), body);
+    if (selectionTag) return selectionTag;
+
+    const currentNodeTag = findTagNameFromNode(editor.currentNode ?? null, body);
+    if (currentNodeTag) return currentNodeTag;
+
+    try {
+      return findTagNameFromNode(editor.selection.getRng()?.commonAncestorContainer ?? null, body);
+    } catch {
+      return null;
+    }
+  };
+
+  const getInsertionParentTagFromRange = (
+    editor: LeafWriterEditor,
+    range: Range | null,
+  ): string | null => {
+    if (!range) return null;
+    return findTagNameFromNode(range.commonAncestorContainer, editor.getBody());
+  };
+
+  interface PasteInsertionContext {
+    parentTag: string | null;
+    parentCanContainText: boolean;
+  }
+
+  let pendingPasteTargetRange: Range | null = null;
+  let pendingPasteTargetRangeCapturedAt = 0;
+  let lastKnownEditorRange: Range | null = null;
+  let lastKnownEditorRangeCapturedAt = 0;
+
+  const rangeFromStaticRange = (doc: Document, staticRange: StaticRange): Range => {
+    const range = doc.createRange();
+    range.setStart(staticRange.startContainer, staticRange.startOffset);
+    range.setEnd(staticRange.endContainer, staticRange.endOffset);
+    return range;
+  };
+
+  const getPendingPasteTargetRange = (editor: LeafWriterEditor): Range | null => {
+    if (!pendingPasteTargetRange) return null;
+    if (Date.now() - pendingPasteTargetRangeCapturedAt > 2000) return null;
+    if (
+      !isNodeInEditorBody(editor, pendingPasteTargetRange.startContainer) ||
+      !isNodeInEditorBody(editor, pendingPasteTargetRange.endContainer)
+    ) {
+      return null;
+    }
+    return pendingPasteTargetRange.cloneRange();
+  };
+
+  const rememberEditorRange = (editor: LeafWriterEditor) => {
+    try {
+      const range = editor.selection.getRng()?.cloneRange();
+      if (
+        !range ||
+        !isNodeInEditorBody(editor, range.startContainer) ||
+        !isNodeInEditorBody(editor, range.endContainer)
+      ) {
+        return;
+      }
+      if (
+        isPasteBinNode(range.startContainer) ||
+        isPasteBinNode(range.endContainer) ||
+        isPasteBinNode(range.commonAncestorContainer)
+      ) {
+        return;
+      }
+
+      lastKnownEditorRange = range;
+      lastKnownEditorRangeCapturedAt = Date.now();
+    } catch {
+      // TinyMCE can throw while the iframe selection is settling.
+    }
+  };
+
+  const getLastKnownEditorRange = (editor: LeafWriterEditor): Range | null => {
+    if (!lastKnownEditorRange) return null;
+    if (Date.now() - lastKnownEditorRangeCapturedAt > 30000) return null;
+    if (
+      !isNodeInEditorBody(editor, lastKnownEditorRange.startContainer) ||
+      !isNodeInEditorBody(editor, lastKnownEditorRange.endContainer)
+    ) {
+      return null;
+    }
+    if (
+      isPasteBinNode(lastKnownEditorRange.startContainer) ||
+      isPasteBinNode(lastKnownEditorRange.endContainer) ||
+      isPasteBinNode(lastKnownEditorRange.commonAncestorContainer)
+    ) {
+      return null;
+    }
+    return lastKnownEditorRange.cloneRange();
+  };
+
+  const capturePasteInsertionContext = (
+    editor: LeafWriterEditor,
+    range: Range | null = null,
+  ): PasteInsertionContext => {
+    const parentTag = getInsertionParentTagFromRange(editor, range) ?? getInsertionParentTag(editor);
+    return {
+      parentTag,
+      parentCanContainText: parentTag ? writer.schemaManager.canTagContainText(parentTag) : false,
+    };
+  };
+
+  const canImportXmlFragment = (
+    context: PasteInsertionContext,
+    fragmentDocument: XMLDocument,
+  ) => {
+    if (!context.parentTag) return false;
+
+    return Array.from(fragmentDocument.documentElement.childNodes).every((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent ?? '';
+        return text.trim().length === 0 || context.parentCanContainText;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return true;
+
+      const element = node as Element;
+      return (
+        writer.schemaManager.isTagValidChildOfParent(element.nodeName, context.parentTag!) ||
+        writer.schemaManager
+          .getParentsForTag(element.nodeName)
+          .some((parent) => parent.name === context.parentTag)
+      );
+    });
+  };
+
+  const buildEditorFragmentFromXml = (
+    context: PasteInsertionContext,
+    xml: string,
+  ): { content?: string; error?: string } => {
+    const parsed = parseXmlFragment(xml);
+    if (parsed.error) return { error: parsed.error };
+    if (!canImportXmlFragment(context, parsed.document)) {
+      return { error: 'This XML is well formed, but not valid in this location.' };
+    }
+
+    const content = Array.from(parsed.document.documentElement.childNodes)
+      .map((node): string => buildEditorHtmlFromXmlNode(node))
+      .join('');
+
+    return { content };
+  };
+
+  function buildEditorHtmlFromXmlNode(node: Node): string {
+    if (node.nodeType === Node.TEXT_NODE) return escapeHtml(node.textContent ?? '');
+    if (node.nodeType === Node.COMMENT_NODE) return `<!--${node.textContent ?? ''}-->`;
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+    const element = node as Element;
+    const tagName = element.nodeName;
+    const editorTagName = writer.schemaManager.getTagForEditor(tagName);
+    const id = writer.getUniqueId('dom_');
+    const canContainText = writer.schemaManager.canTagContainText(tagName);
+    const children = Array.from(element.childNodes).map(buildEditorHtmlFromXmlNode).join('');
+    const emptyText = canContainText && children.length === 0 ? '\uFEFF' : '';
+
+    return `<${editorTagName} id="${id}" _tag="${tagName}" _textallowed="${canContainText}"${buildEditorTagAttributes(element)}>${children}${emptyText}</${editorTagName}>`;
+  }
+
+  const textToParagraphXml = (text: string) =>
+    text
+      .replace(/\r\n?/g, '\n')
+      .split(/\n{2,}/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean)
+      .map((paragraph) => `<p>${paragraph.split('\n').map(escapeHtml).join('<lb/>')}</p>`)
+      .join('');
+
+  const textToInlineLineBreakXml = (text: string) =>
+    text.replace(/\r\n?/g, '\n').split('\n').map(escapeHtml).join('<lb/>');
+
+  const canInsertChildTag = (childTag: string, parentTag: string | null) =>
+    Boolean(parentTag && writer.schemaManager.isTagValidChildOfParent(childTag, parentTag));
+
+  const getSavedPasteDefault = (ambiguity: string, fallback: string) => {
+    try {
+      return localStorage.getItem(`leafwriter.pasteSpecial.default.${ambiguity}`) || fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  const savePasteDefault = (ambiguity: string, mode: string) => {
+    try {
+      localStorage.setItem(`leafwriter.pasteSpecial.default.${ambiguity}`, mode);
+    } catch {
+      // localStorage may be unavailable.
+    }
+  };
+
+  const buildPasteModeContent = (
+    context: PasteInsertionContext,
+    mode: string,
+    text: string,
+  ): { content?: string; error?: string } => {
+    if (mode === 'xml') return buildEditorFragmentFromXml(context, text);
+
+    if (mode === 'line-breaks') {
+      if (context.parentCanContainText && canInsertChildTag('lb', context.parentTag)) {
+        return buildEditorFragmentFromXml(context, textToInlineLineBreakXml(text));
+      }
+
+      if (canInsertChildTag('p', context.parentTag)) {
+        return buildEditorFragmentFromXml(context, textToLineBreakXml(text));
+      }
+
+      return { error: 'Line breaks are not valid in this location.' };
+    }
+
+    if (mode === 'paragraphs') {
+      if (context.parentTag === 'p' && context.parentCanContainText) {
+        const xml = canInsertChildTag('lb', context.parentTag)
+          ? textToInlineLineBreakXml(text)
+          : escapeHtml(text.replace(/\r\n?|\n/g, ' '));
+        return buildEditorFragmentFromXml(context, xml);
+      }
+
+      if (canInsertChildTag('p', context.parentTag)) {
+        return buildEditorFragmentFromXml(context, textToParagraphXml(text));
+      }
+
+      if (context.parentCanContainText) {
+        return buildEditorFragmentFromXml(context, escapeHtml(text.replace(/\r\n?|\n/g, ' ')));
+      }
+
+      return { error: 'Paragraphs are not valid in this location.' };
+    }
+
+    if (mode === 'plain') {
+      if (context.parentTag && context.parentCanContainText) {
+        return buildEditorFragmentFromXml(context, escapeHtml(text));
+      }
+      if (canInsertChildTag('p', context.parentTag)) {
+        return buildEditorFragmentFromXml(context, `<p>${escapeHtml(text)}</p>`);
+      }
+      return { error: 'Text is not valid in this location.' };
+    }
+
+    return buildEditorFragmentFromXml(context, escapeHtml(text));
+  };
+
+  const insertEditorContentAtRange = (
+    editor: LeafWriterEditor,
+    content: string,
+    range: Range,
+  ) => {
+    const doc = editor.getDoc();
+    const container = doc.createElement('div');
+    container.innerHTML = content;
+
+    const fragment = doc.createDocumentFragment();
+    let lastNode: ChildNode | null = null;
+    while (container.firstChild) {
+      lastNode = container.firstChild;
+      fragment.appendChild(container.firstChild);
+    }
+
+    range.deleteContents();
+    range.insertNode(fragment);
+
+    if (lastNode) {
+      const collapseRange = doc.createRange();
+      collapseRange.setStartAfter(lastNode);
+      collapseRange.collapse(true);
+      editor.selection.setRng(collapseRange);
+    }
+  };
+
+  const showPasteSpecialDialog = ({
+    ambiguity,
+    context,
+    onPaste,
+    text,
+  }: {
+    ambiguity: string;
+    context: PasteInsertionContext;
+    onPaste: (content: string) => void;
+    text: string;
+  }) => {
+    const xmlStatus = buildEditorFragmentFromXml(context, text);
+    let selectedMode = getSavedPasteDefault(
+      ambiguity,
+      ambiguity === 'xml' && xmlStatus.content ? 'xml' : 'paragraphs',
+    );
+    const modes = [
+      { mode: 'paragraphs', label: 'Paragraphs', description: 'Blank lines create new paragraphs.' },
+      { mode: 'line-breaks', label: 'Line breaks', description: 'Single line breaks become lb elements.' },
+      {
+        mode: 'xml',
+        label: 'XML fragment',
+        description: xmlStatus.content
+          ? 'Import well-formed XML as document structure.'
+          : xmlStatus.error || 'XML is not importable here.',
+        disabled: !xmlStatus.content,
+      },
+      { mode: 'plain', label: 'Plain text', description: 'Paste markup characters as text.' },
+    ];
+
+    if (modes.some((option) => option.mode === selectedMode && option.disabled)) {
+      selectedMode = 'paragraphs';
+    }
+
+    const $dialog = $('<div class="ljb-paste-special" />');
+    const $list = $('<div role="listbox" aria-label="Paste options" />').appendTo($dialog);
+    modes.forEach((option) => {
+      const $button = $('<button type="button" class="ljb-paste-special-option" />')
+        .attr('data-mode', option.mode)
+        .prop('disabled', option.disabled === true)
+        .css({
+          display: 'block',
+          width: '100%',
+          textAlign: 'left',
+          margin: '0 0 8px',
+          padding: '8px',
+        })
+        .append($('<strong />').text(option.label))
+        .append($('<div />').css({ fontSize: '12px', opacity: 0.75 }).text(option.description))
+        .appendTo($list);
+      if (option.mode === selectedMode) $button.addClass('selected');
+    });
+
+    const updateSelection = (nextMode: string) => {
+      const option = modes.find((item) => item.mode === nextMode && !item.disabled);
+      if (!option) return;
+      selectedMode = option.mode;
+      $list.find('button').removeClass('selected').css({ outline: '' });
+      $list
+        .find(`button[data-mode="${selectedMode}"]`)
+        .addClass('selected')
+        .css({ outline: '2px solid currentColor' })
+        .trigger('focus');
+    };
+
+    const finish = (saveDefault: boolean) => {
+      if (saveDefault) savePasteDefault(ambiguity, selectedMode);
+      const result = buildPasteModeContent(context, selectedMode, text);
+      if (result.content) onPaste(result.content);
+      if (!result.content && result.error) {
+        writer.dialogManager.show('message', {
+          title: 'Paste Special',
+          msg: result.error,
+          type: 'error',
+        });
+      }
+      $dialog.dialog('destroy').remove();
+    };
+
+    $dialog.on('click', 'button[data-mode]', function () {
+      updateSelection(String($(this).attr('data-mode')));
+    });
+
+    $dialog.on('dblclick', 'button[data-mode]', function () {
+      if (!$(this).prop('disabled')) finish(false);
+    });
+
+    $dialog.on('keydown', (event) => {
+      const available = modes.filter((option) => !option.disabled);
+      const index = available.findIndex((option) => option.mode === selectedMode);
+      if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        updateSelection(available[(index + 1) % available.length].mode);
+      }
+      if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+        event.preventDefault();
+        updateSelection(available[(index - 1 + available.length) % available.length].mode);
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        finish(false);
+      }
+    });
+
+    $dialog.dialog({
+      title: 'Paste Special',
+      modal: true,
+      resizable: false,
+      width: 420,
+      close: () => {
+        $dialog.dialog('destroy').remove();
+      },
+      buttons: [
+        { text: 'Paste', click: () => finish(false) },
+        { text: 'Save as default', click: () => finish(true) },
+        {
+          text: 'Cancel',
+          click: () => {
+            $dialog.dialog('destroy').remove();
+          },
+        },
+      ],
+    });
+    updateSelection(selectedMode);
+  };
 
   void tinymce.init({
     selector: `#${editorId}`,
@@ -76,7 +539,12 @@ export const tinymceWrapperInit = function ({
           removeEmptyParagraphs(body, writer.schemaManager.getBlockTag());
         }
         // need to fire contentPasted here, after the content is actually within the document
-        writer.event('contentPasted').publish();
+        writer.event('contentPasted').publish({
+          fromLeafWriter: Boolean((writer.editor as any)?._leafWriterLastPasteFromLeafWriter),
+        });
+        if (writer.editor) {
+          (writer.editor as any)._leafWriterLastPasteFromLeafWriter = false;
+        }
       }, 0);
     },
 
@@ -163,16 +631,46 @@ export const tinymceWrapperInit = function ({
 
         // highlight tracking
         body.addEventListener('keydown', onKeyDownHandler, true);
-        body.addEventListener('keyup', onKeyUpHandler);
+        body.addEventListener('keyup', (event) => {
+          onKeyUpHandler(event);
+          rememberEditorRange(editor);
+        });
+        body.addEventListener('mouseup', () => rememberEditorRange(editor), true);
+        body.addEventListener('focusin', () => rememberEditorRange(editor), true);
+        body.addEventListener(
+          'beforeinput',
+          (event: InputEvent) => {
+            if (event.inputType !== 'insertFromPaste') return;
+
+            const targetRanges =
+              typeof event.getTargetRanges === 'function' ? event.getTargetRanges() : [];
+            const targetRange = targetRanges[0];
+            pendingPasteTargetRange = targetRange
+              ? rangeFromStaticRange(editor.getDoc(), targetRange)
+              : null;
+            pendingPasteTargetRangeCapturedAt = Date.now();
+          },
+          true,
+        );
 
         // attach mouseUp to doc because body doesn't always extend to full height of editor panel
         if (editor.iframeElement?.contentDocument) {
           const iframeDoc = editor.iframeElement.contentDocument;
-          iframeDoc.addEventListener('mouseup', onMouseUpHandler);
+          iframeDoc.addEventListener('mouseup', (event) => {
+            onMouseUpHandler(event);
+            rememberEditorRange(editor);
+          });
+          iframeDoc.addEventListener(
+            'selectionchange',
+            () => {
+              if (editor.hasFocus()) rememberEditorRange(editor);
+            },
+            true,
+          );
           iframeDoc.addEventListener(
             'keydown',
             (event: KeyboardEvent) => {
-              if ((event.metaKey || event.ctrlKey) && event.code === 'KeyF') {
+              if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
                 event.preventDefault();
                 dispatchDesktopOpenFind();
               }
@@ -193,16 +691,83 @@ export const tinymceWrapperInit = function ({
         editor.on('Change', onChangeHandler);
         editor.on('Undo', onUndoHandler);
         editor.on('Redo', onRedoHandler);
-        editor.on('focus', () => console.log('[focus-dbg] TinyMCE editor GAINED focus'));
-        editor.on('blur', () => console.log('[focus-dbg] TinyMCE editor LOST focus; activeElement:', document.activeElement));
+        editor.on('focus', () => {
+          rememberEditorRange(editor);
+        });
         editor.on('BeforeAddUndo', () => {
           /*log.info('before add undo'); */
         });
         // editor.on();
         editor.on('NodeChange', (event) => {
           onNodeChangeHandler(event.element);
+          rememberEditorRange(editor);
         });
         editor.on('copy', onCopyHandler);
+        editor.on(
+          'paste',
+          (event: ClipboardEvent) => {
+            const clipboard = event.clipboardData;
+            if (!clipboard) return;
+
+            const fromLeafWriter = isLeafWriterClipboardPayload(
+              clipboard.getData(LEAF_WRITER_CLIPBOARD_MIME),
+            );
+            const text = normalizeClipboardText(
+              clipboard.getData('text/plain') || clipboard.getData('Text') || '',
+            );
+            const ambiguity = detectPasteAmbiguity({ fromLeafWriter, text });
+            if (!ambiguity) return;
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            const bookmark = editor.selection.getBookmark(1);
+            const tinyMcePasteRange = editor.selection.getRng()?.cloneRange();
+            const browserPasteTargetRange = getPendingPasteTargetRange(editor);
+            const lastKnownPasteRange = getLastKnownEditorRange(editor);
+            pendingPasteTargetRange = null;
+            const pasteRange = browserPasteTargetRange ?? lastKnownPasteRange ?? tinyMcePasteRange;
+            const pasteContext = capturePasteInsertionContext(editor, pasteRange);
+            showPasteSpecialDialog({
+              ambiguity,
+              context: pasteContext,
+              text,
+              onPaste: (content) => {
+                editor.focus();
+                try {
+                  if (pasteRange) {
+                    editor.selection.setRng(pasteRange);
+                  } else {
+                    editor.selection.moveToBookmark(bookmark);
+                  }
+                } catch {
+                  editor.selection.moveToBookmark(bookmark);
+                }
+                if (!pasteContext.parentTag) return;
+                (editor as any)._leafWriterLastPasteFromLeafWriter = fromLeafWriter;
+                editor.undoManager.transact(() => {
+                  const liveRange = editor.selection.getRng();
+                  const savedRangeIsUsable =
+                    pasteRange &&
+                    isNodeInEditorBody(editor, pasteRange.startContainer) &&
+                    isNodeInEditorBody(editor, pasteRange.endContainer);
+                  const restoredRange = savedRangeIsUsable ? pasteRange : liveRange;
+                  insertEditorContentAtRange(editor, content, restoredRange);
+                });
+                setTimeout(() => {
+                  const body = editor.getBody();
+                  normalizePastedParagraphs(writer, body);
+                  writer.tagger.processNewContent(body);
+                  fixNestedPastedParagraphs(body);
+                  removeEmptyParagraphs(body, writer.schemaManager.getBlockTag());
+                  writer.event('contentPasted').publish({ fromLeafWriter });
+                  writer.event('contentChanged').publish();
+                }, 0);
+              },
+            });
+          },
+          true,
+        );
 
         editor.on('contextmenu', (event) => {
           event.preventDefault();
@@ -347,13 +912,6 @@ export const tinymceWrapperInit = function ({
   };
 
   const clearTagBoundaryState = () => applyBoundaryClasses(null, null);
-
-  // Pure structural tag (no entity marker) — used for sibling detection.
-  const isTagEl = (n: Node | null): n is Element =>
-    isElement(n) &&
-    (n as Element).hasAttribute('_tag') &&
-    !(n as Element).hasAttribute('_entity') &&
-    (n as Element).getAttribute('_tag') !== 'pb';
 
   // Also matches combined _entity+_tag spans (xml2cwrc stamps _entity onto existing structural tags).
   // Used when the cursor is INSIDE the element (parent checks), not for sibling detection.
@@ -531,7 +1089,7 @@ export const tinymceWrapperInit = function ({
     if (tinymce.isMac ? event.metaKey : event.ctrlKey) return;
 
     //allow select all
-    if ((tinymce.isMac ? event.metaKey : event.ctrlKey) && event.code === 'KeyA') {
+    if ((tinymce.isMac ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'a') {
       event.preventDefault();
       return;
     }
@@ -771,6 +1329,10 @@ export const tinymceWrapperInit = function ({
 
   const onCopyHandler = (event: any) => {
     if (!writer.editor) return;
+
+    if (event.clipboardData?.setData) {
+      event.clipboardData.setData(LEAF_WRITER_CLIPBOARD_MIME, buildLeafWriterClipboardPayload());
+    }
 
     if (writer.editor.copiedElement?.element) {
       $(writer.editor.copiedElement.element).remove();

@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { isTranslationFile } from './translationFileNaming';
 
 export interface NamedPath {
   name: string;
@@ -24,7 +25,7 @@ export const listProjectXmlFiles = async (rootPath: string): Promise<NamedPath[]
         await walk(fullPath);
         continue;
       }
-      if (entry.name.toLowerCase().endsWith('.xml')) {
+      if (entry.name.toLowerCase().endsWith('.xml') && !isTranslationFile(fullPath)) {
         results.push({ name: entry.name, path: fullPath });
       }
     }

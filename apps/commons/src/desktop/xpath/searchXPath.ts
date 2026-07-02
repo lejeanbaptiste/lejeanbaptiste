@@ -1,4 +1,5 @@
 import type { OpenTab } from '@src/overmind/project/state';
+import { isTranslationFile } from '../translationFileNaming';
 import { collectXmlFiles } from './collectXmlFiles';
 import {
   evaluateXPathAll,
@@ -7,6 +8,11 @@ import {
   parseXmlDocument,
 } from './evaluateXPathAll';
 import type { XPathFileResult, XPathScope } from './types';
+
+/** XPath only makes sense against schema-validated documents — translation companion files
+ * (chapter1.fr.translation.xml) are a separate, unvalidated structure and are never targets. */
+const excludeTranslationFiles = (filePaths: string[]): string[] =>
+  filePaths.filter((filePath) => !isTranslationFile(filePath));
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
 
@@ -41,11 +47,31 @@ const buildMatchesFromNodes = (
   } satisfies XPathFileResult;
 };
 
+/** The visual editor strips the teiHeader before loading, so header nodes can't be jumped to
+ * in WYSIWYG mode — and the jump logic would mis-map them onto body elements instead. */
+const isInsideHeader = (node: Node): boolean => {
+  let current: Node | null = node;
+  while (current) {
+    if (
+      current.nodeType === Node.ELEMENT_NODE &&
+      (current as Element).localName === 'teiHeader'
+    ) {
+      return true;
+    }
+    current = current.parentNode;
+  }
+  return false;
+};
+
 const searchInXmlContent = (filePath: string, content: string, query: string) => {
   const doc = parseXmlDocument(content);
   if (!doc) return null;
 
-  const nodes = evaluateXPathAll(doc, query);
+  let nodes = evaluateXPathAll(doc, query);
+  // In Source mode the header is visible and navigable, so header hits stay.
+  if (!isSourceEditorMode()) {
+    nodes = nodes.filter((node) => !isInsideHeader(node));
+  }
   return buildMatchesFromNodes(filePath, nodes, (node) => getXPathForElement(node, doc));
 };
 
@@ -88,6 +114,9 @@ export const searchXPath = async ({
     if (!activeTabPath) {
       return { results: [], error: 'No file is open.' };
     }
+    if (isTranslationFile(activeTabPath)) {
+      return { results: [], error: 'XPath does not apply to translation files.' };
+    }
 
     const tab = openTabs.find((item) => item.filePath === activeTabPath);
     if (!tab) {
@@ -104,6 +133,7 @@ export const searchXPath = async ({
     }
 
     for (const tab of openTabs) {
+      if (isTranslationFile(tab.filePath)) continue;
       addResult(
         searchInXmlContent(tab.filePath, getContentForSearch(tab, activeTabPath), trimmed),
       );
@@ -117,7 +147,7 @@ export const searchXPath = async ({
       return { results: [], error: 'Open a project folder first.' };
     }
 
-    const filePaths = await collectXmlFiles(rootPath);
+    const filePaths = excludeTranslationFiles(await collectXmlFiles(rootPath));
     for (const filePath of filePaths) {
       const content = await window.electronAPI.readFile(filePath);
       addResult(searchInXmlContent(filePath, content, trimmed));
@@ -138,7 +168,7 @@ export const searchXPath = async ({
       return { results: [], error: 'Folder path is not accessible.' };
     }
 
-    const filePaths = await collectXmlFiles(folderPath);
+    const filePaths = excludeTranslationFiles(await collectXmlFiles(folderPath));
     for (const filePath of filePaths) {
       const content = await window.electronAPI.readFile(filePath);
       addResult(searchInXmlContent(filePath, content, trimmed));

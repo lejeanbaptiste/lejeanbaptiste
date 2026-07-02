@@ -101,11 +101,19 @@ export const isPathUnder = (targetPath: string, parentPath: string): boolean => 
   return targetPath.startsWith(prefix) || targetPath.startsWith(winPrefix);
 };
 
-/** Omit the project schema directory from explorer listings (children load only if expanded). */
+const TRANSLATION_FILE_SUFFIX_PATTERN = /\.[A-Za-z0-9-]+\.translation\.xml$/i;
+
+/** Companion translation files (chapter1.fr.translation.xml) are managed only via Translation
+ * Mode, not the general file explorer. */
+export const isTranslationCompanionFile = (entryPath: string): boolean =>
+  TRANSLATION_FILE_SUFFIX_PATTERN.test(entryPath);
+
+/** Omit the project schema directory and translation companion files from explorer listings. */
 export const shouldHideExplorerDirectoryEntry = (
   entryPath: string,
   schemaDirPath: string | null | undefined,
-): boolean => Boolean(schemaDirPath && entryPath === schemaDirPath);
+): boolean =>
+  Boolean(schemaDirPath && entryPath === schemaDirPath) || isTranslationCompanionFile(entryPath);
 
 export const repathFilePath = (filePath: string, oldPath: string, newPath: string): string | null =>
   repathSingle(filePath, oldPath, newPath);

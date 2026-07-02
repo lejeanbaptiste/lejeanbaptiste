@@ -21,6 +21,12 @@ import {
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
 import { normalizeTeiHeaderLanguageElements } from '@src/desktop/teiHeaderXml';
 import { updateTagStatsForFile } from '@src/desktop/tagging/tagStats';
+import {
+  findCompanionTranslationFiles,
+  rewriteCompanionSourceReferences,
+} from '@src/desktop/translationCompanionOps';
+import { translationFilePathFor } from '@src/desktop/translationFileNaming';
+import { reindexTranslationOnSave } from '@src/desktop/translationEntry';
 import { clearWriterSession, resetDesktopEditorSession } from '@src/desktop/clearWriterSession';
 import {
   DESKTOP_LEFT_PANEL_EVENT,
@@ -31,11 +37,12 @@ import { getEnabledCatalogSchemas } from '@src/desktop/schemaCatalog';
 import { warmMetadataDialogStateCache } from '@src/desktop/projectMetadataDialogState';
 import { maybeCheckSchemaUpdateOnOpen } from '@src/desktop/schemaUpdateCheck';
 import { stampContentBeforeSave } from '@src/desktop/revisionDescXml';
+import { separateBlockElements } from '@src/desktop/xmlBlockSpacing';
 import {
   mergeEditorBodyWithStoredHeader,
   stripTeiHeaderForVisualEditor,
 } from '@src/desktop/teiHeaderXml';
-import { isDesktop } from '@src/types/desktop';
+import { isDesktop, type WorkspaceCursorPosition } from '@src/types/desktop';
 import { buildSkeletonForCatalog } from '@src/desktop/schemaTemplates';
 import type { FileTreeNode } from './state';
 
@@ -121,8 +128,7 @@ export const promptCloseDirtyTab = async (
   return 'proceed';
 };
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 const ignoreSavedFileChange = async (filePath: string) => {
   if (!window.electronAPI?.statFile || !window.electronAPI?.ignoreFileChange) return;
@@ -135,15 +141,17 @@ const ignoreSavedFileChange = async (filePath: string) => {
   }
 };
 
-const pushContentToEditor = (content: string) => {
+const pushContentToEditor = (content: string, options?: { resetUndo?: boolean }) => {
   if (!window.writer) return;
 
   if (isSourceEditorMode()) {
+    if (options?.resetUndo) window.__leafWriterNextSourceSyncResetsUndo = true;
     window.writer.overmindActions?.ui?.markSourceSaved?.(content);
     window.writer.overmindActions?.ui?.setSourceCurrentContent?.(content);
     return;
   }
 
+  // Visual mode needs no flag: loadDocumentXML already clears the undo stack on documentLoaded.
   window.writer.loadDocumentXML(content);
 };
 
@@ -180,14 +188,20 @@ const invokeOpenProjectDialog = async (): Promise<ProjectBundle | null> => {
 const getActiveEditorContent = async (): Promise<string | null> => {
   if (window.writer?.getContent) {
     const content = await window.writer.getContent();
-    return content ?? null;
+    if (!content) return null;
+
+    if (isDesktop() && !isSourceEditorMode()) {
+      const baseXml =
+        window.__desktopStoredDocumentXml ?? window.writer.overmindState?.document?.xml ?? content;
+      return mergeEditorBodyWithStoredHeader(stripTeiHeaderForVisualEditor(content), baseXml);
+    }
+
+    return content;
   }
   return null;
 };
 
-const promptUnsavedBeforeProjectSwitch = async (
-  context: Context,
-): Promise<'proceed' | 'abort'> => {
+const promptUnsavedBeforeProjectSwitch = async (context: Context): Promise<'proceed' | 'abort'> => {
   if (!window.electronAPI?.showNativeMessageBox) return 'proceed';
 
   const dirtyTabs = context.state.project.openTabs.filter((tab) => tab.dirty);
@@ -200,8 +214,7 @@ const promptUnsavedBeforeProjectSwitch = async (
     const response = await window.electronAPI.showNativeMessageBox({
       type: 'warning',
       title: 'Unsaved new document',
-      message:
-        'Save the new document to your project folder before opening another project?',
+      message: 'Save the new document to your project folder before opening another project?',
       buttons: ['Save…', "Don't Save", 'Cancel'],
       cancelId: 2,
       defaultId: 0,
@@ -211,8 +224,7 @@ const promptUnsavedBeforeProjectSwitch = async (
     if (response.response === 1) return 'proceed';
 
     const activePath = context.state.project.activeTabPath;
-    const tempTab =
-      tempDirtyTabs.find((tab) => tab.filePath === activePath) ?? tempDirtyTabs[0];
+    const tempTab = tempDirtyTabs.find((tab) => tab.filePath === activePath) ?? tempDirtyTabs[0];
     const content =
       (await getActiveEditorContent()) ??
       tempTab.content ??
@@ -243,9 +255,7 @@ const promptUnsavedBeforeProjectSwitch = async (
   if (response.response === 0) {
     const saveResult = await saveAllDirtyTabs(context);
     if (!saveResult.ok) {
-      context.actions.ui.notifyViaSnackbar(
-        saveResult.error ?? 'Could not save all files.',
-      );
+      context.actions.ui.notifyViaSnackbar(saveResult.error ?? 'Could not save all files.');
       return 'abort';
     }
   }
@@ -262,7 +272,10 @@ export const saveAllDirtyTabs = async (
   const activePath = state.project.activeTabPath;
   let activeContent: string | null = null;
 
-  if (activePath && state.project.openTabs.some((tab) => tab.filePath === activePath && tab.dirty)) {
+  if (
+    activePath &&
+    state.project.openTabs.some((tab) => tab.filePath === activePath && tab.dirty)
+  ) {
     activeContent = await getActiveEditorContent();
     if (!activeContent) {
       activeContent =
@@ -280,8 +293,7 @@ export const saveAllDirtyTabs = async (
       };
     }
 
-    const content =
-      tab.filePath === activePath && activeContent ? activeContent : tab.content;
+    const content = tab.filePath === activePath && activeContent ? activeContent : tab.content;
 
     try {
       await window.electronAPI.writeFile(tab.filePath, content);
@@ -293,8 +305,7 @@ export const saveAllDirtyTabs = async (
 
   state.project.openTabs = state.project.openTabs.map((tab) => {
     if (!tab.dirty) return tab;
-    const content =
-      tab.filePath === activePath && activeContent ? activeContent : tab.content;
+    const content = tab.filePath === activePath && activeContent ? activeContent : tab.content;
     return { ...tab, content, dirty: false };
   });
 
@@ -315,6 +326,50 @@ const showExplorerLeftPanel = () => {
   );
 };
 
+const restoreCursorPositionWhenReady = (position: WorkspaceCursorPosition) => {
+  const delays = [0, 100, 300, 700, 1200, 2000];
+
+  console.info('[cursor-session] restore scheduled', { position });
+
+  const tryRestore = async (remainingDelays: number[], attempt = 1) => {
+    const restored = await window.__leafWriterCursorSession?.restore(position);
+    console.info('[cursor-session] restore attempt', {
+      attempt,
+      restored: Boolean(restored),
+      remainingAttempts: remainingDelays.length,
+    });
+    if (restored || remainingDelays.length === 0) return;
+
+    const [delay, ...next] = remainingDelays;
+    window.setTimeout(() => {
+      void tryRestore(next, attempt + 1);
+    }, delay);
+  };
+
+  void tryRestore(delays);
+};
+
+const captureActiveCursorPosition = (state: Context['state']['project']) => {
+  const activePath = state.activeTabPath;
+  if (!activePath) {
+    console.info('[cursor-session] capture skipped: no active tab');
+    return;
+  }
+
+  const cursorPosition = window.__leafWriterCursorSession?.capture();
+  console.info('[cursor-session] capture active tab', {
+    filePath: activePath,
+    hasBridge: Boolean(window.__leafWriterCursorSession),
+    cursorPosition,
+  });
+  if (cursorPosition) {
+    state.cursorPositions = {
+      ...state.cursorPositions,
+      [activePath]: cursorPosition,
+    };
+  }
+};
+
 const loadProjectBundle = async (context: Context, bundle: ProjectBundle) => {
   const { state, actions } = context;
   state.project.rootPath = bundle.rootPath;
@@ -331,10 +386,7 @@ const loadProjectBundle = async (context: Context, bundle: ProjectBundle) => {
 
   if (window.writer) {
     window.writer.overmindActions?.editor?.clearProjectSchemas?.();
-    registerDesktopSchemas([
-      ...getEnabledCatalogSchemas(),
-      ...state.project.projectSchemas,
-    ]);
+    registerDesktopSchemas([...getEnabledCatalogSchemas(), ...state.project.projectSchemas]);
   }
 
   if (isDesktop()) {
@@ -348,10 +400,7 @@ const loadProjectBundle = async (context: Context, bundle: ProjectBundle) => {
           updatedBundle.config,
         );
         if (window.writer) {
-          registerDesktopSchemas([
-            ...getEnabledCatalogSchemas(),
-            ...state.project.projectSchemas,
-          ]);
+          registerDesktopSchemas([...getEnabledCatalogSchemas(), ...state.project.projectSchemas]);
         }
       },
     });
@@ -382,6 +431,7 @@ export const openProject = async (context: Context) => {
 
     context.state.project.openTabs = [];
     context.state.project.activeTabPath = null;
+    context.state.project.cursorPositions = {};
     context.state.editor.contentHasChanged = false;
     context.state.editor.contentLastSaved = undefined;
     window.writer?.overmindActions?.ui?.resetSourceEditor?.();
@@ -396,7 +446,7 @@ export const openProject = async (context: Context) => {
 };
 
 export const restoreLastProject = async (context: Context) => {
-  if (!window.electronAPI?.restoreLastProject) {
+  if (!window.electronAPI?.restoreWorkspaceSession && !window.electronAPI?.restoreLastProject) {
     context.state.project.isProjectReady = true;
     return;
   }
@@ -407,7 +457,8 @@ export const restoreLastProject = async (context: Context) => {
   }
 
   try {
-    const bundle = await window.electronAPI.restoreLastProject();
+    const session = await window.electronAPI.restoreWorkspaceSession?.();
+    const bundle = session?.bundle ?? (await window.electronAPI.restoreLastProject?.());
     if (!bundle) {
       context.state.project.isProjectReady = true;
       return;
@@ -420,6 +471,34 @@ export const restoreLastProject = async (context: Context) => {
     }
 
     await loadProjectBundle(context, onboarded);
+    context.state.project.cursorPositions = session?.cursorPositions ?? {};
+    console.info('[cursor-session] hydrated startup cursor positions', {
+      activeFilePath: session?.activeFilePath,
+      files: Object.keys(context.state.project.cursorPositions),
+    });
+
+    const openFilePaths = session?.openFilePaths ?? [];
+    for (const filePath of openFilePaths) {
+      try {
+        await context.actions.project.openFile(filePath);
+      } catch (error) {
+        console.warn('[project] restoreWorkspaceSession skipped file:', filePath, error);
+      }
+    }
+
+    if (session?.activeFilePath && context.state.project.activeTabPath !== session.activeFilePath) {
+      await context.actions.project.switchTab({ filePath: session.activeFilePath });
+    }
+
+    const activePath = context.state.project.activeTabPath;
+    const cursorPosition = activePath ? session?.cursorPositions?.[activePath] : null;
+    console.info('[cursor-session] startup active cursor lookup', {
+      activePath,
+      cursorPosition,
+    });
+    if (cursorPosition) {
+      restoreCursorPositionWhenReady(cursorPosition);
+    }
   } catch (error) {
     console.error('[project] restoreLastProject failed:', error);
     context.state.project.isProjectReady = true;
@@ -428,6 +507,36 @@ export const restoreLastProject = async (context: Context) => {
 
 /** @deprecated Use openProject */
 export const openProjectFolder = openProject;
+
+export const saveWorkspaceSession = async ({ state }: Context) => {
+  if (!window.electronAPI?.saveWorkspaceSession || !state.project.projectFilePath) return;
+
+  const openFilePaths = state.project.openTabs
+    .filter((tab) => !isTempTab(tab))
+    .map((tab) => tab.filePath);
+  const activeCursorPosition =
+    state.project.activeTabPath && openFilePaths.includes(state.project.activeTabPath)
+      ? (window.__leafWriterCursorSession?.capture() ?? null)
+      : null;
+  const cursorPositions =
+    activeCursorPosition && state.project.activeTabPath
+      ? { ...state.project.cursorPositions, [state.project.activeTabPath]: activeCursorPosition }
+      : state.project.cursorPositions;
+
+  try {
+    await window.electronAPI.saveWorkspaceSession({
+      activeFilePath:
+        state.project.activeTabPath && openFilePaths.includes(state.project.activeTabPath)
+          ? state.project.activeTabPath
+          : null,
+      cursorPositions,
+      openFilePaths,
+      projectFilePath: state.project.projectFilePath,
+    });
+  } catch (error) {
+    console.warn('[project] saveWorkspaceSession failed:', error);
+  }
+};
 
 export const newFile = async (context: Context) => {
   const { notifyViaSnackbar } = context.actions.ui;
@@ -503,7 +612,10 @@ export const newFile = async (context: Context) => {
 };
 
 export const loadDirectoryChildren = async ({ state }: Context, dirPath: string) => {
-  const schemaDirPath = getExplorerSchemaDirPath(state.project.rootPath, state.project.config?.schema);
+  const schemaDirPath = getExplorerSchemaDirPath(
+    state.project.rootPath,
+    state.project.config?.schema,
+  );
   const updateTree = async (nodes: FileTreeNode[]): Promise<FileTreeNode[]> => {
     return Promise.all(
       nodes.map(async (node) => {
@@ -522,11 +634,7 @@ export const loadDirectoryChildren = async ({ state }: Context, dirPath: string)
   state.project.tree = await updateTree(state.project.tree);
 };
 
-const prepareFileContent = async (
-  { state }: Context,
-  filePath: string,
-  content: string,
-) => {
+const prepareFileContent = async ({ state }: Context, filePath: string, content: string) => {
   if (!window.electronAPI || !state.project.rootPath || !state.project.isProjectReady) {
     return content;
   }
@@ -567,6 +675,14 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
       isLocal: true,
     });
     state.editor.contentLastSaved = content;
+
+    const cursorPosition = state.project.cursorPositions[filePath];
+    console.info('[cursor-session] open file cursor lookup', {
+      filePath,
+      cursorPosition,
+      knownFiles: Object.keys(state.project.cursorPositions),
+    });
+    if (cursorPosition) restoreCursorPositionWhenReady(cursorPosition);
   } catch (error) {
     throw error;
   }
@@ -576,6 +692,12 @@ export const switchTab = async (
   { state, actions }: Context,
   { content, filePath }: { content?: string; filePath: string },
 ) => {
+  console.info('[cursor-session] switch tab requested', {
+    from: state.project.activeTabPath,
+    to: filePath,
+  });
+  captureActiveCursorPosition(state.project);
+
   if (content && state.project.activeTabPath) {
     const currentTab = state.project.openTabs.find(
       (tab) => tab.filePath === state.project.activeTabPath,
@@ -599,7 +721,11 @@ export const switchTab = async (
   if (!tab) return;
 
   if (!tab.editorReady) {
-    tab.content = await prepareFileContent({ state, actions } as Context, tab.filePath, tab.content);
+    tab.content = await prepareFileContent(
+      { state, actions } as Context,
+      tab.filePath,
+      tab.content,
+    );
     tab.editorReady = true;
   }
 
@@ -613,6 +739,9 @@ export const switchTab = async (
     isLocal: true,
   });
   state.editor.contentLastSaved = tab.content;
+
+  const cursorPosition = state.project.cursorPositions[tab.filePath];
+  if (cursorPosition) restoreCursorPositionWhenReady(cursorPosition);
 };
 
 export const saveActiveTab = async (
@@ -634,9 +763,8 @@ export const saveActiveTab = async (
     const baseXml = tab?.content ?? content;
     const editorBody = stripTeiHeaderForVisualEditor(content);
     const merged = mergeEditorBodyWithStoredHeader(editorBody, baseXml);
-    const stamped = await stampContentBeforeSave(
-      merged,
-      state.project.config?.schema?.catalogId,
+    const stamped = separateBlockElements(
+      await stampContentBeforeSave(merged, state.project.config?.schema?.catalogId),
     );
     await window.electronAPI.writeFile(filePath, stamped);
     if (state.project.rootPath) {
@@ -648,6 +776,13 @@ export const saveActiveTab = async (
     state.editor.contentLastSaved = stamped;
     state.editor.contentHasChanged = false;
     await ignoreSavedFileChange(filePath);
+
+    const reindexed = await reindexTranslationOnSave(filePath, stamped);
+    if (reindexed) {
+      await context.actions.project.reloadTabFromDisk(filePath);
+      return { success: true, content: reindexed };
+    }
+
     return { success: true, content: stamped };
   } catch {
     return { success: false, error: 'Failed to save file' };
@@ -690,7 +825,7 @@ export const reloadTabFromDisk = async ({ state, actions }: Context, filePath: s
         isLocal: true,
       });
 
-      pushContentToEditor(content);
+      pushContentToEditor(content, { resetUndo: true });
     }
 
     await ignoreSavedFileChange(filePath);
@@ -709,9 +844,7 @@ const getDefaultSaveAsPath = (
     ? state.openTabs.find((item) => item.filePath === previousPath)
     : undefined;
   const filename = tab?.filename ?? (previousPath ? getFilename(previousPath) : 'untitled.xml');
-  const isTempFile = Boolean(
-    tab?.isTemp || (previousPath && isTempDocumentPath(previousPath)),
-  );
+  const isTempFile = Boolean(tab?.isTemp || (previousPath && isTempDocumentPath(previousPath)));
 
   return buildDefaultSaveAsPath({
     rootPath: state.rootPath,
@@ -770,9 +903,8 @@ export const saveActiveTabAs = async (
     const baseXml = sourceTab?.content ?? content;
     const editorBody = stripTeiHeaderForVisualEditor(content);
     const merged = mergeEditorBodyWithStoredHeader(editorBody, baseXml);
-    const stamped = await stampContentBeforeSave(
-      merged,
-      state.project.config?.schema?.catalogId,
+    const stamped = separateBlockElements(
+      await stampContentBeforeSave(merged, state.project.config?.schema?.catalogId),
     );
     await window.electronAPI.writeFile(filePath, stamped);
     const filename = getFilename(filePath);
@@ -812,6 +944,13 @@ export const saveActiveTabAs = async (
     if (state.project.rootPath) {
       await reloadDirectoryInTree({ state } as Context, getParentPath(filePath));
     }
+
+    const reindexed = await reindexTranslationOnSave(filePath, stamped);
+    if (reindexed) {
+      await actions.project.reloadTabFromDisk(filePath);
+      return { success: true, content: reindexed };
+    }
+
     return { success: true, content: stamped };
   } catch (error) {
     return {
@@ -858,6 +997,14 @@ export const closeTab = async (
   { state, actions }: Context,
   { content, filePath }: { content?: string; filePath: string },
 ) => {
+  console.info('[cursor-session] close tab requested', {
+    activeTabPath: state.project.activeTabPath,
+    filePath,
+  });
+  if (state.project.activeTabPath === filePath) {
+    captureActiveCursorPosition(state.project);
+  }
+
   if (content) {
     const tab = state.project.openTabs.find((item) => item.filePath === filePath);
     if (tab) tab.content = content;
@@ -915,7 +1062,10 @@ const treeContainsPath = (nodes: FileTreeNode[], targetPath: string): boolean =>
   );
 
 export const reloadDirectoryInTree = async ({ state }: Context, dirPath: string) => {
-  const schemaDirPath = getExplorerSchemaDirPath(state.project.rootPath, state.project.config?.schema);
+  const schemaDirPath = getExplorerSchemaDirPath(
+    state.project.rootPath,
+    state.project.config?.schema,
+  );
   const children = await loadTreeLevel(dirPath, schemaDirPath);
   const isProjectRoot = Boolean(state.project.rootPath && dirPath === state.project.rootPath);
   const nodeFoundBefore = treeContainsPath(state.project.tree, dirPath);
@@ -931,11 +1081,7 @@ export const reloadDirectoryInTree = async ({ state }: Context, dirPath: string)
   }));
 };
 
-const repathOpenTabsForMove = (
-  { state, actions }: Context,
-  oldPath: string,
-  newPath: string,
-) => {
+const repathOpenTabsForMove = ({ state, actions }: Context, oldPath: string, newPath: string) => {
   let nextActiveTabPath = state.project.activeTabPath;
 
   state.project.openTabs = state.project.openTabs.map((tab) => {
@@ -1012,12 +1158,39 @@ export const renameExplorerItem = async (
 
   if (newPath === oldPath) return { success: true };
 
+  // Resolve companions before the rename — their paths derive from the source filename.
+  const companions = await findCompanionTranslationFiles(oldPath);
+
   try {
     await window.electronAPI.renamePath(oldPath, newPath);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to rename';
     if (message.includes('exists')) return { success: false, error: 'exists' };
     return { success: false, error: message };
+  }
+
+  for (const companion of companions) {
+    try {
+      const newCompanionPath = translationFilePathFor(newPath, companion.lang);
+      // eslint-disable-next-line no-await-in-loop
+      await window.electronAPI.renamePath(companion.path, newCompanionPath);
+
+      // The companion's @corresp values still reference the old source filename — rewrite
+      // them, or every unit lookup silently fails after the rename.
+      // eslint-disable-next-line no-await-in-loop
+      const companionXml = await window.electronAPI.readFile(newCompanionPath);
+      const rewritten = rewriteCompanionSourceReferences(
+        companionXml,
+        getFilename(oldPath),
+        getFilename(newPath),
+      );
+      if (rewritten && rewritten !== companionXml) {
+        // eslint-disable-next-line no-await-in-loop
+        await window.electronAPI.writeFile(newCompanionPath, rewritten);
+      }
+    } catch (error) {
+      console.warn('[translation] failed to rename companion file', companion.path, error);
+    }
   }
 
   state.project.tree = repathTreeSubtree(state.project.tree, oldPath, newPath);
@@ -1035,9 +1208,20 @@ export const moveExplorerItem = async (
     return { success: false, error: 'Unavailable' };
   }
 
+  const companions = await findCompanionTranslationFiles(sourcePath);
+
   try {
     const newPath = await window.electronAPI.movePath(sourcePath, destDir);
     const oldParent = getParentPath(sourcePath);
+
+    for (const companion of companions) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await window.electronAPI.movePath(companion.path, destDir);
+      } catch (error) {
+        console.warn('[translation] failed to move companion file', companion.path, error);
+      }
+    }
 
     state.project.tree = removeTreeNode(state.project.tree, sourcePath);
     repathOpenTabsForMove({ state, actions } as Context, sourcePath, newPath);
@@ -1070,6 +1254,8 @@ export const deleteExplorerItem = async (
     return tab.filePath.startsWith(prefix);
   });
 
+  const companions = await findCompanionTranslationFiles(targetPath);
+
   try {
     await window.electronAPI.deletePath(targetPath);
   } catch (error) {
@@ -1077,6 +1263,15 @@ export const deleteExplorerItem = async (
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete',
     };
+  }
+
+  for (const companion of companions) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await window.electronAPI.deletePath(companion.path);
+    } catch (error) {
+      console.warn('[translation] failed to delete companion file', companion.path, error);
+    }
   }
 
   state.project.tree = removeTreeNode(state.project.tree, targetPath);
@@ -1109,9 +1304,6 @@ export const refreshProjectSchemaConfig = ({ state }: Context, bundle: ProjectBu
 
   if (window.writer) {
     window.writer.overmindActions?.editor?.clearProjectSchemas?.();
-    registerDesktopSchemas([
-      ...getEnabledCatalogSchemas(),
-      ...state.project.projectSchemas,
-    ]);
+    registerDesktopSchemas([...getEnabledCatalogSchemas(), ...state.project.projectSchemas]);
   }
 };

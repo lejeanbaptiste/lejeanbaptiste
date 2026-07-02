@@ -5,6 +5,15 @@ import type { ContextMenuState, LayoutProps, NotificationProps, PaletteMode } fr
 
 export type EditorViewMode = 'visual' | 'source';
 
+export interface TranslationModeState {
+  active: boolean;
+  lang: string | null;
+  sourcePath: string | null;
+  translationPath: string | null;
+  alignmentUnit: 'div' | 'p' | null;
+  selectedUnitId: string | null;
+}
+
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {
   contextMenu: ContextMenuState;
@@ -13,6 +22,7 @@ type State = {
   dialogBar: DialogBarProps[];
   editSourceProps: EditSourceDialogProps;
   editorViewMode: EditorViewMode;
+  translationMode: TranslationModeState;
   sourceCurrentContent: string;
   sourceOriginalContent: string;
   sourcePendingCursorOffset: number | null;
@@ -35,6 +45,14 @@ export const state: State = {
   dialogBar: [],
   editSourceProps: { open: false },
   editorViewMode: 'visual',
+  translationMode: {
+    active: false,
+    lang: null,
+    sourcePath: null,
+    translationPath: null,
+    alignmentUnit: null,
+    selectedUnitId: null,
+  },
   sourceCurrentContent: '',
   sourceOriginalContent: '',
   sourcePendingCursorOffset: null,

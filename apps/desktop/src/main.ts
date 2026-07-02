@@ -1,4 +1,14 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, protocol, systemPreferences } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeImage,
+  net,
+  protocol,
+  systemPreferences,
+} from 'electron';
 import { fork, type ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
 import fs from 'fs/promises';
@@ -10,7 +20,20 @@ import {
   prewarmNativeDialog,
   registerNativeDialogIpc,
 } from './nativeDialogs';
-import { getValidLastProjectFile, writeLastProjectFile } from './projectPrefs';
+import {
+  getAiApiSettings,
+  getEncoderName,
+  getRememberWorkspaceOnStartup,
+  getValidLastProjectFile,
+  getWorkspaceSession,
+  saveWorkspaceSession,
+  setAiApiSettings,
+  setEncoderName,
+  setRememberWorkspaceOnStartup,
+  writeLastProjectFile,
+  type AiApiSettings,
+  type WorkspaceSession,
+} from './projectPrefs';
 import { loadOrCreateProject, loadProjectFile } from './projectFile';
 import {
   createDirectory,
@@ -22,11 +45,280 @@ import {
 } from './explorerFileOps';
 import { OpenFileWatcher } from './openFileWatcher';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
-import { getEncoderName, setEncoderName } from './projectPrefs';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
 import { applyCatalogSchemaUpdate, checkCatalogSchemaUpdate } from './checkSchemaUpdate';
+import {
+  createTimeMachineSnapshot,
+  getDefaultTimeMachineRestorePath,
+  listTimeMachineSnapshots,
+  restoreTimeMachineSnapshotToProject,
+  restoreTimeMachineSnapshotToDirectory,
+} from './timeMachine';
 
 const APP_NAME = 'Le Jean-Baptiste';
+
+interface AiConnectionResult {
+  error?: string;
+  models?: string[];
+  ok: boolean;
+}
+
+interface AiTranslationRequest {
+  alignmentUnit: 'div' | 'p';
+  sourceUnitXml: string;
+  targetLanguage: string;
+}
+
+interface AiTranslationResult {
+  error?: string;
+  ok: boolean;
+  translationXml?: string;
+}
+
+const normalizeOpenAiBaseUrl = (baseUrl: string): string => {
+  const trimmed = baseUrl.trim().replace(/\/+$/, '');
+  const url = new URL(trimmed);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error('Base URL must start with http:// or https://.');
+  }
+  return url.toString().replace(/\/+$/, '');
+};
+
+const testAiConnection = async (settings: Partial<AiApiSettings>): Promise<AiConnectionResult> => {
+  const saved = await getAiApiSettings();
+  const merged: AiApiSettings = { ...saved, ...settings };
+  let baseUrl: string;
+
+  try {
+    baseUrl = normalizeOpenAiBaseUrl(merged.baseUrl);
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Invalid base URL.' };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (merged.apiKey.trim()) headers.Authorization = `Bearer ${merged.apiKey.trim()}`;
+
+    const response = await fetch(`${baseUrl}/models`, {
+      headers,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      return { ok: false, error: `Server returned HTTP ${response.status}.` };
+    }
+
+    const body = (await response.json()) as { data?: Array<{ id?: unknown }> };
+    const models = Array.isArray(body.data)
+      ? body.data
+          .map((model) => (typeof model.id === 'string' ? model.id : null))
+          .filter((id): id is string => Boolean(id))
+      : [];
+
+    return { ok: true, models };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { ok: false, error: 'Connection timed out.' };
+    }
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Could not reach the AI API.',
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const listAiModels = async (settings: AiApiSettings): Promise<string[]> => {
+  const baseUrl = normalizeOpenAiBaseUrl(settings.baseUrl);
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (settings.apiKey.trim()) headers.Authorization = `Bearer ${settings.apiKey.trim()}`;
+
+  const response = await fetch(`${baseUrl}/models`, { headers });
+  if (!response.ok) return [];
+
+  const body = (await response.json()) as { data?: Array<{ id?: unknown }> };
+  return Array.isArray(body.data)
+    ? body.data
+        .map((model) => (typeof model.id === 'string' ? model.id : null))
+        .filter((id): id is string => Boolean(id))
+    : [];
+};
+
+const parseTranslationXmlFromResponse = (content: string): string | null => {
+  const trimmed = content.trim();
+  try {
+    const parsed = JSON.parse(trimmed) as { translationXml?: unknown; translation?: unknown };
+    const value = parsed.translationXml ?? parsed.translation;
+    return typeof value === 'string' ? value.trim() : null;
+  } catch {
+    const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (!fenced?.[1]) return null;
+    try {
+      const parsed = JSON.parse(fenced[1].trim()) as { translationXml?: unknown };
+      return typeof parsed.translationXml === 'string' ? parsed.translationXml.trim() : null;
+    } catch {
+      return null;
+    }
+  }
+};
+
+const readErrorResponse = async (response: Response): Promise<string> => {
+  const text = await response.text().catch(() => '');
+  if (!text.trim()) return `Server returned HTTP ${response.status}.`;
+
+  try {
+    const parsed = JSON.parse(text) as {
+      error?: { message?: unknown } | string;
+      message?: unknown;
+    };
+    if (typeof parsed.error === 'string') return parsed.error;
+    if (typeof parsed.error?.message === 'string') return parsed.error.message;
+    if (typeof parsed.message === 'string') return parsed.message;
+  } catch {
+    // Fall through to raw text.
+  }
+
+  return `Server returned HTTP ${response.status}: ${text.slice(0, 500)}`;
+};
+
+const buildTranslationRequestBody = (
+  model: string,
+  settings: AiApiSettings,
+  { alignmentUnit, sourceUnitXml, targetLanguage }: AiTranslationRequest,
+) => ({
+  model,
+  temperature: settings.temperature,
+  messages: [
+    {
+      role: 'system',
+      content:
+        'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. Treat source TEI tags such as persName, placeName, orgName, officeName, date, term, title, and quote as semantic hints, but do not reproduce those source tags. Output only simple inline XML suitable for a rich text translation editor: plain text plus optional <b>, <i>, <u>, <s>, <sup>, <sub>, or <hi rend="bold|italic|underline|strikethrough|small-caps">. Do not wrap the result in p, div, translation, body, html, or markdown. Ensure the XML fragment is well formed.',
+    },
+    {
+      role: 'user',
+      content: JSON.stringify({
+        targetLanguage,
+        alignmentUnit,
+        customInstructions: settings.customInstructions,
+        sourceUnitXml,
+      }),
+    },
+  ],
+  response_format: {
+    type: 'json_schema',
+    json_schema: {
+      name: 'translation_result',
+      schema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          translationXml: { type: 'string' },
+        },
+        required: ['translationXml'],
+      },
+    },
+  },
+});
+
+const postAiTranslation = async (
+  baseUrl: string,
+  settings: AiApiSettings,
+  request: AiTranslationRequest,
+  model: string,
+  signal: AbortSignal,
+): Promise<Response> => {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  };
+  if (settings.apiKey.trim()) headers.Authorization = `Bearer ${settings.apiKey.trim()}`;
+
+  return fetch(`${baseUrl}/chat/completions`, {
+    body: JSON.stringify(buildTranslationRequestBody(model, settings, request)),
+    headers,
+    method: 'POST',
+    signal,
+  });
+};
+
+const generateAiTranslation = async ({
+  alignmentUnit,
+  sourceUnitXml,
+  targetLanguage,
+}: AiTranslationRequest): Promise<AiTranslationResult> => {
+  const settings = await getAiApiSettings();
+  const request = { alignmentUnit, sourceUnitXml, targetLanguage };
+  let baseUrl: string;
+
+  try {
+    baseUrl = normalizeOpenAiBaseUrl(settings.baseUrl);
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Invalid base URL.' };
+  }
+
+  let model = settings.model.trim();
+  if (!model) {
+    const models = await listAiModels(settings).catch(() => []);
+    model = models[0] ?? '';
+  }
+  if (!model) {
+    return { ok: false, error: 'Choose an AI model in Settings before generating.' };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
+
+  try {
+    let response = await postAiTranslation(baseUrl, settings, request, model, controller.signal);
+
+    if (response.status === 404 && settings.model.trim()) {
+      const models = await listAiModels(settings).catch(() => []);
+      const fallbackModel = models.find((candidate) => candidate !== model);
+      if (fallbackModel) {
+        response = await postAiTranslation(
+          baseUrl,
+          settings,
+          request,
+          fallbackModel,
+          controller.signal,
+        );
+      }
+    }
+
+    if (!response.ok) {
+      return { ok: false, error: await readErrorResponse(response) };
+    }
+
+    const body = (await response.json()) as {
+      choices?: Array<{ message?: { content?: unknown } }>;
+    };
+    const content = body.choices?.[0]?.message?.content;
+    if (typeof content !== 'string') {
+      return { ok: false, error: 'AI response did not include message content.' };
+    }
+
+    const translationXml = parseTranslationXmlFromResponse(content);
+    if (!translationXml) {
+      return { ok: false, error: 'AI response did not include translationXml.' };
+    }
+
+    return { ok: true, translationXml };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { ok: false, error: 'Translation request timed out.' };
+    }
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'AI translation failed.',
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
 
 // Hide macOS-injected Edit menu items (Emoji & Symbols, Start Dictation).
 if (process.platform === 'darwin') {
@@ -38,9 +330,7 @@ if (process.platform === 'darwin') {
 app.setName(APP_NAME);
 
 const getIconPath = () => {
-  const base = app.isPackaged
-    ? process.resourcesPath
-    : path.join(__dirname, '../../../design');
+  const base = app.isPackaged ? process.resourcesPath : path.join(__dirname, '../../../design');
   const pngPath = path.join(base, 'icon.png');
   const svgPath = path.join(base, 'icon.svg');
 
@@ -277,6 +567,12 @@ const buildApplicationMenu = () => {
     click: () => sendMenuAction('save-as'),
   };
 
+  const closeTabItem: Electron.MenuItemConstructorOptions = {
+    label: 'Close Tab',
+    accelerator: 'CommandOrControl+W',
+    click: () => sendMenuAction('close-tab'),
+  };
+
   const editionMetadataItem: Electron.MenuItemConstructorOptions = {
     label: 'Edition metadata…',
     click: () => sendMenuAction('edition-metadata'),
@@ -285,6 +581,11 @@ const buildApplicationMenu = () => {
   const checkSchemaUpdateItem: Electron.MenuItemConstructorOptions = {
     label: 'Check for schema updates…',
     click: () => sendMenuAction('check-schema-update'),
+  };
+
+  const timeMachineItem: Electron.MenuItemConstructorOptions = {
+    label: 'Time Machine…',
+    click: () => sendMenuAction('open-time-machine'),
   };
 
   const newFileItem: Electron.MenuItemConstructorOptions = {
@@ -323,10 +624,12 @@ const buildApplicationMenu = () => {
         newFileItem,
         saveItem,
         saveAsItem,
+        closeTabItem,
         { type: 'separator' },
         openProjectItem,
         editionMetadataItem,
         checkSchemaUpdateItem,
+        timeMachineItem,
         { type: 'separator' },
         ...(process.platform !== 'darwin'
           ? [
@@ -337,7 +640,12 @@ const buildApplicationMenu = () => {
               { type: 'separator' },
             ]
           : []),
-        process.platform === 'darwin' ? { role: 'close' } : { role: 'quit' },
+        process.platform === 'darwin'
+          ? {
+              label: 'Close Window',
+              click: () => mainWindow?.close(),
+            }
+          : { role: 'quit' },
       ],
     },
     buildEditMenu(),
@@ -386,9 +694,53 @@ const registerIpcHandlers = () => {
   ipcMain.handle('openProjectFolder', openProjectFromDialog);
 
   ipcMain.handle('restoreLastProject', async () => {
+    if (!(await getRememberWorkspaceOnStartup())) return null;
     const projectFilePath = await getValidLastProjectFile();
     if (!projectFilePath) return null;
     return loadProjectFile(projectFilePath);
+  });
+
+  ipcMain.handle('getRememberWorkspaceOnStartup', () => getRememberWorkspaceOnStartup());
+  ipcMain.handle('setRememberWorkspaceOnStartup', (_event, remember: boolean) =>
+    setRememberWorkspaceOnStartup(Boolean(remember)),
+  );
+
+  ipcMain.handle('saveWorkspaceSession', (_event, session: WorkspaceSession) =>
+    saveWorkspaceSession(session),
+  );
+
+  ipcMain.handle('restoreWorkspaceSession', async () => {
+    if (!(await getRememberWorkspaceOnStartup())) return null;
+
+    const session = await getWorkspaceSession();
+    const projectFilePath = session?.projectFilePath ?? (await getValidLastProjectFile());
+    if (!projectFilePath) return null;
+
+    const bundle = await loadProjectFile(projectFilePath);
+    if (!bundle) return null;
+
+    const openFilePaths: string[] = [];
+    for (const filePath of session?.openFilePaths ?? []) {
+      try {
+        const stat = await fs.stat(filePath);
+        if (stat.isFile()) openFilePaths.push(filePath);
+      } catch {
+        // File was moved or deleted since the last session.
+      }
+    }
+
+    const activeFilePath =
+      session?.activeFilePath && openFilePaths.includes(session.activeFilePath)
+        ? session.activeFilePath
+        : (openFilePaths[0] ?? null);
+
+    const cursorPositions = Object.fromEntries(
+      Object.entries(session?.cursorPositions ?? {}).filter(([filePath]) =>
+        openFilePaths.includes(filePath),
+      ),
+    );
+
+    return { activeFilePath, bundle, cursorPositions, openFilePaths };
   });
 
   ipcMain.handle(
@@ -468,6 +820,48 @@ const registerIpcHandlers = () => {
     return applyCatalogSchemaUpdate(projectFilePath);
   });
 
+  ipcMain.handle('timeMachine:listSnapshots', async (_event, projectRootPath: string) => {
+    return listTimeMachineSnapshots(projectRootPath);
+  });
+
+  ipcMain.handle(
+    'timeMachine:createSnapshot',
+    async (_event, projectRootPath: string, projectName: string) => {
+      return createTimeMachineSnapshot(projectRootPath, projectName);
+    },
+  );
+
+  ipcMain.handle(
+    'timeMachine:pickRestoreDestination',
+    async (_event, projectRootPath: string, snapshotId: string) => {
+      if (!mainWindow) return null;
+
+      mainWindow.focus();
+      const result = await dialog.showOpenDialog(mainWindow, {
+        defaultPath: getDefaultTimeMachineRestorePath(projectRootPath, snapshotId),
+        properties: ['openDirectory', 'createDirectory'],
+        title: 'Choose restore destination',
+      });
+
+      if (result.canceled || !result.filePaths[0]) return null;
+      return result.filePaths[0];
+    },
+  );
+
+  ipcMain.handle(
+    'timeMachine:restoreSnapshot',
+    async (_event, snapshotPath: string, destinationPath: string) => {
+      await restoreTimeMachineSnapshotToDirectory(snapshotPath, destinationPath);
+    },
+  );
+
+  ipcMain.handle(
+    'timeMachine:restoreSnapshotToProject',
+    async (_event, projectRootPath: string, projectName: string, snapshotPath: string) => {
+      return restoreTimeMachineSnapshotToProject(projectRootPath, projectName, snapshotPath);
+    },
+  );
+
   ipcMain.handle('pickSchemaFiles', async () => {
     const dialogParent = getTopNativeDialogWindow() ?? mainWindow;
     if (!dialogParent) return null;
@@ -487,8 +881,7 @@ const registerIpcHandlers = () => {
     });
     return {
       rngPath: rngResult.filePaths[0],
-      cssPath:
-        cssResult.canceled || !cssResult.filePaths[0] ? null : cssResult.filePaths[0],
+      cssPath: cssResult.canceled || !cssResult.filePaths[0] ? null : cssResult.filePaths[0],
     };
   });
 
@@ -504,6 +897,20 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('setEncoderName', async (_event, name: string) => {
     await setEncoderName(name);
+  });
+
+  ipcMain.handle('getAiApiSettings', async () => getAiApiSettings());
+
+  ipcMain.handle('setAiApiSettings', async (_event, settings: Partial<AiApiSettings>) => {
+    await setAiApiSettings(settings);
+  });
+
+  ipcMain.handle('testAiConnection', async (_event, settings: Partial<AiApiSettings>) => {
+    return testAiConnection(settings);
+  });
+
+  ipcMain.handle('generateAiTranslation', async (_event, request: AiTranslationRequest) => {
+    return generateAiTranslation(request);
   });
 
   ipcMain.handle('renamePath', async (_event, oldPath: string, newPath: string) => {
@@ -595,7 +1002,7 @@ const createWindow = async () => {
       (input.meta || input.control) &&
       !input.shift &&
       !input.alt &&
-      (input.code === 'KeyF' || input.key?.toLowerCase() === 'f');
+      input.key?.toLowerCase() === 'f';
 
     if (!isFindShortcut) return;
 

@@ -14,11 +14,11 @@ const getActiveXmlContent = (
   openTabs: { content: string; filePath: string }[],
   activeTabPath: string | null,
 ): string => {
-  if (
-    activeTabPath === filePath &&
-    window.writer?.overmindState?.ui?.editorViewMode === 'source'
-  ) {
+  if (activeTabPath === filePath && window.writer?.overmindState?.ui?.editorViewMode === 'source') {
     return window.writer.overmindState.ui.sourceCurrentContent;
+  }
+  if (activeTabPath === filePath && window.__desktopStoredDocumentXml) {
+    return window.__desktopStoredDocumentXml;
   }
   return openTabs.find((tab) => tab.filePath === filePath)?.content ?? '';
 };

@@ -2,7 +2,7 @@ import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import type { Locales } from '@src/i18n';
 import type { PaletteMode } from '@src/types';
-import { isDesktop } from '@src/types/desktop';
+import { isDesktop, type AiApiSettings } from '@src/types/desktop';
 import { useAtom } from 'jotai';
 import { useEffect } from 'react';
 
@@ -35,6 +35,11 @@ import {
   subscribeSchemaSetupDialogClosed,
 } from './schemaSetupSession';
 import type { ProjectMetadataFile } from './projectTypes';
+import {
+  addTranslationLanguage,
+  readTranslationSettings,
+  writeTranslationSettings,
+} from './translationSettings';
 
 declare global {
   interface Window {
@@ -129,6 +134,22 @@ export const useNativeDialogBridge = () => {
           case 'setEncoderName':
             await window.electronAPI?.setEncoderName?.(String(args ?? ''));
             return true;
+          case 'getAiApiSettings':
+            return window.electronAPI?.getAiApiSettings?.() ?? null;
+          case 'setAiApiSettings':
+            await window.electronAPI?.setAiApiSettings?.((args ?? {}) as Partial<AiApiSettings>);
+            return true;
+          case 'getRememberWorkspaceOnStartup':
+            return (await window.electronAPI?.getRememberWorkspaceOnStartup?.()) ?? true;
+          case 'setRememberWorkspaceOnStartup':
+            await window.electronAPI?.setRememberWorkspaceOnStartup?.(Boolean(args));
+            return true;
+          case 'testAiConnection':
+            return (
+              (await window.electronAPI?.testAiConnection?.(
+                (args ?? {}) as Partial<AiApiSettings>,
+              )) ?? { ok: false, error: 'Desktop AI API bridge is unavailable.' }
+            );
           case 'setThemeAppearance':
             setThemeAppearance(args as PaletteMode);
             leafWriter?.setThemeAppearance?.(args as PaletteMode);
@@ -262,11 +283,20 @@ export const useNativeDialogBridge = () => {
             return buildProjectMetadataDialogState(bundle, session.mode);
           }
           case 'saveProjectMetadata': {
-            const { dialogId, values, custom, applyToDocuments } = (args ?? {}) as {
+            const {
+              dialogId,
+              values,
+              custom,
+              applyToDocuments,
+              translationAlignmentUnit,
+              translationLanguages,
+            } = (args ?? {}) as {
               dialogId?: string;
               values?: Record<string, string>;
               custom?: Array<{ path: string; label: string; value: string }>;
               applyToDocuments?: boolean;
+              translationAlignmentUnit?: 'div' | 'p';
+              translationLanguages?: Array<{ code: string; label: string }>;
             };
             const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
             if (!session) {
@@ -297,6 +327,39 @@ export const useNativeDialogBridge = () => {
                 ok: false,
                 error: error instanceof Error ? error.message : 'Could not save metadata.',
               };
+            }
+
+            if (translationAlignmentUnit) {
+              try {
+                // Re-read current disk state rather than trusting a stale snapshot — a
+                // prior save within the same dialog session may have already locked
+                // alignmentUnit.
+                const existingTranslationSettings = await readTranslationSettings(bundle);
+                if (!existingTranslationSettings) {
+                  await writeTranslationSettings(bundle, {
+                    alignmentUnit: translationAlignmentUnit,
+                    languages: translationLanguages ?? [],
+                  });
+                } else {
+                  const existingCodes = new Set(
+                    existingTranslationSettings.languages.map((lang) => lang.code),
+                  );
+                  for (const lang of translationLanguages ?? []) {
+                    if (!existingCodes.has(lang.code)) {
+                      // eslint-disable-next-line no-await-in-loop
+                      await addTranslationLanguage(bundle, lang);
+                    }
+                  }
+                }
+              } catch (error) {
+                return {
+                  ok: false,
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : 'Could not save translation settings.',
+                };
+              }
             }
 
             const sanitized = sanitizeMetadataForSave(draft);

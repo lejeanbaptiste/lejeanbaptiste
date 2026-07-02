@@ -165,10 +165,14 @@ export const useMenu = () => {
 
     let action: 'save' | 'saveAs' | 'load' | 'download' | '' = '';
 
-    if (event.code === 'KeyS') action = 'save';
-    if (event.shiftKey && event.altKey && event.code === 'KeyS') action = 'saveAs';
-    if (event.shiftKey && event.code === 'KeyD') action = 'download';
-    if (event.code === 'KeyO') action = 'load';
+    const key = event.key.toLowerCase();
+    if (key === 's') action = 'save';
+    // With Alt held, macOS reports a transformed character in `key`, so keep a
+    // physical-key fallback for this combo only.
+    if (event.shiftKey && event.altKey && (key === 's' || event.code === 'KeyS'))
+      action = 'saveAs';
+    if (event.shiftKey && key === 'd') action = 'download';
+    if (key === 'o') action = 'load';
 
     if (action === '') return;
 
