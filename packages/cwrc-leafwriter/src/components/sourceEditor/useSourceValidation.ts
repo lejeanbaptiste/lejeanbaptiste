@@ -28,8 +28,9 @@ export const useSourceValidation = () => {
       return;
     }
 
-    const writer = window.writer;
-    if (!writer) return;
+    let canceled = false;
+    let timer: number | undefined;
+    let writer = window.writer;
 
     const onValidated = (_valid: boolean, result: ValidationResult) => {
       if (result.parseError) {
@@ -50,10 +51,23 @@ export const useSourceValidation = () => {
       setMarkers(mapValidationErrorsToMarkers(contentRef.current, result.errors));
     };
 
-    writer.event('documentValidated').subscribe(onValidated);
+    const subscribe = () => {
+      if (canceled) return;
+      writer = window.writer;
+      if (!writer) {
+        timer = window.setTimeout(subscribe, 100);
+        return;
+      }
+
+      writer.event('documentValidated').subscribe(onValidated);
+    };
+
+    subscribe();
 
     return () => {
-      writer.event('documentValidated').unsubscribe(onValidated);
+      canceled = true;
+      if (timer) window.clearTimeout(timer);
+      if (writer) writer.event('documentValidated').unsubscribe(onValidated);
       setMarkers([]);
     };
   }, [editorViewMode]);

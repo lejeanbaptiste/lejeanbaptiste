@@ -1,16 +1,7 @@
 # Todo
 
 **Before**
-- [x] Link
-- [x] footnotes
-- [x] Set default fonts.
-- [x] Autosave
-- [x] Improve fixed layout of things in find and replace
-- [x] fix validation
-- [x] try splitting
-- [ ] Fix hash tweaking not restoring same id?
 - [ ] Fix saving the visual, headerless version. (fixed?)
-- [ ] Debug remember cursor location.
 - [ ] Commit and push !
 
 **Misc**

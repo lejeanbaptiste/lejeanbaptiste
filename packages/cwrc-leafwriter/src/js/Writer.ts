@@ -253,7 +253,13 @@ class Writer extends EventManager {
   async getContent() {
     const docString = await this.getDocumentString();
 
-    this.overmindActions.document.updateContent(docString);
+    const mergeEditorBodyWithStoredHeader = window.__desktopMergeEditorBodyWithStoredHeader;
+    const contentForState =
+      typeof docString === 'string' && typeof mergeEditorBodyWithStoredHeader === 'function'
+        ? mergeEditorBodyWithStoredHeader(docString)
+        : docString;
+
+    this.overmindActions.document.updateContent(contentForState);
 
     return docString;
   }

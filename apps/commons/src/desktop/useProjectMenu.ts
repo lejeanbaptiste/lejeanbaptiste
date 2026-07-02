@@ -66,6 +66,7 @@ export const useProjectMenu = () => {
       setContentHasChanged(false);
       markTabDirty(false);
       leafWriter?.setContentHasChanged(false);
+      window.__desktopStoredDocumentXml = content;
       window.writer?.overmindActions?.document?.setDocumentXml(content);
       window.writer?.overmindActions?.ui?.markSourceSaved?.(content);
       void window.writer?.overmindActions?.validator?.validate();

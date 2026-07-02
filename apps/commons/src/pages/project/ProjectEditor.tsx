@@ -1,5 +1,11 @@
 import { Box, Typography } from '@mui/material';
-import { TagCommandProvider, UnifiedLeftPanel, UnifiedRightPanel, useExternalFileWatcher, useProjectMenu } from '@src/desktop';
+import {
+  TagCommandProvider,
+  UnifiedLeftPanel,
+  UnifiedRightPanel,
+  useExternalFileWatcher,
+  useProjectMenu,
+} from '@src/desktop';
 import { TOOLBAR_ROW_HEIGHT } from '@src/desktop/sidebarConstants';
 import { AboutDialog } from '@src/desktop/AboutDialog';
 import { TimeMachineDialog } from '@src/desktop/TimeMachineDialog';
@@ -14,7 +20,7 @@ import { useEffect, useRef } from 'react';
 
 export const ProjectEditor = () => {
   const { contentHasChanged, readonly, resource } = useAppState().editor;
-  const { projectFilePath } = useAppState().project;
+  const { cursorPositions, projectFilePath } = useAppState().project;
   const { markTabDirty } = useActions().project;
 
   const divEl = useRef<HTMLDivElement>(null);
@@ -102,11 +108,22 @@ export const ProjectEditor = () => {
     }
 
     if (previousTabRef.current !== resource.filePath) {
-      void loadDocumentInWriter(resource.filePath, resource.content);
+      void loadDocumentInWriter(
+        resource.filePath,
+        resource.content,
+        cursorPositions[resource.filePath] ?? null,
+      );
     }
 
     previousTabRef.current = resource.filePath;
-  }, [resource?.filePath, leafWriter, resource?.content, initLeafWriter, loadDocumentInWriter]);
+  }, [
+    cursorPositions,
+    resource?.filePath,
+    leafWriter,
+    resource?.content,
+    initLeafWriter,
+    loadDocumentInWriter,
+  ]);
 
   useEffect(() => {
     leafWriter?.setContentHasChanged(contentHasChanged);
@@ -123,10 +140,7 @@ export const ProjectEditor = () => {
   return (
     <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
       <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />
-      <TimeMachineDialog
-        onClose={() => setTimeMachineOpen(false)}
-        open={timeMachineOpen}
-      />
+      <TimeMachineDialog onClose={() => setTimeMachineOpen(false)} open={timeMachineOpen} />
       <TagCommandProvider />
       <UnifiedLeftPanel />
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>

@@ -107,6 +107,19 @@ class Validation {
 
     // add to writer
     this.writer.validation = this;
+    if (!window.__desktopValidatorInstrumentation) {
+      window.__desktopValidatorInstrumentation = {
+        workerLoading: false,
+        workerLoaded: false,
+        schemaLoading: false,
+        schemaLoaded: false,
+        validationRunning: false,
+        validationPanelRequested: false,
+        validationPanelMounted: true,
+      };
+    } else {
+      window.__desktopValidatorInstrumentation.validationPanelMounted = true;
+    }
   }
 
   async validate() {

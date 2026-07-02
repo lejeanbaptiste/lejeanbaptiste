@@ -5,6 +5,7 @@ import '../../lib/jquery/jquery.layout_and_plugins.js';
 import { ISettingsModuleName } from '../../types/index.js';
 import Writer from '../Writer';
 import { log } from './../../utilities';
+import { describePanelNode, panelTrace } from '../../utilities/panelTrace';
 import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
 import Validation from './panels/validation';
@@ -236,6 +237,15 @@ class LayoutManager {
         create: () => {
           $region.parent().find('.ui-corner-all:not(button)').removeClass('ui-corner-all');
           if (region === 'east') {
+            panelTrace('layoutManager: east tabs created, dispatching lw:east-tabs-ready', {
+              editorId: this.editorId,
+              imageViewerNode: describePanelNode(
+                document.getElementById(`${this.editorId}-imageViewer`),
+              ),
+              validationNode: describePanelNode(
+                document.getElementById(`${this.editorId}-validation`),
+              ),
+            });
             window.dispatchEvent(
               new CustomEvent('lw:east-tabs-ready', { detail: { editorId: this.editorId } }),
             );
@@ -333,6 +343,14 @@ class LayoutManager {
       return;
     }
 
+    const rightPanelModules: ISettingsModuleName[] = [
+      'fileMetadata',
+      'attributes',
+      'imageViewer',
+      'validation',
+      'translation',
+    ];
+
     if (window.__desktopRightPanel) {
       const eastConfig = this.modulesLayout.get('east');
       const eastList = eastConfig ? (Array.isArray(eastConfig) ? eastConfig : [eastConfig]) : [];
@@ -341,6 +359,14 @@ class LayoutManager {
         window.__desktopRightPanel.expand();
         return;
       }
+    }
+
+    if (rightPanelModules.includes(moduleId)) {
+      window.__desktopRightPanelPendingTab = moduleId as DesktopRightPanelTab;
+      if (window.__desktopValidatorInstrumentation) {
+        window.__desktopValidatorInstrumentation.validationPanelRequested = moduleId === 'validation';
+      }
+      console.debug('[ValidatorInstrumentation]', 'validationPanelRequested', window.__desktopValidatorInstrumentation);
     }
 
     this.modulesLayout.forEach((modules, region) => {
@@ -588,11 +614,29 @@ class LayoutManager {
     config.writer = this.writer;
     config.parentId = `${this.editorId}-${module.id}`;
 
-    if (module.id === 'entities') return new EntitiesList(config);
-    if (module.id === 'validation') return new Validation(config);
-    if (module.id === 'imageViewer') return new ImageViewer(config);
+    const traced = module.id === 'validation' || module.id === 'imageViewer';
+    if (traced) {
+      panelTrace('layoutManager: initModule', {
+        module: module.id,
+        parentId: config.parentId,
+        parentBefore: describePanelNode(document.getElementById(config.parentId)),
+      });
+    }
 
-    return null;
+    let instance = null;
+    if (module.id === 'entities') instance = new EntitiesList(config);
+    if (module.id === 'validation') instance = new Validation(config);
+    if (module.id === 'imageViewer') instance = new ImageViewer(config);
+
+    if (traced) {
+      panelTrace('layoutManager: initModule done', {
+        module: module.id,
+        created: !!instance,
+        parentAfter: describePanelNode(document.getElementById(config.parentId)),
+      });
+    }
+
+    return instance;
   }
 }
 
