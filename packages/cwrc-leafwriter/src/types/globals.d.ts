@@ -40,7 +40,22 @@ interface DesktopRightPanelBridge {
   showTab: (tab: DesktopRightPanelTab) => void;
 }
 
+type DesktopValidatorInstrumentation = {
+  workerLoading: boolean;
+  workerLoaded: boolean;
+  schemaLoading: boolean;
+  schemaLoaded: boolean;
+  validationRunning: boolean;
+  validationPanelRequested: boolean;
+  validationPanelMounted: boolean;
+};
+
 declare global {
+  interface Window {
+    __desktopRightPanelPendingTab?: DesktopRightPanelTab;
+    __desktopValidatorInstrumentation?: DesktopValidatorInstrumentation;
+    __lwPanelTrace?: { t: string; tag: string; data?: Record<string, unknown> }[];
+  }
   interface Window {
     __desktopLeftPanel?: DesktopLeftPanelBridge;
     __desktopRightPanel?: DesktopRightPanelBridge;
@@ -48,6 +63,7 @@ declare global {
       changeTag?: (tagId: string, newTagName: string) => void;
       handleEditorKeyDown: (event: KeyboardEvent) => boolean;
     };
+    __desktopMergeEditorBodyWithStoredHeader?: (editorXml: string, storedXml?: string) => string;
     __desktopMergeHeaderForValidation?: (editorXml: string) => string;
     __desktopStoredDocumentXml?: string;
     __leafWriterTranslationPane?: {

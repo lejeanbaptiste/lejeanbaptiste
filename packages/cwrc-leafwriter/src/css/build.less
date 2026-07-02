@@ -16,8 +16,6 @@
   @import (less) url('../js/dialogs/loadingIndicator/loadingIndicator.css');
 
   @import (less) url('../js/layout/panels/entitiesList/entitiesList.less');
-  @import (less) url('../js/layout/panels/imageViewer/imageViewer.css');
-  @import (less) url('../js/layout/panels/validation/validation.css');
 
   @import (less) url('./jquery-ui-overrides.css');
   @import (less) url('./jquery-layout-overrides.css');
@@ -25,3 +23,10 @@
 
 /* can't wrap these because otherwise they're TOO specific */
 @import (less) url('./tinymce-overrides.css');
+
+/* unwrapped: desktop mode migrates these panels' DOM outside the parentId container
+   (into the React right panel), where scoped selectors can no longer reach them.
+   Their selectors are all rooted at panel-specific classes, so global is safe. */
+@import (less) url('../js/layout/panels/imageViewer/imageViewer.css');
+@import (less) url('../js/layout/panels/validation/validation.css');
+@import (less) url('../js/layout/panels/desktopPanelChrome.css');

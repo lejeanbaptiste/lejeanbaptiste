@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
 import type { LeafWriterOptionsSettings } from '@cwrc/leafwriter/lib/src/types';
 import { schemas } from '@src/config/schemas';
+import type { WorkspaceCursorPosition } from '@src/types/desktop';
 
 const showDefaultEastPanel = () => {
   if (!isDesktop()) return;
@@ -38,6 +39,29 @@ const showDefaultEastPanel = () => {
   }
 };
 
+const restoreCursorPositionWhenReady = (position: WorkspaceCursorPosition) => {
+  const delays = [0, 100, 300, 700, 1200, 2000];
+
+  console.info('[cursor-session] restore scheduled after editor load', { position });
+
+  const tryRestore = async (remainingDelays: number[], attempt = 1) => {
+    const restored = await window.__leafWriterCursorSession?.restore(position);
+    console.info('[cursor-session] restore-after-load attempt', {
+      attempt,
+      restored: Boolean(restored),
+      remainingAttempts: remainingDelays.length,
+    });
+    if (restored || remainingDelays.length === 0) return;
+
+    const [delay, ...next] = remainingDelays;
+    window.setTimeout(() => {
+      void tryRestore(next, attempt + 1);
+    }, delay);
+  };
+
+  void tryRestore(delays);
+};
+
 export const useLeafWriter = () => {
   const { analytics } = useAnalytics();
   const navigate = useNavigate();
@@ -45,6 +69,14 @@ export const useLeafWriter = () => {
 
   if (isDesktop() && typeof window !== 'undefined') {
     window.__desktopStripTeiHeaderForVisualEditor = stripTeiHeaderForVisualEditor;
+    window.__desktopMergeEditorBodyWithStoredHeader = (editorXml: string, storedXml?: string) => {
+      const stored =
+        storedXml ??
+        window.__desktopStoredDocumentXml ??
+        window.writer?.overmindState?.document?.xml ??
+        '';
+      return mergeEditorBodyWithStoredHeader(stripTeiHeaderForVisualEditor(editorXml), stored);
+    };
     window.__desktopMergeHeaderForValidation = (editorXml: string) => {
       const stored =
         window.__desktopStoredDocumentXml ?? window.writer?.overmindState?.document?.xml ?? '';
@@ -56,7 +88,7 @@ export const useLeafWriter = () => {
   }
 
   const { user } = useAppState().auth;
-  const { config, projectSchemas, rootPath } = useAppState().project;
+  const { config, cursorPositions, projectSchemas, rootPath } = useAppState().project;
   const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
   const { currentLocale } = useAppState().ui;
 
@@ -183,7 +215,11 @@ export const useLeafWriter = () => {
   };
 
   /** Load a different project file into an already-running editor (tab switch / second file). */
-  const loadDocumentInWriter = async (filePath: string, content: string) => {
+  const loadDocumentInWriter = async (
+    filePath: string,
+    content: string,
+    cursorPosition?: WorkspaceCursorPosition | null,
+  ) => {
     if (!window.writer) return;
 
     if (isDesktop() && rootPath && config?.schema) {
@@ -202,7 +238,11 @@ export const useLeafWriter = () => {
     window.writer.overmindActions?.editor?.setContentHasChanged?.(false);
     window.writer.layoutManager?.resizeEditor?.();
     window.writer.layoutManager?.resizeAll?.();
-    focusFirstBodyParagraph();
+    if (cursorPosition) {
+      restoreCursorPositionWhenReady(cursorPosition);
+    } else {
+      focusFirstBodyParagraph();
+    }
     showDefaultEastPanel();
   };
 
@@ -238,7 +278,12 @@ export const useLeafWriter = () => {
       tapDocument(resource, schemaName);
       subscribeToTimerService(leafWriter);
       if (isDesktop()) {
-        focusFirstBodyParagraph();
+        const cursorPosition = resource.filePath ? cursorPositions[resource.filePath] : null;
+        if (cursorPosition) {
+          restoreCursorPositionWhenReady(cursorPosition);
+        } else {
+          focusFirstBodyParagraph();
+        }
         showDefaultEastPanel();
       }
     });

@@ -10,6 +10,25 @@ import { webpackEnv } from '../../types';
 import { checkWellFormedness } from '../../utilities/checkWellFormedness';
 import { isLocalFileUrl, localSchemaToBlobUrl } from '../../utilities/fetchResource';
 
+const getValidatorInstrumentation = () => {
+  if (!window.__desktopValidatorInstrumentation) {
+    window.__desktopValidatorInstrumentation = {
+      workerLoading: false,
+      workerLoaded: false,
+      schemaLoading: false,
+      schemaLoaded: false,
+      validationRunning: false,
+      validationPanelRequested: false,
+      validationPanelMounted: false,
+    };
+  }
+  return window.__desktopValidatorInstrumentation;
+};
+
+const logValidatorInstrumentation = (tag: string) => {
+  console.debug?.('[ValidatorInstrumentation]', tag, window.__desktopValidatorInstrumentation);
+};
+
 export type SourceValidationResult = ValidationResponse & {
   parseError?: Extract<ReturnType<typeof checkWellFormedness>, { valid: false }>['error'];
 };
@@ -22,12 +41,25 @@ declare global {
 }
 
 export const loadValidator = async ({ state }: Context) => {
+  const instrumentation = getValidatorInstrumentation();
+  instrumentation.workerLoading = true;
+  instrumentation.workerLoaded = false;
+  logValidatorInstrumentation('loadValidator started');
+
   const baseUrl = state.editor.baseUrl;
   const validator = await loadWebworker(baseUrl);
-  if (!validator) return;
+  if (!validator) {
+    instrumentation.workerLoading = false;
+    instrumentation.workerLoaded = false;
+    logValidatorInstrumentation('loadValidator failed');
+    return;
+  }
 
   window.leafwriterValidator = validator;
   state.validator.hasWorkerValidator = true;
+  instrumentation.workerLoading = false;
+  instrumentation.workerLoaded = true;
+  logValidatorInstrumentation('loadValidator completed');
 };
 
 const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<ValidatorType>> => {
@@ -56,17 +88,32 @@ const resolveSchemaUrlForWorker = async (schemaURL: string): Promise<string> => 
 };
 
 export const initialize = async ({ state }: Context) => {
-  const writer = window.writer;
-  if (!writer) return;
+  const instrumentation = getValidatorInstrumentation();
+  instrumentation.schemaLoading = true;
+  instrumentation.schemaLoaded = false;
+  logValidatorInstrumentation('initialize started');
 
-  if (!state.validator.hasWorkerValidator) return;
+  const writer = window.writer;
+  if (!writer) {
+    instrumentation.schemaLoading = false;
+    logValidatorInstrumentation('initialize aborted: no writer');
+    return;
+  }
+
+  if (!state.validator.hasWorkerValidator) {
+    instrumentation.schemaLoading = false;
+    return;
+  }
 
   const workerValidator = window.leafwriterValidator;
   state.validator.hasWorkerValidator = !!workerValidator;
 
   const schemaId = writer.schemaManager.getCurrentSchema()?.id;
   const schemaURL = writer.schemaManager.getRng();
-  if (!schemaId || !schemaURL) return;
+  if (!schemaId || !schemaURL) {
+    instrumentation.schemaLoading = false;
+    return;
+  }
 
   const workerUrl = await resolveSchemaUrlForWorker(schemaURL);
   let schemaWorker = { success: false };
@@ -76,14 +123,26 @@ export const initialize = async ({ state }: Context) => {
     schemaWorker = { success: false };
   }
 
+  instrumentation.schemaLoading = false;
+  instrumentation.schemaLoaded = !!schemaWorker.success;
+  logValidatorInstrumentation(
+    schemaWorker.success ? 'initialize completed' : 'initialize failed',
+  );
+
   if (schemaWorker.success) state.validator.hasSchema = true;
 
   window.writer?.event('workerValidatorLoaded').publish(schemaWorker);
 };
 
 export const validate = async ({ state, actions }: Context) => {
+  const instrumentation = getValidatorInstrumentation();
+  instrumentation.validationRunning = true;
+
   const writer = window.writer;
-  if (!writer) return;
+  if (!writer) {
+    instrumentation.validationRunning = false;
+    return;
+  }
 
   const documentString =
     state.ui.editorViewMode === 'source'
@@ -96,7 +155,10 @@ export const validate = async ({ state, actions }: Context) => {
       ? mergeForValidation(documentString ?? '')
       : documentString;
 
-  if (!validationString) return;
+  if (!validationString) {
+    instrumentation.validationRunning = false;
+    return;
+  }
 
   const wellFormed = checkWellFormedness(validationString);
   if (!wellFormed.valid) {
@@ -107,12 +169,15 @@ export const validate = async ({ state, actions }: Context) => {
       { valid: false, errors: [], parseError: wellFormed.error } satisfies SourceValidationResult,
       validationString,
     );
+    instrumentation.validationRunning = false;
     return;
   }
 
   if (!state.validator.hasWorkerValidator || !state.validator.hasSchema) {
     await actions.validator.updateValidationError(0);
     writer.event('documentValidated').publish(true, { valid: true }, validationString);
+    instrumentation.validationRunning = false;
+    logValidatorInstrumentation('validate skipped: no worker or schema');
     return;
   }
 
@@ -132,6 +197,7 @@ export const validate = async ({ state, actions }: Context) => {
 
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   await workerValidator.validate(validationString, Comlink.proxy(validationProgress));
+  instrumentation.validationRunning = false;
 };
 
 export const updateValidationError = async ({ state }: Context, value: number) => {

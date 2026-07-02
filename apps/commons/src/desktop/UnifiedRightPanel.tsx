@@ -10,6 +10,7 @@ import { leafwriterAtom } from '@src/jotai';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileMetadataPanel } from './FileMetadataPanel';
+import { describePanelNode, panelTrace } from './panelTrace';
 import { AttributesPanel } from './tagging/AttributesPanel';
 import { RightPanelResizeHandle } from './RightPanelResizeHandle';
 import { TranslationTabContent } from './TranslationTabContent';
@@ -88,6 +89,7 @@ export const UnifiedRightPanel = () => {
   const migratedNodesRef = useRef<{ node: HTMLElement; originalParent: HTMLElement | null }[]>([]);
 
   const showTab = useCallback((tab: string) => {
+    panelTrace('rightPanel: showTab', { tab });
     if (!TAB_ORDER.includes(tab as RightTabId)) return;
     const tabId = tab as RightTabId;
     // Programmatic resets to the default panel (fired on every document load via
@@ -107,6 +109,14 @@ export const UnifiedRightPanel = () => {
 
   useEffect(() => {
     window.__desktopRightPanel = { showTab, expand };
+
+    if (window.__desktopRightPanelPendingTab) {
+      console.debug('[ValidatorInstrumentation]', 'replayPendingRightPanelTab', window.__desktopRightPanelPendingTab);
+      setActiveTab(window.__desktopRightPanelPendingTab);
+      setCollapsed(false);
+      delete window.__desktopRightPanelPendingTab;
+    }
+
     return () => {
       delete window.__desktopRightPanel;
     };
@@ -119,26 +129,54 @@ export const UnifiedRightPanel = () => {
   // goes permanently blank. On cleanup we hand the nodes back to their original parent.
   useEffect(() => {
     if (!leafWriter) return;
+    panelTrace('rightPanel: migration effect mounted', {
+      editorId: window.writer?.editorId ?? null,
+    });
 
-    const migrate = (): boolean => {
+    const migrate = (reason: string): boolean => {
       const editorId = window.writer?.editorId;
-      if (!editorId) return false;
+      if (!editorId) {
+        panelTrace('rightPanel: migrate skipped, no editorId', { reason });
+        return false;
+      }
 
-      const pairs: [HTMLElement | null, HTMLDivElement | null][] = [
-        [document.getElementById(`${editorId}-imageViewer`), imageViewerSlotRef.current],
-        [document.getElementById(`${editorId}-validation`), validationSlotRef.current],
+      const pairs: [RightTabId, HTMLElement | null, HTMLDivElement | null][] = [
+        ['imageViewer', document.getElementById(`${editorId}-imageViewer`), imageViewerSlotRef.current],
+        ['validation', document.getElementById(`${editorId}-validation`), validationSlotRef.current],
       ];
 
       let migratedAny = false;
       let foundAll = true;
-      for (const [src, slot] of pairs) {
+      for (const [tabId, src, slot] of pairs) {
         if (!src || !slot) {
           foundAll = false;
+          panelTrace('rightPanel: migrate missing node', {
+            reason,
+            tabId,
+            editorId,
+            srcFound: !!src,
+            slotFound: !!slot,
+          });
           continue;
         }
         if (slot.contains(src)) continue;
+        panelTrace('rightPanel: migrating node', {
+          reason,
+          tabId,
+          src: describePanelNode(src),
+        });
         migratedNodesRef.current.push({ node: src, originalParent: src.parentElement });
+        // jQuery UI tabs hid this panel (inline display:none + aria-hidden) because it
+        // wasn't the active jQuery tab. From here on the React slot controls visibility,
+        // so strip jQuery's hiding or the panel stays permanently blank.
+        src.style.removeProperty('display');
+        src.removeAttribute('aria-hidden');
         slot.appendChild(src);
+        panelTrace('rightPanel: node migrated', {
+          tabId,
+          src: describePanelNode(src),
+          slot: describePanelNode(slot),
+        });
         migratedAny = true;
       }
 
@@ -152,8 +190,9 @@ export const UnifiedRightPanel = () => {
     };
 
     const onEastTabsReady = () => {
+      panelTrace('rightPanel: lw:east-tabs-ready received');
       // Give jQuery UI a frame to finish tab initialization before we move nodes
-      requestAnimationFrame(migrate);
+      requestAnimationFrame(() => migrate('east-tabs-ready'));
     };
 
     window.addEventListener('lw:east-tabs-ready', onEastTabsReady);
@@ -161,9 +200,25 @@ export const UnifiedRightPanel = () => {
     // remounted after a route change while the editor instance survived). The validation
     // and image viewer modules can also appear shortly after the React panel, so retry
     // briefly rather than leaving an empty slot if the timing is unlucky.
-    const initialAttempt = requestAnimationFrame(migrate);
+    const initialAttempt = requestAnimationFrame(() => migrate('initial'));
+    let retryCount = 0;
     const retryId = window.setInterval(() => {
-      if (migrate()) window.clearInterval(retryId);
+      retryCount += 1;
+      if (migrate(`retry #${retryCount}`)) {
+        window.clearInterval(retryId);
+        return;
+      }
+      if (retryCount === 25) {
+        // ~5s without success: dump what actually exists so the failure mode is obvious.
+        panelTrace('rightPanel: migration still failing after 25 retries', {
+          editorId: window.writer?.editorId ?? null,
+          panelNodeIdsInDom: Array.from(
+            document.querySelectorAll('[id$="-imageViewer"], [id$="-validation"]'),
+            (el) => el.id,
+          ),
+          eastPane: describePanelNode(document.querySelector<HTMLElement>('.ui-layout-east')),
+        });
+      }
     }, 200);
     return () => {
       window.removeEventListener('lw:east-tabs-ready', onEastTabsReady);
@@ -175,6 +230,21 @@ export const UnifiedRightPanel = () => {
       migratedNodesRef.current = [];
     };
   }, [leafWriter]);
+
+  useEffect(() => {
+    if (activeTab !== 'imageViewer' && activeTab !== 'validation') return;
+    const slot =
+      activeTab === 'imageViewer' ? imageViewerSlotRef.current : validationSlotRef.current;
+    const id = requestAnimationFrame(() => {
+      panelTrace('rightPanel: jquery-module tab shown', {
+        activeTab,
+        collapsed,
+        slot: describePanelNode(slot),
+        migratedChild: describePanelNode((slot?.firstElementChild as HTMLElement | null) ?? null),
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [activeTab, collapsed]);
 
   const handleWidthChange = useCallback((nextWidth: number) => {
     const clamped = clampWidth(nextWidth);

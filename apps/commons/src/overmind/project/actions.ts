@@ -42,7 +42,7 @@ import {
   mergeEditorBodyWithStoredHeader,
   stripTeiHeaderForVisualEditor,
 } from '@src/desktop/teiHeaderXml';
-import { isDesktop, type WorkspaceCursorPosition } from '@src/types/desktop';
+import { isDesktop } from '@src/types/desktop';
 import { buildSkeletonForCatalog } from '@src/desktop/schemaTemplates';
 import type { FileTreeNode } from './state';
 
@@ -326,29 +326,6 @@ const showExplorerLeftPanel = () => {
   );
 };
 
-const restoreCursorPositionWhenReady = (position: WorkspaceCursorPosition) => {
-  const delays = [0, 100, 300, 700, 1200, 2000];
-
-  console.info('[cursor-session] restore scheduled', { position });
-
-  const tryRestore = async (remainingDelays: number[], attempt = 1) => {
-    const restored = await window.__leafWriterCursorSession?.restore(position);
-    console.info('[cursor-session] restore attempt', {
-      attempt,
-      restored: Boolean(restored),
-      remainingAttempts: remainingDelays.length,
-    });
-    if (restored || remainingDelays.length === 0) return;
-
-    const [delay, ...next] = remainingDelays;
-    window.setTimeout(() => {
-      void tryRestore(next, attempt + 1);
-    }, delay);
-  };
-
-  void tryRestore(delays);
-};
-
 const captureActiveCursorPosition = (state: Context['state']['project']) => {
   const activePath = state.activeTabPath;
   if (!activePath) {
@@ -496,9 +473,6 @@ export const restoreLastProject = async (context: Context) => {
       activePath,
       cursorPosition,
     });
-    if (cursorPosition) {
-      restoreCursorPositionWhenReady(cursorPosition);
-    }
   } catch (error) {
     console.error('[project] restoreLastProject failed:', error);
     context.state.project.isProjectReady = true;
@@ -682,7 +656,6 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
       cursorPosition,
       knownFiles: Object.keys(state.project.cursorPositions),
     });
-    if (cursorPosition) restoreCursorPositionWhenReady(cursorPosition);
   } catch (error) {
     throw error;
   }
@@ -739,9 +712,6 @@ export const switchTab = async (
     isLocal: true,
   });
   state.editor.contentLastSaved = tab.content;
-
-  const cursorPosition = state.project.cursorPositions[tab.filePath];
-  if (cursorPosition) restoreCursorPositionWhenReady(cursorPosition);
 };
 
 export const saveActiveTab = async (
@@ -760,7 +730,7 @@ export const saveActiveTab = async (
   }
 
   try {
-    const baseXml = tab?.content ?? content;
+    const baseXml = window.__desktopStoredDocumentXml ?? tab?.content ?? content;
     const editorBody = stripTeiHeaderForVisualEditor(content);
     const merged = mergeEditorBodyWithStoredHeader(editorBody, baseXml);
     const stamped = separateBlockElements(
@@ -775,6 +745,8 @@ export const saveActiveTab = async (
     );
     state.editor.contentLastSaved = stamped;
     state.editor.contentHasChanged = false;
+    window.__desktopStoredDocumentXml = stamped;
+    window.writer?.overmindActions?.document?.setDocumentXml?.(stamped);
     await ignoreSavedFileChange(filePath);
 
     const reindexed = await reindexTranslationOnSave(filePath, stamped);
@@ -900,7 +872,7 @@ export const saveActiveTabAs = async (
     const sourceTab = previousPath
       ? state.project.openTabs.find((item) => item.filePath === previousPath)
       : state.project.openTabs.find((item) => item.filePath === state.project.activeTabPath);
-    const baseXml = sourceTab?.content ?? content;
+    const baseXml = window.__desktopStoredDocumentXml ?? sourceTab?.content ?? content;
     const editorBody = stripTeiHeaderForVisualEditor(content);
     const merged = mergeEditorBodyWithStoredHeader(editorBody, baseXml);
     const stamped = separateBlockElements(
@@ -940,6 +912,8 @@ export const saveActiveTabAs = async (
 
     state.editor.contentLastSaved = stamped;
     state.editor.contentHasChanged = false;
+    window.__desktopStoredDocumentXml = stamped;
+    window.writer?.overmindActions?.document?.setDocumentXml?.(stamped);
     await ignoreSavedFileChange(filePath);
     if (state.project.rootPath) {
       await reloadDirectoryInTree({ state } as Context, getParentPath(filePath));
