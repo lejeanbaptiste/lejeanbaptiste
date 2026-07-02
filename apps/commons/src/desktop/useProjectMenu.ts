@@ -45,6 +45,7 @@ const getEditorContent = async (
 export const useProjectMenu = () => {
   const {
     closeTab,
+    importDocuments,
     markTabDirty,
     newFile,
     openProject,
@@ -196,6 +197,11 @@ export const useProjectMenu = () => {
         return;
       }
 
+      if (action === 'import-documents') {
+        void importDocuments();
+        return;
+      }
+
       if (action === 'save') {
         void saveCurrentDocument();
         return;
@@ -276,6 +282,7 @@ export const useProjectMenu = () => {
     });
   }, [
     isProjectReady,
+    importDocuments,
     leafWriter,
     newFile,
     notifyViaSnackbar,

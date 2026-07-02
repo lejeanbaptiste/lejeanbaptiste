@@ -39,6 +39,15 @@ import { maybeCheckSchemaUpdateOnOpen } from '@src/desktop/schemaUpdateCheck';
 import { stampContentBeforeSave } from '@src/desktop/revisionDescXml';
 import { separateBlockElements } from '@src/desktop/xmlBlockSpacing';
 import {
+  buildDocumentImportPlan,
+  buildImportedDocumentXml,
+  assertImportedXmlWellFormed,
+  logImportedXmlInspection,
+  type DocumentImportPlanItem,
+  type DocumentImportProblem,
+  type DocumentImportSource,
+} from '@src/desktop/documentImport';
+import {
   mergeEditorBodyWithStoredHeader,
   stripTeiHeaderForVisualEditor,
 } from '@src/desktop/teiHeaderXml';
@@ -47,6 +56,14 @@ import { buildSkeletonForCatalog } from '@src/desktop/schemaTemplates';
 import type { FileTreeNode } from './state';
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
+
+const replaceExtension = (filePath: string, extension: string): string => {
+  const normalized = filePath.replace(/\\/g, '/');
+  const slash = normalized.lastIndexOf('/');
+  const dir = slash === -1 ? '' : normalized.slice(0, slash);
+  const name = (slash === -1 ? normalized : normalized.slice(slash + 1)).replace(/\.[^.]+$/, '');
+  return joinPath(dir, `${name || 'Untitled'}.${extension.replace(/^\./, '')}`);
+};
 
 const isTempDocumentPath = (filePath: string): boolean =>
   /[/\\]le-jean-baptiste[/\\]/.test(filePath);
@@ -583,6 +600,233 @@ export const newFile = async (context: Context) => {
     console.error('[project] newFile failed:', error);
     notifyViaSnackbar('Could not create a new file.');
   }
+};
+
+const getDocumentImportBaseOutputPaths = (rootPath: string, sources: DocumentImportSource[]) =>
+  sources.map((source) => joinPath(rootPath, replaceExtension(source.relativePath, 'xml')));
+
+const getExistingImportOutputPaths = async (
+  rootPath: string,
+  sources: DocumentImportSource[],
+): Promise<string[]> => {
+  if (!window.electronAPI?.pathExists) return [];
+
+  const baseOutputPaths = getDocumentImportBaseOutputPaths(rootPath, sources);
+  const checks = await Promise.all(
+    baseOutputPaths.map(async (outputPath) => ({
+      exists: await window.electronAPI?.pathExists?.(outputPath),
+      outputPath,
+    })),
+  );
+
+  return checks.filter((check) => check.exists).map((check) => check.outputPath);
+};
+
+const confirmDocumentImportOverwrite = async (
+  existingCount: number,
+): Promise<'cancel' | 'keepBoth' | 'overwrite'> => {
+  if (!window.electronAPI?.showNativeMessageBox || existingCount === 0) return 'keepBoth';
+
+  const result = await window.electronAPI.showNativeMessageBox({
+    buttons: ['Cancel', 'Keep Both', 'Overwrite'],
+    cancelId: 0,
+    defaultId: 1,
+    message:
+      existingCount === 1
+        ? 'One imported document would replace an existing XML file.'
+        : `${existingCount} imported documents would replace existing XML files.`,
+    title: 'Import documents',
+    type: 'warning',
+  });
+
+  if (result.response === 2) return 'overwrite';
+  if (result.response === 1) return 'keepBoth';
+  return 'cancel';
+};
+
+const writeImportedDocument = async (
+  item: DocumentImportPlanItem,
+  config: ProjectBundle['config'],
+  metadata: Awaited<ReturnType<typeof readProjectMetadata>>,
+): Promise<void> => {
+  if (!window.electronAPI) throw new Error('Desktop file APIs are unavailable.');
+
+  const { text } = await window.electronAPI.readFileAutoEncoding(item.sourcePath);
+  let xml = buildImportedDocumentXml({
+    config,
+    format: item.format,
+    sourcePath: item.sourcePath,
+    text,
+  });
+  logImportedXmlInspection({
+    content: xml,
+    outputPath: item.outputPath,
+    sourcePath: item.sourcePath,
+    stage: 'body generation',
+  });
+  assertImportedXmlWellFormed(xml, 'Generated import XML is not well formed');
+
+  if (metadata) {
+    xml = mergeMetadataIntoHeader(xml, metadata);
+    logImportedXmlInspection({
+      content: xml,
+      outputPath: item.outputPath,
+      sourcePath: item.sourcePath,
+      stage: 'metadata merge',
+    });
+    assertImportedXmlWellFormed(xml, 'Imported XML is not well formed after metadata merge');
+  }
+  xml = separateBlockElements(xml);
+  logImportedXmlInspection({
+    content: xml,
+    outputPath: item.outputPath,
+    sourcePath: item.sourcePath,
+    stage: 'block formatting',
+  });
+  assertImportedXmlWellFormed(xml, 'Imported XML is not well formed after block formatting');
+
+  const parentDir = getParentPath(item.outputPath);
+  if (parentDir) await window.electronAPI.ensureDirectory(parentDir);
+  await window.electronAPI.writeFile(item.outputPath, xml);
+
+  const writtenXml = await window.electronAPI.readFile(item.outputPath);
+  logImportedXmlInspection({
+    content: writtenXml,
+    outputPath: item.outputPath,
+    sourcePath: item.sourcePath,
+    stage: 'disk write',
+  });
+  assertImportedXmlWellFormed(writtenXml, 'Written import XML is not well formed');
+};
+
+const formatDocumentImportProblems = (problems: DocumentImportProblem[]): string =>
+  problems
+    .slice(0, 5)
+    .map((problem) => {
+      const sourceName = getFilename(problem.sourcePath);
+      const outputName = problem.outputPath ? getFilename(problem.outputPath) : null;
+      return `${sourceName}${outputName ? ` -> ${outputName}` : ''}: ${problem.message}`;
+    })
+    .join('\n');
+
+export const importDocuments = async (context: Context) => {
+  const { state, actions } = context;
+  const { notifyViaSnackbar } = actions.ui;
+
+  if (!window.electronAPI?.pickDocumentImportSources) {
+    notifyViaSnackbar('Document import is unavailable. Restart the desktop app.');
+    return;
+  }
+
+  if (!state.project.isProjectReady || !state.project.rootPath || !state.project.config) {
+    notifyViaSnackbar('Open a project first.');
+    void actions.project.openProject();
+    return;
+  }
+
+  if (!state.project.projectFilePath) {
+    notifyViaSnackbar('Project is not fully loaded.');
+    return;
+  }
+
+  const sources = await window.electronAPI.pickDocumentImportSources();
+  if (!sources) return;
+  if (sources.length === 0) {
+    notifyViaSnackbar('No supported files found. Import supports TXT, Markdown, and RTF for now.');
+    return;
+  }
+
+  const existingOutputPaths = await getExistingImportOutputPaths(state.project.rootPath, sources);
+  const overwriteChoice = await confirmDocumentImportOverwrite(existingOutputPaths.length);
+  if (overwriteChoice === 'cancel') return;
+
+  const plan = buildDocumentImportPlan({
+    destinationRoot: state.project.rootPath,
+    existingOutputPaths: overwriteChoice === 'keepBoth' ? existingOutputPaths : [],
+    sources,
+  });
+
+  const bundle: ProjectBundle = {
+    config: state.project.config,
+    projectFilePath: state.project.projectFilePath,
+    rootPath: state.project.rootPath,
+  };
+  const metadata = await readProjectMetadata(bundle);
+  const problems: DocumentImportProblem[] = [];
+  const writtenPaths: string[] = [];
+
+  for (const item of plan) {
+    try {
+      await writeImportedDocument(item, state.project.config, metadata);
+      writtenPaths.push(item.outputPath);
+    } catch (error) {
+      problems.push({
+        message: error instanceof Error ? error.message : String(error),
+        outputPath: item.outputPath,
+        sourcePath: item.sourcePath,
+      });
+    }
+  }
+
+  const schemaDirPath = getExplorerSchemaDirPath(
+    state.project.rootPath,
+    state.project.config?.schema,
+  );
+  state.project.tree = await loadTreeLevel(state.project.rootPath, schemaDirPath);
+  if (writtenPaths.length > 0 && window.electronAPI?.syncWatchedFiles) {
+    await window.electronAPI.syncWatchedFiles(state.project.openTabs.map((tab) => tab.filePath));
+  }
+
+  if (writtenPaths[0]) {
+    try {
+      const firstXml = await window.electronAPI.readFile(writtenPaths[0]);
+      logImportedXmlInspection({
+        content: firstXml,
+        outputPath: writtenPaths[0],
+        sourcePath: writtenPaths[0],
+        stage: 'before opening first imported file',
+      });
+      assertImportedXmlWellFormed(firstXml, 'First imported XML is not well formed before open');
+      await actions.project.openFile(writtenPaths[0]);
+    } catch (error) {
+      problems.push({
+        message: error instanceof Error ? error.message : String(error),
+        outputPath: writtenPaths[0],
+        sourcePath: writtenPaths[0],
+      });
+    }
+  }
+
+  if (problems.length > 0) {
+    console.warn('[document-import] completed with problems', problems);
+    const detail = formatDocumentImportProblems(problems);
+    if (window.electronAPI?.showNativeMessageBox) {
+      void window.electronAPI.showNativeMessageBox({
+        buttons: ['OK'],
+        defaultId: 0,
+        message: `Imported ${writtenPaths.length} document${
+          writtenPaths.length === 1 ? '' : 's'
+        } with ${problems.length} problem file${problems.length === 1 ? '' : 's'}.`,
+        title: 'Import diagnostics',
+        type: writtenPaths.length > 0 ? 'warning' : 'error',
+        ...(detail ? { detail } : {}),
+      });
+    }
+    notifyViaSnackbar({
+      message: `Imported ${writtenPaths.length} document${
+        writtenPaths.length === 1 ? '' : 's'
+      }; ${problems.length} problem file${
+        problems.length === 1 ? '' : 's'
+      }. See console for details.`,
+      options: { variant: writtenPaths.length > 0 ? 'warning' : 'error' },
+    });
+    return;
+  }
+
+  notifyViaSnackbar({
+    message: `Imported ${writtenPaths.length} document${writtenPaths.length === 1 ? '' : 's'}.`,
+    options: { variant: 'success' },
+  });
 };
 
 export const loadDirectoryChildren = async ({ state }: Context, dirPath: string) => {
