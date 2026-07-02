@@ -134,3 +134,5 @@ out
 .pnp.*
 
 *.code-workspace
+
+"docs/doc import"
