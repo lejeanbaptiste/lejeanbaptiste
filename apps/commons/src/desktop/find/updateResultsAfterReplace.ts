@@ -53,6 +53,7 @@ export const updateResultsAfterSingleReplace = (
   fileContent: string,
   query: string,
   useRegex: boolean,
+  ignoreCase = false,
   replacedHit?: { end: number; start: number; replacementLength: number },
 ): { results: FindFileResult[]; totalMatches: number } => {
   if (replacedHit) {
@@ -79,7 +80,7 @@ export const updateResultsAfterSingleReplace = (
     }
   }
 
-  let matches = searchInContent(fileContent, query, useRegex);
+  let matches = searchInContent(fileContent, query, useRegex, ignoreCase);
   if (!isSourceEditorMode()) {
     matches = filterHitsForWysiwygEditor(fileContent, matches);
   }

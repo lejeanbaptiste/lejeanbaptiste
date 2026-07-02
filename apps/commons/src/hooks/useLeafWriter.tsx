@@ -3,7 +3,12 @@ import { DESKTOP_APP_DISPLAY_NAME } from '@src/desktop/desktopBranding';
 import { focusFirstBodyParagraph } from '@src/desktop/focusFirstBodyParagraph';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
 import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
-import { stripTeiHeaderForVisualEditor, mergeStoredHeaderForValidation } from '@src/desktop/teiHeaderXml';
+import {
+  mergeEditorBodyWithStoredHeader,
+  mergeStoredHeaderForValidation,
+  stripTeiHeaderForVisualEditor,
+} from '@src/desktop/teiHeaderXml';
+import { separateBlockElements } from '@src/desktop/xmlBlockSpacing';
 import { ENABLED_CATALOG_IDS, getEnabledCatalogSchemas } from '@src/desktop/schemaCatalog';
 import {
   leafwriterAtom,
@@ -29,9 +34,7 @@ const showDefaultEastPanel = () => {
   window.writer?.layoutManager?.showModule('fileMetadata');
   const editorId = window.writer?.editorId;
   if (editorId) {
-    window.dispatchEvent(
-      new CustomEvent('lw:east-tabs-ready', { detail: { editorId } }),
-    );
+    window.dispatchEvent(new CustomEvent('lw:east-tabs-ready', { detail: { editorId } }));
   }
 };
 
@@ -44,10 +47,11 @@ export const useLeafWriter = () => {
     window.__desktopStripTeiHeaderForVisualEditor = stripTeiHeaderForVisualEditor;
     window.__desktopMergeHeaderForValidation = (editorXml: string) => {
       const stored =
-        window.__desktopStoredDocumentXml ??
-        window.writer?.overmindState?.document?.xml ??
-        '';
-      return mergeStoredHeaderForValidation(editorXml, stored);
+        window.__desktopStoredDocumentXml ?? window.writer?.overmindState?.document?.xml ?? '';
+      // Block spacing here (not just at disk-save) so the Source-mode buffer — which is
+      // regenerated from the editor's run-on serializer output through this bridge — shows
+      // the same one-block-per-line layout the saved file gets.
+      return separateBlockElements(mergeStoredHeaderForValidation(editorXml, stored));
     };
   }
 
@@ -77,6 +81,8 @@ export const useLeafWriter = () => {
   const [leafWriterEvent, setLeafWriterEvents] = useAtom(leafWriterEventsAtom);
   const [tapDocumentTimer, setTapDocumentTimer] = useAtom(tapDocumentTimerAtom);
   const bumpEditorSession = useSetAtom(leafWriterSessionKeyAtom);
+
+  const canAutosaveResource = Boolean(resource?.provider || (isDesktop() && resource?.filePath));
 
   useEffect(() => {
     if (!isDesktop() || !rootPath || !leafWriter) return;
@@ -120,7 +126,11 @@ export const useLeafWriter = () => {
       );
       xml = prepared.content;
       documentSchemas = [...projectSchemas, ...prepared.schemas];
-      registerDesktopSchemas([...getEnabledCatalogSchemas(), ...projectSchemas, ...prepared.schemas]);
+      registerDesktopSchemas([
+        ...getEnabledCatalogSchemas(),
+        ...projectSchemas,
+        ...prepared.schemas,
+      ]);
       if (xml !== resource.content) {
         await setResource({ ...resource, content: xml });
         updateTabContent({ filePath: resource.filePath, content: xml });
@@ -177,12 +187,7 @@ export const useLeafWriter = () => {
     if (!window.writer) return;
 
     if (isDesktop() && rootPath && config?.schema) {
-      const prepared = await prepareDesktopDocument(
-        filePath,
-        content,
-        rootPath,
-        config.schema,
-      );
+      const prepared = await prepareDesktopDocument(filePath, content, rootPath, config.schema);
       content = prepared.content;
       registerDesktopSchemas([
         ...getEnabledCatalogSchemas(),
@@ -215,7 +220,7 @@ export const useLeafWriter = () => {
         return;
       }
 
-      if (autosave && resource?.provider) timerService.start();
+      if (autosave && canAutosaveResource) timerService.start();
     });
     // leafWriterEvents.push(dirtyEvent);
     setLeafWriterEvents((prev) => [...prev, dirtyEvent]);
@@ -277,6 +282,20 @@ export const useLeafWriter = () => {
     setLeafWriterEvents((prev) => [...prev, onStateChangeEvent]);
   };
 
+  useEffect(() => {
+    if (!contentHasChanged) {
+      timerService.stop();
+      return;
+    }
+
+    if (autosave && canAutosaveResource) {
+      timerService.start();
+      return;
+    }
+
+    timerService.stop();
+  }, [autosave, canAutosaveResource, contentHasChanged, timerService]);
+
   const removeSubscribers = () => {
     // leafWriterEvents.forEach((subs) => subs.unsubscribe());
     // leafWriterEvents = [];
@@ -287,7 +306,7 @@ export const useLeafWriter = () => {
 
   const handleDownload = async (format: string) => {
     if (!leafWriter || !resource) return;
-    const content = await leafWriter.getContent();
+    const content = await getContent();
     if (!content) return;
 
     if (format === 'xml') {
@@ -322,13 +341,22 @@ export const useLeafWriter = () => {
 
   const getContent = async () => {
     if (!leafWriter || !resource) return;
-    return await leafWriter.getContent();
+    const content = await leafWriter.getContent();
+    if (isDesktop() && content && window.writer?.overmindState?.ui?.editorViewMode !== 'source') {
+      const baseXml =
+        window.__desktopStoredDocumentXml ??
+        window.writer?.overmindState?.document?.xml ??
+        resource.content ??
+        content;
+      return mergeEditorBodyWithStoredHeader(stripTeiHeaderForVisualEditor(content), baseXml);
+    }
+    return content;
   };
 
   const handleSave = async (action: 'save' | 'saveAs' = 'save') => {
     if (!leafWriter) return;
 
-    const content = await leafWriter.getContent();
+    const content = await getContent();
     if (!content) return;
     const screenshot = await leafWriter.getDocumentScreenshot();
 

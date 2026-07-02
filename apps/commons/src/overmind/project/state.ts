@@ -1,4 +1,5 @@
 import type { Types } from '@cwrc/leafwriter';
+import type { WorkspaceCursorPosition } from '@src/types/desktop';
 import type { ProjectFileConfig } from './projectFile';
 
 export interface FileTreeNode {
@@ -22,6 +23,7 @@ export interface OpenTab {
 export interface ProjectState {
   activeTabPath: string | null;
   config: ProjectFileConfig | null;
+  cursorPositions: Record<string, WorkspaceCursorPosition>;
   explorerFocusedIsDirectory: boolean;
   explorerFocusedPath: string | null;
   isProjectReady: boolean;
@@ -35,6 +37,7 @@ export interface ProjectState {
 export const state: ProjectState = {
   activeTabPath: null,
   config: null,
+  cursorPositions: {},
   explorerFocusedIsDirectory: false,
   explorerFocusedPath: null,
   isProjectReady: false,

@@ -7,6 +7,14 @@ import {
 } from './projectMetadata';
 import { getMetadataFieldsForCatalog } from './schemaMetadataFields';
 import type { ProjectMetadataDialogMode } from './projectMetadataSession';
+import { readTranslationSettings } from './translationSettings';
+import type { TranslationLanguage } from './translationTypes';
+
+export interface TranslationMetadataSection {
+  locked: boolean;
+  alignmentUnit: 'div' | 'p' | null;
+  languages: TranslationLanguage[];
+}
 
 export interface ProjectMetadataDialogState {
   mode: ProjectMetadataDialogMode;
@@ -14,6 +22,7 @@ export interface ProjectMetadataDialogState {
   fields: Array<{ path: string; label: string }>;
   values: Record<string, string>;
   custom: Array<{ path: string; label: string; value: string }>;
+  translation: TranslationMetadataSection;
 }
 
 const cache = new Map<string, ProjectMetadataDialogState>();
@@ -67,6 +76,15 @@ export const buildProjectMetadataDialogState = async (
     metadata = emptyMetadata(bundle.config.schema?.catalogId);
   }
 
+  const translationSettings = await readTranslationSettings(bundle);
+  const translation: TranslationMetadataSection = translationSettings
+    ? {
+        locked: true,
+        alignmentUnit: translationSettings.alignmentUnit,
+        languages: translationSettings.languages,
+      }
+    : { locked: false, alignmentUnit: null, languages: [] };
+
   return {
     mode,
     note: fieldDef.note,
@@ -77,6 +95,7 @@ export const buildProjectMetadataDialogState = async (
       label: row.label,
       value: row.value,
     })),
+    translation,
   };
 };
 

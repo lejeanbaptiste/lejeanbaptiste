@@ -2,12 +2,14 @@ import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { recoverTranslationLinksOnExternalChange } from './translationRecovery';
 
 export const useExternalFileWatcher = () => {
   const { activeTabPath, openTabs } = useAppState().project;
   const { contentHasChanged } = useAppState().editor;
   const { reloadTabFromDisk, setExternalChangePending, isTabContentStaleOnDisk } =
     useActions().project;
+  const { notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation();
 
   const openTabsRef = useRef(openTabs);
@@ -68,6 +70,20 @@ export const useExternalFileWatcher = () => {
       const tab = openTabsRef.current.find((item) => item.filePath === filePath);
       if (!tab) return;
 
+      // Tier-1 translation-link recovery: if the external edit stripped/scrambled
+      // alignment-unit ids, restore them from the snapshot before the stale check, so the
+      // reload prompt (and any reload) already sees the repaired file.
+      try {
+        const restored = await recoverTranslationLinksOnExternalChange(filePath);
+        if (restored > 0) {
+          notifyViaSnackbar(
+            t('LWC.desktop.translation_links_restored', { count: restored }) as string,
+          );
+        }
+      } catch (error) {
+        console.error('[translation-recovery] failed', error);
+      }
+
       const stale = await isTabContentStaleOnDisk(filePath);
       if (!stale) return;
 
@@ -78,7 +94,7 @@ export const useExternalFileWatcher = () => {
 
       setExternalChangePending({ filePath, pending: true });
     },
-    [isTabContentStaleOnDisk, promptReload, setExternalChangePending],
+    [isTabContentStaleOnDisk, notifyViaSnackbar, promptReload, setExternalChangePending, t],
   );
 
   useEffect(() => {

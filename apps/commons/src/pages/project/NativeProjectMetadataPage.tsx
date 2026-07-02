@@ -2,7 +2,10 @@ import { useSearchParams } from 'react-router';
 import {
   Box,
   Button,
+  FormControlLabel,
   IconButton,
+  Radio,
+  RadioGroup,
   Stack,
   TextField,
   Typography,
@@ -10,6 +13,7 @@ import {
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { isDesktop } from '@src/types/desktop';
 import type { ProjectMetadataDialogState } from '@src/desktop/projectMetadataDialogState';
+import type { TranslationLanguage } from '@src/desktop/translationTypes';
 import { useCallback, useEffect, useState } from 'react';
 
 export const NativeProjectMetadataPage = () => {
@@ -22,6 +26,11 @@ export const NativeProjectMetadataPage = () => {
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [alignmentUnit, setAlignmentUnit] = useState<'div' | 'p'>('div');
+  const [languages, setLanguages] = useState<TranslationLanguage[]>([]);
+  const [newLangCode, setNewLangCode] = useState('');
+  const [newLangLabel, setNewLangLabel] = useState('');
 
   const invoke = useCallback(
     async (method: string, args?: unknown) => {
@@ -37,6 +46,8 @@ export const NativeProjectMetadataPage = () => {
   const applyDialogState = useCallback((dialogState: ProjectMetadataDialogState | null) => {
     if (dialogState) {
       setState(dialogState);
+      setAlignmentUnit(dialogState.translation.alignmentUnit ?? 'div');
+      setLanguages(dialogState.translation.languages);
       setError(null);
     } else {
       setError('Could not load edition metadata.');
@@ -118,15 +129,38 @@ export const NativeProjectMetadataPage = () => {
     );
   };
 
+  const addLanguage = () => {
+    const code = newLangCode.trim();
+    const label = newLangLabel.trim() || code;
+    if (!code || languages.some((lang) => lang.code === code)) return;
+    setLanguages((prev) => [...prev, { code, label }]);
+    setNewLangCode('');
+    setNewLangLabel('');
+  };
+
+  const removeLanguage = (code: string) => {
+    setLanguages((prev) => prev.filter((lang) => lang.code !== code));
+  };
+
   const handleSave = async (applyToDocuments: boolean) => {
     if (!state || submitting) return;
     setSubmitting(true);
     setError(null);
     try {
+      // Include a typed-but-not-yet-added language row so forgetting to click
+      // "Add" before Save doesn't silently save zero languages.
+      const pendingCode = newLangCode.trim();
+      const languagesToSave =
+        pendingCode && !languages.some((lang) => lang.code === pendingCode)
+          ? [...languages, { code: pendingCode, label: newLangLabel.trim() || pendingCode }]
+          : languages;
+
       const result = (await invoke('saveProjectMetadata', {
         values: state.values,
         custom: state.custom,
         applyToDocuments,
+        translationAlignmentUnit: alignmentUnit,
+        translationLanguages: languagesToSave,
       })) as { ok: boolean; error?: string; summary?: string };
       if (!result?.ok) {
         setError(result?.error ?? 'Could not save metadata.');
@@ -231,6 +265,73 @@ export const NativeProjectMetadataPage = () => {
             <Button onClick={addCustomRow} size="small" variant="text">
               Add custom field
             </Button>
+
+            <Typography sx={{ pt: 1 }} variant="subtitle2">
+              Translation
+            </Typography>
+            <Typography color="text.secondary" variant="body2">
+              {state.translation.locked
+                ? 'Alignment unit is locked once translations have started.'
+                : 'Choose the granularity at which source and translation are linked. This cannot be changed later.'}
+            </Typography>
+            <RadioGroup
+              row
+              value={alignmentUnit}
+              onChange={(event) => setAlignmentUnit(event.target.value as 'div' | 'p')}
+            >
+              <FormControlLabel
+                control={<Radio disabled={state.translation.locked} />}
+                label="Div (section-level, looser)"
+                value="div"
+              />
+              <FormControlLabel
+                control={<Radio disabled={state.translation.locked} />}
+                label="Paragraph (1:1)"
+                value="p"
+              />
+            </RadioGroup>
+
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Languages
+            </Typography>
+
+            {languages.map((lang) => (
+              <Stack alignItems="center" direction="row" key={lang.code} spacing={1}>
+                <TextField disabled label="Code" size="small" sx={{ flex: 1 }} value={lang.code} />
+                <TextField
+                  disabled
+                  label="Label"
+                  size="small"
+                  sx={{ flex: 2 }}
+                  value={lang.label}
+                />
+                <IconButton aria-label="Remove language" onClick={() => removeLanguage(lang.code)}>
+                  <DeleteOutlineIcon />
+                </IconButton>
+              </Stack>
+            ))}
+
+            <Stack alignItems="center" direction="row" spacing={1}>
+              <TextField
+                label="Code (e.g. fr)"
+                onChange={(event) => setNewLangCode(event.target.value)}
+                onKeyDown={(event) => event.key === 'Enter' && addLanguage()}
+                size="small"
+                sx={{ flex: 1 }}
+                value={newLangCode}
+              />
+              <TextField
+                label="Label (e.g. Français)"
+                onChange={(event) => setNewLangLabel(event.target.value)}
+                onKeyDown={(event) => event.key === 'Enter' && addLanguage()}
+                size="small"
+                sx={{ flex: 2 }}
+                value={newLangLabel}
+              />
+              <Button onClick={addLanguage} size="small" variant="text">
+                Add
+              </Button>
+            </Stack>
 
             {error && (
               <Typography color="error" variant="body2">

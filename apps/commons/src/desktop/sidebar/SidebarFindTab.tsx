@@ -1,19 +1,19 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   Box,
   Button,
-  Checkbox,
   CircularProgress,
   Collapse,
-  FormControlLabel,
+  FormControl,
+  InputLabel,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  MenuItem,
+  Select,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -21,6 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
+import { DOC_SCOPE_LABELS, type DocScope } from '@src/desktop/find/docScope';
 import { useFindPanelUndo } from '@src/desktop/find/findPanelUndo';
 import { DESKTOP_EDITOR_VIEW_MODE_EVENT, DESKTOP_FIND_FOCUS_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { FindSnippetLine, formatSnippetLabel } from '@src/desktop/find/snippetDisplay';
@@ -28,6 +29,8 @@ import { searchText } from '@src/desktop/find/searchText';
 import type { FindFileResult, FindHighlightMode } from '@src/desktop/find/types';
 import { useFindNavigation } from '@src/desktop/find/useFindNavigation';
 import { useFindReplace } from '@src/desktop/find/useFindReplace';
+import { useTranslationHitJump } from '@src/desktop/find/useTranslationHitJump';
+import { isTranslationFile } from '@src/desktop/translationFileNaming';
 import { ScopeFields } from '@src/desktop/shared/ScopeFields';
 import type { SearchScope } from '@src/desktop/shared/searchScope';
 import { useAppState } from '@src/overmind';
@@ -78,9 +81,11 @@ export const SidebarFindTab = () => {
   const [findQuery, setFindQuery] = useState('');
   const [replaceQuery, setReplaceQuery] = useState('');
   const [scope, setScope] = useState<SearchScope>('currentFile');
+  const [docScope, setDocScope] = useState<DocScope>('both');
   const [customPath, setCustomPath] = useState('');
+  const [ignoreCase, setIgnoreCase] = useState(false);
   const [useRegex, setUseRegex] = useState(false);
-  const [searchBackwards, setSearchBackwards] = useState(false);
+  const searchBackwards = false;
   const [results, setResults] = useState<FindFileResult[]>([]);
   const [totalMatches, setTotalMatches] = useState(0);
   const [collapsedFilePaths, setCollapsedFilePaths] = useState<Set<string>>(() => new Set());
@@ -108,6 +113,7 @@ export const SidebarFindTab = () => {
   }, []);
 
   const { jumpToHit } = useFindNavigation(refocusSelectedItem);
+  const { jumpToTranslationHit } = useTranslationHitJump();
   const { handleFindPanelUndoKeyDown } = useFindPanelUndo();
 
   const flatResults = useMemo(
@@ -115,13 +121,20 @@ export const SidebarFindTab = () => {
     [results, collapsedFilePaths],
   );
 
-  const jumpToFlatResult = useCallback(
+  /** Single entry point for navigating to a result — routes translation-file hits to the
+   * source+translation split-pane flow instead of trying to open the companion file itself
+   * (which isn't a valid document on its own; it has no recognized schema root element). */
+  const performJump = useCallback(
     (
-      index: number,
+      item: FlatFindResult | undefined,
       options?: { contentForJump?: string; highlightMode?: FindHighlightMode },
     ) => {
-      const item = flatResults[index];
       if (!item) return;
+
+      if (isTranslationFile(item.filePath)) {
+        void jumpToTranslationHit({ filePath: item.filePath, start: item.start, end: item.end });
+        return;
+      }
 
       void jumpToHit({
         contentForJump: options?.contentForJump,
@@ -133,21 +146,34 @@ export const SidebarFindTab = () => {
         query: findQuery.trim(),
         start: item.start,
         end: item.end,
+        ignoreCase,
         useRegex,
       });
     },
-    [flatResults, findQuery, jumpToHit, useRegex],
+    [findQuery, ignoreCase, jumpToHit, jumpToTranslationHit, useRegex],
+  );
+
+  const jumpToFlatResult = useCallback(
+    (
+      index: number,
+      options?: { contentForJump?: string; highlightMode?: FindHighlightMode },
+    ) => {
+      performJump(flatResults[index], options);
+    },
+    [flatResults, performJump],
   );
 
   const buildSearchKey = useCallback(
     () =>
       JSON.stringify({
         customPath,
+        docScope,
         findQuery: findQuery.trim(),
+        ignoreCase,
         scope,
         useRegex,
       }),
-    [customPath, findQuery, scope, useRegex],
+    [customPath, docScope, findQuery, ignoreCase, scope, useRegex],
   );
 
   const handleSearchComplete = useCallback(
@@ -185,44 +211,16 @@ export const SidebarFindTab = () => {
         setSelectedIndex(idx);
         selectedIndexRef.current = idx;
         if (jumpToSelection || refreshHighlight) {
-          const item = flat[idx];
-          if (item) {
-            const highlightMode: FindHighlightMode = 'active-only';
-            void jumpToHit({
-              column: item.column,
-              contentForJump,
-              end: item.end,
-              filePath: item.filePath,
-              highlightMode,
-              line: item.line,
-              matchIndexInFile: item.matchIndexInFile,
-              query: findQuery.trim(),
-              start: item.start,
-              useRegex,
-            });
-          }
+          performJump(flat[idx], { contentForJump, highlightMode: 'active-only' });
         }
         return;
       }
 
       setSelectedIndex(0);
       selectedIndexRef.current = 0;
-      const first = flat[0];
-      if (first) {
-        void jumpToHit({
-          column: first.column,
-          end: first.end,
-          filePath: first.filePath,
-          highlightMode: 'active-only',
-          line: first.line,
-          matchIndexInFile: first.matchIndexInFile,
-          query: findQuery.trim(),
-          start: first.start,
-          useRegex,
-        });
-      }
+      performJump(flat[0], { highlightMode: 'active-only' });
     },
-    [buildSearchKey, collapsedFilePaths, findQuery, jumpToHit, useRegex],
+    [buildSearchKey, collapsedFilePaths, performJump],
   );
 
   const selectedHit = selectedIndex >= 0 ? flatResults[selectedIndex] ?? null : null;
@@ -230,6 +228,7 @@ export const SidebarFindTab = () => {
   const { replaceAllInScope, replaceCurrentHit } = useFindReplace({
     activeTabPath,
     customPath,
+    docScope,
     findQuery,
     onSearchComplete: handleSearchComplete,
     openTabs,
@@ -239,6 +238,7 @@ export const SidebarFindTab = () => {
     scope,
     selectedHit,
     selectedIndex,
+    ignoreCase,
     useRegex,
   });
 
@@ -397,10 +397,12 @@ export const SidebarFindTab = () => {
       } = await searchText({
         activeTabPath,
         customPath,
+        docScope,
         openTabs,
         query: findQuery,
         rootPath,
         scope,
+        ignoreCase,
         useRegex,
       });
 
@@ -414,7 +416,18 @@ export const SidebarFindTab = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTabPath, customPath, findQuery, handleSearchComplete, openTabs, rootPath, scope, useRegex]);
+  }, [
+    activeTabPath,
+    customPath,
+    docScope,
+    findQuery,
+    handleSearchComplete,
+    ignoreCase,
+    openTabs,
+    rootPath,
+    scope,
+    useRegex,
+  ]);
 
   const cycleFind = useCallback(
     (backwards = searchBackwards) => {
@@ -515,50 +528,96 @@ export const SidebarFindTab = () => {
           gap: 1,
         }}
       >
-        <TextField
-          fullWidth
-          size="small"
-          label="Find"
-          placeholder="Search text"
-          value={findQuery}
-          inputRef={findInputRef}
-          onChange={(event) => setFindQuery(event.target.value)}
-          onKeyDown={(event) => {
-            handleFindPanelUndoKeyDown(event);
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              if (!event.shiftKey && !event.altKey) {
-                enterWalkMode('find', findInputRef.current);
+        <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'stretch' }}>
+          <TextField
+            fullWidth
+            size="small"
+            label="Find"
+            placeholder="Search text"
+            value={findQuery}
+            inputRef={findInputRef}
+            onChange={(event) => setFindQuery(event.target.value)}
+            onKeyDown={(event) => {
+              handleFindPanelUndoKeyDown(event);
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                if (!event.shiftKey && !event.altKey) {
+                  enterWalkMode('find', findInputRef.current);
+                }
+                // Shift+Enter, Alt+Enter: nothing
+                return;
               }
-              // Shift+Enter, Alt+Enter: nothing
-              return;
-            }
-            if (
-              event.key === 'F3' ||
-              (event.key === 'g' && (event.metaKey || event.ctrlKey) && !event.shiftKey)
-            ) {
-              event.preventDefault();
-              cycleFind(false);
-              return;
-            }
-            if (
-              (event.key === 'F3' && event.shiftKey) ||
-              (event.key === 'g' && (event.metaKey || event.ctrlKey) && event.shiftKey)
-            ) {
-              event.preventDefault();
-              cycleFind(true);
-              return;
-            }
-            if (event.key === 'ArrowDown' && flatResults.length > 0) {
-              event.preventDefault();
-              navigateToIndex(0);
-              resultsContainerRef.current?.focus();
-            }
-          }}
-          slotProps={{
-            input: { sx: { fontSize: '0.8125rem' } },
-          }}
-        />
+              if (
+                event.key === 'F3' ||
+                (event.key === 'g' && (event.metaKey || event.ctrlKey) && !event.shiftKey)
+              ) {
+                event.preventDefault();
+                cycleFind(false);
+                return;
+              }
+              if (
+                (event.key === 'F3' && event.shiftKey) ||
+                (event.key === 'g' && (event.metaKey || event.ctrlKey) && event.shiftKey)
+              ) {
+                event.preventDefault();
+                cycleFind(true);
+                return;
+              }
+              if (event.key === 'ArrowDown' && flatResults.length > 0) {
+                event.preventDefault();
+                navigateToIndex(0);
+                resultsContainerRef.current?.focus();
+              }
+            }}
+            slotProps={{
+              input: { sx: { fontSize: '0.8125rem' } },
+            }}
+          />
+          <ToggleButtonGroup size="small" sx={{ alignSelf: 'stretch', flexShrink: 0 }}>
+            <Tooltip title="Ignore case">
+              <ToggleButton
+                selected={ignoreCase}
+                value="ignore-case"
+                aria-label="Ignore case"
+                tabIndex={-1}
+                onChange={() => setIgnoreCase((value) => !value)}
+                sx={{
+                  width: 28,
+                  minWidth: 28,
+                  minHeight: 0,
+                  px: 0,
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  textTransform: 'none',
+                }}
+              >
+                Aa
+              </ToggleButton>
+            </Tooltip>
+            <Tooltip title="Use regular expression">
+              <ToggleButton
+                selected={useRegex}
+                value="regex"
+                aria-label="Use regular expression"
+                tabIndex={-1}
+                onChange={() => setUseRegex((value) => !value)}
+                sx={{
+                  width: 28,
+                  minWidth: 28,
+                  minHeight: 0,
+                  px: 0,
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  textTransform: 'none',
+                }}
+              >
+                .*
+              </ToggleButton>
+            </Tooltip>
+          </ToggleButtonGroup>
+        </Box>
         <TextField
           fullWidth
           size="small"
@@ -587,63 +646,28 @@ export const SidebarFindTab = () => {
                 ? 'Capture groups: $1 or \\1'
                 : undefined
           }
-          slotProps={{ input: { sx: { fontSize: '0.8125rem' } } }}
+          slotProps={{
+            input: { sx: { fontSize: '0.8125rem' } },
+            inputLabel: { shrink: true },
+          }}
         />
-        <ScopeFields
-          scope={scope}
-          onScopeChange={setScope}
-          customPath={customPath}
-          onCustomPathChange={setCustomPath}
-          onEnter={() => runFindOrNext()}
-          scopeLabelId="find-scope-label"
-        />
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                size="small"
-                checked={useRegex}
-                onChange={(event) => setUseRegex(event.target.checked)}
-              />
-            }
-            label="Regex"
-            sx={{ ml: 0, mr: 0, '& .MuiFormControlLabel-label': { fontSize: '0.8125rem' } }}
-          />
-          <ToggleButtonGroup
-            size="small"
-            exclusive
-            value={searchBackwards ? 'back' : 'forward'}
-            onChange={(_event, value: 'back' | 'forward' | null) => {
-              if (value) setSearchBackwards(value === 'back');
-            }}
-          >
-            <ToggleButton value="forward" aria-label="Search forward">
-              <Tooltip title="Forward">
-                <ArrowDownwardIcon fontSize="small" />
-              </Tooltip>
-            </ToggleButton>
-            <ToggleButton value="back" aria-label="Search backward">
-              <Tooltip title="Backward">
-                <ArrowUpwardIcon fontSize="small" />
-              </Tooltip>
-            </ToggleButton>
-          </ToggleButtonGroup>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
           <Button
             size="small"
             variant="outlined"
             startIcon={<SearchIcon fontSize="small" />}
             onClick={runFindOrNext}
             disabled={loading || replacing || !findQuery.trim()}
+            sx={{ flex: '1 1 0', minWidth: 0 }}
           >
             Find
           </Button>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             size="small"
             variant="outlined"
             onClick={() => void handleReplace()}
             disabled={!canReplace}
+            sx={{ flex: '1 1 0', minWidth: 0 }}
           >
             Replace
           </Button>
@@ -652,9 +676,37 @@ export const SidebarFindTab = () => {
             variant="outlined"
             onClick={() => void handleReplaceAll()}
             disabled={!canReplaceAll}
+            sx={{ flex: '1 1 0', minWidth: 0 }}
           >
-            Replace all
+            All
           </Button>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+          <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
+            <ScopeFields
+              scope={scope}
+              onScopeChange={setScope}
+              customPath={customPath}
+              onCustomPathChange={setCustomPath}
+              onEnter={() => runFindOrNext()}
+              scopeLabelId="find-scope-label"
+            />
+          </Box>
+          <FormControl size="small" sx={{ flex: '1 1 0', minWidth: 0 }}>
+            <InputLabel id="find-doc-scope-label">Documents</InputLabel>
+            <Select
+              label="Documents"
+              labelId="find-doc-scope-label"
+              onChange={(event) => setDocScope(event.target.value as DocScope)}
+              value={docScope}
+            >
+              {(Object.keys(DOC_SCOPE_LABELS) as DocScope[]).map((value) => (
+                <MenuItem key={value} value={value}>
+                  {DOC_SCOPE_LABELS[value]}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       </Box>
 

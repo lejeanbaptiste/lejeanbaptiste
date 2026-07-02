@@ -382,6 +382,10 @@
       "editor": {
         "Show Entities": "Zeige Entitäten",
         "Show Raw XML panel": "Rohes-XML-Panel anzeigen",
+        "asian font": "Asiatische Schrift",
+        "default fonts": "Standardschriften",
+        "latin font": "Lateinische Schrift",
+        "refresh system fonts": "Systemschriften aktualisieren",
         "font size": "Schriftgröße"
       },
       "markupPanel": {

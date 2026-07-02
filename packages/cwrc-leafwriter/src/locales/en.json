@@ -386,6 +386,10 @@
       "editor": {
         "Show Entities": "Show Entities",
         "Show Raw XML panel": "Show Raw XML panel",
+        "asian font": "Asian font",
+        "default fonts": "default fonts",
+        "latin font": "Latin font",
+        "refresh system fonts": "Refresh system fonts",
         "font size": "font size"
       },
       "markupPanel": {

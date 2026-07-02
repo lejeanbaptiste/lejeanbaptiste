@@ -2,6 +2,7 @@ import { List } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../../overmind';
 import { Toggler } from '../../components';
+import { FontFamily } from './font-family';
 import { FontSize } from './font-size';
 
 export const Editor = () => {
@@ -12,6 +13,7 @@ export const Editor = () => {
   return (
     <List dense>
       <FontSize />
+      <FontFamily />
       {autosave !== undefined && !isReadonly && (
         <Toggler
           icon="cloudSync"

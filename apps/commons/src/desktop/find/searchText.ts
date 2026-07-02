@@ -1,6 +1,9 @@
 import type { OpenTab } from '@src/overmind/project/state';
 import { collectXmlFiles } from '../xpath/collectXmlFiles';
+import { isTranslationFile } from '../translationFileNaming';
 import type { SearchScope } from '../shared/searchScope';
+import { matchesDocScope, type DocScope } from './docScope';
+import { getCompanionTranslationFilePaths } from './translationCompanionResults';
 import { filterHitsForWysiwygEditor } from './wysiwygVisibleHits';
 import { searchInContent } from './textSearchUtils';
 import type { FindFileResult } from './types';
@@ -18,8 +21,14 @@ const getContentForSearch = (tab: OpenTab, activeTabPath: string | null) => {
   return tab.content;
 };
 
-const buildFileResult = (filePath: string, content: string, query: string, useRegex: boolean) => {
-  let matches = searchInContent(content, query, useRegex);
+const buildFileResult = (
+  filePath: string,
+  content: string,
+  query: string,
+  useRegex: boolean,
+  ignoreCase: boolean,
+) => {
+  let matches = searchInContent(content, query, useRegex, ignoreCase);
   if (!isSourceEditorMode()) {
     matches = filterHitsForWysiwygEditor(content, matches);
   }
@@ -35,10 +44,12 @@ const buildFileResult = (filePath: string, content: string, query: string, useRe
 export interface SearchTextParams {
   activeTabPath: string | null;
   customPath?: string;
+  docScope?: DocScope;
   openTabs: OpenTab[];
   query: string;
   rootPath: string | null;
   scope: SearchScope;
+  ignoreCase?: boolean;
   useRegex: boolean;
 }
 
@@ -51,10 +62,12 @@ export interface SearchTextResult {
 export const searchText = async ({
   activeTabPath,
   customPath,
+  docScope = 'both',
   openTabs,
   query,
   rootPath,
   scope,
+  ignoreCase = false,
   useRegex,
 }: SearchTextParams): Promise<SearchTextResult> => {
   const trimmed = query.trim();
@@ -66,7 +79,7 @@ export const searchText = async ({
 
   if (useRegex) {
     try {
-      new RegExp(trimmed, 'g');
+      new RegExp(trimmed, ignoreCase ? 'gi' : 'g');
     } catch (error) {
       return {
         results: [],
@@ -82,6 +95,23 @@ export const searchText = async ({
     if (result) results.push(result);
   };
 
+  /** Translation companion files are never open as tabs, so currentFile/openTabs scope has
+   * to fetch their content directly rather than relying on the tab list. */
+  const addCompanionResults = async (sourcePath: string) => {
+    if (docScope === 'source' || isTranslationFile(sourcePath)) return;
+
+    const companionPaths = await getCompanionTranslationFilePaths(sourcePath);
+    for (const companionPath of companionPaths) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const content = await window.electronAPI!.readFile(companionPath);
+        addResult(buildFileResult(companionPath, content, trimmed, useRegex, ignoreCase));
+      } catch {
+        // companion doesn't exist yet for this language — skip
+      }
+    }
+  };
+
   try {
     if (scope === 'currentFile') {
       if (!activeTabPath) {
@@ -93,24 +123,49 @@ export const searchText = async ({
         return { results: [], totalMatches: 0, error: 'No file is open.' };
       }
 
-      addResult(buildFileResult(activeTabPath, getContentForSearch(tab, activeTabPath), trimmed, useRegex));
+      if (matchesDocScope(activeTabPath, docScope)) {
+        addResult(
+          buildFileResult(
+            activeTabPath,
+            getContentForSearch(tab, activeTabPath),
+            trimmed,
+            useRegex,
+            ignoreCase,
+          ),
+        );
+      }
+      await addCompanionResults(activeTabPath);
     } else if (scope === 'openTabs') {
       if (openTabs.length === 0) {
         return { results: [], totalMatches: 0, error: 'No files are open.' };
       }
 
       for (const tab of openTabs) {
-        addResult(buildFileResult(tab.filePath, getContentForSearch(tab, activeTabPath), trimmed, useRegex));
+        if (matchesDocScope(tab.filePath, docScope)) {
+          addResult(
+            buildFileResult(
+              tab.filePath,
+              getContentForSearch(tab, activeTabPath),
+              trimmed,
+              useRegex,
+              ignoreCase,
+            ),
+          );
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await addCompanionResults(tab.filePath);
       }
     } else if (scope === 'project') {
       if (!rootPath) {
         return { results: [], totalMatches: 0, error: 'Open a project folder first.' };
       }
 
-      const filePaths = await collectXmlFiles(rootPath);
+      const filePaths = (await collectXmlFiles(rootPath)).filter((filePath) =>
+        matchesDocScope(filePath, docScope),
+      );
       for (const filePath of filePaths) {
         const content = await window.electronAPI.readFile(filePath);
-        addResult(buildFileResult(filePath, content, trimmed, useRegex));
+        addResult(buildFileResult(filePath, content, trimmed, useRegex, ignoreCase));
       }
     } else if (scope === 'custom') {
       const folderPath = customPath?.trim();
@@ -124,10 +179,12 @@ export const searchText = async ({
         return { results: [], totalMatches: 0, error: 'Folder path is not accessible.' };
       }
 
-      const filePaths = await collectXmlFiles(folderPath);
+      const filePaths = (await collectXmlFiles(folderPath)).filter((filePath) =>
+        matchesDocScope(filePath, docScope),
+      );
       for (const filePath of filePaths) {
         const content = await window.electronAPI.readFile(filePath);
-        addResult(buildFileResult(filePath, content, trimmed, useRegex));
+        addResult(buildFileResult(filePath, content, trimmed, useRegex, ignoreCase));
       }
     }
   } catch (error) {

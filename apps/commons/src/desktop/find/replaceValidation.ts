@@ -45,9 +45,9 @@ export interface ValidateReplaceAllResult {
   skippedNonReplaceable: number;
 }
 
-const buildSearchRegex = (query: string): RegExp | null => {
+const buildSearchRegex = (query: string, ignoreCase = false): RegExp | null => {
   try {
-    return new RegExp(query, 'gu');
+    return new RegExp(query, ignoreCase ? 'giu' : 'gu');
   } catch {
     return null;
   }
@@ -60,6 +60,7 @@ export const validateAndReplaceHit = (
   replacement: string,
   useRegex: boolean,
   query: string,
+  ignoreCase = false,
 ): ValidateReplaceHitResult => {
   if (!isReplaceableTextHit(content, start, end)) {
     return {
@@ -71,7 +72,7 @@ export const validateAndReplaceHit = (
   let nextReplacement = replacement;
 
   if (useRegex) {
-    const regex = buildSearchRegex(query);
+    const regex = buildSearchRegex(query, ignoreCase);
     if (!regex) {
       return { ok: false, error: 'Invalid regular expression.' };
     }
@@ -102,8 +103,9 @@ export const validateAndReplaceAll = (
   query: string,
   replacement: string,
   useRegex: boolean,
+  ignoreCase = false,
 ): ValidateReplaceAllResult => {
-  if (useRegex && !buildSearchRegex(query)) {
+  if (useRegex && !buildSearchRegex(query, ignoreCase)) {
     return { ok: false, count: 0, skippedNonReplaceable: 0, error: 'Invalid regular expression.' };
   }
 
@@ -112,6 +114,7 @@ export const validateAndReplaceAll = (
     query,
     replacement,
     useRegex,
+    ignoreCase,
   );
 
   if (count === 0) {

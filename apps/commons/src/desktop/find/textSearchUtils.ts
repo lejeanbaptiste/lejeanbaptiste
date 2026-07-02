@@ -167,15 +167,21 @@ export const offsetToLineColumn = (content: string, offset: number) => {
   return { line, column: offset - lineStart + 1 };
 };
 
-export const searchLiteralInContent = (content: string, needle: string): TextHit[] => {
+export const searchLiteralInContent = (
+  content: string,
+  needle: string,
+  ignoreCase = false,
+): TextHit[] => {
   if (!needle) return [];
 
   const hits: TextHit[] = [];
+  const haystack = ignoreCase ? content.toLocaleLowerCase() : content;
+  const searchNeedle = ignoreCase ? needle.toLocaleLowerCase() : needle;
   let from = 0;
   let matchIndex = 0;
 
   while (from <= content.length) {
-    const index = content.indexOf(needle, from);
+    const index = haystack.indexOf(searchNeedle, from);
     if (index === -1) break;
 
     const end = index + needle.length;
@@ -192,18 +198,22 @@ export const searchLiteralInContent = (content: string, needle: string): TextHit
     });
 
     matchIndex += 1;
-    from = index + needle.length;
+    from = index + searchNeedle.length;
   }
 
   return hits;
 };
 
-export const searchRegexInContent = (content: string, pattern: string): TextHit[] => {
+export const searchRegexInContent = (
+  content: string,
+  pattern: string,
+  ignoreCase = false,
+): TextHit[] => {
   if (!pattern) return [];
 
   let regex: RegExp;
   try {
-    regex = new RegExp(pattern, 'g');
+    regex = new RegExp(pattern, ignoreCase ? 'gi' : 'g');
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Invalid regular expression.');
   }
@@ -242,7 +252,8 @@ export const searchInContent = (
   content: string,
   query: string,
   useRegex: boolean,
+  ignoreCase = false,
 ): TextHit[] => {
-  if (useRegex) return searchRegexInContent(content, query);
-  return searchLiteralInContent(content, query);
+  if (useRegex) return searchRegexInContent(content, query, ignoreCase);
+  return searchLiteralInContent(content, query, ignoreCase);
 };

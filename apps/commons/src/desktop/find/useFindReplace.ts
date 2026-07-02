@@ -7,8 +7,10 @@ import {
   readFileContentForReplace,
   resolveTextHitInXml,
   syncReplacedContent,
+  syncTranslationPaneReplacedContent,
   writeReplacedContentToDisk,
 } from './applyReplaceToEditor';
+import type { DocScope } from './docScope';
 import { validateAndReplaceAll, validateAndReplaceHit } from './replaceValidation';
 import { searchText } from './searchText';
 import type { FindFileResult } from './types';
@@ -25,6 +27,7 @@ export interface FlatReplaceHit {
 export interface UseFindReplaceParams {
   activeTabPath: string | null;
   customPath: string;
+  docScope?: DocScope;
   findQuery: string;
   onSearchComplete: (params: {
     contentForJump?: string;
@@ -42,12 +45,14 @@ export interface UseFindReplaceParams {
   scope: SearchScope;
   selectedHit: FlatReplaceHit | null;
   selectedIndex: number;
+  ignoreCase: boolean;
   useRegex: boolean;
 }
 
 export const useFindReplace = ({
   activeTabPath,
   customPath,
+  docScope,
   findQuery,
   onSearchComplete,
   openTabs,
@@ -57,6 +62,7 @@ export const useFindReplace = ({
   scope,
   selectedHit,
   selectedIndex,
+  ignoreCase,
   useRegex,
 }: UseFindReplaceParams) => {
   const { resource } = useAppState().editor;
@@ -88,10 +94,12 @@ export const useFindReplace = ({
       } = await searchText({
         activeTabPath,
         customPath,
+        docScope,
         openTabs,
         query: findQuery,
         rootPath,
         scope,
+        ignoreCase,
         useRegex,
       });
 
@@ -106,11 +114,13 @@ export const useFindReplace = ({
     [
       activeTabPath,
       customPath,
+      docScope,
       findQuery,
       onSearchComplete,
       openTabs,
       rootPath,
       scope,
+      ignoreCase,
       useRegex,
     ],
   );
@@ -133,6 +143,7 @@ export const useFindReplace = ({
       replaceQuery,
       useRegex,
       findQuery.trim(),
+      ignoreCase,
     );
 
     if (!outcome.ok || !outcome.content) {
@@ -171,6 +182,7 @@ export const useFindReplace = ({
         notifyViaSnackbar('Failed to write file.');
         return;
       }
+      syncTranslationPaneReplacedContent(selectedHit.filePath, outcome.content);
     }
 
     const { results: nextResults, totalMatches } = updateResultsAfterSingleReplace(
@@ -179,6 +191,7 @@ export const useFindReplace = ({
       outcome.content,
       findQuery.trim(),
       useRegex,
+      ignoreCase,
       {
         end: selectedHit.end,
         replacementLength: outcome.replacementUsed.length,
@@ -214,6 +227,7 @@ export const useFindReplace = ({
     selectedIndex,
     openTabs,
     updateTabContent,
+    ignoreCase,
     useRegex,
   ]);
 
@@ -237,6 +251,7 @@ export const useFindReplace = ({
         findQuery.trim(),
         replaceQuery,
         useRegex,
+        ignoreCase,
       );
 
       if (!outcome.ok) {
@@ -268,6 +283,7 @@ export const useFindReplace = ({
           filesFailed += 1;
           continue;
         }
+        syncTranslationPaneReplacedContent(fileResult.filePath, outcome.content);
       }
 
       totalReplaced += outcome.count;
@@ -308,6 +324,7 @@ export const useFindReplace = ({
     resource?.filePath,
     results,
     updateTabContent,
+    ignoreCase,
     useRegex,
   ]);
 

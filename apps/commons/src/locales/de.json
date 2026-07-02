@@ -193,14 +193,18 @@
         "reload": "Neu laden",
         "keep_editing": "Weiter bearbeiten"
       },
+      "translation_links_restored_one": "{{count}} Übersetzungsverknüpfung nach externer Änderung wiederhergestellt",
+      "translation_links_restored_other": "{{count}} Übersetzungsverknüpfungen nach externer Änderung wiederhergestellt",
       "close_unsaved": {
         "title": "Nicht gespeicherte Änderungen",
         "message": "{{filename}} enthält nicht gespeicherte Änderungen. Ohne Speichern schließen?"
       },
       "settings": {
         "editor_options_hint": "Schema, Autoritäten und andere Editoroptionen sind über die ⚙-Symbolleiste verfügbar, wenn ein Dokument geöffnet ist.",
+        "remember_workspace_on_startup": "Projekt und Tabs beim Start erneut öffnen",
         "skip_copy_paste_help": "Kopieren-Einfügen-Hilfe nicht anzeigen",
         "skip_delete_confirm": "Dateien und Ordner ohne Rückfrage löschen",
+        "startup": "Start",
         "title": "Einstellungen",
         "warnings": "Warnungen"
       },

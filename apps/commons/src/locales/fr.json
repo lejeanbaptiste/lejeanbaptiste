@@ -193,14 +193,18 @@
         "reload": "Recharger",
         "keep_editing": "Continuer l'édition"
       },
+      "translation_links_restored_one": "{{count}} lien de traduction restauré après une modification externe",
+      "translation_links_restored_other": "{{count}} liens de traduction restaurés après une modification externe",
       "close_unsaved": {
         "title": "Modifications non enregistrées",
         "message": "{{filename}} contient des modifications non enregistrées. Fermer sans enregistrer ?"
       },
       "settings": {
         "editor_options_hint": "Les schémas, autorités et autres options d’édition sont disponibles via la barre d’outils ⚙ lorsqu’un document est ouvert.",
+        "remember_workspace_on_startup": "Rouvrir le projet et les onglets au démarrage",
         "skip_copy_paste_help": "Ne pas afficher l’aide copier-coller",
         "skip_delete_confirm": "Supprimer fichiers et dossiers sans confirmation",
+        "startup": "Démarrage",
         "title": "Paramètres",
         "warnings": "Avertissements"
       },

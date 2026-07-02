@@ -39,8 +39,7 @@ export const findTeiHeader = (doc: Document): Element | null => {
   const tei = doc.documentElement;
   if (!tei) return null;
   const header =
-    tei.getElementsByTagNameNS(TEI_NS, 'teiHeader')[0] ??
-    tei.getElementsByTagName('teiHeader')[0];
+    tei.getElementsByTagNameNS(TEI_NS, 'teiHeader')[0] ?? tei.getElementsByTagName('teiHeader')[0];
   return header ?? null;
 };
 
@@ -59,6 +58,13 @@ const findFileDesc = (header: Element): Element | null =>
   header.getElementsByTagName('fileDesc')[0] ??
   null;
 
+const findDirectChild = (parent: Element, localName: string): Element | null => {
+  for (const child of Array.from(parent.children)) {
+    if (child.localName === localName || child.nodeName === localName) return child;
+  }
+  return null;
+};
+
 export const ensurePath = (root: Element, parts: string[]): Element => {
   let current: Element = root;
   if (parts.length > 0 && FILE_DESC_CONTAINER_PATHS.has(parts[0]!)) {
@@ -67,9 +73,7 @@ export const ensurePath = (root: Element, parts: string[]): Element => {
   }
 
   for (const part of parts) {
-    let child =
-      current.getElementsByTagNameNS(TEI_NS, part)[0] ??
-      current.getElementsByTagName(part)[0];
+    let child = findDirectChild(current, part);
     if (!child) {
       child = root.ownerDocument!.createElementNS(TEI_NS, part);
       current.appendChild(child);
@@ -87,15 +91,13 @@ export const getHeaderPathValue = (header: Element, teiPath: string): string => 
   let current: Element = header;
   for (const part of parts) {
     const next =
-      current.getElementsByTagNameNS(TEI_NS, part)[0] ??
-      current.getElementsByTagName(part)[0];
+      current.getElementsByTagNameNS(TEI_NS, part)[0] ?? current.getElementsByTagName(part)[0];
     if (!next) return '';
     current = next;
   }
 
   const node =
-    current.getElementsByTagNameNS(TEI_NS, leaf)[0] ??
-    current.getElementsByTagName(leaf)[0];
+    current.getElementsByTagNameNS(TEI_NS, leaf)[0] ?? current.getElementsByTagName(leaf)[0];
   if (!node) return '';
 
   const attrName = HEADER_ATTRIBUTE_PATHS[teiPath];
@@ -111,9 +113,7 @@ export const setHeaderPathValue = (header: Element, teiPath: string, value: stri
   const leaf = parts.pop();
   if (!leaf) return;
   const parent = parts.length ? ensurePath(header, parts) : header;
-  let node =
-    parent.getElementsByTagNameNS(TEI_NS, leaf)[0] ??
-    parent.getElementsByTagName(leaf)[0];
+  let node = parent.getElementsByTagNameNS(TEI_NS, leaf)[0] ?? parent.getElementsByTagName(leaf)[0];
   if (!node) {
     node = header.ownerDocument!.createElementNS(TEI_NS, leaf);
     parent.appendChild(node);
@@ -122,9 +122,7 @@ export const setHeaderPathValue = (header: Element, teiPath: string, value: stri
   const attrName = HEADER_ATTRIBUTE_PATHS[teiPath];
   if (attrName) {
     const attrValue =
-      teiPath === 'profileDesc/langUsage/language'
-        ? normalizeLanguageIdent(value)
-        : value.trim();
+      teiPath === 'profileDesc/langUsage/language' ? normalizeLanguageIdent(value) : value.trim();
     if (attrValue) {
       node.setAttribute(attrName, attrValue);
     } else {
@@ -135,6 +133,15 @@ export const setHeaderPathValue = (header: Element, teiPath: string, value: stri
   }
 
   node.textContent = value;
+};
+
+const PUBLICATION_STMT_AGENCY_ORDER = ['publisher', 'distributor', 'authority'];
+const PUBLICATION_STMT_DETAIL_ORDER = ['address', 'date', 'pubPlace', 'idno', 'availability'];
+const PUBLICATION_STMT_ORDER = [...PUBLICATION_STMT_AGENCY_ORDER, ...PUBLICATION_STMT_DETAIL_ORDER];
+
+const getPublicationStmtSortIndex = (element: Element): number => {
+  const index = PUBLICATION_STMT_ORDER.indexOf(element.localName);
+  return index === -1 ? PUBLICATION_STMT_ORDER.length : index;
 };
 
 export const normalizeLanguageElementsInHeader = (header: Element) => {
@@ -152,12 +159,32 @@ export const normalizeLanguageElementsInHeader = (header: Element) => {
   }
 };
 
+const normalizePublicationStmtChildren = (publicationStmt: Element) => {
+  const elementChildren = Array.from(publicationStmt.children);
+  const hasStructuredChild = elementChildren.some((child) => child.localName !== 'p');
+
+  if (hasStructuredChild) {
+    for (const child of elementChildren) {
+      if (child.localName === 'p' && !(child.textContent ?? '').trim()) {
+        publicationStmt.removeChild(child);
+      }
+    }
+  }
+
+  const orderedChildren = Array.from(publicationStmt.children)
+    .filter((child) => child.localName !== 'p')
+    .sort((a, b) => getPublicationStmtSortIndex(a) - getPublicationStmtSortIndex(b));
+
+  for (const child of orderedChildren) {
+    publicationStmt.appendChild(child);
+  }
+};
+
 /** TEI sourceDesc/publicationStmt cannot contain raw text — wrap in <p> and keep a valid empty <p/>. */
 export const normalizeParagraphContainersInHeader = (header: Element) => {
   for (const name of ['sourceDesc', 'publicationStmt'] as const) {
     const container =
-      header.getElementsByTagNameNS(TEI_NS, name)[0] ??
-      header.getElementsByTagName(name)[0];
+      header.getElementsByTagNameNS(TEI_NS, name)[0] ?? header.getElementsByTagName(name)[0];
     if (!container) continue;
 
     const looseParts: string[] = [];
@@ -173,16 +200,23 @@ export const normalizeParagraphContainersInHeader = (header: Element) => {
       container.removeChild(node);
     }
 
-    if (looseParts.length > 0) {
+    const hasStructuredPublicationChild =
+      name === 'publicationStmt' &&
+      Array.from(container.children).some((child) => child.localName !== 'p');
+
+    if (looseParts.length > 0 && !hasStructuredPublicationChild) {
       let paragraph =
-        container.getElementsByTagNameNS(TEI_NS, 'p')[0] ??
-        container.getElementsByTagName('p')[0];
+        container.getElementsByTagNameNS(TEI_NS, 'p')[0] ?? container.getElementsByTagName('p')[0];
       if (!paragraph) {
         paragraph = header.ownerDocument!.createElementNS(TEI_NS, 'p');
         container.appendChild(paragraph);
       }
       const existing = paragraph.textContent?.trim() ?? '';
       paragraph.textContent = [existing, ...looseParts].filter(Boolean).join(' ').trim();
+    }
+
+    if (name === 'publicationStmt') {
+      normalizePublicationStmtChildren(container);
     }
 
     const hasElementChild = Array.from(container.childNodes).some(
@@ -218,20 +252,18 @@ export const clearHeaderPath = (header: Element, teiPath: string) => {
   let current: Element = header;
   for (const part of parts) {
     const next =
-      current.getElementsByTagNameNS(TEI_NS, part)[0] ??
-      current.getElementsByTagName(part)[0];
+      current.getElementsByTagNameNS(TEI_NS, part)[0] ?? current.getElementsByTagName(part)[0];
     if (!next) return;
     current = next;
   }
   const node =
-    current.getElementsByTagNameNS(TEI_NS, leaf)[0] ??
-    current.getElementsByTagName(leaf)[0];
+    current.getElementsByTagNameNS(TEI_NS, leaf)[0] ?? current.getElementsByTagName(leaf)[0];
   node?.parentNode?.removeChild(node);
 };
 
 export const applyHeaderPathUpdates = (
   xml: string,
-  updates: Array<{ path: string; value: string }>,
+  updates: { path: string; value: string }[],
   options?: { clearPaths?: string[]; skipPaths?: Set<string> },
 ): string => {
   const parser = new DOMParser();
@@ -268,10 +300,7 @@ export const applyHeaderPathUpdates = (
   return new XMLSerializer().serializeToString(doc);
 };
 
-export const readHeaderPathValues = (
-  xml: string,
-  paths: string[],
-): Record<string, string> => {
+export const readHeaderPathValues = (xml: string, paths: string[]): Record<string, string> => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xml, 'application/xml');
   if (doc.querySelector('parsererror')) {
@@ -298,9 +327,7 @@ export const hasTeiHeader = (xml: string): boolean => {
 };
 
 const findTeiText = (tei: Element): Element | null =>
-  tei.getElementsByTagNameNS(TEI_NS, 'text')[0] ??
-  tei.getElementsByTagName('text')[0] ??
-  null;
+  tei.getElementsByTagNameNS(TEI_NS, 'text')[0] ?? tei.getElementsByTagName('text')[0] ?? null;
 
 /** Loose text nodes directly under header elements that forbid raw text (e.g. publicationStmt). */
 export const inspectHeaderLooseText = (
@@ -372,14 +399,11 @@ export const stripEncodingDescFromHeader = (xml: string): string => {
 export const stripEncodingDescFromTeiXml = stripEncodingDescFromHeader;
 
 /** Merge WYSIWYG body edits with the stored file header (metadata + revision stamp). */
-export const mergeEditorBodyWithStoredHeader = (
-  editorXml: string,
-  storedXml: string,
-): string => {
+export const mergeEditorBodyWithStoredHeader = (editorXml: string, storedXml: string): string => {
   const parser = new DOMParser();
   const editorDoc = parser.parseFromString(editorXml, 'application/xml');
   const storedDoc = parser.parseFromString(storedXml, 'application/xml');
-  if (editorDoc.querySelector('parsererror')) return storedXml || editorXml;
+  if (editorDoc.querySelector('parsererror')) return editorXml;
   if (storedDoc.querySelector('parsererror')) return editorXml;
 
   const storedTei = storedDoc.documentElement;
@@ -399,10 +423,7 @@ export const mergeEditorBodyWithStoredHeader = (
 };
 
 /** Reattach stored file header so RelaxNG validation matches the on-disk document. */
-export const mergeStoredHeaderForValidation = (
-  editorXml: string,
-  storedXml: string,
-): string => {
+export const mergeStoredHeaderForValidation = (editorXml: string, storedXml: string): string => {
   if (!storedXml || !/<teiHeader[\s>]/i.test(storedXml)) return editorXml;
   const editorBody = stripTeiHeaderForVisualEditor(editorXml);
   const merged = mergeEditorBodyWithStoredHeader(editorBody, storedXml);

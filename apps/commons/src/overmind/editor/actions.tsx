@@ -1,6 +1,7 @@
 import LeafWriter from '@cwrc/leafwriter';
 import { saveDocument } from '@cwrc/leafwriter-storage-service/headless';
 import { AUTOSAVE_TIMEOUT_RETRY } from '@src/config';
+import { isDesktop } from '@src/types/desktop';
 import type { Error, Resource } from '@src/types';
 import { isErrorMessage } from '@src/types';
 import { log } from '@src/utilities';
@@ -163,6 +164,16 @@ export const subscribeToTimerService = ({ state, actions }: Context, editor: Lea
   state.editor.timerService.onTimer.subscribe(async () => {
     const content = await editor.getContent();
     if (typeof content !== 'string') return;
+
+    if (isDesktop() && state.editor.resource?.filePath) {
+      const result = await actions.project.saveActiveTab({ content });
+      if (result.success) {
+        editor.setContentHasChanged(false);
+        state.editor.contentLastSaved = result.content ?? content;
+      }
+      return;
+    }
+
     const screenshot = await editor.getDocumentScreenshot();
     await actions.editor.save({ content, screenshot });
   });

@@ -20,6 +20,8 @@ export interface ProjectFileConfig {
   schema?: ProjectSchemaConfig;
   /** Relative path, default schema/project-metadata.json */
   metadata?: string;
+  /** Relative path, default schema/translation-settings.json */
+  translationSettings?: string;
 }
 
 export interface ProjectMetadataFile {

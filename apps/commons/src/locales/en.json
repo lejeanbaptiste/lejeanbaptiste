@@ -193,14 +193,18 @@
         "reload": "Reload",
         "keep_editing": "Keep editing"
       },
+      "translation_links_restored_one": "Restored {{count}} translation link after external change",
+      "translation_links_restored_other": "Restored {{count}} translation links after external change",
       "close_unsaved": {
         "title": "Unsaved changes",
         "message": "{{filename}} has unsaved changes. Close without saving?"
       },
       "settings": {
         "editor_options_hint": "Schema, authorities, and other editor options are available from the ⚙ toolbar while a document is open.",
+        "remember_workspace_on_startup": "Reopen project and tabs on startup",
         "skip_copy_paste_help": "Don't show copy and paste help",
         "skip_delete_confirm": "Delete files and folders without asking",
+        "startup": "Startup",
         "title": "Settings",
         "warnings": "Warnings"
       },

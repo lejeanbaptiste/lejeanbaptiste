@@ -17,6 +17,7 @@ export interface PerformFindJumpParams {
   matchIndexInFile: number;
   query: string;
   start: number;
+  ignoreCase: boolean;
   useRegex: boolean;
 }
 
@@ -31,6 +32,7 @@ export const performFindJump = ({
   matchIndexInFile,
   query,
   start,
+  ignoreCase,
   useRegex,
 }: PerformFindJumpParams): boolean => {
   const editorContent = contentForJump ?? getActiveEditorContent(content);
@@ -64,6 +66,7 @@ export const performFindJump = ({
     return applyFindJumpInSourceEditor({
       content: editorContent,
       end,
+      ignoreCase,
       query,
       start,
       useRegex,

@@ -35,10 +35,7 @@ describe('stripTeiHeaderForVisualEditor', () => {
 
 describe('mergeEditorBodyWithStoredHeader', () => {
   test('replaces text from editor while preserving stored header', () => {
-    const editorOnly = stripTeiHeaderForVisualEditor(skeleton).replace(
-      'Body text',
-      'Edited body',
-    );
+    const editorOnly = stripTeiHeaderForVisualEditor(skeleton).replace('Body text', 'Edited body');
     const merged = mergeEditorBodyWithStoredHeader(editorOnly, skeleton);
     expect(merged).toContain('<teiHeader');
     expect(merged).toContain('<title>Untitled</title>');
@@ -58,6 +55,11 @@ describe('mergeStoredHeaderForValidation', () => {
   test('returns editor xml when stored has no header', () => {
     const editorOnly = stripTeiHeaderForVisualEditor(skeleton);
     expect(mergeStoredHeaderForValidation(editorOnly, editorOnly)).toBe(editorOnly);
+  });
+
+  test('keeps malformed source xml so validation reports the source parse error', () => {
+    const malformed = skeleton.replace('<p>Body text</p>', '<p>Body text');
+    expect(mergeStoredHeaderForValidation(malformed, skeleton)).toBe(malformed);
   });
 
   test('strips encodingDesc from merged validation xml', () => {
@@ -129,5 +131,19 @@ describe('sourceDesc paragraph normalization', () => {
     expect(updated).toContain('<title>Chapter One</title>');
     expect(updated).toMatch(/<sourceDesc>\s*<p\s*\/?>\s*<\/sourceDesc>/);
     expect(inspectHeaderLooseText(updated).sourceDesc).toBe(false);
+  });
+});
+
+describe('publicationStmt normalization', () => {
+  test('removes placeholder paragraph and orders structured publication metadata', () => {
+    const updated = applyHeaderPathUpdates(skeleton, [
+      { path: 'publicationStmt/availability/licence', value: 'CC BY' },
+      { path: 'publicationStmt/distributor', value: 'CNRS' },
+    ]);
+
+    expect(updated).toContain(
+      '<publicationStmt><distributor>CNRS</distributor><availability><licence>CC BY</licence></availability></publicationStmt>',
+    );
+    expect(updated).not.toContain('<publicationStmt><p/>');
   });
 });

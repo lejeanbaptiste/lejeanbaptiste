@@ -1,0 +1,1319 @@
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  InputBase,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import CloseIcon from '@mui/icons-material/Close';
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import FormatClearIcon from '@mui/icons-material/FormatClear';
+import FormatItalicIcon from '@mui/icons-material/FormatItalic';
+import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
+import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
+import LinkIcon from '@mui/icons-material/Link';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import StickyNote2Icon from '@mui/icons-material/StickyNote2';
+import SubscriptIcon from '@mui/icons-material/Subscript';
+import SuperscriptIcon from '@mui/icons-material/Superscript';
+import TextFieldsIcon from '@mui/icons-material/TextFields';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useActions, useAppState } from '../overmind';
+
+const TEI_NS = 'http://www.tei-c.org/ns/1.0';
+
+const getElementsByLocalName = (root: Document | Element, localName: string): Element[] => {
+  const namespaced = Array.from(root.getElementsByTagNameNS(TEI_NS, localName));
+  const plain = Array.from(root.getElementsByTagName(localName));
+  const seen = new Set<Element>();
+  const result: Element[] = [];
+  for (const element of [...namespaced, ...plain]) {
+    if (!seen.has(element)) {
+      seen.add(element);
+      result.push(element);
+    }
+  }
+  return result;
+};
+
+const findUnitByCorrespId = (
+  doc: Document,
+  alignmentUnit: 'div' | 'p',
+  sourceFileName: string,
+  unitId: string,
+): Element | null => {
+  const expected = `${sourceFileName}#${unitId}`;
+  return (
+    getElementsByLocalName(doc, alignmentUnit).find(
+      (element) => element.getAttribute('corresp') === expected,
+    ) ?? null
+  );
+};
+
+const fileNameOf = (filePath: string): string => {
+  const idx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+  return idx === -1 ? filePath : filePath.slice(idx + 1);
+};
+
+/** Looks up the tagger's schema id attribute name (xml:id or id), matching attributeIdHelpers.ts. */
+const getSchemaIdAttributeName = (): string =>
+  window.writer?.schemaManager?.getIdName?.() ?? 'xml:id';
+
+interface DesktopElectronApi {
+  generateAiTranslation?: (request: {
+    alignmentUnit: 'div' | 'p';
+    sourceUnitXml: string;
+    targetLanguage: string;
+  }) => Promise<{ error?: string; ok: boolean; translationXml?: string }>;
+  readFile?: (filePath: string) => Promise<string>;
+  writeFile?: (filePath: string, content: string) => Promise<void>;
+}
+
+interface TranslationLanguageState {
+  indexing: boolean;
+  languages: Array<{ code: string; label: string }>;
+  selectedLang: string;
+  setSelectedLang: (lang: string) => void;
+}
+
+declare global {
+  interface Window {
+    __leafWriterTranslationPane?: {
+      filePath: string | null;
+      isActive: () => boolean;
+      redo: () => Promise<boolean>;
+      replaceContent: (filePath: string, content: string) => boolean;
+      undo: () => Promise<boolean>;
+    };
+  }
+}
+
+const getDesktopApi = (): DesktopElectronApi | undefined =>
+  (window as Window & { electronAPI?: DesktopElectronApi }).electronAPI;
+
+const getTranslationLanguageState = (): TranslationLanguageState | null =>
+  (
+    window as Window & {
+      __desktopTranslationLanguageState?: TranslationLanguageState;
+    }
+  ).__desktopTranslationLanguageState ?? null;
+
+const findUnitById = (doc: Document, alignmentUnit: 'div' | 'p', unitId: string): Element | null =>
+  getElementsByLocalName(doc, alignmentUnit).find((element) => {
+    return element.getAttribute('xml:id') === unitId || element.getAttribute('id') === unitId;
+  }) ?? null;
+
+const getXmlParseError = (doc: Document): string | null => {
+  const error = doc.getElementsByTagName('parsererror')[0];
+  return error?.textContent?.trim() || null;
+};
+
+const parseTranslationDocument = (xml: string): Document | null => {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  return getXmlParseError(doc) ? null : doc;
+};
+
+const serializeSourceUnit = (
+  sourceXml: string,
+  alignmentUnit: 'div' | 'p',
+  unitId: string,
+): { error?: string; xml?: string } => {
+  const doc = new DOMParser().parseFromString(sourceXml, 'application/xml');
+  const parseError = getXmlParseError(doc);
+  if (parseError) return { error: 'Source XML could not be parsed.' };
+
+  const unit = findUnitById(doc, alignmentUnit, unitId);
+  if (!unit) return { error: `Could not find source ${alignmentUnit} ${unitId}.` };
+
+  return { xml: new XMLSerializer().serializeToString(unit) };
+};
+
+const ALLOWED_GENERATED_TAGS = new Set(['b', 'i', 'u', 's', 'strike', 'sup', 'sub', 'hi']);
+const ALLOWED_HI_REND = new Set(['bold', 'italic', 'underline', 'strikethrough', 'small-caps']);
+
+const validateGeneratedFragment = (fragmentXml: string): { error?: string; xml?: string } => {
+  const wrapped = `<fragment>${fragmentXml}</fragment>`;
+  const doc = new DOMParser().parseFromString(wrapped, 'application/xml');
+  const parseError = getXmlParseError(doc);
+  if (parseError) return { error: 'AI returned XML that is not well formed.' };
+
+  const root = doc.documentElement;
+  const elementChildren = Array.from(root.children);
+  const contentRoot =
+    elementChildren.length === 1 &&
+    (elementChildren[0]!.tagName === 'p' || elementChildren[0]!.tagName === 'div')
+      ? elementChildren[0]!
+      : root;
+
+  for (const element of Array.from(contentRoot.getElementsByTagName('*'))) {
+    const tag = element.tagName;
+    if (!ALLOWED_GENERATED_TAGS.has(tag)) {
+      return { error: `AI returned unsupported tag <${tag}>.` };
+    }
+    for (const attr of Array.from(element.attributes)) {
+      if (tag === 'hi' && attr.name === 'rend' && ALLOWED_HI_REND.has(attr.value)) continue;
+      return { error: `AI returned unsupported attribute ${attr.name} on <${tag}>.` };
+    }
+  }
+
+  return {
+    xml: Array.from(contentRoot.childNodes)
+      .map((node) => new XMLSerializer().serializeToString(node))
+      .join(''),
+  };
+};
+
+interface TextIndex {
+  combined: string;
+  textNodes: Text[];
+  offsets: number[];
+}
+
+const buildTextIndex = (container: HTMLElement): TextIndex => {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  const offsets: number[] = [];
+  let combined = '';
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    offsets.push(combined.length);
+    textNodes.push(node as Text);
+    combined += node.textContent ?? '';
+  }
+  return { combined, textNodes, offsets };
+};
+
+const locateInIndex = (
+  index: TextIndex,
+  globalOffset: number,
+): { node: Text; offset: number } | null => {
+  for (let i = 0; i < index.textNodes.length; i++) {
+    const start = index.offsets[i]!;
+    const length = index.textNodes[i]!.textContent?.length ?? 0;
+    if (globalOffset <= start + length) {
+      return { node: index.textNodes[i]!, offset: Math.max(0, globalOffset - start) };
+    }
+  }
+  return null;
+};
+
+const selectRange = (index: TextIndex, start: number, end: number): boolean => {
+  const startPos = locateInIndex(index, start);
+  const endPos = locateInIndex(index, end);
+  if (!startPos || !endPos) return false;
+
+  const range = document.createRange();
+  range.setStart(startPos.node, startPos.offset);
+  range.setEnd(endPos.node, endPos.offset);
+
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+
+  startPos.node.parentElement?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+  return true;
+};
+
+/** Selects the exact match a Find hit pointed to, given its decoded-character offset within
+ * the unit's own text — correctly distinguishes multiple occurrences of the same text, unlike
+ * a plain substring search. Falls back to the first occurrence of `text` when no offset is
+ * available (e.g. the match was inside a nested inline tag rather than the unit's own text). */
+const selectHighlightedMatch = (
+  container: HTMLElement,
+  text: string,
+  offset: { start: number; end: number } | null,
+): boolean => {
+  const index = buildTextIndex(container);
+
+  if (offset) {
+    if (selectRange(index, offset.start, offset.end)) return true;
+    // Offset didn't line up with the currently rendered content (e.g. stale) — fall through.
+  }
+
+  if (!text) return false;
+  const idx = index.combined.toLowerCase().indexOf(text.toLowerCase());
+  if (idx === -1) return false;
+  return selectRange(index, idx, idx + text.length);
+};
+
+export const TranslationPane = () => {
+  const { translationMode } = useAppState().ui;
+  const { setSelectedTranslationUnit } = useActions().ui;
+
+  const [translationDoc, setTranslationDoc] = useState<Document | null>(null);
+  const [unitHtml, setUnitHtml] = useState('');
+  const [caretInUnindexedUnit, setCaretInUnindexedUnit] = useState(false);
+  const [aiStatus, setAiStatus] = useState<{
+    message: string;
+    severity: 'error' | 'info' | 'success';
+  } | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [languageState, setLanguageState] = useState<TranslationLanguageState | null>(() =>
+    getTranslationLanguageState(),
+  );
+  const [locked, setLocked] = useState(false);
+  const [formatAnchor, setFormatAnchor] = useState<HTMLElement | null>(null);
+  const editableRef = useRef<HTMLDivElement>(null);
+  const savedRangeRef = useRef<Range | null>(null);
+  const focusFootnoteIndexRef = useRef<number | null>(null);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [footnotes, setFootnotes] = useState<string[]>([]);
+  const docRef = useRef<Document | null>(null);
+  docRef.current = translationDoc;
+  const pendingHighlightRef = useRef<{
+    unitId: string;
+    text: string;
+    offset: { start: number; end: number } | null;
+  } | null>(null);
+  const { translationPath, alignmentUnit, sourcePath, selectedUnitId } = translationMode;
+  const selectedUnitIdRef = useRef<string | null>(null);
+  selectedUnitIdRef.current = selectedUnitId ?? null;
+  const translationPathRef = useRef<string | null>(null);
+  translationPathRef.current = translationPath ?? null;
+  const focusedRef = useRef(false);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const setTranslationDocument = useCallback((doc: Document) => {
+    docRef.current = doc;
+    setTranslationDoc(doc);
+  }, []);
+
+  useEffect(() => {
+    const syncLanguageState = () => setLanguageState(getTranslationLanguageState());
+    syncLanguageState();
+    window.addEventListener('desktop:translation-language-state-changed', syncLanguageState);
+    return () =>
+      window.removeEventListener('desktop:translation-language-state-changed', syncLanguageState);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    },
+    [],
+  );
+
+  // A Find hit inside this unit's content requests a highlight. If the content is already
+  // showing (rendered before this event arrives), apply it immediately; otherwise store it as
+  // pending for the innerHTML-sync effect below to apply once the matching content renders.
+  useEffect(() => {
+    const onHighlightText = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          unitId?: string;
+          text?: string;
+          offset?: { start: number; end: number } | null;
+        }>
+      ).detail;
+      if (!detail?.unitId || !detail.text) return;
+
+      if (
+        selectedUnitIdRef.current === detail.unitId &&
+        editableRef.current &&
+        selectHighlightedMatch(editableRef.current, detail.text, detail.offset ?? null)
+      ) {
+        return;
+      }
+
+      pendingHighlightRef.current = {
+        unitId: detail.unitId,
+        text: detail.text,
+        offset: detail.offset ?? null,
+      };
+    };
+    window.addEventListener('desktop:translation-highlight-text', onHighlightText);
+    return () => window.removeEventListener('desktop:translation-highlight-text', onHighlightText);
+  }, []);
+
+  // Load the companion translation file whenever it changes, or after a reindex rewrote it
+  // on disk (translationPath itself doesn't change, so the reindex event forces a reload).
+  useEffect(() => {
+    if (!translationPath) return;
+    let cancelled = false;
+
+    const load = async () => {
+      const xml = await getDesktopApi()
+        ?.readFile?.(translationPath)
+        .catch(() => null);
+      if (cancelled || !xml) return;
+      const doc = parseTranslationDocument(xml);
+      if (doc) setTranslationDocument(doc);
+    };
+
+    void load();
+    window.addEventListener('desktop:translation-reindexed', load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('desktop:translation-reindexed', load);
+    };
+  }, [setTranslationDocument, translationPath]);
+
+  // Track the main editor's selection to figure out which alignment unit is active. Re-subscribes
+  // whenever the active source file changes, since window.writer.editor may be a fresh
+  // instance/body by then — keying only on alignmentUnit (a fixed per-project setting) would
+  // leave a stale listener attached to the previous file's editor.
+  useEffect(() => {
+    if (!alignmentUnit) return;
+
+    let cancelled = false;
+    let detachEditorListener: (() => void) | null = null;
+    let unsubscribeDocumentLoaded: (() => void) | null = null;
+    let pollTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const schemaId = getSchemaIdAttributeName();
+
+    // Distinguishes "cursor not inside an alignment unit at all" from "inside one that has
+    // no schema id yet" (e.g. a freshly split paragraph before the next save indexes it) —
+    // the pane shows different guidance for each.
+    const resolveUnit = (
+      startNode: Element | null,
+    ): { id: string | null; inUnindexedUnit: boolean } => {
+      let node: Element | null = startNode;
+      while (node && node.getAttribute?.('_tag') !== alignmentUnit) {
+        node = node.parentElement;
+      }
+      if (!node) return { id: null, inUnindexedUnit: false };
+      const attrs = window.writer?.tagger?.getAttributesForTag?.(node) ?? {};
+      const id = attrs[schemaId] ?? (schemaId !== 'id' ? attrs.id : undefined);
+      if (typeof id === 'string' && id) return { id, inUnindexedUnit: false };
+      return { id: null, inUnindexedUnit: true };
+    };
+
+    const applyResolved = (resolved: { id: string | null; inUnindexedUnit: boolean }) => {
+      setSelectedTranslationUnit(resolved.id);
+      setCaretInUnindexedUnit(resolved.inUnindexedUnit);
+    };
+
+    // Attempts to attach the NodeChange listener; returns false if the editor for the current
+    // source file isn't ready yet (e.g. right after opening a file the editor hasn't finished
+    // initializing) so the caller can retry once it is.
+    const attach = (): boolean => {
+      const editor = window.writer?.editor;
+      if (!editor?.on) return false;
+
+      const handler = (event: { element: Element }) => {
+        applyResolved(resolveUnit(event.element));
+      };
+      editor.on('NodeChange', handler);
+      detachEditorListener = () => editor.off?.('NodeChange', handler);
+
+      // Sync immediately using the current cursor position — otherwise, if the cursor was
+      // already sitting in a paragraph before this effect (re-)attached (e.g. switching back
+      // to this tab, or switching files, without moving the caret), no NodeChange event fires
+      // and the pane is left showing nothing until the next click.
+      const currentNode = editor.selection?.getNode?.();
+      if (currentNode) applyResolved(resolveUnit(currentNode));
+
+      return true;
+    };
+
+    const retryUntilAttached = () => {
+      if (cancelled || attach()) return;
+
+      if (window.writer) {
+        const onDocumentLoaded = (success: boolean) => {
+          if (!success || cancelled) return;
+          if (attach()) unsubscribeDocumentLoaded?.();
+        };
+        window.writer.event('documentLoaded').subscribe(onDocumentLoaded);
+        unsubscribeDocumentLoaded = () =>
+          window.writer?.event('documentLoaded').unsubscribe(onDocumentLoaded);
+      } else {
+        // window.writer itself doesn't exist yet (very first load) — poll briefly.
+        pollTimeout = setTimeout(retryUntilAttached, 200);
+      }
+    };
+
+    retryUntilAttached();
+
+    return () => {
+      cancelled = true;
+      detachEditorListener?.();
+      unsubscribeDocumentLoaded?.();
+      if (pollTimeout) clearTimeout(pollTimeout);
+    };
+  }, [alignmentUnit, sourcePath, setSelectedTranslationUnit]);
+
+  // Reflect the selected unit's current content into the editable surface.
+  useEffect(() => {
+    if (!translationDoc || !alignmentUnit || !sourcePath || !selectedUnitId) {
+      setUnitHtml('');
+      return;
+    }
+    const unit = findUnitByCorrespId(
+      translationDoc,
+      alignmentUnit,
+      fileNameOf(sourcePath),
+      selectedUnitId,
+    );
+    setUnitHtml(unit?.innerHTML ?? '');
+    setLocked(unit?.getAttribute('data-leaf-locked') === 'true');
+  }, [translationDoc, alignmentUnit, sourcePath, selectedUnitId]);
+
+  /** Sync the numbered footnote list below the text from the inline <note> elements,
+   * marking them non-editable so they behave as atomic anchors in the main text. */
+  const refreshFootnotes = useCallback(() => {
+    const editable = editableRef.current;
+    if (!editable) {
+      setFootnotes([]);
+      return;
+    }
+    const notes = Array.from(editable.querySelectorAll('note'));
+    for (const note of notes) note.setAttribute('contenteditable', 'false');
+    setFootnotes(notes.map((note) => note.textContent ?? ''));
+  }, []);
+
+  useEffect(() => {
+    if (editableRef.current && editableRef.current.innerHTML !== unitHtml) {
+      editableRef.current.innerHTML = unitHtml;
+    }
+    refreshFootnotes();
+
+    const pending = pendingHighlightRef.current;
+    if (pending && selectedUnitId === pending.unitId && editableRef.current) {
+      if (selectHighlightedMatch(editableRef.current, pending.text, pending.offset)) {
+        pendingHighlightRef.current = null;
+      }
+    }
+  }, [unitHtml, selectedUnitId, refreshFootnotes]);
+
+  const persist = useCallback(async () => {
+    const doc = docRef.current;
+    if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) return;
+
+    const unit = findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), selectedUnitId);
+    if (!unit || !editableRef.current) return;
+
+    // Strip the editing-only contenteditable markers before writing to disk.
+    const clone = editableRef.current.cloneNode(true) as HTMLElement;
+    for (const note of Array.from(clone.querySelectorAll('note'))) {
+      note.removeAttribute('contenteditable');
+    }
+    unit.innerHTML = clone.innerHTML;
+    const nextXml = new XMLSerializer().serializeToString(doc);
+    await getDesktopApi()?.writeFile?.(translationPath, nextXml);
+  }, [alignmentUnit, sourcePath, selectedUnitId, translationPath]);
+
+  useEffect(() => {
+    const runHistoryCommand = async (command: 'redo' | 'undo'): Promise<boolean> => {
+      const editable = editableRef.current;
+      if (!editable || !translationPathRef.current) return false;
+
+      editable.focus();
+      if (
+        typeof document.queryCommandEnabled === 'function' &&
+        !document.queryCommandEnabled(command)
+      ) {
+        return false;
+      }
+
+      const before = editable.innerHTML;
+      const ok = document.execCommand(command);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+      if (editable.innerHTML !== before) {
+        await persist();
+        setUnitHtml(editable.innerHTML);
+        return true;
+      }
+
+      return ok;
+    };
+
+    const bridge = {
+      filePath: translationPath ?? null,
+      isActive: () =>
+        focusedRef.current ||
+        (!!editableRef.current && document.activeElement === editableRef.current),
+      redo: () => runHistoryCommand('redo'),
+      replaceContent: (filePath: string, content: string) => {
+        if (translationPathRef.current !== filePath) return false;
+
+        const doc = parseTranslationDocument(content);
+        if (!doc) return false;
+        setTranslationDocument(doc);
+
+        if (alignmentUnit && sourcePath && selectedUnitIdRef.current) {
+          const unit = findUnitByCorrespId(
+            doc,
+            alignmentUnit,
+            fileNameOf(sourcePath),
+            selectedUnitIdRef.current,
+          );
+          const nextHtml = unit?.innerHTML ?? '';
+          setUnitHtml(nextHtml);
+          setLocked(unit?.getAttribute('data-leaf-locked') === 'true');
+          if (editableRef.current) editableRef.current.innerHTML = nextHtml;
+        }
+
+        return true;
+      },
+      undo: () => runHistoryCommand('undo'),
+    };
+    window.__leafWriterTranslationPane = bridge;
+
+    return () => {
+      if (window.__leafWriterTranslationPane === bridge) {
+        delete window.__leafWriterTranslationPane;
+      }
+    };
+  }, [alignmentUnit, persist, setTranslationDocument, sourcePath, translationPath]);
+
+  const toggleLock = useCallback(async () => {
+    const doc = docRef.current;
+    if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) return;
+
+    const unit = findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), selectedUnitId);
+    if (!unit) return;
+
+    const next = unit.getAttribute('data-leaf-locked') !== 'true';
+    if (next) unit.setAttribute('data-leaf-locked', 'true');
+    else unit.removeAttribute('data-leaf-locked');
+    setLocked(next);
+
+    const nextXml = new XMLSerializer().serializeToString(doc);
+    await getDesktopApi()?.writeFile?.(translationPath, nextXml);
+  }, [alignmentUnit, sourcePath, selectedUnitId, translationPath]);
+
+  const replaceCurrentUnit = useCallback(
+    async (nextUnitXml: string) => {
+      const doc = docRef.current;
+      if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) {
+        return { error: 'No translation unit is selected.' };
+      }
+
+      const unit = findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), selectedUnitId);
+      if (!unit) return { error: 'Could not find the matching translation unit.' };
+
+      unit.innerHTML = nextUnitXml;
+      setUnitHtml(nextUnitXml);
+      if (editableRef.current) editableRef.current.innerHTML = nextUnitXml;
+
+      const nextXml = new XMLSerializer().serializeToString(doc);
+      await getDesktopApi()?.writeFile?.(translationPath, nextXml);
+      return {};
+    },
+    [alignmentUnit, sourcePath, selectedUnitId, translationPath],
+  );
+
+  const generateTranslation = useCallback(async () => {
+    if (!alignmentUnit || !sourcePath || !selectedUnitId) {
+      setAiStatus({ severity: 'error', message: 'Select a source unit first.' });
+      return;
+    }
+    if (locked) {
+      setAiStatus({ severity: 'error', message: 'This translation unit is locked.' });
+      return;
+    }
+
+    const api = getDesktopApi();
+    if (!api?.generateAiTranslation || !api.readFile) {
+      setAiStatus({ severity: 'error', message: 'AI translation is not available.' });
+      return;
+    }
+
+    setGenerating(true);
+    setAiStatus({ severity: 'info', message: 'Generating translation...' });
+
+    try {
+      const sourceXml = await api.readFile(sourcePath);
+      const sourceUnit = serializeSourceUnit(sourceXml, alignmentUnit, selectedUnitId);
+      if (!sourceUnit.xml) {
+        setAiStatus({
+          severity: 'error',
+          message: sourceUnit.error ?? 'Could not read source unit.',
+        });
+        return;
+      }
+
+      const result = await api.generateAiTranslation({
+        alignmentUnit,
+        sourceUnitXml: sourceUnit.xml,
+        targetLanguage: translationMode.lang ?? '',
+      });
+      if (!result.ok || !result.translationXml) {
+        setAiStatus({
+          severity: 'error',
+          message: result.error ?? 'AI did not return a translation.',
+        });
+        return;
+      }
+
+      const validated = validateGeneratedFragment(result.translationXml);
+      if (!validated.xml) {
+        setAiStatus({
+          severity: 'error',
+          message: validated.error ?? 'AI returned invalid translation XML.',
+        });
+        return;
+      }
+
+      const replaceResult = await replaceCurrentUnit(validated.xml);
+      if (replaceResult.error) {
+        setAiStatus({ severity: 'error', message: replaceResult.error });
+        return;
+      }
+
+      setAiStatus({ severity: 'success', message: 'Translation generated.' });
+    } catch (error) {
+      setAiStatus({
+        severity: 'error',
+        message: error instanceof Error ? error.message : 'AI translation failed.',
+      });
+    } finally {
+      setGenerating(false);
+    }
+  }, [alignmentUnit, locked, replaceCurrentUnit, selectedUnitId, sourcePath, translationMode.lang]);
+
+  const getEditableRange = (): Range | null => {
+    editableRef.current?.focus();
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+    const range = selection.getRangeAt(0);
+    if (!editableRef.current?.contains(range.commonAncestorContainer)) return null;
+    return range;
+  };
+
+  const unwrapElement = (element: Element) => {
+    const parent = element.parentNode;
+    if (!parent) return;
+    const first = element.firstChild;
+    const last = element.lastChild;
+    while (element.firstChild) parent.insertBefore(element.firstChild, element);
+    parent.removeChild(element);
+    if (first && last) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStartBefore(first);
+      range.setEndAfter(last);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+  };
+
+  const findSmallCapsAncestor = (range: Range): Element | null => {
+    const start = range.commonAncestorContainer;
+    let el = start.nodeType === Node.ELEMENT_NODE ? (start as Element) : start.parentElement;
+    while (el && el !== editableRef.current) {
+      if (el.tagName.toLowerCase() === 'hi' && el.getAttribute('rend') === 'small-caps') {
+        return el;
+      }
+      el = el.parentElement;
+    }
+    return null;
+  };
+
+  const toggleSmallCaps = () => {
+    const range = getEditableRange();
+    if (!range) return;
+
+    // Already inside a small-caps <hi>: toggle it off by unwrapping.
+    const ancestor = findSmallCapsAncestor(range);
+    if (ancestor) {
+      unwrapElement(ancestor);
+      return;
+    }
+
+    // Selection contains small-caps <hi> elements: unwrap those.
+    const contained = Array.from(editableRef.current?.querySelectorAll('hi[rend="small-caps"]') ?? [])
+      .filter((hi) => range.intersectsNode(hi));
+    if (contained.length > 0) {
+      for (const hi of contained) unwrapElement(hi);
+      return;
+    }
+
+    if (range.collapsed) return;
+
+    const wrapper = document.createElement('hi');
+    wrapper.setAttribute('rend', 'small-caps');
+    wrapper.appendChild(range.extractContents());
+    range.insertNode(wrapper);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    const nextRange = document.createRange();
+    nextRange.selectNodeContents(wrapper);
+    selection?.addRange(nextRange);
+  };
+
+  const removeAllFormatting = () => {
+    const range = getEditableRange();
+    if (!range || range.collapsed) return;
+
+    document.execCommand('removeFormat');
+
+    // execCommand doesn't know TEI <hi>; unwrap any that intersect the selection.
+    const selection = window.getSelection();
+    const current = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (!current || !editableRef.current) return;
+    for (const hi of Array.from(editableRef.current.querySelectorAll('hi'))) {
+      if (current.intersectsNode(hi)) unwrapElement(hi);
+    }
+  };
+
+  const findAncestorTag = (range: Range, tagName: string): Element | null => {
+    const start = range.commonAncestorContainer;
+    let el = start.nodeType === Node.ELEMENT_NODE ? (start as Element) : start.parentElement;
+    while (el && el !== editableRef.current) {
+      if (el.tagName.toLowerCase() === tagName) return el;
+      el = el.parentElement;
+    }
+    return null;
+  };
+
+  const selectContents = (element: Node) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  };
+
+  const openLinkDialog = () => {
+    const range = getEditableRange();
+    if (!range) return;
+    savedRangeRef.current = range.cloneRange();
+    // Editing an existing link: prefill its target.
+    const existingRef = findAncestorTag(range, 'ref');
+    setLinkUrl(existingRef?.getAttribute('target') ?? '');
+    setLinkDialogOpen(true);
+  };
+
+  const applyLink = () => {
+    setLinkDialogOpen(false);
+    const url = linkUrl.trim();
+    const saved = savedRangeRef.current;
+    savedRangeRef.current = null;
+    if (!saved || !editableRef.current) return;
+
+    editableRef.current.focus();
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(saved);
+
+    const existingRef = findAncestorTag(saved, 'ref');
+    if (existingRef) {
+      // Empty URL removes the link, otherwise update it.
+      if (!url) unwrapElement(existingRef);
+      else existingRef.setAttribute('target', url);
+      return;
+    }
+
+    if (!url) return;
+
+    const wrapper = document.createElement('ref');
+    wrapper.setAttribute('target', url);
+    if (saved.collapsed) {
+      // No selection: insert the URL itself as the link text, like Word does.
+      wrapper.textContent = url;
+      saved.insertNode(wrapper);
+    } else {
+      wrapper.appendChild(saved.extractContents());
+      saved.insertNode(wrapper);
+    }
+    selectContents(wrapper);
+  };
+
+  const insertFootnote = () => {
+    const range = getEditableRange();
+    if (!range) return;
+
+    // Caret inside an existing footnote anchor: nothing to insert.
+    if (findAncestorTag(range, 'note')) return;
+
+    const note = document.createElement('note');
+    note.setAttribute('place', 'foot');
+    note.setAttribute('contenteditable', 'false');
+    // A selection becomes the footnote text, like Word's "insert from selection".
+    if (!range.collapsed) note.appendChild(range.extractContents());
+    range.insertNode(note);
+
+    // Leave the caret right after the new anchor.
+    const selection = window.getSelection();
+    const after = document.createRange();
+    after.setStartAfter(note);
+    after.collapse(true);
+    selection?.removeAllRanges();
+    selection?.addRange(after);
+
+    // Focus the new footnote's text field so the user can type its content.
+    const notes = Array.from(editableRef.current?.querySelectorAll('note') ?? []);
+    focusFootnoteIndexRef.current = notes.indexOf(note);
+    refreshFootnotes();
+  };
+
+  const updateFootnote = (index: number, value: string) => {
+    const note = editableRef.current?.querySelectorAll('note')[index];
+    if (note) note.textContent = value;
+    setFootnotes((previous) => previous.map((text, i) => (i === index ? value : text)));
+  };
+
+  const removeFootnote = (index: number) => {
+    const note = editableRef.current?.querySelectorAll('note')[index];
+    if (!note) return;
+    note.remove();
+    refreshFootnotes();
+    void persist();
+  };
+
+  const applyFormat = (
+    command:
+      | 'bold'
+      | 'italic'
+      | 'underline'
+      | 'strikeThrough'
+      | 'superscript'
+      | 'subscript'
+      | 'smallCaps'
+      | 'removeFormat'
+      | 'link'
+      | 'footnote',
+  ) => {
+    editableRef.current?.focus();
+    if (command === 'smallCaps') {
+      toggleSmallCaps();
+      return;
+    }
+    if (command === 'removeFormat') {
+      removeAllFormatting();
+      return;
+    }
+    if (command === 'link') {
+      openLinkDialog();
+      return;
+    }
+    if (command === 'footnote') {
+      insertFootnote();
+      return;
+    }
+    document.execCommand(command);
+  };
+
+  console.log('[translation] TranslationPane render', translationMode);
+
+  if (!translationMode.active) return null;
+
+  const languageOptions = languageState?.languages ?? [];
+  const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
+
+  const formatItems: Array<{
+    command:
+      | 'bold'
+      | 'italic'
+      | 'underline'
+      | 'strikeThrough'
+      | 'smallCaps'
+      | 'superscript'
+      | 'subscript'
+      | 'removeFormat'
+      | 'link'
+      | 'footnote';
+    icon: ReactNode;
+    label: string;
+    shortcut: string;
+  }> = [
+    {
+      command: 'bold',
+      icon: <FormatBoldIcon fontSize="small" />,
+      label: 'Bold',
+      shortcut: 'Cmd/Ctrl+B',
+    },
+    {
+      command: 'italic',
+      icon: <FormatItalicIcon fontSize="small" />,
+      label: 'Italic',
+      shortcut: 'Cmd/Ctrl+I',
+    },
+    {
+      command: 'underline',
+      icon: <FormatUnderlinedIcon fontSize="small" />,
+      label: 'Underline',
+      shortcut: 'Cmd/Ctrl+U',
+    },
+    {
+      command: 'strikeThrough',
+      icon: <FormatStrikethroughIcon fontSize="small" />,
+      label: 'Strikethrough',
+      shortcut: 'Alt+Shift+5',
+    },
+    {
+      command: 'smallCaps',
+      icon: <TextFieldsIcon fontSize="small" />,
+      label: 'Small caps',
+      shortcut: 'Cmd/Ctrl+Shift+K',
+    },
+    {
+      command: 'superscript',
+      icon: <SuperscriptIcon fontSize="small" />,
+      label: 'Superscript',
+      shortcut: 'Cmd/Ctrl+.',
+    },
+    {
+      command: 'subscript',
+      icon: <SubscriptIcon fontSize="small" />,
+      label: 'Subscript',
+      shortcut: 'Cmd/Ctrl+,',
+    },
+    {
+      command: 'link',
+      icon: <LinkIcon fontSize="small" />,
+      label: 'Link',
+      shortcut: 'Cmd/Ctrl+K',
+    },
+    {
+      command: 'footnote',
+      icon: <StickyNote2Icon fontSize="small" />,
+      label: 'Footnote',
+      shortcut: 'Cmd/Ctrl+Alt+F',
+    },
+    {
+      command: 'removeFormat',
+      icon: <FormatClearIcon fontSize="small" />,
+      label: 'Clear formatting',
+      shortcut: 'Cmd/Ctrl+M',
+    },
+  ];
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        borderLeft: 1,
+        borderColor: 'divider',
+      }}
+    >
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.5}
+        sx={{ p: 0.5, borderBottom: 1, borderColor: 'divider', minWidth: 0 }}
+      >
+        {languageOptions.length > 0 ? (
+          <Select
+            disabled={languageState?.indexing}
+            onChange={(event) => languageState?.setSelectedLang(String(event.target.value))}
+            size="small"
+            sx={{
+              flex: '0 0 auto',
+              minWidth: 72,
+              '& .MuiSelect-select': { px: 1, py: 0.5 },
+            }}
+            value={
+              languageOptions.some((lang) => lang.code === selectedLanguage)
+                ? selectedLanguage
+                : languageOptions[0]!.code
+            }
+          >
+            {languageOptions.map((lang) => (
+              <MenuItem key={lang.code} value={lang.code}>
+                {lang.code}
+              </MenuItem>
+            ))}
+          </Select>
+        ) : (
+          <Typography
+            noWrap
+            variant="caption"
+            sx={{
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              flex: '0 0 auto',
+              minWidth: 48,
+              px: 1,
+              py: 0.5,
+              textAlign: 'center',
+            }}
+          >
+            {selectedLanguage || '--'}
+          </Typography>
+        )}
+
+        <Tooltip title="Generate translation">
+          <span>
+            <IconButton
+              disabled={!selectedUnitId || generating || locked}
+              onClick={() => void generateTranslation()}
+              size="small"
+            >
+              {generating ? <CircularProgress size={18} /> : <AutoAwesomeIcon fontSize="small" />}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title={locked ? 'Unlock translation unit' : 'Lock translation unit'}>
+          <span>
+            <IconButton disabled={!selectedUnitId} onClick={() => void toggleLock()} size="small">
+              {locked ? <LockIcon fontSize="small" /> : <LockOpenIcon fontSize="small" />}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="Formatting">
+          <span>
+            <IconButton
+              aria-controls={formatAnchor ? 'translation-format-menu' : undefined}
+              aria-haspopup="menu"
+              disabled={!selectedUnitId}
+              onClick={(event) => setFormatAnchor(event.currentTarget)}
+              size="small"
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Menu
+          anchorEl={formatAnchor}
+          id="translation-format-menu"
+          onClose={() => setFormatAnchor(null)}
+          open={Boolean(formatAnchor)}
+        >
+          {formatItems.map((item) => (
+            <MenuItem
+              key={item.command}
+              onClick={() => {
+                applyFormat(item.command);
+                setFormatAnchor(null);
+              }}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} />
+              <Typography color="text.secondary" sx={{ ml: 3 }} variant="caption">
+                {item.shortcut}
+              </Typography>
+            </MenuItem>
+          ))}
+        </Menu>
+
+        <Dialog
+          fullWidth
+          maxWidth="xs"
+          onClose={() => {
+            setLinkDialogOpen(false);
+            savedRangeRef.current = null;
+          }}
+          open={linkDialogOpen}
+        >
+          <DialogTitle>Link</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              fullWidth
+              label="Target (URL)"
+              margin="dense"
+              onChange={(event) => setLinkUrl(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  applyLink();
+                }
+              }}
+              placeholder="https://…"
+              size="small"
+              value={linkUrl}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setLinkDialogOpen(false);
+                savedRangeRef.current = null;
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={applyLink} variant="contained">
+              Apply
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Typography
+          color="text.secondary"
+          noWrap
+          variant="caption"
+          sx={{ flex: 1, minWidth: 0, textAlign: 'right' }}
+        >
+          {selectedUnitId ? selectedUnitId : 'No unit'}
+        </Typography>
+      </Stack>
+
+      {aiStatus ? (
+        <Alert severity={aiStatus.severity} sx={{ borderRadius: 0 }}>
+          {aiStatus.message}
+        </Alert>
+      ) : null}
+
+      {selectedUnitId ? (
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+        <Box
+          ref={editableRef}
+          contentEditable
+          suppressContentEditableWarning
+          onBlur={() => {
+            void persist();
+            blurTimeoutRef.current = setTimeout(() => {
+              focusedRef.current = false;
+            }, 200);
+          }}
+          onFocus={() => {
+            if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+            focusedRef.current = true;
+          }}
+          onInput={refreshFootnotes}
+          onKeyDown={(event) => {
+            if (!(event.metaKey || event.ctrlKey)) return;
+            const key = event.key.toLowerCase();
+            let command:
+              | 'smallCaps'
+              | 'superscript'
+              | 'subscript'
+              | 'removeFormat'
+              | 'link'
+              | 'footnote'
+              | null = null;
+            if (event.shiftKey && key === 'k') command = 'smallCaps';
+            else if (!event.shiftKey && !event.altKey && key === 'k') command = 'link';
+            // With Alt held, macOS reports the Option-layer character in `key`
+            // (Option+F = 'ƒ' on any layout, since the Option layer follows the
+            // logical letter). Match it too, plus a physical-key fallback.
+            else if (
+              event.altKey &&
+              !event.shiftKey &&
+              (key === 'f' || key === 'ƒ' || event.code === 'KeyF')
+            )
+              command = 'footnote';
+            else if (key === '.') command = 'superscript';
+            else if (key === ',') command = 'subscript';
+            else if (key === 'm') command = 'removeFormat';
+            if (!command) return;
+            event.preventDefault();
+            event.stopPropagation();
+            applyFormat(command);
+          }}
+          sx={{
+            flex: '1 0 auto',
+            p: 1.5,
+            outline: 'none',
+            textAlign: 'justify',
+            counterReset: 'footnote',
+            // <hi> is a TEI element unknown to HTML, so its rend values need
+            // explicit styling to be visible while editing.
+            '& hi[rend="small-caps"]': { fontVariant: 'small-caps' },
+            '& hi[rend="bold"]': { fontWeight: 'bold' },
+            '& hi[rend="italic"]': { fontStyle: 'italic' },
+            '& hi[rend="underline"]': { textDecoration: 'underline' },
+            '& hi[rend="strikethrough"]': { textDecoration: 'line-through' },
+            '& ref': { color: 'primary.main', textDecoration: 'underline' },
+            // Footnotes render as numbered superscript anchors; their text is
+            // collapsed here and edited in the numbered list below the text.
+            '& note': {
+              counterIncrement: 'footnote',
+              fontSize: '0px',
+              userSelect: 'none',
+            },
+            '& note::after': {
+              content: 'counter(footnote)',
+              fontSize: '0.7rem',
+              lineHeight: 0,
+              // vertical-align: super is relative to the parent's font metrics,
+              // which are 0px here (the note text is collapsed) — raise manually.
+              position: 'relative',
+              top: '-0.5em',
+              fontWeight: 600,
+              color: 'primary.main',
+              px: '1px',
+            },
+            '&:empty::before': {
+              content: '"Start typing the translation for this unit…"',
+              color: 'text.disabled',
+            },
+          }}
+        />
+
+        {footnotes.length > 0 && (
+          <Box sx={{ px: 1.5, pb: 1.5 }}>
+            <Divider sx={{ width: 120, mb: 1 }} />
+            <Stack spacing={0.5}>
+              {footnotes.map((text, index) => (
+                <Stack alignItems="baseline" direction="row" key={index} spacing={1}>
+                  <Typography
+                    color="text.secondary"
+                    sx={{ minWidth: 16, textAlign: 'right', flexShrink: 0 }}
+                    variant="caption"
+                  >
+                    {index + 1}.
+                  </Typography>
+                  <InputBase
+                    fullWidth
+                    inputRef={(el: HTMLTextAreaElement | null) => {
+                      if (el && focusFootnoteIndexRef.current === index) {
+                        focusFootnoteIndexRef.current = null;
+                        el.focus();
+                      }
+                    }}
+                    multiline
+                    onBlur={() => void persist()}
+                    onChange={(event) => updateFootnote(index, event.target.value)}
+                    placeholder="Footnote text…"
+                    sx={{ fontSize: '0.85rem', p: 0, lineHeight: 1.4 }}
+                    value={text}
+                  />
+                  <Tooltip title="Remove footnote">
+                    <IconButton
+                      aria-label="Remove footnote"
+                      onClick={() => removeFootnote(index)}
+                      size="small"
+                      sx={{ flexShrink: 0, alignSelf: 'center' }}
+                    >
+                      <CloseIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        )}
+        </Box>
+      ) : (
+        <Box sx={{ flex: 1, p: 1.5 }}>
+          <Typography color="text.secondary" variant="body2">
+            {caretInUnindexedUnit
+              ? 'This paragraph is new and not yet indexed for translation — save the document to add it.'
+              : `Select a ${alignmentUnit ?? 'section'} in the source to translate it.`}
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+};

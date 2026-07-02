@@ -1,7 +1,6 @@
 import { redoWysiwygEditor, undoWysiwygEditor } from './find/selectTextInEditor';
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 const syncOpenTabContent = (content: string) => {
   const filePath =
@@ -14,6 +13,11 @@ const syncOpenTabContent = (content: string) => {
 
 /** Undo in the active document editor (Source or Visual). */
 export const undoDocumentEditor = async (): Promise<boolean> => {
+  const translationPane = window.__leafWriterTranslationPane;
+  if (translationPane?.isActive() && (await translationPane.undo())) {
+    return true;
+  }
+
   if (isSourceEditorMode()) {
     const content = (await window.__leafWriterSourceFind?.undo?.()) ?? null;
     if (content === null) return false;
@@ -26,6 +30,11 @@ export const undoDocumentEditor = async (): Promise<boolean> => {
 
 /** Redo in the active document editor (Source or Visual). */
 export const redoDocumentEditor = async (): Promise<boolean> => {
+  const translationPane = window.__leafWriterTranslationPane;
+  if (translationPane?.isActive() && (await translationPane.redo())) {
+    return true;
+  }
+
   if (isSourceEditorMode()) {
     const content = (await window.__leafWriterSourceFind?.redo?.()) ?? null;
     if (content === null) return false;

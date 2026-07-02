@@ -33,5 +33,6 @@ export interface PendingFindJump {
   matchIndexInFile: number;
   query: string;
   start: number;
+  ignoreCase: boolean;
   useRegex: boolean;
 }

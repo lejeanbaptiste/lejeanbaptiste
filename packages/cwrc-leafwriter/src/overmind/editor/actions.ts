@@ -4,9 +4,50 @@ import { Context } from '../';
 import { db } from '../../db';
 import { resetLookupPreferences } from '../../jotai/entity-lookup/utilities';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
+import { DEFAULT_ASIAN_FONT, DEFAULT_LATIN_FONT, getValidFontFamily } from './fontFamilies';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
+const ASIAN_FONT_KEY = 'asianFont';
+const FONT_FAMILY_STYLE_ID = 'leafwriter-default-font-families';
+const LATIN_FONT_KEY = 'latinFont';
 const SHOW_RAW_XML_PANEL_KEY = 'showRawXmlPanel';
+
+const CJK_FONT_SELECTORS = [
+  ':lang(zh)',
+  ':lang(ja)',
+  ':lang(ko)',
+  '[lang|="zh"]',
+  '[lang|="ja"]',
+  '[lang|="ko"]',
+  '[xml\\:lang|="zh"]',
+  '[xml\\:lang|="ja"]',
+  '[xml\\:lang|="ko"]',
+].join(',\n');
+
+const applyFontFamiliesToEditor = (latinFont: string, asianFont: string) => {
+  const editor = window.writer?.editor;
+  if (!editor) return;
+
+  editor.dom.setStyles(editor.dom.getRoot(), { fontFamily: latinFont });
+
+  const doc = editor.getDoc();
+  let style = doc.getElementById(FONT_FAMILY_STYLE_ID);
+  if (!style) {
+    style = doc.createElement('style');
+    style.id = FONT_FAMILY_STYLE_ID;
+    doc.head.appendChild(style);
+  }
+
+  style.textContent = `
+    body {
+      font-family: ${latinFont};
+    }
+
+    ${CJK_FONT_SELECTORS} {
+      font-family: ${asianFont};
+    }
+  `;
+};
 
 export const writerInitSettings = async (
   { state: { editor }, actions }: Context,
@@ -26,10 +67,20 @@ export const writerInitSettings = async (
   await actions.validator.loadValidator();
 };
 
-export const applyInitialSettings = ({ state, actions }: Context) => {
+export const applyInitialSettings = ({ state, actions, effects }: Context) => {
   if (!window.writer?.editor) return;
 
+  state.editor.latinFont = getValidFontFamily(
+    effects.editor.api.getFromLocalStorage<string>(LATIN_FONT_KEY),
+    state.editor.latinFont,
+  );
+  state.editor.asianFont = getValidFontFamily(
+    effects.editor.api.getFromLocalStorage<string>(ASIAN_FONT_KEY),
+    state.editor.asianFont,
+  );
+
   actions.editor.setFontSize(state.editor.fontSize);
+  actions.editor.applyFontFamilies();
   const body = window.writer.editor.getBody();
   if (state.editor.showEntities) $(body).addClass('showEntities');
   if (state.editor.showTags) $(body).addClass('showTags');
@@ -63,6 +114,24 @@ export const setFontSize = ({ state }: Context, value: number) => {
   const styles = { fontSize: `${value}pt` };
   window.writer.editor.dom.setStyles(window.writer.editor.dom.getRoot(), styles);
   state.editor.fontSize = value;
+};
+
+export const applyFontFamilies = ({ state }: Context) => {
+  applyFontFamiliesToEditor(state.editor.latinFont, state.editor.asianFont);
+};
+
+export const setLatinFont = ({ state, effects }: Context, value: string) => {
+  const font = getValidFontFamily(value, DEFAULT_LATIN_FONT);
+  state.editor.latinFont = font;
+  effects.editor.api.saveToLocalStorage(LATIN_FONT_KEY, font);
+  applyFontFamiliesToEditor(font, state.editor.asianFont);
+};
+
+export const setAsianFont = ({ state, effects }: Context, value: string) => {
+  const font = getValidFontFamily(value, DEFAULT_ASIAN_FONT);
+  state.editor.asianFont = font;
+  effects.editor.api.saveToLocalStorage(ASIAN_FONT_KEY, font);
+  applyFontFamiliesToEditor(state.editor.latinFont, font);
 };
 
 export const toggleShowTags = ({ state }: Context, value?: boolean) => {
@@ -259,6 +328,8 @@ export const resetDialogWarnings = async ({ actions }: Context) => {
 
 export const resetPreferences = async ({ actions, effects }: Context) => {
   actions.editor.setFontSize(11);
+  actions.editor.setLatinFont(DEFAULT_LATIN_FONT);
+  actions.editor.setAsianFont(DEFAULT_ASIAN_FONT);
   actions.editor.toggleShowTags(false);
   actions.editor.setShowEntities(true);
   actions.editor.setShowRawXmlPanel(false);
@@ -335,7 +406,9 @@ export const clear = ({ state }: Context) => {
   state.editor.annotationMode = 3;
   state.editor.contentHasChanged = false;
   state.editor.editorMode = 'xmlrdf';
+  state.editor.asianFont = DEFAULT_ASIAN_FONT;
   state.editor.fontSize = 11;
+  state.editor.latinFont = DEFAULT_LATIN_FONT;
   state.editor.isAnnotator = false;
   state.editor.isReadonly = false;
   state.editor.mode = 0;

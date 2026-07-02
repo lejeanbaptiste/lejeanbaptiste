@@ -36,17 +36,18 @@ const applyDecorationsForHits = (
   decorationCollection = editor.createDecorationsCollection(decorations);
 };
 
-const buildSearchRegex = (query: string, useRegex: boolean) => {
+const buildSearchRegex = (query: string, useRegex: boolean, ignoreCase = false) => {
+  const flags = ignoreCase ? 'giu' : 'gu';
   if (useRegex) {
     try {
-      return new RegExp(query, 'gu');
+      return new RegExp(query, flags);
     } catch {
       return null;
     }
   }
 
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(escaped, 'gu');
+  return new RegExp(escaped, flags);
 };
 
 const offsetToPosition = (content: string, offset: number) => {
@@ -109,6 +110,17 @@ export const setCursorOffsetInSourceEditor = ({
   );
 
   return true;
+};
+
+export const getCursorOffsetInSourceEditor = (): number | null => {
+  const editor = registeredEditor;
+  if (!editor) return null;
+
+  const model = editor.getModel();
+  const position = editor.getPosition();
+  if (!model || !position) return null;
+
+  return model.getOffsetAt(position);
 };
 
 export const revealRangeInSourceEditor = ({
@@ -178,12 +190,14 @@ export const scrollToSourceFindHit = ({
 
 export const applyFindJumpInSourceEditor = ({
   content,
+  ignoreCase,
   query,
   useRegex,
   start,
   end,
 }: {
   content: string;
+  ignoreCase: boolean;
   query: string;
   useRegex: boolean;
   start: number;
@@ -195,7 +209,7 @@ export const applyFindJumpInSourceEditor = ({
   ensureHighlightStyles();
   clearFindHighlightsInSourceEditor();
 
-  const regex = buildSearchRegex(query.trim(), useRegex);
+  const regex = buildSearchRegex(query.trim(), useRegex, ignoreCase);
   if (!regex) return false;
 
   const hits: { end: number; start: number }[] = [];
@@ -327,12 +341,17 @@ export const DESKTOP_OPEN_FIND_EVENT = 'desktop:open-find';
 
 declare global {
   interface Window {
+    /** One-shot: the next external value sync into the source editor replaces content via
+     * setValue (clearing the undo stack) instead of an undoable edit. Set by desktop reload
+     * paths after translation reindexing so id writes can't be undone. */
+    __leafWriterNextSourceSyncResetsUndo?: boolean;
     __leafWriterSourceFind?: {
       applyJump: typeof applyFindJumpInSourceEditor;
       clear: typeof clearFindHighlightsInSourceEditor;
       replaceRange: typeof replaceRangeInSourceEditor;
       revealRange: typeof revealRangeInSourceEditor;
       scrollToHit: typeof scrollToSourceFindHit;
+      getCursorOffset: typeof getCursorOffsetInSourceEditor;
       setCursorOffset: typeof setCursorOffsetInSourceEditor;
       undo: typeof undoSourceEditor;
       redo: typeof redoSourceEditor;
@@ -346,6 +365,7 @@ window.__leafWriterSourceFind = {
   replaceRange: replaceRangeInSourceEditor,
   revealRange: revealRangeInSourceEditor,
   scrollToHit: scrollToSourceFindHit,
+  getCursorOffset: getCursorOffsetInSourceEditor,
   setCursorOffset: setCursorOffsetInSourceEditor,
   undo: undoSourceEditor,
   redo: redoSourceEditor,

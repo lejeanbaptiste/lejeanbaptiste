@@ -4,6 +4,7 @@ declare global {
       applyJump: (params: {
         content: string;
         end: number;
+        ignoreCase: boolean;
         query: string;
         start: number;
         useRegex: boolean;
@@ -33,6 +34,7 @@ export const clearFindHighlightsInSourceEditor = () => {
 export const applyFindJumpInSourceEditor = (params: {
   content: string;
   end: number;
+  ignoreCase: boolean;
   query: string;
   start: number;
   useRegex: boolean;

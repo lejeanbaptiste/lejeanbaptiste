@@ -1,5 +1,6 @@
 import { derived } from 'overmind';
 import type { Schema, SchemaMappingType } from '../../types';
+import { DEFAULT_ASIAN_FONT, DEFAULT_LATIN_FONT } from './fontFamilies';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type EditorStateType = {
@@ -13,9 +14,11 @@ export type EditorStateType = {
     disabled?: boolean;
   }[];
   autosave?: boolean;
+  asianFont: string;
   baseUrl?: string;
   contentHasChanged: boolean;
   fontSize: number;
+  latinFont: string;
   editorMode: string;
   editorModeLabel: string;
   editorModes: {
@@ -54,6 +57,7 @@ export const state: EditorStateType = {
     if (!annotatonMode) return '';
     return annotatonMode.label;
   }),
+  asianFont: DEFAULT_ASIAN_FONT,
   baseUrl: '.',
   contentHasChanged: false,
   editorMode: 'xmlrdf',
@@ -69,6 +73,7 @@ export const state: EditorStateType = {
     { key: 2, value: 'rdf', label: 'Linking Only', disabled: true },
   ],
   fontSize: 11,
+  latinFont: DEFAULT_LATIN_FONT,
   isAnnotator: false,
   isReadonly: false,
   LWChangeEventSuspended: false,
