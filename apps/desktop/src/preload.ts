@@ -24,6 +24,7 @@ export interface NativeMessageBoxOptions {
   buttons?: string[];
   cancelId?: number;
   defaultId?: number;
+  detail?: string;
   message: string;
   title: string;
   type?: 'error' | 'info' | 'none' | 'question' | 'warning';
@@ -49,6 +50,14 @@ export interface NamedPath {
 export interface FileStat {
   mtimeMs: number;
   size: number;
+}
+
+export type ImportableDocumentFormat = 'txt' | 'md' | 'rtf';
+
+export interface DocumentImportSource {
+  format: ImportableDocumentFormat;
+  relativePath: string;
+  sourcePath: string;
 }
 
 export interface TimeMachineSnapshotSummary {
@@ -118,7 +127,9 @@ export interface ElectronAPI {
   restoreWorkspaceSession: () => Promise<WorkspaceSessionRestore | null>;
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) => Promise<FileEntry[]>;
   readFile: (filePath: string) => Promise<string>;
+  readFileAutoEncoding: (filePath: string) => Promise<{ encoding: string; text: string }>;
   writeFile: (filePath: string, content: string) => Promise<void>;
+  pathExists: (filePath: string) => Promise<boolean>;
   statFile: (filePath: string) => Promise<FileStat>;
   syncWatchedFiles: (paths: string[]) => Promise<void>;
   ignoreFileChange: (filePath: string, mtimeMs: number) => Promise<void>;
@@ -152,6 +163,7 @@ export interface ElectronAPI {
     snapshotPath: string,
   ) => Promise<{ beforeRestoreSnapshot: TimeMachineSnapshotSummary }>;
   pickSchemaFiles: () => Promise<PickSchemaFilesResult | null>;
+  pickDocumentImportSources: () => Promise<DocumentImportSource[] | null>;
   createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
@@ -168,6 +180,7 @@ export interface ElectronAPI {
   movePath: (sourcePath: string, destDir: string) => Promise<string>;
   deletePath: (targetPath: string) => Promise<void>;
   createDirectory: (parentDir: string, folderName: string) => Promise<string>;
+  ensureDirectory: (dirPath: string) => Promise<void>;
   pickMoveDestination: (defaultDir?: string) => Promise<string | null>;
   saveFileAs: (defaultPath?: string) => Promise<string | null>;
   setWindowTitle: (title: string) => Promise<void>;
@@ -221,8 +234,10 @@ const electronAPI: ElectronAPI = {
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) =>
     ipcRenderer.invoke('readDirectory', dirPath, options),
   readFile: (filePath: string) => ipcRenderer.invoke('readFile', filePath),
+  readFileAutoEncoding: (filePath: string) => ipcRenderer.invoke('readFileAutoEncoding', filePath),
   writeFile: (filePath: string, content: string) =>
     ipcRenderer.invoke('writeFile', filePath, content),
+  pathExists: (filePath: string) => ipcRenderer.invoke('pathExists', filePath),
   statFile: (filePath: string) => ipcRenderer.invoke('statFile', filePath),
   syncWatchedFiles: (paths: string[]) => ipcRenderer.invoke('syncWatchedFiles', paths),
   ignoreFileChange: (filePath: string, mtimeMs: number) =>
@@ -260,6 +275,7 @@ const electronAPI: ElectronAPI = {
       snapshotPath,
     ),
   pickSchemaFiles: () => ipcRenderer.invoke('pickSchemaFiles'),
+  pickDocumentImportSources: () => ipcRenderer.invoke('pickDocumentImportSources'),
   createTempDocument: (content: string) => ipcRenderer.invoke('createTempDocument', content),
   getEncoderName: () => ipcRenderer.invoke('getEncoderName'),
   setEncoderName: (name: string) => ipcRenderer.invoke('setEncoderName', name),
@@ -282,6 +298,7 @@ const electronAPI: ElectronAPI = {
   deletePath: (targetPath: string) => ipcRenderer.invoke('deletePath', targetPath),
   createDirectory: (parentDir: string, folderName: string) =>
     ipcRenderer.invoke('createDirectory', parentDir, folderName),
+  ensureDirectory: (dirPath: string) => ipcRenderer.invoke('ensureDirectory', dirPath),
   pickMoveDestination: (defaultDir?: string) =>
     ipcRenderer.invoke('pickMoveDestination', defaultDir),
   saveFileAs: (defaultPath?: string) => ipcRenderer.invoke('saveFileAs', defaultPath),

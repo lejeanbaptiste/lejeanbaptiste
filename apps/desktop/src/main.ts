@@ -35,6 +35,7 @@ import {
   type WorkspaceSession,
 } from './projectPrefs';
 import { loadOrCreateProject, loadProjectFile } from './projectFile';
+import { decodeTextBuffer } from './textEncoding';
 import {
   createDirectory,
   deletePath,
@@ -82,6 +83,30 @@ interface AiTranslationResult {
   translationXml?: string;
 }
 
+type ImportableDocumentFormat = 'txt' | 'md' | 'rtf';
+
+interface DocumentImportSource {
+  format: ImportableDocumentFormat;
+  relativePath: string;
+  sourcePath: string;
+}
+
+const getImportableDocumentFormat = (filePath: string): ImportableDocumentFormat | null => {
+  const extension = path.extname(filePath).toLowerCase();
+  if (extension === '.txt') return 'txt';
+  if (extension === '.md' || extension === '.markdown') return 'md';
+  if (extension === '.rtf') return 'rtf';
+  return null;
+};
+
+const pathExists = async (filePath: string): Promise<boolean> => {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+};
 const normalizeOpenAiBaseUrl = (baseUrl: string): string => {
   const trimmed = baseUrl.trim().replace(/\/+$/, '');
   const url = new URL(trimmed);
@@ -493,9 +518,45 @@ const sortEntries = (
   return a.name.localeCompare(b.name);
 };
 
+const collectImportSourcesFromPath = async (
+  entryPath: string,
+  rootPath = entryPath,
+): Promise<DocumentImportSource[]> => {
+  const stat = await fs.stat(entryPath);
+
+  if (stat.isFile()) {
+    const format = getImportableDocumentFormat(entryPath);
+    if (!format) return [];
+
+    return [
+      {
+        format,
+        relativePath:
+          rootPath === entryPath
+            ? path.basename(entryPath)
+            : path.relative(rootPath, entryPath) || path.basename(entryPath),
+        sourcePath: entryPath,
+      },
+    ];
+  }
+
+  if (!stat.isDirectory()) return [];
+
+  const entries = await fs.readdir(entryPath, { withFileTypes: true });
+  const collected = await Promise.all(
+    entries
+      .filter((entry) => !entry.name.startsWith('.'))
+      .map((entry) => collectImportSourcesFromPath(path.join(entryPath, entry.name), rootPath)),
+  );
+
+  return collected.flat();
+};
+
 const sendMenuAction = (action: string) => {
   mainWindow?.webContents.send('app:menu-action', action);
 };
+
+const menuSeparator = (): Electron.MenuItemConstructorOptions => ({ type: 'separator' });
 
 const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
   label: 'Edit',
@@ -510,11 +571,11 @@ const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
       accelerator: 'CommandOrControl+Shift+Z',
       click: () => sendMenuAction('redo'),
     },
-    { type: 'separator' },
+    menuSeparator(),
     { role: 'cut' },
     { role: 'copy' },
     { role: 'paste' },
-    { type: 'separator' },
+    menuSeparator(),
     {
       label: 'Find',
       accelerator: 'CommandOrControl+F',
@@ -528,7 +589,7 @@ const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
         ] as Electron.MenuItemConstructorOptions[])
       : ([
           { role: 'delete' },
-          { type: 'separator' },
+          menuSeparator(),
           { role: 'selectAll' },
         ] as Electron.MenuItemConstructorOptions[])),
   ],
@@ -540,11 +601,11 @@ const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
     { role: 'reload' },
     { role: 'forceReload' },
     { role: 'toggleDevTools' },
-    { type: 'separator' },
+    menuSeparator(),
     { role: 'resetZoom' },
     { role: 'zoomIn' },
     { role: 'zoomOut' },
-    { type: 'separator' },
+    menuSeparator(),
     { role: 'togglefullscreen' },
   ],
 });
@@ -615,6 +676,11 @@ const buildApplicationMenu = () => {
     click: () => sendMenuAction('new-file'),
   };
 
+  const importDocumentsItem: Electron.MenuItemConstructorOptions = {
+    label: 'Import Documents',
+    click: () => sendMenuAction('import-documents'),
+  };
+
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin'
       ? [
@@ -625,15 +691,15 @@ const buildApplicationMenu = () => {
                 label: `About ${APP_NAME}`,
                 click: () => sendMenuAction('open-about'),
               },
-              { type: 'separator' },
+              menuSeparator(),
               settingsItem,
-              { type: 'separator' },
+              menuSeparator(),
               { role: 'services' },
-              { type: 'separator' },
+              menuSeparator(),
               { role: 'hide' },
               { role: 'hideOthers' },
               { role: 'unhide' },
-              { type: 'separator' },
+              menuSeparator(),
               { role: 'quit' },
             ],
           } satisfies Electron.MenuItemConstructorOptions,
@@ -643,22 +709,23 @@ const buildApplicationMenu = () => {
       label: 'File',
       submenu: [
         newFileItem,
+        importDocumentsItem,
         saveItem,
         saveAsItem,
         closeTabItem,
-        { type: 'separator' },
+        menuSeparator(),
         openProjectItem,
         editionMetadataItem,
         checkSchemaUpdateItem,
         timeMachineItem,
-        { type: 'separator' },
+        menuSeparator(),
         ...(process.platform !== 'darwin'
           ? [
               {
                 label: 'About Le Jean-Baptiste',
                 click: () => sendMenuAction('open-about'),
               },
-              { type: 'separator' },
+              menuSeparator(),
             ]
           : []),
         process.platform === 'darwin'
@@ -788,8 +855,16 @@ const registerIpcHandlers = () => {
     return fs.readFile(filePath, 'utf-8');
   });
 
+  ipcMain.handle('readFileAutoEncoding', async (_event, filePath: string) => {
+    return decodeTextBuffer(await fs.readFile(filePath));
+  });
+
   ipcMain.handle('writeFile', async (_event, filePath: string, content: string) => {
     await fs.writeFile(filePath, content, 'utf-8');
+  });
+
+  ipcMain.handle('pathExists', async (_event, filePath: string) => {
+    return pathExists(filePath);
   });
 
   ipcMain.handle('statFile', async (_event, filePath: string) => {
@@ -907,6 +982,29 @@ const registerIpcHandlers = () => {
     };
   });
 
+  ipcMain.handle('pickDocumentImportSources', async () => {
+    if (!mainWindow) return null;
+
+    mainWindow.focus();
+    const result = await dialog.showOpenDialog(mainWindow, {
+      filters: [
+        { name: 'Importable documents', extensions: ['txt', 'md', 'markdown', 'rtf'] },
+        { name: 'All files', extensions: ['*'] },
+      ],
+      message: 'Choose text, Markdown, RTF files, or folders to import.',
+      properties: ['openFile', 'openDirectory', 'multiSelections'],
+      title: 'Import documents',
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return null;
+
+    const collected = await Promise.all(
+      result.filePaths.map((filePath) => collectImportSourcesFromPath(filePath)),
+    );
+
+    return collected.flat().sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  });
+
   ipcMain.handle('createTempDocument', async (_event, content: string) => {
     const dir = path.join(app.getPath('temp'), 'le-jean-baptiste', `${Date.now()}`);
     await fs.mkdir(dir, { recursive: true });
@@ -961,6 +1059,10 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('createDirectory', async (_event, parentDir: string, folderName: string) => {
     return createDirectory(parentDir, folderName);
+  });
+
+  ipcMain.handle('ensureDirectory', async (_event, dirPath: string) => {
+    await fs.mkdir(dirPath, { recursive: true });
   });
 
   ipcMain.handle('pickMoveDestination', async (_event, defaultDir?: string) => {

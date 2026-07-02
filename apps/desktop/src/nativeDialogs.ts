@@ -277,6 +277,7 @@ export const registerNativeDialogIpc = () => {
         buttons?: string[];
         cancelId?: number;
         defaultId?: number;
+        detail?: string;
         message: string;
         title: string;
         type?: 'error' | 'info' | 'none' | 'question' | 'warning';
@@ -296,6 +297,7 @@ export const registerNativeDialogIpc = () => {
         type: options.type ?? 'none',
         title: options.title,
         message: options.message,
+        detail: options.detail,
         buttons,
         defaultId,
         cancelId: resolvedCancelId,
