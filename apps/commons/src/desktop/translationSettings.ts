@@ -16,6 +16,7 @@ export const readTranslationSettings = async (
       alignmentUnit: parsed.alignmentUnit,
       languages: Array.isArray(parsed.languages) ? parsed.languages : [],
       lockedAt: parsed.lockedAt,
+      citationStyle: typeof parsed.citationStyle === 'string' ? parsed.citationStyle : undefined,
     };
   } catch {
     return null;
@@ -73,6 +74,21 @@ export const writeTranslationSettings = async (
 
   await writeSettingsFile(bundle, settings);
   return settings;
+};
+
+/** Updates the citation style used for footnote citations. No-op when settings don't
+ * exist yet or the style is unchanged. Returns the settings on disk afterwards. */
+export const setCitationStyle = async (
+  bundle: ProjectBundle,
+  citationStyle: string,
+): Promise<TranslationSettingsFile | null> => {
+  const existing = await readTranslationSettings(bundle);
+  if (!existing) return null;
+  if (existing.citationStyle === citationStyle) return existing;
+
+  const next: TranslationSettingsFile = { ...existing, citationStyle };
+  await writeSettingsFile(bundle, next);
+  return next;
 };
 
 export const addTranslationLanguage = async (

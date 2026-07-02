@@ -44,6 +44,13 @@ import {
   renamePath,
 } from './explorerFileOps';
 import { OpenFileWatcher } from './openFileWatcher';
+import {
+  cancelZoteroPick,
+  checkZoteroAvailability,
+  listZoteroStyles,
+  pickZoteroCitationCayw,
+  searchZoteroItems,
+} from './zoteroClient';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
 import { applyCatalogSchemaUpdate, checkCatalogSchemaUpdate } from './checkSchemaUpdate';
@@ -509,7 +516,7 @@ const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
     { role: 'paste' },
     { type: 'separator' },
     {
-      label: 'Find…',
+      label: 'Find',
       accelerator: 'CommandOrControl+F',
       click: () => sendMenuAction('open-find'),
     },
@@ -542,15 +549,29 @@ const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
   ],
 });
 
+const buildToolsMenu = (): Electron.MenuItemConstructorOptions => ({
+  label: 'Tools',
+  submenu: [
+    {
+      label: 'Zotero Preferences',
+      click: () => sendMenuAction('zotero-preferences'),
+    },
+    {
+      label: 'Zotero Refresh',
+      click: () => sendMenuAction('zotero-refresh'),
+    },
+  ],
+});
+
 const buildApplicationMenu = () => {
   const settingsItem: Electron.MenuItemConstructorOptions = {
-    label: 'Settings…',
+    label: 'Settings',
     accelerator: 'CommandOrControl+,',
     click: () => sendMenuAction('open-settings'),
   };
 
   const openProjectItem: Electron.MenuItemConstructorOptions = {
-    label: 'Open Project…',
+    label: 'Open Project',
     accelerator: 'CommandOrControl+O',
     click: () => sendMenuAction('open-project'),
   };
@@ -562,7 +583,7 @@ const buildApplicationMenu = () => {
   };
 
   const saveAsItem: Electron.MenuItemConstructorOptions = {
-    label: 'Save As…',
+    label: 'Save As',
     accelerator: 'CommandOrControl+Shift+S',
     click: () => sendMenuAction('save-as'),
   };
@@ -574,17 +595,17 @@ const buildApplicationMenu = () => {
   };
 
   const editionMetadataItem: Electron.MenuItemConstructorOptions = {
-    label: 'Edition metadata…',
+    label: 'Edition metadata',
     click: () => sendMenuAction('edition-metadata'),
   };
 
   const checkSchemaUpdateItem: Electron.MenuItemConstructorOptions = {
-    label: 'Check for schema updates…',
+    label: 'Check for schema updates',
     click: () => sendMenuAction('check-schema-update'),
   };
 
   const timeMachineItem: Electron.MenuItemConstructorOptions = {
-    label: 'Time Machine…',
+    label: 'Time Machine',
     click: () => sendMenuAction('open-time-machine'),
   };
 
@@ -649,6 +670,7 @@ const buildApplicationMenu = () => {
       ],
     },
     buildEditMenu(),
+    buildToolsMenu(),
     buildViewMenu(),
     { role: 'windowMenu' },
   ];
@@ -911,6 +933,18 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('generateAiTranslation', async (_event, request: AiTranslationRequest) => {
     return generateAiTranslation(request);
+  });
+
+  ipcMain.handle('zoteroCheckAvailability', async () => checkZoteroAvailability());
+
+  ipcMain.handle('zoteroSearchItems', async (_event, query: string) => searchZoteroItems(query));
+
+  ipcMain.handle('zoteroListStyles', async () => listZoteroStyles());
+
+  ipcMain.handle('zoteroPickCitation', async () => pickZoteroCitationCayw());
+
+  ipcMain.handle('zoteroCancelPick', async () => {
+    cancelZoteroPick();
   });
 
   ipcMain.handle('renamePath', async (_event, oldPath: string, newPath: string) => {

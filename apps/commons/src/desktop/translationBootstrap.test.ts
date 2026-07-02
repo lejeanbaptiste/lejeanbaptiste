@@ -236,6 +236,32 @@ describe('resyncTranslationShell', () => {
       expect(other.innerHTML.trim()).toBe('');
     }
   });
+
+  test('carries the standOff bibliography across a resync, GC-ing orphaned entries', async () => {
+    const sourceDoc = parse(SPLIT_PARAGRAPH_XML);
+
+    // Existing companion: one cited entry referenced from a surviving unit's footnote,
+    // one entry no footnote references anymore (orphan to be GC'd).
+    const existingTranslationDoc = parse(
+      `<translation xml:lang="fr" corresp="chapter1.xml"><standOff><listBibl type="zotero"><bibl xml:id="zbib-KEEP1234" corresp="http://zotero.org/users/1/items/KEEP1234"><note type="csl-json"><![CDATA[{"id":"KEEP1234","type":"book"}]]></note></bibl><bibl xml:id="zbib-DROP5678" corresp="http://zotero.org/users/1/items/DROP5678"><note type="csl-json"><![CDATA[{"id":"DROP5678","type":"book"}]]></note></bibl></listBibl></standOff><div type="chapter" corresp="chapter1.xml#ch1"><p corresp="chapter1.xml#p1">Traduction.<note place="foot"><bibl type="zotero-ref" corresp="#zbib-KEEP1234">Cit.</bibl></note></p></div></translation>`,
+    );
+
+    await reindexAlignmentUnits(sourceDoc, 'p', 'twu');
+
+    const resynced = resyncTranslationShell(
+      sourceDoc,
+      existingTranslationDoc,
+      'chapter1.xml',
+      'fr',
+      'p',
+    );
+
+    expect(resynced.documentElement.firstElementChild?.localName).toBe('standOff');
+    const ids = Array.from(resynced.getElementsByTagName('listBibl')[0]?.children ?? []).map(
+      (bibl) => bibl.getAttribute('xml:id'),
+    );
+    expect(ids).toEqual(['zbib-KEEP1234']);
+  });
 });
 
 describe('header exclusion', () => {

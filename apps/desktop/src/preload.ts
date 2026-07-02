@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+import type {
+  ZoteroAvailability,
+  ZoteroCaywResult,
+  ZoteroSearchResult,
+  ZoteroStyle,
+} from './zoteroClient';
+
 import type { ProjectBundle } from './projectFile';
 import type {
   SchemaUpdateApplyResult,
@@ -152,6 +159,11 @@ export interface ElectronAPI {
   setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
   generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
+  zoteroCheckAvailability: () => Promise<ZoteroAvailability>;
+  zoteroSearchItems: (query: string) => Promise<ZoteroSearchResult[]>;
+  zoteroListStyles: () => Promise<ZoteroStyle[]>;
+  zoteroPickCitation: () => Promise<ZoteroCaywResult>;
+  zoteroCancelPick: () => Promise<void>;
   renamePath: (oldPath: string, newPath: string) => Promise<void>;
   movePath: (sourcePath: string, destDir: string) => Promise<string>;
   deletePath: (targetPath: string) => Promise<void>;
@@ -258,6 +270,11 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('testAiConnection', settings),
   generateAiTranslation: (request: AiTranslationRequest) =>
     ipcRenderer.invoke('generateAiTranslation', request),
+  zoteroCheckAvailability: () => ipcRenderer.invoke('zoteroCheckAvailability'),
+  zoteroSearchItems: (query: string) => ipcRenderer.invoke('zoteroSearchItems', query),
+  zoteroListStyles: () => ipcRenderer.invoke('zoteroListStyles'),
+  zoteroPickCitation: () => ipcRenderer.invoke('zoteroPickCitation'),
+  zoteroCancelPick: () => ipcRenderer.invoke('zoteroCancelPick'),
   renamePath: (oldPath: string, newPath: string) =>
     ipcRenderer.invoke('renamePath', oldPath, newPath),
   movePath: (sourcePath: string, destDir: string) =>

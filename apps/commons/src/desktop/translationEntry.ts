@@ -23,6 +23,8 @@ export interface TranslationEnterPayload {
   sourcePath: string;
   translationPath: string;
   alignmentUnit: 'div' | 'p';
+  /** CSL style id for footnote citations (undefined → app default). */
+  citationStyle?: string;
 }
 
 export interface TranslationEntryContext {
@@ -82,7 +84,13 @@ export const startTranslationForLang = async (
   const existingTranslationXml = await readFileOrNull(translationPath);
   log('existingTranslationXml found?', !!existingTranslationXml);
   if (existingTranslationXml) {
-    ctx.onEnter({ lang, sourcePath, translationPath, alignmentUnit: settings.alignmentUnit });
+    ctx.onEnter({
+      lang,
+      sourcePath,
+      translationPath,
+      alignmentUnit: settings.alignmentUnit,
+      citationStyle: settings.citationStyle,
+    });
     return;
   }
 
@@ -122,7 +130,13 @@ export const startTranslationForLang = async (
 
   await writeTranslationSnapshot(bundle, sourceFileName, sourceDoc, settings.alignmentUnit);
 
-  ctx.onEnter({ lang, sourcePath, translationPath, alignmentUnit: settings.alignmentUnit });
+  ctx.onEnter({
+    lang,
+    sourcePath,
+    translationPath,
+    alignmentUnit: settings.alignmentUnit,
+    citationStyle: settings.citationStyle,
+  });
   log('onEnter dispatched');
 };
 

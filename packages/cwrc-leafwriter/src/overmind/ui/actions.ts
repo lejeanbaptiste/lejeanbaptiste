@@ -282,6 +282,7 @@ export const enterTranslationMode = (
     sourcePath: string;
     translationPath: string;
     alignmentUnit: 'div' | 'p';
+    citationStyle?: string;
   },
 ) => {
   console.log('[translation] enterTranslationMode action called with', payload);
@@ -291,6 +292,7 @@ export const enterTranslationMode = (
     sourcePath: payload.sourcePath,
     translationPath: payload.translationPath,
     alignmentUnit: payload.alignmentUnit,
+    citationStyle: payload.citationStyle ?? null,
     selectedUnitId: null,
   };
   window.dispatchEvent(
@@ -311,6 +313,7 @@ export const exitTranslationMode = ({ state }: Context) => {
     sourcePath: null,
     translationPath: null,
     alignmentUnit: null,
+    citationStyle: null,
     selectedUnitId: null,
   };
   window.dispatchEvent(

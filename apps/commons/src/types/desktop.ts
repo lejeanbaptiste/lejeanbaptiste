@@ -94,6 +94,12 @@ export interface AiTranslationResult {
   translationXml?: string;
 }
 
+export interface ZoteroStyle {
+  id: string;
+  label: string;
+  xml: string;
+}
+
 export interface WorkspaceSession {
   activeFilePath: string | null;
   cursorPositions?: Record<string, WorkspaceCursorPosition>;
@@ -164,6 +170,7 @@ export interface ElectronAPI {
   setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
   generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
+  zoteroListStyles: () => Promise<ZoteroStyle[]>;
   renamePath: (oldPath: string, newPath: string) => Promise<void>;
   movePath: (sourcePath: string, destDir: string) => Promise<string>;
   deletePath: (targetPath: string) => Promise<void>;

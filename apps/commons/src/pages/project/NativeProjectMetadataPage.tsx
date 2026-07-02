@@ -12,6 +12,10 @@ import {
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { isDesktop } from '@src/types/desktop';
+import {
+  CITATION_STYLE_OPTIONS,
+  DEFAULT_CITATION_STYLE_ID,
+} from '@src/desktop/citations/styleOptions';
 import type { ProjectMetadataDialogState } from '@src/desktop/projectMetadataDialogState';
 import type { TranslationLanguage } from '@src/desktop/translationTypes';
 import { useCallback, useEffect, useState } from 'react';
@@ -28,6 +32,7 @@ export const NativeProjectMetadataPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [alignmentUnit, setAlignmentUnit] = useState<'div' | 'p'>('div');
+  const [citationStyle, setCitationStyle] = useState<string>(DEFAULT_CITATION_STYLE_ID);
   const [languages, setLanguages] = useState<TranslationLanguage[]>([]);
   const [newLangCode, setNewLangCode] = useState('');
   const [newLangLabel, setNewLangLabel] = useState('');
@@ -47,6 +52,7 @@ export const NativeProjectMetadataPage = () => {
     if (dialogState) {
       setState(dialogState);
       setAlignmentUnit(dialogState.translation.alignmentUnit ?? 'div');
+      setCitationStyle(dialogState.translation.citationStyle ?? DEFAULT_CITATION_STYLE_ID);
       setLanguages(dialogState.translation.languages);
       setError(null);
     } else {
@@ -161,6 +167,7 @@ export const NativeProjectMetadataPage = () => {
         applyToDocuments,
         translationAlignmentUnit: alignmentUnit,
         translationLanguages: languagesToSave,
+        translationCitationStyle: citationStyle,
       })) as { ok: boolean; error?: string; summary?: string };
       if (!result?.ok) {
         setError(result?.error ?? 'Could not save metadata.');
@@ -310,6 +317,23 @@ export const NativeProjectMetadataPage = () => {
                 </IconButton>
               </Stack>
             ))}
+
+            <TextField
+              helperText="Style used for footnote citations in translations. Can be changed anytime; citations re-render."
+              label="Citation style"
+              onChange={(event) => setCitationStyle(event.target.value)}
+              select
+              size="small"
+              SelectProps={{ native: true }}
+              sx={{ maxWidth: 360 }}
+              value={citationStyle}
+            >
+              {CITATION_STYLE_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </TextField>
 
             <Stack alignItems="center" direction="row" spacing={1}>
               <TextField
