@@ -445,6 +445,7 @@
     "thing": "",
     "title": "",
     "unknown": "",
-    "xml_document_invalid": "XML document invalid"
+    "xml_document_invalid": "XML document invalid",
+    "Copy Source and Translation": "Copy Source and Translation"
   }
 }

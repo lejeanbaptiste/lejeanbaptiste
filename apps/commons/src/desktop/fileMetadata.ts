@@ -48,8 +48,11 @@ export const getFileMetadataFieldsForCatalog = (
 export const readFileMetadataFromXml = (
   xml: string,
   catalogId?: string | null,
+  fieldOverrides?: FileMetadataFieldDefinition[],
 ): Record<string, string> => {
-  const fields = getFileMetadataFieldsForCatalog(catalogId);
+  const fields = fieldOverrides?.length
+    ? fieldOverrides
+    : getFileMetadataFieldsForCatalog(catalogId);
   const paths = fields.map((field) => field.path);
   if (isOrlandoCatalog(catalogId)) {
     return readOrlandoHeaderPathValues(xml, paths);

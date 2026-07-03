@@ -57,7 +57,7 @@ export interface FileStat {
   size: number;
 }
 
-export type ImportableDocumentFormat = 'txt' | 'md' | 'rtf';
+export type ImportableDocumentFormat = 'txt' | 'md' | 'rtf' | 'docx' | 'odt';
 
 export interface DocumentImportSource {
   format: ImportableDocumentFormat;
@@ -139,6 +139,9 @@ export interface ElectronAPI {
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) => Promise<FileEntry[]>;
   readFile: (filePath: string) => Promise<string>;
   readFileAutoEncoding: (filePath: string) => Promise<{ encoding: string; text: string }>;
+  extractDocxText: (filePath: string) => Promise<{ text: string; warnings: string[] }>;
+  extractOdtText: (filePath: string) => Promise<{ text: string; warnings: string[] }>;
+  writeClipboardRich: (flavors: { text: string; html?: string; rtf?: string }) => Promise<void>;
   writeFile: (filePath: string, content: string) => Promise<void>;
   pathExists: (filePath: string) => Promise<boolean>;
   statFile: (filePath: string) => Promise<FileStat>;

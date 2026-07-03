@@ -1,7 +1,7 @@
 import type { ProjectFileConfig } from './projectFile';
 import { buildSkeletonForCatalog } from './schemaTemplates';
 
-export type ImportableDocumentFormat = 'txt' | 'md' | 'rtf';
+export type ImportableDocumentFormat = 'txt' | 'md' | 'rtf' | 'docx' | 'odt';
 
 export interface DocumentImportSource {
   format: ImportableDocumentFormat;

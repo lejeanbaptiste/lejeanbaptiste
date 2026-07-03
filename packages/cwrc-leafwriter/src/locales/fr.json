@@ -436,6 +436,7 @@
     "thing": "LW.chose",
     "title": "LW.titre",
     "unknown": "LW.inconnu",
-    "xml_document_invalid": "document XML invalide"
+    "xml_document_invalid": "document XML invalide",
+    "Copy Source and Translation": "Copier source et traduction"
   }
 }

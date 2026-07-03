@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   ipcMain,
   Menu,
@@ -35,6 +36,8 @@ import {
   type WorkspaceSession,
 } from './projectPrefs';
 import { loadOrCreateProject, loadProjectFile } from './projectFile';
+import mammoth from 'mammoth';
+import { extractOdtText } from './odtText';
 import { decodeTextBuffer } from './textEncoding';
 import {
   createDirectory,
@@ -83,7 +86,7 @@ interface AiTranslationResult {
   translationXml?: string;
 }
 
-type ImportableDocumentFormat = 'txt' | 'md' | 'rtf';
+type ImportableDocumentFormat = 'txt' | 'md' | 'rtf' | 'docx' | 'odt';
 
 interface DocumentImportSource {
   format: ImportableDocumentFormat;
@@ -96,6 +99,8 @@ const getImportableDocumentFormat = (filePath: string): ImportableDocumentFormat
   if (extension === '.txt') return 'txt';
   if (extension === '.md' || extension === '.markdown') return 'md';
   if (extension === '.rtf') return 'rtf';
+  if (extension === '.docx') return 'docx';
+  if (extension === '.odt') return 'odt';
   return null;
 };
 
@@ -180,6 +185,23 @@ const listAiModels = async (settings: AiApiSettings): Promise<string[]> => {
     : [];
 };
 
+const aiTranslationDebugLogPath = (): string =>
+  path.join(app.getPath('userData'), 'ai-translation-debug.jsonl');
+
+/** Appends one JSON line per AI translation attempt so failures (e.g. malformed or
+ * truncated XML) can be diagnosed from the raw response after the fact. */
+const logAiTranslationDebug = async (entry: Record<string, unknown>): Promise<void> => {
+  try {
+    await fs.appendFile(
+      aiTranslationDebugLogPath(),
+      JSON.stringify({ timestamp: new Date().toISOString(), ...entry }) + '\n',
+      'utf8',
+    );
+  } catch (error) {
+    console.error('[crcao-desktop] Failed to write AI translation debug log:', error);
+  }
+};
+
 const parseTranslationXmlFromResponse = (content: string): string | null => {
   const trimmed = content.trim();
   try {
@@ -228,7 +250,7 @@ const buildTranslationRequestBody = (
     {
       role: 'system',
       content:
-        'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. Treat source TEI tags such as persName, placeName, orgName, officeName, date, term, title, and quote as semantic hints, but do not reproduce those source tags. Output only simple inline XML suitable for a rich text translation editor: plain text plus optional <b>, <i>, <u>, <s>, <sup>, <sub>, or <hi rend="bold|italic|underline|strikethrough|small-caps">. Do not wrap the result in p, div, translation, body, html, or markdown. Ensure the XML fragment is well formed.',
+        'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. Treat source TEI tags such as persName, placeName, orgName, officeName, date, term, title, and quote as semantic hints, but do not reproduce them. Output plain text only: no XML or HTML tags, no markdown, no angle brackets. Write ampersands and angle brackets as the XML entities &amp;, &lt;, and &gt; if they occur in the text itself.',
     },
     {
       role: 'user',
@@ -326,18 +348,46 @@ const generateAiTranslation = async ({
     }
 
     const body = (await response.json()) as {
-      choices?: Array<{ message?: { content?: unknown } }>;
+      choices?: Array<{ finish_reason?: unknown; message?: { content?: unknown } }>;
+      usage?: unknown;
     };
-    const content = body.choices?.[0]?.message?.content;
+    const choice = body.choices?.[0];
+    const finishReason = typeof choice?.finish_reason === 'string' ? choice.finish_reason : null;
+    const content = choice?.message?.content;
+    const debugBase = {
+      model,
+      finishReason,
+      usage: body.usage ?? null,
+      sourceUnitXmlLength: sourceUnitXml.length,
+      contentLength: typeof content === 'string' ? content.length : null,
+      rawContent: typeof content === 'string' ? content : null,
+    };
+
     if (typeof content !== 'string') {
+      await logAiTranslationDebug({ ...debugBase, outcome: 'no-message-content' });
       return { ok: false, error: 'AI response did not include message content.' };
+    }
+
+    if (finishReason === 'length') {
+      await logAiTranslationDebug({ ...debugBase, outcome: 'truncated' });
+      return {
+        ok: false,
+        error:
+          'AI response was cut off by the token limit (finish_reason=length) — the passage is too long for the model settings.',
+      };
     }
 
     const translationXml = parseTranslationXmlFromResponse(content);
     if (!translationXml) {
+      await logAiTranslationDebug({ ...debugBase, outcome: 'no-translation-xml' });
       return { ok: false, error: 'AI response did not include translationXml.' };
     }
 
+    await logAiTranslationDebug({
+      ...debugBase,
+      outcome: 'ok',
+      translationXmlLength: translationXml.length,
+    });
     return { ok: true, translationXml };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
@@ -859,6 +909,29 @@ const registerIpcHandlers = () => {
     return decodeTextBuffer(await fs.readFile(filePath));
   });
 
+  ipcMain.handle(
+    'writeClipboardRich',
+    (_event, flavors: { text: string; html?: string; rtf?: string }) => {
+      clipboard.write({
+        text: flavors.text,
+        ...(flavors.html ? { html: flavors.html } : {}),
+        ...(flavors.rtf ? { rtf: flavors.rtf } : {}),
+      });
+    },
+  );
+
+  ipcMain.handle('extractOdtText', async (_event, filePath: string) => {
+    return extractOdtText(filePath);
+  });
+
+  ipcMain.handle('extractDocxText', async (_event, filePath: string) => {
+    const result = await mammoth.extractRawText({ path: filePath });
+    return {
+      text: result.value,
+      warnings: result.messages.map((message) => message.message),
+    };
+  });
+
   ipcMain.handle('writeFile', async (_event, filePath: string, content: string) => {
     await fs.writeFile(filePath, content, 'utf-8');
   });
@@ -988,7 +1061,7 @@ const registerIpcHandlers = () => {
     mainWindow.focus();
     const result = await dialog.showOpenDialog(mainWindow, {
       filters: [
-        { name: 'Importable documents', extensions: ['txt', 'md', 'markdown', 'rtf'] },
+        { name: 'Importable documents', extensions: ['txt', 'md', 'markdown', 'rtf', 'docx', 'odt'] },
         { name: 'All files', extensions: ['*'] },
       ],
       message: 'Choose text, Markdown, RTF files, or folders to import.',

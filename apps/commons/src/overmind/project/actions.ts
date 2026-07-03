@@ -651,7 +651,12 @@ const writeImportedDocument = async (
 ): Promise<void> => {
   if (!window.electronAPI) throw new Error('Desktop file APIs are unavailable.');
 
-  const { text } = await window.electronAPI.readFileAutoEncoding(item.sourcePath);
+  const { text } =
+    item.format === 'docx'
+      ? await window.electronAPI.extractDocxText(item.sourcePath)
+      : item.format === 'odt'
+        ? await window.electronAPI.extractOdtText(item.sourcePath)
+        : await window.electronAPI.readFileAutoEncoding(item.sourcePath);
   let xml = buildImportedDocumentXml({
     config,
     format: item.format,

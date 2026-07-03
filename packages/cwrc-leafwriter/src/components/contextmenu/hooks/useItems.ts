@@ -6,6 +6,7 @@ import type {
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'nanoid';
 import { IconLeafWriter } from '../../../icons';
+import { collectSelectedUnitIds, copyUnitsForExport } from '../../../js/conversion/copyForExport';
 import type { Action } from '../../../js/tagger';
 import { useActions, useAppState } from '../../../overmind';
 import type { EntityType } from '../../../types';
@@ -18,10 +19,10 @@ export const useItems = (ctx: State) => {
 
   const { isAnnotator } = useAppState().editor;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { markupPanel } = useAppState().ui;
+  const { markupPanel, translationMode } = useAppState().ui;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { openDialog, showTextNodes } = useActions().ui;
+  const { notifyViaSnackbar, openDialog, showTextNodes } = useActions().ui;
   const { getPossibleNodesAt } = useActions().validator;
 
   const { t } = useTranslation();
@@ -450,6 +451,34 @@ export const useItems = (ctx: State) => {
           const tags = await getTagsFor(params);
           const items = getTagItems(tags, 'change');
           return items ? items : [];
+        },
+      });
+    }
+
+    if (translationMode.active && translationMode.alignmentUnit) {
+      items.push({
+        type: 'action',
+        name: t('LW.Copy Source and Translation'),
+        icon: 'copy',
+        onClick: async () => {
+          const alignmentUnit = translationMode.alignmentUnit;
+          if (!alignmentUnit) return;
+          const unitIds = collectSelectedUnitIds(writer, alignmentUnit);
+          try {
+            await copyUnitsForExport({
+              translationMode: {
+                alignmentUnit,
+                sourcePath: translationMode.sourcePath,
+                translationPath: translationMode.translationPath,
+              },
+              unitIds,
+              notify: (message) => notifyViaSnackbar(message),
+            });
+          } catch (error) {
+            notifyViaSnackbar(
+              `Copy failed: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
         },
       });
     }

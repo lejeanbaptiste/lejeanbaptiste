@@ -5,7 +5,11 @@ import {
   getManagedFieldValues,
   readProjectMetadata,
 } from './projectMetadata';
-import { getMetadataFieldsForCatalog } from './schemaMetadataFields';
+import {
+  applyTemplateDefaults,
+  readMetadataFieldsTemplate,
+  resolveProjectMetadataFields,
+} from './metadataFieldsTemplate';
 import type { ProjectMetadataDialogMode } from './projectMetadataSession';
 import { readTranslationSettings } from './translationSettings';
 import type { TranslationLanguage } from './translationTypes';
@@ -66,7 +70,8 @@ export const buildProjectMetadataDialogState = async (
     bundle.config.schema?.catalogId,
     bundle.config.schema?.rng,
   );
-  const fieldDef = getMetadataFieldsForCatalog(catalogKind);
+  const template = await readMetadataFieldsTemplate(bundle.rootPath);
+  const fieldDef = resolveProjectMetadataFields(template, catalogKind);
 
   let metadata = await readProjectMetadata(bundle);
   if (!metadata && mode === 'firstSetup') {
@@ -91,7 +96,7 @@ export const buildProjectMetadataDialogState = async (
     mode,
     note: fieldDef.note,
     fields: fieldDef.fields,
-    values: getManagedFieldValues(metadata, fieldDef.fields),
+    values: applyTemplateDefaults(getManagedFieldValues(metadata, fieldDef.fields), template),
     custom: metadata.custom.map((row) => ({
       path: row.path,
       label: row.label,
