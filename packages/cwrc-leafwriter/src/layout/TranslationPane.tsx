@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CloseIcon from '@mui/icons-material/Close';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatClearIcon from '@mui/icons-material/FormatClear';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
@@ -35,7 +36,16 @@ import StickyNote2Icon from '@mui/icons-material/StickyNote2';
 import SubscriptIcon from '@mui/icons-material/Subscript';
 import SuperscriptIcon from '@mui/icons-material/Superscript';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type ReactNode,
+  type SyntheticEvent,
+} from 'react';
+import { copyUnitsForExport } from '../js/conversion/copyForExport';
 import { useActions, useAppState } from '../overmind';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
@@ -178,6 +188,66 @@ const prepareAtomicCitationFields = (root: ParentNode): void => {
   }
 };
 
+const EDITING_ONLY_ATTRIBUTES = new Set([
+  'class',
+  'contenteditable',
+  'face',
+  'size',
+  'style',
+  'title',
+]);
+const WRAPPER_ELEMENTS = new Set(['div', 'font', 'p', 'span']);
+const TEI_INLINE_ELEMENTS = new Set([
+  'b',
+  'bibl',
+  'br',
+  'hi',
+  'i',
+  'lb',
+  'note',
+  'ref',
+  's',
+  'strike',
+  'sub',
+  'sup',
+  'u',
+]);
+
+const sanitizeTranslationFragment = (root: ParentNode): void => {
+  for (const element of Array.from(root.querySelectorAll('*'))) {
+    for (const attr of Array.from(element.attributes)) {
+      const attrName = attr.name.toLowerCase();
+      if (
+        EDITING_ONLY_ATTRIBUTES.has(attrName) ||
+        (attrName.startsWith('data-') &&
+          attrName !== 'data-locator' &&
+          attrName !== 'data-locator-type')
+      ) {
+        element.removeAttribute(attr.name);
+      }
+    }
+
+    const tagName = element.tagName.toLowerCase();
+    if (WRAPPER_ELEMENTS.has(tagName) || !TEI_INLINE_ELEMENTS.has(tagName)) {
+      const parent = element.parentNode;
+      if (!parent) continue;
+      while (element.firstChild) parent.insertBefore(element.firstChild, element);
+      parent.removeChild(element);
+    }
+  }
+
+  prepareAtomicCitationFields(root);
+};
+
+const unwrapElementsByTagName = (root: ParentNode, tagName: string): void => {
+  for (const element of Array.from(root.querySelectorAll(tagName))) {
+    const parent = element.parentNode;
+    if (!parent) continue;
+    while (element.firstChild) parent.insertBefore(element.firstChild, element);
+    parent.removeChild(element);
+  }
+};
+
 const findUnitById = (doc: Document, alignmentUnit: 'div' | 'p', unitId: string): Element | null =>
   getElementsByLocalName(doc, alignmentUnit).find((element) => {
     return element.getAttribute('xml:id') === unitId || element.getAttribute('id') === unitId;
@@ -215,7 +285,18 @@ const validateGeneratedFragment = (fragmentXml: string): { error?: string; xml?:
   const wrapped = `<fragment>${fragmentXml}</fragment>`;
   const doc = new DOMParser().parseFromString(wrapped, 'application/xml');
   const parseError = getXmlParseError(doc);
-  if (parseError) return { error: 'AI returned XML that is not well formed.' };
+  if (parseError) {
+    console.error(
+      '[translation] AI fragment failed XML parsing.\nParser error:',
+      parseError,
+      '\nFragment length:',
+      fragmentXml.length,
+      '\nFragment:',
+      fragmentXml,
+    );
+    const firstLine = parseError.split('\n')[0] ?? parseError;
+    return { error: `AI returned XML that is not well formed (${firstLine}).` };
+  }
 
   const root = doc.documentElement;
   const elementChildren = Array.from(root.children);
@@ -319,7 +400,7 @@ const selectHighlightedMatch = (
 
 export const TranslationPane = () => {
   const { translationMode } = useAppState().ui;
-  const { setSelectedTranslationUnit } = useActions().ui;
+  const { notifyViaSnackbar, setSelectedTranslationUnit } = useActions().ui;
 
   const [translationDoc, setTranslationDoc] = useState<Document | null>(null);
   const [unitHtml, setUnitHtml] = useState('');
@@ -335,7 +416,10 @@ export const TranslationPane = () => {
   const [locked, setLocked] = useState(false);
   const [formatAnchor, setFormatAnchor] = useState<HTMLElement | null>(null);
   const editableRef = useRef<HTMLDivElement>(null);
+  const savedBodyRangeRef = useRef<Range | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
+  const savedFootnoteRangeRef = useRef<{ index: number; range: Range } | null>(null);
+  const lastCitationTargetRef = useRef<'body' | 'footnote'>('body');
   const focusFootnoteIndexRef = useRef<number | null>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -854,12 +938,111 @@ export const TranslationPane = () => {
   }, [alignmentUnit, locked, replaceCurrentUnit, selectedUnitId, sourcePath, translationMode.lang]);
 
   const getEditableRange = (): Range | null => {
-    editableRef.current?.focus();
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return null;
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (range && editableRef.current?.contains(range.commonAncestorContainer)) {
+      savedBodyRangeRef.current = range.cloneRange();
+      lastCitationTargetRef.current = 'body';
+      return range;
+    }
+
+    const saved = savedBodyRangeRef.current;
+    if (
+      saved &&
+      editableRef.current?.contains(saved.startContainer) &&
+      editableRef.current.contains(saved.endContainer)
+    ) {
+      editableRef.current.focus();
+      selection?.removeAllRanges();
+      selection?.addRange(saved);
+      return saved.cloneRange();
+    }
+
+    return null;
+  };
+
+  const rememberBodyRange = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
     const range = selection.getRangeAt(0);
-    if (!editableRef.current?.contains(range.commonAncestorContainer)) return null;
-    return range;
+    if (!editableRef.current?.contains(range.commonAncestorContainer)) return;
+    savedBodyRangeRef.current = range.cloneRange();
+    lastCitationTargetRef.current = 'body';
+  };
+
+  const rememberFootnoteRange = (index: number, element: HTMLElement) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!element.contains(range.commonAncestorContainer)) return;
+    savedFootnoteRangeRef.current = { index, range: range.cloneRange() };
+    lastCitationTargetRef.current = 'footnote';
+  };
+
+  const restoreFootnoteRange = (index: number): Range | null => {
+    const saved = savedFootnoteRangeRef.current;
+    if (!saved || saved.index !== index) return null;
+    const footnoteEditor = document.querySelector<HTMLElement>(
+      `[data-leaf-footnote-editor="${index}"]`,
+    );
+    if (
+      !footnoteEditor ||
+      !footnoteEditor.contains(saved.range.startContainer) ||
+      !footnoteEditor.contains(saved.range.endContainer)
+    ) {
+      return null;
+    }
+
+    footnoteEditor.focus();
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(saved.range);
+    return saved.range.cloneRange();
+  };
+
+  const getCitationInsertionTarget = ():
+    | { kind: 'body'; range: Range }
+    | { element: HTMLElement; index: number; kind: 'footnote'; range: Range }
+    | null => {
+    const selection = window.getSelection();
+    const liveRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (liveRange && editableRef.current?.contains(liveRange.commonAncestorContainer)) {
+      savedBodyRangeRef.current = liveRange.cloneRange();
+      lastCitationTargetRef.current = 'body';
+      return { kind: 'body', range: liveRange.cloneRange() };
+    }
+
+    if (liveRange) {
+      const footnoteEditor = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-leaf-footnote-editor]'),
+      ).find((element) => element.contains(liveRange.commonAncestorContainer));
+      if (footnoteEditor) {
+        const index = Number(footnoteEditor.dataset.leafFootnoteEditor);
+        lastCitationTargetRef.current = 'footnote';
+        return { element: footnoteEditor, index, kind: 'footnote', range: liveRange.cloneRange() };
+      }
+    }
+
+    const saved = savedFootnoteRangeRef.current;
+    if (lastCitationTargetRef.current === 'footnote' && saved) {
+      const footnoteEditor = document.querySelector<HTMLElement>(
+        `[data-leaf-footnote-editor="${saved.index}"]`,
+      );
+      const range = restoreFootnoteRange(saved.index);
+      if (footnoteEditor && range) {
+        return { element: footnoteEditor, index: saved.index, kind: 'footnote', range };
+      }
+    }
+
+    const savedBody = getEditableRange();
+    if (savedBody) return { kind: 'body', range: savedBody };
+    if (!saved) return null;
+    const footnoteEditor = document.querySelector<HTMLElement>(
+      `[data-leaf-footnote-editor="${saved.index}"]`,
+    );
+    const range = restoreFootnoteRange(saved.index);
+    if (!footnoteEditor || !range) return null;
+    return { element: footnoteEditor, index: saved.index, kind: 'footnote', range };
   };
 
   const unwrapElement = (element: Element) => {
@@ -1101,6 +1284,23 @@ export const TranslationPane = () => {
     return bibl;
   };
 
+  const insertFragmentAtRange = (range: Range, fragment: DocumentFragment): ChildNode | null => {
+    range.deleteContents();
+    const lastInserted = fragment.lastChild;
+    range.insertNode(fragment);
+
+    if (lastInserted) {
+      const selection = window.getSelection();
+      const after = document.createRange();
+      after.setStartAfter(lastInserted);
+      after.collapse(true);
+      selection?.removeAllRanges();
+      selection?.addRange(after);
+    }
+
+    return lastInserted;
+  };
+
   const insertZoteroCitation = async () => {
     const bridge = getCitationBridge();
     if (!bridge) {
@@ -1118,8 +1318,8 @@ export const TranslationPane = () => {
       return;
     }
 
-    const range = getEditableRange();
-    if (!range) return;
+    const insertionTarget = getCitationInsertionTarget();
+    if (!insertionTarget) return;
 
     setAiStatus({ severity: 'info', message: 'Waiting for Zotero citation...' });
     const result = await bridge.pickZoteroCitation();
@@ -1147,23 +1347,62 @@ export const TranslationPane = () => {
       fragment.appendChild(bibl);
     });
 
-    range.deleteContents();
-    const lastInserted = fragment.lastChild;
-    range.insertNode(fragment);
-
-    const selection = window.getSelection();
-    if (lastInserted) {
-      const after = document.createRange();
-      after.setStartAfter(lastInserted);
-      after.collapse(true);
+    if (insertionTarget.kind === 'footnote') {
+      insertionTarget.element.focus();
+      const selection = window.getSelection();
       selection?.removeAllRanges();
-      selection?.addRange(after);
+      selection?.addRange(insertionTarget.range);
+      insertFragmentAtRange(insertionTarget.range, fragment);
+      prepareAtomicCitationFields(insertionTarget.element);
+      updateFootnote(insertionTarget.index, insertionTarget.element.innerHTML);
+      rememberFootnoteRange(insertionTarget.index, insertionTarget.element);
+    } else {
+      editableRef.current?.focus();
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(insertionTarget.range);
+      insertFragmentAtRange(insertionTarget.range, fragment);
     }
 
     renderCitationRefs(doc);
     refreshFootnotes();
     await persist();
     setAiStatus(null);
+  };
+
+  const handleTranslationPaste = (
+    event: ClipboardEvent<HTMLElement>,
+    options: { target: 'body' | 'footnote' } = { target: 'body' },
+  ) => {
+    const range = window.getSelection()?.rangeCount ? window.getSelection()?.getRangeAt(0) : null;
+    if (!range || !event.currentTarget.contains(range.commonAncestorContainer)) return;
+
+    event.preventDefault();
+    const html = event.clipboardData.getData('text/html');
+    const text = event.clipboardData.getData('text/plain');
+    const container = document.createElement('div');
+    if (html) container.innerHTML = html;
+    else container.textContent = text;
+
+    sanitizeTranslationFragment(container);
+    if (options.target === 'footnote') {
+      unwrapElementsByTagName(container, 'note');
+    }
+
+    const fragment = document.createDocumentFragment();
+    while (container.firstChild) fragment.appendChild(container.firstChild);
+    insertFragmentAtRange(range, fragment);
+    sanitizeTranslationFragment(event.currentTarget);
+    refreshFootnotes();
+  };
+
+  const protectCitationField = (event: SyntheticEvent<HTMLElement>) => {
+    const target = event.target as Node | null;
+    const element =
+      target?.nodeType === Node.ELEMENT_NODE ? (target as Element) : target?.parentElement;
+    if (element?.closest?.('bibl[data-leaf-citation-field="true"]')) {
+      event.preventDefault();
+    }
   };
 
   const updateFootnote = (index: number, html: string) => {
@@ -1196,7 +1435,6 @@ export const TranslationPane = () => {
       | 'footnote'
       | 'citation',
   ) => {
-    editableRef.current?.focus();
     if (command === 'smallCaps') {
       toggleSmallCaps();
       return;
@@ -1217,6 +1455,7 @@ export const TranslationPane = () => {
       void insertZoteroCitation();
       return;
     }
+    editableRef.current?.focus();
     document.execCommand(command);
   };
 
@@ -1376,6 +1615,30 @@ export const TranslationPane = () => {
               size="small"
             >
               {generating ? <CircularProgress size={18} /> : <AutoAwesomeIcon fontSize="small" />}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="Copy source + translation for export">
+          <span>
+            <IconButton
+              disabled={!selectedUnitId}
+              onClick={() => {
+                if (!selectedUnitId) return;
+                void copyUnitsForExport({
+                  translationMode: { alignmentUnit, sourcePath, translationPath },
+                  unitIds: [selectedUnitId],
+                  translationDoc,
+                  notify: (message) => notifyViaSnackbar(message),
+                }).catch((error) => {
+                  notifyViaSnackbar(
+                    `Copy failed: ${error instanceof Error ? error.message : String(error)}`,
+                  );
+                });
+              }}
+              size="small"
+            >
+              <ContentCopyIcon fontSize="small" />
             </IconButton>
           </span>
         </Tooltip>
@@ -1542,12 +1805,21 @@ export const TranslationPane = () => {
                 focusedRef.current = false;
               }, 200);
             }}
+            onBeforeInput={protectCitationField}
             onFocus={() => {
               if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
               focusedRef.current = true;
+              rememberBodyRange();
             }}
-            onInput={refreshFootnotes}
+            onInput={() => {
+              refreshFootnotes();
+              rememberBodyRange();
+            }}
+            onKeyUp={rememberBodyRange}
+            onMouseUp={rememberBodyRange}
             onKeyDown={(event) => {
+              protectCitationField(event);
+              if (event.defaultPrevented) return;
               if (!(event.metaKey || event.ctrlKey)) return;
               const key = event.key.toLowerCase();
               let command:
@@ -1576,6 +1848,10 @@ export const TranslationPane = () => {
               event.preventDefault();
               event.stopPropagation();
               applyFormat(command);
+            }}
+            onPaste={(event) => {
+              handleTranslationPaste(event);
+              rememberBodyRange();
             }}
             sx={{
               flex: '1 0 auto',
@@ -1632,14 +1908,29 @@ export const TranslationPane = () => {
                     </Typography>
                     <Box
                       contentEditable
+                      data-leaf-footnote-editor={index}
                       dangerouslySetInnerHTML={{ __html: text }}
                       onBlur={(event) => {
+                        rememberFootnoteRange(index, event.currentTarget);
                         updateFootnote(index, event.currentTarget.innerHTML);
                         void persist();
                       }}
+                      onBeforeInput={protectCitationField}
+                      onFocus={(event) => rememberFootnoteRange(index, event.currentTarget)}
                       onInput={(event) => {
                         prepareAtomicCitationFields(event.currentTarget);
                         updateFootnote(index, event.currentTarget.innerHTML);
+                        rememberFootnoteRange(index, event.currentTarget);
+                      }}
+                      onKeyDown={(event) => {
+                        protectCitationField(event);
+                      }}
+                      onKeyUp={(event) => rememberFootnoteRange(index, event.currentTarget)}
+                      onMouseUp={(event) => rememberFootnoteRange(index, event.currentTarget)}
+                      onPaste={(event) => {
+                        handleTranslationPaste(event, { target: 'footnote' });
+                        updateFootnote(index, event.currentTarget.innerHTML);
+                        rememberFootnoteRange(index, event.currentTarget);
                       }}
                       ref={(el: HTMLDivElement | null) => {
                         if (el) prepareAtomicCitationFields(el);

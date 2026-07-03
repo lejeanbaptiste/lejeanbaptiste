@@ -420,6 +420,7 @@
     "thing": "LW.coisa",
     "title": "LW.título",
     "unknown": "LW.desconhecido",
-    "xml_document_invalid": "Documento XML inválido"
+    "xml_document_invalid": "Documento XML inválido",
+    "Copy Source and Translation": "Copiar fonte e tradução"
   }
 }

@@ -128,6 +128,9 @@ export interface ElectronAPI {
   readDirectory: (dirPath: string, options?: { allFiles?: boolean }) => Promise<FileEntry[]>;
   readFile: (filePath: string) => Promise<string>;
   readFileAutoEncoding: (filePath: string) => Promise<{ encoding: string; text: string }>;
+  extractDocxText: (filePath: string) => Promise<{ text: string; warnings: string[] }>;
+  extractOdtText: (filePath: string) => Promise<{ text: string; warnings: string[] }>;
+  writeClipboardRich: (flavors: { text: string; html?: string; rtf?: string }) => Promise<void>;
   writeFile: (filePath: string, content: string) => Promise<void>;
   pathExists: (filePath: string) => Promise<boolean>;
   statFile: (filePath: string) => Promise<FileStat>;
@@ -235,6 +238,10 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('readDirectory', dirPath, options),
   readFile: (filePath: string) => ipcRenderer.invoke('readFile', filePath),
   readFileAutoEncoding: (filePath: string) => ipcRenderer.invoke('readFileAutoEncoding', filePath),
+  extractDocxText: (filePath: string) => ipcRenderer.invoke('extractDocxText', filePath),
+  extractOdtText: (filePath: string) => ipcRenderer.invoke('extractOdtText', filePath),
+  writeClipboardRich: (flavors: { text: string; html?: string; rtf?: string }) =>
+    ipcRenderer.invoke('writeClipboardRich', flavors),
   writeFile: (filePath: string, content: string) =>
     ipcRenderer.invoke('writeFile', filePath, content),
   pathExists: (filePath: string) => ipcRenderer.invoke('pathExists', filePath),

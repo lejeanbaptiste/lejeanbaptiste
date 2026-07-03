@@ -2,10 +2,14 @@ import { Box, Paper, Stack, TextField, Typography } from '@mui/material';
 import {
   applyFileHeaderFields,
   documentSupportsFileMetadata,
-  getFileMetadataFieldsForCatalog,
   pushXmlToActiveEditor,
   readFileMetadataFromXml,
 } from '@src/desktop/fileMetadata';
+import {
+  readMetadataFieldsTemplate,
+  resolveFileMetadataFields,
+  type MetadataFieldsTemplate,
+} from '@src/desktop/metadataFieldsTemplate';
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -24,7 +28,7 @@ const getActiveXmlContent = (
 };
 
 export const FileMetadataPanel = () => {
-  const { activeTabPath, config, openTabs } = useAppState().project;
+  const { activeTabPath, config, openTabs, rootPath } = useAppState().project;
   const { readonly } = useAppState().editor;
   const { markTabDirty, updateTabContent } = useActions().project;
 
@@ -33,9 +37,25 @@ export const FileMetadataPanel = () => {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const valuesRef = useRef(values);
 
+  const [fieldsTemplate, setFieldsTemplate] = useState<MetadataFieldsTemplate | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!rootPath) {
+      setFieldsTemplate(null);
+      return;
+    }
+    readMetadataFieldsTemplate(rootPath).then((template) => {
+      if (!cancelled) setFieldsTemplate(template);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [rootPath]);
+
   const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
   const catalogId = config?.schema?.catalogId;
-  const metadataFields = getFileMetadataFieldsForCatalog(catalogId);
+  const metadataFields = resolveFileMetadataFields(fieldsTemplate, catalogId);
   const xml = activeTabPath ? getActiveXmlContent(activeTabPath, openTabs, activeTabPath) : '';
   const supported = Boolean(activeTabPath && xml && documentSupportsFileMetadata(xml, catalogId));
 
@@ -54,8 +74,8 @@ export const FileMetadataPanel = () => {
       return;
     }
 
-    setValues(readFileMetadataFromXml(xml, catalogId));
-  }, [activeTabPath, activeTab?.content, catalogId, xml]);
+    setValues(readFileMetadataFromXml(xml, catalogId, fieldsTemplate?.file));
+  }, [activeTabPath, activeTab?.content, catalogId, fieldsTemplate, xml]);
 
   const commitChanges = useCallback(
     (nextValues: Record<string, string>) => {
@@ -135,8 +155,8 @@ export const FileMetadataPanel = () => {
             disabled={readonly}
             fullWidth
             label={field.label}
-            minRows={field.label === 'Source' ? 3 : undefined}
-            multiline={field.label === 'Source'}
+            minRows={field.multiline || field.label === 'Source' ? 3 : undefined}
+            multiline={Boolean(field.multiline) || field.label === 'Source'}
             onChange={(event) => handleFieldChange(field.path, event.target.value)}
             size="small"
             value={values[field.path] ?? ''}

@@ -1,15 +1,16 @@
 # Todo
 
+**Document I/O**
+- [ ] Bug: Zotero won't go to footnote
+- [ ] Zotero anchor is still editable.
+- [ ] copying from body to footnote and vice versa, font size should not come with
+- [ ] Try copying into Word and LO
+- [ ] commit
+
+
+
 **Easy**
 - [ ] What does entities do?
-
-**Document I/O**
-- [ ] Machine to import odt, docx, markdown, raw txt.
-- [ ] Copy text with translation and page number, like cbeta?
-- [ ] Zotero export
-
-**Metadata (requires reading?)**
-- [ ] Make fuller list of project and file metadata to act as norm.
 
 **Auto-tagging**
 - [ ] AI api integration for tagging without modifying the language (?).
@@ -18,6 +19,9 @@
 **Disambiguation**
 - [ ] Attribute propagation.
 - [ ] Disambiguation queue + resolution-file attribute propagation (later phases)
+
+**Metadata (requires reading?)**
+- [ ] Make fuller list of project and file metadata to act as norm.
 
 **Clean-up**
 - [ ] Double clicking contents should not select the node as well (?)

@@ -441,6 +441,7 @@
     "thing": "Sache",
     "title": "Werk",
     "unknown": "Unbekannt",
-    "xml_document_invalid": "XML-Dokument ungültig"
+    "xml_document_invalid": "XML-Dokument ungültig",
+    "Copy Source and Translation": "Quelle und Übersetzung kopieren"
   }
 }
