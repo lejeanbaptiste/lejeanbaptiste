@@ -18,11 +18,11 @@ export const getTeiXPathFromEditorElement = (
     const tag = current.getAttribute('_tag');
     if (!tag) break;
 
-    const parent = current.parentElement;
+    const parent: Element | null = current.parentElement;
     if (!parent) break;
 
-    const siblings = Array.from(parent.children).filter(
-      (el): el is Element =>
+    const siblings: Element[] = Array.from(parent.children).filter(
+      (el: Element) =>
         el.nodeType === Node.ELEMENT_NODE && matchesTeiTag(el.getAttribute('_tag'), tag),
     );
     const index = siblings.indexOf(current);

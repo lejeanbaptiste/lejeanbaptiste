@@ -212,7 +212,7 @@ class Validation {
 
     this.writer.tagger.removeNoteWrappersForEntities();
 
-    errors?.forEach((error) => {
+    errors?.forEach((error: ValidationError) => {
       // convert xpath to jquery selector
       //@ts-ignore
       const path = this.getElementPathOnEditor(error.target.xpath ?? error.element.xpath);

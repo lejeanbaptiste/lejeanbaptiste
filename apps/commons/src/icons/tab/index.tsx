@@ -1,5 +1,6 @@
 import { Box, type SxProps, type Theme } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
+import { useAppState } from '@src/overmind';
 import explorerPng from './tab_explorer.png';
 import explorerDarkPng from './tab_explorer.dark.png';
 import findPng from './tab_find.png';
@@ -59,7 +60,8 @@ interface TabIconProps {
 
 export const TabIcon = ({ tabId, size = 16, sx }: TabIconProps) => {
   const { mode, systemMode } = useColorScheme();
-  const isDark = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
+  const { darkMode } = useAppState().ui;
+  const isDark = darkMode || mode === 'dark' || (mode === 'system' && systemMode === 'dark');
   const src = isDark ? tabIconSourcesDark[tabId] : tabIconSources[tabId];
 
   return (

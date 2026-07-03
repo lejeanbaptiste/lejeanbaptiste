@@ -336,9 +336,9 @@ class LayoutManager {
   }
 
   showModule(moduleId: ISettingsModuleName) {
-    const westModules: ISettingsModuleName[] = ['toc', 'markup', 'entities'];
-    if (!this.modulesLayout.has('west') && westModules.includes(moduleId)) {
-      window.__desktopLeftPanel?.showTab(moduleId);
+    const westModules: DesktopLeftPanelTab[] = ['toc', 'markup', 'entities'];
+    if (!this.modulesLayout.has('west') && westModules.includes(moduleId as DesktopLeftPanelTab)) {
+      window.__desktopLeftPanel?.showTab(moduleId as DesktopLeftPanelTab);
       window.__desktopLeftPanel?.expand();
       return;
     }

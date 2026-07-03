@@ -1,14 +1,5 @@
 # Todo
 
-**Document I/O**
-- [x] Bug: Zotero won't go to footnote
-- [x] Zotero anchor is still editable.
-- [x] copying from body to footnote and vice versa, font size should not come with
-- [ ] Try copying into Word and LO
-- [ ] commit
-
-
-
 **Easy**
 - [ ] What does entities do?
 

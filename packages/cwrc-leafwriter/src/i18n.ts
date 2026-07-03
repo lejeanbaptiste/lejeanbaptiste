@@ -1,4 +1,5 @@
 import { createInstance } from 'i18next';
+import type { i18n as I18n } from 'i18next';
 import z from 'zod';
 import de from './locales/de.json';
 import en from './locales/en.json';
@@ -15,7 +16,7 @@ export type Locales = z.infer<typeof localesSchema>;
 
 //https://luxiyalu.com/how-to-have-multiple-instances-of-i18next-for-component-library/
 
-const i18n = createInstance(
+const i18n: I18n = createInstance(
   {
     // debug: true,
     defaultNS: 'LW',

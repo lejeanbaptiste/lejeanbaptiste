@@ -37,6 +37,7 @@ export type EditorStateType = {
   schemaMappings: SchemaMappingType[];
   proxyLoaderXmlEndpoint?: string;
   proxyLoaderCssEndpoint?: string;
+  resource?: { filePath?: string | null };
   settings?: any;
   showEntities: boolean;
   showRawXmlPanel: boolean;

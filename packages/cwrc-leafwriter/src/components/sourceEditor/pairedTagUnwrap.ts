@@ -78,7 +78,8 @@ export const registerPairedTagUnwrap = (
       return;
     }
 
-    if (editor.getSelections().length > 1) return;
+    const selections = editor.getSelections();
+    if (!selections || selections.length > 1) return;
 
     const model = editor.getModel();
     if (!model || model.isDisposed()) return;

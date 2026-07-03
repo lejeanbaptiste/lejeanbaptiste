@@ -97,7 +97,7 @@ export const removeEmptyParagraphs = (root: ParentNode, blockTag = 'div') => {
   }
 };
 
-const splitDivOnParagraphBreaks = (element: HTMLDivElement, blockTag: string): HTMLDivElement[] => {
+const splitDivOnParagraphBreaks = (element: HTMLDivElement, blockTag: string): HTMLElement[] => {
   const html = element.innerHTML;
   if (!PARAGRAPH_BREAK.test(html)) {
     PARAGRAPH_BREAK.lastIndex = 0;
@@ -116,7 +116,7 @@ const splitDivOnParagraphBreaks = (element: HTMLDivElement, blockTag: string): H
   const parent = element.parentNode;
   if (!doc || !parent) return [element];
 
-  const replacements: HTMLDivElement[] = parts.map((part) => {
+  const replacements = parts.map((part) => {
     const div = doc.createElement(blockTag);
     div.innerHTML = part;
     return div;

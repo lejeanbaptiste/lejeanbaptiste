@@ -19,7 +19,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
-      "@cwrc/leafwriter-validator": ["../cwrc-leafwriter-validator/src/index.worker.ts"],
       "@src/*": ["src/*"]
     },
     "preserveWatchOutput": true,

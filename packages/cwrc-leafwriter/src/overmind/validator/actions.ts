@@ -3,6 +3,7 @@ import type {
   ValidationResponse,
   ValidatorType,
 } from '@cwrc/leafwriter-validator';
+import { WorkingState } from '@cwrc/salve-dom-leafwriter';
 import * as Comlink from 'comlink';
 import { Context } from '../';
 import Writer from '../../js/Writer';
@@ -166,7 +167,12 @@ export const validate = async ({ state, actions }: Context) => {
     await actions.validator.updateValidationError(parseErrorCount);
     writer.event('documentValidated').publish(
       false,
-      { valid: false, errors: [], parseError: wellFormed.error } satisfies SourceValidationResult,
+      {
+        state: WorkingState.INVALID,
+        valid: false,
+        errors: [],
+        parseError: wellFormed.error,
+      } satisfies SourceValidationResult,
       validationString,
     );
     instrumentation.validationRunning = false;

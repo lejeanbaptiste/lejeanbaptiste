@@ -91,7 +91,7 @@ export const ensureLspInitialized = async (
 
     const initParams: InitializeParams = {
       processId: null,
-      rootUri: rootUri ?? undefined,
+      rootUri: rootUri ?? null,
       capabilities: {
         textDocument: {
           completion: {

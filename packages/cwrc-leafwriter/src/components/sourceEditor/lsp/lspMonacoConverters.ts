@@ -1,9 +1,15 @@
-import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import type { CompletionItem, CompletionList, MarkupContent } from 'vscode-languageserver-protocol';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import type {
+  CompletionItem,
+  CompletionList,
+  MarkedString,
+  MarkupContent,
+} from 'vscode-languageserver-protocol';
 
-const markupToString = (content: MarkupContent | string | undefined): string => {
+const markupToString = (content: MarkupContent | MarkedString | string | undefined): string => {
   if (!content) return '';
   if (typeof content === 'string') return content;
+  if ('language' in content) return content.value;
   return content.value;
 };
 
@@ -16,14 +22,13 @@ export const toMonacoCompletionItems = (
   const items = Array.isArray(result) ? result : result.items ?? [];
 
   return items.map((item) => {
-    const label =
-      typeof item.label === 'string'
-        ? item.label
-        : item.label?.label ?? String(item.label);
+    const label = item.label;
 
     const monacoItem: monaco.languages.CompletionItem = {
       label,
-      kind: item.kind as monaco.languages.CompletionItemKind | undefined,
+      kind:
+        (item.kind as monaco.languages.CompletionItemKind | undefined) ??
+        monaco.languages.CompletionItemKind.Text,
       detail: item.detail,
       documentation: markupToString(item.documentation),
       insertText: item.insertText ?? label,
@@ -49,7 +54,9 @@ export const toMonacoCompletionItems = (
 };
 
 export const toMonacoHover = (
-  hover: { contents: MarkupContent | MarkupContent[] | string } | null,
+  hover: {
+    contents: MarkupContent | MarkupContent[] | MarkedString | MarkedString[] | string;
+  } | null,
 ): monaco.languages.Hover | null => {
   if (!hover) return null;
 
