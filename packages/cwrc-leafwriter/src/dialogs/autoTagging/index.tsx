@@ -47,8 +47,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     return session.current;
   };
 
-  const handleClose = () => onClose?.(id);
-
   /** Filter, match, and open the review walk for a set of dictionary entries. */
   const produceFromEntries = async (parsed: DictionaryEntry[], sourceLabel: string) => {
     if (parsed.length === 0) {
@@ -118,6 +116,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     setApplied(0);
   };
 
+  const handleClose = () => {
+    void getSession().flushDecisions();
+    onClose?.(id);
+  };
+
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
       <DialogTitle>Auto-tagging</DialogTitle>
@@ -170,6 +173,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               suggestions={suggestions}
               onApply={handleApply}
               onFocus={(s) => getSession().focus(s)}
+              onDecision={(e) => getSession().logDecision(e)}
             />
           </Box>
         )}

@@ -1,5 +1,4 @@
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import { Box, ListItem, TextField, Typography } from '@mui/material';
+import { ListItem, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
 
 const getCommonsUiBridge = () =>
@@ -24,22 +23,16 @@ export const DesktopEncoderName = () => {
   if (!bridge) return null;
 
   return (
-    <ListItem dense disableGutters sx={{ alignItems: 'flex-start', py: 1 }}>
-      <PersonOutlineIcon sx={{ height: 18, width: 18, mx: 1, mt: 1 }} />
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2">Encoder name</Typography>
-        <Typography color="text.secondary" sx={{ mb: 0.75 }} variant="caption">
-          Pre-fills Principal when setting up a new project only.
-        </Typography>
-        <TextField
-          fullWidth
-          onBlur={() => void bridge.setEncoderName(encoderName)}
-          onChange={(event) => setEncoderNameLocal(event.target.value)}
-          placeholder="Your name"
-          size="small"
-          value={encoderName}
-        />
-      </Box>
+    <ListItem dense disableGutters sx={{ py: 0.25 }}>
+      <TextField
+        fullWidth
+        label="User name"
+        onBlur={() => void bridge.setEncoderName(encoderName)}
+        onChange={(event) => setEncoderNameLocal(event.target.value)}
+        placeholder="Your name"
+        size="small"
+        value={encoderName}
+      />
     </ListItem>
   );
 };

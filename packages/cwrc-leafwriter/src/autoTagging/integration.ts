@@ -1,6 +1,9 @@
 import { buildDocIndex } from './anchor';
 import { applySuggestions, type BatchResult, type UserRule } from './apply';
+import { DecisionLogBuffer } from './decisionLog';
+import { entityStoreFromDesktop, type EntityStore } from './entityStore';
 import { normalizeDomText } from './normalize';
+import type { DecisionEvent } from './reviewController';
 import type { Suggestion, WhitespacePolicy } from './types';
 
 /**
@@ -29,11 +32,41 @@ export interface WriterLike {
  */
 export class AutoTaggingSession {
   private snapshots: string[] = [];
+  private readonly decisions = new DecisionLogBuffer();
+  private readonly store: EntityStore | null;
 
   constructor(
     private readonly writer: WriterLike,
     readonly policy: WhitespacePolicy = 'ignore',
-  ) {}
+    store: EntityStore | null = entityStoreFromDesktop(),
+  ) {
+    this.store = store;
+  }
+
+  /**
+   * Record a review-walk decision for the decision log. Wire this to
+   * `ReviewController.onDecision` (or ReviewPanel's `onDecision` prop).
+   */
+  logDecision(event: DecisionEvent): void {
+    this.decisions.add(event);
+  }
+
+  get pendingDecisionCount(): number {
+    return this.decisions.length;
+  }
+
+  /**
+   * Flush buffered decisions to `/.leaf/entity-decisions.jsonl`. No-op (but
+   * still clears the buffer) in the web app where no project store exists.
+   * Returns the number of records written.
+   */
+  async flushDecisions(): Promise<number> {
+    const records = this.decisions.pending;
+    if (records.length === 0) return 0;
+    if (this.store) await this.store.appendDecisions(records);
+    this.decisions.flush(); // clear the buffer regardless
+    return records.length;
+  }
 
   /** Current document as a normalized XML DOM — the input for producers. */
   async getDocument(): Promise<Document> {

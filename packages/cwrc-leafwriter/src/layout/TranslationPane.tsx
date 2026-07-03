@@ -1740,8 +1740,6 @@ export const TranslationPane = () => {
             <TextField
               autoFocus
               fullWidth
-              helperText="Stored with this project's translation metadata."
-              label="Style"
               margin="dense"
               onChange={(event) => setPendingCitationStyle(event.target.value)}
               select

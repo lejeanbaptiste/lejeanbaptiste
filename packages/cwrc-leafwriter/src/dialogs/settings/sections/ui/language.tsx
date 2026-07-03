@@ -1,5 +1,4 @@
-import TranslateIcon from '@mui/icons-material/Translate';
-import { Box, ListItem, MenuItem, Select, Typography } from '@mui/material';
+import { ListItem, MenuItem, TextField } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { locales } from '../../../../i18n';
 import { useActions, useAppState } from '../../../../overmind';
@@ -11,18 +10,16 @@ export const Language = () => {
   const { switchLocale } = useActions().ui;
 
   return (
-    <ListItem dense disableGutters>
-      <TranslateIcon sx={{ height: 18, width: 18, mx: 1 }} />
-      <Typography sx={{ textTransform: 'capitalize' }} variant="body2">
-        {t('LW.commons.language')}
-      </Typography>
-      <Box flexGrow={1} />
-      <Select
+    <ListItem dense disableGutters sx={{ py: 0.25 }}>
+      <TextField
+        fullWidth
         id="language-selector"
+        label={t('LW.commons.language')}
         onChange={(event) => {
           switchLocale(event.target.value);
           i18n.changeLanguage(event.target.value);
         }}
+        select
         size="small"
         value={currentLocale}
       >
@@ -31,7 +28,7 @@ export const Language = () => {
             {t(`LW.languages.${locale}`, { lng: locale, fallbackLng: 'en' })}
           </MenuItem>
         ))}
-      </Select>
+      </TextField>
     </ListItem>
   );
 };

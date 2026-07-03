@@ -1,5 +1,6 @@
 import {
   applyRegexReplacement,
+  isReplaceableSourceHit,
   isReplaceableTextHit,
   replaceAllInContent,
   replaceHitAtOffset,
@@ -22,6 +23,12 @@ describe('replaceText', () => {
     expect(isReplaceableTextHit(sampleXml, start, end)).toBe(false);
   });
 
+  test('isReplaceableSourceHit accepts a raw XML tag match', () => {
+    const start = sampleXml.indexOf('</p>');
+    const end = start + '</p>'.length;
+    expect(isReplaceableSourceHit(sampleXml, start, end)).toBe(true);
+  });
+
   test('replaceHitAtOffset splices literal replacement', () => {
     const start = sampleXml.indexOf('world');
     const end = start + 'world'.length;
@@ -40,9 +47,7 @@ describe('replaceText', () => {
   test('applyRegexReplacement substitutes \\1 backrefs', () => {
     const match = /(第[一二三十])/.exec('第一');
     expect(match).not.toBeNull();
-    expect(applyRegexReplacement(match!, '第<number>\\1</number>')).toBe(
-      '第<number>第一</number>',
-    );
+    expect(applyRegexReplacement(match!, '第<number>\\1</number>')).toBe('第<number>第一</number>');
   });
 
   test('replaceAllInContent replaces only replaceable hits', () => {
@@ -58,6 +63,22 @@ describe('replaceText', () => {
     const { count, skippedNonReplaceable } = replaceAllInContent(xml, '中.*国', '泰国', true);
     expect(count).toBe(0);
     expect(skippedNonReplaceable).toBe(1);
+  });
+
+  test('replaceAllInContent can replace raw XML when markup is allowed', () => {
+    const xml = '<root><p><persName>Ada</persName></p></root>';
+    const { content, count, skippedNonReplaceable } = replaceAllInContent(
+      xml,
+      '</persName>',
+      '</name>',
+      false,
+      false,
+      true,
+    );
+
+    expect(count).toBe(1);
+    expect(skippedNonReplaceable).toBe(0);
+    expect(content).toBe('<root><p><persName>Ada</name></p></root>');
   });
 });
 
@@ -76,6 +97,25 @@ describe('replaceValidation', () => {
     const outcome = validateAndReplaceHit(sampleXml, start, end, '泰国', false, '中国');
     expect(outcome.ok).toBe(false);
     expect(outcome.error).toContain('crosses XML markup');
+  });
+
+  test('validateAndReplaceHit allows well-formed source markup replacement', () => {
+    const xml = '<root><p>Ada<lb/></p></root>';
+    const start = xml.indexOf('<lb/>');
+    const end = start + '<lb/>'.length;
+    const outcome = validateAndReplaceHit(xml, start, end, '<br/>', false, '<lb/>', false, true);
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.content).toBe('<root><p>Ada<br/></p></root>');
+  });
+
+  test('validateAndReplaceAll allows matching source XML tags when result is well formed', () => {
+    const xml = '<root><p><persName>Ada</persName></p></root>';
+    const outcome = validateAndReplaceAll(xml, 'persName', 'name', false, false, true);
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.count).toBe(2);
+    expect(outcome.content).toBe('<root><p><name>Ada</name></p></root>');
   });
 
   test('validateAndReplaceHit rejects invalid XML result', () => {

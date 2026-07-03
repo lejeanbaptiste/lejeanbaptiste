@@ -27,6 +27,7 @@ export interface FlatReplaceHit {
 
 export interface UseFindReplaceParams {
   activeTabPath: string | null;
+  allowMarkupReplace?: boolean;
   customPath: string;
   docScope?: DocScope;
   findQuery: string;
@@ -52,6 +53,7 @@ export interface UseFindReplaceParams {
 
 export const useFindReplace = ({
   activeTabPath,
+  allowMarkupReplace = false,
   customPath,
   docScope,
   findQuery,
@@ -145,6 +147,7 @@ export const useFindReplace = ({
       useRegex,
       findQuery.trim(),
       ignoreCase,
+      allowMarkupReplace,
     );
 
     if (!outcome.ok || !outcome.content) {
@@ -174,7 +177,9 @@ export const useFindReplace = ({
           replacement: replacementUsed,
           start: selectedHit.start,
         },
-        visualPatch: resolvedHit ? { resolved: resolvedHit, replacement: replacementUsed } : undefined,
+        visualPatch: resolvedHit
+          ? { resolved: resolvedHit, replacement: replacementUsed }
+          : undefined,
       });
     } else {
       const written = await writeReplacedContentToDisk(selectedHit.filePath, outcome.content);
@@ -213,6 +218,7 @@ export const useFindReplace = ({
     });
   }, [
     activeTabPath,
+    allowMarkupReplace,
     findQuery,
     loadDocumentInWriter,
     loadFileContent,
@@ -252,6 +258,7 @@ export const useFindReplace = ({
         replaceQuery,
         useRegex,
         ignoreCase,
+        allowMarkupReplace,
       );
 
       if (!outcome.ok) {
@@ -313,6 +320,7 @@ export const useFindReplace = ({
     await rerunSearch({ jumpToSelection: true, selectedIndex: 0 });
   }, [
     activeTabPath,
+    allowMarkupReplace,
     findQuery,
     loadDocumentInWriter,
     loadFileContent,

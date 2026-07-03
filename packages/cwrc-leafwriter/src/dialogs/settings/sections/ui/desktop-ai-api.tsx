@@ -1,4 +1,3 @@
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import {
   Alert,
   Box,
@@ -120,15 +119,13 @@ export const DesktopAiApi = () => {
   };
 
   return (
-    <ListItem dense disableGutters sx={{ alignItems: 'flex-start', py: 1 }}>
-      <AutoAwesomeIcon sx={{ height: 18, width: 18, mx: 1, mt: 1 }} />
+    <ListItem dense disableGutters sx={{ alignItems: 'flex-start', py: 0.25 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2">AI API</Typography>
-        <Typography color="text.secondary" sx={{ mb: 1 }} variant="caption">
+        <Typography color="text.secondary" sx={{ mb: 0.5 }} variant="caption">
           Configure an OpenAI-compatible endpoint for AI-assisted translation.
         </Typography>
 
-        <Stack spacing={1.25}>
+        <Stack spacing={0.75}>
           <TextField
             fullWidth
             label="Base URL"
@@ -170,18 +167,33 @@ export const DesktopAiApi = () => {
             multiline
             onChange={(event) => updateSetting('customInstructions', event.target.value)}
             placeholder="Translate in a concise scholarly style."
+            size="small"
             value={settings.customInstructions}
           />
 
           <Collapse in={Boolean(status)}>
-            {status ? <Alert severity={status.severity}>{status.message}</Alert> : null}
+            {status ? (
+              <Alert severity={status.severity} sx={{ py: 0 }}>
+                {status.message}
+              </Alert>
+            ) : null}
           </Collapse>
 
           <Stack direction="row" spacing={1}>
-            <Button disabled={saving} onClick={() => void saveSettings()} variant="contained">
+            <Button
+              disabled={saving}
+              onClick={() => void saveSettings()}
+              size="small"
+              variant="contained"
+            >
               {saving ? 'Saving...' : 'Save'}
             </Button>
-            <Button disabled={checking} onClick={() => void checkConnection()} variant="outlined">
+            <Button
+              disabled={checking}
+              onClick={() => void checkConnection()}
+              size="small"
+              variant="outlined"
+            >
               {checking ? 'Checking...' : 'Check connection'}
             </Button>
           </Stack>

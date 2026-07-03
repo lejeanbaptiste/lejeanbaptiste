@@ -1,6 +1,7 @@
 import { parseXmlDocument } from '../xpath/evaluateXPathAll';
 import {
   applyRegexReplacement,
+  isReplaceableSourceHit,
   isReplaceableTextHit,
   replaceAllInContent,
   replaceHitAtOffset,
@@ -12,8 +13,7 @@ export type ReplaceRiskTier = 'low' | 'medium' | 'high';
 const MARKUP_CHARS = /[<>/&]/;
 const GREEDY_REGEX = /\(\.\*|\(\.\+|\\\.\\\*|\\\.\\\+/;
 
-export const INVALID_XML_MESSAGE =
-  'Replace would produce invalid XML. No changes were saved.';
+export const INVALID_XML_MESSAGE = 'Replace would produce invalid XML. No changes were saved.';
 
 export const getReplaceRiskTier = (
   find: string,
@@ -61,8 +61,13 @@ export const validateAndReplaceHit = (
   useRegex: boolean,
   query: string,
   ignoreCase = false,
+  allowMarkup = false,
 ): ValidateReplaceHitResult => {
-  if (!isReplaceableTextHit(content, start, end)) {
+  const canReplace = allowMarkup
+    ? isReplaceableSourceHit(content, start, end)
+    : isReplaceableTextHit(content, start, end);
+
+  if (!canReplace) {
     return {
       ok: false,
       error: 'This match crosses XML markup and cannot be replaced in Source mode.',
@@ -104,18 +109,17 @@ export const validateAndReplaceAll = (
   replacement: string,
   useRegex: boolean,
   ignoreCase = false,
+  allowMarkup = false,
 ): ValidateReplaceAllResult => {
   if (useRegex && !buildSearchRegex(query, ignoreCase)) {
     return { ok: false, count: 0, skippedNonReplaceable: 0, error: 'Invalid regular expression.' };
   }
 
-  const { content: nextContent, count, skippedNonReplaceable } = replaceAllInContent(
-    content,
-    query,
-    replacement,
-    useRegex,
-    ignoreCase,
-  );
+  const {
+    content: nextContent,
+    count,
+    skippedNonReplaceable,
+  } = replaceAllInContent(content, query, replacement, useRegex, ignoreCase, allowMarkup);
 
   if (count === 0) {
     return { ok: true, content, count: 0, skippedNonReplaceable };

@@ -74,36 +74,68 @@ First real producers. Should be small once 0–1 exist.
 The disambiguation substrate. No UI beyond what's needed to create the file.
 
 **Decide first:**
-- [ ] Exact TEI shape: `<standOff>` in one file per project? File name/location convention? `<listPerson>`/`<listPlace>`/`<listOrg>`/`<listBibl>` — which lists in v1?
-- [ ] Local id scheme (format, generation, collision policy).
-- [ ] `@key` vs `@ref` on mentions, and the pointer syntax to the entity file.
-- [ ] Which `<idno>` types are recognized (CBDB, Wikidata, VIAF, DILA, CHGIS…) and how cached authority data is stored on the entity (custom namespace? `<note type="cached">`?).
-- [ ] Decision-log format and location (same file or sibling), and what exactly is recorded (surface → tag counts; surface → entity choices; rejections).
-- [ ] **The exclusion mechanism**: how files are marked as infrastructure so find/replace/whole-project operations skip them by role — this likely touches code outside this feature, so decide the mechanism (file role in project manifest? reserved path?) before creating the first entity file.
+- [x] Exact TEI shape: one project-level TEI standoff file at `/.leaf/entities.xml`. V1 includes `<listPerson>`, `<listPlace>`, `<listOrg>`, and `<listBibl>`, and must allow additional project-defined lists for tags the user adds and wants to disambiguate.
+- [x] Local id scheme: typed sequential `xml:id`s (`person-000001`, `place-000001`, `org-000001`, `work-000001`, etc.). Generation scans existing ids for the type, takes the next suffix, and increments on collision. Do not derive ids from names.
+- [x] Mentions use `@key`, not `@ref`, with a bare local id: `<persName key="person-000001">張衡</persName>`. The project entity file location is resolved by project metadata/default convention, not encoded into each mention.
+- [x] Recognized `<idno>` types: canonical `CBDB`, `Wikidata`, `VIAF`, `DILA`, `CHGIS`, and `GeoNames` (places). Cached authority display data is optional compact JSON in `<note type="authority-cache" source="..." resp="leaf-writer" when="...">`; `<idno>` values remain the source of truth.
+- [x] Decision log: sibling append-only JSONL file at `/.leaf/entity-decisions.jsonl`, not inside `entities.xml`. Each event records timestamp, document path/id, surface, tag, action, source method, optional entity id or rejected candidate, scope (`occurrence`, `document-surface`, later maybe `selection`), and optional anchor/context hash. Counts are derived from the log.
+- [x] **The exclusion mechanism**: reserve `/.leaf/` for infrastructure by default and mark infrastructure files explicitly in the project manifest, e.g. `role: "infrastructure"` with `kind: "entity-authority"` or `kind: "decision-log"`. The manifest role is authoritative; whole-project find/replace, auto-tagging crawls, exports, and normal corpus validation skip these files unless a command explicitly targets project infrastructure.
+- [x] **Candidate / unresolved representation** (decided in place of Norbert's in-document `|` lists): the corpus XML holds only *terminal* states — (1) resolved: `key="person-000001"` (single local id); (2) deferred/ambiguous: TEI-native `cert="unknown"` marker with no key, styled red in the editor as a deliberate irritant (the equivalent of Norbert's red 'ambiguous' tag); (3) not-an-entity: tag removed. **Candidate sets are pipeline artifacts, not document state** — a multi-hit is a suggestion object carrying N candidate entities, held in the review pipeline + pending cache and regenerable by re-running the seed/bombard (matches the Norbert habit of discarding the `|` list on deferral). Provenance: machine-auto-resolved mentions carry `resp="#leafwriter-autotag"` (or `cert="high"`) to distinguish confident auto-links from human-confirmed ones, so auto-links can be bulk-trusted yet still filtered for spot-checking. Entities are written to `entities.xml` only when resolved or auto-resolved (unique hit) — never speculative candidates, so every entity in the file is real and referenced.
 
 **Prepare:**
-- [ ] Survey existing TEI personography conventions/tools for interop before inventing anything.
-- [ ] Check every existing whole-project operation in leaf-writer (find, replace, crawl, export, validation runs) against the exclusion mechanism.
-- [ ] Migration story: what happens when a project already has `@key` values from elsewhere?
+- [ ] Survey existing TEI personography conventions/tools for interop before inventing anything. *(Not done as a formal tool survey. Shape is standard: `<standOff>`/`<listPerson>`+`<listPlace>`+`<listOrg>` with `<person xml:id>`, names in `<persName>`, authority links as `<idno type="VIAF|Wikidata|CBDB">`; interop tools (CETEIcean, TEI Publisher) expect this. Chosen model uses `@key` with bare local id — confirm target tools accept `@key` vs `@ref` before locking.)*
+- [x] Check every existing whole-project operation in leaf-writer against the exclusion mechanism. **Audit done (2026-07-03).** No single choke point — **three independent enumerators**: (1) `apps/desktop/src/explorerFileOps.ts::listProjectXmlFiles` (Node fs) already skips the `schema/` dir and `isTranslationFile()` — used by metadata apply, the auto-tag crawl, sidebar list; (2) `apps/commons/src/desktop/xpath/collectXmlFiles.ts` (renderer, via `readDirectory`) filters **nothing** at collection, defers scoping downstream — used by project find/replace (`find/searchText.ts`); (3) `explorerFileOps.ts::findXmlFilesByName` (filename search, no exclusion). **Implications for the chosen `/.leaf/` + manifest-role mechanism:** `listProjectXmlFiles` already does a directory skip, so adding `/.leaf/` is a one-liner; `collectXmlFiles` skips nothing and must get the exclusion explicitly (it's the find/replace path — the real leak risk); the manifest `role: "infrastructure"` check is the backstop layer across all three. Existing precedent to mirror: `translationFileNaming.ts::isTranslationFile` is already a "special file role by convention" consulted by enumerators. Still to re-check: exports and normal validation runs must consult the same exclusion.
+- [ ] Migration story: what happens when a project already has `@key` values from elsewhere? *(Not started — depends on the local-id scheme already decided (`person-000001` etc.). Likely shape: an import pass that mints local entities and ingests any pre-existing `@key`/`@ref` values as authority `<idno>`s, rewriting mentions to the new local `@key`. Defer until Phase 3 build.)*
 
-**Done when:** a project can hold an entity file with local ids + authority idnos; mentions can point to it; find/replace provably never touches it; the decision log records Phase 1 accept/reject events.
+**Done when:** a project can hold `/.leaf/entities.xml` with local ids + authority idnos; mentions point to entities with `@key`; find/replace and other corpus-wide operations provably skip infrastructure files; the sibling JSONL decision log records Phase 1 accept/reject events.
 
-## Phase 4 — Disambiguation panel & authority lookups
+**Status (2026-07-03):** core built.
+- **Entity file model** (`autoTagging/entities.ts`): `createEntitiesScaffold()` (TEI standoff with `<listPerson>`/`<listPlace>`/`<listOrg>`/`<listBibl>`), `nextEntityId(doc, kind)` (typed sequential `person-000001`…, scan-highest+1, collision-safe, never name-derived), `addEntity()` (writes name + `<idno>`s + optional `resp` provenance like `#leafwriter-autotag` + optional `<note type="authority-cache">` JSON), `findEntity()`, plus `ENTITY_KINDS`/`TAG_TO_KIND` maps.
+- **Decision log** (`autoTagging/decisionLog.ts`): JSONL record model, `recordFromDecision()` mapping a review `DecisionEvent` → log record, append/parse/deriveCounts, and `DecisionLogBuffer` whose `.add()` matches `ReviewController.onDecision` exactly — the dangling Phase 1 hook now has its consumer (wire it in when the disambiguation UI lands).
+- **Exclusion mechanism** (reserved-path layer): `isInfrastructurePath()`/`INFRASTRUCTURE_DIR = '.leaf'` added in both `apps/desktop/src` and `apps/commons/src/desktop` (mirroring `translationFileNaming`). Wired into all three enumerators the audit found: `listProjectXmlFiles` and `findXmlFilesByName` (desktop fs) and `collectXmlFiles` (find/replace, the leak risk) now skip `/.leaf/`. fs-backed and mocked tests prove exclusion. Manifest `role: "infrastructure"` backstop still to add when the project manifest is next touched.
+- Tests: +15 Core (entities/decisionLog), +23 desktop/commons (exclusion). Pre-existing unrelated failure noted: `apps/commons/.../updateResultsAfterReplace.test.ts` (find/replace offset math, untouched here).
+**Phase 3 completed (2026-07-03):** persistence + log wiring done.
+- **Persistence** (`autoTagging/entityStore.ts`): `EntityStore` behind a narrow file API (`ensureDirectory`/`pathExists`/`readFile`/`writeFile`); `loadEntities()` creates `/.leaf/entities.xml` from the scaffold on first use, `saveEntities()` writes back, `appendDecisions()` grows the JSONL log. `entityStoreFromDesktop()` builds one from the desktop globals (null in the web app). Platform-separator aware.
+- **Decision log wired to the review walk**: `AutoTaggingSession` now holds a `DecisionLogBuffer`; `logDecision(event)` is passed as the ReviewPanel `onDecision` prop, and `flushDecisions()` (called on dialog close) appends to `/.leaf/entity-decisions.jsonl` via the store — no-op-but-clears in the web app. The dangling Phase 1 hook is now connected end to end.
+- Tests: 140 Core total (+ entityStore round-trip, session buffer→flush, web-app no-store path). Typecheck clean.
+- Deferred to Phase 4 (where identity is actually assigned): entities get *written* to `entities.xml` during 4a/4b resolution, and `resolved`/`auto-resolved` records join the log. Also still open from the audit: the manifest `role: "infrastructure"` backstop, and confirming exports/validation consult the exclusion.
+- **End-to-end smoke test** (`autoTagging/smoke.test.ts`, run `npx jest --selectProjects Core smoke`): against real `test_project/sizhu_shang.xml` it crawls (146 names) → tags untagged occurrences (41) → reviews/logs → applies (21) → seeds one entity in `/.leaf/entities.xml` → flushes 41 decisions to `/.leaf/entity-decisions.jsonl`, printing a trace. Exercises anchor/apply/dictionary/crawl/entities/entityStore/decisionLog together.
+- **Fixed a pre-existing unrelated failure**: `apps/commons/.../updateResultsAfterReplace.test.ts` called `updateResultsAfterSingleReplace` with the old arg order — the `replacedHit` object landed in the `ignoreCase` slot (added later), so the incremental-offset-shift path was skipped and the test expected 20 but got a re-scan's 14. Production (`useFindReplace.ts`) passes 7 args correctly; the test was stale. Added the missing `ignoreCase` arg. All 394 tests across Core/desktop/commons now pass.
+
+## Phase 4a — Bulk authority seed & auto-resolve (the "bombard")
+
+DPM's primary bootstrap (Norbert phase-one): fire big authority sets (his own DB export, CBDB, DILA, Wikidata name dumps, etc.) at the corpus to populate the entity database before any hand-disambiguation. This is the workhorse when exhaustive lists exist; AI (Phase 5) is the supplement for the long tail when they don't. Comes right after Phase 3 and before the interactive panel, because it makes the panel have little left to do.
 
 **Decide first:**
-- [ ] Which authorities in v1, and per authority: API vs. periodic dump, query shape, and license/politeness constraints (rate limits, batch sizes).
+- [ ] Authority pool format: offline dumps (CBDB/DILA/Wikidata/his SQL export) ingested as candidate records with authority id + names + minimal metadata (dates, type). Offline dump is the primary path; live API is Phase 4b's concern.
+- [ ] Match → outcome rules: unique hit → auto-create/link a project entity (`person-000001` + `<idno>`), mark `resp="#leafwriter-autotag"`; multi-hit → suggestion object carrying the candidate set (stays in the pipeline, not the corpus), routed to the 4b panel or written as `cert="unknown"` on deferral; no hit → left untagged/clean.
+- [ ] Confidence/precision gate: what counts as a "unique confident" hit safe to auto-assign (exact surface + single authority match; disambiguating metadata agreement?), and the bulk auto-accept threshold.
+- [ ] Reuse: the seed pass emits the same suggestion objects as the dictionary producer; auto-resolve is "accept all unique-hit suggestions", using the existing apply engine + snapshot/undo.
+
+**Prepare:**
+- [ ] Authority dumps for DPM's corpus (his SQL export first; then CBDB/DILA samples) with a normalizer into the candidate-record shape.
+- [ ] Bulk-apply performance: the bombard may auto-resolve thousands of mentions in one pass — one snapshot, one undo.
+
+**Done when:** ingest an authority dump → seed pass over the corpus → unique hits auto-linked (entities minted in `entities.xml`, mentions keyed + provenance-marked, one undo) → multi-hits queued for 4b; all decisions logged.
+
+## Phase 4b — Interactive disambiguation panel
+
+The panel for the leftovers 4a couldn't auto-resolve, plus live authority lookups.
+
+**Decide first:**
+- [ ] Which authorities support live lookup in v1, per authority: API vs. periodic dump, query shape, and license/politeness constraints (rate limits, batch sizes).
 - [ ] Cache policy: where cached responses live, TTL, manual refresh.
 - [ ] Grouping/collapse rules: when two authority hits merge into one candidate (already linked in entity file vs. heuristic match).
 - [ ] Button set final list and semantics — especially "accept for all identical strings *in this document*" (document-scoped, never corpus-wide) and "split group".
 - [ ] The add-description popup: which fields, required vs. optional.
-- [ ] What "mark unresolved" writes into the XML, if anything.
+- [ ] "Mark unresolved" writes `cert="unknown"` (no key), the visible red irritant; candidates are dropped from the corpus (regenerable by re-seeding).
 
 **Prepare:**
 - [ ] API keys / endpoint access for chosen authorities; record them in project config design (per-user, not per-project, presumably).
 - [ ] UI mock: tag selector → unique-string tree → instances → candidate list.
 - [ ] Recorded/mock authority responses for offline development and tests.
 
-**Done when:** select `<persName>` → tree of unique strings → candidates from entity file + authorities → accept assigns local entity id in `@key`/`@ref`, creating the entity if new; filter hides fully-resolved strings; all decisions land in the decision log.
+**Done when:** select `<persName>` → tree of unique strings → candidates from entity file + seeded pool + live authorities → accept assigns local entity `@key`, creating the entity if new; filter hides fully-resolved strings; all decisions land in the decision log.
 
 ## Phase 5 — AI suggest & AI audit
 

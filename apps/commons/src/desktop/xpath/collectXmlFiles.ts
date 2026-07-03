@@ -1,3 +1,5 @@
+import { INFRASTRUCTURE_DIR } from '../infrastructurePaths';
+
 export const collectXmlFiles = async (dirPath: string): Promise<string[]> => {
   if (!window.electronAPI) return [];
 
@@ -6,6 +8,9 @@ export const collectXmlFiles = async (dirPath: string): Promise<string[]> => {
 
   for (const entry of entries) {
     if (entry.isDirectory) {
+      // Reserved project infrastructure (entity file, decision log) is never
+      // a search target — keep find/replace out of /.leaf/.
+      if (entry.name === INFRASTRUCTURE_DIR) continue;
       files.push(...(await collectXmlFiles(entry.path)));
       continue;
     }
