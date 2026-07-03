@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron';
+import type { ChildProcessWithoutNullStreams } from 'child_process';
 import { ipcMain } from 'electron';
 import path from 'path';
 import { app } from 'electron';

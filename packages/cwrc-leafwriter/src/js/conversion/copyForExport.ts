@@ -88,7 +88,10 @@ const writeClipboard = async (flavors: {
 }): Promise<void> => {
   const api = getDesktopApi();
   if (api?.writeClipboardRich) {
-    await api.writeClipboardRich(flavors);
+    // Word on macOS may prefer HTML over RTF when both are present. The HTML
+    // flavor can only render footnotes inline, so desktop export writes RTF
+    // plus plain text and lets Word pick the native-footnote representation.
+    await api.writeClipboardRich({ text: flavors.text, rtf: flavors.rtf });
     return;
   }
   // Web fallback: no RTF flavor available, write text + HTML.

@@ -7,7 +7,7 @@
     "./package.json",
     "./.env-cmdrc.js"
   ],
-  "exclude": ["node_modules", "server", "public"],
+  "exclude": ["node_modules", "server", "public", "**/*.test.ts", "**/*.test.tsx"],
   "ts-node": {
     "files": true,
     "compilerOptions": {
@@ -37,6 +37,7 @@
     "noUnusedParameters": false,
     "outDir": "dist",
     "paths": {
+      "@cwrc/leafwriter-validator": ["../../packages/cwrc-leafwriter-validator/src/index.worker.ts"],
       "@src/*": ["src/*"]
     },
     "preserveWatchOutput": true,
