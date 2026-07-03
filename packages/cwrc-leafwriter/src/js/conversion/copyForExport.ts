@@ -110,7 +110,7 @@ interface EditorLike {
 
 interface WriterLike {
   editor?: EditorLike | null;
-  schemaManager?: { getIdName?: () => string };
+  schemaManager?: { getIdName?: () => string | null };
   tagger?: { getAttributesForTag?: (element: Element) => Record<string, string> };
 }
 

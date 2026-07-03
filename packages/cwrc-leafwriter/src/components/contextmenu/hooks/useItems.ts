@@ -23,7 +23,9 @@ export const useItems = (ctx: State) => {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { notifyViaSnackbar, openDialog, showTextNodes } = useActions().ui;
-  const { getPossibleNodesAt } = useActions().validator;
+  const { getPossibleNodesAt } = useActions().validator as {
+    getPossibleNodesAt: (params: PossibleNodesAtTarget) => Promise<NodeDetail[] | undefined>;
+  };
 
   const { t } = useTranslation();
 

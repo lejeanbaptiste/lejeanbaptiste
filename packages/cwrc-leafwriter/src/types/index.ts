@@ -88,6 +88,7 @@ export type ISettingsModuleName =
   | 'attributes'
   | 'imageViewer'
   | 'validation'
+  | 'translation'
   | 'code';
 
 export const SupportedSchemas = new Map<string, Schema>();

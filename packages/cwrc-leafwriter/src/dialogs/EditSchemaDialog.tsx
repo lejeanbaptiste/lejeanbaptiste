@@ -119,11 +119,11 @@ export const EditSchemaDialog = ({
     .object({
       name: z
         .string()
-        .default('')
         .min(3, { message: t('LW.Must be at least characters', { min: 3 }).toString() })
         .max(20, {
           message: t('LW.Cannot have more than characters', { max: 20 }).toString(),
-        }),
+        })
+        .default(''),
       mapping: z.string(),
       rng: urlValidation,
       css: cssValidation,
