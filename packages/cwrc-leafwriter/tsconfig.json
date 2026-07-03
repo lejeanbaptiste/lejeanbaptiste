@@ -1,6 +1,6 @@
 {
   "include": ["src/**/*", "src/types/**/*.d.ts"],
-  "exclude": ["node_modules", "lib"],
+  "exclude": ["node_modules", "lib", "**/*.test.ts", "**/*.test.tsx"],
   "compilerOptions": {
     "allowJs": true,
     "composite": false,
@@ -19,6 +19,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
+      "@cwrc/leafwriter-validator": ["../cwrc-leafwriter-validator/src/index.worker.ts"],
       "@src/*": ["src/*"]
     },
     "preserveWatchOutput": true,
