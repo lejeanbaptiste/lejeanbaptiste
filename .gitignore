@@ -135,5 +135,9 @@ out
 
 *.code-workspace
 
-"docs/doc import"
-test_project/*
+docs/doc import/
+test_project/
+databases/
+**/.obsidian/
+**/.claude/
+**/.cursor/
