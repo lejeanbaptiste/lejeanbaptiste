@@ -26,9 +26,7 @@ const getValidatorInstrumentation = () => {
   return window.__desktopValidatorInstrumentation;
 };
 
-const logValidatorInstrumentation = (tag: string) => {
-  console.debug?.('[ValidatorInstrumentation]', tag, window.__desktopValidatorInstrumentation);
-};
+const logValidatorInstrumentation = (_tag: string) => undefined;
 
 export type SourceValidationResult = ValidationResponse & {
   parseError?: Extract<ReturnType<typeof checkWellFormedness>, { valid: false }>['error'];

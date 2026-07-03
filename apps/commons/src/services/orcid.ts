@@ -8,7 +8,7 @@ const name = 'orcid';
 const isIdentityProvider = true;
 const isStorageProvider = false;
 
-let _access_token: string;
+let _access_token = '';
 const getAccessToken = () => _access_token;
 
 let _userId: string;
@@ -25,6 +25,7 @@ const authenticate = ({ access_token, IDPTokens }: AuthenticateProp) => {
   }
 
   if (!access_token) throw new Error('No access token provided');
+  _access_token = access_token;
 };
 
 const getAuthenticatedUser = async (_userId?: string) => {

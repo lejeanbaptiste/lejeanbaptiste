@@ -285,7 +285,6 @@ export const enterTranslationMode = (
     citationStyle?: string;
   },
 ) => {
-  console.log('[translation] enterTranslationMode action called with', payload);
   state.ui.translationMode = {
     active: true,
     lang: payload.lang,
@@ -301,10 +300,6 @@ export const enterTranslationMode = (
 };
 
 export const exitTranslationMode = ({ state }: Context) => {
-  console.log(
-    '[translation] exitTranslationMode action called, was active?',
-    state.ui.translationMode.active,
-  );
   if (!state.ui.translationMode.active) return;
 
   state.ui.translationMode = {

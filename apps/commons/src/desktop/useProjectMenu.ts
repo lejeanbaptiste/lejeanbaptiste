@@ -138,34 +138,14 @@ export const useProjectMenu = () => {
   ]);
 
   const closeCurrentTab = useCallback(async () => {
-    if (!activeTabPath) {
-      console.info('[cursor-session] close current tab skipped: no active tab');
-      return;
-    }
+    if (!activeTabPath) return;
 
     clearFindHighlights();
     const tab = openTabs.find((item) => item.filePath === activeTabPath);
-    if (!tab) {
-      console.info('[cursor-session] close current tab skipped: active tab missing', {
-        activeTabPath,
-      });
-      return;
-    }
+    if (!tab) return;
 
-    console.info('[cursor-session] close current tab before content read', {
-      activeTabPath,
-      bridgeCapture: window.__leafWriterCursorSession?.capture?.() ?? null,
-      contentHasChanged,
-      tabDirty: tab.dirty,
-    });
     const content = await getEditorContent(leafWriter, tab.content);
     const isDirty = contentHasChanged || tab.dirty;
-    console.info('[cursor-session] close current tab after content read', {
-      activeTabPath,
-      bridgeCapture: window.__leafWriterCursorSession?.capture?.() ?? null,
-      contentLength: content?.length ?? null,
-      isDirty,
-    });
 
     if (isDirty) {
       const result = await promptCloseDirtyTab({

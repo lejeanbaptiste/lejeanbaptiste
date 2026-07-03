@@ -1,29 +1,3 @@
-declare global {
-  interface Window {
-    __leafWriterSourceFind?: {
-      applyJump: (params: {
-        content: string;
-        end: number;
-        ignoreCase: boolean;
-        query: string;
-        start: number;
-        useRegex: boolean;
-      }) => boolean;
-      clear: () => void;
-      replaceRange: (params: {
-        content: string;
-        end: number;
-        replacement: string;
-        start: number;
-      }) => boolean;
-      revealRange: (params: { content: string; end: number; start: number }) => boolean;
-      scrollToHit: (params: { content: string; end: number; start: number }) => boolean;
-      undo: () => Promise<string | null>;
-      redo?: () => Promise<string | null>;
-    };
-  }
-}
-
 const isSourceEditorMode = () =>
   window.writer?.overmindState?.ui?.editorViewMode === 'source';
 

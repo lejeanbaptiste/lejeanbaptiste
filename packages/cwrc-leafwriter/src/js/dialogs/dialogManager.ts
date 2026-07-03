@@ -81,17 +81,10 @@ const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
           $(window).off('resize', $.proxy(handleResize, this, $(event.target)));
           // dialogclose fires after close animation; by then jQuery UI has already restored
           // focus to its opener element. Re-claim it for the editor.
-          const t0 = performance.now();
-          const onFocusIn = (e: FocusEvent) =>
-            console.log(`[focus-dbg +${(performance.now() - t0).toFixed(1)}ms] outer-doc focusin →`, e.target, '← from', e.relatedTarget);
-          document.addEventListener('focusin', onFocusIn, true);
-          setTimeout(() => document.removeEventListener('focusin', onFocusIn, true), 2000);
-          console.log('[focus-dbg] dialogclose fired; activeElement before editor.focus():', document.activeElement);
           // Suppress Enter in TinyMCE for 300ms so the dialog-confirmation Enter
           // doesn't leak through and re-open the tag command popup.
           if (window.writer?.editor) (window.writer.editor as any)._suppressEnterUntil = Date.now() + 300;
           window.writer?.editor?.focus();
-          console.log('[focus-dbg] dialogclose: after editor.focus(); activeElement:', document.activeElement);
         });
     },
   });

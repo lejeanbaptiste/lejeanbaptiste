@@ -40,6 +40,7 @@ import {
 import { findParagraphAncestor } from './tagInsert';
 import { getProjectTagCounts, loadTagStats, updateTagStatsForFile } from './tagStats';
 import { getCaretScreenPosition } from './editorAnchor';
+import { getBookmark } from './taggerRuntime';
 
 const LAST_USED_TAG_KEY = 'ljb:lastUsedTag';
 
@@ -129,20 +130,7 @@ export const useTagCommandController = () => {
     setFilter('');
     queueWalkRef.current = null;
     bookmarkRef.current = null;
-    const t0 = performance.now();
-    const track = (label: string) =>
-      console.log(`[focus-popup +${(performance.now() - t0).toFixed(1)}ms] ${label}`, document.activeElement);
-    track('closePopup: before editor.focus()');
     window.writer?.editor?.focus();
-    track('closePopup: after editor.focus() sync');
-    requestAnimationFrame(() => track('closePopup: rAF after focus'));
-    setTimeout(() => track('closePopup: setTimeout(0) after focus'), 0);
-    setTimeout(() => track('closePopup: setTimeout(100)'), 100);
-    // Watch for any focus changes for 500ms
-    const onFocusIn = (e: FocusEvent) =>
-      console.log(`[focus-popup +${(performance.now() - t0).toFixed(1)}ms] focusin →`, e.target, '← from', e.relatedTarget);
-    document.addEventListener('focusin', onFocusIn, true);
-    setTimeout(() => document.removeEventListener('focusin', onFocusIn, true), 500);
   }, []);
 
   const exitWalkMode = useCallback(() => {
@@ -204,7 +192,7 @@ export const useTagCommandController = () => {
 
       const editor = window.writer?.editor;
       if (editor) {
-        bookmarkRef.current = editor.selection.getBookmark(1);
+        bookmarkRef.current = getBookmark(editor);
       }
 
       const text =
@@ -705,7 +693,7 @@ export const useTagCommandController = () => {
     onApplyWalkStep: applyWalkStep,
     onEnterWalkMode: enterWalkMode,
     onApplySingle: () => void applyHighlighted(),
-    onApplyTag: (tag) => void applyTag(tag),
+    onApplyTag: (tag: NodeDetail) => void applyTag(tag),
     onSkipWalkStep: skipWalkStep,
     open,
     openPopup,

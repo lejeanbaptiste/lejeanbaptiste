@@ -366,7 +366,6 @@ class LayoutManager {
       if (window.__desktopValidatorInstrumentation) {
         window.__desktopValidatorInstrumentation.validationPanelRequested = moduleId === 'validation';
       }
-      console.debug('[ValidatorInstrumentation]', 'validationPanelRequested', window.__desktopValidatorInstrumentation);
     }
 
     this.modulesLayout.forEach((modules, region) => {

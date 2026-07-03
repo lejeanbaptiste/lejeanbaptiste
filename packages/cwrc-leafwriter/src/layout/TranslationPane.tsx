@@ -1459,8 +1459,6 @@ export const TranslationPane = () => {
     document.execCommand(command);
   };
 
-  console.log('[translation] TranslationPane render', translationMode);
-
   if (!translationMode.active) return null;
 
   const languageOptions = languageState?.languages ?? [];

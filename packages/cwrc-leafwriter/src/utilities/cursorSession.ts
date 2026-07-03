@@ -23,7 +23,6 @@ const parseXPathSegments = (xpath: string) =>
 const findElementByTeiXPath = (xpath: string): Element | null => {
   const body = window.writer?.editor?.getBody();
   if (!body) {
-    console.info('[cursor-session] visual restore lookup failed: no editor body', { xpath });
     return null;
   }
 
@@ -37,12 +36,6 @@ const findElementByTeiXPath = (xpath: string): Element | null => {
     });
     current = matches[segment.index] ?? null;
     if (!current) {
-      console.info('[cursor-session] visual restore lookup failed: missing segment', {
-        available: matches.map((element) => element.getAttribute('_tag')),
-        index: segment.index,
-        segment,
-        xpath,
-      });
       return null;
     }
     scope = current;
@@ -55,12 +48,6 @@ const setVisualCaret = ({ offsetInElementText, teiXPath }: VisualCaretPosition):
   const editor = window.writer?.editor;
   const element = findElementByTeiXPath(teiXPath);
   if (!editor || !element) {
-    console.info('[cursor-session] visual restore failed: editor or element unavailable', {
-      hasEditor: Boolean(editor),
-      hasElement: Boolean(element),
-      offsetInElementText,
-      teiXPath,
-    });
     return false;
   }
 
@@ -81,12 +68,6 @@ const setVisualCaret = ({ offsetInElementText, teiXPath }: VisualCaretPosition):
       editor.focus();
       element.scrollIntoView({ block: 'center' });
       window.writer?.event('nodeChanged').publish(element);
-      console.info('[cursor-session] visual restore applied', {
-        nodePreview: textNode.textContent?.slice(0, 80),
-        offsetInTextNode: remaining,
-        teiXPath,
-        visitedTextLength,
-      });
       return true;
     }
     remaining -= length;
@@ -101,11 +82,6 @@ const setVisualCaret = ({ offsetInElementText, teiXPath }: VisualCaretPosition):
   editor.focus();
   element.scrollIntoView({ block: 'center' });
   window.writer?.event('nodeChanged').publish(element);
-  console.info('[cursor-session] visual restore applied at element end', {
-    offsetInElementText,
-    teiXPath,
-    visitedTextLength,
-  });
   return true;
 };
 
@@ -113,41 +89,19 @@ export const captureLeafWriterCursorPosition = (): LeafWriterCursorPosition | nu
   const mode = window.writer?.overmindState?.ui?.editorViewMode;
   if (mode === 'source') {
     const offset = getCursorOffsetInSourceEditor();
-    console.info('[cursor-session] source capture', {
-      mode,
-      offset,
-    });
     return typeof offset === 'number' ? { mode: 'source', offset } : null;
   }
 
   const visualCaret = getVisualCaretForSourceSync();
-  console.info('[cursor-session] visual capture', {
-    mode,
-    visualCaret,
-    currentNodeTag:
-      window.writer?.editor?.currentNode instanceof Element
-        ? window.writer.editor.currentNode.getAttribute('_tag')
-        : null,
-    selectionText: window.writer?.editor?.selection?.getRng?.()?.toString?.() ?? null,
-  });
   return visualCaret ? { mode: 'visual', ...visualCaret } : null;
 };
 
 export const restoreLeafWriterCursorPosition = async (
   position: LeafWriterCursorPosition,
 ): Promise<boolean> => {
-  console.info('[cursor-session] editor restore requested', {
-    editorViewMode: window.writer?.overmindState?.ui?.editorViewMode,
-    position,
-  });
   if (position.mode === 'source') {
     await window.writer?.overmindActions?.ui?.enterSourceMode?.();
-    const restored = setCursorOffsetInSourceEditor({ offset: position.offset, focusEditor: true });
-    console.info('[cursor-session] source restore result', {
-      offset: position.offset,
-      restored,
-    });
-    return restored;
+    return setCursorOffsetInSourceEditor({ offset: position.offset, focusEditor: true });
   }
 
   window.writer?.overmindActions?.ui?.setEditorViewMode?.('visual');

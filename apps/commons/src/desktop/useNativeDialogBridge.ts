@@ -55,6 +55,16 @@ interface SchemaPickerStatePayload {
   schemas: Array<{ id: string; name: string }>;
 }
 
+const getStringArg = (args: unknown, key: string): string | null => {
+  const value = (args as Record<string, unknown> | null | undefined)?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+};
+
+const getLeafWriterPaletteMode = (mode: PaletteMode): 'light' | 'dark' => {
+  if (mode === 'light' || mode === 'dark') return mode;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
 const getWriterSchemasList = (): Array<{
   id: string;
   name: string;
@@ -115,6 +125,8 @@ export const useNativeDialogBridge = () => {
 
   useEffect(() => {
     if (!isDesktop()) return;
+    const electronAPI = window.electronAPI;
+    if (!electronAPI) return;
 
     const resolveProjectBundle = async (
       sessionProjectFilePath: string,
@@ -131,30 +143,33 @@ export const useNativeDialogBridge = () => {
               themeAppearance,
             };
           case 'getEncoderName':
-            return (await window.electronAPI?.getEncoderName?.()) ?? '';
+            return (await electronAPI.getEncoderName()) ?? '';
           case 'setEncoderName':
-            await window.electronAPI?.setEncoderName?.(String(args ?? ''));
+            await electronAPI.setEncoderName(String(args ?? ''));
             return true;
           case 'getAiApiSettings':
-            return window.electronAPI?.getAiApiSettings?.() ?? null;
+            return electronAPI.getAiApiSettings() ?? null;
           case 'setAiApiSettings':
-            await window.electronAPI?.setAiApiSettings?.((args ?? {}) as Partial<AiApiSettings>);
+            await electronAPI.setAiApiSettings((args ?? {}) as Partial<AiApiSettings>);
             return true;
           case 'getRememberWorkspaceOnStartup':
-            return (await window.electronAPI?.getRememberWorkspaceOnStartup?.()) ?? true;
+            return (await electronAPI.getRememberWorkspaceOnStartup?.()) ?? true;
           case 'setRememberWorkspaceOnStartup':
-            await window.electronAPI?.setRememberWorkspaceOnStartup?.(Boolean(args));
+            await electronAPI.setRememberWorkspaceOnStartup?.(Boolean(args));
             return true;
           case 'testAiConnection':
             return (
-              (await window.electronAPI?.testAiConnection?.(
-                (args ?? {}) as Partial<AiApiSettings>,
-              )) ?? { ok: false, error: 'Desktop AI API bridge is unavailable.' }
+              (await electronAPI.testAiConnection?.((args ?? {}) as Partial<AiApiSettings>)) ?? {
+                ok: false,
+                error: 'Desktop AI API bridge is unavailable.',
+              }
             );
-          case 'setThemeAppearance':
-            setThemeAppearance(args as PaletteMode);
-            leafWriter?.setThemeAppearance?.(args as PaletteMode);
+          case 'setThemeAppearance': {
+            const mode = args as PaletteMode;
+            setThemeAppearance(mode);
+            leafWriter?.setThemeAppearance?.(getLeafWriterPaletteMode(mode));
             return true;
+          }
           case 'setLocale': {
             const locale = args as Locales;
             switchLanguage(locale);
@@ -170,7 +185,7 @@ export const useNativeDialogBridge = () => {
             return true;
           }
           case 'getSchemaPickerState': {
-            const { dialogId } = (args ?? {}) as { dialogId?: string };
+            const dialogId = getStringArg(args, 'dialogId');
             const session = dialogId ? getSchemaPickerSession(dialogId) : undefined;
             if (!session) return null;
 
@@ -189,11 +204,10 @@ export const useNativeDialogBridge = () => {
             return payload;
           }
           case 'applySchemaPickerSelection': {
-            const { dialogId, schemaId } = (args ?? {}) as {
-              dialogId?: string;
-              schemaId?: string;
-            };
-            const session = dialogId ? getSchemaPickerSession(dialogId) : undefined;
+            const dialogId = getStringArg(args, 'dialogId');
+            const schemaId = getStringArg(args, 'schemaId');
+            if (!dialogId || !schemaId) return { ok: false };
+            const session = getSchemaPickerSession(dialogId);
             if (!session || !schemaId) return { ok: false };
 
             const schema = getWriterSchemasList().find(({ id }) => id === schemaId);
@@ -205,8 +219,9 @@ export const useNativeDialogBridge = () => {
             return { ok: true };
           }
           case 'cancelSchemaPicker': {
-            const { dialogId } = (args ?? {}) as { dialogId?: string };
-            const session = dialogId ? getSchemaPickerSession(dialogId) : undefined;
+            const dialogId = getStringArg(args, 'dialogId');
+            if (!dialogId) return { ok: false };
+            const session = getSchemaPickerSession(dialogId);
             if (!session) return { ok: false };
 
             clearSchemaPickerSession(dialogId);
@@ -222,20 +237,18 @@ export const useNativeDialogBridge = () => {
             };
           }
           case 'installCatalogSchema': {
-            const { dialogId, catalogId } = (args ?? {}) as {
-              dialogId?: string;
-              catalogId?: string;
-            };
-            const session = dialogId ? getSchemaSetupSession(dialogId) : undefined;
-            if (!session || !catalogId || !window.electronAPI?.installCatalogSchema) {
+            const dialogId = getStringArg(args, 'dialogId');
+            const catalogId = getStringArg(args, 'catalogId');
+            if (!dialogId || !catalogId) {
+              return { ok: false, error: 'Invalid schema setup session.' };
+            }
+            const session = getSchemaSetupSession(dialogId);
+            if (!session || !catalogId || !electronAPI.installCatalogSchema) {
               return { ok: false, error: 'Invalid schema setup session.' };
             }
 
             try {
-              const bundle = await window.electronAPI.installCatalogSchema(
-                session.projectFilePath,
-                catalogId,
-              );
+              const bundle = await electronAPI.installCatalogSchema(session.projectFilePath, catalogId);
               registerDesktopSchemas(buildProjectSchemas(bundle.rootPath, bundle.config));
               clearSchemaSetupSession(dialogId);
               session.onComplete(bundle);
@@ -248,16 +261,17 @@ export const useNativeDialogBridge = () => {
             }
           }
           case 'installLocalSchema': {
-            const { dialogId } = (args ?? {}) as { dialogId?: string };
-            const session = dialogId ? getSchemaSetupSession(dialogId) : undefined;
-            if (!session || !window.electronAPI?.pickSchemaFiles) {
+            const dialogId = getStringArg(args, 'dialogId');
+            if (!dialogId) return { ok: false, error: 'Invalid schema setup session.' };
+            const session = getSchemaSetupSession(dialogId);
+            if (!session || !electronAPI.pickSchemaFiles || !electronAPI.installLocalSchema) {
               return { ok: false, error: 'Invalid schema setup session.' };
             }
-            const picked = await window.electronAPI.pickSchemaFiles();
+            const picked = await electronAPI.pickSchemaFiles();
             if (!picked) return { ok: false, error: 'cancelled' };
 
             try {
-              const bundle = await window.electronAPI.installLocalSchema!(
+              const bundle = await electronAPI.installLocalSchema(
                 session.projectFilePath,
                 picked.rngPath,
                 picked.cssPath,
@@ -274,7 +288,7 @@ export const useNativeDialogBridge = () => {
             }
           }
           case 'getProjectMetadataState': {
-            const { dialogId } = (args ?? {}) as { dialogId?: string };
+            const dialogId = getStringArg(args, 'dialogId');
             const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
             if (!session) return null;
             if (session.initialState) return session.initialState;
@@ -285,7 +299,6 @@ export const useNativeDialogBridge = () => {
           }
           case 'saveProjectMetadata': {
             const {
-              dialogId,
               values,
               custom,
               applyToDocuments,
@@ -293,7 +306,6 @@ export const useNativeDialogBridge = () => {
               translationLanguages,
               translationCitationStyle,
             } = (args ?? {}) as {
-              dialogId?: string;
               values?: Record<string, string>;
               custom?: Array<{ path: string; label: string; value: string }>;
               applyToDocuments?: boolean;
@@ -301,7 +313,11 @@ export const useNativeDialogBridge = () => {
               translationLanguages?: Array<{ code: string; label: string }>;
               translationCitationStyle?: string;
             };
-            const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
+            const dialogId = getStringArg(args, 'dialogId');
+            if (!dialogId) {
+              return { ok: false, error: 'Invalid metadata session.' };
+            }
+            const session = getProjectMetadataSession(dialogId);
             if (!session) {
               return { ok: false, error: 'Invalid metadata session.' };
             }
@@ -386,7 +402,7 @@ export const useNativeDialogBridge = () => {
             if (applyToDocuments) {
               const dirtyTabs = openTabs.filter((tab) => tab.dirty);
               if (dirtyTabs.length > 0) {
-                const warn = await window.electronAPI.showNativeMessageBox({
+                const warn = await electronAPI.showNativeMessageBox({
                   type: 'warning',
                   title: 'Unsaved documents',
                   message: `${dirtyTabs.length} open document(s) have unsaved changes. Bulk update writes to disk and may overwrite in-memory edits.`,
@@ -445,8 +461,9 @@ export const useNativeDialogBridge = () => {
             return { ok: true, summary };
           }
           case 'cancelProjectMetadata': {
-            const { dialogId } = (args ?? {}) as { dialogId?: string };
-            const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
+            const dialogId = getStringArg(args, 'dialogId');
+            if (!dialogId) return { ok: false };
+            const session = getProjectMetadataSession(dialogId);
             if (!session) return { ok: false };
 
             clearProjectMetadataSession(dialogId);

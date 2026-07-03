@@ -206,12 +206,10 @@ class Tagger {
       attributesEditor.show({
         attributes: {},
         callback: (attributes: any) => {
-          console.log('[focus-dbg] addTagDialog callback start; activeElement:', document.activeElement);
           if (attributes) {
             const bookmark = this.writer.editor?.currentBookmark;
             if (!bookmark) return;
             this.addStructureTag({ action, attributes, bookmark, tagName });
-            console.log('[focus-dbg] addStructureTag done; activeElement:', document.activeElement);
           }
           //@ts-ignore
           delete this.writer.editor.currentBookmark.tagId;
@@ -715,13 +713,10 @@ class Tagger {
     // TODO is this necessary?
     //@ts-ignore
     this.writer.editor.currentBookmark = null;
-    console.log('[focus-dbg] tagger: before setTimeout; activeElement:', document.activeElement);
     // Defer focus so React state updates (markup tree panel nodeChanged → scroll/select)
     // don't steal focus back after we return it to the editor.
     setTimeout(() => {
-      console.log('[focus-dbg] tagger setTimeout(0) fired; activeElement before focus():', document.activeElement);
       this.writer.editor?.focus();
-      console.log('[focus-dbg] tagger setTimeout(0): after focus(); activeElement:', document.activeElement);
     }, 0);
   }
 
@@ -998,7 +993,7 @@ class Tagger {
 
       const note = this.writer.editor?.getBody().querySelector(`#${id}`);
       if (!note) {
-        console.log(`Element ${id} not found for note tag`);
+        log.warn(`Element ${id} not found for note tag`);
         return;
       }
 

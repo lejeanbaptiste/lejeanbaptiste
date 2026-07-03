@@ -1,6 +1,12 @@
 import { Box, Link, Stack, Typography } from '@mui/material';
-import type { MarkdownHeading } from '@src/utilities';
 import { useTranslation } from 'react-i18next';
+
+interface MarkdownHeading {
+  id: string;
+  level: number;
+  slug: string;
+  title: string;
+}
 
 export const Toc = ({ headings }: { headings: MarkdownHeading[] }) => {
   const { t } = useTranslation();

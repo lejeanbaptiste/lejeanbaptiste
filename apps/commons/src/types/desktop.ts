@@ -120,6 +120,52 @@ export type WorkspaceCursorPosition =
   | { mode: 'source'; offset: number }
   | { mode: 'visual'; offsetInElementText: number; teiXPath: string };
 
+export type DesktopRightPanelTab =
+  | 'fileMetadata'
+  | 'attributes'
+  | 'imageViewer'
+  | 'validation'
+  | 'translation';
+
+export type DesktopValidatorInstrumentation = {
+  workerLoading: boolean;
+  workerLoaded: boolean;
+  schemaLoading: boolean;
+  schemaLoaded: boolean;
+  validationRunning: boolean;
+  validationPanelRequested: boolean;
+  validationPanelMounted: boolean;
+};
+
+export interface LeafWriterSourceFindBridge {
+  applyJump: (params: {
+    content: string;
+    ignoreCase: boolean;
+    query: string;
+    useRegex: boolean;
+    start: number;
+    end: number;
+  }) => boolean;
+  clear: () => void;
+  replaceRange: (params: {
+    content: string;
+    end: number;
+    replacement: string;
+    start: number;
+  }) => boolean;
+  revealRange: (params: {
+    content: string;
+    end: number;
+    focusEditor?: boolean;
+    start: number;
+  }) => boolean;
+  scrollToHit: (params: { content: string; end: number; start: number }) => boolean;
+  getCursorOffset: () => number | null;
+  setCursorOffset: (params: { focusEditor?: boolean; offset: number }) => boolean;
+  undo: () => Promise<string | null>;
+  redo: () => Promise<string | null>;
+}
+
 export interface WorkspaceSessionRestore {
   activeFilePath: string | null;
   bundle: ProjectBundle;
@@ -232,12 +278,27 @@ export interface ElectronAPI {
 }
 
 declare global {
+  type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup' | 'entities';
+  type DesktopRightPanelTab =
+    | 'fileMetadata'
+    | 'attributes'
+    | 'imageViewer'
+    | 'validation'
+    | 'translation';
+
+  interface JQuery {
+    dialog(method: 'option', optionName: string): any;
+    dialog(...args: unknown[]): JQuery;
+  }
+
   interface Window {
     electronAPI?: ElectronAPI;
     __desktopRightPanel?: {
       expand: () => void;
-      showTab: (tab: string) => void;
+      showTab: (tab: DesktopRightPanelTab) => void;
     };
+    __desktopRightPanelPendingTab?: DesktopRightPanelTab;
+    __desktopValidatorInstrumentation?: DesktopValidatorInstrumentation;
     __ljbCommonsUi?: {
       aiApiSettings: AiApiSettings | null;
       encoderName: string;
@@ -270,10 +331,7 @@ declare global {
       replaceContent: (filePath: string, content: string) => boolean;
       undo: () => Promise<boolean>;
     };
-    __leafWriterCursorSession?: {
-      capture: () => WorkspaceCursorPosition | null;
-      restore: (position: WorkspaceCursorPosition) => Promise<boolean>;
-    };
+    __leafWriterSourceFind?: LeafWriterSourceFindBridge;
   }
 }
 

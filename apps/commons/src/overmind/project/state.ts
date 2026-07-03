@@ -1,6 +1,6 @@
 import type { Types } from '@cwrc/leafwriter';
 import type { WorkspaceCursorPosition } from '@src/types/desktop';
-import type { ProjectFileConfig } from './projectFile';
+import type { ProjectFileConfig } from '@src/desktop/projectTypes';
 
 export interface FileTreeNode {
   children?: FileTreeNode[];

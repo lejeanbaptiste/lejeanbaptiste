@@ -4,7 +4,7 @@ import { isTranslationFile } from './translationFileNaming';
 import { readTranslationSettings } from './translationSettings';
 import { readTranslationSnapshot, type SnapshotUnit } from './translationSnapshot';
 
-const log = (...args: unknown[]) => console.log('[translation-recovery]', ...args);
+const log = (..._args: unknown[]) => undefined;
 
 const fileNameOf = (filePath: string): string => {
   const idx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));

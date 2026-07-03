@@ -345,17 +345,9 @@ const showExplorerLeftPanel = () => {
 
 const captureActiveCursorPosition = (state: Context['state']['project']) => {
   const activePath = state.activeTabPath;
-  if (!activePath) {
-    console.info('[cursor-session] capture skipped: no active tab');
-    return;
-  }
+  if (!activePath) return;
 
   const cursorPosition = window.__leafWriterCursorSession?.capture();
-  console.info('[cursor-session] capture active tab', {
-    filePath: activePath,
-    hasBridge: Boolean(window.__leafWriterCursorSession),
-    cursorPosition,
-  });
   if (cursorPosition) {
     state.cursorPositions = {
       ...state.cursorPositions,
@@ -466,10 +458,6 @@ export const restoreLastProject = async (context: Context) => {
 
     await loadProjectBundle(context, onboarded);
     context.state.project.cursorPositions = session?.cursorPositions ?? {};
-    console.info('[cursor-session] hydrated startup cursor positions', {
-      activeFilePath: session?.activeFilePath,
-      files: Object.keys(context.state.project.cursorPositions),
-    });
 
     const openFilePaths = session?.openFilePaths ?? [];
     for (const filePath of openFilePaths) {
@@ -483,13 +471,6 @@ export const restoreLastProject = async (context: Context) => {
     if (session?.activeFilePath && context.state.project.activeTabPath !== session.activeFilePath) {
       await context.actions.project.switchTab({ filePath: session.activeFilePath });
     }
-
-    const activePath = context.state.project.activeTabPath;
-    const cursorPosition = activePath ? session?.cursorPositions?.[activePath] : null;
-    console.info('[cursor-session] startup active cursor lookup', {
-      activePath,
-      cursorPosition,
-    });
   } catch (error) {
     console.error('[project] restoreLastProject failed:', error);
     context.state.project.isProjectReady = true;
@@ -898,13 +879,6 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
       isLocal: true,
     });
     state.editor.contentLastSaved = content;
-
-    const cursorPosition = state.project.cursorPositions[filePath];
-    console.info('[cursor-session] open file cursor lookup', {
-      filePath,
-      cursorPosition,
-      knownFiles: Object.keys(state.project.cursorPositions),
-    });
   } catch (error) {
     throw error;
   }
@@ -914,10 +888,6 @@ export const switchTab = async (
   { state, actions }: Context,
   { content, filePath }: { content?: string; filePath: string },
 ) => {
-  console.info('[cursor-session] switch tab requested', {
-    from: state.project.activeTabPath,
-    to: filePath,
-  });
   captureActiveCursorPosition(state.project);
 
   if (content && state.project.activeTabPath) {
@@ -1220,10 +1190,6 @@ export const closeTab = async (
   { state, actions }: Context,
   { content, filePath }: { content?: string; filePath: string },
 ) => {
-  console.info('[cursor-session] close tab requested', {
-    activeTabPath: state.project.activeTabPath,
-    filePath,
-  });
   if (state.project.activeTabPath === filePath) {
     captureActiveCursorPosition(state.project);
   }

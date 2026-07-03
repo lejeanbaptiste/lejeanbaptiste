@@ -1,8 +1,7 @@
 /**
- * Debug instrumentation for the desktop right-panel lifecycle (imageViewer / validation
- * blank-panel investigation). Shares window.__lwPanelTrace with the cwrc-leafwriter
- * package so both sides of the DOM-migration handshake land in one timeline.
- * Inspect with `window.__lwPanelTrace` in devtools.
+ * Debug instrumentation for the desktop right-panel lifecycle. Entries accumulate
+ * on window.__lwPanelTrace so both sides of the DOM-migration handshake land in
+ * one timeline.
  */
 
 declare global {
@@ -18,7 +17,6 @@ export const panelTrace = (tag: string, data?: Record<string, unknown>) => {
     ...(data ? { data } : {}),
   };
   (window.__lwPanelTrace ??= []).push(entry);
-  console.debug('[PanelTrace]', entry.t, tag, data ?? '');
 };
 
 /** Snapshot of a panel container node: existence, visibility, and content. */

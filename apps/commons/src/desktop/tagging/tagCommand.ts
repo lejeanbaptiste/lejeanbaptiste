@@ -6,6 +6,13 @@ import {
   fetchTagSuggestions,
   getEditorTagContext,
 } from './tagSuggestions';
+import {
+  getBookmark,
+  getRuntimeTagger,
+  getSelectionRange,
+  moveToBookmark,
+  type RuntimeBookmark,
+} from './taggerRuntime';
 
 export type TagCommandMode = 'wrap' | 'insert' | 'rename' | 'lineBreak';
 
@@ -19,11 +26,11 @@ export interface ApplyTagResult {
 
 const getWriter = () => window.writer;
 
-const restoreBookmark = (bookmark: unknown) => {
+const restoreBookmark = (bookmark: RuntimeBookmark | null | undefined) => {
   const writer = getWriter();
   if (!writer?.editor || !bookmark) return;
-  writer.editor.selection.moveToBookmark(bookmark);
-  writer.editor.currentBookmark = bookmark;
+  moveToBookmark(writer.editor, bookmark);
+  writer.editor.currentBookmark = bookmark as never;
 };
 
 const isEntityTag = (element: Element | null): boolean =>
@@ -58,7 +65,7 @@ const stripEntityWrapper = (tagElement: Element): Element => {
 
 const expandSelectionToElementBoundaries = (editor: NonNullable<ReturnType<typeof getWriter>>['editor']): boolean => {
   if (!editor) return false;
-  const rng = editor.selection.getRng(true);
+  const rng = getSelectionRange(editor);
   const lca = rng.commonAncestorContainer;
 
   // Walk up from startContainer to find its topmost child under lca
@@ -80,7 +87,7 @@ const expandSelectionToElementBoundaries = (editor: NonNullable<ReturnType<typeo
 
 export const applyWrapTag = (
   tagName: string,
-  bookmark: unknown,
+  bookmark: RuntimeBookmark | null | undefined,
   action: StructureAction = 'add',
   inTransaction = false,
 ): ApplyTagResult => {
@@ -91,18 +98,19 @@ export const applyWrapTag = (
   // Check validity without cleanRange — we handle expansion ourselves.
   // cleanRange distorts the selection in the wrong direction when the user's
   // range crosses element boundaries, causing incorrect wraps.
-  let valid = writer.tagger.isSelectionValid({ isStructTag: true, cleanRange: false });
-  if (valid !== writer.tagger.VALID) {
+  const tagger = getRuntimeTagger(writer.tagger);
+  let valid = tagger.isSelectionValid({ isStructTag: true, cleanRange: false });
+  if (valid !== tagger.VALID) {
     if (!expandSelectionToElementBoundaries(writer.editor)) {
       return { applied: false, error: 'Selection must stay within a single parent tag.' };
     }
-    valid = writer.tagger.isSelectionValid({ isStructTag: true, cleanRange: false });
-    if (valid !== writer.tagger.VALID) {
+    valid = tagger.isSelectionValid({ isStructTag: true, cleanRange: false });
+    if (valid !== tagger.VALID) {
       return { applied: false, error: 'Selection must stay within a single parent tag.' };
     }
   }
 
-  writer.editor.currentBookmark = writer.editor.selection.getBookmark(1);
+  writer.editor.currentBookmark = getBookmark(writer.editor) as never;
   const bm = writer.editor.currentBookmark;
   if (!bm) return { applied: false, error: 'Could not save selection' };
 
@@ -110,7 +118,7 @@ export const applyWrapTag = (
     writer.tagger.addStructureTag({
       action,
       attributes: {},
-      bookmark: bm,
+      bookmark: bm as never,
       tagName,
     });
   };
@@ -228,7 +236,12 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
       const targetElement = (getEditorTagContext() ?? ctx).tagElement ?? (getEditorTagContext() ?? ctx).element;
       const tagId = targetElement?.getAttribute('id');
       if (!tagId) return { applied: false, error: `Cannot insert <${tagName}> here.` };
-      writer.tagger.addStructureTag({ action: 'after', attributes: {}, bookmark: { tagId }, tagName });
+      writer.tagger.addStructureTag({
+        action: 'after',
+        attributes: {},
+        bookmark: { tagId } as never,
+        tagName,
+      });
       writer.event('contentChanged').publish();
       return { applied: true, tagName };
     }
@@ -260,14 +273,14 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
       if (retrySplit.kind === 'applied') return retrySplit.result;
     }
     writer.editor.selection.collapse(true);
-    writer.editor.currentBookmark = writer.editor.selection.getBookmark(1);
+    writer.editor.currentBookmark = getBookmark(writer.editor) as never;
     const bm = writer.editor.currentBookmark;
     if (!bm) return { applied: false, error: 'Could not save caret' };
 
     writer.tagger.addStructureTag({
       action: 'add',
       attributes: {},
-      bookmark: bm,
+      bookmark: bm as never,
       tagName,
     });
     writer.event('contentChanged').publish();
@@ -278,13 +291,13 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
   const tagId = targetElement.getAttribute('id');
   if (!tagId) return { applied: false, error: 'No target element' };
 
-  writer.editor.currentBookmark = { tagId };
+  writer.editor.currentBookmark = { tagId } as never;
   const bm = writer.editor.currentBookmark;
 
   writer.tagger.addStructureTag({
     action,
     attributes: {},
-    bookmark: bm,
+    bookmark: bm as never,
     tagName,
   });
 
@@ -295,7 +308,7 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
 export const applyTagFromPopup = async (
   mode: TagCommandMode,
   tag: NodeDetail,
-  bookmark: unknown,
+  bookmark: RuntimeBookmark | null | undefined,
   tagElement: Element | null,
 ): Promise<ApplyTagResult> => {
   if (tag.invalid) return { applied: false, error: `Tag <${tag.name}> is not valid here.` };

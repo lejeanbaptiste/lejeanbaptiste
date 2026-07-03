@@ -1,5 +1,6 @@
 import type { ApplyTagResult } from './tagCommand';
 import { applyRenameTag, applyWrapTag } from './tagCommand';
+import { getBookmark } from './taggerRuntime';
 import {
   clearTagWalkHighlight,
   highlightTagWalkElement,
@@ -137,7 +138,7 @@ export const propagateTagInFile = (search: string, tagName: string): PropagateRe
       }
 
       editor.selection.setRng(range);
-      const bookmark = editor.selection.getBookmark(1);
+      const bookmark = getBookmark(editor);
       const result = applyWrapTag(tagName, bookmark, 'add', true);
       if (result.applied) {
         applied += 1;
@@ -267,7 +268,7 @@ export const applyQueueWalkStepAt = (
 
     let result: ApplyTagResult = { applied: false };
     const runApply = () => {
-      const bm = editor.selection.getBookmark(1);
+      const bm = getBookmark(editor);
       result = applyWrapTag(tagName, bm, 'add', false);
     };
     if (editor.undoManager?.transact) {

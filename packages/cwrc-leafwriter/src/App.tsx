@@ -110,7 +110,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     const tryFind = () => {
       const el = window.document.querySelector('#desktop-panel-translation');
       if (el) {
-        console.log('[translation] found #desktop-panel-translation, portaling TranslationPane');
         if (!cancelled) setTranslationPaneContainer(el);
         return;
       }

@@ -50,21 +50,10 @@ export const DocumentTabBar = () => {
     const isDirty = isActive ? contentHasChanged : tab.dirty;
 
     if (isDirty && isDesktop()) {
-      console.info('[cursor-session] tab bar close before dirty prompt', {
-        bridgeCapture: window.__leafWriterCursorSession?.capture?.() ?? null,
-        filePath,
-        isActive,
-        isDirty,
-      });
       const contentOverride =
         isActive && leafWriter
           ? canonicalizeActiveEditorContent(await leafWriter.getContent(), tab.content)
           : tab.content;
-      console.info('[cursor-session] tab bar close after content read', {
-        bridgeCapture: window.__leafWriterCursorSession?.capture?.() ?? null,
-        contentLength: contentOverride?.length ?? null,
-        filePath,
-      });
       const result = await promptCloseDirtyTab({
         tab: {
           content: tab.content,
@@ -77,20 +66,10 @@ export const DocumentTabBar = () => {
       if (result === 'abort' || result === 'handled') return;
     }
 
-    console.info('[cursor-session] tab bar close before closeTab', {
-      bridgeCapture: window.__leafWriterCursorSession?.capture?.() ?? null,
-      filePath,
-      isActive,
-    });
     const content =
       filePath === activeTabPath && leafWriter
         ? canonicalizeActiveEditorContent(await leafWriter.getContent(), tab.content)
         : undefined;
-    console.info('[cursor-session] tab bar close final content read', {
-      bridgeCapture: window.__leafWriterCursorSession?.capture?.() ?? null,
-      contentLength: content?.length ?? null,
-      filePath,
-    });
     await closeTab({ content, filePath });
   };
 

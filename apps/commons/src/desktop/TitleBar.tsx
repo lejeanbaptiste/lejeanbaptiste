@@ -6,11 +6,15 @@ export const TITLEBAR_HEIGHT = 36;
 
 const MAC_TRAFFIC_LIGHT_WIDTH = 78;
 
+const getUserAgentPlatform = (): string | undefined => {
+  const userAgentData = (navigator as Navigator & { userAgentData?: { platform?: string } })
+    .userAgentData;
+  return userAgentData?.platform;
+};
+
 const isMacOS = () =>
   typeof navigator !== 'undefined' &&
-  (navigator.userAgentData
-    ? navigator.userAgentData.platform === 'macOS'
-    : /Mac/i.test(navigator.userAgent));
+  (getUserAgentPlatform() ? getUserAgentPlatform() === 'macOS' : /Mac/i.test(navigator.userAgent));
 
 const dragStyle = { WebkitAppRegion: 'drag' } as React.CSSProperties;
 const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties;

@@ -2,7 +2,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useRef } from 'react';
 import { resolveTranslationHitTarget } from './translationHitJump';
 
-const log = (...args: unknown[]) => console.log('[translation-jump]', ...args);
+const log = (..._args: unknown[]) => undefined;
 
 const isElement = (node: unknown): node is Element =>
   !!node && typeof node === 'object' && (node as Node).nodeType === Node.ELEMENT_NODE;
