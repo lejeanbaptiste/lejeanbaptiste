@@ -161,18 +161,13 @@ export const logImportedXmlInspection = ({
   const label = `[document-import] ${inspection.ok ? 'valid' : 'invalid'} XML after ${stage}`;
 
   if (inspection.ok) {
-    console.info(label, {
-      length: content.length,
-      outputPath,
-      sourcePath,
-    });
     return inspection;
   }
 
   console.group(label);
   console.error(inspection.error?.message ?? 'Invalid XML');
-  console.info({ outputPath, sourcePath, stage, length: content.length });
-  if (inspection.error?.snippet) console.info(`Snippet:\n${inspection.error.snippet}`);
+  console.error({ outputPath, sourcePath, stage, length: content.length });
+  if (inspection.error?.snippet) console.error(`Snippet:\n${inspection.error.snippet}`);
   console.groupEnd();
 
   return inspection;

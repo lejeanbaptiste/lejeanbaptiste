@@ -9,14 +9,15 @@ import {
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { AnimationControls, motion, type Variants } from 'motion/react';
+import type { LegacyAnimationControls } from 'motion-dom';
+import { motion, type Variants } from 'motion/react';
 import { type MouseEvent } from 'react';
 import { Layout } from '..';
 
 const ENABLE_GRID = true;
 
 interface TopBarProps {
-  animationControl?: AnimationControls;
+  animationControl?: LegacyAnimationControls;
   layout?: Layout;
   onLayoutChange: (value: Layout) => void;
   title?: string;

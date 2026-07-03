@@ -26,9 +26,11 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
-import type { LeafWriterOptionsSettings } from '@cwrc/leafwriter/lib/src/types';
+import type { Types } from '@cwrc/leafwriter';
 import { schemas } from '@src/config/schemas';
 import type { WorkspaceCursorPosition } from '@src/types/desktop';
+
+type LeafWriterOptionsSettings = Types.LeafWriterOptionsSettings;
 
 const showDefaultEastPanel = () => {
   if (!isDesktop()) return;
@@ -42,15 +44,8 @@ const showDefaultEastPanel = () => {
 const restoreCursorPositionWhenReady = (position: WorkspaceCursorPosition) => {
   const delays = [0, 100, 300, 700, 1200, 2000];
 
-  console.info('[cursor-session] restore scheduled after editor load', { position });
-
   const tryRestore = async (remainingDelays: number[], attempt = 1) => {
     const restored = await window.__leafWriterCursorSession?.restore(position);
-    console.info('[cursor-session] restore-after-load attempt', {
-      attempt,
-      restored: Boolean(restored),
-      remainingAttempts: remainingDelays.length,
-    });
     if (restored || remainingDelays.length === 0) return;
 
     const [delay, ...next] = remainingDelays;

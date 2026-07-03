@@ -1,10 +1,29 @@
 import { log } from '@src//utilities';
 import { clearCache } from '@src/db';
-import type { AnnotationUserProfileProps, User } from '@src/types';
+import type { AnnotationUserProfileProps, IdentityProps, User } from '@src/types';
 import Cookies from 'js-cookie';
 import { Context } from '../index';
-import type { LinkedAccount } from './effects';
+import type { HTTPRequestError, LinkedAccount } from './effects';
 import { effects } from '.';
+
+const isHttpRequestError = (value: unknown): value is HTTPRequestError =>
+  !!value &&
+  typeof value === 'object' &&
+  'error' in value &&
+  typeof (value as HTTPRequestError).error?.message === 'string';
+
+const isIdentityProps = (value: unknown): value is IdentityProps =>
+  !!value &&
+  typeof value === 'object' &&
+  typeof (value as Partial<IdentityProps>).id === 'string' &&
+  typeof (value as Partial<IdentityProps>).name === 'string' &&
+  typeof (value as Partial<IdentityProps>).uri === 'string' &&
+  typeof (value as Partial<IdentityProps>).username === 'string';
+
+const getAvatarUrl = (identity: IdentityProps | undefined): string | undefined => {
+  const avatarUrl = identity?.avatar_url;
+  return typeof avatarUrl === 'string' ? avatarUrl : undefined;
+};
 
 //* INIITIALIZE
 export const onInitializeOvermind = async ({ actions, effects, state }: Context, overmind: any) => {
@@ -71,7 +90,10 @@ export const setupMainIdentityProvider = async ({ actions, effects }: Context, t
 
   const IDPTokens = await effects.auth.api.getExternalIDPTokens(identity_provider, token);
 
-  if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) return 'none';
+  if (IDPTokens instanceof Error) {
+    log.warn(IDPTokens.message);
+    return;
+  }
 
   if (!IDPTokens) return log.warn('No identity_provider tokens');
 
@@ -108,7 +130,7 @@ export const setUserProfile = async (
   if (!identityProvider) return;
 
   //preferredID
-  const preferredID = effects.storage.api.getFromLocalStorage('prefIdProvider');
+  const preferredID = effects.storage.api.getFromLocalStorage<string>('prefIdProvider');
 
   //if not preferredID, use the first identityProviders linked Account
   preferredID
@@ -116,18 +138,18 @@ export const setUserProfile = async (
     : actions.auth.setPreferredId(identityProvider);
 
   //use avatar from preffed ID
-  state.auth.user.avatar_url = user.identities.get(user.preferredID)?.avatar_url ?? undefined;
+  state.auth.user.avatar_url = getAvatarUrl(user.identities.get(user.preferredID));
 
   //* Prefer Storage
 
   const { storageProviders } = state.providers;
 
   //get preferred storage if available
-  let prefStorageProvider = effects.storage.api.getFromLocalStorage('prefStorageProvider');
+  let prefStorageProvider = effects.storage.api.getFromLocalStorage<string>('prefStorageProvider');
 
   //If no prefStorageProvider use preferId to define prefStorage
   if (!prefStorageProvider) {
-    if (storageProviders.some((provider) => provider.providerId === preferredID)) {
+    if (preferredID && storageProviders.some((provider) => provider.providerId === preferredID)) {
       prefStorageProvider = preferredID;
     } else {
       //If preferId is not a storage provider, use the first one available
@@ -157,7 +179,7 @@ export const linkAccount = async (
     provider: identity_provider,
     keycloakAccessCode: token,
   });
-  if (typeof linkAccountUrl !== 'string') {
+  if (isHttpRequestError(linkAccountUrl)) {
     const { message } = linkAccountUrl.error;
     actions.ui.emitNotification({ message });
     return;
@@ -173,7 +195,7 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
   if (!token) return log.warn('No Authentication token');
 
   const linkedAccounts = await effects.auth.api.getLinkedAccounts(token, state.auth.user.username);
-  if ('error' in linkedAccounts) {
+  if (isHttpRequestError(linkedAccounts)) {
     const { message } = linkedAccounts.error;
     actions.ui.emitNotification({ message });
     return;
@@ -211,7 +233,7 @@ export const getUserDetails = async (
   if (!provider?.service) return;
 
   const userDetails = await provider.service.getAuthenticatedUser(userId);
-  if (!userDetails) return;
+  if (!isIdentityProps(userDetails)) return;
 
   if (state.auth.user) state.auth.user.identities.set(providerName, userDetails);
   return userDetails;
@@ -227,9 +249,8 @@ export const setupLinkedAccountProvider = async (
   if (!token) return log.warn('No Authentication token');
 
   const IDPTokens = await effects.auth.api.getExternalIDPTokens(providerName, token);
-  if (typeof IDPTokens !== 'string' && 'error' in IDPTokens) {
-    const { message } = IDPTokens.error;
-    actions.ui.emitNotification({ message });
+  if (IDPTokens instanceof Error) {
+    actions.ui.emitNotification({ message: IDPTokens.message });
     return;
   }
 
@@ -288,7 +309,7 @@ export const setPreferredId = ({ state, effects }: Context, providerId: string) 
   state.auth.user.preferredID = providerId;
   effects.storage.api.saveToLocalStorage('prefIdProvider', providerId);
 
-  state.auth.user.avatar_url = state.auth.user.identities.get(providerId)?.avatar_url ?? undefined;
+  state.auth.user.avatar_url = getAvatarUrl(state.auth.user.identities.get(providerId));
 
   return providerId;
 };

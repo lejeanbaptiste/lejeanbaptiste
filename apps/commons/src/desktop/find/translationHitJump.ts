@@ -1,7 +1,7 @@
 import { parseTranslationFilePath } from '../translationFileNaming';
 import { resolveTextHitInXml } from './resolveTextHitInXml';
 
-const log = (...args: unknown[]) => console.log('[translation-jump]', ...args);
+const log = (..._args: unknown[]) => undefined;
 
 const splitDirAndFile = (filePath: string): { dir: string; file: string } => {
   const idx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));

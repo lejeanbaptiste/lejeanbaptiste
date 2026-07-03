@@ -9,6 +9,10 @@ import {
 
 const DRAG_MIME = 'application/x-ljb-explorer-path';
 
+type ExplorerDragProps = React.HTMLAttributes<HTMLDivElement> & {
+  draggable: boolean;
+};
+
 let dragGhostEl: HTMLDivElement | null = null;
 
 const getDragGhostElement = (): HTMLDivElement => {
@@ -29,6 +33,7 @@ const applyDragGhostTheme = (element: HTMLDivElement) => {
 
 export interface ExplorerDragPayload {
   isDirectory: boolean;
+  name: string;
   path: string;
 }
 
@@ -97,7 +102,7 @@ export const useExplorerDragDrop = (enabled: boolean) => {
   );
 
   const getDragProps = useCallback(
-    (item: ExplorerTarget) => {
+    (item: ExplorerTarget): ExplorerDragProps => {
       if (!enabled || isExplorerItemProtected(item, rootPath, schemaDirPath)) {
         return { draggable: false as const };
       }
@@ -108,10 +113,11 @@ export const useExplorerDragDrop = (enabled: boolean) => {
           dragSourceRef.current = null;
           setDropTargetPath(null);
         },
-        onDragStart: (event: React.DragEvent) => {
+        onDragStart: (event: React.DragEvent<HTMLDivElement>) => {
           event.stopPropagation();
           const payload: ExplorerDragPayload = {
             isDirectory: item.isDirectory,
+            name: item.name,
             path: item.path,
           };
           dragSourceRef.current = payload;
@@ -128,18 +134,18 @@ export const useExplorerDragDrop = (enabled: boolean) => {
   );
 
   const getDropProps = useCallback(
-    (folder: ExplorerTarget) => {
+    (folder: ExplorerTarget): React.HTMLAttributes<HTMLDivElement> => {
       if (!enabled || !folder.isDirectory) {
         return {};
       }
 
       return {
-        onDragLeave: (event: React.DragEvent) => {
+        onDragLeave: (event: React.DragEvent<HTMLDivElement>) => {
           event.stopPropagation();
           if (event.currentTarget.contains(event.relatedTarget as Node)) return;
           setDropTargetPath((current) => (current === folder.path ? null : current));
         },
-        onDragOver: (event: React.DragEvent) => {
+        onDragOver: (event: React.DragEvent<HTMLDivElement>) => {
           event.preventDefault();
           event.stopPropagation();
 
@@ -154,7 +160,7 @@ export const useExplorerDragDrop = (enabled: boolean) => {
 
           event.dataTransfer.dropEffect = 'none';
         },
-        onDrop: (event: React.DragEvent) => {
+        onDrop: (event: React.DragEvent<HTMLDivElement>) => {
           event.preventDefault();
           event.stopPropagation();
           setDropTargetPath(null);

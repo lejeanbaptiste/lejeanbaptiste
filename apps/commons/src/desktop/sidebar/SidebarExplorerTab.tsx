@@ -39,7 +39,7 @@ interface TreeNodeProps {
   depth: number;
   focusRow: (path: string) => void;
   focusedPath: string | null;
-  focusedRowRef: React.RefObject<HTMLDivElement | null>;
+  focusedRowRef: React.RefObject<HTMLDivElement>;
   getDragProps: ReturnType<typeof useExplorerDragDrop>['getDragProps'];
   getDropProps: ReturnType<typeof useExplorerDragDrop>['getDropProps'];
   isDropTarget: ReturnType<typeof useExplorerDragDrop>['isDropTarget'];
@@ -76,6 +76,7 @@ const TreeNode = ({
   };
   const dragProps = getDragProps(item);
   const dropProps = node.isDirectory ? getDropProps(item) : {};
+  const interactionProps = { ...dragProps, ...dropProps } as React.HTMLAttributes<HTMLDivElement>;
   const expanded = node.isDirectory && isExpanded(node.path);
   const isActiveFile = !node.isDirectory && node.path === activeTabPath;
   const isFocused = focusedPath === node.path;
@@ -104,6 +105,7 @@ const TreeNode = ({
   return (
     <>
       <ListItemButton
+        component="div"
         ref={isFocused ? focusedRowRef : undefined}
         dense
         data-explorer-row
@@ -113,8 +115,7 @@ const TreeNode = ({
         onDoubleClick={() => {
           if (!node.isDirectory) onOpenFile(node.path);
         }}
-        {...dragProps}
-        {...dropProps}
+        {...interactionProps}
         sx={{
           pl: 1 + depth * 1.5,
           py: 0.125,

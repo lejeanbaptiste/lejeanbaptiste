@@ -1,6 +1,7 @@
 import { parseTeiXPathSegments, matchesTeiTag } from './teiXPathWalker';
 
-const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
+const isElement = (node: unknown): node is Element =>
+  node instanceof Element || (!!node && (node as Node).nodeType === Node.ELEMENT_NODE);
 
 /** Build a TEI-style xpath from an editor element using _tag attributes. */
 export const getTeiXPathFromEditorElement = (
@@ -14,12 +15,12 @@ export const getTeiXPathFromEditorElement = (
     const tag = current.getAttribute('_tag');
     if (!tag) break;
 
-    const parent = current.parentElement;
+    const parent: Element | null = current.parentElement;
     if (!parent) break;
 
-    const siblings = Array.from(parent.children).filter(
-      (el): el is Element =>
-        el.nodeType === Node.ELEMENT_NODE && matchesTeiTag(el.getAttribute('_tag'), tag),
+    const children = Array.from(parent.children) as Element[];
+    const siblings = children.filter((el) =>
+      matchesTeiTag(el.getAttribute('_tag'), tag),
     );
     const index = siblings.indexOf(current);
     const segment = index >= 0 ? `${tag}[${index + 1}]` : tag;
@@ -46,7 +47,7 @@ export const findEditorNodeByMatchingTeiXPath = (
   const nodes = window.writer.utilities.evaluateXPathAll(body, query.trim());
   const storedKey = normalizePathKey(storedXpath);
 
-  for (const node of nodes) {
+  for (const node of nodes as unknown[]) {
     if (!isElement(node)) continue;
     const editorXpath = getTeiXPathFromEditorElement(node, body);
     if (editorXpath === storedXpath || normalizePathKey(editorXpath) === storedKey) {

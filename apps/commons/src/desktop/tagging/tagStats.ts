@@ -51,10 +51,10 @@ const RESERVED_ATTR_NAMES = new Set([
   'data-mce-type',
 ]);
 
-const subtractNestedCounts = <T extends Record<string, number>>(
-  target: Record<string, T>,
+const subtractNestedCounts = (
+  target: Record<string, Record<string, number>>,
   key: string,
-  counts: T,
+  counts: Record<string, number>,
 ): void => {
   if (!target[key]) return;
   for (const [name, count] of Object.entries(counts)) {
@@ -64,12 +64,12 @@ const subtractNestedCounts = <T extends Record<string, number>>(
   if (Object.keys(target[key]!).length === 0) delete target[key];
 };
 
-const addNestedCounts = <T extends Record<string, number>>(
-  target: Record<string, T>,
+const addNestedCounts = (
+  target: Record<string, Record<string, number>>,
   key: string,
-  counts: T,
+  counts: Record<string, number>,
 ): void => {
-  if (!target[key]) target[key] = {} as T;
+  if (!target[key]) target[key] = {};
   for (const [name, count] of Object.entries(counts)) {
     target[key]![name] = (target[key]![name] ?? 0) + count;
   }

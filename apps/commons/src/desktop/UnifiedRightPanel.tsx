@@ -111,7 +111,6 @@ export const UnifiedRightPanel = () => {
     window.__desktopRightPanel = { showTab, expand };
 
     if (window.__desktopRightPanelPendingTab) {
-      console.debug('[ValidatorInstrumentation]', 'replayPendingRightPanelTab', window.__desktopRightPanelPendingTab);
       setActiveTab(window.__desktopRightPanelPendingTab);
       setCollapsed(false);
       delete window.__desktopRightPanelPendingTab;

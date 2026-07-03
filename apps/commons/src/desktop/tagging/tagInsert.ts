@@ -2,6 +2,7 @@ import type { ApplyTagResult } from './tagCommand';
 import { applyInsertTag } from './tagCommand';
 import { getEditorTagContext, type EditorTagContext } from './tagSuggestions';
 import { DEFAULT_INSERT_TAG, DEFAULT_LINE_BREAK_TAG } from './keybindings';
+import { getRuntimeTagger, getSelectionRange } from './taggerRuntime';
 
 const getWriter = () => window.writer;
 
@@ -46,7 +47,7 @@ export const shouldSplitSameTagAtCaret = (
 const runSplitAtCaret = (): boolean => {
   const writer = getWriter();
   if (!writer?.editor || !writer.tagger) return false;
-  writer.tagger.splitTag();
+  getRuntimeTagger(writer.tagger).splitTag();
   return true;
 };
 
@@ -55,7 +56,7 @@ const ensureCollapsedTextRange = (): boolean => {
   const editor = writer?.editor;
   if (!editor) return false;
 
-  const rng = editor.selection.getRng(true);
+  const rng = getSelectionRange(editor);
   if (!rng.collapsed) return false;
   if (rng.startContainer.nodeType === Node.TEXT_NODE) return true;
 
@@ -196,7 +197,7 @@ export const splitParagraphAtCaret = (): ApplyTagResult => {
   }
 
   const body = writer.editor.getBody();
-  const rng0 = writer.editor.selection.getRng(true);
+  const rng0 = getSelectionRange(writer.editor);
   const paragraph = findParagraphAncestor(rng0.startContainer, body);
   if (!paragraph) {
     return { applied: false, error: 'Caret is not inside a paragraph.' };
@@ -209,7 +210,7 @@ export const splitParagraphAtCaret = (): ApplyTagResult => {
   const doc = writer.editor.getDoc();
 
   writer.editor.undoManager.transact(() => {
-    const caretRng = writer.editor!.selection.getRng(true);
+    const caretRng = getSelectionRange(writer.editor!);
 
     // Extract everything from the caret to the end of the paragraph into a new <p>
     const afterRng = doc.createRange();
@@ -337,7 +338,7 @@ export const insertLineBreak = async (): Promise<ApplyTagResult> => {
 
   if (isInlineStructuralParent(ctx.tagElement)) {
     writer.editor.undoManager.transact(() => {
-      writer.tagger.splitTag();
+      getRuntimeTagger(writer.tagger).splitTag();
     });
     writer.event('contentChanged').publish();
     return { applied: true, tagName: DEFAULT_LINE_BREAK_TAG };

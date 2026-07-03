@@ -11,7 +11,7 @@ import { isTranslationFile, translationFilePathFor } from './translationFileNami
 import { readTranslationSettings } from './translationSettings';
 import { writeTranslationSnapshot } from './translationSnapshot';
 
-const log = (...args: unknown[]) => console.log('[translation]', ...args);
+const log = (..._args: unknown[]) => undefined;
 
 const fileNameOf = (filePath: string): string => {
   const idx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));

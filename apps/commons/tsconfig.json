@@ -42,6 +42,7 @@
     },
     "preserveWatchOutput": true,
     "resolveJsonModule": true,
+    "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
     "types": ["node", "react", "react-dom"]

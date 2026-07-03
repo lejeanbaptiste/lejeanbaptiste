@@ -11,6 +11,7 @@ import {
   writeReplacedContentToDisk,
 } from './applyReplaceToEditor';
 import type { DocScope } from './docScope';
+import type { OpenTab } from '@src/overmind/project/state';
 import { validateAndReplaceAll, validateAndReplaceHit } from './replaceValidation';
 import { searchText } from './searchText';
 import type { FindFileResult } from './types';
@@ -38,7 +39,7 @@ export interface UseFindReplaceParams {
     selectedIndex?: number;
     jumpToSelection?: boolean;
   }) => void;
-  openTabs: { content: string; filePath: string }[];
+  openTabs: OpenTab[];
   replaceQuery: string;
   results: FindFileResult[];
   rootPath: string | null;
@@ -150,6 +151,11 @@ export const useFindReplace = ({
       notifyViaSnackbar(outcome.error ?? 'Replace failed.');
       return;
     }
+    const replacementUsed = outcome.replacementUsed;
+    if (replacementUsed === undefined) {
+      notifyViaSnackbar('Replace failed.');
+      return;
+    }
 
     const isOpen = isFileOpenInTabs(selectedHit.filePath, openTabs);
 
@@ -162,19 +168,13 @@ export const useFindReplace = ({
         markTabDirty,
         resourceFilePath: resource?.filePath,
         updateTabContent,
-        sourcePatch:
-          outcome.replacementUsed !== undefined
-            ? {
-                contentBefore: content,
-                end: selectedHit.end,
-                replacement: outcome.replacementUsed,
-                start: selectedHit.start,
-              }
-            : undefined,
-        visualPatch:
-          resolvedHit && outcome.replacementUsed !== undefined
-            ? { resolved: resolvedHit, replacement: outcome.replacementUsed }
-            : undefined,
+        sourcePatch: {
+          contentBefore: content,
+          end: selectedHit.end,
+          replacement: replacementUsed,
+          start: selectedHit.start,
+        },
+        visualPatch: resolvedHit ? { resolved: resolvedHit, replacement: replacementUsed } : undefined,
       });
     } else {
       const written = await writeReplacedContentToDisk(selectedHit.filePath, outcome.content);
@@ -194,7 +194,7 @@ export const useFindReplace = ({
       ignoreCase,
       {
         end: selectedHit.end,
-        replacementLength: outcome.replacementUsed.length,
+        replacementLength: replacementUsed.length,
         start: selectedHit.start,
       },
     );

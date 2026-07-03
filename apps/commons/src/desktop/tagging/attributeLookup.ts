@@ -4,11 +4,12 @@ import { RESET } from 'jotai/utils';
 import { applyLookupAttributes } from './attributeCommand';
 
 const { namedEntityTypesSchema } = Types;
+type NamedEntityType = Types.NamedEntityType;
 type EntityLink = Types.EntityLink;
 
 const getWriter = () => window.writer;
 
-export const getLookupEntityTypeForTag = (tagName: string): string | null => {
+export const getLookupEntityTypeForTag = (tagName: string): NamedEntityType | null => {
   const writer = getWriter();
   if (!writer?.schemaManager?.mapper) return null;
   const type = writer.schemaManager.mapper.getEntityTypeForTag(tagName);

@@ -98,9 +98,9 @@ export const fetchSchemaAttributes = async (
     try {
       const nodes = await validatorActions.getAttributesForTagAt({ xpath, index: 1 });
       const fromValidator = (nodes ?? [])
-        .filter((node) => node.type === 'attribute')
-        .map((node) => toSchemaAttribute(node))
-        .filter((att): att is SchemaAttributeDetail => Boolean(att));
+        .filter((node: NodeDetail) => node.type === 'attribute')
+        .map((node: NodeDetail) => toSchemaAttribute(node))
+        .filter((att: SchemaAttributeDetail | null): att is SchemaAttributeDetail => Boolean(att));
       if (fromValidator.length > 0) return fromValidator;
     } catch {
       // fall through to schema manager

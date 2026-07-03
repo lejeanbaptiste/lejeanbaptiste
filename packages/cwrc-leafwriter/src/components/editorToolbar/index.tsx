@@ -75,7 +75,7 @@ export const EditorToolbar = () => {
       },
       title: t('LW.editorToolbar.Tag'),
       tooltip: t('LW.editorToolbar.Add Tag'),
-      type: 'button',
+      type: 'iconButton',
     },
     { group: 'action', type: 'divider', hide: hideEntityShortcutButtons },
     {
@@ -179,14 +179,6 @@ export const EditorToolbar = () => {
       type: 'iconButton',
     },
     { group: 'action', type: 'divider', hide: hideEntityShortcutButtons },
-    {
-      icon: 'translate',
-      group: 'action',
-      hide: isReadonly || !isDesktopApp(),
-      onClick: () => window.__desktopRightPanel?.showTab?.('translation'),
-      title: t('LW.editorToolbar.Add Translation'),
-      type: 'iconButton',
-    },
     { group: 'action', type: 'divider', hide: isReadonly },
     {
       group: 'ui',

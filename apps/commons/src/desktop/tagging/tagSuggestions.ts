@@ -1,6 +1,7 @@
 import type { NodeDetail, Target as PossibleNodesAtTarget } from '@cwrc/leafwriter-validator';
 import { DEFAULT_INSERT_TAG } from './keybindings';
 import type { TagCommandMode } from './tagCommand';
+import { getSelectionRange } from './taggerRuntime';
 
 export interface EditorTagContext {
   element: Element;
@@ -51,7 +52,7 @@ export const getEditorTagContext = (): EditorTagContext | null => {
   const editor = writer?.editor;
   if (!editor) return null;
 
-  const rng = editor.selection.getRng(true);
+  const rng = getSelectionRange(editor);
   const hasContentSelection = !rng.collapsed && rng.toString().length > 0;
 
   const element =
@@ -222,10 +223,10 @@ export const fetchTagSuggestions = async (
       (await validatorActions.getPossibleNodesAt(target)) ??
       (await window.leafwriterValidator?.getPossibleNodesAt(target, {
         speculativeValidate: true,
-      }))?.nodes?.filter((node) => node.type === 'tag') ??
+      }))?.nodes?.filter((node: NodeDetail) => node.type === 'tag') ??
       [];
 
-    return nodes.filter((node) => node.type === 'tag');
+    return nodes.filter((node: NodeDetail) => node.type === 'tag');
   } catch {
     return [];
   }

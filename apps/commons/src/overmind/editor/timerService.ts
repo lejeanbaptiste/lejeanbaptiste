@@ -20,7 +20,7 @@ export interface TimerServiceProps {
 
 const tick = 1_000;
 
-let timer: NodeJS.Timer;
+let timer: ReturnType<typeof setInterval> | undefined;
 
 let currentAttempt = 0;
 let currentTick = 0;
@@ -73,7 +73,8 @@ const stop = () => {
   duration = 30_000;
   isRunning = false;
   maxAttempts = Infinity;
-  clearInterval(timer);
+  if (timer) clearInterval(timer);
+  timer = undefined;
   return TimerService;
 };
 
