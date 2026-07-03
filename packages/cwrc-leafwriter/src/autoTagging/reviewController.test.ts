@@ -1,0 +1,138 @@
+import { handleReviewKey, ReviewController, type DecisionEvent } from './reviewController';
+import type { Suggestion } from './types';
+
+const make = (id: string, extra: Partial<Suggestion> = {}): Suggestion => ({
+  id,
+  source: 'dictionary',
+  action: 'add',
+  tag: 'persName',
+  anchor: {
+    documentId: 'doc',
+    xpath: '/TEI/p/text()[1]',
+    offset: 0,
+    surface: id,
+    occurrence: 1,
+    contextBefore: '',
+    contextAfter: '',
+    nodeHash: '0',
+  },
+  status: 'pending',
+  ...extra,
+});
+
+describe('ReviewController', () => {
+  it('walks, decides, and advances to the next pending suggestion', () => {
+    const focused: string[] = [];
+    const decisions: DecisionEvent[] = [];
+    const c = new ReviewController([make('a'), make('b'), make('c')], {
+      onFocus: (s) => focused.push(s.id),
+      onDecision: (e) => decisions.push(e),
+    });
+
+    expect(c.current()!.id).toBe('a');
+    c.accept();
+    expect(c.current()!.id).toBe('b');
+    c.reject();
+    expect(c.current()!.id).toBe('c');
+    c.accept();
+
+    expect(c.counts()).toMatchObject({ pending: 0, accepted: 2, rejected: 1 });
+    expect(decisions.map((d) => `${d.suggestion.id}:${d.decision}`)).toEqual([
+      'a:accepted',
+      'b:rejected',
+      'c:accepted',
+    ]);
+    expect(focused).toEqual(['a', 'b', 'c']);
+  });
+
+  it('wraps around to earlier pending items after deciding the last one', () => {
+    const c = new ReviewController([make('a'), make('b')]);
+    c.next(); // move to b without deciding a
+    c.accept(); // decide b → should wrap to a
+    expect(c.current()!.id).toBe('a');
+  });
+
+  it('undecide restores pending before apply', () => {
+    const c = new ReviewController([make('a'), make('b')]);
+    c.accept();
+    c.previous();
+    expect(c.current()!.id).toBe('a');
+    c.undecide();
+    expect(c.counts()).toMatchObject({ pending: 2, accepted: 0 });
+  });
+
+  it('skips deciding unresolvable suggestions', () => {
+    const c = new ReviewController([make('a', { status: 'unresolvable' })]);
+    c.accept();
+    expect(c.counts()).toMatchObject({ unresolvable: 1, accepted: 0 });
+  });
+
+  it('filters by source and confidence', () => {
+    const c = new ReviewController([
+      make('dict1'),
+      make('ai-low', { source: 'ai', confidence: 0.4 }),
+      make('ai-high', { source: 'ai', confidence: 0.9 }),
+    ]);
+
+    c.setFilters({ sources: new Set(['ai']), minConfidence: 0.5 });
+    expect(c.visible().map((s) => s.id)).toEqual(['ai-high']);
+
+    c.setFilters({ sources: new Set(), minConfidence: 0 });
+    expect(c.visible()).toHaveLength(3);
+  });
+
+  it('confidence filter keeps suggestions without confidence visible', () => {
+    const c = new ReviewController([make('dict1'), make('ai', { source: 'ai', confidence: 0.3 })]);
+    c.setFilters({ minConfidence: 0.5 });
+    expect(c.visible().map((s) => s.id)).toEqual(['dict1']);
+  });
+
+  it('acceptAllAbove only touches pending items with confidence at/above threshold', () => {
+    const decisions: string[] = [];
+    const c = new ReviewController(
+      [
+        make('dict', {}), // no confidence → untouched
+        make('lo', { source: 'ai', confidence: 0.4 }),
+        make('hi', { source: 'ai', confidence: 0.95 }),
+        make('done', { source: 'ai', confidence: 0.99, status: 'rejected' }),
+      ],
+      { onDecision: (e) => decisions.push(e.suggestion.id) },
+    );
+
+    c.acceptAllAbove(0.9);
+    expect(c.counts()).toMatchObject({ accepted: 1, pending: 2, rejected: 1 });
+    expect(decisions).toEqual(['hi']);
+  });
+
+  it('takeAccepted supports partial apply: accepted leave, pending remain', () => {
+    const c = new ReviewController([make('a'), make('b'), make('c')]);
+    c.accept(); // a
+    const taken = c.takeAccepted();
+    expect(taken.map((s) => s.id)).toEqual(['a']);
+    expect(c.visible().map((s) => s.id)).toEqual(['b', 'c']);
+    expect(c.current()).not.toBeNull();
+  });
+
+  it('handles an empty batch without a cursor', () => {
+    const c = new ReviewController([]);
+    expect(c.current()).toBeNull();
+    c.next();
+    c.accept();
+    expect(c.counts().total).toBe(0);
+  });
+});
+
+describe('handleReviewKey', () => {
+  it('maps the shared keyboard model to commands', () => {
+    const c = new ReviewController([make('a'), make('b')]);
+    expect(handleReviewKey(c, 'j')).toBe(true);
+    expect(c.current()!.id).toBe('b');
+    expect(handleReviewKey(c, 'ArrowUp')).toBe(true);
+    expect(c.current()!.id).toBe('a');
+    expect(handleReviewKey(c, 'Enter')).toBe(true);
+    expect(c.counts().accepted).toBe(1);
+    expect(handleReviewKey(c, 'x')).toBe(true);
+    expect(c.counts().rejected).toBe(1);
+    expect(handleReviewKey(c, 'q')).toBe(false);
+  });
+});

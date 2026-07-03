@@ -1,32 +1,25 @@
 # Todo
 
-**Easy**
-- [ ] What does entities do?
-
-**Auto-tagging**
-- [ ] AI api integration for tagging without modifying the language (?).
-- [ ] SQL integration (?)
-
-**Disambiguation**
-- [ ] Attribute propagation.
-- [ ] Disambiguation queue + resolution-file attribute propagation (later phases)
+**Plan**
+- [ ] Auto-tagging
+- [ ] disambiguation
 
 **Metadata (requires reading?)**
-- [ ] Make fuller list of project and file metadata to act as norm.
+- [ ] Make fuller list of project and file metadata, update JSON.
 
 **Clean-up**
 - [ ] Double clicking contents should not select the node as well (?)
 - [ ] Keyboard shortcuts for all side panels + everything useful
+- [ ] display keyboard shortcuts on hover
 - [ ] Rethink context menu
 - [ ] Translations
 
-**Documentation**
-- [ ] clean up branding in docs
-- [ ] Website (shortcut guide)
-- [ ] Figure out what to do about external documentation
-
 **Packaging**
+- [ ] Clean up branding in docs
 - [ ] Redo icon insignia OR splash?
-- [ ] Debug auto metadata validation errors. 
 - [ ] Test on Linux
 - [ ] Test on Windows
+
+**Documentation**
+- [ ] Website (shortcut guide)
+- [ ] Figure out what to do about external documentation

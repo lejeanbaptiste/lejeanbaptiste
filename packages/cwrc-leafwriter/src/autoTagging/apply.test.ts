@@ -1,0 +1,184 @@
+import fs from 'fs';
+import path from 'path';
+import { collectTextNodes, createAnchor } from './anchor';
+import { applySuggestions, revertToSnapshot } from './apply';
+import { normalizeDomText } from './normalize';
+import type { Suggestion } from './types';
+
+const parse = (xml: string) => {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  normalizeDomText(doc);
+  return doc;
+};
+
+const serialize = (doc: Document) => new XMLSerializer().serializeToString(doc);
+
+const TEI = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
+<p>上陽子曰：老君出真文於大浮黎土。</p>
+<p>又見上陽子，居<placeName>洛陽</placeName>之南。</p>
+</body></text></TEI>`;
+
+/** Build an 'add' suggestion for the nth occurrence of a string in the document. */
+const suggest = (
+  doc: Document,
+  surface: string,
+  tag: string,
+  n = 1,
+  extra: Partial<Suggestion> = {},
+): Suggestion => {
+  const nodes = collectTextNodes(doc, 'ignore');
+  let seen = 0;
+  for (const { node, search } of nodes) {
+    let from = 0;
+    while (true) {
+      const idx = search.text.indexOf(surface, from);
+      if (idx === -1) break;
+      if (++seen === n) {
+        const rawStart = search.map[idx]!;
+        const rawEnd = search.map[idx + surface.length - 1]! + 1;
+        return {
+          id: `sug_${surface}_${n}`,
+          source: 'dictionary',
+          action: 'add',
+          tag,
+          anchor: createAnchor('doc', doc, node, rawStart, rawEnd, 'ignore'),
+          status: 'pending',
+          ...extra,
+        };
+      }
+      from = idx + 1;
+    }
+  }
+  throw new Error(`occurrence ${n} of ${surface} not found`);
+};
+
+describe('applySuggestions', () => {
+  it('wraps the anchored range in a new element in the document namespace', () => {
+    const doc = parse(TEI);
+    const batch = [suggest(doc, '上陽子', 'persName')];
+    const { results, applied } = applySuggestions(doc, batch, { policy: 'ignore' });
+
+    expect(applied).toBe(1);
+    const el = results[0]!.element!;
+    expect(el.nodeName).toBe('persName');
+    expect(el.namespaceURI).toBe('http://www.tei-c.org/ns/1.0');
+    expect(el.textContent).toBe('上陽子');
+    expect(serialize(doc)).toContain('<persName>上陽子</persName>曰');
+    expect(batch[0]!.status).toBe('accepted');
+  });
+
+  it('sets attributes and applies multiple suggestions in the same text node', () => {
+    const doc = parse(TEI);
+    const batch = [
+      suggest(doc, '上陽子', 'persName', 1, { attributes: { key: 'p001' } }),
+      suggest(doc, '老君', 'persName'),
+      suggest(doc, '大浮黎土', 'placeName'),
+    ];
+    const { applied } = applySuggestions(doc, batch, { policy: 'ignore' });
+
+    expect(applied).toBe(3);
+    const xml = serialize(doc);
+    expect(xml).toContain('<persName key="p001">上陽子</persName>');
+    expect(xml).toContain('<persName>老君</persName>');
+    expect(xml).toContain('<placeName>大浮黎土</placeName>');
+  });
+
+  it('prefers the longer span when suggestions overlap', () => {
+    const doc = parse(TEI);
+    const batch = [
+      suggest(doc, '浮黎', 'placeName'),
+      suggest(doc, '大浮黎土', 'placeName'),
+    ];
+    const { results } = applySuggestions(doc, batch, { policy: 'ignore' });
+
+    const byId = (id: string) => results.find((r) => r.suggestion.id === id)!;
+    expect(byId('sug_大浮黎土_1').outcome).toBe('applied');
+    // the shorter overlapping span now sits inside the new placeName → dedup catches it
+    expect(byId('sug_浮黎_1').outcome).toBe('already-tagged');
+    expect(serialize(doc)).not.toContain('<placeName>浮黎</placeName>');
+  });
+
+  it('skips text already wrapped in the same tag', () => {
+    const doc = parse(TEI);
+    const { results } = applySuggestions(doc, [suggest(doc, '洛陽', 'placeName')], {
+      policy: 'ignore',
+    });
+    expect(results[0]!.outcome).toBe('already-tagged');
+  });
+
+  it('blocks insertions the schema forbids', () => {
+    const doc = parse(TEI);
+    const { results } = applySuggestions(doc, [suggest(doc, '上陽子', 'persName')], {
+      policy: 'ignore',
+      canContain: (parent, child) => !(parent === 'p' && child === 'persName'),
+    });
+    expect(results[0]!.outcome).toBe('schema-blocked');
+    expect(serialize(doc)).not.toContain('<persName>');
+  });
+
+  it('blocks insertions matching a user rule', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><placeName>洛陽之南</placeName></p></TEI>',
+    );
+    const { results } = applySuggestions(doc, [suggest(doc, '南', 'date')], {
+      policy: 'ignore',
+      userRules: [{ tag: 'date', notInside: 'placeName' }],
+    });
+    expect(results[0]!.outcome).toBe('rule-blocked');
+  });
+
+  it('marks suggestions whose anchor no longer resolves as unresolvable', () => {
+    const doc = parse(TEI);
+    const batch = [suggest(doc, '老君', 'persName')];
+    // the text changes out from under the suggestion
+    const node = collectTextNodes(doc, 'ignore')[0]!.node;
+    node.data = node.data.replace('老君', '老子');
+
+    const { results } = applySuggestions(doc, batch, { policy: 'ignore' });
+    expect(results[0]!.outcome).toBe('unresolvable');
+    expect(batch[0]!.status).toBe('unresolvable');
+  });
+
+  it('reverts the whole batch via the snapshot', () => {
+    const doc = parse(TEI);
+    const before = serialize(doc);
+    const { snapshot, applied } = applySuggestions(
+      doc,
+      [suggest(doc, '上陽子', 'persName'), suggest(doc, '大浮黎土', 'placeName')],
+      { policy: 'ignore' },
+    );
+    expect(applied).toBe(2);
+    expect(serialize(doc)).not.toBe(before);
+    expect(serialize(revertToSnapshot(snapshot))).toBe(before);
+  });
+});
+
+describe('real corpus batch', () => {
+  const xmlPath = path.resolve(__dirname, '../../../../test_project/sizhu_shang.xml');
+  const maybe = fs.existsSync(xmlPath) ? it : it.skip;
+
+  maybe('tags every untagged 老君, respects tagged 上陽子, and reverts cleanly', () => {
+    const doc = parse(fs.readFileSync(xmlPath, 'utf-8'));
+    const before = serialize(doc);
+
+    // one suggestion per document-wide occurrence of each name
+    const batch: Suggestion[] = [];
+    for (const surface of ['上陽子', '老君']) {
+      const total = collectTextNodes(doc, 'ignore').reduce((count, { search }) => {
+        let from = 0;
+        while ((from = search.text.indexOf(surface, from) + 1) > 0) count++;
+        return count;
+      }, 0);
+      for (let n = 1; n <= total; n++) batch.push(suggest(doc, surface, 'persName', n));
+    }
+    expect(batch.length).toBeGreaterThan(5);
+
+    const { results, applied, snapshot } = applySuggestions(doc, batch, { policy: 'ignore' });
+    const already = results.filter((r) => r.outcome === 'already-tagged').length;
+    expect(applied + already).toBe(batch.length); // nothing unresolvable or blocked
+    expect(applied).toBeGreaterThan(0); // untagged occurrences exist and got tagged
+    expect(already).toBeGreaterThan(0); // existing <persName>上陽子</persName> respected
+
+    expect(serialize(revertToSnapshot(snapshot))).toBe(before);
+  });
+});

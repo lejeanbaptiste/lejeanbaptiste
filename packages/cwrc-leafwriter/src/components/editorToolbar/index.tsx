@@ -205,6 +205,14 @@ export const EditorToolbar = () => {
       title: t('LW.xpathSearch.title'),
       type: 'iconButton',
     },
+    {
+      group: 'ui',
+      hide: isReadonly,
+      icon: 'TagPlus',
+      onClick: () => openDialog({ type: 'autoTagging' }),
+      title: 'Auto-tagging',
+      type: 'iconButton',
+    },
     // {
     //   group: 'ui',
     //   hide: isReadonly,
