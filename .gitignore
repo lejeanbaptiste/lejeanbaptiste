@@ -136,3 +136,4 @@ out
 *.code-workspace
 
 "docs/doc import"
+test_project/*

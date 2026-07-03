@@ -7,3 +7,4 @@ export * from './popup';
 export * from './settings';
 export * from './type';
 export * from './xpathSearch';
+export * from './autoTagging';

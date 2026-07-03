@@ -1,6 +1,7 @@
 import { useModal } from 'mui-modal-provider';
 import { useEffect } from 'react';
 import {
+  AutoTaggingDialog,
   EditSchemaDialog,
   EditSourceDialog,
   Popup,
@@ -72,5 +73,6 @@ export const useDialog = () => {
     if (type === 'settings') return SettingsDialog;
     if (type === 'popup') return Popup;
     if (type === 'xpathSearch') return XPathSearchDialog;
+    if (type === 'autoTagging') return AutoTaggingDialog;
   };
 };
