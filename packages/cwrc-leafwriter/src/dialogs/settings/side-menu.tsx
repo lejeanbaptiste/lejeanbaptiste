@@ -26,10 +26,10 @@ export const SideMenu = ({ items }: SideMenuProps) => {
     <Box
       ref={refElemennt}
       aria-label={t('LW.commons.side menu')}
-      minWidth={160}
-      mt={2}
+      minWidth={128}
+      mt={1}
       gap={0.5}
-      ml={-1.5}
+      ml={-1}
     >
       <MenuList>
         {items
@@ -42,6 +42,9 @@ export const SideMenu = ({ items }: SideMenuProps) => {
               sx={{
                 borderTopRightRadius: 4,
                 borderBottomRightRadius: 4,
+                fontSize: '0.875rem',
+                minHeight: 30,
+                py: 0.15,
                 textTransform: 'capitalize',
               }}
             >

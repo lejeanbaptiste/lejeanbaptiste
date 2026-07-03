@@ -7,5 +7,8 @@ export * from './fakeSuggestions';
 export * from './dictionary';
 export * from './spreadsheet';
 export * from './crawl';
+export * from './entities';
+export * from './decisionLog';
+export * from './entityStore';
 export * from './integration';
 export { ReviewPanel, type ReviewPanelProps } from './ReviewPanel';

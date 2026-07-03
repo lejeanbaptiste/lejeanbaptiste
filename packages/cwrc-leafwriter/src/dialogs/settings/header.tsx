@@ -7,9 +7,9 @@ export const Header = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation();
 
   return (
-    <Stack direction="row" justifyContent="center" alignItems="center" py={2} spacing={2}>
-      <Icon name="settings" sx={{ height: 24, width: 24 }} />
-      <Typography sx={{ textTransform: 'capitalize' }} variant="h5">
+    <Stack direction="row" justifyContent="center" alignItems="center" py={1} spacing={1}>
+      <Icon name="settings" sx={{ height: 20, width: 20 }} />
+      <Typography sx={{ textTransform: 'capitalize' }} variant="h6">
         {t('LW.commons.settings')}
       </Typography>
       <IconButton
@@ -18,9 +18,10 @@ export const Header = ({ onClose }: { onClose: () => void }) => {
         sx={{
           position: 'absolute',
           right: 8,
-          top: 12,
+          top: 7,
           color: (theme) => theme.vars.palette.grey[500],
         }}
+        size="small"
       >
         <CloseIcon fontSize="inherit" />
       </IconButton>

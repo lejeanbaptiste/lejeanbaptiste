@@ -12,17 +12,17 @@ export const Section = ({ children, endDecorator, id, title }: SectionProps) => 
       <Stack
         direction="row"
         justifyContent="space-between"
-        mt={1.5}
-        px={2}
-        py={0.5}
+        mt={0.75}
+        px={1}
+        py={0.25}
         borderBottom="1px solid"
       >
-        <Typography variant="subtitle1" sx={{ textTransform: 'capitalize' }}>
+        <Typography variant="subtitle2" sx={{ textTransform: 'capitalize' }}>
           {title}
         </Typography>
         {endDecorator}
       </Stack>
-      <Stack px={1} spacing={1}>
+      <Stack px={0.5} spacing={0.25}>
         {children}
       </Stack>
     </Stack>

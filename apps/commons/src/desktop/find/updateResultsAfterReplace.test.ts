@@ -80,6 +80,7 @@ describe('updateResultsAfterSingleReplace', () => {
       updatedContent,
       'cat',
       false,
+      false,
       { start: 10, end: 13, replacementLength: 3 },
     );
 

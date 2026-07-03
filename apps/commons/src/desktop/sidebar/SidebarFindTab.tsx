@@ -23,7 +23,10 @@ import {
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { DOC_SCOPE_LABELS, type DocScope } from '@src/desktop/find/docScope';
 import { useFindPanelUndo } from '@src/desktop/find/findPanelUndo';
-import { DESKTOP_EDITOR_VIEW_MODE_EVENT, DESKTOP_FIND_FOCUS_EVENT } from '@src/desktop/desktopLeftPanelBridge';
+import {
+  DESKTOP_EDITOR_VIEW_MODE_EVENT,
+  DESKTOP_FIND_FOCUS_EVENT,
+} from '@src/desktop/desktopLeftPanelBridge';
 import { FindSnippetLine, formatSnippetLabel } from '@src/desktop/find/snippetDisplay';
 import { searchText } from '@src/desktop/find/searchText';
 import type { FindFileResult, FindHighlightMode } from '@src/desktop/find/types';
@@ -75,6 +78,8 @@ const flattenResults = (
   return flat;
 };
 
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
+
 export const SidebarFindTab = () => {
   const { activeTabPath, openTabs, rootPath } = useAppState().project;
 
@@ -91,6 +96,7 @@ export const SidebarFindTab = () => {
   const [collapsedFilePaths, setCollapsedFilePaths] = useState<Set<string>>(() => new Set());
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
+  const [sourceMode, setSourceMode] = useState(() => isSourceEditorMode());
   const [loading, setLoading] = useState(false);
   const [replacing, setReplacing] = useState(false);
   const [walkMode, setWalkMode] = useState<'find' | 'replace' | null>(null);
@@ -154,10 +160,7 @@ export const SidebarFindTab = () => {
   );
 
   const jumpToFlatResult = useCallback(
-    (
-      index: number,
-      options?: { contentForJump?: string; highlightMode?: FindHighlightMode },
-    ) => {
+    (index: number, options?: { contentForJump?: string; highlightMode?: FindHighlightMode }) => {
       performJump(flatResults[index], options);
     },
     [flatResults, performJump],
@@ -223,10 +226,11 @@ export const SidebarFindTab = () => {
     [buildSearchKey, collapsedFilePaths, performJump],
   );
 
-  const selectedHit = selectedIndex >= 0 ? flatResults[selectedIndex] ?? null : null;
+  const selectedHit = selectedIndex >= 0 ? (flatResults[selectedIndex] ?? null) : null;
 
   const { replaceAllInScope, replaceCurrentHit } = useFindReplace({
     activeTabPath,
+    allowMarkupReplace: sourceMode,
     customPath,
     docScope,
     findQuery,
@@ -273,6 +277,7 @@ export const SidebarFindTab = () => {
   );
 
   const resetFindOnEditorViewModeChange = useCallback(() => {
+    setSourceMode(isSourceEditorMode());
     clearFindHighlights();
     lastSearchKeyRef.current = '';
     setFindQuery('');
@@ -512,7 +517,7 @@ export const SidebarFindTab = () => {
     !!findQuery.trim() &&
     totalMatches > 0 &&
     selectedIndex >= 0 &&
-    selectedHit?.replaceable !== false;
+    (sourceMode || selectedHit?.replaceable !== false);
 
   const canReplaceAll = !loading && !replacing && !!findQuery.trim() && totalMatches > 0;
 
@@ -640,8 +645,8 @@ export const SidebarFindTab = () => {
             }
           }}
           helperText={
-            selectedHit?.replaceable === false
-              ? 'This match crosses XML markup and cannot be replaced in Source mode.'
+            selectedHit?.replaceable === false && !sourceMode
+              ? 'This match crosses XML markup. Switch to XML source mode to replace it.'
               : useRegex
                 ? 'Capture groups: $1 or \\1'
                 : undefined
@@ -732,7 +737,11 @@ export const SidebarFindTab = () => {
         )}
 
         {!loading && totalMatches > 0 && (
-          <Typography variant="caption" color="text.secondary" sx={{ px: 1.5, py: 0.75, display: 'block' }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ px: 1.5, py: 0.75, display: 'block' }}
+          >
             {totalMatches} match{totalMatches === 1 ? '' : 'es'} in {results.length} file
             {results.length === 1 ? '' : 's'}
           </Typography>

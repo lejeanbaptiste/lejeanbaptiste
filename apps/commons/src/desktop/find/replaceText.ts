@@ -3,12 +3,16 @@ import { searchInContent } from './textSearchUtils';
 
 const MARKUP_IN_SLICE = /[<>]/;
 
-/** True when the hit lies entirely in one raw XML text run (safe for phase 2a replace). */
+/** True when the hit lies entirely in one raw XML text run (safe for visual replace). */
 export const isReplaceableTextHit = (content: string, start: number, end: number): boolean => {
   if (start < 0 || end <= start || end > content.length) return false;
   if (MARKUP_IN_SLICE.test(content.slice(start, end))) return false;
   return resolveTextHitInXml(content, start, end) !== null;
 };
+
+/** True when the hit can be edited directly in XML source mode. */
+export const isReplaceableSourceHit = (content: string, start: number, end: number): boolean =>
+  start >= 0 && end > start && end <= content.length;
 
 export const replaceHitAtOffset = (
   content: string,
@@ -18,10 +22,7 @@ export const replaceHitAtOffset = (
 ): string => content.slice(0, start) + replacement + content.slice(end);
 
 /** Apply regex-style `$1`, `$2`, `$$`, and `\1`, `\2` substitution from a match. */
-export const applyRegexReplacement = (
-  match: RegExpExecArray,
-  replacement: string,
-): string => {
+export const applyRegexReplacement = (match: RegExpExecArray, replacement: string): string => {
   const withBackrefs = replacement.replace(/\\([1-9]\d*)/g, (_full, digits: string) => {
     const index = Number.parseInt(digits, 10);
     if (Number.isNaN(index) || index < 1 || index >= match.length) return '';
@@ -36,11 +37,7 @@ export const applyRegexReplacement = (
   });
 };
 
-const buildSearchRegex = (
-  query: string,
-  useRegex: boolean,
-  ignoreCase = false,
-): RegExp | null => {
+const buildSearchRegex = (query: string, useRegex: boolean, ignoreCase = false): RegExp | null => {
   const flags = ignoreCase ? 'giu' : 'gu';
   if (useRegex) {
     try {
@@ -66,6 +63,7 @@ export const replaceAllInContent = (
   replacement: string,
   useRegex: boolean,
   ignoreCase = false,
+  allowMarkup = false,
 ): ReplaceAllResult => {
   const hits = searchInContent(content, query, useRegex, ignoreCase);
   if (hits.length === 0) {
@@ -81,7 +79,11 @@ export const replaceAllInContent = (
     const start = hit.start + offsetDelta;
     const end = hit.end + offsetDelta;
 
-    if (!isReplaceableTextHit(nextContent, start, end)) {
+    const canReplace = allowMarkup
+      ? isReplaceableSourceHit(nextContent, start, end)
+      : isReplaceableTextHit(nextContent, start, end);
+
+    if (!canReplace) {
       skippedNonReplaceable += 1;
       continue;
     }

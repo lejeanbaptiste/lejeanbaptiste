@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { INFRASTRUCTURE_DIR } from './infrastructurePaths';
 import { isTranslationFile } from './translationFileNaming';
 
 export interface NamedPath {
@@ -22,6 +23,7 @@ export const listProjectXmlFiles = async (rootPath: string): Promise<NamedPath[]
       const fullPath = path.join(dirPath, entry.name);
       if (entry.isDirectory()) {
         if (path.normalize(fullPath) === path.normalize(schemaDir)) continue;
+        if (entry.name === INFRASTRUCTURE_DIR) continue;
         await walk(fullPath);
         continue;
       }
@@ -49,6 +51,7 @@ export const findXmlFilesByName = async (
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
       if (entry.isDirectory()) {
+        if (entry.name === INFRASTRUCTURE_DIR) continue;
         await walk(fullPath);
         continue;
       }
