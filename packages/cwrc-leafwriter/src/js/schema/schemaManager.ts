@@ -747,6 +747,17 @@ class SchemaManager {
     });
     elements.sort();
 
+    schemaTags += `
+      persName[cert="unknown"]:not([key]),
+      placeName[cert="unknown"]:not([key]),
+      orgName[cert="unknown"]:not([key]),
+      title[cert="unknown"]:not([key]),
+      bibl[cert="unknown"]:not([key]) {
+        background-color: rgba(198, 40, 40, 0.08) !important;
+        outline: 1px dashed #c62828;
+      }
+    `;
+
     // hide the header
     const tagName = this.getTagForEditor(this.header);
     schemaTags += `${tagName} [_tag=${this.header}] { display: none !important; }`;

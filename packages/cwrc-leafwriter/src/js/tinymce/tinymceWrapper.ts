@@ -11,6 +11,7 @@ import './plugins/prevent_delete';
 // import './tinymce_plugins/cwrc_path';
 import fscreen from 'fscreen';
 import Writer from '../Writer';
+import { stripCjkWhitespaceInElement } from '../../utilities/cjkWhitespace';
 import { normalizePastedParagraphs, fixNestedPastedParagraphs, removeEmptyParagraphs } from './normalizePastedParagraphs';
 import {
   buildLeafWriterClipboardPayload,
@@ -530,6 +531,12 @@ export const tinymceWrapperInit = function ({
     keep_styles: false, // false, otherwise tinymce interprets our spans as style elements
 
     paste_postprocess: (plugin: any, args: any) => {
+      // Opt-in: strip inter-character whitespace from pasted content too, so
+      // pasted spaces/line breaks between East Asian characters don't show as
+      // gaps. Runs before normalization so downstream sees the cleaned text.
+      if (args.node && writer.overmindState?.editor?.stripCjkWhitespace) {
+        stripCjkWhitespaceInElement(args.node);
+      }
       normalizePastedParagraphs(writer, args.node);
       writer.tagger.processNewContent(args.node);
       setTimeout(() => {
@@ -800,6 +807,13 @@ export const tinymceWrapperInit = function ({
   writer.event('documentLoaded').subscribe(() => {
     if (!writer.editor) return;
     const { overmindState, overmindActions } = writer;
+
+    // Opt-in: strip inter-character whitespace from the rendered body so
+    // pretty-printed East Asian source doesn't show as gaps. Done post-render
+    // (here, on every load path) so it's guaranteed to affect what's on screen.
+    if (overmindState?.editor?.stripCjkWhitespace) {
+      stripCjkWhitespaceInElement(writer.editor.getBody());
+    }
 
     writer.editor.undoManager.clear();
     writer.editor.isNotDirty = true;

@@ -1,7 +1,8 @@
 import type { DecisionRecord } from './decisionLog';
 import { parseLog } from './decisionLog';
-import { addEntity, findEntity } from './entities';
+import { addEntity, findEntity, getDatabaseId } from './entities';
 import { EntityStore, type EntityFileApi } from './entityStore';
+import { resolveEntityStorePaths } from './entityStoreResolve';
 
 /** In-memory fake of the desktop file API. */
 class FakeFs implements EntityFileApi {
@@ -32,21 +33,49 @@ const record = (over: Partial<DecisionRecord> = {}): DecisionRecord => ({
   ...over,
 });
 
+describe('resolveEntityStorePaths', () => {
+  it('resolves central mode to configured folder', () => {
+    const paths = resolveEntityStorePaths({
+      projectRoot: '/proj',
+      entityStore: 'central',
+      centralFolder: '/corpus',
+    });
+    expect(paths.entitiesPath).toBe('/corpus/entities.xml');
+    expect(paths.projectLjbDir).toBe('/proj/.ljb');
+    expect(paths.mode).toBe('central');
+  });
+
+  it('resolves project mode to project root entities.xml', () => {
+    const paths = resolveEntityStorePaths({
+      projectRoot: '/proj',
+      entityStore: 'project',
+    });
+    expect(paths.entitiesPath).toBe('/proj/entities.xml');
+    expect(paths.projectLjbDir).toBe('/proj/.ljb');
+  });
+});
+
 describe('EntityStore', () => {
-  it('creates /.leaf/entities.xml from the scaffold on first load', async () => {
+  const projectPaths = () =>
+    resolveEntityStorePaths({
+      projectRoot: '/proj',
+      entityStore: 'project',
+    });
+
+  it('creates entities.xml from the scaffold on first load (project mode)', async () => {
     const fs = new FakeFs();
-    const store = new EntityStore(fs, '/proj');
-    expect(store.entitiesPath).toBe('/proj/.leaf/entities.xml');
+    const store = EntityStore.fromPaths(fs, projectPaths());
+    expect(store.entitiesPath).toBe('/proj/entities.xml');
 
     const doc = await store.loadEntities();
-    expect(fs.dirs.has('/proj/.leaf')).toBe(true);
-    expect(fs.files.has('/proj/.leaf/entities.xml')).toBe(true);
+    expect(fs.files.has('/proj/entities.xml')).toBe(true);
     expect(doc.getElementsByTagName('listPerson')).toHaveLength(1);
+    expect(getDatabaseId(doc)).toBeTruthy();
   });
 
   it('persists added entities across load/save/reload', async () => {
     const fs = new FakeFs();
-    const store = new EntityStore(fs, '/proj');
+    const store = EntityStore.fromPaths(fs, projectPaths());
     const doc = await store.loadEntities();
     const { id } = addEntity(doc, 'person', {
       name: '張衡',
@@ -54,23 +83,28 @@ describe('EntityStore', () => {
     });
     await store.saveEntities(doc);
 
-    const reloaded = await store.loadEntities(); // file now exists, not re-scaffolded
+    const reloaded = await store.loadEntities();
     expect(findEntity(reloaded, id)?.getElementsByTagName('persName')[0]?.textContent).toBe('張衡');
   });
 
-  it('appends decision records as JSONL, creating then growing the log', async () => {
+  it('appends decision records under .ljb/', async () => {
     const fs = new FakeFs();
-    const store = new EntityStore(fs, '/proj');
+    const store = EntityStore.fromPaths(fs, projectPaths());
 
     await store.appendDecisions([record()]);
     await store.appendDecisions([record({ action: 'rejected' }), record({ action: 'accepted' })]);
 
-    const body = fs.files.get('/proj/.leaf/entity-decisions.jsonl')!;
+    const body = fs.files.get('/proj/.ljb/entity-decisions.jsonl')!;
     expect(parseLog(body)).toHaveLength(3);
   });
 
   it('uses the platform separator implied by the root', () => {
-    const win = new EntityStore(new FakeFs(), 'C:\\proj');
-    expect(win.entitiesPath).toBe('C:\\proj\\.leaf\\entities.xml');
+    const paths = resolveEntityStorePaths({
+      projectRoot: 'C:\\proj',
+      entityStore: 'project',
+    });
+    const win = EntityStore.fromPaths(new FakeFs(), paths);
+    expect(win.entitiesPath).toBe('C:\\proj\\entities.xml');
+    expect(win.decisionsPath).toBe('C:\\proj\\.ljb\\entity-decisions.jsonl');
   });
 });

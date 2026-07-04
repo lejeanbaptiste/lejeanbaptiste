@@ -29,6 +29,19 @@ export const normalizeLanguageIdent = (value: string): string => {
 
   if (/^[a-z]{2,3}$/i.test(trimmed)) return trimmed.toLowerCase();
 
+  // BCP-47 tags with subtags (zh-Hant, en-US, …): keep whole, canonical case.
+  if (/^[a-z]{2,3}(-[a-z0-9]{2,8})+$/i.test(trimmed)) {
+    return trimmed
+      .split('-')
+      .map((subtag, i) => {
+        if (i === 0) return subtag.toLowerCase();
+        if (subtag.length === 4) return subtag[0].toUpperCase() + subtag.slice(1).toLowerCase();
+        if (subtag.length === 2) return subtag.toUpperCase();
+        return subtag.toLowerCase();
+      })
+      .join('-');
+  }
+
   const mapped = LANGUAGE_NAME_TO_IDENT[trimmed.toLowerCase()];
   if (mapped) return mapped;
 

@@ -68,6 +68,7 @@ import { ImBook } from 'react-icons/im';
 import { TbChartBubbleFilled } from 'react-icons/tb';
 
 import { BookOutlinedIcon } from './custom/Book';
+import { DisambiguateIcon } from './custom/Disambiguate';
 import { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 import workIcon from './svg/book-solid.svg';
 import thingIcon from './svg/box-open-solid.svg';
@@ -94,6 +95,7 @@ import triangleExclamationIcon from './svg/triangle-exclamation-solid.svg';
 import iconOrg from './svg/users-solid.svg';
 
 export { BookIcon, BookOutlinedIcon } from './custom/Book';
+export { DisambiguateIcon } from './custom/Disambiguate';
 export { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 
 const asMuiIcon = (ReactIcon: IconType, props?: IconBaseProps) => {
@@ -127,6 +129,7 @@ const icons = {
   correction: WarningRoundedIcon,
   date: EventIcon,
   delete: ClearIcon,
+  disambiguate: DisambiguateIcon,
   documentation: QuizRoundedIcon,
   DotsCircle: DotsCircle,
   draft: DotsCircle,

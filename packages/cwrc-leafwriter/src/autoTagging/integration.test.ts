@@ -1,6 +1,8 @@
+import { crawlEntities } from './crawl';
 import { dictionaryTag } from './dictionary';
 import { parseLog } from './decisionLog';
 import { EntityStore, type EntityFileApi } from './entityStore';
+import { resolveEntityStorePaths } from './entityStoreResolve';
 import { AutoTaggingSession, type WriterLike } from './integration';
 
 const XML = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
@@ -39,6 +41,33 @@ describe('AutoTaggingSession', () => {
     expect(loads).toHaveLength(1);
     expect(getCurrent()).toContain('<persName>張衡</persName>居洛陽');
     expect(getCurrent()).toContain('<persName>張衡</persName>造渾天儀');
+  });
+
+  it('marks the document unsaved after apply', async () => {
+    let contentHasChanged = false;
+    let tabDirty = false;
+    let storedContent: string | undefined;
+    const { writer, getCurrent } = makeWriter(XML);
+    writer.overmindActions = {
+      editor: { setContentHasChanged: (value) => { contentHasChanged = value; } },
+      project: {
+        markTabDirty: (dirty) => { tabDirty = dirty; },
+        updateTabContent: ({ content }) => { storedContent = content; },
+      },
+    };
+    writer.overmindState = {
+      editor: { resource: { filePath: '/project/doc.xml' } },
+    };
+
+    const session = new AutoTaggingSession(writer);
+    const doc = await session.getDocument();
+    const suggestions = dictionaryTag(doc, [{ string: '張衡', tag: 'persName' }], 'ignore');
+    await session.apply(suggestions);
+
+    expect(contentHasChanged).toBe(true);
+    expect(tabDirty).toBe(true);
+    expect(storedContent).toContain('<persName>張衡</persName>');
+    expect(getCurrent()).toContain('<persName>張衡</persName>');
   });
 
   it('routes schema validity through the writer schemaManager', async () => {
@@ -96,6 +125,90 @@ describe('AutoTaggingSession', () => {
     expect(session.focus(suggestion!)).toBe(false);
   });
 
+  describe('getProjectDocuments', () => {
+    type DesktopGlobals = {
+      electronAPI?: {
+        listProjectXmlFiles: (root: string) => Promise<{ name: string; path: string }[]>;
+        readFile: (path: string) => Promise<string>;
+      };
+      __ljbLspProject?: { projectRoot?: string };
+      writer?: { overmindState?: { editor?: { resource?: { filePath?: string } } } };
+    };
+
+    const win = window as unknown as DesktopGlobals;
+    let savedElectron: DesktopGlobals['electronAPI'];
+    let savedProject: DesktopGlobals['__ljbLspProject'];
+    let savedWriter: DesktopGlobals['writer'];
+
+    beforeEach(() => {
+      savedElectron = win.electronAPI;
+      savedProject = win.__ljbLspProject;
+      savedWriter = win.writer;
+      delete win.electronAPI;
+      delete win.__ljbLspProject;
+      delete win.writer;
+    });
+
+    afterEach(() => {
+      if (savedElectron === undefined) delete win.electronAPI;
+      else win.electronAPI = savedElectron;
+      if (savedProject === undefined) delete win.__ljbLspProject;
+      else win.__ljbLspProject = savedProject;
+      if (savedWriter === undefined) delete win.writer;
+      else win.writer = savedWriter;
+    });
+
+    it('returns only the live document when desktop project APIs are absent', async () => {
+      const { writer } = makeWriter(XML);
+      const session = new AutoTaggingSession(writer);
+
+      const { documents, available } = await session.getProjectDocuments();
+
+      expect(available).toBe(false);
+      expect(documents).toHaveLength(1);
+      expect(crawlEntities(documents[0]!, 'ignore')).toHaveLength(0);
+    });
+
+    it('merges other project XML but skips the active file on disk', async () => {
+      const liveXml = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
+<p><persName>甲</persName></p>
+</body></text></TEI>`;
+      const otherXml = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
+<p><persName>乙</persName></p>
+</body></text></TEI>`;
+      const staleDiskXml = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
+<p><persName>舊</persName></p>
+</body></text></TEI>`;
+
+      const { writer } = makeWriter(liveXml);
+      win.electronAPI = {
+        listProjectXmlFiles: async () => [
+          { name: 'current.xml', path: '/proj/current.xml' },
+          { name: 'other.xml', path: '/proj/other.xml' },
+        ],
+        readFile: async (path) => {
+          if (path === '/proj/current.xml') return staleDiskXml;
+          if (path === '/proj/other.xml') return otherXml;
+          throw new Error(`unexpected read: ${path}`);
+        },
+      };
+      win.__ljbLspProject = { projectRoot: '/proj' };
+      win.writer = {
+        overmindState: { editor: { resource: { filePath: '/proj/current.xml' } } },
+      };
+
+      const session = new AutoTaggingSession(writer);
+      const { documents, available } = await session.getProjectDocuments();
+
+      expect(available).toBe(true);
+      expect(documents).toHaveLength(2);
+      const surfaces = documents.flatMap((doc) => crawlEntities(doc, 'ignore').map((e) => e.string));
+      expect(surfaces).toContain('甲');
+      expect(surfaces).toContain('乙');
+      expect(surfaces).not.toContain('舊');
+    });
+  });
+
   describe('decision logging', () => {
     const makeStore = () => {
       const files = new Map<string, string>();
@@ -107,7 +220,13 @@ describe('AutoTaggingSession', () => {
           files.set(p, c);
         },
       };
-      return { store: new EntityStore(api, '/proj'), files };
+      return {
+        store: EntityStore.fromPaths(
+          api,
+          resolveEntityStorePaths({ projectRoot: '/proj', entityStore: 'project' }),
+        ),
+        files,
+      };
     };
 
     const suggestionFor = async (session: AutoTaggingSession, surface: string) => {
@@ -115,7 +234,7 @@ describe('AutoTaggingSession', () => {
       return dictionaryTag(doc, [{ string: surface, tag: 'persName' }], 'ignore')[0]!;
     };
 
-    it('buffers decisions and flushes them to /.leaf/entity-decisions.jsonl', async () => {
+    it('buffers decisions and flushes them to /.ljb/entity-decisions.jsonl', async () => {
       const { writer } = makeWriter(XML);
       const { store, files } = makeStore();
       const session = new AutoTaggingSession(writer, 'ignore', store);
@@ -129,7 +248,7 @@ describe('AutoTaggingSession', () => {
       expect(written).toBe(2);
       expect(session.pendingDecisionCount).toBe(0);
 
-      const body = files.get('/proj/.leaf/entity-decisions.jsonl')!;
+      const body = files.get('/proj/.ljb/entity-decisions.jsonl')!;
       const records = parseLog(body);
       expect(records.map((r) => r.action)).toEqual(['accepted', 'rejected']);
       expect(records[0]).toMatchObject({ surface: '張衡', tag: 'persName', source: 'dictionary' });
@@ -144,5 +263,47 @@ describe('AutoTaggingSession', () => {
       expect(await session.flushDecisions()).toBe(1);
       expect(session.pendingDecisionCount).toBe(0);
     });
+
+    it('resolves a tagged mention to @key and writes the entity file', async () => {
+      const files = new Map<string, string>();
+      const api = {
+        ensureDirectory: async (dir: string) => {
+          files.set(dir, '');
+        },
+        pathExists: async (path: string) => files.has(path),
+        readFile: async (path: string) => files.get(path) ?? '',
+        writeFile: async (path: string, content: string) => {
+          files.set(path, content);
+        },
+      };
+      const paths = resolveEntityStorePaths({
+        projectRoot: '/proj',
+        entityStore: 'project',
+      });
+      const store = EntityStore.fromPaths(api, paths);
+      const { writer, getCurrent } = makeWriter(XML);
+      const session = new AutoTaggingSession(writer, 'ignore', store);
+
+      const doc = await session.getDocument();
+      const suggestions = dictionaryTag(doc, [{ string: '張衡', tag: 'persName' }], 'ignore');
+      await session.apply(suggestions);
+      expect(getCurrent()).toContain('<persName>張衡</persName>');
+
+      const groups = await session.scanMentions();
+      const group = groups.find((item) => item.surface === '張衡');
+      expect(group?.instances.length).toBeGreaterThan(0);
+
+      const instance = group!.instances[0];
+      if (!instance) throw new Error('missing mention instance');
+      const entityId = await session.resolveMention(instance, {
+        id: 'new',
+        label: '張衡',
+        sources: ['manual'],
+      }, { createNew: true });
+
+      expect(getCurrent()).toContain(`key="${entityId}"`);
+      expect(files.get('/proj/entities.xml')).toContain(entityId);
+    });
+
   });
 });

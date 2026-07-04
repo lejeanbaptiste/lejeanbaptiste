@@ -2,6 +2,7 @@ import type { NodeDetail } from '@cwrc/leafwriter-validator';
 import {
   filterTagSuggestions,
   getDefaultHighlightIndex,
+  getEditorTagContext,
   pinParagraphInsertOption,
   sortTagSuggestions,
   withInsertModeFallbacks,
@@ -88,5 +89,59 @@ describe('getDefaultHighlightIndex', () => {
   test('skips invalid preferred tag', () => {
     const tags = [tag('note'), tag('p', true), tag('persName')];
     expect(getDefaultHighlightIndex(tags, 'insert', 'p')).toBe(0);
+  });
+});
+
+describe('getEditorTagContext', () => {
+  const mountTaggedBody = () => {
+    const body = document.createElement('div');
+    const tagged = document.createElement('span');
+    tagged.setAttribute('_tag', 'persName');
+    const text = document.createTextNode('Ada');
+    tagged.appendChild(text);
+    body.appendChild(tagged);
+    return { body, tagged, text };
+  };
+
+  test('finds tag from range start when selection node is the editor body', () => {
+    const { body, tagged, text } = mountTaggedBody();
+    const rng = document.createRange();
+    rng.setStart(text, 1);
+    rng.collapse(true);
+
+    (window as unknown as { writer: { editor: { getBody: () => Element; selection: { getNode: () => Node; getRng: () => Range } } } }).writer = {
+      editor: {
+        getBody: () => body,
+        selection: {
+          getNode: () => body,
+          getRng: () => rng,
+        },
+      },
+    };
+
+    const ctx = getEditorTagContext();
+    expect(ctx?.tagElement).toBe(tagged);
+    expect(ctx?.element.getAttribute('_tag')).toBe('persName');
+  });
+
+  test('returns null when caret is outside tagged content', () => {
+    const body = document.createElement('div');
+    const text = document.createTextNode('plain');
+    body.appendChild(text);
+    const rng = document.createRange();
+    rng.setStart(text, 0);
+    rng.collapse(true);
+
+    (window as unknown as { writer: { editor: { getBody: () => Element; selection: { getNode: () => Node; getRng: () => Range } } } }).writer = {
+      editor: {
+        getBody: () => body,
+        selection: {
+          getNode: () => body,
+          getRng: () => rng,
+        },
+      },
+    };
+
+    expect(getEditorTagContext()).toBeNull();
   });
 });

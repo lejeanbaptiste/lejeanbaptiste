@@ -103,6 +103,18 @@ interface Occurrence {
   searchIndex: number;
 }
 
+/** Reuse occurrence lists when building many anchors in one document. */
+export type OccurrenceCache = Map<string, Occurrence[]>;
+
+function cachedOccurrences(index: DocIndex, surface: string, cache?: OccurrenceCache): Occurrence[] {
+  if (!cache) return occurrences(index, surface);
+  const hit = cache.get(surface);
+  if (hit) return hit;
+  const list = occurrences(index, surface);
+  cache.set(surface, list);
+  return list;
+}
+
 /**
  * Occurrences of surface within single nodes, in document order. Matches
  * spanning node boundaries are excluded — insertion targets one text node.
@@ -160,7 +172,8 @@ function contextScore(index: DocIndex, anchor: Anchor, occ: Occurrence): number 
  * Create an anchor for the raw range [rawStart, rawEnd) inside a text node.
  * The document must already be NFC-normalized (see normalizeDomText).
  * Producers creating many anchors should pass a prebuilt DocIndex — it is
- * only valid while the document is unmodified.
+ * only valid while the document is unmodified. Pass an OccurrenceCache when
+ * building anchors for many mentions in the same document.
  */
 export function createAnchor(
   documentId: string,
@@ -170,6 +183,7 @@ export function createAnchor(
   rawEnd: number,
   policy: WhitespacePolicy,
   prebuiltIndex?: DocIndex,
+  occurrenceCache?: OccurrenceCache,
 ): Anchor {
   const index = prebuiltIndex ?? buildDocIndex(root, policy);
   const nodeIndex = index.nodes.findIndex((n) => n.node === node);
@@ -184,7 +198,7 @@ export function createAnchor(
   }
 
   const surface = text.slice(searchStart, searchEnd);
-  const all = occurrences(index, surface);
+  const all = cachedOccurrences(index, surface, occurrenceCache);
   const occurrence =
     all.findIndex((o) => o.nodeIndex === nodeIndex && o.searchIndex === searchStart) + 1;
   if (occurrence === 0) throw new Error('createAnchor: could not locate own occurrence');

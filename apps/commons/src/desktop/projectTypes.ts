@@ -22,6 +22,10 @@ export interface ProjectFileConfig {
   metadata?: string;
   /** Relative path, default schema/translation-settings.json */
   translationSettings?: string;
+  /** Central (default) or project-local entity database. */
+  entityStore?: 'central' | 'project';
+  /** UUID fingerprint of the linked entities.xml database file. */
+  entityDatabaseId?: string;
 }
 
 export interface ProjectMetadataFile {

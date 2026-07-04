@@ -24,6 +24,7 @@ export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
 
 export type DialogType =
   | 'autoTagging'
+  | 'disambiguation'
   | 'editSchema'
   | 'editSource'
   | 'popup'

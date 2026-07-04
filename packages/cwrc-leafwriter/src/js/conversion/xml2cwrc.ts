@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import { log } from '../../utilities';
+import { stripCjkWhitespaceInElement } from '../../utilities/cjkWhitespace';
 import { isValidHttpURL } from '../../utilities/string';
 import { EntityConfig } from '../entities/Entity';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
@@ -37,6 +38,14 @@ class XML2CWRC {
   async processDocument(doc: XMLDocument) {
     // clear current doc
     await this.clearDocument();
+
+    // Opt-in: strip inter-character whitespace so pretty-printed source doesn't
+    // show as gaps in WYSIWYG. Safe on any document — the rule only touches
+    // whitespace between East Asian characters — so no language check is needed.
+    // Done here, the single chokepoint every load path funnels through.
+    if (this.writer.overmindState?.editor?.stripCjkWhitespace) {
+      stripCjkWhitespaceInElement(doc);
+    }
 
     const { overmindActions, schemaManager } = this.writer;
     const schemaProcess: ProcessSchemaProps = { doc, writer: this.writer };

@@ -7,6 +7,11 @@ import type {
   ZoteroStyle,
 } from './zoteroClient';
 
+import type {
+  AuthorityDownloadProgress,
+  AuthoritySourceId,
+  AuthoritySourceStatus,
+} from './authorityDatabases';
 import type { ProjectBundle } from './projectFile';
 import type {
   SchemaUpdateApplyResult,
@@ -170,6 +175,21 @@ export interface ElectronAPI {
   createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
+  getEntityDbFolder: () => Promise<string | null>;
+  setEntityDbFolder: (folder: string | null) => Promise<void>;
+  pickEntityDbFolder: () => Promise<string | null>;
+  authorityDbStatuses: () => Promise<AuthoritySourceStatus[]>;
+  authorityDbDownload: (
+    sourceId: AuthoritySourceId,
+  ) => Promise<{ ok: boolean; error?: string }>;
+  authorityDbPromptDownload: () => Promise<'accepted' | 'declined'>;
+  onAuthorityDbProgress: (
+    callback: (progress: AuthorityDownloadProgress) => void,
+  ) => () => void;
+  updateProjectFileConfig: (
+    projectFilePath: string,
+    patch: Record<string, unknown>,
+  ) => Promise<ProjectBundle>;
   getAiApiSettings: () => Promise<AiApiSettings>;
   setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
@@ -190,6 +210,7 @@ export interface ElectronAPI {
   minimizeWindow: () => Promise<void>;
   maximizeWindow: () => Promise<void>;
   closeWindow: () => Promise<void>;
+  openExternalUrl: (url: string) => Promise<boolean>;
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
@@ -286,6 +307,21 @@ const electronAPI: ElectronAPI = {
   createTempDocument: (content: string) => ipcRenderer.invoke('createTempDocument', content),
   getEncoderName: () => ipcRenderer.invoke('getEncoderName'),
   setEncoderName: (name: string) => ipcRenderer.invoke('setEncoderName', name),
+  getEntityDbFolder: () => ipcRenderer.invoke('getEntityDbFolder'),
+  setEntityDbFolder: (folder: string | null) => ipcRenderer.invoke('setEntityDbFolder', folder),
+  pickEntityDbFolder: () => ipcRenderer.invoke('pickEntityDbFolder'),
+  authorityDbStatuses: () => ipcRenderer.invoke('authorityDb:statuses'),
+  authorityDbDownload: (sourceId: AuthoritySourceId) =>
+    ipcRenderer.invoke('authorityDb:download', sourceId),
+  authorityDbPromptDownload: () => ipcRenderer.invoke('authorityDb:promptDownload'),
+  onAuthorityDbProgress: (callback: (progress: AuthorityDownloadProgress) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: AuthorityDownloadProgress) =>
+      callback(progress);
+    ipcRenderer.on('authorityDb:progress', listener);
+    return () => ipcRenderer.removeListener('authorityDb:progress', listener);
+  },
+  updateProjectFileConfig: (projectFilePath: string, patch: Record<string, unknown>) =>
+    ipcRenderer.invoke('updateProjectFileConfig', projectFilePath, patch),
   getAiApiSettings: () => ipcRenderer.invoke('getAiApiSettings'),
   setAiApiSettings: (settings: Partial<AiApiSettings>) =>
     ipcRenderer.invoke('setAiApiSettings', settings),
@@ -313,6 +349,7 @@ const electronAPI: ElectronAPI = {
   minimizeWindow: () => ipcRenderer.invoke('window-minimize'),
   maximizeWindow: () => ipcRenderer.invoke('window-maximize'),
   closeWindow: () => ipcRenderer.invoke('window-close'),
+  openExternalUrl: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
   isWindowMaximized: () => ipcRenderer.invoke('window-is-maximized'),
   onWindowMaximized: (callback: (maximized: boolean) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, maximized: boolean) => callback(maximized);

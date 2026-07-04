@@ -54,6 +54,20 @@ Key points:
 
 **Schema rules, two layers.** (1) Structural validity from the loaded schema automatically (`schemaManager.isTagValidChildOfParent`, checked against the ancestor chain before insertion; full validation after apply catches rare positional cases). (2) User taste rules — schema-allowed but unwanted, e.g. `<date>` in `<placeName>` — in a settings panel: structured `{ tag, notInside }` with dropdowns fed by the schema, raw-XPath escape hatch for power users. Rules block during auto-tagging, warn during audit. Ships empty.
 
+### Matching performance (the "bombard")
+
+Firing a large authority set (CBDB is ~660k persons) at a document must **not** be done the naive way — iterating dictionary rows and scanning the text once per string (whether via `indexOf` or `re.sub`). That is O(patterns × text): 600k patterns over a 200k-char document is ~10¹¹ character comparisons, minutes to hours, and it recompiles/rescans for every string.
+
+Instead the matcher (`autoTagging/matcher.ts`, `MultiStringMatcher`) does a **single pass** over the text:
+
+- **Build once.** Every pattern is hashed into a bucket keyed by its length (a `Map<length, Set<string>>`). Cost O(Σ pattern lengths), done once and reusable across documents if the dictionary is fixed.
+- **Scan once.** Walk the text left to right. At each position, test only the *distinct pattern lengths* (a handful — names are short), doing an O(1) `Set` lookup per length. On a hit, emit it and resume **after** the match (non-overlapping, leftmost-longest — which is exactly the "prefer the longer span" conflict rule). Scan cost is O(text × distinctLengths) — **independent of the number of patterns**.
+- **No regex.** Patterns are exact substrings, so there is no regex compilation, backtracking, or escaping — just hash lookups. (This suits CJK, where there are no word boundaries and every position is a candidate start; it is equally correct for whitespace languages via the search-text policy.)
+
+Measured (jsdom, 200k-char text, patterns of length ≤ 6): build 6 ms / 35 ms / 178 ms and **scan 161 ms / 119 ms / 142 ms for 10k / 100k / 600k patterns** — scan time flat as the dictionary grows 60×.
+
+The theoretical optimum is an Aho-Corasick automaton (O(text + matches), also independent of *distinctLengths*). We chose length-bucketed hashing because for short-name dictionaries `distinctLengths` is tiny (≤ ~10), so it is within a small constant of Aho-Corasick while being far simpler and less bug-prone; if a dictionary ever has a wide length spread, swapping in Aho-Corasick behind the same `MultiStringMatcher` interface is a localized change. `dictionaryTag` and the authority seed pass both run through this matcher; the document search-index (normalization, offset map, occurrence counts) is likewise built once per document, not per pattern.
+
 ## Base technology
 
 Whatever different methods of autotagging we do, we should use the same set of solid functions for regex, xpath navigation, and validation. I've built such things into sanmiao, so we can look at that package.
@@ -76,9 +90,9 @@ Priority *across* methods (dictionary vs. AI vs. NER on overlapping spans) is se
 
 - sanmiao python package, adapted for TEI
 
-## Regex (Dictionary tagging)
+## Dictionary tagging
 
-At the very least, we should offer the ability to import tables with 'string' and 'tag' columns. We sort by string length, descending, and tag in order.
+At the very least, we should offer the ability to import tables with 'string' and 'tag' columns. (Despite the historical "regex" label, the implementation uses no regex — see **Matching performance** above; matching is exact-substring via a single-pass length-bucketed matcher, longest span first.)
 
 Sources:
 - Spreadsheets (tsv, csv, xlsx, LibreOffice, etc.)
@@ -136,15 +150,162 @@ TEI mapping, explicitly:
 - entity = `@key`/`@ref` on the mention, pointing **only to the local project entity** — never directly to an external authority;
 - authority links live on the entity record. This keeps the XML stable when authority mappings change.
 
-## Project entity file (the "database")
+## Entity file (the "database")
 
-Not an SQL server. The project database is a TEI standoff file in the project itself: `<standOff>` / personography / placeography (`<listPerson>`, `<listPlace>`, ...) with `xml:id`s as local ids and `<idno type="CBDB">`, `<idno type="wikidata">`, etc. for authority links, plus description fields and cached authority data.
+Not an SQL server. The entity database is a TEI standoff file: `<standOff>` / personography / placeography (`<listPerson>`, `<listPlace>`, ...) with `xml:id`s as local ids and `<idno type="CBDB">`, `<idno type="wikidata">`, etc. for authority links, plus description fields and cached authority data.
 
-Benefits: self-contained, versionable in git alongside the texts, interoperable with other TEI tooling. If lookup speed becomes an issue we index it into SQLite at runtime — the XML stays the source of truth.
+**Default: one shared database per user**, not one per project. This matches Norbert's personal SQL database — you disambiguate 張衡 once and reuse that entity across every text you work on. Projects opt in to a **project-local** database only when they need an isolated entity pool (teaching sandbox, experimental fork, etc.).
 
-**Important**: this file must be invisible to find, replace, and other whole-project text operations — it's infrastructure, not corpus. Excluded by file role, not by user convention.
+### Where things live
 
-The decision log (user's accept/reject/correct history) lives alongside it.
+| Artifact | Location | Visible? |
+|----------|----------|----------|
+| Central entity database | `{user-chosen folder}/entities.xml` | Yes — open in any TEI editor |
+| Project entity database (opt-in) | `<projectRoot>/entities.xml` | Yes |
+| Decision log, pending caches, project backups | `<projectRoot>/.ljb/` | Hidden |
+| App prefs (central DB folder path, etc.) | Electron userData | Hidden |
+
+**Central database folder** — chosen at **first-run / install** (folder picker, not file). LJB explains: this folder holds your **entity database** (`entities.xml`); we **suggest** keeping your projects as subfolders here, but that layout is optional. Changeable in **App Settings → Entity database location**. Pointer-only on move (no automatic file migration) + strong warning.
+
+**Project-specific database** — opt-in at new-project setup or in **Project → Project settings** (renamed from "Edition metadata"). Writes `<projectRoot>/entities.xml`.
+
+**Decision log** — always per-project at `<projectRoot>/.ljb/entity-decisions.jsonl`. Not shared (projects differ in scope, period, etc.). Other LJB-internal clutter (pending suggestion cache, import run logs, project Time Machine snapshots) also lives under `.ljb/`. No LEAF / `.leaf` branding anywhere in this stack.
+
+### Example layout (optional, user-defined)
+
+```
+~/Documents/XML corpus/           ← folder chosen at install
+├── entities.xml                  ← central database (visible)
+├── my-han-texts/                 ← project using central database
+│   ├── jean-baptiste.project.json
+│   ├── .ljb/
+│   │   ├── entity-decisions.jsonl
+│   │   └── time-machine/         ← project snapshots (planned)
+│   └── chapter1.xml
+└── teaching-sandbox/             ← project with its own database
+    ├── jean-baptiste.project.json
+    ├── entities.xml
+    ├── .ljb/
+    └── exercise1.xml
+```
+
+### How the app picks which entity file to use
+
+No directory walking. Resolution is explicit:
+
+1. **App Settings** stores the central database **folder**; file is always `{folder}/entities.xml`.
+2. **Project settings** (`jean-baptiste.project.json`) stores `"entityStore": "central"` (default) or `"entityStore": "project"`.
+3. If `"central"` → read/write App Settings path. If missing → prompt (see **Recovery** below).
+4. If `"project"` → read/write `<projectRoot>/entities.xml`.
+
+**On every project open:** if the project JSON has no `entityStore` settings yet, open **Project settings** automatically (same dialog as first-time metadata setup).
+
+Mentions use bare local ids (`key="person-000001"`). Which file holds that id is resolved from project settings + app prefs, not encoded into each mention.
+
+### Database identity & mismatch warnings
+
+Each `entities.xml` carries a stable **database id** in its TEI header (e.g. `<idno type="ljb-entity-database">` with a UUID, set at creation). The project JSON stores `entityDatabaseId` — the id of the database this project was last linked to.
+
+On open (and before any entity write), LJB compares the resolved database file's id to the project's stored id. **Mismatch → warn:** the corpus `@key` values were created against a different database; ids will not match. Default action: **Cancel** (stay disconnected until resolved).
+
+When the user changes App Settings to point at a different folder, or switches `entityStore` mode, treat it as a potential mismatch and run the same check.
+
+### Database file validation (safety)
+
+Before reading or writing, LJB verifies the target file is an entity database:
+
+- TEI standoff with expected structure (`<standOff>`, entity lists), **and**
+- A hard-coded marker in the file (subtype / `idno type="ljb-entity-database"`) that LJB sets in the scaffold.
+
+If the user points App Settings at an ordinary TEI text file, refuse and warn. This prevents corrupting corpus XML by mistake.
+
+### Missing or lost central database
+
+If App Settings points at a folder where `entities.xml` is missing:
+
+1. **Prominent warning** — your entity database was not found; disambiguation is blocked until resolved. Emphasize: **do not lose this file**; back it up (Time Machine tab — see below).
+2. **Find existing** — file picker to locate a previously created `entities.xml`.
+3. **Create new** — scaffold a fresh empty database in the configured folder (or a newly chosen folder).
+
+If the corpus already contains `@key` values but the database is gone:
+
+| Option | What it does |
+|--------|----------------|
+| **Purge all entity ids** | Strip `@key` only from all corpus files in the project; **keep tags** and all other attributes (`@resp`, `cert`, etc.). User re-disambiguates from scratch. |
+| **Reconstitute from corpus** | Crawl all `@key` values in the project; mint **stub** entity records (id + name from the tagged surface text). Preserves id continuity in the XML but **cannot restore** authority `<idno>` links or descriptions that lived only in the lost file. |
+
+Use **reconstitute** when the database file is lost but the XML still has keys. Use **purge** when you want a clean slate with no keys.
+
+### Voluntary database switch (central ↔ project, or different central path)
+
+What matters is **not** preserving LJB local ids (`person-000001`) — those are disposable handles. What matters is preserving **relationships and authority links**:
+
+- these mentions pointed at the same entity (shared old `@key`);
+- that entity's names, descriptions, and **`<idno>` authority links** (CBDB, Wikidata, your own database ids, etc.).
+
+**Yes, this is doable.** When switching databases and the **old** `entities.xml` is still available:
+
+1. **Import entities** from old database → target database. For each entity referenced in the project (or the full old file — user choice):
+   - Copy names, notes, descriptions, and **all `<idno>` elements** (including custom types for the user's own authority ids).
+   - **Do not** copy old `xml:id` values — mint fresh local ids in the target (or match an existing entity in the target if it already has the same authority `<idno>`, to avoid duplicates).
+2. **Build a remap table** oldLocalId → newLocalId from that import.
+3. **Rewrite corpus `@key` values** using the remap table so every mention still points at the correct imported entity.
+4. Update `entityDatabaseId` in the project JSON.
+
+After import, old LJB ids are gone from both the database and the corpus; authority links and mention↔entity groupings are preserved.
+
+**Mismatch dialog options:**
+
+| Option | When |
+|--------|------|
+| **Cancel** (default) | No change. |
+| **Import from previous database** | Old `entities.xml` available (file picker if needed). Import + remap as above. |
+| **Purge all entity ids** | Strip `@key` only; keep tags and all other attributes. Attach to new empty or existing target database. |
+
+Do **not** silently keep stale keys. **Reconstitute** (stub entities from corpus surface text) remains for **lost-database** recovery when the old file is gone — it cannot restore authority `<idno>` links.
+
+**Import without corpus remap** (e.g. merging two database files in App Settings): same entity-import logic, deduplicating on authority `<idno>` where possible; no corpus rewrite. Deferred as a separate "merge databases" action if not needed for v1 project switch flow.
+
+### External edits & reload
+
+A file watcher on the active `entities.xml` detects changes made outside LJB. Prompt: **"Database changed externally — reload?"** Reload before the next entity operation if the user confirms.
+
+### Incremental ids (SQL-equivalent behaviour)
+
+Local ids (`person-000001`, `place-000002`, …) are generated by scanning all existing `xml:id` values of that type in the database file, taking the highest numeric suffix, adding one, and skipping any collision. Ids are **never derived from names**. This is the same guarantee SQL auto-increment gives you:
+
+- **Monotonic** within a type — each new entity gets a fresh number.
+- **Non-duplicating** — collision loop ensures uniqueness even if the file was hand-edited or merged oddly.
+- **Stable** — once `person-000042` is written into a corpus `@key`, that string stays meaningful as long as the same database file is attached.
+- **Per-database** — ids are unique within one `entities.xml`, not globally across files. That is why the database-id fingerprint matters.
+
+The only way ids "break" is attaching a corpus to a different database (handled by mismatch warnings) or manual hand-editing that reuses an id for a different person (same risk as editing an SQL table by hand — rare, user-owned).
+
+Machine provenance on auto-linked mentions: `resp="#ljb-autotag"` (replacing `#leafwriter-autotag`). Authority-cache notes: `resp="le-jean-baptiste"`.
+
+### Time Machine backups
+
+Time Machine gains a **second tab** for the **central entity database**:
+
+- **Project tab** — corpus snapshots under `<project>/.ljb/history/` (unchanged).
+- **Entity database tab** — snapshots of `entities.xml` stored in the **hidden app folder** (Electron userData, alongside cache and settings). Same hash-dedup rules as corpus saves.
+- The Time Machine popup lets the user **delete individual snapshots** (both tabs).
+- Project-local `entities.xml` (when `entityStore: "project"`) uses the Project tab scope under that project's `.ljb/history/`.
+
+Strong reminder in UI: back up your entity database; it is the disambiguation work of a lifetime.
+
+### Corpus operations & exclusion
+
+Project-local `entities.xml` must be excluded from find/replace, auto-tag crawls, and validation. Hidden `.ljb/` is excluded by the reserved-path mechanism. The central database lives outside the project tree and is never enumerated.
+
+### Deferred (not v1)
+
+- **Standalone database merge** — combine two entity files without an attached project/corpus (same import logic as voluntary switch; lower priority if project switch covers the main use case).
+- **SQLite runtime index** for very large central files (XML remains source of truth).
+- **Multi-machine sync** — two LJB instances editing the same `entities.xml` concurrently.
+- **Migration tooling** from early `.leaf/entities.xml` prototype paths in test projects.
+- **Move-file wizard** when changing central DB folder (v1 = pointer update + warning only).
+- **Entity database viewer/editor** UI beyond opening the XML externally.
 
 ## Norbert paradigm (reference)
 
@@ -159,23 +320,38 @@ This works great for me, but I'm not going to set up such a thing for every user
 
 When we disambiguate, it will open a version of the 'entities' panel. We'll select what tag we want to disambiguate (`<persName>` only, for example). Each unique string will expand into a tree with instances of that unique string. These can be clicked or keyboard navigated like with find, so that we can immediately see where it is in the text.
 
-When we launch that, we'll query the authorities that the user has chosen, plus the project entity file. Where the project file has linked an id to, say, CBDB and Wikidata, those will be collapsed into one item, mentioning their sources. Each item will provide some basic details to help the user cognitively disambiguate. There will be a button to go to the authority source, e.g. open the Wikipedia page.
+When we launch that, we'll query the authorities the user has chosen, the local entity database, and any offline dumps (CBDB, DILA, etc.). **Grouping rules:**
 
-Buttons:
+1. If the local entity file already links authority ids, hits matching those ids **auto-merge** into one candidate.
+2. Cross-authority indexes (e.g. Wikidata → VIAF) collapse matching proposals.
+3. The user can **manually link** two proposals (Wikidata + VIAF) to one local entity; both `<idno>` entries are stored — multiples of the same type allowed.
+4. Each proposal shows a **source icon**; linked/merged proposals show **stacked icons**.
+
+Each item provides basic details to help disambiguate. Button to open the authority source (e.g. Wikipedia).
+
+**Buttons:**
 - accept for this occurrence;
-- accept for all identical strings **in this document** (never corpus-wide — identical surface form ≠ identical entity, especially for Chinese person names; per-instance AI sanity-checking can flag outliers);
+- accept for all identical strings **in this document** (default bulk — never corpus-wide);
 - create new entity;
-- mark unresolved;
+- mark unresolved (`cert="unknown"`, no `@key`, red styling — candidates kept in `.ljb/`);
 - ignore (X on the tree, moves to the bottom of the list);
 - split group.
 
+**Re-running disambiguation:** each pass is incremental. Mentions with `@key` appear as already done (filter hides them by default). Ambiguous mentions (`cert="unknown"`, no key) and untagged/unkeyed mentions stay in the queue. **Never** auto-purge keys on re-run — purge is manual only.
+
 A filter button at the top of the panel filters out strings in which all instances have ids.
 
-When the author accepts something and there is no custom description of the person, place, etc., in the project entity file, a popup allows him to add one.
+When the author accepts and the entity has no custom description, a popup offers an **optional** free-text note. Pre-fill dates/one-liner from authority when available. Everything optional ("the cheese guy" is fine).
+
+### Live authority lookup (Phase 4b)
+
+**v1 strategy:** reuse the **LINCS reconcile API** (already in the app) for VIAF, Wikidata, DBpedia, GeoNames, Getty, GND. **Offline only** for CBDB, DILA, CHGIS, and personal SQL/CSV exports.
+
+**Politeness:** cache in `<project>/.ljb/authority-cache/`; query when a string is opened, not on every keystroke; ~1 request/second max; 30-day TTL + manual refresh; User-Agent identifies Le Jean-Baptiste. See `Auto-tagging-phases.md` Phase 4b for the full authority matrix.
 
 Technical:
 - cache authority queries;
-- send batched requests;
+- batched reconcile calls (multi-authority per request via LINCS);
 - rate limit, to be polite.
 
 ## AI-assisted ranking
@@ -204,4 +380,4 @@ Disambiguation choices are suggestion objects too, using the same anchor scheme.
 
 # Database
 
-We'll presumably want a viewer/editing tools for the project entity file at some point.... I'll think about that later.
+Entity database viewer/editing tools deferred (see **Deferred** in `Auto-tagging.md`). Users open `entities.xml` directly in LJB or any TEI editor.

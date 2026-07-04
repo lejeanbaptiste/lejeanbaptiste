@@ -11,7 +11,13 @@ import {
   Typography,
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import {
+  FIXED_LANGUAGE_OPTIONS,
+  isKnownLanguageCode,
+  languageLabelForCode,
+} from '@cwrc/leafwriter/languageCodes';
 import { isDesktop } from '@src/types/desktop';
+import { SOURCE_LANGUAGE_PATH } from '@src/desktop/projectLanguage';
 import {
   CITATION_STYLE_OPTIONS,
   DEFAULT_CITATION_STYLE_ID,
@@ -35,7 +41,6 @@ export const NativeProjectMetadataPage = () => {
   const [citationStyle, setCitationStyle] = useState<string>(DEFAULT_CITATION_STYLE_ID);
   const [languages, setLanguages] = useState<TranslationLanguage[]>([]);
   const [newLangCode, setNewLangCode] = useState('');
-  const [newLangLabel, setNewLangLabel] = useState('');
 
   const invoke = useCallback(
     async (method: string, args?: unknown) => {
@@ -137,11 +142,9 @@ export const NativeProjectMetadataPage = () => {
 
   const addLanguage = () => {
     const code = newLangCode.trim();
-    const label = newLangLabel.trim() || code;
     if (!code || languages.some((lang) => lang.code === code)) return;
-    setLanguages((prev) => [...prev, { code, label }]);
+    setLanguages((prev) => [...prev, { code, label: languageLabelForCode(code) }]);
     setNewLangCode('');
-    setNewLangLabel('');
   };
 
   const removeLanguage = (code: string) => {
@@ -158,7 +161,7 @@ export const NativeProjectMetadataPage = () => {
       const pendingCode = newLangCode.trim();
       const languagesToSave =
         pendingCode && !languages.some((lang) => lang.code === pendingCode)
-          ? [...languages, { code: pendingCode, label: newLangLabel.trim() || pendingCode }]
+          ? [...languages, { code: pendingCode, label: languageLabelForCode(pendingCode) }]
           : languages;
 
       const result = (await invoke('saveProjectMetadata', {
@@ -168,6 +171,7 @@ export const NativeProjectMetadataPage = () => {
         translationAlignmentUnit: alignmentUnit,
         translationLanguages: languagesToSave,
         translationCitationStyle: citationStyle,
+        entityStore: state.entityStore,
       })) as { ok: boolean; error?: string; summary?: string };
       if (!result?.ok) {
         setError(result?.error ?? 'Could not save metadata.');
@@ -195,17 +199,19 @@ export const NativeProjectMetadataPage = () => {
   }
 
   const isFirstSetup = state?.mode === 'firstSetup';
+  const requiresLanguage =
+    state?.fields.some((field) => field.path === SOURCE_LANGUAGE_PATH) ?? false;
+  const languageMissing =
+    requiresLanguage && !(state?.values[SOURCE_LANGUAGE_PATH] ?? '').trim();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
       <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', WebkitAppRegion: 'drag' }}>
-        <Typography variant="h6">
-          {isFirstSetup ? 'Project metadata' : 'Edition metadata'}
-        </Typography>
+        <Typography variant="h6">Project settings</Typography>
         <Typography color="text.secondary" variant="body2">
           {isFirstSetup
-            ? 'Save once to finish project setup. Fields may be left blank.'
-            : 'Project-wide defaults stored in schema/project-metadata.json.'}
+            ? 'Save once to finish project setup. Source language is required; other fields may be left blank.'
+            : 'Project-wide defaults and entity database choice.'}
         </Typography>
       </Box>
 
@@ -214,7 +220,7 @@ export const NativeProjectMetadataPage = () => {
           <Typography color="text.secondary">Loading…</Typography>
         ) : !state ? (
           <Typography color="error" variant="body2">
-            {error ?? 'Could not load edition metadata.'}
+            {error ?? 'Could not load project settings.'}
           </Typography>
         ) : (
           <>
@@ -224,17 +230,71 @@ export const NativeProjectMetadataPage = () => {
               </Typography>
             )}
 
-            {state.fields.map((field) => (
-              <TextField
-                fullWidth
-                key={field.path}
-                label={field.label}
-                multiline={field.path.includes('projectDesc')}
-                onChange={(event) => updateField(field.path, event.target.value)}
-                size="small"
-                value={state.values[field.path] ?? ''}
+            {state.fields.map((field) =>
+              field.path === SOURCE_LANGUAGE_PATH ? (
+                <TextField
+                  fullWidth
+                  key={field.path}
+                  label={field.label}
+                  onChange={(event) => updateField(field.path, event.target.value)}
+                  required
+                  select
+                  size="small"
+                  SelectProps={{ native: true }}
+                  value={state.values[field.path] ?? ''}
+                >
+                  <option value="">Select language…</option>
+                  {/* Legacy free-text value from an older project: keep it selectable so
+                      opening the dialog doesn't silently drop it. */}
+                  {(state.values[field.path] ?? '') !== '' &&
+                    !isKnownLanguageCode(state.values[field.path] ?? '') && (
+                      <option value={state.values[field.path]}>
+                        {state.values[field.path]} (legacy)
+                      </option>
+                    )}
+                  {FIXED_LANGUAGE_OPTIONS.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.label} ({option.code})
+                    </option>
+                  ))}
+                </TextField>
+              ) : (
+                <TextField
+                  fullWidth
+                  key={field.path}
+                  label={field.label}
+                  multiline={field.path.includes('projectDesc')}
+                  onChange={(event) => updateField(field.path, event.target.value)}
+                  size="small"
+                  value={state.values[field.path] ?? ''}
+                />
+              ),
+            )}
+
+            <Typography sx={{ pt: 1 }} variant="subtitle2">
+              Entity database
+            </Typography>
+            <Typography color="text.secondary" variant="body2">
+              Use your central database (App Settings) or keep a separate entities.xml in this
+              project folder.
+            </Typography>
+            <RadioGroup
+              value={state.entityStore}
+              onChange={(event) =>
+                setState((prev) =>
+                  prev
+                    ? { ...prev, entityStore: event.target.value as 'central' | 'project' }
+                    : prev,
+                )
+              }
+            >
+              <FormControlLabel control={<Radio size="small" />} label="Central database" value="central" />
+              <FormControlLabel
+                control={<Radio size="small" />}
+                label="This project's database"
+                value="project"
               />
-            ))}
+            </RadioGroup>
 
             <Typography sx={{ pt: 1 }} variant="subtitle2">
               Custom fields
@@ -337,22 +397,24 @@ export const NativeProjectMetadataPage = () => {
 
             <Stack alignItems="center" direction="row" spacing={1}>
               <TextField
-                label="Code (e.g. fr)"
+                label="Add translation language"
                 onChange={(event) => setNewLangCode(event.target.value)}
-                onKeyDown={(event) => event.key === 'Enter' && addLanguage()}
+                select
                 size="small"
-                sx={{ flex: 1 }}
-                value={newLangCode}
-              />
-              <TextField
-                label="Label (e.g. Français)"
-                onChange={(event) => setNewLangLabel(event.target.value)}
-                onKeyDown={(event) => event.key === 'Enter' && addLanguage()}
-                size="small"
+                SelectProps={{ native: true }}
                 sx={{ flex: 2 }}
-                value={newLangLabel}
-              />
-              <Button onClick={addLanguage} size="small" variant="text">
+                value={newLangCode}
+              >
+                <option value="" />
+                {FIXED_LANGUAGE_OPTIONS.filter(
+                  (option) => !languages.some((lang) => lang.code === option.code),
+                ).map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.label} ({option.code})
+                  </option>
+                ))}
+              </TextField>
+              <Button disabled={!newLangCode} onClick={addLanguage} size="small" variant="text">
                 Add
               </Button>
             </Stack>
@@ -384,7 +446,7 @@ export const NativeProjectMetadataPage = () => {
         )}
         {!isFirstSetup && (
           <Button
-            disabled={submitting}
+            disabled={submitting || languageMissing}
             onClick={() => void handleSave(false)}
             variant="outlined"
           >
@@ -393,7 +455,7 @@ export const NativeProjectMetadataPage = () => {
         )}
         <Button
           color="primary"
-          disabled={submitting || !state}
+          disabled={submitting || !state || languageMissing}
           onClick={() => void handleSave(!isFirstSetup)}
           variant="contained"
         >

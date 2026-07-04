@@ -9,7 +9,7 @@ export const TEI_V1_METADATA_FIELDS: MetadataFieldDefinition[] = [
   { label: 'Funder', path: 'titleStmt/funder' },
   { label: 'Principal (encoder)', path: 'titleStmt/principal' },
   { label: 'Encoding project description', path: 'encodingDesc/projectDesc/p' },
-  { label: 'Default language (e.g. English or eng)', path: 'profileDesc/langUsage/language' },
+  { label: 'Source language', path: 'profileDesc/langUsage/language' },
 ];
 
 export const TEI_SIMPLE_PRINT_METADATA_FIELDS: MetadataFieldDefinition[] =
@@ -18,7 +18,7 @@ export const TEI_SIMPLE_PRINT_METADATA_FIELDS: MetadataFieldDefinition[] =
 export const JTEI_METADATA_FIELDS: MetadataFieldDefinition[] = [
   { label: 'Publisher / distributor', path: 'publicationStmt/distributor' },
   { label: 'Encoding project description', path: 'encodingDesc/projectDesc/p' },
-  { label: 'Default language (e.g. English or eng)', path: 'profileDesc/langUsage/language' },
+  { label: 'Source language', path: 'profileDesc/langUsage/language' },
 ];
 
 export const ORLANDO_METADATA_FIELDS: MetadataFieldDefinition[] = [

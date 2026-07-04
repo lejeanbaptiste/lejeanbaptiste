@@ -1,3 +1,8 @@
+import type {
+  AuthorityDownloadProgress,
+  AuthoritySourceId,
+  AuthoritySourceStatus,
+} from '@src/desktop/authorityDbTypes';
 import type { ProjectBundle } from '@src/desktop/projectFile';
 import type {
   SchemaUpdateApplyResult,
@@ -227,6 +232,21 @@ export interface ElectronAPI {
   createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
+  getEntityDbFolder: () => Promise<string | null>;
+  setEntityDbFolder: (folder: string | null) => Promise<void>;
+  pickEntityDbFolder: () => Promise<string | null>;
+  authorityDbStatuses?: () => Promise<AuthoritySourceStatus[]>;
+  authorityDbDownload?: (
+    sourceId: AuthoritySourceId,
+  ) => Promise<{ ok: boolean; error?: string }>;
+  authorityDbPromptDownload?: () => Promise<'accepted' | 'declined'>;
+  onAuthorityDbProgress?: (
+    callback: (progress: AuthorityDownloadProgress) => void,
+  ) => () => void;
+  updateProjectFileConfig: (
+    projectFilePath: string,
+    patch: Record<string, unknown>,
+  ) => Promise<ProjectBundle>;
   getAiApiSettings: () => Promise<AiApiSettings>;
   setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
@@ -243,6 +263,7 @@ export interface ElectronAPI {
   minimizeWindow: () => Promise<void>;
   maximizeWindow: () => Promise<void>;
   closeWindow: () => Promise<void>;
+  openExternalUrl: (url: string) => Promise<boolean>;
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;

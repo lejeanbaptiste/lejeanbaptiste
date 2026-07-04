@@ -45,6 +45,7 @@ import {
   type ReactNode,
   type SyntheticEvent,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { copyUnitsForExport } from '../js/conversion/copyForExport';
 import { useActions, useAppState } from '../overmind';
 
@@ -180,11 +181,11 @@ const getCitationBridge = (): DesktopCitationBridge | null =>
   (window as Window & { __desktopCitationBridge?: DesktopCitationBridge })
     .__desktopCitationBridge ?? null;
 
-const prepareAtomicCitationFields = (root: ParentNode): void => {
+const prepareAtomicCitationFields = (root: ParentNode, title: string): void => {
   for (const bibl of Array.from(root.querySelectorAll('bibl[type="zotero-ref"]'))) {
     bibl.setAttribute('contenteditable', 'false');
     bibl.setAttribute('data-leaf-citation-field', 'true');
-    bibl.setAttribute('title', 'Zotero citation');
+    bibl.setAttribute('title', title);
   }
 };
 
@@ -213,7 +214,7 @@ const TEI_INLINE_ELEMENTS = new Set([
   'u',
 ]);
 
-const sanitizeTranslationFragment = (root: ParentNode): void => {
+const sanitizeTranslationFragment = (root: ParentNode, title: string): void => {
   for (const element of Array.from(root.querySelectorAll('*'))) {
     for (const attr of Array.from(element.attributes)) {
       const attrName = attr.name.toLowerCase();
@@ -236,7 +237,7 @@ const sanitizeTranslationFragment = (root: ParentNode): void => {
     }
   }
 
-  prepareAtomicCitationFields(root);
+  prepareAtomicCitationFields(root, title);
 };
 
 const unwrapElementsByTagName = (root: ParentNode, tagName: string): void => {
@@ -399,6 +400,7 @@ const selectHighlightedMatch = (
 };
 
 export const TranslationPane = () => {
+  const { t } = useTranslation('LW');
   const { translationMode } = useAppState().ui;
   const { notifyViaSnackbar, setSelectedTranslationUnit } = useActions().ui;
 
@@ -634,7 +636,7 @@ export const TranslationPane = () => {
     const notes = Array.from(editable.querySelectorAll('note'));
     for (const note of notes) {
       note.setAttribute('contenteditable', 'false');
-      prepareAtomicCitationFields(note);
+      prepareAtomicCitationFields(note, zoteroCitationLabel);
     }
     setFootnotes(notes.map((note) => note.innerHTML));
   }, []);
@@ -1321,11 +1323,14 @@ export const TranslationPane = () => {
     const insertionTarget = getCitationInsertionTarget();
     if (!insertionTarget) return;
 
-    setAiStatus({ severity: 'info', message: 'Waiting for Zotero citation...' });
+    setAiStatus({ severity: 'info', message: t('LW.translationPane.waitingForZoteroCitation') });
     const result = await bridge.pickZoteroCitation();
     if (!result.ok) {
       if (!result.cancelled) {
-        setAiStatus({ severity: 'error', message: result.error ?? 'Zotero citation failed.' });
+        setAiStatus({
+          severity: 'error',
+          message: result.error ?? t('LW.translationPane.zoteroCitationFailed'),
+        });
       } else {
         setAiStatus(null);
       }
@@ -1353,7 +1358,7 @@ export const TranslationPane = () => {
       selection?.removeAllRanges();
       selection?.addRange(insertionTarget.range);
       insertFragmentAtRange(insertionTarget.range, fragment);
-      prepareAtomicCitationFields(insertionTarget.element);
+      prepareAtomicCitationFields(insertionTarget.element, zoteroCitationLabel);
       updateFootnote(insertionTarget.index, insertionTarget.element.innerHTML);
       rememberFootnoteRange(insertionTarget.index, insertionTarget.element);
     } else {
@@ -1384,7 +1389,7 @@ export const TranslationPane = () => {
     if (html) container.innerHTML = html;
     else container.textContent = text;
 
-    sanitizeTranslationFragment(container);
+    sanitizeTranslationFragment(container, zoteroCitationLabel);
     if (options.target === 'footnote') {
       unwrapElementsByTagName(container, 'note');
     }
@@ -1392,7 +1397,7 @@ export const TranslationPane = () => {
     const fragment = document.createDocumentFragment();
     while (container.firstChild) fragment.appendChild(container.firstChild);
     insertFragmentAtRange(range, fragment);
-    sanitizeTranslationFragment(event.currentTarget);
+    sanitizeTranslationFragment(event.currentTarget, zoteroCitationLabel);
     refreshFootnotes();
   };
 
@@ -1409,7 +1414,7 @@ export const TranslationPane = () => {
     const note = editableRef.current?.querySelectorAll('note')[index];
     if (note) {
       note.innerHTML = html;
-      prepareAtomicCitationFields(note);
+      prepareAtomicCitationFields(note, zoteroCitationLabel);
     }
   };
 
@@ -1463,6 +1468,7 @@ export const TranslationPane = () => {
 
   const languageOptions = languageState?.languages ?? [];
   const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
+  const zoteroCitationLabel = t('LW.translationPane.formatItems.zoteroCitation');
   const formatItems: Array<{
     command:
       | 'bold'
@@ -1483,68 +1489,68 @@ export const TranslationPane = () => {
     {
       command: 'bold',
       icon: <FormatBoldIcon fontSize="small" />,
-      label: 'Bold',
-      shortcut: 'Cmd/Ctrl+B',
+      label: t('LW.translationPane.formatItems.bold'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.bold'),
     },
     {
       command: 'italic',
       icon: <FormatItalicIcon fontSize="small" />,
-      label: 'Italic',
-      shortcut: 'Cmd/Ctrl+I',
+      label: t('LW.translationPane.formatItems.italic'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.italic'),
     },
     {
       command: 'underline',
       icon: <FormatUnderlinedIcon fontSize="small" />,
-      label: 'Underline',
-      shortcut: 'Cmd/Ctrl+U',
+      label: t('LW.translationPane.formatItems.underline'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.underline'),
     },
     {
       command: 'strikeThrough',
       icon: <FormatStrikethroughIcon fontSize="small" />,
-      label: 'Strikethrough',
-      shortcut: 'Alt+Shift+5',
+      label: t('LW.translationPane.formatItems.strikethrough'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.strikethrough'),
     },
     {
       command: 'smallCaps',
       icon: <TextFieldsIcon fontSize="small" />,
-      label: 'Small caps',
-      shortcut: 'Cmd/Ctrl+Shift+K',
+      label: t('LW.translationPane.formatItems.smallCaps'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.smallCaps'),
     },
     {
       command: 'superscript',
       icon: <SuperscriptIcon fontSize="small" />,
-      label: 'Superscript',
-      shortcut: 'Cmd/Ctrl+.',
+      label: t('LW.translationPane.formatItems.superscript'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.superscript'),
     },
     {
       command: 'subscript',
       icon: <SubscriptIcon fontSize="small" />,
-      label: 'Subscript',
-      shortcut: 'Cmd/Ctrl+,',
+      label: t('LW.translationPane.formatItems.subscript'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.subscript'),
     },
     {
       command: 'link',
       icon: <LinkIcon fontSize="small" />,
-      label: 'Link',
-      shortcut: 'Cmd/Ctrl+K',
+      label: t('LW.translationPane.formatItems.link'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.link'),
     },
     {
       command: 'footnote',
       icon: <StickyNote2Icon fontSize="small" />,
-      label: 'Footnote',
-      shortcut: 'Cmd/Ctrl+Alt+F',
+      label: t('LW.translationPane.formatItems.footnote'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.footnote'),
     },
     {
       command: 'citation',
       icon: <FormatQuoteIcon fontSize="small" />,
-      label: 'Zotero citation',
-      shortcut: 'Zotero picker',
+      label: t('LW.translationPane.formatItems.zoteroCitation'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.zoteroPicker'),
     },
     {
       command: 'removeFormat',
       icon: <FormatClearIcon fontSize="small" />,
-      label: 'Clear formatting',
-      shortcut: 'Cmd/Ctrl+M',
+      label: t('LW.translationPane.formatItems.clearFormatting'),
+      shortcut: t('LW.translationPane.formatItems.shortcuts.clearFormatting'),
     },
   ];
 
@@ -1605,7 +1611,7 @@ export const TranslationPane = () => {
           </Typography>
         )}
 
-        <Tooltip title="Generate translation">
+        <Tooltip title={t('LW.translationPane.generateTranslation')}>
           <span>
             <IconButton
               disabled={!selectedUnitId || generating || locked}
@@ -1617,7 +1623,7 @@ export const TranslationPane = () => {
           </span>
         </Tooltip>
 
-        <Tooltip title="Copy source + translation for export">
+        <Tooltip title={t('LW.translationPane.copyForExport')}>
           <span>
             <IconButton
               disabled={!selectedUnitId}
@@ -1630,7 +1636,9 @@ export const TranslationPane = () => {
                   notify: (message) => notifyViaSnackbar(message),
                 }).catch((error) => {
                   notifyViaSnackbar(
-                    `Copy failed: ${error instanceof Error ? error.message : String(error)}`,
+                    t('LW.translationPane.copyFailed', {
+                      error: error instanceof Error ? error.message : String(error),
+                    }),
                   );
                 });
               }}
@@ -1641,7 +1649,13 @@ export const TranslationPane = () => {
           </span>
         </Tooltip>
 
-        <Tooltip title={locked ? 'Unlock translation unit' : 'Lock translation unit'}>
+        <Tooltip
+          title={
+            locked
+              ? t('LW.translationPane.unlockTranslationUnit')
+              : t('LW.translationPane.lockTranslationUnit')
+          }
+        >
           <span>
             <IconButton disabled={!selectedUnitId} onClick={() => void toggleLock()} size="small">
               {locked ? <LockIcon fontSize="small" /> : <LockOpenIcon fontSize="small" />}
@@ -1649,7 +1663,7 @@ export const TranslationPane = () => {
           </span>
         </Tooltip>
 
-        <Tooltip title="Formatting">
+        <Tooltip title={t('LW.translationPane.formatting')}>
           <span>
             <IconButton
               aria-controls={formatAnchor ? 'translation-format-menu' : undefined}
@@ -1695,12 +1709,12 @@ export const TranslationPane = () => {
           }}
           open={linkDialogOpen}
         >
-          <DialogTitle>Link</DialogTitle>
+          <DialogTitle>{t('LW.translationPane.linkDialogTitle')}</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
               fullWidth
-              label="Target (URL)"
+              label={t('LW.translationPane.linkTargetLabel')}
               margin="dense"
               onChange={(event) => setLinkUrl(event.target.value)}
               onKeyDown={(event) => {
@@ -1709,7 +1723,7 @@ export const TranslationPane = () => {
                   applyLink();
                 }
               }}
-              placeholder="https://…"
+              placeholder={t('LW.translationPane.linkUrlPlaceholder')}
               size="small"
               value={linkUrl}
             />
@@ -1721,10 +1735,10 @@ export const TranslationPane = () => {
                 savedRangeRef.current = null;
               }}
             >
-              Cancel
+              {t('LW.commons.cancel')}
             </Button>
             <Button onClick={applyLink} variant="contained">
-              Apply
+              {t('LW.commons.update')}
             </Button>
           </DialogActions>
         </Dialog>
@@ -1735,7 +1749,7 @@ export const TranslationPane = () => {
           onClose={() => citationStyleResolveRef.current?.(null)}
           open={citationStylePickerOpen}
         >
-          <DialogTitle>Citation style</DialogTitle>
+          <DialogTitle>{t('LW.translationPane.citationStyleDialogTitle')}</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -1755,12 +1769,14 @@ export const TranslationPane = () => {
             </TextField>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => citationStyleResolveRef.current?.(null)}>Cancel</Button>
+            <Button onClick={() => citationStyleResolveRef.current?.(null)}>
+              {t('LW.commons.cancel')}
+            </Button>
             <Button
               onClick={() => citationStyleResolveRef.current?.(pendingCitationStyle)}
               variant="contained"
             >
-              Use Style
+              {t('LW.translationPane.useStyle')}
             </Button>
           </DialogActions>
         </Dialog>
@@ -1771,7 +1787,7 @@ export const TranslationPane = () => {
           variant="caption"
           sx={{ flex: 1, minWidth: 0, textAlign: 'right' }}
         >
-          {selectedUnitId ? selectedUnitId : 'No unit'}
+          {selectedUnitId ? selectedUnitId : t('LW.translationPane.noUnit')}
         </Typography>
       </Stack>
 
@@ -1883,7 +1899,7 @@ export const TranslationPane = () => {
                 px: '1px',
               },
               '&:empty::before': {
-                content: '"Start typing the translation for this unit…"',
+                content: `"${t('LW.translationPane.startTypingPlaceholder')}"`,
                 color: 'text.disabled',
               },
             }}
@@ -1914,7 +1930,7 @@ export const TranslationPane = () => {
                       onBeforeInput={protectCitationField}
                       onFocus={(event) => rememberFootnoteRange(index, event.currentTarget)}
                       onInput={(event) => {
-                        prepareAtomicCitationFields(event.currentTarget);
+                        prepareAtomicCitationFields(event.currentTarget, zoteroCitationLabel);
                         updateFootnote(index, event.currentTarget.innerHTML);
                         rememberFootnoteRange(index, event.currentTarget);
                       }}
@@ -1929,7 +1945,7 @@ export const TranslationPane = () => {
                         rememberFootnoteRange(index, event.currentTarget);
                       }}
                       ref={(el: HTMLDivElement | null) => {
-                        if (el) prepareAtomicCitationFields(el);
+                        if (el) prepareAtomicCitationFields(el, zoteroCitationLabel);
                         if (el && focusFootnoteIndexRef.current === index) {
                           focusFootnoteIndexRef.current = null;
                           el.focus();
@@ -1944,7 +1960,7 @@ export const TranslationPane = () => {
                         outline: 'none',
                         py: 0.25,
                         '&:empty::before': {
-                          content: '"Footnote text..."',
+                          content: `"${t('LW.translationPane.footnotePlaceholder')}"`,
                           color: 'text.disabled',
                         },
                         '& bibl[data-leaf-citation-field="true"]': {
@@ -1959,9 +1975,9 @@ export const TranslationPane = () => {
                         },
                       }}
                     />
-                    <Tooltip title="Remove footnote">
+                    <Tooltip title={t('LW.translationPane.removeFootnote')}>
                       <IconButton
-                        aria-label="Remove footnote"
+                        aria-label={t('LW.translationPane.removeFootnote')}
                         onClick={() => removeFootnote(index)}
                         size="small"
                         sx={{ flexShrink: 0, alignSelf: 'center' }}
@@ -1979,8 +1995,10 @@ export const TranslationPane = () => {
         <Box sx={{ flex: 1, p: 1.5 }}>
           <Typography color="text.secondary" variant="body2">
             {caretInUnindexedUnit
-              ? 'This paragraph is new and not yet indexed for translation — save the document to add it.'
-              : `Select a ${alignmentUnit ?? 'section'} in the source to translate it.`}
+              ? t('LW.translationPane.unindexedUnitMessage')
+              : t('LW.translationPane.selectUnitMessage', {
+                  unit: alignmentUnit ?? t('LW.translationPane.defaultUnitLabel'),
+                })}
           </Typography>
         </Box>
       )}

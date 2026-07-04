@@ -14,6 +14,7 @@ import { parseLog } from './decisionLog';
 import { dictionaryTag } from './dictionary';
 import { addEntity, findEntity, TAG_TO_KIND } from './entities';
 import { EntityStore, type EntityFileApi } from './entityStore';
+import { resolveEntityStorePaths } from './entityStoreResolve';
 import { AutoTaggingSession, type WriterLike } from './integration';
 
 /** In-memory stand-in for the desktop file API. */
@@ -45,7 +46,10 @@ describe('auto-tagging smoke test (real corpus)', () => {
   maybe('crawl → tag → apply → entity file → decision log', async () => {
     const source = fs.readFileSync(xmlPath, 'utf-8');
     const fakeFs = new FakeFs();
-    const store = new EntityStore(fakeFs, '/proj');
+    const store = EntityStore.fromPaths(
+      fakeFs,
+      resolveEntityStorePaths({ projectRoot: '/proj', entityStore: 'project' }),
+    );
     const { writer, getCurrent } = makeWriter(source);
     const session = new AutoTaggingSession(writer, 'ignore', store);
 
@@ -86,13 +90,12 @@ describe('auto-tagging smoke test (real corpus)', () => {
     // 6. Flush decisions to the JSONL log and read them back.
     const written = await session.flushDecisions();
     expect(written).toBe(suggestions.length);
-    const logBody = fakeFs.files.get('/proj/.leaf/entity-decisions.jsonl')!;
+    const logBody = fakeFs.files.get('/proj/.ljb/entity-decisions.jsonl')!;
     const records = parseLog(logBody);
     expect(records).toHaveLength(suggestions.length);
 
-    // 7. Infrastructure lives under /.leaf/ (exclusion is enforced by the enumerators).
-    expect(store.entitiesPath).toBe('/proj/.leaf/entities.xml');
-    expect(store.decisionsPath).toBe('/proj/.leaf/entity-decisions.jsonl');
+    expect(store.entitiesPath).toBe('/proj/entities.xml');
+    expect(store.decisionsPath).toBe('/proj/.ljb/entity-decisions.jsonl');
 
     // Readable trace.
     const applied = result.applied;
@@ -108,8 +111,8 @@ describe('auto-tagging smoke test (real corpus)', () => {
         `  accepted / applied:${accepted.length} / ${applied}`,
         `  already-tagged:    ${alreadyTagged}`,
         `  entity minted:     ${id} (${samplePerson.string})`,
-        `  decisions logged:  ${records.length} → /proj/.leaf/entity-decisions.jsonl`,
-        `  entity file:       /proj/.leaf/entities.xml (${entitiesDoc.getElementsByTagName('person').length} person)`,
+        `  decisions logged:  ${records.length} → /proj/.ljb/entity-decisions.jsonl`,
+        `  entity file:       /proj/entities.xml (${entitiesDoc.getElementsByTagName('person').length} person)`,
         '────────────────────────────────────────────────────────',
       ].join('\n'),
     );

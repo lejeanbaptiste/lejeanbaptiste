@@ -165,6 +165,15 @@ const webpackConfig: webpack.Configuration = {
   resolve: {
     alias: {
       '@src': path.resolve(__dirname, 'src/'),
+      // Exact-match alias so light windows (native dialogs) can use the shared
+      // language-code list without pulling in the whole editor bundle.
+      '@cwrc/leafwriter/languageCodes$': path.resolve(
+        relPathToPackages,
+        'cwrc-leafwriter',
+        'src',
+        'utilities',
+        'languageCodes.ts',
+      ),
       '@cwrc/leafwriter': path.resolve(relPathToPackages, 'cwrc-leafwriter', 'src', 'index.tsx'),
     },
     extensions: ['.tsx', '.ts', '.js', '.json'],

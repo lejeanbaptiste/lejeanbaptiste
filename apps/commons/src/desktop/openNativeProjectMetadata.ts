@@ -62,7 +62,7 @@ export const openNativeProjectMetadata = (
     void window.electronAPI!.openNativeDialog({
       id: dialogId,
       type: 'projectMetadata',
-      title: mode === 'firstSetup' ? 'Project metadata' : 'Edition metadata',
+      title: mode === 'firstSetup' ? 'Project settings' : 'Project settings',
       initialState,
     });
 

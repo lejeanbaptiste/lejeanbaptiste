@@ -41,6 +41,19 @@ TEI/XML files are small; full-file snapshots with hash deduplication and retenti
 - **v1:** all `*.xml` under project root (same scope as “apply metadata to all files” in schema planning).
 - **Later:** optional include `schema/project-metadata.json`, `schema/tag-colors.json`; exclude generated `schema/tag-colors.css`, `schema/_archive/` (schema backups are separate—see `project-schema-planning.md`).
 
+### Entity database backups (2026-07-04)
+
+Time Machine / rollback UI gets a **second tab** for the **central entity database** (`entities.xml` at the App Settings folder path):
+
+- Snapshot on meaningful save of the database file (same hash-dedup rules as corpus files).
+- Storage in the **hidden app folder** (Electron userData — same area as cache and settings).
+- User can **delete individual snapshots** from within the Time Machine popup.
+- Prominent reminder: the entity database is valuable disambiguation work — back it up.
+
+Project-local `entities.xml` (when `entityStore: "project"`) follows the same snapshot rules but lives in the **Project** tab scope under that project's `.ljb/history/`.
+
+See `docs/Auto-tagging.md` for database location, import-on-switch, and recovery flows.
+
 ### Storage layout
 
 ```

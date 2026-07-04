@@ -32,6 +32,14 @@ declare global {
 }
 
 export { clearCache, deleteDb } from './db';
+export {
+  FIXED_LANGUAGE_OPTIONS,
+  canonicalLanguageCode,
+  isChineseLanguageCode,
+  isKnownLanguageCode,
+  languageLabelForCode,
+} from './utilities/languageCodes';
+export type { LanguageOption } from './utilities/languageCodes';
 export { entityLookupDialogAtom } from './jotai/entity-lookup';
 export * as Types from './types';
 

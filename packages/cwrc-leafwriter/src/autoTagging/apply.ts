@@ -32,6 +32,8 @@ export interface ApplyOptions {
   canContain?: (parentTag: string, childTag: string) => boolean;
   /** Schema-allowed but unwanted combinations. Blocks during auto-tagging. */
   userRules?: UserRule[];
+  /** Called after each suggestion is processed (done, total). */
+  onProgress?: (done: number, total: number) => void;
 }
 
 export interface BatchResult {
@@ -40,6 +42,11 @@ export interface BatchResult {
   /** Serialized document as it was before any change, for snapshot revert. */
   snapshot: string;
 }
+
+const yieldToUi = (): Promise<void> =>
+  new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
 
 /**
  * Apply a batch of 'add' suggestions to a document.
@@ -50,18 +57,19 @@ export interface BatchResult {
  * is ever applied approximately: a suggestion whose anchor fails to resolve
  * is marked unresolvable and skipped.
  */
-export function applySuggestions(
+export async function applySuggestions(
   doc: Document,
   suggestions: Suggestion[],
   options: ApplyOptions,
-): BatchResult {
+): Promise<BatchResult> {
   const snapshot = new XMLSerializer().serializeToString(doc);
   const ordered = [...suggestions].sort(
     (a, b) => b.anchor.surface.length - a.anchor.surface.length,
   );
 
   const results: ApplyResult[] = [];
-  for (const suggestion of ordered) {
+  for (let index = 0; index < ordered.length; index++) {
+    const suggestion = ordered[index]!;
     const result = applyOne(doc, suggestion, options);
     suggestion.status =
       result.outcome === 'applied'
@@ -70,6 +78,10 @@ export function applySuggestions(
           ? 'unresolvable'
           : suggestion.status;
     results.push(result);
+    options.onProgress?.(index + 1, ordered.length);
+    if (options.onProgress && (index + 1) % 8 === 0) {
+      await yieldToUi();
+    }
   }
 
   return {
@@ -135,4 +147,39 @@ function wrapRange(
 /** Reparse a snapshot taken by applySuggestions, undoing the whole batch. */
 export function revertToSnapshot(snapshot: string): Document {
   return new DOMParser().parseFromString(snapshot, 'application/xml');
+}
+
+export type EntityApplyAction = 'assign-entity' | 'mark-unresolved';
+
+export interface AssignEntityInput {
+  element: Element;
+  entityId: string;
+  resp?: string;
+}
+
+export interface AssignEntityResult {
+  action: 'assign-entity';
+  entityId: string;
+  element: Element;
+}
+
+export interface MarkUnresolvedResult {
+  action: 'mark-unresolved';
+  element: Element;
+}
+
+/** Assign a local entity id to an already-tagged mention element. */
+export function assignEntity(input: AssignEntityInput): AssignEntityResult {
+  const { element, entityId, resp } = input;
+  element.setAttribute('key', entityId);
+  element.removeAttribute('cert');
+  if (resp) element.setAttribute('resp', resp);
+  return { action: 'assign-entity', entityId, element };
+}
+
+/** Mark a mention unresolved without removing the tag. */
+export function markUnresolved(element: Element): MarkUnresolvedResult {
+  element.removeAttribute('key');
+  element.setAttribute('cert', 'unknown');
+  return { action: 'mark-unresolved', element };
 }

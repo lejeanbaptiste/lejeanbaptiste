@@ -43,6 +43,8 @@ export type EditorStateType = {
   showRawXmlPanel: boolean;
   showTagBubble: boolean;
   showTags: boolean;
+  /** Strip inter-character whitespace on load for no-space East Asian docs. */
+  stripCjkWhitespace: boolean;
 };
 
 export const state: EditorStateType = {
@@ -83,6 +85,7 @@ export const state: EditorStateType = {
   showRawXmlPanel: false,
   showTagBubble: true,
   showTags: false,
+  stripCjkWhitespace: false,
   schemas: {},
   schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),
   schemaMappings: ['cwrcEntry', 'orlando', 'tei', 'teiLite'],

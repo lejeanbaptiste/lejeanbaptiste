@@ -8,6 +8,7 @@ interface AppPrefs {
   aiApi?: AiApiSettings;
   rememberWorkspaceOnStartup?: boolean;
   workspaceSession?: WorkspaceSession;
+  entityDbFolder?: string | null;
 }
 
 const PREFS_FILENAME = 'project-prefs.json';
@@ -106,6 +107,8 @@ const readAppPrefs = async (): Promise<AppPrefs> => {
         aiApi: sanitizeAiApiSettings(parsed.aiApi),
         rememberWorkspaceOnStartup: parsed.rememberWorkspaceOnStartup !== false,
         workspaceSession: sanitizeWorkspaceSession(parsed.workspaceSession),
+        entityDbFolder:
+          typeof parsed.entityDbFolder === 'string' ? parsed.entityDbFolder.trim() || null : null,
       };
     }
 
@@ -116,6 +119,8 @@ const readAppPrefs = async (): Promise<AppPrefs> => {
         aiApi: sanitizeAiApiSettings(parsed.aiApi),
         rememberWorkspaceOnStartup: parsed.rememberWorkspaceOnStartup !== false,
         workspaceSession: sanitizeWorkspaceSession(parsed.workspaceSession),
+        entityDbFolder:
+          typeof parsed.entityDbFolder === 'string' ? parsed.entityDbFolder.trim() || null : null,
       };
     }
 
@@ -125,6 +130,7 @@ const readAppPrefs = async (): Promise<AppPrefs> => {
       aiApi: DEFAULT_AI_API_SETTINGS,
       rememberWorkspaceOnStartup: true,
       workspaceSession: sanitizeWorkspaceSession(undefined),
+      entityDbFolder: null,
     };
   } catch {
     return {
@@ -133,6 +139,7 @@ const readAppPrefs = async (): Promise<AppPrefs> => {
       aiApi: DEFAULT_AI_API_SETTINGS,
       rememberWorkspaceOnStartup: true,
       workspaceSession: sanitizeWorkspaceSession(undefined),
+      entityDbFolder: null,
     };
   }
 };
@@ -169,6 +176,18 @@ export const getEncoderName = async (): Promise<string> => {
 export const setEncoderName = async (encoderName: string) => {
   const prefs = await readAppPrefs();
   prefs.encoderName = encoderName.trim();
+  await writeAppPrefs(prefs);
+};
+
+export const getEntityDbFolder = async (): Promise<string | null> => {
+  const prefs = await readAppPrefs();
+  const folder = prefs.entityDbFolder?.trim();
+  return folder || null;
+};
+
+export const setEntityDbFolder = async (folder: string | null) => {
+  const prefs = await readAppPrefs();
+  prefs.entityDbFolder = folder?.trim() || null;
   await writeAppPrefs(prefs);
 };
 

@@ -29,7 +29,23 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
     typeof raw.metadata === 'string' && raw.metadata.trim()
       ? raw.metadata.trim()
       : DEFAULT_METADATA_PATH,
+  entityStore: raw.entityStore === 'project' ? 'project' : 'central',
+  entityDatabaseId:
+    typeof raw.entityDatabaseId === 'string' && raw.entityDatabaseId.trim()
+      ? raw.entityDatabaseId.trim()
+      : undefined,
 });
+
+export const writeProjectConfig = async (
+  projectFilePath: string,
+  patch: Partial<ProjectFileConfig>,
+): Promise<ProjectBundle> => {
+  const rootPath = path.dirname(projectFilePath);
+  const raw = JSON.parse(await fs.readFile(projectFilePath, 'utf-8')) as Partial<ProjectFileConfig>;
+  const config = normalizeConfig({ ...raw, ...patch }, rootPath);
+  await fs.writeFile(projectFilePath, JSON.stringify(config, null, 2), 'utf-8');
+  return { rootPath, projectFilePath, config };
+};
 
 const detectSchema = async (rootPath: string): Promise<ProjectSchemaConfig | undefined> => {
   const schemaDir = path.join(rootPath, 'schema');

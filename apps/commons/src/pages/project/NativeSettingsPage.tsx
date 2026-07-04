@@ -10,6 +10,7 @@ import {
   Switch,
   TextField,
   Typography,
+  Alert,
 } from '@mui/material';
 import { locales, type Locales } from '@src/i18n';
 import { useActions, useAppState } from '@src/overmind';
@@ -30,6 +31,7 @@ export const NativeSettingsPage = () => {
 
   const [encoderName, setEncoderName] = useState('');
   const [rememberWorkspaceOnStartup, setRememberWorkspaceOnStartup] = useState(true);
+  const [entityDbFolder, setEntityDbFolder] = useState<string | null>(null);
 
   const syncParent = useCallback(
     async (method: string, args?: unknown) => {
@@ -48,6 +50,9 @@ export const NativeSettingsPage = () => {
 
       const remember = (await syncParent('getRememberWorkspaceOnStartup')) as boolean;
       if (typeof remember === 'boolean') setRememberWorkspaceOnStartup(remember);
+
+      const folder = (await syncParent('getEntityDbFolder')) as string | null;
+      setEntityDbFolder(typeof folder === 'string' && folder.trim() ? folder : null);
     })();
   }, [dialogId, syncParent]);
 
@@ -92,6 +97,11 @@ export const NativeSettingsPage = () => {
 
   const handleEncoderNameBlur = async () => {
     await syncParent('setEncoderName', encoderName);
+  };
+
+  const handlePickEntityDbFolder = async () => {
+    const picked = (await syncParent('pickEntityDbFolder')) as string | null;
+    if (picked) setEntityDbFolder(picked);
   };
 
   const handleClose = () => {
@@ -167,6 +177,27 @@ export const NativeSettingsPage = () => {
           size="small"
           value={encoderName}
         />
+
+        <Typography variant="subtitle2">{t('LWC.desktop.settings.entity_database')}</Typography>
+
+        {!entityDbFolder && (
+          <Alert severity="warning">
+            {t('LWC.desktop.settings.entity_database_missing')}
+          </Alert>
+        )}
+
+        <TextField
+          fullWidth
+          label={t('LWC.desktop.settings.entity_database_folder')}
+          size="small"
+          value={entityDbFolder ?? ''}
+          InputProps={{ readOnly: true }}
+          helperText={t('LWC.desktop.settings.entity_database_hint')}
+        />
+
+        <Button variant="outlined" onClick={() => void handlePickEntityDbFolder()}>
+          {t('LWC.desktop.settings.entity_database_change')}
+        </Button>
 
         <Typography variant="subtitle2">{t('LWC.desktop.settings.startup')}</Typography>
 
