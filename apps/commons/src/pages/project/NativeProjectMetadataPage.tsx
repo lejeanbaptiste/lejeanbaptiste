@@ -18,10 +18,6 @@ import {
 } from '@cwrc/leafwriter/languageCodes';
 import { isDesktop } from '@src/types/desktop';
 import { SOURCE_LANGUAGE_PATH } from '@src/desktop/projectLanguage';
-import {
-  CITATION_STYLE_OPTIONS,
-  DEFAULT_CITATION_STYLE_ID,
-} from '@src/desktop/citations/styleOptions';
 import type { ProjectMetadataDialogState } from '@src/desktop/projectMetadataDialogState';
 import type { TranslationLanguage } from '@src/desktop/translationTypes';
 import { useCallback, useEffect, useState } from 'react';
@@ -38,7 +34,6 @@ export const NativeProjectMetadataPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [alignmentUnit, setAlignmentUnit] = useState<'div' | 'p'>('div');
-  const [citationStyle, setCitationStyle] = useState<string>(DEFAULT_CITATION_STYLE_ID);
   const [languages, setLanguages] = useState<TranslationLanguage[]>([]);
   const [newLangCode, setNewLangCode] = useState('');
 
@@ -57,7 +52,6 @@ export const NativeProjectMetadataPage = () => {
     if (dialogState) {
       setState(dialogState);
       setAlignmentUnit(dialogState.translation.alignmentUnit ?? 'div');
-      setCitationStyle(dialogState.translation.citationStyle ?? DEFAULT_CITATION_STYLE_ID);
       setLanguages(dialogState.translation.languages);
       setError(null);
     } else {
@@ -170,7 +164,6 @@ export const NativeProjectMetadataPage = () => {
         applyToDocuments,
         translationAlignmentUnit: alignmentUnit,
         translationLanguages: languagesToSave,
-        translationCitationStyle: citationStyle,
         entityStore: state.entityStore,
       })) as { ok: boolean; error?: string; summary?: string };
       if (!result?.ok) {
@@ -236,6 +229,7 @@ export const NativeProjectMetadataPage = () => {
                   fullWidth
                   key={field.path}
                   label={field.label}
+                  InputLabelProps={{ shrink: true }}
                   onChange={(event) => updateField(field.path, event.target.value)}
                   required
                   select
@@ -270,31 +264,6 @@ export const NativeProjectMetadataPage = () => {
                 />
               ),
             )}
-
-            <Typography sx={{ pt: 1 }} variant="subtitle2">
-              Entity database
-            </Typography>
-            <Typography color="text.secondary" variant="body2">
-              Use your central database (App Settings) or keep a separate entities.xml in this
-              project folder.
-            </Typography>
-            <RadioGroup
-              value={state.entityStore}
-              onChange={(event) =>
-                setState((prev) =>
-                  prev
-                    ? { ...prev, entityStore: event.target.value as 'central' | 'project' }
-                    : prev,
-                )
-              }
-            >
-              <FormControlLabel control={<Radio size="small" />} label="Central database" value="central" />
-              <FormControlLabel
-                control={<Radio size="small" />}
-                label="This project's database"
-                value="project"
-              />
-            </RadioGroup>
 
             <Typography sx={{ pt: 1 }} variant="subtitle2">
               Custom fields
@@ -332,6 +301,31 @@ export const NativeProjectMetadataPage = () => {
             <Button onClick={addCustomRow} size="small" variant="text">
               Add custom field
             </Button>
+
+            <Typography sx={{ pt: 1 }} variant="subtitle2">
+              Entity database
+            </Typography>
+            <Typography color="text.secondary" variant="body2">
+              Use your central database (App Settings) or keep a separate entities.xml in this
+              project folder.
+            </Typography>
+            <RadioGroup
+              value={state.entityStore}
+              onChange={(event) =>
+                setState((prev) =>
+                  prev
+                    ? { ...prev, entityStore: event.target.value as 'central' | 'project' }
+                    : prev,
+                )
+              }
+            >
+              <FormControlLabel control={<Radio size="small" />} label="Central database" value="central" />
+              <FormControlLabel
+                control={<Radio size="small" />}
+                label="This project's database"
+                value="project"
+              />
+            </RadioGroup>
 
             <Typography sx={{ pt: 1 }} variant="subtitle2">
               Translation
@@ -378,26 +372,10 @@ export const NativeProjectMetadataPage = () => {
               </Stack>
             ))}
 
-            <TextField
-              helperText="Style used for footnote citations in translations. Can be changed anytime; citations re-render."
-              label="Citation style"
-              onChange={(event) => setCitationStyle(event.target.value)}
-              select
-              size="small"
-              SelectProps={{ native: true }}
-              sx={{ maxWidth: 360 }}
-              value={citationStyle}
-            >
-              {CITATION_STYLE_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </TextField>
-
             <Stack alignItems="center" direction="row" spacing={1}>
               <TextField
                 label="Add translation language"
+                InputLabelProps={{ shrink: true }}
                 onChange={(event) => setNewLangCode(event.target.value)}
                 select
                 size="small"

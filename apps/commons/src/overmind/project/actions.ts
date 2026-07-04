@@ -19,6 +19,7 @@ import {
   updateTreeNode,
 } from '@src/desktop/explorer/treeUtils';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
+import { isCorpusExcludedPath } from '@src/desktop/infrastructurePaths';
 import { normalizeTeiHeaderLanguageElements } from '@src/desktop/teiHeaderXml';
 import { updateTagStatsForFile } from '@src/desktop/tagging/tagStats';
 import {
@@ -178,11 +179,12 @@ const getExplorerSchemaDirPath = (rootPath: string | null, schema?: { rng?: stri
 const loadTreeLevel = async (
   dirPath: string,
   schemaDirPath: string | null = null,
+  projectRoot: string | null = null,
 ): Promise<FileTreeNode[]> => {
   if (!window.electronAPI) return [];
   const entries = await window.electronAPI.readDirectory(dirPath);
   return entries
-    .filter((entry) => !shouldHideExplorerDirectoryEntry(entry.path, schemaDirPath))
+    .filter((entry) => !shouldHideExplorerDirectoryEntry(entry.path, schemaDirPath, projectRoot))
     .map((entry) => ({
       ...entry,
       children: entry.isDirectory ? [] : undefined,
@@ -365,6 +367,7 @@ const loadProjectBundle = async (context: Context, bundle: ProjectBundle) => {
   state.project.tree = await loadTreeLevel(
     bundle.rootPath,
     getExplorerSchemaDirPath(bundle.rootPath, bundle.config?.schema),
+    bundle.rootPath,
   );
   state.project.isProjectReady = true;
   state.project.explorerFocusedPath = null;
@@ -758,7 +761,7 @@ export const importDocuments = async (context: Context) => {
     state.project.rootPath,
     state.project.config?.schema,
   );
-  state.project.tree = await loadTreeLevel(state.project.rootPath, schemaDirPath);
+  state.project.tree = await loadTreeLevel(state.project.rootPath, schemaDirPath, state.project.rootPath);
   if (writtenPaths.length > 0 && window.electronAPI?.syncWatchedFiles) {
     await window.electronAPI.syncWatchedFiles(state.project.openTabs.map((tab) => tab.filePath));
   }
@@ -824,7 +827,7 @@ export const loadDirectoryChildren = async ({ state }: Context, dirPath: string)
     return Promise.all(
       nodes.map(async (node) => {
         if (node.path === dirPath && node.isDirectory && !node.childrenLoaded) {
-          const children = await loadTreeLevel(dirPath, schemaDirPath);
+          const children = await loadTreeLevel(dirPath, schemaDirPath, state.project.rootPath);
           return { ...node, children, childrenLoaded: true };
         }
         if (node.children) {
@@ -857,6 +860,7 @@ const prepareFileContent = async ({ state }: Context, filePath: string, content:
 
 export const openFile = async ({ state, actions }: Context, filePath: string) => {
   if (!window.electronAPI || !state.project.isProjectReady || !state.project.rootPath) return;
+  if (isCorpusExcludedPath(filePath, state.project.rootPath)) return;
   const existing = state.project.openTabs.find((tab) => tab.filePath === filePath);
   if (existing) {
     await actions.project.switchTab({ filePath });
@@ -1255,7 +1259,7 @@ export const reloadDirectoryInTree = async ({ state }: Context, dirPath: string)
     state.project.rootPath,
     state.project.config?.schema,
   );
-  const children = await loadTreeLevel(dirPath, schemaDirPath);
+  const children = await loadTreeLevel(dirPath, schemaDirPath, state.project.rootPath);
   const isProjectRoot = Boolean(state.project.rootPath && dirPath === state.project.rootPath);
   const nodeFoundBefore = treeContainsPath(state.project.tree, dirPath);
   if (isProjectRoot) {

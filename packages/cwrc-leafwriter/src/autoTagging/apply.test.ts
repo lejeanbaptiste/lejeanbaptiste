@@ -151,6 +151,77 @@ describe('applySuggestions', () => {
     expect(serialize(doc)).not.toBe(before);
     expect(serialize(revertToSnapshot(snapshot))).toBe(before);
   });
+
+  it('removes an existing tag wrapper (audit remove)', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><persName>張衡</persName>是天文學家</p></body></text></TEI>',
+    );
+    const batch: Suggestion[] = [
+      {
+        ...suggest(doc, '張衡', 'persName'),
+        action: 'remove',
+        source: 'ai',
+      },
+    ];
+    const { results, applied } = await applySuggestions(doc, batch, { policy: 'ignore' });
+    expect(applied).toBe(1);
+    expect(results[0]!.outcome).toBe('applied');
+    expect(serialize(doc)).toContain('張衡是天文學家');
+    expect(serialize(doc)).not.toContain('<persName>');
+  });
+
+  it('retags an existing mention (audit retag)', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><persName>洛陽</persName></p></body></text></TEI>',
+    );
+    const batch: Suggestion[] = [
+      {
+        ...suggest(doc, '洛陽', 'placeName'),
+        action: 'retag',
+        source: 'ai',
+      },
+    ];
+    const { results, applied } = await applySuggestions(doc, batch, { policy: 'ignore' });
+    expect(applied).toBe(1);
+    expect(results[0]!.outcome).toBe('applied');
+    expect(serialize(doc)).toContain('<placeName>洛陽</placeName>');
+    expect(serialize(doc)).not.toContain('<persName>');
+  });
+
+  it('redraws a tag boundary (audit redraw-boundary)', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><persName>張衡與</persName>友人</p></body></text></TEI>',
+    );
+    const batch: Suggestion[] = [
+      {
+        ...suggest(doc, '張衡', 'persName'),
+        action: 'redraw-boundary',
+        source: 'ai',
+      },
+    ];
+    const { results, applied } = await applySuggestions(doc, batch, { policy: 'ignore' });
+    expect(applied).toBe(1);
+    expect(results[0]!.outcome).toBe('applied');
+    const xml = serialize(doc);
+    expect(xml).toContain('<persName>張衡</persName>與');
+    expect(xml).not.toContain('<persName>張衡與</persName>');
+  });
+
+  it('processes audit actions before adds in the same batch', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><persName>假人</persName>與張衡</p></body></text></TEI>',
+    );
+    const batch: Suggestion[] = [
+      suggest(doc, '張衡', 'persName'),
+      { ...suggest(doc, '假人', 'persName'), action: 'remove', source: 'ai' },
+    ];
+    const { results, applied } = await applySuggestions(doc, batch, { policy: 'ignore' });
+    expect(applied).toBe(2);
+    const xml = serialize(doc);
+    expect(xml).not.toMatch(/<persName>假人<\/persName>/);
+    expect(xml).toContain('<persName>張衡</persName>');
+    expect(results.filter((r) => r.outcome === 'applied')).toHaveLength(2);
+  });
 });
 
 describe('real corpus batch', () => {

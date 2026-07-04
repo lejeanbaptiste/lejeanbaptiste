@@ -18,7 +18,6 @@ export interface TranslationMetadataSection {
   locked: boolean;
   alignmentUnit: 'div' | 'p' | null;
   languages: TranslationLanguage[];
-  citationStyle: string | null;
 }
 
 export interface ProjectMetadataDialogState {
@@ -89,9 +88,8 @@ export const buildProjectMetadataDialogState = async (
         locked: true,
         alignmentUnit: translationSettings.alignmentUnit,
         languages: translationSettings.languages,
-        citationStyle: translationSettings.citationStyle ?? null,
       }
-    : { locked: false, alignmentUnit: null, languages: [], citationStyle: null };
+    : { locked: false, alignmentUnit: null, languages: [] };
 
   return {
     mode,

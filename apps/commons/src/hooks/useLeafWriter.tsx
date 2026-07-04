@@ -1,5 +1,6 @@
 import { loadAndInjectTagColors } from '@src/desktop/tagging/tagColors';
 import { DESKTOP_APP_DISPLAY_NAME } from '@src/desktop/desktopBranding';
+import { registerLeafWriterCommonsI18n } from '@src/desktop/registerLeafWriterCommonsI18n';
 import { focusFirstBodyParagraph } from '@src/desktop/focusFirstBodyParagraph';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
 import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
@@ -27,12 +28,12 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
 import type { Types } from '@cwrc/leafwriter';
+import { SETTINGS_BOOTSTRAP_URL } from '@cwrc/leafwriter';
 import { schemas } from '@src/config/schemas';
 import type { WorkspaceCursorPosition } from '@src/types/desktop';
 
 type LeafWriterOptionsSettings = Types.LeafWriterOptionsSettings;
 
-const SETTINGS_BOOTSTRAP_URL = '__settings-bootstrap__';
 const SETTINGS_BOOTSTRAP_XML =
   '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p/></body></text></TEI>';
 
@@ -227,6 +228,7 @@ export const useLeafWriter = () => {
     if (!isDesktop() || !leafWriter) return false;
     if (window.writer) return true;
 
+    registerLeafWriterCommonsI18n();
     registerDesktopSchemas([...getEnabledCatalogSchemas(), ...projectSchemas]);
 
     const author = user && {

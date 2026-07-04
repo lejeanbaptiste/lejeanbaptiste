@@ -1,4 +1,5 @@
 import { useActions, useAppState } from '@src/overmind';
+import { registerLeafWriterCommonsI18n } from '@src/desktop/registerLeafWriterCommonsI18n';
 import { isDesktop, type AiApiSettings } from '@src/types/desktop';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -115,6 +116,7 @@ export const useCommonsUiBridge = () => {
 
   useEffect(() => {
     if (!isDesktop()) return;
+    registerLeafWriterCommonsI18n();
 
     window.__ljbCommonsUi = {
       encoderName,

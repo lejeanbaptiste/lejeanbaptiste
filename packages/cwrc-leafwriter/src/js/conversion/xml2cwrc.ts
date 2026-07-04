@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import { SETTINGS_BOOTSTRAP_URL } from '../../constants/settingsBootstrap';
 import { log } from '../../utilities';
 import { stripCjkWhitespaceInElement } from '../../utilities/cjkWhitespace';
 import { isValidHttpURL } from '../../utilities/string';
@@ -65,6 +66,11 @@ class XML2CWRC {
 
     overmindActions.document.setRootname(schemaProcess.rootName);
 
+    if (this.isSettingsBootstrapDocument()) {
+      await this.processSettingsBootstrapDocument(doc);
+      return;
+    }
+
     // * HAS SCHEMA?
     schemaProcess.docSchema = this.getSchemaUrls(doc);
     schemaProcess.schemaFound = !!schemaProcess.docSchema.rng;
@@ -103,6 +109,31 @@ class XML2CWRC {
     }
 
     this.doProcessing(schemaProcess.doc);
+  }
+
+  private isSettingsBootstrapDocument(): boolean {
+    return this.writer.overmindState?.document?.url === SETTINGS_BOOTSTRAP_URL;
+  }
+
+  /** Boot the editor shell for App Settings without a real project document. */
+  private async processSettingsBootstrapDocument(doc: XMLDocument) {
+    const { schemaManager } = this.writer;
+
+    const bootstrapSchemaId =
+      schemaManager.schemas.find((schema) => schema.id === 'teiLite')?.id ??
+      schemaManager.schemas.find((schema) => schema.mapping === 'teiLite' || schema.mapping === 'tei')
+        ?.id ??
+      schemaManager.schemas[0]?.id;
+
+    if (bootstrapSchemaId && bootstrapSchemaId !== schemaManager.schemaId) {
+      const loaded = await schemaManager.loadSchema(bootstrapSchemaId);
+      if (!loaded) {
+        this.doBasicProcessing(doc);
+        return;
+      }
+    }
+
+    this.doProcessing(doc, { skipEditorModeDialog: true });
   }
 
   /**
@@ -204,7 +235,7 @@ class XML2CWRC {
     this.writer.event('documentLoaded').publish(false, this.writer.editor?.getBody());
   }
 
-  doProcessing(doc: Document) {
+  doProcessing(doc: Document, options?: { skipEditorModeDialog?: boolean }) {
     this.writer.event('processingDocument').publish();
 
     this._isLegacyDocument = this.isLegacyDocument(doc);
@@ -215,7 +246,7 @@ class XML2CWRC {
       .then(() => {
         this.writer.event('documentLoaded').publish(true, this.writer.editor?.getBody());
 
-        if (this.writer.isReadOnly) return;
+        if (this.writer.isReadOnly || options?.skipEditorModeDialog) return;
         openEditorModeDialog(this.writer);
       })
       .catch((error: unknown) => {

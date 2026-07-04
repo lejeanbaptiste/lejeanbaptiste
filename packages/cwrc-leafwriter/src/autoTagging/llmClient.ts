@@ -100,6 +100,8 @@ export interface MistralClientOptions {
    * llmParse validates). Override with json_object/json_schema if needed.
    */
   structuredOutput?: 'json_schema' | 'json_object' | 'prompt_only';
+  /** Retries on HTTP 429 (rate limit). Defaults to 4. */
+  maxRateLimitRetries?: number;
 }
 
 function extractJsonContent(text: string): string {
@@ -119,6 +121,15 @@ function isJsonValidateFailed(status: number, bodyText: string): boolean {
   }
 }
 
+/** Parse Groq/OpenAI-style rate-limit messages, e.g. "try again in 12.96s". */
+export function parseRateLimitRetryMs(bodyText: string): number | null {
+  const match = bodyText.match(/try again in ([\d.]+)s/i);
+  if (!match) return null;
+  return Math.ceil(parseFloat(match[1]!) * 1000) + 500;
+}
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * OpenAI-compatible chat-completions client (Mistral API, Groq, LM Studio,
  * etc.). Uses response_format json_schema where supported; Groq Qwen defaults
@@ -131,6 +142,7 @@ export class MistralLlmClient implements LlmClient {
   private readonly fetchImpl: FetchFn;
   private readonly structuredOutput: 'json_schema' | 'json_object' | 'prompt_only';
   private readonly isGroq: boolean;
+  private readonly maxRateLimitRetries: number;
 
   constructor(options: MistralClientOptions) {
     this.modelId = `mistral:${options.model}`;
@@ -141,6 +153,7 @@ export class MistralLlmClient implements LlmClient {
     this.structuredOutput =
       options.structuredOutput ??
       (this.isGroq ? 'prompt_only' : 'json_schema');
+    this.maxRateLimitRetries = options.maxRateLimitRetries ?? 4;
   }
 
   private groqExtras(): Record<string, unknown> {
@@ -194,25 +207,35 @@ export class MistralLlmClient implements LlmClient {
 
   async complete(request: LlmRequest): Promise<LlmResponse> {
     let mode = this.structuredOutput;
-    let result = await this.postCompletion(request, mode);
-    if (!result.ok && isJsonValidateFailed(result.status, result.text) && mode !== 'prompt_only') {
-      mode = 'prompt_only';
-      result = await this.postCompletion(request, mode);
+    let rateLimitAttempt = 0;
+
+    while (true) {
+      let result = await this.postCompletion(request, mode);
+      if (!result.ok && result.status === 429 && rateLimitAttempt < this.maxRateLimitRetries) {
+        const delayMs = parseRateLimitRetryMs(result.text) ?? 15_000;
+        rateLimitAttempt++;
+        await sleep(delayMs);
+        continue;
+      }
+      if (!result.ok && isJsonValidateFailed(result.status, result.text) && mode !== 'prompt_only') {
+        mode = 'prompt_only';
+        result = await this.postCompletion(request, mode);
+      }
+      if (!result.ok) {
+        throw new Error(`Mistral request failed: ${result.status} ${result.text}`);
+      }
+      const body = JSON.parse(result.text) as {
+        choices: { message: { content: string | null } }[];
+        usage?: { prompt_tokens: number; completion_tokens: number };
+      };
+      const raw = body.choices[0]!.message.content ?? '';
+      return {
+        json: extractJsonContent(raw),
+        usage: {
+          inputTokens: body.usage?.prompt_tokens ?? 0,
+          outputTokens: body.usage?.completion_tokens ?? 0,
+        },
+      };
     }
-    if (!result.ok) {
-      throw new Error(`Mistral request failed: ${result.status} ${result.text}`);
-    }
-    const body = JSON.parse(result.text) as {
-      choices: { message: { content: string | null } }[];
-      usage?: { prompt_tokens: number; completion_tokens: number };
-    };
-    const raw = body.choices[0]!.message.content ?? '';
-    return {
-      json: extractJsonContent(raw),
-      usage: {
-        inputTokens: body.usage?.prompt_tokens ?? 0,
-        outputTokens: body.usage?.completion_tokens ?? 0,
-      },
-    };
   }
 }

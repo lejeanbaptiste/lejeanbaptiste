@@ -32,6 +32,13 @@ describe('chunkDocument', () => {
     expect(chunks[0]!.text).toBe('alphabetagamma');
   });
 
+  it('emits one leaf block per chunk when maxBlocksPerChunk is 1', () => {
+    const doc = parse('<TEI><text><body><p>alpha</p><p>beta</p><p>gamma</p></body></text></TEI>');
+    const chunks = chunkDocument(doc, { policy: 'ignore', targetChars: 10_000, maxBlocksPerChunk: 1 });
+    expect(chunks).toHaveLength(3);
+    expect(chunks.map((c) => c.text)).toEqual(['alpha', 'beta', 'gamma']);
+  });
+
   it('produces non-overlapping, contiguous chunks covering the whole document', () => {
     const doc = parse('<TEI><text><body><p>alpha</p><p>beta</p><p>gamma</p></body></text></TEI>');
     const chunks = chunkDocument(doc, { policy: 'ignore', targetChars: 5 });

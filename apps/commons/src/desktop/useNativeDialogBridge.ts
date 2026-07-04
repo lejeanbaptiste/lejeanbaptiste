@@ -15,6 +15,7 @@ import {
   writeProjectMetadata,
 } from './projectMetadata';
 import { invalidateMetadataDialogStateCache, warmMetadataDialogStateCache } from './projectMetadataDialogState';
+import { removeOrphanProjectEntitiesFile } from './entityDatabaseCleanup';
 import {
   clearProjectMetadataSession,
   getProjectMetadataSession,
@@ -38,7 +39,6 @@ import type { ProjectMetadataFile } from './projectTypes';
 import {
   addTranslationLanguage,
   readTranslationSettings,
-  setCitationStyle,
   writeTranslationSettings,
 } from './translationSettings';
 
@@ -311,7 +311,6 @@ export const useNativeDialogBridge = () => {
               applyToDocuments,
               translationAlignmentUnit,
               translationLanguages,
-              translationCitationStyle,
               entityStore,
             } = (args ?? {}) as {
               values?: Record<string, string>;
@@ -319,7 +318,6 @@ export const useNativeDialogBridge = () => {
               applyToDocuments?: boolean;
               translationAlignmentUnit?: 'div' | 'p';
               translationLanguages?: Array<{ code: string; label: string }>;
-              translationCitationStyle?: string;
               entityStore?: 'central' | 'project';
             };
             const dialogId = getStringArg(args, 'dialogId');
@@ -353,6 +351,10 @@ export const useNativeDialogBridge = () => {
                   entityStore,
                 });
               }
+              if (entityStore === 'central') {
+                const centralFolder = await electronAPI.getEntityDbFolder?.();
+                await removeOrphanProjectEntitiesFile(bundle.rootPath, centralFolder);
+              }
               invalidateMetadataDialogStateCache(bundle.projectFilePath);
               void warmMetadataDialogStateCache(bundle, session.mode);
             } catch (error) {
@@ -385,20 +387,6 @@ export const useNativeDialogBridge = () => {
                   }
                 }
 
-                if (translationCitationStyle) {
-                  const styleChanged =
-                    (existingTranslationSettings?.citationStyle ?? undefined) !==
-                    translationCitationStyle;
-                  await setCitationStyle(bundle, translationCitationStyle);
-                  if (styleChanged && existingTranslationSettings) {
-                    // Open translation panes re-render their footnote citations.
-                    window.dispatchEvent(
-                      new CustomEvent('desktop:translation-citation-style-changed', {
-                        detail: { citationStyle: translationCitationStyle },
-                      }),
-                    );
-                  }
-                }
               } catch (error) {
                 return {
                   ok: false,

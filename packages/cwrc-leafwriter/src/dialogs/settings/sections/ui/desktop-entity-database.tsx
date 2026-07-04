@@ -21,7 +21,7 @@ const getCommonsUiBridge = () =>
   ).__ljbCommonsUi;
 
 export const DesktopEntityDatabase = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('LWC');
   const bridge = getCommonsUiBridge();
   const [entityDbFolder, setEntityDbFolder] = useState(bridge?.entityDbFolder ?? null);
 
@@ -35,12 +35,12 @@ export const DesktopEntityDatabase = () => {
   return (
     <ListItem dense disableGutters sx={{ alignItems: 'flex-start', flexDirection: 'column', py: 0.5 }}>
       <Typography color="text.secondary" sx={{ mb: 0.75 }} variant="caption">
-        {t('LWC.desktop.settings.entity_database')}
+        {t('desktop.settings.entity_database')}
       </Typography>
 
       {!entityDbFolder && (
         <Alert severity="warning" sx={{ mb: 1, width: '100%' }}>
-          {t('LWC.desktop.settings.entity_database_missing')}
+          {t('desktop.settings.entity_database_missing')}
         </Alert>
       )}
 
@@ -48,10 +48,10 @@ export const DesktopEntityDatabase = () => {
         <TextField
           fullWidth
           InputProps={{ readOnly: true }}
-          label={t('LWC.desktop.settings.entity_database_folder')}
+          label={t('desktop.settings.entity_database_folder')}
           size="small"
           value={entityDbFolder ?? ''}
-          helperText={t('LWC.desktop.settings.entity_database_hint')}
+          helperText={t('desktop.settings.entity_database_hint')}
         />
         <Box>
           <Button
@@ -63,7 +63,7 @@ export const DesktopEntityDatabase = () => {
             size="small"
             variant="outlined"
           >
-            {t('LWC.desktop.settings.entity_database_change')}
+            {t('desktop.settings.entity_database_change')}
           </Button>
         </Box>
       </Stack>

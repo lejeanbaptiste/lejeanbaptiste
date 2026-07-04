@@ -170,10 +170,11 @@ Hosted Mistral `ministral-8b-2512` is fine when you need Mistral-family output. 
 
 ## Next steps (updated 2026-07-04)
 
-1. ~~Gold passage + model comparison~~ — **done** (four models in validation-results doc; Qwen3.6 leads).
-2. **Prompt tuning** — Qwen3.6 still misses 43/65 gold mentions; triage 7 FPs.
-4. Wire `.ljb/ai-cache/` into harness runs before prompt iteration.
-5. `sizhu_shang` 89-FP triage still optional (incomplete gold there).
-6. Auto-accept rules, dialog wiring, `apply.ts` audit actions — still open.
+1. ~~Gold passage + model comparison~~ — **done** (four models; Qwen3.6 + v3 leads).
+2. ~~Dialog wiring + `.ljb/ai-cache/`~~ — **done** (desktop AI suggest path).
+3. **Prompt profiles UI** — edit/save per-model suggest text; version in cache key. Spec: [Auto-tagging.md](Auto-tagging.md) → Immediate future **A**.
+4. **Expandable tag types** — schema-driven picker; definitions + gold for `roleName`/`orgName`. Spec: **B** in same section.
+5. Triage FNs/FPs on `gold_test.xml` (Groq+v3 baseline).
+6. Auto-accept rules, `apply.ts` audit actions — still open.
 
 Related memory: [[autotagging_phase5_ai_producers]].

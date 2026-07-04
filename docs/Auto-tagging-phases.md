@@ -228,12 +228,33 @@ The panel for the leftovers 4a couldn't auto-resolve, plus live authority lookup
 - **Producers**: `autoTagging/llmSuggest.ts` (`llmSuggest(doc, options) → {suggestions, unverifiableCount}`, emits plain `'ai'`-source `add` suggestions, no ids, through the same `Suggestion` shape every other producer uses) and `autoTagging/llmAudit.ts` (`llmAudit(doc, options) → {suggestions, unverifiableCount}`, renders each chunk with its existing tags shown inline as `<TAG>surface</TAG>` markers so the model can see current boundaries, then verifies and emits `add`/`remove`/`retag`/`redraw-boundary` findings against the live document).
 - Both producers take an optional `LlmCache`; a same-document re-run with an identical chunk/tag-set/model/prompt-version hits cache and makes zero model calls (tested).
 - 32 new tests across `chunk`, `llmCache`, `llmParse`, `llmSuggest`, `llmAudit` (fake in-memory `LlmClient` implementations — no network in tests); all pass, typecheck clean (pre-existing unrelated `integration.ts` TS2774 and pre-existing React-act failures in `mentions`/`reviewController`/`ReviewPanel` untouched).
-- **Still open:** auto-accept rules storage/UI; apply-side handling for `remove`/`retag`/`redraw-boundary` actions in `apply.ts` (today only `add` is applied — audit's other actions reach the review walk correctly shaped but still need an apply-engine branch); hand-testing audit prompts against a running local Ministral model; **custom prompt UI** (per-model prompt editing/saving — deferred; built-in `suggest.v3` ships in code for now).
-- **UI wired (2026-07-04):** Auto-tagging dialog → **AI suggest** (desktop only) reads Application Settings → AI API, runs `llmSuggest` with `suggest.v3`, persists chunk cache under `.ljb/ai-cache/`, hands off to the docked review panel. Tag picker: `persName` / `placeName`.
+- **Still open:** auto-accept rules storage/UI; apply-side handling for `remove`/`retag`/`redraw-boundary` actions in `apply.ts` (today only `add` is applied — audit's other actions reach the review walk correctly shaped but still need an apply-engine branch); hand-testing audit prompts against a running local Ministral model.
+- **UI wired (2026-07-04):** Auto-tagging dialog → **AI suggest** (desktop only) reads Application Settings → AI API, runs `llmSuggest` with `suggest.v3`, persists chunk cache under `.ljb/ai-cache/`, hands off to the docked review panel. Tag picker: `persName` / `placeName` (bootstrap only — see **Immediate future** below).
 - **Validation harness (2026-07-04): built and run live.** `validationHarness.ts` + opt-in `validationHarness.live.test.ts`. **Gold-standard (`gold_test.xml`, 65 mentions):** Groq Qwen3.6-27B + `suggest.v3` **F1=.74 R=.68** (~5 s) — best run; prompt v1→v3 nearly doubled recall. Earlier: local Ministral F1=.37; hosted Mistral F1=.35. Full numbers in [phase5-validation-results.md](phase5-validation-results.md).
 - **Provider/free-tier options (2026-07-04):** surveyed beyond the local Ministral instance — Groq's free tier hosts a genuine Qwen3-32B at 60 RPM/500K TPD (official docs), enough for ~8 full-document runs/day at zero cost, and speaks the same OpenAI-compatible shape `MistralLlmClient` already handles (model/baseUrl swap only). Mistral's own hosted free tier no longer publishes exact numbers; third-party estimates (~2 RPM) would make it no faster than local for full-document runs. GuwenBERT and similar encoder-only classical-Chinese models don't fit this architecture at all — they'd need a token-classification head, i.e. the deferred NER path, not another `LlmClient`. Full write-up and the recommended next comparison (Groq Qwen3-32B once a properly complete gold document exists) in [phase5-ai-integration-log.md](phase5-ai-integration-log.md).
 
-**Done when:** AI suggest and audit both emit verified suggestion objects through the same review walk; re-running on an unchanged document hits cache and costs nothing; unverifiable model output is dropped, never applied.
+### Immediate future (2026-07) — build next
+
+Full spec in [Auto-tagging.md](Auto-tagging.md) → AI mode → **Immediate future**. Summary:
+
+**A. Prompt profiles (model- and corpus-specific)**
+
+- [ ] **Storage:** `.ljb/ai-prompt-profiles.json` (project) and/or app-level profiles beside AI API settings. Fields: `id`, `label`, optional `modelPattern`, editable suggest suffix, per-tag guide overrides, `version`.
+- [ ] **UI:** AI suggest step shows active profile; “Edit prompt…” without editing repo files. Auto-match profile to configured model (e.g. Qwen3.6 vs Ministral).
+- [ ] **Assembly:** keep locator/JSON rules locked (`preamble.txt`); user edits task bias and tag definitions only. Wire optional reuse of App Settings `customInstructions` for suggest (today translation-only).
+- [ ] **Cache:** profile `version` (or profile id) participates in LLM cache key alongside `SUGGEST_PROMPT_VERSION`.
+- [ ] **Validation loop:** harness run per profile/model; record in `phase5-validation-results.md`. Known need: shorter/alternate profile for local Ministral (v3 regressed vs v1).
+
+**B. Expandable tag types (schema- and project-driven)**
+
+- [ ] **UI:** replace hardcoded `persName`/`placeName` checkboxes with schema-driven or project-allowlist tag picker (same list shape `llmSuggest` already accepts).
+- [ ] **Definitions:** extend `prompt-templates/tag-definitions.json` — priority `roleName`, `orgName`, then `title`/`date` as schema allows.
+- [ ] **Gold:** extend `gold_test.xml` or add passage with hand-tagged offices/institutions; per-tag P/R in harness before enabling defaults.
+- [ ] **Modeling note:** `roleName` vs `persName` boundary is the main tuning risk on 後漢書-style text; `roleName` may not map to standoff entities (Phase 4a).
+
+**Done when (Phase 5 “prompt + tags” slice):** items A and B above ship; harness documents at least one non–persName/placeName tag family on gold; user never needs to edit `prompt-templates/` in the repo for day-to-day tuning.
+
+**Done when (Phase 5 overall):** AI suggest and audit both emit verified suggestion objects through the same review walk; re-running on an unchanged document hits cache and costs nothing; unverifiable model output is dropped, never applied.
 
 ## Phase 6 — AI-assisted disambiguation ranking
 

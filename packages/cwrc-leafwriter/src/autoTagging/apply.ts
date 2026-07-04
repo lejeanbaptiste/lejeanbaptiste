@@ -1,5 +1,5 @@
 import { resolveAnchor } from './anchor';
-import type { Suggestion, WhitespacePolicy } from './types';
+import type { Suggestion, SuggestionAction, WhitespacePolicy } from './types';
 
 export type ApplyOutcome =
   | 'applied'
@@ -48,14 +48,28 @@ const yieldToUi = (): Promise<void> =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
 
+/** Audit corrections before new insertions; within each tier, prefer longer spans. */
+const ACTION_PRIORITY: Partial<Record<SuggestionAction, number>> = {
+  'redraw-boundary': 0,
+  retag: 1,
+  remove: 2,
+  add: 3,
+};
+
+function compareSuggestions(a: Suggestion, b: Suggestion): number {
+  const pa = ACTION_PRIORITY[a.action] ?? 99;
+  const pb = ACTION_PRIORITY[b.action] ?? 99;
+  if (pa !== pb) return pa - pb;
+  return b.anchor.surface.length - a.anchor.surface.length;
+}
+
 /**
- * Apply a batch of 'add' suggestions to a document.
+ * Apply a batch of suggestions to a document (`add` plus audit actions).
  *
- * Suggestions are sorted longest-surface-first (conflict rule 1: prefer the
- * longer span) and each anchor is resolved immediately before its own
- * insertion, so earlier insertions cannot invalidate later offsets. Nothing
- * is ever applied approximately: a suggestion whose anchor fails to resolve
- * is marked unresolvable and skipped.
+ * Suggestions are sorted audit-first, then longest-surface-first (conflict
+ * rule 1: prefer the longer span). Each anchor is resolved immediately
+ * before its own mutation. Nothing is ever applied approximately: a
+ * suggestion whose anchor fails to resolve is marked unresolvable and skipped.
  */
 export async function applySuggestions(
   doc: Document,
@@ -63,9 +77,7 @@ export async function applySuggestions(
   options: ApplyOptions,
 ): Promise<BatchResult> {
   const snapshot = new XMLSerializer().serializeToString(doc);
-  const ordered = [...suggestions].sort(
-    (a, b) => b.anchor.surface.length - a.anchor.surface.length,
-  );
+  const ordered = [...suggestions].sort(compareSuggestions);
 
   const results: ApplyResult[] = [];
   for (let index = 0; index < ordered.length; index++) {
@@ -92,8 +104,21 @@ export async function applySuggestions(
 }
 
 function applyOne(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
-  if (suggestion.action !== 'add') return { suggestion, outcome: 'unsupported-action' };
+  switch (suggestion.action) {
+    case 'add':
+      return applyAdd(doc, suggestion, options);
+    case 'remove':
+      return applyRemove(doc, suggestion, options);
+    case 'retag':
+      return applyRetag(doc, suggestion, options);
+    case 'redraw-boundary':
+      return applyRedrawBoundary(doc, suggestion, options);
+    default:
+      return { suggestion, outcome: 'unsupported-action' };
+  }
+}
 
+function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
   const resolved = resolveAnchor(doc, suggestion.anchor, options.policy);
   if (!resolved) return { suggestion, outcome: 'unresolvable' };
 
@@ -106,21 +131,144 @@ function applyOne(doc: Document, suggestion: Suggestion, options: ApplyOptions):
     if (el.nodeName === suggestion.tag) return { suggestion, outcome: 'already-tagged' };
   }
 
-  // Structural validity against the immediate parent, from the schema.
-  if (options.canContain && !options.canContain(parent.nodeName, suggestion.tag)) {
+  if (blockedBySchema(parent.nodeName, suggestion.tag, options)) {
     return { suggestion, outcome: 'schema-blocked' };
   }
-
-  // User taste rules: block when any ancestor matches notInside.
-  for (const rule of options.userRules ?? []) {
-    if (rule.tag !== suggestion.tag) continue;
-    for (let el: Element | null = parent; el; el = el.parentElement) {
-      if (el.nodeName === rule.notInside) return { suggestion, outcome: 'rule-blocked' };
-    }
+  if (blockedByUserRule(parent, suggestion.tag, options)) {
+    return { suggestion, outcome: 'rule-blocked' };
   }
 
   const element = wrapRange(doc, resolved.node, resolved.start, resolved.end, suggestion);
   return { suggestion, outcome: 'applied', element };
+}
+
+function applyRemove(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
+  const resolved = resolveAnchor(doc, suggestion.anchor, options.policy);
+  if (!resolved) return { suggestion, outcome: 'unresolvable' };
+
+  const wrapper = findTagWrapper(resolved.node, suggestion.tag);
+  if (!wrapper) return { suggestion, outcome: 'unresolvable' };
+
+  unwrapElement(wrapper);
+  return { suggestion, outcome: 'applied', element: wrapper };
+}
+
+function applyRetag(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
+  const resolved = resolveAnchor(doc, suggestion.anchor, options.policy);
+  if (!resolved) return { suggestion, outcome: 'unresolvable' };
+
+  const wrapper = findWrongTagWrapper(resolved.node, suggestion.tag);
+  if (!wrapper) return { suggestion, outcome: 'unresolvable' };
+  if (wrapper.nodeName === suggestion.tag) return { suggestion, outcome: 'already-tagged' };
+
+  const parent = wrapper.parentElement;
+  if (!parent) return { suggestion, outcome: 'unresolvable' };
+  if (blockedBySchema(parent.nodeName, suggestion.tag, options)) {
+    return { suggestion, outcome: 'schema-blocked' };
+  }
+  if (blockedByUserRule(parent, suggestion.tag, options)) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
+
+  const element = retagElement(doc, wrapper, suggestion.tag);
+  return { suggestion, outcome: 'applied', element };
+}
+
+function applyRedrawBoundary(
+  doc: Document,
+  suggestion: Suggestion,
+  options: ApplyOptions,
+): ApplyResult {
+  const resolved = resolveAnchor(doc, suggestion.anchor, options.policy);
+  if (!resolved) return { suggestion, outcome: 'unresolvable' };
+
+  const wrapper = findTagWrapper(resolved.node, suggestion.tag);
+  if (!wrapper) return { suggestion, outcome: 'unresolvable' };
+
+  const parent = wrapper.parentElement;
+  if (!parent) return { suggestion, outcome: 'unresolvable' };
+
+  unwrapElement(wrapper);
+
+  const reResolved = resolveAnchor(doc, suggestion.anchor, options.policy);
+  if (!reResolved) return { suggestion, outcome: 'unresolvable' };
+
+  const insertParent = reResolved.node.parentElement;
+  if (!insertParent) return { suggestion, outcome: 'unresolvable' };
+  if (blockedBySchema(insertParent.nodeName, suggestion.tag, options)) {
+    return { suggestion, outcome: 'schema-blocked' };
+  }
+  if (blockedByUserRule(insertParent, suggestion.tag, options)) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
+
+  const element = wrapRange(doc, reResolved.node, reResolved.start, reResolved.end, suggestion);
+  return { suggestion, outcome: 'applied', element };
+}
+
+function blockedBySchema(parentTag: string, childTag: string, options: ApplyOptions): boolean {
+  return !!(options.canContain && !options.canContain(parentTag, childTag));
+}
+
+function blockedByUserRule(parent: Element, tag: string, options: ApplyOptions): boolean {
+  for (const rule of options.userRules ?? []) {
+    if (rule.tag !== tag) continue;
+    for (let el: Element | null = parent; el; el = el.parentElement) {
+      if (el.nodeName === rule.notInside) return true;
+    }
+  }
+  return false;
+}
+
+/** Innermost ancestor element with the given tag name wrapping `node`. */
+function findTagWrapper(node: Text, tag: string): Element | null {
+  for (let el: Element | null = node.parentElement; el; el = el.parentElement) {
+    if (el.nodeName === tag) return el;
+  }
+  return null;
+}
+
+/** Tags that may wrap a named entity mention (same set crawl uses by default). */
+const ENTITY_TAGS = new Set([
+  'persName',
+  'placeName',
+  'orgName',
+  'geogName',
+  'name',
+  'roleName',
+  'title',
+  'date',
+]);
+
+/** Innermost ancestor entity tag that is not the target tag (for retag). */
+function findWrongTagWrapper(node: Text, targetTag: string): Element | null {
+  for (let el: Element | null = node.parentElement; el; el = el.parentElement) {
+    if (el.nodeName === targetTag) return null;
+    if (ENTITY_TAGS.has(el.nodeName)) return el;
+  }
+  return null;
+}
+
+function unwrapElement(element: Element): void {
+  const parent = element.parentNode;
+  if (!parent) return;
+  while (element.firstChild) {
+    parent.insertBefore(element.firstChild, element);
+  }
+  parent.removeChild(element);
+}
+
+function retagElement(doc: Document, element: Element, newTag: string): Element {
+  const ns = doc.documentElement?.namespaceURI ?? null;
+  const replacement = doc.createElementNS(ns, newTag);
+  for (const attr of Array.from(element.attributes)) {
+    replacement.setAttribute(attr.name, attr.value);
+  }
+  while (element.firstChild) {
+    replacement.appendChild(element.firstChild);
+  }
+  element.parentNode!.replaceChild(replacement, element);
+  return replacement;
 }
 
 /** Wrap [start, end) of a text node in a new element, splitting the node. */

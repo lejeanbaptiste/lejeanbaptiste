@@ -68,6 +68,9 @@ const SuggestionRow = ({
   >
     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
       <Chip size="small" label={`<${suggestion.tag}>`} />
+      {suggestion.action !== 'add' && (
+        <Chip size="small" variant="outlined" color="warning" label={suggestion.action} />
+      )}
       <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
         {suggestion.anchor.surface}
       </Typography>
