@@ -56,6 +56,9 @@ const config: Config.InitialOptions = {
       testMatch: ['<rootDir>/packages/cwrc-leafwriter/**/?(*.)+(spec|test).[jt]s?(x)'],
       testPathIgnorePatterns: ['<rootDir>/packages/cwrc-leafwriter/lib*'],
       preset: 'ts-jest',
+      transform: {
+        '\\.txt$': '<rootDir>/packages/cwrc-leafwriter/test/loadTextFile.cjs',
+      },
     },
     {
       displayName: { name: 'desktop', color: 'green' },

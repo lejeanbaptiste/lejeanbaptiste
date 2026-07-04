@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { takeAutoTaggingBatch } from '../autoTagging/batchHolder';
 import { AutoTaggingSession, ReviewPanel, type Suggestion } from '../autoTagging';
 import { useActions, useAppState } from '../overmind';
-import { AutoTaggingApplyOverlay } from './AutoTaggingApplyOverlay';
+import { AutoTaggingApplyOverlay, type AutoTaggingBusyLabel } from './AutoTaggingApplyOverlay';
 
 /** Default width when docked beside the editor (desktop shell). */
 export const AUTO_TAGGING_PANEL_WIDTH = 380;
@@ -24,7 +24,7 @@ export const AutoTaggingReviewPane = () => {
   const [applied, setApplied] = useState(0);
   const [canRevert, setCanRevert] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [busyLabel, setBusyLabel] = useState<'Applying tags…' | 'Reverting tags…'>('Applying tags…');
+  const [busyLabel, setBusyLabel] = useState<AutoTaggingBusyLabel>('Applying tags…');
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const session = useRef<AutoTaggingSession | null>(null);
 

@@ -233,14 +233,14 @@ export const EditorToolbar = () => {
     //   title: t('LW.editorToolbar.Validate'),
     //   type: 'iconButton',
     // },
-    // { group: 'ui', type: 'divider', hide: isReadonly },
-    // {
-    //   group: 'ui',
-    //   icon: 'settings',
-    //   onClick: () => openDialog({ type: 'settings' }),
-    //   title: t('LW.editorToolbar.Settings'),
-    //   type: 'iconButton',
-    // },
+    { group: 'ui', type: 'divider', hide: isReadonly },
+    {
+      group: 'ui',
+      icon: 'settings',
+      onClick: () => openDialog({ type: 'settings' }),
+      title: t('LW.editorToolbar.Settings'),
+      type: 'iconButton',
+    },
     {
       group: 'ui',
       icon: 'documentation',

@@ -31,6 +31,7 @@ export const LJB_DIR = '.ljb';
 export const ENTITIES_FILE = 'entities.xml';
 export const DECISIONS_FILE = 'entity-decisions.jsonl';
 export const AUTHORITY_CACHE_DIR = 'authority-cache';
+export const AI_CACHE_DIR = 'ai-cache';
 export const DISAMBIGUATION_PENDING_FILE = 'disambiguation-pending.json';
 
 /** @deprecated Use LJB_DIR */
@@ -45,6 +46,7 @@ export class EntityStore {
   readonly projectRoot: string;
   readonly decisionsPath: string;
   readonly authorityCacheDir: string;
+  readonly aiCacheDir: string;
   readonly disambiguationPendingPath: string;
 
   constructor(
@@ -57,6 +59,7 @@ export class EntityStore {
     this.projectRoot = paths.projectRoot;
     this.decisionsPath = joinPath(paths.projectLjbDir, DECISIONS_FILE);
     this.authorityCacheDir = joinPath(paths.projectLjbDir, AUTHORITY_CACHE_DIR);
+    this.aiCacheDir = joinPath(paths.projectLjbDir, AI_CACHE_DIR);
     this.disambiguationPendingPath = joinPath(
       paths.projectLjbDir,
       DISAMBIGUATION_PENDING_FILE,

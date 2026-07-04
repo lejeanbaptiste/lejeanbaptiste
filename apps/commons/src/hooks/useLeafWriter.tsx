@@ -32,6 +32,19 @@ import type { WorkspaceCursorPosition } from '@src/types/desktop';
 
 type LeafWriterOptionsSettings = Types.LeafWriterOptionsSettings;
 
+const SETTINGS_BOOTSTRAP_URL = '__settings-bootstrap__';
+const SETTINGS_BOOTSTRAP_XML =
+  '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p/></body></text></TEI>';
+
+const waitForWriter = async (timeoutMs = 5000): Promise<boolean> => {
+  const started = Date.now();
+  while (!window.writer) {
+    if (Date.now() - started > timeoutMs) return false;
+    await new Promise((resolve) => window.setTimeout(resolve, 50));
+  }
+  return true;
+};
+
 const showDefaultEastPanel = () => {
   if (!isDesktop()) return;
   window.writer?.layoutManager?.showModule('fileMetadata');
@@ -207,6 +220,51 @@ export const useLeafWriter = () => {
       analytics.track('editor', { opened: true });
       analytics.page();
     }
+  };
+
+  /** Minimal editor bootstrap so settings and preferences work before any file is open. */
+  const ensureLeafWriterReadyForSettings = async (): Promise<boolean> => {
+    if (!isDesktop() || !leafWriter) return false;
+    if (window.writer) return true;
+
+    registerDesktopSchemas([...getEnabledCatalogSchemas(), ...projectSchemas]);
+
+    const author = user && {
+      name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
+      uri: user?.identities.get(user.preferredID)?.uri ?? '',
+    };
+
+    const settings: LeafWriterOptionsSettings = {
+      locale: currentLocale,
+      readonly: false,
+      schemas: [...projectSchemas, ...schemas],
+      baseUrl: `${window.location.origin}/`,
+      schemasId: [...ENABLED_CATALOG_IDS],
+      appDisplayName: DESKTOP_APP_DISPLAY_NAME,
+      modules: {
+        east: [
+          { id: 'fileMetadata', title: 'File metadata' },
+          { id: 'attributes', title: 'Attributes' },
+          { id: 'imageViewer', title: 'Image Viewer' },
+          { id: 'validation', title: 'Validation' },
+        ],
+      },
+    };
+
+    leafWriter.init({
+      document: {
+        url: SETTINGS_BOOTSTRAP_URL,
+        xml: stripTeiHeaderForVisualEditor(SETTINGS_BOOTSTRAP_XML),
+      },
+      settings,
+      user: author,
+    });
+
+    if (!leafWriter.onLoad.observed) {
+      setEditorEvents();
+    }
+
+    return waitForWriter();
   };
 
   /** Load a different project file into an already-running editor (tab switch / second file). */
@@ -487,6 +545,7 @@ export const useLeafWriter = () => {
 
   return {
     disposeLeafWriter,
+    ensureLeafWriterReadyForSettings,
     getDocumentRootName,
     getContent,
     handleCloseDocument,

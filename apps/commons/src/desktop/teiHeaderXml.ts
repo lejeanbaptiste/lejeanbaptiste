@@ -172,21 +172,46 @@ export const normalizeLanguageElementsInHeader = (header: Element) => {
   }
 };
 
+const isPublicationStmtAgency = (localName: string): boolean =>
+  PUBLICATION_STMT_AGENCY_ORDER.includes(localName);
+
+const isPublicationStmtDetail = (localName: string): boolean =>
+  PUBLICATION_STMT_DETAIL_ORDER.includes(localName);
+
+const ensurePublicationStmtAgency = (publicationStmt: Element) => {
+  const children = Array.from(publicationStmt.children);
+  const hasAgency = children.some((child) => isPublicationStmtAgency(child.localName));
+  const hasDetail = children.some((child) => isPublicationStmtDetail(child.localName));
+  if (hasDetail && !hasAgency) {
+    publicationStmt.insertBefore(
+      publicationStmt.ownerDocument!.createElementNS(TEI_NS, 'authority'),
+      publicationStmt.firstChild,
+    );
+  }
+};
+
 const normalizePublicationStmtChildren = (publicationStmt: Element) => {
   const elementChildren = Array.from(publicationStmt.children);
-  const hasStructuredChild = elementChildren.some((child) => child.localName !== 'p');
+  const paragraphs = elementChildren.filter((child) => child.localName === 'p');
+  const structured = elementChildren.filter((child) => child.localName !== 'p');
+  const hasParagraphContent = paragraphs.some((child) => (child.textContent ?? '').trim());
 
-  if (hasStructuredChild) {
-    for (const child of elementChildren) {
-      if (child.localName === 'p' && !(child.textContent ?? '').trim()) {
-        publicationStmt.removeChild(child);
-      }
+  if (hasParagraphContent) {
+    for (const child of structured) {
+      publicationStmt.removeChild(child);
     }
+    return;
   }
 
-  const orderedChildren = Array.from(publicationStmt.children)
-    .filter((child) => child.localName !== 'p')
-    .sort((a, b) => getPublicationStmtSortIndex(a) - getPublicationStmtSortIndex(b));
+  for (const child of paragraphs) {
+    publicationStmt.removeChild(child);
+  }
+
+  ensurePublicationStmtAgency(publicationStmt);
+
+  const orderedChildren = Array.from(publicationStmt.children).sort(
+    (a, b) => getPublicationStmtSortIndex(a) - getPublicationStmtSortIndex(b),
+  );
 
   for (const child of orderedChildren) {
     publicationStmt.appendChild(child);
@@ -215,7 +240,7 @@ export const normalizeParagraphContainersInHeader = (header: Element) => {
 
     const hasStructuredPublicationChild =
       name === 'publicationStmt' &&
-      Array.from(container.children).some((child) => child.localName !== 'p');
+      Array.from(container.children).some((child) => isPublicationStmtAgency(child.localName));
 
     if (looseParts.length > 0 && !hasStructuredPublicationChild) {
       let paragraph =
@@ -236,7 +261,8 @@ export const normalizeParagraphContainersInHeader = (header: Element) => {
       (node) => node.nodeType === Node.ELEMENT_NODE,
     );
     if (!hasElementChild) {
-      container.appendChild(header.ownerDocument!.createElementNS(TEI_NS, 'p'));
+      const placeholder = name === 'publicationStmt' ? 'authority' : 'p';
+      container.appendChild(header.ownerDocument!.createElementNS(TEI_NS, placeholder));
     }
   }
 };
