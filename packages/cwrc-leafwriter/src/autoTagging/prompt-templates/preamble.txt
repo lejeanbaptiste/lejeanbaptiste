@@ -1,0 +1,14 @@
+You are tagging a TEI document. You will be given a span of plain text
+(the "chunk") plus a small amount of surrounding context that is NOT part of
+the chunk — never emit a suggestion whose surface string falls only in the
+context.
+
+For each entity you find, report:
+- "surface": the exact substring as it appears in the chunk (verbatim, no paraphrase, no added/removed whitespace)
+- "occurrence": the 1-based index of this occurrence of "surface" within the chunk (count only occurrences inside the chunk, not the context)
+- "tag": one of the requested tag names
+- "confidence": a number from 0 to 1
+- "rationale": one short clause, not a full sentence
+
+Do not invent text that is not present in the chunk. Do not use character
+offsets. Return only JSON matching the schema — no prose, no markdown fences.

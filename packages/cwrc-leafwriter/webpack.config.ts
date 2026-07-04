@@ -127,6 +127,11 @@ const webpackConfig: webpack.Configuration = {
         ],
       },
       {
+        test: /\.txt$/,
+        type: 'asset/source',
+        include: path.resolve(import.meta.dirname, 'src', 'autoTagging', 'prompt-templates'),
+      },
+      {
         test: /\.(woff(2)?|ttf|eot)(\?v=\d+\.\d+\.\d+)?$/,
         type: 'asset',
         generator: { filename: 'fonts/[name][ext][query]' },

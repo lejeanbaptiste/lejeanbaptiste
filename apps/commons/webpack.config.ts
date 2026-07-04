@@ -148,6 +148,18 @@ const webpackConfig: webpack.Configuration = {
         options: { removeSVGTagAttrs: false },
       },
       {
+        // Auto-tagging LLM prompt templates (imported from cwrc-leafwriter source).
+        test: /\.txt$/,
+        type: 'asset/source',
+        include: path.join(
+          relPathToPackages,
+          'cwrc-leafwriter',
+          'src',
+          'autoTagging',
+          'prompt-templates',
+        ),
+      },
+      {
         // Bundled CSL citation styles and locales, imported as raw strings.
         test: /\.(csl|xml)$/,
         include: path.resolve(__dirname, 'src', 'desktop', 'citations', 'styles'),

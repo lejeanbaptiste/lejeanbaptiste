@@ -12,6 +12,9 @@ import {
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
 import { LJB_AUTOTAG_RESP, TAG_TO_KIND, type EntityKind } from './entities';
 import { entityStoreFromDesktop, type EntityStore } from './entityStore';
+import type { LlmClient } from './llmClient';
+import { LlmCache } from './llmCache';
+import { llmSuggest, type LlmSuggestResult } from './llmSuggest';
 import { normalizeDomText } from './normalize';
 import {
   collectMentions,
@@ -90,6 +93,7 @@ export class AutoTaggingSession {
   private readonly store: EntityStore | null;
   private entitiesDoc: Document | null = null;
   private authorityCache: AuthorityCache | null = null;
+  private llmCache: LlmCache | null = null;
   private pendingCache: PendingCache = { version: 1, entries: {} };
   private documentPaths = new Map<Document, string>();
 
@@ -111,6 +115,7 @@ export class AutoTaggingSession {
       const api = globals.electronAPI;
       if (api?.readFile && api.writeFile && api.pathExists && api.ensureDirectory) {
         this.authorityCache = new AuthorityCache(api, store.authorityCacheDir);
+        this.llmCache = new LlmCache(api, store.aiCacheDir);
       }
     }
   }
@@ -121,6 +126,29 @@ export class AutoTaggingSession {
 
   get cache(): AuthorityCache | null {
     return this.authorityCache;
+  }
+
+  get aiCache(): LlmCache | null {
+    return this.llmCache;
+  }
+
+  /**
+   * Run AI suggest on the live document. Uses `.ljb/ai-cache/` when a project
+   * store is available. `onProgress` reports completed chunk count.
+   */
+  async runAiSuggest(
+    tags: string[],
+    client: LlmClient,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<LlmSuggestResult> {
+    const doc = await this.getDocument();
+    return llmSuggest(doc, {
+      tags,
+      client,
+      cache: this.llmCache ?? undefined,
+      policy: this.policy,
+      onProgress,
+    });
   }
 
   /**

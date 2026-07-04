@@ -18,7 +18,7 @@ ${stylesheetPi(css)}
 <teiHeader>
   <fileDesc>
     <titleStmt><title>Untitled</title></titleStmt>
-    <publicationStmt><p/></publicationStmt>
+    <publicationStmt><authority/></publicationStmt>
     <sourceDesc><p/></sourceDesc>
   </fileDesc>
 </teiHeader>
@@ -55,7 +55,7 @@ ${stylesheetPi(css)}
         <email>email@example.com</email>
       </author>
     </titleStmt>
-    <publicationStmt><p/></publicationStmt>
+    <publicationStmt><authority/></publicationStmt>
     <sourceDesc><p/></sourceDesc>
   </fileDesc>
   <profileDesc>

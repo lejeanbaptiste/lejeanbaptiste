@@ -16,6 +16,11 @@ declare module '*.svg' {
   export default content;
 }
 
+declare module '*.txt' {
+  const content: string;
+  export default content;
+}
+
 declare module '*.module.css' {
   const classes: { [key: string]: string };
   export = classes;

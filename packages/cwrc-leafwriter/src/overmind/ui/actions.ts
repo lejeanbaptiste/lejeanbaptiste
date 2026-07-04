@@ -59,6 +59,8 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
   actions.ui.setDarkMode(darkMode);
 
   effects.editor.api.saveToLocalStorage<PaletteMode>('themeAppearance', value);
+
+  setTimeout(() => window.dispatchEvent(new Event('changeTheme')), 0);
 };
 
 export const listenChangeLanguage = async ({ state, effects }: Context) => {
@@ -115,6 +117,7 @@ export const resetPreferences = ({ effects }: Context) => {
 export const switchLocale = ({ state }: Context, locale: string) => {
   const supportedLocale = localesSchema.safeParse(locale).success ? (locale as Locales) : 'en';
   state.ui.currentLocale = supportedLocale;
+  setTimeout(() => window.dispatchEvent(new Event('changeLanguage')), 0);
   return supportedLocale;
 };
 

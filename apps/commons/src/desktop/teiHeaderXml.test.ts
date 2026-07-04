@@ -13,7 +13,7 @@ const skeleton = `<?xml version="1.0" encoding="UTF-8"?>
 <teiHeader>
   <fileDesc>
     <titleStmt><title>Untitled</title></titleStmt>
-    <publicationStmt><p/></publicationStmt>
+    <publicationStmt><authority/></publicationStmt>
     <sourceDesc><p/></sourceDesc>
   </fileDesc>
 </teiHeader>
@@ -101,7 +101,7 @@ describe('language metadata path', () => {
 describe('inspectHeaderLooseText', () => {
   test('detects loose text in publicationStmt', () => {
     const bad = skeleton.replace(
-      '<publicationStmt><p/></publicationStmt>',
+      '<publicationStmt><authority/></publicationStmt>',
       '<publicationStmt>oops</publicationStmt>',
     );
     expect(inspectHeaderLooseText(bad)).toMatchObject({
@@ -145,5 +145,15 @@ describe('publicationStmt normalization', () => {
       '<publicationStmt><distributor>CNRS</distributor><availability><licence>CC BY</licence></availability></publicationStmt>',
     );
     expect(updated).not.toContain('<publicationStmt><p/>');
+  });
+
+  test('adds agency placeholder when only licence metadata is provided', () => {
+    const updated = applyHeaderPathUpdates(skeleton, [
+      { path: 'publicationStmt/availability/licence', value: 'CC BY' },
+    ]);
+
+    expect(updated).toContain('<authority/>');
+    expect(updated).toContain('<availability><licence>CC BY</licence></availability>');
+    expect(updated).not.toContain('<publicationStmt><p');
   });
 });

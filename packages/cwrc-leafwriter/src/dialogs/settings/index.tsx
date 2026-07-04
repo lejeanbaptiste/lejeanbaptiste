@@ -28,7 +28,7 @@ export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
       aria-labelledby="settings-title"
       container={dialogContainer}
       fullWidth
-      maxWidth="md"
+      maxWidth={isDesktop ? 'lg' : 'md'}
       onClose={handleClose}
       open={open}
     >

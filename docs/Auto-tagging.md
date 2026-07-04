@@ -107,11 +107,14 @@ Principle: **the AI proposes, the machine applies.** The model never rewrites te
 
 **AI suggest**: The user supplies a list of tags. We feed the document (chunked) to the AI with that list; it returns suggestion objects for what it identifies as `<persName>`, etc.
 
+**Provider (2026-07-04, built):** Mistral family only for v1 — a local Ministral model via an Ollama-compatible endpoint for development/no-cost use, hosted Mistral API as the BYO-key fallback. NER is dropped from scope for now (stays in Deferred/future). Frontier-model spend is a later decision if the local/Mistral path proves insufficient. See `autoTagging/llmClient.ts`.
+
 Requirements:
-- **Chunking with overlap** for long documents, with sufficient surrounding context to avoid misclassification.
-- **One pass, multiple tag types**: a single pass should be able to request several tag types at once — this shapes the JSON response format and keeps costs down. Multi-turn refinement (second pass for a tag type) remains possible but is not the default.
+- **Structural, non-overlapping chunking** (`autoTagging/chunk.ts`), not fixed-size-with-overlap: cut only at block-element boundaries (`p`/`div`/`l`/`lg`/`head`/`ab`/`item`), so chunks never split mid-sentence and occurrence counting stays unambiguous (every document offset belongs to exactly one chunk). A read-only context margin surrounds each chunk for disambiguation but is never itself taggable.
+- **One pass, multiple tag types**: a single pass should be able to request several tag types at once — this shapes the JSON response format and keeps costs down. Multi-turn refinement (second pass for a tag type) remains possible but is not the default. Suggest, audit, and (later) translation stay **separate prompts/requests** rather than one stacked prompt — a small local model degrades on multi-objective instructions, the output shapes genuinely differ per task, and stacking would invalidate the whole cache whenever any one task's instructions change. They share only a preamble prompt module.
 - **Confidence scoring** on every suggestion, filterable by threshold in the review UI.
-- **Economy**: cache responses keyed on (chunk hash, tag set, model, prompt version) so re-runs on unchanged text cost nothing; batch requests; only send chunks that changed since the last run.
+- **Economy**: cache responses keyed on (chunk hash, tag set, model, prompt version) so re-runs on unchanged text cost nothing (`autoTagging/llmCache.ts`, `.ljb/ai-cache/`, 30-day TTL); batch requests; only send chunks that changed since the last run.
+- **Two-layer validation** before anything becomes a suggestion: schema/field validation (`autoTagging/llmParse.ts`: tag/action must be one requested, confidence in [0,1]) and anchor verification against the live document (surface + occurrence must actually resolve). Either failing drops the item silently — never applied, always counted.
 
 **AI audit**: take a dumb-tagged document, identify mistakes with a one-sentence rationale, and walk the user through keep/add/correct decisions:
 - dumb mode missed something → `add`
@@ -353,6 +356,8 @@ Technical:
 - cache authority queries;
 - batched reconcile calls (multi-authority per request via LINCS);
 - rate limit, to be polite.
+
+**LLM prompts** (Phase 5 suggest/audit) live as editable text in `packages/cwrc-leafwriter/src/autoTagging/prompt-templates/` — not inline in TypeScript. Bump `versions.json` when wording changes enough to invalidate the AI cache.
 
 ## AI-assisted ranking
 

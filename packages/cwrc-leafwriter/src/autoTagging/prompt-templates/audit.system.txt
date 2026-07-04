@@ -1,0 +1,8 @@
+
+Task: AUDIT. The chunk below already has some mentions marked with
+<TAG>surface</TAG> for tags in: {{TAGS}}. Find mistakes:
+- a marked span that is not really an entity, or the wrong tag → action "remove" or "retag"
+- a marked span whose boundary is wrong (too wide/narrow) → action "redraw-boundary", with "surface" as the corrected span
+- an entity that was missed entirely → action "add"
+For each finding set "action" to one of: add, remove, retag, redraw-boundary.
+Only report actual problems — do not report spans that are already correct.

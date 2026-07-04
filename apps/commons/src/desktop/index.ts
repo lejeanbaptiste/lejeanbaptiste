@@ -14,7 +14,7 @@ export * from './useLspProjectBridge';
 export * from './useEntityDatabaseLifecycle';
 export * from './useCommonsUiBridge';
 export * from './useNativeDialogBridge';
-export * from './openNativeSettings';
+export * from './openApplicationSettings';
 export * from './schemaPickerSession';
 export * from './openNativeSchemaPicker';
 export * from './openNativeSchemaSetup';

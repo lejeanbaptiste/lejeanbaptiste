@@ -2,9 +2,14 @@ import { Backdrop, LinearProgress, Stack, Typography } from '@mui/material';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
+export type AutoTaggingBusyLabel =
+  | 'Applying tags…'
+  | 'Reverting tags…'
+  | 'Running AI suggest…';
+
 export interface AutoTaggingApplyOverlayProps {
   done?: number;
-  label: 'Applying tags…' | 'Reverting tags…';
+  label: AutoTaggingBusyLabel;
   open: boolean;
   total?: number;
 }

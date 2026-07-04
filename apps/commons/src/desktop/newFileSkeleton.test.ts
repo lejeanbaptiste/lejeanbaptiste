@@ -18,6 +18,15 @@ const sampleMetadata: ProjectMetadataFile = {
 };
 
 describe('buildTeiSkeletonXml', () => {
+  test('teiAll skeleton uses structured publicationStmt placeholder', () => {
+    const xml = buildTeiSkeletonXml({
+      schema: { catalogId: 'teiAll', rng: 'schema/tei_all.rng', css: 'schema/tei.css' },
+    });
+
+    expect(xml).toContain('<publicationStmt><authority/></publicationStmt>');
+    expect(xml).not.toContain('<publicationStmt><p/>');
+  });
+
   test('teiAll skeleton uses relative PIs and minimal body', () => {
     const xml = buildTeiSkeletonXml({
       schema: { catalogId: 'teiAll', rng: 'schema/tei_all.rng', css: 'schema/tei.css' },
@@ -113,6 +122,24 @@ describe('mergeMetadataIntoHeader', () => {
     expect(xml).toContain('<distributor>Example Press</distributor>');
     expect(xml).toContain('<p>Custom note</p>');
     expect(xml).toContain('<title>Untitled</title>');
+  });
+
+  test('writes licence-only publication metadata with agency placeholder', () => {
+    const skeleton = buildTeiSkeletonXml({
+      schema: { catalogId: 'teiAll', rng: 'schema/tei_all.rng', css: 'schema/tei.css' },
+    });
+    const xml = mergeMetadataIntoHeader(skeleton, {
+      version: 1,
+      catalogId: 'teiAll',
+      fields: {
+        'publicationStmt/availability/licence': 'CC BY',
+      },
+      custom: [],
+    });
+
+    expect(xml).toContain('<authority/>');
+    expect(xml).toContain('<availability><licence>CC BY</licence></availability>');
+    expect(xml).not.toContain('<publicationStmt><p');
   });
 
   test('writes structured TEI publication metadata without the paragraph fallback', () => {

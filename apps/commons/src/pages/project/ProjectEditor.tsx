@@ -5,6 +5,7 @@ import {
   UnifiedRightPanel,
   useExternalFileWatcher,
   useProjectMenu,
+  registerApplicationSettingsBootstrap,
 } from '@src/desktop';
 import { TOOLBAR_ROW_HEIGHT } from '@src/desktop/sidebarConstants';
 import { AboutDialog } from '@src/desktop/AboutDialog';
@@ -20,7 +21,8 @@ import { useEffect, useRef } from 'react';
 
 export const ProjectEditor = () => {
   const { contentHasChanged, readonly, resource } = useAppState().editor;
-  const { cursorPositions, projectFilePath } = useAppState().project;
+  const { activeTabPath, cursorPositions, isProjectReady, openTabs, projectFilePath } =
+    useAppState().project;
   const { markTabDirty } = useActions().project;
 
   const divEl = useRef<HTMLDivElement>(null);
@@ -28,7 +30,8 @@ export const ProjectEditor = () => {
   const initStartedForRef = useRef<string | null>(null);
   const loadLibStartedForRef = useRef<number | null>(null);
 
-  const { initLeafWriter, loadDocumentInWriter, loadLib } = useLeafWriter();
+  const { initLeafWriter, loadDocumentInWriter, loadLib, ensureLeafWriterReadyForSettings } =
+    useLeafWriter();
   const { aboutOpen, onKeydownHandle, setAboutOpen, setTimeMachineOpen, timeMachineOpen } =
     useProjectMenu();
   const [leafWriter] = useAtom(leafwriterAtom);
@@ -72,12 +75,17 @@ export const ProjectEditor = () => {
   }, [sessionKey]);
 
   useEffect(() => {
-    if (divEl.current && resource && !leafWriter && loadLibStartedForRef.current !== sessionKey) {
+    registerApplicationSettingsBootstrap(ensureLeafWriterReadyForSettings);
+    return () => registerApplicationSettingsBootstrap(async () => false);
+  }, [ensureLeafWriterReadyForSettings]);
+
+  useEffect(() => {
+    if (divEl.current && isProjectReady && !leafWriter && loadLibStartedForRef.current !== sessionKey) {
       loadLibStartedForRef.current = sessionKey;
       divEl.current.style.height = '100%';
       void loadLib(divEl.current);
     }
-  }, [resource, leafWriter, loadLib, sessionKey]);
+  }, [isProjectReady, leafWriter, loadLib, sessionKey]);
 
   useEffect(() => {
     if (!leafWriter) {

@@ -1,7 +1,7 @@
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
 import { openEditionMetadataDialog } from '@src/desktop/projectOnboarding';
-import { openNativeSettings } from '@src/desktop/openNativeSettings';
+import { openApplicationSettings } from '@src/desktop/openApplicationSettings';
 import { checkSchemaUpdateManually } from '@src/desktop/schemaUpdateCheck';
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
@@ -14,9 +14,7 @@ const openSettings = async (
   leafWriter: { showSettingsDialog: () => Promise<void> } | null,
   notify: (message: string) => void,
 ) => {
-  // App-level settings window; works with no document open. Editor-specific
-  // options (schema, authorities) stay in the editor's ⚙ toolbar dialog.
-  if (await openNativeSettings()) return;
+  if (await openApplicationSettings()) return;
 
   if (leafWriter) {
     await leafWriter.showSettingsDialog();
@@ -28,7 +26,7 @@ const openSettings = async (
     return;
   }
 
-  notify('Open an XML file to change settings.');
+  notify('Could not open settings.');
 };
 
 const getEditorContent = async (
