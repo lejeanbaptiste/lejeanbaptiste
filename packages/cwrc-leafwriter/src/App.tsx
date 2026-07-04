@@ -12,6 +12,8 @@ import Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import { CodePanel, MarkupPanel, TocPanel } from './panels';
 import { DesktopEntitiesPanel } from './panels/entities/DesktopEntitiesPanel';
+import { AutoTaggingReviewPane } from './layout/AutoTaggingReviewPane';
+import { DisambiguationReviewPane, DISAMBIGUATION_PANEL_WIDTH } from './layout/DisambiguationReviewPane';
 import { TranslationPane } from './layout/TranslationPane';
 import type { LeafWriterOptions } from './types';
 import './utilities/cursorSession';
@@ -42,7 +44,9 @@ const waitForElement = (selector: string, timeoutMs = 5000): Promise<Element> =>
 const App = ({ document, settings, user }: LeafWriterOptions) => {
   const actions = useActions();
   const state = useAppState();
-  const { editorViewMode } = state.ui;
+  const { editorViewMode, autoTaggingReview, disambiguationReview } = state.ui;
+  const autoTaggingActive = autoTaggingReview?.active ?? false;
+  const disambiguationActive = disambiguationReview?.active ?? false;
   const { isReadonly, showRawXmlPanel } = state.editor;
   const [writer, setWriter] = useState<Writer | null>(null);
   const { i18n } = useTranslation();
@@ -62,6 +66,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   );
   const [entitiesPanelReady, setEntitiesPanelReady] = useState(false);
   const [translationPaneContainer, setTranslationPaneContainer] = useState<Element | null>(null);
+  const [autoTaggingPaneContainer, setAutoTaggingPaneContainer] = useState<Element | null>(null);
+  const [disambiguationPaneContainer, setDisambiguationPaneContainer] = useState<Element | null>(null);
 
   const [initialized, setInitialized] = useState(false);
   const [docLoaded, setDocLoaded] = useState(false);
@@ -114,6 +120,44 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
         return;
       }
       if (!cancelled) setTimeout(tryFind, 1000);
+    };
+    tryFind();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktopApp()) return;
+    let cancelled = false;
+
+    const tryFind = () => {
+      const el = window.document.querySelector('#desktop-panel-auto-tagging');
+      if (el) {
+        if (!cancelled) setAutoTaggingPaneContainer(el);
+        return;
+      }
+      if (!cancelled) setTimeout(tryFind, 500);
+    };
+    tryFind();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktopApp()) return;
+    let cancelled = false;
+
+    const tryFind = () => {
+      const el = window.document.querySelector('#desktop-panel-disambiguation');
+      if (el) {
+        if (!cancelled) setDisambiguationPaneContainer(el);
+        return;
+      }
+      if (!cancelled) setTimeout(tryFind, 500);
     };
     tryFind();
 
@@ -260,6 +304,40 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
           {entitiesPanelReady && isDesktopApp() && <DesktopEntitiesPanel />}
           {translationPaneContainer &&
             createPortal(<TranslationPane />, translationPaneContainer)}
+          {autoTaggingPaneContainer &&
+            createPortal(<AutoTaggingReviewPane />, autoTaggingPaneContainer)}
+          {disambiguationPaneContainer &&
+            createPortal(<DisambiguationReviewPane />, disambiguationPaneContainer)}
+          {!isDesktopApp() && autoTaggingActive && (
+            <Box
+              sx={{
+                position: 'fixed',
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: 380,
+                zIndex: 1300,
+                boxShadow: 4,
+              }}
+            >
+              <AutoTaggingReviewPane />
+            </Box>
+          )}
+          {!isDesktopApp() && disambiguationActive && (
+            <Box
+              sx={{
+                position: 'fixed',
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: DISAMBIGUATION_PANEL_WIDTH,
+                zIndex: 1300,
+                boxShadow: 4,
+              }}
+            >
+              <DisambiguationReviewPane />
+            </Box>
+          )}
         </div>
       </Box>
       {/* //* WIP {docLoaded && <Layout />} */}

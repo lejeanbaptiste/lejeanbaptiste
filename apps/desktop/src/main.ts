@@ -7,7 +7,9 @@ import {
   Menu,
   nativeImage,
   net,
+  Notification,
   protocol,
+  shell,
   systemPreferences,
 } from 'electron';
 import { fork, type ChildProcess } from 'child_process';
@@ -24,18 +26,26 @@ import {
 import {
   getAiApiSettings,
   getEncoderName,
+  getEntityDbFolder,
   getRememberWorkspaceOnStartup,
   getValidLastProjectFile,
   getWorkspaceSession,
   saveWorkspaceSession,
   setAiApiSettings,
   setEncoderName,
+  setEntityDbFolder,
   setRememberWorkspaceOnStartup,
   writeLastProjectFile,
   type AiApiSettings,
   type WorkspaceSession,
 } from './projectPrefs';
-import { loadOrCreateProject, loadProjectFile } from './projectFile';
+import {
+  AUTHORITY_DB_DIRNAME,
+  downloadAuthoritySource,
+  getAuthorityStatuses,
+  type AuthoritySourceId,
+} from './authorityDatabases';
+import { loadOrCreateProject, loadProjectFile, writeProjectConfig } from './projectFile';
 import mammoth from 'mammoth';
 import { extractOdtText } from './odtText';
 import { decodeTextBuffer } from './textEncoding';
@@ -706,7 +716,7 @@ const buildApplicationMenu = () => {
   };
 
   const editionMetadataItem: Electron.MenuItemConstructorOptions = {
-    label: 'Edition metadata',
+    label: 'Project settings',
     click: () => sendMenuAction('edition-metadata'),
   };
 
@@ -1092,6 +1102,112 @@ const registerIpcHandlers = () => {
     await setEncoderName(name);
   });
 
+  ipcMain.handle('getEntityDbFolder', async () => getEntityDbFolder());
+
+  const getAuthorityDbDir = async (): Promise<string | null> => {
+    const folder = await getEntityDbFolder();
+    return folder?.trim() ? path.join(folder, AUTHORITY_DB_DIRNAME) : null;
+  };
+
+  ipcMain.handle('authorityDb:statuses', async () =>
+    getAuthorityStatuses(await getAuthorityDbDir()),
+  );
+
+  const activeAuthorityDownloads = new Set<AuthoritySourceId>();
+
+  ipcMain.handle('authorityDb:download', async (event, sourceId: AuthoritySourceId) => {
+    const baseDir = await getAuthorityDbDir();
+    if (!baseDir) return { ok: false, error: 'No entity database folder configured.' };
+    if (activeAuthorityDownloads.has(sourceId)) {
+      return { ok: false, error: 'Download already in progress.' };
+    }
+
+    activeAuthorityDownloads.add(sourceId);
+    // Throttle progress events: these fire per network chunk.
+    let lastSent = 0;
+    try {
+      const manifest = await downloadAuthoritySource(baseDir, sourceId, (progress) => {
+        const now = Date.now();
+        if (now - lastSent < 250) return;
+        lastSent = now;
+        if (!event.sender.isDestroyed()) event.sender.send('authorityDb:progress', progress);
+      });
+      new Notification({
+        title: 'Authority database installed',
+        body: `${sourceId.toUpperCase()} ${manifest.version} is ready to use.`,
+      }).show();
+      return { ok: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      new Notification({
+        title: 'Authority database download failed',
+        body: `${sourceId.toUpperCase()}: ${message}`,
+      }).show();
+      return { ok: false, error: message };
+    } finally {
+      activeAuthorityDownloads.delete(sourceId);
+    }
+  });
+
+  ipcMain.handle('authorityDb:promptDownload', async () => {
+    if (!mainWindow) return 'declined';
+
+    // A past decline is remembered so the user isn't nagged on every project
+    // open; downloads stay available from the authority UI later.
+    const baseDir = await getAuthorityDbDir();
+    if (!baseDir) return 'declined';
+    const declinedMarker = path.join(baseDir, 'download-declined.json');
+    if (existsSync(declinedMarker)) return 'declined';
+
+    const result = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Download', 'Not now'],
+      defaultId: 0,
+      cancelId: 1,
+      message: 'Download Chinese authority databases?',
+      detail:
+        'This project uses Chinese as its source language. LEAF-Writer can download ' +
+        'CBDB (China Biographical Database, ~600 MB) and the DILA Buddhist Studies ' +
+        'authorities (~85 MB) for automated tagging. They are stored next to your ' +
+        'central entity database and download in the background.',
+    });
+    if (result.response !== 0) {
+      await fs.mkdir(baseDir, { recursive: true });
+      await fs.writeFile(
+        declinedMarker,
+        JSON.stringify({ declinedAt: new Date().toISOString() }, null, 2),
+        'utf-8',
+      );
+      return 'declined';
+    }
+    return 'accepted';
+  });
+
+  ipcMain.handle('setEntityDbFolder', async (_event, folder: string | null) => {
+    await setEntityDbFolder(folder);
+  });
+
+  ipcMain.handle('pickEntityDbFolder', async () => {
+    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openDirectory', 'createDirectory'],
+      title: 'Choose entity database folder',
+      message:
+        'This folder will hold your entity database (entities.xml). You can keep your projects here too.',
+    };
+    const result = parent
+      ? await dialog.showOpenDialog(parent, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle(
+    'updateProjectFileConfig',
+    async (_event, projectFilePath: string, patch: Record<string, unknown>) =>
+      writeProjectConfig(projectFilePath, patch),
+  );
+
   ipcMain.handle('getAiApiSettings', async () => getAiApiSettings());
 
   ipcMain.handle('setAiApiSettings', async (_event, settings: Partial<AiApiSettings>) => {
@@ -1169,6 +1285,12 @@ const registerIpcHandlers = () => {
   });
 
   ipcMain.handle('window-minimize', () => mainWindow?.minimize());
+
+  ipcMain.handle('shell:openExternal', async (_event, url: string) => {
+    if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) return false;
+    await shell.openExternal(url);
+    return true;
+  });
   ipcMain.handle('window-maximize', () => {
     if (mainWindow?.isMaximized()) mainWindow.unmaximize();
     else mainWindow?.maximize();

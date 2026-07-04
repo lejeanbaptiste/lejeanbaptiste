@@ -2,6 +2,9 @@ import {
   addEntity,
   createEntitiesScaffold,
   findEntity,
+  getDatabaseId,
+  isEntityDatabase,
+  LJB_AUTOTAG_RESP,
   nextEntityId,
   parseEntities,
   serializeEntities,
@@ -10,11 +13,13 @@ import {
 
 describe('entities scaffold', () => {
   it('creates an empty TEI standoff with the four core lists', () => {
-    const doc = parseEntities(createEntitiesScaffold());
+    const doc = parseEntities(createEntitiesScaffold('test-db-id'));
     expect(doc.getElementsByTagName('parsererror')).toHaveLength(0);
     for (const list of ['listPerson', 'listPlace', 'listOrg', 'listBibl']) {
       expect(doc.getElementsByTagName(list)).toHaveLength(1);
     }
+    expect(getDatabaseId(doc)).toBe('test-db-id');
+    expect(isEntityDatabase(doc)).toBe(true);
   });
 });
 
@@ -56,13 +61,13 @@ describe('addEntity', () => {
           { type: 'Wikidata', value: 'Q11332' },
         ],
       },
-      '#leafwriter-autotag',
+      LJB_AUTOTAG_RESP,
     );
 
     expect(id).toBe('person-000001');
     const el = findEntity(doc, id)!;
     expect(el.nodeName).toBe('person');
-    expect(el.getAttribute('resp')).toBe('#leafwriter-autotag');
+    expect(el.getAttribute('resp')).toBe(LJB_AUTOTAG_RESP);
     expect(el.getElementsByTagName('persName')[0]?.textContent).toBe('張衡');
 
     const idnos = Array.from(el.getElementsByTagName('idno'));

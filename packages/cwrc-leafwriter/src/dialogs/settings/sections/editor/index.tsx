@@ -6,8 +6,8 @@ import { FontFamily } from './font-family';
 import { FontSize } from './font-size';
 
 export const Editor = () => {
-  const { autosave, isReadonly, showEntities } = useAppState().editor;
-  const { setAutosave, setShowEntities } = useActions().editor;
+  const { autosave, isReadonly, showEntities, stripCjkWhitespace } = useAppState().editor;
+  const { setAutosave, setShowEntities, setStripCjkWhitespace } = useActions().editor;
   const { t } = useTranslation();
 
   return (
@@ -29,6 +29,13 @@ export const Editor = () => {
         title={t('LW.settings.editor.Show Entities')}
         type="toggle"
         value={showEntities}
+      />
+      <Toggler
+        icon="translate"
+        onChange={setStripCjkWhitespace}
+        title={t('LW.settings.editor.Strip East Asian whitespace')}
+        type="toggle"
+        value={stripCjkWhitespace}
       />
     </List>
   );

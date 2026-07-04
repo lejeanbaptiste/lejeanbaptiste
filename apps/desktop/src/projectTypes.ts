@@ -19,6 +19,10 @@ export interface ProjectFileConfig {
   name: string;
   schema?: ProjectSchemaConfig;
   metadata?: string;
+  /** Central (default) or project-local entity database. */
+  entityStore?: 'central' | 'project';
+  /** UUID fingerprint of the linked entities.xml database file. */
+  entityDatabaseId?: string;
 }
 
 export interface ProjectMetadataFile {

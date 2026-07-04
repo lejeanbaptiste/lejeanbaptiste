@@ -191,6 +191,15 @@ export const ProjectEditor = () => {
           />
         </Box>
       </Box>
+      {/* Mount point for the auto-tagging review panel (portaled from LEAF-Writer App). */}
+      <Box
+        id="desktop-panel-auto-tagging"
+        sx={{ flexShrink: 0, height: '100%', overflow: 'hidden', width: 0, minWidth: 0, display: 'none' }}
+      />
+      <Box
+        id="desktop-panel-disambiguation"
+        sx={{ flexShrink: 0, height: '100%', overflow: 'hidden', width: 0, minWidth: 0, display: 'none' }}
+      />
       <UnifiedRightPanel />
     </Box>
   );

@@ -53,10 +53,10 @@ const suggest = (
 };
 
 describe('applySuggestions', () => {
-  it('wraps the anchored range in a new element in the document namespace', () => {
+  it('wraps the anchored range in a new element in the document namespace', async () => {
     const doc = parse(TEI);
     const batch = [suggest(doc, '上陽子', 'persName')];
-    const { results, applied } = applySuggestions(doc, batch, { policy: 'ignore' });
+    const { results, applied } = await applySuggestions(doc, batch, { policy: 'ignore' });
 
     expect(applied).toBe(1);
     const el = results[0]!.element!;
@@ -67,14 +67,14 @@ describe('applySuggestions', () => {
     expect(batch[0]!.status).toBe('accepted');
   });
 
-  it('sets attributes and applies multiple suggestions in the same text node', () => {
+  it('sets attributes and applies multiple suggestions in the same text node', async () => {
     const doc = parse(TEI);
     const batch = [
       suggest(doc, '上陽子', 'persName', 1, { attributes: { key: 'p001' } }),
       suggest(doc, '老君', 'persName'),
       suggest(doc, '大浮黎土', 'placeName'),
     ];
-    const { applied } = applySuggestions(doc, batch, { policy: 'ignore' });
+    const { applied } = await applySuggestions(doc, batch, { policy: 'ignore' });
 
     expect(applied).toBe(3);
     const xml = serialize(doc);
@@ -83,13 +83,13 @@ describe('applySuggestions', () => {
     expect(xml).toContain('<placeName>大浮黎土</placeName>');
   });
 
-  it('prefers the longer span when suggestions overlap', () => {
+  it('prefers the longer span when suggestions overlap', async () => {
     const doc = parse(TEI);
     const batch = [
       suggest(doc, '浮黎', 'placeName'),
       suggest(doc, '大浮黎土', 'placeName'),
     ];
-    const { results } = applySuggestions(doc, batch, { policy: 'ignore' });
+    const { results } = await applySuggestions(doc, batch, { policy: 'ignore' });
 
     const byId = (id: string) => results.find((r) => r.suggestion.id === id)!;
     expect(byId('sug_大浮黎土_1').outcome).toBe('applied');
@@ -98,17 +98,17 @@ describe('applySuggestions', () => {
     expect(serialize(doc)).not.toContain('<placeName>浮黎</placeName>');
   });
 
-  it('skips text already wrapped in the same tag', () => {
+  it('skips text already wrapped in the same tag', async () => {
     const doc = parse(TEI);
-    const { results } = applySuggestions(doc, [suggest(doc, '洛陽', 'placeName')], {
+    const { results } = await applySuggestions(doc, [suggest(doc, '洛陽', 'placeName')], {
       policy: 'ignore',
     });
     expect(results[0]!.outcome).toBe('already-tagged');
   });
 
-  it('blocks insertions the schema forbids', () => {
+  it('blocks insertions the schema forbids', async () => {
     const doc = parse(TEI);
-    const { results } = applySuggestions(doc, [suggest(doc, '上陽子', 'persName')], {
+    const { results } = await applySuggestions(doc, [suggest(doc, '上陽子', 'persName')], {
       policy: 'ignore',
       canContain: (parent, child) => !(parent === 'p' && child === 'persName'),
     });
@@ -116,33 +116,33 @@ describe('applySuggestions', () => {
     expect(serialize(doc)).not.toContain('<persName>');
   });
 
-  it('blocks insertions matching a user rule', () => {
+  it('blocks insertions matching a user rule', async () => {
     const doc = parse(
       '<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><placeName>洛陽之南</placeName></p></TEI>',
     );
-    const { results } = applySuggestions(doc, [suggest(doc, '南', 'date')], {
+    const { results } = await applySuggestions(doc, [suggest(doc, '南', 'date')], {
       policy: 'ignore',
       userRules: [{ tag: 'date', notInside: 'placeName' }],
     });
     expect(results[0]!.outcome).toBe('rule-blocked');
   });
 
-  it('marks suggestions whose anchor no longer resolves as unresolvable', () => {
+  it('marks suggestions whose anchor no longer resolves as unresolvable', async () => {
     const doc = parse(TEI);
     const batch = [suggest(doc, '老君', 'persName')];
     // the text changes out from under the suggestion
     const node = collectTextNodes(doc, 'ignore')[0]!.node;
     node.data = node.data.replace('老君', '老子');
 
-    const { results } = applySuggestions(doc, batch, { policy: 'ignore' });
+    const { results } = await applySuggestions(doc, batch, { policy: 'ignore' });
     expect(results[0]!.outcome).toBe('unresolvable');
     expect(batch[0]!.status).toBe('unresolvable');
   });
 
-  it('reverts the whole batch via the snapshot', () => {
+  it('reverts the whole batch via the snapshot', async () => {
     const doc = parse(TEI);
     const before = serialize(doc);
-    const { snapshot, applied } = applySuggestions(
+    const { snapshot, applied } = await applySuggestions(
       doc,
       [suggest(doc, '上陽子', 'persName'), suggest(doc, '大浮黎土', 'placeName')],
       { policy: 'ignore' },
@@ -157,7 +157,7 @@ describe('real corpus batch', () => {
   const xmlPath = path.resolve(__dirname, '../../../../test_project/sizhu_shang.xml');
   const maybe = fs.existsSync(xmlPath) ? it : it.skip;
 
-  maybe('tags every untagged 老君, respects tagged 上陽子, and reverts cleanly', () => {
+  maybe('tags every untagged 老君, respects tagged 上陽子, and reverts cleanly', async () => {
     const doc = parse(fs.readFileSync(xmlPath, 'utf-8'));
     const before = serialize(doc);
 
@@ -173,7 +173,7 @@ describe('real corpus batch', () => {
     }
     expect(batch.length).toBeGreaterThan(5);
 
-    const { results, applied, snapshot } = applySuggestions(doc, batch, { policy: 'ignore' });
+    const { results, applied, snapshot } = await applySuggestions(doc, batch, { policy: 'ignore' });
     const already = results.filter((r) => r.outcome === 'already-tagged').length;
     expect(applied + already).toBe(batch.length); // nothing unresolvable or blocked
     expect(applied).toBeGreaterThan(0); // untagged occurrences exist and got tagged

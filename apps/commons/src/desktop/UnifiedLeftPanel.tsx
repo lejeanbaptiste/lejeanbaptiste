@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SidebarTabId } from '@src/icons/tab';
 import {
   DESKTOP_FIND_FOCUS_EVENT,
@@ -41,13 +41,20 @@ export const UnifiedLeftPanel = () => {
   const [activeTab, setActiveTab] = useState<SidebarTabId>('explorer');
   const [collapsed, setCollapsed] = useState(false);
   const [panelWidth, setPanelWidth] = useState(readStoredWidth);
+  const collapsedRef = useRef(collapsed);
+  const suppressedByDockedReviewRef = useRef(false);
+  const dockedReviewSuppressCountRef = useRef(0);
+  const restoreExpandedAfterDockedReviewRef = useRef(false);
+
+  collapsedRef.current = collapsed;
 
   const showTab = useCallback((tab: SidebarTabId) => {
     setActiveTab(tab);
-    setCollapsed(false);
+    if (!suppressedByDockedReviewRef.current) setCollapsed(false);
   }, []);
 
   const expand = useCallback(() => {
+    if (suppressedByDockedReviewRef.current) return;
     setCollapsed(false);
   }, []);
 
@@ -77,6 +84,39 @@ export const UnifiedLeftPanel = () => {
     };
   }, [expand, showTab]);
 
+  // Hide the left panel while a docked review pane is open; restore if it was expanded.
+  useEffect(() => {
+    const onOpen = () => {
+      if (dockedReviewSuppressCountRef.current === 0) {
+        restoreExpandedAfterDockedReviewRef.current = !collapsedRef.current;
+        if (!collapsedRef.current) setCollapsed(true);
+      }
+      dockedReviewSuppressCountRef.current += 1;
+      suppressedByDockedReviewRef.current = true;
+    };
+    const onClose = () => {
+      dockedReviewSuppressCountRef.current = Math.max(0, dockedReviewSuppressCountRef.current - 1);
+      if (dockedReviewSuppressCountRef.current > 0) return;
+      suppressedByDockedReviewRef.current = false;
+      if (restoreExpandedAfterDockedReviewRef.current) setCollapsed(false);
+      restoreExpandedAfterDockedReviewRef.current = false;
+    };
+    const openEvents = [
+      'desktop:auto-tagging-review-open',
+      'desktop:disambiguation-review-open',
+    ] as const;
+    const closeEvents = [
+      'desktop:auto-tagging-review-close',
+      'desktop:disambiguation-review-close',
+    ] as const;
+    for (const eventName of openEvents) window.addEventListener(eventName, onOpen);
+    for (const eventName of closeEvents) window.addEventListener(eventName, onClose);
+    return () => {
+      for (const eventName of openEvents) window.removeEventListener(eventName, onOpen);
+      for (const eventName of closeEvents) window.removeEventListener(eventName, onClose);
+    };
+  }, []);
+
   useEffect(() => {
     if (activeTab !== 'find') return;
     window.dispatchEvent(new CustomEvent(DESKTOP_FIND_FOCUS_EVENT));
@@ -89,7 +129,12 @@ export const UnifiedLeftPanel = () => {
 
   const handleSelectTab = (tab: SidebarTabId) => {
     setActiveTab(tab);
-    if (collapsed) setCollapsed(false);
+    if (!suppressedByDockedReviewRef.current && collapsed) setCollapsed(false);
+  };
+
+  const expandPanel = () => {
+    if (suppressedByDockedReviewRef.current) return;
+    setCollapsed(false);
   };
 
   const panelSx = (tab: SidebarTabId) => ({
@@ -117,7 +162,7 @@ export const UnifiedLeftPanel = () => {
           activeTab={activeTab}
           collapsed={collapsed}
           onSelectTab={handleSelectTab}
-          onToggleCollapse={() => setCollapsed(false)}
+          onToggleCollapse={expandPanel}
           orientation="vertical"
         />
       </Box>

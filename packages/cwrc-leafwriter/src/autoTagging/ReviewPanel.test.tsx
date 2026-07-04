@@ -31,8 +31,8 @@ describe('ReviewPanel', () => {
     render(
       <ReviewPanel
         suggestions={suggestions}
-        onApply={(accepted) => {
-          const { results } = applySuggestions(doc, accepted, { policy: 'ignore' });
+        onApply={async (accepted) => {
+          const { results } = await applySuggestions(doc, accepted, { policy: 'ignore' });
           applied.push(...results.filter((r) => r.outcome === 'applied').map((r) => r.suggestion.id));
         }}
       />,
@@ -88,6 +88,11 @@ describe('ReviewPanel', () => {
     expect(screen.getByTestId('review-counts').textContent).toContain('1 accepted');
     expect(screen.getByTestId('review-counts').textContent).toContain('1 rejected');
 
+    // Backspace rejects the current row when the panel has focus
+    fireEvent.keyDown(panel, { key: 'k' });
+    fireEvent.keyDown(panel, { key: 'Backspace' });
+    expect(screen.getByTestId('review-counts').textContent).toContain('2 rejected');
+
     // a decided row offers undo, restoring it to pending
     fireEvent.click(screen.getByTestId(`undo-${suggestions[0]!.id}`));
     expect(screen.getByTestId('review-counts').textContent).toContain('0 accepted');
@@ -96,5 +101,25 @@ describe('ReviewPanel', () => {
   it('shows an empty state', () => {
     render(<ReviewPanel suggestions={[]} onApply={() => {}} />);
     expect(screen.getByText('Nothing to review.')).toBeTruthy();
+  });
+
+  it('apply all remaining accepts pending items and skips rejected ones', () => {
+    const { doc, suggestions } = setup();
+    const applied: string[] = [];
+    render(
+      <ReviewPanel
+        suggestions={suggestions}
+        onApply={async (accepted) => {
+          const { results } = await applySuggestions(doc, accepted, { policy: 'ignore' });
+          applied.push(...results.filter((r) => r.outcome === 'applied').map((r) => r.suggestion.id));
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId(`reject-${suggestions[1]!.id}`));
+    fireEvent.click(screen.getByTestId('review-apply-all'));
+
+    expect(applied).toHaveLength(2);
+    expect(screen.getAllByRole('listitem')).toHaveLength(1);
   });
 });

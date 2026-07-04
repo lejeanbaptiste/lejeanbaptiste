@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { INFRASTRUCTURE_DIR } from './infrastructurePaths';
+import { INFRASTRUCTURE_DIR, isCorpusExcludedPath } from './infrastructurePaths';
 import { isTranslationFile } from './translationFileNaming';
 
 export interface NamedPath {
@@ -27,7 +27,11 @@ export const listProjectXmlFiles = async (rootPath: string): Promise<NamedPath[]
         await walk(fullPath);
         continue;
       }
-      if (entry.name.toLowerCase().endsWith('.xml') && !isTranslationFile(fullPath)) {
+      if (
+        entry.name.toLowerCase().endsWith('.xml') &&
+        !isTranslationFile(fullPath) &&
+        !isCorpusExcludedPath(fullPath, rootPath)
+      ) {
         results.push({ name: entry.name, path: fullPath });
       }
     }
@@ -57,7 +61,8 @@ export const findXmlFilesByName = async (
       }
       if (
         entry.name.toLowerCase().endsWith('.xml') &&
-        entry.name.toLowerCase().includes(normalizedQuery)
+        entry.name.toLowerCase().includes(normalizedQuery) &&
+        !isCorpusExcludedPath(fullPath, rootPath)
       ) {
         results.push({ name: entry.name, path: fullPath });
       }

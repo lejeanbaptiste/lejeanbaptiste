@@ -1,4 +1,4 @@
-import { crawlEntities } from './crawl';
+import { crawlDocuments, crawlEntities } from './crawl';
 import { applySuggestions } from './apply';
 import { dictionaryTag } from './dictionary';
 import { normalizeDomText } from './normalize';
@@ -11,6 +11,22 @@ const parse = (xml: string) => {
 
 const byString = (entries: { string: string }[], s: string) =>
   entries.find((e) => e.string === s);
+
+describe('crawlDocuments', () => {
+  it('merges tagged entities across documents, deduping by (surface, tag)', () => {
+    const a = parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName>上陽子</persName><placeName>洛陽</placeName></p></TEI>`,
+    );
+    const b = parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName>上陽子</persName><persName>老君</persName></p></TEI>`,
+    );
+    const entries = crawlDocuments([a, b], 'ignore');
+    const key = (e: { string: string; tag: string }) => `${e.tag}:${e.string}`;
+    expect(entries.map(key).sort()).toEqual(
+      ['persName:上陽子', 'persName:老君', 'placeName:洛陽'].sort(),
+    );
+  });
+});
 
 describe('crawlEntities', () => {
   it('collects distinct (surface, tag) pairs from tagged entities', () => {
@@ -26,18 +42,19 @@ describe('crawlEntities', () => {
     expect(byString(entries, '洛陽')!.tag).toBe('placeName');
   });
 
-  it('propagates an entity id only when every instance agrees', () => {
+  it('never propagates entity ids — tag stage stays id-free', () => {
     const doc = parse(
       `<TEI xmlns="http://www.tei-c.org/ns/1.0"><p>
-        <persName ref="p1">甲</persName><persName ref="p1">甲</persName>
-        <persName ref="p2">乙</persName><persName ref="p3">乙</persName>
-        <persName ref="p4">丙</persName><persName>丙</persName>
+        <persName ref="p1">甲乙</persName><persName ref="p1">甲乙</persName>
+        <persName ref="p2">丙丁</persName>
       </p></TEI>`,
     );
     const entries = crawlEntities(doc, 'ignore');
-    expect(byString(entries, '甲')!.entityId).toBe('p1'); // unanimous
-    expect(byString(entries, '乙')!.entityId).toBeUndefined(); // conflicting keys
-    expect(byString(entries, '丙')!.entityId).toBeUndefined(); // one instance keyless
+    // even a unanimous @ref is not carried into the entry
+    expect(entries).toEqual([
+      { string: '甲乙', tag: 'persName' },
+      { string: '丙丁', tag: 'persName' },
+    ]);
   });
 
   it('normalizes surfaces with the whitespace policy so they match later', () => {
@@ -48,7 +65,7 @@ describe('crawlEntities', () => {
     expect(entry!.string).toBe('上陽子');
   });
 
-  it('feeds the producer: tags untagged occurrences of already-tagged names', () => {
+  it('feeds the producer: tags untagged occurrences of already-tagged names', async () => {
     const doc = parse(
       `<TEI xmlns="http://www.tei-c.org/ns/1.0"><body>
         <p><persName ref="p1">上陽子</persName>曰。</p>
@@ -61,12 +78,12 @@ describe('crawlEntities', () => {
     // two untagged occurrences in the second paragraph
     expect(suggestions).toHaveLength(2);
     expect(suggestions.every((s) => s.tag === 'persName')).toBe(true);
-    // the unanimous ref is carried onto the new tags
-    expect(suggestions.every((s) => s.attributes?.key === 'p1')).toBe(true);
+    // tag stage writes no ids — the existing @ref is not propagated
+    expect(suggestions.every((s) => s.attributes === undefined)).toBe(true);
 
-    const { applied } = applySuggestions(doc, suggestions, { policy: 'ignore' });
+    const { applied } = await applySuggestions(doc, suggestions, { policy: 'ignore' });
     expect(applied).toBe(2);
     const xml = new XMLSerializer().serializeToString(doc);
-    expect(xml).toContain('又見<persName key="p1">上陽子</persName>');
+    expect(xml).toContain('又見<persName>上陽子</persName>');
   });
 });

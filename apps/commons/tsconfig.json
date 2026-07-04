@@ -37,6 +37,7 @@
     "noUnusedParameters": false,
     "outDir": "dist",
     "paths": {
+      "@cwrc/leafwriter/languageCodes": ["../../packages/cwrc-leafwriter/src/utilities/languageCodes.ts"],
       "@cwrc/leafwriter-validator": ["../../packages/cwrc-leafwriter-validator/src/index.worker.ts"],
       "@src/*": ["src/*"]
     },

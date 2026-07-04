@@ -6,6 +6,8 @@ import { LateralBar } from './LateralBar';
 import { Main } from './Main';
 import { ResizeHandle } from './ResizeHandle';
 import { Section } from './Section';
+import { AutoTaggingReviewPane } from './AutoTaggingReviewPane';
+import { DisambiguationReviewPane } from './DisambiguationReviewPane';
 import { TranslationPane } from './TranslationPane';
 
 //* DOCUMENTATION
@@ -13,7 +15,9 @@ import { TranslationPane } from './TranslationPane';
 //* https://react-resizable-panels.vercel.app/examples/imperative-api
 
 export const Layout = () => {
-  const { active } = useAppState().ui.translationMode;
+  const { active: translationActive } = useAppState().ui.translationMode;
+  const { active: autoTaggingActive } = useAppState().ui.autoTaggingReview ?? { active: false };
+  const { active: disambiguationActive } = useAppState().ui.disambiguationReview ?? { active: false };
 
   return (
     <Stack>
@@ -23,11 +27,27 @@ export const Layout = () => {
           <Section collapsible={true} side="left" />
           <ResizeHandle />
           <Main />
-          {active && (
+          {translationActive && (
             <>
               <ResizeHandle />
               <Panel id="translation" order={2} defaultSize={35} minSize={20}>
                 <TranslationPane />
+              </Panel>
+            </>
+          )}
+          {autoTaggingActive && (
+            <>
+              <ResizeHandle />
+              <Panel id="auto-tagging" order={3} defaultSize={38} minSize={24}>
+                <AutoTaggingReviewPane />
+              </Panel>
+            </>
+          )}
+          {disambiguationActive && (
+            <>
+              <ResizeHandle />
+              <Panel id="disambiguation" order={4} defaultSize={38} minSize={24}>
+                <DisambiguationReviewPane />
               </Panel>
             </>
           )}

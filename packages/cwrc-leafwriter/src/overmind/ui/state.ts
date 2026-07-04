@@ -16,6 +16,14 @@ export interface TranslationModeState {
   selectedUnitId: string | null;
 }
 
+export interface AutoTaggingReviewState {
+  active: boolean;
+}
+
+export interface DisambiguationReviewState {
+  active: boolean;
+}
+
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {
   contextMenu: ContextMenuState;
@@ -25,6 +33,8 @@ type State = {
   editSourceProps: EditSourceDialogProps;
   editorViewMode: EditorViewMode;
   translationMode: TranslationModeState;
+  autoTaggingReview: AutoTaggingReviewState;
+  disambiguationReview: DisambiguationReviewState;
   sourceCurrentContent: string;
   sourceOriginalContent: string;
   sourcePendingCursorOffset: number | null;
@@ -55,6 +65,12 @@ export const state: State = {
     alignmentUnit: null,
     citationStyle: null,
     selectedUnitId: null,
+  },
+  autoTaggingReview: {
+    active: false,
+  },
+  disambiguationReview: {
+    active: false,
   },
   sourceCurrentContent: '',
   sourceOriginalContent: '',

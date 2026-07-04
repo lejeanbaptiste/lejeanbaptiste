@@ -55,9 +55,8 @@ describe('ReviewController', () => {
   it('undecide restores pending before apply', () => {
     const c = new ReviewController([make('a'), make('b')]);
     c.accept();
-    c.previous();
-    expect(c.current()!.id).toBe('a');
-    c.undecide();
+    const [accepted] = c.acceptedVisible();
+    c.undecideSuggestion(accepted!);
     expect(c.counts()).toMatchObject({ pending: 2, accepted: 0 });
   });
 
@@ -113,6 +112,32 @@ describe('ReviewController', () => {
     expect(c.current()).not.toBeNull();
   });
 
+  it('takeAllExceptRejected accepts pending, keeps rejected, and returns all non-rejected', () => {
+    const decisions: string[] = [];
+    const c = new ReviewController([make('a'), make('b'), make('c'), make('d')], {
+      onDecision: (e) => decisions.push(`${e.suggestion.id}:${e.decision}`),
+    });
+    c.accept(); // a
+    c.reject(); // b
+    const taken = c.takeAllExceptRejected();
+    expect(taken.map((s) => s.id).sort()).toEqual(['a', 'c', 'd'].sort());
+    expect(c.visible().map((s) => s.id)).toEqual(['b']);
+    expect(c.counts()).toMatchObject({ rejected: 1, pending: 0, accepted: 0 });
+    expect(decisions).toContain('c:accepted');
+    expect(decisions).toContain('d:accepted');
+  });
+
+  it('acceptAllIdenticalStrings accepts every pending match for surface and tag', () => {
+    const anchor = make('x').anchor;
+    const c = new ReviewController([
+      make('a1', { anchor: { ...anchor, surface: '張衡' } }),
+      make('a2', { anchor: { ...anchor, surface: '張衡' } }),
+      make('b', { anchor: { ...anchor, surface: '洛陽' }, tag: 'placeName' }),
+    ]);
+    c.acceptAllIdenticalStrings();
+    expect(c.counts()).toMatchObject({ accepted: 2, pending: 1 });
+  });
+
   it('handles an empty batch without a cursor', () => {
     const c = new ReviewController([]);
     expect(c.current()).toBeNull();
@@ -120,7 +145,7 @@ describe('ReviewController', () => {
     c.accept();
     expect(c.counts().total).toBe(0);
   });
-});
+};
 
 describe('handleReviewKey', () => {
   it('maps the shared keyboard model to commands', () => {
@@ -131,8 +156,19 @@ describe('handleReviewKey', () => {
     expect(c.current()!.id).toBe('a');
     expect(handleReviewKey(c, 'Enter')).toBe(true);
     expect(c.counts().accepted).toBe(1);
-    expect(handleReviewKey(c, 'x')).toBe(true);
+    expect(handleReviewKey(c, 'Backspace')).toBe(true);
     expect(c.counts().rejected).toBe(1);
     expect(handleReviewKey(c, 'q')).toBe(false);
+  });
+
+  it('Shift+Enter accepts all pending items with the same surface and tag', () => {
+    const anchor = make('x').anchor;
+    const c = new ReviewController([
+      make('one', { anchor: { ...anchor, surface: '同' } }),
+      make('two', { anchor: { ...anchor, surface: '同' } }),
+      make('other', { anchor: { ...anchor, surface: '異' } }),
+    ]);
+    expect(handleReviewKey(c, 'Enter', { shift: true })).toBe(true);
+    expect(c.counts()).toMatchObject({ accepted: 2, pending: 1 });
   });
 });

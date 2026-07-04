@@ -1,22 +1,23 @@
 import { buildDocIndex, createAnchor } from './anchor';
+import { MultiStringMatcher } from './matcher';
 import type { Suggestion, WhitespacePolicy } from './types';
 
-/** One row of an imported dictionary table. */
+/**
+ * One row of an imported table. Tag-stage only: a string and the tag to wrap
+ * it in. NO ids/attributes — all identity work is deferred to disambiguation
+ * (Phase 4b), so extra columns (entity ids, etc.) in an imported file are
+ * ignored here and kept clean out of the document.
+ */
 export interface DictionaryEntry {
   string: string;
   tag: string;
-  /** Optional attributes to set on the created element. */
-  attributes?: Record<string, string>;
-  /** Optional entity id (forward-compatible with Phase 3 disambiguation). */
-  entityId?: string;
 }
 
 /**
- * Parse a CSV/TSV dictionary table. Expected columns: string, tag, and
- * optionally attributes (key=value pairs separated by ';') and entityId.
- * A header row naming the columns is recognized and used for ordering;
- * without one, column order is assumed to be string, tag, attributes, entityId.
- * Handles double-quoted fields (with "" escapes).
+ * Parse a CSV/TSV table into {string, tag} entries. A header row naming the
+ * columns is recognized; without one, the first two columns are string, tag.
+ * Any other columns (ids, metadata) are ignored at this stage. Handles
+ * double-quoted fields (with "" escapes).
  */
 export function parseDictionaryTable(content: string, delimiter?: ',' | '\t'): DictionaryEntry[] {
   const rows = content
@@ -27,44 +28,29 @@ export function parseDictionaryTable(content: string, delimiter?: ',' | '\t'): D
 }
 
 /**
- * Turn a grid of cells (from CSV, xlsx, or ods) into dictionary entries.
- * A header row naming the columns is recognized and used for ordering;
- * without one, column order is assumed to be string, tag, attributes, entityId.
+ * Turn a grid of cells (from CSV, xlsx, or ods) into {string, tag} entries.
+ * A header naming `string`/`tag` columns is honored; otherwise the first two
+ * columns are used. Extra columns are ignored — the tag stage inserts no ids.
  */
 export function entriesFromRows(rows: string[][]): DictionaryEntry[] {
   if (rows.length === 0) return [];
 
-  let columns = ['string', 'tag', 'attributes', 'entityId'];
+  let stringCol = 0;
+  let tagCol = 1;
   let dataRows = rows;
   const header = rows[0]!.map((c) => c.trim().toLowerCase());
   if (header.includes('string') && header.includes('tag')) {
-    columns = header.map((h) => (h === 'entityid' ? 'entityId' : h));
+    stringCol = header.indexOf('string');
+    tagCol = header.indexOf('tag');
     dataRows = rows.slice(1);
   }
 
   const entries: DictionaryEntry[] = [];
   for (const row of dataRows) {
-    const get = (name: string) => {
-      const i = columns.indexOf(name);
-      return i === -1 ? undefined : row[i]?.trim() || undefined;
-    };
-    const string = get('string');
-    const tag = get('tag');
+    const string = row[stringCol]?.trim();
+    const tag = row[tagCol]?.trim();
     if (!string || !tag) continue;
-
-    const entry: DictionaryEntry = { string, tag };
-    const attributes = get('attributes');
-    if (attributes) {
-      entry.attributes = Object.fromEntries(
-        attributes
-          .split(';')
-          .map((pair) => pair.split('=').map((s) => s.trim()))
-          .filter((kv): kv is [string, string] => kv.length === 2 && !!kv[0] && !!kv[1]),
-      );
-    }
-    const entityId = get('entityId');
-    if (entityId) entry.entityId = entityId;
-    entries.push(entry);
+    entries.push({ string, tag });
   }
   return entries;
 }
@@ -97,72 +83,68 @@ function splitRow(line: string, delimiter: string): string[] {
   return fields;
 }
 
+/** Default minimum surface length: single characters match far too broadly. */
+export const DEFAULT_MIN_MATCH_LENGTH = 2;
+
 /**
- * Dictionary producer: scan the document for entry strings and emit 'add'
- * suggestions. Longest string first; within a text node, characters claimed
- * by a match are not available to later (shorter or overlapping) matches.
- * Matches never cross tag boundaries (matching is per text node by
- * construction). Whole-document occurrence counting happens in createAnchor.
+ * Dictionary producer: scan the document for entry strings and emit tag-only
+ * 'add' suggestions (no ids — identity is deferred to disambiguation).
+ * Longest string first, leftmost-longest, never crossing tag boundaries.
+ * Strings shorter than `minLength` (default 2 code points) are skipped —
+ * single characters over-match in running text and are almost never entities.
+ * Whole-document occurrence counting happens in createAnchor.
  */
 export function dictionaryTag(
   doc: Document,
   entries: DictionaryEntry[],
   policy: WhitespacePolicy,
   sourceDetail = 'dictionary',
+  minLength: number = DEFAULT_MIN_MATCH_LENGTH,
 ): Suggestion[] {
-  const sorted = [...entries].sort((a, b) => b.string.length - a.string.length);
+  // Map each surface string to its entry, dropping too-short strings. When the
+  // same string carries several tags, the first entry in input order wins the
+  // span (mirrors longest-first/stable-order); such collisions are rare.
+  const entryByString = new Map<string, DictionaryEntry>();
+  for (const entry of entries) {
+    if ([...entry.string].length < minLength) continue;
+    if (!entryByString.has(entry.string)) entryByString.set(entry.string, entry);
+  }
+  const matcher = new MultiStringMatcher(entryByString.keys());
+
+  const index = buildDocIndex(doc, policy);
   const suggestions: Suggestion[] = [];
   let counter = 0;
 
-  const index = buildDocIndex(doc, policy);
-  const nodes = index.nodes;
-  const claimed = nodes.map(({ search }) => new Array<boolean>(search.text.length).fill(false));
+  for (const { node, search } of index.nodes) {
+    // Ancestor tag names for this node, computed once (not per match).
+    const ancestors = ancestorTagNames(node);
 
-  for (const entry of sorted) {
-    nodes.forEach(({ node, search }, nodeIndex) => {
-      // Skip nodes already inside this tag — no point suggesting what's
-      // already tagged (also keeps the review list free of no-op items).
-      if (hasAncestorTag(node, entry.tag)) return;
+    for (const match of matcher.scan(search.text)) {
+      const entry = entryByString.get(match.pattern)!;
+      // Skip spots already inside this tag — no point re-suggesting.
+      if (ancestors.has(entry.tag)) continue;
 
-      let from = 0;
-      while (true) {
-        const idx = search.text.indexOf(entry.string, from);
-        if (idx === -1) break;
-        from = idx + 1;
-
-        const range = claimed[nodeIndex]!.slice(idx, idx + entry.string.length);
-        if (range.some(Boolean)) continue; // overlaps a longer, earlier match
-
-        for (let i = idx; i < idx + entry.string.length; i++) claimed[nodeIndex]![i] = true;
-
-        const rawStart = search.map[idx]!;
-        const rawEnd = search.map[idx + entry.string.length - 1]! + 1;
-        const attributes = {
-          ...entry.attributes,
-          ...(entry.entityId ? { key: entry.entityId } : {}),
-        };
-        suggestions.push({
-          id: `dict_${counter++}`,
-          source: 'dictionary',
-          sourceDetail,
-          action: 'add',
-          tag: entry.tag,
-          ...(Object.keys(attributes).length > 0 ? { attributes } : {}),
-          anchor: createAnchor('', doc, node, rawStart, rawEnd, policy, index),
-          rationale: `Matched "${entry.string}" (${sourceDetail})`,
-          status: 'pending',
-        });
-      }
-    });
+      const rawStart = search.map[match.start]!;
+      const rawEnd = search.map[match.end - 1]! + 1;
+      suggestions.push({
+        id: `dict_${counter++}`,
+        source: 'dictionary',
+        sourceDetail,
+        action: 'add',
+        tag: entry.tag,
+        anchor: createAnchor('', doc, node, rawStart, rawEnd, policy, index),
+        rationale: `Matched "${match.pattern}" (${sourceDetail})`,
+        status: 'pending',
+      });
+    }
   }
 
   return suggestions;
 }
 
-/** True if the node has an ancestor element with the given tag name. */
-function hasAncestorTag(node: Node, tag: string): boolean {
-  for (let el = node.parentElement; el; el = el.parentElement) {
-    if (el.nodeName === tag) return true;
-  }
-  return false;
+/** The set of ancestor element names above a node (computed once per node). */
+function ancestorTagNames(node: Node): Set<string> {
+  const names = new Set<string>();
+  for (let el = node.parentElement; el; el = el.parentElement) names.add(el.nodeName);
+  return names;
 }

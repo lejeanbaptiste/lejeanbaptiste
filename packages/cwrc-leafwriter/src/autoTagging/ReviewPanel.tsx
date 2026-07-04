@@ -1,26 +1,27 @@
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import UndoIcon from '@mui/icons-material/Undo';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { handleReviewKey, ReviewController, type DecisionEvent } from './reviewController';
 import type { Suggestion } from './types';
 
 export interface ReviewPanelProps {
   suggestions: Suggestion[];
-  /** Host applies the accepted suggestions (apply engine + editor undo snapshot). */
   onApply: (accepted: Suggestion[]) => void;
-  /** Host jumps the editor to the suggestion, e.g. via utilities.selectElementById. */
   onFocus?: (suggestion: Suggestion) => void;
-  /** Feeds the decision log. */
   onDecision?: (event: DecisionEvent) => void;
-  /** Host closes the panel. */
   onClose?: () => void;
+  autoFocus?: boolean;
+  busy?: boolean;
 }
 
 const statusColor: Record<Suggestion['status'], 'default' | 'success' | 'error' | 'warning'> = {
@@ -30,35 +31,175 @@ const statusColor: Record<Suggestion['status'], 'default' | 'success' | 'error' 
   unresolvable: 'warning',
 };
 
-/**
- * The shared review walk (Phase 1): one commit gate for every auto-tagging
- * method. Renders the suggestion to-do list; keyboard: j/↓ k/↑ navigate,
- * a/Enter accept, r/x reject, u undecide.
- */
+interface SuggestionRowProps {
+  suggestion: Suggestion;
+  isCurrent?: boolean;
+  onSelect?: () => void;
+  onAccept?: () => void;
+  onReject?: () => void;
+  onUndo?: () => void;
+  onPreview?: () => void;
+}
+
+const SuggestionRow = ({
+  suggestion,
+  isCurrent,
+  onSelect,
+  onAccept,
+  onReject,
+  onUndo,
+  onPreview,
+}: SuggestionRowProps) => (
+  <Box
+    role="listitem"
+    data-testid={`review-item-${suggestion.id}`}
+    data-current={isCurrent || undefined}
+    onClick={() => {
+      onSelect?.();
+      onPreview?.();
+    }}
+    sx={{
+      p: 1,
+      cursor: 'pointer',
+      borderLeft: isCurrent ? '3px solid' : '3px solid transparent',
+      borderLeftColor: isCurrent ? 'primary.main' : 'transparent',
+      bgcolor: isCurrent ? 'action.selected' : undefined,
+    }}
+  >
+    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+      <Chip size="small" label={`<${suggestion.tag}>`} />
+      <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
+        {suggestion.anchor.surface}
+      </Typography>
+      <Chip size="small" variant="outlined" label={suggestion.source} />
+      {suggestion.confidence !== undefined && (
+        <Chip size="small" variant="outlined" label={suggestion.confidence.toFixed(2)} />
+      )}
+      <Chip
+        size="small"
+        color={statusColor[suggestion.status]}
+        label={suggestion.status}
+        data-testid={`status-${suggestion.id}`}
+      />
+      {suggestion.status !== 'unresolvable' && (
+        <Box sx={{ ml: 'auto', display: 'flex', gap: 0.25 }}>
+          {suggestion.status === 'pending' && onAccept && onReject ? (
+            <>
+              <Tooltip title="Accept (Enter)">
+                <IconButton
+                  size="small"
+                  color="success"
+                  data-testid={`accept-${suggestion.id}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onAccept();
+                  }}
+                >
+                  <CheckIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Reject (Backspace)">
+                <IconButton
+                  size="small"
+                  color="error"
+                  data-testid={`reject-${suggestion.id}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onReject();
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          ) : onUndo ? (
+            <Tooltip title="Undo (u)">
+              <IconButton
+                size="small"
+                data-testid={`undo-${suggestion.id}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onUndo();
+                }}
+              >
+                <UndoIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : null}
+        </Box>
+      )}
+    </Box>
+    <Typography variant="caption" color="text.secondary" component="div">
+      …{suggestion.anchor.contextBefore}
+      <b>{suggestion.anchor.surface}</b>
+      {suggestion.anchor.contextAfter}…
+    </Typography>
+    {suggestion.rationale && (
+      <Typography variant="caption" component="div">
+        {suggestion.rationale}
+      </Typography>
+    )}
+  </Box>
+);
+
+interface DecisionGroupProps {
+  title: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}
+
+const DecisionGroup = ({ title, count, open, onToggle, children }: DecisionGroupProps) => (
+  <Box sx={{ borderTop: 1, borderColor: 'divider', flexShrink: 0 }}>
+    <Button
+      fullWidth
+      size="small"
+      onClick={onToggle}
+      endIcon={
+        <ExpandMoreIcon sx={{ transform: open ? 'rotate(180deg)' : undefined, transition: '0.2s' }} />
+      }
+      sx={{ justifyContent: 'space-between', textTransform: 'none', px: 1, py: 0.5, borderRadius: 0 }}
+    >
+      {title} ({count})
+    </Button>
+    <Collapse in={open}>{children}</Collapse>
+  </Box>
+);
+
 export const ReviewPanel = ({
   suggestions,
   onApply,
   onFocus,
   onDecision,
   onClose,
+  autoFocus = true,
+  busy = false,
 }: ReviewPanelProps) => {
+  const { t } = useTranslation('LW');
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [acceptedOpen, setAcceptedOpen] = useState(false);
+  const [rejectedOpen, setRejectedOpen] = useState(false);
 
   const controller = useMemo(
     () => new ReviewController(suggestions, { onFocus, onDecision }),
-    // a new batch means a new walk
     [suggestions, onFocus, onDecision],
   );
 
-  // Take keyboard focus when a batch mounts, so j/k/a/r work without a click.
   useEffect(() => {
+    if (autoFocus) containerRef.current?.focus();
+  }, [controller, autoFocus]);
+
+  const rerender = () => {
     containerRef.current?.focus();
-  }, [controller]);
+    forceRender();
+  };
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      if (handleReviewKey(controller, event.key)) {
+      if (handleReviewKey(controller, event.key, { shift: event.shiftKey })) {
         event.preventDefault();
         forceRender();
       }
@@ -66,18 +207,15 @@ export const ReviewPanel = ({
     [controller],
   );
 
-  const decide = (index: number, decision: 'accepted' | 'rejected') => {
-    controller.moveTo(index);
+  const decidePending = (index: number, decision: 'accepted' | 'rejected') => {
+    controller.moveToPendingIndex(index);
     controller.decide(decision);
-    containerRef.current?.focus();
-    forceRender();
+    rerender();
   };
 
-  const undecide = (index: number) => {
-    controller.moveTo(index);
-    controller.undecide();
-    containerRef.current?.focus();
-    forceRender();
+  const undecideItem = (suggestion: Suggestion) => {
+    controller.undecideSuggestion(suggestion);
+    rerender();
   };
 
   const apply = () => {
@@ -85,9 +223,24 @@ export const ReviewPanel = ({
     forceRender();
   };
 
+  const applyAllRemaining = () => {
+    onApply(controller.takeAllExceptRejected());
+    forceRender();
+  };
+
   const counts = controller.counts();
-  const visible = controller.visible();
+  const pending = controller.pendingVisible();
+  const accepted = controller.acceptedVisible();
+  const rejected = controller.rejectedVisible();
   const current = controller.current();
+  const remainingCount = counts.pending + counts.accepted;
+
+  useEffect(() => {
+    if (!current || !listRef.current) return;
+    listRef.current
+      .querySelector(`[data-testid="review-item-${current.id}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [current?.id]);
 
   return (
     <Box
@@ -97,7 +250,7 @@ export const ReviewPanel = ({
       onKeyDown={handleKeyDown}
       sx={{ display: 'flex', flexDirection: 'column', height: '100%', outline: 'none' }}
     >
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', p: 1 }}>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', p: 1, flexShrink: 0 }}>
         <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
           Review suggestions
         </Typography>
@@ -107,124 +260,115 @@ export const ReviewPanel = ({
         </Typography>
       </Box>
 
-      <Box sx={{ flexGrow: 1, overflowY: 'auto' }} role="list">
-        {visible.map((suggestion, index) => (
-          <Box
-            key={suggestion.id}
-            role="listitem"
-            data-testid={`review-item-${suggestion.id}`}
-            data-current={suggestion === current || undefined}
-            onClick={() => {
-              controller.moveTo(index);
-              forceRender();
-            }}
-            sx={{
-              p: 1,
-              cursor: 'pointer',
-              borderLeft: suggestion === current ? '3px solid' : '3px solid transparent',
-              borderLeftColor: suggestion === current ? 'primary.main' : 'transparent',
-              bgcolor: suggestion === current ? 'action.selected' : undefined,
-            }}
-          >
-            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Chip size="small" label={`<${suggestion.tag}>`} />
-              <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
-                {suggestion.anchor.surface}
-              </Typography>
-              <Chip size="small" variant="outlined" label={suggestion.source} />
-              {suggestion.confidence !== undefined && (
-                <Chip size="small" variant="outlined" label={suggestion.confidence.toFixed(2)} />
-              )}
-              <Chip
-                size="small"
-                color={statusColor[suggestion.status]}
-                label={suggestion.status}
-                data-testid={`status-${suggestion.id}`}
-              />
-              {suggestion.status !== 'unresolvable' && (
-                <Box sx={{ ml: 'auto', display: 'flex', gap: 0.25 }}>
-                  {suggestion.status === 'pending' ? (
-                    <>
-                      <Tooltip title="Accept (a)">
-                        <IconButton
-                          size="small"
-                          color="success"
-                          data-testid={`accept-${suggestion.id}`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            decide(index, 'accepted');
-                          }}
-                        >
-                          <CheckIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Reject (r)">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          data-testid={`reject-${suggestion.id}`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            decide(index, 'rejected');
-                          }}
-                        >
-                          <CloseIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </>
-                  ) : (
-                    <Tooltip title="Undo (u)">
-                      <IconButton
-                        size="small"
-                        data-testid={`undo-${suggestion.id}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          undecide(index);
-                        }}
-                      >
-                        <UndoIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </Box>
-              )}
-            </Box>
-            <Typography variant="caption" color="text.secondary" component="div">
-              …{suggestion.anchor.contextBefore}
-              <b>{suggestion.anchor.surface}</b>
-              {suggestion.anchor.contextAfter}…
+      <Box
+        ref={listRef}
+        sx={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+        onClick={() => containerRef.current?.focus()}
+      >
+        <Box role="list" sx={{ flexGrow: 1 }}>
+          {pending.map((suggestion, index) => (
+            <SuggestionRow
+              key={suggestion.id}
+              suggestion={suggestion}
+              isCurrent={suggestion === current}
+              onSelect={() => {
+                controller.moveToPendingIndex(index);
+                forceRender();
+              }}
+              onAccept={() => decidePending(index, 'accepted')}
+              onReject={() => decidePending(index, 'rejected')}
+              onPreview={() => controller.preview(suggestion)}
+            />
+          ))}
+          {pending.length === 0 && accepted.length === 0 && rejected.length === 0 && (
+            <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
+              Nothing to review.
             </Typography>
-            {suggestion.rationale && (
-              <Typography variant="caption" component="div">
-                {suggestion.rationale}
-              </Typography>
-            )}
-          </Box>
-        ))}
-        {visible.length === 0 && (
-          <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
-            Nothing to review.
-          </Typography>
+          )}
+          {pending.length === 0 && (accepted.length > 0 || rejected.length > 0) && (
+            <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
+              No pending items — apply tags or expand groups below to review decisions.
+            </Typography>
+          )}
+        </Box>
+
+        {accepted.length > 0 && (
+          <DecisionGroup
+            title={t('Accepted')}
+            count={accepted.length}
+            open={acceptedOpen}
+            onToggle={() => setAcceptedOpen((open) => !open)}
+          >
+            {accepted.map((suggestion) => (
+              <SuggestionRow
+                key={suggestion.id}
+                suggestion={suggestion}
+                onPreview={() => controller.preview(suggestion)}
+                onUndo={() => undecideItem(suggestion)}
+              />
+            ))}
+          </DecisionGroup>
+        )}
+
+        {rejected.length > 0 && (
+          <DecisionGroup
+            title={t('Rejected')}
+            count={rejected.length}
+            open={rejectedOpen}
+            onToggle={() => setRejectedOpen((open) => !open)}
+          >
+            {rejected.map((suggestion) => (
+              <SuggestionRow
+                key={suggestion.id}
+                suggestion={suggestion}
+                onPreview={() => controller.preview(suggestion)}
+                onUndo={() => undecideItem(suggestion)}
+              />
+            ))}
+          </DecisionGroup>
         )}
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 1, p: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          p: 1,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          flexWrap: 'wrap',
+          flexShrink: 0,
+        }}
+      >
         <Button
           size="small"
           variant="contained"
-          disabled={counts.accepted === 0}
+          disabled={busy || remainingCount === 0}
+          onClick={applyAllRemaining}
+          data-testid="review-apply-all"
+        >
+          {remainingCount > 0
+            ? t('Apply all remaining ({{count}})', { count: remainingCount })
+            : t('Apply all remaining ({{count}})', { count: 0 })}
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          disabled={busy || counts.accepted === 0}
           onClick={apply}
           data-testid="review-apply"
         >
-          Apply {counts.accepted > 0 ? `(${counts.accepted})` : ''}
+          {counts.accepted > 0
+            ? t('Apply accepted ({{count}})', { count: counts.accepted })
+            : t('Apply accepted ({{count}})', { count: 0 })}
         </Button>
         {onClose && (
-          <Button size="small" onClick={onClose}>
-            Close
+          <Button size="small" onClick={onClose} disabled={busy}>
+            {t('Close review')}
           </Button>
         )}
         <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', alignSelf: 'center' }}>
-          j/k navigate · a accept · r reject · u undo
+          j/k · Enter · Shift+Enter all same · Backspace reject
         </Typography>
       </Box>
     </Box>

@@ -47,34 +47,44 @@ const syncValidatorState = async (): Promise<void> => {
   await validatorActions.validate();
 };
 
+const findTaggedAncestor = (start: Node | null, body: Node): Element | null => {
+  let node: Node | null = start;
+  while (node && node !== body) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as Element;
+      if (el.hasAttribute('_tag')) return el;
+    }
+    node = node.parentNode;
+  }
+  return null;
+};
+
 export const getEditorTagContext = (): EditorTagContext | null => {
   const writer = getWriter();
   const editor = writer?.editor;
   if (!editor) return null;
 
+  const body = editor.getBody();
   const rng = getSelectionRange(editor);
   const hasContentSelection = !rng.collapsed && rng.toString().length > 0;
 
-  const element =
+  const tagElement =
+    findTaggedAncestor(editor.selection.getNode(), body) ??
+    findTaggedAncestor(rng.startContainer, body) ??
+    findTaggedAncestor(rng.endContainer, body);
+
+  const elementFromAncestor =
     rng.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
       ? (rng.commonAncestorContainer as Element)
-      : (rng.commonAncestorContainer.parentElement);
-  if (!element?.hasAttribute('_tag')) return null;
+      : rng.commonAncestorContainer.parentElement;
 
-  let tagElement: Element | null = null;
-  let node: Node | null = editor.selection.getNode();
-  while (node && node !== editor.getBody()) {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as Element;
-      if (el.hasAttribute('_tag')) {
-        tagElement = el;
-        break;
-      }
-    }
-    node = node.parentNode;
-  }
+  const element =
+    tagElement ??
+    (elementFromAncestor?.hasAttribute('_tag') ? elementFromAncestor : null);
 
-  return { element, hasContentSelection, rng, tagElement };
+  if (!element) return null;
+
+  return { element, hasContentSelection, rng, tagElement: tagElement ?? element };
 };
 
 export const buildValidatorTarget = (

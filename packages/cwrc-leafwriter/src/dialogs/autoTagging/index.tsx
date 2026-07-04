@@ -3,197 +3,157 @@ import {
   Box,
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
-  DialogTitle,
+  Link,
   Stack,
   Typography,
 } from '@mui/material';
 import { useRef, useState } from 'react';
 import {
   AutoTaggingSession,
-  crawlEntities,
+  crawlDocuments,
   dictionaryTag,
   entriesFromRows,
   parseDictionaryTable,
   readSpreadsheet,
-  ReviewPanel,
   type DictionaryEntry,
   type Suggestion,
 } from '../../autoTagging';
+import { useActions } from '../../overmind';
 import type { IDialog } from '../type';
 
 const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
 
-type Step = 'choose' | 'review';
-
 /**
- * The auto-tagging entry point (Phase 2 shell): method chooser → producer →
- * shared review walk. Dictionary import is live; dates/AI/NER are stubs for
- * later phases. Big dialog per the "not something the user does all the
- * time" UI decision.
+ * Method chooser for auto-tagging. Produces suggestions, then hands off to the
+ * docked review panel (split screen) — the editor stays visible, not greyed out.
  */
 export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
-  const [step, setStep] = useState<Step>('choose');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [applied, setApplied] = useState(0);
-  const [canRevert, setCanRevert] = useState(false);
+  const [busy, setBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const session = useRef<AutoTaggingSession | null>(null);
+  const { startAutoTaggingReview } = useActions().ui;
 
   const getSession = () => {
     session.current ??= new AutoTaggingSession(window.writer);
     return session.current;
   };
 
-  /** Filter, match, and open the review walk for a set of dictionary entries. */
-  const produceFromEntries = async (parsed: DictionaryEntry[], sourceLabel: string) => {
+  const beginReview = (produced: Suggestion[]) => {
+    startAutoTaggingReview(produced);
+    onClose?.(id);
+  };
+
+  const openReview = async (parsed: DictionaryEntry[], sourceLabel: string) => {
     if (parsed.length === 0) {
-      setError('No usable entries found. Expected columns: string, tag (then optional attributes, entityId).');
-      return;
-    }
-    // Single-character strings match far too broadly in running text
-    // (bare surnames, common characters), so drop them.
-    const entries = parsed.filter((entry) => [...entry.string].length > 1);
-    const dropped = parsed.length - entries.length;
-    if (entries.length === 0) {
-      setError(`All ${parsed.length} entries were single-character strings, which are skipped.`);
+      setError('No usable entries found. Expected columns: string, tag.');
       return;
     }
     const doc = await getSession().getDocument();
-    const produced = dictionaryTag(doc, entries, getSession().policy, sourceLabel);
+    const produced = dictionaryTag(doc, parsed, getSession().policy, sourceLabel);
     if (produced.length === 0) {
-      setError(
-        `No untagged matches in the document for the ${entries.length} entries` +
-          (dropped > 0 ? ` (${dropped} single-character entries skipped).` : '.'),
-      );
+      setError(`No untagged matches in the document for these ${parsed.length} entries.`);
       return;
     }
-    setSuggestions(produced);
-    setStep('review');
+    beginReview(produced);
   };
 
-  const importDictionary = async (file: File) => {
+  const importList = async (file: File) => {
     setError(null);
+    setBusy(true);
     try {
       const entries = SPREADSHEET_RE.test(file.name)
         ? entriesFromRows(await readSpreadsheet(await file.arrayBuffer(), file.name))
         : parseDictionaryTable(await file.text());
-      await produceFromEntries(entries, file.name);
+      await openReview(entries, file.name);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
     }
   };
 
-  const crawlCurrentDocument = async () => {
+  const crawlProject = async () => {
     setError(null);
+    setBusy(true);
     try {
-      const doc = await getSession().getDocument();
-      const entries = crawlEntities(doc, getSession().policy);
+      const { documents, available } = await getSession().getProjectDocuments();
+      const entries = crawlDocuments(documents, getSession().policy);
       if (entries.length === 0) {
-        setError('No tagged entities found in this document to crawl.');
+        setError(
+          available
+            ? 'No tagged entities found in the project to crawl.'
+            : 'No tagged entities found in this document to crawl.',
+        );
         return;
       }
-      await produceFromEntries(entries, 'this document');
+      await openReview(entries, available ? 'the project' : 'this document');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
     }
-  };
-
-  const handleApply = (accepted: Suggestion[]) => {
-    void getSession()
-      .apply(accepted)
-      .then((result) => {
-        setApplied((n) => n + result.applied);
-        setCanRevert(getSession().canRevert);
-      });
-  };
-
-  const handleRevert = () => {
-    getSession().revertLastApply();
-    setCanRevert(getSession().canRevert);
-    setApplied(0);
   };
 
   const handleClose = () => {
-    void getSession().flushDecisions();
     onClose?.(id);
   };
 
+  const methodButton = (label: string, onClick: () => void, disabled = false) => (
+    <Button
+      size="small"
+      variant="text"
+      disabled={disabled || busy}
+      onClick={onClick}
+      sx={{ justifyContent: 'flex-start', textTransform: 'none', px: 1, py: 0.25 }}
+    >
+      {label}
+    </Button>
+  );
+
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-      <DialogTitle>Auto-tagging</DialogTitle>
-      <DialogContent sx={{ minHeight: 420, display: 'flex', flexDirection: 'column' }}>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      PaperProps={{ sx: { width: 340, m: 1, borderRadius: 1 } }}
+    >
+      <DialogContent sx={{ p: 1.5 }}>
+        <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+          Auto-tagging
+        </Typography>
+
         {error && (
-          <Alert severity="warning" onClose={() => setError(null)} sx={{ mb: 1 }}>
+          <Alert severity="warning" variant="outlined" onClose={() => setError(null)} sx={{ my: 1, py: 0, fontSize: 12 }}>
             {error}
           </Alert>
         )}
 
-        {step === 'choose' && (
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Choose a tagging method. Suggestions go through a review walk before anything is
-              applied to the document.
-            </Typography>
-            <Button variant="outlined" onClick={() => fileInput.current?.click()}>
-              Dictionary (import CSV, TSV, xlsx, or ods table)
-            </Button>
-            <input
-              ref={fileInput}
-              type="file"
-              accept=".csv,.tsv,.txt,.xlsx,.xlsm,.ods"
-              hidden
-              data-testid="dictionary-file-input"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void importDictionary(file);
-                event.target.value = '';
-              }}
-            />
-            <Button variant="outlined" onClick={() => void crawlCurrentDocument()}>
-              From existing tags in this document
-            </Button>
-            <Button variant="outlined" disabled>
-              East Asian dates (coming later)
-            </Button>
-            <Button variant="outlined" disabled>
-              AI suggest (coming later)
-            </Button>
-            <Button variant="outlined" disabled>
-              NER (coming later)
-            </Button>
-          </Stack>
-        )}
-
-        {step === 'review' && (
-          <Box sx={{ flexGrow: 1, minHeight: 0 }}>
-            <ReviewPanel
-              suggestions={suggestions}
-              onApply={handleApply}
-              onFocus={(s) => getSession().focus(s)}
-              onDecision={(e) => getSession().logDecision(e)}
-            />
+        <Stack sx={{ mt: 0.5 }}>
+          {methodButton('Tag from a list (CSV, TSV, xlsx, ODS)', () => fileInput.current?.click())}
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".csv,.tsv,.txt,.xlsx,.xlsm,.ods"
+            hidden
+            data-testid="dictionary-file-input"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void importList(file);
+              event.target.value = '';
+            }}
+          />
+          {methodButton('From existing tags in this project', () => void crawlProject())}
+          {methodButton('East Asian dates', () => {}, true)}
+          {methodButton('AI suggest', () => {}, true)}
+          {methodButton('NER', () => {}, true)}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+            <Link component="button" variant="caption" underline="hover" onClick={handleClose}>
+              Close
+            </Link>
           </Box>
-        )}
+        </Stack>
       </DialogContent>
-      <DialogActions>
-        {step === 'review' && (
-          <>
-            {applied > 0 && (
-              <Typography variant="caption" sx={{ mr: 'auto', ml: 1 }}>
-                {applied} tag{applied === 1 ? '' : 's'} applied
-              </Typography>
-            )}
-            <Button onClick={() => setStep('choose')}>Back</Button>
-            <Button onClick={handleRevert} disabled={!canRevert} data-testid="revert-apply">
-              Revert last apply
-            </Button>
-          </>
-        )}
-        <Button onClick={handleClose}>Close</Button>
-      </DialogActions>
     </Dialog>
   );
 };

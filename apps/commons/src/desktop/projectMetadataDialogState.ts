@@ -28,6 +28,7 @@ export interface ProjectMetadataDialogState {
   values: Record<string, string>;
   custom: Array<{ path: string; label: string; value: string }>;
   translation: TranslationMetadataSection;
+  entityStore: 'central' | 'project';
 }
 
 const cache = new Map<string, ProjectMetadataDialogState>();
@@ -103,6 +104,7 @@ export const buildProjectMetadataDialogState = async (
       value: row.value,
     })),
     translation,
+    entityStore: bundle.config.entityStore === 'project' ? 'project' : 'central',
   };
 };
 

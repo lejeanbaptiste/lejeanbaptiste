@@ -61,11 +61,12 @@ export const generateTagColorsCss = (file: TagColorsFile): string => {
 export const loadTagColors = async (rootPath: string): Promise<TagColorsFile> => {
   if (!window.electronAPI?.readFile) return emptyTagColorsFile();
 
+  const colorsPath = getTagColorsPath(rootPath);
   try {
-    if (window.electronAPI.statFile) {
-      await window.electronAPI.statFile(getTagColorsPath(rootPath));
+    if (window.electronAPI.pathExists && !(await window.electronAPI.pathExists(colorsPath))) {
+      return emptyTagColorsFile();
     }
-    const raw = await window.electronAPI.readFile(getTagColorsPath(rootPath));
+    const raw = await window.electronAPI.readFile(colorsPath);
     const parsed = JSON.parse(raw) as TagColorsFile;
     return { version: 1, tags: parsed.tags ?? {} };
   } catch {

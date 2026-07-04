@@ -206,7 +206,18 @@
         "skip_delete_confirm": "Delete files and folders without asking",
         "startup": "Startup",
         "title": "Settings",
-        "warnings": "Warnings"
+        "warnings": "Warnings",
+        "entity_database": "Entity database",
+        "entity_database_folder": "Database folder",
+        "entity_database_change": "Change folder…",
+        "entity_database_hint": "Your shared entities.xml lives here when projects use the central database.",
+        "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one."
+      },
+      "entity_database_changed": {
+        "title": "Entity database changed",
+        "message": "entities.xml was modified outside Le Jean-Baptiste. Reload before writing entity changes?",
+        "reload": "Reload database",
+        "keep": "Keep current copy"
       },
       "explorer": {
         "delete": "Delete",

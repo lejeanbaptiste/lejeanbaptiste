@@ -83,6 +83,12 @@ export const UnifiedRightPanel = () => {
   const [activeTab, setActiveTab] = useState<RightTabId>('fileMetadata');
   const [collapsed, setCollapsed] = useState(false);
   const [panelWidth, setPanelWidth] = useState(readStoredWidth);
+  const collapsedRef = useRef(collapsed);
+  const suppressedByDockedReviewRef = useRef(false);
+  const dockedReviewSuppressCountRef = useRef(0);
+  const restoreExpandedAfterDockedReviewRef = useRef(false);
+
+  collapsedRef.current = collapsed;
 
   const imageViewerSlotRef = useRef<HTMLDivElement>(null);
   const validationSlotRef = useRef<HTMLDivElement>(null);
@@ -92,18 +98,14 @@ export const UnifiedRightPanel = () => {
     panelTrace('rightPanel: showTab', { tab });
     if (!TAB_ORDER.includes(tab as RightTabId)) return;
     const tabId = tab as RightTabId;
-    // Programmatic resets to the default panel (fired on every document load via
-    // showDefaultEastPanel) must not steal the panel away from the Translation tab —
-    // first-time translation indexing rewrites the source file and reloads it from disk,
-    // which would otherwise hop the user back to File Metadata mid-flow. Explicit user
-    // clicks go through the icon strip's own handler, not this bridge.
     setActiveTab((current) =>
       tabId === 'fileMetadata' && current === 'translation' ? current : tabId,
     );
-    setCollapsed(false);
+    if (!suppressedByDockedReviewRef.current) setCollapsed(false);
   }, []);
 
   const expand = useCallback(() => {
+    if (suppressedByDockedReviewRef.current) return;
     setCollapsed(false);
   }, []);
 
@@ -112,7 +114,7 @@ export const UnifiedRightPanel = () => {
 
     if (window.__desktopRightPanelPendingTab) {
       setActiveTab(window.__desktopRightPanelPendingTab);
-      setCollapsed(false);
+      if (!suppressedByDockedReviewRef.current) setCollapsed(false);
       delete window.__desktopRightPanelPendingTab;
     }
 
@@ -120,6 +122,39 @@ export const UnifiedRightPanel = () => {
       delete window.__desktopRightPanel;
     };
   }, [showTab, expand]);
+
+  // Hide the right panel while a docked review pane is open; restore if it was expanded.
+  useEffect(() => {
+    const onOpen = () => {
+      if (dockedReviewSuppressCountRef.current === 0) {
+        restoreExpandedAfterDockedReviewRef.current = !collapsedRef.current;
+        if (!collapsedRef.current) setCollapsed(true);
+      }
+      dockedReviewSuppressCountRef.current += 1;
+      suppressedByDockedReviewRef.current = true;
+    };
+    const onClose = () => {
+      dockedReviewSuppressCountRef.current = Math.max(0, dockedReviewSuppressCountRef.current - 1);
+      if (dockedReviewSuppressCountRef.current > 0) return;
+      suppressedByDockedReviewRef.current = false;
+      if (restoreExpandedAfterDockedReviewRef.current) setCollapsed(false);
+      restoreExpandedAfterDockedReviewRef.current = false;
+    };
+    const openEvents = [
+      'desktop:auto-tagging-review-open',
+      'desktop:disambiguation-review-open',
+    ] as const;
+    const closeEvents = [
+      'desktop:auto-tagging-review-close',
+      'desktop:disambiguation-review-close',
+    ] as const;
+    for (const eventName of openEvents) window.addEventListener(eventName, onOpen);
+    for (const eventName of closeEvents) window.addEventListener(eventName, onClose);
+    return () => {
+      for (const eventName of openEvents) window.removeEventListener(eventName, onOpen);
+      for (const eventName of closeEvents) window.removeEventListener(eventName, onClose);
+    };
+  }, []);
 
   // After jQuery east tabs are ready, migrate the jQuery-rendered containers into our slots.
   // Migration must be idempotent (re-attempted on every ready event) and reversible: the
@@ -301,7 +336,10 @@ export const UnifiedRightPanel = () => {
           <Tooltip placement={tooltipPlacement} title="Expand panel">
             <IconButton
               size="small"
-              onClick={() => setCollapsed(false)}
+              onClick={() => {
+                if (suppressedByDockedReviewRef.current) return;
+                setCollapsed(false);
+              }}
               aria-label="Expand right panel"
               sx={{
                 width: SIDEBAR_TAB_BUTTON_SIZE,
@@ -321,7 +359,7 @@ export const UnifiedRightPanel = () => {
           onChange={(_event, value: RightTabId | null) => {
             if (value) {
               setActiveTab(value);
-              if (collapsed) setCollapsed(false);
+              if (!suppressedByDockedReviewRef.current && collapsed) setCollapsed(false);
             }
           }}
           sx={{
@@ -414,7 +452,7 @@ export const UnifiedRightPanel = () => {
           <FileMetadataPanel />
         </Box>
         <Box sx={panelSx('attributes')}>
-          <AttributesPanel />
+          <AttributesPanel visible={activeTab === 'attributes' && !collapsed} />
         </Box>
         <Box sx={panelSx('translation')}>
           <TranslationTabContent active={activeTab === 'translation'} />

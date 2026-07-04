@@ -60,10 +60,12 @@ export const readMetadataFieldsTemplate = async (
   rootPath: string,
 ): Promise<MetadataFieldsTemplate | null> => {
   if (!window.electronAPI?.readFile) return null;
+  const templatePath = joinProjectPath(rootPath, METADATA_FIELDS_TEMPLATE_PATH);
   try {
-    const raw = await window.electronAPI.readFile(
-      joinProjectPath(rootPath, METADATA_FIELDS_TEMPLATE_PATH),
-    );
+    if (window.electronAPI.pathExists && !(await window.electronAPI.pathExists(templatePath))) {
+      return null;
+    }
+    const raw = await window.electronAPI.readFile(templatePath);
     return parseMetadataFieldsTemplate(raw);
   } catch {
     return null;

@@ -1,8 +1,10 @@
+import CloseIcon from '@mui/icons-material/Close';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   Box,
   Button,
+  IconButton,
   MenuItem,
   Paper,
   Stack,
@@ -10,7 +12,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
+import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   applyAttributeToTag,
@@ -36,9 +40,11 @@ const isVisualEditorActive = (): boolean =>
   Boolean(window.writer?.editor) &&
   window.writer?.overmindState?.ui?.editorViewMode !== 'source';
 
-export const AttributesPanel = () => {
+export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const { activeTabPath, rootPath } = useAppState().project;
   const { readonly } = useAppState().editor;
+  const { editorViewMode } = useAppState().ui;
+  const leafWriter = useAtomValue(leafwriterAtom);
   const { notifyViaSnackbar } = useActions().ui;
 
   const [tagElement, setTagElement] = useState<Element | null>(null);
@@ -49,6 +55,7 @@ export const AttributesPanel = () => {
   const [addAttrName, setAddAttrName] = useState('');
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncGenerationRef = useRef(0);
   const valuesRef = useRef(values);
   const tagElementRef = useRef(tagElement);
 
@@ -70,8 +77,14 @@ export const AttributesPanel = () => {
     }
 
     const ctx = getEditorTagContext();
-    const element = ctx?.tagElement;
-    if (!element) {
+    const element = ctx?.tagElement ?? ctx?.element ?? null;
+    const name = element?.getAttribute('_tag') ?? '';
+
+    if (!element || !name) {
+      const editorFocused = window.writer?.editor?.hasFocus?.() ?? false;
+      if (!editorFocused && tagElementRef.current?.isConnected) {
+        return;
+      }
       setTagElement(null);
       setTagName('');
       setSchemaAttributes([]);
@@ -79,18 +92,19 @@ export const AttributesPanel = () => {
       return;
     }
 
-    const name = element.getAttribute('_tag') ?? '';
+    const generation = ++syncGenerationRef.current;
     setTagElement(element);
     setTagName(name);
     setValues(readTagAttributes(element));
     const attrs = await fetchSchemaAttributes(element);
+    if (generation !== syncGenerationRef.current) return;
     setSchemaAttributes(attrs);
   }, []);
 
   useEffect(() => {
-    if (!window.writer) return;
-
     const writer = window.writer;
+    if (!writer) return;
+
     const events = ['selectionChanged', 'tagEdited', 'contentChanged', 'nodeChanged'] as const;
     const handler = () => void syncFromEditor();
 
@@ -104,7 +118,12 @@ export const AttributesPanel = () => {
         writer.event(eventName).unsubscribe(handler);
       }
     };
-  }, [activeTabPath, syncFromEditor]);
+  }, [activeTabPath, editorViewMode, leafWriter, syncFromEditor]);
+
+  useEffect(() => {
+    if (!visible) return;
+    void syncFromEditor();
+  }, [visible, syncFromEditor]);
 
   useEffect(() => {
     if (!rootPath) {
@@ -248,42 +267,50 @@ export const AttributesPanel = () => {
               schemaAttributes.find((item) => item.name === attrName) ?? { name: attrName };
 
             return (
-            <Box key={attr.name}>
-              {attr.choices && attr.choices.length > 0 ? (
-                <TextField
-                  select
-                  disabled={readonly}
-                  fullWidth
-                  label={attr.fullName ?? attr.name}
-                  size="small"
-                  value={attrValue}
-                  onChange={(event) => handleFieldChange(attr.name, event.target.value)}
-                >
-                  <MenuItem value="">
-                    <em>(none)</em>
-                  </MenuItem>
-                  {attr.choices.map((choice) => (
-                    <MenuItem key={choice} value={choice}>
-                      {choice}
+              <Stack alignItems="center" direction="row" key={attr.name} spacing={0.5}>
+                {attr.choices && attr.choices.length > 0 ? (
+                  <TextField
+                    select
+                    disabled={readonly}
+                    fullWidth
+                    label={attr.name}
+                    size="small"
+                    sx={{ flex: 1, minWidth: 0 }}
+                    value={attrValue}
+                    onChange={(event) => handleFieldChange(attr.name, event.target.value)}
+                  >
+                    <MenuItem value="">
+                      <em>(none)</em>
                     </MenuItem>
-                  ))}
-                </TextField>
-              ) : (
-                <TextField
-                  disabled={readonly}
-                  fullWidth
-                  label={attr.fullName ?? attr.name}
-                  size="small"
-                  value={attrValue}
-                  onChange={(event) => handleFieldChange(attr.name, event.target.value)}
-                />
-              )}
-              {!readonly ? (
-                <Button color="inherit" onClick={() => handleRemoveAttribute(attr.name)} size="small">
-                  Remove
-                </Button>
-              ) : null}
-            </Box>
+                    {attr.choices.map((choice) => (
+                      <MenuItem key={choice} value={choice}>
+                        {choice}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                ) : (
+                  <TextField
+                    disabled={readonly}
+                    fullWidth
+                    label={attr.name}
+                    size="small"
+                    sx={{ flex: 1, minWidth: 0 }}
+                    value={attrValue}
+                    onChange={(event) => handleFieldChange(attr.name, event.target.value)}
+                  />
+                )}
+                {!readonly ? (
+                  <Tooltip title={`Remove ${attr.name}`}>
+                    <IconButton
+                      aria-label={`Remove ${attr.name}`}
+                      onClick={() => handleRemoveAttribute(attr.name)}
+                      size="small"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+              </Stack>
             );
           })}
 

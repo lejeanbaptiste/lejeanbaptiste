@@ -144,6 +144,13 @@ export const useNativeDialogBridge = () => {
             };
           case 'getEncoderName':
             return (await electronAPI.getEncoderName()) ?? '';
+          case 'getEntityDbFolder':
+            return (await electronAPI.getEntityDbFolder?.()) ?? null;
+          case 'pickEntityDbFolder': {
+            const picked = await electronAPI.pickEntityDbFolder?.();
+            if (picked) await electronAPI.setEntityDbFolder?.(picked);
+            return picked ?? null;
+          }
           case 'setEncoderName':
             await electronAPI.setEncoderName(String(args ?? ''));
             return true;
@@ -305,6 +312,7 @@ export const useNativeDialogBridge = () => {
               translationAlignmentUnit,
               translationLanguages,
               translationCitationStyle,
+              entityStore,
             } = (args ?? {}) as {
               values?: Record<string, string>;
               custom?: Array<{ path: string; label: string; value: string }>;
@@ -312,6 +320,7 @@ export const useNativeDialogBridge = () => {
               translationAlignmentUnit?: 'div' | 'p';
               translationLanguages?: Array<{ code: string; label: string }>;
               translationCitationStyle?: string;
+              entityStore?: 'central' | 'project';
             };
             const dialogId = getStringArg(args, 'dialogId');
             if (!dialogId) {
@@ -339,6 +348,11 @@ export const useNativeDialogBridge = () => {
 
             try {
               await writeProjectMetadata(bundle, draft);
+              if (entityStore && electronAPI.updateProjectFileConfig) {
+                await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
+                  entityStore,
+                });
+              }
               invalidateMetadataDialogStateCache(bundle.projectFilePath);
               void warmMetadataDialogStateCache(bundle, session.mode);
             } catch (error) {
@@ -453,7 +467,7 @@ export const useNativeDialogBridge = () => {
             session.onSave();
             if (!applyToDocuments && session.mode === 'edition') {
               notifyViaSnackbar({
-                message: 'Edition metadata saved.',
+                message: 'Project settings saved.',
                 options: { variant: 'success' },
               });
             }

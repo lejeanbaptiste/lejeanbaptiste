@@ -40,7 +40,8 @@ export const EditorToolbar = () => {
   // const { fullscreen } = useAppState().ui;
 
   const { toggleShowTags } = useActions().editor;
-  const { openDialog, showContextMenu /* , toggleFullscreen */ } = useActions().ui;
+  const { openDialog, showContextMenu, startDisambiguationReview /* , toggleFullscreen */ } =
+    useActions().ui;
 
   const { entity, spacing } = useTheme();
 
@@ -211,6 +212,14 @@ export const EditorToolbar = () => {
       icon: 'TagPlus',
       onClick: () => openDialog({ type: 'autoTagging' }),
       title: 'Auto-tagging',
+      type: 'iconButton',
+    },
+    {
+      group: 'ui',
+      hide: isReadonly,
+      icon: 'disambiguate',
+      onClick: () => startDisambiguationReview(),
+      title: 'Disambiguate',
       type: 'iconButton',
     },
     // {

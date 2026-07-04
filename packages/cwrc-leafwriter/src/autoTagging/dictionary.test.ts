@@ -20,18 +20,16 @@ describe('parseDictionaryTable', () => {
     expect(entries).toEqual([{ string: '張衡', tag: 'persName' }]);
   });
 
-  it('parses optional attributes and entityId columns', () => {
+  it('ignores extra columns (ids, metadata) — tag stage writes no ids', () => {
     const entries = parseDictionaryTable(
       'string,tag,attributes,entityId\n張衡,persName,type=historical;cert=high,p042',
     );
-    expect(entries).toEqual([
-      {
-        string: '張衡',
-        tag: 'persName',
-        attributes: { type: 'historical', cert: 'high' },
-        entityId: 'p042',
-      },
-    ]);
+    expect(entries).toEqual([{ string: '張衡', tag: 'persName' }]);
+  });
+
+  it('reads an authority export with id columns as a plain string/tag list', () => {
+    const entries = parseDictionaryTable('person_id,string,tag\n80160,張衡,persName');
+    expect(entries).toEqual([{ string: '張衡', tag: 'persName' }]);
   });
 
   it('handles quoted fields containing the delimiter', () => {
@@ -49,12 +47,12 @@ describe('dictionaryTag', () => {
 <p>大浮黎土之中，浮黎再現。張衡居洛陽。</p>
 </body></text></TEI>`;
 
-  it('emits suggestions for every match, entityId becoming @key', () => {
+  it('emits tag-only suggestions for every match (no ids at this stage)', () => {
     const doc = parse(TEI);
     const suggestions = dictionaryTag(
       doc,
       [
-        { string: '張衡', tag: 'persName', entityId: 'p042' },
+        { string: '張衡', tag: 'persName' },
         { string: '洛陽', tag: 'placeName' },
       ],
       'ignore',
@@ -64,9 +62,15 @@ describe('dictionaryTag', () => {
     expect(suggestions).toHaveLength(2);
     const zhang = suggestions.find((s) => s.anchor.surface === '張衡')!;
     expect(zhang.tag).toBe('persName');
-    expect(zhang.attributes).toEqual({ key: 'p042' });
+    expect(zhang.attributes).toBeUndefined();
     expect(zhang.sourceDetail).toBe('test-table');
     expect(zhang.rationale).toContain('test-table');
+  });
+
+  it('skips single-character strings by default (minLength 2)', () => {
+    const doc = parse(TEI);
+    const suggestions = dictionaryTag(doc, [{ string: '張', tag: 'persName' }], 'ignore');
+    expect(suggestions).toHaveLength(0);
   });
 
   it('prefers longer strings: shorter entries never match inside a longer claim', () => {

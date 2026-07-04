@@ -5,6 +5,11 @@ import { entityLookupDialogAtom } from '../../jotai/entity-lookup';
 import { Context } from '../';
 import { db } from '../../db';
 import type { DialogBarProps, PopupProps } from '../../dialogs';
+import {
+  clearAutoTaggingBatch,
+  stashAutoTaggingBatch,
+} from '../../autoTagging/batchHolder';
+import type { Suggestion } from '../../autoTagging/types';
 import i18n, { Locales, localesSchema } from '../../i18n';
 import type { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 import type { EditorViewMode } from './state';
@@ -319,6 +324,28 @@ export const exitTranslationMode = ({ state }: Context) => {
 export const setSelectedTranslationUnit = ({ state }: Context, unitId: string | null) => {
   if (!state.ui.translationMode.active) return;
   state.ui.translationMode.selectedUnitId = unitId;
+};
+
+export const startAutoTaggingReview = ({ state }: Context, suggestions: Suggestion[]) => {
+  stashAutoTaggingBatch(suggestions);
+  state.ui.autoTaggingReview.active = true;
+  window.dispatchEvent(new CustomEvent('desktop:auto-tagging-review-open'));
+};
+
+export const exitAutoTaggingReview = ({ state }: Context) => {
+  clearAutoTaggingBatch();
+  state.ui.autoTaggingReview.active = false;
+  window.dispatchEvent(new CustomEvent('desktop:auto-tagging-review-close'));
+};
+
+export const startDisambiguationReview = ({ state }: Context) => {
+  state.ui.disambiguationReview.active = true;
+  window.dispatchEvent(new CustomEvent('desktop:disambiguation-review-open'));
+};
+
+export const exitDisambiguationReview = ({ state }: Context) => {
+  state.ui.disambiguationReview.active = false;
+  window.dispatchEvent(new CustomEvent('desktop:disambiguation-review-close'));
 };
 
 export const resetSourceEditor = ({ state }: Context) => {

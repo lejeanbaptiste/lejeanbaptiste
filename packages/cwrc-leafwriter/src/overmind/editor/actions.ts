@@ -11,6 +11,7 @@ const ASIAN_FONT_KEY = 'asianFont';
 const FONT_FAMILY_STYLE_ID = 'leafwriter-default-font-families';
 const LATIN_FONT_KEY = 'latinFont';
 const SHOW_RAW_XML_PANEL_KEY = 'showRawXmlPanel';
+const STRIP_CJK_WHITESPACE_KEY = 'stripCjkWhitespace';
 
 const CJK_FONT_SELECTORS = [
   ':lang(zh)',
@@ -86,6 +87,9 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
   if (state.editor.showTags) $(body).addClass('showTags');
   if (state.editor.showTagBubble) $(body).addClass('showTagBubble');
   window.writer.layoutManager.applyRawXmlPanelVisibility(state.editor.showRawXmlPanel);
+
+  const storedStripCjk = effects.editor.api.getFromLocalStorage<boolean>(STRIP_CJK_WHITESPACE_KEY);
+  if (storedStripCjk !== null) state.editor.stripCjkWhitespace = storedStripCjk;
 };
 
 export const setAutosave = ({ state }: Context, value?: boolean) => {
@@ -155,6 +159,17 @@ export const setShowEntities = ({ state }: Context, value: boolean) => {
 
   $('body', window.writer.editor.getDoc()).toggleClass('showEntities');
   state.editor.showEntities = value;
+};
+
+export const setStripCjkWhitespace = ({ state, effects }: Context, value: boolean) => {
+  state.editor.stripCjkWhitespace = value;
+  effects.editor.api.saveToLocalStorage<boolean>(STRIP_CJK_WHITESPACE_KEY, value);
+  // Re-process the current document so the change takes effect immediately.
+  if (value && window.writer?.isDocLoaded) {
+    void window.writer.getDocumentString().then((xml) => {
+      if (xml) window.writer?.loadDocumentXML(xml);
+    });
+  }
 };
 
 export const setShowRawXmlPanel = ({ state, effects }: Context, value: boolean) => {

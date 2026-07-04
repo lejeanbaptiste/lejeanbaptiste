@@ -1,6 +1,9 @@
-import { INFRASTRUCTURE_DIR } from '../infrastructurePaths';
+import { INFRASTRUCTURE_DIR, isCorpusExcludedPath } from '../infrastructurePaths';
 
-export const collectXmlFiles = async (dirPath: string): Promise<string[]> => {
+export const collectXmlFiles = async (
+  dirPath: string,
+  projectRoot: string = dirPath,
+): Promise<string[]> => {
   if (!window.electronAPI) return [];
 
   const entries = await window.electronAPI.readDirectory(dirPath, { allFiles: true });
@@ -8,13 +11,14 @@ export const collectXmlFiles = async (dirPath: string): Promise<string[]> => {
 
   for (const entry of entries) {
     if (entry.isDirectory) {
-      // Reserved project infrastructure (entity file, decision log) is never
-      // a search target — keep find/replace out of /.leaf/.
       if (entry.name === INFRASTRUCTURE_DIR) continue;
-      files.push(...(await collectXmlFiles(entry.path)));
+      files.push(...(await collectXmlFiles(entry.path, projectRoot)));
       continue;
     }
-    if (entry.name.toLowerCase().endsWith('.xml')) {
+    if (
+      entry.name.toLowerCase().endsWith('.xml') &&
+      !isCorpusExcludedPath(entry.path, projectRoot)
+    ) {
       files.push(entry.path);
     }
   }

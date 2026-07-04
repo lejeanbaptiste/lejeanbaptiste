@@ -9,10 +9,13 @@ interface FakeEntry {
 const tree: Record<string, FakeEntry[]> = {
   '/proj': [
     { name: 'chapter1.xml', path: '/proj/chapter1.xml', isDirectory: false },
-    { name: '.leaf', path: '/proj/.leaf', isDirectory: true },
+    { name: 'entities.xml', path: '/proj/entities.xml', isDirectory: false },
+    { name: '.ljb', path: '/proj/.ljb', isDirectory: true },
     { name: 'sub', path: '/proj/sub', isDirectory: true },
   ],
-  '/proj/.leaf': [{ name: 'entities.xml', path: '/proj/.leaf/entities.xml', isDirectory: false }],
+  '/proj/.ljb': [
+    { name: 'entity-decisions.jsonl', path: '/proj/.ljb/entity-decisions.jsonl', isDirectory: false },
+  ],
   '/proj/sub': [{ name: 'chapter2.xml', path: '/proj/sub/chapter2.xml', isDirectory: false }],
 };
 
@@ -27,9 +30,10 @@ describe('collectXmlFiles', () => {
     window.electronAPI = original;
   });
 
-  it('recurses into normal folders but never into /.leaf/', async () => {
+  it('recurses into normal folders but skips .ljb/ and entities.xml', async () => {
     const files = await collectXmlFiles('/proj');
     expect(files).toEqual(['/proj/chapter1.xml', '/proj/sub/chapter2.xml']);
-    expect(files).not.toContain('/proj/.leaf/entities.xml');
+    expect(files).not.toContain('/proj/entities.xml');
+    expect(files).not.toContain('/proj/.ljb/entity-decisions.jsonl');
   });
 });

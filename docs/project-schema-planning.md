@@ -10,17 +10,21 @@
 
 **Open Project** (IDE-style) opens or creates a folder, ensures a local schema in `schema/`, collects **project-wide metadata**, then loads the project. There is no separate “New Project” menu item.
 
-After the user picks a schema (first-time setup only), a **Project metadata** dialog appears. Fields are defined by the schema catalog entry; the user can add custom fields at the bottom. Values are stored in **`schema/project-metadata.json`** (portable with the schema folder). Blanks stay blank — they are not written into defaults and are omitted from new files until set per document.
+After the user picks a schema (first-time setup only), a **Project settings** dialog appears (renamed from "Project metadata" / "Edition metadata"). Fields are defined by the schema catalog entry; the user can add custom fields at the bottom. Values are stored in **`schema/project-metadata.json`** (portable with the schema folder). Blanks stay blank — they are not written into defaults and are omitted from new files until set per document.
 
-**App Settings** includes the user’s **encoder name**, pre-filled in the metadata dialog when creating a new project (user can clear or override for that project). Changing Settings does not rewrite existing projects.
+**First-run (install):** before any project work, the user chooses a **central entity database folder** (see `docs/Auto-tagging.md`). LJB explains the folder holds `entities.xml` and suggests keeping projects as subfolders; layout is optional.
+
+**App Settings** includes the user's **encoder name** (pre-filled in Project settings on new projects), **entity database folder path**, and other global prefs. Changing Settings does not rewrite existing projects.
 
 **New File** (⌘N) merges project metadata defaults into a schema-valid skeleton (plus per-file `Untitled` title). Temp file + Save As flow unchanged.
 
-**Project → Edition metadata…** re-opens the dialog anytime. Saving changed defaults prompts whether to **apply to existing XML files** (confirmed, never silent).
+**Project → Project settings…** re-opens the dialog anytime. Includes **entity database: Central / This project** (see `jean-baptiste.project.json` `entityStore`). Saving changed defaults prompts whether to **apply to existing XML files** (confirmed, never silent).
+
+**On project open:** if `jean-baptiste.project.json` has no `entityStore` / `entityDatabaseId` yet, open Project settings automatically (same as missing metadata file).
 
 **Schema download picker** reuses the existing LEAF-Writer catalog (`packages/cwrc-leafwriter/src/config/schemas.ts` + `schemasList` in the editor)—no duplicate menu. **v1** enables **TEI All** and **TEI Lite** for download, metadata fields, and New File skeletons; other catalog entries appear under **More schemas…** (disabled or phased) until templates and field maps ship. **Use local schema file…** is always available.
 
-**Per-file metadata** lives in a **right-hand panel** (LEAF-Writer east rail), first icon in the icon strip, **default panel when a file opens**. **Edition metadata** (project-wide) stays **Project → Edition metadata…** dialog. Right-rail tabs use **icons instead of text labels** where space is tight.
+**Per-file metadata** lives in a **right-hand panel** (LEAF-Writer east rail), first icon in the icon strip, **default panel when a file opens**. **Project settings** (project-wide defaults + entity database choice) stays **Project → Project settings…** dialog. Right-rail tabs use **icons instead of text labels** where space is tight.
 
 ---
 
