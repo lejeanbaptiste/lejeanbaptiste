@@ -15,6 +15,7 @@ import { entityStoreFromDesktop, type EntityStore } from './entityStore';
 import type { LlmClient } from './llmClient';
 import { LlmCache } from './llmCache';
 import { llmSuggest, type LlmSuggestResult } from './llmSuggest';
+import { llmAudit, collectTaggedSpans, type LlmAuditResult } from './llmAudit';
 import { normalizeDomText } from './normalize';
 import {
   collectMentions,
@@ -149,6 +150,32 @@ export class AutoTaggingSession {
       policy: this.policy,
       onProgress,
     });
+  }
+
+  /**
+   * Run AI audit on the live document (existing tags rendered inline per chunk).
+   * Uses `.ljb/ai-cache/` when a project store is available.
+   */
+  async runAiAudit(
+    tags: string[],
+    client: LlmClient,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<LlmAuditResult> {
+    const doc = await this.getDocument();
+    return llmAudit(doc, {
+      tags,
+      client,
+      cache: this.llmCache ?? undefined,
+      policy: this.policy,
+      onProgress,
+    });
+  }
+
+  /** True when the document has at least one tagged mention for any of `tags`. */
+  async hasTaggedMentions(tags: string[]): Promise<boolean> {
+    const doc = await this.getDocument();
+    const index = buildDocIndex(doc, this.policy);
+    return collectTaggedSpans(doc, index, new Set(tags)).length > 0;
   }
 
   /**

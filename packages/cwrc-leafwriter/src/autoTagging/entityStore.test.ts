@@ -62,6 +62,35 @@ describe('EntityStore', () => {
       entityStore: 'project',
     });
 
+  it('creates central entities.xml on first load without touching the project folder', async () => {
+    const fs = new FakeFs();
+    const store = EntityStore.fromPaths(
+      fs,
+      resolveEntityStorePaths({
+        projectRoot: '/proj',
+        entityStore: 'central',
+        centralFolder: '/corpus',
+      }),
+    );
+
+    await store.loadEntities();
+    expect(fs.files.has('/corpus/entities.xml')).toBe(true);
+    expect(fs.files.has('/proj/entities.xml')).toBe(false);
+  });
+
+  it('refuses project-local entities.xml when central folder is elsewhere', async () => {
+    const fs = new FakeFs();
+    const paths = resolveEntityStorePaths({
+      projectRoot: '/proj',
+      entityStore: 'central',
+      centralFolder: '/corpus',
+    });
+    const store = EntityStore.fromPaths(fs, { ...paths, entitiesPath: '/proj/entities.xml' });
+
+    await expect(store.loadEntities()).rejects.toThrow(/project-local entities\.xml/);
+    expect(fs.files.has('/proj/entities.xml')).toBe(false);
+  });
+
   it('creates entities.xml from the scaffold on first load (project mode)', async () => {
     const fs = new FakeFs();
     const store = EntityStore.fromPaths(fs, projectPaths());

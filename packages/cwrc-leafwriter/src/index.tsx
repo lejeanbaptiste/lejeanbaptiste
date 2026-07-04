@@ -41,6 +41,7 @@ export {
 } from './utilities/languageCodes';
 export type { LanguageOption } from './utilities/languageCodes';
 export { entityLookupDialogAtom } from './jotai/entity-lookup';
+export { SETTINGS_BOOTSTRAP_URL } from './constants/settingsBootstrap';
 export * as Types from './types';
 
 const overmind = createOvermind(config, {

@@ -1,4 +1,5 @@
 import type { FileTreeNode } from '@src/overmind/project/state';
+import { isEntityDatabasePath } from '@src/desktop/infrastructurePaths';
 
 const splitPath = (filePath: string) => filePath.split(/[/\\]/);
 
@@ -108,12 +109,15 @@ const TRANSLATION_FILE_SUFFIX_PATTERN = /\.[A-Za-z0-9-]+\.translation\.xml$/i;
 export const isTranslationCompanionFile = (entryPath: string): boolean =>
   TRANSLATION_FILE_SUFFIX_PATTERN.test(entryPath);
 
-/** Omit the project schema directory and translation companion files from explorer listings. */
+/** Omit schema dir, translation companions, and project entity database from explorer listings. */
 export const shouldHideExplorerDirectoryEntry = (
   entryPath: string,
   schemaDirPath: string | null | undefined,
+  projectRoot?: string | null,
 ): boolean =>
-  Boolean(schemaDirPath && entryPath === schemaDirPath) || isTranslationCompanionFile(entryPath);
+  Boolean(schemaDirPath && entryPath === schemaDirPath) ||
+  isTranslationCompanionFile(entryPath) ||
+  Boolean(projectRoot && isEntityDatabasePath(entryPath, projectRoot));
 
 export const repathFilePath = (filePath: string, oldPath: string, newPath: string): string | null =>
   repathSingle(filePath, oldPath, newPath);

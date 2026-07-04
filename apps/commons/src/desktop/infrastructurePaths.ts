@@ -7,6 +7,12 @@
 export const INFRASTRUCTURE_DIR = '.ljb';
 export const ENTITIES_FILE_NAME = 'entities.xml';
 
+export const normalizePathKey = (filePath: string): string =>
+  filePath.split(/[/\\]+/).filter(Boolean).join('/').toLowerCase();
+
+export const pathsMatch = (a: string, b: string): boolean =>
+  normalizePathKey(a) === normalizePathKey(b);
+
 /** True when any path segment is the reserved infrastructure directory. */
 export const isInfrastructurePath = (filePath: string): boolean =>
   filePath.split(/[/\\]+/).includes(INFRASTRUCTURE_DIR);
@@ -16,11 +22,11 @@ export const isInfrastructurePath = (filePath: string): boolean =>
  * Central-database paths outside the project are never enumerated.
  */
 export const isEntityDatabasePath = (filePath: string, projectRoot?: string): boolean => {
-  const normalized = filePath.split(/[/\\]+/).join('/');
-  if (!normalized.endsWith(`/${ENTITIES_FILE_NAME}`)) return false;
-  if (!projectRoot) return normalized.endsWith(`/${ENTITIES_FILE_NAME}`);
-  const root = projectRoot.split(/[/\\]+/).join('/').replace(/\/+$/, '');
-  return normalized === `${root}/${ENTITIES_FILE_NAME}`;
+  const normalized = normalizePathKey(filePath);
+  if (!normalized.endsWith(`/${ENTITIES_FILE_NAME.toLowerCase()}`)) return false;
+  if (!projectRoot) return true;
+  const root = normalizePathKey(projectRoot).replace(/\/+$/, '');
+  return normalized === `${root}/${ENTITIES_FILE_NAME.toLowerCase()}`;
 };
 
 /** Skip hidden infra or the project entity database file. */

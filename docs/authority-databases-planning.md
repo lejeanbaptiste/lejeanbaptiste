@@ -1,3 +1,8 @@
+
+# Vague base plan
+
+We should look into offering to scrape all names for persons, places, orgs, etc. from the base authorities (WikiData, VIAF, etc.) if possible. Unclear whether the user should do this OR if pre-ship.
+
 # Authority databases: CBDB + DILA integration plan
 
 Status: planning (studied 2026-07-04 against the files in `databases/`).

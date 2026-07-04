@@ -304,6 +304,36 @@ describe('AutoTaggingSession', () => {
       expect(getCurrent()).toContain(`key="${entityId}"`);
       expect(files.get('/proj/entities.xml')).toContain(entityId);
     });
+  });
 
+  it('applies audit remove suggestions through the session', async () => {
+    const tagged = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
+<p><persName>張衡</persName>居<placeName>洛陽</placeName>。</p>
+</body></text></TEI>`;
+    const { writer, getCurrent } = makeWriter(tagged);
+    const session = new AutoTaggingSession(writer);
+
+    const doc = await session.getDocument();
+    const { collectTextNodes, createAnchor } = await import('./anchor');
+    const nodes = collectTextNodes(doc, 'ignore');
+    const persNode = nodes.find((n) => n.search.text.includes('張衡'))!.node;
+    const idx = nodes.find((n) => n.node === persNode)!.search.text.indexOf('張衡');
+    const rawStart = nodes.find((n) => n.node === persNode)!.search.map[idx]!;
+    const rawEnd = rawStart + '張衡'.length;
+
+    const removeSuggestion = {
+      id: 'audit_remove_1',
+      source: 'ai' as const,
+      action: 'remove' as const,
+      tag: 'persName',
+      anchor: createAnchor('doc', doc, persNode, rawStart, rawEnd, 'ignore'),
+      status: 'pending' as const,
+    };
+
+    const result = await session.apply([removeSuggestion]);
+    expect(result.applied).toBe(1);
+    expect(getCurrent()).toContain('張衡居');
+    expect(getCurrent()).not.toContain('<persName>張衡</persName>');
+    expect(getCurrent()).toContain('<placeName>洛陽</placeName>');
   });
 });

@@ -11,6 +11,22 @@ export interface ChunkOptions {
   /** Read-only context margin included before/after the taggable span. */
   marginChars?: number;
   blockTags?: string[];
+  /**
+   * When set, pack at most this many leaf block elements per chunk (e.g. 1 =
+   * one `<p>` at a time). Overrides `targetChars` packing across blocks.
+   */
+  maxBlocksPerChunk?: number;
+}
+
+/** Default for AI suggest/audit — one leaf block per request to stay under provider TPM limits. */
+export const LLM_MAX_BLOCKS_PER_CHUNK = 1;
+
+/** Chunk options for LLM producers: one `<p>` (leaf block) per API call unless overridden. */
+export function llmChunkOptions(options: ChunkOptions): ChunkOptions {
+  return {
+    ...options,
+    maxBlocksPerChunk: options.maxBlocksPerChunk ?? LLM_MAX_BLOCKS_PER_CHUNK,
+  };
 }
 
 export interface Chunk {
@@ -39,7 +55,13 @@ interface BlockRange {
  * elements are present.
  */
 export function chunkDocument(doc: Document, options: ChunkOptions): Chunk[] {
-  const { policy, targetChars = 3000, marginChars = 200, blockTags = DEFAULT_BLOCK_TAGS } = options;
+  const {
+    policy,
+    targetChars = 3000,
+    marginChars = 200,
+    blockTags = DEFAULT_BLOCK_TAGS,
+    maxBlocksPerChunk,
+  } = options;
   const index = buildDocIndex(doc, policy);
   if (index.text.length === 0) return [];
 
@@ -53,9 +75,16 @@ export function chunkDocument(doc: Document, options: ChunkOptions): Chunk[] {
     const start = ranges[i]!.start;
     let end = ranges[i]!.end;
     let j = i + 1;
-    while (j < ranges.length && ranges[j]!.end - start <= targetChars) {
-      end = ranges[j]!.end;
-      j++;
+    if (maxBlocksPerChunk !== undefined) {
+      while (j < ranges.length && j - i < maxBlocksPerChunk) {
+        end = ranges[j]!.end;
+        j++;
+      }
+    } else {
+      while (j < ranges.length && ranges[j]!.end - start <= targetChars) {
+        end = ranges[j]!.end;
+        j++;
+      }
     }
     chunks.push({
       id: `chunk_${counter++}`,

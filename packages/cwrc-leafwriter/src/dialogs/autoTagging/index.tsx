@@ -32,6 +32,7 @@ const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
 const AI_TAG_OPTIONS = ['persName', 'placeName'] as const;
 type AiTagOption = (typeof AI_TAG_OPTIONS)[number];
 type DialogStep = 'methods' | 'ai';
+type AiMode = 'suggest' | 'audit';
 
 const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI;
 
@@ -43,6 +44,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<DialogStep>('methods');
+  const [aiMode, setAiMode] = useState<AiMode>('suggest');
   const [aiTags, setAiTags] = useState<Record<AiTagOption, boolean>>({
     persName: true,
     placeName: true,
@@ -116,9 +118,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     }
   };
 
-  const openAiStep = () => {
+  const openAiStep = (mode: AiMode) => {
     if (!isDesktopApp()) {
-      setError('AI suggest is available in the desktop app.');
+      setError(`AI ${mode} is available in the desktop app.`);
       return;
     }
     if (!aiReady) {
@@ -128,10 +130,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       return;
     }
     setError(null);
+    setAiMode(mode);
     setStep('ai');
   };
 
-  const runAiSuggest = async () => {
+  const runAi = async () => {
     const tags = AI_TAG_OPTIONS.filter((tag) => aiTags[tag]);
     if (tags.length === 0) {
       setError('Select at least one tag type.');
@@ -143,19 +146,34 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       return;
     }
 
+    if (aiMode === 'audit') {
+      const hasTags = await getSession().hasTaggedMentions(tags);
+      if (!hasTags) {
+        setError(
+          'No existing tags to audit for the selected types. Tag the document first (dictionary, crawl, or suggest).',
+        );
+        return;
+      }
+    }
+
     setError(null);
     setBusy(true);
     setAiProgress({ done: 0, total: 0 });
     try {
       const client = createLlmClientFromSettings(settings);
-      const result = await getSession().runAiSuggest(tags, client, (done, total) => {
-        setAiProgress({ done, total });
-      });
+      const onProgress = (done: number, total: number) => setAiProgress({ done, total });
+      const result =
+        aiMode === 'audit'
+          ? await getSession().runAiAudit(tags, client, onProgress)
+          : await getSession().runAiSuggest(tags, client, onProgress);
+
       if (result.suggestions.length === 0) {
         setError(
           result.unverifiableCount > 0
-            ? `No verifiable suggestions (${result.unverifiableCount} model claims could not be anchored in the document).`
-            : 'No suggestions from the model for the selected tags.',
+            ? `No verifiable ${aiMode === 'audit' ? 'findings' : 'suggestions'} (${result.unverifiableCount} model claims could not be anchored in the document).`
+            : aiMode === 'audit'
+              ? 'No issues found — the model did not propose any corrections.'
+              : 'No suggestions from the model for the selected tags.',
         );
         return;
       }
@@ -186,11 +204,13 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     </Button>
   );
 
+  const aiBusyLabel = aiMode === 'audit' ? 'Running AI audit…' : 'Running AI suggest…';
+
   return (
     <>
       <AutoTaggingApplyOverlay
         open={busy && step === 'ai'}
-        label="Running AI suggest…"
+        label={aiBusyLabel}
         done={aiProgress.done}
         total={aiProgress.total}
       />
@@ -232,7 +252,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               />
               {methodButton('From existing tags in this project', () => void crawlProject())}
               {methodButton('East Asian dates', () => {}, true)}
-              {methodButton('AI suggest', openAiStep, !isDesktopApp())}
+              {methodButton('AI suggest', () => openAiStep('suggest'), !isDesktopApp())}
+              {methodButton('AI audit', () => openAiStep('audit'), !isDesktopApp())}
               {methodButton('NER', () => {}, true)}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
                 <Link component="button" variant="caption" underline="hover" onClick={handleClose}>
@@ -243,7 +264,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
           ) : (
             <Stack spacing={1} sx={{ mt: 0.5 }}>
               <Typography variant="body2" color="text.secondary">
-                Ask the configured model to find entity mentions. Results open in the review panel.
+                {aiMode === 'audit'
+                  ? 'Review existing tags for mistakes. The model sees current boundaries inline; results open in the review panel.'
+                  : 'Ask the configured model to find entity mentions. Results open in the review panel.'}
               </Typography>
               {aiSettings?.model && (
                 <Typography variant="caption" color="text.secondary">
@@ -279,8 +302,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 >
                   Back
                 </Link>
-                <Button size="small" variant="contained" disabled={busy} onClick={() => void runAiSuggest()}>
-                  Run AI suggest
+                <Button size="small" variant="contained" disabled={busy} onClick={() => void runAi()}>
+                  {aiMode === 'audit' ? 'Run AI audit' : 'Run AI suggest'}
                 </Button>
               </Stack>
             </Stack>

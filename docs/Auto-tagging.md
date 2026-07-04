@@ -123,6 +123,63 @@ Requirements:
 
 These are just suggestion objects with different `action` values, reviewed in the same UI as everything else.
 
+**LLM prompts** (Phase 5 suggest/audit) live as editable text in `packages/cwrc-leafwriter/src/autoTagging/prompt-templates/` — not inline in TypeScript. Bump `versions.json` when wording changes enough to invalidate the AI cache. See **Immediate future** below for the planned UI on top of these files.
+
+### Immediate future (post–first UI wiring, 2026-07)
+
+AI suggest is wired in the desktop app (dialog → review panel → `.ljb/ai-cache/`). Two gaps surfaced immediately after the first live runs: **prompt control for different models**, and **tag types beyond the bootstrap pair**. Both are engine-ready; what is missing is UI, definitions, and harness coverage.
+
+#### A. Prompt profiles — edit, save, and match models
+
+**Problem:** `suggest.v3` was tuned on Groq Qwen3.6-27B (`gold_test.xml`, F1≈0.74). The same prompt regressed on local Ministral 8B; hosted Mistral improved but stayed behind Groq. Users will run different models (Groq, Mistral API, LM Studio) and different corpora (biography vs. cosmology vs. modern Chinese). Prompt text cannot stay one-size-fits-all or developer-only.
+
+**What exists today:**
+
+| Piece | Location | Role |
+|-------|----------|------|
+| Template files | `autoTagging/prompt-templates/` | `preamble.txt`, `suggest.system.txt`, `tag-definitions.json`, `versions.json` |
+| Assembly | `prompts.ts` | Fills `{{TAGS}}`, `{{TAG_GUIDE}}`; exports `SUGGEST_PROMPT_VERSION` for cache keys |
+| Connection settings | App Settings → AI API | base URL, API key, model — **not** suggest prompt text |
+| Translation-only extra | `customInstructions` in AI API settings | Used by translation; **not** wired to suggest yet |
+
+**What to build (v1 prompt UI):**
+
+1. **Prompt profile storage** — e.g. `.ljb/ai-prompt-profiles.json` (project-scoped) and/or app-level defaults beside AI API settings. Each profile: `{ id, label, modelPattern?, suggestSuffix?, tagGuideOverrides?, version }`.
+2. **Profile selection** — on the AI suggest step (and later audit): show active profile; “Edit prompt…” opens an editor. Auto-select profile when `modelPattern` matches the configured model id (e.g. `*qwen3.6*` → “Groq classical biography”).
+3. **Layered assembly** (do not let users break the contract):
+   - **Locked in code:** locator rules, JSON shape, chunk/context boundaries (`preamble.txt`).
+   - **Editable per profile:** task wording, recall/precision bias, corpus genre note (`suggest.system.txt` body or suffix).
+   - **Editable per tag:** one-line definitions (`tag-definitions.json` or UI equivalent).
+4. **Version bump on save** — any semantic profile change bumps effective `SUGGEST_PROMPT_VERSION` (or a profile-specific suffix in the cache key) so `.ljb/ai-cache/` does not serve stale chunks.
+5. **Harness loop** — re-run `validationHarness.live.test` after profile edits; document P/R/F1 in `phase5-validation-results.md` per profile/model pair.
+
+**Out of scope for v1 prompt UI:** stacking suggest + audit in one request; user-editable JSON schema; sharing profiles across projects (export/import can come later).
+
+#### B. Expandable tag types — not only `persName` / `placeName`
+
+**Problem:** The dialog hardcodes two checkboxes (`persName`, `placeName`) because the gold harness and `tag-definitions.json` only cover those tags. Biographical TEI also needs `roleName` (尚書僕射, 侍中), `orgName` (太學), `date`, `title`, etc. — and each project/schema will want a different subset.
+
+**What the engine already supports:**
+
+- `llmSuggest(doc, { tags: [...] })` accepts **any tag name list**; validation only requires the model to return tags from that list.
+- **Crawl** already defaults to eight tag types (`persName`, `placeName`, `orgName`, `geogName`, `name`, `roleName`, `title`, `date` — see `DEFAULT_CRAWL_TAGS` in `crawl.ts`).
+- **Entity database** maps `persName`, `placeName`, `orgName`, `title` → entity kinds (`TAG_TO_KIND` in `entities.ts`). `roleName` is still an open modeling question (tag in corpus XML, often no standoff entity — see Phase 4a notes).
+
+**What to build (v1 tag picker):**
+
+1. **Schema-driven tag list** — populate the AI suggest checkboxes from the loaded RNG (or a curated allowlist per project: “entity tags this edition uses”). Default selection: project’s most common NE tags, not a global hardcode.
+2. **`tag-definitions.json` entries** for each offered tag — at minimum next batch for classical biography:
+   - `roleName` — office/rank when referring to a role, not a person name (尚書僕射, 大將軍); distinguish from `persName` when the string is clearly a title.
+   - `orgName` — institution (太學, 學官).
+   - `date` — explicit dates and reign-period references (defer if schema uses `<date>` differently).
+   - `title` — work titles (公羊春秋) when not a personal name.
+3. **Gold + harness extension** — extend `gold_test.xml` (or add `gold_test_roles.xml`) with hand-tagged `roleName`/`orgName` examples; measure per-tag P/R before enabling in the default UI.
+4. **Per-tag prompt tuning** — expect separate iteration: `roleName` is the main source of persName/placeName confusion in 後漢書-style prose; tune definitions before widening the default checkbox set.
+
+**Principle (unchanged):** one suggest pass, **multiple tag types** in a single request — keeps cost down and matches the JSON response shape. Do not default to one API call per tag type unless a tag family needs a wholly different prompt (possible later for `date`).
+
+**Done when (these two items):** user can pick tags from schema/project settings; active prompt profile is visible and editable without touching repo files; profile + tag set participate in cache keys; harness documents quality for at least Groq Qwen3.6 + one Mistral path on gold that includes `roleName`/`orgName`.
+
 **Auto-accept rules**: let users define per-tag trust (e.g., "auto-accept AI `<date>` suggestions above 0.9, always review `<persName>`").
 
 **User feedback**: no trained classifier. A simple decision log (surface form → chosen tag/entity, with counts) in the project entity file gets 90% of the value: it drives defaults ("user corrected 張衡→persName twice, so default to that") and doubles as context for AI ranking.

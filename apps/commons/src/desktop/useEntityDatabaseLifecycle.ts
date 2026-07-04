@@ -1,6 +1,7 @@
 import { entityStoreFromDesktop } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { runEntityDatabaseCheck } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityDatabaseCheck';
 import { resolveEntityStorePaths } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStoreResolve';
+import { removeOrphanProjectEntitiesFile } from '@src/desktop/entityDatabaseCleanup';
 import { useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useCallback, useEffect, useRef } from 'react';
@@ -37,23 +38,36 @@ export const useEntityDatabaseLifecycle = () => {
     if (!store || !window.electronAPI) return;
 
     checkedProjectRef.current = projectFilePath;
-    void runEntityDatabaseCheck(
-      store,
-      {
-        projectDatabaseId: config?.entityDatabaseId,
-        projectRoot: rootPath,
-        projectFilePath,
-      },
-      {
-        listProjectXmlFiles: (path) => window.electronAPI!.listProjectXmlFiles(path),
-        readFile: (path) => window.electronAPI!.readFile(path),
-        writeFile: (path, content) => window.electronAPI!.writeFile(path, content),
-        showNativeMessageBox: (options) => window.electronAPI!.showNativeMessageBox(options),
-        updateProjectFileConfig: (path, patch) =>
-          window.electronAPI!.updateProjectFileConfig(path, patch),
-      },
-    );
-  }, [config?.entityDatabaseId, projectFilePath, rootPath]);
+
+    void (async () => {
+      if (config?.entityStore !== 'project') {
+        const globals = window as unknown as {
+          __ljbLspProject?: { entityDbFolder?: string | null };
+        };
+        const centralFolder =
+          globals.__ljbLspProject?.entityDbFolder ??
+          (await window.electronAPI!.getEntityDbFolder?.().catch(() => null));
+        await removeOrphanProjectEntitiesFile(rootPath, centralFolder);
+      }
+
+      await runEntityDatabaseCheck(
+        store,
+        {
+          projectDatabaseId: config?.entityDatabaseId,
+          projectRoot: rootPath,
+          projectFilePath,
+        },
+        {
+          listProjectXmlFiles: (path) => window.electronAPI!.listProjectXmlFiles(path),
+          readFile: (path) => window.electronAPI!.readFile(path),
+          writeFile: (path, content) => window.electronAPI!.writeFile(path, content),
+          showNativeMessageBox: (options) => window.electronAPI!.showNativeMessageBox(options),
+          updateProjectFileConfig: (path, patch) =>
+            window.electronAPI!.updateProjectFileConfig(path, patch),
+        },
+      );
+    })();
+  }, [config?.entityDatabaseId, config?.entityStore, projectFilePath, rootPath]);
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onExternalFileChange) return;

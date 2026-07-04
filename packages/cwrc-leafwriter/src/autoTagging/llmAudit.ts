@@ -1,5 +1,5 @@
 import { buildDocIndex, createAnchor, type DocIndex } from './anchor';
-import { chunkDocument, type Chunk, type ChunkOptions } from './chunk';
+import { chunkDocument, llmChunkOptions, type Chunk, type ChunkOptions } from './chunk';
 import type { LlmCache } from './llmCache';
 import type { LlmClient } from './llmClient';
 import { findOccurrenceOffset, locateInDoc, parseValidItems } from './llmParse';
@@ -11,6 +11,8 @@ export interface LlmAuditOptions extends ChunkOptions {
   tags: string[];
   client: LlmClient;
   cache?: LlmCache;
+  /** Called after each chunk finishes (done/total). */
+  onProgress?: (done: number, total: number) => void;
 }
 
 export interface LlmAuditResult {
@@ -101,8 +103,8 @@ function renderChunkWithTags(index: DocIndex, chunk: Chunk, spans: TaggedSpan[])
  * suggestion, exactly like llmSuggest.
  */
 export async function llmAudit(doc: Document, options: LlmAuditOptions): Promise<LlmAuditResult> {
-  const { tags, client, cache, policy } = options;
-  const chunks = chunkDocument(doc, options);
+  const { tags, client, cache, policy, onProgress } = options;
+  const chunks = chunkDocument(doc, llmChunkOptions(options));
   const index = buildDocIndex(doc, policy);
   const tagSet = new Set(tags);
   const spans = collectTaggedSpans(doc, index, tagSet);
@@ -112,7 +114,8 @@ export async function llmAudit(doc: Document, options: LlmAuditOptions): Promise
   let unverifiableCount = 0;
   let counter = 0;
 
-  for (const chunk of chunks) {
+  for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+    const chunk = chunks[chunkIndex]!;
     const { rendered, map } = renderChunkWithTags(index, chunk, spans);
 
     let items = (await cache?.get(rendered, tags, client.modelId, AUDIT_PROMPT_VERSION)) ?? null;
@@ -157,6 +160,8 @@ export async function llmAudit(doc: Document, options: LlmAuditOptions): Promise
         unverifiableCount++;
       }
     }
+
+    onProgress?.(chunkIndex + 1, chunks.length);
   }
 
   return { suggestions, unverifiableCount };

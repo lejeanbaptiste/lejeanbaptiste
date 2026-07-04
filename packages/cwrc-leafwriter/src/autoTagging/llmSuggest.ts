@@ -1,6 +1,6 @@
 import { buildDocIndex } from './anchor';
 import { createAnchor } from './anchor';
-import { chunkDocument, type ChunkOptions } from './chunk';
+import { chunkDocument, llmChunkOptions, type ChunkOptions } from './chunk';
 import type { LlmCache } from './llmCache';
 import type { LlmClient } from './llmClient';
 import { findOccurrenceOffset, locateInDoc, parseValidItems } from './llmParse';
@@ -31,7 +31,7 @@ const SUGGEST_ACTIONS = ['add'];
  */
 export async function llmSuggest(doc: Document, options: LlmSuggestOptions): Promise<LlmSuggestResult> {
   const { tags, client, cache, policy, onProgress } = options;
-  const chunks = chunkDocument(doc, options);
+  const chunks = chunkDocument(doc, llmChunkOptions(options));
   const index = buildDocIndex(doc, policy);
   const schema = suggestionResponseSchema(SUGGEST_ACTIONS);
 

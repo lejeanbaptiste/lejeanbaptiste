@@ -221,14 +221,11 @@ confusions.
 ## Recommended next steps (updated 2026-07-04)
 
 1. ~~Prepare a short, completely hand-tagged gold passage~~ — **done:** `gold_test.xml`.
-2. ~~Run Groq Qwen3-32B and local Ministral on the same gold~~ — **done** (table above).
-2b. ~~Hosted Mistral `ministral-8b-2512` on same gold~~ — **done**.
-2c. ~~Groq `qwen/qwen3.6-27b` on same gold~~ — **done** (`suggest.v1` F1=.47; **`suggest.v3` F1=.74**).
-3. **Triage remaining errors** — Groq+v3: 21 FNs, 10 FPs. Hosted+v3: 40 FNs, 6 FPs.
-4. **Local Ministral:** v3 regressed — keep `suggest.v1` for LM Studio or draft a shorter Mistral-specific prompt.
-5. **Wire persistent `.ljb/ai-cache/`** into harness runs before prompt iteration.
-5. **`sizhu_shang` FPs (89)** — still worth sampling separately; precision there remains a floor
-   until that document's tagging is completed or superseded by `gold_test.xml` for benchmarking.
-6. Set per-tag auto-accept confidence thresholds once prompt tuning stabilizes.
+2. ~~Run model comparison + wire AI suggest UI~~ — **done** (Groq Qwen3.6 + v3 leads; dialog wired; `.ljb/ai-cache/` live).
+3. **Immediate future — prompt profiles** — UI to edit/save per-model (and per-project) suggest prompts; cache key includes profile version. See [Auto-tagging.md](Auto-tagging.md) → AI mode → Immediate future **A**.
+4. **Immediate future — expandable tags** — schema-driven tag picker; `tag-definitions.json` for `roleName`, `orgName`, …; extend gold + harness. See **B** in same section.
+5. **Triage remaining errors** on current gold — Groq+v3: 21 FNs, 10 FPs.
+6. **Local Ministral profile** — v3 regressed; ship a shorter Mistral-specific profile when prompt UI lands.
+7. Set per-tag auto-accept confidence thresholds once prompt/tag tuning stabilizes.
 
 Related memory: [[autotagging_phase5_ai_producers]].

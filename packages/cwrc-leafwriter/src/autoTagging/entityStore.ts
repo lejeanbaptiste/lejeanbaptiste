@@ -44,6 +44,7 @@ export class EntityStore {
   readonly entitiesPath: string;
   readonly projectLjbDir: string;
   readonly projectRoot: string;
+  readonly centralFolder: string | null;
   readonly decisionsPath: string;
   readonly authorityCacheDir: string;
   readonly aiCacheDir: string;
@@ -57,6 +58,7 @@ export class EntityStore {
     this.entitiesPath = paths.entitiesPath;
     this.projectLjbDir = paths.projectLjbDir;
     this.projectRoot = paths.projectRoot;
+    this.centralFolder = paths.centralFolder;
     this.decisionsPath = joinPath(paths.projectLjbDir, DECISIONS_FILE);
     this.authorityCacheDir = joinPath(paths.projectLjbDir, AUTHORITY_CACHE_DIR);
     this.aiCacheDir = joinPath(paths.projectLjbDir, AI_CACHE_DIR);
@@ -74,11 +76,32 @@ export class EntityStore {
     return resolveEntityStorePaths(input);
   }
 
+  private pathsMatch(a: string, b: string): boolean {
+    const normalize = (value: string) =>
+      value.split(/[/\\]+/).filter(Boolean).join('/').toLowerCase();
+    return normalize(a) === normalize(b);
+  }
+
+  /** Central mode must not write the default project-local slot unless that IS the central folder. */
+  private assertEntitiesPathForMode(): void {
+    if (this.mode !== 'central') return;
+
+    const projectLocalPath = joinPath(this.projectRoot, ENTITIES_FILE);
+    if (!this.pathsMatch(this.entitiesPath, projectLocalPath)) return;
+
+    if (this.centralFolder && this.pathsMatch(this.centralFolder, this.projectRoot)) return;
+
+    throw new Error(
+      'Central entity database must not use a project-local entities.xml file when the central folder is elsewhere.',
+    );
+  }
+
   /**
    * Load the entity file, creating `entities.xml` from the scaffold on first
    * use. Returns the parsed document.
    */
   async loadEntities(): Promise<Document> {
+    this.assertEntitiesPathForMode();
     const entitiesDir = this.entitiesPath.replace(/[/\\][^/\\]+$/, '');
     await this.api.ensureDirectory(entitiesDir);
     if (!(await this.api.pathExists(this.entitiesPath))) {
@@ -95,6 +118,7 @@ export class EntityStore {
 
   /** Write the entity document back to disk. */
   async saveEntities(doc: Document): Promise<void> {
+    this.assertEntitiesPathForMode();
     if (!isEntityDatabase(doc)) {
       throw new Error('Refusing to save: document is not a valid entity database.');
     }
