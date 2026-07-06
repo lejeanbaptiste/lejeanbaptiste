@@ -8,8 +8,13 @@ import * as Comlink from 'comlink';
 import { Context } from '../';
 import Writer from '../../js/Writer';
 import { webpackEnv } from '../../types';
+import { debugValidator } from './debugValidator';
 import { checkWellFormedness } from '../../utilities/checkWellFormedness';
-import { isLocalFileUrl, localSchemaToBlobUrl } from '../../utilities/fetchResource';
+import {
+  fetchResourceText,
+  isLocalFileUrl,
+  clearLocalSchemaBlobCache,
+} from '../../utilities/fetchResource';
 
 const getValidatorInstrumentation = () => {
   if (!window.__desktopValidatorInstrumentation) {
@@ -30,6 +35,8 @@ const logValidatorInstrumentation = (_tag: string) => undefined;
 
 export type SourceValidationResult = ValidationResponse & {
   parseError?: Extract<ReturnType<typeof checkWellFormedness>, { valid: false }>['error'];
+  /** RelaxNG validation did not run (worker or schema unavailable). */
+  schemaUnavailable?: boolean;
 };
 
 declare global {
@@ -39,26 +46,134 @@ declare global {
   }
 }
 
-export const loadValidator = async ({ state }: Context) => {
+const isEditorSchemaReady = (writer: Writer): boolean => {
+  const schemaManager = writer.schemaManager;
+  const schemaURL = schemaManager.getRng() ?? schemaManager.getCurrentDocumentSchemaUrl();
+  if (!schemaURL) return false;
+
+  const schemaId =
+    schemaManager.schemaId ??
+    schemaManager.getCurrentSchema()?.id ??
+    schemaManager.getSchemaIdFromUrl(schemaURL);
+
+  return Boolean(schemaId);
+};
+
+/** Block until the editor knows which RelaxNG schema to compile, or give up after document open. */
+const waitForEditorSchema = (writer: Writer): Promise<boolean> => {
+  if (isEditorSchemaReady(writer)) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = (ready: boolean) => {
+      if (settled) return;
+      settled = true;
+      writer.event('schemaLoaded').unsubscribe(onSchemaLoaded);
+      writer.event('documentLoaded').unsubscribe(onDocumentLoaded);
+      resolve(ready);
+    };
+
+    const onSchemaLoaded = () => finish(isEditorSchemaReady(writer));
+
+    const onDocumentLoaded = (success?: boolean) => {
+      if (success === false) {
+        finish(false);
+        return;
+      }
+      // Document finished opening; schemaLoaded may still be in flight this tick.
+      queueMicrotask(() => finish(isEditorSchemaReady(writer)));
+    };
+
+    writer.event('schemaLoaded').subscribe(onSchemaLoaded);
+    writer.event('documentLoaded').subscribe(onDocumentLoaded);
+
+    if (writer.isDocLoaded) {
+      queueMicrotask(() => finish(isEditorSchemaReady(writer)));
+    }
+  });
+};
+
+let validatorSpawnInFlight: Promise<void> | null = null;
+
+export type LoadValidatorOptions = {
+  silent?: boolean;
+  /** When false, the caller guarantees the editor schema is already resolved (e.g. loadSchema). */
+  waitForSchema?: boolean;
+};
+
+export const loadValidator = async (
+  { state, actions }: Context,
+  options?: LoadValidatorOptions,
+) => {
   const instrumentation = getValidatorInstrumentation();
+  const writer = window.writer;
+
+  if (!writer) {
+    logValidatorInstrumentation('loadValidator aborted: no writer');
+    return;
+  }
+
+  // Worker already running — just ensure the current schema is loaded into it.
+  if (state.validator.hasWorkerValidator && window.leafwriterValidator) {
+    await actions.validator.initialize(options);
+    return;
+  }
+
+  const shouldWaitForSchema = options?.waitForSchema !== false;
+
+  if (shouldWaitForSchema) {
+    const schemaReady = await waitForEditorSchema(writer);
+    if (!schemaReady) {
+      state.validator.hasSchema = false;
+      logValidatorInstrumentation('loadValidator deferred: schema not ready');
+      return;
+    }
+  } else if (!isEditorSchemaReady(writer)) {
+    state.validator.hasSchema = false;
+    logValidatorInstrumentation('loadValidator aborted: schema not ready (no wait)');
+    return;
+  }
+
+  if (validatorSpawnInFlight) {
+    await validatorSpawnInFlight;
+    await actions.validator.initialize(options);
+    return;
+  }
+
   instrumentation.workerLoading = true;
   instrumentation.workerLoaded = false;
   logValidatorInstrumentation('loadValidator started');
 
-  const baseUrl = state.editor.baseUrl;
-  const validator = await loadWebworker(baseUrl);
-  if (!validator) {
+  validatorSpawnInFlight = (async () => {
+    const baseUrl = state.editor.baseUrl;
+    const validator = await loadWebworker(baseUrl);
+    if (!validator) {
+      instrumentation.workerLoading = false;
+      instrumentation.workerLoaded = false;
+      logValidatorInstrumentation('loadValidator failed');
+      return;
+    }
+
+    window.leafwriterValidator = validator;
+    state.validator.hasWorkerValidator = true;
+    state.validator.hasSchema = false;
     instrumentation.workerLoading = false;
-    instrumentation.workerLoaded = false;
-    logValidatorInstrumentation('loadValidator failed');
+    instrumentation.workerLoaded = true;
+    logValidatorInstrumentation('loadValidator completed');
+  })();
+
+  try {
+    await validatorSpawnInFlight;
+  } finally {
+    validatorSpawnInFlight = null;
+  }
+
+  if (!state.validator.hasWorkerValidator) {
     return;
   }
 
-  window.leafwriterValidator = validator;
-  state.validator.hasWorkerValidator = true;
-  instrumentation.workerLoading = false;
-  instrumentation.workerLoaded = true;
-  logValidatorInstrumentation('loadValidator completed');
+  await actions.validator.initialize(options);
 };
 
 const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<ValidatorType>> => {
@@ -78,15 +193,22 @@ const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<ValidatorType
   });
 };
 
-const resolveSchemaUrlForWorker = async (schemaURL: string): Promise<string> => {
+const resolveSchemaForWorker = async (
+  schemaURL: string,
+): Promise<{ url: string; schemaText?: string } | null> => {
   if (isLocalFileUrl(schemaURL)) {
-    const blobUrl = await localSchemaToBlobUrl(schemaURL);
-    if (blobUrl) return blobUrl;
+    const schemaText = await fetchResourceText(schemaURL);
+    if (!schemaText) return null;
+    // Pass text to the worker; keep crcao URL as the stable identity key.
+    return { url: schemaURL, schemaText };
   }
-  return schemaURL;
+  return { url: schemaURL };
 };
 
-export const initialize = async ({ state }: Context) => {
+export const initialize = async (
+  { state }: Context,
+  options?: { silent?: boolean },
+) => {
   const instrumentation = getValidatorInstrumentation();
   instrumentation.schemaLoading = true;
   instrumentation.schemaLoaded = false;
@@ -107,30 +229,77 @@ export const initialize = async ({ state }: Context) => {
   const workerValidator = window.leafwriterValidator;
   state.validator.hasWorkerValidator = !!workerValidator;
 
-  const schemaId = writer.schemaManager.getCurrentSchema()?.id;
-  const schemaURL = writer.schemaManager.getRng();
+  const schemaManager = writer.schemaManager;
+  const documentSchemaUrl = schemaManager.getCurrentDocumentSchemaUrl();
+  const schemaURL = schemaManager.getRng() ?? documentSchemaUrl;
+  const schemaId =
+    schemaManager.schemaId ??
+    schemaManager.getCurrentSchema()?.id ??
+    (schemaURL ? schemaManager.getSchemaIdFromUrl(schemaURL) : undefined);
+
   if (!schemaId || !schemaURL) {
+    state.validator.hasSchema = false;
     instrumentation.schemaLoading = false;
+    logValidatorInstrumentation('initialize aborted: no schema id or url');
     return;
   }
 
-  const workerUrl = await resolveSchemaUrlForWorker(schemaURL);
-  let schemaWorker = { success: false };
+  const schemaRevision = schemaManager.getSchemaRevision();
+  const resolved = await resolveSchemaForWorker(schemaURL);
+  if (!resolved) {
+    state.validator.hasSchema = false;
+    instrumentation.schemaLoading = false;
+    console.warn('[validator] could not read local schema for RelaxNG validation:', schemaURL);
+    logValidatorInstrumentation('initialize failed: could not read local schema');
+    return;
+  }
+
+  const shouldCache = !isLocalFileUrl(schemaURL);
+  let schemaWorker: { success: boolean; error?: Error } = { success: false };
   try {
-    schemaWorker = await workerValidator.initialize({ id: schemaId, url: workerUrl });
-  } catch {
-    schemaWorker = { success: false };
+    schemaWorker = await workerValidator.initialize({
+      id: schemaId,
+      url: resolved.url,
+      schemaRevision,
+      schemaText: resolved.schemaText,
+      shouldCache,
+    });
+  } catch (error) {
+    schemaWorker = {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error)),
+    };
+    console.warn('[validator] worker schema initialize threw:', error);
   }
 
   instrumentation.schemaLoading = false;
   instrumentation.schemaLoaded = !!schemaWorker.success;
+  if (!schemaWorker.success) {
+    console.warn(
+      '[validator] RelaxNG schema failed to compile in worker:',
+      schemaId,
+      resolved.url,
+      schemaRevision ?? '',
+      schemaWorker.error?.message ?? '(no error message)',
+    );
+  }
   logValidatorInstrumentation(
     schemaWorker.success ? 'initialize completed' : 'initialize failed',
   );
 
-  if (schemaWorker.success) state.validator.hasSchema = true;
+  if (schemaWorker.success) {
+    state.validator.hasSchema = true;
+  } else {
+    state.validator.hasSchema = false;
+  }
 
-  window.writer?.event('workerValidatorLoaded').publish(schemaWorker);
+  // Callers that already trigger their own validate() afterward (like
+  // validate() itself, below) must suppress this event: the validation
+  // panel's "workerValidatorLoaded" subscriber calls validate() on receipt,
+  // which would call initialize() again, publish again, and loop forever.
+  if (!options?.silent) {
+    window.writer?.event('workerValidatorLoaded').publish(schemaWorker);
+  }
 };
 
 export const validate = async ({ state, actions }: Context) => {
@@ -142,6 +311,9 @@ export const validate = async ({ state, actions }: Context) => {
     instrumentation.validationRunning = false;
     return;
   }
+
+  // Ensure the worker exists and holds the current schema before validating.
+  await actions.validator.loadValidator({ silent: true });
 
   const documentString =
     state.ui.editorViewMode === 'source'
@@ -178,8 +350,17 @@ export const validate = async ({ state, actions }: Context) => {
   }
 
   if (!state.validator.hasWorkerValidator || !state.validator.hasSchema) {
-    await actions.validator.updateValidationError(0);
-    writer.event('documentValidated').publish(true, { valid: true }, validationString);
+    await actions.validator.updateValidationError(1);
+    writer.event('documentValidated').publish(
+      false,
+      {
+        state: WorkingState.INVALID,
+        valid: false,
+        errors: [],
+        schemaUnavailable: true,
+      } satisfies SourceValidationResult,
+      validationString,
+    );
     instrumentation.validationRunning = false;
     logValidatorInstrumentation('validate skipped: no worker or schema');
     return;
@@ -340,6 +521,12 @@ export const clear = ({ state }: Context) => {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const clearCache = async (_props: Context) => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  clearLocalSchemaBlobCache();
+  if (!window.leafwriterValidator) return;
   await window.leafwriterValidator.clearCache();
 };
+
+export const debugValidatorState = async (
+  _props: Context,
+  options?: { runValidation?: boolean },
+) => debugValidator(options);

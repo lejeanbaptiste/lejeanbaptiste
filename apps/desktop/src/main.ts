@@ -825,7 +825,10 @@ const setMainWindowTitle = (title?: string) => {
 };
 
 const openProjectFromDialog = async () => {
-  if (!mainWindow) return null;
+  if (!mainWindow) {
+    await createWindow();
+    if (!mainWindow) return null;
+  }
 
   mainWindow.focus();
 

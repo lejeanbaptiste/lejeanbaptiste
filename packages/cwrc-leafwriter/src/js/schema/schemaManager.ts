@@ -51,6 +51,9 @@ class SchemaManager {
    */
   schemaJSON: any | null = null;
 
+  /** Content fingerprint of the loaded RNG (merge version marker or hash prefix). */
+  private schemaRevision: string | null = null;
+
   /**
    * Stores a list of all the elements of the current schema
    * @member {Object}
@@ -115,6 +118,35 @@ class SchemaManager {
    */
   getRng() {
     return this.rng;
+  }
+
+  getSchemaRevision() {
+    return this.schemaRevision;
+  }
+
+  clearSchemaRevision() {
+    this.schemaRevision = null;
+  }
+
+  /** Fingerprint used to detect on-disk schema changes without a schema id change. */
+  static revisionFromRngContent(rngContent: string): string {
+    const mergeVersion = rngContent.match(/ljb-sanmiao-merge v\d+/i)?.[0];
+    if (mergeVersion) return mergeVersion.toLowerCase();
+    return rngContent.slice(0, 4096);
+  }
+
+  async revisionForRngUrl(rngUrl: string): Promise<string | null> {
+    const data = await fetchResourceText(rngUrl);
+    if (!data) return null;
+    return SchemaManager.revisionFromRngContent(data);
+  }
+
+  sameLocalRngUrl(a: string | null | undefined, b: string | null | undefined): boolean {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    const localA = fromLocalFileUrl(a);
+    const localB = fromLocalFileUrl(b);
+    return Boolean(localA && localB && localA === localB);
   }
 
   /**
@@ -584,11 +616,25 @@ class SchemaManager {
    * @param {Array} urls Collection of url sources
    * @returns {Document} The XML
    */
-  private async loadSchemaFile(urls: string[]) {
+  private async loadSchemaFile(
+    urls: string[],
+    options: { prioritizeDocumentSchema?: boolean; trackRng?: boolean } = {},
+  ) {
+    const { prioritizeDocumentSchema = true, trackRng = true } = options;
     urls = filterResourceUrls(urls);
 
-    // prioritize the document schema
-    if (this.documentSchemaUrl && !urls.includes(this.documentSchemaUrl)) {
+    // Prioritize the document schema — but NOT when resolving an <include>: an
+    // include's href is a specific file (e.g. the TEI core), and if
+    // documentSchemaUrl happens to equal the wrapper's own URL (set whenever a
+    // document is opened, and persists across project switches since
+    // schemaManager isn't recreated per project), this override would fetch the
+    // wrapper again instead of the include target, silently truncating the
+    // merged schema to just the wrapper's ~200 lines.
+    if (
+      prioritizeDocumentSchema &&
+      this.documentSchemaUrl &&
+      !urls.includes(this.documentSchemaUrl)
+    ) {
       urls = filterResourceUrls([this.documentSchemaUrl, ...urls]);
     }
 
@@ -618,7 +664,7 @@ class SchemaManager {
 
       // Convert to XML
       const xml = this.writer.utilities.stringToXML(data);
-      this.rng = url;
+      if (trackRng) this.rng = url;
       return xml;
     }
 
@@ -658,8 +704,13 @@ class SchemaManager {
       return;
     }
 
-    //load resource
-    const includesXML = await this.loadSchemaFile([url]);
+    //load resource — must fetch exactly this include's URL, not whatever
+    // documentSchemaUrl happens to be, and must not clobber this.rng (which
+    // tracks the top-level schema's own URL, used to resolve future includes).
+    const includesXML = await this.loadSchemaFile([url], {
+      prioritizeDocumentSchema: false,
+      trackRng: false,
+    });
     if (!includesXML) return null;
 
     include.children().each((index, el) => {
@@ -786,8 +837,6 @@ class SchemaManager {
     }
 
     schemaNavigator.setSchemaJSON(this.schemaJSON);
-
-    await this.writer.utilities.sendSchemaToWorkerValidator();
   }
 
   /**
@@ -813,6 +862,7 @@ class SchemaManager {
     this.writer.event('loadingSchema').publish();
 
     this.schemaId = schemaId;
+    this.schemaRevision = null;
 
     this.writer.overmindActions.document.setInitialStateSchema(schemaId);
 
@@ -821,9 +871,15 @@ class SchemaManager {
 
     //load resource
     const schemaXML = await this.loadSchemaFile(schemaEntry.rng);
+    const loadedRngUrl = this.rng ?? schemaEntry.rng[0];
+    const loadedRngText = loadedRngUrl ? await fetchResourceText(loadedRngUrl) : null;
+    if (loadedRngText) {
+      this.schemaRevision = SchemaManager.revisionFromRngContent(loadedRngText);
+    }
 
     if (!schemaXML) {
       this.schemaId = null;
+      this.schemaRevision = null;
       // this.writer.dialogManager.getDialog('loadingindicator')?.hide?.();
       // this.writer.dialogManager.show('message', {
       //   title: 'Error',
@@ -868,8 +924,11 @@ class SchemaManager {
     // if (loadCss === true) this.loadSchemaCSS(schemaEntry.id);
     this.loadSchemaCSS(css);
 
-    //Process schema
-    this.processSchema();
+    //Process schema (UI/CSS/schemaJSON for the editor)
+    await this.processSchema();
+
+    // Compile RelaxNG in the validator worker before notifying listeners.
+    await this.writer.utilities.sendSchemaToWorkerValidator({ silent: true });
 
     this.writer.event('schemaLoaded').publish();
 

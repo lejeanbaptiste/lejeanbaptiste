@@ -49,10 +49,15 @@ const joinPath = (root: string, ...parts: string[]) => {
   return [root, ...parts].join(separator);
 };
 
+/** Upstream TEI copies kept for sanmiao regeneration — not project schemas. */
+const isUpstreamTeiCoreCopy = (schemaPath: string): boolean => /\.tei\.rng$/i.test(schemaPath);
+
 const prioritizeSchemaPaths = (paths: string[]) => {
-  const rng = paths.filter((p) => /\.rng$/i.test(p));
+  const rng = paths.filter((p) => /\.rng$/i.test(p) && !isUpstreamTeiCoreCopy(p));
   const rnc = paths.filter((p) => /\.rnc$/i.test(p));
-  const rest = paths.filter((p) => !/\.rng$/i.test(p) && !/\.rnc$/i.test(p));
+  const rest = paths.filter(
+    (p) => !/\.rng$/i.test(p) && !/\.rnc$/i.test(p) && !isUpstreamTeiCoreCopy(p),
+  );
   return [...new Set([...rng, ...rnc, ...rest])];
 };
 

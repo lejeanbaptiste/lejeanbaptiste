@@ -4,6 +4,7 @@
     "**/*.tsx",
     "src/**/*.json",
     "src/types/**/*.d.ts",
+    "../../packages/cwrc-leafwriter/src/types/assets.d.ts",
     "./package.json",
     "./.env-cmdrc.js"
   ],

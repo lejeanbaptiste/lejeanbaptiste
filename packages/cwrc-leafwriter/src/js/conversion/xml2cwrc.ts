@@ -85,7 +85,17 @@ class XML2CWRC {
     schemaManager.setDocumentSchemaUrl(schemaProcess.docSchema.rng);
     if (schemaProcess.docSchema.css) schemaManager.setDocumentCssUrl(schemaProcess.docSchema.css);
 
-    if (schemaProcess.schemaId !== schemaManager.schemaId) {
+    const docRng = schemaProcess.docSchema.rng;
+    const docRevision = await schemaManager.revisionForRngUrl(docRng);
+    const schemaUrlChanged = !schemaManager.sameLocalRngUrl(docRng, schemaManager.getRng());
+    const schemaRevisionChanged =
+      docRevision !== null && docRevision !== schemaManager.getSchemaRevision();
+    const needsSchemaLoad =
+      schemaProcess.schemaId !== schemaManager.schemaId ||
+      schemaUrlChanged ||
+      schemaRevisionChanged;
+
+    if (needsSchemaLoad) {
       const { schemaId, docSchema } = schemaProcess;
       if (!schemaId) return openProcessIssueDialog(schemaProcess);
 
@@ -107,6 +117,10 @@ class XML2CWRC {
       const matchCsss = currentSchema?.css.some((url: string) => url === docSchema.css);
       if (!matchCsss) await schemaManager.loadSchemaCSS(docSchema.css);
     }
+
+    // Same schema id and path, but the validator worker may still hold a stale
+    // grammar (e.g. after a sanmiao merge upgraded the on-disk RNG in place).
+    await this.writer.utilities.sendSchemaToWorkerValidator({ silent: true });
 
     this.doProcessing(schemaProcess.doc);
   }

@@ -12,6 +12,7 @@ const AUTO_VALIDATE_DELAY_MS = 2000;
 
 type ValidationResult = ValidationResponse & {
   parseError?: Extract<XMLValidity, { valid: false }>['error'];
+  schemaUnavailable?: boolean;
 };
 
 export const useSourceValidation = () => {
@@ -33,6 +34,21 @@ export const useSourceValidation = () => {
     let writer = window.writer;
 
     const onValidated = (_valid: boolean, result: ValidationResult) => {
+      if (result.schemaUnavailable) {
+        setMarkers([
+          {
+            severity: monaco.MarkerSeverity.Error,
+            message:
+              'Schema is not loaded, so RelaxNG validation did not run. Try reopening the document or the project.',
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: 1,
+            endColumn: 1,
+          },
+        ]);
+        return;
+      }
+
       if (result.parseError) {
         setMarkers(
           mapWellFormednessToMarkers({

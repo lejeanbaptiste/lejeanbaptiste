@@ -2,10 +2,15 @@ import fs from 'fs/promises';
 import path from 'path';
 
 import { getCatalogEntry } from './schemaCatalog';
+import { flattenRelaxNgGrammar } from './relaxNgFlatten';
 import { ensureSchemaDir } from './schemaSetupHelpers';
 import type { ProjectBundle } from './projectFile';
 
 export const SANMIAO_PATCH_FILENAME = 'ljb-sanmiao-dates.rng';
+/** Bump when the generated RNG changes so existing merged schemas get regenerated. */
+export const SANMIAO_MERGE_VERSION = 5;
+const MERGE_VERSION_MARKER = `ljb-sanmiao-merge v${SANMIAO_MERGE_VERSION}`;
+const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei']);
 
 const SANMIAO_DATE_PARTS = [
@@ -14,6 +19,7 @@ const SANMIAO_DATE_PARTS = [
   'era',
   'year',
   'month',
+  'int',
   'day',
   'gz',
   'sexYear',
@@ -37,7 +43,14 @@ export const isTeiRelaxNgSchema = (rngContent: string): boolean =>
 
 export const isSanmiaoMergedWrapper = (rngContent: string): boolean =>
   /ljb-sanmiao-dates\.rng/.test(rngContent) ||
-  /Le Jean-Baptiste: TEI \+ sanmiao East Asian date extension/i.test(rngContent);
+  /Le Jean-Baptiste: TEI \+ sanmiao East Asian date extension/i.test(rngContent) ||
+  /ljb\.sanmiao\.date\.parts/.test(rngContent);
+
+export const isFlatRelaxNgGrammar = (rngContent: string): boolean =>
+  !/<include[\s>]/i.test(rngContent);
+
+export const isCurrentSanmiaoMergeVersion = (rngContent: string): boolean =>
+  rngContent.includes(MERGE_VERSION_MARKER);
 
 /** Attribute groups referenced on stock TEI `<date>`. */
 export const extractDateAttributeRefs = (baseRng: string): string[] => {
@@ -51,17 +64,45 @@ export const extractDateAttributeRefs = (baseRng: string): string[] => {
 export const teiCoreRngFileName = (wrapperFileName: string): string =>
   wrapperFileName.replace(/\.rng$/i, '.tei.rng');
 
-export const buildSanmiaoWrapperRng = (teiCoreFileName: string): string => `<?xml version="1.0" encoding="UTF-8"?>
+/**
+ * Replacement `<define name="date">` for the merged grammar. RelaxNG has no
+ * include/except; the only way to replace a definition is to place the new
+ * define directly inside `<include>`, which is what the wrapper does.
+ */
+const buildDateOverrideDefine = (baseRng: string): string => {
+  const attRefs = extractDateAttributeRefs(baseRng);
+  if (attRefs.length === 0) {
+    throw new Error('Could not find TEI <date> attribute references in base schema');
+  }
+  const attRefLines = attRefs.map((name) => `      <ref name="${name}"/>`).join('\n');
+  return `    <define name="date">
+      <element name="date">
+        <a:documentation>TEI date extended for sanmiao parse children and calendar resolution attributes.</a:documentation>
+        <zeroOrMore>
+          <choice>
+            <text/>
+            <ref name="model.gLike"/>
+            <ref name="model.phrase"/>
+            <ref name="model.global"/>
+            <ref name="ljb.sanmiao.date.parts"/>
+          </choice>
+        </zeroOrMore>
+${attRefLines}
+      <ref name="ljb.sanmiao.att.resolution"/>
+      </element>
+    </define>`;
+};
+
+export const buildSanmiaoWrapperRng = (teiCoreFileName: string, baseRng: string): string => `<?xml version="1.0" encoding="UTF-8"?>
 <grammar xmlns="http://relaxng.org/ns/structure/1.0"
+         ns="${TEI_NS}"
          datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"
          xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">
-  <a:documentation>Le Jean-Baptiste: TEI + sanmiao East Asian date extension</a:documentation>
+  <a:documentation>Le Jean-Baptiste: TEI + sanmiao East Asian date extension (${MERGE_VERSION_MARKER})</a:documentation>
   <include href="${teiCoreFileName}">
-    <except>
-      <define name="date"/>
-    </except>
+${buildDateOverrideDefine(baseRng)}
   </include>
-  <include href="${SANMIAO_PATCH_FILENAME}"/>
+${generateSanmiaoHelperDefines()}
 </grammar>
 `;
 
@@ -77,24 +118,18 @@ const textElementDefine = (name: string): string => `
     </element>
   </define>`;
 
-export const generateSanmiaoDatesPatchRng = (baseRng: string): string => {
-  const attRefs = extractDateAttributeRefs(baseRng);
-  if (attRefs.length === 0) {
-    throw new Error('Could not find TEI <date> attribute references in base schema');
-  }
-
+/**
+ * Sanmiao helper defines referenced by the `date` override. Emitted as bare
+ * `<define>` elements in the wrapper grammar before flattening. Deliberately
+ * does NOT define `date` — that lives in the include override.
+ */
+export const generateSanmiaoHelperDefines = (): string => {
   const partDefines = SANMIAO_DATE_PARTS.map((name) => textElementDefine(name)).join('\n');
   const partRefs = SANMIAO_DATE_PARTS.map((name) => `          <ref name="ljb.sanmiao.${name}"/>`).join(
     '\n',
   );
-  const attRefLines = attRefs.map((name) => `         <ref name="${name}"/>`).join('\n');
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<grammar xmlns="http://relaxng.org/ns/structure/1.0"
-         datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"
-         xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">
-  <a:documentation>Sanmiao East Asian date parse children and resolution attributes for TEI &lt;date&gt;</a:documentation>
-${partDefines}
+  return `${partDefines}
   <define name="ljb.sanmiao.rel">
     <element name="rel">
       <optional>
@@ -115,16 +150,10 @@ ${partDefines}
       </zeroOrMore>
     </element>
   </define>
-  <define name="ljb.sanmiao.int">
-    <element name="int">
-      <empty/>
-    </element>
-  </define>
   <define name="ljb.sanmiao.date.parts">
     <choice>
 ${partRefs}
           <ref name="ljb.sanmiao.rel"/>
-          <ref name="ljb.sanmiao.int"/>
     </choice>
   </define>
   <define name="ljb.sanmiao.att.resolution">
@@ -144,36 +173,31 @@ ${partRefs}
     <optional><attribute name="jdn"><data type="decimal"/></attribute></optional>
     <optional><attribute name="jdnEnd"><data type="decimal"/></attribute></optional>
     <optional><attribute name="dila_id"><text/></attribute></optional>
-  </define>
-  <define name="date">
-    <element name="date">
-      <a:documentation>TEI date extended for sanmiao parse children and calendar resolution attributes.</a:documentation>
-      <zeroOrMore>
-        <choice>
-          <text/>
-          <ref name="model.gLike"/>
-          <ref name="model.phrase"/>
-          <ref name="model.global"/>
-          <ref name="ljb.sanmiao.date.parts"/>
-        </choice>
-      </zeroOrMore>
-${attRefLines}
-         <ref name="ljb.sanmiao.att.resolution"/>
-      <empty/>
-    </element>
-  </define>
-</grammar>
-`;
+  </define>`;
 };
 
 export interface SanmiaoSchemaMergeResult {
-  wrapperRng: string;
+  /** Fully resolved grammar written to the project's main `.rng` path. */
+  flatRng: string;
   teiCoreRng: string;
-  patchRng: string;
   teiCoreFileName: string;
 }
 
-/** Build wrapper + patch files from upstream TEI RelaxNG content. */
+const resolveTeiCoreInclude =
+  (teiCoreFileName: string, teiCoreRng: string) =>
+  (href: string): string | null => {
+    const includeFile = href.includes('/')
+      ? (href.match(/(.*\/)(.*)/)?.[2] ?? href)
+      : href;
+    if (includeFile === teiCoreFileName) return teiCoreRng;
+    return null;
+  };
+
+/**
+ * Build merged schema files from upstream TEI RelaxNG content: the pristine TEI
+ * core (`*.tei.rng`) and a fully flattened project schema with sanmiao date
+ * extensions baked in (zero `<include>` tags).
+ */
 export const buildSanmiaoMergedSchemaFiles = (
   upstreamRng: string,
   wrapperFileName: string,
@@ -182,10 +206,17 @@ export const buildSanmiaoMergedSchemaFiles = (
     throw new Error('Schema does not look like a TEI RelaxNG file with <date>');
   }
   const teiCoreFileName = teiCoreRngFileName(wrapperFileName);
+  const wrapperRng = buildSanmiaoWrapperRng(teiCoreFileName, upstreamRng);
+  const flatRng = flattenRelaxNgGrammar(
+    wrapperRng,
+    resolveTeiCoreInclude(teiCoreFileName, upstreamRng),
+  );
+  if (!isFlatRelaxNgGrammar(flatRng)) {
+    throw new Error('Sanmiao schema flatten did not remove all RelaxNG includes');
+  }
   return {
     teiCoreRng: upstreamRng,
-    patchRng: generateSanmiaoDatesPatchRng(upstreamRng),
-    wrapperRng: buildSanmiaoWrapperRng(teiCoreFileName),
+    flatRng,
     teiCoreFileName,
   };
 };
@@ -206,11 +237,17 @@ export const writeSanmiaoMergedTeiSchema = async (
 ): Promise<void> => {
   const merged = buildSanmiaoMergedSchemaFiles(upstreamRng, wrapperFileName);
   await fs.writeFile(path.join(schemaDir, merged.teiCoreFileName), merged.teiCoreRng, 'utf-8');
-  await fs.writeFile(path.join(schemaDir, SANMIAO_PATCH_FILENAME), merged.patchRng, 'utf-8');
-  await fs.writeFile(path.join(schemaDir, wrapperFileName), merged.wrapperRng, 'utf-8');
+  await fs.writeFile(path.join(schemaDir, wrapperFileName), merged.flatRng, 'utf-8');
+  // Remove the obsolete second-include patch file from v1/v2 merges (helpers
+  // are now inlined into the wrapper).
+  await fs.rm(path.join(schemaDir, SANMIAO_PATCH_FILENAME), { force: true });
 };
 
-/** Patch an existing project TEI schema in place (idempotent). */
+/**
+ * Patch an existing project TEI schema in place (idempotent). Also regenerates
+ * wrappers produced by an older merge version, using the pristine upstream copy
+ * preserved as `*.tei.rng`.
+ */
 export const ensureSanmiaoDatesSchemaMerged = async (
   bundle: ProjectBundle,
 ): Promise<boolean> => {
@@ -228,7 +265,21 @@ export const ensureSanmiaoDatesSchemaMerged = async (
     return false;
   }
 
-  if (isSanmiaoMergedWrapper(wrapperContent)) return false;
+  if (isSanmiaoMergedWrapper(wrapperContent)) {
+    if (isCurrentSanmiaoMergeVersion(wrapperContent)) return false;
+    let coreContent: string;
+    try {
+      coreContent = await fs.readFile(
+        path.join(schemaDir, teiCoreRngFileName(wrapperFileName)),
+        'utf-8',
+      );
+    } catch {
+      return false;
+    }
+    if (!isTeiRelaxNgSchema(coreContent)) return false;
+    await writeSanmiaoMergedTeiSchema(schemaDir, wrapperFileName, coreContent);
+    return true;
+  }
 
   const catalogId = schema.catalogId;
   if (catalogId && !isTeiCatalogId(catalogId) && !isTeiRelaxNgSchema(wrapperContent)) {

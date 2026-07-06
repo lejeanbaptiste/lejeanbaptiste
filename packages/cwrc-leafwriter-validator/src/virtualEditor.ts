@@ -24,36 +24,78 @@ class VirtualEditor {
   document?: Document;
   schema?: Grammar;
   schemaId?: string;
+  schemaUrl?: string;
+  schemaRevision?: string | null;
   validator?: Validator;
+  private initializeInFlight?: Promise<InitializeResponse>;
   // private walker?: GrammarWalker<NameResolver>;
 
   constructor() {
     this.validatorPrefix = 'lw';
   }
 
-  async initialize({
+  async initialize(params: InitializeParameters): Promise<InitializeResponse> {
+    if (this.sameSchemaIdentity(params)) {
+      return { success: true };
+    }
+
+    if (this.initializeInFlight) {
+      await this.initializeInFlight;
+      if (this.sameSchemaIdentity(params)) {
+        return { success: true };
+      }
+    }
+
+    this.initializeInFlight = this.loadSchemaIntoWorker(params);
+    try {
+      return await this.initializeInFlight;
+    } finally {
+      this.initializeInFlight = undefined;
+    }
+  }
+
+  private sameSchemaIdentity({
+    id,
+    url,
+    schemaRevision = null,
+  }: InitializeParameters): boolean {
+    return (
+      this.schemaId === id &&
+      this.schemaUrl === url &&
+      (this.schemaRevision ?? null) === (schemaRevision ?? null)
+    );
+  }
+
+  private async loadSchemaIntoWorker({
     shouldCache = true,
     id,
     url,
+    schemaText,
+    schemaRevision = null,
   }: InitializeParameters): Promise<InitializeResponse> {
-    if (this.schemaId === id) return { success: true };
+    let grammar;
+    try {
+      if (shouldCache && !schemaText) {
+        const cachedSchema = await db.cachedSchemas.get(id);
+        const validCache = cachedSchema?.hash ? await verifyHash(url, cachedSchema) : false;
+        grammar =
+          cachedSchema && validCache
+            ? readTreeFromJSON(cachedSchema.gramarJson)
+            : await processSchema({ id, url, shouldCache });
+      } else {
+        grammar = await processSchema({ id, url, schemaText, shouldCache: false });
+      }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
+    }
 
-    //* get cached schema
-    const cachedSchema = await db.cachedSchemas.get(id);
-
-    //* validade hash
-    const validCache = cachedSchema?.hash ? verifyHash(url, cachedSchema) : false;
-
-    //* get Gramar from cache or process schema
-    const grammar =
-      cachedSchema && validCache
-        ? readTreeFromJSON(cachedSchema.gramarJson)
-        : await processSchema({ id, url, shouldCache });
-
-    //if it fails
-    if (!grammar) return { success: false, error: new Error('Something went wrong') };
+    if (!grammar) {
+      return { success: false, error: new Error('Schema conversion returned no grammar') };
+    }
 
     this.schemaId = id;
+    this.schemaUrl = url;
+    this.schemaRevision = schemaRevision ?? null;
     this.schema = grammar;
 
     return { success: true };
@@ -306,6 +348,8 @@ class VirtualEditor {
     this.document = undefined;
     this.schema = undefined;
     this.schemaId = undefined;
+    this.schemaUrl = undefined;
+    this.schemaRevision = undefined;
     this.validator = undefined;
     // this.walker = undefined;
   }

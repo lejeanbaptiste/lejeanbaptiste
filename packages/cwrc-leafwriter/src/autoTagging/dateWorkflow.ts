@@ -134,7 +134,7 @@ export async function readProjectLanguageFromDisk(): Promise<string | null> {
 
   let metadataRel = DEFAULT_METADATA_REL;
   const projectFile =
-    projectApi.__leafWriterProject?.getProjectFilePath?.().trim() ||
+    projectApi?.__leafWriterProject?.getProjectFilePath?.().trim() ||
     joinProjectPath(root, PROJECT_FILE_NAME);
 
   try {

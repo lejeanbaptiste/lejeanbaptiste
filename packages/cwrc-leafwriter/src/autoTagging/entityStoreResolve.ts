@@ -18,7 +18,7 @@ export interface EntityStoreResolveInput {
 
 /** Resolve entity database and project hidden infra paths. */
 export function resolveEntityStorePaths(input: EntityStoreResolveInput): EntityStorePaths {
-  const mode: EntityStoreMode = input.entityStore === 'project' ? 'project' : 'central';
+  const mode: EntityStoreMode = input.entityStore === 'central' ? 'central' : 'project';
   const projectRoot = input.projectRoot.replace(/[/\\]+$/, '');
   const projectLjbDir = joinPath(projectRoot, '.ljb');
 

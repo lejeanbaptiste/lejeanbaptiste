@@ -88,6 +88,32 @@ const mergeRngIncludes = async (rngText: string, baseUrl: string): Promise<strin
     const includeGrammar = includeDoc.querySelector('grammar');
     if (!includeGrammar) continue;
 
+    // RelaxNG override: <start>/<define> children of <include> replace the
+    // matching entries in the included grammar BEFORE it's merged in. Without
+    // this, an override define nested inside <include> is silently discarded
+    // by includeEl.remove() below and the stock upstream define wins instead.
+    for (const overrideChild of Array.from(includeEl.children)) {
+      const tag = overrideChild.tagName.toLowerCase();
+      if (tag === 'start') {
+        const existingStart = Array.from(includeGrammar.children).find(
+          (el) => el.tagName.toLowerCase() === 'start',
+        );
+        const imported = includeDoc.importNode(overrideChild, true);
+        if (existingStart) existingStart.replaceWith(imported);
+        else includeGrammar.appendChild(imported);
+      } else if (tag === 'define') {
+        const name = overrideChild.getAttribute('name');
+        const existingDefine = name
+          ? Array.from(includeGrammar.children).find(
+              (el) => el.tagName.toLowerCase() === 'define' && el.getAttribute('name') === name,
+            )
+          : null;
+        const imported = includeDoc.importNode(overrideChild, true);
+        if (existingDefine) existingDefine.replaceWith(imported);
+        else includeGrammar.appendChild(imported);
+      }
+    }
+
     for (const child of Array.from(includeGrammar.children)) {
       const tag = child.tagName.toLowerCase();
       if (tag === 'start') {
@@ -114,12 +140,46 @@ const mergeRngIncludes = async (rngText: string, baseUrl: string): Promise<strin
   return new XMLSerializer().serializeToString(doc);
 };
 
-/** Read a desktop/local RNG (with includes inlined) and return a worker-safe blob URL. */
-export async function localSchemaToBlobUrl(schemaURL: string): Promise<string | null> {
+const localSchemaBlobCache = new Map<string, { revision: string; url: string }>();
+
+/** Drop cached blob URLs (e.g. after sanmiao merge or validator cache clear). */
+export const clearLocalSchemaBlobCache = (): void => {
+  for (const { url } of localSchemaBlobCache.values()) {
+    URL.revokeObjectURL(url);
+  }
+  localSchemaBlobCache.clear();
+};
+
+/**
+ * Read a desktop/local RNG and return a worker-safe blob URL.
+ * Reuses the same blob URL while `revision` is unchanged so the validator
+ * worker can skip recompiling a 1MB flat TEI grammar on every validate().
+ */
+export async function localSchemaToBlobUrl(
+  schemaURL: string,
+  revision?: string | null,
+): Promise<string | null> {
+  const localPath = fromLocalFileUrl(schemaURL);
+  const cacheKey = localPath ?? schemaURL;
+  const revisionKey = revision ?? '';
+
+  const cached = localSchemaBlobCache.get(cacheKey);
+  if (cached && cached.revision === revisionKey) {
+    return cached.url;
+  }
+
   const text = await fetchResourceText(schemaURL);
   if (!text) return null;
-  const merged = await mergeRngIncludes(text, schemaURL);
-  return URL.createObjectURL(new Blob([merged], { type: 'application/xml' }));
+  // Project sanmiao schemas are pre-flattened at install time; skip runtime merge.
+  const merged = /<include[\s>]/i.test(text) ? await mergeRngIncludes(text, schemaURL) : text;
+  const blobUrl = URL.createObjectURL(new Blob([merged], { type: 'application/xml' }));
+
+  if (cached?.url) {
+    URL.revokeObjectURL(cached.url);
+  }
+  localSchemaBlobCache.set(cacheKey, { revision: revisionKey, url: blobUrl });
+
+  return blobUrl;
 }
 
 /** Load text from a remote URL or a desktop crcao:// project file. */

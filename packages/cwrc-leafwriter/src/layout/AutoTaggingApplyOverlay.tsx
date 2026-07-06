@@ -10,7 +10,8 @@ export type AutoTaggingBusyLabel =
 
 export interface AutoTaggingApplyOverlayProps {
   done?: number;
-  label: AutoTaggingBusyLabel;
+  /** Known labels get i18n treatment; free-form progress strings are shown as-is. */
+  label: AutoTaggingBusyLabel | (string & {});
   open: boolean;
   total?: number;
 }

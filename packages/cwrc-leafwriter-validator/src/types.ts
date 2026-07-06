@@ -20,8 +20,17 @@ export type EventName =
 
 export interface InitializeParameters {
   id: string;
+  /** Stable schema locator (http(s) URL or crcao:// path). Used for cache keys and change detection. */
   url: string;
   shouldCache?: boolean;
+  /** On-disk content fingerprint (e.g. sanmiao merge version). */
+  schemaRevision?: string | null;
+  /**
+   * When set, compile from this RelaxNG text inside the worker. Required for
+   * desktop project files: blob URLs created on the main thread are not
+   * fetchable from the validator web worker.
+   */
+  schemaText?: string;
 }
 
 export interface InitializeResponse {

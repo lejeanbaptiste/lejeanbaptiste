@@ -89,10 +89,10 @@ class Validation {
 
     this.writer
       .event('documentValidated')
-      .subscribe((valid: boolean, result: ValidationResponse & { parseError?: { message: string; positions?: XMLParseErrorPosition[] } }) => {
+      .subscribe((valid: boolean, result: ValidationResponse & { parseError?: { message: string; positions?: XMLParseErrorPosition[] }; schemaUnavailable?: boolean }) => {
         $(`#${this.id}_indicator`).hide();
         this.showValidationResult(result);
-        if (result.errors?.length || result.parseError) {
+        if (result.errors?.length || result.parseError || result.schemaUnavailable) {
           if (!window.__desktopTagging) {
             this.writer.layoutManager.showModule('validation');
           }
@@ -137,8 +137,10 @@ class Validation {
     valid,
     errors,
     parseError,
+    schemaUnavailable,
   }: ValidationResponse & {
     parseError?: { message: string; positions?: XMLParseErrorPosition[] };
+    schemaUnavailable?: boolean;
   }) {
     const list = $(`#${this.id} > div.validationList`);
     list.empty();
@@ -155,6 +157,41 @@ class Validation {
       // Make sure validation error counter get's removed if it has been shown before
       const $stats = $('.moduleFooter > div.stats');
       $stats.empty();
+
+      return;
+    }
+
+    if (schemaUnavailable) {
+      if (!window.__desktopTagging) {
+        this.writer.layoutManager.showModule('validation');
+      }
+
+      list.append(`
+        <li>
+          <div id="header">
+            <div id="headerIcon">
+              <i class="fas fa-exclamation-circle" />
+            </div>
+            <div style="flex-grow: 1;">
+              Schema is not loaded, so RelaxNG validation did not run. Try reopening the document or the project.
+            </div>
+          </div>
+        </li>
+      `);
+
+      const $stats = $(`.moduleFooter > div.stats`);
+      $stats.empty();
+      $stats.append(`
+        <div id="stats-container">
+          <div id="info" title="Rerun validator">
+            <i class="fas fa-exclamation-circle"></i>
+            1
+          </div>
+        </div>
+      `);
+
+      //@ts-ignore
+      $stats.find('#info').button().on('click', () => this.writer.validate());
 
       return;
     }
