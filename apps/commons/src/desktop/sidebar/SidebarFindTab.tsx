@@ -276,10 +276,11 @@ export const SidebarFindTab = () => {
     [flatResults.length, jumpToFlatResult],
   );
 
-  const resetFindOnEditorViewModeChange = useCallback(() => {
-    setSourceMode(isSourceEditorMode());
+  const resetFindPanel = useCallback(() => {
     clearFindHighlights();
     lastSearchKeyRef.current = '';
+    setWalkMode(null);
+    walkOriginRef.current = null;
     setFindQuery('');
     setReplaceQuery('');
     setResults([]);
@@ -289,6 +290,11 @@ export const SidebarFindTab = () => {
     selectedIndexRef.current = -1;
     setError(null);
   }, []);
+
+  const resetFindOnEditorViewModeChange = useCallback(() => {
+    setSourceMode(isSourceEditorMode());
+    resetFindPanel();
+  }, [resetFindPanel]);
 
   useEffect(() => {
     window.addEventListener(DESKTOP_EDITOR_VIEW_MODE_EVENT, resetFindOnEditorViewModeChange);
@@ -350,11 +356,15 @@ export const SidebarFindTab = () => {
     }
   }, [selectedIndex]);
 
+  const handleEscapeInFindPanel = useCallback(() => {
+    resetFindPanel();
+    findInputRef.current?.focus();
+  }, [resetFindPanel]);
+
   const handleResultsKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Escape') {
       event.preventDefault();
-      setWalkMode(null);
-      walkOriginRef.current?.focus();
+      handleEscapeInFindPanel();
       return;
     }
 
@@ -544,6 +554,11 @@ export const SidebarFindTab = () => {
             onChange={(event) => setFindQuery(event.target.value)}
             onKeyDown={(event) => {
               handleFindPanelUndoKeyDown(event);
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                handleEscapeInFindPanel();
+                return;
+              }
               if (event.key === 'Enter') {
                 event.preventDefault();
                 if (!event.shiftKey && !event.altKey) {
@@ -633,6 +648,11 @@ export const SidebarFindTab = () => {
           onChange={(event) => setReplaceQuery(event.target.value)}
           onKeyDown={(event) => {
             handleFindPanelUndoKeyDown(event);
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              handleEscapeInFindPanel();
+              return;
+            }
             if (event.key === 'Enter') {
               event.preventDefault();
               if (event.shiftKey) {

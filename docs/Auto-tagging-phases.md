@@ -49,11 +49,11 @@ First real producers. Should be small once 0–1 exist.
 - [x] Import formats for v1 (tsv/csv/xlsx — which spreadsheet formats exactly, and which library reads them). **DPM:** also LibreOffice. 
 - [x] Table schema beyond string/tag: allow an optional attributes column? An optional entity-id column (forward-compatible with Phase 3)? **DPM:** yes, allow.
 - [x] Internal-crawl scope: crawl current document, open documents, or whole project? Where is the compiled list stored and is it user-editable?  DPM: Current or open. The user selects the compiled list from somewhere on his computer.
-- [ ] For dates: exactly which sanmiao capabilities are in scope for v1, and what TEI output (`<date when=…>`? `@when-custom`? calendar attributes?). **DPM:** we'll implement this later.
+- [x] For dates: workflow and TEI output decided — see `docs/Auto-tagging.md` § East Asian dates, `docs/sanmiao-dates-schema.md`, `docs/sanmiao-ljb-integration.md`. Integrated tag+resolve; parse children in XML; `jdn` canonical + derived `when`; schema patch `ljb-sanmiao-dates.rng`; no `@key`/entities for dates.
 - [x] Matching policy details: longest-string-first is decided; also decide case/width sensitivity and whether matches can cross existing tag boundaries. **DPM:** longest string first; fuzzy is good, if it's not too complicated; no cross tag boundaries.
 
 **Prepare:**
-- [ ] Port/adapt the sanmiao date logic; write its TEI mapping table.
+- [x] Sanmiao `tei_bridge.propose_dates()` + LJB `dates.ts` producer + desktop IPC (`sanmiao:proposeDates`). Fuzzy mode preserves original script (0.2.9+). Schema: ship `ljb-sanmiao-dates.rng` merge; dedicated resolve UI still open.
 - [ ] Sample dictionary tables from real data (including strings that overlap, to exercise conflict resolution rule 1). **DPM:** I extracted 5000 person names from CBDB in sample_names.csv.
 - [ ] The big-popup entry point on the central panel (method chooser shell — AI/NER greyed out).
 
@@ -68,6 +68,49 @@ First real producers. Should be small once 0–1 exist.
 - **Internal crawl** (`autoTagging/crawl.ts`, `integration.ts`): `crawlEntities(doc, policy, tags?)` compiles a dictionary from entities already tagged in one document; `crawlDocuments(docs, …)` merges across several. Default TEI entity tag set; surfaces normalized with the whitespace policy. Tag stage only — no `@key`/`@ref` propagation (identity is Phase 4b). Dialog method **"From existing tags in this project"**: on desktop, `getProjectDocuments()` reads every project XML via `listProjectXmlFiles` (skipping the active file on disk — the live editor copy is used instead) and applies matches to the **current** document only. Web app / no project open falls back to the current document with `available: false`.
 - **Producer dedup moved earlier**: `dictionaryTag` now skips matches already inside the target tag (ancestor check), so the review list no longer shows no-op items; apply-time dedup remains as a safety net. 119 tests pass.
 - There should be NO disambiguation or id-ing at this stage.
+
+## Phase 2b — Date curation UI (planned)
+
+**Problem:** the generic review walk only asks “is this a date?” It does not let users pick among one-to-many era interpretations, repair broken sequential context (e.g. `三月` after a “back in the Han” flashback), or inject implied ruler/era/year before re-resolve. Experts can tweak sanmiao and rerun; average users cannot.
+
+**Design:** one **document-order curator** that combines keep/reject with disambiguation and forward-filling.
+
+| Row type | UI | On accept |
+|----------|-----|-----------|
+| **Unique** | Single candidate, green highlight | Accept applies parse + resolution attrs |
+| **Ambiguous** (one-to-many era, etc.) | Radio list of sanmiao display lines | Selected candidate → resolution attrs |
+| **Unresolved relative** (`三月`, `其三年`) | Dropdown of **previously accepted** dates in this passage | Injects implied context → re-run sanmiao resolve for this row and below |
+| **Reject** | Not a date | Drops from sequential chain |
+
+Accepting fixes (a) which spans stay tagged and (b) the parse/implied state passed into sanmiao’s resolver. After curation, LJB re-runs `resolve_date_element` / batch resolve with updated inner XML and implied state (e.g. “month III” → “Zhengguang year 2, month III”).
+
+**Easy path:** when every date is unique, each row shows one green option — same walk, no extra clicks.
+
+**Phase 2c — AI curation (optional, before human review):** when the batch contains ambiguous or unresolved rows, offer “AI curation”: pass a compact table (index, surface, parsed structure, status, candidate summary) plus short local context; model returns suggested picks (`selectedCandidateIndex`, `attachToDateIndex`). Pre-fill the curator; user confirms. Target ~90% on era one-to-many and sequential month attachment.
+
+**Implementation notes:**
+- Reuse `Suggestion.dateResolution` (`status`, `candidates`, `parseXml`); extend with `selectedCandidateIndex`, `attachToDateIndex`, `sequentialContext`.
+- Sanmiao: `reset_implied_state_for_era`, `resolve_date_element`, implied carry in `propose_dates_batch`.
+- Review in **document order** — fixing date *n* affects resolution of *n+1…*.
+
+**Done when:** ambiguous and unresolved-relative dates are curatable without leaving LJB; apply writes correct parse + resolution; re-resolve loop is visible in the UI.
+
+## Phase 2d — Dates-first workflow gate (2026-07-05)
+
+**Decided (DPM):** for Chinese and Japanese source documents, **run sanmiao before** dictionary, authority, or AI tagging. Sanmiao is **not** offered for Korean or Western languages in v1. Completing the dates pass (or applying date tags) **unlocks** other methods.
+
+**Rationale:** relative dates and era flashbacks break sequential pass-through; tagging people/places first pollutes spans and misleads downstream matchers. `buildTaggableDocIndex` already skips text inside `<date>`.
+
+**Implemented:**
+- `autoTagging/dateWorkflow.ts` — `requiresDatesBeforeOtherTagging`, `resolveAutoTaggingSourceLanguage` (project metadata → stored header → editor), session flags (`ran` / `applied`); unlock **only** from those flags, not from pre-existing `<date>` tags.
+- `utilities/languageCodes.ts` — `isJapaneseLanguageCode`, `isEastAsianCalendarLanguageCode`, `normalizeSourceLanguageCode`.
+- `apps/commons/.../useNativeDialogBridge.ts` — `__leafWriterProject.getProjectSourceLanguage()`.
+- `dialogs/autoTagging/` — dates listed first (numbered), other methods disabled/greyed until pass; sanmiao civ defaults to `c` or `j` only.
+- `layout/AutoTaggingReviewPane.tsx` — `markDatesPassApplied` on apply of date suggestions.
+
+**Done when:** zh/ja project opens auto-tagging → only dates until pass complete; en/ko projects unchanged.
+
+**Phase 2b (in progress):** date curator panel — pick among ambiguous sanmiao interpretations in document order; see `DateCuratorPanel.tsx`.
 
 ## Phase 3 — Entity file & decision log
 

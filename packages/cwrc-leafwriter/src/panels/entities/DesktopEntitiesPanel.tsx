@@ -7,14 +7,34 @@ export const DesktopEntitiesPanel = () => {
   const listRef = useRef<EntitiesList | null>(null);
 
   useEffect(() => {
-    if (!window.writer) return;
+    const mount = (): boolean => {
+      const parent = document.getElementById(DESKTOP_ENTITIES_PANEL_ID);
+      if (!parent?.isConnected || !window.writer) return false;
 
-    listRef.current = new EntitiesList({
-      writer: window.writer,
-      parentId: DESKTOP_ENTITIES_PANEL_ID,
-    });
+      const existingRoot = parent.querySelector('.entitiesList');
+      if (listRef.current && existingRoot) return true;
+
+      listRef.current?.destroy?.();
+      listRef.current = new EntitiesList({
+        writer: window.writer,
+        parentId: DESKTOP_ENTITIES_PANEL_ID,
+      });
+      return true;
+    };
+
+    if (mount()) {
+      return () => {
+        listRef.current?.destroy?.();
+        listRef.current = null;
+      };
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (mount()) window.clearInterval(intervalId);
+    }, 200);
 
     return () => {
+      window.clearInterval(intervalId);
       listRef.current?.destroy?.();
       listRef.current = null;
     };

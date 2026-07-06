@@ -210,7 +210,7 @@
         "entity_database": "Entity database",
         "entity_database_folder": "Database folder",
         "entity_database_change": "Change folder…",
-        "entity_database_hint": "Your shared entities.xml lives here when projects use the central database.",
+        "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs and raw CBDB/DILA downloads also live here.",
         "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one."
       },
       "entity_database_changed": {

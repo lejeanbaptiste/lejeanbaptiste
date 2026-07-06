@@ -1,5 +1,7 @@
 import { buildDocIndex } from './anchor';
 import { applySuggestions, assignEntity, markUnresolved as markMentionUnresolved, type BatchResult, type UserRule } from './apply';
+import { withApplyDiagnostics } from './applyDiagnostics';
+import { canContainForAutoTagging } from './schemaContainment';
 import { AuthorityCache } from './authorityCache';
 import type { DisambiguationCandidate } from './disambiguationCandidates';
 import { resolveEntityInDocument } from './disambiguationCandidates';
@@ -17,6 +19,12 @@ import { LlmCache } from './llmCache';
 import { llmSuggest, type LlmSuggestResult } from './llmSuggest';
 import { llmAudit, collectTaggedSpans, type LlmAuditResult } from './llmAudit';
 import { normalizeDomText } from './normalize';
+import type { AuthorityPackId } from './packPaths';
+import {
+  MAX_AUTHORITY_SUGGESTIONS,
+  runAuthorityTagBombOnDocument,
+} from './authorityTagBomb';
+import { dateTagOnlyFromSanmiao, dateResolveFromDocument, type DateTagOptions, type SanmiaoBatchResolveFn, type SanmiaoBatchTagFn } from './dates';
 import {
   collectMentions,
   mergeMentionGroups,
@@ -25,6 +33,8 @@ import {
 } from './mentions';
 import type { DecisionEvent } from './reviewController';
 import type { Suggestion, WhitespacePolicy } from './types';
+
+export { MAX_AUTHORITY_SUGGESTIONS } from './authorityTagBomb';
 
 /**
  * The slice of Writer this session needs. Kept structural so the session can
@@ -176,6 +186,63 @@ export class AutoTaggingSession {
     const doc = await this.getDocument();
     const index = buildDocIndex(doc, this.policy);
     return collectTaggedSpans(doc, index, new Set(tags)).length > 0;
+  }
+
+  /**
+   * Tag bomb from pre-compiled authority NDJSON packs (Phase A2/A3).
+   * Tag-only — no @key; clues on suggestions for review / later disambiguation.
+   */
+  async runAuthorityTagBomb(
+    packIds: AuthorityPackId[],
+    readPackFile: (packId: AuthorityPackId) => Promise<string>,
+    options: {
+      yearRange?: { start: number; end: number };
+      hideUndated?: boolean;
+      onProgress?: (message: string) => void;
+    } = {},
+  ): Promise<{
+    suggestions: Suggestion[];
+    candidateCount: number;
+    matchCount: number;
+    loaded: Partial<Record<AuthorityPackId, number>>;
+    truncated: boolean;
+  }> {
+    const doc = await this.getDocument();
+    const result = await runAuthorityTagBombOnDocument(doc, packIds, readPackFile, this.policy, {
+      ...options,
+      maxSuggestions: MAX_AUTHORITY_SUGGESTIONS,
+      onProgress: (message) => {
+        options.onProgress?.(message);
+        void yieldToUi();
+      },
+    });
+    return result;
+  }
+
+  async runEastAsianDateTag(
+    batchTag: SanmiaoBatchTagFn,
+    options: DateTagOptions = {},
+  ): Promise<{ suggestions: Suggestion[]; proposalCount: number }> {
+    const doc = await this.getDocument();
+    const suggestions = await dateTagOnlyFromSanmiao(doc, this.policy, batchTag, options);
+    return { suggestions, proposalCount: suggestions.length };
+  }
+
+  async runEastAsianDateResolve(
+    batchResolve: SanmiaoBatchResolveFn,
+    options: DateTagOptions = {},
+  ): Promise<{ suggestions: Suggestion[]; proposalCount: number }> {
+    const doc = await this.getDocument();
+    const suggestions = await dateResolveFromDocument(doc, this.policy, batchResolve, options);
+    return { suggestions, proposalCount: suggestions.length };
+  }
+
+  /** @deprecated Use {@link runEastAsianDateTag}. */
+  async runEastAsianDates(
+    batchTag: SanmiaoBatchTagFn,
+    options: DateTagOptions = {},
+  ): Promise<{ suggestions: Suggestion[]; proposalCount: number }> {
+    return this.runEastAsianDateTag(batchTag, options);
   }
 
   /**
@@ -467,14 +534,19 @@ export class AutoTaggingSession {
 
     const doc = await this.getDocument();
     const schemaManager = this.writer.schemaManager;
-    const result = await applySuggestions(doc, accepted, {
+    const applyOptions = {
       policy: this.policy,
       ...(schemaManager
-        ? { canContain: (parent, child) => schemaManager.isTagValidChildOfParent(child, parent) }
+        ? {
+            canContain: (parent, child) =>
+              canContainForAutoTagging(schemaManager, parent, child),
+          }
         : {}),
       userRules,
       onProgress,
-    });
+    };
+    const raw = await applySuggestions(doc, accepted, applyOptions);
+    const result = withApplyDiagnostics(doc, raw, applyOptions);
 
     if (result.applied > 0) {
       onProgress?.(total, total);

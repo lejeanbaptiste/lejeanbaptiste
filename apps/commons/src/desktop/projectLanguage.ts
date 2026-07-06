@@ -4,6 +4,7 @@ import type { ProjectBundle } from './projectFile';
 import { readProjectMetadata } from './projectMetadata';
 import { isOrlandoCatalog } from './schemaMetadataFields';
 import type { ProjectMetadataFile } from './projectTypes';
+import { normalizeSourceLanguageCode } from '@cwrc/leafwriter/languageCodes';
 
 /** TEI metadata path holding the project's source-document language. */
 export const SOURCE_LANGUAGE_PATH = 'profileDesc/langUsage/language';
@@ -12,7 +13,7 @@ export const sourceLanguageFromMetadata = (
   metadata: ProjectMetadataFile | null,
 ): string | null => {
   const value = metadata?.fields?.[SOURCE_LANGUAGE_PATH]?.trim();
-  return value ? value : null;
+  return value ? normalizeSourceLanguageCode(value) : null;
 };
 
 /** Source language is mandatory for TEI projects; Orlando has no language field. */

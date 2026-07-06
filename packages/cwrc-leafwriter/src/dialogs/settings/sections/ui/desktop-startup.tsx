@@ -1,4 +1,3 @@
-import { ListItem } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Toggler } from '../../components/toggler';
@@ -28,17 +27,15 @@ export const DesktopStartup = () => {
   if (!bridge) return null;
 
   return (
-    <ListItem dense disableGutters sx={{ py: 0.25 }}>
-      <Toggler
-        icon="settings"
-        onChange={(value) => {
-          void bridge.setRememberWorkspaceOnStartup(value);
-          setRememberWorkspaceOnStartupLocal(value);
-        }}
-        title={t('desktop.settings.remember_workspace_on_startup')}
-        type="toggle"
-        value={rememberWorkspaceOnStartup}
-      />
-    </ListItem>
+    <Toggler
+      icon="settings"
+      onChange={(value) => {
+        void bridge.setRememberWorkspaceOnStartup(value);
+        setRememberWorkspaceOnStartupLocal(value);
+      }}
+      title={t('desktop.settings.remember_workspace_on_startup')}
+      type="toggle"
+      value={rememberWorkspaceOnStartup}
+    />
   );
 };

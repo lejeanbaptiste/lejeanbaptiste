@@ -166,6 +166,35 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isDesktopApp() || !writer) return;
+
+    const syncPanelContainers = () => {
+      const toc = window.document.querySelector('#desktop-panel-toc');
+      const markup = window.document.querySelector('#desktop-panel-markup');
+      const entities = window.document.querySelector('#desktop-panel-entities');
+
+      if (toc?.isConnected) {
+        setTocPanelContainer((current) => (current === toc ? current : toc));
+      }
+      if (markup?.isConnected) {
+        setStructureTreePanelContainer((current) => (current === markup ? current : markup));
+      }
+      if (entities?.isConnected) {
+        setEntitiesPanelReady(true);
+      }
+    };
+
+    syncPanelContainers();
+    const intervalId = window.setInterval(syncPanelContainers, 300);
+    const stopId = window.setTimeout(() => window.clearInterval(intervalId), 10_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(stopId);
+    };
+  }, [writer]);
+
   const fullscreenchanged = () => actions.ui.setFullscreen(!!window.document.fullscreenElement);
 
   const setup = async () => {

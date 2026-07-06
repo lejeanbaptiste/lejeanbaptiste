@@ -1,5 +1,8 @@
 import type { EntityKind } from './entities';
 
+/** Standoff kinds plus compile-time `office` (corpus tag: roleName). */
+export type AuthorityKind = EntityKind | 'office';
+
 /**
  * A normalized authority record (Phase 4a). Every source — a CSV export, CBDB,
  * DILA, etc. — flattens into this shape, which the seed matcher then fires at
@@ -11,7 +14,7 @@ export interface AuthorityCandidate {
   source: string;
   /** Id within that source (becomes an <idno> on the minted entity). */
   authorityId: string;
-  kind: EntityKind;
+  kind: AuthorityKind;
   /** Display/primary name for the entity. */
   primaryName: string;
   /** All strings that should match this entity in the corpus (primary + variants). */
@@ -23,19 +26,38 @@ export interface AuthorityCandidate {
     /** Place subtype (county/mountain/…) or similar sub-classification. */
     subtype?: string;
     description?: string;
+    teiTag?: string;
+    ana?: string;
+    crosswalk?: { cbdb?: string; wikidata?: string[] };
+    pinyin?: string;
+    translation?: string;
+    /** DILA `note type="disambiguation"` — not the same person as… */
+    disambiguation?: string;
   };
 }
 
+/** Corpus TEI tag used when matching this candidate. */
+export function teiTagForCandidate(candidate: AuthorityCandidate): string {
+  if (candidate.kind === 'office') return candidate.metadata?.teiTag ?? 'roleName';
+  const map: Record<EntityKind, string> = {
+    person: 'persName',
+    place: 'placeName',
+    org: 'orgName',
+    work: 'title',
+  };
+  return map[candidate.kind];
+}
+
 /**
- * Authority-table tag → entity kind. `ntName` (name variants) folds into the
- * person it belongs to. `officeName` is intentionally unmapped for now — its
- * TEI entity home is an open modeling decision (see Phase 4a notes).
+ * Authority-table tag → entity kind. `ntName` folds into person.
+ * `officeName` → office kind (tags as roleName).
  */
-const TABLE_TAG_TO_KIND: Record<string, EntityKind> = {
+const TABLE_TAG_TO_KIND: Record<string, AuthorityKind> = {
   persName: 'person',
   ntName: 'person',
   placeName: 'place',
   orgName: 'org',
+  officeName: 'office',
   title: 'work',
 };
 

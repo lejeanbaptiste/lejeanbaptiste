@@ -64,6 +64,34 @@ export const languageLabelForCode = (code: string): string => {
 };
 
 /**
+ * Normalize project metadata or TEI header language values to a BCP-47-ish code
+ * (`zh-Hant`, `ja`, legacy `chi`, …).
+ */
+export const normalizeSourceLanguageCode = (raw: string | null | undefined): string | null => {
+  if (!raw?.trim()) return null;
+  const trimmed = raw.trim();
+  const byCode = FIXED_LANGUAGE_OPTIONS.find(
+    (option) => canonicalLanguageCode(option.code) === canonicalLanguageCode(trimmed),
+  );
+  if (byCode) return byCode.code;
+  const byLabel = FIXED_LANGUAGE_OPTIONS.find((option) => option.label === trimmed);
+  if (byLabel) return byLabel.code;
+  if (/^[a-z]{2,3}(-[a-z0-9]{2,8})+$/i.test(trimmed)) return canonicalLanguageCode(trimmed);
+  const legacy: Record<string, string> = {
+    english: 'en',
+    chinese: 'zh-Hans',
+    japanese: 'ja',
+    korean: 'ko',
+    chi: 'zh-Hans',
+    zho: 'zh-Hans',
+    jpn: 'ja',
+  };
+  const mapped = legacy[trimmed.toLowerCase()];
+  if (mapped) return mapped;
+  return trimmed;
+};
+
+/**
  * Chinese gate for authority databases (CBDB/DILA): any `zh` primary subtag
  * (zh, zh-Hant, zh-Hans, …) plus Literary Chinese (`lzh`) and legacy ISO 639-2
  * idents (`chi`, `zho`) still found in older project metadata.
@@ -73,3 +101,17 @@ export const isChineseLanguageCode = (code: string | null | undefined): boolean 
   const primary = canonicalLanguageCode(code).split('-')[0].toLowerCase();
   return primary === 'zh' || primary === 'lzh' || primary === 'chi' || primary === 'zho';
 };
+
+/** Japanese gate for sanmiao (East Asian calendar dates). */
+export const isJapaneseLanguageCode = (code: string | null | undefined): boolean => {
+  if (!code) return false;
+  const primary = canonicalLanguageCode(code).split('-')[0].toLowerCase();
+  return primary === 'ja' || primary === 'jpn';
+};
+
+/**
+ * Projects that should run sanmiao before other auto-tagging (Chinese + Japanese
+ * documentary prose). Korean and other languages are out of scope for v1.
+ */
+export const isEastAsianCalendarLanguageCode = (code: string | null | undefined): boolean =>
+  isChineseLanguageCode(code) || isJapaneseLanguageCode(code);

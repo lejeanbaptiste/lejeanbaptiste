@@ -23,6 +23,17 @@ export interface ProjectFileConfig {
   entityStore?: 'central' | 'project';
   /** UUID fingerprint of the linked entities.xml database file. */
   entityDatabaseId?: string;
+  /** Saved authority tag-bomb pack/year settings for this project. */
+  autoTaggingAuthority?: AutoTaggingAuthoritySettings;
+}
+
+/** Persisted in jean-baptiste.project.json — mirrors cwrc-leafwriter authoritySettings. */
+export interface AutoTaggingAuthoritySettings {
+  packs?: string[];
+  yearFilterEnabled?: boolean;
+  yearStart?: number;
+  yearEnd?: number;
+  hideUndated?: boolean;
 }
 
 export interface ProjectMetadataFile {

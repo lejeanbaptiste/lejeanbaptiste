@@ -1,9 +1,19 @@
 import CloseIcon from '@mui/icons-material/Close';
-import { Box, IconButton, Link, Stack, Tooltip, Typography } from '@mui/material';
+import { Alert, Box, IconButton, Link, Stack, Tooltip, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { takeAutoTaggingBatch } from '../autoTagging/batchHolder';
-import { AutoTaggingSession, ReviewPanel, type Suggestion } from '../autoTagging';
+import { takeAutoTaggingBatch, takeAutoTaggingNotice } from '../autoTagging/batchHolder';
+import {
+  AutoTaggingSession,
+  DateCuratorPanel,
+  ReviewPanel,
+  autoTaggingDocumentKey,
+  isDateCuratorBatch,
+  isDateTagOnlyBatch,
+  markDatesPassApplied,
+  markDatesPassRan,
+  type Suggestion,
+} from '../autoTagging';
 import { useActions, useAppState } from '../overmind';
 import { AutoTaggingApplyOverlay, type AutoTaggingBusyLabel } from './AutoTaggingApplyOverlay';
 
@@ -26,15 +36,26 @@ export const AutoTaggingReviewPane = () => {
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState<AutoTaggingBusyLabel>('Applying tags…');
   const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [notice, setNotice] = useState<string | null>(null);
+  const [applyDiagnostics, setApplyDiagnostics] = useState<string | null>(null);
+  const [applyDiagSeverity, setApplyDiagSeverity] = useState<'error' | 'warning' | 'success' | 'info'>(
+    'info',
+  );
   const session = useRef<AutoTaggingSession | null>(null);
 
   useEffect(() => {
     if (active) {
       setSuggestions(takeAutoTaggingBatch());
+      setNotice(takeAutoTaggingNotice());
+      setApplyDiagnostics(null);
+      setApplyDiagSeverity('info');
       setApplied(0);
       setCanRevert(false);
     } else {
       setSuggestions([]);
+      setNotice(null);
+      setApplyDiagnostics(null);
+      setApplyDiagSeverity('info');
       session.current = null;
     }
   }, [active]);
@@ -91,10 +112,31 @@ export const AutoTaggingReviewPane = () => {
           const result = await getSession().apply(accepted, [], (done, total) => {
             setProgress({ done, total });
           });
+          if (accepted.some((s) => s.source === 'dates' && s.action === 'resolve-date')) {
+            markDatesPassApplied(autoTaggingDocumentKey(window.writer));
+          } else if (accepted.some((s) => s.source === 'dates' && s.action === 'add')) {
+            markDatesPassRan(autoTaggingDocumentKey(window.writer));
+          }
           setApplied((n) => n + result.applied);
           setCanRevert(getSession().canRevert);
+          if (result.diagnostics) {
+            let text = result.diagnostics.summary;
+            if (result.diagnostics.lines.length > 0) {
+              text += `\n\n${result.diagnostics.lines
+                .slice(0, 5)
+                .map((line) => `• "${line.surface}" (${line.outcome}): ${line.reason}`)
+                .join('\n')}`;
+            }
+            setApplyDiagnostics(text);
+            setApplyDiagSeverity(
+              result.applied === 0 ? 'error' : result.applied < accepted.length ? 'warning' : 'success',
+            );
+          }
         } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
           console.error('[auto-tagging] apply failed', error);
+          setApplyDiagnostics(`Apply threw an error: ${message}`);
+          setApplyDiagSeverity('error');
         } finally {
           setBusy(false);
           setProgress({ done: 0, total: 0 });
@@ -211,16 +253,44 @@ export const AutoTaggingReviewPane = () => {
           </Tooltip>
         </Stack>
 
+        {notice && (
+          <Alert severity="warning" sx={{ mx: 1, mt: 1, py: 0.25 }} onClose={() => setNotice(null)}>
+            {notice}
+          </Alert>
+        )}
+
+        {applyDiagnostics && (
+          <Alert
+            severity={applyDiagSeverity}
+            sx={{ mx: 1, mt: 1, py: 0.5, whiteSpace: 'pre-wrap', fontSize: '0.75rem' }}
+            onClose={() => setApplyDiagnostics(null)}
+          >
+            {applyDiagnostics}
+          </Alert>
+        )}
+
         <Box sx={{ flex: 1, minHeight: 0 }}>
-          <ReviewPanel
-            autoFocus={false}
-            busy={busy}
-            suggestions={suggestions}
-            onApply={handleApply}
-            onFocus={handleFocus}
-            onDecision={handleDecision}
-            onClose={handleClose}
-          />
+          {isDateCuratorBatch(suggestions) || isDateTagOnlyBatch(suggestions) ? (
+            <DateCuratorPanel
+              autoFocus={false}
+              busy={busy}
+              suggestions={suggestions}
+              onApply={handleApply}
+              onFocus={handleFocus}
+              onDecision={handleDecision}
+              onClose={handleClose}
+            />
+          ) : (
+            <ReviewPanel
+              autoFocus={false}
+              busy={busy}
+              suggestions={suggestions}
+              onApply={handleApply}
+              onFocus={handleFocus}
+              onDecision={handleDecision}
+              onClose={handleClose}
+            />
+          )}
         </Box>
       </Box>
     </>

@@ -15,6 +15,10 @@ import {
   type ProjectFileConfig,
   type ProjectSchemaConfig,
 } from './projectFile';
+import {
+  shouldMergeSanmiaoDates,
+  writeSanmiaoMergedTeiSchema,
+} from './sanmiaoSchemaMerge';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
@@ -44,7 +48,11 @@ export const installCatalogSchema = async (
     const rngPath = path.join(schemaDir, entry.localRngName);
     const cssPath = path.join(schemaDir, entry.localCssName);
 
-    await fs.writeFile(rngPath, rngContent, 'utf-8');
+    if (shouldMergeSanmiaoDates(entry.id, rngContent)) {
+      await writeSanmiaoMergedTeiSchema(schemaDir, entry.localRngName, rngContent);
+    } else {
+      await fs.writeFile(rngPath, rngContent, 'utf-8');
+    }
     await fs.writeFile(cssPath, cssContent, 'utf-8');
     writtenFiles.push(rngPath, cssPath);
 
@@ -112,6 +120,10 @@ export const installLocalSchema = async (
     }
 
     const rngContent = await fs.readFile(destRng, 'utf-8');
+
+    if (shouldMergeSanmiaoDates(undefined, rngContent)) {
+      await writeSanmiaoMergedTeiSchema(schemaDir, rngName, rngContent);
+    }
 
     const schema: ProjectSchemaConfig = {
       rng: `schema/${rngName}`,

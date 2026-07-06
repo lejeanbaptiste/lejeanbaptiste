@@ -7,23 +7,42 @@ import {
   DialogContent,
   FormControlLabel,
   Link,
+  Slider,
   Stack,
   Typography,
 } from '@mui/material';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AutoTaggingSession,
   aiApiSettingsFromDesktop,
+  areOtherAutoTaggingMethodsUnlocked,
+  autoTaggingDocumentKey,
   crawlDocuments,
   createLlmClientFromSettings,
+  defaultSanmiaoCivForLanguage,
   dictionaryTag,
   entriesFromRows,
+  inferEastAsianLanguageFromDocument,
   isAiSuggestReady,
+  isEastAsianDatesMethodAvailable,
+  markDatesPassRan,
   parseDictionaryTable,
+  formatAuthorityTagBombNotice,
+  persistAuthoritySettings,
+  readPersistedAuthoritySettings,
   readSpreadsheet,
+  requiresDatesBeforeOtherTagging,
+  resolveAutoTaggingSourceLanguage,
+  settingsFromUiState,
+  uiStateFromSettings,
+  type AuthorityPackId,
   type DictionaryEntry,
   type Suggestion,
 } from '../../autoTagging';
+import {
+  isJapaneseLanguageCode,
+  languageLabelForCode,
+} from '../../utilities/languageCodes';
 import { AutoTaggingApplyOverlay } from '../../layout/AutoTaggingApplyOverlay';
 import { useActions } from '../../overmind';
 import type { IDialog } from '../type';
@@ -31,8 +50,53 @@ import type { IDialog } from '../type';
 const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
 const AI_TAG_OPTIONS = ['persName', 'placeName'] as const;
 type AiTagOption = (typeof AI_TAG_OPTIONS)[number];
-type DialogStep = 'methods' | 'ai';
+type DialogStep = 'methods' | 'ai' | 'authority' | 'dates';
 type AiMode = 'suggest' | 'audit';
+
+const AUTHORITY_PACK_OPTIONS = [
+  { id: 'cbdb-persons' as const, label: 'CBDB persons' },
+  { id: 'cbdb-places' as const, label: 'CBDB places' },
+  { id: 'cbdb-offices' as const, label: 'CBDB offices (roleName)' },
+  { id: 'dila-persons' as const, label: 'DILA persons' },
+  { id: 'dila-places' as const, label: 'DILA places' },
+  { id: 'ndl-persons' as const, label: 'NDL persons' },
+  { id: 'ndl-works' as const, label: 'NDL works' },
+];
+type AuthorityPackOptionId = (typeof AUTHORITY_PACK_OPTIONS)[number]['id'];
+
+const defaultAuthorityPacksForLanguage = (
+  language: string | null,
+): Record<AuthorityPackOptionId, boolean> => ({
+  'cbdb-persons': false,
+  'cbdb-places': false,
+  'cbdb-offices': false,
+  'dila-persons': !isJapaneseLanguageCode(language),
+  'dila-places': false,
+  'ndl-persons': isJapaneseLanguageCode(language),
+  'ndl-works': false,
+});
+
+const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityPackOptionId[] =>
+  isJapaneseLanguageCode(language)
+    ? ['ndl-persons', 'ndl-works']
+    : ['cbdb-persons', 'cbdb-places', 'cbdb-offices', 'dila-persons', 'dila-places'];
+
+/** CE presets for dynasty-scoped tag bombs. */
+const AUTHORITY_YEAR_PRESETS = [
+  { label: 'Eastern Han', start: 25, end: 220 },
+  { label: 'Tang', start: 618, end: 907 },
+  { label: 'Song', start: 960, end: 1279 },
+  { label: 'Ming–Qing', start: 1368, end: 1912 },
+] as const;
+
+const AUTHORITY_YEAR_MIN = -500;
+const AUTHORITY_YEAR_MAX = 2000;
+
+const SANMIAO_CIV_OPTIONS = [
+  { id: 'c' as const, label: 'Chinese' },
+  { id: 'j' as const, label: 'Japanese' },
+] as const;
+type SanmiaoCivId = (typeof SANMIAO_CIV_OPTIONS)[number]['id'];
 
 const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI;
 
@@ -50,24 +114,167 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     placeName: true,
   });
   const [aiProgress, setAiProgress] = useState({ done: 0, total: 0 });
+  const [authorityPacks, setAuthorityPacks] = useState<
+    Record<AuthorityPackOptionId, boolean>
+  >(defaultAuthorityPacksForLanguage(null));
+  const [authorityStatus, setAuthorityStatus] = useState<
+    { id: AuthorityPackOptionId; installed: boolean }[]
+  >([]);
+  const [entityDbFolder, setEntityDbFolder] = useState<string | null>(null);
+  const [packsLocationHint, setPacksLocationHint] = useState<string | null>(null);
+  const [authorityProgress, setAuthorityProgress] = useState('');
+  const [authorityYearFilterEnabled, setAuthorityYearFilterEnabled] = useState(true);
+  const [authorityYearRange, setAuthorityYearRange] = useState<[number, number]>([25, 220]);
+  const [authorityHideUndated, setAuthorityHideUndated] = useState(true);
+  const [dateCiv, setDateCiv] = useState<Record<SanmiaoCivId, boolean>>({
+    c: true,
+    j: false,
+  });
+  const [dateFuzzy, setDateFuzzy] = useState(true);
+  const [datesProgress, setDatesProgress] = useState('');
+  const [datesChunkProgress, setDatesChunkProgress] = useState({ done: 0, total: 0 });
+  const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
+  const [otherMethodsUnlocked, setOtherMethodsUnlocked] = useState(false);
+  const [workflowReady, setWorkflowReady] = useState(false);
+  const [documentKey, setDocumentKey] = useState('unknown');
   const fileInput = useRef<HTMLInputElement>(null);
   const session = useRef<AutoTaggingSession | null>(null);
   const { startAutoTaggingReview } = useActions().ui;
 
   const aiSettings = aiApiSettingsFromDesktop();
   const aiReady = isAiSuggestReady(aiSettings);
+  const sanmiaoAvailable =
+    !!window.electronAPI?.sanmiaoTagDatesBatch ||
+    !!window.electronAPI?.sanmiaoProposeDatesBatch ||
+    !!window.electronAPI?.sanmiaoProposeDates;
+  const datesGateActive = requiresDatesBeforeOtherTagging(sourceLanguage);
+  const eastAsianDatesOffered =
+    isDesktopApp() &&
+    sanmiaoAvailable &&
+    isEastAsianDatesMethodAvailable(sourceLanguage);
+  const otherMethodsLocked = datesGateActive && !otherMethodsUnlocked;
 
   const getSession = () => {
     session.current ??= new AutoTaggingSession(window.writer);
     return session.current;
   };
 
-  const beginReview = (produced: Suggestion[]) => {
-    startAutoTaggingReview(produced);
+  const refreshWorkflowState = async () => {
+    const doc = await getSession().getDocument();
+    const lang = await resolveAutoTaggingSourceLanguage(doc, () =>
+      window.__leafWriterProject?.getProjectSourceLanguage?.() ?? Promise.resolve(null),
+    );
+    const key = autoTaggingDocumentKey(window.writer);
+    setSourceLanguage(lang);
+    setDocumentKey(key);
+    setOtherMethodsUnlocked(areOtherAutoTaggingMethodsUnlocked(key, doc, lang));
+    const defaultCiv = defaultSanmiaoCivForLanguage(lang);
+    setDateCiv({
+      c: defaultCiv.includes('c'),
+      j: defaultCiv.includes('j'),
+    });
+    setWorkflowReady(true);
+  };
+
+  const refreshAuthoritySetup = async () => {
+    if (!isDesktopApp()) return;
+    const folder = (await window.electronAPI?.getEntityDbFolder?.()) ?? null;
+    const trimmed = folder?.trim() ? folder : null;
+    setEntityDbFolder(trimmed);
+    const statuses = await window.electronAPI?.authorityPackStatuses?.();
+    setAuthorityStatus(
+      AUTHORITY_PACK_OPTIONS.map((opt) => ({
+        id: opt.id,
+        installed: statuses?.find((s) => s.id === opt.id)?.installed ?? false,
+      })),
+    );
+
+    setPacksLocationHint(null);
+    if (trimmed && !statuses?.some((s) => s.installed)) {
+      const parent = trimmed.replace(/[/\\][^/\\]+$/, '');
+      const parentPacks = parent
+        ? [
+            `${parent}/authority-packs/dila/persons.ndjson`,
+            `${parent}/authority-packs/ndl/persons.ndjson`,
+          ]
+        : [];
+      const parentHasPacks = await Promise.all(
+        parentPacks.map((candidate) => window.electronAPI?.pathExists?.(candidate)),
+      ).then((hits) => hits.some(Boolean));
+      if (parentHasPacks) {
+        setPacksLocationHint(
+          `Compiled packs were found in ${parent}/authority-packs/, but the entity database folder is set to a subfolder. Choose ${parent} in App Settings → Entity database.`,
+        );
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!open || !isDesktopApp()) return;
+    void refreshAuthoritySetup();
+    const saved = uiStateFromSettings(readPersistedAuthoritySettings());
+    setAuthorityYearFilterEnabled(saved.yearFilterEnabled);
+    setAuthorityYearRange(saved.yearRange);
+    setAuthorityHideUndated(saved.hideUndated);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const saved = uiStateFromSettings(readPersistedAuthoritySettings());
+    const defaults = defaultAuthorityPacksForLanguage(sourceLanguage);
+    const visibleIds = new Set(visibleAuthorityPackIdsForLanguage(sourceLanguage));
+    const visibleSaved = Object.entries(saved.packs).some(
+      ([id, enabled]) => visibleIds.has(id as AuthorityPackOptionId) && enabled,
+    );
+    setAuthorityPacks(visibleSaved ? saved.packs : defaults);
+  }, [open, sourceLanguage]);
+
+  useEffect(() => {
+    if (!open) {
+      setWorkflowReady(false);
+      return;
+    }
+    void refreshWorkflowState().catch(async () => {
+      try {
+        const doc = await getSession().getDocument();
+        const inferred = inferEastAsianLanguageFromDocument(doc);
+        const key = autoTaggingDocumentKey(window.writer);
+        setSourceLanguage(inferred);
+        setDocumentKey(key);
+        setOtherMethodsUnlocked(areOtherAutoTaggingMethodsUnlocked(key, doc, inferred));
+      } catch {
+        setSourceLanguage(null);
+        setOtherMethodsUnlocked(true);
+      }
+      setWorkflowReady(true);
+    });
+  }, [open]);
+
+  const visibleAuthorityPackOptions = AUTHORITY_PACK_OPTIONS.filter((opt) =>
+    visibleAuthorityPackIdsForLanguage(sourceLanguage).includes(opt.id),
+  );
+  const anyVisibleAuthorityPackInstalled = visibleAuthorityPackOptions.some(
+    (opt) => authorityStatus.find((s) => s.id === opt.id)?.installed ?? false,
+  );
+  const authorityPackGroupLabel = isJapaneseLanguageCode(sourceLanguage)
+    ? 'NDL'
+    : 'CBDB / DILA';
+
+  const beginReview = (produced: Suggestion[], notice?: string) => {
+    startAutoTaggingReview(produced, notice);
     handleClose();
   };
 
+  const guardOtherMethods = (): boolean => {
+    if (otherMethodsLocked) {
+      setError('Run East Asian dates first.');
+      return false;
+    }
+    return true;
+  };
+
   const openReview = async (parsed: DictionaryEntry[], sourceLabel: string) => {
+    if (!guardOtherMethods()) return;
     if (parsed.length === 0) {
       setError('No usable entries found. Expected columns: string, tag.');
       return;
@@ -97,6 +304,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   };
 
   const crawlProject = async () => {
+    if (!guardOtherMethods()) return;
     setError(null);
     setBusy(true);
     try {
@@ -119,6 +327,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   };
 
   const openAiStep = (mode: AiMode) => {
+    if (!guardOtherMethods()) return;
     if (!isDesktopApp()) {
       setError(`AI ${mode} is available in the desktop app.`);
       return;
@@ -132,6 +341,261 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     setError(null);
     setAiMode(mode);
     setStep('ai');
+  };
+
+  const openAuthorityStep = () => {
+    if (!guardOtherMethods()) return;
+    if (!isDesktopApp()) {
+      setError('Authority packs are available in the desktop app.');
+      return;
+    }
+    if (!window.electronAPI?.authorityPackRead) {
+      setError('Authority pack API is not available. Restart the desktop app.');
+      return;
+    }
+    setError(null);
+    setStep('authority');
+  };
+
+  const chooseEntityDbFolder = async () => {
+    setError(null);
+    const picked = await window.electronAPI?.pickEntityDbFolder?.();
+    if (!picked) return;
+
+    const folder = picked.replace(/[/\\]+$/, '');
+    const entitiesHere = await window.electronAPI?.pathExists?.(`${folder}/entities.xml`);
+    if (!entitiesHere) {
+      const parent = folder.replace(/[/\\][^/\\]+$/, '');
+      const entitiesInParent =
+        parent.length > 0 &&
+        (await window.electronAPI?.pathExists?.(`${parent}/entities.xml`));
+      if (entitiesInParent) {
+        setError(
+          `No entities.xml in that folder. Your entity database is probably the parent folder (${parent}) — choose that, not the project subfolder inside it.`,
+        );
+        return;
+      }
+      setError(
+        'No entities.xml in that folder. Pick the folder that contains entities.xml; compiled packs go in authority-packs/ beside it.',
+      );
+    }
+
+    await window.electronAPI?.setEntityDbFolder?.(picked);
+    await refreshAuthoritySetup();
+  };
+
+  const installAuthorityPacks = async () => {
+    if (!entityDbFolder) {
+      setError('Choose an entity database folder first (App Settings → Entity database).');
+      return;
+    }
+    const source = await window.electronAPI?.pickAuthorityPacksSource?.();
+    if (!source) return;
+
+    setError(null);
+    setBusy(true);
+    try {
+      const result = await window.electronAPI?.authorityPackInstallFrom?.(source);
+      if (!result?.ok) {
+        setError(result?.error ?? 'Install failed.');
+        return;
+      }
+      await refreshAuthoritySetup();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openDatesStep = () => {
+    if (!isDesktopApp()) {
+      setError('East Asian dates are available in the desktop app.');
+      return;
+    }
+    if (!eastAsianDatesOffered) {
+      setError('East Asian dates are only offered for Chinese and Japanese source documents.');
+      return;
+    }
+    if (!sanmiaoAvailable) {
+      setError('Sanmiao is not available. Install the sanmiao Python package and restart the app.');
+      return;
+    }
+    setError(null);
+    setStep('dates');
+  };
+
+  const makeSanmiaoProgress = (
+    setProgress: (label: string) => void,
+    verb: string,
+  ): import('../../autoTagging/dates').DateTagOptions['onProgress'] => (p) => {
+    setDatesChunkProgress({ done: p.done, total: p.total });
+    if (p.phase === 'starting') {
+      setProgress(
+        p.tablesMs != null
+          ? `Tables loaded (${p.tablesMs} ms). ${verb}…`
+          : `${verb}…`,
+      );
+    } else if (p.phase === 'chunk') {
+      const slow = (p.ms ?? 0) > 5000 ? ' — slow' : '';
+      setProgress(
+        p.total <= 1
+          ? `${verb}… ${p.proposalsInChunk ?? 0} items, ${(p.chars ?? 0).toLocaleString()} chars, ${p.ms ?? 0} ms${slow}`
+          : `${verb} ${p.done} / ${p.total}: ${p.proposalsInChunk ?? 0} items, ${(p.chars ?? 0).toLocaleString()} chars, ${p.ms ?? 0} ms${slow}`,
+      );
+    } else if (p.phase === 'mapping') {
+      setProgress(`Mapping… ${p.suggestionsSoFar ?? 0} suggestions so far`);
+    }
+  };
+
+  const runEastAsianDateTag = async () => {
+    const batchTag = window.electronAPI?.sanmiaoTagDatesBatch;
+    if (!batchTag) {
+      setError('Sanmiao tag API is not available. Restart the desktop app.');
+      return;
+    }
+    const civ = SANMIAO_CIV_OPTIONS.filter((o) => dateCiv[o.id]).map((o) => o.id);
+    if (civ.length === 0) {
+      setError('Select at least one calendar tradition.');
+      return;
+    }
+
+    setError(null);
+    setBusy(true);
+    setDatesProgress('Tagging dates…');
+    setDatesChunkProgress({ done: 0, total: 0 });
+    try {
+      const tagFn: import('../../autoTagging/dates').SanmiaoBatchTagFn = (chunks, opts, onChunk) => {
+        const stop = window.electronAPI?.onSanmiaoProgress?.((event) => onChunk?.(event));
+        return batchTag(chunks, opts).finally(() => stop?.());
+      };
+
+      const result = await getSession().runEastAsianDateTag(tagFn, {
+        civ,
+        fuzzy: dateFuzzy,
+        onProgress: makeSanmiaoProgress(setDatesProgress, 'Tagging'),
+      });
+      markDatesPassRan(documentKey);
+      setOtherMethodsUnlocked(true);
+      if (result.suggestions.length === 0) {
+        setError(
+          'No date spans found. Add any missing dates manually, then run Resolve. Other tagging methods are now available.',
+        );
+        return;
+      }
+      beginReview(
+        result.suggestions,
+        'Tag pass only — apply parse markup, add missing dates in the editor, then run Resolve dates.',
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+      setDatesProgress('');
+      setDatesChunkProgress({ done: 0, total: 0 });
+    }
+  };
+
+  const runEastAsianDateResolve = async () => {
+    const batchResolve = window.electronAPI?.sanmiaoResolveDatesBatch;
+    if (!batchResolve) {
+      setError('Sanmiao resolve API is not available. Restart the desktop app.');
+      return;
+    }
+    const civ = SANMIAO_CIV_OPTIONS.filter((o) => dateCiv[o.id]).map((o) => o.id);
+    if (civ.length === 0) {
+      setError('Select at least one calendar tradition.');
+      return;
+    }
+
+    setError(null);
+    setBusy(true);
+    setDatesProgress('Resolving dates…');
+    setDatesChunkProgress({ done: 0, total: 0 });
+    try {
+      const resolveFn: import('../../autoTagging/dates').SanmiaoBatchResolveFn = (
+        dates,
+        opts,
+        onChunk,
+      ) => {
+        const stop = window.electronAPI?.onSanmiaoProgress?.((event) => onChunk?.(event));
+        return batchResolve(dates, opts).finally(() => stop?.());
+      };
+
+      const result = await getSession().runEastAsianDateResolve(resolveFn, {
+        civ,
+        sequential: true,
+        onProgress: makeSanmiaoProgress(setDatesProgress, 'Resolving'),
+      });
+      if (result.suggestions.length === 0) {
+        setError('No <date> elements in the document. Run Tag dates first.');
+        return;
+      }
+      beginReview(result.suggestions);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+      setDatesProgress('');
+      setDatesChunkProgress({ done: 0, total: 0 });
+    }
+  };
+
+  const runAuthorityTagBomb = async () => {
+    const selected = visibleAuthorityPackOptions.filter((o) => authorityPacks[o.id]).map(
+      (o) => o.id,
+    ) as AuthorityPackId[];
+    if (selected.length === 0) {
+      setError('Select at least one authority pack.');
+      return;
+    }
+    const readPack = window.electronAPI?.authorityPackRead;
+    if (!readPack) {
+      setError('Authority pack API is not available.');
+      return;
+    }
+
+    setError(null);
+    setBusy(true);
+    setAuthorityProgress('Starting…');
+    try {
+      await persistAuthoritySettings(
+        settingsFromUiState({
+          packs: authorityPacks,
+          yearFilterEnabled: authorityYearFilterEnabled,
+          yearRange: authorityYearRange,
+          hideUndated: authorityHideUndated,
+        }),
+      );
+      const [yearStart, yearEnd] = authorityYearRange;
+      const result = await getSession().runAuthorityTagBomb(selected, readPack, {
+        onProgress: setAuthorityProgress,
+        ...(authorityYearFilterEnabled
+          ? {
+              yearRange: {
+                start: Math.min(yearStart, yearEnd),
+                end: Math.max(yearStart, yearEnd),
+              },
+              hideUndated: authorityHideUndated,
+            }
+          : {}),
+      });
+      if (result.suggestions.length === 0) {
+        const filterNote = authorityYearFilterEnabled
+          ? ` (${Math.min(...authorityYearRange)}–${Math.max(...authorityYearRange)} CE${authorityHideUndated ? ', undated excluded' : ''})`
+          : '';
+        setError(
+          `No untagged matches (${result.candidateCount.toLocaleString()} authority entries after filters${filterNote}).`,
+        );
+        return;
+      }
+      beginReview(result.suggestions, formatAuthorityTagBombNotice(result));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+      setAuthorityProgress('');
+    }
   };
 
   const runAi = async () => {
@@ -192,13 +656,31 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     onClose?.(id);
   };
 
-  const methodButton = (label: string, onClick: () => void, disabled = false) => (
+  const methodButton = (
+    label: string,
+    onClick: () => void,
+    disabled = false,
+    title?: string,
+    emphasize = false,
+  ) => (
     <Button
       size="small"
-      variant="text"
-      disabled={disabled || busy}
+      variant={emphasize ? 'contained' : 'text'}
+      color={emphasize ? 'primary' : 'inherit'}
+      disabled={disabled || busy || !workflowReady}
+      title={title}
       onClick={onClick}
-      sx={{ justifyContent: 'flex-start', textTransform: 'none', px: 1, py: 0.25 }}
+      sx={{
+        justifyContent: 'flex-start',
+        textTransform: 'none',
+        px: 1,
+        py: 0.25,
+        ...(disabled || !workflowReady
+          ? { color: 'text.disabled' }
+          : emphasize
+            ? { fontWeight: 600 }
+            : {}),
+      }}
     >
       {label}
     </Button>
@@ -209,15 +691,23 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   return (
     <>
       <AutoTaggingApplyOverlay
-        open={busy && step === 'ai'}
-        label={aiBusyLabel}
-        done={aiProgress.done}
-        total={aiProgress.total}
+        open={busy && (step === 'ai' || step === 'authority' || step === 'dates')}
+        label={
+          step === 'authority'
+            ? authorityProgress || 'Loading authority packs…'
+            : step === 'dates'
+              ? datesProgress || 'Running sanmiao…'
+              : aiBusyLabel
+        }
+        done={step === 'dates' ? datesChunkProgress.done : step === 'ai' ? aiProgress.done : 0}
+        total={step === 'dates' ? datesChunkProgress.total : step === 'ai' ? aiProgress.total : 0}
       />
       <Dialog
         open={open}
         onClose={handleClose}
-        PaperProps={{ sx: { width: step === 'ai' ? 360 : 340, m: 1, borderRadius: 1 } }}
+        PaperProps={{
+          sx: { width: step === 'methods' ? 340 : 380, m: 1, borderRadius: 1 },
+        }}
       >
         <DialogContent sx={{ p: 1.5 }}>
           <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.6 }}>
@@ -237,7 +727,36 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
 
           {step === 'methods' ? (
             <Stack sx={{ mt: 0.5 }}>
-              {methodButton('Tag from a list (CSV, TSV, xlsx, ODS)', () => fileInput.current?.click())}
+              {!workflowReady ? (
+                <Typography variant="body2" color="text.secondary" sx={{ px: 1, py: 0.5 }}>
+                  Checking document language…
+                </Typography>
+              ) : (
+                <>
+              {otherMethodsLocked && (
+                <Alert severity="info" sx={{ py: 0.5, mb: 0.5, fontSize: 12 }}>
+                  For {languageLabelForCode(sourceLanguage ?? '')} documents, run{' '}
+                  <strong>East Asian dates</strong> before dictionary, authority, or AI tagging.
+                </Alert>
+              )}
+              {eastAsianDatesOffered &&
+                methodButton(
+                  '1. East Asian dates',
+                  () => openDatesStep(),
+                  !isDesktopApp() || !sanmiaoAvailable,
+                  !isDesktopApp()
+                    ? 'Desktop app only'
+                    : !sanmiaoAvailable
+                      ? 'Install sanmiao Python package'
+                      : undefined,
+                  otherMethodsLocked,
+                )}
+              {methodButton(
+                eastAsianDatesOffered ? '2. Tag from a list (CSV, TSV, xlsx, ODS)' : 'Tag from a list (CSV, TSV, xlsx, ODS)',
+                () => fileInput.current?.click(),
+                otherMethodsLocked,
+                otherMethodsLocked ? 'Run East Asian dates first' : undefined,
+              )}
               <input
                 ref={fileInput}
                 type="file"
@@ -250,16 +769,262 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   event.target.value = '';
                 }}
               />
-              {methodButton('From existing tags in this project', () => void crawlProject())}
-              {methodButton('East Asian dates', () => {}, true)}
-              {methodButton('AI suggest', () => openAiStep('suggest'), !isDesktopApp())}
-              {methodButton('AI audit', () => openAiStep('audit'), !isDesktopApp())}
+              {methodButton(
+                eastAsianDatesOffered ? '3. From existing tags in this project' : 'From existing tags in this project',
+                () => void crawlProject(),
+                otherMethodsLocked,
+                otherMethodsLocked ? 'Run East Asian dates first' : undefined,
+              )}
+              {methodButton(
+                eastAsianDatesOffered
+                  ? `4. Tag from authority packs (${authorityPackGroupLabel})`
+                  : `Tag from authority packs (${authorityPackGroupLabel})`,
+                () => openAuthorityStep(),
+                !isDesktopApp() || otherMethodsLocked,
+                otherMethodsLocked
+                  ? 'Run East Asian dates first'
+                  : !isDesktopApp()
+                    ? 'Desktop app only'
+                    : undefined,
+              )}
+              {methodButton(
+                eastAsianDatesOffered ? '5. AI suggest' : 'AI suggest',
+                () => openAiStep('suggest'),
+                !isDesktopApp() || otherMethodsLocked,
+                otherMethodsLocked
+                  ? 'Run East Asian dates first'
+                  : !isDesktopApp()
+                    ? 'Desktop app only'
+                    : undefined,
+              )}
+              {methodButton(
+                eastAsianDatesOffered ? '6. AI audit' : 'AI audit',
+                () => openAiStep('audit'),
+                !isDesktopApp() || otherMethodsLocked,
+                otherMethodsLocked
+                  ? 'Run East Asian dates first'
+                  : !isDesktopApp()
+                    ? 'Desktop app only'
+                    : undefined,
+              )}
               {methodButton('NER', () => {}, true)}
+                </>
+              )}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
                 <Link component="button" variant="caption" underline="hover" onClick={handleClose}>
                   Close
                 </Link>
               </Box>
+            </Stack>
+          ) : step === 'authority' ? (
+            <Stack spacing={1} sx={{ mt: 0.5 }}>
+              <Typography variant="body2" color="text.secondary">
+                Match pre-compiled {authorityPackGroupLabel} strings. Clue lines appear in review;
+                no ids until disambiguation.
+              </Typography>
+              {!entityDbFolder && (
+                <Alert severity="warning" sx={{ py: 0.5 }}>
+                  No entity database folder configured. Pick the folder that contains{' '}
+                  <code>entities.xml</code> — not the project subfolder inside it. Compiled packs
+                  install to <code>authority-packs/</code> beside that file.
+                  <Box sx={{ mt: 1 }}>
+                    <Button size="small" variant="outlined" disabled={busy} onClick={() => void chooseEntityDbFolder()}>
+                      Choose entity database folder…
+                    </Button>
+                  </Box>
+                </Alert>
+              )}
+              {packsLocationHint && (
+                <Alert severity="warning" sx={{ py: 0.5 }}>
+                  {packsLocationHint}
+                </Alert>
+              )}
+              {entityDbFolder && !anyVisibleAuthorityPackInstalled && !packsLocationHint && (
+                <Alert severity="info" sx={{ py: 0.5 }}>
+                  Entity database: {entityDbFolder}
+                  <br />
+                  No compiled packs found in <code>authority-packs/</code> yet.
+                  <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button size="small" variant="outlined" disabled={busy} onClick={() => void installAuthorityPacks()}>
+                      Install from folder…
+                    </Button>
+                  </Box>
+                </Alert>
+              )}
+              <Stack>
+                      {visibleAuthorityPackOptions.map((opt) => {
+                  const installed =
+                    authorityStatus.find((s) => s.id === opt.id)?.installed ?? false;
+                  return (
+                    <FormControlLabel
+                      key={opt.id}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={authorityPacks[opt.id]}
+                          disabled={busy || !installed}
+                          onChange={(event) =>
+                            setAuthorityPacks((current) => ({
+                              ...current,
+                              [opt.id]: event.target.checked,
+                            }))
+                          }
+                        />
+                      }
+                      label={`${opt.label}${installed ? '' : ' (not installed)'}`}
+                      sx={{ ml: 0 }}
+                    />
+                  );
+                })}
+              </Stack>
+              <Box sx={{ px: 0.5 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={authorityYearFilterEnabled}
+                      disabled={busy}
+                      onChange={(event) => setAuthorityYearFilterEnabled(event.target.checked)}
+                    />
+                  }
+                  label="Limit to year range (CE)"
+                  sx={{ ml: 0 }}
+                />
+                {authorityYearFilterEnabled && (
+                  <Stack spacing={0.75} sx={{ pl: 3.5, pr: 0.5, pb: 0.5 }}>
+                    <Slider
+                      size="small"
+                      min={AUTHORITY_YEAR_MIN}
+                      max={AUTHORITY_YEAR_MAX}
+                      step={1}
+                      value={authorityYearRange}
+                      onChange={(_event, value) =>
+                        setAuthorityYearRange(value as [number, number])
+                      }
+                      valueLabelDisplay="auto"
+                      getAriaLabel={(index) => (index === 0 ? 'Start year' : 'End year')}
+                      getAriaValueText={(value) => `${value} CE`}
+                      disabled={busy}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {Math.min(...authorityYearRange)} – {Math.max(...authorityYearRange)} CE
+                      (include entries whose lifespan overlaps this span)
+                    </Typography>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={authorityHideUndated}
+                          disabled={busy}
+                          onChange={(event) => setAuthorityHideUndated(event.target.checked)}
+                        />
+                      }
+                      label="Exclude entries with no dates"
+                      sx={{ ml: 0 }}
+                    />
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                      {AUTHORITY_YEAR_PRESETS.map((preset) => (
+                        <Button
+                          key={preset.label}
+                          size="small"
+                          variant="outlined"
+                          disabled={busy}
+                          onClick={() => setAuthorityYearRange([preset.start, preset.end])}
+                          sx={{ py: 0, minWidth: 0, textTransform: 'none' }}
+                        >
+                          {preset.label}
+                        </Button>
+                      ))}
+                    </Stack>
+                  </Stack>
+                )}
+              </Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Link
+                  component="button"
+                  variant="caption"
+                  underline="hover"
+                  onClick={() => setStep('methods')}
+                  disabled={busy}
+                >
+                  Back
+                </Link>
+                <Button
+                  size="small"
+                  variant="contained"
+                  disabled={busy || !authoritySetupReady}
+                  onClick={() => void runAuthorityTagBomb()}
+                >
+                  Run tag bomb
+                </Button>
+              </Stack>
+            </Stack>
+          ) : step === 'dates' ? (
+            <Stack spacing={1} sx={{ mt: 0.5 }}>
+              <Typography variant="body2" color="text.secondary">
+                Two passes: (1) tag date spans and write parse structure only; (2) after you add
+                any missing dates in the editor, resolve calendar attributes in document order.
+              </Typography>
+              <Stack>
+                {SANMIAO_CIV_OPTIONS.map((opt) => (
+                  <FormControlLabel
+                    key={opt.id}
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={dateCiv[opt.id]}
+                        disabled={busy}
+                        onChange={(event) =>
+                          setDateCiv((current) => ({ ...current, [opt.id]: event.target.checked }))
+                        }
+                      />
+                    }
+                    label={opt.label}
+                    sx={{ ml: 0 }}
+                  />
+                ))}
+              </Stack>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={dateFuzzy}
+                    disabled={busy}
+                    onChange={(event) => setDateFuzzy(event.target.checked)}
+                  />
+                }
+                label="Fuzzy character matching (variant forms)"
+                sx={{ ml: 0 }}
+              />
+              <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
+                <Link
+                  component="button"
+                  variant="caption"
+                  underline="hover"
+                  onClick={() => setStep('methods')}
+                  disabled={busy}
+                >
+                  Back
+                </Link>
+                <Stack direction="row" spacing={0.5}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={busy}
+                    onClick={() => void runEastAsianDateResolve()}
+                  >
+                    Resolve dates
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={busy}
+                    onClick={() => void runEastAsianDateTag()}
+                  >
+                    Tag dates
+                  </Button>
+                </Stack>
+              </Stack>
             </Stack>
           ) : (
             <Stack spacing={1} sx={{ mt: 0.5 }}>

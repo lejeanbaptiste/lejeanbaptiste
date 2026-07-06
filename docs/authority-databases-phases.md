@@ -47,63 +47,115 @@ Smallest piece, unblocks everything else.
 - Prompt-on-first-Chinese-project: `maybeOfferAuthorityDatabases` in commons, called fire-and-forget at the end of `completeProjectOnboarding` — project open is never blocked; missing-source check uses the same statuses IPC. Shared renderer types in `apps/commons/src/desktop/authorityDbTypes.ts`.
 - Not yet exercised end-to-end with the full 600 MB CBDB download (URLs verified reachable; DILA files are the ones already in `databases/`).
 
-## Phase A2 — Compile step
+## Phase A2 — Compile step — **partial (pre-compiled packs, 2026-07-05)**
 
-The heart of it: raw source → `AuthorityCandidate` NDJSON per source × kind
-(`cbdb.person.ndjson`, `cbdb.place.ndjson`, `cbdb.office.ndjson`,
-`dila.person.ndjson`, `dila.place.ndjson`). Runs after download and after an
-accepted update; the matcher never touches SQLite/XML.
+Compile runs in the sibling [`authority extraction`](../../authority%20extraction/) repo (`npm run compile:cbdb`, `compile:dila`). LJB **loads** NDJSON from `<entityDbFolder>/authority-packs/`.
 
-**Decide first:**
-- [ ] SQLite access in-app: better-sqlite3 (native dep in Electron) vs. sql.js (wasm, slower but dependency-free). 550 MB file favours better-sqlite3.
-- [ ] Include CBDB altname type 0 "Unknown" (45k strings)? Sample first.
-- [ ] officeName candidate shape — carried-over open question (roleName at tag time, no entity?).
+**Built:**
 
-**Prepare:**
-- [ ] CBDB extraction queries: BIOG_MAIN + DYNASTIES join; ALTNAME_DATA with the include/exclude type list from the planning doc; ADDR_CODES; OFFICE_CODES.
-- [ ] DILA streaming XML parse (49 MB / 30 MB — SAX-style, not DOM): persName sets, birth/death year extraction, dynasty note → year range via DYNASTIES + alias table (北宋/南宋…), concise-note first clause, `idno` crosslinks; place records + districts.xml hierarchy for the clue.
-- [ ] Shared rules: drop match strings ≤ 1 char, normalize whitespace/width per existing policy, build the one-line clue string at compile time.
-- [ ] Progress UI — compiling 660k persons takes real seconds.
+- [x] `packLoader.ts`, `packPaths.ts`, `runAuthorityTagBomb` on `AutoTaggingSession`
+- [x] Desktop IPC: `authorityPack:statuses`, `authorityPack:read`, `authorityPack:installFrom`
+- [x] Dialog: **Tag from authority packs (CBDB / DILA)** with source checkboxes
+- [x] CBDB offices → `roleName`; `kind: office` on candidates (standoff `office` entity deferred to 4b)
+- [x] `scripts/sync-authority-packs.mjs` — copy compiled packs into entity DB folder
 
-**Done when:** each downloaded source yields NDJSON artifacts; a golden test compiles a fixture slice of each source and snapshots the candidates (including clue lines).
+**Install packs (dev):**
+
+```bash
+cd authority\ extraction && npm run compile:cbdb && npm run compile:dila
+cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
+```
+
+**Still to do:**
+
+- [x] Year-range slider + hide undated (A4)
+- [ ] In-app compile from downloaded sqlite/XML — **superseded**: GitLab packs + optional raw reference ([authority-data-lifecycle.md](authority-data-lifecycle.md))
+- [ ] Progress / memory profile on full 659k-person load
+
+**Done when:** each downloaded source yields NDJSON artifacts; a golden test compiles a fixture slice of each source and snapshots the candidates (including clue lines). → **Met via authority extraction tests + packLoader tests.**
 
 ## Phase A3 — Matcher integration at scale
 
+**Status (2026-07-05):** built for v1 tag bomb path.
+
 **Decide first:**
-- [ ] Memory budget: full CBDB persons ≈ 850k strings — profile the automaton; decide whether date filtering happens before automaton build (preferred) or per-match.
+- [x] Memory budget: stream NDJSON + build index incrementally (no 659k `push()`); date filter **before** index build.
 
 **Prepare:**
-- [ ] Loader: selected sources → `Map<string, AuthorityCandidate[]>` (dedup by string; a hit fans out to all candidates sharing it, and cross-source overlap collapses).
-- [ ] Date-range filter applied at load time using the fallback chain (birth/death → fl./index ± window → dynasty range → undated = include, with "hide undated" toggle).
-- [ ] Merge candidates linked by DILA's `idno type="CBDB"` into one suggestion carrying both ids.
-- [ ] Wire into the existing seed matcher / suggestion pipeline; suggestions carry source label + authority id + clue.
+- [x] Loader: seed index `Map<tag+surface, candidates[]>`; overlap merge **only** when DILA `idno type="CBDB"` crosswalk links to CBDB (`authorityOverlap.ts`). Same string without crosswalk → separate suggestions; user may link manually in disambiguation (4b).
+- [x] Date-range filter at load time (`candidateIntersectsYearRange`).
+- [x] Wire into seed matcher; suggestions carry `sourceDetail` + `rationale` clue.
 
-**Done when:** with CBDB persons + DILA persons both selected and a date range set, a real document produces deduped suggestions with correct clue lines, at acceptable load time and memory.
+**Still to do:**
+- [ ] Formal memory/time profile on full pack load in desktop app.
+
+**Done when:** with CBDB persons + DILA persons both selected and a date range set, a real document produces deduped suggestions with correct clue lines, at acceptable load time and memory. → **Met in app + opt-in harness (`authorityTagBombHarness.live.test`).**
 
 ## Phase A4 — Authority panel UI
 
+**Status (2026-07-05):** partial.
+
 **Decide first:**
-- [ ] Slider design: single year-range slider with dynasty presets as labeled stops (Markus-style) — or dynasty multi-select plus optional year refinement?
-- [ ] Where per-source counts show (Markus shows match counts per category).
+- [x] Slider design: single year-range slider with dynasty presets as labeled stops (Eastern Han, Tang, Song, Ming–Qing).
 
 **Prepare:**
-- [ ] Authority mode panel: checkbox per available source × category (CBDB persons/places/offices, DILA persons/places, project CSV), date slider, "hide undated" toggle.
-- [ ] Review-panel additions: source badge, clue line, and DILA `disambiguation` cross-refs surfaced when both look-alikes match.
-- [ ] Persist the user's source + date selection per project.
+- [x] Authority dialog: checkbox per pack, date slider, hide undated, install-from-source.
+- [x] Review panel: source badge (`CBDB+DILA`), clue line (`rationale`); DILA disambiguation in clue when compiled.
+- [x] Post-run notice: per-pack entry counts + match count.
+- [x] Persist source + date selection per project (`autoTaggingAuthority` in project JSON).
 
-**Done when:** the full flow — pick sources, set period, run, review with clues — works end to end and unavailable sources are absent (not greyed).
+**Still to do:**
+- [ ] Review-panel: surface DILA disambiguation when **both** look-alikes match same span (needs candidate list on suggestion, not just merged clue).
+- [ ] Per-source match counts in dialog (Markus-style), before run.
 
-## Phase A5 — Update checking
+**Done when:** the full flow — pick sources, set period, run, review with clues — works end to end and unavailable sources are absent (not greyed). → **Mostly met; polish items above remain.**
+
+## Phase A5 — Update checking & lifecycle
+
+**Spec:** [authority-data-lifecycle.md](authority-data-lifecycle.md) (revised 2026-07-05) — **two-tier model**: tagging packs from **GitLab CI**, reference databases from **official upstream**.
+
+**Decision (2026-07-05):** Do **not** compile on user machines for CBDB/DILA in production. GitLab builds NDJSON; LJB downloads binaries. Raw sqlite/XML remains a **separate optional tier** for entity enrichment (posting history, full TEI, coords, etc.) — not for tag matching.
+
+**Built (spike, 2026-07-05):**
+
+- [x] `lifecycle.json` schema + `authorityLifecycle:*` IPC (get, setEnabled, update, progress, prompt)
+- [x] Settings → Authorities: offline toggle, update, open folder, disable confirm
+- [x] Onboarding wired to lifecycle enable flag
+- [x] In-app compile spike (`authorityCompile.ts`) — **dev fallback only**; replace with pack fetch
+
+**Prepare (build next — in order):**
+
+1. [x] **C3/D3** — GitLab CI in `authority extraction`: compile → tarball + `packs-index.json`
+2. [x] LJB pack fetcher: `authorityPackRegistry.ts` — download bundle from GitLab artifacts, verify sha256, extract
+3. [ ] **Reference data** checkbox (default off): keep A1 fetcher for `authority-databases/` when enabled
+4. [ ] Throttled check (≤ weekly): pack registry manifest + upstream pins (if reference enabled)
+5. [ ] “Update available” badge; on accept: refresh packs (+ raw if enabled). Never auto-replace mid-review
+6. [ ] Disable: delete or keep both tiers
+
+**Done when:** per [authority-data-lifecycle.md](authority-data-lifecycle.md) exit criteria — packs from GitLab, reference optional, no terminal for normal users.
+
+## Phase A6 — Reference lookup (disambiguation enrichment)
+
+**Spec:** [authority-data-lifecycle.md](authority-data-lifecycle.md) § two tiers.
+
+**Purpose:** When the user picks or inspects a CBDB/DILA candidate in Phase 4b, show **rich fields** from the raw database (beyond the pack clue line) and optionally write `<note type="authority-cache">` on `entities.xml`.
 
 **Prepare:**
-- [ ] Throttled check (≤ weekly, on app start): HuggingFace API for the CBDB dataset, GitHub API for the DILA repo; compare against manifests; offline = skip silently.
-- [ ] "Update available" badge; on accept: download to temp, verify, recompile, atomically swap files + manifest. Never auto-replace (dictionary swaps change match results).
 
-**Done when:** bumping a manifest to an older hash makes the badge appear, and accepting produces fresh artifacts without breaking a running session.
+- [ ] `authorityRef:lookup(source, authorityId)` IPC — targeted sqlite query (CBDB) or TEI slice (DILA); no full-table load
+- [ ] Renderer types + disambiguation panel hook (detail pane below candidate list)
+- [ ] Field set v1: dates, dynasty, description/notes, birthplace/postings (CBDB); DILA `<note>`, placeOfOrigin ref
+- [ ] Graceful degrade: pack-only clue when reference tier not installed
+
+**Done when:** with reference data installed, selecting a CBDB person in disambiguation shows posting/dates not present in NDJSON; works offline.
+
+## Phase H — CHGIS (deferred)
+
+Historical place pack + **local-only** delivery (Dataverse EULA — no GitLab redistribution). See lifecycle spec § CHGIS. Compile track in `authority extraction` when CBDB+DILA pipeline is stable.
 
 ## Deferred / future
 
-- Wikipedia/VIAF/Wikidata: Phase 4b reconciliation at entity-minting time, seeded by DILA's Wikidata idnos.
+- Wikipedia/VIAF/Wikidata: not a match source at tag time — use **authority packs** built in the [`authority extraction`](../authority%20extraction/) repo (see [authority-extraction.md](authority-extraction.md), [phases.md](../authority%20extraction/docs/phases.md)). VIAF/Wikidata idnos remain Phase 4b reconciliation when minting entities.
 - Web-app support (databases are desktop-filesystem for now).
 - DILA `ana` values other than `historical` — flag mythical/uncertain in the clue?
 - Other authority sources behind the same source-manifest interface (Korean sets à la Markus, local gazetteers).

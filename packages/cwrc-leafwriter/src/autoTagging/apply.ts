@@ -41,6 +41,8 @@ export interface BatchResult {
   applied: number;
   /** Serialized document as it was before any change, for snapshot revert. */
   snapshot: string;
+  /** Populated when apply diagnostics are built (integration layer). */
+  diagnostics?: import('./applyDiagnostics').ApplyDiagnosticsReport;
 }
 
 const yieldToUi = (): Promise<void> =>
@@ -52,6 +54,7 @@ const yieldToUi = (): Promise<void> =>
 const ACTION_PRIORITY: Partial<Record<SuggestionAction, number>> = {
   'redraw-boundary': 0,
   retag: 1,
+  'resolve-date': 1,
   remove: 2,
   add: 3,
 };
@@ -107,6 +110,8 @@ function applyOne(doc: Document, suggestion: Suggestion, options: ApplyOptions):
   switch (suggestion.action) {
     case 'add':
       return applyAdd(doc, suggestion, options);
+    case 'resolve-date':
+      return applyResolveDate(doc, suggestion, options);
     case 'remove':
       return applyRemove(doc, suggestion, options);
     case 'retag':
@@ -131,7 +136,7 @@ function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions):
     if (el.nodeName === suggestion.tag) return { suggestion, outcome: 'already-tagged' };
   }
 
-  if (blockedBySchema(parent.nodeName, suggestion.tag, options)) {
+  if (blockedBySchema(schemaTagName(parent), suggestion.tag, options)) {
     return { suggestion, outcome: 'schema-blocked' };
   }
   if (blockedByUserRule(parent, suggestion.tag, options)) {
@@ -139,7 +144,35 @@ function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions):
   }
 
   const element = wrapRange(doc, resolved.node, resolved.start, resolved.end, suggestion);
+  if (suggestion.dateResolution?.parseXml) {
+    replaceDateInnerStructure(doc, element, suggestion.dateResolution.parseXml);
+  }
   return { suggestion, outcome: 'applied', element };
+}
+
+function applyResolveDate(
+  doc: Document,
+  suggestion: Suggestion,
+  options: ApplyOptions,
+): ApplyResult {
+  const resolved = resolveAnchor(doc, suggestion.anchor, options.policy);
+  if (!resolved) return { suggestion, outcome: 'unresolvable' };
+
+  let dateEl: Element | null = resolved.node.parentElement;
+  while (dateEl && dateEl.localName !== 'date') {
+    dateEl = dateEl.parentElement;
+  }
+  if (!dateEl) return { suggestion, outcome: 'unresolvable' };
+
+  for (const [name, value] of Object.entries(suggestion.attributes ?? {})) {
+    dateEl.setAttribute(name, value);
+  }
+
+  if (suggestion.dateResolution?.parseXml) {
+    replaceDateInnerStructure(doc, dateEl, suggestion.dateResolution.parseXml);
+  }
+
+  return { suggestion, outcome: 'applied', element: dateEl };
 }
 
 function applyRemove(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
@@ -163,7 +196,7 @@ function applyRetag(doc: Document, suggestion: Suggestion, options: ApplyOptions
 
   const parent = wrapper.parentElement;
   if (!parent) return { suggestion, outcome: 'unresolvable' };
-  if (blockedBySchema(parent.nodeName, suggestion.tag, options)) {
+  if (blockedBySchema(schemaTagName(parent), suggestion.tag, options)) {
     return { suggestion, outcome: 'schema-blocked' };
   }
   if (blockedByUserRule(parent, suggestion.tag, options)) {
@@ -195,7 +228,7 @@ function applyRedrawBoundary(
 
   const insertParent = reResolved.node.parentElement;
   if (!insertParent) return { suggestion, outcome: 'unresolvable' };
-  if (blockedBySchema(insertParent.nodeName, suggestion.tag, options)) {
+  if (blockedBySchema(schemaTagName(insertParent), suggestion.tag, options)) {
     return { suggestion, outcome: 'schema-blocked' };
   }
   if (blockedByUserRule(insertParent, suggestion.tag, options)) {
@@ -204,6 +237,11 @@ function applyRedrawBoundary(
 
   const element = wrapRange(doc, reResolved.node, reResolved.start, reResolved.end, suggestion);
   return { suggestion, outcome: 'applied', element };
+}
+
+/** Tag name for schema checks (namespace-safe). */
+function schemaTagName(el: Element): string {
+  return el.localName || el.nodeName;
 }
 
 function blockedBySchema(parentTag: string, childTag: string, options: ApplyOptions): boolean {
@@ -290,6 +328,22 @@ function wrapRange(
   target.parentNode!.insertBefore(element, target);
   element.appendChild(target);
   return element;
+}
+
+/** Replace bare text inside `<date>` with sanmiao parse children (era, year, …). */
+function replaceDateInnerStructure(doc: Document, element: Element, innerXml: string): void {
+  const teiNs = doc.documentElement?.namespaceURI ?? 'http://www.tei-c.org/ns/1.0';
+  const wrapped = `<wrapper xmlns="${teiNs}">${innerXml}</wrapper>`;
+  const parsed = new DOMParser().parseFromString(wrapped, 'application/xml');
+  const wrapper = parsed.documentElement;
+  if (!wrapper || parsed.getElementsByTagName('parsererror').length > 0) return;
+
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+  for (const child of Array.from(wrapper.childNodes)) {
+    element.appendChild(doc.importNode(child, true));
+  }
 }
 
 /** Reparse a snapshot taken by applySuggestions, undoing the whole batch. */

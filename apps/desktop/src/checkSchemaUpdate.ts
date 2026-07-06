@@ -11,6 +11,10 @@ import {
   writeProjectConfig,
 } from './schemaSetupHelpers';
 import { loadProjectFile, type ProjectBundle, type ProjectFileConfig, type ProjectSchemaConfig } from './projectFile';
+import {
+  shouldMergeSanmiaoDates,
+  writeSanmiaoMergedTeiSchema,
+} from './sanmiaoSchemaMerge';
 import type { ProjectMetadataFile } from './projectTypes';
 import {
   isSchemaCheckThrottled,
@@ -184,7 +188,11 @@ export const applyCatalogSchemaUpdate = async (
     const { text: rngContent, url: sourceUrl } = await fetchText(entry.rngUrls);
     const { text: cssContent, url: sourceCssUrl } = await fetchText(entry.cssUrls);
 
-    await fs.writeFile(rngPath, rngContent, 'utf-8');
+    if (shouldMergeSanmiaoDates(entry.id, rngContent)) {
+      await writeSanmiaoMergedTeiSchema(schemaDir, entry.localRngName, rngContent);
+    } else {
+      await fs.writeFile(rngPath, rngContent, 'utf-8');
+    }
 
     let relativeCss = schema.css;
     if (cssPath) {

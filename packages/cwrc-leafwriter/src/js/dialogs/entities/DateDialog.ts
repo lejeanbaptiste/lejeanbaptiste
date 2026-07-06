@@ -8,6 +8,17 @@ import Writer from '../../Writer';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
+import {
+  getEastAsianDateFieldValues,
+  mountEastAsianDateFields,
+  unmountEastAsianDateFields,
+} from '../../../dateAuthority/eastAsianDateMount';
+import {
+  hasEastAsianCalendarContext,
+  mergeEastAsianIntoAttributes,
+  readEastAsianDateValues,
+} from '../../../dateAuthority/values';
+import { isEastAsianCalendarLanguageCode } from '../../../utilities/languageCodes';
 
 type DateTypes = 'date' | 'range' | 'DATE' | 'DATERANGE' | 'DATESTRUCT';
 
@@ -58,6 +69,8 @@ class DateDialog implements SchemaDialog {
   type: EntityType = 'date';
 
   dateRange: any;
+  eastAsianMode = false;
+  private readonly formId: string;
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     const mappingID = writer.schemaManager.mapper.currentMappingsId;
@@ -80,6 +93,7 @@ class DateDialog implements SchemaDialog {
 
     const idPrefix = this.schemaMappingMatch('cwrcEntry') ? 'dateForm_' : 'dateForm_';
     const id = writer.getUniqueId(idPrefix);
+    this.formId = id;
 
     const today = new Date();
     const upperLimit = today.getFullYear() + 10;
@@ -90,6 +104,7 @@ class DateDialog implements SchemaDialog {
         ${this.dateTypeField(id)}
         ${this.dateField(id)}
         ${this.rangeField(id)}
+        <div id="${id}_eastAsianDates" class="attribute eastAsianDateFields" style="display:none"></div>
         ${this.certaintyField(id)}
         ${this.schemaMappingMatch(['orlando', 'cwrcEntry']) ? this.calendarField(id) : ''} 
       </div>
@@ -228,6 +243,8 @@ class DateDialog implements SchemaDialog {
     };
 
     this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any) => {
+      void this.prepareEastAsianMode(config);
+
       this.dateRange.datepicker('option', 'minDate', new Date(1800, 0, 1));
       this.dateRange.datepicker('option', 'maxDate', new Date(upperLimit, 11, 31));
 
@@ -306,6 +323,23 @@ class DateDialog implements SchemaDialog {
     });
 
     this.dialog.$el.on('beforeSave', (event: JQuery.Event, dialog: DialogForm) => {
+      if (this.eastAsianMode) {
+        const eastAsian = getEastAsianDateFieldValues();
+        if (!hasEastAsianCalendarContext(eastAsian)) {
+          dialog.isValid = false;
+          return;
+        }
+        Object.assign(
+          dialog.currentData.attributes,
+          mergeEastAsianIntoAttributes(dialog.currentData.attributes, eastAsian),
+        );
+        if (!dialog.currentData.attributes.cert) {
+          dialog.currentData.attributes.cert = 'low';
+        }
+        dialog.isValid = true;
+        return;
+      }
+
       const type: DateTypes = $(`#${id}_type input:checked`).val() as DateTypes;
       let error = false;
 
@@ -372,6 +406,39 @@ class DateDialog implements SchemaDialog {
 
       dialog.isValid = error ? false : true;
     });
+  }
+
+  private async prepareEastAsianMode(config?: { entry?: Entity }) {
+    const id = this.formId;
+    if (this.schemaMappingMatch(['orlando', 'cwrcEntry'])) {
+      this.eastAsianMode = false;
+      return;
+    }
+
+    const language = (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
+    this.eastAsianMode = isEastAsianCalendarLanguageCode(language);
+    const $eastAsian = $(`#${id}_eastAsianDates`);
+
+    if (!this.eastAsianMode) {
+      $eastAsian.hide();
+      $(`#${id}_date`).show();
+      $(`#${id}_type`).show();
+      return;
+    }
+
+    $eastAsian.show();
+    $(`#${id}_date`).hide();
+    $(`#${id}_range`).hide();
+    $(`#${id}_type`).hide();
+
+    const initial = config?.entry
+      ? readEastAsianDateValues(config.entry.getAttributes())
+      : readEastAsianDateValues({});
+
+    const container = $eastAsian[0];
+    if (container) {
+      mountEastAsianDateFields(container, { initialValues: initial });
+    }
   }
 
   private selectedTextField(id: string) {
@@ -623,6 +690,7 @@ class DateDialog implements SchemaDialog {
   }
 
   destroy() {
+    unmountEastAsianDateFields();
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$dateInput.datepicker('destroy');

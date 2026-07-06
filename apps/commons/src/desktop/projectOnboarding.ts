@@ -31,6 +31,8 @@ export const completeProjectOnboarding = async (
     const setup = await openNativeSchemaSetup(current.projectFilePath);
     if (setup.result !== 'installed' || !setup.bundle) return null;
     current = setup.bundle;
+  } else if (window.electronAPI?.ensureSanmiaoDatesSchema) {
+    await window.electronAPI.ensureSanmiaoDatesSchema(current.projectFilePath);
   }
 
   if (!(await metadataFileExists(current))) {

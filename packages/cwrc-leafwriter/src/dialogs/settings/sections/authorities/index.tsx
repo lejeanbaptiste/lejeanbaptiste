@@ -1,9 +1,10 @@
-import { Stack } from '@mui/material';
+import { Divider, Stack } from '@mui/material';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAtomValue } from 'jotai';
 import { db } from '../../../../db';
 import { authorityServicesAtom } from '../../../../jotai/entity-lookup';
 import { Authority } from './authority';
+import { DesktopOfflineAuthorities } from './desktop-offline-authorities';
 
 export const Authorities = () => {
   const authorityServices = useAtomValue(authorityServicesAtom);
@@ -14,8 +15,17 @@ export const Authorities = () => {
     return Array.from(uniqueAuthorities);
   });
 
+  const isDesktop =
+    typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
+
   return (
     <Stack width="100%" mt={1} py={1} gap={0.5}>
+      {isDesktop && (
+        <>
+          <DesktopOfflineAuthorities />
+          <Divider sx={{ my: 1 }} />
+        </>
+      )}
       {authorityIds?.map((id) => {
         const service = authorityServices.get(id);
         if (!service) return null;

@@ -1,0 +1,10 @@
+I honestly feel a little lost. 
+The results were quite good, and we could tune prompts even further, but these are dependant on individual models, and there are lots of those and they come and go. I also can't anticipate what Japanese and Tibetain sources need....
+We only have persName and placeName activated for the moment, and while my personal inclination would be to work on offices, titles, etc. next, the problem is the same. 
+My initial impressions of audit: it's mostly telling me that I'm tagging wrong, 'this is not a persName, it's a regnal name...' It suggests retag, but the items don't specify retag to what, and after accepting they remain persName. ... I think that we need to work on this, but I probably don't know TEI norms well enough to judge on some of these things, and each user is going to have their own definitions...
+
+Another big thing missing is that Norbert relies a lot on nesting custom tags, e.g. a person + roleName + date in `<appointment>`, signalling that a role belonged to a person at a particular moment. OR, giving a `<roleName>` a `person_id` attribute, signalling who was occupying that role. TEI seems poorly suited to this, and I'm not sure if there is one norm that governs these more complicated things.
+
+One idea: I'm wondering if we couldn't automate prompt tuning: the user chooses a model, chooses a golden example text, then we ask the AI itself for suggestions on how to prompt it, test, give it the results, and tell it to modify the prompt... we set a number of loops or an acceptable threshold and we let it run until it meets one or the other, then we take the prompt that generated the best result. Is that doable?
+
+This leads me to the thought that all of this is useful, but Norbert (and MARKUS') 'tag bomb' is far more simple, immediate, and useful, at least in quantity. We spent a lot of time planning how we could connect CBDB and DILA, but now I'm wondering if we shouldn't scrape the common authorities (wiki, viaf, etc.) for tagging strings, divided up by language. 

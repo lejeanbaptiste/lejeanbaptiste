@@ -24,12 +24,14 @@ describe('candidatesFromRows', () => {
     expect(luoyang.metadata?.subtype).toBe('郡');
   });
 
-  it('skips rows whose tag has no entity kind (e.g. officeName, for now)', () => {
+  it('maps officeName rows to office kind', () => {
     const rows: AuthorityRow[] = [
       { id: '1', string: '丞', tag: 'officeName' },
       { id: '2', string: '張衡', tag: 'persName' },
     ];
-    expect(candidatesFromRows(rows, 'x').map((c) => c.authorityId)).toEqual(['2']);
+    const candidates = candidatesFromRows(rows, 'x');
+    expect(candidates.map((c) => c.authorityId).sort()).toEqual(['1', '2']);
+    expect(candidates.find((c) => c.authorityId === '1')!.kind).toBe('office');
   });
 });
 

@@ -16,6 +16,8 @@ export interface ChunkOptions {
    * one `<p>` at a time). Overrides `targetChars` packing across blocks.
    */
   maxBlocksPerChunk?: number;
+  /** When set, chunk only this subtree (e.g. TEI `<body>`). Offsets are relative to its index. */
+  root?: Node;
 }
 
 /** Default for AI suggest/audit — one leaf block per request to stay under provider TPM limits. */
@@ -61,11 +63,13 @@ export function chunkDocument(doc: Document, options: ChunkOptions): Chunk[] {
     marginChars = 200,
     blockTags = DEFAULT_BLOCK_TAGS,
     maxBlocksPerChunk,
+    root: rootOption,
   } = options;
-  const index = buildDocIndex(doc, policy);
+  const root = rootOption ?? doc.documentElement ?? doc;
+  const index = buildDocIndex(root, policy);
   if (index.text.length === 0) return [];
 
-  const blocks = collectBlockRanges(doc, index, new Set(blockTags.map((t) => t.toLowerCase())));
+  const blocks = collectBlockRanges(root, index, new Set(blockTags.map((t) => t.toLowerCase())));
   const ranges = blocks.length > 0 ? blocks : [{ start: 0, end: index.text.length }];
 
   const chunks: Chunk[] = [];
@@ -104,9 +108,12 @@ export function chunkDocument(doc: Document, options: ChunkOptions): Chunk[] {
  * element, so a <div> wrapping <p>s contributes its <p> ranges, not its own).
  * Ranges are in document order and mutually exclusive.
  */
-function collectBlockRanges(doc: Document, index: DocIndex, blockSet: Set<string>): BlockRange[] {
-  const isBlock = (el: Element) => blockSet.has(el.nodeName.toLowerCase());
-  const walker = doc.createTreeWalker(doc.documentElement ?? doc, NodeFilter.SHOW_ELEMENT);
+function collectBlockRanges(root: Node, index: DocIndex, blockSet: Set<string>): BlockRange[] {
+  const isBlock = (el: Element) => blockSet.has(el.localName.toLowerCase());
+  const walker = (root.ownerDocument ?? (root as Document)).createTreeWalker(
+    root,
+    NodeFilter.SHOW_ELEMENT,
+  );
 
   const leafBlocks: Element[] = [];
   let node = walker.nextNode() as Element | null;

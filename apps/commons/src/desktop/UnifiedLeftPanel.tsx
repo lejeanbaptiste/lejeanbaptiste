@@ -145,36 +145,15 @@ export const UnifiedLeftPanel = () => {
     overflow: 'hidden',
   });
 
-  if (collapsed) {
-    return (
-      <Box
-        sx={{
-          width: LEFT_PANEL_COLLAPSED_WIDTH,
-          minWidth: LEFT_PANEL_COLLAPSED_WIDTH,
-          flexShrink: 0,
-          height: '100%',
-          bgcolor: 'background.paper',
-          borderRight: 1,
-          borderColor: 'divider',
-        }}
-      >
-        <SidebarIconTabBar
-          activeTab={activeTab}
-          collapsed={collapsed}
-          onSelectTab={handleSelectTab}
-          onToggleCollapse={expandPanel}
-          orientation="vertical"
-        />
-      </Box>
-    );
-  }
-
+  // Collapse must not unmount panel slots: LEAF-Writer portals (TOC, markup) and the
+  // entities module render into #desktop-panel-* nodes for the lifetime of the editor.
+  // Destroying those nodes leaves permanently blank panels when the sidebar expands again.
   return (
     <Box
       sx={{
-        width: panelWidth,
-        minWidth: LEFT_PANEL_MIN_WIDTH,
-        maxWidth: LEFT_PANEL_MAX_WIDTH,
+        width: collapsed ? LEFT_PANEL_COLLAPSED_WIDTH : panelWidth,
+        minWidth: collapsed ? LEFT_PANEL_COLLAPSED_WIDTH : LEFT_PANEL_MIN_WIDTH,
+        maxWidth: collapsed ? LEFT_PANEL_COLLAPSED_WIDTH : LEFT_PANEL_MAX_WIDTH,
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
@@ -189,8 +168,8 @@ export const UnifiedLeftPanel = () => {
         activeTab={activeTab}
         collapsed={collapsed}
         onSelectTab={handleSelectTab}
-        onToggleCollapse={() => setCollapsed(true)}
-        orientation="horizontal"
+        onToggleCollapse={collapsed ? expandPanel : () => setCollapsed(true)}
+        orientation={collapsed ? 'vertical' : 'horizontal'}
       />
 
       <Box
@@ -198,7 +177,7 @@ export const UnifiedLeftPanel = () => {
           flex: 1,
           minHeight: 0,
           overflow: 'hidden',
-          display: 'flex',
+          display: collapsed ? 'none' : 'flex',
           flexDirection: 'column',
         }}
       >
@@ -216,7 +195,9 @@ export const UnifiedLeftPanel = () => {
         <Box id="desktop-panel-entities" sx={panelSx('entities')} />
       </Box>
 
-      <LeftPanelResizeHandle panelWidth={panelWidth} onWidthChange={handleWidthChange} />
+      {!collapsed && (
+        <LeftPanelResizeHandle panelWidth={panelWidth} onWidthChange={handleWidthChange} />
+      )}
     </Box>
   );
 };
