@@ -11,30 +11,34 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AutoTaggingSession,
   aiApiSettingsFromDesktop,
-  areOtherAutoTaggingMethodsUnlocked,
-  autoTaggingDocumentKey,
   crawlDocuments,
+  createDefaultAiPromptProfilesState,
   createLlmClientFromSettings,
+  defaultAiTagSelection,
   dictionaryTag,
   entriesFromRows,
+  getActiveAiPromptProfile,
   inferEastAsianLanguageFromDocument,
   isAiSuggestReady,
+  listAiTagOptions,
   parseDictionaryTable,
   formatAuthorityTagBombNotice,
+  persistAiPromptProfiles,
   persistAuthoritySettings,
+  readAiPromptProfilesFromDesktop,
   readPersistedAuthoritySettings,
   readSpreadsheet,
-  requiresDatesBeforeOtherTagging,
   resolveAutoTaggingSourceLanguage,
   settingsFromUiState,
-  shouldWarnResolveDatesBeforeAutoTag,
-  shouldWarnTagDatesFirst,
   uiStateFromSettings,
+  type AiPromptProfilesState,
   type AuthorityPackId,
+  AUTHORITY_PACKS,
+  groupAuthorityPacksByTagType,
   type DictionaryEntry,
   type Suggestion,
 } from '../../autoTagging';
@@ -44,40 +48,45 @@ import {
 import { AutoTaggingApplyOverlay } from '../../layout/AutoTaggingApplyOverlay';
 import { useActions } from '../../overmind';
 import type { IDialog } from '../type';
+import { AiPromptEditorDialog } from './AiPromptEditorDialog';
+import { AiTagChipPicker } from './AiTagChipPicker';
 
 const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
-const AI_TAG_OPTIONS = ['persName', 'placeName'] as const;
-type AiTagOption = (typeof AI_TAG_OPTIONS)[number];
 type DialogStep = 'methods' | 'ai' | 'authority';
 type AiMode = 'suggest' | 'audit';
 
-const AUTHORITY_PACK_OPTIONS = [
-  { id: 'cbdb-persons' as const, label: 'CBDB persons' },
-  { id: 'cbdb-places' as const, label: 'CBDB places' },
-  { id: 'cbdb-offices' as const, label: 'CBDB offices (roleName)' },
-  { id: 'dila-persons' as const, label: 'DILA persons' },
-  { id: 'dila-places' as const, label: 'DILA places' },
-  { id: 'ndl-persons' as const, label: 'NDL persons' },
-  { id: 'ndl-works' as const, label: 'NDL works' },
-];
-type AuthorityPackOptionId = (typeof AUTHORITY_PACK_OPTIONS)[number]['id'];
-
 const defaultAuthorityPacksForLanguage = (
   language: string | null,
-): Record<AuthorityPackOptionId, boolean> => ({
+): Record<AuthorityPackId, boolean> => ({
   'cbdb-persons': false,
   'cbdb-places': false,
   'cbdb-offices': false,
   'dila-persons': !isJapaneseLanguageCode(language),
   'dila-places': false,
+  'chgis-places': false,
+  'wikidata-persons-tang': false,
+  'wikidata-persons-pre-ming': false,
+  'wikidata-persons-ming': false,
+  'wikidata-persons-qing': false,
   'ndl-persons': isJapaneseLanguageCode(language),
   'ndl-works': false,
 });
 
-const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityPackOptionId[] =>
+const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityPackId[] =>
   isJapaneseLanguageCode(language)
     ? ['ndl-persons', 'ndl-works']
-    : ['cbdb-persons', 'cbdb-places', 'cbdb-offices', 'dila-persons', 'dila-places'];
+    : [
+        'cbdb-persons',
+        'cbdb-places',
+        'cbdb-offices',
+        'dila-persons',
+        'dila-places',
+        'chgis-places',
+        'wikidata-persons-tang',
+        'wikidata-persons-pre-ming',
+        'wikidata-persons-ming',
+        'wikidata-persons-qing',
+      ];
 
 /** CE presets for dynasty-scoped tag bombs. */
 const AUTHORITY_YEAR_PRESETS = [
@@ -101,16 +110,18 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<DialogStep>('methods');
   const [aiMode, setAiMode] = useState<AiMode>('suggest');
-  const [aiTags, setAiTags] = useState<Record<AiTagOption, boolean>>({
-    persName: true,
-    placeName: true,
-  });
+  const [aiTagOptions, setAiTagOptions] = useState<string[]>([]);
+  const [aiSelectedTags, setAiSelectedTags] = useState<string[]>(['persName', 'placeName']);
+  const [aiPromptProfiles, setAiPromptProfiles] = useState<AiPromptProfilesState>(
+    createDefaultAiPromptProfilesState(),
+  );
+  const [promptEditorOpen, setPromptEditorOpen] = useState(false);
   const [aiProgress, setAiProgress] = useState({ done: 0, total: 0 });
   const [authorityPacks, setAuthorityPacks] = useState<
-    Record<AuthorityPackOptionId, boolean>
+    Record<AuthorityPackId, boolean>
   >(defaultAuthorityPacksForLanguage(null));
   const [authorityStatus, setAuthorityStatus] = useState<
-    { id: AuthorityPackOptionId; installed: boolean }[]
+    { id: AuthorityPackId; installed: boolean }[]
   >([]);
   const [entityDbFolder, setEntityDbFolder] = useState<string | null>(null);
   const [packsLocationHint, setPacksLocationHint] = useState<string | null>(null);
@@ -119,8 +130,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [authorityYearRange, setAuthorityYearRange] = useState<[number, number]>([25, 220]);
   const [authorityHideUndated, setAuthorityHideUndated] = useState(true);
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
-  const [otherMethodsUnlocked, setOtherMethodsUnlocked] = useState(false);
-  const [resolveWarning, setResolveWarning] = useState(false);
   const [workflowReady, setWorkflowReady] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const session = useRef<AutoTaggingSession | null>(null);
@@ -128,8 +137,10 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
 
   const aiSettings = aiApiSettingsFromDesktop();
   const aiReady = isAiSuggestReady(aiSettings);
-  const datesGateActive = requiresDatesBeforeOtherTagging(sourceLanguage);
-  const otherMethodsLocked = datesGateActive && !otherMethodsUnlocked;
+  const activePromptProfile = useMemo(
+    () => getActiveAiPromptProfile(aiPromptProfiles),
+    [aiPromptProfiles],
+  );
 
   const getSession = () => {
     session.current ??= new AutoTaggingSession(window.writer);
@@ -141,10 +152,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     const lang = await resolveAutoTaggingSourceLanguage(doc, () =>
       window.__leafWriterProject?.getProjectSourceLanguage?.() ?? Promise.resolve(null),
     );
-    const key = autoTaggingDocumentKey(window.writer);
     setSourceLanguage(lang);
-    setOtherMethodsUnlocked(areOtherAutoTaggingMethodsUnlocked(key, doc, lang));
-    setResolveWarning(shouldWarnResolveDatesBeforeAutoTag(key, lang));
     setWorkflowReady(true);
   };
 
@@ -155,7 +163,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     setEntityDbFolder(trimmed);
     const statuses = await window.electronAPI?.authorityPackStatuses?.();
     setAuthorityStatus(
-      AUTHORITY_PACK_OPTIONS.map((opt) => ({
+      AUTHORITY_PACKS.map((opt) => ({
         id: opt.id,
         installed: statuses?.find((s) => s.id === opt.id)?.installed ?? false,
       })),
@@ -196,10 +204,21 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     const defaults = defaultAuthorityPacksForLanguage(sourceLanguage);
     const visibleIds = new Set(visibleAuthorityPackIdsForLanguage(sourceLanguage));
     const visibleSaved = Object.entries(saved.packs).some(
-      ([id, enabled]) => visibleIds.has(id as AuthorityPackOptionId) && enabled,
+      ([id, enabled]) => visibleIds.has(id as AuthorityPackId) && enabled,
     );
     setAuthorityPacks(visibleSaved ? saved.packs : defaults);
   }, [open, sourceLanguage]);
+
+  useEffect(() => {
+    if (!open || step !== 'ai') return;
+    const options = listAiTagOptions(window.writer);
+    setAiTagOptions(options);
+    setAiSelectedTags((current) => {
+      const kept = current.filter((tag) => options.includes(tag));
+      return kept.length > 0 ? kept : defaultAiTagSelection(options);
+    });
+    void readAiPromptProfilesFromDesktop().then(setAiPromptProfiles);
+  }, [open, step]);
 
   useEffect(() => {
     if (!open) {
@@ -209,37 +228,18 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     void refreshWorkflowState().catch(async () => {
       try {
         const doc = await getSession().getDocument();
-        const inferred = inferEastAsianLanguageFromDocument(doc);
-        const key = autoTaggingDocumentKey(window.writer);
-        setSourceLanguage(inferred);
-        setOtherMethodsUnlocked(areOtherAutoTaggingMethodsUnlocked(key, doc, inferred));
-        setResolveWarning(shouldWarnResolveDatesBeforeAutoTag(key, inferred));
+        setSourceLanguage(inferEastAsianLanguageFromDocument(doc));
       } catch {
         setSourceLanguage(null);
-        setOtherMethodsUnlocked(true);
       }
       setWorkflowReady(true);
     });
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onWorkflowChanged = () => {
-      void refreshWorkflowState().catch(() => undefined);
-    };
-    window.addEventListener('desktop:calendar-workflow-changed', onWorkflowChanged);
-    window.addEventListener('desktop:auto-tagging-review-close', onWorkflowChanged);
-    return () => {
-      window.removeEventListener('desktop:calendar-workflow-changed', onWorkflowChanged);
-      window.removeEventListener('desktop:auto-tagging-review-close', onWorkflowChanged);
-    };
-  }, [open]);
-
-  const visibleAuthorityPackOptions = AUTHORITY_PACK_OPTIONS.filter((opt) =>
-    visibleAuthorityPackIdsForLanguage(sourceLanguage).includes(opt.id),
-  );
-  const anyVisibleAuthorityPackInstalled = visibleAuthorityPackOptions.some(
-    (opt) => authorityStatus.find((s) => s.id === opt.id)?.installed ?? false,
+  const visibleAuthorityPackIds = visibleAuthorityPackIdsForLanguage(sourceLanguage);
+  const visibleAuthorityPackGroups = groupAuthorityPacksByTagType(visibleAuthorityPackIds);
+  const anyVisibleAuthorityPackInstalled = visibleAuthorityPackIds.some(
+    (id) => authorityStatus.find((s) => s.id === id)?.installed ?? false,
   );
   const authoritySetupReady = Boolean(entityDbFolder) && anyVisibleAuthorityPackInstalled;
   const authorityPackGroupLabel = isJapaneseLanguageCode(sourceLanguage)
@@ -251,16 +251,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     handleClose();
   };
 
-  const guardOtherMethods = (): boolean => {
-    if (otherMethodsLocked) {
-      setError('Tag dates from the Calendar toolbar button first.');
-      return false;
-    }
-    return true;
-  };
-
   const openReview = async (parsed: DictionaryEntry[], sourceLabel: string) => {
-    if (!guardOtherMethods()) return;
     if (parsed.length === 0) {
       setError('No usable entries found. Expected columns: string, tag.');
       return;
@@ -290,7 +281,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   };
 
   const crawlProject = async () => {
-    if (!guardOtherMethods()) return;
     setError(null);
     setBusy(true);
     try {
@@ -313,7 +303,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   };
 
   const openAiStep = (mode: AiMode) => {
-    if (!guardOtherMethods()) return;
     if (!isDesktopApp()) {
       setError(`AI ${mode} is available in the desktop app.`);
       return;
@@ -330,7 +319,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   };
 
   const openAuthorityStep = () => {
-    if (!guardOtherMethods()) return;
     if (!isDesktopApp()) {
       setError('Authority packs are available in the desktop app.');
       return;
@@ -395,9 +383,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   };
 
   const runAuthorityTagBomb = async () => {
-    const selected = visibleAuthorityPackOptions.filter((o) => authorityPacks[o.id]).map(
-      (o) => o.id,
-    ) as AuthorityPackId[];
+    const selected = visibleAuthorityPackIds.filter((id) => authorityPacks[id]);
     if (selected.length === 0) {
       setError('Select at least one authority pack.');
       return;
@@ -452,7 +438,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   };
 
   const runAi = async () => {
-    const tags = AI_TAG_OPTIONS.filter((tag) => aiTags[tag]);
+    const tags = aiSelectedTags;
     if (tags.length === 0) {
       setError('Select at least one tag type.');
       return;
@@ -481,8 +467,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       const onProgress = (done: number, total: number) => setAiProgress({ done, total });
       const result =
         aiMode === 'audit'
-          ? await getSession().runAiAudit(tags, client, onProgress)
-          : await getSession().runAiSuggest(tags, client, onProgress);
+          ? await getSession().runAiAudit(tags, client, onProgress, activePromptProfile)
+          : await getSession().runAiSuggest(tags, client, onProgress, activePromptProfile);
 
       if (result.suggestions.length === 0) {
         setError(
@@ -584,23 +570,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 </Typography>
               ) : (
                 <>
-              {otherMethodsLocked && (
-                <Alert severity="warning" sx={{ py: 0.5, mb: 0.5, fontSize: 12 }}>
-                  Tag dates from the <strong>Calendar</strong> toolbar button before dictionary,
-                  authority, or AI tagging.
-                </Alert>
-              )}
-              {resolveWarning && !otherMethodsLocked && (
-                <Alert severity="warning" sx={{ py: 0.5, mb: 0.5, fontSize: 12 }}>
-                  Resolve dates from the Calendar button when ready — calendar context helps
-                  authority and AI tagging.
-                </Alert>
-              )}
               {methodButton(
                 'Tag from a list (CSV, TSV, xlsx, ODS)',
                 () => fileInput.current?.click(),
-                otherMethodsLocked,
-                otherMethodsLocked ? 'Tag dates from Calendar first' : undefined,
               )}
               <input
                 ref={fileInput}
@@ -617,38 +589,24 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               {methodButton(
                 'From existing tags in this project',
                 () => void crawlProject(),
-                otherMethodsLocked,
-                otherMethodsLocked ? 'Tag dates from Calendar first' : undefined,
               )}
               {methodButton(
                 `Tag from authority packs (${authorityPackGroupLabel})`,
                 () => openAuthorityStep(),
-                !isDesktopApp() || otherMethodsLocked,
-                otherMethodsLocked
-                  ? 'Tag dates from Calendar first'
-                  : !isDesktopApp()
-                    ? 'Desktop app only'
-                    : undefined,
+                !isDesktopApp(),
+                !isDesktopApp() ? 'Desktop app only' : undefined,
               )}
               {methodButton(
                 'AI suggest',
                 () => openAiStep('suggest'),
-                !isDesktopApp() || otherMethodsLocked,
-                otherMethodsLocked
-                  ? 'Tag dates from Calendar first'
-                  : !isDesktopApp()
-                    ? 'Desktop app only'
-                    : undefined,
+                !isDesktopApp(),
+                !isDesktopApp() ? 'Desktop app only' : undefined,
               )}
               {methodButton(
                 'AI audit',
                 () => openAiStep('audit'),
-                !isDesktopApp() || otherMethodsLocked,
-                otherMethodsLocked
-                  ? 'Tag dates from Calendar first'
-                  : !isDesktopApp()
-                    ? 'Desktop app only'
-                    : undefined,
+                !isDesktopApp(),
+                !isDesktopApp() ? 'Desktop app only' : undefined,
               )}
               {methodButton('NER', () => {}, true)}
                 </>
@@ -694,31 +652,40 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   </Box>
                 </Alert>
               )}
-              <Stack>
-                      {visibleAuthorityPackOptions.map((opt) => {
-                  const installed =
-                    authorityStatus.find((s) => s.id === opt.id)?.installed ?? false;
-                  return (
-                    <FormControlLabel
-                      key={opt.id}
-                      control={
-                        <Checkbox
-                          size="small"
-                          checked={authorityPacks[opt.id]}
-                          disabled={busy || !installed}
-                          onChange={(event) =>
-                            setAuthorityPacks((current) => ({
-                              ...current,
-                              [opt.id]: event.target.checked,
-                            }))
-                          }
-                        />
-                      }
-                      label={`${opt.label}${installed ? '' : ' (not installed)'}`}
-                      sx={{ ml: 0 }}
-                    />
-                  );
-                })}
+              <Stack spacing={1.25}>
+                {visibleAuthorityPackGroups.map((group) => (
+                  <Box key={group.tag}>
+                    <Typography variant="caption" color="text.secondary" sx={{ pl: 0.5 }}>
+                      {group.label}
+                    </Typography>
+                    <Stack>
+                      {group.packs.map((opt) => {
+                        const installed =
+                          authorityStatus.find((s) => s.id === opt.id)?.installed ?? false;
+                        return (
+                          <FormControlLabel
+                            key={opt.id}
+                            control={
+                              <Checkbox
+                                size="small"
+                                checked={authorityPacks[opt.id]}
+                                disabled={busy || !installed}
+                                onChange={(event) =>
+                                  setAuthorityPacks((current) => ({
+                                    ...current,
+                                    [opt.id]: event.target.checked,
+                                  }))
+                                }
+                              />
+                            }
+                            label={`${opt.label}${installed ? '' : ' (not installed)'}`}
+                            sx={{ ml: 0 }}
+                          />
+                        );
+                      })}
+                    </Stack>
+                  </Box>
+                ))}
               </Stack>
               <Box sx={{ px: 0.5 }}>
                 <FormControlLabel
@@ -762,7 +729,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                           onChange={(event) => setAuthorityHideUndated(event.target.checked)}
                         />
                       }
-                      label="Exclude entries with no dates"
+                      label="Exclude undated persons (DILA places always included)"
                       sx={{ ml: 0 }}
                     />
                     <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
@@ -814,25 +781,26 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   Model: {aiSettings.model}
                 </Typography>
               )}
-              <Stack>
-                {AI_TAG_OPTIONS.map((tag) => (
-                  <FormControlLabel
-                    key={tag}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={aiTags[tag]}
-                        disabled={busy}
-                        onChange={(event) =>
-                          setAiTags((current) => ({ ...current, [tag]: event.target.checked }))
-                        }
-                      />
-                    }
-                    label={tag}
-                    sx={{ ml: 0 }}
-                  />
-                ))}
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                <Typography variant="caption" color="text.secondary">
+                  Prompt profile: {activePromptProfile.label}
+                </Typography>
+                <Link
+                  component="button"
+                  variant="caption"
+                  underline="hover"
+                  disabled={busy}
+                  onClick={() => setPromptEditorOpen(true)}
+                >
+                  Edit prompt…
+                </Link>
               </Stack>
+              <AiTagChipPicker
+                options={aiTagOptions}
+                value={aiSelectedTags}
+                disabled={busy}
+                onChange={setAiSelectedTags}
+              />
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Link
                   component="button"
@@ -851,6 +819,15 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
           )}
         </DialogContent>
       </Dialog>
+      <AiPromptEditorDialog
+        open={promptEditorOpen}
+        state={aiPromptProfiles}
+        onClose={() => setPromptEditorOpen(false)}
+        onSave={async (next) => {
+          await persistAiPromptProfiles(next);
+          setAiPromptProfiles(next);
+        }}
+      />
     </>
   );
 };

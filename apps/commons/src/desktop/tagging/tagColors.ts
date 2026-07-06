@@ -87,9 +87,17 @@ export const saveGeneratedTagColorsCss = async (
   await window.electronAPI.writeFile(getTagColorsCssPath(rootPath), css);
 };
 
-export const injectTagColorsCss = (css: string): void => {
+const tagColorsCssCache = new Map<string, string>();
+
+export const reapplyCachedTagColors = (rootPath: string): boolean => {
+  const css = tagColorsCssCache.get(rootPath);
+  if (!css) return false;
+  return injectTagColorsCss(css);
+};
+
+export const injectTagColorsCss = (css: string): boolean => {
   const doc = window.writer?.editor?.getDoc();
-  if (!doc) return;
+  if (!doc) return false;
 
   let style = doc.getElementById('tagColors') as HTMLStyleElement | null;
   if (!style) {
@@ -99,13 +107,67 @@ export const injectTagColorsCss = (css: string): void => {
     doc.head.appendChild(style);
   }
   style.textContent = css;
+  return true;
+};
+
+const cacheAndInjectTagColors = (rootPath: string, css: string): void => {
+  tagColorsCssCache.set(rootPath, css);
+  injectTagColorsCss(css);
+};
+
+export const scheduleTagColorsInjection = (rootPath: string): void => {
+  void loadAndInjectTagColors(rootPath).then(() => {
+    if (reapplyCachedTagColors(rootPath)) return;
+
+    let attempts = 0;
+    const retry = () => {
+      if (reapplyCachedTagColors(rootPath) || attempts >= 20) return;
+      attempts += 1;
+      window.setTimeout(retry, 100);
+    };
+    retry();
+  });
+};
+
+const tagColorsWriteQueues = new Map<string, Promise<unknown>>();
+
+/** Serialize read-modify-write so rapid colour changes cannot drop other tag entries. */
+const enqueueTagColorsWrite = <T>(
+  rootPath: string,
+  write: () => Promise<T>,
+): Promise<T> => {
+  const prior = tagColorsWriteQueues.get(rootPath) ?? Promise.resolve();
+  const next = prior.then(write, write);
+  tagColorsWriteQueues.set(rootPath, next);
+  return next;
+};
+
+const applyTagColorUpdate = (
+  file: TagColorsFile,
+  tagName: string,
+  colors: TagColorEntry | null,
+): TagColorsFile => {
+  const nextTags = { ...file.tags };
+  if (!colors || (!colors.highlight && !colors.text)) {
+    delete nextTags[tagName];
+  } else {
+    nextTags[tagName] = colors;
+  }
+  return { version: 1, tags: nextTags };
+};
+
+const persistTagColors = async (rootPath: string, file: TagColorsFile): Promise<TagColorsFile> => {
+  await saveTagColors(rootPath, file);
+  const css = generateTagColorsCss(file);
+  cacheAndInjectTagColors(rootPath, css);
+  await saveGeneratedTagColorsCss(rootPath, css);
+  return file;
 };
 
 export const loadAndInjectTagColors = async (rootPath: string): Promise<TagColorsFile> => {
   const file = await loadTagColors(rootPath);
   const css = generateTagColorsCss(file);
-  injectTagColorsCss(css);
-  await saveGeneratedTagColorsCss(rootPath, css);
+  cacheAndInjectTagColors(rootPath, css);
   return file;
 };
 
@@ -113,16 +175,8 @@ export const updateTagColor = async (
   rootPath: string,
   tagName: string,
   colors: TagColorEntry | null,
-): Promise<TagColorsFile> => {
-  const file = await loadTagColors(rootPath);
-  if (!colors || (!colors.highlight && !colors.text)) {
-    delete file.tags[tagName];
-  } else {
-    file.tags[tagName] = colors;
-  }
-  await saveTagColors(rootPath, file);
-  const css = generateTagColorsCss(file);
-  injectTagColorsCss(css);
-  await saveGeneratedTagColorsCss(rootPath, css);
-  return file;
-};
+): Promise<TagColorsFile> =>
+  enqueueTagColorsWrite(rootPath, async () => {
+    const file = await loadTagColors(rootPath);
+    return persistTagColors(rootPath, applyTagColorUpdate(file, tagName, colors));
+  });

@@ -214,6 +214,19 @@ export interface ElectronAPI {
       progress: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
     ) => void,
   ) => () => void;
+  authorityChgisGet?: () => Promise<
+    import('../../commons/src/desktop/authorityChgisTypes').ChgisStatus
+  >;
+  pickChgisArchive?: () => Promise<string | null>;
+  authorityChgisInstallFromArchive?: (
+    archivePath: string,
+  ) => Promise<import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallResult>;
+  authorityChgisRemove?: () => Promise<{ ok: boolean; error?: string }>;
+  onAuthorityChgisProgress?: (
+    callback: (
+      progress: import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallProgress,
+    ) => void,
+  ) => () => void;
   sanmiaoProposeDates?: (
     text: string,
     options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
@@ -264,6 +277,7 @@ export interface ElectronAPI {
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
+  signalRendererReady: () => Promise<void>;
   onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (
     options: NativeMessageBoxOptions,
@@ -386,6 +400,11 @@ const electronAPI: ElectronAPI = {
   authorityLifecyclePromptEnable: (profile) =>
     ipcRenderer.invoke('authorityLifecycle:promptEnable', profile),
   authorityLifecycleRevealFolder: () => ipcRenderer.invoke('authorityLifecycle:revealFolder'),
+  authorityChgisGet: () => ipcRenderer.invoke('authorityChgis:get'),
+  pickChgisArchive: () => ipcRenderer.invoke('pickChgisArchive'),
+  authorityChgisInstallFromArchive: (archivePath: string) =>
+    ipcRenderer.invoke('authorityChgis:installFromArchive', archivePath),
+  authorityChgisRemove: () => ipcRenderer.invoke('authorityChgis:remove'),
   onAuthorityLifecycleProgress: (callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,
@@ -393,6 +412,14 @@ const electronAPI: ElectronAPI = {
     ) => callback(progress);
     ipcRenderer.on('authorityLifecycle:progress', listener);
     return () => ipcRenderer.removeListener('authorityLifecycle:progress', listener);
+  },
+  onAuthorityChgisProgress: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      progress: import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallProgress,
+    ) => callback(progress);
+    ipcRenderer.on('authorityChgis:progress', listener);
+    return () => ipcRenderer.removeListener('authorityChgis:progress', listener);
   },
   sanmiaoProposeDates: (text, options) => ipcRenderer.invoke('sanmiao:proposeDates', text, options),
   sanmiaoProposeDatesBatch: (chunks, options) =>
@@ -452,6 +479,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.on('app:menu-action', listener);
     return () => ipcRenderer.removeListener('app:menu-action', listener);
   },
+  signalRendererReady: () => ipcRenderer.invoke('signalRendererReady'),
   onExternalFileChange: (callback: (filePath: string) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: { filePath: string }) => {
       if (payload?.filePath) callback(payload.filePath);

@@ -3,6 +3,9 @@ import { normalizeDomText } from './normalize';
 import type { Suggestion } from './types';
 import {
   goldMentions,
+  goldMentionsForAutoCorpus,
+  runAuditValidationHarness,
+  runManualAutoAuditHarness,
   runValidationHarness,
   scoreSuggestions,
   stripTags,
@@ -152,5 +155,116 @@ describe('runValidationHarness', () => {
     const report = await runValidationHarness(doc, { policy: 'ignore', tags: ['persName'], client });
     expect(report.unverifiableCount).toBe(1);
     expect(report.overall).toMatchObject({ tp: 0, fp: 0, fn: 1 }); // gold "張衡" missed entirely
+  });
+});
+
+describe('runAuditValidationHarness', () => {
+  it('runs suggest then audit and reports both stages', async () => {
+    const doc = parse(
+      '<TEI><text><body><p><persName>張衡</persName>與<placeName>洛陽</placeName></p></body></text></TEI>',
+    );
+    let call = 0;
+    const client = new FakeClient(() => {
+      call++;
+      if (call === 1) {
+        return JSON.stringify({
+          suggestions: [
+            { surface: '張衡', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
+            { surface: '洛陽', occurrence: 1, tag: 'placeName', action: 'add', confidence: 0.9, rationale: 'place' },
+          ],
+        });
+      }
+      return JSON.stringify({ suggestions: [] });
+    });
+
+    const report = await runAuditValidationHarness(doc, {
+      policy: 'ignore',
+      tags: ['persName', 'placeName'],
+      client,
+    });
+    expect(report.afterSuggest.overall).toMatchObject({ tp: 2, fp: 0, fn: 0 });
+    expect(report.overall).toMatchObject({ tp: 2, fp: 0, fn: 0 });
+    expect(report.auditSuggestionCount).toBe(0);
+  });
+
+  it('applies audit corrections that improve suggest output', async () => {
+    const doc = parse('<TEI><text><body><p><persName>張衡</persName>與<placeName>洛陽</placeName></p></body></text></TEI>');
+    let call = 0;
+    const client = new FakeClient(() => {
+      call++;
+      if (call === 1) {
+        return JSON.stringify({
+          suggestions: [
+            { surface: '張衡', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
+            { surface: '洛陽', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.7, rationale: 'wrong' },
+          ],
+        });
+      }
+      if (call === 2) {
+        return JSON.stringify({
+          suggestions: [
+            { surface: '洛陽', occurrence: 1, tag: 'placeName', action: 'retag', confidence: 0.9, rationale: 'place' },
+          ],
+        });
+      }
+      return JSON.stringify({ suggestions: [] });
+    });
+
+    const report = await runAuditValidationHarness(doc, {
+      policy: 'ignore',
+      tags: ['persName', 'placeName'],
+      client,
+    });
+    expect(report.afterSuggest.wrongTag).toHaveLength(1);
+    expect(report.overall).toMatchObject({ tp: 2, fp: 0, fn: 0 });
+    expect(report.auditSuggestionCount).toBe(1);
+  });
+});
+
+describe('goldMentionsForAutoCorpus', () => {
+  it('filters gold mentions whose occurrence is absent in auto text', () => {
+    const manual = parse(
+      '<TEI><text><body><p><persName>甲</persName>與<persName>乙</persName></p></body></text></TEI>',
+    );
+    const auto = parse('<TEI><text><body><p><persName>甲</persName>一人</p></body></text></TEI>');
+    const { gold, corpusTextMatch, goldSkipped } = goldMentionsForAutoCorpus(manual, auto, 'ignore', [
+      'persName',
+    ]);
+    expect(corpusTextMatch).toBe(false);
+    expect(goldSkipped).toBe(1);
+    expect(gold).toEqual([{ tag: 'persName', surface: '甲', occurrence: 1 }]);
+  });
+});
+
+describe('runManualAutoAuditHarness', () => {
+  it('scores auto input before and after audit against manual gold', async () => {
+    const manual = parse(
+      '<TEI><text><body><p><persName>張衡</persName>與<placeName>洛陽</placeName></p></body></text></TEI>',
+    );
+    const auto = parse(
+      '<TEI><text><body><p><persName>張衡</persName>與<persName>洛陽</persName></p></body></text></TEI>',
+    );
+    let call = 0;
+    const client = new FakeClient(() => {
+      call++;
+      if (call === 1) {
+        return JSON.stringify({
+          suggestions: [
+            { surface: '洛陽', occurrence: 1, tag: 'placeName', action: 'retag', confidence: 0.9, rationale: 'place' },
+          ],
+        });
+      }
+      return JSON.stringify({ suggestions: [] });
+    });
+
+    const report = await runManualAutoAuditHarness(manual, auto, {
+      policy: 'ignore',
+      tags: ['persName', 'placeName'],
+      client,
+    });
+    expect(report.corpusTextMatch).toBe(true);
+    expect(report.beforeAudit.wrongTag).toHaveLength(1);
+    expect(report.overall).toMatchObject({ tp: 2, fp: 0, fn: 0 });
+    expect(report.auditSuggestionCount).toBe(1);
   });
 });

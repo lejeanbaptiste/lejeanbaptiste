@@ -138,6 +138,30 @@ describe('ReviewController', () => {
     expect(c.counts()).toMatchObject({ accepted: 2, pending: 1 });
   });
 
+  it('rejectAllIdenticalStrings rejects every pending match for surface and tag', () => {
+    const anchor = make('x').anchor;
+    const c = new ReviewController([
+      make('a1', { anchor: { ...anchor, surface: '張衡' } }),
+      make('a2', { anchor: { ...anchor, surface: '張衡' } }),
+      make('b', { anchor: { ...anchor, surface: '洛陽' }, tag: 'placeName' }),
+    ]);
+    c.rejectAllIdenticalStrings();
+    expect(c.counts()).toMatchObject({ rejected: 2, pending: 1 });
+  });
+
+  it('changeDecision flips accepted and rejected outcomes', () => {
+    const decisions: string[] = [];
+    const c = new ReviewController([make('a'), make('b')], {
+      onDecision: (e) => decisions.push(`${e.suggestion.id}:${e.decision}`),
+    });
+    c.accept();
+    const accepted = c.acceptedVisible()[0]!;
+    c.changeDecision(accepted, 'rejected');
+    expect(accepted.status).toBe('rejected');
+    expect(decisions).toContain('a:accepted');
+    expect(decisions).toContain('a:rejected');
+  });
+
   it('handles an empty batch without a cursor', () => {
     const c = new ReviewController([]);
     expect(c.current()).toBeNull();
@@ -170,5 +194,16 @@ describe('handleReviewKey', () => {
     ]);
     expect(handleReviewKey(c, 'Enter', { shift: true })).toBe(true);
     expect(c.counts()).toMatchObject({ accepted: 2, pending: 1 });
+  });
+
+  it('Shift+Backspace rejects all pending items with the same surface and tag', () => {
+    const anchor = make('x').anchor;
+    const c = new ReviewController([
+      make('one', { anchor: { ...anchor, surface: '同' } }),
+      make('two', { anchor: { ...anchor, surface: '同' } }),
+      make('other', { anchor: { ...anchor, surface: '異' } }),
+    ]);
+    expect(handleReviewKey(c, 'Backspace', { shift: true })).toBe(true);
+    expect(c.counts()).toMatchObject({ rejected: 2, pending: 1 });
   });
 });

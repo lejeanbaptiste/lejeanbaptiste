@@ -3,11 +3,8 @@ import {
   autoTaggingDocumentKey,
   countDocumentDates,
   defaultSanmiaoCivForLanguage,
-  documentHasDateMarkup,
-  inferEastAsianLanguageFromDocument,
   inferEastAsianLanguageFromText,
   isDisambiguationUnlockedForDocument,
-  markDatesPassApplied,
   markDatesPassRan,
   requiresDatesBeforeOtherTagging,
   resolveAutoTaggingSourceLanguage,
@@ -59,23 +56,10 @@ describe('resolveAutoTaggingSourceLanguage', () => {
 });
 
 describe('requiresDatesBeforeOtherTagging', () => {
-  it('is true for Chinese, Japanese, and Korean', () => {
-    expect(requiresDatesBeforeOtherTagging('zh-Hant')).toBe(true);
-    expect(requiresDatesBeforeOtherTagging('lzh')).toBe(true);
-    expect(requiresDatesBeforeOtherTagging('ja')).toBe(true);
-    expect(requiresDatesBeforeOtherTagging('ko')).toBe(true);
-  });
-
-  it('is false for English', () => {
+  it('no longer gates other tagging methods', () => {
+    expect(requiresDatesBeforeOtherTagging('zh-Hant')).toBe(false);
+    expect(requiresDatesBeforeOtherTagging('ja')).toBe(false);
     expect(requiresDatesBeforeOtherTagging('en')).toBe(false);
-  });
-});
-
-describe('defaultSanmiaoCivForLanguage', () => {
-  it('defaults civ to project language', () => {
-    expect(defaultSanmiaoCivForLanguage('zh-Hant')).toEqual(['c']);
-    expect(defaultSanmiaoCivForLanguage('ja')).toEqual(['j']);
-    expect(defaultSanmiaoCivForLanguage('ko')).toEqual(['k']);
   });
 });
 
@@ -86,76 +70,41 @@ describe('areOtherAutoTaggingMethodsUnlocked', () => {
     sessionStorage.clear();
   });
 
-  it('unlocks immediately for non-East-Asian languages', () => {
-    const doc = docFromTei('<p>x</p>', 'en');
-    expect(areOtherAutoTaggingMethodsUnlocked(docKey, doc, 'en')).toBe(true);
-  });
-
-  it('stays locked for Chinese until dates pass is recorded', () => {
+  it('is always true', () => {
     const doc = docFromTei('<p>x</p>', 'zh-Hant');
-    expect(areOtherAutoTaggingMethodsUnlocked(docKey, doc, 'zh-Hant')).toBe(false);
-    markDatesPassRan(docKey);
     expect(areOtherAutoTaggingMethodsUnlocked(docKey, doc, 'zh-Hant')).toBe(true);
-  });
-
-  it('does not unlock just because the body already has date elements', () => {
-    const doc = docFromTei('<p><date>義熙元年</date></p>', 'zh-Hant');
-    expect(documentHasDateMarkup(doc)).toBe(true);
-    expect(areOtherAutoTaggingMethodsUnlocked(docKey, doc, 'zh-Hant')).toBe(false);
+    expect(areOtherAutoTaggingMethodsUnlocked(docKey, doc, 'en')).toBe(true);
   });
 });
 
 describe('isDisambiguationUnlockedForDocument', () => {
-  const docKey = 'test-doc.xml';
-
-  beforeEach(() => {
-    sessionStorage.clear();
-  });
-
-  it('unlocks immediately for non-East-Asian languages', () => {
-    expect(isDisambiguationUnlockedForDocument(docKey, 'en')).toBe(true);
-  });
-
-  it('stays locked until resolve is applied', () => {
-    expect(isDisambiguationUnlockedForDocument(docKey, 'zh-Hant')).toBe(false);
-    markDatesPassRan(docKey);
-    expect(isDisambiguationUnlockedForDocument(docKey, 'zh-Hant')).toBe(false);
-    markDatesPassApplied(docKey);
-    expect(isDisambiguationUnlockedForDocument(docKey, 'zh-Hant')).toBe(true);
+  it('is always true', () => {
+    expect(isDisambiguationUnlockedForDocument('test-doc.xml', 'zh-Hant')).toBe(true);
+    expect(isDisambiguationUnlockedForDocument('test-doc.xml', 'en')).toBe(true);
   });
 });
 
 describe('shouldWarnResolveDatesBeforeAutoTag', () => {
-  const docKey = 'test-doc.xml';
-
-  beforeEach(() => {
-    sessionStorage.clear();
-  });
-
-  it('warns after tag pass but before resolve', () => {
-    expect(shouldWarnResolveDatesBeforeAutoTag(docKey, 'zh-Hant')).toBe(false);
-    markDatesPassRan(docKey);
-    expect(shouldWarnResolveDatesBeforeAutoTag(docKey, 'zh-Hant')).toBe(true);
-    markDatesPassApplied(docKey);
-    expect(shouldWarnResolveDatesBeforeAutoTag(docKey, 'zh-Hant')).toBe(false);
+  it('never warns', () => {
+    expect(shouldWarnResolveDatesBeforeAutoTag('test-doc.xml', 'zh-Hant')).toBe(false);
+    markDatesPassRan('test-doc.xml');
+    expect(shouldWarnResolveDatesBeforeAutoTag('test-doc.xml', 'zh-Hant')).toBe(false);
   });
 });
 
 describe('shouldWarnTagDatesFirst', () => {
-  const docKey = 'test-doc.xml';
-
-  beforeEach(() => {
-    sessionStorage.clear();
+  it('never warns', () => {
+    expect(shouldWarnTagDatesFirst('test-doc.xml', 'zh-Hant')).toBe(false);
+    markDatesPassRan('test-doc.xml');
+    expect(shouldWarnTagDatesFirst('test-doc.xml', 'zh-Hant')).toBe(false);
   });
+});
 
-  it('warns until tag pass is recorded', () => {
-    expect(shouldWarnTagDatesFirst(docKey, 'zh-Hant')).toBe(true);
-    markDatesPassRan(docKey);
-    expect(shouldWarnTagDatesFirst(docKey, 'zh-Hant')).toBe(false);
-  });
-
-  it('is false for non-East-Asian languages', () => {
-    expect(shouldWarnTagDatesFirst(docKey, 'en')).toBe(false);
+describe('defaultSanmiaoCivForLanguage', () => {
+  it('defaults civ to project language', () => {
+    expect(defaultSanmiaoCivForLanguage('zh-Hant')).toEqual(['c']);
+    expect(defaultSanmiaoCivForLanguage('ja')).toEqual(['j']);
+    expect(defaultSanmiaoCivForLanguage('ko')).toEqual(['k']);
   });
 });
 

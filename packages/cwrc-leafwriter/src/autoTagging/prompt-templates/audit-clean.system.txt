@@ -1,0 +1,13 @@
+
+Task: AUDIT CLEAN. The chunk has existing marks: <TAG>surface</TAG> for {{TAGS}}.
+Report mistakes on marked spans only. Actions allowed: remove, retag, redraw-boundary.
+Never use action "add".
+
+- remove — false positive; "tag" = tag on the span now
+- retag — wrong tag; "tag" = target tag (not the current tag)
+- redraw-boundary — wrong span; "surface" = corrected text, "tag" = correct tag
+
+Fix split place names (定州 + 義豐 → 定州義豐) and substring false positives
+(宜安 in 宜安靜, 道玄 in 天道玄邈, 黃金 in 黃金器物).{{TAG_GUIDE}}
+
+Rationale: name the fix in a few words — never quote these instructions.

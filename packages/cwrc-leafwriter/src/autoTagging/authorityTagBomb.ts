@@ -5,13 +5,18 @@ import {
 } from './packLoader';
 import type { AuthorityPackId } from './packPaths';
 
-/** CBDB before DILA so overlap merge prefers CBDB metadata as the base. */
+/** CBDB before DILA so overlap merge prefers CBDB metadata as the base. CHGIS before DILA for place dates. */
 const PACK_LOAD_ORDER: AuthorityPackId[] = [
   'cbdb-persons',
   'cbdb-places',
   'cbdb-offices',
+  'chgis-places',
   'dila-persons',
   'dila-places',
+  'wikidata-persons-tang',
+  'wikidata-persons-pre-ming',
+  'wikidata-persons-ming',
+  'wikidata-persons-qing',
   'ndl-persons',
   'ndl-works',
 ];

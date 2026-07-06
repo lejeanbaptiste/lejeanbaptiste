@@ -1,6 +1,10 @@
 import {
+  buildAuditAddPrompt,
+  buildAuditCleanPrompt,
   buildSuggestPrompt,
   buildSuggestTagGuide,
+  AUDIT_ADD_PROMPT_VERSION,
+  AUDIT_CLEAN_PROMPT_VERSION,
   SUGGEST_PROMPT_VERSION,
 } from './prompts';
 
@@ -34,5 +38,27 @@ describe('prompts', () => {
       after: '',
     });
     expect(user).toContain('<chunk>test</chunk>');
+  });
+
+  it('uses split audit prompts for clean and add passes', () => {
+    expect(AUDIT_CLEAN_PROMPT_VERSION).toBe('audit-clean.v2');
+    expect(AUDIT_ADD_PROMPT_VERSION).toBe('audit-add.v1');
+    const clean = buildAuditCleanPrompt({
+      tags: ['persName', 'placeName'],
+      taggedChunkText: '<persName>張衡</persName>',
+      before: '',
+      after: '',
+    });
+    expect(clean.system).toContain('AUDIT CLEAN');
+    expect(clean.system).toContain('Never use action "add"');
+    const add = buildAuditAddPrompt({
+      tags: ['persName', 'placeName'],
+      taggedChunkText: '<persName>張衡</persName>與洛陽',
+      before: '',
+      after: '',
+    });
+    expect(add.system).toContain('AUDIT ADD');
+    expect(add.system).toContain('PLAIN TEXT ONLY');
+    expect(add.system).toContain('substring');
   });
 });

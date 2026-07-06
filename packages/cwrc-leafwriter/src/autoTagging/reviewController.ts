@@ -152,6 +152,32 @@ export class ReviewController {
     this.advanceToPending();
   }
 
+  /**
+   * Reject every pending suggestion with the same surface and tag as the
+   * current item (mirror of acceptAllIdenticalStrings).
+   */
+  rejectAllIdenticalStrings() {
+    const current = this.current();
+    if (!current) return;
+    const { surface } = current.anchor;
+    const { tag } = current;
+    for (const s of this.pendingVisible()) {
+      if (s.anchor.surface === surface && s.tag === tag) {
+        s.status = 'rejected';
+        this.options.onDecision?.({ suggestion: s, decision: 'rejected' });
+      }
+    }
+    this.advanceToPending();
+  }
+
+  /** Flip an already-decided suggestion to the other outcome. */
+  changeDecision(suggestion: Suggestion, decision: Decision) {
+    if (suggestion.status === 'unresolvable' || suggestion.status === 'pending') return;
+    if (suggestion.status === decision) return;
+    suggestion.status = decision;
+    this.options.onDecision?.({ suggestion, decision });
+  }
+
   /** Revert the current pending suggestion's decision (only meaningful before apply). */
   undecide() {
     const current = this.current();
@@ -224,7 +250,8 @@ export interface ReviewKeyModifiers {
 /**
  * Keyboard model for the review walk:
  * j/↓ next · k/↑ previous · Enter accept · Shift+Enter accept all identical ·
- * Backspace/Delete reject · a/r/x/u aliases · u undecide (current pending only).
+ * Backspace/Delete reject · Shift+Backspace reject all identical ·
+ * a/r/x/u aliases · u undecide (current pending only).
  */
 export function handleReviewKey(
   controller: ReviewController,
@@ -249,9 +276,12 @@ export function handleReviewKey(
       return true;
     case 'r':
     case 'x':
+      controller.reject();
+      return true;
     case 'Backspace':
     case 'Delete':
-      controller.reject();
+      if (modifiers.shift) controller.rejectAllIdenticalStrings();
+      else controller.reject();
       return true;
     case 'u':
       controller.undecide();

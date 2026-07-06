@@ -125,4 +125,17 @@ describe('ReviewPanel', () => {
     expect(applied).toHaveLength(2);
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
   });
+
+  it('can flip a decision from the expanded accepted group', () => {
+    const { suggestions } = setup();
+    render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+
+    fireEvent.click(screen.getByTestId(`accept-${suggestions[0]!.id}`));
+    expect(screen.getByTestId('review-counts').textContent).toContain('1 accepted');
+
+    fireEvent.click(screen.getByText(/Accepted \(1\)/));
+    fireEvent.click(screen.getByTestId(`reject-${suggestions[0]!.id}`));
+    expect(screen.getByTestId('review-counts').textContent).toContain('0 accepted');
+    expect(screen.getByTestId('review-counts').textContent).toContain('1 rejected');
+  });
 });

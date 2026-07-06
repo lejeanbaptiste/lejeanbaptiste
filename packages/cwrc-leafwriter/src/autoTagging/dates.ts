@@ -102,7 +102,7 @@ function hasAncestorLocalName(node: Element, name: string): boolean {
 /** Document index excluding text already inside `<date>` elements. */
 export function buildTaggableDocIndex(root: Node, policy: WhitespacePolicy): DocIndex {
   const all = collectTextNodes(root, policy);
-  const nodes = all.filter(({ node }) => !insideDate(node));
+  const nodes = all.filter(({ node }) => !isInsideDateElement(node));
   const nodeStart: number[] = [];
   let total = 0;
   for (const { search } of nodes) {
@@ -112,11 +112,38 @@ export function buildTaggableDocIndex(root: Node, policy: WhitespacePolicy): Doc
   return { nodes, text: nodes.map((n) => n.search.text).join(''), nodeStart };
 }
 
-function insideDate(node: Text): boolean {
-  for (let el = node.parentElement; el; el = el.parentElement) {
+/** TEI entity tags that must not be inserted inside `<date>` (sanmiao owns that subtree). */
+export const ENTITY_TAGS_FORBIDDEN_IN_DATE = [
+  'persName',
+  'placeName',
+  'orgName',
+  'org',
+  'geogName',
+  'name',
+  'roleName',
+  'title',
+] as const;
+
+function hasDateAncestor(node: Node): boolean {
+  let el: Element | null =
+    node.nodeType === Node.TEXT_NODE
+      ? (node as Text).parentElement
+      : node.nodeType === Node.ELEMENT_NODE
+        ? (node as Element)
+        : node.parentElement;
+  for (; el; el = el.parentElement) {
     if (el.localName === 'date') return true;
   }
   return false;
+}
+
+/** True when `node` sits inside a TEI `<date>` (including subelements like when/orig). */
+export function isInsideDateElement(node: Node): boolean {
+  return hasDateAncestor(node);
+}
+
+export function isEntityTagForbiddenInDate(tag: string): boolean {
+  return (ENTITY_TAGS_FORBIDDEN_IN_DATE as readonly string[]).includes(tag);
 }
 
 /** Map a flat offset in taggable search text to raw text-node offsets. */
@@ -219,7 +246,7 @@ function proposalsToSuggestions(
     const globalOffset = chunkStart + offset;
     const range = offsetToRawRange(index, globalOffset, proposal.date_string.length);
     if (!range) continue;
-    if (insideDate(range.node)) continue;
+    if (isInsideDateElement(range.node)) continue;
 
     suggestions.push({
       id: `date_${counter++}`,

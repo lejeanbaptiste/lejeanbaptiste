@@ -47,6 +47,9 @@ const isVisualEditorActive = (): boolean =>
   Boolean(window.writer?.editor) &&
   window.writer?.overmindState?.ui?.editorViewMode !== 'source';
 
+const isFocusInAttributesPanel = (): boolean =>
+  Boolean(document.activeElement?.closest('[data-attributes-panel]'));
+
 export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const { activeTabPath, rootPath } = useAppState().project;
   const { readonly } = useAppState().editor;
@@ -68,6 +71,8 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   );
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const colorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingColorRef = useRef<{ tagName: string; colors: TagColorEntry } | null>(null);
   const syncGenerationRef = useRef(0);
   const valuesRef = useRef(values);
   const tagElementRef = useRef(tagElement);
@@ -90,6 +95,8 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     };
   }, [activeTabPath]);
 
+  const persistPendingColorRef = useRef<() => Promise<void>>(async () => {});
+
   const syncFromEditor = useCallback(async () => {
     if (!isVisualEditorActive()) {
       setTagElement(null);
@@ -104,8 +111,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     const name = element?.getAttribute('_tag') ?? '';
 
     if (!element || !name) {
-      const editorFocused = window.writer?.editor?.hasFocus?.() ?? false;
-      if (!editorFocused && tagElementRef.current?.isConnected) {
+      if (isFocusInAttributesPanel() && tagElementRef.current?.isConnected) {
         return;
       }
       setTagElement(null);
@@ -124,24 +130,74 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     setSchemaAttributes(attrs);
   }, []);
 
-  useEffect(() => {
+  const attachEditorSync = useCallback(() => {
     const writer = window.writer;
-    if (!writer) return;
+    if (!writer) return undefined;
 
     const events = ['selectionChanged', 'tagEdited', 'contentChanged', 'nodeChanged'] as const;
     const handler = () => void syncFromEditor();
+    const onWriterKeyup = (event: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+        void syncFromEditor();
+      }
+    };
 
     for (const eventName of events) {
       writer.event(eventName).subscribe(handler);
     }
+    writer.event('writerKeyup').subscribe(onWriterKeyup);
     void syncFromEditor();
 
     return () => {
       for (const eventName of events) {
         writer.event(eventName).unsubscribe(handler);
       }
+      writer.event('writerKeyup').unsubscribe(onWriterKeyup);
     };
-  }, [activeTabPath, leafWriter, syncFromEditor]);
+  }, [syncFromEditor]);
+
+  useEffect(() => {
+    if (!leafWriter) return;
+
+    let detach = attachEditorSync();
+    const onWriterReady = () => {
+      detach?.();
+      detach = attachEditorSync();
+    };
+
+    const subscribeReady = () => {
+      window.writer?.event('tinymceInitialized').subscribe(onWriterReady);
+      window.writer?.event('documentLoaded').subscribe(onWriterReady);
+    };
+
+    const unsubscribeReady = () => {
+      window.writer?.event('tinymceInitialized').unsubscribe(onWriterReady);
+      window.writer?.event('documentLoaded').unsubscribe(onWriterReady);
+    };
+
+    subscribeReady();
+
+    if (!detach) {
+      const retryId = window.setInterval(() => {
+        if (!window.writer) return;
+        detach = attachEditorSync();
+        if (detach) {
+          subscribeReady();
+          window.clearInterval(retryId);
+        }
+      }, 100);
+      return () => {
+        window.clearInterval(retryId);
+        detach?.();
+        unsubscribeReady();
+      };
+    }
+
+    return () => {
+      detach?.();
+      unsubscribeReady();
+    };
+  }, [activeTabPath, attachEditorSync, leafWriter]);
 
   useEffect(() => {
     if (!visible) return;
@@ -201,16 +257,39 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     });
   };
 
-  const handleColorChange = async (field: keyof TagColorEntry, color: string) => {
+  const persistPendingColor = useCallback(async () => {
+    const pending = pendingColorRef.current;
+    if (!pending || !rootPath) return;
+    pendingColorRef.current = null;
+    const updated = await updateTagColor(rootPath, pending.tagName, pending.colors);
+    setTagColors(updated);
+  }, [rootPath]);
+
+  useEffect(() => {
+    persistPendingColorRef.current = persistPendingColor;
+  }, [persistPendingColor]);
+
+  const handleColorChange = (field: keyof TagColorEntry, color: string) => {
     if (!rootPath || !tagName) return;
     const current = resolveTagColor(tagColors ?? { version: 1, tags: {} }, tagName) ?? {};
     const next: TagColorEntry = { ...current, [field]: color };
-    const updated = await updateTagColor(rootPath, tagName, next);
-    setTagColors(updated);
+
+    setTagColors((prev) => {
+      const base = prev ?? { version: 1, tags: {} };
+      return { version: 1, tags: { ...base.tags, [tagName]: next } };
+    });
+    pendingColorRef.current = { tagName, colors: next };
+
+    if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
+    colorDebounceRef.current = setTimeout(() => {
+      void persistPendingColor();
+    }, 300);
   };
 
   const handleResetColors = async () => {
     if (!rootPath || !tagName) return;
+    if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
+    pendingColorRef.current = null;
     const updated = await updateTagColor(rootPath, tagName, null);
     setTagColors(updated);
   };
@@ -218,13 +297,15 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   useEffect(
     () => () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
+      void persistPendingColorRef.current();
     },
     [],
   );
 
   if (!activeTabPath) {
     return (
-      <Paper elevation={0} square sx={{ height: '100%', p: 2 }}>
+      <Paper data-attributes-panel elevation={0} square sx={{ height: '100%', p: 2 }}>
         <Typography color="text.secondary" variant="body2">
           Open a file to edit tag attributes.
         </Typography>
@@ -234,7 +315,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
 
   if (!tagElement || !tagName) {
     return (
-      <Paper elevation={0} square sx={{ height: '100%', p: 2 }}>
+      <Paper data-attributes-panel elevation={0} square sx={{ height: '100%', p: 2 }}>
         <Typography color="text.secondary" variant="body2">
           Place the caret inside a tag to view and edit its attributes.
         </Typography>
@@ -270,6 +351,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
 
   return (
     <Paper
+      data-attributes-panel
       elevation={0}
       square
       sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}

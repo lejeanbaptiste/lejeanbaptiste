@@ -25,6 +25,8 @@ import HelpCenterIcon from '@mui/icons-material/HelpCenter';
 import LabelImportantRoundedIcon from '@mui/icons-material/LabelImportantRounded';
 import LabelRoundedIcon from '@mui/icons-material/LabelRounded';
 import LinkRoundedIcon from '@mui/icons-material/LinkRounded';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MergeRoundedIcon from '@mui/icons-material/MergeRounded';
 import PanoramaFishEyeIcon from '@mui/icons-material/PanoramaFishEye';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
@@ -112,6 +114,8 @@ const icons = {
   BookOutlinedIcon: BookOutlinedIcon,
   BoxIcon: asMuiIcon(FaBoxOpen),
   BoxOutlinedIcon: BoxOutlinedIcon,
+  lock: LockIcon,
+  lockOpen: LockOpenIcon,
   change: ReplayIcon,
   checkIcon: CheckIcon,
   citation: FormatQuoteIcon,

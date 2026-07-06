@@ -15,6 +15,19 @@ Plain-text templates for **suggest** and **audit** producers. Edit these files d
 
 Assembly logic lives in `../prompts.ts`.
 
+## Audit tuning harness (opt-in live test)
+
+Hand-tag `manual.xml`, auto-tag the same passage as `auto.xml`, then run:
+
+```bash
+LLM_LIVE_TEST=1 LLM_LIVE_MODEL=qwen/qwen3.6-27b \
+  npx jest --selectProjects Core --testPathPatterns=auditValidationHarness.live.test
+```
+
+Defaults: `test_project/project/gold_test/manual.xml` + `auto.xml`. Override with
+`LLM_LIVE_MANUAL` / `LLM_LIVE_AUTO`. Reports **before audit** (auto as-is) vs
+**after audit** (corrections applied) against manual gold.
+
 ## Planned UI (immediate future)
 
 Developers can edit these files directly today. **Next build:** prompt profiles in the app so users can tune suggest text per model/corpus without touching the repo.

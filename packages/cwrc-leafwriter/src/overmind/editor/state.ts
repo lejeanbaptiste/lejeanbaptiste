@@ -29,6 +29,8 @@ export type EditorStateType = {
   }[];
   isAnnotator: boolean;
   isReadonly: boolean;
+  /** WYSIWYG only: block typing/paste/delete; tagging shortcuts still work. */
+  textLocked: boolean;
   latestEvent?: string;
   LWChangeEventSuspended: boolean;
   mode: number;
@@ -79,6 +81,7 @@ export const state: EditorStateType = {
   latinFont: DEFAULT_LATIN_FONT,
   isAnnotator: false,
   isReadonly: false,
+  textLocked: false,
   LWChangeEventSuspended: false,
   mode: 0,
   showEntities: true,

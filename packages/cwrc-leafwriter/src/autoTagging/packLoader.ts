@@ -43,6 +43,11 @@ export function candidateIntersectsYearRange(
   const end = meta?.endYear ?? meta?.startYear;
 
   if (start == null && end == null) {
+    // DILA places have no lifespan in the authority file — still match in text;
+    // temporal narrowing belongs in disambiguation, not seed exclusion.
+    if (candidate.kind === 'place' && candidate.source === 'DILA') {
+      return true;
+    }
     return !range.hideUndated;
   }
 

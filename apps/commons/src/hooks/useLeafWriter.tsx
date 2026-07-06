@@ -1,4 +1,4 @@
-import { loadAndInjectTagColors } from '@src/desktop/tagging/tagColors';
+import { reapplyCachedTagColors, scheduleTagColorsInjection } from '@src/desktop/tagging/tagColors';
 import { DESKTOP_APP_DISPLAY_NAME } from '@src/desktop/desktopBranding';
 import { registerLeafWriterCommonsI18n } from '@src/desktop/registerLeafWriterCommonsI18n';
 import { focusFirstBodyParagraph } from '@src/desktop/focusFirstBodyParagraph';
@@ -129,16 +129,57 @@ export const useLeafWriter = () => {
     if (!isDesktop() || !rootPath || !leafWriter) return;
 
     const injectColors = () => {
-      void loadAndInjectTagColors(rootPath);
+      if (!reapplyCachedTagColors(rootPath)) {
+        scheduleTagColorsInjection(rootPath);
+      }
     };
 
-    injectColors();
-    window.writer?.event('documentLoaded').subscribe(injectColors);
-    window.writer?.event('tinymceInitialized').subscribe(injectColors);
+    const attach = () => {
+      const writer = window.writer;
+      if (!writer) return undefined;
+
+      const events = [
+        'documentLoaded',
+        'tinymceInitialized',
+        'schemaLoaded',
+        'writerInitialized',
+      ] as const;
+      for (const eventName of events) {
+        writer.event(eventName).subscribe(injectColors);
+      }
+      injectColors();
+
+      return () => {
+        for (const eventName of events) {
+          writer.event(eventName).unsubscribe(injectColors);
+        }
+      };
+    };
+
+    let detach = attach();
+    const onWriterReady = () => {
+      detach?.();
+      detach = attach();
+    };
+
+    window.writer?.event('tinymceInitialized').subscribe(onWriterReady);
+
+    if (!detach) {
+      const retryId = window.setInterval(() => {
+        if (!window.writer) return;
+        detach = attach();
+        if (detach) window.clearInterval(retryId);
+      }, 100);
+      return () => {
+        window.clearInterval(retryId);
+        detach?.();
+        window.writer?.event('tinymceInitialized').unsubscribe(onWriterReady);
+      };
+    }
 
     return () => {
-      window.writer?.event('documentLoaded').unsubscribe(injectColors);
-      window.writer?.event('tinymceInitialized').unsubscribe(injectColors);
+      detach?.();
+      window.writer?.event('tinymceInitialized').unsubscribe(onWriterReady);
     };
   }, [leafWriter, rootPath]);
 

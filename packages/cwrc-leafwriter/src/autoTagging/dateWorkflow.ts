@@ -189,9 +189,9 @@ export async function resolveAutoTaggingSourceLanguage(
   return inferEastAsianLanguageFromDocument(doc);
 }
 
-/** True when sanmiao should run before dictionary / authority / AI on this project. */
-export function requiresDatesBeforeOtherTagging(language: string | null | undefined): boolean {
-  return isEastAsianCalendarLanguageCode(language);
+/** East Asian calendar tagging is optional; it no longer gates other methods. */
+export function requiresDatesBeforeOtherTagging(_language: string | null | undefined): boolean {
+  return false;
 }
 
 /** East Asian dates method is offered for Chinese / Japanese / Korean source languages. */
@@ -321,82 +321,75 @@ export const clearDatesPassForDocument = (docKey: string): void => {
 };
 
 /**
- * Dictionary, authority, AI, etc. unlock only after sanmiao has run for this
- * document in the current browser session (including a pass that found zero spans).
+ * Dictionary, authority, AI, etc. are always available regardless of calendar passes.
  */
 export function areOtherAutoTaggingMethodsUnlocked(
-  docKey: string,
+  _docKey: string,
   _doc?: Document | null,
-  language?: string | null | undefined,
+  _language?: string | null | undefined,
 ): boolean {
-  if (!requiresDatesBeforeOtherTagging(language)) return true;
-  const status = readDatesPassStore()[docKey];
-  return status === 'ran' || status === 'applied';
+  return true;
 }
 
 export const datesPassStatusForDocument = (
   docKey: string,
 ): DatesPassStatus | undefined => readDatesPassStore()[docKey];
 
-/** True after the user completed the tag-dates workflow step. */
+/** True after the user completed the tag-dates workflow step in this session. */
 export function isTagDatesPassComplete(
   docKey: string,
   language: string | null | undefined,
 ): boolean {
-  if (!requiresDatesBeforeOtherTagging(language)) return true;
+  if (!isEastAsianCalendarLanguageCode(language)) return true;
   const status = readDatesPassStore()[docKey];
   return status === 'ran' || status === 'applied';
 }
 
-/** True after resolve-dates has been applied at least once. */
+/** True after resolve-dates has been applied at least once in this session. */
 export function isResolveDatesPassComplete(
   docKey: string,
   language: string | null | undefined,
 ): boolean {
-  return isDisambiguationUnlockedForDocument(docKey, language);
-}
-
-/** Warn when the tag-dates step has not been recorded yet. */
-export function shouldWarnTagDatesFirst(
-  docKey: string,
-  language: string | null | undefined,
-): boolean {
-  return requiresDatesBeforeOtherTagging(language) && !isTagDatesPassComplete(docKey, language);
-}
-
-/** True after the tag-dates pass has run (unlocks auto-tagging). */
-export function isAutoTaggingUnlockedForDocument(
-  docKey: string,
-  language: string | null | undefined,
-): boolean {
-  return isTagDatesPassComplete(docKey, language);
-}
-
-/** True after resolve-dates has been applied at least once (unlocks disambiguation). */
-export function isDisambiguationUnlockedForDocument(
-  docKey: string,
-  language: string | null | undefined,
-): boolean {
-  if (!requiresDatesBeforeOtherTagging(language)) return true;
+  if (!isEastAsianCalendarLanguageCode(language)) return true;
   return readDatesPassStore()[docKey] === 'applied';
 }
 
-/** Soft reminder: tag pass done but resolve not yet applied. */
-export function shouldWarnResolveDatesBeforeAutoTag(
-  docKey: string,
-  language: string | null | undefined,
+/** @deprecated Calendar no longer gates other workflows. */
+export function shouldWarnTagDatesFirst(
+  _docKey: string,
+  _language: string | null | undefined,
 ): boolean {
-  if (!requiresDatesBeforeOtherTagging(language)) return false;
-  const status = readDatesPassStore()[docKey];
-  return status === 'ran';
+  return false;
 }
 
-/** Whether this document still needs its first sanmiao pass. */
-export function needsDatesPassFirst(
-  docKey: string,
-  language: string | null | undefined,
+/** @deprecated Calendar no longer gates auto-tagging. */
+export function isAutoTaggingUnlockedForDocument(
+  _docKey: string,
+  _language: string | null | undefined,
 ): boolean {
-  if (!requiresDatesBeforeOtherTagging(language)) return false;
-  const status = readDatesPassStore()[docKey];
-  return status !== 'ran' && status !== 'applied';
+  return true;
+}
+
+/** Disambiguation is always available. */
+export function isDisambiguationUnlockedForDocument(
+  _docKey: string,
+  _language: string | null | undefined,
+): boolean {
+  return true;
+}
+
+/** @deprecated Calendar no longer gates other workflows. */
+export function shouldWarnResolveDatesBeforeAutoTag(
+  _docKey: string,
+  _language: string | null | undefined,
+): boolean {
+  return false;
+}
+
+/** @deprecated Calendar no longer gates other workflows. */
+export function needsDatesPassFirst(
+  _docKey: string,
+  _language: string | null | undefined,
+): boolean {
+  return false;
 }

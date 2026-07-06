@@ -1,3 +1,9 @@
+import type { AiPromptProfile } from './aiPromptProfiles';
+import {
+  promptVersionWithProfile,
+  resolveAuditCleanTaskText,
+  resolveSuggestTaskText,
+} from './aiPromptProfiles';
 import { buildDocIndex } from './anchor';
 import { createAnchor } from './anchor';
 import { chunkDocument, llmChunkOptions, type ChunkOptions } from './chunk';
@@ -11,6 +17,7 @@ export interface LlmSuggestOptions extends ChunkOptions {
   tags: string[];
   client: LlmClient;
   cache?: LlmCache;
+  promptProfile?: AiPromptProfile;
   /** Called after each chunk finishes (done/total). */
   onProgress?: (done: number, total: number) => void;
 }
@@ -30,10 +37,12 @@ const SUGGEST_ACTIONS = ['add'];
  * suggestions through the same review walk as every other producer.
  */
 export async function llmSuggest(doc: Document, options: LlmSuggestOptions): Promise<LlmSuggestResult> {
-  const { tags, client, cache, policy, onProgress } = options;
+  const { tags, client, cache, policy, onProgress, promptProfile } = options;
   const chunks = chunkDocument(doc, llmChunkOptions(options));
   const index = buildDocIndex(doc, policy);
   const schema = suggestionResponseSchema(SUGGEST_ACTIONS);
+  const promptVersion = promptVersionWithProfile(SUGGEST_PROMPT_VERSION, promptProfile);
+  const suggestTaskText = resolveSuggestTaskText(promptProfile);
 
   const suggestions: Suggestion[] = [];
   let unverifiableCount = 0;
@@ -41,17 +50,18 @@ export async function llmSuggest(doc: Document, options: LlmSuggestOptions): Pro
 
   for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
     const chunk = chunks[chunkIndex]!;
-    let items = (await cache?.get(chunk.text, tags, client.modelId, SUGGEST_PROMPT_VERSION)) ?? null;
+    let items = (await cache?.get(chunk.text, tags, client.modelId, promptVersion)) ?? null;
     if (!items) {
       const prompt = buildSuggestPrompt({
         tags,
         chunkText: chunk.text,
         before: chunk.before,
         after: chunk.after,
+        suggestTaskText,
       });
       const response = await client.complete({ ...prompt, jsonSchema: schema });
       items = parseValidItems(response.json, tags, SUGGEST_ACTIONS);
-      await cache?.set(chunk.text, tags, client.modelId, SUGGEST_PROMPT_VERSION, items);
+      await cache?.set(chunk.text, tags, client.modelId, promptVersion, items);
     }
 
     for (const item of items) {

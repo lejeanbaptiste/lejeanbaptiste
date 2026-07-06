@@ -24,6 +24,15 @@ const packFiles = [
   'dila/persons.ndjson',
   'dila/places.ndjson',
   'dila/manifest.json',
+  'wikidata/person-zh-hant-tang/persons.ndjson',
+  'wikidata/person-zh-hant-tang/manifest.json',
+  'wikidata/person-zh-hant-pre-ming/persons.ndjson',
+  'wikidata/person-zh-hant-pre-ming/manifest.json',
+  'wikidata/person-zh-hant-ming/persons.ndjson',
+  'wikidata/person-zh-hant-ming/manifest.json',
+  'wikidata/person-zh-hant-qing/persons.ndjson',
+  'wikidata/person-zh-hant-qing/manifest.json',
+  'wikidata/manifest.json',
 ];
 
 const destRoot = process.argv[2]
@@ -33,6 +42,7 @@ const destRoot = process.argv[2]
 if (!fs.existsSync(defaultSource)) {
   console.error(`Source packs not found: ${defaultSource}`);
   console.error('Run: cd "../authority extraction" && npm run compile:cbdb && npm run compile:dila');
+  console.error('Optional Wikidata: npm run wikidata:compile-all (Tang/Ming/Qing under packs/wikidata/)');
   process.exit(1);
 }
 
@@ -46,6 +56,11 @@ fs.mkdirSync(destRoot, { recursive: true });
 for (const rel of packFiles) {
   const src = path.join(defaultSource, rel);
   const dest = path.join(destRoot, rel);
+  if (!fs.existsSync(src)) {
+    if (rel.startsWith('wikidata/')) continue;
+    console.error(`Missing pack file: ${src}`);
+    process.exit(1);
+  }
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.copyFileSync(src, dest);
   console.log(`  ${rel}`);

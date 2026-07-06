@@ -1,0 +1,17 @@
+
+Task: AUDIT ADD. The chunk below has some mentions already marked with
+<TAG>surface</TAG> for tags in: {{TAGS}}. Find entity mentions that appear in
+PLAIN TEXT ONLY — text not inside any existing mark — and should be tagged.
+Use action "add" on every such mention.
+
+Rules for "add":
+- Only tag text that appears as plain characters in the chunk, outside all
+  <TAG>…</TAG> markers. Never set action "add" on text already inside a mark.
+- Never add a surface that is a substring of an already-marked name (e.g. do not
+  add 行成 when <persName>張行成</persName> is present; do not add 太宗 when
+  the same occurrence is already part of a longer marked name).
+- Walk the chunk left to right. Include anaphoric references (行成, 太宗, 世充,
+  高宗, 炫, 劉炫, etc.) when the person or place is clear from context.
+- Prefer add with confidence 0.5–0.7 over omitting a plausible mention.
+
+Use only tags from {{TAGS}}. State the concrete correction only.{{TAG_GUIDE}}

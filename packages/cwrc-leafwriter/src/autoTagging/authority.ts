@@ -28,7 +28,7 @@ export interface AuthorityCandidate {
     description?: string;
     teiTag?: string;
     ana?: string;
-    crosswalk?: { cbdb?: string; wikidata?: string[] };
+    crosswalk?: { cbdb?: string; chgis?: string; dila?: string; wikidata?: string[] };
     pinyin?: string;
     translation?: string;
     /** DILA `note type="disambiguation"` — not the same person as… */

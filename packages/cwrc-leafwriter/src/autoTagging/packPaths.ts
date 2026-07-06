@@ -8,13 +8,18 @@ export type AuthorityPackId =
   | 'cbdb-offices'
   | 'dila-persons'
   | 'dila-places'
+  | 'chgis-places'
+  | 'wikidata-persons-tang'
+  | 'wikidata-persons-ming'
+  | 'wikidata-persons-qing'
+  | 'wikidata-persons-pre-ming'
   | 'ndl-persons'
   | 'ndl-works';
 
 export interface AuthorityPackSpec {
   id: AuthorityPackId;
   label: string;
-  source: 'cbdb' | 'dila' | 'ndl';
+  source: 'cbdb' | 'dila' | 'chgis' | 'wikidata' | 'ndl';
   relativePath: string;
   defaultTag: string;
 }
@@ -56,6 +61,41 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     defaultTag: 'placeName',
   },
   {
+    id: 'chgis-places',
+    label: 'CHGIS historical places',
+    source: 'chgis',
+    relativePath: 'chgis/places.ndjson',
+    defaultTag: 'placeName',
+  },
+  {
+    id: 'wikidata-persons-tang',
+    label: 'Wikidata persons (Tang, zh-hant)',
+    source: 'wikidata',
+    relativePath: 'wikidata/person-zh-hant-tang/persons.ndjson',
+    defaultTag: 'persName',
+  },
+  {
+    id: 'wikidata-persons-ming',
+    label: 'Wikidata persons (Ming, zh-hant)',
+    source: 'wikidata',
+    relativePath: 'wikidata/person-zh-hant-ming/persons.ndjson',
+    defaultTag: 'persName',
+  },
+  {
+    id: 'wikidata-persons-qing',
+    label: 'Wikidata persons (Qing, zh-hant)',
+    source: 'wikidata',
+    relativePath: 'wikidata/person-zh-hant-qing/persons.ndjson',
+    defaultTag: 'persName',
+  },
+  {
+    id: 'wikidata-persons-pre-ming',
+    label: 'Wikidata persons (pre-Ming, zh-hant)',
+    source: 'wikidata',
+    relativePath: 'wikidata/person-zh-hant-pre-ming/persons.ndjson',
+    defaultTag: 'persName',
+  },
+  {
     id: 'ndl-persons',
     label: 'NDL persons',
     source: 'ndl',
@@ -95,4 +135,45 @@ export function packPath(baseFolder: string, packId: AuthorityPackId): string {
 export function packsRoot(baseFolder: string): string {
   const sep = baseFolder.includes('\\') ? '\\' : '/';
   return `${baseFolder.replace(/[/\\]+$/, '')}${sep}${AUTHORITY_PACKS_DIRNAME}`;
+}
+
+/** Display order for authority pack checkboxes (grouped by entity type, not source). */
+export const AUTHORITY_TAG_TYPE_GROUP_ORDER = [
+  'persName',
+  'placeName',
+  'roleName',
+  'title',
+] as const;
+
+export const AUTHORITY_TAG_TYPE_GROUP_LABELS: Record<
+  (typeof AUTHORITY_TAG_TYPE_GROUP_ORDER)[number],
+  string
+> = {
+  persName: 'Persons',
+  placeName: 'Places',
+  roleName: 'Offices / roles',
+  title: 'Works',
+};
+
+export interface AuthorityPackTypeGroup {
+  tag: (typeof AUTHORITY_TAG_TYPE_GROUP_ORDER)[number];
+  label: string;
+  packs: AuthorityPackSpec[];
+}
+
+/** Group visible pack specs by TEI tag type (persName, placeName, …). */
+export function groupAuthorityPacksByTagType(
+  packIds: AuthorityPackId[],
+): AuthorityPackTypeGroup[] {
+  const specs = packIds
+    .map((id) => AUTHORITY_PACKS.find((p) => p.id === id))
+    .filter((p): p is AuthorityPackSpec => !!p);
+  const groups: AuthorityPackTypeGroup[] = [];
+  for (const tag of AUTHORITY_TAG_TYPE_GROUP_ORDER) {
+    const packs = specs.filter((p) => p.defaultTag === tag);
+    if (packs.length > 0) {
+      groups.push({ tag, label: AUTHORITY_TAG_TYPE_GROUP_LABELS[tag], packs });
+    }
+  }
+  return groups;
 }

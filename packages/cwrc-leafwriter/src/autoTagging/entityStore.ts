@@ -147,6 +147,23 @@ export class EntityStore {
     await this.api.ensureDirectory(this.projectLjbDir);
     await this.api.writeFile(this.disambiguationPendingPath, content);
   }
+
+  projectLjbFilePath(relativeName: string): string {
+    return joinPath(this.projectLjbDir, relativeName);
+  }
+
+  async readProjectLjbFile(relativeName: string): Promise<string | null> {
+    const path = this.projectLjbFilePath(relativeName);
+    if (!(await this.api.pathExists(path))) return null;
+    return this.api.readFile(path);
+  }
+
+  async writeProjectLjbFile(relativeName: string, content: string): Promise<void> {
+    await this.api.ensureDirectory(this.projectLjbDir);
+    const path = this.projectLjbFilePath(relativeName);
+    await this.api.writeFile(path, content);
+    await this.api.notifyOwnWrite?.(path);
+  }
 }
 
 export interface DesktopEntityStoreGlobals {

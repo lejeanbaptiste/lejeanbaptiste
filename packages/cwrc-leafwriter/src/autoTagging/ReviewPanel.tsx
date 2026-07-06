@@ -122,20 +122,54 @@ const SuggestionRow = ({
                 </IconButton>
               </Tooltip>
             </>
-          ) : onUndo ? (
-            <Tooltip title="Undo (u)">
-              <IconButton
-                size="small"
-                data-testid={`undo-${suggestion.id}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onUndo();
-                }}
-              >
-                <UndoIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          ) : null}
+          ) : (
+            <>
+              {suggestion.status === 'rejected' && onAccept ? (
+                <Tooltip title="Accept">
+                  <IconButton
+                    size="small"
+                    color="success"
+                    data-testid={`accept-${suggestion.id}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAccept();
+                    }}
+                  >
+                    <CheckIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+              {suggestion.status === 'accepted' && onReject ? (
+                <Tooltip title="Reject">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    data-testid={`reject-${suggestion.id}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onReject();
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+              {onUndo ? (
+                <Tooltip title="Back to pending (u)">
+                  <IconButton
+                    size="small"
+                    data-testid={`undo-${suggestion.id}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onUndo();
+                    }}
+                  >
+                    <UndoIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+            </>
+          )}
         </Box>
       )}
     </Box>
@@ -228,6 +262,11 @@ export const ReviewPanel = ({
     rerender();
   };
 
+  const changeDecision = (suggestion: Suggestion, decision: 'accepted' | 'rejected') => {
+    controller.changeDecision(suggestion, decision);
+    rerender();
+  };
+
   const apply = () => {
     onApply(controller.takeAccepted());
     forceRender();
@@ -244,6 +283,13 @@ export const ReviewPanel = ({
   const rejected = controller.rejectedVisible();
   const current = controller.current();
   const remainingCount = counts.pending + counts.accepted;
+
+  useEffect(() => {
+    if (pending.length === 0) {
+      if (accepted.length > 0) setAcceptedOpen(true);
+      if (rejected.length > 0) setRejectedOpen(true);
+    }
+  }, [pending.length, accepted.length, rejected.length]);
 
   useEffect(() => {
     if (!current || !listRef.current) return;
@@ -314,6 +360,7 @@ export const ReviewPanel = ({
                 key={suggestion.id}
                 suggestion={suggestion}
                 onPreview={() => controller.preview(suggestion)}
+                onReject={() => changeDecision(suggestion, 'rejected')}
                 onUndo={() => undecideItem(suggestion)}
               />
             ))}
@@ -332,6 +379,7 @@ export const ReviewPanel = ({
                 key={suggestion.id}
                 suggestion={suggestion}
                 onPreview={() => controller.preview(suggestion)}
+                onAccept={() => changeDecision(suggestion, 'accepted')}
                 onUndo={() => undecideItem(suggestion)}
               />
             ))}
@@ -378,7 +426,7 @@ export const ReviewPanel = ({
           </Button>
         )}
         <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', alignSelf: 'center' }}>
-          j/k · Enter · Shift+Enter all same · Backspace reject
+          j/k · Enter · Shift+Enter all same · Backspace · Shift+Backspace all same
         </Typography>
       </Box>
     </Box>

@@ -3,11 +3,8 @@ import { AutoTaggingSession } from './integration';
 import {
   autoTaggingDocumentKey,
   inferEastAsianLanguageFromDocument,
-  isAutoTaggingUnlockedForDocument,
-  isDisambiguationUnlockedForDocument,
   isEastAsianDatesMethodAvailable,
   resolveAutoTaggingSourceLanguage,
-  shouldWarnResolveDatesBeforeAutoTag,
 } from './dateWorkflow';
 
 const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI;
@@ -19,25 +16,19 @@ const sanmiaoAvailable = () =>
 
 export interface CalendarWorkflowState {
   calendarOffered: boolean;
-  disambiguationLocked: boolean;
   docKey: string;
   language: string | null;
   ready: boolean;
-  resolveWarning: boolean;
-  tagDatesLocked: boolean;
 }
 
 const defaultState: CalendarWorkflowState = {
   calendarOffered: false,
-  disambiguationLocked: false,
   docKey: 'unknown',
   language: null,
   ready: false,
-  resolveWarning: false,
-  tagDatesLocked: false,
 };
 
-/** Language + sanmiao workflow flags for toolbar buttons. */
+/** Language + sanmiao availability for toolbar buttons. */
 export const useCalendarWorkflow = (): CalendarWorkflowState & { refresh: () => void } => {
   const [state, setState] = useState<CalendarWorkflowState>(defaultState);
 
@@ -60,12 +51,9 @@ export const useCalendarWorkflow = (): CalendarWorkflowState & { refresh: () => 
 
         setState({
           calendarOffered: offered,
-          disambiguationLocked: offered && !isDisambiguationUnlockedForDocument(docKey, lang),
           docKey,
           language: lang,
           ready: true,
-          resolveWarning: shouldWarnResolveDatesBeforeAutoTag(docKey, lang),
-          tagDatesLocked: offered && !isAutoTaggingUnlockedForDocument(docKey, lang),
         });
       } catch {
         setState({ ...defaultState, ready: true });

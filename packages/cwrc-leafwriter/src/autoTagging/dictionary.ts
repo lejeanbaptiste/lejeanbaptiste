@@ -1,4 +1,5 @@
 import { buildDocIndex, createAnchor } from './anchor';
+import { isInsideDateElement } from './dates';
 import { MultiStringMatcher } from './matcher';
 import type { Suggestion, WhitespacePolicy } from './types';
 
@@ -116,6 +117,9 @@ export function dictionaryTag(
   let counter = 0;
 
   for (const { node, search } of index.nodes) {
+    // Never tag entity mentions inside <date> — reserved for sanmiao date workflow.
+    if (isInsideDateElement(node)) continue;
+
     // Ancestor tag names for this node, computed once (not per match).
     const ancestors = ancestorTagNames(node);
 
@@ -145,6 +149,8 @@ export function dictionaryTag(
 /** The set of ancestor element names above a node (computed once per node). */
 function ancestorTagNames(node: Node): Set<string> {
   const names = new Set<string>();
-  for (let el = node.parentElement; el; el = el.parentElement) names.add(el.nodeName);
+  for (let el = node.parentElement; el; el = el.parentElement) {
+    names.add(el.localName || el.nodeName);
+  }
   return names;
 }

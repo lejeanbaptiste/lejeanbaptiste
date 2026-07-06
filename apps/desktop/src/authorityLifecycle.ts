@@ -67,8 +67,18 @@ const PROFILE_SPECS: Record<
   }
 > = {
   chinese: {
-    label: 'Offline Chinese authorities (CBDB + DILA)',
-    packIds: ['cbdb-persons', 'cbdb-places', 'cbdb-offices', 'dila-persons', 'dila-places'],
+    label: 'Offline Chinese authorities (CBDB + DILA + Wikidata)',
+    packIds: [
+      'cbdb-persons',
+      'cbdb-places',
+      'cbdb-offices',
+      'dila-persons',
+      'dila-places',
+      'wikidata-persons-tang',
+      'wikidata-persons-pre-ming',
+      'wikidata-persons-ming',
+      'wikidata-persons-qing',
+    ],
     rawSourceIds: ['cbdb', 'dila'],
     supportsReferenceData: true,
   },
