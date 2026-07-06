@@ -1,6 +1,6 @@
 # Sanmiao schema validation bugs — debugging session log
 
-**Status:** Six bugs fixed and verified; a seventh (validate/initialize race) fixed but not yet confirmed live.
+**Status:** Verified end-to-end (2026-07-06). Sanmiao dates validate in LJB; remaining errors are genuine document/schema-content issues (e.g. `<int>` text content, typos like `<daaate>`).
 **Related:** `docs/sanmiao-dates-schema.md` (design), `docs/sanmiao-ljb-integration.md` (integration)
 
 This log documents a single extended debugging session chasing why sanmiao-tagged
@@ -293,3 +293,171 @@ not yet been re-verified live after this specific fix when this log was written.
   store defaulted to `'central'` even for brand-new projects with no central
   folder configured), `apps/commons/src/desktop/useCommonsUiBridge.ts`
   (offer to scaffold a new entity database when picking an empty root folder).
+
+---
+
+## Phase 2 — Flat merge, validation pipeline, and “542 errors that lied” (2026-07-06)
+
+After Phase 1 (Bugs 1–7 above), the symptom **“542 errors: era/year not allowed in date”**
+kept returning even when `test_project/project/schema/tei_all.rng` on disk was correct.
+This phase added an architectural fix plus a second stack of deployment/cache bugs.
+
+### Architectural fix — flatten at merge time (v4+)
+
+**Problem:** Three systems each interpreted the same wrapper RNG differently:
+
+| Consumer | Merge behaviour |
+|----------|-----------------|
+| `xmllint` | Spec-correct RelaxNG includes → often **passes** |
+| `schemaManager.ts` | Custom merge for tagging / parent lookup |
+| `fetchResource.ts` → validator worker | **Second** custom merge for the checkmark panel |
+
+Bugs 3–5 were all “hand-rolled merge diverged from RelaxNG.” Fixing each merge site
+helped, but the class of bugs could recur whenever a new code path loaded RNG.
+
+**Fix:** `buildSanmiaoMergedSchemaFiles()` now writes a **fully flattened** `tei_all.rng`
+(~1 MB, zero `<include>` tags) via `relaxNgFlatten.ts`. The wrapper (include + date
+override + inlined sanmiao helpers) is an intermediate step only; the on-disk artifact
+is self-contained. `SANMIAO_MERGE_VERSION` tracks regeneration (currently **v5**).
+
+**Verification:** `xmllint`, Salve, `schemaManager`, and the validator worker all read
+the **same bytes**. When they disagree after this, suspect cache/lifecycle — not merge logic.
+
+### Bug 8 — IndexedDB cache: `verifyHash` never awaited
+
+**File:** `packages/cwrc-leafwriter-validator/src/virtualEditor.ts`
+
+```js
+const validCache = cachedSchema?.hash ? verifyHash(url, cachedSchema) : false;
+```
+
+`verifyHash` is async; without `await`, `validCache` is a **Promise object** (always
+truthy). Any IndexedDB entry for a schema id was treated as valid forever — typically
+**stock TEI** from an earlier session — even when the project file was correct v4 flat.
+
+**Fix:** `await verifyHash(...)`; `shouldCache: false` for local `crcao://` project schemas.
+
+This alone turned 542 errors into ~2 (real document issues).
+
+### Bug 9 — Schema reload skipped when schema *id* unchanged
+
+**Files:** `xml2cwrc.ts`, `schemaManager.ts`, `projectOnboarding.ts`
+
+Reopening a document with the same catalog id (`project-tei-all`) skipped `loadSchema()`
+even though the on-disk RNG had changed (wrapper → flat v4). Added **schema revision**
+fingerprint (`ljb-sanmiao-merge vN` marker), reload on revision change, clear validator
+cache after sanmiao merge on project open, exclude `*.tei.rng` from schema auto-discovery
+(those are upstream preservation copies, not the merged schema).
+
+### Bug 10 — Worker/schema lifecycle deadlock and silent “valid”
+
+Several interacting issues in the validator bootstrap:
+
+1. **Deadlock:** `processSchema()` → `sendSchemaToWorkerValidator()` → `loadValidator()`
+   waited for `schemaLoaded`, which only fired after `processSchema()` finished.
+   **Fix:** sync worker at end of `loadSchema()`, before publishing `schemaLoaded`.
+
+2. **Worker spawned too early:** removed eager `loadValidator()` from app boot.
+
+3. **Blob URLs in worker:** main-thread `blob:` URLs are not fetchable from the worker.
+   **Fix:** pass `schemaText` via Comlink; compile with in-memory `StringResourceLoader`.
+
+4. **Invalid URL:** appending `#ljb-sanmiao-merge v4` to `crcao://` broke `new URL()` (space
+   in fragment). **Fix:** separate `schemaRevision` field; use `rng:///schema.rng` when
+   compiling from text.
+
+5. **Empty manifest crash:** Salve returns `manifest: []` when `shouldCache: false`; guarded
+   cache write with `shouldCache && manifest?.[0]?.hash`.
+
+6. **Silent pass:** when worker/schema missing, `validate()` reported `valid: true` with 0
+   errors. **Fix:** `schemaUnavailable: true` + UI message.
+
+7. **Validate/init loop:** `validate()` calling `initialize()` re-fired
+   `workerValidatorLoaded` → infinite refresh. **Fix:** `{ silent: true }` on internal init.
+
+**Debug helper:** `window.__ljbDebugValidator()` in `debugValidator.ts`.
+
+### Bug 11 — Schema content: `<int>` defined as empty-only (v5)
+
+After the pipeline worked, one real schema error remained: **“Text not allowed in `<int>`”.**
+
+The merge had `<int>` as `<empty/>` (empty marker only), but sanmiao and
+`docs/sanmiao-dates-schema.md` treat `int` as the intercalary character (e.g. `<int>閏</int>`).
+Other date parts used `textElementDefine()`; `int` was mistakenly separate.
+
+**Fix (v5):** add `int` to `SANMIAO_DATE_PARTS`; remove the empty-only define.
+
+### Rebuild workflow (easy to forget)
+
+The validator worker is **not** in the commons dev watch loop:
+
+1. `npm run build` in `packages/cwrc-leafwriter-validator`
+2. Copy worker to `apps/commons/public/` (or rebuild commons — CopyPlugin pulls from `dist/`)
+3. **Restart** the dev server / desktop app (in dev, worker may be bundled in `app.js`)
+4. Reopen project so `ensureSanmiaoDatesSchemaMerged` regenerates if merge version bumped
+5. Optionally clear IndexedDB `LEAF-Writer-Validator` once after cache bugs
+
+### Diagnostic techniques (Phase 2 additions)
+
+- **Compare on-disk schema vs what the app uses:** read `tei_all.rng` via
+  `electronAPI.readFile`; grep for `ljb-sanmiao-merge vN`, `ljb.sanmiao.date.parts`,
+  and absence of `<include`. If file is ~1 MB and correct but UI shows 542 errors → cache/lifecycle.
+- **Salve directly on disk file:** same error count as xmllint isolates “schema wrong” from
+  “app wrong”.
+- **`getValidNodesAt` on a known `<date>`:** if `era`/`year` are valid children, grammar is
+  loaded; if not, still on stock TEI.
+- **Fetch served worker bundle** and grep for `await verifyHash`, `schemaText`, etc.
+
+---
+
+## Did we reject the `<include>` solution for the wrong reasons?
+
+**Short answer: mostly no — but we rejected the *wrong* `<include>` pattern, not `<include>` itself.**
+
+RelaxNG has several ways people *wish* they could patch TEI. We tried or discussed three;
+only one is spec-correct, and we still use it:
+
+| Approach | Valid RelaxNG? | Verdict |
+|----------|----------------|---------|
+| `<include><except><define name="date"/></except></include>` | **No** — `<except>` is not a RelaxNG construct | Correctly rejected (Bug 1) |
+| Top-level `<define name="date">` in wrapper *without* override inside include | Partially — needs `combine="override"` or you get duplicate-define errors | Avoided in favour of override-inside-include |
+| **`<include href="tei.rng"><define name="date">…</define></include>`** | **Yes** — official override mechanism | **Still used** in the merge pipeline (wrapper stage) |
+| Second `<include href="ljb-sanmiao-dates.rng"/>` for helpers | Valid RNG, but… | Rejected because **`schemaManager` only resolves the first `<include>`** (Bug 3) — valid reason for LJB, not a RelaxNG limitation |
+| Thin wrapper on disk + runtime merge in app | Valid RNG | **Superseded** by flat-at-merge (v4+) because **three different merge implementations** diverged — architectural reason, not because includes are wrong |
+
+So if “the `<include>` solution” means **override defines nested inside `<include>`**: we did
+**not** reject it; that is exactly how `buildSanmiaoWrapperRng()` works before flattening.
+
+If it means **`<except>` to delete stock `date`**: rejection was **correct** — that syntax
+does not exist in RelaxNG (it looks like XInclude or wishful thinking).
+
+If it means **leaving a multi-include wrapper as the runtime schema**: rejection was **correct
+for this codebase**, because LJB’s schema loader and validator each had incomplete include
+handling. Flattening sidesteps that without abandoning the include-override *authoring* model.
+
+**The deeper lesson:** the painful session was rarely “we picked the wrong RelaxNG pattern.”
+More often:
+
+1. **The on-disk schema was already correct** while the app validated against a stale copy
+   (IndexedDB, worker lifecycle, schema id not changing).
+2. **`xmllint` passed** while in-app code failed, because xmllint and LJB use different merge paths.
+3. **Symptoms looked like schema design failures** (“TEI doesn’t allow `<era>`”) when they were
+   **infrastructure failures** (cache, async bug, worker never re-initialized).
+
+When debugging sanmiao validation in future: **prove which bytes are being compiled** before
+debating RelaxNG structure.
+
+---
+
+## Files changed (Phase 2)
+
+- `apps/desktop/src/relaxNgFlatten.ts` (+ test) — flat merge at install/open
+- `apps/desktop/src/sanmiaoSchemaMerge.ts` — v4 flat output, v5 `<int>` text fix
+- `packages/cwrc-leafwriter/src/js/schema/schemaManager.ts` — revision tracking, worker sync timing
+- `packages/cwrc-leafwriter/src/js/conversion/xml2cwrc.ts` — reload on revision change
+- `packages/cwrc-leafwriter/src/utilities/fetchResource.ts` — skip merge for flat RNG
+- `packages/cwrc-leafwriter-validator/src/virtualEditor.ts` — await verifyHash, schemaText path
+- `packages/cwrc-leafwriter-validator/src/conversion.ts` — StringResourceLoader, manifest guard
+- `packages/cwrc-leafwriter/src/overmind/validator/actions.ts` — validate/init lifecycle, schemaUnavailable
+- `packages/cwrc-leafwriter/src/overmind/validator/debugValidator.ts` — console diagnostics
+- `apps/commons/src/desktop/projectOnboarding.ts`, `resolveDocumentSchemas.ts` — merge + discovery fixes

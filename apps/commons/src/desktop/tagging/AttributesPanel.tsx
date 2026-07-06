@@ -253,7 +253,17 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const lookupAvailable = Boolean(getLookupEntityTypeForTag(tagName));
   const resolvedColors = resolveTagColor(tagColors ?? { version: 1, tags: {} }, tagName);
   const unsetSchemaAttrs = schemaAttributes.filter((attr) => !(attr.name in values));
-  const eastAsianAttrNames = new Set(['dyn_id', 'ruler_id', 'era_id', 'year', 'month', 'day']);
+  const eastAsianAttrNames = new Set([
+    'dyn_id',
+    'ruler_id',
+    'era_id',
+    'year',
+    'month',
+    'day',
+    'sex_year',
+    'gz',
+    'nmd_gz',
+  ]);
   const setAttributeEntries = Object.entries(values).filter(
     ([name]) => !(eastAsianDates && eastAsianAttrNames.has(name)),
   );

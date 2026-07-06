@@ -19,13 +19,10 @@ import {
   autoTaggingDocumentKey,
   crawlDocuments,
   createLlmClientFromSettings,
-  defaultSanmiaoCivForLanguage,
   dictionaryTag,
   entriesFromRows,
   inferEastAsianLanguageFromDocument,
   isAiSuggestReady,
-  isEastAsianDatesMethodAvailable,
-  markDatesPassRan,
   parseDictionaryTable,
   formatAuthorityTagBombNotice,
   persistAuthoritySettings,
@@ -34,6 +31,8 @@ import {
   requiresDatesBeforeOtherTagging,
   resolveAutoTaggingSourceLanguage,
   settingsFromUiState,
+  shouldWarnResolveDatesBeforeAutoTag,
+  shouldWarnTagDatesFirst,
   uiStateFromSettings,
   type AuthorityPackId,
   type DictionaryEntry,
@@ -41,7 +40,6 @@ import {
 } from '../../autoTagging';
 import {
   isJapaneseLanguageCode,
-  languageLabelForCode,
 } from '../../utilities/languageCodes';
 import { AutoTaggingApplyOverlay } from '../../layout/AutoTaggingApplyOverlay';
 import { useActions } from '../../overmind';
@@ -50,7 +48,7 @@ import type { IDialog } from '../type';
 const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
 const AI_TAG_OPTIONS = ['persName', 'placeName'] as const;
 type AiTagOption = (typeof AI_TAG_OPTIONS)[number];
-type DialogStep = 'methods' | 'ai' | 'authority' | 'dates';
+type DialogStep = 'methods' | 'ai' | 'authority';
 type AiMode = 'suggest' | 'audit';
 
 const AUTHORITY_PACK_OPTIONS = [
@@ -92,12 +90,6 @@ const AUTHORITY_YEAR_PRESETS = [
 const AUTHORITY_YEAR_MIN = -500;
 const AUTHORITY_YEAR_MAX = 2000;
 
-const SANMIAO_CIV_OPTIONS = [
-  { id: 'c' as const, label: 'Chinese' },
-  { id: 'j' as const, label: 'Japanese' },
-] as const;
-type SanmiaoCivId = (typeof SANMIAO_CIV_OPTIONS)[number]['id'];
-
 const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI;
 
 /**
@@ -126,32 +118,17 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [authorityYearFilterEnabled, setAuthorityYearFilterEnabled] = useState(true);
   const [authorityYearRange, setAuthorityYearRange] = useState<[number, number]>([25, 220]);
   const [authorityHideUndated, setAuthorityHideUndated] = useState(true);
-  const [dateCiv, setDateCiv] = useState<Record<SanmiaoCivId, boolean>>({
-    c: true,
-    j: false,
-  });
-  const [dateFuzzy, setDateFuzzy] = useState(true);
-  const [datesProgress, setDatesProgress] = useState('');
-  const [datesChunkProgress, setDatesChunkProgress] = useState({ done: 0, total: 0 });
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
   const [otherMethodsUnlocked, setOtherMethodsUnlocked] = useState(false);
+  const [resolveWarning, setResolveWarning] = useState(false);
   const [workflowReady, setWorkflowReady] = useState(false);
-  const [documentKey, setDocumentKey] = useState('unknown');
   const fileInput = useRef<HTMLInputElement>(null);
   const session = useRef<AutoTaggingSession | null>(null);
   const { startAutoTaggingReview } = useActions().ui;
 
   const aiSettings = aiApiSettingsFromDesktop();
   const aiReady = isAiSuggestReady(aiSettings);
-  const sanmiaoAvailable =
-    !!window.electronAPI?.sanmiaoTagDatesBatch ||
-    !!window.electronAPI?.sanmiaoProposeDatesBatch ||
-    !!window.electronAPI?.sanmiaoProposeDates;
   const datesGateActive = requiresDatesBeforeOtherTagging(sourceLanguage);
-  const eastAsianDatesOffered =
-    isDesktopApp() &&
-    sanmiaoAvailable &&
-    isEastAsianDatesMethodAvailable(sourceLanguage);
   const otherMethodsLocked = datesGateActive && !otherMethodsUnlocked;
 
   const getSession = () => {
@@ -166,13 +143,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     );
     const key = autoTaggingDocumentKey(window.writer);
     setSourceLanguage(lang);
-    setDocumentKey(key);
     setOtherMethodsUnlocked(areOtherAutoTaggingMethodsUnlocked(key, doc, lang));
-    const defaultCiv = defaultSanmiaoCivForLanguage(lang);
-    setDateCiv({
-      c: defaultCiv.includes('c'),
-      j: defaultCiv.includes('j'),
-    });
+    setResolveWarning(shouldWarnResolveDatesBeforeAutoTag(key, lang));
     setWorkflowReady(true);
   };
 
@@ -240,14 +212,27 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         const inferred = inferEastAsianLanguageFromDocument(doc);
         const key = autoTaggingDocumentKey(window.writer);
         setSourceLanguage(inferred);
-        setDocumentKey(key);
         setOtherMethodsUnlocked(areOtherAutoTaggingMethodsUnlocked(key, doc, inferred));
+        setResolveWarning(shouldWarnResolveDatesBeforeAutoTag(key, inferred));
       } catch {
         setSourceLanguage(null);
         setOtherMethodsUnlocked(true);
       }
       setWorkflowReady(true);
     });
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onWorkflowChanged = () => {
+      void refreshWorkflowState().catch(() => undefined);
+    };
+    window.addEventListener('desktop:calendar-workflow-changed', onWorkflowChanged);
+    window.addEventListener('desktop:auto-tagging-review-close', onWorkflowChanged);
+    return () => {
+      window.removeEventListener('desktop:calendar-workflow-changed', onWorkflowChanged);
+      window.removeEventListener('desktop:auto-tagging-review-close', onWorkflowChanged);
+    };
   }, [open]);
 
   const visibleAuthorityPackOptions = AUTHORITY_PACK_OPTIONS.filter((opt) =>
@@ -268,7 +253,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
 
   const guardOtherMethods = (): boolean => {
     if (otherMethodsLocked) {
-      setError('Run East Asian dates first.');
+      setError('Tag dates from the Calendar toolbar button first.');
       return false;
     }
     return true;
@@ -406,139 +391,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
-    }
-  };
-
-  const openDatesStep = () => {
-    if (!isDesktopApp()) {
-      setError('East Asian dates are available in the desktop app.');
-      return;
-    }
-    if (!eastAsianDatesOffered) {
-      setError('East Asian dates are only offered for Chinese and Japanese source documents.');
-      return;
-    }
-    if (!sanmiaoAvailable) {
-      setError('Sanmiao is not available. Install the sanmiao Python package and restart the app.');
-      return;
-    }
-    setError(null);
-    setStep('dates');
-  };
-
-  const makeSanmiaoProgress = (
-    setProgress: (label: string) => void,
-    verb: string,
-  ): import('../../autoTagging/dates').DateTagOptions['onProgress'] => (p) => {
-    setDatesChunkProgress({ done: p.done, total: p.total });
-    if (p.phase === 'starting') {
-      setProgress(
-        p.tablesMs != null
-          ? `Tables loaded (${p.tablesMs} ms). ${verb}…`
-          : `${verb}…`,
-      );
-    } else if (p.phase === 'chunk') {
-      const slow = (p.ms ?? 0) > 5000 ? ' — slow' : '';
-      setProgress(
-        p.total <= 1
-          ? `${verb}… ${p.proposalsInChunk ?? 0} items, ${(p.chars ?? 0).toLocaleString()} chars, ${p.ms ?? 0} ms${slow}`
-          : `${verb} ${p.done} / ${p.total}: ${p.proposalsInChunk ?? 0} items, ${(p.chars ?? 0).toLocaleString()} chars, ${p.ms ?? 0} ms${slow}`,
-      );
-    } else if (p.phase === 'mapping') {
-      setProgress(`Mapping… ${p.suggestionsSoFar ?? 0} suggestions so far`);
-    }
-  };
-
-  const runEastAsianDateTag = async () => {
-    const batchTag = window.electronAPI?.sanmiaoTagDatesBatch;
-    if (!batchTag) {
-      setError('Sanmiao tag API is not available. Restart the desktop app.');
-      return;
-    }
-    const civ = SANMIAO_CIV_OPTIONS.filter((o) => dateCiv[o.id]).map((o) => o.id);
-    if (civ.length === 0) {
-      setError('Select at least one calendar tradition.');
-      return;
-    }
-
-    setError(null);
-    setBusy(true);
-    setDatesProgress('Tagging dates…');
-    setDatesChunkProgress({ done: 0, total: 0 });
-    try {
-      const tagFn: import('../../autoTagging/dates').SanmiaoBatchTagFn = (chunks, opts, onChunk) => {
-        const stop = window.electronAPI?.onSanmiaoProgress?.((event) => onChunk?.(event));
-        return batchTag(chunks, opts).finally(() => stop?.());
-      };
-
-      const result = await getSession().runEastAsianDateTag(tagFn, {
-        civ,
-        fuzzy: dateFuzzy,
-        onProgress: makeSanmiaoProgress(setDatesProgress, 'Tagging'),
-      });
-      markDatesPassRan(documentKey);
-      setOtherMethodsUnlocked(true);
-      if (result.suggestions.length === 0) {
-        setError(
-          'No date spans found. Add any missing dates manually, then run Resolve. Other tagging methods are now available.',
-        );
-        return;
-      }
-      beginReview(
-        result.suggestions,
-        'Tag pass only — apply parse markup, add missing dates in the editor, then run Resolve dates.',
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-      setDatesProgress('');
-      setDatesChunkProgress({ done: 0, total: 0 });
-    }
-  };
-
-  const runEastAsianDateResolve = async () => {
-    const batchResolve = window.electronAPI?.sanmiaoResolveDatesBatch;
-    if (!batchResolve) {
-      setError('Sanmiao resolve API is not available. Restart the desktop app.');
-      return;
-    }
-    const civ = SANMIAO_CIV_OPTIONS.filter((o) => dateCiv[o.id]).map((o) => o.id);
-    if (civ.length === 0) {
-      setError('Select at least one calendar tradition.');
-      return;
-    }
-
-    setError(null);
-    setBusy(true);
-    setDatesProgress('Resolving dates…');
-    setDatesChunkProgress({ done: 0, total: 0 });
-    try {
-      const resolveFn: import('../../autoTagging/dates').SanmiaoBatchResolveFn = (
-        dates,
-        opts,
-        onChunk,
-      ) => {
-        const stop = window.electronAPI?.onSanmiaoProgress?.((event) => onChunk?.(event));
-        return batchResolve(dates, opts).finally(() => stop?.());
-      };
-
-      const result = await getSession().runEastAsianDateResolve(resolveFn, {
-        civ,
-        sequential: true,
-        onProgress: makeSanmiaoProgress(setDatesProgress, 'Resolving'),
-      });
-      if (result.suggestions.length === 0) {
-        setError('No <date> elements in the document. Run Tag dates first.');
-        return;
-      }
-      beginReview(result.suggestions);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-      setDatesProgress('');
-      setDatesChunkProgress({ done: 0, total: 0 });
     }
   };
 
@@ -692,16 +544,14 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   return (
     <>
       <AutoTaggingApplyOverlay
-        open={busy && (step === 'ai' || step === 'authority' || step === 'dates')}
+        open={busy && (step === 'ai' || step === 'authority')}
         label={
           step === 'authority'
             ? authorityProgress || 'Loading authority packs…'
-            : step === 'dates'
-              ? datesProgress || 'Running sanmiao…'
-              : aiBusyLabel
+            : aiBusyLabel
         }
-        done={step === 'dates' ? datesChunkProgress.done : step === 'ai' ? aiProgress.done : 0}
-        total={step === 'dates' ? datesChunkProgress.total : step === 'ai' ? aiProgress.total : 0}
+        done={step === 'ai' ? aiProgress.done : 0}
+        total={step === 'ai' ? aiProgress.total : 0}
       />
       <Dialog
         open={open}
@@ -735,28 +585,22 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               ) : (
                 <>
               {otherMethodsLocked && (
-                <Alert severity="info" sx={{ py: 0.5, mb: 0.5, fontSize: 12 }}>
-                  For {languageLabelForCode(sourceLanguage ?? '')} documents, run{' '}
-                  <strong>East Asian dates</strong> before dictionary, authority, or AI tagging.
+                <Alert severity="warning" sx={{ py: 0.5, mb: 0.5, fontSize: 12 }}>
+                  Tag dates from the <strong>Calendar</strong> toolbar button before dictionary,
+                  authority, or AI tagging.
                 </Alert>
               )}
-              {eastAsianDatesOffered &&
-                methodButton(
-                  '1. East Asian dates',
-                  () => openDatesStep(),
-                  !isDesktopApp() || !sanmiaoAvailable,
-                  !isDesktopApp()
-                    ? 'Desktop app only'
-                    : !sanmiaoAvailable
-                      ? 'Install sanmiao Python package'
-                      : undefined,
-                  otherMethodsLocked,
-                )}
+              {resolveWarning && !otherMethodsLocked && (
+                <Alert severity="warning" sx={{ py: 0.5, mb: 0.5, fontSize: 12 }}>
+                  Resolve dates from the Calendar button when ready — calendar context helps
+                  authority and AI tagging.
+                </Alert>
+              )}
               {methodButton(
-                eastAsianDatesOffered ? '2. Tag from a list (CSV, TSV, xlsx, ODS)' : 'Tag from a list (CSV, TSV, xlsx, ODS)',
+                'Tag from a list (CSV, TSV, xlsx, ODS)',
                 () => fileInput.current?.click(),
                 otherMethodsLocked,
-                otherMethodsLocked ? 'Run East Asian dates first' : undefined,
+                otherMethodsLocked ? 'Tag dates from Calendar first' : undefined,
               )}
               <input
                 ref={fileInput}
@@ -771,39 +615,37 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 }}
               />
               {methodButton(
-                eastAsianDatesOffered ? '3. From existing tags in this project' : 'From existing tags in this project',
+                'From existing tags in this project',
                 () => void crawlProject(),
                 otherMethodsLocked,
-                otherMethodsLocked ? 'Run East Asian dates first' : undefined,
+                otherMethodsLocked ? 'Tag dates from Calendar first' : undefined,
               )}
               {methodButton(
-                eastAsianDatesOffered
-                  ? `4. Tag from authority packs (${authorityPackGroupLabel})`
-                  : `Tag from authority packs (${authorityPackGroupLabel})`,
+                `Tag from authority packs (${authorityPackGroupLabel})`,
                 () => openAuthorityStep(),
                 !isDesktopApp() || otherMethodsLocked,
                 otherMethodsLocked
-                  ? 'Run East Asian dates first'
+                  ? 'Tag dates from Calendar first'
                   : !isDesktopApp()
                     ? 'Desktop app only'
                     : undefined,
               )}
               {methodButton(
-                eastAsianDatesOffered ? '5. AI suggest' : 'AI suggest',
+                'AI suggest',
                 () => openAiStep('suggest'),
                 !isDesktopApp() || otherMethodsLocked,
                 otherMethodsLocked
-                  ? 'Run East Asian dates first'
+                  ? 'Tag dates from Calendar first'
                   : !isDesktopApp()
                     ? 'Desktop app only'
                     : undefined,
               )}
               {methodButton(
-                eastAsianDatesOffered ? '6. AI audit' : 'AI audit',
+                'AI audit',
                 () => openAiStep('audit'),
                 !isDesktopApp() || otherMethodsLocked,
                 otherMethodsLocked
-                  ? 'Run East Asian dates first'
+                  ? 'Tag dates from Calendar first'
                   : !isDesktopApp()
                     ? 'Desktop app only'
                     : undefined,
@@ -958,73 +800,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 >
                   Run tag bomb
                 </Button>
-              </Stack>
-            </Stack>
-          ) : step === 'dates' ? (
-            <Stack spacing={1} sx={{ mt: 0.5 }}>
-              <Typography variant="body2" color="text.secondary">
-                Two passes: (1) tag date spans and write parse structure only; (2) after you add
-                any missing dates in the editor, resolve calendar attributes in document order.
-              </Typography>
-              <Stack>
-                {SANMIAO_CIV_OPTIONS.map((opt) => (
-                  <FormControlLabel
-                    key={opt.id}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={dateCiv[opt.id]}
-                        disabled={busy}
-                        onChange={(event) =>
-                          setDateCiv((current) => ({ ...current, [opt.id]: event.target.checked }))
-                        }
-                      />
-                    }
-                    label={opt.label}
-                    sx={{ ml: 0 }}
-                  />
-                ))}
-              </Stack>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={dateFuzzy}
-                    disabled={busy}
-                    onChange={(event) => setDateFuzzy(event.target.checked)}
-                  />
-                }
-                label="Fuzzy character matching (variant forms)"
-                sx={{ ml: 0 }}
-              />
-              <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
-                <Link
-                  component="button"
-                  variant="caption"
-                  underline="hover"
-                  onClick={() => setStep('methods')}
-                  disabled={busy}
-                >
-                  Back
-                </Link>
-                <Stack direction="row" spacing={0.5}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    disabled={busy}
-                    onClick={() => void runEastAsianDateResolve()}
-                  >
-                    Resolve dates
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    disabled={busy}
-                    onClick={() => void runEastAsianDateTag()}
-                  >
-                    Tag dates
-                  </Button>
-                </Stack>
               </Stack>
             </Stack>
           ) : (

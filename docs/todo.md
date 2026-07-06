@@ -3,6 +3,11 @@
 **Plan**
 - [ ] Auto-tagging
 - [ ] disambiguation
+- [ ] Why is resolve dates not in disambiguation?
+
+**Database**
+- [ ] viewer
+- [ ] split and merge + update in XML
 
 **Metadata (requires reading?)**
 - [ ] Make fuller list of project and file metadata, update JSON.

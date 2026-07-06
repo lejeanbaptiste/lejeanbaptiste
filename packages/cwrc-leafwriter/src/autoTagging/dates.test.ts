@@ -118,7 +118,29 @@ describe('dateResolveFromDocument', () => {
     );
     expect(suggestions).toHaveLength(2);
     expect(suggestions[0]!.action).toBe('resolve-date');
+    expect(suggestions[0]!.anchor.surface).toBe('義熙');
+    expect(suggestions[0]!.dateResolution?.displaySurface).toBe('義熙元年');
     expect(suggestions[1]!.action).toBe('resolve-date');
+    expect(suggestions[1]!.anchor.surface).toBe('三');
+    expect(suggestions[1]!.dateResolution?.displaySurface).toBe('三年');
+  });
+
+  it('stores full structured date on displaySurface while anchor matches first child', async () => {
+    const doc = docFromBody(
+      '<p><date cert="low"><dyn>魏</dyn><era>文帝黃初</era><year>二年</year><month>六月</month><day>戊辰</day><lp>晦</lp></date></p>',
+    );
+    const suggestions = await dateResolveFromDocument(doc, policy, async () => [
+      {
+        date_index: 0,
+        date_string: '魏文帝黃初二年六月戊辰晦',
+        status: 'unique',
+        candidates: [{ displayLine: '三國魏文帝黃初二年六月戊辰晦', attrs: { when: '221-08-05' } }],
+        attrs: { when: '221-08-05' },
+      },
+    ]);
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]!.anchor.surface).toBe('魏');
+    expect(suggestions[0]!.dateResolution?.displaySurface).toBe('魏文帝黃初二年六月戊辰晦');
   });
 });
 

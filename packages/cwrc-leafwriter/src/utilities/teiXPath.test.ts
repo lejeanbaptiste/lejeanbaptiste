@@ -1,4 +1,4 @@
-import { getTeiXPathAtOffset } from './teiXPath';
+import { getTeiXPathAtOffset, parseTeiXPathToBreadcrumbSegments } from './teiXPath';
 
 const sample = `<?xml version="1.0"?>
 <TEI>
@@ -26,5 +26,19 @@ describe('getTeiXPathAtOffset', () => {
     const offset = sample.indexOf('First');
     const xpath = getTeiXPathAtOffset(sample, offset);
     expect(xpath).toBe('/TEI/text/body/cb:div/list/item');
+  });
+});
+
+describe('parseTeiXPathToBreadcrumbSegments', () => {
+  test('builds cumulative xpath prefixes for each segment', () => {
+    const segments = parseTeiXPathToBreadcrumbSegments('/TEI/text/body/div/p[4]/date');
+    expect(segments).toEqual([
+      { label: 'TEI', xpath: '/TEI' },
+      { label: 'text', xpath: '/TEI/text' },
+      { label: 'body', xpath: '/TEI/text/body' },
+      { label: 'div', xpath: '/TEI/text/body/div' },
+      { label: 'p[4]', xpath: '/TEI/text/body/div/p[4]' },
+      { label: 'date', xpath: '/TEI/text/body/div/p[4]/date' },
+    ]);
   });
 });

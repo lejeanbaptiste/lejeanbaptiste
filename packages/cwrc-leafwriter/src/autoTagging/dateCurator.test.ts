@@ -99,7 +99,7 @@ describe('finalizeDateSuggestion', () => {
 });
 
 describe('priorAcceptedDates', () => {
-  it('lists only accepted dates before the current row', () => {
+  it('lists accepted dates before the current row', () => {
     const suggestions: Suggestion[] = [
       { ...dateSuggestion({ id: 'date_0' }), status: 'accepted' },
       { ...dateSuggestion({ id: 'date_1', anchor: { ...dateSuggestion().anchor, surface: '三月' } }), status: 'pending' },
@@ -107,5 +107,31 @@ describe('priorAcceptedDates', () => {
     const prior = priorAcceptedDates(suggestions, 'date_1');
     expect(prior).toHaveLength(1);
     expect(prior[0]!.surface).toBe('義熙八年');
+  });
+
+  it('includes still-pending unique dates so attach dropdowns work before top-down accept', () => {
+    const suggestions: Suggestion[] = [
+      { ...dateSuggestion({ id: 'date_0' }), status: 'pending' },
+      {
+        ...dateSuggestion({
+          id: 'date_1',
+          anchor: { ...dateSuggestion().anchor, surface: '四年五月丁丑朔' },
+          dateResolution: { status: 'unresolved', candidates: [] },
+        }),
+        status: 'pending',
+      },
+    ];
+    const prior = priorAcceptedDates(suggestions, 'date_1');
+    expect(prior).toHaveLength(1);
+    expect(prior[0]!.surface).toBe('義熙八年');
+    expect(prior[0]!.label).toContain('412');
+  });
+
+  it('skips rejected prior dates', () => {
+    const suggestions: Suggestion[] = [
+      { ...dateSuggestion({ id: 'date_0' }), status: 'rejected' },
+      { ...dateSuggestion({ id: 'date_1' }), status: 'pending' },
+    ];
+    expect(priorAcceptedDates(suggestions, 'date_1')).toHaveLength(0);
   });
 });

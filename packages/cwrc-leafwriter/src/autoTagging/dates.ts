@@ -378,8 +378,15 @@ export interface BodyDateEntry {
   outerXml: string;
 }
 
+/** Plain-text content of a `<date>` element under the whitespace policy. */
+export function dateElementSurface(el: Element, policy: WhitespacePolicy): string {
+  const raw = el.textContent ?? '';
+  if (policy === 'ignore') return raw.replace(/\s+/g, '');
+  return buildSearchText(raw, policy).text.trim();
+}
+
 /** Walk the TEI body and collect every `<date>` in document order. */
-export function collectBodyDatesInOrder(bodyRoot: Node): BodyDateEntry[] {
+export function collectBodyDatesInOrder(bodyRoot: Node, policy: WhitespacePolicy): BodyDateEntry[] {
   const doc = bodyRoot.ownerDocument ?? (bodyRoot as Document);
   const walker = doc.createTreeWalker(bodyRoot, NodeFilter.SHOW_ELEMENT);
   const entries: BodyDateEntry[] = [];
@@ -389,7 +396,7 @@ export function collectBodyDatesInOrder(bodyRoot: Node): BodyDateEntry[] {
     if (el.localName === 'date') {
       entries.push({
         element: el,
-        surface: (el.textContent ?? '').replace(/\s+/g, ''),
+        surface: dateElementSurface(el, policy),
         outerXml: new XMLSerializer().serializeToString(el),
       });
     }
@@ -411,7 +418,11 @@ function firstTextNodeIn(element: Element): Text | null {
   return null;
 }
 
-/** Anchor the first text inside an existing `<date>` for resolve-date apply. */
+/**
+ * Anchor the first text node inside an existing `<date>` for resolve-date apply.
+ * The anchor surface matches that node (e.g. "魏" inside `<dyn>`) so resolveAnchor
+ * can verify it; use `dateResolution.displaySurface` for the full date string in UI.
+ */
 export function anchorForDateElement(
   dateEl: Element,
   bodyRoot: Node,
@@ -435,7 +446,10 @@ function resolveProposalToSuggestion(
   proposal: SanmiaoProposal,
   anchor: Anchor,
   counter: number,
+  displaySurface?: string,
 ): Suggestion {
+  const dateResolution = toDateResolution(proposal);
+  if (displaySurface) dateResolution.displaySurface = displaySurface;
   return {
     id: `date_resolve_${counter}`,
     source: 'dates',
@@ -446,7 +460,7 @@ function resolveProposalToSuggestion(
     anchor,
     rationale: proposalRationale(proposal),
     status: 'pending',
-    dateResolution: toDateResolution(proposal),
+    dateResolution,
   };
 }
 
@@ -461,7 +475,7 @@ export async function dateResolveFromDocument(
   options: DateTagOptions = {},
 ): Promise<Suggestion[]> {
   const bodyRoot = findTeiBodyRoot(doc);
-  const entries = collectBodyDatesInOrder(bodyRoot);
+  const entries = collectBodyDatesInOrder(bodyRoot, policy);
   if (entries.length === 0) return [];
 
   const { onProgress, ...sanmiaoOpts } = options;
@@ -508,7 +522,10 @@ export async function dateResolveFromDocument(
     if (!proposal) continue;
     const anchor = anchorForDateElement(entry.element, bodyRoot, policy, index);
     if (!anchor) continue;
-    suggestions.push(resolveProposalToSuggestion(proposal, anchor, counter++));
+    const displaySurface = proposal.date_string || entry.surface;
+    suggestions.push(
+      resolveProposalToSuggestion(proposal, anchor, counter++, displaySurface),
+    );
   }
 
   onProgress?.({
