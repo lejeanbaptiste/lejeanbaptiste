@@ -61,13 +61,18 @@ Optional later: flatten parse children to plain text once resolved; keep childre
 
 On **TEI catalog schema install** (TEI All, TEI Lite, Simple Print, jTEI) and on **project open** (existing projects):
 
-1. Upstream TEI `.rng` is saved as `schema/<name>.tei.rng`.
-2. `schema/ljb-sanmiao-dates.rng` is generated with sanmiao parse children + resolution attributes.
-3. `schema/<name>.rng` becomes a thin wrapper that includes both and replaces `<date>`.
+1. Upstream TEI `.rng` is saved as `schema/<name>.tei.rng` (pristine copy for regeneration).
+2. A temporary wrapper is built: one `<include href="…tei.rng">` with a **`<define name="date">` override inside the include** (the spec-correct RelaxNG replacement mechanism — not `<except>`, which is invalid).
+3. Sanmiao helper defines (`ljb.sanmiao.*`) are inlined as siblings of that include in the wrapper.
+4. The wrapper is **flattened** into `schema/<name>.rng` — a single self-contained grammar with **no `<include>` tags** (~1 MB for TEI All). This is what LJB loads and validates against.
+
+`SANMIAO_MERGE_VERSION` (marker `ljb-sanmiao-merge vN` in the schema documentation element) bumps when generated content changes; `ensureSanmiaoDatesSchemaMerged` regenerates outdated projects on open.
 
 **Orlando** and non-TEI schemas are unchanged in v1.
 
 **Trigger:** automatic for TEI catalog installs; `ensureSanmiaoDatesSchema` patches legacy projects on open.
+
+**Debugging:** see `docs/sanmiao-schema-debugging-session.md` for the full bug list and diagnostic techniques.
 
 ---
 

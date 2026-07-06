@@ -2,6 +2,7 @@ import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCalendarWorkflow } from '../../autoTagging';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
 import { EntityType } from '../../types';
@@ -40,8 +41,21 @@ export const EditorToolbar = () => {
   // const { fullscreen } = useAppState().ui;
 
   const { toggleShowTags } = useActions().editor;
-  const { openDialog, showContextMenu, startDisambiguationReview /* , toggleFullscreen */ } =
-    useActions().ui;
+  const { openDialog, showContextMenu } = useActions().ui;
+  const { calendarOffered } = useCalendarWorkflow();
+
+  const openCalendarDialog = useCallback(
+    (notice?: string) => {
+      openDialog({
+        type: 'calendar',
+        props: {
+          id: notice ? `calendar-${Date.now()}` : 'calendar',
+          notice,
+        },
+      });
+    },
+    [openDialog],
+  );
 
   const { entity, spacing } = useTheme();
 
@@ -208,9 +222,18 @@ export const EditorToolbar = () => {
     },
     {
       group: 'ui',
+      hide: isReadonly || !calendarOffered,
+      icon: 'date',
+      onClick: () => openCalendarDialog(),
+      title: 'Calendar',
+      tooltip: 'Tag and resolve East Asian dates (sanmiao)',
+      type: 'iconButton',
+    },
+    {
+      group: 'ui',
       hide: isReadonly,
       icon: 'TagPlus',
-      onClick: () => openDialog({ type: 'autoTagging' }),
+      onClick: () => openDialog({ type: 'autoTagging', props: { id: 'autoTagging' } }),
       title: 'Auto-tagging',
       type: 'iconButton',
     },
@@ -218,7 +241,7 @@ export const EditorToolbar = () => {
       group: 'ui',
       hide: isReadonly,
       icon: 'disambiguate',
-      onClick: () => startDisambiguationReview(),
+      onClick: () => openDialog({ type: 'disambiguation', props: { id: 'disambiguation' } }),
       title: 'Disambiguate',
       type: 'iconButton',
     },

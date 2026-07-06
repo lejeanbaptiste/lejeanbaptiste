@@ -1,7 +1,23 @@
 const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
 
-const matchesTeiTag = (a: string | null, b: string | null) =>
-  !!a && !!b && a.toLowerCase() === b.toLowerCase();
+const localTagName = (tag: string) => (tag.includes(':') ? tag.split(':').pop()! : tag);
+
+export interface TeiXPathSegment {
+  label: string;
+  xpath: string;
+}
+
+export interface TeiSegment {
+  index: number;
+  tag: string;
+}
+
+const matchesTeiTag = (a: string | null, b: string | null) => {
+  if (!a || !b) return false;
+  const wantedLocal = localTagName(b).toLowerCase();
+  const attrLocal = localTagName(a).toLowerCase();
+  return attrLocal === wantedLocal || a.toLowerCase() === b.toLowerCase();
+};
 
 const formatSegment = (tag: string, index: number) =>
   index === 0 ? tag : `${tag}[${index + 1}]`;
@@ -164,6 +180,90 @@ export const getTeiXPathAtOffset = (content: string, offset: number): string | n
   }
 
   return lastXPath ?? xpathForStack();
+};
+
+/** Parse TEI-style xpath segments (1-based indices in xpath become 0-based here). */
+export const parseTeiXPathSegments = (xpath: string): TeiSegment[] =>
+  xpath
+    .replace(/^\/+/, '')
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => {
+      const match = segment.match(/^(?:[\w.-]+:)*([\w.-]+)(?:\[(\d+)\])?$/);
+      if (!match) {
+        const bare = segment.replace(/\[.*\]/, '');
+        return { tag: localTagName(bare), index: 0 };
+      }
+      return {
+        tag: match[1],
+        index: match[2] ? parseInt(match[2], 10) - 1 : 0,
+      };
+    });
+
+/** Split a TEI xpath into clickable breadcrumb segments. */
+export const parseTeiXPathToBreadcrumbSegments = (xpath: string): TeiXPathSegment[] => {
+  const parts = xpath.replace(/^\/+/, '').split('/').filter(Boolean);
+  if (parts.length === 0) return [];
+
+  const segments: TeiXPathSegment[] = [];
+  let cumulative = '';
+  for (const part of parts) {
+    cumulative = `${cumulative}/${part}`;
+    segments.push({ label: part, xpath: cumulative });
+  }
+  return segments;
+};
+
+const tagChildren = (parent: Element, tag: string): Element[] =>
+  Array.from(parent.children).filter(
+    (el): el is Element =>
+      el.nodeType === Node.ELEMENT_NODE && matchesTeiTag(el.getAttribute('_tag'), tag),
+  );
+
+const findRootCandidate = (body: HTMLElement, tag: string, index: number): Element | null => {
+  let candidates = tagChildren(body, tag);
+  if (candidates.length > 0) {
+    return candidates[index] ?? candidates[0] ?? null;
+  }
+
+  const all = Array.from(body.querySelectorAll('*')).filter((el) =>
+    matchesTeiTag(el.getAttribute('_tag'), tag),
+  );
+  if (all.length === 0) return null;
+
+  const depthOf = (el: Element) => {
+    let depth = 0;
+    let node: Element | null = el;
+    while (node && node !== body) {
+      depth += 1;
+      node = node.parentElement;
+    }
+    return depth;
+  };
+
+  const minDepth = Math.min(...all.map(depthOf));
+  candidates = all.filter((el) => depthOf(el) === minDepth);
+  return candidates[index] ?? candidates[0] ?? null;
+};
+
+/** Walk the WYSIWYG editor DOM using TEI-style xpath segments (_tag names). */
+export const findEditorNodeByTeiXPath = (
+  body: HTMLElement,
+  teiXpath: string,
+): Element | null => {
+  const segments = parseTeiXPathSegments(teiXpath);
+  if (segments.length === 0) return null;
+
+  let current = findRootCandidate(body, segments[0].tag, segments[0].index);
+  if (!current) return null;
+
+  for (let i = 1; i < segments.length; i++) {
+    const candidates = tagChildren(current, segments[i].tag);
+    current = candidates[segments[i].index] ?? null;
+    if (!current) return null;
+  }
+
+  return current;
 };
 
 export const getTeiXPathForEditorNode = (node: Node | null | undefined): string => {

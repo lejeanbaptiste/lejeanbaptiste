@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { collectTextNodes, createAnchor } from './anchor';
 import { applySuggestions, revertToSnapshot } from './apply';
+import { anchorForDateElement, findTeiBodyRoot } from './dates';
 import { normalizeDomText } from './normalize';
 import type { Suggestion } from './types';
 
@@ -221,6 +222,36 @@ describe('applySuggestions', () => {
     expect(xml).not.toMatch(/<persName>假人<\/persName>/);
     expect(xml).toContain('<persName>張衡</persName>');
     expect(results.filter((r) => r.outcome === 'applied')).toHaveLength(2);
+  });
+
+  it('applies resolve-date when displaySurface spans child elements but anchor is first child', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><date cert="low"><dyn>魏</dyn><era>文帝黃初</era><year>二年</year></date></p></body></text></TEI>',
+    );
+    const dateEl = doc.getElementsByTagName('date')[0] as Element;
+    const anchor = anchorForDateElement(dateEl, findTeiBodyRoot(doc), 'ignore');
+    expect(anchor?.surface).toBe('魏');
+
+    const suggestion: Suggestion = {
+      id: 'date_resolve_0',
+      source: 'dates',
+      sourceDetail: 'sanmiao-resolve',
+      action: 'resolve-date',
+      tag: 'date',
+      anchor: anchor!,
+      status: 'pending',
+      attributes: { resp: '#ljb-sanmiao', cert: 'high', when: '221-08-05' },
+      dateResolution: {
+        status: 'unique',
+        displaySurface: '魏文帝黃初二年',
+        candidates: [{ displayLine: 'test', attrs: { when: '221-08-05' } }],
+      },
+    };
+
+    const { results, applied } = await applySuggestions(doc, [suggestion], { policy: 'ignore' });
+    expect(applied).toBe(1);
+    expect(results[0]!.outcome).toBe('applied');
+    expect(dateEl.getAttribute('when')).toBe('221-08-05');
   });
 });
 

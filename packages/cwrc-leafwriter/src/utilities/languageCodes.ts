@@ -109,9 +109,16 @@ export const isJapaneseLanguageCode = (code: string | null | undefined): boolean
   return primary === 'ja' || primary === 'jpn';
 };
 
+/** Korean gate for sanmiao (East Asian calendar dates). */
+export const isKoreanLanguageCode = (code: string | null | undefined): boolean => {
+  if (!code) return false;
+  const primary = canonicalLanguageCode(code).split('-')[0].toLowerCase();
+  return primary === 'ko' || primary === 'kor';
+};
+
 /**
- * Projects that should run sanmiao before other auto-tagging (Chinese + Japanese
- * documentary prose). Korean and other languages are out of scope for v1.
+ * Projects that should run sanmiao before other auto-tagging and disambiguation
+ * (Chinese, Japanese, and Korean documentary prose).
  */
 export const isEastAsianCalendarLanguageCode = (code: string | null | undefined): boolean =>
-  isChineseLanguageCode(code) || isJapaneseLanguageCode(code);
+  isChineseLanguageCode(code) || isJapaneseLanguageCode(code) || isKoreanLanguageCode(code);

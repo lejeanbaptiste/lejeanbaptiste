@@ -41,4 +41,5 @@ export * from './authorityOverlap';
 export * from './authoritySettings';
 export * from './dates';
 export * from './dateWorkflow';
+export * from './useCalendarWorkflow';
 export * from './validationHarness';

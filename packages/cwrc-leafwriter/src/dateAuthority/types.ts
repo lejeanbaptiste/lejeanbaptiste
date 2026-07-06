@@ -43,6 +43,12 @@ export interface EastAsianDateValues {
   year: string;
   month: string;
   day: string;
+  /** Sexagenary year index (sex_year). */
+  sexYear: string;
+  /** Sexagenary day index (gz), 1–60; accepts 甲子-style names. */
+  gz: string;
+  /** New-moon sexagenary day index (nmd_gz). */
+  nmdGz: string;
 }
 
 export const EMPTY_EAST_ASIAN_DATE_VALUES: EastAsianDateValues = {
@@ -52,6 +58,9 @@ export const EMPTY_EAST_ASIAN_DATE_VALUES: EastAsianDateValues = {
   year: '',
   month: '',
   day: '',
+  sexYear: '',
+  gz: '',
+  nmdGz: '',
 };
 
 export const EAST_ASIAN_DATE_ATTR_NAMES = [
@@ -61,4 +70,7 @@ export const EAST_ASIAN_DATE_ATTR_NAMES = [
   'year',
   'month',
   'day',
+  'sex_year',
+  'gz',
+  'nmd_gz',
 ] as const;

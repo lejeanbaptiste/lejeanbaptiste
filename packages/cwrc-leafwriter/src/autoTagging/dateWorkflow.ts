@@ -3,6 +3,7 @@ import {
   isChineseLanguageCode,
   isEastAsianCalendarLanguageCode,
   isJapaneseLanguageCode,
+  isKoreanLanguageCode,
   normalizeSourceLanguageCode,
 } from '../utilities/languageCodes';
 
@@ -193,30 +194,90 @@ export function requiresDatesBeforeOtherTagging(language: string | null | undefi
   return isEastAsianCalendarLanguageCode(language);
 }
 
-/** East Asian dates method is offered only for Chinese / Japanese source languages. */
+/** East Asian dates method is offered for Chinese / Japanese / Korean source languages. */
 export function isEastAsianDatesMethodAvailable(language: string | null | undefined): boolean {
   return isEastAsianCalendarLanguageCode(language);
 }
 
+export type SanmiaoCivId = 'c' | 'j' | 'k';
+
+export const SANMIAO_CIV_OPTIONS: ReadonlyArray<{ id: SanmiaoCivId; label: string }> = [
+  { id: 'c', label: 'Chinese' },
+  { id: 'j', label: 'Japanese' },
+  { id: 'k', label: 'Korean' },
+];
+
 /** Default sanmiao `civ` for a project language. */
 export function defaultSanmiaoCivForLanguage(
   language: string | null | undefined,
-): Array<'c' | 'j'> {
+): SanmiaoCivId[] {
   if (isJapaneseLanguageCode(language)) return ['j'];
+  if (isKoreanLanguageCode(language)) return ['k'];
   if (isChineseLanguageCode(language)) return ['c'];
   return ['c'];
 }
 
+export const defaultSanmiaoCivSelection = (
+  language: string | null | undefined,
+): Record<SanmiaoCivId, boolean> => {
+  const defaults = defaultSanmiaoCivForLanguage(language);
+  return {
+    c: defaults.includes('c'),
+    j: defaults.includes('j'),
+    k: defaults.includes('k'),
+  };
+};
+
 /** Body already contains `<date>` markup (informational only — does not unlock the gate). */
 export function documentHasDateMarkup(doc: Document): boolean {
+  return countDocumentDates(doc).tagged > 0;
+}
+
+export interface DocumentDateCounts {
+  resolved: number;
+  tagged: number;
+}
+
+const RESOLVED_DATE_ATTRS = [
+  'when',
+  'year',
+  'month',
+  'day',
+  'era_id',
+  'dyn_id',
+  'ruler_id',
+  'sex_year',
+  'gz',
+  'nmd_gz',
+] as const;
+
+/** True when a `<date>` has sanmiao calendar attributes (not tag-only). */
+export function isDateElementResolved(el: Element): boolean {
+  if (el.localName !== 'date') return false;
+  if (el.getAttribute('when')?.trim()) return true;
+  if (el.getAttribute('cert') === 'high') return true;
+  return RESOLVED_DATE_ATTRS.some((name) => {
+    const value = el.getAttribute(name);
+    return value != null && value.trim() !== '';
+  });
+}
+
+/** Count `<date>` elements in the body and how many have resolved calendar attributes. */
+export function countDocumentDates(doc: Document): DocumentDateCounts {
   const body = findTeiBodyRoot(doc);
+  let tagged = 0;
+  let resolved = 0;
   const walker = doc.createTreeWalker(body, NodeFilter.SHOW_ELEMENT);
   let node = walker.nextNode();
   while (node) {
-    if ((node as Element).localName === 'date') return true;
+    const el = node as Element;
+    if (el.localName === 'date') {
+      tagged += 1;
+      if (isDateElementResolved(el)) resolved += 1;
+    }
     node = walker.nextNode();
   }
-  return false;
+  return { tagged, resolved };
 }
 
 const readDatesPassStore = (): DatesPassStore => {
@@ -244,6 +305,9 @@ const setDatesPassStatus = (docKey: string, status: DatesPassStatus): void => {
   const store = readDatesPassStore();
   store[docKey] = status;
   writeDatesPassStore(store);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('desktop:calendar-workflow-changed'));
+  }
 };
 
 export const markDatesPassRan = (docKey: string): void => setDatesPassStatus(docKey, 'ran');
@@ -262,8 +326,8 @@ export const clearDatesPassForDocument = (docKey: string): void => {
  */
 export function areOtherAutoTaggingMethodsUnlocked(
   docKey: string,
-  _doc: Document,
-  language: string | null | undefined,
+  _doc?: Document | null,
+  language?: string | null | undefined,
 ): boolean {
   if (!requiresDatesBeforeOtherTagging(language)) return true;
   const status = readDatesPassStore()[docKey];
@@ -273,6 +337,59 @@ export function areOtherAutoTaggingMethodsUnlocked(
 export const datesPassStatusForDocument = (
   docKey: string,
 ): DatesPassStatus | undefined => readDatesPassStore()[docKey];
+
+/** True after the user completed the tag-dates workflow step. */
+export function isTagDatesPassComplete(
+  docKey: string,
+  language: string | null | undefined,
+): boolean {
+  if (!requiresDatesBeforeOtherTagging(language)) return true;
+  const status = readDatesPassStore()[docKey];
+  return status === 'ran' || status === 'applied';
+}
+
+/** True after resolve-dates has been applied at least once. */
+export function isResolveDatesPassComplete(
+  docKey: string,
+  language: string | null | undefined,
+): boolean {
+  return isDisambiguationUnlockedForDocument(docKey, language);
+}
+
+/** Warn when the tag-dates step has not been recorded yet. */
+export function shouldWarnTagDatesFirst(
+  docKey: string,
+  language: string | null | undefined,
+): boolean {
+  return requiresDatesBeforeOtherTagging(language) && !isTagDatesPassComplete(docKey, language);
+}
+
+/** True after the tag-dates pass has run (unlocks auto-tagging). */
+export function isAutoTaggingUnlockedForDocument(
+  docKey: string,
+  language: string | null | undefined,
+): boolean {
+  return isTagDatesPassComplete(docKey, language);
+}
+
+/** True after resolve-dates has been applied at least once (unlocks disambiguation). */
+export function isDisambiguationUnlockedForDocument(
+  docKey: string,
+  language: string | null | undefined,
+): boolean {
+  if (!requiresDatesBeforeOtherTagging(language)) return true;
+  return readDatesPassStore()[docKey] === 'applied';
+}
+
+/** Soft reminder: tag pass done but resolve not yet applied. */
+export function shouldWarnResolveDatesBeforeAutoTag(
+  docKey: string,
+  language: string | null | undefined,
+): boolean {
+  if (!requiresDatesBeforeOtherTagging(language)) return false;
+  const status = readDatesPassStore()[docKey];
+  return status === 'ran';
+}
 
 /** Whether this document still needs its first sanmiao pass. */
 export function needsDatesPassFirst(

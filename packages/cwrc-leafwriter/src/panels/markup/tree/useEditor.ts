@@ -37,6 +37,13 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
 
     writer.event('writerKeyup').subscribe(handleWriterKeyup);
 
+    const onViewModeChanged = () => {
+      if (window.writer?.overmindState?.ui?.editorViewMode === 'visual') {
+        setTimeout(() => setUpdatePending(true), 1);
+      }
+    };
+    window.addEventListener('desktop:editor-view-mode-changed', onViewModeChanged);
+
     //? This events were listed in the previous version of the tree view. We may or may not need them.
     // writer.event('entityAdded').subscribe(update);
     // writer.event('entityPasted').subscribe(update);
@@ -55,6 +62,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
       writer.event('massUpdateStarted').unsubscribe(handleMassUpdateStarted);
       writer.event('massUpdateCompleted').unsubscribe(handleMassUpdateCompleted);
       writer.event('writerKeyup').unsubscribe(handleWriterKeyup);
+      window.removeEventListener('desktop:editor-view-mode-changed', onViewModeChanged);
     };
   }, [initialized, enabled, items]);
 

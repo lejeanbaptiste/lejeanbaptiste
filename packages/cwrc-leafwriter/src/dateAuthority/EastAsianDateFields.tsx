@@ -213,7 +213,7 @@ export const EastAsianDateFields = ({
           fullWidth
           label="Month"
           onChange={(event) => patch({ month: event.target.value })}
-          placeholder="optional"
+          placeholder="3, 十八"
           size="small"
           value={values.month}
         />
@@ -225,6 +225,38 @@ export const EastAsianDateFields = ({
           placeholder="optional"
           size="small"
           value={values.day}
+        />
+      </Stack>
+
+      <Stack direction="row" spacing={1}>
+        <TextField
+          disabled={disabled}
+          fullWidth
+          label="Sexagenary year"
+          onChange={(event) => patch({ sexYear: event.target.value })}
+          placeholder="sex_year"
+          size="small"
+          value={values.sexYear}
+        />
+        <TextField
+          disabled={disabled}
+          fullWidth
+          helperText="1–60, or paste 甲子"
+          label="Sexagenary day"
+          onChange={(event) => patch({ gz: event.target.value })}
+          placeholder="gz"
+          size="small"
+          value={values.gz}
+        />
+        <TextField
+          disabled={disabled}
+          fullWidth
+          helperText="1–60, or paste 甲子"
+          label="New-moon gz"
+          onChange={(event) => patch({ nmdGz: event.target.value })}
+          placeholder="nmd_gz"
+          size="small"
+          value={values.nmdGz}
         />
       </Stack>
     </Stack>

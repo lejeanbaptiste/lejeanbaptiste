@@ -441,6 +441,12 @@ export const exitSourceMode = async ({ state, actions }: Context): Promise<boole
   const { sourceOriginalContent, sourceCurrentContent } = state.ui;
 
   if (sourceCurrentContent === sourceOriginalContent) {
+    if (checkWellFormedness(sourceCurrentContent).valid) {
+      // Source-mode save does not refresh the hidden WYSIWYG tree; reload so markup
+      // panel and visual mode match the XML buffer (even when source text unchanged).
+      actions.document.setIsReload(true);
+      actions.document.loadDocumentXML(sourceCurrentContent);
+    }
     actions.ui.setEditorViewMode('visual');
     return true;
   }

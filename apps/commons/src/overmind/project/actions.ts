@@ -976,7 +976,7 @@ export const saveActiveTab = async (
   context: Context,
   { content }: { content: string },
 ): Promise<{ success: boolean; content?: string; error?: string }> => {
-  const { state } = context;
+  const { state, actions } = context;
   if (!window.electronAPI || !state.project.activeTabPath) {
     return { success: false, error: 'No active file' };
   }
@@ -1006,6 +1006,11 @@ export const saveActiveTab = async (
     window.__desktopStoredDocumentXml = stamped;
     window.writer?.overmindActions?.document?.setDocumentXml?.(stamped);
     await ignoreSavedFileChange(filePath);
+
+    if (isSourceEditorMode() && window.writer) {
+      actions.document.setIsReload(true);
+      window.writer.loadDocumentXML(stamped);
+    }
 
     const reindexed = await reindexTranslationOnSave(filePath, stamped);
     if (reindexed) {

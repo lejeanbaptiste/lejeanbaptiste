@@ -1,4 +1,5 @@
 import { buildDocIndex } from './anchor';
+import { dateCuratorDisplaySurface } from './dateCurator';
 import { applySuggestions, assignEntity, markUnresolved as markMentionUnresolved, type BatchResult, type UserRule } from './apply';
 import { withApplyDiagnostics } from './applyDiagnostics';
 import { canContainForAutoTagging } from './schemaContainment';
@@ -587,6 +588,31 @@ export class AutoTaggingSession {
     try {
       const body = editor.getBody();
       const index = buildDocIndex(body, this.policy);
+      const displaySurface = dateCuratorDisplaySurface(suggestion);
+
+      // Prefer full date string (may span element boundaries in XML; flat in editor text).
+      const flatStart = index.text.indexOf(displaySurface);
+      if (flatStart !== -1 && displaySurface.length > 0) {
+        for (let i = 0; i < index.nodes.length; i++) {
+          const nodeStart = index.nodeStart[i]!;
+          const nodeEnd = nodeStart + index.nodes[i]!.search.text.length;
+          if (flatStart >= nodeStart && flatStart < nodeEnd) {
+            const local = flatStart - nodeStart;
+            const { node, search } = index.nodes[i]!;
+            const endFlat = Math.min(flatStart + displaySurface.length, nodeEnd);
+            const rawStart = search.map[local]!;
+            const rawEnd = search.map[endFlat - nodeStart - 1]! + 1;
+            const range = editor.getDoc().createRange();
+            range.setStart(node, rawStart);
+            range.setEnd(node, rawEnd);
+            editor.selection.setRng(range);
+            editor.selection.scrollIntoView?.();
+            (node.parentElement as HTMLElement | null)?.scrollIntoView?.({ block: 'center' });
+            return true;
+          }
+        }
+      }
+
       const { surface, occurrence } = suggestion.anchor;
 
       let seen = 0;

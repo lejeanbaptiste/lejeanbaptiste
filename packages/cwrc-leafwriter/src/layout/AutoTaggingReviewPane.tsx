@@ -114,7 +114,10 @@ export const AutoTaggingReviewPane = () => {
           });
           if (accepted.some((s) => s.source === 'dates' && s.action === 'resolve-date')) {
             markDatesPassApplied(autoTaggingDocumentKey(window.writer));
-          } else if (accepted.some((s) => s.source === 'dates' && s.action === 'add')) {
+          } else if (
+            accepted.some((s) => s.source === 'dates' && s.action === 'add') &&
+            !isDateTagOnlyBatch(suggestions)
+          ) {
             markDatesPassRan(autoTaggingDocumentKey(window.writer));
           }
           setApplied((n) => n + result.applied);
@@ -143,7 +146,7 @@ export const AutoTaggingReviewPane = () => {
         }
       })();
     },
-    [busy, getSession],
+    [busy, getSession, suggestions],
   );
 
   const handleRevert = useCallback(() => {
@@ -186,8 +189,16 @@ export const AutoTaggingReviewPane = () => {
       } catch {
         // logging is best-effort until the editor is ready
       }
+
+      const docKey = autoTaggingDocumentKey(window.writer);
+      if (
+        isDateTagOnlyBatch(suggestions) &&
+        (event.decision === 'accepted' || event.decision === 'rejected')
+      ) {
+        markDatesPassRan(docKey);
+      }
     },
-    [getSession],
+    [getSession, suggestions],
   );
 
   if (!active) return null;

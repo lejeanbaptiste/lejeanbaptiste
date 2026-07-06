@@ -1,6 +1,11 @@
-import type { DateResolution, Suggestion } from './types';
+import type { Suggestion } from './types';
 
 const SANMIAO_RESP = '#ljb-sanmiao';
+
+/** Full date string for curator UI (structured `<date>` spans many text nodes). */
+export function dateCuratorDisplaySurface(suggestion: Suggestion): string {
+  return suggestion.dateResolution?.displaySurface ?? suggestion.anchor.surface;
+}
 
 /** True when every suggestion is a sanmiao resolve pass — use the date curator UI. */
 export function isDateCuratorBatch(suggestions: Suggestion[]): boolean {
@@ -91,7 +96,19 @@ export function finalizeDateSuggestion(
   return suggestion;
 }
 
-/** Accepted dates that appear earlier in the batch (for unresolved-relative context). */
+function priorDateLabel(s: Suggestion): string {
+  const resolution = s.dateResolution;
+  const pick =
+    resolution?.selectedCandidateIndex ??
+    (resolution?.status === 'unique' ? 0 : null);
+  if (pick != null && resolution?.candidates?.[pick]?.displayLine) {
+    return resolution.candidates[pick]!.displayLine;
+  }
+  if (resolution?.candidates?.[0]?.displayLine) return resolution.candidates[0].displayLine;
+  return s.rationale ?? s.anchor.surface;
+}
+
+/** Prior dates in document order that a relative date can attach to (accepted or still pending). */
 export function priorAcceptedDates(
   suggestions: Suggestion[],
   currentId: string,
@@ -102,12 +119,10 @@ export function priorAcceptedDates(
   const prior: Array<{ index: number; surface: string; label: string }> = [];
   for (let i = 0; i < currentIndex; i++) {
     const s = suggestions[i]!;
-    if (s.status !== 'accepted' || s.tag !== 'date') continue;
-    const line =
-      s.dateResolution?.candidates?.[s.dateResolution.selectedCandidateIndex ?? 0]?.displayLine ??
-      s.rationale ??
-      s.anchor.surface;
-    prior.push({ index: i, surface: s.anchor.surface, label: line });
+    if (s.tag !== 'date') continue;
+    if (s.status === 'rejected' || s.status === 'unresolvable') continue;
+    if (!s.dateResolution || s.dateResolution.status === 'tagged') continue;
+    prior.push({ index: i, surface: dateCuratorDisplaySurface(s), label: priorDateLabel(s) });
   }
   return prior;
 }

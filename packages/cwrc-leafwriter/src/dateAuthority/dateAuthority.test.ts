@@ -14,9 +14,25 @@ import {
 describe('dateAuthority values', () => {
   it('normalizes 元年 to year 1', () => {
     expect(normalizeYearInput('元年')).toBe('1');
-    expect(eastAsianValuesToAttributes({ dynId: '', rulerId: '', eraId: '', year: '元年', month: '', day: '' })).toEqual({
+    expect(eastAsianValuesToAttributes({ dynId: '', rulerId: '', eraId: '', year: '元年', month: '', day: '', sexYear: '', gz: '', nmdGz: '' })).toEqual({
       year: '1',
     });
+  });
+
+  it('normalizes Chinese numerals and gz names on write', () => {
+    expect(
+      eastAsianValuesToAttributes({
+        dynId: '',
+        rulerId: '',
+        eraId: '',
+        year: '',
+        month: '十八',
+        day: '',
+        sexYear: '',
+        gz: '甲子',
+        nmdGz: '',
+      }),
+    ).toEqual({ month: '18', gz: '1' });
   });
 
   it('reads sanmiao attrs into picker state', () => {
@@ -26,6 +42,8 @@ describe('dateAuthority values', () => {
         ruler_id: '15305',
         era_id: '505',
         year: '1',
+        gz: '42',
+        nmd_gz: '60',
       }),
     ).toEqual({
       dynId: '119',
@@ -34,16 +52,39 @@ describe('dateAuthority values', () => {
       year: '元年',
       month: '',
       day: '',
+      sexYear: '',
+      gz: '42',
+      nmdGz: '60',
     });
   });
 
   it('requires at least one calendar anchor', () => {
-    expect(hasEastAsianCalendarContext({ dynId: '', rulerId: '', eraId: '', year: '', month: '', day: '' })).toBe(
-      false,
-    );
-    expect(hasEastAsianCalendarContext({ dynId: '119', rulerId: '', eraId: '', year: '', month: '', day: '' })).toBe(
-      true,
-    );
+    expect(
+      hasEastAsianCalendarContext({
+        dynId: '',
+        rulerId: '',
+        eraId: '',
+        year: '',
+        month: '',
+        day: '',
+        sexYear: '',
+        gz: '',
+        nmdGz: '',
+      }),
+    ).toBe(false);
+    expect(
+      hasEastAsianCalendarContext({
+        dynId: '119',
+        rulerId: '',
+        eraId: '',
+        year: '',
+        month: '',
+        day: '',
+        sexYear: '',
+        gz: '',
+        nmdGz: '',
+      }),
+    ).toBe(true);
   });
 });
 

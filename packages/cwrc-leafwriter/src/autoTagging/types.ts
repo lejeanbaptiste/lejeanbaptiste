@@ -74,6 +74,8 @@ export interface DateResolution {
   selectedCandidateIndex?: number;
   /** Prior accepted date in this batch used as sequential context (Phase 2b). */
   attachToDateIndex?: number;
+  /** Full `<date>` text for curator display/focus; anchor.surface stays on the first text node for apply. */
+  displaySurface?: string;
 }
 
 /** A resolved anchor: the concrete text node and raw offsets to act on. */

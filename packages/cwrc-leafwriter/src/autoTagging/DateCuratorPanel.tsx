@@ -28,6 +28,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import {
   canAcceptDateSuggestion,
+  dateCuratorDisplaySurface,
   defaultDateCandidateIndex,
   finalizeDateSuggestion,
   priorAcceptedDates,
@@ -94,6 +95,7 @@ const DateRow = ({
   const dateStatus = resolution?.status ?? 'unique';
   const prior = priorAcceptedDates(batch, suggestion.id);
   const acceptReady = canAcceptDateSuggestion(suggestion, selectedIndex);
+  const displaySurface = dateCuratorDisplaySurface(suggestion);
 
   return (
     <Box
@@ -114,7 +116,7 @@ const DateRow = ({
     >
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
         <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
-          {suggestion.anchor.surface}
+          {displaySurface}
         </Typography>
         <Chip size="small" variant="outlined" label={dateStatusLabel[dateStatus] ?? dateStatus} />
         <Chip
@@ -177,7 +179,7 @@ const DateRow = ({
 
       <Typography variant="caption" color="text.secondary" component="div">
         …{suggestion.anchor.contextBefore}
-        <b>{suggestion.anchor.surface}</b>
+        <b>{displaySurface}</b>
         {suggestion.anchor.contextAfter}…
       </Typography>
 
