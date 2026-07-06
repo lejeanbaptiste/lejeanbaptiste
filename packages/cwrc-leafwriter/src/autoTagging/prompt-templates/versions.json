@@ -1,4 +1,5 @@
 {
   "suggest": "suggest.v3",
-  "audit": "audit.v1"
+  "audit-clean": "audit-clean.v2",
+  "audit-add": "audit-add.v1"
 }

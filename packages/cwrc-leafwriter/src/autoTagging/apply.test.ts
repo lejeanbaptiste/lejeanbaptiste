@@ -128,6 +128,17 @@ describe('applySuggestions', () => {
     expect(results[0]!.outcome).toBe('rule-blocked');
   });
 
+  it('blocks entity tags inside <date>', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><date>義熙元年洛陽</date></p></body></text></TEI>',
+    );
+    const { results } = await applySuggestions(doc, [suggest(doc, '洛陽', 'placeName')], {
+      policy: 'ignore',
+    });
+    expect(results[0]!.outcome).toBe('rule-blocked');
+    expect(serialize(doc)).not.toContain('<placeName>');
+  });
+
   it('marks suggestions whose anchor no longer resolves as unresolvable', async () => {
     const doc = parse(TEI);
     const batch = [suggest(doc, '老君', 'persName')];

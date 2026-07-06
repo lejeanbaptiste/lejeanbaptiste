@@ -271,6 +271,15 @@ export interface ElectronAPI {
   onAuthorityLifecycleProgress?: (
     callback: (progress: AuthorityLifecycleProgress) => void,
   ) => () => void;
+  authorityChgisGet?: () => Promise<import('@src/desktop/authorityChgisTypes').ChgisStatus>;
+  pickChgisArchive?: () => Promise<string | null>;
+  authorityChgisInstallFromArchive?: (
+    archivePath: string,
+  ) => Promise<import('@src/desktop/authorityChgisTypes').ChgisInstallResult>;
+  authorityChgisRemove?: () => Promise<{ ok: boolean; error?: string }>;
+  onAuthorityChgisProgress?: (
+    callback: (progress: import('@src/desktop/authorityChgisTypes').ChgisInstallProgress) => void,
+  ) => () => void;
   sanmiaoProposeDates?: (
     text: string,
     options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
@@ -319,6 +328,7 @@ export interface ElectronAPI {
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
+  signalRendererReady: () => Promise<void>;
   onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (
     options: NativeMessageBoxOptions,

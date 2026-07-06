@@ -3,14 +3,18 @@
 **Plan**
 - [ ] Auto-tagging
 - [ ] disambiguation
-- [ ] Why is resolve dates not in disambiguation?
 
 **Database**
 - [ ] viewer
 - [ ] split and merge + update in XML
 
+**Schema editing**
+
 **Metadata (requires reading?)**
 - [ ] Make fuller list of project and file metadata, update JSON.
+
+**Source import**
+- [ ] Browser extension to import texts.
 
 **Clean-up**
 - [ ] Double clicking contents should not select the node as well (?)

@@ -12,6 +12,7 @@ const FONT_FAMILY_STYLE_ID = 'leafwriter-default-font-families';
 const LATIN_FONT_KEY = 'latinFont';
 const SHOW_RAW_XML_PANEL_KEY = 'showRawXmlPanel';
 const STRIP_CJK_WHITESPACE_KEY = 'stripCjkWhitespace';
+const TEXT_LOCKED_KEY = 'textLocked';
 
 const CJK_FONT_SELECTORS = [
   ':lang(zh)',
@@ -89,6 +90,12 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
 
   const storedStripCjk = effects.editor.api.getFromLocalStorage<boolean>(STRIP_CJK_WHITESPACE_KEY);
   if (storedStripCjk !== null) state.editor.stripCjkWhitespace = storedStripCjk;
+
+  const storedTextLocked = effects.editor.api.getFromLocalStorage<boolean>(TEXT_LOCKED_KEY);
+  if (storedTextLocked !== null) {
+    state.editor.textLocked = storedTextLocked;
+    window.writer.isTextLocked = storedTextLocked;
+  }
 };
 
 export const setAutosave = ({ state }: Context, value?: boolean) => {
@@ -135,6 +142,13 @@ export const setAsianFont = ({ state, effects }: Context, value: string) => {
   state.editor.asianFont = font;
   effects.editor.api.saveToLocalStorage(ASIAN_FONT_KEY, font);
   applyFontFamiliesToEditor(state.editor.latinFont, font);
+};
+
+export const toggleTextLocked = ({ state, effects }: Context, value?: boolean) => {
+  const next = value ?? !state.editor.textLocked;
+  state.editor.textLocked = next;
+  effects.editor.api.saveToLocalStorage(TEXT_LOCKED_KEY, next);
+  if (window.writer) window.writer.isTextLocked = next;
 };
 
 export const toggleShowTags = ({ state }: Context, value?: boolean) => {

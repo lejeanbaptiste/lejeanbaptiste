@@ -647,6 +647,14 @@ export const tinymceWrapperInit = function ({
         body.addEventListener(
           'beforeinput',
           (event: InputEvent) => {
+            if (writer.isTextLocked === true) {
+              const type = event.inputType ?? '';
+              if (type.startsWith('insert') || type.startsWith('delete')) {
+                event.preventDefault();
+              }
+              return;
+            }
+
             if (event.inputType !== 'insertFromPaste') return;
 
             const targetRanges =
@@ -713,6 +721,12 @@ export const tinymceWrapperInit = function ({
         editor.on(
           'paste',
           (event: ClipboardEvent) => {
+            if (writer.isTextLocked === true) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              return;
+            }
+
             const clipboard = event.clipboardData;
             if (!clipboard) return;
 
@@ -1031,6 +1045,34 @@ export const tinymceWrapperInit = function ({
     writer.event('contentChanged').publish();
   };
 
+  const NAVIGATION_KEYS = new Set([
+    'Home',
+    'End',
+    'PageUp',
+    'PageDown',
+    'ArrowUp',
+    'ArrowDown',
+    'ArrowRight',
+    'ArrowLeft',
+    'Tab',
+    'Escape',
+  ]);
+
+  const shouldBlockWhenTextLocked = (event: KeyboardEvent): boolean => {
+    if (writer.isTextLocked !== true) return false;
+    if (event.isComposing) return false;
+    if (NAVIGATION_KEYS.has(event.code)) return false;
+
+    const mod = tinymce.isMac ? event.metaKey : event.ctrlKey;
+    if (mod) {
+      const key = event.key.toLowerCase();
+      if (key === 'a' || key === 'f' || key === '.') return false;
+      return true;
+    }
+
+    return true;
+  };
+
   const onKeyDownHandler = (event: KeyboardEvent) => {
     if (!writer.editor) return;
     // if (writer.isReadOnly === true) return
@@ -1056,7 +1098,8 @@ export const tinymceWrapperInit = function ({
       event.shiftKey &&
       (event.code === 'Backspace' || event.code === 'Delete') &&
       !event.ctrlKey && !event.metaKey && !event.altKey &&
-      writer.isReadOnly !== true
+      writer.isReadOnly !== true &&
+      writer.isTextLocked !== true
     ) {
       const node = writer.editor.selection.getNode();
       const tagEl = isElement(node) ? node.closest('[_tag]') : null;
@@ -1089,7 +1132,8 @@ export const tinymceWrapperInit = function ({
       ((event.code === 'Delete' && currentBoundarySide === 'before') ||
         (event.code === 'Backspace' && currentBoundarySide === 'after')) &&
       !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
-      writer.isReadOnly !== true
+      writer.isReadOnly !== true &&
+      writer.isTextLocked !== true
     ) {
       const id = currentBoundaryElement.getAttribute('id');
       if (id) {
@@ -1120,6 +1164,12 @@ export const tinymceWrapperInit = function ({
     const enterSuppressed = isEnter && Date.now() < suppressUntil;
     const taggingHandled = !enterSuppressed && Boolean(desktopTagging?.handleEditorKeyDown(event));
     if (taggingHandled) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    if (shouldBlockWhenTextLocked(event)) {
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -1159,6 +1209,7 @@ export const tinymceWrapperInit = function ({
     }
 
     if (writer.isReadOnly === true) return;
+    if (writer.isTextLocked === true) return;
 
     // update current entity
     const entityId = writer.entitiesManager.getCurrentEntity();

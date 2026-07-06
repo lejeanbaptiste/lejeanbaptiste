@@ -1,7 +1,7 @@
 import { applySuggestions, type ApplyOptions } from './apply';
 import type { AuthorityCandidate } from './authority';
 import { teiTagForCandidate } from './authority';
-import { canonicalEntityKey, collapseLinkedCandidates } from './authorityOverlap';
+import { collapseLinkedCandidates, mergeCandidateIntoLookupList } from './authorityOverlap';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
 import { addEntity, ENTITY_KINDS, findEntity, LJB_AUTOTAG_RESP } from './entities';
 import { rationaleForCandidates } from './packLoader';
@@ -38,6 +38,30 @@ export interface AuthoritySeedIndex {
 
 const seedKeyOf = (tag: string, surface: string) => `${tag}\t${surface}`;
 
+function dedupeDictionaryEntries(entries: DictionaryEntry[]): DictionaryEntry[] {
+  const seen = new Map<string, DictionaryEntry>();
+  for (const entry of entries) {
+    const key = seedKeyOf(entry.tag, entry.string);
+    if (!seen.has(key)) seen.set(key, entry);
+  }
+  return [...seen.values()];
+}
+
+function dedupeSeedMatches(matches: SeedMatch[]): SeedMatch[] {
+  const seen = new Map<string, SeedMatch>();
+  for (const match of matches) {
+    const anchor = match.suggestion.anchor;
+    const key = `${match.suggestion.tag}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offsetStart}`;
+    const prior = seen.get(key);
+    if (!prior) {
+      seen.set(key, match);
+      continue;
+    }
+    prior.candidates = collapseLinkedCandidates([...prior.candidates, ...match.candidates]);
+  }
+  return [...seen.values()];
+}
+
 export function createAuthoritySeedIndex(): AuthoritySeedIndex {
   return { entries: [], lookup: new Map() };
 }
@@ -53,9 +77,7 @@ export function addCandidateToSeedIndex(
     const key = seedKeyOf(tag, surface);
     const list = index.lookup.get(key);
     if (list) {
-      if (!list.some((c) => canonicalEntityKey(c) === canonicalEntityKey(candidate))) {
-        list.push(candidate);
-      }
+      mergeCandidateIntoLookupList(list, candidate);
     } else {
       index.lookup.set(key, [candidate]);
     }
@@ -67,13 +89,19 @@ export function seedSuggestionsFromIndex(
   index: AuthoritySeedIndex,
   policy: WhitespacePolicy,
 ): SeedMatch[] {
-  const suggestions = dictionaryTag(doc, index.entries, policy, 'authority');
-  return suggestions.map((suggestion) => ({
+  const suggestions = dictionaryTag(
+    doc,
+    dedupeDictionaryEntries(index.entries),
+    policy,
+    'authority',
+  );
+  const matches = suggestions.map((suggestion) => ({
     suggestion,
     candidates: collapseLinkedCandidates(
       index.lookup.get(seedKeyOf(suggestion.tag, suggestion.anchor.surface)) ?? [],
     ),
   }));
+  return dedupeSeedMatches(matches);
 }
 
 /**

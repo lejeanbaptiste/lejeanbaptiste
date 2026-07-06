@@ -149,9 +149,9 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 
 **Done when:** with reference data installed, selecting a CBDB person in disambiguation shows posting/dates not present in NDJSON; works offline.
 
-## Phase H — CHGIS (deferred)
+## Phase H — CHGIS
 
-Historical place pack + **local-only** delivery (Dataverse EULA — no GitLab redistribution). See lifecycle spec § CHGIS. Compile track in `authority extraction` when CBDB+DILA pipeline is stable.
+Historical place pack + **local-only** delivery (Dataverse EULA — no GitLab redistribution). Compile track in `authority extraction` (`chgis/compile.mjs`); LJB **Settings → Authorities → Install from download…** (`authorityChgis.ts`).
 
 ## Deferred / future
 

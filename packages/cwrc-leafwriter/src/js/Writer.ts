@@ -63,6 +63,8 @@ class Writer extends EventManager {
   isInitialized = false; // is the editor initialized
   isDocLoaded = false; // has a doc been loaded
   isReadOnly = false; // is the editor in readonly mode
+  /** WYSIWYG text entry/delete/paste blocked; tagging shortcuts still work. */
+  isTextLocked = false;
   isAnnotator = false; // is the editor in annotate (entities) only mode
 
   mode: number = this.XMLRDF; // editor mode

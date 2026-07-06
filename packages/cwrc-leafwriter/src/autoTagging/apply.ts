@@ -1,4 +1,5 @@
 import { resolveAnchor } from './anchor';
+import { isEntityTagForbiddenInDate, isInsideDateElement } from './dates';
 import type { Suggestion, SuggestionAction, WhitespacePolicy } from './types';
 
 export type ApplyOutcome =
@@ -142,6 +143,9 @@ function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions):
   if (blockedByUserRule(parent, suggestion.tag, options)) {
     return { suggestion, outcome: 'rule-blocked' };
   }
+  if (isEntityTagForbiddenInDate(suggestion.tag) && isInsideDateElement(resolved.node)) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
 
   const element = wrapRange(doc, resolved.node, resolved.start, resolved.end, suggestion);
   if (suggestion.dateResolution?.parseXml) {
@@ -202,6 +206,9 @@ function applyRetag(doc: Document, suggestion: Suggestion, options: ApplyOptions
   if (blockedByUserRule(parent, suggestion.tag, options)) {
     return { suggestion, outcome: 'rule-blocked' };
   }
+  if (isEntityTagForbiddenInDate(suggestion.tag) && isInsideDateElement(resolved.node)) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
 
   const element = retagElement(doc, wrapper, suggestion.tag);
   return { suggestion, outcome: 'applied', element };
@@ -214,6 +221,10 @@ function applyRedrawBoundary(
 ): ApplyResult {
   const resolved = resolveAnchor(doc, suggestion.anchor, options.policy);
   if (!resolved) return { suggestion, outcome: 'unresolvable' };
+
+  if (isEntityTagForbiddenInDate(suggestion.tag) && isInsideDateElement(resolved.node)) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
 
   const wrapper = findTagWrapper(resolved.node, suggestion.tag);
   if (!wrapper) return { suggestion, outcome: 'unresolvable' };
@@ -232,6 +243,9 @@ function applyRedrawBoundary(
     return { suggestion, outcome: 'schema-blocked' };
   }
   if (blockedByUserRule(insertParent, suggestion.tag, options)) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
+  if (isEntityTagForbiddenInDate(suggestion.tag) && isInsideDateElement(reResolved.node)) {
     return { suggestion, outcome: 'rule-blocked' };
   }
 
@@ -271,6 +285,7 @@ const ENTITY_TAGS = new Set([
   'persName',
   'placeName',
   'orgName',
+  'org',
   'geogName',
   'name',
   'roleName',
@@ -278,7 +293,6 @@ const ENTITY_TAGS = new Set([
   'date',
 ]);
 
-/** Innermost ancestor entity tag that is not the target tag (for retag). */
 function findWrongTagWrapper(node: Text, targetTag: string): Element | null {
   for (let el: Element | null = node.parentElement; el; el = el.parentElement) {
     if (el.nodeName === targetTag) return null;

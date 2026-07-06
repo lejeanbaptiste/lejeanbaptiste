@@ -15,6 +15,7 @@ export const DEFAULT_AUTHORITY_PACK_SELECTION: Record<AuthorityPackId, boolean> 
   'cbdb-offices': false,
   'dila-persons': true,
   'dila-places': false,
+  'chgis-places': false,
   'ndl-persons': false,
   'ndl-works': false,
 };

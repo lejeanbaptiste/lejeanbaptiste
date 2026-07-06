@@ -145,6 +145,47 @@ export const ProjectEditor = () => {
     markTabDirty(contentHasChanged);
   }, [contentHasChanged, markTabDirty]);
 
+  // Safety net: when a docked review closes, collapse its mount even if the
+  // portaled pane missed a layout effect (race on fast close / tab switch).
+  useEffect(() => {
+    if (!isDesktop()) return;
+
+    const collapseMount = (id: string) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = 'none';
+      el.style.width = '0';
+      el.style.minWidth = '0';
+      el.style.maxWidth = '0';
+      el.style.flex = '0 0 0px';
+    };
+
+    const relayout = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.writer?.layoutManager?.resizeAll?.();
+          window.writer?.layoutManager?.resizeEditor?.();
+        });
+      });
+    };
+
+    const onAutoTagClose = () => {
+      collapseMount('desktop-panel-auto-tagging');
+      relayout();
+    };
+    const onDisambigClose = () => {
+      collapseMount('desktop-panel-disambiguation');
+      relayout();
+    };
+
+    window.addEventListener('desktop:auto-tagging-review-close', onAutoTagClose);
+    window.addEventListener('desktop:disambiguation-review-close', onDisambigClose);
+    return () => {
+      window.removeEventListener('desktop:auto-tagging-review-close', onAutoTagClose);
+      window.removeEventListener('desktop:disambiguation-review-close', onDisambigClose);
+    };
+  }, []);
+
   return (
     <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
       <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />

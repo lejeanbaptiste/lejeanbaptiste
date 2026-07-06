@@ -86,4 +86,18 @@ describe('crawlEntities', () => {
     const xml = new XMLSerializer().serializeToString(doc);
     expect(xml).toContain('又見<persName>上陽子</persName>');
   });
+
+  it('ignores entity tags inside <date> so they are not propagated', () => {
+    const doc = parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><p>
+        <date when="618"><placeName>洛陽</placeName></date>
+        又到洛陽。
+      </p></TEI>`,
+    );
+    const entries = crawlEntities(doc, 'ignore');
+    expect(entries).toEqual([{ string: '洛陽', tag: 'placeName' }]);
+    const suggestions = dictionaryTag(doc, entries, 'ignore');
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]!.anchor.contextBefore).toContain('又到');
+  });
 });

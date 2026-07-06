@@ -32,6 +32,7 @@ import {
 import { translationFilePathFor } from '@src/desktop/translationFileNaming';
 import { reindexTranslationOnSave } from '@src/desktop/translationEntry';
 import { clearWriterSession, resetDesktopEditorSession } from '@src/desktop/clearWriterSession';
+import { filterVisualCursorPositions } from '../../../../../packages/cwrc-leafwriter/src/utilities/cursorPositionFilter';
 import {
   DESKTOP_LEFT_PANEL_EVENT,
   type DesktopLeftPanelShowDetail,
@@ -381,6 +382,8 @@ const loadProjectBundle = async (context: Context, bundle: ProjectBundle) => {
     registerDesktopSchemas([...getEnabledCatalogSchemas(), ...state.project.projectSchemas]);
   }
 
+  window.writer?.overmindActions?.ui?.resetSourceEditor?.();
+
   if (isDesktop()) {
     void warmMetadataDialogStateCache(bundle, 'edition');
     void maybeCheckSchemaUpdateOnOpen(bundle.projectFilePath, {
@@ -464,7 +467,10 @@ export const restoreLastProject = async (context: Context) => {
     }
 
     await loadProjectBundle(context, onboarded);
-    context.state.project.cursorPositions = session?.cursorPositions ?? {};
+    context.state.project.cursorPositions = filterVisualCursorPositions(
+      session?.cursorPositions ?? {},
+    );
+    window.writer?.overmindActions?.ui?.resetSourceEditor?.();
 
     const openFilePaths = session?.openFilePaths ?? [];
     for (const filePath of openFilePaths) {
@@ -1007,9 +1013,8 @@ export const saveActiveTab = async (
     window.writer?.overmindActions?.document?.setDocumentXml?.(stamped);
     await ignoreSavedFileChange(filePath);
 
-    if (isSourceEditorMode() && window.writer) {
-      actions.document.setIsReload(true);
-      window.writer.loadDocumentXML(stamped);
+    if (isSourceEditorMode()) {
+      pushContentToEditor(stamped);
     }
 
     const reindexed = await reindexTranslationOnSave(filePath, stamped);

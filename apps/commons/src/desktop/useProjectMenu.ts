@@ -51,7 +51,6 @@ export const useProjectMenu = () => {
     importDocuments,
     markTabDirty,
     newFile,
-    openProject,
     promptCloseDirtyTab,
     refreshProjectSchemaConfig,
     saveActiveTab,
@@ -170,11 +169,6 @@ export const useProjectMenu = () => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
 
     return window.electronAPI.onAppMenuAction((action) => {
-      if (action === 'open-project') {
-        void openProject();
-        return;
-      }
-
       if (action === 'new-file') {
         void newFile();
         return;
@@ -269,7 +263,6 @@ export const useProjectMenu = () => {
     leafWriter,
     newFile,
     notifyViaSnackbar,
-    openProject,
     projectFilePath,
     closeCurrentTab,
     refreshProjectSchemaConfig,

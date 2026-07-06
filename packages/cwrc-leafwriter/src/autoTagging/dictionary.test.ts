@@ -99,4 +99,14 @@ describe('dictionaryTag', () => {
     expect(suggestions).toHaveLength(1);
     expect(suggestions[0]!.anchor.contextAfter.startsWith('匹配')).toBe(true);
   });
+
+  it('skips text inside <date> elements', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>洛陽 outside <date>洛陽 inside</date></p></body></text></TEI>',
+    );
+    const suggestions = dictionaryTag(doc, [{ string: '洛陽', tag: 'placeName' }], 'ignore');
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]!.anchor.surface).toBe('洛陽');
+    expect(suggestions[0]!.anchor.contextBefore).toContain('outside');
+  });
 });

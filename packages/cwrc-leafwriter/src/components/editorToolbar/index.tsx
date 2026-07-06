@@ -37,10 +37,10 @@ export interface MenuItem extends Item {
 export const EditorToolbar = () => {
   const { t } = useTranslation();
   const { schemaId } = useAppState().document;
-  const { isReadonly, showTags } = useAppState().editor;
+  const { isReadonly, showTags, textLocked } = useAppState().editor;
   // const { fullscreen } = useAppState().ui;
 
-  const { toggleShowTags } = useActions().editor;
+  const { toggleShowTags, toggleTextLocked } = useActions().editor;
   const { openDialog, showContextMenu } = useActions().ui;
   const { calendarOffered } = useCalendarWorkflow();
 
@@ -72,7 +72,21 @@ export const EditorToolbar = () => {
   const items: (MenuItem | Item)[] = [
     {
       group: 'action',
-      hide: isReadonly,
+      hide: isReadonly || !isDesktopApp(),
+      icon: textLocked ? 'lock' : 'lockOpen',
+      onClick: () => toggleTextLocked(),
+      selected: textLocked,
+      title: textLocked
+        ? t('LW.editorToolbar.Unlock Text')
+        : t('LW.editorToolbar.Lock Text'),
+      tooltip: textLocked
+        ? t('LW.editorToolbar.Unlock Text tooltip')
+        : t('LW.editorToolbar.Lock Text tooltip'),
+      type: 'toggle',
+    },
+    {
+      group: 'action',
+      hide: isReadonly || isDesktopApp(),
       icon: 'insertTag',
       onClick: () => {
         if (!container.current) return;
@@ -256,9 +270,10 @@ export const EditorToolbar = () => {
     //   title: t('LW.editorToolbar.Validate'),
     //   type: 'iconButton',
     // },
-    { group: 'ui', type: 'divider', hide: isReadonly },
+    { group: 'ui', type: 'divider', hide: isReadonly || isDesktopApp() },
     {
       group: 'ui',
+      hide: isReadonly || isDesktopApp(),
       icon: 'settings',
       onClick: () => openDialog({ type: 'settings' }),
       title: t('LW.editorToolbar.Settings'),
@@ -266,6 +281,7 @@ export const EditorToolbar = () => {
     },
     {
       group: 'ui',
+      hide: isDesktopApp(),
       icon: 'documentation',
       onClick: () => {
         window.open('https://www.leaf-vre.org/docs/documentation/leaf-writer-documentation');

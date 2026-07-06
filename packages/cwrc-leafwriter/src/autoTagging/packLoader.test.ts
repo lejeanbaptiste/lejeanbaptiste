@@ -45,6 +45,22 @@ describe('candidateIntersectsYearRange', () => {
     ).toBe(false);
   });
 
+  it('always includes undated DILA places even when hideUndated is true', () => {
+    expect(
+      candidateIntersectsYearRange(
+        person({
+          source: 'DILA',
+          authorityId: 'PL1',
+          kind: 'place',
+          primaryName: '襄陽',
+          searchStrings: ['襄陽'],
+          metadata: { description: '襄陽 (襄城區)' },
+        }),
+        { start: 25, end: 220, hideUndated: true },
+      ),
+    ).toBe(true);
+  });
+
   it('checks interval overlap', () => {
     expect(
       candidateIntersectsYearRange(person(), { start: 1100, end: 1200 }),

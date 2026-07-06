@@ -4,7 +4,8 @@
  * the version string is part of the LLM cache key (see llmCache.ts).
  */
 
-import auditSystemTemplate from './prompt-templates/audit.system.txt';
+import auditAddSystemTemplate from './prompt-templates/audit-add.system.txt';
+import auditCleanSystemTemplate from './prompt-templates/audit-clean.system.txt';
 import preambleTemplate from './prompt-templates/preamble.txt';
 import suggestSystemTemplate from './prompt-templates/suggest.system.txt';
 import tagDefinitions from './prompt-templates/tag-definitions.json';
@@ -12,7 +13,10 @@ import userWrapperTemplate from './prompt-templates/user.wrapper.txt';
 import versions from './prompt-templates/versions.json';
 
 export const SUGGEST_PROMPT_VERSION = versions.suggest;
-export const AUDIT_PROMPT_VERSION = versions.audit;
+export const AUDIT_CLEAN_PROMPT_VERSION = versions['audit-clean'];
+export const AUDIT_ADD_PROMPT_VERSION = versions['audit-add'];
+/** @deprecated Combined audit — use clean + add passes instead. */
+export const AUDIT_PROMPT_VERSION = AUDIT_CLEAN_PROMPT_VERSION;
 
 const TAG_DEFINITIONS: Record<string, string> = tagDefinitions;
 
@@ -34,9 +38,12 @@ export function buildSuggestPrompt(params: {
   chunkText: string;
   before: string;
   after: string;
+  /** Override shipped suggest.system.txt task body (preamble and tag guide stay locked). */
+  suggestTaskText?: string;
 }): { system: string; user: string } {
   const tagGuide = buildSuggestTagGuide(params.tags);
-  const system = `${preambleTemplate}${fillTemplate(suggestSystemTemplate, {
+  const taskTemplate = params.suggestTaskText ?? suggestSystemTemplate;
+  const system = `${preambleTemplate}${fillTemplate(taskTemplate, {
     TAGS: params.tags.join(', '),
     TAG_GUIDE: tagGuide,
   })}`;
@@ -50,21 +57,29 @@ export function buildSuggestPrompt(params: {
   return { system, user };
 }
 
-/**
- * Audit operates on a chunk that already carries tags (rendered as inline
- * markers below) and proposes corrections. Action vocabulary mirrors the
- * shared Suggestion type: keep (no suggestion emitted), add (missed
- * mention), remove (false positive), retag (wrong tag name), or
- * redraw-boundary (right idea, wrong span).
- */
-export function buildAuditPrompt(params: {
-  tags: string[];
-  taggedChunkText: string;
-  before: string;
-  after: string;
-}): { system: string; user: string } {
-  const system = `${preambleTemplate}${fillTemplate(auditSystemTemplate, {
+export function buildAuditTagGuide(tags: string[]): string {
+  const lines = tags
+    .map((tag) => TAG_DEFINITIONS[tag])
+    .filter((line): line is string => Boolean(line));
+  if (lines.length === 0) return '';
+  return `\n\nTagging guide (classical Chinese biography):\n${lines.map((l) => `- ${l}`).join('\n')}`;
+}
+
+function buildTaggedChunkPrompt(
+  systemTemplate: string,
+  params: {
+    tags: string[];
+    taggedChunkText: string;
+    before: string;
+    after: string;
+    taskText?: string;
+  },
+): { system: string; user: string } {
+  const tagGuide = buildAuditTagGuide(params.tags);
+  const taskTemplate = params.taskText ?? systemTemplate;
+  const system = `${preambleTemplate}${fillTemplate(taskTemplate, {
     TAGS: params.tags.join(', '),
+    TAG_GUIDE: tagGuide,
   })}`;
 
   const user = fillTemplate(userWrapperTemplate, {
@@ -74,6 +89,31 @@ export function buildAuditPrompt(params: {
   });
 
   return { system, user };
+}
+
+/** Fix/remove/retag/redraw existing marks only — no additions. */
+export function buildAuditCleanPrompt(params: {
+  tags: string[];
+  taggedChunkText: string;
+  before: string;
+  after: string;
+  /** Override shipped audit-clean.system.txt task body. */
+  auditCleanTaskText?: string;
+}): { system: string; user: string } {
+  return buildTaggedChunkPrompt(auditCleanSystemTemplate, {
+    ...params,
+    taskText: params.auditCleanTaskText,
+  });
+}
+
+/** Find missed mentions in plain text only — add action only. */
+export function buildAuditAddPrompt(params: {
+  tags: string[];
+  taggedChunkText: string;
+  before: string;
+  after: string;
+}): { system: string; user: string } {
+  return buildTaggedChunkPrompt(auditAddSystemTemplate, params);
 }
 
 /** JSON schema shared by suggest/audit responses — `action` defaults are enforced by each producer, not the schema. */

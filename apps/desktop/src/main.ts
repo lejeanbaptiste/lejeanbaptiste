@@ -58,6 +58,11 @@ import {
   runAuthorityLifecyclePipeline,
   setAuthorityLifecycleEnabled,
 } from './authorityLifecycle';
+import {
+  getChgisStatus,
+  installChgisFromArchive,
+  removeChgisData,
+} from './authorityChgis';
 import { loadOrCreateProject, loadProjectFile, writeProjectConfig } from './projectFile';
 import mammoth from 'mammoth';
 import { extractOdtText } from './odtText';
@@ -631,6 +636,68 @@ const sendMenuAction = (action: string) => {
   mainWindow?.webContents.send('app:menu-action', action);
 };
 
+const isMainWindowLive = (): boolean =>
+  mainWindow !== null && !mainWindow.isDestroyed();
+
+const waitForMainWindowLoad = (window: BrowserWindow): Promise<void> =>
+  new Promise((resolve) => {
+    if (window.webContents.isLoading()) {
+      window.webContents.once('did-finish-load', () => resolve());
+      return;
+    }
+    resolve();
+  });
+
+let pendingRendererReadyResolvers: Array<() => void> = [];
+
+const waitForRendererReady = (timeoutMs = 10_000): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const onReady = () => {
+      clearTimeout(timeout);
+      resolve();
+    };
+
+    const timeout = setTimeout(() => {
+      const index = pendingRendererReadyResolvers.indexOf(onReady);
+      if (index >= 0) pendingRendererReadyResolvers.splice(index, 1);
+      reject(new Error('Timed out waiting for renderer'));
+    }, timeoutMs);
+
+    pendingRendererReadyResolvers.push(onReady);
+  });
+
+const ensureMainWindowReady = async (): Promise<BrowserWindow | null> => {
+  if (isMainWindowLive()) {
+    await waitForMainWindowLoad(mainWindow!);
+    mainWindow!.focus();
+    return mainWindow;
+  }
+
+  await createWindow();
+  if (!isMainWindowLive()) return null;
+
+  await waitForMainWindowLoad(mainWindow!);
+  mainWindow!.focus();
+  return mainWindow;
+};
+
+const handleOpenProjectMenu = async () => {
+  const reopening = !isMainWindowLive();
+  if (!(await ensureMainWindowReady())) return;
+
+  if (reopening) {
+    try {
+      await waitForRendererReady();
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    } catch (error) {
+      console.error('[crcao-desktop] Renderer not ready for open project:', error);
+      return;
+    }
+  }
+
+  sendMenuAction('open-project');
+};
+
 const menuSeparator = (): Electron.MenuItemConstructorOptions => ({ type: 'separator' });
 
 const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
@@ -699,6 +766,16 @@ const buildToolsMenu = (): Electron.MenuItemConstructorOptions => ({
   ],
 });
 
+const buildHelpMenu = (): Electron.MenuItemConstructorOptions => ({
+  label: 'Help',
+  submenu: [
+    {
+      label: 'Documentation',
+      click: () => sendMenuAction('open-documentation'),
+    },
+  ],
+});
+
 const buildApplicationMenu = () => {
   const settingsItem: Electron.MenuItemConstructorOptions = {
     label: 'Settings',
@@ -709,7 +786,9 @@ const buildApplicationMenu = () => {
   const openProjectItem: Electron.MenuItemConstructorOptions = {
     label: 'Open Project',
     accelerator: 'CommandOrControl+O',
-    click: () => sendMenuAction('open-project'),
+    click: () => {
+      void handleOpenProjectMenu();
+    },
   };
 
   const saveItem: Electron.MenuItemConstructorOptions = {
@@ -796,6 +875,8 @@ const buildApplicationMenu = () => {
         menuSeparator(),
         ...(process.platform !== 'darwin'
           ? [
+              settingsItem,
+              menuSeparator(),
               {
                 label: 'About Le Jean-Baptiste',
                 click: () => sendMenuAction('open-about'),
@@ -815,6 +896,7 @@ const buildApplicationMenu = () => {
     buildToolsMenu(),
     buildViewMenu(),
     { role: 'windowMenu' },
+    buildHelpMenu(),
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
@@ -857,6 +939,12 @@ const openProjectFromDialog = async () => {
 };
 
 const registerIpcHandlers = () => {
+  ipcMain.handle('signalRendererReady', () => {
+    const resolvers = [...pendingRendererReadyResolvers];
+    pendingRendererReadyResolvers.length = 0;
+    resolvers.forEach((resolve) => resolve());
+  });
+
   ipcMain.handle('openProject', openProjectFromDialog);
   ipcMain.handle('openProjectFolder', openProjectFromDialog);
 
@@ -1388,6 +1476,83 @@ const registerIpcHandlers = () => {
     return 'accepted';
   });
 
+  const emitChgisProgress = (
+    event: Electron.IpcMainInvokeEvent,
+    progress: import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallProgress,
+  ) => {
+    if (!event.sender.isDestroyed()) event.sender.send('authorityChgis:progress', progress);
+  };
+
+  ipcMain.handle('authorityChgis:get', async () => {
+    const folder = await getEntityDbFolderOrNull();
+    return getChgisStatus(folder);
+  });
+
+  ipcMain.handle('pickChgisArchive', async () => {
+    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openFile', 'openDirectory'],
+      title: 'Choose CHGIS download',
+      message:
+        'Select a .zip from Harvard Dataverse, an unzipped layer folder, or a .shp file.',
+      filters: [
+        { name: 'CHGIS archives', extensions: ['zip'] },
+        { name: 'Shapefiles', extensions: ['shp'] },
+        { name: 'All files', extensions: ['*'] },
+      ],
+    };
+    const result = parent
+      ? await dialog.showOpenDialog(parent, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle('authorityChgis:installFromArchive', async (event, archivePath: string) => {
+    const folder = await getEntityDbFolderOrNull();
+    if (!folder) return { ok: false, error: 'No entity database folder configured.' };
+    if (!mainWindow) {
+      return { ok: false, error: 'Install dialog is unavailable.' };
+    }
+
+    const license = await dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      buttons: ['Accept and install', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1,
+      title: 'CHGIS academic license',
+      message: 'Install CHGIS historical place data?',
+      detail:
+        'CHGIS is free for academic research. Commercial use, resale, and redistribution are not permitted.\n\nYou must have downloaded the data yourself from Harvard Dataverse. LEAF-Writer will compile a local tagging pack on your machine only.',
+    });
+    if (license.response !== 0) return { ok: false, error: 'Install cancelled.' };
+
+    const result = await installChgisFromArchive({
+      entityDbFolder: folder,
+      archivePath,
+      onProgress: (progress) => emitChgisProgress(event, progress),
+    });
+    if (result.ok) {
+      new Notification({
+        title: 'CHGIS places ready',
+        body: `Compiled ${result.placeCount?.toLocaleString() ?? ''} historical places for auto-tagging.`,
+      }).show();
+    } else {
+      new Notification({
+        title: 'CHGIS install failed',
+        body: result.error ?? 'Compile could not complete.',
+      }).show();
+    }
+    return result;
+  });
+
+  ipcMain.handle('authorityChgis:remove', async () => {
+    const folder = await getEntityDbFolderOrNull();
+    if (!folder) return { ok: false, error: 'No entity database folder configured.' };
+    await removeChgisData(folder);
+    return { ok: true };
+  });
+
   ipcMain.handle('setEntityDbFolder', async (_event, folder: string | null) => {
     await setEntityDbFolder(folder);
   });
@@ -1520,6 +1685,8 @@ const registerIpcHandlers = () => {
 };
 
 const createWindow = async () => {
+  if (isMainWindowLive()) return;
+
   const icon = getAppIcon();
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -1586,6 +1753,7 @@ const createWindow = async () => {
     openFileWatcher = null;
     closeAllNativeDialogs();
     disposeLemminx();
+    pendingRendererReadyResolvers.length = 0;
     mainWindow = null;
   });
 

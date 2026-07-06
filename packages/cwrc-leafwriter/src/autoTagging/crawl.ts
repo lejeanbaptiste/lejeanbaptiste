@@ -7,12 +7,20 @@ export const DEFAULT_CRAWL_TAGS = [
   'persName',
   'placeName',
   'orgName',
+  'org',
   'geogName',
   'name',
   'roleName',
   'title',
   'date',
 ];
+
+function isInsideDateElement(el: Element): boolean {
+  for (let cur: Element | null = el; cur; cur = cur.parentElement) {
+    if (cur.localName === 'date') return true;
+  }
+  return false;
+}
 
 /**
  * Compile a dictionary from entities already tagged in a document: each
@@ -33,6 +41,7 @@ export function crawlEntities(
 
   for (const tag of tags) {
     for (const el of Array.from(doc.getElementsByTagName(tag))) {
+      if (tag !== 'date' && isInsideDateElement(el)) continue;
       const surface = buildSearchText(el.textContent ?? '', policy).text;
       if (surface.length === 0) continue;
       const mapKey = `${tag}\t${surface}`;

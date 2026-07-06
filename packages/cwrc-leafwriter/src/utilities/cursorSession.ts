@@ -1,6 +1,9 @@
 import { getCursorOffsetInSourceEditor, setCursorOffsetInSourceEditor } from '../sourceEditor/findInSourceEditor';
 import { getVisualCaretForSourceSync, type VisualCaretPosition } from './sourceCursorSync';
 
+export type { StoredCursorPosition } from './cursorPositionFilter';
+export { filterVisualCursorPositions } from './cursorPositionFilter';
+
 export type LeafWriterCursorPosition =
   | ({ mode: 'source' } & { offset: number })
   | ({ mode: 'visual' } & VisualCaretPosition);

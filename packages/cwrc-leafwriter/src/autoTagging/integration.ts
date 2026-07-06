@@ -15,9 +15,11 @@ import {
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
 import { LJB_AUTOTAG_RESP, TAG_TO_KIND, type EntityKind } from './entities';
 import { entityStoreFromDesktop, type EntityStore } from './entityStore';
+import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
 import { LlmCache } from './llmCache';
 import { llmSuggest, type LlmSuggestResult } from './llmSuggest';
+import { filterNestedSameTagAdds } from './suggestionFilters';
 import { llmAudit, collectTaggedSpans, type LlmAuditResult } from './llmAudit';
 import { normalizeDomText } from './normalize';
 import type { AuthorityPackId } from './packPaths';
@@ -152,15 +154,22 @@ export class AutoTaggingSession {
     tags: string[],
     client: LlmClient,
     onProgress?: (done: number, total: number) => void,
+    promptProfile?: AiPromptProfile,
   ): Promise<LlmSuggestResult> {
     const doc = await this.getDocument();
-    return llmSuggest(doc, {
+    const result = await llmSuggest(doc, {
       tags,
       client,
       cache: this.llmCache ?? undefined,
       policy: this.policy,
       onProgress,
+      promptProfile,
     });
+    const { suggestions, dropped } = filterNestedSameTagAdds(doc, this.policy, result.suggestions);
+    return {
+      suggestions,
+      unverifiableCount: result.unverifiableCount + dropped,
+    };
   }
 
   /**
@@ -171,15 +180,23 @@ export class AutoTaggingSession {
     tags: string[],
     client: LlmClient,
     onProgress?: (done: number, total: number) => void,
+    promptProfile?: AiPromptProfile,
   ): Promise<LlmAuditResult> {
     const doc = await this.getDocument();
-    return llmAudit(doc, {
+    const result = await llmAudit(doc, {
       tags,
       client,
       cache: this.llmCache ?? undefined,
       policy: this.policy,
       onProgress,
+      promptProfile,
     });
+    const { suggestions, dropped } = filterNestedSameTagAdds(doc, this.policy, result.suggestions);
+    return {
+      ...result,
+      suggestions,
+      unverifiableCount: result.unverifiableCount + dropped,
+    };
   }
 
   /** True when the document has at least one tagged mention for any of `tags`. */

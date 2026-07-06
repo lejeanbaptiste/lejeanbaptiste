@@ -159,20 +159,54 @@ const DateRow = ({
                   </IconButton>
                 </Tooltip>
               </>
-            ) : onUndo ? (
-              <Tooltip title="Undo (u)">
-                <IconButton
-                  size="small"
-                  data-testid={`undo-${suggestion.id}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onUndo();
-                  }}
-                >
-                  <UndoIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            ) : null}
+            ) : (
+              <>
+                {suggestion.status === 'rejected' && onAccept ? (
+                  <Tooltip title="Accept">
+                    <IconButton
+                      size="small"
+                      color="success"
+                      data-testid={`accept-${suggestion.id}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onAccept();
+                      }}
+                    >
+                      <CheckIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+                {suggestion.status === 'accepted' && onReject ? (
+                  <Tooltip title="Reject">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      data-testid={`reject-${suggestion.id}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onReject();
+                      }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+                {onUndo ? (
+                  <Tooltip title="Back to pending (u)">
+                    <IconButton
+                      size="small"
+                      data-testid={`undo-${suggestion.id}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onUndo();
+                      }}
+                    >
+                      <UndoIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+              </>
+            )}
           </Box>
         )}
       </Box>
@@ -369,6 +403,20 @@ export const DateCuratorPanel = ({
     rerender();
   };
 
+  const changeDateDecision = (suggestion: Suggestion, decision: 'accepted' | 'rejected') => {
+    if (decision === 'accepted') {
+      const selected = selectedIndexFor(suggestion);
+      if (!canAcceptDateSuggestion(suggestion, selected)) return;
+      finalizeDateSuggestion(suggestion, selected);
+      const attach = attachIndexFor(suggestion);
+      if (attach !== '' && suggestion.dateResolution) {
+        suggestion.dateResolution.attachToDateIndex = attach;
+      }
+    }
+    controller.changeDecision(suggestion, decision);
+    rerender();
+  };
+
   const collectForApply = (includeUnreviewedPending: boolean): Suggestion[] => {
     const batch: Suggestion[] = [];
     for (const suggestion of suggestions) {
@@ -410,6 +458,13 @@ export const DateCuratorPanel = ({
   const rejected = controller.rejectedVisible();
   const current = controller.current();
   const remainingCount = counts.pending + counts.accepted;
+
+  useEffect(() => {
+    if (pending.length === 0) {
+      if (accepted.length > 0) setAcceptedOpen(true);
+      if (rejected.length > 0) setRejectedOpen(true);
+    }
+  }, [pending.length, accepted.length, rejected.length]);
 
   useEffect(() => {
     if (!current || !listRef.current) return;
@@ -493,6 +548,7 @@ export const DateCuratorPanel = ({
                 onSelectCandidate={() => undefined}
                 onSelectAttach={() => undefined}
                 onPreview={() => controller.preview(suggestion)}
+                onReject={() => changeDateDecision(suggestion, 'rejected')}
                 onUndo={() => undecideItem(suggestion)}
               />
             ))}
@@ -516,6 +572,7 @@ export const DateCuratorPanel = ({
                 onSelectCandidate={() => undefined}
                 onSelectAttach={() => undefined}
                 onPreview={() => controller.preview(suggestion)}
+                onAccept={() => changeDateDecision(suggestion, 'accepted')}
                 onUndo={() => undecideItem(suggestion)}
               />
             ))}
@@ -562,7 +619,7 @@ export const DateCuratorPanel = ({
           </Button>
         )}
         <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', alignSelf: 'center' }}>
-          j/k · Enter · Backspace reject
+          j/k · Enter · Shift+Enter all same · Backspace · Shift+Backspace all same
         </Typography>
       </Box>
     </Box>

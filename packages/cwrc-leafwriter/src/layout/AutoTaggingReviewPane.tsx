@@ -16,6 +16,11 @@ import {
 } from '../autoTagging';
 import { useActions, useAppState } from '../overmind';
 import { AutoTaggingApplyOverlay, type AutoTaggingBusyLabel } from './AutoTaggingApplyOverlay';
+import {
+  DOCKED_AUTO_TAGGING_MOUNT_ID,
+  scheduleDesktopEditorRelayout,
+  setDockedReviewMountOpen,
+} from './dockedReviewLayout';
 
 /** Default width when docked beside the editor (desktop shell). */
 export const AUTO_TAGGING_PANEL_WIDTH = 380;
@@ -60,27 +65,19 @@ export const AutoTaggingReviewPane = () => {
     }
   }, [active]);
 
-  // Desktop: expand the shell mount point between editor and right sidebar.
+  // Desktop: expand/collapse the shell mount between editor and right sidebar.
   useEffect(() => {
     if (!isDesktopApp()) return;
-    const mount = document.getElementById('desktop-panel-auto-tagging');
-    if (!mount) return;
-    if (active) {
-      mount.style.display = 'block';
-      mount.style.width = `${AUTO_TAGGING_PANEL_WIDTH}px`;
-      mount.style.minWidth = '0';
-      mount.style.maxWidth = `${AUTO_TAGGING_PANEL_WIDTH}px`;
-    } else {
-      mount.style.display = 'none';
-      mount.style.width = '0';
-      mount.style.minWidth = '0';
-      mount.style.maxWidth = '0';
-    }
-    try {
-      window.writer?.layoutManager?.resizeEditor();
-    } catch {
-      // layout may not be ready yet
-    }
+    setDockedReviewMountOpen(
+      DOCKED_AUTO_TAGGING_MOUNT_ID,
+      active,
+      AUTO_TAGGING_PANEL_WIDTH,
+    );
+    scheduleDesktopEditorRelayout();
+    return () => {
+      setDockedReviewMountOpen(DOCKED_AUTO_TAGGING_MOUNT_ID, false);
+      scheduleDesktopEditorRelayout();
+    };
   }, [active]);
 
   const getSession = useCallback(() => {

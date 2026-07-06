@@ -13,6 +13,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AutoTaggingSession, DisambiguationPanel, type MentionGroup } from '../autoTagging';
 import { useActions, useAppState } from '../overmind';
+import {
+  DOCKED_DISAMBIGUATION_MOUNT_ID,
+  scheduleDesktopEditorRelayout,
+  setDockedReviewMountOpen,
+} from './dockedReviewLayout';
 
 /** Default width when docked beside the editor (desktop shell). */
 export const DISAMBIGUATION_PANEL_WIDTH = 320;
@@ -77,24 +82,16 @@ export const DisambiguationReviewPane = () => {
 
   useEffect(() => {
     if (!isDesktopApp()) return;
-    const mount = document.getElementById('desktop-panel-disambiguation');
-    if (!mount) return;
-    if (active) {
-      mount.style.display = 'block';
-      mount.style.width = `${DISAMBIGUATION_PANEL_WIDTH}px`;
-      mount.style.minWidth = '0';
-      mount.style.maxWidth = `${DISAMBIGUATION_PANEL_WIDTH}px`;
-    } else {
-      mount.style.display = 'none';
-      mount.style.width = '0';
-      mount.style.minWidth = '0';
-      mount.style.maxWidth = '0';
-    }
-    try {
-      window.writer?.layoutManager?.resizeEditor();
-    } catch {
-      // layout may not be ready yet
-    }
+    setDockedReviewMountOpen(
+      DOCKED_DISAMBIGUATION_MOUNT_ID,
+      active,
+      DISAMBIGUATION_PANEL_WIDTH,
+    );
+    scheduleDesktopEditorRelayout();
+    return () => {
+      setDockedReviewMountOpen(DOCKED_DISAMBIGUATION_MOUNT_ID, false);
+      scheduleDesktopEditorRelayout();
+    };
   }, [active]);
 
   const handleClose = useCallback(() => {

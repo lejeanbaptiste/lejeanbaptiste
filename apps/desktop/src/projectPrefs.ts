@@ -95,52 +95,56 @@ const sanitizeWorkspaceSession = (value: WorkspaceSession | undefined): Workspac
 
 const getPrefsPath = () => path.join(app.getPath('userData'), PREFS_FILENAME);
 
+const defaultAppPrefs = (): AppPrefs => ({
+  lastProjectFile: null,
+  encoderName: '',
+  aiApi: DEFAULT_AI_API_SETTINGS,
+  rememberWorkspaceOnStartup: true,
+  workspaceSession: sanitizeWorkspaceSession(undefined),
+  entityDbFolder: null,
+});
+
+const readCommonPrefs = (
+  parsed: Partial<AppPrefs> & { lastRootPath?: string | null },
+): Omit<AppPrefs, 'lastProjectFile'> => ({
+  encoderName: typeof parsed.encoderName === 'string' ? parsed.encoderName : '',
+  aiApi: sanitizeAiApiSettings(parsed.aiApi),
+  rememberWorkspaceOnStartup: parsed.rememberWorkspaceOnStartup !== false,
+  workspaceSession: sanitizeWorkspaceSession(parsed.workspaceSession),
+  entityDbFolder:
+    typeof parsed.entityDbFolder === 'string' ? parsed.entityDbFolder.trim() || null : null,
+});
+
+/** Parse stored prefs JSON. Exported for unit tests. */
+export const parseAppPrefs = (
+  parsed: Partial<AppPrefs> & { lastRootPath?: string | null },
+): AppPrefs => {
+  const common = readCommonPrefs(parsed);
+
+  if (typeof parsed.lastProjectFile === 'string') {
+    return { ...common, lastProjectFile: parsed.lastProjectFile };
+  }
+
+  if (typeof parsed.lastRootPath === 'string') {
+    return {
+      ...common,
+      lastProjectFile: path.join(parsed.lastRootPath, 'jean-baptiste.project.json'),
+    };
+  }
+
+  return {
+    ...common,
+    lastProjectFile: null,
+  };
+};
+
 const readAppPrefs = async (): Promise<AppPrefs> => {
   try {
     const raw = await fs.readFile(getPrefsPath(), 'utf-8');
-    const parsed = JSON.parse(raw) as AppPrefs & { lastRootPath?: string | null };
-
-    if (typeof parsed.lastProjectFile === 'string') {
-      return {
-        lastProjectFile: parsed.lastProjectFile,
-        encoderName: typeof parsed.encoderName === 'string' ? parsed.encoderName : '',
-        aiApi: sanitizeAiApiSettings(parsed.aiApi),
-        rememberWorkspaceOnStartup: parsed.rememberWorkspaceOnStartup !== false,
-        workspaceSession: sanitizeWorkspaceSession(parsed.workspaceSession),
-        entityDbFolder:
-          typeof parsed.entityDbFolder === 'string' ? parsed.entityDbFolder.trim() || null : null,
-      };
-    }
-
-    if (typeof parsed.lastRootPath === 'string') {
-      return {
-        lastProjectFile: path.join(parsed.lastRootPath, 'jean-baptiste.project.json'),
-        encoderName: typeof parsed.encoderName === 'string' ? parsed.encoderName : '',
-        aiApi: sanitizeAiApiSettings(parsed.aiApi),
-        rememberWorkspaceOnStartup: parsed.rememberWorkspaceOnStartup !== false,
-        workspaceSession: sanitizeWorkspaceSession(parsed.workspaceSession),
-        entityDbFolder:
-          typeof parsed.entityDbFolder === 'string' ? parsed.entityDbFolder.trim() || null : null,
-      };
-    }
-
-    return {
-      lastProjectFile: null,
-      encoderName: '',
-      aiApi: DEFAULT_AI_API_SETTINGS,
-      rememberWorkspaceOnStartup: true,
-      workspaceSession: sanitizeWorkspaceSession(undefined),
-      entityDbFolder: null,
-    };
+    const parsed = JSON.parse(raw) as Partial<AppPrefs> & { lastRootPath?: string | null };
+    return parseAppPrefs(parsed);
   } catch {
-    return {
-      lastProjectFile: null,
-      encoderName: '',
-      aiApi: DEFAULT_AI_API_SETTINGS,
-      rememberWorkspaceOnStartup: true,
-      workspaceSession: sanitizeWorkspaceSession(undefined),
-      entityDbFolder: null,
-    };
+    return defaultAppPrefs();
   }
 };
 
@@ -148,10 +152,22 @@ const writeAppPrefs = async (prefs: AppPrefs) => {
   await fs.writeFile(getPrefsPath(), JSON.stringify(prefs, null, 2), 'utf-8');
 };
 
+/** Serialize read-modify-write so concurrent saves cannot clobber fields like entityDbFolder. */
+let prefsWriteChain: Promise<void> = Promise.resolve();
+
+const mutateAppPrefs = async (mutator: (prefs: AppPrefs) => void): Promise<void> => {
+  prefsWriteChain = prefsWriteChain.then(async () => {
+    const prefs = await readAppPrefs();
+    mutator(prefs);
+    await writeAppPrefs(prefs);
+  });
+  await prefsWriteChain;
+};
+
 export const writeLastProjectFile = async (projectFilePath: string) => {
-  const prefs = await readAppPrefs();
-  prefs.lastProjectFile = projectFilePath;
-  await writeAppPrefs(prefs);
+  await mutateAppPrefs((prefs) => {
+    prefs.lastProjectFile = projectFilePath;
+  });
 };
 
 export const getValidLastProjectFile = async (): Promise<string | null> => {
@@ -174,9 +190,9 @@ export const getEncoderName = async (): Promise<string> => {
 };
 
 export const setEncoderName = async (encoderName: string) => {
-  const prefs = await readAppPrefs();
-  prefs.encoderName = encoderName.trim();
-  await writeAppPrefs(prefs);
+  await mutateAppPrefs((prefs) => {
+    prefs.encoderName = encoderName.trim();
+  });
 };
 
 export const getEntityDbFolder = async (): Promise<string | null> => {
@@ -186,9 +202,9 @@ export const getEntityDbFolder = async (): Promise<string | null> => {
 };
 
 export const setEntityDbFolder = async (folder: string | null) => {
-  const prefs = await readAppPrefs();
-  prefs.entityDbFolder = folder?.trim() || null;
-  await writeAppPrefs(prefs);
+  await mutateAppPrefs((prefs) => {
+    prefs.entityDbFolder = folder?.trim() || null;
+  });
 };
 
 export const getAiApiSettings = async (): Promise<AiApiSettings> => {
@@ -197,9 +213,9 @@ export const getAiApiSettings = async (): Promise<AiApiSettings> => {
 };
 
 export const setAiApiSettings = async (settings: Partial<AiApiSettings>) => {
-  const prefs = await readAppPrefs();
-  prefs.aiApi = sanitizeAiApiSettings(settings);
-  await writeAppPrefs(prefs);
+  await mutateAppPrefs((prefs) => {
+    prefs.aiApi = sanitizeAiApiSettings(settings);
+  });
 };
 
 export const getRememberWorkspaceOnStartup = async (): Promise<boolean> => {
@@ -208,29 +224,29 @@ export const getRememberWorkspaceOnStartup = async (): Promise<boolean> => {
 };
 
 export const setRememberWorkspaceOnStartup = async (remember: boolean) => {
-  const prefs = await readAppPrefs();
-  prefs.rememberWorkspaceOnStartup = remember;
-  await writeAppPrefs(prefs);
+  await mutateAppPrefs((prefs) => {
+    prefs.rememberWorkspaceOnStartup = remember;
+  });
 };
 
 export const saveWorkspaceSession = async (session: WorkspaceSession) => {
-  const prefs = await readAppPrefs();
-  const nextSession = sanitizeWorkspaceSession(session);
-  const previousSession = sanitizeWorkspaceSession(prefs.workspaceSession);
-  const openFilePathSet = new Set(nextSession.openFilePaths);
-  nextSession.cursorPositions = {
-    ...Object.fromEntries(
-      Object.entries(previousSession.cursorPositions ?? {}).filter(([filePath]) =>
-        openFilePathSet.has(filePath),
+  await mutateAppPrefs((prefs) => {
+    const nextSession = sanitizeWorkspaceSession(session);
+    const previousSession = sanitizeWorkspaceSession(prefs.workspaceSession);
+    const openFilePathSet = new Set(nextSession.openFilePaths);
+    nextSession.cursorPositions = {
+      ...Object.fromEntries(
+        Object.entries(previousSession.cursorPositions ?? {}).filter(([filePath]) =>
+          openFilePathSet.has(filePath),
+        ),
       ),
-    ),
-    ...(nextSession.cursorPositions ?? {}),
-  };
-  prefs.workspaceSession = nextSession;
-  if (prefs.workspaceSession.projectFilePath) {
-    prefs.lastProjectFile = prefs.workspaceSession.projectFilePath;
-  }
-  await writeAppPrefs(prefs);
+      ...(nextSession.cursorPositions ?? {}),
+    };
+    prefs.workspaceSession = nextSession;
+    if (prefs.workspaceSession.projectFilePath) {
+      prefs.lastProjectFile = prefs.workspaceSession.projectFilePath;
+    }
+  });
 };
 
 export const getWorkspaceSession = async (): Promise<WorkspaceSession | null> => {
