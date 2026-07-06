@@ -271,6 +271,30 @@ export interface ElectronAPI {
   onAuthorityLifecycleProgress?: (
     callback: (progress: AuthorityLifecycleProgress) => void,
   ) => () => void;
+  sanmiaoProposeDates?: (
+    text: string,
+    options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
+  ) => Promise<import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[]>;
+  sanmiaoProposeDatesBatch?: (
+    chunks: string[],
+    options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
+  ) => Promise<import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[][]>;
+  sanmiaoTagDatesBatch?: (
+    chunks: string[],
+    options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
+  ) => Promise<import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[][]>;
+  sanmiaoResolveDatesBatch?: (
+    dates: string[],
+    options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
+  ) => Promise<(import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal | null)[]>;
+  sanmiaoListDateAuthority?: (options?: {
+    civ?: string[];
+  }) => Promise<import('../../../../packages/cwrc-leafwriter/src/dateAuthority/types').DateAuthorityIndex>;
+  onSanmiaoProgress?: (
+    callback: (
+      progress: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoChunkProgressEvent,
+    ) => void,
+  ) => () => void;
   updateProjectFileConfig: (
     projectFilePath: string,
     patch: Record<string, unknown>,

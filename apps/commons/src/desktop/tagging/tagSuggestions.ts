@@ -27,13 +27,7 @@ const ensureValidatorReady = async (): Promise<boolean> => {
   const validatorActions = writer?.overmindActions?.validator;
   if (!validatorActions) return false;
 
-  const state = writer?.overmindState?.validator;
-  if (!state?.hasWorkerValidator) {
-    await validatorActions.loadValidator();
-  }
-  if (!writer?.overmindState?.validator?.hasSchema) {
-    await validatorActions.initialize();
-  }
+  await validatorActions.loadValidator();
 
   return Boolean(
     writer?.overmindState?.validator?.hasWorkerValidator &&

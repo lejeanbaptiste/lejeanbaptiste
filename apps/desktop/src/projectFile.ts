@@ -49,7 +49,7 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
     typeof raw.metadata === 'string' && raw.metadata.trim()
       ? raw.metadata.trim()
       : DEFAULT_METADATA_PATH,
-  entityStore: raw.entityStore === 'project' ? 'project' : 'central',
+  entityStore: (raw.entityStore === 'project' || raw.entityStore === 'central') ? raw.entityStore : undefined,
   entityDatabaseId:
     typeof raw.entityDatabaseId === 'string' && raw.entityDatabaseId.trim()
       ? raw.entityDatabaseId.trim()

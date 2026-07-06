@@ -228,6 +228,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     _writer.overmindActions = actions;
     window.writer = _writer;
 
+    window.__ljbDebugValidator = (opts) => actions.validator.debugValidatorState(opts);
+
     //@ts-ignore
     _writer.event('writerInitialized').subscribe(() => {
       actions.document.setDocumentUrl(document.url);

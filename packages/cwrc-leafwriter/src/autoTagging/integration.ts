@@ -124,7 +124,7 @@ export class AutoTaggingSession {
         };
       };
       const api = globals.electronAPI;
-      if (api?.readFile && api.writeFile && api.pathExists && api.ensureDirectory) {
+      if (api) {
         this.authorityCache = new AuthorityCache(api, store.authorityCacheDir);
         this.llmCache = new LlmCache(api, store.aiCacheDir);
       }
@@ -538,7 +538,7 @@ export class AutoTaggingSession {
       policy: this.policy,
       ...(schemaManager
         ? {
-            canContain: (parent, child) =>
+            canContain: (parent: string, child: string) =>
               canContainForAutoTagging(schemaManager, parent, child),
           }
         : {}),

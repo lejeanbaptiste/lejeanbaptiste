@@ -188,53 +188,53 @@ export interface ElectronAPI {
   onAuthorityDbProgress: (
     callback: (progress: AuthorityDownloadProgress) => void,
   ) => () => void;
-  authorityPackStatuses?: () => Promise<import('@src/desktop/authorityPackTypes').AuthorityPackStatus[]>;
-  authorityPackRead?: (packId: import('@src/desktop/authorityPackTypes').AuthorityPackId) => Promise<string>;
+  authorityPackStatuses?: () => Promise<import('../../commons/src/desktop/authorityPackTypes').AuthorityPackStatus[]>;
+  authorityPackRead?: (packId: import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId) => Promise<string>;
   authorityPackInstallFrom?: (
     sourcePacksRoot: string,
   ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;
   authorityLifecycleGet?: () => Promise<
-    import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus
+    import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus
   >;
   authorityLifecycleSetEnabled?: (
-    options: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleSetEnabledOptions,
-  ) => Promise<import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult>;
+    options: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleSetEnabledOptions,
+  ) => Promise<import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult>;
   authorityLifecycleUpdate?: () => Promise<
-    import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult
+    import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult
   >;
   authorityLifecycleMaybeCheckUpdates?: () => Promise<
-    import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus | null
+    import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus | null
   >;
   authorityLifecyclePromptEnable?: (
-    profile?: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleProfile,
+    profile?: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleProfile,
   ) => Promise<'accepted' | 'declined'>;
   authorityLifecycleRevealFolder?: () => Promise<boolean>;
   onAuthorityLifecycleProgress?: (
     callback: (
-      progress: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
+      progress: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
     ) => void,
   ) => () => void;
   sanmiaoProposeDates?: (
     text: string,
-    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<import('@src/desktop/sanmiaoBridge').SanmiaoProposal[]>;
+    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<import('./sanmiaoBridge').SanmiaoProposal[]>;
   sanmiaoProposeDatesBatch?: (
     chunks: string[],
-    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<import('@src/desktop/sanmiaoBridge').SanmiaoProposal[][]>;
+    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<import('./sanmiaoBridge').SanmiaoProposal[][]>;
   sanmiaoTagDatesBatch?: (
     chunks: string[],
-    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<import('@src/desktop/sanmiaoBridge').SanmiaoProposal[][]>;
+    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<import('./sanmiaoBridge').SanmiaoProposal[][]>;
   sanmiaoResolveDatesBatch?: (
     dates: string[],
-    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<(import('@src/desktop/sanmiaoBridge').SanmiaoProposal | null)[]>;
+    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<(import('./sanmiaoBridge').SanmiaoProposal | null)[]>;
   sanmiaoListDateAuthority?: (
-    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<import('@src/desktop/sanmiaoBridge').DateAuthorityIndex>;
+    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<import('./sanmiaoBridge').DateAuthorityIndex>;
   onSanmiaoProgress?: (
-    callback: (progress: import('@src/desktop/sanmiaoBridge').SanmiaoChunkProgress) => void,
+    callback: (progress: import('./sanmiaoBridge').SanmiaoChunkProgress) => void,
   ) => () => void;
   updateProjectFileConfig: (
     projectFilePath: string,
@@ -389,7 +389,7 @@ const electronAPI: ElectronAPI = {
   onAuthorityLifecycleProgress: (callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,
-      progress: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
+      progress: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
     ) => callback(progress);
     ipcRenderer.on('authorityLifecycle:progress', listener);
     return () => ipcRenderer.removeListener('authorityLifecycle:progress', listener);
@@ -406,7 +406,7 @@ const electronAPI: ElectronAPI = {
   onSanmiaoProgress: (callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,
-      progress: import('@src/desktop/sanmiaoBridge').SanmiaoChunkProgress,
+      progress: import('./sanmiaoBridge').SanmiaoChunkProgress,
     ) => callback(progress);
     ipcRenderer.on('sanmiao:progress', listener);
     return () => ipcRenderer.removeListener('sanmiao:progress', listener);

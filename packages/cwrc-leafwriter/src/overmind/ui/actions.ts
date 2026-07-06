@@ -331,8 +331,7 @@ export const setSelectedTranslationUnit = ({ state }: Context, unitId: string | 
 
 export const startAutoTaggingReview = (
   { state }: Context,
-  suggestions: Suggestion[],
-  notice?: string,
+  { suggestions, notice }: { suggestions: Suggestion[]; notice?: string },
 ) => {
   stashAutoTaggingBatch(suggestions, notice);
   state.ui.autoTaggingReview.active = true;

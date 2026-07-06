@@ -65,7 +65,6 @@ export const writerInitSettings = async (
   editor.schemas = schemaObjs;
 
   actions.editor.setReadonly(settings.readonly);
-  await actions.validator.loadValidator();
 };
 
 export const applyInitialSettings = ({ state, actions, effects }: Context) => {

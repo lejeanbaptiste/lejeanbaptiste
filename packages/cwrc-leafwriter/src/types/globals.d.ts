@@ -81,6 +81,8 @@ declare global {
     __desktopStripTeiHeaderForVisualEditor?: (xml: string) => string;
     __desktopTagging?: DesktopTaggingBridge;
     __desktopValidatorInstrumentation?: DesktopValidatorInstrumentation;
+    /** DevTools helper: `await __ljbDebugValidator()` */
+    __ljbDebugValidator?: (options?: { runValidation?: boolean }) => Promise<unknown>;
     __leafWriterCursorSession?: {
       capture: () => WorkspaceCursorPosition | null;
       restore: (position: WorkspaceCursorPosition) => Promise<boolean>;

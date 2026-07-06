@@ -32,7 +32,11 @@ export const completeProjectOnboarding = async (
     if (setup.result !== 'installed' || !setup.bundle) return null;
     current = setup.bundle;
   } else if (window.electronAPI?.ensureSanmiaoDatesSchema) {
-    await window.electronAPI.ensureSanmiaoDatesSchema(current.projectFilePath);
+    const mergeResult = await window.electronAPI.ensureSanmiaoDatesSchema(current.projectFilePath);
+    if (mergeResult.merged && window.writer) {
+      await window.writer.overmindActions?.validator?.clearCache?.();
+      window.writer.schemaManager?.clearSchemaRevision?.();
+    }
   }
 
   if (!(await metadataFileExists(current))) {

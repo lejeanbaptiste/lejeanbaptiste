@@ -220,7 +220,7 @@ const DateRow = ({
                     displayEmpty
                     value={attachIndex}
                     onChange={(event) => {
-                      const value = event.target.value;
+                      const value = event.target.value as number | '';
                       onSelectAttach(value === '' ? '' : Number(value));
                     }}
                   >

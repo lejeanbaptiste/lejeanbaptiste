@@ -256,12 +256,13 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const anyVisibleAuthorityPackInstalled = visibleAuthorityPackOptions.some(
     (opt) => authorityStatus.find((s) => s.id === opt.id)?.installed ?? false,
   );
+  const authoritySetupReady = Boolean(entityDbFolder) && anyVisibleAuthorityPackInstalled;
   const authorityPackGroupLabel = isJapaneseLanguageCode(sourceLanguage)
     ? 'NDL'
     : 'CBDB / DILA';
 
   const beginReview = (produced: Suggestion[], notice?: string) => {
-    startAutoTaggingReview(produced, notice);
+    startAutoTaggingReview({ suggestions: produced, notice });
     handleClose();
   };
 

@@ -50,7 +50,6 @@ const isVisualEditorActive = (): boolean =>
 export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const { activeTabPath, rootPath } = useAppState().project;
   const { readonly } = useAppState().editor;
-  const { editorViewMode } = useAppState().ui;
   const leafWriter = useAtomValue(leafwriterAtom);
   const { notifyViaSnackbar } = useActions().ui;
 
@@ -142,7 +141,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
         writer.event(eventName).unsubscribe(handler);
       }
     };
-  }, [activeTabPath, editorViewMode, leafWriter, syncFromEditor]);
+  }, [activeTabPath, leafWriter, syncFromEditor]);
 
   useEffect(() => {
     if (!visible) return;

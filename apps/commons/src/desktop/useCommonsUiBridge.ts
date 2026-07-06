@@ -7,6 +7,8 @@ import type {
   AuthorityLifecycleStatus,
 } from '@src/desktop/authorityLifecycleTypes';
 import { useCallback, useEffect, useState } from 'react';
+import { createEntitiesScaffold } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { AUTHORITY_PACKS_DIRNAME } from '@src/desktop/authorityPackTypes';
 
 export const useCommonsUiBridge = () => {
   const { skipCopyPasteHelp, skipExplorerDeleteConfirm, themeAppearance, currentLocale } =
@@ -137,15 +139,26 @@ export const useCommonsUiBridge = () => {
       const entitiesInParent =
         parent.length > 0 &&
         (await window.electronAPI?.pathExists?.(`${parent}/entities.xml`));
-      await window.electronAPI?.showNativeMessageBox?.({
-        type: 'warning',
-        title: 'No entities.xml in that folder',
-        message: entitiesInParent
-          ? `Your entity database is probably the parent folder:\n${parent}\n\nChoose that folder, not the project subfolder inside it.`
-          : 'The entity database folder should contain entities.xml at its root. Compiled authority packs go in authority-packs/ beside it.',
-        buttons: ['OK'],
+      if (entitiesInParent) {
+        await window.electronAPI?.showNativeMessageBox?.({
+          type: 'warning',
+          title: 'No entities.xml in that folder',
+          message: `Your entity database is probably the parent folder:\n${parent}\n\nChoose that folder, not the project subfolder inside it.`,
+          buttons: ['OK'],
+        });
+        return null;
+      }
+      const choice = await window.electronAPI?.showNativeMessageBox?.({
+        type: 'question',
+        title: 'Create a new entity database?',
+        message: `This folder has no entities.xml yet:\n${folder}\n\nLe Jean-Baptiste can set up a new entity database here from scratch. Compiled authority packs will go in authority-packs/ beside it.`,
+        buttons: ['Create entity database', 'Cancel'],
+        defaultId: 0,
+        cancelId: 1,
       });
-      if (entitiesInParent) return null;
+      if (choice?.response !== 0) return null;
+      await window.electronAPI?.writeFile?.(`${folder}/entities.xml`, createEntitiesScaffold());
+      await window.electronAPI?.ensureDirectory?.(`${folder}/${AUTHORITY_PACKS_DIRNAME}`);
     }
 
     await window.electronAPI?.setEntityDbFolder?.(picked);

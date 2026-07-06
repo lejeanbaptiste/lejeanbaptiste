@@ -64,9 +64,12 @@ class Utilities {
     return json;
   }
 
-  //? Load schema using Salve
-  async sendSchemaToWorkerValidator() {
-    await this.writer.overmindActions.validator.initialize();
+  //? Load schema into the validator worker (spawns the worker on first use).
+  async sendSchemaToWorkerValidator(options?: { silent?: boolean }) {
+    await this.writer.overmindActions.validator.loadValidator({
+      ...options,
+      waitForSchema: false,
+    });
   }
 
   /**j
