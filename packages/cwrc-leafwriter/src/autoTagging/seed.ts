@@ -1,16 +1,21 @@
 import { applySuggestions, type ApplyOptions } from './apply';
 import type { AuthorityCandidate } from './authority';
+import { teiTagForCandidate } from './authority';
+import { canonicalEntityKey, collapseLinkedCandidates } from './authorityOverlap';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
-import { addEntity, ENTITY_KINDS, findEntity, LJB_AUTOTAG_RESP, type EntityKind } from './entities';
+import { addEntity, ENTITY_KINDS, findEntity, LJB_AUTOTAG_RESP } from './entities';
+import { rationaleForCandidates } from './packLoader';
 import type { Suggestion, WhitespacePolicy } from './types';
 
-/** Entity kind → the mention tag the seed pass writes. */
-const KIND_TO_TAG: Record<EntityKind, string> = {
-  person: 'persName',
-  place: 'placeName',
-  org: 'orgName',
-  work: 'title',
-};
+/** Convert seed matches to tag-stage suggestions (no @key — disambiguation later). */
+export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
+  return matches.map((match) => ({
+    ...match.suggestion,
+    source: 'authority' as const,
+    sourceDetail: [...new Set(match.candidates.map((c) => c.source))].join('+'),
+    rationale: rationaleForCandidates(match.candidates),
+  }));
+}
 
 /** A corpus match with the authority candidate(s) whose name matched there. */
 export interface SeedMatch {
@@ -26,6 +31,51 @@ export interface SeedBuckets {
   ambiguous: SeedMatch[];
 }
 
+export interface AuthoritySeedIndex {
+  entries: DictionaryEntry[];
+  lookup: Map<string, AuthorityCandidate[]>;
+}
+
+const seedKeyOf = (tag: string, surface: string) => `${tag}\t${surface}`;
+
+export function createAuthoritySeedIndex(): AuthoritySeedIndex {
+  return { entries: [], lookup: new Map() };
+}
+
+/** Add one authority row to a seed index (safe for streaming large packs). */
+export function addCandidateToSeedIndex(
+  index: AuthoritySeedIndex,
+  candidate: AuthorityCandidate,
+): void {
+  const tag = teiTagForCandidate(candidate);
+  for (const surface of candidate.searchStrings) {
+    index.entries.push({ string: surface, tag });
+    const key = seedKeyOf(tag, surface);
+    const list = index.lookup.get(key);
+    if (list) {
+      if (!list.some((c) => canonicalEntityKey(c) === canonicalEntityKey(candidate))) {
+        list.push(candidate);
+      }
+    } else {
+      index.lookup.set(key, [candidate]);
+    }
+  }
+}
+
+export function seedSuggestionsFromIndex(
+  doc: Document,
+  index: AuthoritySeedIndex,
+  policy: WhitespacePolicy,
+): SeedMatch[] {
+  const suggestions = dictionaryTag(doc, index.entries, policy, 'authority');
+  return suggestions.map((suggestion) => ({
+    suggestion,
+    candidates: collapseLinkedCandidates(
+      index.lookup.get(seedKeyOf(suggestion.tag, suggestion.anchor.surface)) ?? [],
+    ),
+  }));
+}
+
 /**
  * Fire authority candidates at the corpus. Reuses the tested dictionary
  * matcher (longest-first, no cross-tag, skips already-tagged spots) and
@@ -37,30 +87,9 @@ export function seedSuggestions(
   candidates: AuthorityCandidate[],
   policy: WhitespacePolicy,
 ): SeedMatch[] {
-  // Build dictionary entries and a (tag, surface) → candidates lookup.
-  const entries: DictionaryEntry[] = [];
-  const lookup = new Map<string, AuthorityCandidate[]>();
-  const keyOf = (tag: string, surface: string) => `${tag}\t${surface}`;
-
-  for (const candidate of candidates) {
-    const tag = KIND_TO_TAG[candidate.kind];
-    for (const surface of candidate.searchStrings) {
-      entries.push({ string: surface, tag });
-      const key = keyOf(tag, surface);
-      const list = lookup.get(key);
-      if (list) {
-        if (!list.includes(candidate)) list.push(candidate);
-      } else {
-        lookup.set(key, [candidate]);
-      }
-    }
-  }
-
-  const suggestions = dictionaryTag(doc, entries, policy, 'authority');
-  return suggestions.map((suggestion) => ({
-    suggestion,
-    candidates: lookup.get(keyOf(suggestion.tag, suggestion.anchor.surface)) ?? [],
-  }));
+  const index = createAuthoritySeedIndex();
+  for (const candidate of candidates) addCandidateToSeedIndex(index, candidate);
+  return seedSuggestionsFromIndex(doc, index, policy);
 }
 
 /** Split matches into the auto-link (unique) and disambiguate (ambiguous) buckets. */
@@ -118,7 +147,7 @@ function resolveEntity(
 
   const { id } = addEntity(
     entitiesDoc,
-    candidate.kind,
+    candidate.kind === 'office' ? 'org' : candidate.kind,
     {
       name: candidate.primaryName,
       authorityIds: [{ type: candidate.source, value: candidate.authorityId }],

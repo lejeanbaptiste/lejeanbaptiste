@@ -42,6 +42,9 @@ declare global {
     }) => Promise<{ ok: boolean; error?: string; initializationOptions?: unknown }>;
     lspSend: (message: unknown) => Promise<{ ok: boolean }>;
     onLspMessage: (callback: (message: unknown) => void) => () => void;
+    sanmiaoListDateAuthority?: (options?: {
+      civ?: string[];
+    }) => Promise<import('../dateAuthority/types').DateAuthorityIndex>;
     showNativeMessageBox?: (options: {
       buttons?: string[];
       cancelId?: number;
@@ -88,6 +91,26 @@ declare global {
       redo: () => Promise<boolean>;
       replaceContent: (filePath: string, content: string) => boolean;
       undo: () => Promise<boolean>;
+    };
+    __leafWriterProject?: {
+      getProjectFilePath: () => string;
+      getProjectSourceLanguage?: () => Promise<string | null>;
+      getAutoTaggingAuthoritySettings: () =>
+        | {
+            packs?: string[];
+            yearFilterEnabled?: boolean;
+            yearStart?: number;
+            yearEnd?: number;
+            hideUndated?: boolean;
+          }
+        | undefined;
+      setAutoTaggingAuthoritySettings: (settings: {
+        packs?: string[];
+        yearFilterEnabled?: boolean;
+        yearStart?: number;
+        yearEnd?: number;
+        hideUndated?: boolean;
+      }) => void;
     };
     __lwPanelTrace?: { t: string; tag: string; data?: Record<string, unknown> }[];
   }

@@ -14,6 +14,13 @@ import {
 } from '@mui/material';
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
+import {
+  EastAsianDateFields,
+  isEastAsianCalendarLanguageCode,
+  mergeEastAsianIntoAttributes,
+  readEastAsianDateValues,
+  useDateAuthority,
+} from '@cwrc/leafwriter';
 import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -53,6 +60,13 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const [values, setValues] = useState<Record<string, string>>({});
   const [tagColors, setTagColors] = useState<TagColorsFile | null>(null);
   const [addAttrName, setAddAttrName] = useState('');
+  const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
+
+  const eastAsianDates =
+    tagName === 'date' && isEastAsianCalendarLanguageCode(sourceLanguage);
+  const { authority, loading: authorityLoading, error: authorityError } = useDateAuthority(
+    eastAsianDates,
+  );
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncGenerationRef = useRef(0);
@@ -66,6 +80,16 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   useEffect(() => {
     tagElementRef.current = tagElement;
   }, [tagElement]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void window.__leafWriterProject?.getProjectSourceLanguage?.().then((language) => {
+      if (!cancelled) setSourceLanguage(language ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTabPath]);
 
   const syncFromEditor = useCallback(async () => {
     if (!isVisualEditorActive()) {
@@ -219,10 +243,21 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     );
   }
 
+  const handleEastAsianChange = (nextValues: ReturnType<typeof readEastAsianDateValues>) => {
+    const merged = mergeEastAsianIntoAttributes(valuesRef.current, nextValues);
+    valuesRef.current = merged;
+    setValues(merged);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => commitValues(merged), 300);
+  };
+
   const lookupAvailable = Boolean(getLookupEntityTypeForTag(tagName));
   const resolvedColors = resolveTagColor(tagColors ?? { version: 1, tags: {} }, tagName);
   const unsetSchemaAttrs = schemaAttributes.filter((attr) => !(attr.name in values));
-  const setAttributeEntries = Object.entries(values);
+  const eastAsianAttrNames = new Set(['dyn_id', 'ruler_id', 'era_id', 'year', 'month', 'day']);
+  const setAttributeEntries = Object.entries(values).filter(
+    ([name]) => !(eastAsianDates && eastAsianAttrNames.has(name)),
+  );
 
   return (
     <Paper
@@ -256,7 +291,18 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
 
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 1.5 }}>
         <Stack spacing={1.5}>
-          {setAttributeEntries.length === 0 ? (
+          {eastAsianDates ? (
+            <EastAsianDateFields
+              authority={authority}
+              disabled={readonly}
+              error={authorityError}
+              loading={authorityLoading}
+              onChange={handleEastAsianChange}
+              values={readEastAsianDateValues(values)}
+            />
+          ) : null}
+
+          {setAttributeEntries.length === 0 && !eastAsianDates ? (
             <Typography color="text.secondary" variant="body2">
               No attributes set on this tag.
             </Typography>

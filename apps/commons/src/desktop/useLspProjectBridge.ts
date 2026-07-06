@@ -20,6 +20,20 @@ export const useLspProjectBridge = () => {
   useEffect(() => {
     if (!isDesktop()) return;
 
+    const syncFromBridge = () => {
+      const folder = window.__ljbCommonsUi?.entityDbFolder;
+      if (typeof folder === 'string' && folder.trim()) {
+        setEntityDbFolder(folder);
+      }
+    };
+
+    window.addEventListener('ljbCommonsUiChanged', syncFromBridge);
+    return () => window.removeEventListener('ljbCommonsUiChanged', syncFromBridge);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop()) return;
+
     window.__ljbLspProject = {
       defaultSchemaRng: config?.schema?.rng,
       projectRoot: rootPath ?? undefined,

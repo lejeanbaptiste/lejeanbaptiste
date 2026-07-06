@@ -45,6 +45,19 @@ import {
   getAuthorityStatuses,
   type AuthoritySourceId,
 } from './authorityDatabases';
+import {
+  getAuthorityPackStatuses,
+  installAuthorityPacksFrom,
+  readAuthorityPackFile,
+} from './authorityPacks';
+import {
+  getAuthorityLifecycleStatus,
+  maybeCheckAuthorityUpdates,
+  readLifecycleConfig,
+  recordDeclinedFirstPrompt,
+  runAuthorityLifecyclePipeline,
+  setAuthorityLifecycleEnabled,
+} from './authorityLifecycle';
 import { loadOrCreateProject, loadProjectFile, writeProjectConfig } from './projectFile';
 import mammoth from 'mammoth';
 import { extractOdtText } from './odtText';
@@ -67,6 +80,7 @@ import {
 } from './zoteroClient';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
+import { ensureSanmiaoDatesSchemaMerged } from './sanmiaoSchemaMerge';
 import { applyCatalogSchemaUpdate, checkCatalogSchemaUpdate } from './checkSchemaUpdate';
 import {
   createTimeMachineSnapshot,
@@ -75,6 +89,7 @@ import {
   restoreTimeMachineSnapshotToProject,
   restoreTimeMachineSnapshotToDirectory,
 } from './timeMachine';
+import { sanmiaoListDateAuthority, sanmiaoProposeDates, sanmiaoProposeDatesBatch, sanmiaoResolveDatesBatch, sanmiaoTagDatesBatch, type SanmiaoProposeOptions, type SanmiaoChunkProgress } from './sanmiaoBridge';
 
 const APP_NAME = 'Le Jean-Baptiste';
 
@@ -989,6 +1004,13 @@ const registerIpcHandlers = () => {
     },
   );
 
+  ipcMain.handle('ensureSanmiaoDatesSchema', async (_event, projectFilePath: string) => {
+    const bundle = await loadProjectFile(projectFilePath);
+    if (!bundle) return { merged: false };
+    const merged = await ensureSanmiaoDatesSchemaMerged(bundle);
+    return { merged };
+  });
+
   ipcMain.handle(
     'checkSchemaUpdate',
     async (_event, projectFilePath: string, options?: { force?: boolean }) => {
@@ -1183,6 +1205,186 @@ const registerIpcHandlers = () => {
     return 'accepted';
   });
 
+  const getEntityDbFolderOrNull = async () => {
+    const folder = await getEntityDbFolder();
+    return folder?.trim() ? folder : null;
+  };
+
+  ipcMain.handle('authorityPack:statuses', async () => {
+    const folder = await getEntityDbFolderOrNull();
+    if (!folder) return [];
+    return getAuthorityPackStatuses(folder);
+  });
+
+  ipcMain.handle('authorityPack:read', async (_event, packId: string) => {
+    const folder = await getEntityDbFolderOrNull();
+    if (!folder) throw new Error('No entity database folder configured.');
+    return readAuthorityPackFile(folder, packId as import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId);
+  });
+
+  ipcMain.handle(
+    'sanmiao:proposeDates',
+    async (_event, text: string, options?: SanmiaoProposeOptions) => sanmiaoProposeDates(text, options ?? {}),
+  );
+
+  ipcMain.handle(
+    'sanmiao:proposeDatesBatch',
+    async (event, chunks: string[], options?: SanmiaoProposeOptions) =>
+      sanmiaoProposeDatesBatch(chunks, options ?? {}, (progress) => {
+        event.sender.send('sanmiao:progress', progress);
+      }),
+  );
+
+  ipcMain.handle(
+    'sanmiao:tagDatesBatch',
+    async (event, chunks: string[], options?: SanmiaoProposeOptions) =>
+      sanmiaoTagDatesBatch(chunks, options ?? {}, (progress) => {
+        event.sender.send('sanmiao:progress', progress);
+      }),
+  );
+
+  ipcMain.handle(
+    'sanmiao:resolveDatesBatch',
+    async (event, dates: string[], options?: SanmiaoProposeOptions) =>
+      sanmiaoResolveDatesBatch(dates, options ?? {}, (progress) => {
+        event.sender.send('sanmiao:progress', progress);
+      }),
+  );
+
+  ipcMain.handle(
+    'sanmiao:listDateAuthority',
+    async (_event, options?: SanmiaoProposeOptions) => sanmiaoListDateAuthority(options ?? {}),
+  );
+
+  ipcMain.handle(
+    'authorityPack:installFrom',
+    async (_event, sourcePacksRoot: string) => {
+      const folder = await getEntityDbFolderOrNull();
+      if (!folder) return { ok: false, error: 'No entity database folder configured.' };
+      try {
+        const { copied } = await installAuthorityPacksFrom(sourcePacksRoot, folder);
+        return { ok: true, copied };
+      } catch (error) {
+        return {
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+  );
+
+  const emitAuthorityLifecycleProgress = (
+    event: Electron.IpcMainInvokeEvent,
+    progress: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
+  ) => {
+    if (!event.sender.isDestroyed()) event.sender.send('authorityLifecycle:progress', progress);
+  };
+
+  ipcMain.handle('authorityLifecycle:get', async () => {
+    const folder = await getEntityDbFolderOrNull();
+    return getAuthorityLifecycleStatus(folder);
+  });
+
+  ipcMain.handle('authorityLifecycle:maybeCheckUpdates', async () => {
+    const folder = await getEntityDbFolderOrNull();
+    return maybeCheckAuthorityUpdates(folder);
+  });
+
+  ipcMain.handle('authorityLifecycle:revealFolder', async () => {
+    const folder = await getEntityDbFolderOrNull();
+    if (!folder) return false;
+    shell.showItemInFolder(path.join(folder, 'entities.xml'));
+    return true;
+  });
+
+  ipcMain.handle(
+    'authorityLifecycle:setEnabled',
+    async (
+      event,
+      options: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleSetEnabledOptions,
+    ) => {
+      const folder = await getEntityDbFolderOrNull();
+      const result = await setAuthorityLifecycleEnabled(folder, options, (progress) =>
+        emitAuthorityLifecycleProgress(event, progress),
+      );
+      if (result.ok && options.enabled) {
+        const label = options.profile === 'japanese' ? 'NDL tagging packs' : 'CBDB and DILA tagging packs';
+        new Notification({
+          title: 'Offline authorities ready',
+          body: `${label} were installed from the registry.`,
+        }).show();
+      } else if (!result.ok) {
+        new Notification({
+          title: 'Authority setup failed',
+          body: result.error ?? 'Could not download or compile authority data.',
+        }).show();
+      }
+      return result;
+    },
+  );
+
+  ipcMain.handle('authorityLifecycle:update', async (event) => {
+    const folder = await getEntityDbFolderOrNull();
+    if (!folder) return { ok: false, error: 'No entity database folder configured.' };
+    const lifecycle = await readLifecycleConfig(folder);
+    const result = await runAuthorityLifecyclePipeline({
+      entityDbFolder: folder,
+      profile: lifecycle.profile,
+      forceDownload: false,
+      onProgress: (progress) => emitAuthorityLifecycleProgress(event, progress),
+    });
+    if (result.ok) {
+      const label = lifecycle.profile === 'japanese' ? 'NDL tagging packs' : 'CBDB and DILA tagging packs';
+      new Notification({
+        title: 'Authority data updated',
+        body: `${label} were refreshed from the registry.`,
+      }).show();
+    } else {
+      new Notification({
+        title: 'Authority update failed',
+        body: result.error ?? 'Update could not complete.',
+      }).show();
+    }
+    return result;
+  });
+
+  ipcMain.handle('authorityLifecycle:promptEnable', async (_event, profile = 'chinese') => {
+    if (!mainWindow) return 'declined';
+
+    const folder = await getEntityDbFolderOrNull();
+    if (!folder) return 'declined';
+
+    const lifecycle = await readLifecycleConfig(folder);
+    if (lifecycle.enabled && lifecycle.profile === profile) return 'declined';
+    if (lifecycle.declinedFirstPrompt && lifecycle.profile === profile) return 'declined';
+
+    const legacyDeclined = path.join(folder, AUTHORITY_DB_DIRNAME, 'download-declined.json');
+    if (existsSync(legacyDeclined)) {
+      await recordDeclinedFirstPrompt(folder, profile);
+      return 'declined';
+    }
+
+    const result = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Download', 'Not now'],
+      defaultId: 0,
+      cancelId: 1,
+      message:
+        profile === 'japanese'
+          ? 'Download Japanese authority packs?'
+          : 'Download Chinese authority databases?',
+      detail:
+        profile === 'japanese'
+          ? 'This project uses Japanese as its source language. LEAF-Writer can download NDL authority packs for automated tagging. They are stored next to your central entity database.'
+          : 'This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB) and the DILA Buddhist Studies authorities (~85 MB), then compile them for automated tagging. They are stored next to your central entity database.',
+    });
+    if (result.response !== 0) {
+      await recordDeclinedFirstPrompt(folder, profile);
+      return 'declined';
+    }
+    return 'accepted';
+  });
+
   ipcMain.handle('setEntityDbFolder', async (_event, folder: string | null) => {
     await setEntityDbFolder(folder);
   });
@@ -1194,6 +1396,21 @@ const registerIpcHandlers = () => {
       title: 'Choose entity database folder',
       message:
         'This folder will hold your entity database (entities.xml). You can keep your projects here too.',
+    };
+    const result = parent
+      ? await dialog.showOpenDialog(parent, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle('pickAuthorityPacksSource', async () => {
+    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openDirectory'],
+      title: 'Choose compiled authority packs folder',
+      message:
+        'Select the folder that contains cbdb/ and dila/ (e.g. authority extraction/packs).',
     };
     const result = parent
       ? await dialog.showOpenDialog(parent, options)

@@ -3,6 +3,7 @@ import { dictionaryTag } from './dictionary';
 import { parseLog } from './decisionLog';
 import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
+import { collectTextNodes, createAnchor } from './anchor';
 import { AutoTaggingSession, type WriterLike } from './integration';
 
 const XML = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
@@ -81,6 +82,36 @@ describe('AutoTaggingSession', () => {
     expect(result.applied).toBe(0);
     expect(result.results.every((r) => r.outcome === 'schema-blocked')).toBe(true);
     expect(loads).toHaveLength(0); // nothing applied → no reload
+  });
+
+  it('allows date in p when schema lists persName but not date', async () => {
+    const dateXml = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>少帝即位</p></body></text></TEI>`;
+    const { writer, loads, getCurrent } = makeWriter(dateXml);
+    writer.schemaManager = {
+      isTagValidChildOfParent: (child, parent) =>
+        parent === 'p' && child === 'persName',
+    };
+    const session = new AutoTaggingSession(writer);
+    const doc = await session.getDocument();
+    const [{ node, search }] = collectTextNodes(doc, 'ignore');
+    const surface = '少帝即位';
+    const idx = search.text.indexOf(surface);
+    const rawStart = search.map[idx]!;
+    const rawEnd = search.map[idx + surface.length - 1]! + 1;
+    const suggestion = {
+      id: 'date-1',
+      source: 'dates' as const,
+      action: 'add' as const,
+      tag: 'date',
+      anchor: createAnchor('doc', doc, node, rawStart, rawEnd, 'ignore'),
+      status: 'pending' as const,
+    };
+
+    const result = await session.apply([suggestion]);
+
+    expect(result.applied).toBe(1);
+    expect(loads).toHaveLength(1);
+    expect(getCurrent()).toContain('<date>少帝即位</date>');
   });
 
   it('reverts the last apply from its snapshot', async () => {

@@ -4,9 +4,10 @@ import type { Locales } from '@src/i18n';
 import type { PaletteMode } from '@src/types';
 import { isDesktop, type AiApiSettings } from '@src/types/desktop';
 import { useAtom } from 'jotai';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { buildProjectSchemas, type ProjectBundle } from './projectFile';
+import { getProjectSourceLanguage } from './projectLanguage';
 import {
   applyMetadataToProjectFiles,
   buildLastAppliedSnapshot,
@@ -35,7 +36,7 @@ import {
   getSchemaSetupSession,
   subscribeSchemaSetupDialogClosed,
 } from './schemaSetupSession';
-import type { ProjectMetadataFile } from './projectTypes';
+import type { AutoTaggingAuthoritySettings, ProjectMetadataFile } from './projectTypes';
 import {
   addTranslationLanguage,
   readTranslationSettings,
@@ -46,6 +47,12 @@ declare global {
   interface Window {
     __ljbNativeBridge?: {
       invoke: (method: string, args: unknown) => Promise<unknown>;
+    };
+    __leafWriterProject?: {
+      getProjectFilePath: () => string;
+      getProjectSourceLanguage?: () => Promise<string | null>;
+      getAutoTaggingAuthoritySettings: () => AutoTaggingAuthoritySettings | undefined;
+      setAutoTaggingAuthoritySettings: (settings: AutoTaggingAuthoritySettings) => void;
     };
   }
 }
@@ -96,6 +103,7 @@ export const useNativeDialogBridge = () => {
     useActions().ui;
   const { reloadTabFromDisk } = useActions().project;
   const [leafWriter] = useAtom(leafwriterAtom);
+  const authoritySettingsCache = useRef<AutoTaggingAuthoritySettings | undefined>(undefined);
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -120,7 +128,21 @@ export const useNativeDialogBridge = () => {
       setActiveProjectBundle(null);
       return;
     }
+    authoritySettingsCache.current = undefined;
     setActiveProjectBundle({ rootPath, projectFilePath, config });
+    window.__leafWriterProject = {
+      getProjectFilePath: () => projectFilePath,
+      getProjectSourceLanguage: () =>
+        getProjectSourceLanguage({ rootPath, projectFilePath, config }),
+      getAutoTaggingAuthoritySettings: () =>
+        authoritySettingsCache.current ?? config.autoTaggingAuthority,
+      setAutoTaggingAuthoritySettings: (settings) => {
+        authoritySettingsCache.current = settings;
+      },
+    };
+    return () => {
+      delete window.__leafWriterProject;
+    };
   }, [rootPath, projectFilePath, config]);
 
   useEffect(() => {

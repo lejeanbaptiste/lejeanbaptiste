@@ -1,7 +1,7 @@
 
-# Vague base plan
+# Vague base plan (superseded in part — see [authority-packs-planning.md](authority-packs-planning.md))
 
-We should look into offering to scrape all names for persons, places, orgs, etc. from the base authorities (WikiData, VIAF, etc.) if possible. Unclear whether the user should do this OR if pre-ship.
+We should look into offering to scrape all names for persons, places, orgs, etc. from the base authorities (WikiData, VIAF, etc.) if possible. Unclear whether the user should do this OR if pre-ship. **Updated 2026-07-05:** prefer **official dumps → compiled authority packs → tag bomb**; see the new planning doc for source-by-source feasibility. Wikidata/VIAF are pack inputs, not live scrape targets.
 
 # Authority databases: CBDB + DILA integration plan
 

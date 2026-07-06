@@ -1,0 +1,285 @@
+import { findTeiBodyRoot } from './dates';
+import {
+  isChineseLanguageCode,
+  isEastAsianCalendarLanguageCode,
+  isJapaneseLanguageCode,
+  normalizeSourceLanguageCode,
+} from '../utilities/languageCodes';
+
+const DATES_PASS_STORAGE_KEY = 'ljb:autoTagging:datesPass';
+const PROJECT_LANGUAGE_FIELD = 'profileDesc/langUsage/language';
+const DEFAULT_METADATA_REL = 'schema/project-metadata.json';
+const PROJECT_FILE_NAME = 'jean-baptiste.project.json';
+
+const HAN_RE = /\p{Script=Han}/u;
+const KANA_RE = /[\p{Script=Hiragana}\p{Script=Katakana}]/u;
+
+export type DatesPassStatus = 'ran' | 'applied';
+
+type DatesPassStore = Record<string, DatesPassStatus>;
+
+/** Stable per-document key for workflow flags (session + reopen). */
+export function autoTaggingDocumentKey(writer?: {
+  overmindState?: {
+    editor?: { resource?: { filePath?: string } };
+    document?: { url?: string };
+  };
+} | null): string {
+  const path =
+    writer?.overmindState?.editor?.resource?.filePath?.trim() ||
+    writer?.overmindState?.document?.url?.trim();
+  return path || 'unknown';
+}
+
+/**
+ * Read source language from a TEI document (`profileDesc/langUsage/language`
+ * or root `xml:lang`). The visual editor body often omits the header.
+ */
+export function sourceLanguageFromDocument(doc: Document): string | null {
+  const root = doc.documentElement;
+  if (!root) return null;
+
+  for (const el of root.getElementsByTagName('*')) {
+    if (el.localName !== 'language') continue;
+    let inLangUsage = false;
+    for (let p = el.parentElement; p; p = p.parentElement) {
+      if (p.localName === 'langUsage') {
+        inLangUsage = true;
+        break;
+      }
+    }
+    if (!inLangUsage) continue;
+    const ident = el.getAttribute('ident') || el.getAttribute('lang') || el.textContent;
+    const normalized = normalizeSourceLanguageCode(ident);
+    if (normalized) return normalized;
+  }
+
+  const rootLang = root.getAttribute('xml:lang') || root.getAttribute('lang');
+  return normalizeSourceLanguageCode(rootLang);
+}
+
+/** Plain text from the taggable body (for script inference). */
+export function collectBodyText(doc: Document): string {
+  const body = findTeiBodyRoot(doc);
+  const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+  const parts: string[] = [];
+  let node = walker.nextNode();
+  while (node) {
+    const text = node.textContent;
+    if (text) parts.push(text);
+    node = walker.nextNode();
+  }
+  return parts.join('');
+}
+
+/**
+ * When project metadata is missing, guess Chinese vs Japanese from body script.
+ * Returns null for predominantly Latin documents.
+ */
+export function inferEastAsianLanguageFromText(text: string): 'zh-Hans' | 'ja' | null {
+  let han = 0;
+  let kana = 0;
+  let latin = 0;
+  let sampled = 0;
+
+  for (const ch of text) {
+    if (/\s/u.test(ch)) continue;
+    sampled += 1;
+    if (HAN_RE.test(ch)) han += 1;
+    else if (KANA_RE.test(ch)) kana += 1;
+    else if (/[A-Za-zÀ-ÿ]/.test(ch)) latin += 1;
+    if (sampled >= 4000) break;
+  }
+
+  if (sampled < 40) return null;
+
+  const cjk = han + kana;
+  const cjkRatio = cjk / sampled;
+  if (cjkRatio < 0.2) return null;
+
+  // Meaningful kana → Japanese; otherwise literary/classical Chinese body text.
+  if (kana >= 8 && kana / Math.max(cjk, 1) >= 0.08) return 'ja';
+  if (latin / sampled > 0.65 && cjkRatio < 0.35) return null;
+
+  return 'zh-Hans';
+}
+
+export function inferEastAsianLanguageFromDocument(doc: Document): 'zh-Hans' | 'ja' | null {
+  return inferEastAsianLanguageFromText(collectBodyText(doc));
+}
+
+const joinProjectPath = (rootPath: string, relativePath: string): string => {
+  const separator = rootPath.includes('\\') ? '\\' : '/';
+  return [rootPath, ...relativePath.split(/[/\\]/)].join(separator);
+};
+
+/** Read language from `schema/project-metadata.json` when the bridge is unavailable. */
+export async function readProjectLanguageFromDisk(): Promise<string | null> {
+  const api = typeof window !== 'undefined'
+    ? (window as {
+        electronAPI?: { readFile?: (path: string) => Promise<string> };
+        __leafWriterProject?: { getProjectFilePath?: () => string };
+        __ljbLspProject?: { projectRoot?: string };
+      }).electronAPI
+    : undefined;
+  const projectApi = typeof window !== 'undefined'
+    ? (window as {
+        __leafWriterProject?: { getProjectFilePath?: () => string };
+        __ljbLspProject?: { projectRoot?: string };
+      })
+    : undefined;
+
+  const root = projectApi?.__ljbLspProject?.projectRoot?.trim();
+  if (!root || !api?.readFile) return null;
+
+  let metadataRel = DEFAULT_METADATA_REL;
+  const projectFile =
+    projectApi.__leafWriterProject?.getProjectFilePath?.().trim() ||
+    joinProjectPath(root, PROJECT_FILE_NAME);
+
+  try {
+    const config = JSON.parse(await api.readFile(projectFile)) as { metadata?: string };
+    if (config.metadata?.trim()) metadataRel = config.metadata.trim();
+  } catch {
+    // default metadata path
+  }
+
+  try {
+    const raw = await api.readFile(joinProjectPath(root, metadataRel));
+    const parsed = JSON.parse(raw) as { fields?: Record<string, string> };
+    return normalizeSourceLanguageCode(parsed.fields?.[PROJECT_LANGUAGE_FIELD]);
+  } catch {
+    return null;
+  }
+}
+
+/** Project metadata → stored header → editor doc → CJK body inference. */
+export async function resolveAutoTaggingSourceLanguage(
+  doc: Document,
+  getProjectLanguage?: () => Promise<string | null | undefined>,
+): Promise<string | null> {
+  if (getProjectLanguage) {
+    try {
+      const fromProject = normalizeSourceLanguageCode(await getProjectLanguage());
+      if (fromProject) return fromProject;
+    } catch {
+      // fall through
+    }
+  }
+
+  const fromDisk = await readProjectLanguageFromDisk();
+  if (fromDisk) return fromDisk;
+
+  const storedXml =
+    typeof window !== 'undefined'
+      ? (window as { __desktopStoredDocumentXml?: string }).__desktopStoredDocumentXml
+      : undefined;
+  if (storedXml?.trim()) {
+    const fullDoc = new DOMParser().parseFromString(storedXml, 'application/xml');
+    if (fullDoc.getElementsByTagName('parsererror').length === 0) {
+      const fromStored = sourceLanguageFromDocument(fullDoc);
+      if (fromStored) return fromStored;
+    }
+  }
+
+  const fromDoc = sourceLanguageFromDocument(doc);
+  if (fromDoc) return fromDoc;
+
+  return inferEastAsianLanguageFromDocument(doc);
+}
+
+/** True when sanmiao should run before dictionary / authority / AI on this project. */
+export function requiresDatesBeforeOtherTagging(language: string | null | undefined): boolean {
+  return isEastAsianCalendarLanguageCode(language);
+}
+
+/** East Asian dates method is offered only for Chinese / Japanese source languages. */
+export function isEastAsianDatesMethodAvailable(language: string | null | undefined): boolean {
+  return isEastAsianCalendarLanguageCode(language);
+}
+
+/** Default sanmiao `civ` for a project language. */
+export function defaultSanmiaoCivForLanguage(
+  language: string | null | undefined,
+): Array<'c' | 'j'> {
+  if (isJapaneseLanguageCode(language)) return ['j'];
+  if (isChineseLanguageCode(language)) return ['c'];
+  return ['c'];
+}
+
+/** Body already contains `<date>` markup (informational only — does not unlock the gate). */
+export function documentHasDateMarkup(doc: Document): boolean {
+  const body = findTeiBodyRoot(doc);
+  const walker = doc.createTreeWalker(body, NodeFilter.SHOW_ELEMENT);
+  let node = walker.nextNode();
+  while (node) {
+    if ((node as Element).localName === 'date') return true;
+    node = walker.nextNode();
+  }
+  return false;
+}
+
+const readDatesPassStore = (): DatesPassStore => {
+  if (typeof sessionStorage === 'undefined') return {};
+  try {
+    const raw = sessionStorage.getItem(DATES_PASS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as DatesPassStore;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeDatesPassStore = (store: DatesPassStore): void => {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    sessionStorage.setItem(DATES_PASS_STORAGE_KEY, JSON.stringify(store));
+  } catch {
+    // quota / private mode — ignore
+  }
+};
+
+const setDatesPassStatus = (docKey: string, status: DatesPassStatus): void => {
+  const store = readDatesPassStore();
+  store[docKey] = status;
+  writeDatesPassStore(store);
+};
+
+export const markDatesPassRan = (docKey: string): void => setDatesPassStatus(docKey, 'ran');
+
+export const markDatesPassApplied = (docKey: string): void => setDatesPassStatus(docKey, 'applied');
+
+export const clearDatesPassForDocument = (docKey: string): void => {
+  const store = readDatesPassStore();
+  delete store[docKey];
+  writeDatesPassStore(store);
+};
+
+/**
+ * Dictionary, authority, AI, etc. unlock only after sanmiao has run for this
+ * document in the current browser session (including a pass that found zero spans).
+ */
+export function areOtherAutoTaggingMethodsUnlocked(
+  docKey: string,
+  _doc: Document,
+  language: string | null | undefined,
+): boolean {
+  if (!requiresDatesBeforeOtherTagging(language)) return true;
+  const status = readDatesPassStore()[docKey];
+  return status === 'ran' || status === 'applied';
+}
+
+export const datesPassStatusForDocument = (
+  docKey: string,
+): DatesPassStatus | undefined => readDatesPassStore()[docKey];
+
+/** Whether this document still needs its first sanmiao pass. */
+export function needsDatesPassFirst(
+  docKey: string,
+  language: string | null | undefined,
+): boolean {
+  if (!requiresDatesBeforeOtherTagging(language)) return false;
+  const status = readDatesPassStore()[docKey];
+  return status !== 'ran' && status !== 'applied';
+}

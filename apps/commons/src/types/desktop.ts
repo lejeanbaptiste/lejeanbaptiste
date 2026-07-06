@@ -3,6 +3,12 @@ import type {
   AuthoritySourceId,
   AuthoritySourceStatus,
 } from '@src/desktop/authorityDbTypes';
+import type {
+  AuthorityLifecycleProgress,
+  AuthorityLifecycleRunResult,
+  AuthorityLifecycleSetEnabledOptions,
+  AuthorityLifecycleStatus,
+} from '@src/desktop/authorityLifecycleTypes';
 import type { ProjectBundle } from '@src/desktop/projectFile';
 import type {
   SchemaUpdateApplyResult,
@@ -207,6 +213,7 @@ export interface ElectronAPI {
     rngPath: string,
     cssPath?: string | null,
   ) => Promise<ProjectBundle>;
+  ensureSanmiaoDatesSchema?: (projectFilePath: string) => Promise<{ merged: boolean }>;
   checkSchemaUpdate: (
     projectFilePath: string,
     options?: SchemaUpdateCheckOptions,
@@ -235,6 +242,7 @@ export interface ElectronAPI {
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
+  pickAuthorityPacksSource?: () => Promise<string | null>;
   authorityDbStatuses?: () => Promise<AuthoritySourceStatus[]>;
   authorityDbDownload?: (
     sourceId: AuthoritySourceId,
@@ -242,6 +250,26 @@ export interface ElectronAPI {
   authorityDbPromptDownload?: () => Promise<'accepted' | 'declined'>;
   onAuthorityDbProgress?: (
     callback: (progress: AuthorityDownloadProgress) => void,
+  ) => () => void;
+  authorityPackStatuses?: () => Promise<import('@src/desktop/authorityPackTypes').AuthorityPackStatus[]>;
+  authorityPackRead?: (
+    packId: import('@src/desktop/authorityPackTypes').AuthorityPackId,
+  ) => Promise<string>;
+  authorityPackInstallFrom?: (
+    sourcePacksRoot: string,
+  ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;
+  authorityLifecycleGet?: () => Promise<AuthorityLifecycleStatus>;
+  authorityLifecycleSetEnabled?: (
+    options: AuthorityLifecycleSetEnabledOptions,
+  ) => Promise<AuthorityLifecycleRunResult>;
+  authorityLifecycleUpdate?: () => Promise<AuthorityLifecycleRunResult>;
+  authorityLifecycleMaybeCheckUpdates?: () => Promise<AuthorityLifecycleStatus | null>;
+  authorityLifecyclePromptEnable?: (
+    profile?: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleProfile,
+  ) => Promise<'accepted' | 'declined'>;
+  authorityLifecycleRevealFolder?: () => Promise<boolean>;
+  onAuthorityLifecycleProgress?: (
+    callback: (progress: AuthorityLifecycleProgress) => void,
   ) => () => void;
   updateProjectFileConfig: (
     projectFilePath: string,
@@ -323,13 +351,24 @@ declare global {
     __ljbCommonsUi?: {
       aiApiSettings: AiApiSettings | null;
       encoderName: string;
+      entityDbFolder: string | null;
+      rememberWorkspaceOnStartup: boolean;
       skipCopyPasteHelp: boolean;
       skipExplorerDeleteConfirm: boolean;
+      pickEntityDbFolder: () => Promise<string | null>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;
       setEncoderName: (name: string) => void | Promise<void>;
+      setRememberWorkspaceOnStartup: (value: boolean) => void | Promise<void>;
       setSkipCopyPasteHelp: (value: boolean) => void;
       setSkipExplorerDeleteConfirm: (value: boolean) => void;
       testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
+      authorityLifecycleStatus: AuthorityLifecycleStatus | null;
+      refreshAuthorityLifecycle: () => Promise<void>;
+      setAuthorityLifecycleEnabled: (
+        options: AuthorityLifecycleSetEnabledOptions,
+      ) => Promise<AuthorityLifecycleRunResult>;
+      runAuthorityLifecycleUpdate: () => Promise<AuthorityLifecycleRunResult>;
+      revealAuthorityLifecycleFolder: () => Promise<void>;
     };
     __ljbOpenNativeSchemaPicker?: (options: SchemaPickerOpenerOptions) => Promise<void>;
     /** Desktop: strip teiHeader before WYSIWYG load (registered by useLeafWriter). */

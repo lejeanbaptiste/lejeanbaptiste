@@ -61,7 +61,7 @@ function parseGoldXml(source: string): Document {
 const RUN_LIVE = process.env.LLM_LIVE_TEST === '1';
 const maybe = RUN_LIVE ? it : it.skip;
 
-const defaultGold = path.resolve(__dirname, '../../../../test_project/corpus_a/gold/gold_test.xml');
+const defaultGold = path.resolve(__dirname, '../../../../test_project/project/gold_test.xml');
 const xmlPath = process.env.LLM_LIVE_GOLD ?? defaultGold;
 
 function formatMetrics(m: { tp: number; fp: number; fn: number; precision: number; recall: number; f1: number }): string {

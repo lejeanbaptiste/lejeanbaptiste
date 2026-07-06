@@ -15,7 +15,7 @@ const getCommonsUiBridge = () =>
     window as Window & {
       __ljbCommonsUi?: {
         entityDbFolder: string | null;
-        pickEntityDbFolder: () => void | Promise<void>;
+        pickEntityDbFolder: () => Promise<string | null>;
       };
     }
   ).__ljbCommonsUi;
@@ -26,9 +26,11 @@ export const DesktopEntityDatabase = () => {
   const [entityDbFolder, setEntityDbFolder] = useState(bridge?.entityDbFolder ?? null);
 
   useEffect(() => {
-    if (!bridge) return;
-    setEntityDbFolder(bridge.entityDbFolder);
-  }, [bridge?.entityDbFolder]);
+    const sync = () => setEntityDbFolder(getCommonsUiBridge()?.entityDbFolder ?? null);
+    sync();
+    window.addEventListener('ljbCommonsUiChanged', sync);
+    return () => window.removeEventListener('ljbCommonsUiChanged', sync);
+  }, []);
 
   if (!bridge) return null;
 
@@ -56,8 +58,8 @@ export const DesktopEntityDatabase = () => {
         <Box>
           <Button
             onClick={() =>
-              void bridge.pickEntityDbFolder().then(() => {
-                setEntityDbFolder(bridge.entityDbFolder);
+              void bridge.pickEntityDbFolder().then((folder) => {
+                if (folder) setEntityDbFolder(folder);
               })
             }
             size="small"

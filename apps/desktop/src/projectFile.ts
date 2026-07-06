@@ -4,6 +4,7 @@ import path from 'path';
 import {
   DEFAULT_METADATA_PATH,
   PROJECT_FILE_NAME,
+  type AutoTaggingAuthoritySettings,
   type ProjectBundle,
   type ProjectFileConfig,
   type ProjectSchemaConfig,
@@ -17,6 +18,25 @@ export {
   type ProjectMetadataFile,
   type ProjectSchemaConfig,
 } from './projectTypes';
+
+const normalizeAutoTaggingAuthority = (
+  raw: unknown,
+): AutoTaggingAuthoritySettings | undefined => {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const value = raw as AutoTaggingAuthoritySettings;
+  const packs = Array.isArray(value.packs)
+    ? value.packs.filter((p): p is string => typeof p === 'string' && p.trim().length > 0)
+    : undefined;
+  const yearStart = typeof value.yearStart === 'number' ? value.yearStart : undefined;
+  const yearEnd = typeof value.yearEnd === 'number' ? value.yearEnd : undefined;
+  const out: AutoTaggingAuthoritySettings = {};
+  if (packs?.length) out.packs = packs;
+  if (typeof value.yearFilterEnabled === 'boolean') out.yearFilterEnabled = value.yearFilterEnabled;
+  if (yearStart != null) out.yearStart = yearStart;
+  if (yearEnd != null) out.yearEnd = yearEnd;
+  if (typeof value.hideUndated === 'boolean') out.hideUndated = value.hideUndated;
+  return Object.keys(out).length ? out : undefined;
+};
 
 const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): ProjectFileConfig => ({
   version: 1,
@@ -34,6 +54,7 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
     typeof raw.entityDatabaseId === 'string' && raw.entityDatabaseId.trim()
       ? raw.entityDatabaseId.trim()
       : undefined,
+  autoTaggingAuthority: normalizeAutoTaggingAuthority(raw.autoTaggingAuthority),
 });
 
 export const writeProjectConfig = async (

@@ -1,4 +1,7 @@
 import type { Context } from '../';
+
+/** Skip debounced saves while restoring tabs so we do not persist partial/empty session state. */
+let suppressWorkspaceSessionSave = false;
 import { buildProjectSchemas, joinProjectPath, type ProjectBundle } from '@src/desktop/projectFile';
 import { completeProjectOnboarding } from '@src/desktop/projectOnboarding';
 import {
@@ -52,7 +55,7 @@ import {
   mergeEditorBodyWithStoredHeader,
   stripTeiHeaderForVisualEditor,
 } from '@src/desktop/teiHeaderXml';
-import { isDesktop } from '@src/types/desktop';
+import { isDesktop, type WorkspaceCursorPosition } from '@src/types/desktop';
 import { buildSkeletonForCatalog } from '@src/desktop/schemaTemplates';
 import type { FileTreeNode } from './state';
 
@@ -445,6 +448,7 @@ export const restoreLastProject = async (context: Context) => {
     return;
   }
 
+  suppressWorkspaceSessionSave = true;
   try {
     const session = await window.electronAPI.restoreWorkspaceSession?.();
     const bundle = session?.bundle ?? (await window.electronAPI.restoreLastProject?.());
@@ -477,13 +481,41 @@ export const restoreLastProject = async (context: Context) => {
   } catch (error) {
     console.error('[project] restoreLastProject failed:', error);
     context.state.project.isProjectReady = true;
+  } finally {
+    suppressWorkspaceSessionSave = false;
+    await context.actions.project.saveWorkspaceSession();
   }
 };
 
 /** @deprecated Use openProject */
 export const openProjectFolder = openProject;
 
+/** Build a plain object safe for Electron IPC structured clone (Overmind proxies are not). */
+const cloneableCursorPositions = (
+  positions: Record<string, WorkspaceCursorPosition>,
+): Record<string, WorkspaceCursorPosition> => {
+  const out: Record<string, WorkspaceCursorPosition> = {};
+  for (const [filePath, position] of Object.entries(positions)) {
+    if (!position || typeof position !== 'object') continue;
+    if (position.mode === 'source' && typeof position.offset === 'number') {
+      out[filePath] = { mode: 'source', offset: position.offset };
+    } else if (
+      position.mode === 'visual' &&
+      typeof position.teiXPath === 'string' &&
+      typeof position.offsetInElementText === 'number'
+    ) {
+      out[filePath] = {
+        mode: 'visual',
+        teiXPath: position.teiXPath,
+        offsetInElementText: position.offsetInElementText,
+      };
+    }
+  }
+  return out;
+};
+
 export const saveWorkspaceSession = async ({ state }: Context) => {
+  if (suppressWorkspaceSessionSave) return;
   if (!window.electronAPI?.saveWorkspaceSession || !state.project.projectFilePath) return;
 
   const openFilePaths = state.project.openTabs
@@ -493,10 +525,11 @@ export const saveWorkspaceSession = async ({ state }: Context) => {
     state.project.activeTabPath && openFilePaths.includes(state.project.activeTabPath)
       ? (window.__leafWriterCursorSession?.capture() ?? null)
       : null;
-  const cursorPositions =
+  const cursorPositions = cloneableCursorPositions(
     activeCursorPosition && state.project.activeTabPath
       ? { ...state.project.cursorPositions, [state.project.activeTabPath]: activeCursorPosition }
-      : state.project.cursorPositions;
+      : state.project.cursorPositions,
+  );
 
   try {
     await window.electronAPI.saveWorkspaceSession({
@@ -505,7 +538,7 @@ export const saveWorkspaceSession = async ({ state }: Context) => {
           ? state.project.activeTabPath
           : null,
       cursorPositions,
-      openFilePaths,
+      openFilePaths: [...openFilePaths],
       projectFilePath: state.project.projectFilePath,
     });
   } catch (error) {
@@ -883,6 +916,7 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
       isLocal: true,
     });
     state.editor.contentLastSaved = content;
+    await actions.project.saveWorkspaceSession();
   } catch (error) {
     throw error;
   }
@@ -935,6 +969,7 @@ export const switchTab = async (
     isLocal: true,
   });
   state.editor.contentLastSaved = tab.content;
+  await actions.project.saveWorkspaceSession();
 };
 
 export const saveActiveTab = async (
@@ -1211,7 +1246,10 @@ export const closeTab = async (
   const remaining = state.project.openTabs.filter((tab) => tab.filePath !== filePath);
   state.project.openTabs = remaining;
 
-  if (state.project.activeTabPath !== filePath) return;
+  if (state.project.activeTabPath !== filePath) {
+    await actions.project.saveWorkspaceSession();
+    return;
+  }
 
   if (remaining.length === 0) {
     state.project.activeTabPath = null;
@@ -1219,6 +1257,7 @@ export const closeTab = async (
     state.editor.contentLastSaved = undefined;
     await actions.editor.clearResource();
     clearWriterSession();
+    await actions.project.saveWorkspaceSession();
     return;
   }
 

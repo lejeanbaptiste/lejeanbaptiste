@@ -329,8 +329,12 @@ export const setSelectedTranslationUnit = ({ state }: Context, unitId: string | 
   state.ui.translationMode.selectedUnitId = unitId;
 };
 
-export const startAutoTaggingReview = ({ state }: Context, suggestions: Suggestion[]) => {
-  stashAutoTaggingBatch(suggestions);
+export const startAutoTaggingReview = (
+  { state }: Context,
+  suggestions: Suggestion[],
+  notice?: string,
+) => {
+  stashAutoTaggingBatch(suggestions, notice);
   state.ui.autoTaggingReview.active = true;
   window.dispatchEvent(new CustomEvent('desktop:auto-tagging-review-open'));
 };

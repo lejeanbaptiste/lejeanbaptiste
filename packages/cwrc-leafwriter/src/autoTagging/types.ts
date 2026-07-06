@@ -1,11 +1,18 @@
-export type SuggestionSource = 'dictionary' | 'dates' | 'ai' | 'ner' | 'disambiguation';
+export type SuggestionSource =
+  | 'dictionary'
+  | 'authority'
+  | 'dates'
+  | 'ai'
+  | 'ner'
+  | 'disambiguation';
 
 export type SuggestionAction =
   | 'add'
   | 'remove'
   | 'retag'
   | 'redraw-boundary'
-  | 'assign-entity';
+  | 'assign-entity'
+  | 'resolve-date';
 
 export type SuggestionStatus = 'pending' | 'accepted' | 'rejected' | 'unresolvable';
 
@@ -46,6 +53,27 @@ export interface Suggestion {
   confidence?: number;
   rationale?: string;
   status: SuggestionStatus;
+  /** East Asian dates: parse + resolution metadata from sanmiao. */
+  dateResolution?: DateResolution;
+}
+
+export interface DateCandidate {
+  displayLine: string;
+  attrs?: Record<string, string>;
+  era_id?: number;
+  dyn_id?: number;
+  error_str?: string;
+}
+
+export interface DateResolution {
+  status: 'tagged' | 'unique' | 'ambiguous' | 'unresolved' | 'range';
+  candidates?: DateCandidate[];
+  /** Sanmiao parse children (inner XML only), applied inside `<date>`. */
+  parseXml?: string;
+  /** User's pick when status is ambiguous or unresolved with multiple candidates. */
+  selectedCandidateIndex?: number;
+  /** Prior accepted date in this batch used as sequential context (Phase 2b). */
+  attachToDateIndex?: number;
 }
 
 /** A resolved anchor: the concrete text node and raw offsets to act on. */

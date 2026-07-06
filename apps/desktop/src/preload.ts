@@ -150,6 +150,7 @@ export interface ElectronAPI {
     rngPath: string,
     cssPath?: string | null,
   ) => Promise<ProjectBundle>;
+  ensureSanmiaoDatesSchema?: (projectFilePath: string) => Promise<{ merged: boolean }>;
   checkSchemaUpdate: (
     projectFilePath: string,
     options?: SchemaUpdateCheckOptions,
@@ -178,6 +179,7 @@ export interface ElectronAPI {
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
+  pickAuthorityPacksSource: () => Promise<string | null>;
   authorityDbStatuses: () => Promise<AuthoritySourceStatus[]>;
   authorityDbDownload: (
     sourceId: AuthoritySourceId,
@@ -185,6 +187,54 @@ export interface ElectronAPI {
   authorityDbPromptDownload: () => Promise<'accepted' | 'declined'>;
   onAuthorityDbProgress: (
     callback: (progress: AuthorityDownloadProgress) => void,
+  ) => () => void;
+  authorityPackStatuses?: () => Promise<import('@src/desktop/authorityPackTypes').AuthorityPackStatus[]>;
+  authorityPackRead?: (packId: import('@src/desktop/authorityPackTypes').AuthorityPackId) => Promise<string>;
+  authorityPackInstallFrom?: (
+    sourcePacksRoot: string,
+  ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;
+  authorityLifecycleGet?: () => Promise<
+    import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus
+  >;
+  authorityLifecycleSetEnabled?: (
+    options: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleSetEnabledOptions,
+  ) => Promise<import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult>;
+  authorityLifecycleUpdate?: () => Promise<
+    import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult
+  >;
+  authorityLifecycleMaybeCheckUpdates?: () => Promise<
+    import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus | null
+  >;
+  authorityLifecyclePromptEnable?: (
+    profile?: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleProfile,
+  ) => Promise<'accepted' | 'declined'>;
+  authorityLifecycleRevealFolder?: () => Promise<boolean>;
+  onAuthorityLifecycleProgress?: (
+    callback: (
+      progress: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
+    ) => void,
+  ) => () => void;
+  sanmiaoProposeDates?: (
+    text: string,
+    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<import('@src/desktop/sanmiaoBridge').SanmiaoProposal[]>;
+  sanmiaoProposeDatesBatch?: (
+    chunks: string[],
+    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<import('@src/desktop/sanmiaoBridge').SanmiaoProposal[][]>;
+  sanmiaoTagDatesBatch?: (
+    chunks: string[],
+    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<import('@src/desktop/sanmiaoBridge').SanmiaoProposal[][]>;
+  sanmiaoResolveDatesBatch?: (
+    dates: string[],
+    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<(import('@src/desktop/sanmiaoBridge').SanmiaoProposal | null)[]>;
+  sanmiaoListDateAuthority?: (
+    options?: import('@src/desktop/sanmiaoBridge').SanmiaoProposeOptions,
+  ) => Promise<import('@src/desktop/sanmiaoBridge').DateAuthorityIndex>;
+  onSanmiaoProgress?: (
+    callback: (progress: import('@src/desktop/sanmiaoBridge').SanmiaoChunkProgress) => void,
   ) => () => void;
   updateProjectFileConfig: (
     projectFilePath: string,
@@ -279,6 +329,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('installCatalogSchema', projectFilePath, catalogId),
   installLocalSchema: (projectFilePath: string, rngPath: string, cssPath?: string | null) =>
     ipcRenderer.invoke('installLocalSchema', projectFilePath, rngPath, cssPath),
+  ensureSanmiaoDatesSchema: (projectFilePath: string) =>
+    ipcRenderer.invoke('ensureSanmiaoDatesSchema', projectFilePath),
   checkSchemaUpdate: (projectFilePath: string, options?: SchemaUpdateCheckOptions) =>
     ipcRenderer.invoke('checkSchemaUpdate', projectFilePath, options),
   applyCatalogSchemaUpdate: (projectFilePath: string) =>
@@ -310,6 +362,7 @@ const electronAPI: ElectronAPI = {
   getEntityDbFolder: () => ipcRenderer.invoke('getEntityDbFolder'),
   setEntityDbFolder: (folder: string | null) => ipcRenderer.invoke('setEntityDbFolder', folder),
   pickEntityDbFolder: () => ipcRenderer.invoke('pickEntityDbFolder'),
+  pickAuthorityPacksSource: () => ipcRenderer.invoke('pickAuthorityPacksSource'),
   authorityDbStatuses: () => ipcRenderer.invoke('authorityDb:statuses'),
   authorityDbDownload: (sourceId: AuthoritySourceId) =>
     ipcRenderer.invoke('authorityDb:download', sourceId),
@@ -319,6 +372,44 @@ const electronAPI: ElectronAPI = {
       callback(progress);
     ipcRenderer.on('authorityDb:progress', listener);
     return () => ipcRenderer.removeListener('authorityDb:progress', listener);
+  },
+  authorityPackStatuses: () => ipcRenderer.invoke('authorityPack:statuses'),
+  authorityPackRead: (packId: string) => ipcRenderer.invoke('authorityPack:read', packId),
+  authorityPackInstallFrom: (sourcePacksRoot: string) =>
+    ipcRenderer.invoke('authorityPack:installFrom', sourcePacksRoot),
+  authorityLifecycleGet: () => ipcRenderer.invoke('authorityLifecycle:get'),
+  authorityLifecycleSetEnabled: (options) =>
+    ipcRenderer.invoke('authorityLifecycle:setEnabled', options),
+  authorityLifecycleUpdate: () => ipcRenderer.invoke('authorityLifecycle:update'),
+  authorityLifecycleMaybeCheckUpdates: () =>
+    ipcRenderer.invoke('authorityLifecycle:maybeCheckUpdates'),
+  authorityLifecyclePromptEnable: (profile) =>
+    ipcRenderer.invoke('authorityLifecycle:promptEnable', profile),
+  authorityLifecycleRevealFolder: () => ipcRenderer.invoke('authorityLifecycle:revealFolder'),
+  onAuthorityLifecycleProgress: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      progress: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
+    ) => callback(progress);
+    ipcRenderer.on('authorityLifecycle:progress', listener);
+    return () => ipcRenderer.removeListener('authorityLifecycle:progress', listener);
+  },
+  sanmiaoProposeDates: (text, options) => ipcRenderer.invoke('sanmiao:proposeDates', text, options),
+  sanmiaoProposeDatesBatch: (chunks, options) =>
+    ipcRenderer.invoke('sanmiao:proposeDatesBatch', chunks, options),
+  sanmiaoTagDatesBatch: (chunks, options) =>
+    ipcRenderer.invoke('sanmiao:tagDatesBatch', chunks, options),
+  sanmiaoResolveDatesBatch: (dates, options) =>
+    ipcRenderer.invoke('sanmiao:resolveDatesBatch', dates, options),
+  sanmiaoListDateAuthority: (options) =>
+    ipcRenderer.invoke('sanmiao:listDateAuthority', options),
+  onSanmiaoProgress: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      progress: import('@src/desktop/sanmiaoBridge').SanmiaoChunkProgress,
+    ) => callback(progress);
+    ipcRenderer.on('sanmiao:progress', listener);
+    return () => ipcRenderer.removeListener('sanmiao:progress', listener);
   },
   updateProjectFileConfig: (projectFilePath: string, patch: Record<string, unknown>) =>
     ipcRenderer.invoke('updateProjectFileConfig', projectFilePath, patch),

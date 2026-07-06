@@ -36,10 +36,21 @@ export {
   FIXED_LANGUAGE_OPTIONS,
   canonicalLanguageCode,
   isChineseLanguageCode,
+  isEastAsianCalendarLanguageCode,
   isKnownLanguageCode,
   languageLabelForCode,
 } from './utilities/languageCodes';
 export type { LanguageOption } from './utilities/languageCodes';
+export {
+  EastAsianDateFields,
+  useDateAuthority,
+  isDateAuthorityAvailable,
+  readEastAsianDateValues,
+  eastAsianValuesToAttributes,
+  hasEastAsianCalendarContext,
+  mergeEastAsianIntoAttributes,
+} from './dateAuthority';
+export type { EastAsianDateValues, DateAuthorityIndex } from './dateAuthority';
 export { entityLookupDialogAtom } from './jotai/entity-lookup';
 export { SETTINGS_BOOTSTRAP_URL } from './constants/settingsBootstrap';
 export * as Types from './types';

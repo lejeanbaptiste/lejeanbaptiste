@@ -1,6 +1,11 @@
 import { useActions, useAppState } from '@src/overmind';
 import { registerLeafWriterCommonsI18n } from '@src/desktop/registerLeafWriterCommonsI18n';
 import { isDesktop, type AiApiSettings } from '@src/types/desktop';
+import type {
+  AuthorityLifecycleRunResult,
+  AuthorityLifecycleSetEnabledOptions,
+  AuthorityLifecycleStatus,
+} from '@src/desktop/authorityLifecycleTypes';
 import { useCallback, useEffect, useState } from 'react';
 
 export const useCommonsUiBridge = () => {
@@ -12,6 +17,8 @@ export const useCommonsUiBridge = () => {
   const [aiApiSettings, setAiApiSettingsState] = useState<AiApiSettings | null>(null);
   const [entityDbFolder, setEntityDbFolderState] = useState<string | null>(null);
   const [rememberWorkspaceOnStartup, setRememberWorkspaceOnStartupState] = useState(true);
+  const [authorityLifecycleStatus, setAuthorityLifecycleStatusState] =
+    useState<AuthorityLifecycleStatus | null>(null);
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.getEncoderName) return;
@@ -44,6 +51,24 @@ export const useCommonsUiBridge = () => {
       if (typeof remember === 'boolean') setRememberWorkspaceOnStartupState(remember);
     });
   }, []);
+
+  const refreshAuthorityLifecycle = useCallback(async () => {
+    if (!window.electronAPI?.authorityLifecycleGet) return;
+    const next = await window.electronAPI.authorityLifecycleGet();
+    setAuthorityLifecycleStatusState(next);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.authorityLifecycleGet) return;
+    void refreshAuthorityLifecycle();
+  }, [entityDbFolder, refreshAuthorityLifecycle]);
+
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.authorityLifecycleMaybeCheckUpdates) return;
+    void window.electronAPI.authorityLifecycleMaybeCheckUpdates().then((status) => {
+      if (status) setAuthorityLifecycleStatusState(status);
+    });
+  }, [entityDbFolder]);
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -101,17 +126,63 @@ export const useCommonsUiBridge = () => {
     );
   }, []);
 
-  const pickEntityDbFolder = useCallback(async () => {
+  const pickEntityDbFolder = useCallback(async (): Promise<string | null> => {
     const picked = await window.electronAPI?.pickEntityDbFolder?.();
-    if (picked) {
-      await window.electronAPI?.setEntityDbFolder?.(picked);
-      setEntityDbFolderState(picked);
+    if (!picked) return null;
+
+    const folder = picked.replace(/[/\\]+$/, '');
+    const entitiesHere = await window.electronAPI?.pathExists?.(`${folder}/entities.xml`);
+    if (!entitiesHere) {
+      const parent = folder.replace(/[/\\][^/\\]+$/, '');
+      const entitiesInParent =
+        parent.length > 0 &&
+        (await window.electronAPI?.pathExists?.(`${parent}/entities.xml`));
+      await window.electronAPI?.showNativeMessageBox?.({
+        type: 'warning',
+        title: 'No entities.xml in that folder',
+        message: entitiesInParent
+          ? `Your entity database is probably the parent folder:\n${parent}\n\nChoose that folder, not the project subfolder inside it.`
+          : 'The entity database folder should contain entities.xml at its root. Compiled authority packs go in authority-packs/ beside it.',
+        buttons: ['OK'],
+      });
+      if (entitiesInParent) return null;
     }
+
+    await window.electronAPI?.setEntityDbFolder?.(picked);
+    setEntityDbFolderState(picked);
+    return picked;
   }, []);
 
   const setRememberWorkspaceOnStartup = useCallback(async (value: boolean) => {
     setRememberWorkspaceOnStartupState(value);
     await window.electronAPI?.setRememberWorkspaceOnStartup?.(value);
+  }, []);
+
+  const setAuthorityLifecycleEnabled = useCallback(
+    async (options: AuthorityLifecycleSetEnabledOptions): Promise<AuthorityLifecycleRunResult> => {
+      const result =
+        (await window.electronAPI?.authorityLifecycleSetEnabled?.(options)) ?? {
+          ok: false,
+          error: 'Authority lifecycle bridge is unavailable.',
+        };
+      await refreshAuthorityLifecycle();
+      return result;
+    },
+    [refreshAuthorityLifecycle],
+  );
+
+  const runAuthorityLifecycleUpdate = useCallback(async (): Promise<AuthorityLifecycleRunResult> => {
+    const result =
+      (await window.electronAPI?.authorityLifecycleUpdate?.()) ?? {
+        ok: false,
+        error: 'Authority lifecycle bridge is unavailable.',
+      };
+    await refreshAuthorityLifecycle();
+    return result;
+  }, [refreshAuthorityLifecycle]);
+
+  const revealAuthorityLifecycleFolder = useCallback(async () => {
+    await window.electronAPI?.authorityLifecycleRevealFolder?.();
   }, []);
 
   useEffect(() => {
@@ -125,6 +196,7 @@ export const useCommonsUiBridge = () => {
       rememberWorkspaceOnStartup,
       skipCopyPasteHelp,
       skipExplorerDeleteConfirm,
+      authorityLifecycleStatus,
       setAiApiSettings,
       setEncoderName,
       setRememberWorkspaceOnStartup,
@@ -132,18 +204,29 @@ export const useCommonsUiBridge = () => {
       setSkipExplorerDeleteConfirm,
       pickEntityDbFolder,
       testAiConnection,
+      refreshAuthorityLifecycle,
+      setAuthorityLifecycleEnabled,
+      runAuthorityLifecycleUpdate,
+      revealAuthorityLifecycleFolder,
     };
+
+    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
 
     return () => {
       delete window.__ljbCommonsUi;
     };
   }, [
     aiApiSettings,
+    authorityLifecycleStatus,
     encoderName,
     entityDbFolder,
     rememberWorkspaceOnStartup,
     pickEntityDbFolder,
+    refreshAuthorityLifecycle,
+    runAuthorityLifecycleUpdate,
+    revealAuthorityLifecycleFolder,
     setAiApiSettings,
+    setAuthorityLifecycleEnabled,
     setEncoderName,
     setRememberWorkspaceOnStartup,
     setSkipCopyPasteHelp,

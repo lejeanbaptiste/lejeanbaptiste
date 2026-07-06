@@ -28,12 +28,28 @@ export const ProjectEditPage = () => {
   useEffect(() => {
     if (!isDesktop() || !isProjectReady || !projectFilePath) return;
 
-    const timeout = window.setTimeout(() => {
-      void saveWorkspaceSession();
-    }, 250);
+    void saveWorkspaceSession();
 
-    return () => window.clearTimeout(timeout);
+    return () => {
+      void saveWorkspaceSession();
+    };
   }, [activeTabPath, isProjectReady, openTabs, projectFilePath, saveWorkspaceSession]);
+
+  useEffect(() => {
+    if (!isDesktop() || !isProjectReady) return;
+
+    const flush = () => {
+      void saveWorkspaceSession();
+    };
+
+    window.addEventListener('pagehide', flush);
+    window.addEventListener('beforeunload', flush);
+
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      window.removeEventListener('beforeunload', flush);
+    };
+  }, [isProjectReady, saveWorkspaceSession]);
 
   if (isDesktop() && !isProjectReady) {
     return (

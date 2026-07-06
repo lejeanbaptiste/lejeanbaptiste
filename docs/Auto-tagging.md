@@ -88,7 +88,86 @@ Priority *across* methods (dictionary vs. AI vs. NER on overlapping spans) is se
 
 ## East Asian dates
 
-- sanmiao python package, adapted for TEI
+Uses the [sanmiao](https://pypi.org/project/sanmiao/) Python package (tag → solve → report).
+
+**Desktop setup:** for day-to-day hacking, use an [editable install](docs/sanmiao-ljb-integration.md#editable-dev-install-tweak-sanmiao--ljb-together) in a sibling `sanmiao` repo. For a fixed release only: `pip install sanmiao`. LJB calls `python -m sanmiao.tei_bridge` via Electron IPC.
+
+Dates follow a **different workflow** from `persName` dictionary tagging or entity disambiguation. See **`docs/sanmiao-dates-schema.md`** for schema extension details and **`docs/sanmiao-ljb-integration.md`** for sanmiao source-code / namespace notes.
+
+### Why dates are not “tag now, disambiguate later”
+
+- Sanmiao **must** parse structure (`<era>`, `<year>`, `<month>`, …) or numeric attrs on `<date>` before it can solve. A bare `<date>建安十八年二月</date>` is display text until `tag_date_elements` runs again.
+- **Resolution attrs** (`era_id`, `jdn`, `when`, …) cannot be written at tag time: proliferate mode returns **one-to-many** calendar candidates per span.
+- Ambiguity is **which historical moment**, not which person. Bulk “accept all identical strings” is unsafe for bare relative dates (`三年`).
+
+### Two-phase workflow (Chinese / Japanese)
+
+Dates use **tag first, resolve later** — not one combined pass:
+
+1. **Tag dates** — sanmiao finds spans and writes **parse structure only** inside `<date>` (`<dyn>`, `<era>`, `<year>`, …) with `cert="low"`. No `jdn` / `when` yet.
+2. **Manual gap-fill** — add any missed anchors in the editor (e.g. `宋臺初建`) before resolving relatives that depend on them.
+3. **Resolve dates** — walk every `<date>` in **document order**, run sanmiao solve with sequential implied context, curate ambiguous picks, apply resolution attributes.
+
+This fixes flashback/relative-date chains that break when the tagger misses a context-setting phrase.
+
+### Integrated tag + resolve (legacy note)
+
+Earlier builds combined tag+solve in one `propose_dates` call. The UI now uses `tag_dates_batch` + `resolve_dates_batch` instead.
+
+### Two layers in corpus XML
+
+| Layer | When | Content |
+|-------|------|---------|
+| **Parse** | After tag apply (or after resolve if still ambiguous) | Sanmiao children inside `<date>`: `<dyn>`, `<era>`, `<year>`, … — encodes what the text says, **no** `era_id` / `jdn` |
+| **Resolution** | After user picks a candidate | `jdn` (canonical), `when` / `notBefore` / `notAfter` (derived ISO for display), optional `era_id`, `dyn_id`, `dila_id`, `calendar` |
+
+Ambiguous or pending: parse children + `cert="low"` (or `type="sanmiao-pending"`). No resolution IDs until confirmed.
+
+**JDN is canonical; ISO is derived.** Project settings store `prolepticGregorian`, `gregorianStart`, `civ`, `tpq`/`taq`. Changing `pg`/`gs` recomputes `when` from stored `jdn` without re-running sanmiao.
+
+### Suggestion object extension
+
+Same `Suggestion` type; dates add optional resolution metadata:
+
+```typescript
+interface DateResolution {
+  status: 'unique' | 'ambiguous' | 'unresolved' | 'range';
+  candidates?: DateCandidate[];
+  sequentialContext?: string;
+  /** Sanmiao parse XML fragment (inner children only), for apply before resolve */
+  parseXml?: string;
+}
+
+interface DateCandidate {
+  jdn?: number;
+  jdnEnd?: number;
+  iso?: string;
+  isoEnd?: string;
+  displayLine: string;   // sanmiao report line
+  era_id?: number;
+  dyn_id?: number;
+  dila_id?: string;
+  error_str?: string;
+}
+```
+
+Resolve UI shows **sanmiao match lines** (not CBDB-style authority cards). No `@key` / `entities.xml` for dates.
+
+### Workflow gate (Chinese / Japanese)
+
+For **Chinese** (`zh*`, `lzh`) and **Japanese** (`ja`) source documents, LJB enforces **dates first**:
+
+1. Auto-tagging opens with **East Asian dates** at the top; dictionary, authority packs, and AI stay disabled until the dates pass completes.
+2. **Unlock** when: sanmiao has run on this document in this session (even if zero spans found), or the user applies date tags. Pre-existing `<date>` markup alone does **not** unlock — you must run the dates pass.
+3. **Sanmiao is not offered** for Korean or Western-language projects in v1 (other methods are available immediately).
+
+Language is read from **Project settings** metadata first (`profileDesc/langUsage/language`), then the stored TEI header, then the editor document. See `autoTagging/dateWorkflow.ts` and `window.__leafWriterProject.getProjectSourceLanguage()`.
+
+**Planned (Phase 2b):** replace the generic yes/no review for dates with a **date curator** — combined keep/reject, one-to-many picker, and sequential context repair, optionally AI-pre-filled (Phase 2c). See `docs/Auto-tagging-phases.md` § Phase 2b–2d.
+
+### Schema
+
+Stock TEI does not allow sanmiao children or `jdn` / `era_id` on `<date>`. **TEI catalog schemas** (All, Lite, Simple Print, jTEI) are automatically merged on install and patched on project open — see `sanmiao-dates-schema.md`.
 
 ## Dictionary tagging
 
@@ -181,6 +260,8 @@ AI suggest is wired in the desktop app (dialog → review panel → `.ljb/ai-cac
 **Done when (these two items):** user can pick tags from schema/project settings; active prompt profile is visible and editable without touching repo files; profile + tag set participate in cache keys; harness documents quality for at least Groq Qwen3.6 + one Mistral path on gold that includes `roleName`/`orgName`.
 
 **Auto-accept rules**: let users define per-tag trust (e.g., "auto-accept AI `<date>` suggestions above 0.9, always review `<persName>`").
+
+**Authority packs & tag bomb (2026-07-05):** the primary throughput path for tagging quantity is offline **authority packs** (CBDB, DILA, Wikidata subsets, GeoNames, NDL, …) compiled to match strings and fired through the dictionary/seed matcher — not LLM suggest. AI remains the long-tail supplement. Strategic plan and source feasibility: [authority-packs-planning.md](authority-packs-planning.md).
 
 **User feedback**: no trained classifier. A simple decision log (surface form → chosen tag/entity, with counts) in the project entity file gets 90% of the value: it drives defaults ("user corrected 張衡→persName twice, so default to that") and doubles as context for AI ranking.
 

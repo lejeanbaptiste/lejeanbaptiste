@@ -31,6 +31,13 @@ const statusColor: Record<Suggestion['status'], 'default' | 'success' | 'error' 
   unresolvable: 'warning',
 };
 
+const sourceBadgeLabel = (suggestion: Suggestion): string => {
+  if (suggestion.source === 'authority' && suggestion.sourceDetail) {
+    return suggestion.sourceDetail;
+  }
+  return suggestion.sourceDetail ?? suggestion.source;
+};
+
 interface SuggestionRowProps {
   suggestion: Suggestion;
   isCurrent?: boolean;
@@ -74,7 +81,7 @@ const SuggestionRow = ({
       <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
         {suggestion.anchor.surface}
       </Typography>
-      <Chip size="small" variant="outlined" label={suggestion.source} />
+      <Chip size="small" variant="outlined" label={sourceBadgeLabel(suggestion)} />
       {suggestion.confidence !== undefined && (
         <Chip size="small" variant="outlined" label={suggestion.confidence.toFixed(2)} />
       )}
@@ -138,7 +145,7 @@ const SuggestionRow = ({
       {suggestion.anchor.contextAfter}…
     </Typography>
     {suggestion.rationale && (
-      <Typography variant="caption" component="div">
+      <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 0.25 }}>
         {suggestion.rationale}
       </Typography>
     )}
@@ -242,7 +249,7 @@ export const ReviewPanel = ({
     if (!current || !listRef.current) return;
     listRef.current
       .querySelector(`[data-testid="review-item-${current.id}"]`)
-      ?.scrollIntoView({ block: 'nearest' });
+      ?.scrollIntoView?.({ block: 'nearest' });
   }, [current?.id]);
 
   return (

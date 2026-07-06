@@ -1,29 +1,59 @@
 /**
- * Prompt-on-first-Chinese-project for the authority databases (Phase A1).
- * Fire-and-forget: the project opens regardless; downloads run in the main
- * process and a system notification reports the result. The main process
- * remembers a decline (marker file next to the databases) so the user isn't
- * nagged on every open; downloads stay available from the authority UI later.
+ * Prompt on first Chinese/Japanese project for offline authority packs.
+ * Fire-and-forget: the project opens regardless; download/refresh run in the
+ * main process and a system notification reports the result.
  */
 
-import { isChineseLanguageCode } from '@cwrc/leafwriter/languageCodes';
+import {
+  isChineseLanguageCode,
+  isJapaneseLanguageCode,
+} from '@cwrc/leafwriter/languageCodes';
 
 import { getProjectSourceLanguage } from './projectLanguage';
 import type { ProjectBundle } from './projectFile';
 import { isDesktop } from '@src/types/desktop';
 
+const authorityProfileForLanguage = (
+  language: string | null | undefined,
+): 'chinese' | 'japanese' | null => {
+  if (isChineseLanguageCode(language)) return 'chinese';
+  if (isJapaneseLanguageCode(language)) return 'japanese';
+  return null;
+};
+
 /**
- * Offer the CBDB/DILA downloads if this is a Chinese project with sources
- * missing. Safe to call on every project open.
+ * Offer offline authority assets if this is a supported East Asian project and
+ * the matching lifecycle is not yet enabled. Safe to call on every project open.
  */
 export const maybeOfferAuthorityDatabases = async (bundle: ProjectBundle): Promise<void> => {
   if (!isDesktop()) return;
   const api = window.electronAPI;
-  if (!api?.authorityDbStatuses || !api.authorityDbPromptDownload || !api.authorityDbDownload) {
+  if (!api) return;
+
+  const profile = authorityProfileForLanguage(await getProjectSourceLanguage(bundle));
+  if (!profile) return;
+
+  if (api.authorityLifecycleGet && api.authorityLifecyclePromptEnable && api.authorityLifecycleSetEnabled) {
+    const status = await api.authorityLifecycleGet();
+    if (status.enabled && status.profile === profile) return;
+    if (status.declinedFirstPrompt && status.profile === profile) return;
+    if (
+      status.profile === profile &&
+      status.packsReady &&
+      status.rawSources.every((source) => source.installed)
+    ) {
+      return;
+    }
+
+    if ((await api.authorityLifecyclePromptEnable(profile)) !== 'accepted') return;
+    await api.authorityLifecycleSetEnabled({ enabled: true, profile });
     return;
   }
 
-  if (!isChineseLanguageCode(await getProjectSourceLanguage(bundle))) return;
+  // Legacy path (Phase A1) when lifecycle IPC is unavailable.
+  if (!api.authorityDbStatuses || !api.authorityDbPromptDownload || !api.authorityDbDownload) {
+    return;
+  }
 
   const statuses = await api.authorityDbStatuses();
   const missing = statuses.filter((status) => !status.installed);
@@ -31,7 +61,6 @@ export const maybeOfferAuthorityDatabases = async (bundle: ProjectBundle): Promi
 
   if ((await api.authorityDbPromptDownload()) !== 'accepted') return;
 
-  // Sequential on purpose: CBDB alone is ~600 MB.
   for (const status of missing) {
     await api.authorityDbDownload(status.id);
   }

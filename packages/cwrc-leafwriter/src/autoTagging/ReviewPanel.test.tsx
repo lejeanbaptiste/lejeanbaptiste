@@ -82,6 +82,7 @@ describe('ReviewPanel', () => {
   it('accepts and rejects via the row buttons (no keyboard needed)', () => {
     const { suggestions } = setup();
     render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+    const panel = screen.getByTestId('review-panel');
 
     fireEvent.click(screen.getByTestId(`accept-${suggestions[0]!.id}`));
     fireEvent.click(screen.getByTestId(`reject-${suggestions[1]!.id}`));
@@ -103,7 +104,7 @@ describe('ReviewPanel', () => {
     expect(screen.getByText('Nothing to review.')).toBeTruthy();
   });
 
-  it('apply all remaining accepts pending items and skips rejected ones', () => {
+  it('apply all remaining accepts pending items and skips rejected ones', async () => {
     const { doc, suggestions } = setup();
     const applied: string[] = [];
     render(
@@ -118,6 +119,8 @@ describe('ReviewPanel', () => {
 
     fireEvent.click(screen.getByTestId(`reject-${suggestions[1]!.id}`));
     fireEvent.click(screen.getByTestId('review-apply-all'));
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(applied).toHaveLength(2);
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
