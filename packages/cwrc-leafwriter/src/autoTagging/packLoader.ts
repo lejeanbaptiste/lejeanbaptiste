@@ -1,10 +1,67 @@
 import type { AuthorityCandidate } from './authority';
+import { teiTagForCandidate } from './authority';
+import { DEFAULT_MIN_MATCH_LENGTH } from './dictionary';
 import type { AuthorityPackId } from './packPaths';
 
 export interface YearRangeFilter {
   start: number;
   end: number;
   hideUndated?: boolean;
+}
+
+export type DateFilterMode = 'none' | 'limit' | 'exclude';
+
+/** Date filter for authority tag bombs and pack previews. */
+export interface DateRangeFilter {
+  mode: DateFilterMode;
+  start: number;
+  end: number;
+}
+
+export function normalizeDateRangeFilter(filter: DateRangeFilter): DateRangeFilter {
+  return {
+    mode: filter.mode,
+    start: Math.min(filter.start, filter.end),
+    end: Math.max(filter.start, filter.end),
+  };
+}
+
+function candidateOverlapsYearRange(
+  candidate: AuthorityCandidate,
+  start: number,
+  end: number,
+): boolean {
+  const meta = candidate.metadata;
+  const yearStart = meta?.startYear;
+  const yearEnd = meta?.endYear ?? meta?.startYear;
+  if (yearStart == null && yearEnd == null) return false;
+  const lo = yearStart ?? yearEnd!;
+  const hi = yearEnd ?? yearStart!;
+  return lo <= end && hi >= start;
+}
+
+/**
+ * Limit — keep entries overlapping the range (undated excluded; DILA places always kept).
+ * Exclude — drop entries overlapping the range (undated kept; DILA places always kept).
+ */
+export function candidatePassesDateFilter(
+  candidate: AuthorityCandidate,
+  filter?: DateRangeFilter,
+): boolean {
+  if (!filter || filter.mode === 'none') return true;
+
+  if (candidate.kind === 'place' && candidate.source === 'DILA') return true;
+
+  const { start, end } = normalizeDateRangeFilter(filter);
+  const meta = candidate.metadata;
+  const yearStart = meta?.startYear;
+  const yearEnd = meta?.endYear ?? meta?.startYear;
+  const undated = yearStart == null && yearEnd == null;
+
+  if (undated) return filter.mode === 'exclude';
+
+  const overlaps = candidateOverlapsYearRange(candidate, start, end);
+  return filter.mode === 'limit' ? overlaps : !overlaps;
 }
 
 /** Parse NDJSON text (one JSON object per line). Avoids split() on huge files. */
@@ -62,6 +119,40 @@ export function filterCandidatesByYear(
 ): AuthorityCandidate[] {
   if (!range) return candidates;
   return candidates.filter((c) => candidateIntersectsYearRange(c, range));
+}
+
+export interface PackStringCount {
+  /** Authority records after the year filter. */
+  entities: number;
+  /** Unique (tag, surface) pairs the tag bomb would index. */
+  uniqueStrings: number;
+}
+
+/**
+ * Count matchable strings in one NDJSON pack. Uses the same year filter and
+ * minimum surface length as the authority tag bomb.
+ */
+export function countPackUniqueStrings(
+  content: string,
+  range?: DateRangeFilter | YearRangeFilter,
+  minLength: number = DEFAULT_MIN_MATCH_LENGTH,
+): PackStringCount {
+  const strings = new Set<string>();
+  let entities = 0;
+  for (const candidate of iterateAuthorityNdjson(content)) {
+    if (range && 'mode' in range) {
+      if (!candidatePassesDateFilter(candidate, range)) continue;
+    } else if (range && !candidateIntersectsYearRange(candidate, range)) {
+      continue;
+    }
+    entities += 1;
+    const tag = teiTagForCandidate(candidate);
+    for (const surface of candidate.searchStrings) {
+      if ([...surface].length < minLength) continue;
+      strings.add(`${tag}\0${surface}`);
+    }
+  }
+  return { entities, uniqueStrings: strings.size };
 }
 
 export interface LoadedAuthorityPacks {

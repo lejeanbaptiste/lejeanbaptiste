@@ -1,51 +1,139 @@
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogContent,
+  FormControlLabel,
   Link,
   Stack,
   Typography,
 } from '@mui/material';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  createDefaultAiPromptProfilesState,
+  getActiveAiPromptProfile,
+  persistAiPromptProfiles,
+  readAiPromptProfilesFromDesktop,
+  type AiPromptProfilesState,
+} from '../../autoTagging/aiPromptProfiles';
+import {
+  aiCurationFromSettings,
+  persistDisambiguationSettings,
+  readPersistedDisambiguationSettings,
+} from '../../autoTagging/disambiguationSettings';
 import { useActions } from '../../overmind';
 import type { IDialog } from '../type';
+import { AiPromptEditorDialog } from '../autoTagging/AiPromptEditorDialog';
 
-/** Disambiguation launcher. */
+/** Disambiguation launcher — optional AI curation, preference persisted per project. */
 export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
   const { startDisambiguationReview } = useActions().ui;
+  const [aiCuration, setAiCuration] = useState(true);
+  const [aiPromptProfiles, setAiPromptProfiles] = useState<AiPromptProfilesState>(
+    createDefaultAiPromptProfilesState(),
+  );
+  const [promptEditorOpen, setPromptEditorOpen] = useState(false);
+  const startButtonRef = useRef<HTMLButtonElement>(null);
+
+  const activePromptProfile = useMemo(
+    () => getActiveAiPromptProfile(aiPromptProfiles),
+    [aiPromptProfiles],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    setAiCuration(aiCurationFromSettings(readPersistedDisambiguationSettings()));
+    void readAiPromptProfilesFromDesktop().then(setAiPromptProfiles);
+    window.setTimeout(() => startButtonRef.current?.focus(), 0);
+  }, [open]);
 
   const handleClose = () => onClose?.();
 
-  const handleStart = () => {
-    startDisambiguationReview();
+  const handleStart = async () => {
+    await persistDisambiguationSettings({ aiCuration });
+    startDisambiguationReview({ aiCuration });
     handleClose();
   };
 
-  return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      PaperProps={{ sx: { width: 380, m: 1, borderRadius: 1 } }}
-    >
-      <DialogContent sx={{ p: 1.5 }}>
-        <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-          Disambiguate
-        </Typography>
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      void handleStart();
+    }
+  };
 
-        <Stack spacing={1} sx={{ mt: 0.5 }}>
-          <Typography color="text.secondary" variant="body2">
-            Link tagged mentions to authority records in your entity database.
+  return (
+    <>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        PaperProps={{ sx: { width: 380, m: 1, borderRadius: 1 } }}
+      >
+        <DialogContent sx={{ p: 1.5 }} onKeyDown={handleKeyDown}>
+          <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+            Disambiguate
           </Typography>
 
-          <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
-            <Link component="button" onClick={handleClose} underline="hover" variant="caption">
-              Cancel
-            </Link>
-            <Button onClick={handleStart} size="small" variant="contained">
-              Start
-            </Button>
+          <Stack spacing={1} sx={{ mt: 0.5 }}>
+            <Typography color="text.secondary" variant="body2">
+              Link tagged mentions to authority records. With AI curation, the model pre-checks likely
+              matches and explains why — you still accept each choice.
+            </Typography>
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={aiCuration}
+                  onChange={(event) => setAiCuration(event.target.checked)}
+                />
+              }
+              label="AI curation"
+              sx={{ ml: 0 }}
+            />
+
+            {aiCuration && (
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                <Typography variant="caption" color="text.secondary">
+                  Prompt profile: {activePromptProfile.label}
+                </Typography>
+                <Link
+                  component="button"
+                  variant="caption"
+                  underline="hover"
+                  onClick={() => setPromptEditorOpen(true)}
+                >
+                  Edit prompt…
+                </Link>
+              </Stack>
+            )}
+
+            <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
+              <Link component="button" onClick={handleClose} underline="hover" variant="caption">
+                Cancel
+              </Link>
+              <Button
+                ref={startButtonRef}
+                onClick={() => void handleStart()}
+                size="small"
+                variant="contained"
+              >
+                Start
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+      <AiPromptEditorDialog
+        open={promptEditorOpen}
+        state={aiPromptProfiles}
+        highlightField="disambiguation"
+        onClose={() => setPromptEditorOpen(false)}
+        onSave={async (next) => {
+          await persistAiPromptProfiles(next);
+          setAiPromptProfiles(next);
+        }}
+      />
+    </>
   );
 };

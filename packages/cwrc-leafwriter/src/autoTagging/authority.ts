@@ -28,8 +28,20 @@ export interface AuthorityCandidate {
     description?: string;
     teiTag?: string;
     ana?: string;
-    crosswalk?: { cbdb?: string; chgis?: string; dila?: string; wikidata?: string[] };
+    crosswalk?: {
+      cbdb?: string;
+      chgis?: string;
+      dila?: string;
+      wikidata?: string[];
+      viaf?: string;
+      ndl?: string;
+      bdrc?: string;
+    };
     pinyin?: string;
+    /** NDL ja-kana reading (katakana). */
+    yomi?: string;
+    /** Hiragana form of `yomi` for IME lookup. */
+    yomiHiragana?: string;
     translation?: string;
     /** DILA `note type="disambiguation"` — not the same person as… */
     disambiguation?: string;

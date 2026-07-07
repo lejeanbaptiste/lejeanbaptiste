@@ -331,7 +331,7 @@ async function runDateTagPass(
   if (chunks.length === 0) return [];
   const proposeOpts: SanmiaoProposeOptions = {
     sequential: true,
-    fuzzy: true,
+    fuzzy: false,
     civ: ['c', 'j', 'k'],
     ...sanmiaoOpts,
   };

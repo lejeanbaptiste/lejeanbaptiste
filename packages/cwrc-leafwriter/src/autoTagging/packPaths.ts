@@ -9,12 +9,26 @@ export type AuthorityPackId =
   | 'dila-persons'
   | 'dila-places'
   | 'chgis-places'
+  /** UI-only: expands to {@link WIKIDATA_PERSON_CHILD_PACK_IDS} at load time. */
+  | 'wikidata-persons'
   | 'wikidata-persons-tang'
   | 'wikidata-persons-ming'
   | 'wikidata-persons-qing'
   | 'wikidata-persons-pre-ming'
   | 'ndl-persons'
+  | 'ndl-places'
+  | 'ndl-orgs'
   | 'ndl-works';
+
+/** Dynasty-scoped Wikidata NDJSON packs (installed separately; selected via `wikidata-persons`). */
+export const WIKIDATA_PERSON_CHILD_PACK_IDS = [
+  'wikidata-persons-tang',
+  'wikidata-persons-pre-ming',
+  'wikidata-persons-ming',
+  'wikidata-persons-qing',
+] as const satisfies readonly AuthorityPackId[];
+
+const WIKIDATA_PERSON_CHILD_SET = new Set<AuthorityPackId>(WIKIDATA_PERSON_CHILD_PACK_IDS);
 
 export interface AuthorityPackSpec {
   id: AuthorityPackId;
@@ -22,6 +36,8 @@ export interface AuthorityPackSpec {
   source: 'cbdb' | 'dila' | 'chgis' | 'wikidata' | 'ndl';
   relativePath: string;
   defaultTag: string;
+  /** When true, {@link expandAuthorityPackIds} loads {@link WIKIDATA_PERSON_CHILD_PACK_IDS}. */
+  virtual?: boolean;
 }
 
 export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
@@ -68,6 +84,14 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     defaultTag: 'placeName',
   },
   {
+    id: 'wikidata-persons',
+    label: 'Wikidata persons',
+    source: 'wikidata',
+    relativePath: '',
+    defaultTag: 'persName',
+    virtual: true,
+  },
+  {
     id: 'wikidata-persons-tang',
     label: 'Wikidata persons (Tang, zh-hant)',
     source: 'wikidata',
@@ -103,6 +127,20 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     defaultTag: 'persName',
   },
   {
+    id: 'ndl-places',
+    label: 'NDL places',
+    source: 'ndl',
+    relativePath: 'ndl/places.ndjson',
+    defaultTag: 'placeName',
+  },
+  {
+    id: 'ndl-orgs',
+    label: 'NDL organizations',
+    source: 'ndl',
+    relativePath: 'ndl/orgs.ndjson',
+    defaultTag: 'orgName',
+  },
+  {
     id: 'ndl-works',
     label: 'NDL works',
     source: 'ndl',
@@ -128,8 +166,62 @@ export interface AuthorityPackStatus {
 export function packPath(baseFolder: string, packId: AuthorityPackId): string {
   const spec = AUTHORITY_PACKS.find((p) => p.id === packId);
   if (!spec) throw new Error(`Unknown pack: ${packId}`);
+  if (spec.virtual) {
+    throw new Error(`Pack ${packId} is a UI grouping — expand with expandAuthorityPackIds() first`);
+  }
   const sep = baseFolder.includes('\\') ? '\\' : '/';
   return `${baseFolder.replace(/[/\\]+$/, '')}${sep}${AUTHORITY_PACKS_DIRNAME}${sep}${spec.relativePath.replace(/\//g, sep)}`;
+}
+
+/** Pack ids shown in the auto-tagging authority dialog (one Wikidata row, not per-dynasty). */
+export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
+  'cbdb-persons',
+  'cbdb-places',
+  'cbdb-offices',
+  'dila-persons',
+  'dila-places',
+  'chgis-places',
+  'wikidata-persons',
+  'ndl-persons',
+  'ndl-places',
+  'ndl-orgs',
+  'ndl-works',
+];
+
+/** Expand virtual selections (e.g. `wikidata-persons` → all installed dynasty packs). */
+export function expandAuthorityPackIds(packIds: AuthorityPackId[]): AuthorityPackId[] {
+  const out: AuthorityPackId[] = [];
+  for (const id of packIds) {
+    if (id === 'wikidata-persons') out.push(...WIKIDATA_PERSON_CHILD_PACK_IDS);
+    else out.push(id);
+  }
+  return [...new Set(out)];
+}
+
+export function isWikidataPersonChildPackId(id: AuthorityPackId): boolean {
+  return WIKIDATA_PERSON_CHILD_SET.has(id);
+}
+
+/** Map persisted pack ids (incl. legacy per-dynasty Wikidata) to UI checkbox state. */
+export function uiPacksFromPersisted(persisted?: AuthorityPackId[]): Record<AuthorityPackId, boolean> {
+  const base = Object.fromEntries(UI_AUTHORITY_PACK_IDS.map((id) => [id, false])) as Record<
+    AuthorityPackId,
+    boolean
+  >;
+  if (!persisted?.length) return base;
+  for (const id of UI_AUTHORITY_PACK_IDS) {
+    if (id === 'wikidata-persons') continue;
+    base[id] = persisted.includes(id);
+  }
+  base['wikidata-persons'] =
+    persisted.includes('wikidata-persons') ||
+    WIKIDATA_PERSON_CHILD_PACK_IDS.some((id) => persisted.includes(id));
+  return base;
+}
+
+/** Persist UI checkbox state (stores `wikidata-persons`, not dynasty child ids). */
+export function persistedPacksFromUi(packs: Record<AuthorityPackId, boolean>): AuthorityPackId[] {
+  return UI_AUTHORITY_PACK_IDS.filter((id) => packs[id]);
 }
 
 export function packsRoot(baseFolder: string): string {
@@ -141,6 +233,7 @@ export function packsRoot(baseFolder: string): string {
 export const AUTHORITY_TAG_TYPE_GROUP_ORDER = [
   'persName',
   'placeName',
+  'orgName',
   'roleName',
   'title',
 ] as const;
@@ -151,6 +244,7 @@ export const AUTHORITY_TAG_TYPE_GROUP_LABELS: Record<
 > = {
   persName: 'Persons',
   placeName: 'Places',
+  orgName: 'Organizations',
   roleName: 'Offices / roles',
   title: 'Works',
 };
@@ -176,4 +270,56 @@ export function groupAuthorityPacksByTagType(
     }
   }
   return groups;
+}
+
+export const AUTHORITY_SOURCE_ORDER = ['cbdb', 'dila', 'chgis', 'wikidata', 'ndl'] as const;
+
+export type AuthoritySourceId = (typeof AUTHORITY_SOURCE_ORDER)[number];
+
+export const AUTHORITY_SOURCE_LABELS: Record<AuthoritySourceId, string> = {
+  cbdb: 'CBDB',
+  dila: 'DILA',
+  chgis: 'CHGIS',
+  wikidata: 'Wikidata',
+  ndl: 'NDL',
+};
+
+/** Short row label under a source heading (Persons, Places, …). */
+export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string>> = {
+  'cbdb-persons': 'Persons',
+  'cbdb-places': 'Places',
+  'cbdb-offices': 'Offices',
+  'dila-persons': 'Persons',
+  'dila-places': 'Places',
+  'chgis-places': 'Places',
+  'wikidata-persons': 'Persons',
+  'ndl-persons': 'Persons',
+  'ndl-places': 'Places',
+  'ndl-orgs': 'Organizations',
+  'ndl-works': 'Works',
+};
+
+export interface AuthorityPackSourceGroup {
+  source: AuthoritySourceId;
+  label: string;
+  packs: AuthorityPackSpec[];
+}
+
+/** Group visible pack specs by authority source (CBDB, DILA, …). */
+export function groupAuthorityPacksBySource(packIds: AuthorityPackId[]): AuthorityPackSourceGroup[] {
+  const specs = packIds
+    .map((id) => AUTHORITY_PACKS.find((p) => p.id === id))
+    .filter((p): p is AuthorityPackSpec => !!p);
+  const groups: AuthorityPackSourceGroup[] = [];
+  for (const source of AUTHORITY_SOURCE_ORDER) {
+    const packs = specs.filter((p) => p.source === source);
+    if (packs.length > 0) {
+      groups.push({ source, label: AUTHORITY_SOURCE_LABELS[source], packs });
+    }
+  }
+  return groups;
+}
+
+export function shortAuthorityPackLabel(packId: AuthorityPackId): string {
+  return AUTHORITY_PACK_SHORT_LABELS[packId] ?? AUTHORITY_PACKS.find((p) => p.id === packId)?.label ?? packId;
 }

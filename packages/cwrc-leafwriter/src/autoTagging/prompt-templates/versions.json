@@ -1,5 +1,6 @@
 {
   "suggest": "suggest.v3",
   "audit-clean": "audit-clean.v2",
-  "audit-add": "audit-add.v1"
+  "audit-add": "audit-add.v1",
+  "disambiguation-rank": "disambiguation-rank.v1"
 }

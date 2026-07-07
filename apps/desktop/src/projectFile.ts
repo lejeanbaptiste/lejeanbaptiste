@@ -5,6 +5,7 @@ import {
   DEFAULT_METADATA_PATH,
   PROJECT_FILE_NAME,
   type AutoTaggingAuthoritySettings,
+  type DisambiguationSettings,
   type ProjectBundle,
   type ProjectFileConfig,
   type ProjectSchemaConfig,
@@ -31,10 +32,28 @@ const normalizeAutoTaggingAuthority = (
   const yearEnd = typeof value.yearEnd === 'number' ? value.yearEnd : undefined;
   const out: AutoTaggingAuthoritySettings = {};
   if (packs?.length) out.packs = packs;
+  if (value.dateFilter === 'none' || value.dateFilter === 'limit' || value.dateFilter === 'exclude') {
+    out.dateFilter = value.dateFilter;
+  }
   if (typeof value.yearFilterEnabled === 'boolean') out.yearFilterEnabled = value.yearFilterEnabled;
   if (yearStart != null) out.yearStart = yearStart;
   if (yearEnd != null) out.yearEnd = yearEnd;
   if (typeof value.hideUndated === 'boolean') out.hideUndated = value.hideUndated;
+  return Object.keys(out).length ? out : undefined;
+};
+
+const normalizeDisambiguationSettings = (
+  raw: unknown,
+): DisambiguationSettings | undefined => {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const value = raw as DisambiguationSettings;
+  const out: DisambiguationSettings = {};
+  if (typeof value.aiCuration === 'boolean') out.aiCuration = value.aiCuration;
+  if (value.dateFilter === 'none' || value.dateFilter === 'limit' || value.dateFilter === 'exclude') {
+    out.dateFilter = value.dateFilter;
+  }
+  if (typeof value.yearStart === 'number') out.yearStart = value.yearStart;
+  if (typeof value.yearEnd === 'number') out.yearEnd = value.yearEnd;
   return Object.keys(out).length ? out : undefined;
 };
 
@@ -55,6 +74,7 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
       ? raw.entityDatabaseId.trim()
       : undefined,
   autoTaggingAuthority: normalizeAutoTaggingAuthority(raw.autoTaggingAuthority),
+  disambiguation: normalizeDisambiguationSettings(raw.disambiguation),
 });
 
 export const writeProjectConfig = async (

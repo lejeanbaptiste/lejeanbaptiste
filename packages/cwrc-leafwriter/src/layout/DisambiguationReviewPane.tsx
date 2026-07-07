@@ -31,6 +31,7 @@ const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI
 export const DisambiguationReviewPane = () => {
   const { t } = useTranslation('LW');
   const active = useAppState().ui.disambiguationReview?.active ?? false;
+  const aiCuration = useAppState().ui.disambiguationReview?.aiCuration ?? true;
   const { exitDisambiguationReview } = useActions().ui;
   const [groups, setGroups] = useState<MentionGroup[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export const DisambiguationReviewPane = () => {
         await activeSession.loadEntities();
         if (generation !== scanGeneration.current) return;
 
-        const scanned = await activeSession.scanMentions();
+        const scanned = await activeSession.scanMentions({ includeResolved: true });
         if (generation !== scanGeneration.current) return;
         setGroups(scanned);
       } catch (e) {
@@ -152,7 +153,11 @@ export const DisambiguationReviewPane = () => {
         )}
 
         {!loading && groups.length > 0 && (
-          <DisambiguationPanel session={getSession()} groups={groups} />
+          <DisambiguationPanel
+            session={getSession()}
+            groups={groups}
+            aiCuration={aiCuration}
+          />
         )}
       </Box>
     </Box>

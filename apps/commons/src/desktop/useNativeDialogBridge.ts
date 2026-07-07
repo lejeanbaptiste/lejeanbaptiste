@@ -36,7 +36,7 @@ import {
   getSchemaSetupSession,
   subscribeSchemaSetupDialogClosed,
 } from './schemaSetupSession';
-import type { AutoTaggingAuthoritySettings, ProjectMetadataFile } from './projectTypes';
+import type { AutoTaggingAuthoritySettings, DisambiguationSettings, ProjectMetadataFile } from './projectTypes';
 import {
   addTranslationLanguage,
   readTranslationSettings,
@@ -53,6 +53,8 @@ declare global {
       getProjectSourceLanguage?: () => Promise<string | null>;
       getAutoTaggingAuthoritySettings: () => AutoTaggingAuthoritySettings | undefined;
       setAutoTaggingAuthoritySettings: (settings: AutoTaggingAuthoritySettings) => void;
+      getDisambiguationSettings: () => DisambiguationSettings | undefined;
+      setDisambiguationSettings: (settings: DisambiguationSettings) => void;
     };
   }
 }
@@ -104,6 +106,7 @@ export const useNativeDialogBridge = () => {
   const { reloadTabFromDisk } = useActions().project;
   const [leafWriter] = useAtom(leafwriterAtom);
   const authoritySettingsCache = useRef<AutoTaggingAuthoritySettings | undefined>(undefined);
+  const disambiguationSettingsCache = useRef<DisambiguationSettings | undefined>(undefined);
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -129,6 +132,7 @@ export const useNativeDialogBridge = () => {
       return;
     }
     authoritySettingsCache.current = undefined;
+    disambiguationSettingsCache.current = undefined;
     setActiveProjectBundle({ rootPath, projectFilePath, config });
     window.__leafWriterProject = {
       getProjectFilePath: () => projectFilePath,
@@ -138,6 +142,11 @@ export const useNativeDialogBridge = () => {
         authoritySettingsCache.current ?? config.autoTaggingAuthority,
       setAutoTaggingAuthoritySettings: (settings) => {
         authoritySettingsCache.current = settings;
+      },
+      getDisambiguationSettings: () =>
+        disambiguationSettingsCache.current ?? config.disambiguation,
+      setDisambiguationSettings: (settings) => {
+        disambiguationSettingsCache.current = settings;
       },
     };
     return () => {

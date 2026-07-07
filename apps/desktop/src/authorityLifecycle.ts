@@ -84,7 +84,7 @@ const PROFILE_SPECS: Record<
   },
   japanese: {
     label: 'Offline Japanese authorities (NDL)',
-    packIds: ['ndl-persons', 'ndl-works'],
+    packIds: ['ndl-persons', 'ndl-places', 'ndl-orgs', 'ndl-works'],
     rawSourceIds: [],
     supportsReferenceData: false,
   },

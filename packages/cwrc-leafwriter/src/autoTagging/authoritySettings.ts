@@ -1,81 +1,88 @@
-import type { AuthorityPackId } from './packPaths';
+import {
+  persistedPacksFromUi,
+  uiPacksFromPersisted,
+  type AuthorityPackId,
+} from './packPaths';
+import type { DateFilterMode } from './packLoader';
 
 /** Per-project authority tag-bomb settings (stored in jean-baptiste.project.json). */
 export interface AutoTaggingAuthoritySettings {
   packs?: AuthorityPackId[];
-  yearFilterEnabled?: boolean;
+  dateFilter?: DateFilterMode;
   yearStart?: number;
   yearEnd?: number;
+  /** @deprecated Use {@link dateFilter}. */
+  yearFilterEnabled?: boolean;
+  /** @deprecated Folded into {@link dateFilter} (`limit` vs `exclude`). */
   hideUndated?: boolean;
 }
 
-export const DEFAULT_AUTHORITY_PACK_SELECTION: Record<AuthorityPackId, boolean> = {
-  'cbdb-persons': false,
-  'cbdb-places': false,
-  'cbdb-offices': false,
-  'dila-persons': true,
-  'dila-places': false,
-  'chgis-places': false,
-  'ndl-persons': false,
-  'ndl-works': false,
-};
-
 export const DEFAULT_AUTHORITY_YEAR_RANGE: [number, number] = [25, 220];
+export const DEFAULT_AUTHORITY_DATE_FILTER: DateFilterMode = 'limit';
 
-const ALL_PACK_IDS = Object.keys(DEFAULT_AUTHORITY_PACK_SELECTION) as AuthorityPackId[];
+/** Slider bounds shared by the tag-bomb dialog and the disambiguation panel's date filter. */
+export const AUTHORITY_YEAR_MIN = -500;
+export const AUTHORITY_YEAR_MAX = 2000;
+
+export function defaultAuthorityPacksRecord(
+  overrides: Partial<Record<AuthorityPackId, boolean>> = {},
+): Record<AuthorityPackId, boolean> {
+  return {
+    ...uiPacksFromPersisted(),
+    'dila-persons': true,
+    ...overrides,
+  };
+}
+
+export function migrateDateFilter(settings?: AutoTaggingAuthoritySettings): DateFilterMode {
+  if (settings?.dateFilter) return settings.dateFilter;
+  if (settings?.yearFilterEnabled === false) return 'none';
+  return 'limit';
+}
 
 export function packsRecordFromSettings(
   settings?: AutoTaggingAuthoritySettings,
 ): Record<AuthorityPackId, boolean> {
-  const base = { ...DEFAULT_AUTHORITY_PACK_SELECTION };
-  if (!settings?.packs?.length) return base;
-  for (const id of ALL_PACK_IDS) base[id] = settings.packs.includes(id);
-  return base;
+  return uiPacksFromPersisted(settings?.packs);
 }
 
 export function settingsFromUiState(input: {
   packs: Record<AuthorityPackId, boolean>;
-  yearFilterEnabled: boolean;
+  dateFilter: DateFilterMode;
   yearRange: [number, number];
-  hideUndated: boolean;
 }): AutoTaggingAuthoritySettings {
   const [yearStart, yearEnd] = input.yearRange;
   return {
-    packs: ALL_PACK_IDS.filter((id) => input.packs[id]),
-    yearFilterEnabled: input.yearFilterEnabled,
+    packs: persistedPacksFromUi(input.packs),
+    dateFilter: input.dateFilter,
     yearStart: Math.min(yearStart, yearEnd),
     yearEnd: Math.max(yearStart, yearEnd),
-    hideUndated: input.hideUndated,
   };
 }
 
 export function uiStateFromSettings(settings?: AutoTaggingAuthoritySettings): {
   packs: Record<AuthorityPackId, boolean>;
-  yearFilterEnabled: boolean;
+  dateFilter: DateFilterMode;
   yearRange: [number, number];
-  hideUndated: boolean;
 } {
   const yearStart = settings?.yearStart ?? DEFAULT_AUTHORITY_YEAR_RANGE[0];
   const yearEnd = settings?.yearEnd ?? DEFAULT_AUTHORITY_YEAR_RANGE[1];
   return {
     packs: packsRecordFromSettings(settings),
-    yearFilterEnabled: settings?.yearFilterEnabled ?? true,
+    dateFilter: migrateDateFilter(settings),
     yearRange: [Math.min(yearStart, yearEnd), Math.max(yearStart, yearEnd)],
-    hideUndated: settings?.hideUndated ?? true,
   };
 }
 
 export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings | undefined {
   const raw = window.__leafWriterProject?.getAutoTaggingAuthoritySettings?.();
   if (!raw) return undefined;
-  const packs = raw.packs?.filter((id): id is AuthorityPackId =>
-    ALL_PACK_IDS.includes(id as AuthorityPackId),
-  );
   return {
-    packs: packs?.length ? packs : undefined,
-    yearFilterEnabled: raw.yearFilterEnabled,
+    packs: raw.packs,
+    dateFilter: raw.dateFilter,
     yearStart: raw.yearStart,
     yearEnd: raw.yearEnd,
+    yearFilterEnabled: raw.yearFilterEnabled,
     hideUndated: raw.hideUndated,
   };
 }

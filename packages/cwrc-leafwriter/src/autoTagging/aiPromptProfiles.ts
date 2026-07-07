@@ -1,4 +1,5 @@
 import auditCleanSystemTemplate from './prompt-templates/audit-clean.system.txt';
+import disambiguationRankSystemTemplate from './prompt-templates/disambiguation-rank.system.txt';
 import suggestSystemTemplate from './prompt-templates/suggest.system.txt';
 import { entityStoreFromDesktop } from './entityStore';
 import { joinPath } from './pathJoin';
@@ -11,6 +12,7 @@ export interface AiPromptProfile {
   version: number;
   suggestTaskText: string;
   auditCleanTaskText: string;
+  disambiguationRankTaskText: string;
 }
 
 export interface AiPromptProfilesState {
@@ -23,6 +25,7 @@ export const DEFAULT_AI_PROMPT_PROFILE_ID = 'default';
 
 export const DEFAULT_SUGGEST_TASK_TEXT = suggestSystemTemplate.trimStart();
 export const DEFAULT_AUDIT_CLEAN_TASK_TEXT = auditCleanSystemTemplate.trimStart();
+export const DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT = disambiguationRankSystemTemplate.trimStart();
 
 const FILE_FORMAT_VERSION = 1;
 
@@ -39,6 +42,7 @@ export function createDefaultAiPromptProfile(): AiPromptProfile {
     version: 0,
     suggestTaskText: DEFAULT_SUGGEST_TASK_TEXT,
     auditCleanTaskText: DEFAULT_AUDIT_CLEAN_TASK_TEXT,
+    disambiguationRankTaskText: DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT,
   };
 }
 
@@ -62,7 +66,8 @@ export function getActiveAiPromptProfile(state: AiPromptProfilesState): AiPrompt
 export function isDefaultAiPromptProfile(profile: AiPromptProfile): boolean {
   return (
     profile.suggestTaskText === DEFAULT_SUGGEST_TASK_TEXT &&
-    profile.auditCleanTaskText === DEFAULT_AUDIT_CLEAN_TASK_TEXT
+    profile.auditCleanTaskText === DEFAULT_AUDIT_CLEAN_TASK_TEXT &&
+    profile.disambiguationRankTaskText === DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT
   );
 }
 
@@ -75,6 +80,11 @@ export function resolveSuggestTaskText(profile?: AiPromptProfile | null): string
 export function resolveAuditCleanTaskText(profile?: AiPromptProfile | null): string | undefined {
   if (!profile || isDefaultAiPromptProfile(profile)) return undefined;
   return profile.auditCleanTaskText;
+}
+
+export function resolveDisambiguationRankTaskText(profile?: AiPromptProfile | null): string | undefined {
+  if (!profile || isDefaultAiPromptProfile(profile)) return undefined;
+  return profile.disambiguationRankTaskText;
 }
 
 /** Append a profile suffix to the shipped prompt version for cache invalidation. */
@@ -101,7 +111,14 @@ export function parseAiPromptProfilesFile(raw: string): AiPromptProfilesState {
         typeof p.suggestTaskText === 'string' &&
         typeof p.auditCleanTaskText === 'string',
     )
-    .map((p) => ({ ...p, version: Math.max(0, Math.floor(p.version)) }));
+    .map((p) => ({
+      ...p,
+      version: Math.max(0, Math.floor(p.version)),
+      disambiguationRankTaskText:
+        typeof (p as Partial<AiPromptProfile>).disambiguationRankTaskText === 'string'
+          ? (p as AiPromptProfile).disambiguationRankTaskText
+          : DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT,
+    }));
 
   if (profiles.length === 0) return createDefaultAiPromptProfilesState();
 
@@ -149,14 +166,18 @@ export function newAiPromptProfileId(): string {
 export function saveProfileEdits(
   state: AiPromptProfilesState,
   profileId: string,
-  edits: Pick<AiPromptProfile, 'label' | 'suggestTaskText' | 'auditCleanTaskText'>,
+  edits: Pick<
+    AiPromptProfile,
+    'label' | 'suggestTaskText' | 'auditCleanTaskText' | 'disambiguationRankTaskText'
+  >,
 ): AiPromptProfilesState {
   const profiles = state.profiles.map((p) => {
     if (p.id !== profileId) return p;
     const unchanged =
       p.label === edits.label &&
       p.suggestTaskText === edits.suggestTaskText &&
-      p.auditCleanTaskText === edits.auditCleanTaskText;
+      p.auditCleanTaskText === edits.auditCleanTaskText &&
+      p.disambiguationRankTaskText === edits.disambiguationRankTaskText;
     return {
       ...p,
       ...edits,
@@ -179,6 +200,7 @@ export function addNamedProfile(
     version: 1,
     suggestTaskText: source.suggestTaskText,
     auditCleanTaskText: source.auditCleanTaskText,
+    disambiguationRankTaskText: source.disambiguationRankTaskText,
   };
   return {
     activeProfileId: profile.id,
@@ -211,6 +233,7 @@ export function revertProfileToDefaults(profile: AiPromptProfile): AiPromptProfi
     ...profile,
     suggestTaskText: DEFAULT_SUGGEST_TASK_TEXT,
     auditCleanTaskText: DEFAULT_AUDIT_CLEAN_TASK_TEXT,
+    disambiguationRankTaskText: DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT,
     version: profile.version + 1,
   };
 }

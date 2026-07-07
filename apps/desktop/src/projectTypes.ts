@@ -25,6 +25,16 @@ export interface ProjectFileConfig {
   entityDatabaseId?: string;
   /** Saved authority tag-bomb pack/year settings for this project. */
   autoTaggingAuthority?: AutoTaggingAuthoritySettings;
+  /** Disambiguation panel preferences for this project. */
+  disambiguation?: DisambiguationSettings;
+}
+
+export interface DisambiguationSettings {
+  aiCuration?: boolean;
+  /** Date-range filter for the disambiguation panel's own candidate filter. */
+  dateFilter?: 'none' | 'limit' | 'exclude';
+  yearStart?: number;
+  yearEnd?: number;
 }
 
 /** Persisted in jean-baptiste.project.json — mirrors cwrc-leafwriter authoritySettings. */

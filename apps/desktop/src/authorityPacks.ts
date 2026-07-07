@@ -24,7 +24,7 @@ export {
 } from '../../commons/src/desktop/authorityPackTypes';
 
 export function getAuthorityPackStatuses(baseFolder: string): AuthorityPackStatus[] {
-  return AUTHORITY_PACKS.map((spec) => {
+  return AUTHORITY_PACKS.filter((spec) => !spec.virtual).map((spec) => {
     const file = packPath(baseFolder, spec.id);
     let installed = false;
     let bytes: number | undefined;
@@ -61,7 +61,7 @@ export async function installAuthorityPacksFrom(
   await fsp.mkdir(destRoot, { recursive: true });
   const copied: AuthorityPackId[] = [];
 
-  for (const spec of AUTHORITY_PACKS) {
+  for (const spec of AUTHORITY_PACKS.filter((entry) => !entry.virtual)) {
     const srcFile = path.join(sourcePacksRoot, spec.relativePath);
     const destFile = packPath(entityDbFolder, spec.id);
     await fsp.mkdir(path.dirname(destFile), { recursive: true });

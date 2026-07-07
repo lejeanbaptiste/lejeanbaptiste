@@ -4,6 +4,9 @@ import {
   getDefaultTagColor,
   injectTagColorsCss,
   loadAndInjectTagColors,
+  mixHex,
+  pillColorsFromEntry,
+  contrastTextOn,
   reapplyCachedTagColors,
   resolveTagColor,
   updateTagColor,
@@ -13,12 +16,42 @@ import {
 describe('tagColors', () => {
   test('generateTagColorsCss emits showTags rules', () => {
     const file = emptyTagColorsFile();
-    file.tags.persName = { highlight: '#abc', text: '#123' };
+    file.tags.persName = { highlight: '#abcabc', text: '#123123' };
     const css = generateTagColorsCss(file);
     expect(css).toContain("*[_tag='persName']");
     expect(css).toContain("*[_tag='persName'] *");
-    expect(css).toContain('background-color: #abc');
-    expect(css).toContain('color: #123');
+    expect(css).toContain('background-color: #abcabc');
+    expect(css).toContain('color: #123123');
+    expect(css).toContain(".showTags *[_tag='persName']:before");
+    expect(css).toContain(".showTags *[_tag='persName'] *[_tag]:before");
+    expect(css).toContain('background-color: #527163');
+    expect(css).toContain('color: #ffffff');
+    expect(css).toContain('box-decoration-break: clone');
+  });
+
+  test('mixHex blends colours toward a target weight', () => {
+    expect(mixHex('#000000', '#ffffff', 0.5)).toBe('#808080');
+  });
+
+  test('pillColorsFromEntry darkens highlight and picks contrasting label text', () => {
+    expect(pillColorsFromEntry({ highlight: '#fef9e7', text: '#7d6608' })).toEqual({
+      background: '#b3a466',
+      text: '#000000',
+    });
+    expect(pillColorsFromEntry({ highlight: '#d5f5e3', text: '#186a3b' })).toEqual({
+      background: '#67a482',
+      text: '#000000',
+    });
+    expect(pillColorsFromEntry({ highlight: '#1e8449', text: '#145a32' })).toEqual({
+      background: '#186c3c',
+      text: '#ffffff',
+    });
+  });
+
+  test('contrastTextOn picks whichever of black or white reads better', () => {
+    expect(contrastTextOn('#ffffff')).toBe('#000000');
+    expect(contrastTextOn('#111111')).toBe('#ffffff');
+    expect(contrastTextOn('#b3a466')).toBe('#000000');
   });
 
   test('resolveTagColor falls back to defaults', () => {

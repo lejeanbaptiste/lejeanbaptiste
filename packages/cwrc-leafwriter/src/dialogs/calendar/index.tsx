@@ -96,7 +96,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     j: false,
     k: false,
   });
-  const [dateFuzzy, setDateFuzzy] = useState(true);
+  const [dateFuzzy, setDateFuzzy] = useState(false);
   const [datesProgress, setDatesProgress] = useState('');
   const [datesChunkProgress, setDatesChunkProgress] = useState({ done: 0, total: 0 });
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
@@ -285,6 +285,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
 
       const result = await getSession().runEastAsianDateResolve(resolveFn, {
         civ,
+        fuzzy: dateFuzzy,
         sequential: true,
         onProgress: makeSanmiaoProgress(setDatesProgress, 'Resolving'),
       });
@@ -408,7 +409,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
                     onChange={(event) => setDateFuzzy(event.target.checked)}
                   />
                 }
-                label="Fuzzy character matching (variant forms)"
+                label="Fuzzy character matching (variant forms, e.g. simplified ↔ traditional)"
                 sx={{ ml: 0 }}
               />
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

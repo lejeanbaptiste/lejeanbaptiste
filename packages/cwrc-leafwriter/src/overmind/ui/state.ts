@@ -22,6 +22,7 @@ export interface AutoTaggingReviewState {
 
 export interface DisambiguationReviewState {
   active: boolean;
+  aiCuration: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
@@ -71,6 +72,7 @@ export const state: State = {
   },
   disambiguationReview: {
     active: false,
+    aiCuration: true,
   },
   sourceCurrentContent: '',
   sourceOriginalContent: '',

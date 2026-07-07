@@ -761,37 +761,11 @@ class SchemaManager {
       elements.push(tagName);
       schemaTags += `
           .showTags *[_tag=${tagName}]:before {
-            background-color: white;
-            color: #aaa !important;
-            padding-left: 2px;
-            padding-right: 2px;
-            padding-bottom: 2px;
-            margin-right: 4px;
-            border-radius: 4px;
-            font-family: 'Lato';
-            font-size: 13px !important;
-            font-weight: normal !important;
-            font-style: normal !important;
-            font-variant: normal !important;
-            box-shadow: 0 0 2px #aaaa;
             content: "<${tagName}>";
           }
         `;
       schemaTags += `
           .showTags *[_tag=${tagName}]:after {
-            background-color: white;
-            color: #aaa !important;
-            padding-left: 2px;
-            padding-right: 2px;
-            padding-bottom: 2px;
-            margin-left: 4px;
-            border-radius: 4px;
-            font-family: 'Lato';
-            font-size: 13px !important;
-            font-weight: normal !important;
-            font-style: normal !important;
-            font-variant: normal !important;
-            box-shadow: 0 0 2px #aaaa;
             content: "</${tagName}>";
           }
         `;

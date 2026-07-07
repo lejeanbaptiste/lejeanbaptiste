@@ -357,10 +357,17 @@ Detailed action plan: **[wikidata-tag-packs-planning.md](wikidata-tag-packs-plan
 
 **Exit:** place tagging coverage for modern + historical Chinese toponyms.
 
-### Phase P3 — Japanese (NDL)
+### Phase P3 — Japanese (NDL + optional Wikidata)
 
-1. Parse NDL name authority batch or SPARQL export  
+1. **NDL** — persons (all name authorities, ~1M) + works batch (~900 titles); places SPARQL next  
 2. Gate packs when `project language = ja*`  
+3. **Later:** `wikidata-person-ja` as optional supplement (people with `ja` labels but no NDLNA — pre-modern East Asian, Buddhist, etc.); NDL remains primary  
+
+### Phase P3b — Works / titles (Chinese + Japanese)
+
+1. **Wikidata `work` kind** — extract + compile `title` tag strings (`zh-hant` classical corpus first, then `ja`)  
+2. NDL works batch grows quarterly — re-parse; no SPARQL works harvest yet  
+3. No CBDB-scale Chinese title authority — Wikidata is the main path for zh titles  
 
 ### Phase P4 — AI polish (parallel, smaller)
 
