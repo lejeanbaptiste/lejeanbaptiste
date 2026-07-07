@@ -2,6 +2,8 @@ import type { AuthorityCandidate } from './authority';
 import { teiTagForCandidate } from './authority';
 import {
   candidateIntersectsYearRange,
+  candidatePassesDateFilter,
+  countPackUniqueStrings,
   mergePackCandidates,
   parseAuthorityNdjson,
   rationaleForCandidates,
@@ -94,6 +96,54 @@ describe('office candidates tag as roleName', () => {
     const suggestions = suggestionsFromSeedMatches(matches);
     expect(suggestions[0]!.source).toBe('authority');
     expect(suggestions[0]!.rationale).toContain('參知政事');
+  });
+});
+
+describe('candidatePassesDateFilter', () => {
+  it('limit keeps overlap and drops undated; exclude is the inverse', () => {
+    const tang = person({
+      authorityId: '2',
+      primaryName: '李白',
+      searchStrings: ['李白'],
+      metadata: { startYear: 701, endYear: 762 },
+    });
+    const undated = person({ authorityId: '3', primaryName: '無年', searchStrings: ['無年'], metadata: {} });
+    const limit = { mode: 'limit' as const, start: 600, end: 900 };
+    const exclude = { mode: 'exclude' as const, start: 600, end: 900 };
+
+    expect(candidatePassesDateFilter(tang, limit)).toBe(true);
+    expect(candidatePassesDateFilter(undated, limit)).toBe(false);
+    expect(candidatePassesDateFilter(tang, exclude)).toBe(false);
+    expect(candidatePassesDateFilter(undated, exclude)).toBe(true);
+  });
+});
+
+describe('countPackUniqueStrings', () => {
+  it('counts unique tag/surface pairs and applies year filter', () => {
+    const ndjson = [
+      JSON.stringify(person()),
+      JSON.stringify(
+        person({
+          authorityId: '2',
+          primaryName: '李白',
+          searchStrings: ['李白', '李太白'],
+          metadata: { startYear: 701, endYear: 762 },
+        }),
+      ),
+      JSON.stringify(
+        person({
+          authorityId: '3',
+          primaryName: ' undated ',
+          searchStrings: ['無年'],
+          metadata: {},
+        }),
+      ),
+    ].join('\n');
+
+    expect(countPackUniqueStrings(ndjson)).toEqual({ entities: 3, uniqueStrings: 4 });
+
+    const tang = countPackUniqueStrings(ndjson, { mode: 'limit', start: 600, end: 900 });
+    expect(tang).toEqual({ entities: 1, uniqueStrings: 2 });
   });
 });
 

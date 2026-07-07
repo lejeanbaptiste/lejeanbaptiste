@@ -40,6 +40,79 @@ export const resolveTagColor = (
   tagName: string,
 ): TagColorEntry | undefined => file.tags[tagName] ?? getDefaultTagColor(tagName);
 
+const parseHex = (hex: string): [number, number, number] | null => {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) return null;
+  const value = parseInt(match[1]!, 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+};
+
+const toHex = (r: number, g: number, b: number): string =>
+  `#${[r, g, b]
+    .map((channel) =>
+      Math.round(Math.max(0, Math.min(255, channel)))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+
+/** Blend two hex colours; weight 0 = a, 1 = b. */
+export const mixHex = (a: string, b: string, weight: number): string => {
+  const left = parseHex(a);
+  const right = parseHex(b);
+  if (!left || !right) return a;
+  return toHex(
+    left[0] + (right[0] - left[0]) * weight,
+    left[1] + (right[1] - left[1]) * weight,
+    left[2] + (right[2] - left[2]) * weight,
+  );
+};
+
+/** WCAG relative luminance for sRGB hex (0 = black, 1 = white). */
+export const relativeLuminance = (hex: string): number => {
+  const rgb = parseHex(hex);
+  if (!rgb) return 0.5;
+
+  const channel = (value: number) => {
+    const unit = value / 255;
+    return unit <= 0.03928 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+  };
+
+  const [r, g, b] = rgb.map(channel);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+/** WCAG contrast ratio between two sRGB colours. */
+export const contrastRatio = (foreground: string, background: string): number => {
+  const l1 = relativeLuminance(foreground);
+  const l2 = relativeLuminance(background);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+/** Pick black or white label text for readable contrast on a pill background. */
+export const contrastTextOn = (background: string): '#000000' | '#ffffff' => {
+  const onWhite = contrastRatio('#ffffff', background);
+  const onBlack = contrastRatio('#000000', background);
+  return onWhite >= onBlack ? '#ffffff' : '#000000';
+};
+
+/** Darker pill colours derived from the assigned highlight (same hue family). */
+export const pillColorsFromEntry = (
+  colors: TagColorEntry,
+): { background?: string; text?: string } => {
+  const { highlight, text } = colors;
+  if (!highlight && !text) return {};
+
+  const background = highlight
+    ? mixHex(highlight, text ?? '#000000', text ? 0.58 : 0.42)
+    : undefined;
+  const pillText = background ? contrastTextOn(background) : undefined;
+
+  return { background, text: pillText };
+};
+
 export const generateTagColorsCss = (file: TagColorsFile): string => {
   const mergedTags = { ...DEFAULT_TAG_COLORS, ...file.tags };
   const lines = [
@@ -49,10 +122,27 @@ export const generateTagColorsCss = (file: TagColorsFile): string => {
   for (const [tagName, colors] of Object.entries(mergedTags)) {
     if (!colors.highlight && !colors.text) continue;
     const selector = `*[_tag='${tagName}'], *[_tag='${tagName}'] *`;
-    const rules: string[] = [];
+    const rules: string[] = [
+      'box-decoration-break: clone',
+      '-webkit-box-decoration-break: clone',
+    ];
     if (colors.highlight) rules.push(`background-color: ${colors.highlight}`);
     if (colors.text) rules.push(`color: ${colors.text} !important`);
     lines.push(`${selector} { ${rules.join('; ')}; }`);
+
+    const pill = pillColorsFromEntry(colors);
+    if (pill.background || pill.text) {
+      const pillRules: string[] = [];
+      if (pill.background) pillRules.push(`background-color: ${pill.background}`);
+      if (pill.text) pillRules.push(`color: ${pill.text} !important`);
+      const pillSelector = [
+        `.showTags *[_tag='${tagName}']:before`,
+        `.showTags *[_tag='${tagName}']:after`,
+        `.showTags *[_tag='${tagName}'] *[_tag]:before`,
+        `.showTags *[_tag='${tagName}'] *[_tag]:after`,
+      ].join(', ');
+      lines.push(`${pillSelector} { ${pillRules.join('; ')}; }`);
+    }
   }
 
   return `${lines.join('\n')}\n`;

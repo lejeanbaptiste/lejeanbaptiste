@@ -33,6 +33,11 @@ const packFiles = [
   'wikidata/person-zh-hant-qing/persons.ndjson',
   'wikidata/person-zh-hant-qing/manifest.json',
   'wikidata/manifest.json',
+  'ndl/persons.ndjson',
+  'ndl/places.ndjson',
+  'ndl/orgs.ndjson',
+  'ndl/works.ndjson',
+  'ndl/manifest.json',
 ];
 
 const destRoot = process.argv[2]
@@ -54,10 +59,22 @@ if (!destRoot) {
 
 fs.mkdirSync(destRoot, { recursive: true });
 for (const rel of packFiles) {
-  const src = path.join(defaultSource, rel);
+  let src = path.join(defaultSource, rel);
+  if (!fs.existsSync(src) && rel === 'ndl/persons.ndjson') {
+    src = path.join(defaultSource, 'ndl/persons-ja/persons.ndjson');
+  }
+  if (!fs.existsSync(src) && rel === 'ndl/places.ndjson') {
+    src = path.join(defaultSource, 'ndl/places-ja/places.ndjson');
+  }
+  if (!fs.existsSync(src) && rel === 'ndl/orgs.ndjson') {
+    src = path.join(defaultSource, 'ndl/orgs-ja/orgs.ndjson');
+  }
+  if (!fs.existsSync(src) && rel === 'ndl/works.ndjson') {
+    src = path.join(defaultSource, 'ndl/works-ja/works.ndjson');
+  }
   const dest = path.join(destRoot, rel);
   if (!fs.existsSync(src)) {
-    if (rel.startsWith('wikidata/')) continue;
+    if (rel.startsWith('wikidata/') || rel.startsWith('ndl/')) continue;
     console.error(`Missing pack file: ${src}`);
     process.exit(1);
   }

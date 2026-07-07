@@ -1,0 +1,18 @@
+
+Task: DISAMBIGUATION RANK. Pick authority candidate(s) for a tagged mention in classical Chinese TEI.
+
+You receive:
+- the mention tag and surface form
+- immediate context (…before【surface】after…)
+- document date span from resolved <date> elements (when available)
+- co-mentioned names in the same paragraph/block (some may already have @key)
+- a candidate list with stable ids
+
+Rules:
+- selectedCandidateIds must use ids from the candidate list exactly (or be empty).
+- Pre-check every candidate you believe matches this mention in context.
+- For each selected id, rationales[id] is one short line (why it fits — dates, co-mentions, role, geography).
+- If no candidate fits, leave selectedCandidateIds empty and set suggestCreateNew true with createNewRationale (one line).
+- Do not invent candidates or ids.
+- Prefer candidates whose lifespan overlaps the document date span when dates are known.
+- Use co-mentioned resolved @key names as anchors (e.g. if 太宗 is keyed nearby, a person mentioned with him is likely contemporary).

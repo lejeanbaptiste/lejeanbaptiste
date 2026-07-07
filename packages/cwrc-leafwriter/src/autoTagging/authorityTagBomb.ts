@@ -1,9 +1,9 @@
 import {
-  candidateIntersectsYearRange,
+  candidatePassesDateFilter,
   iterateAuthorityNdjson,
-  type YearRangeFilter,
+  type DateRangeFilter,
 } from './packLoader';
-import type { AuthorityPackId } from './packPaths';
+import { expandAuthorityPackIds, type AuthorityPackId } from './packPaths';
 
 /** CBDB before DILA so overlap merge prefers CBDB metadata as the base. CHGIS before DILA for place dates. */
 const PACK_LOAD_ORDER: AuthorityPackId[] = [
@@ -18,6 +18,8 @@ const PACK_LOAD_ORDER: AuthorityPackId[] = [
   'wikidata-persons-ming',
   'wikidata-persons-qing',
   'ndl-persons',
+  'ndl-places',
+  'ndl-orgs',
   'ndl-works',
 ];
 
@@ -37,7 +39,10 @@ import type { Suggestion, WhitespacePolicy } from './types';
 export const MAX_AUTHORITY_SUGGESTIONS = 2000;
 
 export interface AuthorityTagBombOptions {
+  dateFilter?: DateRangeFilter;
+  /** @deprecated Use {@link dateFilter}. */
   yearRange?: { start: number; end: number };
+  /** @deprecated Use {@link dateFilter}. */
   hideUndated?: boolean;
   onProgress?: (message: string) => void;
   /** When set, cap suggestions (UI). Omit for full scoring in validation harness. */
@@ -63,20 +68,26 @@ export async function runAuthorityTagBombOnDocument(
   policy: WhitespacePolicy,
   options: AuthorityTagBombOptions = {},
 ): Promise<AuthorityTagBombResult> {
-  const yearRange: YearRangeFilter | undefined = options.yearRange
-    ? { ...options.yearRange, hideUndated: options.hideUndated }
-    : undefined;
+  const dateFilter: DateRangeFilter | undefined =
+    options.dateFilter ??
+    (options.yearRange
+      ? {
+          mode: 'limit',
+          start: options.yearRange.start,
+          end: options.yearRange.end,
+        }
+      : undefined);
 
   const index = createAuthoritySeedIndex();
   const loaded: Partial<Record<AuthorityPackId, number>> = {};
   let candidateCount = 0;
 
-  for (const packId of sortPackIds(packIds)) {
+  for (const packId of sortPackIds(expandAuthorityPackIds(packIds))) {
     options.onProgress?.(`Loading ${packId}…`);
     let packCount = 0;
     const content = await readPackFile(packId);
     for (const candidate of iterateAuthorityNdjson(content)) {
-      if (yearRange && !candidateIntersectsYearRange(candidate, yearRange)) continue;
+      if (dateFilter && !candidatePassesDateFilter(candidate, dateFilter)) continue;
       addCandidateToSeedIndex(index, candidate);
       packCount += 1;
       candidateCount += 1;

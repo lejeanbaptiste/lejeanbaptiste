@@ -16,15 +16,39 @@ body {
   max-width: none !important;
 }
 
+/* Tag pills in show-tags mode — layout shared by all tag names */
+.showTags *[_tag]:before,
+.showTags *[_tag]:after {
+  display: inline;
+  vertical-align: baseline;
+  line-height: 1.15;
+  padding: 1px 3px;
+  margin: 0 2px;
+  border-radius: 3px;
+  box-shadow: none;
+  font-family: 'Lato', sans-serif;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  background-color: transparent;
+  color: #555 !important;
+}
+
 /* This CSS gets applied to the tinymce editor */
 /* entity colours */
+.entity-colored-pill(@color) {
+  border: 1px solid mix(@color, white, 50%);
+  background-color: mix(@color, white, 35%);
+  color: darken(@color, 25%) !important;
+}
+
 .showEntities .entity,
 .ui-dialog-content .entity {
-  // border-width: 1px;
-  // border-bottom-style: dotted;
-
   padding: 2px 4px 4px 4px;
-  color: white !important;
+  color: #888;
+  background-color: transparent;
+  border: 1px solid transparent;
   border-radius: 4px;
 }
 
@@ -70,52 +94,42 @@ body {
 
 .showEntities .person,
 .ui-dialog-content .person {
-  // border-color: mix(desaturate(@entity-person, 30%), #fff, 50%);
-
-  border-color: @person;
-  background-color: @person;
+  .entity-colored-pill(@entity-person);
 }
 
 .showEntities .date,
 .ui-dialog-content .date {
-  border-color: @entity-date;
-  background-color: @entity-date;
+  .entity-colored-pill(@entity-date);
 }
 
 .showEntities .place,
 .ui-dialog-content .place {
-  border-color: @entity-place;
-  background-color: @entity-place;
+  .entity-colored-pill(@entity-place);
 }
 
 .showEntities .thing,
 .ui-dialog-content .thing {
-  border-color: @entity-thing;
-  background-color: @entity-thing;
+  .entity-colored-pill(@entity-thing);
 }
 
 .showEntities .organization,
 .ui-dialog-content .organization {
-  border-color: @entity-organization;
-  background-color: @entity-organization;
+  .entity-colored-pill(@entity-organization);
 }
 
 .showEntities .work,
 .ui-dialog-content .work {
-  border-color: @entity-work;
-  background-color: @entity-work;
+  .entity-colored-pill(@entity-work);
 }
 
 .showEntities .correction,
 .ui-dialog-content .correction {
-  border-color: @entity-correction;
-  background-color: @entity-correction;
+  .entity-colored-pill(@entity-correction);
 }
 
 .showEntities .link,
 .ui-dialog-content .link {
-  border-color: @entity-link;
-  background-color: @entity-link;
+  .entity-colored-pill(@entity-link);
 }
 
 .entity[_candidate] {

@@ -3,6 +3,7 @@ import {
   createDefaultAiPromptProfile,
   createDefaultAiPromptProfilesState,
   DEFAULT_AUDIT_CLEAN_TASK_TEXT,
+  DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT,
   DEFAULT_SUGGEST_TASK_TEXT,
   parseAiPromptProfilesFile,
   promptVersionWithProfile,
@@ -26,6 +27,7 @@ describe('aiPromptProfiles', () => {
       label: 'Default',
       suggestTaskText: 'Custom suggest task',
       auditCleanTaskText: DEFAULT_AUDIT_CLEAN_TASK_TEXT,
+      disambiguationRankTaskText: DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT,
     });
     expect(next.profiles[0]?.version).toBe(1);
   });
@@ -60,6 +62,7 @@ describe('aiPromptProfiles', () => {
     const reverted = revertProfileToDefaults(edited);
     expect(reverted.suggestTaskText).toBe(DEFAULT_SUGGEST_TASK_TEXT);
     expect(reverted.auditCleanTaskText).toBe(DEFAULT_AUDIT_CLEAN_TASK_TEXT);
+    expect(reverted.disambiguationRankTaskText).toBe(DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT);
     expect(reverted.version).toBe(4);
   });
 
@@ -69,6 +72,24 @@ describe('aiPromptProfiles', () => {
     expect(next.profiles).toHaveLength(2);
     expect(next.activeProfileId).not.toBe('default');
     expect(next.profiles[1]?.label).toBe('Groq biography');
+  });
+
+  it('migrates profiles missing disambiguation task text', () => {
+    const raw = JSON.stringify({
+      version: 1,
+      activeProfileId: 'default',
+      profiles: [
+        {
+          id: 'default',
+          label: 'Default',
+          version: 0,
+          suggestTaskText: DEFAULT_SUGGEST_TASK_TEXT,
+          auditCleanTaskText: DEFAULT_AUDIT_CLEAN_TASK_TEXT,
+        },
+      ],
+    });
+    const parsed = parseAiPromptProfilesFile(raw);
+    expect(parsed.profiles[0]?.disambiguationRankTaskText).toBe(DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT);
   });
 });
 

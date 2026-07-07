@@ -5,8 +5,12 @@ import {
   Checkbox,
   Dialog,
   DialogContent,
+  FormControl,
   FormControlLabel,
+  InputLabel,
   Link,
+  MenuItem,
+  Select,
   Slider,
   Stack,
   Typography,
@@ -15,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AutoTaggingSession,
   aiApiSettingsFromDesktop,
+  countAuthorityPackStrings,
   crawlDocuments,
   createDefaultAiPromptProfilesState,
   createLlmClientFromSettings,
@@ -28,6 +33,7 @@ import {
   parseDictionaryTable,
   formatAuthorityTagBombNotice,
   persistAiPromptProfiles,
+  defaultAuthorityPacksRecord,
   persistAuthoritySettings,
   readAiPromptProfilesFromDesktop,
   readPersistedAuthoritySettings,
@@ -35,10 +41,18 @@ import {
   resolveAutoTaggingSourceLanguage,
   settingsFromUiState,
   uiStateFromSettings,
+  AUTHORITY_YEAR_MIN,
+  AUTHORITY_YEAR_MAX,
   type AiPromptProfilesState,
   type AuthorityPackId,
+  type AuthorityPackStringCounts,
+  type DateFilterMode,
   AUTHORITY_PACKS,
-  groupAuthorityPacksByTagType,
+  expandAuthorityPackIds,
+  groupAuthorityPacksBySource,
+  shortAuthorityPackLabel,
+  UI_AUTHORITY_PACK_IDS,
+  WIKIDATA_PERSON_CHILD_PACK_IDS,
   type DictionaryEntry,
   type Suggestion,
 } from '../../autoTagging';
@@ -55,38 +69,16 @@ const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
 type DialogStep = 'methods' | 'ai' | 'authority';
 type AiMode = 'suggest' | 'audit';
 
-const defaultAuthorityPacksForLanguage = (
-  language: string | null,
-): Record<AuthorityPackId, boolean> => ({
-  'cbdb-persons': false,
-  'cbdb-places': false,
-  'cbdb-offices': false,
-  'dila-persons': !isJapaneseLanguageCode(language),
-  'dila-places': false,
-  'chgis-places': false,
-  'wikidata-persons-tang': false,
-  'wikidata-persons-pre-ming': false,
-  'wikidata-persons-ming': false,
-  'wikidata-persons-qing': false,
-  'ndl-persons': isJapaneseLanguageCode(language),
-  'ndl-works': false,
-});
+const defaultAuthorityPacksForLanguage = (language: string | null): Record<AuthorityPackId, boolean> =>
+  defaultAuthorityPacksRecord({
+    'dila-persons': !isJapaneseLanguageCode(language),
+    'ndl-persons': isJapaneseLanguageCode(language),
+  });
 
 const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityPackId[] =>
   isJapaneseLanguageCode(language)
-    ? ['ndl-persons', 'ndl-works']
-    : [
-        'cbdb-persons',
-        'cbdb-places',
-        'cbdb-offices',
-        'dila-persons',
-        'dila-places',
-        'chgis-places',
-        'wikidata-persons-tang',
-        'wikidata-persons-pre-ming',
-        'wikidata-persons-ming',
-        'wikidata-persons-qing',
-      ];
+    ? ['ndl-persons', 'ndl-places', 'ndl-works']
+    : UI_AUTHORITY_PACK_IDS.filter((id) => !id.startsWith('ndl-'));
 
 /** CE presets for dynasty-scoped tag bombs. */
 const AUTHORITY_YEAR_PRESETS = [
@@ -96,8 +88,47 @@ const AUTHORITY_YEAR_PRESETS = [
   { label: 'Ming–Qing', start: 1368, end: 1912 },
 ] as const;
 
-const AUTHORITY_YEAR_MIN = -500;
-const AUTHORITY_YEAR_MAX = 2000;
+const AUTHORITY_COUNT_DEBOUNCE_MS = 450;
+
+const authorityOptionSx = {
+  ml: 0,
+  mr: 0,
+  py: 0,
+  minHeight: 24,
+  '& .MuiFormControlLabel-label': { fontSize: '0.75rem', lineHeight: 1.25 },
+} as const;
+
+const authoritySourceHeadingSx = {
+  fontSize: '0.6875rem',
+  fontWeight: 700,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  color: 'text.secondary',
+  pl: 0.25,
+  pt: 0.5,
+  pb: 0.125,
+} as const;
+
+const formatPackStringCount = (
+  counts: AuthorityPackStringCounts,
+  packId: AuthorityPackId,
+  loading: boolean,
+): string => {
+  const count = counts[packId];
+  if (count) return ` · ${count.uniqueStrings.toLocaleString()} strings`;
+  if (loading) return ' · …';
+  return '';
+};
+
+const isAuthorityPackInstalled = (
+  packId: AuthorityPackId,
+  statuses: { id: AuthorityPackId; installed: boolean }[],
+): boolean =>
+  packId === 'wikidata-persons'
+    ? WIKIDATA_PERSON_CHILD_PACK_IDS.some(
+        (childId) => statuses.find((status) => status.id === childId)?.installed ?? false,
+      )
+    : (statuses.find((status) => status.id === packId)?.installed ?? false);
 
 const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI;
 
@@ -126,9 +157,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [entityDbFolder, setEntityDbFolder] = useState<string | null>(null);
   const [packsLocationHint, setPacksLocationHint] = useState<string | null>(null);
   const [authorityProgress, setAuthorityProgress] = useState('');
-  const [authorityYearFilterEnabled, setAuthorityYearFilterEnabled] = useState(true);
+  const [authorityDateFilter, setAuthorityDateFilter] = useState<DateFilterMode>('limit');
   const [authorityYearRange, setAuthorityYearRange] = useState<[number, number]>([25, 220]);
-  const [authorityHideUndated, setAuthorityHideUndated] = useState(true);
+  const [authorityPackCounts, setAuthorityPackCounts] = useState<AuthorityPackStringCounts>({});
+  const [authorityPackCountsLoading, setAuthorityPackCountsLoading] = useState(false);
+  const authorityCountGeneration = useRef(0);
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
   const [workflowReady, setWorkflowReady] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -193,9 +226,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     if (!open || !isDesktopApp()) return;
     void refreshAuthoritySetup();
     const saved = uiStateFromSettings(readPersistedAuthoritySettings());
-    setAuthorityYearFilterEnabled(saved.yearFilterEnabled);
+    setAuthorityDateFilter(saved.dateFilter);
     setAuthorityYearRange(saved.yearRange);
-    setAuthorityHideUndated(saved.hideUndated);
   }, [open]);
 
   useEffect(() => {
@@ -237,11 +269,70 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   }, [open]);
 
   const visibleAuthorityPackIds = visibleAuthorityPackIdsForLanguage(sourceLanguage);
-  const visibleAuthorityPackGroups = groupAuthorityPacksByTagType(visibleAuthorityPackIds);
-  const anyVisibleAuthorityPackInstalled = visibleAuthorityPackIds.some(
-    (id) => authorityStatus.find((s) => s.id === id)?.installed ?? false,
+  const visibleAuthorityPackGroups = groupAuthorityPacksBySource(visibleAuthorityPackIds);
+  const anyVisibleAuthorityPackInstalled = visibleAuthorityPackIds.some((id) =>
+    isAuthorityPackInstalled(id, authorityStatus),
   );
   const authoritySetupReady = Boolean(entityDbFolder) && anyVisibleAuthorityPackInstalled;
+
+  useEffect(() => {
+    if (step !== 'authority' || !entityDbFolder || busy || !isDesktopApp()) {
+      setAuthorityPackCounts({});
+      setAuthorityPackCountsLoading(false);
+      return;
+    }
+
+    const readPack = window.electronAPI?.authorityPackRead;
+    if (!readPack) return;
+
+    const generation = ++authorityCountGeneration.current;
+    setAuthorityPackCountsLoading(true);
+
+    const timeout = window.setTimeout(() => {
+      void (async () => {
+        const installedIds = new Set(
+          authorityStatus.filter((status) => status.installed).map((status) => status.id),
+        );
+        const [yearStart, yearEnd] = authorityYearRange;
+        const range =
+          authorityDateFilter === 'none'
+            ? undefined
+            : {
+                mode: authorityDateFilter,
+                start: Math.min(yearStart, yearEnd),
+                end: Math.max(yearStart, yearEnd),
+              };
+
+        try {
+          const counts = await countAuthorityPackStrings(
+            visibleAuthorityPackIds,
+            readPack,
+            installedIds,
+            range,
+          );
+          if (generation !== authorityCountGeneration.current) return;
+          setAuthorityPackCounts(counts);
+        } catch {
+          if (generation !== authorityCountGeneration.current) return;
+          setAuthorityPackCounts({});
+        } finally {
+          if (generation === authorityCountGeneration.current) {
+            setAuthorityPackCountsLoading(false);
+          }
+        }
+      })();
+    }, AUTHORITY_COUNT_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [
+    step,
+    entityDbFolder,
+    busy,
+    authorityStatus,
+    authorityDateFilter,
+    authorityYearRange,
+    visibleAuthorityPackIds,
+  ]);
   const authorityPackGroupLabel = isJapaneseLanguageCode(sourceLanguage)
     ? 'NDL'
     : 'CBDB / DILA';
@@ -301,6 +392,13 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       setBusy(false);
     }
   };
+
+  const aiDisabled = !isDesktopApp() || !aiReady;
+  const aiDisabledReason = !isDesktopApp()
+    ? 'Desktop app only'
+    : !aiReady
+      ? 'Configure the AI API in Application Settings (API key, base URL, and model).'
+      : undefined;
 
   const openAiStep = (mode: AiMode) => {
     if (!isDesktopApp()) {
@@ -383,7 +481,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   };
 
   const runAuthorityTagBomb = async () => {
-    const selected = visibleAuthorityPackIds.filter((id) => authorityPacks[id]);
+    const installedIds = new Set(
+      authorityStatus.filter((status) => status.installed).map((status) => status.id),
+    );
+    const selected = expandAuthorityPackIds(
+      visibleAuthorityPackIds.filter((id) => authorityPacks[id]),
+    ).filter((id) => installedIds.has(id));
     if (selected.length === 0) {
       setError('Select at least one authority pack.');
       return;
@@ -401,28 +504,28 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       await persistAuthoritySettings(
         settingsFromUiState({
           packs: authorityPacks,
-          yearFilterEnabled: authorityYearFilterEnabled,
+          dateFilter: authorityDateFilter,
           yearRange: authorityYearRange,
-          hideUndated: authorityHideUndated,
         }),
       );
       const [yearStart, yearEnd] = authorityYearRange;
+      const dateFilter =
+        authorityDateFilter === 'none'
+          ? undefined
+          : {
+              mode: authorityDateFilter,
+              start: Math.min(yearStart, yearEnd),
+              end: Math.max(yearStart, yearEnd),
+            };
       const result = await getSession().runAuthorityTagBomb(selected, readPack, {
         onProgress: setAuthorityProgress,
-        ...(authorityYearFilterEnabled
-          ? {
-              yearRange: {
-                start: Math.min(yearStart, yearEnd),
-                end: Math.max(yearStart, yearEnd),
-              },
-              hideUndated: authorityHideUndated,
-            }
-          : {}),
+        ...(dateFilter ? { dateFilter } : {}),
       });
       if (result.suggestions.length === 0) {
-        const filterNote = authorityYearFilterEnabled
-          ? ` (${Math.min(...authorityYearRange)}–${Math.max(...authorityYearRange)} CE${authorityHideUndated ? ', undated excluded' : ''})`
-          : '';
+        const filterNote =
+          authorityDateFilter === 'none'
+            ? ''
+            : ` (${Math.min(...authorityYearRange)}–${Math.max(...authorityYearRange)} CE, ${authorityDateFilter})`;
         setError(
           `No untagged matches (${result.candidateCount.toLocaleString()} authority entries after filters${filterNote}).`,
         );
@@ -548,7 +651,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       >
         <DialogContent sx={{ p: 1.5 }}>
           <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-            Auto-tagging
+            {step === 'authority' ? 'Authority tag bomb' : 'Auto-tagging'}
           </Typography>
 
           {error && (
@@ -596,19 +699,27 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 !isDesktopApp(),
                 !isDesktopApp() ? 'Desktop app only' : undefined,
               )}
+              {isDesktopApp() && !aiReady && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ px: 1, py: 0.125, fontSize: '0.6875rem', lineHeight: 1.35 }}
+                >
+                  AI suggest and audit need an API key — set one in Application Settings.
+                </Typography>
+              )}
               {methodButton(
                 'AI suggest',
                 () => openAiStep('suggest'),
-                !isDesktopApp(),
-                !isDesktopApp() ? 'Desktop app only' : undefined,
+                aiDisabled,
+                aiDisabledReason,
               )}
               {methodButton(
                 'AI audit',
                 () => openAiStep('audit'),
-                !isDesktopApp(),
-                !isDesktopApp() ? 'Desktop app only' : undefined,
+                aiDisabled,
+                aiDisabledReason,
               )}
-              {methodButton('NER', () => {}, true)}
                 </>
               )}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
@@ -618,11 +729,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               </Box>
             </Stack>
           ) : step === 'authority' ? (
-            <Stack spacing={1} sx={{ mt: 0.5 }}>
-              <Typography variant="body2" color="text.secondary">
-                Match pre-compiled {authorityPackGroupLabel} strings. Clue lines appear in review;
-                no ids until disambiguation.
-              </Typography>
+            <Stack spacing={0.75} sx={{ mt: 0.25 }}>
               {!entityDbFolder && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
                   No entity database folder configured. Pick the folder that contains{' '}
@@ -652,16 +759,21 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   </Box>
                 </Alert>
               )}
-              <Stack spacing={1.25}>
+              <Stack spacing={0.25}>
                 {visibleAuthorityPackGroups.map((group) => (
-                  <Box key={group.tag}>
-                    <Typography variant="caption" color="text.secondary" sx={{ pl: 0.5 }}>
-                      {group.label}
-                    </Typography>
-                    <Stack>
+                  <Box key={group.source}>
+                    {group.packs.length > 1 && (
+                      <Typography variant="caption" sx={authoritySourceHeadingSx}>
+                        {group.label}
+                      </Typography>
+                    )}
+                    <Stack spacing={0}>
                       {group.packs.map((opt) => {
-                        const installed =
-                          authorityStatus.find((s) => s.id === opt.id)?.installed ?? false;
+                        const installed = isAuthorityPackInstalled(opt.id, authorityStatus);
+                        const soloSourceRow = group.packs.length === 1;
+                        const rowLabel = soloSourceRow
+                          ? group.label
+                          : shortAuthorityPackLabel(opt.id);
                         return (
                           <FormControlLabel
                             key={opt.id}
@@ -670,6 +782,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                                 size="small"
                                 checked={authorityPacks[opt.id]}
                                 disabled={busy || !installed}
+                                sx={{ py: 0.125 }}
                                 onChange={(event) =>
                                   setAuthorityPacks((current) => ({
                                     ...current,
@@ -678,8 +791,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                                 }
                               />
                             }
-                            label={`${opt.label}${installed ? '' : ' (not installed)'}`}
-                            sx={{ ml: 0 }}
+                            label={`${rowLabel}${installed ? formatPackStringCount(authorityPackCounts, opt.id, authorityPackCountsLoading) : ' (not installed)'}`}
+                            sx={authorityOptionSx}
                           />
                         );
                       })}
@@ -687,21 +800,25 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   </Box>
                 ))}
               </Stack>
-              <Box sx={{ px: 0.5 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={authorityYearFilterEnabled}
-                      disabled={busy}
-                      onChange={(event) => setAuthorityYearFilterEnabled(event.target.checked)}
-                    />
-                  }
-                  label="Limit to year range (CE)"
-                  sx={{ ml: 0 }}
-                />
-                {authorityYearFilterEnabled && (
-                  <Stack spacing={0.75} sx={{ pl: 3.5, pr: 0.5, pb: 0.5 }}>
+              <Box sx={{ px: 0.25, pt: 0.25 }}>
+                <FormControl size="small" fullWidth disabled={busy}>
+                  <InputLabel id="authority-date-filter-label">Date filter</InputLabel>
+                  <Select
+                    labelId="authority-date-filter-label"
+                    label="Date filter"
+                    value={authorityDateFilter}
+                    onChange={(event) =>
+                      setAuthorityDateFilter(event.target.value as DateFilterMode)
+                    }
+                    sx={{ fontSize: '0.8125rem' }}
+                  >
+                    <MenuItem value="none">None</MenuItem>
+                    <MenuItem value="limit">Limit</MenuItem>
+                    <MenuItem value="exclude">Exclude</MenuItem>
+                  </Select>
+                </FormControl>
+                {authorityDateFilter !== 'none' && (
+                  <Stack spacing={0.5} sx={{ pt: 0.75, pb: 0.25 }}>
                     <Slider
                       size="small"
                       min={AUTHORITY_YEAR_MIN}
@@ -716,23 +833,13 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                       getAriaValueText={(value) => `${value} CE`}
                       disabled={busy}
                     />
-                    <Typography variant="caption" color="text.secondary">
-                      {Math.min(...authorityYearRange)} – {Math.max(...authorityYearRange)} CE
-                      (include entries whose lifespan overlaps this span)
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
+                      {Math.min(...authorityYearRange)} – {Math.max(...authorityYearRange)} CE ·{' '}
+                      {authorityDateFilter === 'limit'
+                        ? 'include lifespan overlap'
+                        : 'exclude lifespan overlap'}
                     </Typography>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          size="small"
-                          checked={authorityHideUndated}
-                          disabled={busy}
-                          onChange={(event) => setAuthorityHideUndated(event.target.checked)}
-                        />
-                      }
-                      label="Exclude undated persons (DILA places always included)"
-                      sx={{ ml: 0 }}
-                    />
-                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                    <Stack direction="row" spacing={0.375} flexWrap="wrap" useFlexGap>
                       {AUTHORITY_YEAR_PRESETS.map((preset) => (
                         <Button
                           key={preset.label}
@@ -740,7 +847,14 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                           variant="outlined"
                           disabled={busy}
                           onClick={() => setAuthorityYearRange([preset.start, preset.end])}
-                          sx={{ py: 0, minWidth: 0, textTransform: 'none' }}
+                          sx={{
+                            py: 0,
+                            px: 0.75,
+                            minWidth: 0,
+                            minHeight: 22,
+                            fontSize: '0.6875rem',
+                            textTransform: 'none',
+                          }}
                         >
                           {preset.label}
                         </Button>

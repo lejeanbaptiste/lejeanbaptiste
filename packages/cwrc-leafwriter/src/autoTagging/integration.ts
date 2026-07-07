@@ -15,6 +15,7 @@ import {
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
 import { LJB_AUTOTAG_RESP, TAG_TO_KIND, type EntityKind } from './entities';
 import { entityStoreFromDesktop, type EntityStore } from './entityStore';
+import { DisambiguationAiCache } from './disambiguationAiCache';
 import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
 import { LlmCache } from './llmCache';
@@ -108,6 +109,7 @@ export class AutoTaggingSession {
   private entitiesDoc: Document | null = null;
   private authorityCache: AuthorityCache | null = null;
   private llmCache: LlmCache | null = null;
+  private disambiguationAiCacheStore: DisambiguationAiCache | null = null;
   private pendingCache: PendingCache = { version: 1, entries: {} };
   private documentPaths = new Map<Document, string>();
 
@@ -130,6 +132,7 @@ export class AutoTaggingSession {
       if (api) {
         this.authorityCache = new AuthorityCache(api, store.authorityCacheDir);
         this.llmCache = new LlmCache(api, store.aiCacheDir);
+        this.disambiguationAiCacheStore = new DisambiguationAiCache(api, store.aiDisambiguationCacheDir);
       }
     }
   }
@@ -144,6 +147,10 @@ export class AutoTaggingSession {
 
   get aiCache(): LlmCache | null {
     return this.llmCache;
+  }
+
+  get disambiguationAiCache(): DisambiguationAiCache | null {
+    return this.disambiguationAiCacheStore;
   }
 
   /**
@@ -214,6 +221,8 @@ export class AutoTaggingSession {
     packIds: AuthorityPackId[],
     readPackFile: (packId: AuthorityPackId) => Promise<string>,
     options: {
+      dateFilter?: DateRangeFilter;
+      /** @deprecated Use {@link dateFilter}. */
       yearRange?: { start: number; end: number };
       hideUndated?: boolean;
       onProgress?: (message: string) => void;
@@ -457,7 +466,17 @@ export class AutoTaggingSession {
     if (!path || path === 'current' || (activePath && samePath(path, activePath))) {
       this.writer.loadDocumentXML(xml);
       this.syncUnsavedStateAfterReload(xml);
-      this.writer.validate?.();
+      // The editor's own tag/attribute definitions aren't necessarily settled
+      // immediately after a reload (worse if a modal briefly stole DOM focus,
+      // e.g. a confirmation dialog) — give it a couple of frames before asking
+      // it to re-derive XML for validation, and don't let a validate failure
+      // surface as an unhandled rejection since persistence already succeeded.
+      await yieldToUi();
+      try {
+        await this.writer.validate?.();
+      } catch {
+        // best-effort — validation feedback only, not required for persistence
+      }
       return;
     }
 
@@ -490,7 +509,7 @@ export class AutoTaggingSession {
   async resolveMention(
     instance: MentionInstance,
     candidate: DisambiguationCandidate,
-    options: { createNew?: boolean; name?: string; kind?: EntityKind } = {},
+    options: { createNew?: boolean; name?: string; kind?: EntityKind; description?: string } = {},
   ): Promise<string> {
     if (!this.store) throw new Error('No entity store available');
     const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
@@ -503,6 +522,7 @@ export class AutoTaggingSession {
         kind,
         name: options.name ?? instance.surface,
         authorityIds: candidate.authorityIds,
+        description: options.description,
       },
       options.createNew ? undefined : candidate,
     );
@@ -535,6 +555,21 @@ export class AutoTaggingSession {
     await this.savePendingCache();
     await this.persistDocument(instance.element.ownerDocument!);
     this.logResolution(instance, 'unresolved');
+  }
+
+  /** Remove @key from a resolved mention so it can be disambiguated again. */
+  async clearMentionResolution(instance: MentionInstance): Promise<void> {
+    markMentionUnresolved(instance.element);
+    await this.persistDocument(instance.element.ownerDocument!);
+    this.logResolution(instance, 'unresolved');
+  }
+
+  async clearMentionResolutions(instances: MentionInstance[]): Promise<void> {
+    if (instances.length === 0) return;
+    for (const instance of instances) markMentionUnresolved(instance.element);
+    const docs = new Set(instances.map((item) => item.element.ownerDocument!));
+    for (const doc of docs) await this.persistDocument(doc);
+    for (const instance of instances) this.logResolution(instance, 'unresolved');
   }
 
   /**
@@ -598,14 +633,31 @@ export class AutoTaggingSession {
    * stream (which matches the XML's, since conversion preserves text).
    * Best-effort: returns false when the editor is absent or the text differs.
    */
+  focusMention(instance: MentionInstance): boolean {
+    return this.focusAnchor(instance.anchor.surface, instance.anchor.occurrence);
+  }
+
   focus(suggestion: Suggestion): boolean {
+    const editor = this.writer.editor;
+    if (!editor) return false;
+
+    try {
+      const displaySurface = dateCuratorDisplaySurface(suggestion);
+      if (this.focusAnchor(displaySurface, suggestion.anchor.occurrence)) return true;
+      return this.focusAnchor(suggestion.anchor.surface, suggestion.anchor.occurrence);
+    } catch {
+      return false;
+    }
+  }
+
+  private focusAnchor(surface: string, occurrence: number): boolean {
     const editor = this.writer.editor;
     if (!editor) return false;
 
     try {
       const body = editor.getBody();
       const index = buildDocIndex(body, this.policy);
-      const displaySurface = dateCuratorDisplaySurface(suggestion);
+      const displaySurface = surface;
 
       // Prefer full date string (may span element boundaries in XML; flat in editor text).
       const flatStart = index.text.indexOf(displaySurface);
@@ -629,8 +681,6 @@ export class AutoTaggingSession {
           }
         }
       }
-
-      const { surface, occurrence } = suggestion.anchor;
 
       let seen = 0;
       for (const { node, search } of index.nodes) {

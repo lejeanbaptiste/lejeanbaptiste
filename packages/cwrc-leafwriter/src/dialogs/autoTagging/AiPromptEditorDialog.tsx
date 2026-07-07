@@ -14,7 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DEFAULT_AI_PROMPT_PROFILE_ID,
   addNamedProfile,
@@ -27,22 +27,36 @@ import {
   type AiPromptProfilesState,
 } from '../../autoTagging/aiPromptProfiles';
 
+export type AiPromptEditorFocusField = 'suggest' | 'audit' | 'disambiguation';
+
 interface AiPromptEditorDialogProps {
   open: boolean;
   state: AiPromptProfilesState;
   onClose: () => void;
   onSave: (next: AiPromptProfilesState) => void | Promise<void>;
+  /** Scroll this field into view when the dialog opens. */
+  highlightField?: AiPromptEditorFocusField;
 }
 
-export function AiPromptEditorDialog({ open, state, onClose, onSave }: AiPromptEditorDialogProps) {
+export function AiPromptEditorDialog({
+  open,
+  state,
+  onClose,
+  onSave,
+  highlightField,
+}: AiPromptEditorDialogProps) {
   const activeProfile = getActiveAiPromptProfile(state);
   const [profileId, setProfileId] = useState(activeProfile.id);
   const [label, setLabel] = useState(activeProfile.label);
   const [suggestTaskText, setSuggestTaskText] = useState(activeProfile.suggestTaskText);
   const [auditCleanTaskText, setAuditCleanTaskText] = useState(activeProfile.auditCleanTaskText);
+  const [disambiguationRankTaskText, setDisambiguationRankTaskText] = useState(
+    activeProfile.disambiguationRankTaskText,
+  );
   const [newProfileName, setNewProfileName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const disambiguationFieldRef = useRef<HTMLDivElement>(null);
 
   const selectedProfile =
     state.profiles.find((p) => p.id === profileId) ?? activeProfile;
@@ -54,28 +68,38 @@ export function AiPromptEditorDialog({ open, state, onClose, onSave }: AiPromptE
     setLabel(profile.label);
     setSuggestTaskText(profile.suggestTaskText);
     setAuditCleanTaskText(profile.auditCleanTaskText);
+    setDisambiguationRankTaskText(profile.disambiguationRankTaskText);
     setNewProfileName('');
     setError(null);
   }, [open, state]);
+
+  useEffect(() => {
+    if (!open || highlightField !== 'disambiguation') return;
+    window.setTimeout(() => disambiguationFieldRef.current?.scrollIntoView({ block: 'nearest' }), 0);
+  }, [highlightField, open, profileId]);
 
   const loadProfileIntoEditor = (profile: AiPromptProfile) => {
     setProfileId(profile.id);
     setLabel(profile.label);
     setSuggestTaskText(profile.suggestTaskText);
     setAuditCleanTaskText(profile.auditCleanTaskText);
+    setDisambiguationRankTaskText(profile.disambiguationRankTaskText);
     setError(null);
   };
+
+  const profileEdits = () => ({
+    label: label.trim() || selectedProfile.label,
+    suggestTaskText,
+    auditCleanTaskText,
+    disambiguationRankTaskText,
+  });
 
   const handleSave = async () => {
     setError(null);
     setBusy(true);
     try {
       let next = setActiveAiPromptProfile(state, profileId);
-      next = saveProfileEdits(next, profileId, {
-        label: label.trim() || selectedProfile.label,
-        suggestTaskText,
-        auditCleanTaskText,
-      });
+      next = saveProfileEdits(next, profileId, profileEdits());
       await onSave(next);
       onClose();
     } catch (e) {
@@ -89,6 +113,7 @@ export function AiPromptEditorDialog({ open, state, onClose, onSave }: AiPromptE
     const reverted = revertProfileToDefaults(selectedProfile);
     setSuggestTaskText(reverted.suggestTaskText);
     setAuditCleanTaskText(reverted.auditCleanTaskText);
+    setDisambiguationRankTaskText(reverted.disambiguationRankTaskText);
     setError(null);
   };
 
@@ -101,16 +126,11 @@ export function AiPromptEditorDialog({ open, state, onClose, onSave }: AiPromptE
     setError(null);
     setBusy(true);
     try {
-      let next = saveProfileEdits(state, profileId, {
-        label: label.trim() || selectedProfile.label,
-        suggestTaskText,
-        auditCleanTaskText,
-      });
+      let next = saveProfileEdits(state, profileId, profileEdits());
       next = addNamedProfile(next, trimmed, {
         ...selectedProfile,
         label: trimmed,
-        suggestTaskText,
-        auditCleanTaskText,
+        ...profileEdits(),
       });
       await onSave(next);
       onClose();
@@ -142,8 +162,8 @@ export function AiPromptEditorDialog({ open, state, onClose, onSave }: AiPromptE
       <DialogContent>
         <Stack spacing={1.5} sx={{ mt: 0.5 }}>
           <Typography variant="body2" color="text.secondary">
-            Edit task wording for suggest and audit. Locator rules, chunk boundaries, tag
-            definitions, and JSON shape stay locked in the app.
+            Edit task wording for suggest, audit, and disambiguation curation. Locator rules, tag
+            definitions, candidate context assembly, and JSON shape stay locked in the app.
           </Typography>
 
           {error && (
@@ -188,7 +208,7 @@ export function AiPromptEditorDialog({ open, state, onClose, onSave }: AiPromptE
             disabled={busy}
             onChange={(event) => setSuggestTaskText(event.target.value)}
             multiline
-            minRows={6}
+            minRows={5}
             fullWidth
             InputProps={{ sx: { fontFamily: 'monospace', fontSize: 12 } }}
           />
@@ -199,10 +219,24 @@ export function AiPromptEditorDialog({ open, state, onClose, onSave }: AiPromptE
             disabled={busy}
             onChange={(event) => setAuditCleanTaskText(event.target.value)}
             multiline
-            minRows={6}
+            minRows={5}
             fullWidth
             InputProps={{ sx: { fontFamily: 'monospace', fontSize: 12 } }}
           />
+
+          <Box ref={disambiguationFieldRef}>
+            <TextField
+              label="Disambiguation rank task text"
+              value={disambiguationRankTaskText}
+              disabled={busy}
+              onChange={(event) => setDisambiguationRankTaskText(event.target.value)}
+              multiline
+              minRows={5}
+              fullWidth
+              autoFocus={highlightField === 'disambiguation'}
+              InputProps={{ sx: { fontFamily: 'monospace', fontSize: 12 } }}
+            />
+          </Box>
 
           <Box>
             <TextField

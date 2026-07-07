@@ -344,8 +344,12 @@ export const exitAutoTaggingReview = ({ state }: Context) => {
   window.dispatchEvent(new CustomEvent('desktop:auto-tagging-review-close'));
 };
 
-export const startDisambiguationReview = ({ state }: Context) => {
+export const startDisambiguationReview = (
+  { state }: Context,
+  options?: { aiCuration?: boolean },
+) => {
   state.ui.disambiguationReview.active = true;
+  state.ui.disambiguationReview.aiCuration = options?.aiCuration ?? true;
   window.dispatchEvent(new CustomEvent('desktop:disambiguation-review-open'));
 };
 

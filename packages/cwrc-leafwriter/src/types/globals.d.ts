@@ -100,18 +100,34 @@ declare global {
       getAutoTaggingAuthoritySettings: () =>
         | {
             packs?: string[];
-            yearFilterEnabled?: boolean;
+            dateFilter?: 'none' | 'limit' | 'exclude';
             yearStart?: number;
             yearEnd?: number;
+            yearFilterEnabled?: boolean;
             hideUndated?: boolean;
           }
         | undefined;
       setAutoTaggingAuthoritySettings: (settings: {
         packs?: string[];
-        yearFilterEnabled?: boolean;
+        dateFilter?: 'none' | 'limit' | 'exclude';
         yearStart?: number;
         yearEnd?: number;
+        yearFilterEnabled?: boolean;
         hideUndated?: boolean;
+      }) => void;
+      getDisambiguationSettings: () =>
+        | {
+            aiCuration?: boolean;
+            dateFilter?: 'none' | 'limit' | 'exclude';
+            yearStart?: number;
+            yearEnd?: number;
+          }
+        | undefined;
+      setDisambiguationSettings: (settings: {
+        aiCuration?: boolean;
+        dateFilter?: 'none' | 'limit' | 'exclude';
+        yearStart?: number;
+        yearEnd?: number;
       }) => void;
     };
     __lwPanelTrace?: { t: string; tag: string; data?: Record<string, unknown> }[];

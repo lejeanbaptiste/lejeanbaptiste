@@ -4,6 +4,7 @@ import type { AuthorityLookupResult } from '../types/authority';
 import { AuthorityCache } from './authorityCache';
 import {
   addEntity,
+  ENTITY_KINDS,
   findEntity,
   getDatabaseId,
   TAG_TO_KIND,
@@ -11,6 +12,17 @@ import {
   type EntityKind,
 } from './entities';
 import type { EntityStore } from './entityStore';
+import { filterReconcileByExactSurface, stringsMatchExactly } from './disambiguationMatch';
+import { fetchWikidataLifespan, prefixDescriptionWithLifespan } from './wikidataDates';
+import { wikidataQidsMatchingKind } from './wikidataKindFilter';
+import {
+  iterateAuthorityNdjson,
+  normalizeDateRangeFilter,
+  parseAuthorityNdjson,
+  type DateRangeFilter,
+} from './packLoader';
+import type { AuthorityCandidate } from './authority';
+import type { AuthorityPackId } from './packPaths';
 
 export interface DisambiguationCandidate {
   id: string;
@@ -21,6 +33,10 @@ export interface DisambiguationCandidate {
   authorityIds?: AuthorityId[];
   localEntityId?: string;
   fromEntityFile?: boolean;
+  /** Birth/founding year (persons: Wikidata P569; CHGIS places: metadata.startYear). */
+  startYear?: number;
+  /** Death/dissolution year (persons: Wikidata P570; CHGIS places: metadata.endYear). */
+  endYear?: number;
 }
 
 const TAG_TO_ENTITY_TYPE: Record<string, NamedEntityType> = {
@@ -40,9 +56,10 @@ const AUTHORITY_MAP: Record<string, 'wikidata' | 'viaf' | 'dbpedia' | 'geonames'
   GND: 'gnd',
 };
 
-function entityNameMatches(element: Element, surface: string): boolean {
-  const name = element.textContent?.trim() ?? '';
-  return name === surface || name.includes(surface);
+/** Match against the name child's text only — `element.textContent` would also pick up note/idno text. */
+function entityNameMatches(element: Element, nameTag: string, surface: string): boolean {
+  const name = element.getElementsByTagName(nameTag)[0]?.textContent?.trim() ?? '';
+  return stringsMatchExactly(surface, name);
 }
 
 /** Pull a Wikidata Q-id from URIs, VIAF source codes (WKP|Q…), or free text. */
@@ -57,9 +74,9 @@ export function extractWikidataId(text: string): string | null {
   return bare ? bare[1]!.toUpperCase() : null;
 }
 
-/** Pull a VIAF numeric id from a cluster URI. */
+/** Pull a VIAF numeric id from a cluster URI (with or without a locale segment, e.g. `viaf.org/fr/viaf/…`). */
 export function extractViafId(text: string): string | null {
-  const match = text.match(/viaf\.org\/viaf\/(\d+)/i);
+  const match = text.match(/viaf\.org\/(?:[a-z]{2}\/)?viaf\/(\d+)/i);
   return match ? match[1]! : null;
 }
 
@@ -70,6 +87,7 @@ export function extractCbdbId(text: string): string | null {
 }
 
 export const CBDB_PERSON_URL = (id: string) => `https://cbdb.fas.harvard.edu/person?id=${id}`;
+export const DILA_PERSON_URL = (id: string) => `https://authority.dila.edu.tw/person/search.php?aid=${id}`;
 
 export type WikipediaSite = 'enwiki' | 'zhwiki';
 
@@ -88,22 +106,21 @@ export function preferredWikipediaSite(locale?: string): WikipediaSite {
 }
 
 export interface CandidateLink {
-  kind: 'wikipedia' | 'viaf' | 'cbdb';
+  kind: 'wikidata' | 'viaf' | 'cbdb' | 'dila';
   url: string;
   title: string;
 }
 
 export interface CandidateLinkOptions {
-  /** Wikipedia language wiki for sitelink jump (default enwiki). */
+  /** @deprecated Wikipedia sitelinks are not used; links open the Wikidata item page. */
   wikiSite?: WikipediaSite;
 }
 
-/** External links for a candidate row (Wikipedia article, VIAF cluster, etc.). */
+/** External links for a candidate row (Wikidata item, VIAF cluster, etc.). */
 export function candidateLinks(
   candidate: DisambiguationCandidate,
-  options: CandidateLinkOptions = {},
+  _options: CandidateLinkOptions = {},
 ): CandidateLink[] {
-  const wikiSite = options.wikiSite ?? 'enwiki';
   const links: CandidateLink[] = [];
   const seen = new Set<string>();
 
@@ -117,11 +134,7 @@ export function candidateLinks(
     if (!text) return;
     const qid = extractWikidataId(text);
     if (qid) {
-      add(
-        'wikipedia',
-        WIKIPEDIA_ARTICLE_URL(qid, wikiSite),
-        wikiSite === 'zhwiki' ? `中文維基百科 (${qid})` : `Wikipedia (${qid})`,
-      );
+      add('wikidata', WIKIDATA_ITEM_URL(qid), `Wikidata (${qid})`);
     }
     const viaf = extractViafId(text);
     if (viaf) add('viaf', `https://viaf.org/viaf/${viaf}`, `VIAF ${viaf}`);
@@ -134,6 +147,9 @@ export function candidateLinks(
   for (const auth of candidate.authorityIds ?? []) {
     if (auth.type === 'CBDB') {
       add('cbdb', CBDB_PERSON_URL(auth.value), `CBDB ${auth.value}`);
+    }
+    if (auth.type === 'DILA') {
+      add('dila', DILA_PERSON_URL(auth.value), `DILA ${auth.value}`);
     }
     scan(auth.value);
   }
@@ -167,6 +183,7 @@ function authorityKeysForCandidate(candidate: DisambiguationCandidate): string[]
       if (viaf) keys.add(`viaf:${viaf}`);
     }
     if (auth.type === 'CBDB') keys.add(`cbdb:${auth.value}`);
+    if (auth.type === 'DILA') keys.add(`dila:${auth.value}`);
   }
   return [...keys];
 }
@@ -220,6 +237,8 @@ export function mergeSelectedCandidates(
   if (candidates.length === 0) return null;
   const first = candidates[0]!;
   const fromFile = candidates.find((c) => c.fromEntityFile);
+  const startYears = candidates.map((c) => c.startYear).filter((y): y is number => y != null);
+  const endYears = candidates.map((c) => c.endYear).filter((y): y is number => y != null);
   return {
     id: fromFile?.id ?? first.id,
     label: fromFile?.label ?? first.label,
@@ -233,6 +252,8 @@ export function mergeSelectedCandidates(
     localEntityId: fromFile?.localEntityId ?? first.localEntityId,
     fromEntityFile: candidates.some((c) => c.fromEntityFile),
     authorityIds: dedupeAuthorityIds(candidates.flatMap((c) => c.authorityIds ?? [])),
+    startYear: startYears.length ? Math.min(...startYears) : undefined,
+    endYear: endYears.length ? Math.max(...endYears) : undefined,
   };
 }
 
@@ -288,21 +309,26 @@ export function candidatesFromEntityFile(doc: Document, tag: string, surface: st
           ? 'org'
           : 'bibl';
 
+  const nameTag = ENTITY_KINDS[kind].name;
   const items = doc.getElementsByTagName(listTag);
   const out: DisambiguationCandidate[] = [];
   for (let i = 0; i < items.length; i++) {
     const el = items.item(i)!;
-    if (!entityNameMatches(el, surface)) continue;
+    if (!entityNameMatches(el, nameTag, surface)) continue;
     const localId = el.getAttribute('xml:id') ?? '';
     const idnos = Array.from(el.getElementsByTagName('idno'));
     const authorityIds: AuthorityId[] = idnos.map((idno) => ({
       type: idno.getAttribute('type') ?? 'unknown',
       value: idno.textContent?.trim() ?? '',
     }));
+    const notes = Array.from(el.getElementsByTagName('note'));
+    const descriptionNote =
+      notes.find((note) => note.getAttribute('type') === 'description') ??
+      notes.find((note) => !note.getAttribute('type'));
     out.push({
       id: localId || `local-${i}`,
-      label: el.textContent?.trim() || surface,
-      description: el.getElementsByTagName('note')[0]?.textContent ?? undefined,
+      label: el.getElementsByTagName(nameTag)[0]?.textContent?.trim() || surface,
+      description: descriptionNote?.textContent ?? undefined,
       sources: ['entity-file'],
       localEntityId: localId || undefined,
       authorityIds,
@@ -343,15 +369,201 @@ function mergeCandidates(lists: DisambiguationCandidate[][]): DisambiguationCand
   return collapseCrossAuthorityCandidates(out.map(enrichCandidateCrossRefs));
 }
 
+/** Session-lifetime cache of Wikidata Q-id → lifespan (or null when none found). */
+const wikidataLifespanCache = new Map<string, Awaited<ReturnType<typeof fetchWikidataLifespan>>>();
+
+/** Drop Wikidata reconcile rows whose Q-id is not the expected entity kind. */
+async function filterWikidataByKind<T extends { uri: string; description?: string }>(
+  matches: T[],
+  kind: EntityKind,
+  cache: AuthorityCache,
+): Promise<T[]> {
+  if (matches.length === 0) return matches;
+
+  const withQid: Array<{ match: T; qid: string }> = [];
+  for (const match of matches) {
+    const qid =
+      extractWikidataId(match.uri) ?? extractWikidataId(match.description ?? '');
+    if (qid) withQid.push({ match, qid });
+  }
+  if (withQid.length === 0) return [];
+
+  const qids = [...new Set(withQid.map((row) => row.qid))];
+  await cache.throttle();
+  const matching = await wikidataQidsMatchingKind(qids, kind);
+  return withQid.filter((row) => matching.has(row.qid)).map((row) => row.match);
+}
+
+export type ReadAuthorityPackFile = (packId: AuthorityPackId) => Promise<string>;
+
+/** Session-lifetime cache of parsed CHGIS rows, keyed by exact search string. */
+let chgisIndexPromise: Promise<Map<string, { startYear?: number; endYear?: number }>> | null = null;
+
+function buildChgisIndex(rows: AuthorityCandidate[]): Map<string, { startYear?: number; endYear?: number }> {
+  const index = new Map<string, { startYear?: number; endYear?: number }>();
+  for (const row of rows) {
+    const years = { startYear: row.metadata?.startYear, endYear: row.metadata?.endYear };
+    if (years.startYear == null && years.endYear == null) continue;
+    for (const str of row.searchStrings) {
+      if (!index.has(str)) index.set(str, years);
+    }
+  }
+  return index;
+}
+
+/** Look up begin/end years for a place surface string in the installed CHGIS pack (cached for the session). */
+async function chgisYearsForSurface(
+  surface: string,
+  readPackFile: ReadAuthorityPackFile,
+): Promise<{ startYear?: number; endYear?: number } | null> {
+  chgisIndexPromise ??= (async () => {
+    try {
+      const content = await readPackFile('chgis-places');
+      return buildChgisIndex(parseAuthorityNdjson(content));
+    } catch {
+      return new Map();
+    }
+  })();
+  const index = await chgisIndexPromise;
+  return index.get(surface) ?? null;
+}
+
+interface PersonPackEntry {
+  source: 'CBDB' | 'DILA';
+  authorityId: string;
+  primaryName: string;
+  description?: string;
+  startYear?: number;
+  endYear?: number;
+  wikidataQids?: string[];
+}
+
+/**
+ * Session-lifetime index of installed CBDB/DILA person packs, keyed by exact search
+ * string. Local, offline lookup is faster and more reliable than either authority's
+ * live API — we already compile the same underlying source data into these packs.
+ */
+let personPackIndexPromise: Promise<Map<string, PersonPackEntry[]>> | null = null;
+
+export function clearPersonPackIndexForTests(): void {
+  personPackIndexPromise = null;
+}
+
+function indexPersonPackContent(
+  content: string,
+  source: PersonPackEntry['source'],
+  index: Map<string, PersonPackEntry[]>,
+): void {
+  for (const row of iterateAuthorityNdjson(content)) {
+    if (row.kind !== 'person') continue;
+    const entry: PersonPackEntry = {
+      source,
+      authorityId: row.authorityId,
+      primaryName: row.primaryName,
+      description: row.metadata?.description,
+      startYear: row.metadata?.startYear,
+      endYear: row.metadata?.endYear,
+      wikidataQids: row.metadata?.crosswalk?.wikidata,
+    };
+    for (const str of row.searchStrings) {
+      const list = index.get(str);
+      if (list) list.push(entry);
+      else index.set(str, [entry]);
+    }
+  }
+}
+
+async function personPackIndex(readPackFile: ReadAuthorityPackFile): Promise<Map<string, PersonPackEntry[]>> {
+  personPackIndexPromise ??= (async () => {
+    const index = new Map<string, PersonPackEntry[]>();
+    const sources: Array<[AuthorityPackId, PersonPackEntry['source']]> = [
+      ['cbdb-persons', 'CBDB'],
+      ['dila-persons', 'DILA'],
+    ];
+    for (const [packId, source] of sources) {
+      try {
+        indexPersonPackContent(await readPackFile(packId), source, index);
+      } catch {
+        // Pack not installed — skip.
+      }
+    }
+    return index;
+  })();
+  return personPackIndexPromise;
+}
+
+/** Candidates from installed CBDB/DILA person packs matching the surface exactly. */
+async function candidatesFromPersonPacks(
+  surface: string,
+  readPackFile: ReadAuthorityPackFile,
+): Promise<DisambiguationCandidate[]> {
+  const index = await personPackIndex(readPackFile);
+  const entries = index.get(surface) ?? [];
+  return entries.map((entry) => {
+    const authorityIds: AuthorityId[] = [{ type: entry.source, value: entry.authorityId }];
+    for (const qid of entry.wikidataQids ?? []) {
+      authorityIds.push({ type: 'Wikidata', value: WIKIDATA_ITEM_URL(qid) });
+    }
+    return {
+      id: `${entry.source}:${entry.authorityId}`,
+      label: entry.primaryName,
+      description: entry.description,
+      sources: [entry.source],
+      authorityIds,
+      startYear: entry.startYear,
+      endYear: entry.endYear,
+    };
+  });
+}
+
+/**
+ * Same include/exclude semantics as {@link candidatePassesDateFilter}, applied to a live
+ * disambiguation candidate's `startYear`/`endYear` (persons, and CHGIS-matched places).
+ */
+export function candidatePassesYearFilter(
+  candidate: DisambiguationCandidate,
+  filter?: DateRangeFilter,
+): boolean {
+  if (!filter || filter.mode === 'none') return true;
+
+  const { start, end } = normalizeDateRangeFilter(filter);
+  const yearStart = candidate.startYear;
+  const yearEnd = candidate.endYear ?? candidate.startYear;
+  const undated = yearStart == null && yearEnd == null;
+
+  if (undated) return filter.mode === 'exclude';
+
+  const lo = yearStart ?? yearEnd!;
+  const hi = yearEnd ?? yearStart!;
+  const overlaps = lo <= end && hi >= start;
+  return filter.mode === 'limit' ? overlaps : !overlaps;
+}
+
+async function lifespanForQid(qid: string, cache: AuthorityCache) {
+  if (wikidataLifespanCache.has(qid)) return wikidataLifespanCache.get(qid)!;
+  await cache.throttle();
+  let lifespan: Awaited<ReturnType<typeof fetchWikidataLifespan>> = null;
+  try {
+    lifespan = await fetchWikidataLifespan(qid);
+  } catch {
+    lifespan = null;
+  }
+  wikidataLifespanCache.set(qid, lifespan);
+  return lifespan;
+}
+
 export async function fetchLiveCandidates(
   tag: string,
   surface: string,
   cache: AuthorityCache,
   enabledAuthorities: Array<keyof typeof AUTHORITY_MAP>,
   forceRefresh = false,
+  readPackFile?: ReadAuthorityPackFile,
 ): Promise<DisambiguationCandidate[]> {
   const entityType = TAG_TO_ENTITY_TYPE[tag] ?? 'person';
+  const entityKind = TAG_TO_KIND[tag];
   const results: DisambiguationCandidate[] = [];
+  const chgisYears = tag === 'placeName' && readPackFile ? await chgisYearsForSurface(surface, readPackFile) : null;
 
   for (const name of enabledAuthorities) {
     const authorityId = AUTHORITY_MAP[name];
@@ -380,16 +592,46 @@ export async function fetchLiveCandidates(
       }
     }
 
+    if (name === 'Wikidata') {
+      if (entityKind) {
+        matches = await filterWikidataByKind(matches, entityKind, cache);
+      }
+      // Exact-surface matching only makes sense against Wikidata: its reconcile rows
+      // reliably return the queried script as label/alias. VIAF/DBpedia/Getty/GND
+      // headings are authority-specific (often romanized, "Surname, Given, dates")
+      // and rarely equal the raw surface text — filtering them the same way silently
+      // dropped every non-Wikidata authority.
+      await cache.throttle();
+      matches = await filterReconcileByExactSurface(matches, surface);
+    }
+
     for (const match of matches) {
+      let description = match.description;
+      let startYear: number | undefined;
+      let endYear: number | undefined;
+      if (entityType === 'person') {
+        const qid = extractWikidataId(match.uri) ?? extractWikidataId(match.description ?? '');
+        if (qid) {
+          const lifespan = await lifespanForQid(qid, cache);
+          description = prefixDescriptionWithLifespan(description, lifespan);
+          startYear = lifespan?.birthYear;
+          endYear = lifespan?.deathYear;
+        }
+      } else if (entityType === 'place' && chgisYears) {
+        startYear = chgisYears.startYear;
+        endYear = chgisYears.endYear;
+      }
       results.push({
         id: match.uri,
         label: match.label,
-        description: match.description,
+        description,
         sources: [name],
         uri: match.uri,
         authorityIds: dedupeAuthorityIds(
           authorityIdsFromCrossRefs([{ type: name, value: match.uri }], match.description),
         ),
+        startYear,
+        endYear,
       });
     }
   }
@@ -404,11 +646,14 @@ export async function buildDisambiguationCandidates(
   cache: AuthorityCache,
   enabledAuthorities: Array<keyof typeof AUTHORITY_MAP> = ['Wikidata', 'VIAF'],
   forceRefresh = false,
+  readPackFile?: ReadAuthorityPackFile,
 ): Promise<DisambiguationCandidate[]> {
   const local = candidatesFromEntityFile(entitiesDoc, tag, surface);
-  const live = await fetchLiveCandidates(tag, surface, cache, enabledAuthorities, forceRefresh);
+  const packLocal =
+    tag === 'persName' && readPackFile ? await candidatesFromPersonPacks(surface, readPackFile) : [];
+  const live = await fetchLiveCandidates(tag, surface, cache, enabledAuthorities, forceRefresh, readPackFile);
   return collapseCrossAuthorityCandidates(
-    mergeCandidates([local, live]).map(enrichCandidateCrossRefs),
+    mergeCandidates([local, packLocal, live]).map(enrichCandidateCrossRefs),
   );
 }
 
@@ -437,6 +682,7 @@ export function resolveEntityInDocument(
   const { id } = addEntity(entitiesDoc, input.kind, {
     name: input.name,
     authorityIds: input.authorityIds,
+    description: input.description,
   });
   return id;
 }

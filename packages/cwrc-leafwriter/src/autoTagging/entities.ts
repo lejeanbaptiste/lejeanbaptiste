@@ -57,6 +57,8 @@ export interface NewEntity {
   authorityIds?: AuthorityId[];
   /** Optional compact authority-cache payload, stored as a JSON note. */
   cache?: { source: string; data: unknown; when?: string };
+  /** One-line human-written description, stored as `<note type="description">` for later disambiguation. */
+  description?: string;
 }
 
 /** Mint a new database fingerprint id. */
@@ -200,6 +202,13 @@ export function addEntity(
     note.setAttribute('resp', LJB_RESP);
     note.setAttribute('when', entity.cache.when ?? new Date().toISOString());
     note.textContent = JSON.stringify(entity.cache.data);
+    item.appendChild(note);
+  }
+
+  if (entity.description) {
+    const note = doc.createElementNS(TEI_NS, 'note');
+    note.setAttribute('type', 'description');
+    note.textContent = entity.description;
     item.appendChild(note);
   }
 

@@ -366,10 +366,11 @@ Ship small, validate, expand.
 | `wikidata-person-zh-hant-tang` | 5k–15k | **P0** — classical DH corpus |
 | `wikidata-person-zh-hant-song` | 10k–25k | P0 |
 | `wikidata-person-zh-hans` (all periods, metadata filter) | 100k+ | P1 — modern/simple |
-| `wikidata-work-zh-hant` | 5k–20k | P1 — titles in classical texts |
+| `wikidata-work-zh-hant` | 5k–20k | P1 — **title** tag for classical Chinese corpora |
 | `wikidata-place-zh-hant` | 20k–80k | P2 — noisy; compare CHGIS |
 | `wikidata-org-zh-hant` | 5k–15k | P2 |
-| `wikidata-person-ja` | 50k+ | P3 — Japanese projects |
+| `wikidata-person-ja` | 50k+ | P3 — **supplement** to NDL persons (not replacement) |
+| `wikidata-work-ja` | varies | P2 — **title**; NDL works batch is small (~900) |
 
 **Do not v1:** full multilingual all humans, `thing`, lexemes, Wikipedia sitelink titles as aliases.
 

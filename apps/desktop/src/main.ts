@@ -24,8 +24,13 @@ import {
   registerNativeDialogIpc,
 } from './nativeDialogs';
 import {
+  buildTranslationRequestBody,
+  isStructuredOutputRetryable,
+  translationStructuredOutputModes,
+  type StructuredOutputMode,
+} from './aiTranslationLlm';
+import {
   getAiApiSettings,
-  getEncoderName,
   getEntityDbFolder,
   getRememberWorkspaceOnStartup,
   getValidLastProjectFile,
@@ -269,51 +274,13 @@ const readErrorResponse = async (response: Response): Promise<string> => {
   return `Server returned HTTP ${response.status}: ${text.slice(0, 500)}`;
 };
 
-const buildTranslationRequestBody = (
-  model: string,
-  settings: AiApiSettings,
-  { alignmentUnit, sourceUnitXml, targetLanguage }: AiTranslationRequest,
-) => ({
-  model,
-  temperature: settings.temperature,
-  messages: [
-    {
-      role: 'system',
-      content:
-        'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. Treat source TEI tags such as persName, placeName, orgName, officeName, date, term, title, and quote as semantic hints, but do not reproduce them. Output plain text only: no XML or HTML tags, no markdown, no angle brackets. Write ampersands and angle brackets as the XML entities &amp;, &lt;, and &gt; if they occur in the text itself.',
-    },
-    {
-      role: 'user',
-      content: JSON.stringify({
-        targetLanguage,
-        alignmentUnit,
-        customInstructions: settings.customInstructions,
-        sourceUnitXml,
-      }),
-    },
-  ],
-  response_format: {
-    type: 'json_schema',
-    json_schema: {
-      name: 'translation_result',
-      schema: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          translationXml: { type: 'string' },
-        },
-        required: ['translationXml'],
-      },
-    },
-  },
-});
-
 const postAiTranslation = async (
   baseUrl: string,
   settings: AiApiSettings,
   request: AiTranslationRequest,
   model: string,
   signal: AbortSignal,
+  mode: StructuredOutputMode,
 ): Promise<Response> => {
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -322,11 +289,41 @@ const postAiTranslation = async (
   if (settings.apiKey.trim()) headers.Authorization = `Bearer ${settings.apiKey.trim()}`;
 
   return fetch(`${baseUrl}/chat/completions`, {
-    body: JSON.stringify(buildTranslationRequestBody(model, settings, request)),
+    body: JSON.stringify(buildTranslationRequestBody(model, settings, request, baseUrl, mode)),
     headers,
     method: 'POST',
     signal,
   });
+};
+
+const postAiTranslationWithStructuredOutputFallback = async (
+  baseUrl: string,
+  settings: AiApiSettings,
+  request: AiTranslationRequest,
+  model: string,
+  signal: AbortSignal,
+): Promise<Response> => {
+  const modes = translationStructuredOutputModes(baseUrl);
+  let response = await postAiTranslation(baseUrl, settings, request, model, signal, modes[0]!);
+
+  if (!response.ok) {
+    let error = await readErrorResponse(response.clone());
+    for (let i = 1; i < modes.length; i++) {
+      if (!isStructuredOutputRetryable(response.status, error)) break;
+      response = await postAiTranslation(
+        baseUrl,
+        settings,
+        request,
+        model,
+        signal,
+        modes[i]!,
+      );
+      if (response.ok) break;
+      error = await readErrorResponse(response.clone());
+    }
+  }
+
+  return response;
 };
 
 const generateAiTranslation = async ({
@@ -357,13 +354,19 @@ const generateAiTranslation = async ({
   const timeout = setTimeout(() => controller.abort(), 60000);
 
   try {
-    let response = await postAiTranslation(baseUrl, settings, request, model, controller.signal);
+    let response = await postAiTranslationWithStructuredOutputFallback(
+      baseUrl,
+      settings,
+      request,
+      model,
+      controller.signal,
+    );
 
     if (response.status === 404 && settings.model.trim()) {
       const models = await listAiModels(settings).catch(() => []);
       const fallbackModel = models.find((candidate) => candidate !== model);
       if (fallbackModel) {
-        response = await postAiTranslation(
+        response = await postAiTranslationWithStructuredOutputFallback(
           baseUrl,
           settings,
           request,
