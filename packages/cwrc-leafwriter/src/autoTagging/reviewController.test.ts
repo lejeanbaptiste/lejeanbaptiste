@@ -191,10 +191,42 @@ describe('ReviewController', () => {
       expect(decisions).toContain('as-title:rejected');
     });
 
-    it('rejecting one alternative leaves the other pending', () => {
+    it('rejects the whole pair together — there is one reject decision for the group', () => {
+      const decisions: string[] = [];
+      const c = new ReviewController(altPair(), {
+        onDecision: (e) => decisions.push(`${e.suggestion.id}:${e.decision}`),
+      });
+      c.reject();
+      expect(c.counts()).toMatchObject({ rejected: 2, pending: 1 });
+      expect(decisions).toEqual(
+        expect.arrayContaining(['as-pers:rejected', 'as-title:rejected']),
+      );
+    });
+
+    it('j/k treat the alternative pair as a single navigation stop', () => {
       const c = new ReviewController(altPair());
-      c.reject(); // rejects as-pers
-      expect(c.counts()).toMatchObject({ rejected: 1, pending: 2 });
+      expect(c.pendingGroups()).toHaveLength(2); // the pair + 'other'
+      expect(c.pendingGroups()[0]!.suggestions.map((s) => s.id)).toEqual(['as-pers', 'as-title']);
+      c.next();
+      expect(c.current()!.id).toBe('other');
+      c.previous();
+      expect(c.current()!.id).toBe('as-pers'); // default-selected alternative
+    });
+
+    it('cycleAlternative and selectAlternative change which tag Enter would accept', () => {
+      const c = new ReviewController(altPair());
+      expect(c.current()!.id).toBe('as-pers');
+      c.cycleAlternative();
+      expect(c.current()!.id).toBe('as-title');
+      c.cycleAlternative();
+      expect(c.current()!.id).toBe('as-pers');
+
+      const title = c.pendingGroups()[0]!.suggestions.find((s) => s.id === 'as-title')!;
+      c.selectAlternative(title);
+      expect(c.current()!.id).toBe('as-title');
+      c.accept();
+      expect(c.accepted().map((s) => s.id)).toEqual(['as-title']);
+      expect(c.rejectedVisible().map((s) => s.id)).toEqual(['as-pers']);
     });
 
     it('flipping a rejected alternative to accepted dethrones the earlier winner', () => {
@@ -235,6 +267,17 @@ describe('handleReviewKey', () => {
     expect(handleReviewKey(c, 'Backspace')).toBe(true);
     expect(c.counts().rejected).toBe(1);
     expect(handleReviewKey(c, 'q')).toBe(false);
+  });
+
+  it('Space cycles the selected alternative within a group', () => {
+    const anchor = make('x').anchor;
+    const c = new ReviewController([
+      make('pers', { tag: 'persName', anchor: { ...anchor, surface: '高祖' } }),
+      make('title', { tag: 'title', anchor: { ...anchor, surface: '高祖' } }),
+    ]);
+    expect(c.current()!.id).toBe('pers');
+    expect(handleReviewKey(c, ' ')).toBe(true);
+    expect(c.current()!.id).toBe('title');
   });
 
   it('Shift+Enter accepts all pending items with the same surface and tag', () => {

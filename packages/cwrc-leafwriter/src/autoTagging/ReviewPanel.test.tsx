@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { collectTextNodes } from './anchor';
 import { applySuggestions } from './apply';
+import { dictionaryTag } from './dictionary';
 import { generateFakeSuggestions } from './fakeSuggestions';
 import { normalizeDomText } from './normalize';
 import { ReviewPanel } from './ReviewPanel';
@@ -137,5 +138,96 @@ describe('ReviewPanel', () => {
     fireEvent.click(screen.getByTestId(`reject-${suggestions[0]!.id}`));
     expect(screen.getByTestId('review-counts').textContent).toContain('0 accepted');
     expect(screen.getByTestId('review-counts').textContent).toContain('1 rejected');
+  });
+
+  describe('same-span alternatives (one string, several tags)', () => {
+    const setupAlternatives = () => {
+      const doc = parse(
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0"><p>高祖與諸將論其功。</p></TEI>',
+      );
+      const suggestions = dictionaryTag(
+        doc,
+        [
+          { string: '高祖', tag: 'persName' },
+          { string: '高祖', tag: 'title' },
+        ],
+        'ignore',
+      );
+      return { doc, suggestions };
+    };
+
+    it('stacks the alternatives as one navigation stop with a checkbox each', () => {
+      const { suggestions } = setupAlternatives();
+      render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+
+      const pers = suggestions.find((s) => s.tag === 'persName')!;
+      const title = suggestions.find((s) => s.tag === 'title')!;
+
+      // one grouped card, not two separate list rows
+      expect(screen.getAllByRole('listitem')).toHaveLength(1);
+      expect(screen.getByTestId(`review-group-${pers.id}`)).toBeTruthy();
+      expect(screen.getByTestId(`alt-select-${pers.id}`)).toBeTruthy();
+      expect(screen.getByTestId(`alt-select-${title.id}`)).toBeTruthy();
+    });
+
+    it('accepting applies the checked alternative and rejects the sibling', async () => {
+      const { doc, suggestions } = setupAlternatives();
+      const applied: string[] = [];
+      render(
+        <ReviewPanel
+          suggestions={suggestions}
+          onApply={async (accepted) => {
+            const { results } = await applySuggestions(doc, accepted, { policy: 'ignore' });
+            applied.push(
+              ...results.filter((r) => r.outcome === 'applied').map((r) => r.suggestion.id),
+            );
+          }}
+        />,
+      );
+
+      const pers = suggestions.find((s) => s.tag === 'persName')!;
+      const title = suggestions.find((s) => s.tag === 'title')!;
+
+      // check the title alternative, then accept the pair
+      fireEvent.click(screen.getByTestId(`alt-select-${title.id}`));
+      fireEvent.click(screen.getByTestId(`accept-group-${pers.id}`));
+
+      expect(screen.getByTestId('review-counts').textContent).toContain('1 accepted');
+      expect(screen.getByTestId('review-counts').textContent).toContain('1 rejected');
+
+      fireEvent.click(screen.getByTestId('review-apply'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(applied).toEqual([title.id]);
+      expect(doc.getElementsByTagName('title')).toHaveLength(1);
+      expect(doc.getElementsByTagName('persName')).toHaveLength(0);
+    });
+
+    it('rejecting drops the whole pair, not just one alternative', () => {
+      const { suggestions } = setupAlternatives();
+      render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+
+      const pers = suggestions.find((s) => s.tag === 'persName')!;
+      fireEvent.click(screen.getByTestId(`reject-group-${pers.id}`));
+
+      expect(screen.getByTestId('review-counts').textContent).toContain('2 rejected');
+      expect(screen.getByTestId('review-counts').textContent).toContain('0 pending');
+    });
+
+    it('Space cycles the checked alternative via the keyboard', () => {
+      const { suggestions } = setupAlternatives();
+      render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+      const panel = screen.getByTestId('review-panel');
+
+      const pers = suggestions.find((s) => s.tag === 'persName')!;
+      const title = suggestions.find((s) => s.tag === 'title')!;
+
+      const checkboxInput = (id: string) =>
+        screen.getByTestId(`alt-select-${id}`).querySelector('input')!;
+
+      expect(checkboxInput(pers.id).checked).toBe(true);
+      fireEvent.keyDown(panel, { key: ' ' });
+      expect(checkboxInput(title.id).checked).toBe(true);
+    });
   });
 });

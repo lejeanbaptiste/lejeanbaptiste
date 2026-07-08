@@ -22,6 +22,24 @@ export interface ReviewControllerOptions {
 }
 
 /**
+ * A navigation stop in the pending list. Length 1 for an ordinary suggestion.
+ * Length > 1 when several same-span 'add' suggestions with different tags
+ * compete for the same text (e.g. one string offered as both persName and
+ * roleName) — j/k, Enter, and Backspace treat the whole group as one unit;
+ * `selectedIndex` is which alternative Enter currently accepts.
+ */
+export interface PendingGroup {
+  suggestions: Suggestion[];
+  selectedIndex: number;
+}
+
+/** Same-span 'add' suggestions with different tags share this key. */
+function alternativeGroupKey(s: Suggestion): string | null {
+  if (s.action !== 'add') return null;
+  return `${s.anchor.xpath}\t${s.anchor.offset}\t${s.anchor.surface}`;
+}
+
+/**
  * Framework-free state machine for the shared review walk. All auto-tagging
  * methods feed batches of suggestions through this one controller; the UI
  * renders its state and forwards commands.
@@ -32,14 +50,81 @@ export interface ReviewControllerOptions {
 export class ReviewController {
   private suggestions: Suggestion[];
   private filters: ReviewFilters = { sources: new Set(), minConfidence: 0 };
-  /** Index into {@link pendingVisible}. */
+  /** Index into {@link pendingGroups}. */
   private cursorPendingIndex = -1;
+  /** Which alternative is selected within each alternative group, keyed by group key. */
+  private readonly groupSelection = new Map<string, number>();
   private readonly options: ReviewControllerOptions;
 
   constructor(suggestions: Suggestion[], options: ReviewControllerOptions = {}) {
     this.suggestions = [...suggestions];
     this.options = options;
-    if (this.pendingVisible().length > 0) this.moveToPendingIndex(0);
+    if (this.pendingGroups().length > 0) this.moveToPendingIndex(0);
+  }
+
+  /** Partition a suggestion list into navigation stops (see {@link PendingGroup}). */
+  private groupsOf(list: Suggestion[]): Suggestion[][] {
+    const byKey = new Map<string, Suggestion[]>();
+    const order: string[] = [];
+    for (const s of list) {
+      const key = alternativeGroupKey(s) ?? `\0solo:${s.id}`;
+      let bucket = byKey.get(key);
+      if (!bucket) {
+        bucket = [];
+        byKey.set(key, bucket);
+        order.push(key);
+      }
+      bucket.push(s);
+    }
+    const groups: Suggestion[][] = [];
+    for (const key of order) {
+      const bucket = byKey.get(key)!;
+      // Only a real alternative group when the bucket actually carries >1 distinct tag.
+      if (bucket.length > 1 && new Set(bucket.map((s) => s.tag)).size > 1) {
+        groups.push(bucket);
+      } else {
+        for (const item of bucket) groups.push([item]);
+      }
+    }
+    return groups;
+  }
+
+  private selectedIndexFor(group: Suggestion[]): number {
+    if (group.length <= 1) return 0;
+    const key = alternativeGroupKey(group[0]!)!;
+    const stored = this.groupSelection.get(key) ?? 0;
+    return Math.min(Math.max(stored, 0), group.length - 1);
+  }
+
+  /** Pending suggestions grouped into navigation stops, in batch order. */
+  pendingGroups(): PendingGroup[] {
+    return this.groupsOf(this.pendingVisible()).map((suggestions) => ({
+      suggestions,
+      selectedIndex: this.selectedIndexFor(suggestions),
+    }));
+  }
+
+  private currentGroup(): PendingGroup | null {
+    return this.pendingGroups()[this.cursorPendingIndex] ?? null;
+  }
+
+  /** Select which alternative within `suggestion`'s group Enter will accept. */
+  selectAlternative(suggestion: Suggestion) {
+    const key = alternativeGroupKey(suggestion);
+    if (!key) return;
+    const group = this.currentGroup();
+    if (!group || !group.suggestions.includes(suggestion)) return;
+    const index = group.suggestions.indexOf(suggestion);
+    this.groupSelection.set(key, index);
+  }
+
+  /** Cycle the selected alternative in the current group (keyboard: space). */
+  cycleAlternative() {
+    const group = this.currentGroup();
+    if (!group || group.suggestions.length <= 1) return;
+    const key = alternativeGroupKey(group.suggestions[0]!)!;
+    const next = (group.selectedIndex + 1) % group.suggestions.length;
+    this.groupSelection.set(key, next);
   }
 
   /** Suggestions passing the current filters, in batch order. */
@@ -72,8 +157,11 @@ export class ReviewController {
     return this.suggestions.filter((s) => s.status === 'accepted');
   }
 
+  /** The selected suggestion within the current group (single item for ordinary suggestions). */
   current(): Suggestion | null {
-    return this.pendingVisible()[this.cursorPendingIndex] ?? null;
+    const group = this.currentGroup();
+    if (!group) return null;
+    return group.suggestions[group.selectedIndex] ?? group.suggestions[0] ?? null;
   }
 
   counts() {
@@ -93,7 +181,7 @@ export class ReviewController {
   }
 
   next() {
-    if (this.cursorPendingIndex < this.pendingVisible().length - 1) {
+    if (this.cursorPendingIndex < this.pendingGroups().length - 1) {
       this.moveToPendingIndex(this.cursorPendingIndex + 1);
     }
   }
@@ -104,11 +192,13 @@ export class ReviewController {
     }
   }
 
+  /** Move the cursor to a stop in {@link pendingGroups} (one alternative-group counts as one stop). */
   moveToPendingIndex(index: number) {
-    const pending = this.pendingVisible();
-    if (index < 0 || index >= pending.length) return;
+    const groups = this.pendingGroups();
+    if (index < 0 || index >= groups.length) return;
     this.cursorPendingIndex = index;
-    this.options.onFocus?.(pending[index]!);
+    const group = groups[index]!;
+    this.options.onFocus?.(group.suggestions[group.selectedIndex] ?? group.suggestions[0]!);
   }
 
   /** Jump the editor to a suggestion without moving the pending cursor. */
@@ -142,8 +232,26 @@ export class ReviewController {
     }
   }
 
-  /** Decide the current pending suggestion and advance. */
+  /**
+   * Decide the current pending stop and advance. For an alternative group,
+   * Enter accepts the selected alternative (rejecting its siblings via
+   * {@link rejectAlternativesOf}); Backspace rejects the whole group — there's
+   * one accept/reject decision for the pair, not one per alternative.
+   */
   decide(decision: Decision) {
+    const group = this.currentGroup();
+    if (!group) return;
+
+    if (decision === 'rejected' && group.suggestions.length > 1) {
+      for (const s of group.suggestions) {
+        if (s.status === 'unresolvable') continue;
+        s.status = 'rejected';
+        this.options.onDecision?.({ suggestion: s, decision: 'rejected' });
+      }
+      this.advanceToPending();
+      return;
+    }
+
     const current = this.current();
     if (!current || current.status === 'unresolvable') return;
     current.status = decision;
@@ -219,7 +327,9 @@ export class ReviewController {
   undecideSuggestion(suggestion: Suggestion) {
     if (suggestion.status !== 'accepted' && suggestion.status !== 'rejected') return;
     suggestion.status = 'pending';
-    const index = this.pendingVisible().findIndex((s) => s.id === suggestion.id);
+    const index = this.pendingGroups().findIndex((g) =>
+      g.suggestions.some((s) => s.id === suggestion.id),
+    );
     if (index >= 0) this.moveToPendingIndex(index);
     else this.clampCursor();
   }
@@ -245,35 +355,36 @@ export class ReviewController {
   }
 
   takeAllExceptRejected(): Suggestion[] {
-    for (const s of this.pending()) {
-      // Undecided alternatives: the first in batch order wins the span.
-      if (s.status !== 'pending') continue;
-      s.status = 'accepted';
-      this.options.onDecision?.({ suggestion: s, decision: 'accepted' });
-      this.rejectAlternativesOf(s);
+    // Snapshot first: statuses change as we go, and pendingGroups() is derived live.
+    for (const group of this.pendingGroups()) {
+      const winner = group.suggestions[group.selectedIndex] ?? group.suggestions[0]!;
+      if (winner.status !== 'pending') continue;
+      winner.status = 'accepted';
+      this.options.onDecision?.({ suggestion: winner, decision: 'accepted' });
+      this.rejectAlternativesOf(winner);
     }
     return this.takeAccepted();
   }
 
   private advanceToPending() {
-    const pending = this.pendingVisible();
-    if (pending.length === 0) {
+    const groups = this.pendingGroups();
+    if (groups.length === 0) {
       this.cursorPendingIndex = -1;
       return;
     }
-    if (this.cursorPendingIndex >= pending.length) {
-      this.cursorPendingIndex = pending.length - 1;
+    if (this.cursorPendingIndex >= groups.length) {
+      this.cursorPendingIndex = groups.length - 1;
     }
     this.moveToPendingIndex(this.cursorPendingIndex);
   }
 
   private clampCursor() {
-    const pending = this.pendingVisible();
-    if (pending.length === 0) {
+    const groups = this.pendingGroups();
+    if (groups.length === 0) {
       this.cursorPendingIndex = -1;
       return;
     }
-    this.cursorPendingIndex = Math.min(Math.max(this.cursorPendingIndex, 0), pending.length - 1);
+    this.cursorPendingIndex = Math.min(Math.max(this.cursorPendingIndex, 0), groups.length - 1);
   }
 }
 
@@ -284,7 +395,8 @@ export interface ReviewKeyModifiers {
 /**
  * Keyboard model for the review walk:
  * j/↓ next · k/↑ previous · Enter accept · Shift+Enter accept all identical ·
- * Backspace/Delete reject · Shift+Backspace reject all identical ·
+ * Backspace/Delete reject (whole pair, for alternative groups) · Shift+Backspace
+ * reject all identical · Space cycle the selected alternative in a group ·
  * a/r/x/u aliases · u undecide (current pending only).
  */
 export function handleReviewKey(
@@ -300,6 +412,10 @@ export function handleReviewKey(
     case 'k':
     case 'ArrowUp':
       controller.previous();
+      return true;
+    case ' ':
+    case 'Spacebar':
+      controller.cycleAlternative();
       return true;
     case 'Enter':
       if (modifiers.shift) controller.acceptAllIdenticalStrings();
