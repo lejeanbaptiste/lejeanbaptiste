@@ -3,10 +3,10 @@ import ComputerIcon from '@mui/icons-material/Computer';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import GitlabIcon from 'mdi-material-ui/Gitlab';
 import { type SvgIconTypeMap } from '@mui/material';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { createSvgIcon } from '@mui/material/utils';
-import { Gitlab } from 'mdi-material-ui';
 import type { IconBaseProps, IconType } from 'react-icons';
 import { BiDownload } from 'react-icons/bi';
 import { MdLanguage } from 'react-icons/md';
@@ -23,7 +23,7 @@ const icons = {
   fileText: asMuiIcon(RxFileText),
   fingerprint: FingerprintIcon,
   github: GitHubIcon,
-  gitlab: Gitlab,
+  gitlab: GitlabIcon,
   paste: ContentPasteIcon,
   url: asMuiIcon(MdLanguage),
 };

@@ -25,8 +25,9 @@ import ReportOutlinedIcon from '@mui/icons-material/ReportOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import TranslateIcon from '@mui/icons-material/Translate';
+import FileExportOutlineIcon from 'mdi-material-ui/FileExportOutline';
+import GitlabIcon from 'mdi-material-ui/Gitlab';
 import { SvgIcon, type SvgIconProps, createSvgIcon } from '@mui/material';
-import { FileExportOutline, Gitlab } from 'mdi-material-ui';
 import type { IconBaseProps, IconType } from 'react-icons';
 import { BiArrowToTop, BiDownload } from 'react-icons/bi';
 import { FaFeather, FaOrcid } from 'react-icons/fa';
@@ -61,14 +62,14 @@ const icons = {
   drama: LuDrama,
   externalLink: asMuiIcon(FiExternalLink, { x: 1, y: 1 }),
   feather: asMuiIcon(FaFeather, { x: 1, y: 1 }),
-  fileExportOutline: FileExportOutline,
+  fileExportOutline: FileExportOutlineIcon,
   fileText: asMuiIcon(RxFileText, { x: 1, y: 1 }),
   filterDrama: FilterDramaOutlinedIcon,
   fingerPrint: FingerprintIcon,
   folderOpen: FolderOpenIcon,
   formatAlignLeft: FormatAlignLeftOutlinedIcon,
   github: GitHubIcon,
-  gitlab: Gitlab,
+  gitlab: GitlabIcon,
   helpOutlineRoundedIcon: HelpOutlineRoundedIcon,
   importIcon: asMuiIcon(BiArrowToTop, { x: 1, y: 1 }),
   importExportRoundedIcon: ImportExportRoundedIcon,

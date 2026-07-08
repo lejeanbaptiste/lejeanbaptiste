@@ -1,11 +1,11 @@
 import CloudDoneOutlinedIcon from '@mui/icons-material/CloudDoneOutlined';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
+import CloudSyncOutlineIcon from 'mdi-material-ui/CloudSyncOutline';
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import Badge, { type BadgeProps } from '@mui/material/Badge';
 import { styled } from '@mui/material/styles';
 import { useLeafWriter } from '@src/hooks';
 import { useAppState } from '@src/overmind';
-import { CloudSyncOutline } from 'mdi-material-ui';
 import { useTranslation } from 'react-i18next';
 
 const StyledBadge = styled(Badge)<BadgeProps>(() => ({
@@ -50,7 +50,7 @@ export const Cloud = () => {
           ]}
         >
           {isSaving ? (
-            <CloudSyncOutline sx={{ width: 16, height: 16 }} />
+            <CloudSyncOutlineIcon sx={{ width: 16, height: 16 }} />
           ) : isDirty ? (
             <>
               <StyledBadge color="warning" variant="dot" />
