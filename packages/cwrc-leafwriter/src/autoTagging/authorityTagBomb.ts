@@ -38,6 +38,19 @@ import type { Suggestion, WhitespacePolicy } from './types';
 /** Review panel cap in the app; harness runs should omit this. */
 export const MAX_AUTHORITY_SUGGESTIONS = 2000;
 
+/** Deduplicate suggestions by their document location (tag, surface, xpath, offset). */
+function dedupeSuggestionsByLocation(suggestions: Suggestion[]): Suggestion[] {
+  const seen = new Map<string, Suggestion>();
+  for (const suggestion of suggestions) {
+    const anchor = suggestion.anchor;
+    const key = `${suggestion.tag}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offset}`;
+    if (!seen.has(key)) {
+      seen.set(key, suggestion);
+    }
+  }
+  return [...seen.values()];
+}
+
 export interface AuthorityTagBombOptions {
   dateFilter?: DateRangeFilter;
   /** @deprecated Use {@link dateFilter}. */
@@ -99,10 +112,14 @@ export async function runAuthorityTagBombOnDocument(
 
   const matches = seedSuggestionsFromIndex(doc, index, policy);
   const allSuggestions = suggestionsFromSeedMatches(matches);
+
+  // Deduplicate suggestions by location in case any slipped through
+  const deduped = dedupeSuggestionsByLocation(allSuggestions);
+
   const cap = options.maxSuggestions;
-  const truncated = cap != null && allSuggestions.length > cap;
+  const truncated = cap != null && deduped.length > cap;
   const suggestions =
-    truncated && cap != null ? allSuggestions.slice(0, cap) : allSuggestions;
+    truncated && cap != null ? deduped.slice(0, cap) : deduped;
 
   return {
     suggestions,
