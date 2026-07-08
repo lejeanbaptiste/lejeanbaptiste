@@ -411,10 +411,10 @@ export const teiLite: SchemaMappingProps = {
       const $tag = $(tag);
       if ($tag.attr('_tag') === 'graphic') handleGraphics($tag);
     },
-    documentLoaded: (success, body) => {
+    documentLoaded: (_success: any, body: any) => {
       $(body)
         .find('*[_tag="graphic"]')
-        .each((index, el) => handleGraphics($(el)));
+        .each((_index: any, el: any) => handleGraphics($(el)));
     },
   },
 };

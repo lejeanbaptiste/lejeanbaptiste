@@ -275,10 +275,10 @@ export const orlando: SchemaMappingProps = {
       const $tag = $(tag);
       if ($tag.attr('_tag') === 'GRAPHIC') handleGraphics($tag);
     },
-    documentLoaded: (success, body) => {
+    documentLoaded: (_success: any, body: any) => {
       $(body)
         .find('*[_tag="GRAPHIC"]')
-        .each((index, element) => handleGraphics($(element)));
+        .each((_index: any, element: any) => handleGraphics($(element)));
     },
   },
 };

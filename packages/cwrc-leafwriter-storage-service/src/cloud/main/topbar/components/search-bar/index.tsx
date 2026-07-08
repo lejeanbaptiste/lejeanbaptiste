@@ -12,7 +12,7 @@ import {
   useAutocomplete,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import type { Content, SearchResults, SearchResultsBlobs } from '@src/types';
+import type { Content, SearchResults, SearchResultsBlobs } from '@cwrc/leafwriter-storage-service/types';
 import debounce from 'lodash/debounce';
 import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useMemo, useState } from 'react';

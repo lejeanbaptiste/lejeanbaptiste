@@ -520,53 +520,6 @@ class CWRC2XML {
     getOffsets(parent);
     return offsets;
   }
-
-  //! deprecated?
-  private determineOffsetRelationships(_offsets: any[]) {
-    const entityOffsets: any[] = [];
-    const relationships: Record<
-      string,
-      {
-        contains: string[];
-        overlaps: string[];
-      }
-    > = {};
-
-    for (let i = 0; i < offsets.length; i++) {
-      const o = offsets[i];
-      if (o.entity) {
-        entityOffsets.push(o);
-        relationships[o.id] = {
-          contains: [],
-          overlaps: [],
-        };
-      }
-    }
-
-    const ol = entityOffsets.length;
-    for (let i = 0; i < ol; i++) {
-      const o1 = entityOffsets[i];
-      const span1 = o1.offset + o1.length;
-      const r = relationships[o1.id];
-
-      for (let j = 0; j < ol; j++) {
-        const o2 = entityOffsets[j];
-        const span2 = o2.offset + o2.length;
-
-        if (o1.offset < o2.offset && span1 > span2) {
-          r?.contains.push(o2.id);
-        } else if (o1.offset < o2.offset && span1 > o2.offset && span1 < span2) {
-          r?.overlaps.push(o2.id);
-        } else if (o1.offset > o2.offset && span1 > span2 && span2 > o1.offset) {
-          r?.overlaps.push(o2.id);
-        } else if (o1.offset < o2.offset && span1 < span2 && span1 > o2.offset) {
-          r?.overlaps.push(o2.id);
-        }
-      }
-    }
-
-    return relationships;
-  }
 }
 
 export default CWRC2XML;

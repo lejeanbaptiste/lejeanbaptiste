@@ -89,6 +89,11 @@ export default {
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
     '^@src/(.*)': '<rootDir>/src/$1',
+    '^@cwrc/leafwriter-storage-service/\\.$': '<rootDir>/src/index.tsx',
+    '^@cwrc/leafwriter-storage-service$': '<rootDir>/src/index.tsx',
+    '^@cwrc/leafwriter-storage-service/(.*)$': '<rootDir>/src/$1',
+    '^nanoid$': '<rootDir>/test/mocks/nanoid.ts',
+    '^@octokit/rest$': '<rootDir>/test/mocks/octokit-rest.ts',
     // '^dexie$': require.resolve('dexie'),  //*commented out when updated to jest 30
   },
 

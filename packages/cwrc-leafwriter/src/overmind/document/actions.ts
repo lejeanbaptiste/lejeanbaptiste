@@ -59,7 +59,7 @@ export const updateXMLHeader = ({ state }: Context, content: string) => {
   $(xml)
     .find(window.writer.schemaManager.getHeader())
     .children()
-    .each((index, element) => {
+    .each((_index: any, element: any) => {
       newHeaderString += window.writer.converter.buildEditorString(element);
     });
 

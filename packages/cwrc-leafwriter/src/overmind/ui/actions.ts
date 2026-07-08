@@ -19,8 +19,8 @@ import {
   mapVisualCaretToSourceOffset,
 } from '../../utilities/sourceCursorSync';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-export const onInitializeOvermind = ({ state, actions, effects }: Context, overmind: any) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const onInitializeOvermind = ({ state, actions, effects }: Context, _overmind: any) => {
   //DARK MODE
   const prefPaletteMode: PaletteMode =
     effects.editor.api.getFromLocalStorage<PaletteMode>('themeAppearance') ?? 'system';

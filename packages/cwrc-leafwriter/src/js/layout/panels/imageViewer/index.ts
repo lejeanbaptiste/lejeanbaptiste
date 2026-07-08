@@ -115,8 +115,9 @@ class ImageViewer {
     });
 
     this.osd.addHandler('open-failed', (event: any) => {
-      let msg = event.message;
-      if (event.source.url === true) msg = `No URI found for @${this.attrName}.`;
+      if (event.source.url === true) {
+        // No URI found for @${this.attrName}.
+      }
     });
 
     this.osd.addHandler('reset-size', (event: any) => {
@@ -142,7 +143,7 @@ class ImageViewer {
     this.osd.close();
   }
 
-  private processDocument(doc: HTMLElement, docLoaded: any) {
+  private processDocument(doc: HTMLElement, _docLoaded: any) {
     this.$pageBreaks = $(doc).find(`*[_tag=${this.tagName}]`);
 
     if (this.$pageBreaks.length === 0) {
@@ -152,7 +153,7 @@ class ImageViewer {
 
     const tileSources: any[] = [];
 
-    this.$pageBreaks.each((index: any, el: any) => {
+    this.$pageBreaks.each((_index: any, el: any) => {
       const url = $(el).attr(this.attrName);
       if (!url || url === '') return;
 

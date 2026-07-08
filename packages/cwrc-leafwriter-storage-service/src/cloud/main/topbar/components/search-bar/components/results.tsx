@@ -1,6 +1,6 @@
 import { Box, Button, Divider, ListSubheader, Stack } from '@mui/material';
-import { useAppState } from '@src/overmind';
-import type { Content, SearchResultsBlobs } from '@src/types';
+import { useAppState } from '@cwrc/leafwriter-storage-service/overmind';
+import type { Content, SearchResultsBlobs } from '@cwrc/leafwriter-storage-service/types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Item } from './item';

@@ -6,7 +6,7 @@ import type {
   Owner,
   Repository,
   SuportedProviders,
-} from '@src/types';
+} from '@cwrc/leafwriter-storage-service/types';
 import i18n from '../../i18n';
 
 // * The following line is need for VSC extension i18n ally to work

@@ -354,7 +354,7 @@ export const resetDialogWarnings = async ({ actions }: Context) => {
   await actions.ui.resetDoNotDisplayDialogs();
 };
 
-export const resetPreferences = async ({ actions, effects }: Context) => {
+export const resetPreferences = async ({ actions }: Context) => {
   actions.editor.setFontSize(11);
   actions.editor.setLatinFont(DEFAULT_LATIN_FONT);
   actions.editor.setAsianFont(DEFAULT_ASIAN_FONT);

@@ -210,7 +210,7 @@ class EntitiesList {
         .addClass('expanded', { duration: 200, queue: true });
     });
     this.writer.event('entityUnfocused').subscribe(() => {
-      this.$entities.find('div.entitiesList > li').each(function (index, el) {
+      this.$entities.find('div.entitiesList > li').each(function (_index: any, _el: any) {
         //@ts-ignore
         $(this).removeClass('expanded', { duration: 200, queue: true });
       });
@@ -347,10 +347,8 @@ class EntitiesList {
     // named entity values
     const lemma = entity.getLemma();
     const uri = entity.getURI();
-    let nevAdded = false;
     const createLemmaHTML = () => {
       if (!lemma) return undefined;
-      nevAdded = true;
       return `<li><strong>Standard</strong>: ${lemma}</li>`;
     };
     const lemmaHTML = createLemmaHTML();
@@ -359,7 +357,6 @@ class EntitiesList {
     //URI
     const createUriHTML = () => {
       if (!uri) return undefined;
-      nevAdded = true;
       return `
         <li>
           <strong>URI</strong>: <a href="${uri}" target="_blank" rel="noopener">${uri}</a>
@@ -370,7 +367,6 @@ class EntitiesList {
     if (uriHTML) propertiesHtmlArray.push(uriHTML);
 
     // attribute values
-    let attAdded = false;
     const entityAttributes = entity.getAttributes();
     const urlAttributes = this.writer.schemaManager.mapper.getUrlAttributes();
 
@@ -392,13 +388,11 @@ class EntitiesList {
           <li>
             <strong>${name}</strong>: <a href="${value}" target="_blank" rel="noopener">${value}</a>
           </li>`);
-        attAdded = true;
       } else {
         if (value === lemma) continue; // don't duplicate lemma
 
         // if (!attAdded && nevAdded) propertiesHtmlArray.push('<li><hr /></li>');
         propertiesHtmlArray.push(`<li><strong>${name}</strong>: ${value}</li>`);
-        attAdded = true;
       }
     }
 

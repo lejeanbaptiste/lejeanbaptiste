@@ -2,7 +2,7 @@ import type { DialogBarProps } from '@src/dialogs';
 import { Locales } from '@src/i18n';
 import type { NotificationProps, PaletteMode } from '@src/types';
 
-interface State {
+export interface State {
   cookieConsent: string[];
   currentLocale: Locales;
   darkMode: boolean;

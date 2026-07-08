@@ -89,7 +89,7 @@ class Validation {
 
     this.writer
       .event('documentValidated')
-      .subscribe((valid: boolean, result: ValidationResponse & { parseError?: { message: string; positions?: XMLParseErrorPosition[] }; schemaUnavailable?: boolean }) => {
+      .subscribe((_valid: boolean, result: ValidationResponse & { parseError?: { message: string; positions?: XMLParseErrorPosition[] }; schemaUnavailable?: boolean }) => {
         $(`#${this.id}_indicator`).hide();
         this.showValidationResult(result);
         if (result.errors?.length || result.parseError || result.schemaUnavailable) {

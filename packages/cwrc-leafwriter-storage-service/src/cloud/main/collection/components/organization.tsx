@@ -1,6 +1,6 @@
 import { Avatar, Box, ListItem, ListItemButton, Stack, Typography } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
-import type { Organization as OrganizationProps } from '@src/types';
+import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
+import type { Organization as OrganizationProps } from '@cwrc/leafwriter-storage-service/types';
 
 interface Props {
   organization: OrganizationProps;

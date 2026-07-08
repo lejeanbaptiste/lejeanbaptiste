@@ -45,9 +45,6 @@ describe('SchemaManager include loading', () => {
     const schemaXML = await (manager as any).loadSchemaFile([WRAPPER_URL]);
     (manager as any).schemaXML = schemaXML;
 
-    const include = (globalThis as any).$
-      ? undefined
-      : undefined;
     // Use jQuery the same way schemaManager.loadSchema does.
     const $ = require('jquery');
     const includeEl = $('include:first', schemaXML);

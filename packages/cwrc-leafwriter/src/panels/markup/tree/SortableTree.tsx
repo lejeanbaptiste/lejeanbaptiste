@@ -400,7 +400,7 @@ export const SortableTree = () => {
     setOffsetLeft(delta.x);
   };
 
-  const handleDragOver = ({ delta, collisions, over }: DragOverEvent) => {
+  const handleDragOver = ({ over }: DragOverEvent) => {
     setOverId(over?.id ?? null);
   };
 
@@ -408,18 +408,16 @@ export const SortableTree = () => {
     resetState();
 
     if (projected && over) {
-      const { depth, parentId } = projected;
+      const { parentId } = projected;
       if (!parentId) return;
 
       const parentIndex = visibleTree.findIndex(({ id }) => id === parentId);
       if (visibleTree[parentIndex]?.type === 'text') return;
 
       // const overIndex = flattenedItems.findIndex(({ id }) => id === over.id);
-      const activeIndex = visibleTree.findIndex(({ id }) => id === active.id);
       const overIndexParent = visibleTree[parentIndex]?.children.findIndex(
         ({ id }) => id === over.id,
       );
-      // const activeTreeItem = flattenedItems[activeIndex];Í
 
       const position = delta.y >= 0 ? 'after' : 'before';
 
@@ -463,7 +461,7 @@ export const SortableTree = () => {
           ref={virtuoso}
           overscan={1000}
           data={visibleTree}
-          itemContent={(index, { id, content, children, isEntity, depth, label, type }) => {
+          itemContent={(_index: any, { id, content, children, isEntity, depth, label, type }) => {
             return (
               <SortableTreeItem
                 key={id}

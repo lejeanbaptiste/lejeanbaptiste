@@ -1,6 +1,6 @@
 import type { StorageDialogState } from '@src/types';
 
-interface State {
+export interface State {
   storageDialogState: StorageDialogState;
 }
 

@@ -935,7 +935,7 @@ class Tagger {
         );
         if (start) startRange.surroundContents(start);
 
-        $.each(nodes, (index, node) => {
+        $.each(nodes, (_index: any, node) => {
           $(node).wrap(`
             <span _entity="true" _type="${type}" class="entity ${type}" name="${id}" />
           `);
@@ -1337,7 +1337,7 @@ class Tagger {
         const $noteParent = $(currNode).parents('[_type=citation],[_type=note]');
         if ($noteParent.length > 0) {
           setTimeout(() => {
-            $noteParent.each((index, element) => {
+            $noteParent.each((_index: any, element) => {
               const $el = $(element);
 
               const id = $el.attr('id');
@@ -1675,7 +1675,7 @@ class Tagger {
         }
       }
       let count = 0;
-      for (const id in ents) {
+      for (const _id in ents) {
         count++;
       }
 
@@ -1683,47 +1683,6 @@ class Tagger {
     }
 
     return this.VALID;
-  }
-
-  /**
-   * Get the entity boundary tag (and potential inbetween tags) that corresponds to the passed tag.
-   * @param {element} tag
-   * @returns {jQuery}
-   */
-  private getCorrespondingEntityTags(tag: any[] | JQuery<any>) {
-    tag = $(tag);
-    if (tag.hasClass('start') && tag.hasClass('end')) return tag;
-
-    const boundaryType = tag.hasClass('start') ? 'end' : 'start';
-
-    const currentNode: Element = tag[0];
-    const nodeId = currentNode.getAttribute('name');
-
-    const walker = currentNode.ownerDocument.createTreeWalker(
-      currentNode.ownerDocument,
-      NodeFilter.SHOW_ELEMENT,
-      {
-        acceptNode: (node: Element) => {
-          return node.getAttribute('name') === nodeId
-            ? NodeFilter.FILTER_ACCEPT
-            : NodeFilter.FILTER_SKIP;
-        },
-      },
-    );
-    walker.currentNode = currentNode;
-
-    const nodes: Node[] = [];
-
-    //@ts-ignore
-    while (walker.currentNode.getAttribute('name') === nodeId) {
-      const result = boundaryType === 'start' ? walker.previousNode() : walker.nextNode();
-      if (!result) break;
-
-      nodes.push(walker.currentNode);
-      if ($(walker.currentNode).hasClass(boundaryType)) break;
-    }
-
-    return $(nodes);
   }
 
   /**

@@ -3,12 +3,10 @@ import {
   Box,
   Icon as MuiIcon,
   type SvgIconProps,
-  SvgIconTypeMap,
   useColorScheme,
   useTheme,
   type PaletteMode,
 } from '@mui/material';
-import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { useMemo } from 'react';
 
 type IconProps = {

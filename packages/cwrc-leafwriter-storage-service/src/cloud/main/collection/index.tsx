@@ -1,5 +1,5 @@
 import { Box, List } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
+import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
 import { useEffect, useRef, useState } from 'react';
 import { useScrollSpy } from '../../hooks/useScrollSpy';
 import { Content, Empty, LoadMore, Organization, Repository, Skeletons } from './components';

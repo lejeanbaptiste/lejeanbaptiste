@@ -173,7 +173,7 @@ export const Tree = () => {
       ref={virtuoso}
       overscan={1000}
       data={visibleTree}
-      itemContent={(index, { id, children, depth, label, content }) => {
+      itemContent={(_index: any, { id, children, depth, label, content }) => {
         return (
           <Item
             key={id}

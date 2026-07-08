@@ -9,8 +9,8 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { SaveSettingsDialog } from '@src/dialogs';
-import { useActions, useAppState } from '@src/overmind';
+import { SaveSettingsDialog } from '@cwrc/leafwriter-storage-service/dialogs';
+import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
 import {
   useEffect,
   useRef,

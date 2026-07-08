@@ -78,7 +78,7 @@ class NoteDialog implements SchemaDialog {
     //dialog events
     this.dialog.$el.on(
       'buildDynamicFields',
-      (_event: JQuery.Event, _config: any, dialog: DialogForm) => {
+      (_event: JQuery.Event, _config: any, _dialog: DialogForm) => {
         const typeChoices = this.typeAtt?.choices ? this.typeAtt.choices : this.setTypeOptions();
         const choiceOptions = this.generateTypeOptions(typeChoices);
         optionsTypeElement.html(choiceOptions);
@@ -288,18 +288,6 @@ class NoteDialog implements SchemaDialog {
     `;
 
     return html;
-  }
-
-  private getSelection() {
-    const currentBookmark = this.writer.editor?.currentBookmark;
-    if (!currentBookmark) return;
-
-    if ('rng' in currentBookmark) {
-      let selection = currentBookmark.rng.toString();
-      selection = selection.trim().replace(/\s+/g, ' '); // remove excess whitespace
-      return selection;
-    }
-    return;
   }
 
   show(config?: { [x: string]: any; entry: Entity }) {

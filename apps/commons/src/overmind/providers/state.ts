@@ -2,7 +2,7 @@ import { supportedStorageProviders, supportedIdentityProviders } from '@src/conf
 import type { SupportedProvider } from '@src/services';
 import { derived } from 'overmind';
 
-interface State {
+export interface State {
   authProviders: SupportedProvider[];
   identityProviders: SupportedProvider[];
   supportedProviders: SupportedProvider[];

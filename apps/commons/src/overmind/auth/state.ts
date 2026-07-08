@@ -1,6 +1,6 @@
 import type { User } from '@src/types';
 
-interface State {
+export interface State {
   user?: User;
   userState: 'UNAUTHENTICATED' | 'AUTHENTICATING' | 'AUTHENTICATED';
 }

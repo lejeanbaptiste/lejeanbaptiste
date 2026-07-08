@@ -38,7 +38,7 @@ describe('write/read round-trip', () => {
 
   beforeEach(() => {
     files = {};
-    (window as Window & { electronAPI?: unknown }).electronAPI = {
+    const electronAPI = {
       readFile: jest.fn(async (path: string) => {
         if (!(path in files)) throw new Error('not found');
         return files[path];
@@ -46,8 +46,10 @@ describe('write/read round-trip', () => {
       writeFile: jest.fn(async (path: string, content: string) => {
         files[path] = content;
       }),
-      createDirectory: jest.fn(async () => undefined),
+      createDirectory: jest.fn(async (_parentDir: string, folderName: string) => folderName),
     };
+    (window as Window & { electronAPI?: unknown }).electronAPI =
+      electronAPI as unknown as Window['electronAPI'];
   });
 
   afterEach(() => {

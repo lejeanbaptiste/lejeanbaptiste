@@ -1,5 +1,5 @@
 import { Link, Stack, Typography } from '@mui/material';
-import type { LatestCommit } from '@src/types/Provider';
+import type { LatestCommit } from '@cwrc/leafwriter-storage-service/types/Provider';
 import { motion, type Variants } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 

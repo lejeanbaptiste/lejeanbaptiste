@@ -31,7 +31,6 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
       expandDisabled,
       handleProps,
       isEntity,
-      isOver,
       multipleSelection,
       label,
       nodeId,

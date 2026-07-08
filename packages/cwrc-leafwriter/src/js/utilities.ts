@@ -485,7 +485,7 @@ class Utilities {
 
     if (defaultNamespace === null) {
       // remove all namespaces from the xpath
-      xpath = xpath.replace(regex, (match, p1, p2, p3, p4, p5) => {
+      xpath = xpath.replace(regex, (_match: any, p1: any, p2: any, _p3: any, p4: any, p5: any) => {
         return [p1, p2, p4, p5].join('');
       });
     }
@@ -506,7 +506,7 @@ class Utilities {
         }
       }
 
-      xpath = xpath.replace(regex, (match, p1, p2, p3, p4, p5) => {
+      xpath = xpath.replace(regex, (_match: any, p1: any, p2: any, p3: any, p4: any, p5: any) => {
         if (
           // it's an attribute and therefore doesn't need a default namespace
           (p2 !== undefined && (p2.indexOf('attribute') === 0 || p2.indexOf('@') === 0)) ||
@@ -588,7 +588,7 @@ class Utilities {
     }
 
     if (defaultNamespace === null) {
-      xpath = xpath.replace(regex, (match, p1, p2, p3, p4, p5) => {
+      xpath = xpath.replace(regex, (_match: any, p1: any, p2: any, _p3: any, p4: any, p5: any) => {
         return [p1, p2, p4, p5].join('');
       });
     }
@@ -608,7 +608,7 @@ class Utilities {
         }
       }
 
-      xpath = xpath.replace(regex, (match, p1, p2, p3, p4, p5) => {
+      xpath = xpath.replace(regex, (_match: any, p1: any, p2: any, p3: any, p4: any, p5: any) => {
         if (
           (p2 !== undefined && (p2.indexOf('attribute') === 0 || p2.indexOf('@') === 0)) ||
           p4.match(/\(.*?\)/) !== null

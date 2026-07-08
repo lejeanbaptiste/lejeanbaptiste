@@ -10,8 +10,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
-import type { Repository as RepositoryPros } from '@src/types';
+import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
+import type { Repository as RepositoryPros } from '@cwrc/leafwriter-storage-service/types';
 import { useTranslation } from 'react-i18next';
 
 interface Props {

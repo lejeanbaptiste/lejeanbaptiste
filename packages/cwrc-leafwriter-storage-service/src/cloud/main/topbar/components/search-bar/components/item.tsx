@@ -13,8 +13,8 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useActions, useAppState } from '@src/overmind';
-import type { Content, SearchResultsBlobs } from '@src/types';
+import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
+import type { Content, SearchResultsBlobs } from '@cwrc/leafwriter-storage-service/types';
 import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { ContentMatch } from './content-match';

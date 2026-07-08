@@ -9,7 +9,7 @@ import type {
   StorageSource,
   Submit,
   Validate,
-} from '@src/types';
+} from '@cwrc/leafwriter-storage-service/types';
 import { derived } from 'overmind';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions

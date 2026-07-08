@@ -1,6 +1,5 @@
 import $ from 'jquery';
 import { Bookmark } from 'tinymce';
-import { EntityType } from '../../types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import Entity, { type EntityConfig } from './Entity';
@@ -32,17 +31,17 @@ class EntitiesManager {
 
     this.writer.event('processingDocument').subscribe(() => this.reset());
 
-    this.writer.event('entityAdded').subscribe((entityId: string) => {
+    this.writer.event('entityAdded').subscribe((_entityId: string) => {
       // don't highlight the entity because we might be doing bulk additions
       // this.highlightEntity(entityId);
     });
 
-    this.writer.event('entityEdited').subscribe((entityId: string) => {
+    this.writer.event('entityEdited').subscribe((_entityId: string) => {
       // don't highlight the entity because it will move the cursor outside of the entity when the user is editing
       // this.highlightEntity(entityId);
     });
 
-    this.writer.event('entityRemoved').subscribe((entityId: string) => this.highlightEntity());
+    this.writer.event('entityRemoved').subscribe((_entityId: string) => this.highlightEntity());
 
     this.writer.event('entityPasted').subscribe((entityId: string) => {
       this.highlightEntity(entityId);
@@ -407,7 +406,6 @@ class EntitiesManager {
     if (entityTags.length <= 0) return;
 
     const entity = this.getEntity(id);
-    const type = entity?.getType();
 
     // clear selection
     let rng = this.writer.editor?.dom.createRng();

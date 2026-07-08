@@ -16,6 +16,8 @@ function mockInstance(hasKey: boolean, surface = '李白'): MentionInstance {
     element,
     anchor: {
       documentId: 'doc-1',
+      xpath: '/TEI/text/body/p[1]/text()[1]',
+      offset: 0,
       surface,
       occurrence: 1,
       nodeHash: 'abc',

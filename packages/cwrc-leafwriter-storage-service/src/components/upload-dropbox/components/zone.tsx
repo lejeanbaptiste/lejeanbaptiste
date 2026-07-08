@@ -1,5 +1,5 @@
 import { Box, LinearProgress, Stack } from '@mui/material';
-import { getIcon } from '@src/icons';
+import { getIcon } from '@cwrc/leafwriter-storage-service/icons';
 import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

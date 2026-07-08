@@ -1,7 +1,7 @@
 import { Icon, Stack } from '@mui/material';
-import { TextEmphasis } from '@src/components';
-import { db } from '@src/db';
-import { getIcon, type IconName } from '@src/icons';
+import { TextEmphasis } from '@cwrc/leafwriter-storage-service/components';
+import { db } from '@cwrc/leafwriter-storage-service/db';
+import { getIcon, type IconName } from '@cwrc/leafwriter-storage-service/icons';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { Context } from '../';

@@ -1,5 +1,5 @@
 import { Box, MenuList } from '@mui/material';
-import type { PublicRepository } from '@src/types';
+import type { PublicRepository } from '@cwrc/leafwriter-storage-service/types';
 import { motion, type Variants } from 'motion/react';
 import { Item } from './item';
 

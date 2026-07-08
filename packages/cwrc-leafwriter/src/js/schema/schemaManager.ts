@@ -713,7 +713,7 @@ class SchemaManager {
     });
     if (!includesXML) return null;
 
-    include.children().each((index, el) => {
+    include.children().each((_index, el) => {
       if (el.nodeName == 'start') {
         $('start', includesXML).replaceWith(el);
       } else if (el.nodeName == 'define') {
@@ -913,7 +913,7 @@ class SchemaManager {
    * Load the CSS and convert it to the internal format
    * @param {Array} schemaId Collection of url sources
    */
-  async loadSchemaCSS(css?: string) {
+  async loadSchemaCSS(_css?: string) {
     $('#schemaRules', this.writer.editor?.dom.doc).remove();
     $('#schemaRules', document).remove();
 

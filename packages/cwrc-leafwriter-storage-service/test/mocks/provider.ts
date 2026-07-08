@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
-import Github from '@src/providers/Github';
-import Gitlab from '@src/providers/Gitlab';
+import Github from '@cwrc/leafwriter-storage-service/providers/Github';
+import Gitlab from '@cwrc/leafwriter-storage-service/providers/Gitlab';
 import * as mock from './resource';
 
 export const spyProviderFunctions = () => {

@@ -19,8 +19,9 @@ npm run wikidata:compile-zh-ja-orgs-works
 ```
 
 **Disambiguation**
-- [ ] identical strings of different categories.
-- [ ] Disambiguation testing
+- [ ] identical strings of different categories. 
+	- [ ] AI curation.
+- [ ] Disambiguation: improve AI
 
 **Database**
 - [ ] viewer / entities

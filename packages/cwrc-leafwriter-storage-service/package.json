@@ -30,6 +30,20 @@
       ],
       "types": "./lib/index.d.ts"
     },
+    "./components": {
+      "import": [
+        "./lib/components/index.js",
+        "./src/components/index.ts"
+      ],
+      "types": "./src/components/index.ts"
+    },
+    "./db": {
+      "import": [
+        "./lib/db/index.js",
+        "./src/db/index.ts"
+      ],
+      "types": "./src/db/index.ts"
+    },
     "./dialog": {
       "import": [
         "./lib/StorageDialog.js",
@@ -37,12 +51,68 @@
       ],
       "types": "./lib/StorageDialog.d.ts"
     },
+    "./dialogs": {
+      "import": [
+        "./lib/dialogs/index.js",
+        "./src/dialogs/index.ts"
+      ],
+      "types": "./src/dialogs/index.ts"
+    },
     "./headless": {
       "import": [
         "./lib/headless.js",
         "./src/headless.ts"
       ],
       "types": "./lib/headless.d.ts"
+    },
+    "./i18n": {
+      "import": [
+        "./lib/i18n.js",
+        "./src/i18n.ts"
+      ],
+      "types": "./src/i18n.ts"
+    },
+    "./icons": {
+      "import": [
+        "./lib/icons/index.js",
+        "./src/icons/index.tsx"
+      ],
+      "types": "./src/icons/index.tsx"
+    },
+    "./overmind": {
+      "import": [
+        "./lib/overmind/index.js",
+        "./src/overmind/index.ts"
+      ],
+      "types": "./src/overmind/index.ts"
+    },
+    "./providers/*": {
+      "import": [
+        "./lib/providers/*.js",
+        "./src/providers/*.ts"
+      ],
+      "types": "./src/providers/*.ts"
+    },
+    "./types": {
+      "import": [
+        "./lib/types/index.js",
+        "./src/types/index.ts"
+      ],
+      "types": "./src/types/index.ts"
+    },
+    "./types/*": {
+      "import": [
+        "./lib/types/*.js",
+        "./src/types/*.ts"
+      ],
+      "types": "./src/types/*.ts"
+    },
+    "./utilities": {
+      "import": [
+        "./lib/utilities/index.js",
+        "./src/utilities/index.ts"
+      ],
+      "types": "./src/utilities/index.ts"
     }
   },
   "types": "lib/index.d.ts",

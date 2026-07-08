@@ -1,5 +1,6 @@
 import { crawlDocuments, crawlEntities } from './crawl';
 import { applySuggestions } from './apply';
+import type { DictionaryEntry } from './dictionary';
 import { dictionaryTag } from './dictionary';
 import { normalizeDomText } from './normalize';
 
@@ -9,7 +10,7 @@ const parse = (xml: string) => {
   return doc;
 };
 
-const byString = (entries: { string: string }[], s: string) =>
+const byString = (entries: DictionaryEntry[], s: string) =>
   entries.find((e) => e.string === s);
 
 describe('crawlDocuments', () => {

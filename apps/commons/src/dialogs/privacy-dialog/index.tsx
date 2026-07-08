@@ -14,10 +14,6 @@ import * as fr from '@src/content/privacy/fr.mdx';
 import * as pt from '@src/content/privacy/pt.mdx';
 import * as ro from '@src/content/privacy/ro.mdx';
 
-interface PrivacyFrontmatter {
-  lastUpdated: string;
-}
-
 // Static mapping of content by locale
 const privacyContentMap = {
   //@ts-ignore

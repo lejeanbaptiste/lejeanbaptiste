@@ -9,7 +9,7 @@ import {
   Paper,
   Popper,
 } from '@mui/material';
-import { useAppState } from '@src/overmind';
+import { useAppState } from '@cwrc/leafwriter-storage-service/overmind';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
