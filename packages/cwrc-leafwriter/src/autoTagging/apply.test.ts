@@ -107,6 +107,23 @@ describe('applySuggestions', () => {
     expect(results[0]!.outcome).toBe('already-tagged');
   });
 
+  it('applies only one of two same-span adds with different tags (alternatives)', async () => {
+    const doc = parse(TEI);
+    const batch = [
+      suggest(doc, '上陽子', 'persName', 1, { id: 'alt_pers' }),
+      suggest(doc, '上陽子', 'title', 1, { id: 'alt_title' }),
+    ];
+    const { results, applied } = await applySuggestions(doc, batch, { policy: 'ignore' });
+
+    expect(applied).toBe(1);
+    const byId = (id: string) => results.find((r) => r.suggestion.id === id)!;
+    expect(byId('alt_pers').outcome).toBe('applied');
+    expect(byId('alt_title').outcome).toBe('conflict');
+    const xml = serialize(doc);
+    expect(xml).toContain('<persName>上陽子</persName>');
+    expect(xml).not.toContain('<title>');
+  });
+
   it('blocks insertions the schema forbids', async () => {
     const doc = parse(TEI);
     const { results } = await applySuggestions(doc, [suggest(doc, '上陽子', 'persName')], {
