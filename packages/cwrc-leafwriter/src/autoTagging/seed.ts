@@ -51,7 +51,7 @@ function dedupeSeedMatches(matches: SeedMatch[]): SeedMatch[] {
   const seen = new Map<string, SeedMatch>();
   for (const match of matches) {
     const anchor = match.suggestion.anchor;
-    const key = `${match.suggestion.tag}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offsetStart}`;
+    const key = `${match.suggestion.tag}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offset}`;
     const prior = seen.get(key);
     if (!prior) {
       seen.set(key, match);
