@@ -169,6 +169,58 @@ describe('ReviewController', () => {
     c.accept();
     expect(c.counts().total).toBe(0);
   });
+
+  describe('same-span alternatives (one string, several tags)', () => {
+    const altPair = () => {
+      const anchor = { ...make('x').anchor, surface: '高祖', offset: 5 };
+      return [
+        make('as-pers', { tag: 'persName', anchor: { ...anchor } }),
+        make('as-title', { tag: 'title', anchor: { ...anchor } }),
+        make('other', { anchor: { ...make('x').anchor, surface: '洛陽' }, tag: 'placeName' }),
+      ];
+    };
+
+    it('accepting one alternative rejects the other', () => {
+      const decisions: string[] = [];
+      const c = new ReviewController(altPair(), {
+        onDecision: (e) => decisions.push(`${e.suggestion.id}:${e.decision}`),
+      });
+      c.accept(); // accepts as-pers
+      expect(c.counts()).toMatchObject({ accepted: 1, rejected: 1, pending: 1 });
+      expect(decisions).toContain('as-pers:accepted');
+      expect(decisions).toContain('as-title:rejected');
+    });
+
+    it('rejecting one alternative leaves the other pending', () => {
+      const c = new ReviewController(altPair());
+      c.reject(); // rejects as-pers
+      expect(c.counts()).toMatchObject({ rejected: 1, pending: 2 });
+    });
+
+    it('flipping a rejected alternative to accepted dethrones the earlier winner', () => {
+      const c = new ReviewController(altPair());
+      c.accept(); // as-pers wins, as-title auto-rejected
+      const title = c.rejectedVisible().find((s) => s.id === 'as-title')!;
+      c.changeDecision(title, 'accepted');
+      expect(title.status).toBe('accepted');
+      expect(c.accepted().map((s) => s.id)).toEqual(['as-title']);
+      expect(c.rejectedVisible().map((s) => s.id)).toContain('as-pers');
+    });
+
+    it('takeAllExceptRejected lets the first alternative win instead of applying both', () => {
+      const c = new ReviewController(altPair());
+      const taken = c.takeAllExceptRejected();
+      expect(taken.map((s) => s.id)).toEqual(['as-pers', 'other']);
+      expect(c.rejectedVisible().map((s) => s.id)).toEqual(['as-title']);
+    });
+
+    it('acceptAllIdenticalStrings rejects alternatives of each accepted match', () => {
+      const c = new ReviewController(altPair());
+      c.acceptAllIdenticalStrings(); // current is as-pers (高祖/persName)
+      expect(c.accepted().map((s) => s.id)).toEqual(['as-pers']);
+      expect(c.rejectedVisible().map((s) => s.id)).toEqual(['as-title']);
+    });
+  });
 });
 
 describe('handleReviewKey', () => {
