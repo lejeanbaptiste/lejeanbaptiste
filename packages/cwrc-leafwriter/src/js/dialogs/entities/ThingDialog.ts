@@ -99,7 +99,7 @@ class ThingDialog implements SchemaDialog {
     // this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any) => {});
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.dialog.$el.on('beforeSave', (_event: JQuery.Event, config: unknown) => {
+    this.dialog.$el.on('beforeSave', (_event: JQuery.Event, _config: unknown) => {
       if (this.dialog.currentData.attributes.type === '') {
         delete this.dialog.currentData.attributes.type;
       }

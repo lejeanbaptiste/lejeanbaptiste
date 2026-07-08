@@ -242,7 +242,7 @@ export async function llmAudit(doc: Document, options: LlmAuditOptions): Promise
 
   const addResult = await llmSuggest(working, {
     ...options,
-    onProgress: (done, chunkTotal) => options.onProgress?.(chunks.length + done, total),
+    onProgress: (done, _chunkTotal) => options.onProgress?.(chunks.length + done, total),
   });
 
   const merged = dedupeSuggestions([...clean.suggestions, ...addResult.suggestions]);

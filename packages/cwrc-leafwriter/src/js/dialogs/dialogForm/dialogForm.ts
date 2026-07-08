@@ -147,8 +147,7 @@ class DialogForm {
 
         if (type === 'attributes') {
           if (dialogInstance.attributesWidget) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const showWidget = dialogInstance.attributesWidget.setData(data.attributes);
+            dialogInstance.attributesWidget.setData(data.attributes);
             // if (showWidget) dialogInstance.attributesWidget.expand();
           }
         } else {

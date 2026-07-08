@@ -18,11 +18,9 @@ export const useItems = (ctx: State) => {
   const { writer } = window;
 
   const { isAnnotator } = useAppState().editor;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { markupPanel, translationMode } = useAppState().ui;
+  const { translationMode } = useAppState().ui;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { notifyViaSnackbar, openDialog, showTextNodes } = useActions().ui;
+  const { notifyViaSnackbar, openDialog } = useActions().ui;
   const { getPossibleNodesAt } = useActions().validator as {
     getPossibleNodesAt: (params: PossibleNodesAtTarget) => Promise<NodeDetail[] | undefined>;
   };

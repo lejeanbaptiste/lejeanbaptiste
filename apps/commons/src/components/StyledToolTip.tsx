@@ -3,7 +3,7 @@ import Tooltip, { tooltipClasses, type TooltipProps } from '@mui/material/Toolti
 
 export const StyledToolTip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip {...props} classes={{ popper: className }} />
-))(({ theme }) => ({
+))(() => ({
   [`& .${tooltipClasses.tooltip}`]: {
     '::first-letter': { textTransform: 'uppercase !important' },
   },

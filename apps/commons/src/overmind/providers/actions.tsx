@@ -41,7 +41,7 @@ export const getStorageProviderAuth = ({ state }: Context, providerId: string) =
   return { name: provider.service.name, access_token: provider.service.getAccessToken() };
 };
 
-export const getStorageProvidersAuth = ({ state, actions }: Context) => {
+export const getStorageProvidersAuth = ({ state }: Context) => {
   const auths: { name: string; access_token: string }[] = [];
 
   state.providers.storageProviders.forEach(({ providerId, service }) => {

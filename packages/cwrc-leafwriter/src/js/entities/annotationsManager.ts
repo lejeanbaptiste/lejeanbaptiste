@@ -398,7 +398,7 @@ class AnnotationsManager {
         return null;
       });
 
-      $('rdf\\:Description, Description', xmlAnnotation).each((index, el) => {
+      $('rdf\\:Description, Description', xmlAnnotation).each((_index, el) => {
         rdfString += '\n';
         rdfString += this.writer.utilities.xmlToString(el);
       });

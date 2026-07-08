@@ -21,6 +21,12 @@ import './utilities/cursorSession';
 
 const CONTAINER = 'lw-layout-container';
 
+declare global {
+  interface Window {
+    __ljbDebugValidator?: (options?: { runValidation?: boolean }) => Promise<unknown>;
+  }
+}
+
 const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI;
 
 const waitForElement = (selector: string, timeoutMs = 5000): Promise<Element> =>
@@ -69,8 +75,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const [autoTaggingPaneContainer, setAutoTaggingPaneContainer] = useState<Element | null>(null);
   const [disambiguationPaneContainer, setDisambiguationPaneContainer] = useState<Element | null>(null);
 
-  const [initialized, setInitialized] = useState(false);
-  const [docLoaded, setDocLoaded] = useState(false);
   const [ready, setReady] = useState(false);
   const setupInProgressRef = useRef(false);
 
@@ -228,7 +232,9 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     _writer.overmindActions = actions;
     window.writer = _writer;
 
-    window.__ljbDebugValidator = (opts) => actions.validator.debugValidatorState(opts);
+    window.__ljbDebugValidator = (
+      opts?: Parameters<typeof actions.validator.debugValidatorState>[0],
+    ) => actions.validator.debugValidatorState(opts);
 
     //@ts-ignore
     _writer.event('writerInitialized').subscribe(() => {
@@ -296,8 +302,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
         actions.document.setDocumentXml(document.xml);
       }
       actions.document.setLoaded(true);
-      setInitialized(true);
-      setDocLoaded(true);
     });
 
     setReady(true);

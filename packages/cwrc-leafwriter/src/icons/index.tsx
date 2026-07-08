@@ -51,8 +51,7 @@ import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
-import { SvgIcon, SvgIconProps, SvgIconTypeMap, createSvgIcon } from '@mui/material';
-import { OverridableComponent } from '@mui/material/OverridableComponent';
+import { SvgIcon, type SvgIconProps, createSvgIcon } from '@mui/material';
 import {
   CloudSyncOutline,
   DotsCircle,
@@ -219,19 +218,10 @@ const icons = {
   xmlViewer: CodeRoundedIcon,
 };
 
-export type IconLeafWriter =
-  typeof icons extends Record<
-    infer I,
-    OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & {
-      muiName: string;
-    }
-  >
-    ? I
-    : never;
+export type IconLeafWriter = keyof typeof icons;
 
-export const getIcon = (name: IconLeafWriter) => {
-  return icons[name];
-};
+export const getIcon = (name: IconLeafWriter): NonNullable<SvgIconProps['component']> =>
+  icons[name] as NonNullable<SvgIconProps['component']>;
 
 export interface IconProps extends SvgIconProps {
   name: IconLeafWriter;

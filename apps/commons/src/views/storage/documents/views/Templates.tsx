@@ -21,7 +21,6 @@ export const TemplatesView = ({
   onClose,
   onLoad,
   onSelect,
-  selected,
   width = 400,
 }: TemplatesView) => {
   const { getTemplates } = useActions().storage;

@@ -16,7 +16,6 @@ import * as ro from '@src/content/privacy/ro.mdx';
 
 interface PrivacyFrontmatter {
   lastUpdated: string;
-  [key: string]: any;
 }
 
 // Static mapping of content by locale

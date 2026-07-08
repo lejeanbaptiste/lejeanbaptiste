@@ -10,7 +10,7 @@ import { Authorities, Editor, EntityLookups, MarkupPanel, Reset, UI } from './se
 import { DesktopAiApi } from './sections/ui/desktop-ai-api';
 import { SideMenu } from './side-menu';
 
-export const SettingsDialog = ({ id, onClose, open = false }: IDialog) => {
+export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
   const { isReadonly, settings } = useAppState().editor;
   const { t } = useTranslation();
 

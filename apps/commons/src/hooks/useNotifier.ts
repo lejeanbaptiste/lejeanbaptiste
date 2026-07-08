@@ -33,7 +33,7 @@ export const useNotifier = () => {
         onClose: (event, reason, myKey) => {
           if (options.onClose) options.onClose(event, reason, myKey);
         },
-        onExited: (event, myKey) => {
+        onExited: (_event, myKey) => {
           // remove this snackbar from overmind store
           removeNotificationSnackbar(myKey);
           removeDisplayed(myKey);

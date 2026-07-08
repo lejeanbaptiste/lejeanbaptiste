@@ -6,7 +6,7 @@ import { nanoid } from 'nanoid';
 import { Context } from '../index';
 
 //* INIITIALIZE
-export const onInitializeOvermind = async (_context: Context, overmind: any) => {
+export const onInitializeOvermind = async (_context: Context) => {
   // Clean expired document requests
   try {
     const now = new Date();
@@ -71,7 +71,7 @@ export const addToRecentDocument = async (_context: Context, document: Resource)
   await db.recentDocuments.put({ ...resource }, resource.id);
 };
 
-export const downloadImage = async ({ state }: Context, screenshot: string) => {
+export const downloadImage = async (_context: Context, screenshot: string) => {
   const fakeLink = window.document.createElement('a');
 
   (fakeLink as HTMLElement).style.display = 'none';

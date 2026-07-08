@@ -242,7 +242,7 @@ class DateDialog implements SchemaDialog {
       }
     };
 
-    this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any) => {
+    this.dialog.$el.on('beforeShow', (_event: JQuery.Event, config: any) => {
       void this.prepareEastAsianMode(config);
 
       this.dateRange.datepicker('option', 'minDate', new Date(1800, 0, 1));
@@ -322,7 +322,7 @@ class DateDialog implements SchemaDialog {
       this.$dateInput.trigger('focus');
     });
 
-    this.dialog.$el.on('beforeSave', (event: JQuery.Event, dialog: DialogForm) => {
+    this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {
       if (this.eastAsianMode) {
         const eastAsian = getEastAsianDateFieldValues();
         if (!hasEastAsianCalendarContext(eastAsian)) {

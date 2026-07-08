@@ -77,7 +77,8 @@ export async function debugValidator(options?: {
 
   const schemaURL = sm.getRng() ?? sm.getCurrentDocumentSchemaUrl();
   if (schemaURL) {
-    const localPath = fromLocalFileUrl(schemaURL);
+    const currentSchemaUrl = schemaURL as string;
+    const localPath = fromLocalFileUrl(currentSchemaUrl);
     report.schemaFile = { localPath, readable: false };
 
     if (localPath && window.electronAPI?.readFile) {
@@ -96,8 +97,8 @@ export async function debugValidator(options?: {
 
     try {
       const blobUrl = await (async () => {
-        if (!schemaURL.startsWith('ljb://')) return null;
-        const text = await fetchResourceText(schemaURL);
+        if (!currentSchemaUrl.startsWith('ljb://')) return null;
+        const text = await fetchResourceText(currentSchemaUrl);
         return text ? `[${text.length} chars ready for worker]` : null;
       })();
       report.schemaFile.workerPayload = blobUrl;
@@ -125,21 +126,21 @@ export async function debugValidator(options?: {
       if (window.leafwriterValidator) {
         console.log('→ worker initialize()…');
         try {
+          const currentSchemaUrl = schemaURL as string;
           const schemaId =
-            sm.schemaId ??
-            sm.getCurrentSchema()?.id ??
-            (schemaURL ? sm.getSchemaIdFromUrl(schemaURL) : undefined);
+            sm.schemaId ?? sm.getCurrentSchema()?.id ?? sm.getSchemaIdFromUrl(currentSchemaUrl);
           const schemaRevision = sm.getSchemaRevision();
-          const schemaText = schemaURL.startsWith('ljb://')
-            ? await fetchResourceText(schemaURL)
+          const isLjBResource = currentSchemaUrl.startsWith('ljb://');
+          const schemaText = isLjBResource
+            ? await fetchResourceText(currentSchemaUrl)
             : undefined;
-          if (schemaId && (schemaText || !schemaURL.startsWith('ljb://'))) {
+          if (schemaId && (schemaText || !isLjBResource)) {
             const init = await window.leafwriterValidator.initialize({
               id: schemaId,
-              url: schemaURL,
+              url: currentSchemaUrl,
               schemaRevision,
               schemaText: schemaText ?? undefined,
-              shouldCache: !schemaURL.startsWith('ljb://'),
+              shouldCache: !isLjBResource,
             });
             report.workerInit = {
               success: init.success,

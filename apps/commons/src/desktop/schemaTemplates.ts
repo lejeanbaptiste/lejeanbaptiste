@@ -1,5 +1,13 @@
 import type { ProjectFileConfig } from './projectTypes';
 
+type SchemaTemplateConfig = {
+  schema?: {
+    catalogId?: ProjectFileConfig['schema'] extends { catalogId?: infer C } ? C : string;
+    css?: string;
+    rng?: string;
+  };
+};
+
 const xmlModelPi = (rng: string) =>
   `<?xml-model href="${rng}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>`;
 
@@ -7,7 +15,7 @@ const stylesheetPi = (css: string) =>
   `<?xml-stylesheet type="text/css" href="${css}"?>`;
 
 /** TEI skeleton — shared for teiAll, teiLite, and teiSimplePrint. */
-export const buildTeiSkeletonXml = (config: ProjectFileConfig): string => {
+export const buildTeiSkeletonXml = (config: SchemaTemplateConfig): string => {
   const rng = config.schema?.rng ?? 'schema/tei_lite.rng';
   const css = config.schema?.css ?? 'schema/tei.css';
 
@@ -34,7 +42,7 @@ ${stylesheetPi(css)}
 };
 
 /** jTEI article skeleton — front (abstract), body, back (bibliography). */
-export const buildJTeiSkeletonXml = (config: ProjectFileConfig): string => {
+export const buildJTeiSkeletonXml = (config: SchemaTemplateConfig): string => {
   const rng = config.schema?.rng ?? 'schema/tei_jtei.rng';
   const css = config.schema?.css ?? 'schema/tei.css';
 
@@ -92,7 +100,7 @@ ${stylesheetPi(css)}
 };
 
 /** Orlando ENTRY skeleton — author standard name, summary, biography life events, writing sections. */
-export const buildOrlandoSkeletonXml = (config: ProjectFileConfig): string => {
+export const buildOrlandoSkeletonXml = (config: SchemaTemplateConfig): string => {
   const rng = config.schema?.rng ?? 'schema/orlando_entry.rng';
   const css = config.schema?.css ?? 'schema/orlando.css';
 
@@ -144,7 +152,7 @@ ${stylesheetPi(css)}
 </ENTRY>`;
 };
 
-export const buildSkeletonForCatalog = (config: ProjectFileConfig): string => {
+export const buildSkeletonForCatalog = (config: SchemaTemplateConfig): string => {
   const catalogId = config.schema?.catalogId;
   if (catalogId === 'orlando') return buildOrlandoSkeletonXml(config);
   if (catalogId === 'jTei') return buildJTeiSkeletonXml(config);

@@ -93,7 +93,7 @@ class CWRC2XML {
 
     // if (logEnabledFor('DEBUG')) console.time('cleanUp');
     // clean up temp ids used by setEntityRanges
-    $('[cwrcTempId]', xmlDoc).each((index, element) => {
+    $('[cwrcTempId]', xmlDoc).each((_index, element) => {
       $(element).removeAttr('cwrcTempId');
     });
     // if (logEnabledFor('DEBUG')) console.timeEnd('cleanUp');
@@ -101,7 +101,7 @@ class CWRC2XML {
     const rdfmode = this.writer.annotationMode === this.writer.XML ? 'xml' : 'json';
 
     const entities: Entity[] = [];
-    this.writer.entitiesManager.eachEntity((id: string, entity: Entity) => entities.push(entity));
+    this.writer.entitiesManager.eachEntity((_id: string, entity: Entity) => entities.push(entity));
 
     const rdfString = await this.writer.annotationsManager.getAnnotations(entities, rdfmode);
     // parse the selector and find the relevant node
@@ -272,7 +272,7 @@ class CWRC2XML {
       xmlString += tags[0];
 
       if (tags.length > 1) {
-        currentNode.contents().each((index, element) => {
+      currentNode.contents().each((_index, element) => {
           if (element.nodeType === Node.ELEMENT_NODE) {
             doBuild($(element));
           } else if (element.nodeType === Node.TEXT_NODE) {
@@ -315,7 +315,7 @@ class CWRC2XML {
 
     function recursiveTextConversion(parentNode: JQuery<any>) {
       const contents = $(parentNode).contents();
-      contents.each((index, element) => {
+      contents.each((_index, element) => {
         if (element.nodeType == Node.TEXT_NODE) {
           element.nodeValue = _this.writer.utilities.convertTextForExport(element.nodeValue);
         } else if (element.nodeType == Node.ELEMENT_NODE) {
@@ -329,17 +329,17 @@ class CWRC2XML {
 
     // get the overlapping entity IDs, in the order that they appear in the document.
     const overlappingEntNodes = $('[_entity][class~="start"]', body).not('[_tag]').not('[_note]');
-    const overlappingEntIds = $.map(overlappingEntNodes, (val, index) => {
+    const overlappingEntIds = $.map(overlappingEntNodes, (val) => {
       //@ts-ignore
       return $(val).attr('name');
     });
 
     // get ranges for overlapping entities, set offsetIds
     // then remove the associated nodes
-    $(overlappingEntIds).each((index, id) => {
+    $(overlappingEntIds).each((_index, id) => {
       const entry = this.writer.entitiesManager.getEntity(id);
       entry?.setRange(_this.getRangesForEntity(id) as AnnotationRange);
-      $(`[name="${id}"]`, body).each((index, element) => {
+      $(`[name="${id}"]`, body).each((_index, element) => {
         $(element).contents().unwrap();
       });
     });
@@ -475,7 +475,7 @@ class CWRC2XML {
     }[] = [];
 
     function getOffsets(parent: JQuery<any>) {
-      parent.contents().each((index, element) => {
+      parent.contents().each((_index, element) => {
         const $el = $(element);
 
         if (element.nodeType == Node.TEXT_NODE && element.data !== ' ') {
@@ -522,7 +522,7 @@ class CWRC2XML {
   }
 
   //! deprecated?
-  private determineOffsetRelationships(offsets: any[]) {
+  private determineOffsetRelationships(_offsets: any[]) {
     const entityOffsets: any[] = [];
     const relationships: Record<
       string,

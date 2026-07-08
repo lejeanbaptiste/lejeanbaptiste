@@ -42,8 +42,8 @@ export const evaluateXPathAll = (contextNode: Document | Element, xpath: string)
     nsResolver = (prefix) => nsr.lookupNamespaceURI(prefix) || defaultNamespace;
 
     if (defaultNamespace !== null) {
-      xpath = xpath.replace(xpathSegmentRegex, (match, p1, p2, p3, p4, p5) => {
-        if (p3 !== undefined) return match;
+      xpath = xpath.replace(xpathSegmentRegex, (_match, p1, p2, p3, p4, p5) => {
+        if (p3 !== undefined) return _match;
         if (
           (p2 !== undefined && (p2.indexOf('attribute') === 0 || p2.indexOf('@') === 0)) ||
           p4.match(/\(.*?\)/) !== null
@@ -56,7 +56,7 @@ export const evaluateXPathAll = (contextNode: Document | Element, xpath: string)
   }
 
   if (defaultNamespace === null) {
-    xpath = xpath.replace(xpathSegmentRegex, (match, p1, p2, p3, p4, p5) => {
+    xpath = xpath.replace(xpathSegmentRegex, (_match, p1, p2, _p3, p4, p5) => {
       return [p1, p2, p4, p5].join('');
     });
   }

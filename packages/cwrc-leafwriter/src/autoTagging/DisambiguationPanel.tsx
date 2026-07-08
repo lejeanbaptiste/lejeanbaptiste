@@ -363,7 +363,7 @@ export const DisambiguationPanel = ({
   };
 
   const applyAiRank = useCallback(
-    async (targetGroup: MentionGroup, rows: DisambiguationCandidate[], targetInstance: MentionInstance) => {
+    async (_targetGroup: MentionGroup, rows: DisambiguationCandidate[], targetInstance: MentionInstance) => {
       setAiRationales({});
       setAiSuggestCreateNew(false);
       setAiCreateRationale(null);

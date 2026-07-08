@@ -11,7 +11,7 @@ export const StyledToolTip = styled(({ className, ...props }: TooltipProps) => (
       },
     }}
   />
-))(({ theme }) => ({
+))(() => ({
   [`& .${tooltipClasses.tooltipPlacementBottom}`]: {
     marginTop: '10px !important',
   },

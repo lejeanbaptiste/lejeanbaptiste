@@ -243,7 +243,7 @@ class EntitiesManager {
     }
 
     const entityTags = $('[_entity][class~=start]', this.writer.editor?.getBody()); // sequential ordering
-    entityTags.each((index: number, element: Element) => {
+    entityTags.each((_index: number, element: Element) => {
       const entry = this.getEntity($(element).attr('name') ?? '');
       if (entry) sortedEntities.push(entry);
     });
@@ -283,7 +283,7 @@ class EntitiesManager {
   getTextContentForEntity(entityId: string) {
     let entityTextContent = '';
     $(`[name=${entityId}]`, this.writer.editor?.getBody()).each(
-      (index: number, element: Element) => {
+      (_index: number, element: Element) => {
         entityTextContent += element.textContent;
       },
     );
@@ -366,7 +366,7 @@ class EntitiesManager {
     const prevHighlight = $('.entityHighlight', this.writer.editor?.getBody());
 
     if (prevHighlight.length !== 0) {
-      prevHighlight.each((index: number, element: Element) => {
+      prevHighlight.each((_index: number, element: Element) => {
         const $p = $(element);
         if ($p.hasClass('noteWrapper')) {
           $p.removeClass('entityHighlight');

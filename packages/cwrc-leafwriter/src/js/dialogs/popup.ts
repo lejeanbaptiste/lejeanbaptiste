@@ -32,7 +32,7 @@ class Popup implements LWDialogProps {
       draggable: false,
       minHeight: 30,
       minWidth: 40,
-      open: (event: JQuery.Event, ui: any) => {
+      open: (_event: JQuery.Event, _ui: any) => {
         this.$popupEl.parent().find('.ui-dialog-titlebar-close').hide();
       },
       position: {
@@ -209,7 +209,7 @@ class Popup implements LWDialogProps {
     this.$popupEl.parent().on('mouseout', () => this.doMouseOut());
   }
 
-  private attributeMouseover(event: JQuery.Event) {
+  private attributeMouseover(_event: JQuery.Event) {
     //@ts-ignore
     const target = event.target;
 
@@ -293,7 +293,7 @@ class Popup implements LWDialogProps {
     }, 1000);
   }
 
-  private linkMouseover(event: JQuery.Event) {
+  private linkMouseover(_event: JQuery.Event) {
     //@ts-ignore
     const target = event.target;
 
@@ -352,7 +352,7 @@ class Popup implements LWDialogProps {
     this.doPopup(content, 'note');
   }
 
-  private noteClick(event: JQuery.Event) {
+  private noteClick(_event: JQuery.Event) {
     // we're showing the note contents so hide the popup
     //! Deprecated
     // this.hidePopup();

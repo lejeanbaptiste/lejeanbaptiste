@@ -10,7 +10,7 @@ export const useKeyboardShortcut = () => {
     setVal('');
   };
 
-  const [, cancel] = useDebounce(() => setShortcut(val), 2000, [val]);
+  useDebounce(() => setShortcut(val), 2000, [val]);
 
   useEffect(() => {
     if (shortcut !== '') reset();

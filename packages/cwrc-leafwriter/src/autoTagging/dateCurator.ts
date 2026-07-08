@@ -1,4 +1,4 @@
-import type { Suggestion } from './types';
+import type { DateResolution, Suggestion } from './types';
 
 const SANMIAO_RESP = '#ljb-sanmiao';
 

@@ -19,7 +19,7 @@ export const TemplateDialog = ({ id = nanoid(), open = true }: IDialog) => {
 
   const changeLayout = (value: Layout) => setLayout(value);
 
-  const handleClose = (_event: MouseEvent, reason: string) => closeDialog(id);
+  const handleClose = () => closeDialog(id);
   const handleCancel = () => closeDialog(id);
   const handleSelect = (value: Resource) => setSelected(value);
 

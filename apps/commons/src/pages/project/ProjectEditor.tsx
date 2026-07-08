@@ -21,8 +21,7 @@ import { useEffect, useRef } from 'react';
 
 export const ProjectEditor = () => {
   const { contentHasChanged, readonly, resource } = useAppState().editor;
-  const { activeTabPath, cursorPositions, isProjectReady, openTabs, projectFilePath } =
-    useAppState().project;
+  const { cursorPositions, isProjectReady, projectFilePath } = useAppState().project;
   const { markTabDirty } = useActions().project;
 
   const divEl = useRef<HTMLDivElement>(null);

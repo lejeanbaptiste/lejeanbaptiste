@@ -127,10 +127,11 @@ export function AiPromptEditorDialog({
     setBusy(true);
     try {
       let next = saveProfileEdits(state, profileId, profileEdits());
+      const { label: _label, ...editedProfile } = profileEdits();
       next = addNamedProfile(next, trimmed, {
         ...selectedProfile,
         label: trimmed,
-        ...profileEdits(),
+        ...editedProfile,
       });
       await onSave(next);
       onClose();

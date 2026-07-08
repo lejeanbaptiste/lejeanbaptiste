@@ -45,6 +45,25 @@ declare global {
     sanmiaoListDateAuthority?: (options?: {
       civ?: string[];
     }) => Promise<import('../dateAuthority/types').DateAuthorityIndex>;
+    sanmiaoProposeDates?: (
+      text: string,
+      options?: import('../autoTagging/dates').SanmiaoProposeOptions,
+    ) => Promise<import('../autoTagging/dates').SanmiaoProposal[]>;
+    sanmiaoProposeDatesBatch?: (
+      chunks: string[],
+      options?: import('../autoTagging/dates').SanmiaoProposeOptions,
+    ) => Promise<import('../autoTagging/dates').SanmiaoProposal[][]>;
+    sanmiaoTagDatesBatch?: (
+      chunks: string[],
+      options?: import('../autoTagging/dates').SanmiaoProposeOptions,
+    ) => Promise<import('../autoTagging/dates').SanmiaoProposal[][]>;
+    sanmiaoResolveDatesBatch?: (
+      dates: string[],
+      options?: import('../autoTagging/dates').SanmiaoProposeOptions,
+    ) => Promise<(import('../autoTagging/dates').SanmiaoProposal | null)[]>;
+    onSanmiaoProgress?: (
+      callback: (progress: import('../autoTagging/dates').SanmiaoChunkProgressEvent) => void,
+    ) => () => void;
     showNativeMessageBox?: (options: {
       buttons?: string[];
       cancelId?: number;
@@ -54,6 +73,52 @@ declare global {
       title: string;
       type?: 'error' | 'info' | 'none' | 'question' | 'warning';
     }) => Promise<{ response: number; checkboxChecked: boolean }>;
+    updateProjectFileConfig?: (
+      projectFilePath: string,
+      patch: Record<string, unknown>,
+    ) => Promise<unknown>;
+    /** File I/O bridge, used by the entity store and authority pack readers. */
+    pathExists?: (filePath: string) => Promise<boolean>;
+    readFile?: (filePath: string) => Promise<string>;
+    writeFile?: (filePath: string, content: string) => Promise<void>;
+    ensureDirectory?: (dirPath: string) => Promise<void>;
+    statFile?: (filePath: string) => Promise<{ mtimeMs: number }>;
+    ignoreFileChange?: (filePath: string, mtimeMs: number) => Promise<void>;
+    /** Entity database folder (holds entities.xml and authority-packs/). */
+    getEntityDbFolder?: () => Promise<string | null>;
+    setEntityDbFolder?: (folder: string | null) => Promise<void>;
+    pickEntityDbFolder?: () => Promise<string | null>;
+    pickAuthorityPacksSource?: () => Promise<string | null>;
+    authorityPackStatuses?: () => Promise<
+      import('../autoTagging/packPaths').AuthorityPackStatus[]
+    >;
+    authorityPackRead?: (
+      packId: import('../autoTagging/packPaths').AuthorityPackId,
+    ) => Promise<string>;
+    authorityPackInstallFrom?: (
+      sourcePacksRoot: string,
+    ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;
+    /** CHGIS historical-places authority (installed from a downloaded archive). */
+    authorityChgisGet?: () => Promise<{
+      installed: boolean;
+      entityDbFolder: string | null;
+      entityDbReady: boolean;
+      layers?: string[];
+      placeCount?: number;
+      crosswalkCount?: number;
+      installedAt?: string;
+      diskBytes?: number;
+      lastError?: string;
+      busy: boolean;
+    }>;
+    pickChgisArchive?: () => Promise<string | null>;
+    authorityChgisInstallFromArchive?: (
+      archivePath: string,
+    ) => Promise<{ ok: boolean; error?: string; placeCount?: number }>;
+    authorityChgisRemove?: () => Promise<{ ok: boolean; error?: string }>;
+    onAuthorityChgisProgress?: (
+      callback: (progress: { phase: 'extracting' | 'compiling' | 'idle'; message: string }) => void,
+    ) => () => void;
   }
 
   type WorkspaceCursorPosition =

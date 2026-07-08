@@ -2,7 +2,7 @@ import type { Context } from '../';
 
 /** Skip debounced saves while restoring tabs so we do not persist partial/empty session state. */
 let suppressWorkspaceSessionSave = false;
-import { buildProjectSchemas, joinProjectPath, type ProjectBundle } from '@src/desktop/projectFile';
+import { buildProjectSchemas, type ProjectBundle } from '@src/desktop/projectFile';
 import { completeProjectOnboarding } from '@src/desktop/projectOnboarding';
 import {
   mergeMetadataIntoHeader,
@@ -982,7 +982,7 @@ export const saveActiveTab = async (
   context: Context,
   { content }: { content: string },
 ): Promise<{ success: boolean; content?: string; error?: string }> => {
-  const { state, actions } = context;
+  const { state } = context;
   if (!window.electronAPI || !state.project.activeTabPath) {
     return { success: false, error: 'No active file' };
   }
@@ -1310,7 +1310,6 @@ export const reloadDirectoryInTree = async ({ state }: Context, dirPath: string)
   );
   const children = await loadTreeLevel(dirPath, schemaDirPath, state.project.rootPath);
   const isProjectRoot = Boolean(state.project.rootPath && dirPath === state.project.rootPath);
-  const nodeFoundBefore = treeContainsPath(state.project.tree, dirPath);
   if (isProjectRoot) {
     state.project.tree = children;
     return;

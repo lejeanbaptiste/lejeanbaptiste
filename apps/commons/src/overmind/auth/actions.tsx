@@ -4,7 +4,6 @@ import type { AnnotationUserProfileProps, IdentityProps, User } from '@src/types
 import Cookies from 'js-cookie';
 import { Context } from '../index';
 import type { HTTPRequestError, LinkedAccount } from './effects';
-import { effects } from '.';
 
 const isHttpRequestError = (value: unknown): value is HTTPRequestError =>
   !!value &&
@@ -26,7 +25,7 @@ const getAvatarUrl = (identity: IdentityProps | undefined): string | undefined =
 };
 
 //* INIITIALIZE
-export const onInitializeOvermind = async ({ actions, effects, state }: Context, overmind: any) => {
+export const onInitializeOvermind = async ({ actions, effects, state }: Context) => {
   // Desktop app: skip cloud auth (Keycloak silent SSO is unreliable in Electron).
   if (window.electronAPI) {
     state.auth.userState = 'UNAUTHENTICATED';

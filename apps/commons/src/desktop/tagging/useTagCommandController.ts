@@ -574,7 +574,7 @@ export const useTagCommandController = () => {
         event.preventDefault();
         event.stopPropagation();
         setHighlightedIndex((current) => {
-          const next = visibleSuggestions.findIndex((t, i) => i > current && !t.invalid);
+          const next = visibleSuggestions.findIndex((suggestion, i) => i > current && !suggestion.invalid);
           return next === -1 ? current : next;
         });
         return;
@@ -584,7 +584,9 @@ export const useTagCommandController = () => {
         event.preventDefault();
         event.stopPropagation();
         setHighlightedIndex((current) => {
-          const validBelow = visibleSuggestions.map((t, i) => i).filter((i) => i < current && !visibleSuggestions[i].invalid);
+          const validBelow = visibleSuggestions
+            .map((_, i) => i)
+            .filter((i) => i < current && !visibleSuggestions[i].invalid);
           return validBelow.length ? validBelow[validBelow.length - 1] : current;
         });
       }

@@ -132,6 +132,8 @@ function explainFailure(
     }
     case 'rule-blocked':
       return `Blocked by a user tagging rule for <${suggestion.tag}>.`;
+    case 'conflict':
+      return `A different tag was already applied to this exact span in this batch (same-span alternatives are mutually exclusive).`;
     case 'unsupported-action':
       return `Unsupported action "${suggestion.action}".`;
     case 'unresolvable':

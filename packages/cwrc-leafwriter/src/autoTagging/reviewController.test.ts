@@ -169,7 +169,7 @@ describe('ReviewController', () => {
     c.accept();
     expect(c.counts().total).toBe(0);
   });
-};
+});
 
 describe('handleReviewKey', () => {
   it('maps the shared keyboard model to commands', () => {

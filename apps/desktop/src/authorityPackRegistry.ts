@@ -14,7 +14,6 @@ import { promisify } from 'node:util';
 import { AUTHORITY_DB_DIRNAME } from './authorityDatabases';
 import {
   AUTHORITY_PACK_REGISTRY,
-  PACKS_INDEX_FILENAME,
   PACKS_MANIFEST_FILENAME,
   packsIndexUrl,
   parsePacksIndex,
@@ -28,7 +27,6 @@ const execFileAsync = promisify(execFile);
 
 export {
   AUTHORITY_PACK_REGISTRY,
-  PACKS_INDEX_FILENAME,
   PACKS_MANIFEST_FILENAME,
   packsIndexUrl,
   parsePacksIndex,

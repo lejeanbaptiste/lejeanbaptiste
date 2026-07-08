@@ -20,4 +20,4 @@ export const WikipediaIcon = forwardRef<SVGSVGElement, SvgIconProps>(function Wi
   );
 });
 
-WikipediaIcon.muiName = 'Wikipedia';
+(WikipediaIcon as typeof WikipediaIcon & { muiName: string }).muiName = 'Wikipedia';

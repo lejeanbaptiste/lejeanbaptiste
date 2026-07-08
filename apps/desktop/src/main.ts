@@ -100,7 +100,7 @@ import {
   restoreTimeMachineSnapshotToProject,
   restoreTimeMachineSnapshotToDirectory,
 } from './timeMachine';
-import { sanmiaoListDateAuthority, sanmiaoProposeDates, sanmiaoProposeDatesBatch, sanmiaoResolveDatesBatch, sanmiaoTagDatesBatch, type SanmiaoProposeOptions, type SanmiaoChunkProgress } from './sanmiaoBridge';
+import { sanmiaoListDateAuthority, sanmiaoProposeDates, sanmiaoProposeDatesBatch, sanmiaoResolveDatesBatch, sanmiaoTagDatesBatch, type SanmiaoProposeOptions } from './sanmiaoBridge';
 
 const APP_NAME = 'Le Jean-Baptiste';
 

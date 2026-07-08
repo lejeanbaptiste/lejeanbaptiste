@@ -157,7 +157,7 @@ class XML2CWRC {
    * @param {Boolean} [includeComments] True to include comments in the output
    * @returns {String}
    */
-  buildEditorString(node: Element, includeComments?: boolean) {
+  buildEditorString(node: Element, _includeComments?: boolean) {
     let editorString = '';
 
     const doBuild = (node: Element) => {
@@ -254,7 +254,7 @@ class XML2CWRC {
 
     this._isLegacyDocument = this.isLegacyDocument(doc);
 
-    const hasRDF = this.processRDF(doc);
+    this.processRDF(doc);
 
     this.buildDocumentAndInsertEntities(doc)
       .then(() => {
@@ -666,7 +666,6 @@ class XML2CWRC {
           if (entry.getContent() === undefined) {
             this.writer.entitiesManager.highlightEntity(); // remove highlight
             this.writer.entitiesManager.highlightEntity(entry.getId());
-            const content = $('.entityHighlight', docRoot).text();
             this.writer.entitiesManager.highlightEntity();
           }
         } catch (error) {

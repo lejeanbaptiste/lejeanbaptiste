@@ -206,7 +206,7 @@ export class Leafwriter {
     return screenshot;
   }
 
-  async setContent(document: LWDocument) {
+  async setContent(_document: LWDocument) {
     // TODO
   }
 
