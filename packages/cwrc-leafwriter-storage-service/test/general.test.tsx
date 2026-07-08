@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
-import i18n from '@src/i18n';
-import { log, logEnabledFor, updateLocale } from '@src/utilities';
+import i18n from '@cwrc/leafwriter-storage-service/i18n';
+import { log, logEnabledFor, updateLocale } from '@cwrc/leafwriter-storage-service/utilities';
 import '@testing-library/jest-dom';
 
 describe('General', () => {

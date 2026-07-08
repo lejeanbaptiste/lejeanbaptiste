@@ -15,7 +15,7 @@ import {
   buildAuditCleanPrompt,
   suggestionResponseSchema,
 } from './prompts';
-import type { Suggestion, SuggestionAction, WhitespacePolicy } from './types';
+import type { Suggestion, SuggestionAction } from './types';
 
 export interface LlmAuditOptions extends ChunkOptions {
   /** Tags to audit — both the ones already applied and candidates for 'add'. */

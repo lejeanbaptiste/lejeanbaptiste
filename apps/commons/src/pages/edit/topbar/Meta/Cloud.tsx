@@ -6,7 +6,6 @@ import { styled } from '@mui/material/styles';
 import { useLeafWriter } from '@src/hooks';
 import { useAppState } from '@src/overmind';
 import { CloudSyncOutline } from 'mdi-material-ui';
-import { motion, type Variants } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
 const StyledBadge = styled(Badge)<BadgeProps>(() => ({

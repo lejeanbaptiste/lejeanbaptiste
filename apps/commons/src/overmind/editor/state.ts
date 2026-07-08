@@ -1,7 +1,7 @@
 import type { Resource } from '@src/types';
 import { TimerService, type TimerServiceProps } from './timerService';
 
-interface State {
+export interface State {
   autosave: boolean;
   contentHasChanged: boolean;
   contentLastSaved?: string;

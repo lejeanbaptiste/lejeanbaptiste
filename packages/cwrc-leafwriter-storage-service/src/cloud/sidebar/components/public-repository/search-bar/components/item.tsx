@@ -8,7 +8,7 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import type { PublicRepository } from '@src/types';
+import type { PublicRepository } from '@cwrc/leafwriter-storage-service/types';
 
 interface ItemProps {
   onSelect?: (publicRepository: PublicRepository) => void;

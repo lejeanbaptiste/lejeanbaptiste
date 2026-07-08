@@ -6,7 +6,7 @@ import type {
   StorageDialogConfig,
   StorageSource,
   Validate,
-} from '@src/types';
+} from '@cwrc/leafwriter-storage-service/types';
 import { saveAs } from 'file-saver';
 import { Context } from '../';
 import i18n from '../../i18n';

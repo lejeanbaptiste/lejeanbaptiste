@@ -10,7 +10,7 @@ export const Entities = () => {
   // const entityList = useRef<EntitiesList>(null)
 
   useEffect(() => {
-    const list = new EntitiesList({ writer, parentId: containerID });
+    new EntitiesList({ writer, parentId: containerID });
   }, []);
 
   return (

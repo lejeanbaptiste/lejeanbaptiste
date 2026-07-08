@@ -1,6 +1,6 @@
 import { Stack, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { CreateFolderDialog, CreateRepoDialog } from '@src/dialogs';
+import { CreateFolderDialog, CreateRepoDialog } from '@cwrc/leafwriter-storage-service/dialogs';
 import { useEffect, useState } from 'react';
 import { useWindowSize } from 'react-use';
 import { Collection } from './collection';

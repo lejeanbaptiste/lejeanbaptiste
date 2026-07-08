@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
-import StorageDialog from '@src/.';
-import type { StorageDialogProps } from '@src/types';
+import StorageDialog from '@cwrc/leafwriter-storage-service/.';
+import type { StorageDialogProps } from '@cwrc/leafwriter-storage-service/types';
 import '@testing-library/jest-dom';
 import '@testing-library/jest-dom/jest-globals';
 import { act, getByTestId, getByTitle, render, screen, waitFor } from '@testing-library/react';
@@ -38,6 +38,22 @@ const closeSaveDialog = async () => {
 };
 
 describe('Dialog Mobile', () => {
+  const installMobileMatchMedia = () => {
+    const matchMediaBK = window.matchMedia;
+    window.matchMedia = ((query: string) =>
+      ({
+        media: query,
+        matches: true,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }) as unknown as MediaQueryList) as typeof window.matchMedia;
+    return matchMediaBK;
+  };
+
   describe('Load', () => {
     describe.each([
       { name: 'from [Github]', preferProvider: 'github' },
@@ -45,15 +61,9 @@ describe('Dialog Mobile', () => {
     ])('$name', ({ preferProvider }) => {
       test('Open dialog & navigate', async () => {
         //* ALLOWS TO RESIZE WINDOW
-        const matchMediaBK = window.matchMedia;
-        //@ts-ignore
-        window.matchMedia = () => ({
-          matches: true, // <-- Set according to what you want to test
-          addListener: () => {},
-          removeListener: () => {},
-        });
+        const matchMediaBK = installMobileMatchMedia();
 
-        expect.assertions(6);
+        expect.hasAssertions();
 
         //resize window to load mobile menu
         global.innerWidth = 500;
@@ -66,7 +76,9 @@ describe('Dialog Mobile', () => {
 
         const storageDialog = screen.getByTestId('storage-dialog');
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Load');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() =>
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider),
+        );
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(), {
           timeout: 500,
@@ -102,15 +114,9 @@ describe('Dialog Mobile', () => {
     ])('$name', ({ preferProvider }) => {
       test('Open dialog & navigate', async () => {
         //* ALLOWS TO RESIZE WINDOW
-        const matchMediaBK = window.matchMedia;
-        //@ts-ignore
-        window.matchMedia = () => ({
-          matches: true, // <-- Set according to what you want to test
-          addListener: () => {},
-          removeListener: () => {},
-        });
+        const matchMediaBK = installMobileMatchMedia();
 
-        expect.assertions(6);
+        expect.hasAssertions();
 
         //resize window to load mobile menu
         global.innerWidth = 500;
@@ -127,7 +133,9 @@ describe('Dialog Mobile', () => {
 
         const storageDialog = screen.getByTestId('storage-dialog');
         expect(getByTestId(storageDialog, 'header-dialog-title')).toHaveTextContent('Save');
-        expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider);
+        await waitFor(() =>
+          expect(getByTestId(storageDialog, 'header-source')).toHaveTextContent(preferProvider),
+        );
 
         await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(), {
           timeout: 500,

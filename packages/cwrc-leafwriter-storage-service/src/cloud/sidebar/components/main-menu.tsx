@@ -1,6 +1,6 @@
 import { Stack } from '@mui/material';
-import { useActions } from '@src/overmind';
-import type { CollectionSource } from '@src/types';
+import { useActions } from '@cwrc/leafwriter-storage-service/overmind';
+import type { CollectionSource } from '@cwrc/leafwriter-storage-service/types';
 import { useTranslation } from 'react-i18next';
 import { SideButton } from './side-button';
 

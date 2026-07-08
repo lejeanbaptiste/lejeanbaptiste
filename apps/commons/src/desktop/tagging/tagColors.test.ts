@@ -100,7 +100,11 @@ describe('tagColors', () => {
 
   test('loadAndInjectTagColors caches css for later editor injection', async () => {
     const cssText = "*[_tag='persName'] { background-color: #abc; }";
-    (window as unknown as { electronAPI: { readFile: jest.Mock } }).electronAPI = {
+    (
+      window as unknown as {
+        electronAPI: { readFile: jest.Mock; pathExists: jest.Mock };
+      }
+    ).electronAPI = {
       readFile: jest.fn().mockResolvedValue(JSON.stringify({ version: 1, tags: { persName: { highlight: '#abc' } } })),
       pathExists: jest.fn().mockResolvedValue(true),
     };

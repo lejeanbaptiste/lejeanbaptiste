@@ -1,10 +1,14 @@
 import type { Editor } from 'tinymce';
 
 const STORAGE_KEY = 'leafWriterEditorZoom';
+const LEGACY_DEFAULT_ZOOM = 100;
 const MIN_ZOOM = 50;
 const MAX_ZOOM = 300;
 const ZOOM_STEP = 10;
-const DEFAULT_ZOOM = 100;
+// Start a bit larger so the visual editor feels aligned with the rest of the UI,
+// especially on macOS where the default document text can look undersized.
+const DEFAULT_ZOOM = 125;
+const MIGRATION_KEY = 'leafWriterEditorZoomMigratedTo125';
 
 const clampZoom = (level: number) =>
   Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(level)));
@@ -12,6 +16,14 @@ const clampZoom = (level: number) =>
 export const getEditorZoom = (): number => {
   const stored = Number(window.localStorage.getItem(STORAGE_KEY));
   if (!Number.isFinite(stored)) return DEFAULT_ZOOM;
+  if (
+    stored === LEGACY_DEFAULT_ZOOM &&
+    window.localStorage.getItem(MIGRATION_KEY) !== 'true'
+  ) {
+    window.localStorage.setItem(MIGRATION_KEY, 'true');
+    window.localStorage.setItem(STORAGE_KEY, String(DEFAULT_ZOOM));
+    return DEFAULT_ZOOM;
+  }
   return clampZoom(stored);
 };
 
@@ -20,7 +32,8 @@ const applyEditorZoom = (editor: Editor, level: number) => {
   if (!doc) return;
   // CSS zoom on the iframe's root scales the document content (including the
   // fixed-px tag pills) without affecting the surrounding application UI.
-  doc.documentElement.style.zoom = level === DEFAULT_ZOOM ? '' : `${level}%`;
+  // 100% is the browser-native no-op value, regardless of DEFAULT_ZOOM.
+  doc.documentElement.style.zoom = level === LEGACY_DEFAULT_ZOOM ? '' : `${level}%`;
 };
 
 export const setEditorZoom = (editor: Editor, level: number) => {

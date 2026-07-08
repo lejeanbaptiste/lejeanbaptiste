@@ -1,4 +1,4 @@
-import { config } from '@src/overmind';
+import { config } from '@cwrc/leafwriter-storage-service/overmind';
 import { createOvermindMock, IContext } from 'overmind';
 
 export let overmind: IContext<typeof config>;

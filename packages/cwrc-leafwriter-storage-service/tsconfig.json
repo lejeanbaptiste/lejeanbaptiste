@@ -19,7 +19,10 @@
     "noUnusedParameters": true,
     "outDir": "lib",
     "paths": {
-      "@src/*": ["./src/*"]
+      "@src/*": ["./src/*"],
+      "@cwrc/leafwriter-storage-service": ["./src/index.tsx"],
+      "@cwrc/leafwriter-storage-service/.": ["./src/index.tsx"],
+      "@cwrc/leafwriter-storage-service/*": ["./src/*"]
     },
     "preserveWatchOutput": true,
     "resolveJsonModule": true,

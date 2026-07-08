@@ -618,7 +618,7 @@ export const tinymceWrapperInit = function ({
     forced_root_block: writer.schemaManager.getBlockTag(),
     keep_styles: false, // false, otherwise tinymce interprets our spans as style elements
 
-    paste_postprocess: (plugin: any, args: any) => {
+    paste_postprocess: (_plugin: any, args: any) => {
       // Opt-in: strip inter-character whitespace from pasted content too, so
       // pasted spaces/line breaks between East Asian characters don't show as
       // gaps. Runs before normalization so downstream sees the cleaned text.

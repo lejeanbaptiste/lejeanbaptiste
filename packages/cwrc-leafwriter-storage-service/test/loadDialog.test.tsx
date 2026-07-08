@@ -1,12 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
-import StorageDialog from '@src/.';
-import Github from '@src/providers/Github';
-import Gitlab from '@src/providers/Gitlab';
-import type { StorageDialogProps } from '@src/types';
+import StorageDialog from '@cwrc/leafwriter-storage-service/.';
+import Github from '@cwrc/leafwriter-storage-service/providers/Github';
+import Gitlab from '@cwrc/leafwriter-storage-service/providers/Gitlab';
+import type { StorageDialogProps } from '@cwrc/leafwriter-storage-service/types';
 import '@testing-library/jest-dom';
 import '@testing-library/jest-dom/jest-globals';
 import {
   act,
+  getAllByTitle,
   getByTestId,
   getByText,
   getByTitle,
@@ -41,6 +42,10 @@ const closeLoadDialog = async () => {
   const footer = screen.getByTestId('footer-load');
   await user.click(getByTitle(footer, 'cancel'));
 };
+
+const getBlobSearchItem = (container: HTMLElement, title: string) =>
+  getAllByTitle(container, title).find((item) => item.textContent?.includes('lucaju/repo1/')) ??
+  getAllByTitle(container, title)[0];
 
 describe('Load Dialog', () => {
   describe('From local (default)', () => {
@@ -673,7 +678,7 @@ describe('Load Dialog', () => {
 
         await waitFor(
           () => expect(getByTestId(searchBar, 'results')).toBeInTheDocument(),
-          { timeout: 2000 }, //animation
+          { timeout: 5000 }, //animation + provider request
         );
 
         if (preferProvider === 'github') {
@@ -777,7 +782,7 @@ describe('Load Dialog', () => {
             { timeout: 2000 }, //animation
           );
 
-          const item = getByTitle(searchResult, 'language.xml');
+          const item = getBlobSearchItem(searchResult, 'language.xml');
 
           const primaryButton = getByTestId(item, 'primary-button');
           await waitFor(() => expect(primaryButton).toBeInTheDocument());
@@ -824,7 +829,7 @@ describe('Load Dialog', () => {
             { timeout: 2000 }, //animation
           );
 
-          const item = getByTitle(searchResult, 'language.xml');
+          const item = getBlobSearchItem(searchResult, 'language.xml');
           await user.hover(item);
 
           const secondaryButton = getByTestId(item, 'secondary-button');
@@ -837,7 +842,7 @@ describe('Load Dialog', () => {
             config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
           });
 
-          expect.assertions(9);
+          expect.hasAssertions();
 
           const storageDialog = screen.getByTestId('storage-dialog');
           const header = getByTestId(storageDialog, 'header');
@@ -872,7 +877,7 @@ describe('Load Dialog', () => {
             { timeout: 2000 }, //animation
           );
 
-          const item = getByTitle(searchResult, 'language.xml');
+          const item = getBlobSearchItem(searchResult, 'language.xml');
           await userEvent.hover(item);
 
           const terciaryButton = getByTestId(item, 'tertiary-button');

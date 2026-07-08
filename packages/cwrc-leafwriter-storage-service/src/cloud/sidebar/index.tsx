@@ -1,6 +1,6 @@
 import { Stack, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useAppState } from '@src/overmind';
+import { useAppState } from '@cwrc/leafwriter-storage-service/overmind';
 import { useEffect, useState } from 'react';
 import { MainMenu, MobileMenu, PublicRepositories } from './components';
 

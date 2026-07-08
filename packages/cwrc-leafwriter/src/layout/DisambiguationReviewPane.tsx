@@ -2,7 +2,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import {
   Alert,
   Box,
-  CircularProgress,
   IconButton,
   LinearProgress,
   Stack,

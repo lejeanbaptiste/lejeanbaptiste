@@ -1,4 +1,4 @@
-import type { DialogBarProps } from '@src/dialogs';
+import type { DialogBarProps } from '@cwrc/leafwriter-storage-service/dialogs';
 import { nanoid } from 'nanoid';
 import { Context } from '../';
 

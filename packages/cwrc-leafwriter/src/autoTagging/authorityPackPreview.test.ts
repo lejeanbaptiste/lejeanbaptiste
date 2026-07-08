@@ -1,9 +1,10 @@
+import type { AuthorityPackId } from './packPaths';
 import { countAuthorityPackStrings } from './authorityPackPreview';
 
 const ndjson = (rows: object[]) => rows.map((row) => JSON.stringify(row)).join('\n');
 
 describe('countAuthorityPackStrings', () => {
-  const packs = {
+  const packs: Partial<Record<AuthorityPackId, string>> = {
     'cbdb-persons': ndjson([
       {
         source: 'CBDB',
@@ -36,7 +37,7 @@ describe('countAuthorityPackStrings', () => {
     ]),
   };
 
-  const readPackFile = async (packId: keyof typeof packs) => packs[packId] ?? '';
+  const readPackFile = async (packId: AuthorityPackId) => packs[packId] ?? '';
 
   it('counts per UI pack and unions wikidata child packs', async () => {
     const installed = new Set([

@@ -34,7 +34,7 @@ describe('searchXPath translation-file exclusion', () => {
   });
 
   test('excludes companion translation files from project scope', async () => {
-    window.electronAPI = {
+    const electronAPI = {
       ...originalElectronAPI,
       readDirectory: jest.fn().mockResolvedValue([
         { name: 'chapter1.xml', path: '/proj/chapter1.xml', isDirectory: false },
@@ -45,7 +45,8 @@ describe('searchXPath translation-file exclusion', () => {
         },
       ]),
       readFile: jest.fn().mockResolvedValue(sampleXml),
-    } as unknown as typeof window.electronAPI;
+    };
+    window.electronAPI = electronAPI as unknown as typeof window.electronAPI;
 
     const { results } = await searchXPath({
       activeTabPath: null,
@@ -57,7 +58,7 @@ describe('searchXPath translation-file exclusion', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0]?.filePath).toBe('/proj/chapter1.xml');
-    expect(window.electronAPI.readFile).toHaveBeenCalledTimes(1);
+    expect(electronAPI.readFile).toHaveBeenCalledTimes(1);
   });
 
   test('refuses to search a translation file directly (currentFile scope)', async () => {

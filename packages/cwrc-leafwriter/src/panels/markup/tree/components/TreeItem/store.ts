@@ -8,7 +8,7 @@ const _detailsHoverTimeOutAtom = atom(TIME_OUT_HOVER);
 export const detailsHoverTimeOutAtom = atom(
   (get) => get(_detailsHoverTimeOutAtom),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  (get, set, value?) => {
+  (_get: any, set: any, _value?: any) => {
     set(_detailsHoverTimeOutAtom, 0);
     clearTimeout(timer);
     timer = setTimeout(() => {

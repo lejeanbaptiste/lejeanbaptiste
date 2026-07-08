@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
-import StorageDialog from '@src/.';
-import type { StorageDialogProps } from '@src/types';
+import StorageDialog from '@cwrc/leafwriter-storage-service/.';
+import type { StorageDialogProps } from '@cwrc/leafwriter-storage-service/types';
 import '@testing-library/jest-dom';
 import '@testing-library/jest-dom/jest-globals';
 import {
@@ -198,7 +198,7 @@ describe('Save Dialog', () => {
           type: 'save',
         });
 
-        expect.assertions(7);
+        expect.assertions(8);
 
         const storageDialog = screen.getByTestId('storage-dialog');
         const header = getByTestId(storageDialog, 'header');
@@ -214,6 +214,10 @@ describe('Save Dialog', () => {
 
         const repo = getByTitle(repositories, 'repo1');
         await user.dblClick(getByTestId(repo, 'primary-button'));
+
+        await waitFor(() =>
+          expect(getByTestId(storageDialog, 'topbar:create-folder')).toBeInTheDocument(),
+        );
 
         const createFolderButton = getByTestId(storageDialog, 'topbar:create-folder');
         await user.click(createFolderButton);

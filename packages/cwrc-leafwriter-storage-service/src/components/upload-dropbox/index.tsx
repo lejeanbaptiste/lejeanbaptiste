@@ -1,6 +1,6 @@
 import { Stack } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
-import type { MimeTypeSupported, FileDetail } from '@src/types';
+import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
+import type { MimeTypeSupported, FileDetail } from '@cwrc/leafwriter-storage-service/types';
 import { createRef, useMemo } from 'react';
 import Dropzone, { type DropzoneRef } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';

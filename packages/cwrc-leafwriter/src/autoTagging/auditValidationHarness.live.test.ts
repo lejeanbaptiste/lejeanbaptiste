@@ -31,7 +31,9 @@ import { goldMentionsForAutoCorpus, runManualAutoAuditHarness } from './validati
 
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser', 'XMLSerializer'] as const;
 
-function installDomGlobals(window: Pick<Window, (typeof DOM_GLOBALS)[number]>): void {
+function installDomGlobals(
+  window: { [K in (typeof DOM_GLOBALS)[number]]: unknown },
+): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
   }

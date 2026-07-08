@@ -9,9 +9,9 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { useActions, useAppState } from '@src/overmind';
-import type { Content as ContentProps } from '@src/types';
-import type { LatestCommit } from '@src/types/Provider';
+import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
+import type { Content as ContentProps } from '@cwrc/leafwriter-storage-service/types';
+import type { LatestCommit } from '@cwrc/leafwriter-storage-service/types/Provider';
 import { formatDistance } from 'date-fns';
 import { AnimatePresence } from 'motion/react';
 import { useState } from 'react';

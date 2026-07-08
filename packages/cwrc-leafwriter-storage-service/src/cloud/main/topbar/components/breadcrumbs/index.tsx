@@ -7,7 +7,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useActions, useAppState } from '@src/overmind';
+import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
 import { useTranslation } from 'react-i18next';
 import { Crumb } from './crumb';
 

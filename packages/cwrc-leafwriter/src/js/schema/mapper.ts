@@ -622,7 +622,7 @@ class Mapper {
       entityTagNames = entityTagNames.map((name) => `[_tag="${name}"]`);
 
       const matches = $(entityTagNames.join(','), this.writer.editor?.getBody()).filter(
-        (index, element) => {
+        (_index, element) => {
           if (element.getAttribute('_entity') === 'true') return false;
 
           if ($(element).parents(`[_tag="${headerTag}"]`).length !== 0) return false;

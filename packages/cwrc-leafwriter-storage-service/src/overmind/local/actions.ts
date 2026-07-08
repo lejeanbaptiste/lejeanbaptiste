@@ -1,6 +1,6 @@
 import { Context } from '../';
-import { Resource } from '@src/types';
-import { log } from '@src//utilities';
+import { Resource } from '@cwrc/leafwriter-storage-service/types';
+import { log } from '@cwrc/leafwriter-storage-service/utilities';
 
 export const uploadFile = async (_context: Context, file: File): Promise<string | null> => {
   return new Promise((resolve, reject) => {

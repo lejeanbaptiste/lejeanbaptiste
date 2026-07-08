@@ -1,4 +1,4 @@
-import { Locales } from '@src/i18n';
+import { Locales } from '@cwrc/leafwriter-storage-service/i18n';
 import type { IconName } from '../icons';
 import type { ProviderAuth } from './Provider';
 export * from './assert';

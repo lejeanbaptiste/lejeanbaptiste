@@ -464,10 +464,10 @@ export const tei: SchemaMappingProps = {
       const $tag = $(tag);
       if ($tag.attr('_tag') === 'graphic') handleGraphics($tag);
     },
-    documentLoaded: (success, body) => {
+    documentLoaded: (_success: any, body: any) => {
       $(body)
         .find('*[_tag="graphic"]')
-        .each((index, element) => handleGraphics($(element)));
+        .each((_index: any, element: any) => handleGraphics($(element)));
     },
   },
 };

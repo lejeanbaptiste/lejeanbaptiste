@@ -359,7 +359,7 @@ const getChildrenJSON = (
 
     let duplicate = false;
 
-    children.every((entry, index, array) => {
+    children.every((entry, _index: any, _array: any) => {
       if (entry.name === child['@name']) {
         duplicate = true;
         return false;
@@ -536,8 +536,6 @@ const queryDown = (context: any, matchingFunc: Function, processRefs = false) =>
         if (processRefs === true && key === 'ref') {
           const refs = isArray(prop) ? prop : [prop];
 
-          // eslint-disable-next-line no-unused-vars
-          const defs = [];
           for (let j = 0; j < refs.length; j++) {
             const name = refs[j]['@name'];
             //@ts-ignore

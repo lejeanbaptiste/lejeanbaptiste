@@ -255,7 +255,7 @@ class Triple {
 
     let entitiesString = '';
 
-    this.writer.entitiesManager.eachEntity((id: any, entity: Entity) => {
+    this.writer.entitiesManager.eachEntity((_id: any, entity: Entity) => {
       entitiesString += this.buildEntity(entity);
     });
 
@@ -268,7 +268,7 @@ class Triple {
       .on('mouseleave', function () {
         if (!$(this).hasClass('selected')) $(this).removeClass('over');
       })
-      .on('click', function (event) {
+      .on('click', function (_event) {
         $(this).siblings('li').removeClass('selected');
         $(this).removeClass('over').toggleClass('selected');
         $(this).parents('.column').find('input').val('');

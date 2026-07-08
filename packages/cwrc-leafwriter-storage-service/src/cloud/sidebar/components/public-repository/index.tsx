@@ -1,9 +1,9 @@
 import SearchIcon from '@mui/icons-material/Search';
 import { Box, IconButton, Stack, Typography } from '@mui/material';
-import { db } from '@src/db';
-import { useActions, useAppState } from '@src/overmind';
-import type { Owner, PublicRepository } from '@src/types';
-import { log } from '@src/utilities';
+import { db } from '@cwrc/leafwriter-storage-service/db';
+import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
+import type { Owner, PublicRepository } from '@cwrc/leafwriter-storage-service/types';
+import { log } from '@cwrc/leafwriter-storage-service/utilities';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { debounce } from 'lodash';
 import { AnimatePresence } from 'motion/react';
