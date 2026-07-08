@@ -16,6 +16,7 @@ import WebpackBar from 'webpackbar';
 const isDev = process.env.NODE_ENV === 'development';
 
 const relPathToPackages = path.resolve(__dirname, '..', '..', 'packages');
+const storageServiceSrc = path.join(relPathToPackages, 'cwrc-leafwriter-storage-service', 'src');
 
 const entry: webpack.EntryObject = {
   app: [path.resolve(__dirname, 'src', 'index.tsx')],
@@ -187,6 +188,47 @@ const webpackConfig: webpack.Configuration = {
         'languageCodes.ts',
       ),
       '@cwrc/leafwriter': path.resolve(relPathToPackages, 'cwrc-leafwriter', 'src', 'index.tsx'),
+      '@cwrc/leafwriter-storage-service$': path.join(storageServiceSrc, 'index.tsx'),
+      '@cwrc/leafwriter-storage-service/components$': path.join(
+        storageServiceSrc,
+        'components',
+        'index.ts',
+      ),
+      '@cwrc/leafwriter-storage-service/db$': path.join(storageServiceSrc, 'db', 'index.ts'),
+      '@cwrc/leafwriter-storage-service/dialog$': path.join(
+        storageServiceSrc,
+        'StorageDialog.tsx',
+      ),
+      '@cwrc/leafwriter-storage-service/dialogs$': path.join(
+        storageServiceSrc,
+        'dialogs',
+        'index.ts',
+      ),
+      '@cwrc/leafwriter-storage-service/headless$': path.join(
+        storageServiceSrc,
+        'headless.ts',
+      ),
+      '@cwrc/leafwriter-storage-service/i18n$': path.join(storageServiceSrc, 'i18n.ts'),
+      '@cwrc/leafwriter-storage-service/icons$': path.join(
+        storageServiceSrc,
+        'icons',
+        'index.tsx',
+      ),
+      '@cwrc/leafwriter-storage-service/overmind$': path.join(
+        storageServiceSrc,
+        'overmind',
+        'index.ts',
+      ),
+      '@cwrc/leafwriter-storage-service/types$': path.join(
+        storageServiceSrc,
+        'types',
+        'index.ts',
+      ),
+      '@cwrc/leafwriter-storage-service/utilities$': path.join(
+        storageServiceSrc,
+        'utilities',
+        'index.ts',
+      ),
     },
     extensions: ['.tsx', '.ts', '.js', '.json'],
     fallback: {

@@ -1,12 +1,11 @@
 import type { AiPromptProfile } from './aiPromptProfiles';
 import {
   DEFAULT_VALIDATION_TASK_TEXT,
-  promptVersionWithProfile,
   resolveValidationTaskText,
 } from './aiPromptProfiles';
 import type { AiValidationResult, Suggestion } from './types';
 import type { LlmClient } from './llmClient';
-import { chunkDocument, type ChunkOptions } from './chunk';
+import type { ChunkOptions } from './chunk';
 
 /**
  * Validates suggestions using LLM to identify incorrect tags and pre-select

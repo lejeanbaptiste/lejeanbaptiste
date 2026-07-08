@@ -51,18 +51,16 @@ import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded';
 import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
+import CloudSyncOutlineIcon from 'mdi-material-ui/CloudSyncOutline';
+import DotsCircleIcon from 'mdi-material-ui/DotsCircle';
+import GitlabIcon from 'mdi-material-ui/Gitlab';
+import LabelMultipleOutlineIcon from 'mdi-material-ui/LabelMultipleOutline';
+import LabelVariantOutlineIcon from 'mdi-material-ui/LabelVariantOutline';
+import OrderAlphabeticalAscendingIcon from 'mdi-material-ui/OrderAlphabeticalAscending';
+import PlaylistCheckIcon from 'mdi-material-ui/PlaylistCheck';
+import ShuffleVariantIcon from 'mdi-material-ui/ShuffleVariant';
+import TagPlusIcon from 'mdi-material-ui/TagPlus';
 import { SvgIcon, type SvgIconProps, createSvgIcon } from '@mui/material';
-import {
-  CloudSyncOutline,
-  DotsCircle,
-  Gitlab,
-  LabelMultipleOutline,
-  LabelVariantOutline,
-  OrderAlphabeticalAscending,
-  PlaylistCheck,
-  ShuffleVariant,
-  TagPlus,
-} from 'mdi-material-ui';
 import type { IconBaseProps, IconType } from 'react-icons';
 import { FaBoxOpen, FaUserAlt, FaUsers } from 'react-icons/fa';
 import { ImBook } from 'react-icons/im';
@@ -123,7 +121,7 @@ const icons = {
   close: CloseIcon,
   CloseIcon: CloseIcon,
   cloud: CloudQueueIcon,
-  cloudSync: CloudSyncOutline,
+  cloudSync: CloudSyncOutlineIcon,
   code: CodeRoundedIcon,
   CodeRoundedIcon: CodeRoundedIcon,
   computer: ComputerIcon,
@@ -134,9 +132,9 @@ const icons = {
   delete: ClearIcon,
   disambiguate: DisambiguateIcon,
   documentation: QuizRoundedIcon,
-  DotsCircle: DotsCircle,
-  draft: DotsCircle,
-  dragAndDrop: ShuffleVariant,
+  DotsCircle: DotsCircleIcon,
+  draft: DotsCircleIcon,
+  dragAndDrop: ShuffleVariantIcon,
   edit: EditIcon,
   entities: StreamIcon,
   entitiesTag: StyleOutlinedIcon,
@@ -149,21 +147,21 @@ const icons = {
   FullscreenExitRoundedIcon: FullscreenExitRoundedIcon,
   FullscreenRoundedIcon: FullscreenRoundedIcon,
   github: GitHubIcon,
-  gitlab: Gitlab,
+  gitlab: GitlabIcon,
   HelpCenterIcon: HelpCenterIcon,
   imageViewer: PhotoLibraryRoundedIcon,
-  insertTag: TagPlus,
+  insertTag: TagPlusIcon,
   invalid: WarningAmberRoundedIcon,
   keyword: VpnKeyRoundedIcon,
   LabelImportantRoundedIcon: LabelImportantRoundedIcon,
   LabelRoundedIcon: LabelRoundedIcon,
-  LabelVariantOutline: LabelVariantOutline,
+  LabelVariantOutline: LabelVariantOutlineIcon,
   link: LinkRoundedIcon,
   LinkRoundedIcon: LinkRoundedIcon,
   merge: MergeRoundedIcon,
   MergeRoundedIcon: MergeRoundedIcon,
   note: StickyNote2Icon,
-  OrderAlphabeticalAscending: OrderAlphabeticalAscending,
+  OrderAlphabeticalAscending: OrderAlphabeticalAscendingIcon,
   organization: asMuiIcon(FaUsers),
   organizationDraft: PeopleOutlineOutlinedIcon,
   PanoramaFishEyeIcon: PanoramaFishEyeIcon,
@@ -178,7 +176,7 @@ const icons = {
   placeDraft: PlaceOutlinedIcon,
   PlaceIcon: PlaceIcon,
   PlaceOutlinedIcon: PlaceOutlinedIcon,
-  PlaylistCheck: PlaylistCheck,
+  PlaylistCheck: PlaylistCheckIcon,
   Privacy: PrivacyTipOutlinedIcon,
   QuizRoundedIcon: QuizRoundedIcon,
   reject: ClearIcon,
@@ -188,17 +186,17 @@ const icons = {
   settings: SettingsRoundedIcon,
   SettingsRoundedIcon: SettingsRoundedIcon,
   shortText: ShortTextIcon,
-  showTagsOff: LabelVariantOutline,
+  showTagsOff: LabelVariantOutlineIcon,
   showTagsOn: LabelImportantRoundedIcon,
-  ShuffleVariant: ShuffleVariant,
-  sortAlphabetically: OrderAlphabeticalAscending,
+  ShuffleVariant: ShuffleVariantIcon,
+  sortAlphabetically: OrderAlphabeticalAscendingIcon,
   sortLinear: ArrowDownwardIcon,
   sortType: LabelRoundedIcon,
   split: CallSplitIcon,
   StickyNote2Icon: StickyNote2Icon,
   structure: AccountTreeRoundedIcon,
-  tagMultiSelection: LabelMultipleOutline,
-  TagPlus: TagPlus,
+  tagMultiSelection: LabelMultipleOutlineIcon,
+  TagPlus: TagPlusIcon,
   TagRoundedIcon: TagRoundedIcon,
   tags: LabelRoundedIcon,
   textNode: TagRoundedIcon,
@@ -211,7 +209,7 @@ const icons = {
   translate: TranslateRoundedIcon,
   TranslateRoundedIcon: TranslateRoundedIcon,
   unknown: HelpCenterIcon,
-  validate: PlaylistCheck,
+  validate: PlaylistCheckIcon,
   vetted: PanoramaFishEyeIcon,
   VpnKeyRoundedIcon: VpnKeyRoundedIcon,
   WarningRoundedIcon: WarningRoundedIcon,

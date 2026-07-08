@@ -19,7 +19,7 @@ npm run wikidata:compile-zh-ja-orgs-works
 ```
 
 **Database**
-- [ ] viewer / entities
+- [ ] viewer / entities / lookup
 - [ ] split and merge + update in XML
 
 **Schema editing**
