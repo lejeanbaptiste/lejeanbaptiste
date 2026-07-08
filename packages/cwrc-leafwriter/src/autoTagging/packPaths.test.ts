@@ -3,7 +3,6 @@ import {
   persistedPacksFromUi,
   uiPacksFromPersisted,
   WIKIDATA_PERSON_CHILD_PACK_IDS,
-  type AuthorityPackId,
 } from './packPaths';
 
 describe('authority pack UI helpers', () => {

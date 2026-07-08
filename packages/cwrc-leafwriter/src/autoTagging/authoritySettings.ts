@@ -78,7 +78,9 @@ export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings |
   const raw = window.__leafWriterProject?.getAutoTaggingAuthoritySettings?.();
   if (!raw) return undefined;
   return {
-    packs: raw.packs,
+    // Stored as a plain string[] in the project file; uiPacksFromPersisted/
+    // packsRecordFromSettings narrow it back to known ids.
+    packs: raw.packs as AuthorityPackId[] | undefined,
     dateFilter: raw.dateFilter,
     yearStart: raw.yearStart,
     yearEnd: raw.yearEnd,

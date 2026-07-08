@@ -25,4 +25,4 @@ export const DisambiguateIcon = forwardRef<SVGSVGElement, SvgIconProps>(function
   );
 });
 
-DisambiguateIcon.muiName = 'Disambiguate';
+(DisambiguateIcon as typeof DisambiguateIcon & { muiName: string }).muiName = 'Disambiguate';

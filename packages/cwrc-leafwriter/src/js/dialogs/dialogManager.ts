@@ -93,7 +93,7 @@ const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
 
   //@ts-ignore
   $.extend($.ui.tooltip.prototype.options, {
-    create: function (event: JQuery.Event, ui: any) {
+    create: function (_event: JQuery.Event, _ui: any) {
       //@ts-ignore
       const instance = $(this).tooltip('instance');
       instance.liveRegion = instance.liveRegion.appendTo($cwrcDialogWrapper);

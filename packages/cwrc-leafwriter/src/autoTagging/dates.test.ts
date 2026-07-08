@@ -12,8 +12,8 @@ import {
 const policy = 'ignore' as const;
 
 function docFromBody(inner: string): Document {
-  const xml = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>${inner}</body></text></TEI>`;
-  return new DOMParser().parseFromString(xml, 'application/xml');
+  const source = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>${inner}</body></text></TEI>`;
+  return new DOMParser().parseFromString(source, 'application/xml');
 }
 
 describe('sequentialMatchOffsets', () => {
@@ -98,7 +98,7 @@ describe('dateResolveFromDocument', () => {
       '<p><date cert="low"><era>義熙</era><year>元年</year></date>，<date cert="low"><year>三年</year></date></p>',
     );
     const suggestions = await dateResolveFromDocument(doc, policy, async (dates) =>
-      dates.map((xml, index) =>
+      dates.map((_date, index) =>
         index === 0
           ? {
               date_index: 0,

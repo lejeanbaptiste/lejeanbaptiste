@@ -109,4 +109,44 @@ describe('dictionaryTag', () => {
     expect(suggestions[0]!.anchor.surface).toBe('洛陽');
     expect(suggestions[0]!.anchor.contextBefore).toContain('outside');
   });
+
+  it('emits one suggestion per tag when the same string carries several tags', () => {
+    const doc = parse(TEI);
+    const suggestions = dictionaryTag(
+      doc,
+      [
+        { string: '張衡', tag: 'persName' },
+        { string: '張衡', tag: 'title' },
+      ],
+      'ignore',
+      'test-table',
+    );
+
+    const zhang = suggestions.filter((s) => s.anchor.surface === '張衡');
+    expect(zhang.map((s) => s.tag).sort()).toEqual(['persName', 'title']);
+    // Same span: alternatives share xpath + offset, so the review walk can pair them.
+    expect(zhang[0]!.anchor.xpath).toBe(zhang[1]!.anchor.xpath);
+    expect(zhang[0]!.anchor.offset).toBe(zhang[1]!.anchor.offset);
+    // Rationale flags the ambiguity for the reviewer.
+    expect(zhang[0]!.rationale).toContain('ambiguous');
+    expect(zhang[0]!.rationale).toContain('<title>');
+  });
+
+  it('only offers the alternative tag when the span is already inside one of them', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName>張衡</persName>在此。</p></TEI>',
+    );
+    const suggestions = dictionaryTag(
+      doc,
+      [
+        { string: '張衡', tag: 'persName' },
+        { string: '張衡', tag: 'title' },
+      ],
+      'ignore',
+    );
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]!.tag).toBe('title');
+    // Not ambiguous anymore — persName was ruled out by the ancestor check.
+    expect(suggestions[0]!.rationale).not.toContain('ambiguous');
+  });
 });

@@ -361,14 +361,6 @@ export interface ElectronAPI {
 }
 
 declare global {
-  type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup' | 'entities';
-  type DesktopRightPanelTab =
-    | 'fileMetadata'
-    | 'attributes'
-    | 'imageViewer'
-    | 'validation'
-    | 'translation';
-
   interface JQuery {
     dialog(method: 'option', optionName: string): any;
     dialog(...args: unknown[]): JQuery;

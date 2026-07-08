@@ -1,11 +1,11 @@
 import { Icon, useTheme } from '@mui/material';
 import { useMemo } from 'react';
-import { ItemProps } from '../';
+import { type IconLeafWriter } from '../../../../../icons';
 import { isEntityType } from '../../../../../types';
 import { useContextmenu } from '../../../hooks';
 export interface IconLeftProps {
   entityType?: string;
-  icon: Exclude<ItemProps['icon'], undefined>;
+  icon: IconLeafWriter;
 }
 
 export const IconLeft = ({ entityType, icon }: IconLeftProps) => {

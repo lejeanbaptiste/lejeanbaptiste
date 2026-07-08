@@ -1,10 +1,10 @@
 import { CircularProgress, Icon } from '@mui/material';
 import { useMemo } from 'react';
-import { ItemProps } from '../';
+import { type IconLeafWriter } from '../../../../../icons';
 import { useContextmenu } from '../../../hooks';
 
 export interface IconRightProps {
-  icon: Exclude<ItemProps['icon'], undefined>;
+  icon: IconLeafWriter;
   isLoading?: boolean;
   size?: number;
 }

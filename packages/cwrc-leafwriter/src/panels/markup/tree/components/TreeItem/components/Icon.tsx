@@ -2,6 +2,7 @@ import HorizontalRuleRoundedIcon from '@mui/icons-material/HorizontalRuleRounded
 import {
   Box,
   Icon as MuiIcon,
+  type SvgIconProps,
   SvgIconTypeMap,
   useColorScheme,
   useTheme,
@@ -12,7 +13,7 @@ import { useMemo } from 'react';
 
 type IconProps = {
   color?: string;
-  icon?: OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & { muiName: string };
+  icon?: NonNullable<SvgIconProps['component']>;
   isEntity?: boolean;
   selected?: boolean;
 };

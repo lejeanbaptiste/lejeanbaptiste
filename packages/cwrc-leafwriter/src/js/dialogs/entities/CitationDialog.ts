@@ -101,7 +101,7 @@ class CitationDialog implements SchemaDialog {
     });
 
     //event
-    this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any, dialog: DialogForm) => {
+    this.dialog.$el.on('beforeShow', (_event: JQuery.Event, config: any, dialog: DialogForm) => {
       //? Is this still need it?
       if (mappingID === 'orlando' || mappingID === 'cwrcEntry') {
         $(`#${id}_type`).val('citation');

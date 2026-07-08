@@ -254,11 +254,6 @@ class WorkDialog implements SchemaDialog {
   private titleLevelField(id: string) {
     const fieldTitle = 'This work is';
 
-    const valueEncoding =
-      this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
-        ? 'type' //orlando and cwrcEntry
-        : 'level'; //tei & teiLite
-
     const dataMapping =
       this.mappingID === 'orlando'
         ? 'TITLETYPE'

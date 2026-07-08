@@ -20,6 +20,7 @@ export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   severity?: SeverityType;
   title?: string;
   content?: string;
+  notice?: string;
 }
 
 export type DialogType =

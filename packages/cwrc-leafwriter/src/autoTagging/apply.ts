@@ -8,6 +8,7 @@ export type ApplyOutcome =
   | 'already-tagged'
   | 'schema-blocked'
   | 'rule-blocked'
+  | 'conflict'
   | 'unsupported-action';
 
 export interface ApplyResult {
@@ -83,10 +84,29 @@ export async function applySuggestions(
   const snapshot = new XMLSerializer().serializeToString(doc);
   const ordered = [...suggestions].sort(compareSuggestions);
 
+  // Spans already claimed by an applied 'add', to block a second, differently
+  // tagged 'add' on the same exact span (mutually exclusive alternatives).
+  const appliedAddSpans = new Map<string, string>();
+  const spanKeyOf = (s: Suggestion) =>
+    `${s.anchor.xpath}\t${s.anchor.offset}\t${s.anchor.surface}`;
+
   const results: ApplyResult[] = [];
   for (let index = 0; index < ordered.length; index++) {
     const suggestion = ordered[index]!;
+
+    if (suggestion.action === 'add') {
+      const priorTag = appliedAddSpans.get(spanKeyOf(suggestion));
+      if (priorTag !== undefined && priorTag !== suggestion.tag) {
+        results.push({ suggestion, outcome: 'conflict' });
+        options.onProgress?.(index + 1, ordered.length);
+        continue;
+      }
+    }
+
     const result = applyOne(doc, suggestion, options);
+    if (result.outcome === 'applied' && suggestion.action === 'add') {
+      appliedAddSpans.set(spanKeyOf(suggestion), suggestion.tag);
+    }
     suggestion.status =
       result.outcome === 'applied'
         ? 'accepted'

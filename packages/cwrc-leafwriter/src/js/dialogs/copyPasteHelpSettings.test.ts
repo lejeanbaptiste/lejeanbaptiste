@@ -17,10 +17,10 @@ describe('copyPasteHelpSettings', () => {
 
   test('uses commons UI bridge when available', () => {
     const setSkipCopyPasteHelpBridge = jest.fn();
-    window.__ljbCommonsUi = {
+    (window as Window & { __ljbCommonsUi?: any }).__ljbCommonsUi = {
       skipCopyPasteHelp: true,
       setSkipCopyPasteHelp: setSkipCopyPasteHelpBridge,
-    } as typeof window.__ljbCommonsUi;
+    };
 
     expect(getSkipCopyPasteHelp()).toBe(true);
 

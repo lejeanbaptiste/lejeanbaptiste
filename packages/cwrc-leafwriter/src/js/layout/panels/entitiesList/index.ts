@@ -227,7 +227,7 @@ class EntitiesList {
 
   private acceptAll() {
     const filter = this.getFilter();
-    this.writer.entitiesManager.eachEntity((index: number, entity: Entity) => {
+    this.writer.entitiesManager.eachEntity((_index: number, entity: Entity) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const isCandidate = entity.getAttribute('_candidate');
       const type = entity.getType();
@@ -286,7 +286,7 @@ class EntitiesList {
     this.writer.event('massUpdateStarted').publish();
 
     const filter = this.getFilter();
-    this.writer.entitiesManager.eachEntity((index: number, entity: Entity) => {
+    this.writer.entitiesManager.eachEntity((_index: number, entity: Entity) => {
       if (entity.getAttribute('_candidate') === 'true') {
         if (filter === 'all' || filter === entity.getType()) {
           this.rejectEntity(entity.getId());
@@ -326,7 +326,7 @@ class EntitiesList {
     const matches: string[] = [];
     const match = this.writer.entitiesManager.getEntity(entityId);
 
-    this.writer.entitiesManager.eachEntity((index: number, entity: Entity) => {
+    this.writer.entitiesManager.eachEntity((_index: number, entity: Entity) => {
       if (entity.getId() !== match?.getId()) {
         if (
           JSON.stringify(entity.getAttributes()) === JSON.stringify(match?.getAttributes()) &&

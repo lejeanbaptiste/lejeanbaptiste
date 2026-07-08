@@ -78,14 +78,14 @@ class NoteDialog implements SchemaDialog {
     //dialog events
     this.dialog.$el.on(
       'buildDynamicFields',
-      (event: JQuery.Event, config: any, dialog: DialogForm) => {
+      (_event: JQuery.Event, _config: any, dialog: DialogForm) => {
         const typeChoices = this.typeAtt?.choices ? this.typeAtt.choices : this.setTypeOptions();
         const choiceOptions = this.generateTypeOptions(typeChoices);
         optionsTypeElement.html(choiceOptions);
       },
     );
 
-    this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any, dialog: DialogForm) => {
+    this.dialog.$el.on('beforeShow', (_event: JQuery.Event, _config: any, dialog: DialogForm) => {
       const show = dialog.mode === DialogForm.EDIT;
       dialog.$el.find(`label[for=${this.id}_noteContent]`).toggle(!show);
       dialog.$el.find(`#${this.id}_noteContent`).toggle(!show);
@@ -96,7 +96,7 @@ class NoteDialog implements SchemaDialog {
       this.toggleOtherTypeTextField(showOtherTypeTextField);
     });
 
-    this.dialog.$el.on('beforeSave', (event: JQuery.Event, dialog: DialogForm) => {
+    this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {
       //test type value
       const typeValue = dialog.$el.find(`#${this.id}_type`).val();
       dialog.isValid = !!this.typeRequired() && typeValue === null ? false : true;

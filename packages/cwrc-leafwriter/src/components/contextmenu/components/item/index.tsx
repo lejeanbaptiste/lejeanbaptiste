@@ -81,7 +81,7 @@ export const Item = forwardRef<any, ItemProps>(
 
     const color = id && isEntityType(id) ? theme.entity[id].color.main : theme.palette.primary.main;
 
-    const rigthIconProps: { icon: IconLeafWriter; size?: number } | null = useMemo(() => {
+    const rigthIconProps = useMemo<{ icon: IconLeafWriter; size?: number } | null>(() => {
       if (type === 'collection') {
         return isEmpty ? { icon: 'block' } : { icon: 'arrowForwardIosIcon', size: 12 };
       }

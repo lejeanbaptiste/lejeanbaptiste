@@ -10,6 +10,14 @@ import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
 import Validation from './panels/validation';
 
+type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup' | 'entities';
+type DesktopRightPanelTab =
+  | 'fileMetadata'
+  | 'attributes'
+  | 'imageViewer'
+  | 'validation'
+  | 'translation';
+
 interface InitConfigProps {
   editorId: string;
   container: JQuery<HTMLElement>;

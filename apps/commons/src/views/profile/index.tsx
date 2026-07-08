@@ -16,10 +16,7 @@ export const Profile = ({ anchor, onClose }: ProfileProps) => {
 
   const open = Boolean(anchor);
 
-  const handleClose = (event: MouseEvent, reason?: string) => {
-    event.stopPropagation();
-    onClose();
-  };
+  const handleClose = () => onClose();
 
   const handleChangeView = async (view?: ViewType) => {
     const stack = view ? [...stackViews, view] : stackViews.slice(0, -1);

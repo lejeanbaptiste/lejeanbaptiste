@@ -38,7 +38,7 @@ class AttributeWidget {
     if (this.$parent) {
       // add listeners for other form elements
       $('[data-mapping]', this.$parent).each(
-        $.proxy(function (index: number, element: HTMLElement) {
+        $.proxy(function (_index: number, element: HTMLElement) {
           const formEl = $(element);
           const type = formEl.data('type');
           const mapping = formEl.data('mapping');
@@ -319,7 +319,7 @@ class AttributeWidget {
   }
 
   reset() {
-    $('.attributeSelector li', this.$parent).each((index, element) => {
+    $('.attributeSelector li', this.$parent).each((_index, element) => {
       $(element).removeClass('selected');
       const name = $(element).data('name').replace(/:/g, '\\:');
       const div = $(`[data-name="form_${name}"]`, this.$el);

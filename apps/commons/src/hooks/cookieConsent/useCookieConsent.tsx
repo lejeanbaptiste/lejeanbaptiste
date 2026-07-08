@@ -94,7 +94,7 @@ export const useCookieConsent = () => {
       // cookie_necessary_only_expiration: 182   // default: disabled
       // revision: 0,                            // default: 0
 
-      onFirstAction: (user_preferences, cookie) => {
+      onFirstAction: (_user_preferences, cookie) => {
         setCookieConsent(cookie.categories);
       },
 

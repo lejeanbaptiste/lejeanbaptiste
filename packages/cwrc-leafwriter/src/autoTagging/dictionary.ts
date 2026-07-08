@@ -93,6 +93,9 @@ export const DEFAULT_MIN_MATCH_LENGTH = 2;
  * Longest string first, leftmost-longest, never crossing tag boundaries.
  * Strings shorter than `minLength` (default 2 code points) are skipped —
  * single characters over-match in running text and are almost never entities.
+ * When the same string carries several tags (e.g. a name that is both a
+ * persName and a title), each match emits one suggestion per tag; the review
+ * walk treats same-span alternatives as mutually exclusive.
  * Whole-document occurrence counting happens in createAnchor.
  */
 export function dictionaryTag(
@@ -102,15 +105,16 @@ export function dictionaryTag(
   sourceDetail = 'dictionary',
   minLength: number = DEFAULT_MIN_MATCH_LENGTH,
 ): Suggestion[] {
-  // Map each surface string to its entry, dropping too-short strings. When the
-  // same string carries several tags, the first entry in input order wins the
-  // span (mirrors longest-first/stable-order); such collisions are rare.
-  const entryByString = new Map<string, DictionaryEntry>();
+  // Map each surface string to its distinct tags (input order), dropping
+  // too-short strings.
+  const tagsByString = new Map<string, string[]>();
   for (const entry of entries) {
     if ([...entry.string].length < minLength) continue;
-    if (!entryByString.has(entry.string)) entryByString.set(entry.string, entry);
+    const tags = tagsByString.get(entry.string);
+    if (!tags) tagsByString.set(entry.string, [entry.tag]);
+    else if (!tags.includes(entry.tag)) tags.push(entry.tag);
   }
-  const matcher = new MultiStringMatcher(entryByString.keys());
+  const matcher = new MultiStringMatcher(tagsByString.keys());
 
   const index = buildDocIndex(doc, policy);
   const suggestions: Suggestion[] = [];
@@ -124,22 +128,29 @@ export function dictionaryTag(
     const ancestors = ancestorTagNames(node);
 
     for (const match of matcher.scan(search.text)) {
-      const entry = entryByString.get(match.pattern)!;
-      // Skip spots already inside this tag — no point re-suggesting.
-      if (ancestors.has(entry.tag)) continue;
+      // Skip tags already wrapping this spot — no point re-suggesting.
+      const tags = tagsByString.get(match.pattern)!.filter((tag) => !ancestors.has(tag));
+      if (tags.length === 0) continue;
 
       const rawStart = search.map[match.start]!;
       const rawEnd = search.map[match.end - 1]! + 1;
-      suggestions.push({
-        id: `dict_${counter++}`,
-        source: 'dictionary',
-        sourceDetail,
-        action: 'add',
-        tag: entry.tag,
-        anchor: createAnchor('', doc, node, rawStart, rawEnd, policy, index),
-        rationale: `Matched "${match.pattern}" (${sourceDetail})`,
-        status: 'pending',
-      });
+      const anchor = createAnchor('', doc, node, rawStart, rawEnd, policy, index);
+      for (const tag of tags) {
+        const others = tags.filter((t) => t !== tag);
+        suggestions.push({
+          id: `dict_${counter++}`,
+          source: 'dictionary',
+          sourceDetail,
+          action: 'add',
+          tag,
+          anchor: { ...anchor },
+          rationale:
+            others.length > 0
+              ? `Matched "${match.pattern}" (${sourceDetail}) — ambiguous: could also be ${others.map((t) => `<${t}>`).join(' or ')}`
+              : `Matched "${match.pattern}" (${sourceDetail})`,
+          status: 'pending',
+        });
+      }
     }
   }
 

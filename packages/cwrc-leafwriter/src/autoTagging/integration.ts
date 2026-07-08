@@ -37,6 +37,7 @@ import {
 } from './mentions';
 import type { DecisionEvent } from './reviewController';
 import type { Suggestion, WhitespacePolicy } from './types';
+import type { DateRangeFilter } from './packLoader';
 
 export { MAX_AUTHORITY_SUGGESTIONS } from './authorityTagBomb';
 

@@ -67,7 +67,7 @@ class KeywordDialog implements SchemaDialog {
     //Save events
     //Orlando and cwrcEntry don't rely on these events
     if (this.mappingID === 'orlando' || this.mappingID === 'cwrcEntry') return;
-    this.dialog.$el.on('beforeSave', (event: JQuery.Event, dialog: DialogForm) => {
+    this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {
       if (this.forceSave) {
         dialog.isValid = true;
         return;
@@ -102,7 +102,7 @@ class KeywordDialog implements SchemaDialog {
       });
     });
 
-    this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any) => {
+    this.dialog.$el.on('beforeShow', (_event: JQuery.Event, _config: any) => {
       this.dialog.isValid = true;
       this.forceSave = false;
 

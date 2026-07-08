@@ -2,7 +2,6 @@ import {
   ensureSchemaDirectory,
   getMetadataAbsolutePath,
   getMetadataRelativePath,
-  joinProjectPath,
   readProjectFileIfExists,
   type ProjectBundle,
 } from './projectFile';

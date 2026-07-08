@@ -14,7 +14,6 @@ export interface PerformFindJumpParams {
   contentForJump?: string;
   end: number;
   highlightMode?: FindHighlightMode;
-  matchIndexInFile: number;
   query: string;
   start: number;
   ignoreCase: boolean;
@@ -29,7 +28,6 @@ export const performFindJump = ({
   contentForJump,
   end,
   highlightMode = 'full',
-  matchIndexInFile,
   query,
   start,
   ignoreCase,

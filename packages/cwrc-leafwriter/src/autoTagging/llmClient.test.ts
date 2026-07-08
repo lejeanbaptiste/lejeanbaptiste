@@ -40,7 +40,7 @@ describe('MistralLlmClient rate-limit retry', () => {
             usage: { prompt_tokens: 10, completion_tokens: 2 },
           }),
       };
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
     const client = new MistralLlmClient({
       apiKey: 'test',

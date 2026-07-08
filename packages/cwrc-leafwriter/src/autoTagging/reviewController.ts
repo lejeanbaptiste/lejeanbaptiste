@@ -116,12 +116,39 @@ export class ReviewController {
     this.options.onFocus?.(suggestion);
   }
 
+  /**
+   * Same-span 'add' suggestions with different tags are mutually exclusive
+   * alternatives (one string offered as e.g. both persName and title).
+   */
+  private isAlternative(a: Suggestion, b: Suggestion): boolean {
+    return (
+      a !== b &&
+      a.action === 'add' &&
+      b.action === 'add' &&
+      a.tag !== b.tag &&
+      a.anchor.xpath === b.anchor.xpath &&
+      a.anchor.offset === b.anchor.offset &&
+      a.anchor.surface === b.anchor.surface
+    );
+  }
+
+  /** Accepting one alternative rejects the others — only one tag can win the span. */
+  private rejectAlternativesOf(accepted: Suggestion) {
+    for (const s of this.suggestions) {
+      if (!this.isAlternative(accepted, s)) continue;
+      if (s.status !== 'pending' && s.status !== 'accepted') continue;
+      s.status = 'rejected';
+      this.options.onDecision?.({ suggestion: s, decision: 'rejected' });
+    }
+  }
+
   /** Decide the current pending suggestion and advance. */
   decide(decision: Decision) {
     const current = this.current();
     if (!current || current.status === 'unresolvable') return;
     current.status = decision;
     this.options.onDecision?.({ suggestion: current, decision });
+    if (decision === 'accepted') this.rejectAlternativesOf(current);
     this.advanceToPending();
   }
 
@@ -147,6 +174,7 @@ export class ReviewController {
       if (s.anchor.surface === surface && s.tag === tag) {
         s.status = 'accepted';
         this.options.onDecision?.({ suggestion: s, decision: 'accepted' });
+        this.rejectAlternativesOf(s);
       }
     }
     this.advanceToPending();
@@ -176,6 +204,7 @@ export class ReviewController {
     if (suggestion.status === decision) return;
     suggestion.status = decision;
     this.options.onDecision?.({ suggestion, decision });
+    if (decision === 'accepted') this.rejectAlternativesOf(suggestion);
   }
 
   /** Revert the current pending suggestion's decision (only meaningful before apply). */
@@ -198,9 +227,11 @@ export class ReviewController {
   /** Accept every pending visible suggestion at or above the confidence threshold. */
   acceptAllAbove(confidence: number) {
     for (const s of this.pending()) {
+      if (s.status !== 'pending') continue; // rejected as an alternative earlier in this loop
       if (s.confidence !== undefined && s.confidence >= confidence) {
         s.status = 'accepted';
         this.options.onDecision?.({ suggestion: s, decision: 'accepted' });
+        this.rejectAlternativesOf(s);
       }
     }
     this.clampCursor();
@@ -215,8 +246,11 @@ export class ReviewController {
 
   takeAllExceptRejected(): Suggestion[] {
     for (const s of this.pending()) {
+      // Undecided alternatives: the first in batch order wins the span.
+      if (s.status !== 'pending') continue;
       s.status = 'accepted';
       this.options.onDecision?.({ suggestion: s, decision: 'accepted' });
+      this.rejectAlternativesOf(s);
     }
     return this.takeAccepted();
   }

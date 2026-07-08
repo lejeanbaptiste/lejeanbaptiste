@@ -119,7 +119,7 @@ const closeOpenDialogsOfType = (type: NativeDialogType) => {
 };
 
 const createDialogWindow = (
-  type: NativeDialogType,
+  _type: NativeDialogType,
   config: NativeDialogConfig,
   parent: BrowserWindow,
 ): BrowserWindow =>

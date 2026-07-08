@@ -1,3 +1,5 @@
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import {
   Alert,
   Box,
@@ -5,14 +7,12 @@ import {
   Checkbox,
   Dialog,
   DialogContent,
-  FormControl,
   FormControlLabel,
-  InputLabel,
+  IconButton,
   Link,
-  MenuItem,
-  Select,
   Slider,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -48,9 +48,9 @@ import {
   type AuthorityPackStringCounts,
   type DateFilterMode,
   AUTHORITY_PACKS,
+  AUTHORITY_SOURCE_LABELS,
   expandAuthorityPackIds,
-  groupAuthorityPacksBySource,
-  shortAuthorityPackLabel,
+  groupAuthorityPacksByTagType,
   UI_AUTHORITY_PACK_IDS,
   WIKIDATA_PERSON_CHILD_PACK_IDS,
   type DictionaryEntry,
@@ -159,6 +159,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [authorityProgress, setAuthorityProgress] = useState('');
   const [authorityDateFilter, setAuthorityDateFilter] = useState<DateFilterMode>('limit');
   const [authorityYearRange, setAuthorityYearRange] = useState<[number, number]>([25, 220]);
+  const cycleAuthorityDateFilter = () => {
+    setAuthorityDateFilter((mode) => (mode === 'none' ? 'limit' : mode === 'limit' ? 'exclude' : 'none'));
+  };
   const [authorityPackCounts, setAuthorityPackCounts] = useState<AuthorityPackStringCounts>({});
   const [authorityPackCountsLoading, setAuthorityPackCountsLoading] = useState(false);
   const authorityCountGeneration = useRef(0);
@@ -269,7 +272,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   }, [open]);
 
   const visibleAuthorityPackIds = visibleAuthorityPackIdsForLanguage(sourceLanguage);
-  const visibleAuthorityPackGroups = groupAuthorityPacksBySource(visibleAuthorityPackIds);
+  const visibleAuthorityPackGroups = groupAuthorityPacksByTagType(visibleAuthorityPackIds);
   const anyVisibleAuthorityPackInstalled = visibleAuthorityPackIds.some((id) =>
     isAuthorityPackInstalled(id, authorityStatus),
   );
@@ -761,19 +764,14 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               )}
               <Stack spacing={0.25}>
                 {visibleAuthorityPackGroups.map((group) => (
-                  <Box key={group.source}>
-                    {group.packs.length > 1 && (
-                      <Typography variant="caption" sx={authoritySourceHeadingSx}>
-                        {group.label}
-                      </Typography>
-                    )}
+                  <Box key={group.tag}>
+                    <Typography variant="caption" sx={authoritySourceHeadingSx}>
+                      {group.label}
+                    </Typography>
                     <Stack spacing={0}>
                       {group.packs.map((opt) => {
                         const installed = isAuthorityPackInstalled(opt.id, authorityStatus);
-                        const soloSourceRow = group.packs.length === 1;
-                        const rowLabel = soloSourceRow
-                          ? group.label
-                          : shortAuthorityPackLabel(opt.id);
+                        const rowLabel = AUTHORITY_SOURCE_LABELS[opt.source];
                         return (
                           <FormControlLabel
                             key={opt.id}
@@ -801,65 +799,79 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 ))}
               </Stack>
               <Box sx={{ px: 0.25, pt: 0.25 }}>
-                <FormControl size="small" fullWidth disabled={busy}>
-                  <InputLabel id="authority-date-filter-label">Date filter</InputLabel>
-                  <Select
-                    labelId="authority-date-filter-label"
-                    label="Date filter"
-                    value={authorityDateFilter}
-                    onChange={(event) =>
-                      setAuthorityDateFilter(event.target.value as DateFilterMode)
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Tooltip
+                    title={
+                      authorityDateFilter === 'none'
+                        ? 'Date filter off — click to limit matches to the year range'
+                        : authorityDateFilter === 'limit'
+                          ? 'Limit: keep matches overlapping the year range'
+                          : 'Exclude: drop matches overlapping the year range'
                     }
-                    sx={{ fontSize: '0.8125rem' }}
                   >
-                    <MenuItem value="none">None</MenuItem>
-                    <MenuItem value="limit">Limit</MenuItem>
-                    <MenuItem value="exclude">Exclude</MenuItem>
-                  </Select>
-                </FormControl>
+                    <span>
+                      <IconButton
+                        size="small"
+                        aria-label="Toggle date filter mode"
+                        disabled={busy}
+                        onClick={cycleAuthorityDateFilter}
+                        sx={{ p: 0.25, flexShrink: 0 }}
+                      >
+                        {authorityDateFilter === 'none' ? (
+                          <FilterAltOffIcon sx={{ fontSize: 16 }} />
+                        ) : (
+                          <FilterAltIcon
+                            sx={{
+                              fontSize: 16,
+                              color: authorityDateFilter === 'exclude' ? 'error.main' : 'primary.main',
+                            }}
+                          />
+                        )}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Slider
+                    size="small"
+                    min={AUTHORITY_YEAR_MIN}
+                    max={AUTHORITY_YEAR_MAX}
+                    step={1}
+                    value={authorityYearRange}
+                    onChange={(_event, value) => setAuthorityYearRange(value as [number, number])}
+                    valueLabelDisplay="auto"
+                    getAriaLabel={(index) => (index === 0 ? 'Start year' : 'End year')}
+                    getAriaValueText={(value) => `${value} CE`}
+                    disabled={busy || authorityDateFilter === 'none'}
+                    sx={{ flex: 1, minWidth: 0, mx: 0.5 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontSize: '0.6875rem', flexShrink: 0, whiteSpace: 'nowrap' }}
+                  >
+                    {Math.min(...authorityYearRange)}–{Math.max(...authorityYearRange)}
+                  </Typography>
+                </Stack>
                 {authorityDateFilter !== 'none' && (
-                  <Stack spacing={0.5} sx={{ pt: 0.75, pb: 0.25 }}>
-                    <Slider
-                      size="small"
-                      min={AUTHORITY_YEAR_MIN}
-                      max={AUTHORITY_YEAR_MAX}
-                      step={1}
-                      value={authorityYearRange}
-                      onChange={(_event, value) =>
-                        setAuthorityYearRange(value as [number, number])
-                      }
-                      valueLabelDisplay="auto"
-                      getAriaLabel={(index) => (index === 0 ? 'Start year' : 'End year')}
-                      getAriaValueText={(value) => `${value} CE`}
-                      disabled={busy}
-                    />
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
-                      {Math.min(...authorityYearRange)} – {Math.max(...authorityYearRange)} CE ·{' '}
-                      {authorityDateFilter === 'limit'
-                        ? 'include lifespan overlap'
-                        : 'exclude lifespan overlap'}
-                    </Typography>
-                    <Stack direction="row" spacing={0.375} flexWrap="wrap" useFlexGap>
-                      {AUTHORITY_YEAR_PRESETS.map((preset) => (
-                        <Button
-                          key={preset.label}
-                          size="small"
-                          variant="outlined"
-                          disabled={busy}
-                          onClick={() => setAuthorityYearRange([preset.start, preset.end])}
-                          sx={{
-                            py: 0,
-                            px: 0.75,
-                            minWidth: 0,
-                            minHeight: 22,
-                            fontSize: '0.6875rem',
-                            textTransform: 'none',
-                          }}
-                        >
-                          {preset.label}
-                        </Button>
-                      ))}
-                    </Stack>
+                  <Stack direction="row" spacing={0.375} flexWrap="wrap" useFlexGap sx={{ pt: 0.5 }}>
+                    {AUTHORITY_YEAR_PRESETS.map((preset) => (
+                      <Button
+                        key={preset.label}
+                        size="small"
+                        variant="outlined"
+                        disabled={busy}
+                        onClick={() => setAuthorityYearRange([preset.start, preset.end])}
+                        sx={{
+                          py: 0,
+                          px: 0.75,
+                          minWidth: 0,
+                          minHeight: 22,
+                          fontSize: '0.6875rem',
+                          textTransform: 'none',
+                        }}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
                   </Stack>
                 )}
               </Box>

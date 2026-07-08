@@ -160,7 +160,7 @@ export const EastAsianDateFields = ({
 
       <Autocomplete
         disabled={disabled}
-        filterOptions={(options, state) =>
+        filterOptions={(_options, state) =>
           filterRulers(authority.rulers, values.dynId, state.inputValue)
         }
         getOptionLabel={(option) => option.label}
@@ -180,7 +180,7 @@ export const EastAsianDateFields = ({
 
       <Autocomplete
         disabled={disabled}
-        filterOptions={(options, state) =>
+        filterOptions={(_options, state) =>
           filterEras(authority.eras, values.dynId, values.rulerId, state.inputValue)
         }
         getOptionLabel={(option) => option.label}

@@ -1,10 +1,6 @@
 import type { Types } from '@cwrc/leafwriter';
 import { toLocalFileUrl } from './localFileUrl';
-import {
-  type ProjectBundle,
-  type ProjectFileConfig,
-  type ProjectSchemaConfig,
-} from './projectTypes';
+import { type ProjectBundle, type ProjectFileConfig } from './projectTypes';
 
 export {
   DEFAULT_METADATA_PATH,

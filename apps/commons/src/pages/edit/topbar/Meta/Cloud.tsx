@@ -9,7 +9,7 @@ import { CloudSyncOutline } from 'mdi-material-ui';
 import { motion, type Variants } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
-const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
+const StyledBadge = styled(Badge)<BadgeProps>(() => ({
   '& .MuiBadge-badge': { top: -5, left: 11, minWidth: 4, height: 4 },
 }));
 
@@ -23,11 +23,6 @@ export const Cloud = () => {
   const handleClick = () => {
     if (!isDirty || isSaving) return;
     handleSave();
-  };
-
-  const animationProps: Variants = {
-    visible: { width: 'auto', opacity: 1 },
-    hidden: { width: 0, opacity: 0 },
   };
 
   return (
@@ -67,20 +62,13 @@ export const Cloud = () => {
           )}
         </IconButton>
       </Tooltip>
-      <Box
-        position="absolute"
-        ml={3.5}
-        overflow="hidden"
-        sx={{ opacity: 0.5 }}
-        component={motion.div}
-        variants={animationProps}
-        initial="visible"
-        animate={saveDelayed ? 'visible' : 'hidden'}
-      >
-        <Typography ml={0.5} textTransform="capitalize" variant="caption" whiteSpace="nowrap">
-          {t('LWC.storage.waiting_for_resource', { provider: resource?.provider })}
-        </Typography>
-      </Box>
+      {saveDelayed && (
+        <Box position="absolute" ml={3.5} overflow="hidden" sx={{ opacity: 0.5 }}>
+          <Typography ml={0.5} textTransform="capitalize" variant="caption" whiteSpace="nowrap">
+            {t('LWC.storage.waiting_for_resource', { provider: resource?.provider })}
+          </Typography>
+        </Box>
+      )}
     </Stack>
   );
 };

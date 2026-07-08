@@ -60,7 +60,7 @@ class DateDialog implements SchemaDialog {
     // Orlando and cwrcEntry doesn't need these events
     if (this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry') return;
 
-    this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any, dialog: DialogForm) => {
+    this.dialog.$el.on('beforeShow', (_event: JQuery.Event, config: any, dialog: DialogForm) => {
       let sicText: string | undefined;
 
       if (dialog.mode === DialogForm.ADD) {
@@ -84,7 +84,7 @@ class DateDialog implements SchemaDialog {
       }
     });
 
-    this.dialog.$el.on('beforeSave', (event: JQuery.Event, dialog: DialogForm) => {
+    this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {
       if (!writer.editor) return;
       const sicText = dialog.currentData.customValues.sicText;
       const corrText = dialog.currentData.customValues.corrText;

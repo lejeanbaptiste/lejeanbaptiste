@@ -11,7 +11,7 @@ const AnnotationMode = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>();
   const openMenu = Boolean(anchorEl);
 
-  const handleButtonClick = (event: MouseEvent<HTMLElement>) => {
+  const handleButtonClick = (_event: MouseEvent<HTMLElement>) => {
     // setAnchorEl(event.currentTarget);
   };
 

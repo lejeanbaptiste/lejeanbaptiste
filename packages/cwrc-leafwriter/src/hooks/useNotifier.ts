@@ -30,10 +30,10 @@ export const useNotifier = () => {
       enqueueSnackbar(message, {
         key,
         ...options,
-        onClose: (event, reason, myKey) => {
-          if (options.onClose) options.onClose(event, reason, myKey);
+        onClose: (_event, reason, myKey) => {
+          if (options.onClose) options.onClose(_event, reason, myKey);
         },
-        onExited: (event, myKey) => {
+        onExited: (_event, myKey) => {
           // remove this snackbar from overmind store
           removeNotificationSnackbar(myKey);
           removeDisplayed(myKey);

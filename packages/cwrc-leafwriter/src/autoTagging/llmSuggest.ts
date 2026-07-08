@@ -1,7 +1,6 @@
 import type { AiPromptProfile } from './aiPromptProfiles';
 import {
   promptVersionWithProfile,
-  resolveAuditCleanTaskText,
   resolveSuggestTaskText,
 } from './aiPromptProfiles';
 import { buildDocIndex } from './anchor';
