@@ -59,6 +59,23 @@ export interface NewEntity {
   cache?: { source: string; data: unknown; when?: string };
   /** One-line human-written description, stored as `<note type="description">` for later disambiguation. */
   description?: string;
+  /** Birth/founding year (signed; negative = BCE). Persons: `<birth when>`; others: `<note type="dates">`. */
+  startYear?: number;
+  /** Death/dissolution year (signed; negative = BCE). Persons: `<death when>`; others: `<note type="dates">`. */
+  endYear?: number;
+}
+
+/** Format a signed year as an ISO/W3C `@when` year, e.g. -155 -> "-0155", 1990 -> "1990". */
+export function isoYearString(year: number): string {
+  const abs = String(Math.abs(year)).padStart(4, '0');
+  return year < 0 ? `-${abs}` : abs;
+}
+
+/** Parse an ISO `@when` year back to a signed number, tolerating full dates ("1990-01-01"). */
+export function parseIsoYear(when: string | null | undefined): number | null {
+  if (!when) return null;
+  const match = when.trim().match(/^(-?\d{1,4})(?:-|$)/);
+  return match ? parseInt(match[1]!, 10) : null;
 }
 
 /** Mint a new database fingerprint id. */
@@ -210,6 +227,30 @@ export function addEntity(
     note.setAttribute('type', 'description');
     note.textContent = entity.description;
     item.appendChild(note);
+  }
+
+  if (entity.startYear != null || entity.endYear != null) {
+    if (kind === 'person') {
+      if (entity.startYear != null) {
+        const birth = doc.createElementNS(TEI_NS, 'birth');
+        birth.setAttribute('when', isoYearString(entity.startYear));
+        item.appendChild(birth);
+      }
+      if (entity.endYear != null) {
+        const death = doc.createElementNS(TEI_NS, 'death');
+        death.setAttribute('when', isoYearString(entity.endYear));
+        item.appendChild(death);
+      }
+    } else {
+      // place/org/work have no birth/death in TEI — keep the years queryable in a typed note.
+      const note = doc.createElementNS(TEI_NS, 'note');
+      note.setAttribute('type', 'dates');
+      note.textContent = [
+        entity.startYear != null ? isoYearString(entity.startYear) : '',
+        entity.endYear != null ? isoYearString(entity.endYear) : '',
+      ].join('/');
+      item.appendChild(note);
+    }
   }
 
   getList(doc, kind).appendChild(item);

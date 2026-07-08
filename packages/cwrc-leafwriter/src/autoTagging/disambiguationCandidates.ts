@@ -7,6 +7,7 @@ import {
   ENTITY_KINDS,
   findEntity,
   getDatabaseId,
+  parseIsoYear,
   TAG_TO_KIND,
   type AuthorityId,
   type EntityKind,
@@ -325,6 +326,14 @@ export function candidatesFromEntityFile(doc: Document, tag: string, surface: st
     const descriptionNote =
       notes.find((note) => note.getAttribute('type') === 'description') ??
       notes.find((note) => !note.getAttribute('type'));
+    let startYear = parseIsoYear(el.getElementsByTagName('birth')[0]?.getAttribute('when')) ?? undefined;
+    let endYear = parseIsoYear(el.getElementsByTagName('death')[0]?.getAttribute('when')) ?? undefined;
+    const datesNote = notes.find((note) => note.getAttribute('type') === 'dates');
+    if (startYear == null && endYear == null && datesNote) {
+      const [start, end] = (datesNote.textContent ?? '').split('/');
+      startYear = parseIsoYear(start) ?? undefined;
+      endYear = parseIsoYear(end) ?? undefined;
+    }
     out.push({
       id: localId || `local-${i}`,
       label: el.getElementsByTagName(nameTag)[0]?.textContent?.trim() || surface,
@@ -333,6 +342,8 @@ export function candidatesFromEntityFile(doc: Document, tag: string, surface: st
       localEntityId: localId || undefined,
       authorityIds,
       fromEntityFile: true,
+      startYear,
+      endYear,
     });
   }
   return out;
@@ -662,6 +673,8 @@ export interface ResolveEntityInput {
   name: string;
   authorityIds?: AuthorityId[];
   description?: string;
+  startYear?: number;
+  endYear?: number;
 }
 
 /** Mint or reuse entity in database; returns local id. */
@@ -683,6 +696,8 @@ export function resolveEntityInDocument(
     name: input.name,
     authorityIds: input.authorityIds,
     description: input.description,
+    startYear: input.startYear,
+    endYear: input.endYear,
   });
   return id;
 }

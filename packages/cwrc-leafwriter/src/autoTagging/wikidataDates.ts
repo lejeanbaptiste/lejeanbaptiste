@@ -22,6 +22,7 @@ interface WikidataEntitiesResponse {
     string,
     {
       claims?: Record<string, WikidataClaimSnak[]>;
+      descriptions?: Record<string, { value?: string }>;
     }
   >;
 }
@@ -82,16 +83,37 @@ export async function fetchWikidataLifespan(
   qid: string,
   fetchImpl: WikidataFetchFn = fetch,
 ): Promise<WikidataLifespan | null> {
-  const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`;
+  const summary = await fetchWikidataSummary(qid, fetchImpl);
+  if (!summary || (summary.birthYear == null && summary.deathYear == null)) return null;
+  return { birthYear: summary.birthYear, deathYear: summary.deathYear };
+}
+
+export interface WikidataSummary extends WikidataLifespan {
+  /** One-line item description (English, falling back to any available language). */
+  description?: string;
+}
+
+/** Fetch lifespan (P569/P570) and the one-line description for a Q-id in a single call. */
+export async function fetchWikidataSummary(
+  qid: string,
+  fetchImpl: WikidataFetchFn = fetch,
+): Promise<WikidataSummary | null> {
+  const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims|descriptions&format=json&origin=*`;
   const response = await fetchImpl(url);
   if (!response.ok) return null;
 
   const data = (await response.json()) as WikidataEntitiesResponse;
-  const claims = data.entities?.[qid]?.claims;
-  if (!claims) return null;
+  const entity = data.entities?.[qid];
+  if (!entity) return null;
 
-  const birthYear = firstYearFromClaims(claims['P569']) ?? undefined;
-  const deathYear = firstYearFromClaims(claims['P570']) ?? undefined;
-  if (birthYear == null && deathYear == null) return null;
-  return { birthYear, deathYear };
+  const claims = entity.claims ?? {};
+  const descriptions = entity.descriptions ?? {};
+  const description =
+    descriptions['en']?.value ?? Object.values(descriptions)[0]?.value ?? undefined;
+
+  return {
+    birthYear: firstYearFromClaims(claims['P569']) ?? undefined,
+    deathYear: firstYearFromClaims(claims['P570']) ?? undefined,
+    description,
+  };
 }

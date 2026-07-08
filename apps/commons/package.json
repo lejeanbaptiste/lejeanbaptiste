@@ -18,7 +18,7 @@
     "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
   },
   "license": "GPL-2.0",
-  "author": "Luciano Frizzera <lucaju@gmail.com>",
+  "author": "Daniel Patrick Morgan (CNRS)",
   "main": "src/index.ts",
   "type": "commonjs",
   "scripts": {

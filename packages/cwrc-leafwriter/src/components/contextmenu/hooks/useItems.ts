@@ -335,15 +335,17 @@ export const useItems = (ctx: State) => {
         },
       });
 
-      if (writer.schemaManager.isSchemaCustom() === false) {
-        items.push({
-          type: 'collection',
-          name: t('LW.Add Entity Annotation'),
-          icon: 'add',
-          searchable: false,
-          children: getEntitiesOptions(),
-        });
-      }
+      // 'Add Entity Annotation' removed from the context menu — entity linking is
+      // handled by the auto-tagging/disambiguation workflow instead.
+      // if (writer.schemaManager.isSchemaCustom() === false) {
+      //   items.push({
+      //     type: 'collection',
+      //     name: t('LW.Add Entity Annotation'),
+      //     icon: 'add',
+      //     searchable: false,
+      //     children: getEntitiesOptions(),
+      //   });
+      // }
 
       items.push({ type: 'divider', name: 'divider' });
     }

@@ -35,6 +35,21 @@ export const useDesktopAppMenuBridge = () => {
         return;
       }
 
+      if (action === 'editor-zoom-in') {
+        window.__leafWriterEditorZoom?.zoomIn();
+        return;
+      }
+
+      if (action === 'editor-zoom-out') {
+        window.__leafWriterEditorZoom?.zoomOut();
+        return;
+      }
+
+      if (action === 'editor-zoom-reset') {
+        window.__leafWriterEditorZoom?.reset();
+        return;
+      }
+
       if (action === 'open-documentation') {
         window.open(LEAF_WRITER_DOCS_URL, '_blank', 'noopener,noreferrer');
       }

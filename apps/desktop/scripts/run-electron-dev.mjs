@@ -15,7 +15,7 @@ const executable = path.join(
 
 if (!existsSync(executable)) {
   console.error(
-    '[crcao-desktop] Branded dev app not found. Run: npm run brand-electron -w crcao-desktop',
+    '[le-jean-baptiste] Branded dev app not found. Run: npm run brand-electron -w le-jean-baptiste-desktop',
   );
   process.exit(1);
 }

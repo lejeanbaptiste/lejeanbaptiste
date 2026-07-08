@@ -55,6 +55,33 @@ describe('disambiguationCandidates', () => {
     expect(rows[0]?.description).toBe('legendary flood-taming ruler, founder of the Xia dynasty');
   });
 
+  it('stores and reads back life dates for a resolved entity', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const id = resolveEntityInDocument(doc, {
+      kind: 'person',
+      name: '張衡',
+      description: '(78–139) Han dynasty polymath',
+      startYear: 78,
+      endYear: 139,
+    });
+
+    const rows = candidatesFromEntityFile(doc, 'persName', '張衡');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.localEntityId).toBe(id);
+    expect(rows[0]?.startYear).toBe(78);
+    expect(rows[0]?.endYear).toBe(139);
+  });
+
+  it('reads back non-person years from the dates note', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    resolveEntityInDocument(doc, { kind: 'place', name: '洛陽', startYear: -1036, endYear: 938 });
+
+    const rows = candidatesFromEntityFile(doc, 'placeName', '洛陽');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.startYear).toBe(-1036);
+    expect(rows[0]?.endYear).toBe(938);
+  });
+
   it('prefers the description note over an authority-cache note on the same entity', () => {
     const doc = parseEntities(createEntitiesScaffold());
     addEntity(doc, 'person', {

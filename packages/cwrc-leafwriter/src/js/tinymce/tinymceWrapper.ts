@@ -24,6 +24,7 @@ import {
   textToLineBreakXml,
 } from './pasteSpecial';
 import './plugins/treepaste';
+import { initEditorZoom } from './editorZoom';
 
 declare global {
   interface Window {
@@ -133,6 +134,10 @@ export const tinymceWrapperInit = function ({
   interface PasteInsertionContext {
     parentTag: string | null;
     parentCanContainText: boolean;
+    /** Nearest block-tag ancestor of the paste range, when the caret sits inside one. */
+    blockEl: Element | null;
+    /** Tag of the block ancestor's parent — where hoisted paragraphs would be inserted. */
+    blockParentTag: string | null;
   }
 
   let pendingPasteTargetRange: Range | null = null;
@@ -203,14 +208,37 @@ export const tinymceWrapperInit = function ({
     return lastKnownEditorRange.cloneRange();
   };
 
+  const findBlockElFromRange = (editor: LeafWriterEditor, range: Range | null): Element | null => {
+    if (!range) return null;
+    const blockTag = writer.schemaManager.getBlockTag();
+    const body = editor.getBody();
+    let node: Node | null = range.commonAncestorContainer;
+    while (node && node !== body) {
+      if (
+        node.nodeType === Node.ELEMENT_NODE &&
+        (node as Element).getAttribute('_tag') === blockTag
+      ) {
+        return node as Element;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  };
+
   const capturePasteInsertionContext = (
     editor: LeafWriterEditor,
     range: Range | null = null,
   ): PasteInsertionContext => {
     const parentTag = getInsertionParentTagFromRange(editor, range) ?? getInsertionParentTag(editor);
+    const blockEl = findBlockElFromRange(editor, range);
+    const blockParentTag = blockEl
+      ? findTagNameFromNode(blockEl.parentNode, editor.getBody())
+      : null;
     return {
       parentTag,
       parentCanContainText: parentTag ? writer.schemaManager.canTagContainText(parentTag) : false,
+      blockEl,
+      blockParentTag,
     };
   };
 
@@ -270,14 +298,21 @@ export const tinymceWrapperInit = function ({
     return `<${editorTagName} id="${id}" _tag="${tagName}" _textallowed="${canContainText}"${buildEditorTagAttributes(element)}>${children}${emptyText}</${editorTagName}>`;
   }
 
-  const textToParagraphXml = (text: string) =>
-    text
-      .replace(/\r\n?/g, '\n')
-      .split(/\n{2,}/)
+  const textToParagraphXml = (text: string, blockTag = 'p') => {
+    const normalized = text.replace(/\r\n?/g, '\n');
+    // Blank lines separate paragraphs when present; otherwise every line break does,
+    // since the paste dialog only offers this mode for text without blank lines.
+    const separator = /\n{2,}/.test(normalized) ? /\n{2,}/ : /\n/;
+    return normalized
+      .split(separator)
       .map((paragraph) => paragraph.trim())
       .filter(Boolean)
-      .map((paragraph) => `<p>${paragraph.split('\n').map(escapeHtml).join('<lb/>')}</p>`)
+      .map(
+        (paragraph) =>
+          `<${blockTag}>${paragraph.split('\n').map(escapeHtml).join('<lb/>')}</${blockTag}>`,
+      )
       .join('');
+  };
 
   const textToInlineLineBreakXml = (text: string) =>
     text.replace(/\r\n?/g, '\n').split('\n').map(escapeHtml).join('<lb/>');
@@ -305,7 +340,7 @@ export const tinymceWrapperInit = function ({
     context: PasteInsertionContext,
     mode: string,
     text: string,
-  ): { content?: string; error?: string } => {
+  ): { content?: string; error?: string; splitBlock?: boolean } => {
     if (mode === 'xml') return buildEditorFragmentFromXml(context, text);
 
     if (mode === 'line-breaks') {
@@ -321,6 +356,26 @@ export const tinymceWrapperInit = function ({
     }
 
     if (mode === 'paragraphs') {
+      // Caret inside a paragraph: hoist the paste to paragraph level so beginners get
+      // real paragraphs (the host paragraph is split at the caret on insertion).
+      const blockTag = writer.schemaManager.getBlockTag();
+      if (
+        context.blockEl &&
+        context.blockParentTag &&
+        canInsertChildTag(blockTag, context.blockParentTag)
+      ) {
+        const hoisted = buildEditorFragmentFromXml(
+          {
+            parentTag: context.blockParentTag,
+            parentCanContainText: writer.schemaManager.canTagContainText(context.blockParentTag),
+            blockEl: null,
+            blockParentTag: null,
+          },
+          textToParagraphXml(text, blockTag),
+        );
+        if (hoisted.content) return { ...hoisted, splitBlock: true };
+      }
+
       if (context.parentTag === 'p' && context.parentCanContainText) {
         const xml = canInsertChildTag('lb', context.parentTag)
           ? textToInlineLineBreakXml(text)
@@ -350,6 +405,39 @@ export const tinymceWrapperInit = function ({
     }
 
     return buildEditorFragmentFromXml(context, escapeHtml(text));
+  };
+
+  /**
+   * Splits the block element at the range's start and inserts the pasted paragraphs
+   * between the two halves. Empty halves and duplicated ids are handled by the
+   * post-paste cleanup (removeEmptyParagraphs / processNewContent).
+   */
+  const insertEditorContentSplittingBlock = (
+    editor: LeafWriterEditor,
+    content: string,
+    range: Range,
+    blockEl: Element,
+  ) => {
+    const doc = editor.getDoc();
+    range.deleteContents();
+
+    const tailRange = doc.createRange();
+    tailRange.setStart(range.startContainer, range.startOffset);
+    tailRange.setEnd(blockEl, blockEl.childNodes.length);
+    const tailBlock = blockEl.cloneNode(false) as Element;
+    tailBlock.appendChild(tailRange.extractContents());
+    blockEl.parentNode?.insertBefore(tailBlock, blockEl.nextSibling);
+
+    const container = doc.createElement('div');
+    container.innerHTML = content;
+    const fragment = doc.createDocumentFragment();
+    while (container.firstChild) fragment.appendChild(container.firstChild);
+    blockEl.parentNode?.insertBefore(fragment, tailBlock);
+
+    const collapseRange = doc.createRange();
+    collapseRange.setStart(tailBlock, 0);
+    collapseRange.collapse(true);
+    editor.selection.setRng(collapseRange);
   };
 
   const insertEditorContentAtRange = (
@@ -387,7 +475,7 @@ export const tinymceWrapperInit = function ({
   }: {
     ambiguity: string;
     context: PasteInsertionContext;
-    onPaste: (content: string) => void;
+    onPaste: (content: string, splitBlock: boolean) => void;
     text: string;
   }) => {
     const xmlStatus = buildEditorFragmentFromXml(context, text);
@@ -396,7 +484,7 @@ export const tinymceWrapperInit = function ({
       ambiguity === 'xml' && xmlStatus.content ? 'xml' : 'paragraphs',
     );
     const modes = [
-      { mode: 'paragraphs', label: 'Paragraphs', description: 'Blank lines create new paragraphs.' },
+      { mode: 'paragraphs', label: 'Paragraphs', description: 'Blank lines create new paragraphs; without blank lines, every line break does.' },
       { mode: 'line-breaks', label: 'Line breaks', description: 'Single line breaks become lb elements.' },
       {
         mode: 'xml',
@@ -447,7 +535,7 @@ export const tinymceWrapperInit = function ({
     const finish = (saveDefault: boolean) => {
       if (saveDefault) savePasteDefault(ambiguity, selectedMode);
       const result = buildPasteModeContent(context, selectedMode, text);
-      if (result.content) onPaste(result.content);
+      if (result.content) onPaste(result.content, result.splitBlock === true);
       if (!result.content && result.error) {
         writer.dialogManager.show('message', {
           title: 'Paste Special',
@@ -634,6 +722,8 @@ export const tinymceWrapperInit = function ({
 
         writer.overmindActions.editor.applyInitialSettings();
 
+        initEditorZoom(editor);
+
         const body = editor.getBody();
 
         // highlight tracking
@@ -753,7 +843,7 @@ export const tinymceWrapperInit = function ({
               ambiguity,
               context: pasteContext,
               text,
-              onPaste: (content) => {
+              onPaste: (content, splitBlock) => {
                 editor.focus();
                 try {
                   if (pasteRange) {
@@ -766,21 +856,34 @@ export const tinymceWrapperInit = function ({
                 }
                 if (!pasteContext.parentTag) return;
                 (editor as any)._leafWriterLastPasteFromLeafWriter = fromLeafWriter;
-                editor.undoManager.transact(() => {
-                  const liveRange = editor.selection.getRng();
-                  const savedRangeIsUsable =
-                    pasteRange &&
-                    isNodeInEditorBody(editor, pasteRange.startContainer) &&
-                    isNodeInEditorBody(editor, pasteRange.endContainer);
-                  const restoredRange = savedRangeIsUsable ? pasteRange : liveRange;
+                // Commit the pre-paste state so a single undo returns exactly here.
+                editor.undoManager.add();
+                const liveRange = editor.selection.getRng();
+                const savedRangeIsUsable =
+                  pasteRange &&
+                  isNodeInEditorBody(editor, pasteRange.startContainer) &&
+                  isNodeInEditorBody(editor, pasteRange.endContainer);
+                const restoredRange = savedRangeIsUsable ? pasteRange : liveRange;
+                const blockEl = pasteContext.blockEl;
+                if (
+                  splitBlock &&
+                  blockEl &&
+                  isNodeInEditorBody(editor, blockEl) &&
+                  blockEl.contains(restoredRange.startContainer) &&
+                  blockEl.contains(restoredRange.endContainer)
+                ) {
+                  insertEditorContentSplittingBlock(editor, content, restoredRange, blockEl);
+                } else {
                   insertEditorContentAtRange(editor, content, restoredRange);
-                });
+                }
                 setTimeout(() => {
                   const body = editor.getBody();
                   normalizePastedParagraphs(writer, body);
                   writer.tagger.processNewContent(body);
                   fixNestedPastedParagraphs(body);
                   removeEmptyParagraphs(body, writer.schemaManager.getBlockTag());
+                  // Commit the fully processed paste as one undo level.
+                  editor.undoManager.add();
                   writer.event('contentPasted').publish({ fromLeafWriter });
                   writer.event('contentChanged').publish();
                 }, 0);

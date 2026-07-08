@@ -31,6 +31,7 @@ import {
 } from './aiTranslationLlm';
 import {
   getAiApiSettings,
+  getEncoderName,
   getEntityDbFolder,
   getRememberWorkspaceOnStartup,
   getValidLastProjectFile,
@@ -233,7 +234,7 @@ const logAiTranslationDebug = async (entry: Record<string, unknown>): Promise<vo
       'utf8',
     );
   } catch (error) {
-    console.error('[crcao-desktop] Failed to write AI translation debug log:', error);
+    console.error('[le-jean-baptiste] Failed to write AI translation debug log:', error);
   }
 };
 
@@ -462,7 +463,7 @@ const getAppIcon = () => {
 
 protocol.registerSchemesAsPrivileged([
   {
-    scheme: 'crcao',
+    scheme: 'ljb',
     privileges: {
       secure: true,
       standard: true,
@@ -472,10 +473,10 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-const registerCrcaoProtocol = () => {
-  protocol.registerFileProtocol('crcao', (request, callback) => {
+const registerLjbProtocol = () => {
+  protocol.registerFileProtocol('ljb', (request, callback) => {
     try {
-      const filePath = decodeURIComponent(request.url.slice('crcao://'.length));
+      const filePath = decodeURIComponent(request.url.slice('ljb://'.length));
       callback({ path: path.normalize(filePath) });
     } catch {
       callback({ error: -2 });
@@ -485,7 +486,7 @@ const registerCrcaoProtocol = () => {
 
 const isDev = !app.isPackaged;
 const DEV_COMMONS_URL = process.env.COMMONS_URL ?? 'http://localhost:3000';
-const PROD_SERVER_PORT = process.env.CRCAO_SERVER_PORT ?? '3847';
+const PROD_SERVER_PORT = process.env.LJB_SERVER_PORT ?? '3847';
 const DEV_READY_TIMEOUT_MS = 120_000;
 const DEV_READY_POLL_MS = 1_000;
 
@@ -693,7 +694,7 @@ const handleOpenProjectMenu = async () => {
       await waitForRendererReady();
       await new Promise<void>((resolve) => setImmediate(resolve));
     } catch (error) {
-      console.error('[crcao-desktop] Renderer not ready for open project:', error);
+      console.error('[le-jean-baptiste] Renderer not ready for open project:', error);
       return;
     }
   }
@@ -747,9 +748,29 @@ const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
     { role: 'forceReload' },
     { role: 'toggleDevTools' },
     menuSeparator(),
-    { role: 'resetZoom' },
-    { role: 'zoomIn' },
-    { role: 'zoomOut' },
+    {
+      label: 'Actual Size',
+      accelerator: 'CommandOrControl+0',
+      click: () => sendMenuAction('editor-zoom-reset'),
+    },
+    {
+      label: 'Zoom In',
+      accelerator: 'CommandOrControl+Plus',
+      click: () => sendMenuAction('editor-zoom-in'),
+    },
+    {
+      // Hidden twin so the unshifted =/+ key also zooms in, like the built-in role.
+      label: 'Zoom In (hidden)',
+      accelerator: 'CommandOrControl+=',
+      visible: false,
+      acceleratorWorksWhenHidden: true,
+      click: () => sendMenuAction('editor-zoom-in'),
+    },
+    {
+      label: 'Zoom Out',
+      accelerator: 'CommandOrControl+-',
+      click: () => sendMenuAction('editor-zoom-out'),
+    },
     menuSeparator(),
     { role: 'togglefullscreen' },
   ],
@@ -928,7 +949,7 @@ const openProjectFromDialog = async () => {
     await writeLastProjectFile(bundle.projectFilePath);
     return bundle;
   } catch (error) {
-    console.error('[crcao-desktop] openProject failed:', error);
+    console.error('[le-jean-baptiste] openProject failed:', error);
     if (!mainWindow.isDestroyed()) {
       await dialog.showMessageBox(mainWindow, {
         type: 'error',
@@ -1735,7 +1756,7 @@ const createWindow = async () => {
     const url = await getAppUrl();
     await mainWindow.loadURL(url);
   } catch (error) {
-    console.error('[crcao-desktop] Failed to load app URL:', error);
+    console.error('[le-jean-baptiste] Failed to load app URL:', error);
     await dialog.showMessageBox(mainWindow, {
       type: 'error',
       title: APP_NAME,
@@ -1747,7 +1768,7 @@ const createWindow = async () => {
     return;
   }
 
-  if (isDev && process.env.CRCAO_OPEN_DEVTOOLS === '1') {
+  if (isDev && process.env.LJB_OPEN_DEVTOOLS === '1') {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
@@ -1777,7 +1798,7 @@ app.whenReady().then(() => {
   }
 
   buildApplicationMenu();
-  registerCrcaoProtocol();
+  registerLjbProtocol();
   registerIpcHandlers();
   registerNativeDialogIpc();
   registerLemminxIpc(() => mainWindow);

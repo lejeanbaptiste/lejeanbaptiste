@@ -107,7 +107,7 @@ const syncDevAppBundle = () => {
     // rewrite them as absolute paths into node_modules, which breaks GPU helpers.
     cpSync(sourceAppRoot, devAppRoot, { recursive: true, verbatimSymlinks: true });
     writeFileSync(versionMarkerPath, electronVersion, 'utf8');
-    console.log(`[crcao-desktop] Created dev app bundle at ${devAppRoot}`);
+    console.log(`[le-jean-baptiste] Created dev app bundle at ${devAppRoot}`);
   }
 };
 
@@ -136,8 +136,8 @@ const patchDevAppMetadata = () => {
 try {
   syncDevAppBundle();
   patchDevAppMetadata();
-  console.log(`[crcao-desktop] Dev app ready: ${APP_NAME} (${electronVersion})`);
+  console.log(`[le-jean-baptiste] Dev app ready: ${APP_NAME} (${electronVersion})`);
 } catch (error) {
-  console.warn('[crcao-desktop] Could not prepare branded dev app:', error);
+  console.warn('[le-jean-baptiste] Could not prepare branded dev app:', error);
   process.exit(0);
 }

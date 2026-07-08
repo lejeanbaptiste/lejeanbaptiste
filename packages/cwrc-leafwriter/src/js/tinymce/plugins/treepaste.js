@@ -172,7 +172,7 @@
                 var blockTag = ed.writer.schemaManager.getBlockTag();
 
                 if (mode === 'paragraphs') {
-                    return { content: pasteSpecial.textToParagraphHtml(text, blockTag) || originalHtml };
+                    return { content: pasteSpecial.textToParagraphHtml(text, blockTag, true) || originalHtml };
                 }
 
                 if (mode === 'line-breaks') {

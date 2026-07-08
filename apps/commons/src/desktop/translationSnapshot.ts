@@ -1,4 +1,9 @@
-import { getTranslationIndexAbsolutePath, type ProjectBundle } from './projectFile';
+import {
+  ensureSchemaDirectory,
+  getTranslationIndexAbsolutePath,
+  readProjectFileIfExists,
+  type ProjectBundle,
+} from './projectFile';
 import { getTranslatableUnits, hashUnitContent, normalizeUnitText } from './translationBootstrap';
 
 const PREVIEW_LENGTH = 80;
@@ -19,10 +24,10 @@ export interface TranslationIndexFile {
 export const readTranslationSnapshot = async (
   bundle: ProjectBundle,
 ): Promise<TranslationIndexFile | null> => {
-  if (!window.electronAPI?.readFile) return null;
+  const raw = await readProjectFileIfExists(getTranslationIndexAbsolutePath(bundle));
+  if (raw === null) return null;
 
   try {
-    const raw = await window.electronAPI.readFile(getTranslationIndexAbsolutePath(bundle));
     const parsed = JSON.parse(raw) as TranslationIndexFile;
     if (parsed.version !== 1 || typeof parsed.files !== 'object' || parsed.files === null) {
       return null;
@@ -77,13 +82,7 @@ export const writeTranslationSnapshot = async (
     files: { ...existing?.files, [sourceFileName]: units },
   };
 
-  if (window.electronAPI.createDirectory) {
-    try {
-      await window.electronAPI.createDirectory(bundle.rootPath, 'schema');
-    } catch {
-      // may already exist
-    }
-  }
+  await ensureSchemaDirectory(bundle);
 
   await window.electronAPI.writeFile(
     getTranslationIndexAbsolutePath(bundle),

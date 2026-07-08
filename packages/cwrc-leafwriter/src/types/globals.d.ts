@@ -83,6 +83,12 @@ declare global {
     __desktopValidatorInstrumentation?: DesktopValidatorInstrumentation;
     /** DevTools helper: `await __ljbDebugValidator()` */
     __ljbDebugValidator?: (options?: { runValidation?: boolean }) => Promise<unknown>;
+    __leafWriterEditorZoom?: {
+      zoomIn: () => void;
+      zoomOut: () => void;
+      reset: () => void;
+      get: () => number;
+    };
     __leafWriterCursorSession?: {
       capture: () => WorkspaceCursorPosition | null;
       restore: (position: WorkspaceCursorPosition) => Promise<boolean>;

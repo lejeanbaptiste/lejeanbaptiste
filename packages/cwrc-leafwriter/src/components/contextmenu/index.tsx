@@ -6,7 +6,7 @@ import { Collection, Header, type ItemProps } from './components';
 import { useContextmenu } from './hooks';
 import { tagMetaAtom, tagNameAtom, xpathAtom } from './store';
 
-export const MIN_WIDTH = 250;
+export const MIN_WIDTH = 220;
 
 export const ContextMenu = () => {
   const { isReadonly, settings } = useAppState().editor;

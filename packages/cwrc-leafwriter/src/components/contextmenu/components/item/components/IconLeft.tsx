@@ -15,5 +15,5 @@ export const IconLeft = ({ entityType, icon }: IconLeftProps) => {
   const IconComponent = useMemo(() => getIcon(icon), [icon]);
   const color = entityType && isEntityType(entityType) ? entity[entityType].color.main : 'inherit';
 
-  return <Icon component={IconComponent} sx={{ height: 18, width: 18, color }} />;
+  return <Icon component={IconComponent} sx={{ height: 16, width: 16, color }} />;
 };
