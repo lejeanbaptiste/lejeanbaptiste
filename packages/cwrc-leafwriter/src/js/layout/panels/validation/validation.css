@@ -7,6 +7,7 @@
   padding-left: 4px;
   padding-right: 8px;
   /* margin-top: 11px */
+  background-color: #f5f5f5;
 }
 
 .validationList li {
@@ -39,6 +40,7 @@
   width: 16px;
   height: 16px;
   font-size: 0.9em;
+  color: #555;
 }
 
 .validationList li .expandButton {
@@ -47,6 +49,7 @@
   justify-content: center;
   width: 12px;
   height: 12px;
+  color: #555;
 }
 
 .validationList li:hover {
@@ -158,6 +161,7 @@
   & i {
     opacity: 0.8;
     font-size: 0.7rem;
+    color: #555;
   }
 }
 
@@ -179,4 +183,67 @@
   position: relative;
   max-width: 200px;
   font-size: 2rem;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .validationList {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+  }
+  
+  .validationList li {
+    background-color: transparent;
+  }
+  
+  .validationList li:hover {
+    background-color: #2d2d2d;
+  }
+  
+  .validationList li.selected {
+    background-color: #2d2d2d;
+    box-shadow: 0 0px 4px rgb(255 255 255 / 10%);
+  }
+
+  .moduleParent {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+  }
+
+  .moduleFooter {
+    border-top-color: #3a3a3a;
+  }
+  
+  .validationList li #headerIcon {
+    color: #999;
+  }
+  
+  .validationList li .expandButton {
+    color: #999;
+  }
+  
+  .validationList li:hover #headerIcon i {
+    color: #e0e0e0 !important;
+  }
+  
+  .validationList li #details .documentation {
+    border-left-color: #555;
+  }
+  
+  .validationList li .element {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .validationList li [data-tooltip]:hover::before {
+    background-color: #444c;
+    color: #e0e0e0;
+  }
+  
+  .moduleParent .revalidate-bt:hover {
+    background-color: #3a3a3a;
+  }
+  
+  .moduleParent .revalidate-bt i {
+    color: #999;
+  }
 }

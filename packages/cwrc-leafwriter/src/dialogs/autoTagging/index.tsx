@@ -33,6 +33,8 @@ import {
   parseDictionaryTable,
   formatAuthorityTagBombNotice,
   persistAiPromptProfiles,
+  persistValidationSettings,
+  readPersistedValidationSettings,
   defaultAuthorityPacksRecord,
   persistAuthoritySettings,
   readAiPromptProfilesFromDesktop,
@@ -148,6 +150,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   );
   const [promptEditorOpen, setPromptEditorOpen] = useState(false);
   const [aiProgress, setAiProgress] = useState({ done: 0, total: 0 });
+  const [aiValidation, setAiValidation] = useState(true);
   const [authorityPacks, setAuthorityPacks] = useState<
     Record<AuthorityPackId, boolean>
   >(defaultAuthorityPacksForLanguage(null));
@@ -245,6 +248,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   }, [open, sourceLanguage]);
 
   useEffect(() => {
+    if (!open) return;
+    const validationSettings = readPersistedValidationSettings();
+    setAiValidation(validationSettings?.aiValidation ?? true);
+  }, [open]);
+
+  useEffect(() => {
     if (!open || step !== 'ai') return;
     const options = listAiTagOptions(window.writer);
     setAiTagOptions(options);
@@ -271,8 +280,14 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     });
   }, [open]);
 
-  const visibleAuthorityPackIds = visibleAuthorityPackIdsForLanguage(sourceLanguage);
-  const visibleAuthorityPackGroups = groupAuthorityPacksByTagType(visibleAuthorityPackIds);
+  const visibleAuthorityPackIds = useMemo(
+    () => visibleAuthorityPackIdsForLanguage(sourceLanguage),
+    [sourceLanguage],
+  );
+  const visibleAuthorityPackGroups = useMemo(
+    () => groupAuthorityPacksByTagType(visibleAuthorityPackIds),
+    [visibleAuthorityPackIds],
+  );
   const anyVisibleAuthorityPackInstalled = visibleAuthorityPackIds.some((id) =>
     isAuthorityPackInstalled(id, authorityStatus),
   );
@@ -341,7 +356,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     : 'CBDB / DILA';
 
   const beginReview = (produced: Suggestion[], notice?: string) => {
-    startAutoTaggingReview({ suggestions: produced, notice });
+    startAutoTaggingReview({ suggestions: produced, notice, aiValidation });
     handleClose();
   };
 
@@ -676,6 +691,24 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 </Typography>
               ) : (
                 <>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={aiValidation}
+                    onChange={(event) => {
+                      setAiValidation(event.target.checked);
+                      void persistValidationSettings({ aiValidation: event.target.checked });
+                    }}
+                  />
+                }
+                label={
+                  <Typography variant="caption">
+                    AI validation (pre-select best candidates, show warnings)
+                  </Typography>
+                }
+                sx={{ ml: 0, mb: 0.5 }}
+              />
               {methodButton(
                 'Tag from a list (CSV, TSV, xlsx, ODS)',
                 () => fileInput.current?.click(),

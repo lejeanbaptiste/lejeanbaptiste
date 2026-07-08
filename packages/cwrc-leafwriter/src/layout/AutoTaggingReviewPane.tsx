@@ -7,11 +7,15 @@ import {
   AutoTaggingSession,
   DateCuratorPanel,
   ReviewPanel,
+  aiApiSettingsFromDesktop,
   autoTaggingDocumentKey,
+  createLlmClientFromSettings,
+  isAiSuggestReady,
   isDateCuratorBatch,
   isDateTagOnlyBatch,
   markDatesPassApplied,
   markDatesPassRan,
+  validateSuggestions,
   type Suggestion,
 } from '../autoTagging';
 import { useActions, useAppState } from '../overmind';
@@ -34,6 +38,7 @@ const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI
 export const AutoTaggingReviewPane = () => {
   const { t } = useTranslation('LW');
   const active = useAppState().ui.autoTaggingReview?.active ?? false;
+  const aiValidationEnabled = useAppState().ui.autoTaggingReview?.aiValidation ?? true;
   const { exitAutoTaggingReview } = useActions().ui;
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [applied, setApplied] = useState(0);
@@ -48,21 +53,68 @@ export const AutoTaggingReviewPane = () => {
   );
   const session = useRef<AutoTaggingSession | null>(null);
 
+  const getSession = useCallback(() => {
+    if (!window.writer) throw new Error('Editor not ready');
+    session.current ??= new AutoTaggingSession(window.writer);
+    return session.current;
+  }, []);
+
   useEffect(() => {
-    if (active) {
-      setSuggestions(takeAutoTaggingBatch());
-      setNotice(takeAutoTaggingNotice());
-      setApplyDiagnostics(null);
-      setApplyDiagSeverity('info');
-      setApplied(0);
-      setCanRevert(false);
-    } else {
+    if (!active) {
       setSuggestions([]);
       setNotice(null);
       setApplyDiagnostics(null);
       setApplyDiagSeverity('info');
       session.current = null;
+      return;
     }
+
+    const batch = takeAutoTaggingBatch();
+    setSuggestions(batch);
+    setNotice(takeAutoTaggingNotice());
+    setApplyDiagnostics(null);
+    setApplyDiagSeverity('info');
+    setApplied(0);
+    setCanRevert(false);
+
+    if (
+      !aiValidationEnabled ||
+      batch.length === 0 ||
+      isDateCuratorBatch(batch) ||
+      isDateTagOnlyBatch(batch)
+    ) {
+      return;
+    }
+    const settings = aiApiSettingsFromDesktop();
+    if (!settings || !isAiSuggestReady(settings)) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const client = createLlmClientFromSettings(settings);
+        const results = await validateSuggestions({
+          suggestions: batch,
+          client,
+        });
+        if (cancelled || results.size === 0) return;
+        setSuggestions((current) =>
+          current.map((s) => {
+            const validation = results.get(s.id);
+            return validation ? { ...s, aiValidation: validation } : s;
+          }),
+        );
+      } catch (error) {
+        console.warn('[auto-tagging] AI validation failed:', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // aiValidationEnabled is fixed for the lifetime of a batch (set once when
+    // the review opens); only re-run this on active toggling, not every
+    // render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   // Desktop: expand/collapse the shell mount between editor and right sidebar.
@@ -79,12 +131,6 @@ export const AutoTaggingReviewPane = () => {
       scheduleDesktopEditorRelayout();
     };
   }, [active]);
-
-  const getSession = useCallback(() => {
-    if (!window.writer) throw new Error('Editor not ready');
-    session.current ??= new AutoTaggingSession(window.writer);
-    return session.current;
-  }, []);
 
   const handleClose = useCallback(() => {
     if (busy) return;
@@ -297,6 +343,7 @@ export const AutoTaggingReviewPane = () => {
               onFocus={handleFocus}
               onDecision={handleDecision}
               onClose={handleClose}
+              aiValidationEnabled={aiValidationEnabled}
             />
           )}
         </Box>
