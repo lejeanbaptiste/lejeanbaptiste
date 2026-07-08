@@ -331,10 +331,11 @@ export const setSelectedTranslationUnit = ({ state }: Context, unitId: string | 
 
 export const startAutoTaggingReview = (
   { state }: Context,
-  { suggestions, notice }: { suggestions: Suggestion[]; notice?: string },
+  { suggestions, notice, aiValidation }: { suggestions: Suggestion[]; notice?: string; aiValidation?: boolean },
 ) => {
   stashAutoTaggingBatch(suggestions, notice);
   state.ui.autoTaggingReview.active = true;
+  state.ui.autoTaggingReview.aiValidation = aiValidation;
   window.dispatchEvent(new CustomEvent('desktop:auto-tagging-review-open'));
 };
 

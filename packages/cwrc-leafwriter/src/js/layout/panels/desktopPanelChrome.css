@@ -35,3 +35,14 @@
   height: 100%;
   min-height: 0;
 }
+
+@media (prefers-color-scheme: dark) {
+  .moduleParent {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+  }
+
+  .moduleFooter {
+    border-top-color: #3a3a3a;
+  }
+}

@@ -187,11 +187,6 @@ function candidateClueLine(c: AuthorityCandidate): string {
 
 export function rationaleForCandidates(candidates: AuthorityCandidate[]): string | undefined {
   if (candidates.length === 0) return undefined;
-  if (candidates.length === 1) {
-    return candidateClueLine(candidates[0]!);
-  }
-  return candidates
-    .slice(0, 5)
-    .map((c) => candidateClueLine(c))
-    .join(' | ');
+  const lines = [...new Set(candidates.map((c) => candidateClueLine(c)))];
+  return lines.slice(0, 5).join(' | ');
 }

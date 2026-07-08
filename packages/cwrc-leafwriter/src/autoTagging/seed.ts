@@ -7,12 +7,28 @@ import { addEntity, ENTITY_KINDS, findEntity, LJB_AUTOTAG_RESP } from './entitie
 import { rationaleForCandidates } from './packLoader';
 import type { Suggestion, WhitespacePolicy } from './types';
 
+/**
+ * Dedupe source labels for the pill display. Keys on a case/whitespace/
+ * Unicode-form-insensitive form so near-identical labels (stray characters,
+ * full vs. half-width variants) never show as separate pills; keeps the
+ * first-seen spelling for display.
+ */
+function dedupeSourceLabels(sources: string[]): string[] {
+  const seen = new Map<string, string>();
+  for (const raw of sources) {
+    const label = raw.trim();
+    const key = label.toLowerCase().normalize('NFKC');
+    if (!seen.has(key)) seen.set(key, label);
+  }
+  return [...seen.values()];
+}
+
 /** Convert seed matches to tag-stage suggestions (no @key — disambiguation later). */
 export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
   return matches.map((match) => ({
     ...match.suggestion,
     source: 'authority' as const,
-    sourceDetail: [...new Set(match.candidates.map((c) => c.source))].join('+'),
+    sourceDetail: dedupeSourceLabels(match.candidates.map((c) => c.source)).join('+'),
     rationale: rationaleForCandidates(match.candidates),
   }));
 }

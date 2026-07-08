@@ -18,6 +18,7 @@ export interface TranslationModeState {
 
 export interface AutoTaggingReviewState {
   active: boolean;
+  aiValidation?: boolean;
 }
 
 export interface DisambiguationReviewState {

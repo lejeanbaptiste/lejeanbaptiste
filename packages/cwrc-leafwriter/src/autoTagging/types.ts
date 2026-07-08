@@ -55,6 +55,32 @@ export interface Suggestion {
   status: SuggestionStatus;
   /** East Asian dates: parse + resolution metadata from sanmiao. */
   dateResolution?: DateResolution;
+  /** AI validation metadata — populated when AI validation is enabled. */
+  aiValidation?: AiValidationResult;
+}
+
+/** AI validation result for a suggestion. */
+export interface AiValidationResult {
+  /** Overall validation score (0-1), where 1 = definitely correct, 0 = definitely wrong. */
+  confidence: number;
+  /** Warning message if AI flags this suggestion as problematic. */
+  warning?: string;
+  /** True if AI recommends accepting this suggestion. */
+  recommended: boolean;
+  /** For alternative groups: the preferred tag if this surface matches multiple types. */
+  preferredTag?: string;
+  /** Rationale from the AI for its validation decision. */
+  rationale?: string;
+  /** Timestamp of validation. */
+  validatedAt?: string;
+}
+
+/** Default AI validation result when validation hasn't run. */
+export function createDefaultAiValidation(recommended: boolean = false): AiValidationResult {
+  return {
+    confidence: 0.5,
+    recommended,
+  };
 }
 
 export interface DateCandidate {

@@ -18,11 +18,6 @@ When it finishes, compile:
 npm run wikidata:compile-zh-ja-orgs-works
 ```
 
-**Disambiguation**
-- [ ] identical strings of different categories. 
-	- [ ] AI curation.
-- [ ] Disambiguation: improve AI
-
 **Database**
 - [ ] viewer / entities
 - [ ] split and merge + update in XML
@@ -37,6 +32,10 @@ npm run wikidata:compile-zh-ja-orgs-works
 - [ ] Test on Linux
 - [ ] Test on Windows
 - [ ] Test on Mac
+
+---
+**Testing**
+- [ ] Improve AI
 
 ---
 

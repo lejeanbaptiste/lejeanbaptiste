@@ -2,6 +2,8 @@
     display: table;
     height: 100%;
     width: 100%;
+    background-color: #f5f5f5;
+    color-scheme: light;
 }
 
 .imageViewer .toolbar {
@@ -11,6 +13,7 @@
     height: 32px;
     padding: 8px;
     margin-top: 4px;
+    background-color: #f5f5f5;
 }
 
 .imageViewer .image {
@@ -37,6 +40,7 @@
     width: 24px;
     height: 24px;
     border-radius: 3px;
+    color: #333;
 }
 
 .imageViewer .lw-button:hover {
@@ -56,8 +60,37 @@
     height: 20px;
     width: 20px;
     text-align: right;
+    background-color: #f5f5f5;
+    color: #333;
+    border: 1px solid #ccc;
 }
 
 .imageViewer .openseadragon-message {
     white-space: pre;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    .imageViewer {
+        background-color: #1e1e1e;
+        color-scheme: dark;
+    }
+    
+    .imageViewer .toolbar {
+        background-color: #2d2d2d;
+    }
+    
+    .imageViewer .lw-button {
+        color: #e0e0e0;
+    }
+    
+    .imageViewer .lw-button:hover {
+        background-color: rgba(255, 255, 255, .15);
+    }
+    
+    .imageViewer input.currPage {
+        background-color: #2d2d2d;
+        color: #e0e0e0;
+        border-color: #555;
+    }
 }

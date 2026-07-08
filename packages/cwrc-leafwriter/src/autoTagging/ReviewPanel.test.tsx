@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { collectTextNodes } from './anchor';
 import { applySuggestions } from './apply';
 import { dictionaryTag } from './dictionary';
@@ -26,7 +26,7 @@ const setup = () => {
 };
 
 describe('ReviewPanel', () => {
-  it('renders the batch and walks it with the keyboard', () => {
+  it('renders the batch and walks it with the keyboard', async () => {
     const { doc, suggestions } = setup();
     const applied: string[] = [];
     render(
@@ -51,7 +51,7 @@ describe('ReviewPanel', () => {
     expect(screen.getByTestId('review-counts').textContent).toContain('1 rejected');
 
     fireEvent.click(screen.getByTestId('review-apply'));
-    expect(applied).toHaveLength(2);
+    await waitFor(() => expect(applied).toHaveLength(2));
 
     // applied items leave the walk; the rejected one remains
     expect(screen.getAllByRole('listitem')).toHaveLength(1);

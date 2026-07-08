@@ -4,7 +4,7 @@ import type { AuthorityCandidate } from './authority';
 import { candidatesFromCsv } from './authority';
 import { createEntitiesScaffold, findEntity, parseEntities } from './entities';
 import { normalizeDomText } from './normalize';
-import { autoLinkUnique, bucketSeeds, seedSuggestions } from './seed';
+import { autoLinkUnique, bucketSeeds, seedSuggestions, suggestionsFromSeedMatches } from './seed';
 
 const parse = (xml: string) => {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
@@ -41,6 +41,20 @@ describe('seedSuggestions + bucketSeeds', () => {
     expect(unique.map((m) => m.suggestion.anchor.surface)).toEqual(['洛陽']);
     expect(ambiguous).toHaveLength(2); // both 張衡 spots have 2 candidates
     expect(ambiguous[0]!.candidates).toHaveLength(2);
+  });
+
+  it('never shows the same source label twice in the pill even with near-identical raw values', () => {
+    const doc = parse(TEI);
+    const candidates = [
+      cand({ source: 'CBDB', authorityId: '1', searchStrings: ['張衡'] }),
+      cand({ source: 'CBDB ', authorityId: '2', searchStrings: ['張衡'] }), // trailing space
+      cand({ source: 'cbdb', authorityId: '3', searchStrings: ['張衡'] }), // different case
+    ];
+    const matches = seedSuggestions(doc, candidates, 'ignore');
+    const suggestions = suggestionsFromSeedMatches(matches);
+    for (const s of suggestions.filter((s) => s.anchor.surface === '張衡')) {
+      expect(s.sourceDetail).toBe('CBDB');
+    }
   });
 });
 

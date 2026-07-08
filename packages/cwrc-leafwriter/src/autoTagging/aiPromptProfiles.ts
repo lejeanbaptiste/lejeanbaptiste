@@ -1,6 +1,7 @@
 import auditCleanSystemTemplate from './prompt-templates/audit-clean.system.txt';
 import disambiguationRankSystemTemplate from './prompt-templates/disambiguation-rank.system.txt';
 import suggestSystemTemplate from './prompt-templates/suggest.system.txt';
+import validationSystemTemplate from './prompt-templates/validation.system.txt';
 import { entityStoreFromDesktop } from './entityStore';
 import { joinPath } from './pathJoin';
 
@@ -13,6 +14,7 @@ export interface AiPromptProfile {
   suggestTaskText: string;
   auditCleanTaskText: string;
   disambiguationRankTaskText: string;
+  validationTaskText?: string;
 }
 
 export interface AiPromptProfilesState {
@@ -26,6 +28,7 @@ export const DEFAULT_AI_PROMPT_PROFILE_ID = 'default';
 export const DEFAULT_SUGGEST_TASK_TEXT = suggestSystemTemplate.trimStart();
 export const DEFAULT_AUDIT_CLEAN_TASK_TEXT = auditCleanSystemTemplate.trimStart();
 export const DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT = disambiguationRankSystemTemplate.trimStart();
+export const DEFAULT_VALIDATION_TASK_TEXT = validationSystemTemplate.trimStart();
 
 const FILE_FORMAT_VERSION = 1;
 
@@ -43,6 +46,7 @@ export function createDefaultAiPromptProfile(): AiPromptProfile {
     suggestTaskText: DEFAULT_SUGGEST_TASK_TEXT,
     auditCleanTaskText: DEFAULT_AUDIT_CLEAN_TASK_TEXT,
     disambiguationRankTaskText: DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT,
+    validationTaskText: DEFAULT_VALIDATION_TASK_TEXT,
   };
 }
 
@@ -67,7 +71,8 @@ export function isDefaultAiPromptProfile(profile: AiPromptProfile): boolean {
   return (
     profile.suggestTaskText === DEFAULT_SUGGEST_TASK_TEXT &&
     profile.auditCleanTaskText === DEFAULT_AUDIT_CLEAN_TASK_TEXT &&
-    profile.disambiguationRankTaskText === DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT
+    profile.disambiguationRankTaskText === DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT &&
+    profile.validationTaskText === DEFAULT_VALIDATION_TASK_TEXT
   );
 }
 
@@ -85,6 +90,11 @@ export function resolveAuditCleanTaskText(profile?: AiPromptProfile | null): str
 export function resolveDisambiguationRankTaskText(profile?: AiPromptProfile | null): string | undefined {
   if (!profile || isDefaultAiPromptProfile(profile)) return undefined;
   return profile.disambiguationRankTaskText;
+}
+
+export function resolveValidationTaskText(profile?: AiPromptProfile | null): string | undefined {
+  if (!profile || isDefaultAiPromptProfile(profile)) return undefined;
+  return profile.validationTaskText;
 }
 
 /** Append a profile suffix to the shipped prompt version for cache invalidation. */

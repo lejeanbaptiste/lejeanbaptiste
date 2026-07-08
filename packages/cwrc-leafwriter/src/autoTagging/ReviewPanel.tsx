@@ -2,6 +2,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import UndoIcon from '@mui/icons-material/Undo';
+import WarningIcon from '@mui/icons-material/Warning';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
@@ -19,6 +20,7 @@ import {
   type PendingGroup,
 } from './reviewController';
 import type { Suggestion } from './types';
+import { getValidationColor, getConfidenceLabel } from './llmValidationRank';
 
 export interface ReviewPanelProps {
   suggestions: Suggestion[];
@@ -28,6 +30,8 @@ export interface ReviewPanelProps {
   onClose?: () => void;
   autoFocus?: boolean;
   busy?: boolean;
+  /** When true, show AI validation warnings and pre-selections. */
+  aiValidationEnabled?: boolean;
 }
 
 const statusColor: Record<Suggestion['status'], 'default' | 'success' | 'error' | 'warning'> = {
@@ -62,41 +66,61 @@ const SuggestionRow = ({
   onReject,
   onUndo,
   onPreview,
-}: SuggestionRowProps) => (
-  <Box
-    role="listitem"
-    data-testid={`review-item-${suggestion.id}`}
-    data-current={isCurrent || undefined}
-    onClick={() => {
-      onSelect?.();
-      onPreview?.();
-    }}
-    sx={{
-      p: 1,
-      cursor: 'pointer',
-      borderLeft: isCurrent ? '3px solid' : '3px solid transparent',
-      borderLeftColor: isCurrent ? 'primary.main' : 'transparent',
-      bgcolor: isCurrent ? 'action.selected' : undefined,
-    }}
-  >
-    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-      <Chip size="small" label={`<${suggestion.tag}>`} />
-      {suggestion.action !== 'add' && (
-        <Chip size="small" variant="outlined" color="warning" label={suggestion.action} />
-      )}
-      <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
-        {suggestion.anchor.surface}
-      </Typography>
-      <Chip size="small" variant="outlined" label={sourceBadgeLabel(suggestion)} />
-      {suggestion.confidence !== undefined && (
-        <Chip size="small" variant="outlined" label={suggestion.confidence.toFixed(2)} />
-      )}
-      <Chip
-        size="small"
-        color={statusColor[suggestion.status]}
-        label={suggestion.status}
-        data-testid={`status-${suggestion.id}`}
-      />
+}: SuggestionRowProps) => {
+  const aiValidation = suggestion.aiValidation;
+  const showValidation = aiValidation !== undefined;
+  const validationColor = getValidationColor(aiValidation?.confidence);
+  const confidenceLabel = getConfidenceLabel(aiValidation?.confidence);
+  
+  return (
+    <Box
+      role="listitem"
+      data-testid={`review-item-${suggestion.id}`}
+      data-current={isCurrent || undefined}
+      onClick={() => {
+        onSelect?.();
+        onPreview?.();
+      }}
+      sx={{
+        p: 1,
+        cursor: 'pointer',
+        borderLeft: isCurrent ? '3px solid' : '3px solid transparent',
+        borderLeftColor: isCurrent ? 'primary.main' : 'transparent',
+        bgcolor: isCurrent ? 'action.selected' : undefined,
+      }}
+    >
+      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Chip size="small" label={`<${suggestion.tag}>`} />
+        {suggestion.action !== 'add' && (
+          <Chip size="small" variant="outlined" color="warning" label={suggestion.action} />
+        )}
+        <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
+          {suggestion.anchor.surface}
+        </Typography>
+        <Chip size="small" variant="outlined" label={sourceBadgeLabel(suggestion)} />
+        {suggestion.confidence !== undefined && (
+          <Chip size="small" variant="outlined" label={suggestion.confidence.toFixed(2)} />
+        )}
+        {showValidation && (
+          <Chip
+            size="small"
+            variant="outlined"
+            color={validationColor}
+            label={confidenceLabel}
+            title={`AI confidence: ${aiValidation?.confidence?.toFixed(2)}`}
+          />
+        )}
+        {aiValidation?.warning && (
+          <Tooltip title={aiValidation.warning} arrow>
+            <WarningIcon color="error" sx={{ fontSize: 14 }} />
+          </Tooltip>
+        )}
+        <Chip
+          size="small"
+          color={statusColor[suggestion.status]}
+          label={suggestion.status}
+          data-testid={`status-${suggestion.id}`}
+        />
       {suggestion.status !== 'unresolvable' && (
         <Box sx={{ ml: 'auto', display: 'flex', gap: 0.25 }}>
           {suggestion.status === 'pending' && onAccept && onReject ? (
@@ -184,13 +208,19 @@ const SuggestionRow = ({
       <b>{suggestion.anchor.surface}</b>
       {suggestion.anchor.contextAfter}…
     </Typography>
-    {suggestion.rationale && (
+    {suggestion.rationale && suggestion.source !== 'authority' && (
       <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 0.25 }}>
         {suggestion.rationale}
       </Typography>
     )}
+    {aiValidation?.rationale && (
+      <Typography variant="caption" component="div" color="error.main" sx={{ mt: 0.25 }}>
+        AI: {aiValidation.rationale}
+      </Typography>
+    )}
   </Box>
 );
+}
 
 interface AlternativeGroupRowProps {
   group: PendingGroup;
@@ -218,6 +248,17 @@ const AlternativeGroupRow = ({
   onPreview,
 }: AlternativeGroupRowProps) => {
   const first = group.suggestions[0]!;
+  
+  // Check if AI has pre-selected a candidate for this group
+  // Find the AI preferred tag from any suggestion in the group
+  const preferredTag = group.suggestions.find(s => s.aiValidation?.preferredTag)?.aiValidation?.preferredTag;
+  const recommendedIndex = preferredTag 
+    ? group.suggestions.findIndex(s => s.tag === preferredTag)
+    : -1;
+  
+  // Also find if any suggestion in the group has an AI warning
+  const hasAiWarning = group.suggestions.some(s => s.aiValidation?.warning);
+  
   return (
     <Box
       role="listitem"
@@ -239,31 +280,60 @@ const AlternativeGroupRow = ({
         m: 0.5,
       }}
     >
-      {group.suggestions.map((suggestion, index) => (
-        <Box
-          key={suggestion.id}
-          data-testid={`review-item-${suggestion.id}`}
-          sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}
-        >
-          <Checkbox
-            size="small"
-            checked={index === group.selectedIndex}
-            data-testid={`alt-select-${suggestion.id}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              onSelectGroup();
-              onSelectAlternative(suggestion);
-            }}
-            sx={{ p: 0.25 }}
-          />
-          <Chip size="small" label={`<${suggestion.tag}>`} />
-          <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
-            {suggestion.anchor.surface}
-          </Typography>
-          <Chip size="small" variant="outlined" label={sourceBadgeLabel(suggestion)} />
-          {suggestion.confidence !== undefined && (
-            <Chip size="small" variant="outlined" label={suggestion.confidence.toFixed(2)} />
-          )}
+      {group.suggestions.map((suggestion, index) => {
+        const aiValidation = suggestion.aiValidation;
+        const showValidation = aiValidation !== undefined;
+        const validationColor = getValidationColor(aiValidation?.confidence);
+        const confidenceLabel = getConfidenceLabel(aiValidation?.confidence);
+        const isRecommended = aiValidation?.recommended || index === recommendedIndex;
+        
+        return (
+          <Box
+            key={suggestion.id}
+            data-testid={`review-item-${suggestion.id}`}
+            sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}
+          >
+            <Checkbox
+              size="small"
+              checked={index === group.selectedIndex}
+              data-testid={`alt-select-${suggestion.id}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelectGroup();
+                onSelectAlternative(suggestion);
+              }}
+              sx={{ p: 0.25 }}
+            />
+            <Chip 
+              size="small" 
+              label={`<${suggestion.tag}>`} 
+              color={isRecommended ? 'primary' : 'default'}
+              variant={isRecommended ? 'filled' : 'outlined'}
+            />
+            {recommendedIndex === index && (
+              <Chip size="small" color="primary" label="AI pick" />
+            )}
+            <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
+              {suggestion.anchor.surface}
+            </Typography>
+            <Chip size="small" variant="outlined" label={sourceBadgeLabel(suggestion)} />
+            {suggestion.confidence !== undefined && (
+              <Chip size="small" variant="outlined" label={suggestion.confidence.toFixed(2)} />
+            )}
+            {showValidation && (
+              <Chip
+                size="small"
+                variant="outlined"
+                color={validationColor}
+                label={confidenceLabel}
+                title={`AI confidence: ${aiValidation?.confidence?.toFixed(2)}`}
+              />
+            )}
+            {aiValidation?.warning && (
+              <Tooltip title={aiValidation.warning} arrow>
+                <WarningIcon color="error" sx={{ fontSize: 14 }} />
+              </Tooltip>
+            )}
           {index === 0 && (
             <Box sx={{ ml: 'auto', display: 'flex', gap: 0.25 }}>
               <Tooltip title="Accept the checked alternative (Enter)">
@@ -295,12 +365,23 @@ const AlternativeGroupRow = ({
             </Box>
           )}
         </Box>
-      ))}
+        );
+      })}
+      {hasAiWarning && (
+        <Typography variant="caption" color="error" sx={{ mt: 0.5, pl: 2 }}>
+          AI flagged potential issues with some alternatives
+        </Typography>
+      )}
       <Typography variant="caption" color="text.secondary" component="div">
         …{first.anchor.contextBefore}
         <b>{first.anchor.surface}</b>
         {first.anchor.contextAfter}…
       </Typography>
+      {first.aiValidation?.rationale && (
+        <Typography variant="caption" component="div" color="error.main" sx={{ mt: 0.25, pl: 2 }}>
+          AI: {first.aiValidation.rationale}
+        </Typography>
+      )}
     </Box>
   );
 };

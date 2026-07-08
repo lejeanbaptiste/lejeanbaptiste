@@ -21,12 +21,18 @@ export const IconButton = ({ color, disabled, icon, onClick, title, tooltip }: M
           color="primary"
           onClick={onClick}
           size="small"
-          sx={{
-            width: 34,
-            height: 34,
-            borderRadius: 1,
-            '&:hover': { color: color ?? theme.vars.palette.primary.main },
-          }}
+          sx={[
+            {
+              width: 34,
+              height: 34,
+              borderRadius: 1,
+              '&:hover': { color: color ?? theme.vars.palette.primary.main },
+            },
+            theme.applyStyles('dark', {
+              color: theme.vars.palette.text.primary,
+              '&:hover': { color: theme.vars.palette.text.primary },
+            }),
+          ]}
         >
           <Icon component={getIcon(icon)} fontSize="small" />
         </MuiIconButton>
