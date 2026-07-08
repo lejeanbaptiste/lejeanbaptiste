@@ -33,6 +33,7 @@ npm run wikidata:compile-zh-ja-orgs-works
 - [ ] Double clicking contents should not select the node as well (?)
 
 **Packaging**
+- [ ] Reduce package size and load time
 - [ ] Test on Linux
 - [ ] Test on Windows
 - [ ] Test on Mac
