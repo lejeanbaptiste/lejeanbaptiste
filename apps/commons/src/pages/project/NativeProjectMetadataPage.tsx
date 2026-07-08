@@ -33,7 +33,7 @@ export const NativeProjectMetadataPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [alignmentUnit, setAlignmentUnit] = useState<'div' | 'p'>('div');
+  const [alignmentUnit, setAlignmentUnit] = useState<'div' | 'p'>('p');
   const [languages, setLanguages] = useState<TranslationLanguage[]>([]);
   const [newLangCode, setNewLangCode] = useState('');
 
@@ -51,7 +51,7 @@ export const NativeProjectMetadataPage = () => {
   const applyDialogState = useCallback((dialogState: ProjectMetadataDialogState | null) => {
     if (dialogState) {
       setState(dialogState);
-      setAlignmentUnit(dialogState.translation.alignmentUnit ?? 'div');
+      setAlignmentUnit(dialogState.translation.alignmentUnit ?? 'p');
       setLanguages(dialogState.translation.languages);
       setError(null);
     } else {

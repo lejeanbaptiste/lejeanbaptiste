@@ -70,7 +70,7 @@ export const setupSchemas = async (
     if (!mapping || !SchemaMappings.includes(mapping)) continue;
 
     const isSchemaLocator = (url: string) =>
-      isValidHttpURL(url) || url.startsWith('blob:') || url.startsWith('crcao://');
+      isValidHttpURL(url) || url.startsWith('blob:') || url.startsWith('ljb://');
     const validRng = rng.filter((url) => isSchemaLocator(url));
     if (validRng.length === 0) continue;
 

@@ -21,7 +21,7 @@ export const spawnLemminxProcess = (): ChildProcessWithoutNullStreams => {
   const binaryPath = getLemminxBinaryPath();
   if (!binaryPath) {
     throw new Error(
-      'LemMinX binary not found. Run: npm run lemminx:download -w crcao-desktop',
+      'LemMinX binary not found. Run: npm run lemminx:download -w le-jean-baptiste-desktop',
     );
   }
 

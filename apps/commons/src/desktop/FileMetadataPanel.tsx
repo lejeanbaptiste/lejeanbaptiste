@@ -1,7 +1,17 @@
-import { Box, Paper, Stack, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Checkbox,
+  FormControlLabel,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { AuthorPillField } from '@src/desktop/AuthorPillField';
 import {
   applyFileHeaderFields,
   documentSupportsFileMetadata,
+  isTeiCatalogForFileMetadata,
   pushXmlToActiveEditor,
   readFileMetadataFromXml,
 } from '@src/desktop/fileMetadata';
@@ -10,6 +20,13 @@ import {
   resolveFileMetadataFields,
   type MetadataFieldsTemplate,
 } from '@src/desktop/metadataFieldsTemplate';
+import {
+  applySourceDescriptionToXml,
+  emptySourceDescription,
+  readSourceDescriptionFromXml,
+  type SourceAuthor,
+  type SourceDescription,
+} from '@src/desktop/sourceDescription';
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -27,15 +44,161 @@ const getActiveXmlContent = (
   return openTabs.find((tab) => tab.filePath === filePath)?.content ?? '';
 };
 
+/** Structured TEI source metadata: book title, authors, dates, edition, source. */
+const TeiSourceFields = ({
+  disabled,
+  onChange,
+  value,
+}: {
+  disabled: boolean;
+  onChange: (next: SourceDescription) => void;
+  value: SourceDescription;
+}) => {
+  const isRange = value.workDate.when === undefined &&
+    (value.workDate.notBefore !== undefined || value.workDate.notAfter !== undefined);
+  const [rangeMode, setRangeMode] = useState(isRange);
+
+  useEffect(() => {
+    setRangeMode(isRange);
+    // Only resync the toggle when the underlying document changes shape.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRange]);
+
+  const update = (patch: Partial<SourceDescription>) => onChange({ ...value, ...patch });
+
+  const toggleRange = (checked: boolean) => {
+    setRangeMode(checked);
+    if (checked) {
+      update({
+        workDate: value.workDate.when
+          ? { notBefore: value.workDate.when, notAfter: value.workDate.when }
+          : { notBefore: value.workDate.notBefore, notAfter: value.workDate.notAfter },
+      });
+    } else {
+      update({
+        workDate: { when: value.workDate.notBefore || value.workDate.notAfter || undefined },
+      });
+    }
+  };
+
+  return (
+    <>
+      <TextField
+        disabled={disabled}
+        fullWidth
+        label="Book title"
+        onChange={(event) => update({ title: event.target.value })}
+        size="small"
+        value={value.title}
+      />
+
+      <AuthorPillField
+        authors={value.authors}
+        disabled={disabled}
+        onChange={(authors: SourceAuthor[]) => update({ authors })}
+      />
+
+      <Box>
+        <Stack alignItems="center" direction="row" spacing={1}>
+          {rangeMode ? (
+            <>
+              <TextField
+                disabled={disabled}
+                label="Not before"
+                onChange={(event) =>
+                  update({
+                    workDate: { ...value.workDate, when: undefined, notBefore: event.target.value },
+                  })
+                }
+                size="small"
+                sx={{ flex: 1 }}
+                value={value.workDate.notBefore ?? ''}
+              />
+              <TextField
+                disabled={disabled}
+                label="Not after"
+                onChange={(event) =>
+                  update({
+                    workDate: { ...value.workDate, when: undefined, notAfter: event.target.value },
+                  })
+                }
+                size="small"
+                sx={{ flex: 1 }}
+                value={value.workDate.notAfter ?? ''}
+              />
+            </>
+          ) : (
+            <TextField
+              disabled={disabled}
+              label="Year"
+              onChange={(event) => update({ workDate: { when: event.target.value } })}
+              size="small"
+              sx={{ flex: 1 }}
+              value={value.workDate.when ?? ''}
+            />
+          )}
+        </Stack>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={rangeMode}
+              disabled={disabled}
+              onChange={(event) => toggleRange(event.target.checked)}
+              size="small"
+            />
+          }
+          label={
+            <Typography color="text.secondary" variant="caption">
+              Uncertain date (not before / not after)
+            </Typography>
+          }
+        />
+      </Box>
+
+      <Stack direction="row" spacing={1}>
+        <TextField
+          disabled={disabled}
+          label="Edition"
+          onChange={(event) => update({ edition: event.target.value })}
+          size="small"
+          sx={{ flex: 2 }}
+          value={value.edition}
+        />
+        <TextField
+          disabled={disabled}
+          label="Year of edition"
+          onChange={(event) => update({ editionDate: event.target.value })}
+          size="small"
+          sx={{ flex: 1 }}
+          value={value.editionDate}
+        />
+      </Stack>
+
+      <TextField
+        disabled={disabled}
+        fullWidth
+        label="Transcription source"
+        minRows={3}
+        multiline
+        onChange={(event) => update({ sourceNote: event.target.value })}
+        size="small"
+        value={value.sourceNote}
+      />
+    </>
+  );
+};
+
 export const FileMetadataPanel = () => {
   const { activeTabPath, config, openTabs, rootPath } = useAppState().project;
   const { readonly } = useAppState().editor;
   const { markTabDirty, updateTabContent } = useActions().project;
 
   const [values, setValues] = useState<Record<string, string>>({});
+  const [sourceValues, setSourceValues] = useState<SourceDescription>(emptySourceDescription());
   const skipNextSyncRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const valuesRef = useRef(values);
+  const sourceValuesRef = useRef(sourceValues);
 
   const [fieldsTemplate, setFieldsTemplate] = useState<MetadataFieldsTemplate | null>(null);
 
@@ -55,6 +218,9 @@ export const FileMetadataPanel = () => {
 
   const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
   const catalogId = config?.schema?.catalogId;
+  // Structured TEI fields unless a project template overrides the file fields.
+  const structured =
+    isTeiCatalogForFileMetadata(catalogId) && !(fieldsTemplate?.file?.length ?? 0);
   const metadataFields = resolveFileMetadataFields(fieldsTemplate, catalogId);
   const xml = activeTabPath ? getActiveXmlContent(activeTabPath, openTabs, activeTabPath) : '';
   const supported = Boolean(activeTabPath && xml && documentSupportsFileMetadata(xml, catalogId));
@@ -64,8 +230,13 @@ export const FileMetadataPanel = () => {
   }, [values]);
 
   useEffect(() => {
+    sourceValuesRef.current = sourceValues;
+  }, [sourceValues]);
+
+  useEffect(() => {
     if (!activeTabPath || !xml) {
       setValues({});
+      setSourceValues(emptySourceDescription());
       return;
     }
 
@@ -74,19 +245,16 @@ export const FileMetadataPanel = () => {
       return;
     }
 
-    setValues(readFileMetadataFromXml(xml, catalogId, fieldsTemplate?.file));
-  }, [activeTabPath, activeTab?.content, catalogId, fieldsTemplate, xml]);
+    if (structured) {
+      setSourceValues(readSourceDescriptionFromXml(xml));
+    } else {
+      setValues(readFileMetadataFromXml(xml, catalogId, fieldsTemplate?.file));
+    }
+  }, [activeTabPath, activeTab?.content, catalogId, fieldsTemplate, structured, xml]);
 
-  const commitChanges = useCallback(
-    (nextValues: Record<string, string>) => {
-      if (!activeTabPath || readonly) return;
-
-      const currentXml = getActiveXmlContent(activeTabPath, openTabs, activeTabPath);
-      if (!currentXml) return;
-
-      const nextXml = applyFileHeaderFields(currentXml, nextValues, catalogId);
-      if (nextXml === currentXml) return;
-
+  const pushUpdatedXml = useCallback(
+    (nextXml: string, currentXml: string) => {
+      if (!activeTabPath || nextXml === currentXml) return;
       skipNextSyncRef.current = true;
       pushXmlToActiveEditor({
         content: nextXml,
@@ -95,7 +263,27 @@ export const FileMetadataPanel = () => {
         updateTabContent,
       });
     },
-    [activeTabPath, catalogId, markTabDirty, openTabs, readonly, updateTabContent],
+    [activeTabPath, markTabDirty, updateTabContent],
+  );
+
+  const commitChanges = useCallback(
+    (nextValues: Record<string, string>) => {
+      if (!activeTabPath || readonly) return;
+      const currentXml = getActiveXmlContent(activeTabPath, openTabs, activeTabPath);
+      if (!currentXml) return;
+      pushUpdatedXml(applyFileHeaderFields(currentXml, nextValues, catalogId), currentXml);
+    },
+    [activeTabPath, catalogId, openTabs, pushUpdatedXml, readonly],
+  );
+
+  const commitSourceChanges = useCallback(
+    (next: SourceDescription) => {
+      if (!activeTabPath || readonly) return;
+      const currentXml = getActiveXmlContent(activeTabPath, openTabs, activeTabPath);
+      if (!currentXml) return;
+      pushUpdatedXml(applySourceDescriptionToXml(currentXml, next), currentXml);
+    },
+    [activeTabPath, openTabs, pushUpdatedXml, readonly],
   );
 
   const handleFieldChange = (path: string, value: string) => {
@@ -105,6 +293,14 @@ export const FileMetadataPanel = () => {
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => commitChanges(nextValues), 300);
+  };
+
+  const handleSourceChange = (next: SourceDescription) => {
+    sourceValuesRef.current = next;
+    setSourceValues(next);
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => commitSourceChanges(next), 300);
   };
 
   useEffect(
@@ -149,19 +345,27 @@ export const FileMetadataPanel = () => {
     >
       <Stack spacing={2}>
         <Typography variant="subtitle2">File metadata</Typography>
-        {metadataFields.map((field) => (
-          <TextField
-            key={field.path}
+        {structured ? (
+          <TeiSourceFields
             disabled={readonly}
-            fullWidth
-            label={field.label}
-            minRows={field.multiline || field.label === 'Source' ? 3 : undefined}
-            multiline={Boolean(field.multiline) || field.label === 'Source'}
-            onChange={(event) => handleFieldChange(field.path, event.target.value)}
-            size="small"
-            value={values[field.path] ?? ''}
+            onChange={handleSourceChange}
+            value={sourceValues}
           />
-        ))}
+        ) : (
+          metadataFields.map((field) => (
+            <TextField
+              key={field.path}
+              disabled={readonly}
+              fullWidth
+              label={field.label}
+              minRows={field.multiline || field.label === 'Source' ? 3 : undefined}
+              multiline={Boolean(field.multiline) || field.label === 'Source'}
+              onChange={(event) => handleFieldChange(field.path, event.target.value)}
+              size="small"
+              value={values[field.path] ?? ''}
+            />
+          ))
+        )}
         <Box>
           <Typography color="text.secondary" variant="caption">
             Project-wide defaults: Project → Edition metadata…

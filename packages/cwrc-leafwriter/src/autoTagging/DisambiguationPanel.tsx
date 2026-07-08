@@ -50,6 +50,7 @@ import {
   candidatePassesYearFilter,
   collapseCrossAuthorityCandidates,
   enrichCandidateCrossRefs,
+  extractWikidataId,
   mergeSelectedCandidates,
   type CandidateLink,
   type DisambiguationCandidate,
@@ -63,6 +64,7 @@ import {
 } from './disambiguationSettings';
 import { normalizeDateRangeFilter, type DateFilterMode, type DateRangeFilter } from './packLoader';
 import { resolveManualAuthorityLink } from './manualAuthorityLink';
+import { fetchWikidataSummary, type WikidataSummary } from './wikidataDates';
 import {
   DisambiguationController,
   handleDisambiguationKey,
@@ -596,9 +598,29 @@ export const DisambiguationPanel = ({
         setManualLinkError('Only Wikidata, Wikipedia, VIAF, DBPedia, Getty, GND, or Geonames links are accepted.');
         return;
       }
+      // Harvest the one-line description and life dates for the database entry.
+      let summary: WikidataSummary | null = null;
+      if (authorityId.type === 'Wikidata') {
+        const qid = extractWikidataId(authorityId.value);
+        if (qid) {
+          try {
+            summary = await fetchWikidataSummary(qid);
+          } catch {
+            summary = null;
+          }
+        }
+      }
       await session.resolveMention(
         instance,
-        { id: 'new', label: instance.surface, sources: ['manual'], authorityIds: [authorityId] },
+        {
+          id: 'new',
+          label: instance.surface,
+          sources: ['manual'],
+          authorityIds: [authorityId],
+          description: summary?.description,
+          startYear: summary?.birthYear,
+          endYear: summary?.deathYear,
+        },
         { createNew: true, name: instance.surface },
       );
       setManualLinkOpen(false);

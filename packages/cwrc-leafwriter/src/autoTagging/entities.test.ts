@@ -92,6 +92,35 @@ describe('addEntity', () => {
     expect(JSON.parse(note.textContent!)).toEqual({ lat: 34.6, lng: 112.4 });
   });
 
+  it('writes person life dates as birth/death @when, BCE as negative ISO years', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', {
+      name: '張衡',
+      description: 'Han dynasty polymath',
+      startYear: 78,
+      endYear: 139,
+    });
+    const el = findEntity(doc, id)!;
+    expect(el.getElementsByTagName('birth')[0]?.getAttribute('when')).toBe('0078');
+    expect(el.getElementsByTagName('death')[0]?.getAttribute('when')).toBe('0139');
+    const note = el.getElementsByTagName('note')[0]!;
+    expect(note.getAttribute('type')).toBe('description');
+    expect(note.textContent).toBe('Han dynasty polymath');
+
+    const { id: bceId } = addEntity(doc, 'person', { name: '孔子', startYear: -551, endYear: -479 });
+    const bce = findEntity(doc, bceId)!;
+    expect(bce.getElementsByTagName('birth')[0]?.getAttribute('when')).toBe('-0551');
+    expect(bce.getElementsByTagName('death')[0]?.getAttribute('when')).toBe('-0479');
+  });
+
+  it('writes non-person years as a dates note', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'place', { name: '洛陽', startYear: -1036, endYear: 938 });
+    const note = findEntity(doc, id)!.getElementsByTagName('note')[0]!;
+    expect(note.getAttribute('type')).toBe('dates');
+    expect(note.textContent).toBe('-1036/0938');
+  });
+
   it('round-trips through serialization', () => {
     const doc = parseEntities(createEntitiesScaffold());
     addEntity(doc, 'org', { name: '道藏' });

@@ -1,8 +1,9 @@
 {
-  "name": "crcao-desktop",
+  "name": "le-jean-baptiste-desktop",
   "version": "0.1.0",
   "private": true,
   "description": "Le Jean-Baptiste — desktop XML editor",
+  "author": "Daniel Patrick Morgan (CNRS)",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsup",

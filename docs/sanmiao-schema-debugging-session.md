@@ -335,7 +335,7 @@ const validCache = cachedSchema?.hash ? verifyHash(url, cachedSchema) : false;
 truthy). Any IndexedDB entry for a schema id was treated as valid forever — typically
 **stock TEI** from an earlier session — even when the project file was correct v4 flat.
 
-**Fix:** `await verifyHash(...)`; `shouldCache: false` for local `crcao://` project schemas.
+**Fix:** `await verifyHash(...)`; `shouldCache: false` for local `ljb://` project schemas.
 
 This alone turned 542 errors into ~2 (real document issues).
 
@@ -362,7 +362,7 @@ Several interacting issues in the validator bootstrap:
 3. **Blob URLs in worker:** main-thread `blob:` URLs are not fetchable from the worker.
    **Fix:** pass `schemaText` via Comlink; compile with in-memory `StringResourceLoader`.
 
-4. **Invalid URL:** appending `#ljb-sanmiao-merge v4` to `crcao://` broke `new URL()` (space
+4. **Invalid URL:** appending `#ljb-sanmiao-merge v4` to `ljb://` broke `new URL()` (space
    in fragment). **Fix:** separate `schemaRevision` field; use `rng:///schema.rng` when
    compiling from text.
 

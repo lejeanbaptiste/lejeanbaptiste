@@ -1,4 +1,4 @@
-# CRCAO Editor (Desktop)
+# Le Jean-Baptiste (Desktop)
 
 Electron desktop shell for LEAF-Writer Commons.
 
@@ -19,14 +19,14 @@ Or in two terminals:
 
 ```bash
 npm run dev -w leafwriter-commons
-npm run dev -w crcao-desktop
+npm run dev -w le-jean-baptiste-desktop
 ```
 
 The Electron window opens at `http://localhost:3000/project`.
 
 **First launch can take ~30 seconds** while webpack compiles; the desktop shell waits for the dev server and `js/app.js` before opening the window. If you still see an error, wait until the terminal shows `Compiled successfully`, then reload the window (Cmd+R).
 
-Optional: set `CRCAO_OPEN_DEVTOOLS=1` to open Chromium DevTools in development.
+Optional: set `LJB_OPEN_DEVTOOLS=1` to open Chromium DevTools in development.
 
 ## Production build (Mac)
 

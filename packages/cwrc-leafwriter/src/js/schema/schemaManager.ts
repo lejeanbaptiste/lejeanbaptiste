@@ -696,7 +696,7 @@ class SchemaManager {
         Math.max(localBase.lastIndexOf('/'), localBase.lastIndexOf('\\')),
       );
       const includePath = `${dir}${separator}${includeFile}`;
-      url = `crcao://${encodeURIComponent(includePath)}`;
+      url = `ljb://${encodeURIComponent(includePath)}`;
     } else if (/^https?:\/\//i.test(baseRng)) {
       const schemaBase = baseRng.match(/(.*\/)(.*)/)?.[1];
       url = schemaBase ? schemaBase + includeFile : `schema/${includeFile}`;

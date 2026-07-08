@@ -522,7 +522,9 @@ export class AutoTaggingSession {
         kind,
         name: options.name ?? instance.surface,
         authorityIds: candidate.authorityIds,
-        description: options.description,
+        description: options.description ?? candidate.description,
+        startYear: candidate.startYear,
+        endYear: candidate.endYear,
       },
       options.createNew ? undefined : candidate,
     );

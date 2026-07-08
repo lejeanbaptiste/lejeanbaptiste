@@ -111,6 +111,8 @@ export const Item = forwardRef<any, ItemProps>(
           {
             mx: 0.5,
             px: 0.75,
+            py: 0.25,
+            minHeight: 26,
             borderRadius: 1,
             backgroundColor: 'inherit',
             '&.Mui-focusVisible': { backgroundColor: 'inherit' },
@@ -133,7 +135,7 @@ export const Item = forwardRef<any, ItemProps>(
           justifyContent="space-between"
           alignItems="center"
           width="100%"
-          columnGap={1}
+          columnGap={0.75}
         >
           {icon && <IconLeft icon={icon} entityType={id} />}
           <Label {...{ documentation, fullName, invalid, name }} />

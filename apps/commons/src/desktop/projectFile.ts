@@ -83,3 +83,32 @@ export const getTranslationSettingsAbsolutePath = (bundle: ProjectBundle): strin
 /** Recovery snapshot of alignment-unit ids/content hashes (derived data, never source of truth). */
 export const getTranslationIndexAbsolutePath = (bundle: ProjectBundle): string =>
   joinProjectPath(bundle.rootPath, 'schema/translation-index.json');
+
+/**
+ * Reads a project file that may legitimately not exist yet, without triggering the
+ * main-process "Error occurred in handler for 'readFile'" console noise that a bare
+ * readFile of a missing path produces.
+ */
+export const readProjectFileIfExists = async (absolutePath: string): Promise<string | null> => {
+  if (!window.electronAPI?.readFile) return null;
+  if (window.electronAPI.pathExists && !(await window.electronAPI.pathExists(absolutePath))) {
+    return null;
+  }
+  try {
+    return await window.electronAPI.readFile(absolutePath);
+  } catch {
+    return null;
+  }
+};
+
+/** Creates the project's schema/ directory if missing, quietly no-op'ing when it exists. */
+export const ensureSchemaDirectory = async (bundle: ProjectBundle): Promise<void> => {
+  if (!window.electronAPI?.createDirectory) return;
+  const schemaDir = joinProjectPath(bundle.rootPath, 'schema');
+  if (window.electronAPI.pathExists && (await window.electronAPI.pathExists(schemaDir))) return;
+  try {
+    await window.electronAPI.createDirectory(bundle.rootPath, 'schema');
+  } catch {
+    // Lost the race with another writer — the directory exists either way.
+  }
+};

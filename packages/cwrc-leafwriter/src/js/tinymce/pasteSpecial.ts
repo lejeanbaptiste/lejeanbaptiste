@@ -87,15 +87,19 @@ export const escapeHtml = (value: string): string =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-const splitParagraphs = (text: string): string[] =>
-  text
-    .replace(/\r\n?/g, '\n')
-    .split(/\n{2,}/)
+const splitParagraphs = (text: string, singleNewlineFallback = false): string[] => {
+  const normalized = text.replace(/\r\n?/g, '\n');
+  // In paragraphs mode, text without any blank lines splits on every line break —
+  // otherwise the mode could never produce more than one paragraph for such text.
+  const separator = !singleNewlineFallback || /\n{2,}/.test(normalized) ? /\n{2,}/ : /\n/;
+  return normalized
+    .split(separator)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
+};
 
-export const textToParagraphHtml = (text: string, blockTag = 'p'): string =>
-  splitParagraphs(text)
+export const textToParagraphHtml = (text: string, blockTag = 'p', singleNewlineFallback = false): string =>
+  splitParagraphs(text, singleNewlineFallback)
     .map((paragraph) => {
       const html = paragraph
         .split('\n')

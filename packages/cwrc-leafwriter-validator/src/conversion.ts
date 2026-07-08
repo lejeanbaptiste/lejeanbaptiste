@@ -28,7 +28,7 @@ export const processSchema = async ({
   const resourceLoader = schemaText
     ? new StringResourceLoader(schemaText)
     : makeResourceLoader();
-  // crcao:// and other custom schemes are not valid URL() inputs in all runtimes;
+  // ljb:// and other custom schemes are not valid URL() inputs in all runtimes;
   // when compiling from schemaText the loader ignores the path anyway.
   const schemaPath = new URL(schemaText ? IN_MEMORY_SCHEMA_URL : url);
 

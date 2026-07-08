@@ -1,7 +1,9 @@
 import {
+  ensureSchemaDirectory,
   getMetadataAbsolutePath,
   getMetadataRelativePath,
   joinProjectPath,
+  readProjectFileIfExists,
   type ProjectBundle,
 } from './projectFile';
 import {
@@ -28,11 +30,10 @@ const emptyMetadata = (catalogId?: string): ProjectMetadataFile => ({
 export const readProjectMetadata = async (
   bundle: ProjectBundle,
 ): Promise<ProjectMetadataFile | null> => {
-  if (!window.electronAPI?.readFile) return null;
-  const filePath = getMetadataAbsolutePath(bundle);
+  const raw = await readProjectFileIfExists(getMetadataAbsolutePath(bundle));
+  if (raw === null) return null;
 
   try {
-    const raw = await window.electronAPI.readFile(filePath);
     const parsed = JSON.parse(raw) as ProjectMetadataFile;
     return {
       version: 1,
@@ -46,15 +47,8 @@ export const readProjectMetadata = async (
   }
 };
 
-export const metadataFileExists = async (bundle: ProjectBundle): Promise<boolean> => {
-  if (!window.electronAPI?.readFile) return false;
-  try {
-    await window.electronAPI.readFile(getMetadataAbsolutePath(bundle));
-    return true;
-  } catch {
-    return false;
-  }
-};
+export const metadataFileExists = async (bundle: ProjectBundle): Promise<boolean> =>
+  (await readProjectFileIfExists(getMetadataAbsolutePath(bundle))) !== null;
 
 export const sanitizeMetadataForSave = (
   draft: ProjectMetadataFile,
@@ -92,15 +86,8 @@ export const writeProjectMetadata = async (
 
   const sanitized = sanitizeMetadataForSave(draft);
   const filePath = getMetadataAbsolutePath(bundle);
-  const schemaDir = joinProjectPath(bundle.rootPath, 'schema');
 
-  if (window.electronAPI.createDirectory) {
-    try {
-      await window.electronAPI.createDirectory(bundle.rootPath, 'schema');
-    } catch {
-      // may already exist
-    }
-  }
+  await ensureSchemaDirectory(bundle);
 
   await window.electronAPI.writeFile(filePath, JSON.stringify(sanitized, null, 2));
 

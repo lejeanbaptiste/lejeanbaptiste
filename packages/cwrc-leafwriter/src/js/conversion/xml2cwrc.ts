@@ -200,7 +200,7 @@ class XML2CWRC {
       if (!('href' in attributes)) return;
 
       const url: string = attributes.href;
-      if (!isValidHttpURL(url) && !url.startsWith('blob:') && !url.startsWith('crcao://')) return;
+      if (!isValidHttpURL(url) && !url.startsWith('blob:') && !url.startsWith('ljb://')) return;
 
       return url;
     };

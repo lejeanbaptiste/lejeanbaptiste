@@ -426,6 +426,13 @@ declare global {
       undo: () => Promise<boolean>;
     };
     __leafWriterSourceFind?: LeafWriterSourceFindBridge;
+    /** Zoom the visual editor pane (published by cwrc-leafwriter on editor init). */
+    __leafWriterEditorZoom?: {
+      zoomIn: () => void;
+      zoomOut: () => void;
+      reset: () => void;
+      get: () => number;
+    };
   }
 }
 

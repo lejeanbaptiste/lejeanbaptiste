@@ -1,11 +1,11 @@
-const CRCAO_PREFIX = 'crcao://';
+const LJB_PREFIX = 'ljb://';
 
-export const isLocalFileUrl = (url: string): boolean => url.startsWith(CRCAO_PREFIX);
+export const isLocalFileUrl = (url: string): boolean => url.startsWith(LJB_PREFIX);
 
 export const fromLocalFileUrl = (url: string): string | null => {
   if (!isLocalFileUrl(url)) return null;
   try {
-    return decodeURIComponent(url.slice(CRCAO_PREFIX.length));
+    return decodeURIComponent(url.slice(LJB_PREFIX.length));
   } catch {
     return null;
   }
@@ -16,8 +16,8 @@ const isUsableResourceUrl = (url: string): boolean => {
   if (isLocalFileUrl(url)) return fromLocalFileUrl(url) !== null;
   if (/^https?:\/\//i.test(url)) return true;
   if (url.startsWith('blob:')) return true;
-  // Skip paths built by mistakenly treating crcao URLs as relative file paths.
-  if (url.includes('crcao:')) return false;
+  // Skip paths built by mistakenly treating ljb URLs as relative file paths.
+  if (url.includes('ljb:')) return false;
   if (/%2F/i.test(url)) return false;
   return true;
 };
@@ -49,7 +49,7 @@ const resolveIncludeUrl = (baseSchemaUrl: string, href: string): string => {
       0,
       Math.max(localBase.lastIndexOf('/'), localBase.lastIndexOf('\\')),
     );
-    return `${CRCAO_PREFIX}${encodeURIComponent(`${dir}${separator}${includeFile}`)}`;
+    return `${LJB_PREFIX}${encodeURIComponent(`${dir}${separator}${includeFile}`)}`;
   }
 
   if (/^https?:\/\//i.test(baseSchemaUrl)) {
@@ -182,7 +182,7 @@ export async function localSchemaToBlobUrl(
   return blobUrl;
 }
 
-/** Load text from a remote URL or a desktop crcao:// project file. */
+/** Load text from a remote URL or a desktop ljb:// project file. */
 export async function fetchResourceText(url: string): Promise<string | null> {
   const localPath = fromLocalFileUrl(url);
   if (localPath) {

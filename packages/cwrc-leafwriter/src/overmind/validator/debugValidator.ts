@@ -96,7 +96,7 @@ export async function debugValidator(options?: {
 
     try {
       const blobUrl = await (async () => {
-        if (!schemaURL.startsWith('crcao://')) return null;
+        if (!schemaURL.startsWith('ljb://')) return null;
         const text = await fetchResourceText(schemaURL);
         return text ? `[${text.length} chars ready for worker]` : null;
       })();
@@ -130,16 +130,16 @@ export async function debugValidator(options?: {
             sm.getCurrentSchema()?.id ??
             (schemaURL ? sm.getSchemaIdFromUrl(schemaURL) : undefined);
           const schemaRevision = sm.getSchemaRevision();
-          const schemaText = schemaURL.startsWith('crcao://')
+          const schemaText = schemaURL.startsWith('ljb://')
             ? await fetchResourceText(schemaURL)
             : undefined;
-          if (schemaId && (schemaText || !schemaURL.startsWith('crcao://'))) {
+          if (schemaId && (schemaText || !schemaURL.startsWith('ljb://'))) {
             const init = await window.leafwriterValidator.initialize({
               id: schemaId,
               url: schemaURL,
               schemaRevision,
               schemaText: schemaText ?? undefined,
-              shouldCache: !schemaURL.startsWith('crcao://'),
+              shouldCache: !schemaURL.startsWith('ljb://'),
             });
             report.workerInit = {
               success: init.success,

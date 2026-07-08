@@ -38,8 +38,8 @@ const deriveSchemaName = (rng?: string): string => {
   if (!rng) return '';
 
   try {
-    if (rng.startsWith('crcao://')) {
-      const path = decodeURIComponent(rng.slice('crcao://'.length));
+    if (rng.startsWith('ljb://')) {
+      const path = decodeURIComponent(rng.slice('ljb://'.length));
       return path.split(/[/\\]/).pop()?.replace(/\.(rng|rnc|xsd)$/i, '') ?? '';
     }
     const filename = rng.split('/').pop() ?? '';
@@ -97,7 +97,7 @@ export const EditSchemaDialog = ({
     ? z
         .string()
         .min(1, { message: t('LW.Must be a valid URL').toString() })
-        .refine((val) => val.startsWith('crcao://') || val.startsWith('https://'), {
+        .refine((val) => val.startsWith('ljb://') || val.startsWith('https://'), {
           message: t('LW.URL must start with HTTPS secured connection').toString(),
         })
     : z
@@ -109,7 +109,7 @@ export const EditSchemaDialog = ({
   const cssValidation = isDesktop
     ? z
         .string()
-        .refine((val) => !val || val.startsWith('crcao://') || val.startsWith('https://'), {
+        .refine((val) => !val || val.startsWith('ljb://') || val.startsWith('https://'), {
           message: t('LW.URL must start with HTTPS secured connection').toString(),
         })
         .optional()

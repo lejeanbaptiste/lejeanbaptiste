@@ -1,14 +1,18 @@
-import { getTranslationSettingsAbsolutePath, type ProjectBundle } from './projectFile';
+import {
+  ensureSchemaDirectory,
+  getTranslationSettingsAbsolutePath,
+  readProjectFileIfExists,
+  type ProjectBundle,
+} from './projectFile';
 import type { TranslationLanguage, TranslationSettingsFile } from './translationTypes';
 
 export const readTranslationSettings = async (
   bundle: ProjectBundle,
 ): Promise<TranslationSettingsFile | null> => {
-  if (!window.electronAPI?.readFile) return null;
-  const filePath = getTranslationSettingsAbsolutePath(bundle);
+  const raw = await readProjectFileIfExists(getTranslationSettingsAbsolutePath(bundle));
+  if (raw === null) return null;
 
   try {
-    const raw = await window.electronAPI.readFile(filePath);
     const parsed = JSON.parse(raw) as TranslationSettingsFile;
     if (parsed.alignmentUnit !== 'div' && parsed.alignmentUnit !== 'p') return null;
     return {
@@ -38,13 +42,7 @@ const writeSettingsFile = async (
 
   const filePath = getTranslationSettingsAbsolutePath(bundle);
 
-  if (window.electronAPI.createDirectory) {
-    try {
-      await window.electronAPI.createDirectory(bundle.rootPath, 'schema');
-    } catch {
-      // may already exist
-    }
-  }
+  await ensureSchemaDirectory(bundle);
 
   await window.electronAPI.writeFile(filePath, JSON.stringify(settings, null, 2));
 };

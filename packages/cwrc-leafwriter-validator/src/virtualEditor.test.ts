@@ -77,7 +77,7 @@ describe('VirtualEditor.initialize', () => {
     const editor = new VirtualEditor();
     const result = await editor.initialize({
       id: 'project-tei-all',
-      url: 'crcao://%2Fproject%2Fschema%2Ftei_all.rng',
+      url: 'ljb://%2Fproject%2Fschema%2Ftei_all.rng',
       schemaRevision: 'ljb-sanmiao-merge v4',
       schemaText: '<grammar xmlns="http://relaxng.org/ns/structure/1.0"/>',
       shouldCache: false,
@@ -87,12 +87,12 @@ describe('VirtualEditor.initialize', () => {
     expect(mockProcessSchema).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'project-tei-all',
-        url: 'crcao://%2Fproject%2Fschema%2Ftei_all.rng',
+        url: 'ljb://%2Fproject%2Fschema%2Ftei_all.rng',
         schemaText: '<grammar xmlns="http://relaxng.org/ns/structure/1.0"/>',
         shouldCache: false,
       }),
     );
-    expect(editor.schemaUrl).toContain('crcao://');
+    expect(editor.schemaUrl).toContain('ljb://');
   });
 
   it('never reads IndexedDB when shouldCache is false (local project schemas)', async () => {

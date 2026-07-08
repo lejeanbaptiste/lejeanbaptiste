@@ -13,8 +13,8 @@ const mockFetch = fetchResourceText as jest.Mock;
 const WRAPPER_XML = `<?xml version="1.0"?><grammar xmlns="http://relaxng.org/ns/structure/1.0"><include href="tei_all.tei.rng"><define name="date"><element name="date"/></define></include></grammar>`;
 const CORE_XML = `<?xml version="1.0"?><grammar xmlns="http://relaxng.org/ns/structure/1.0"><define name="date"><element name="date"/></define><define name="persName"><element name="persName"/></define></grammar>`;
 
-const WRAPPER_URL = 'crcao://%2Fproj%2Fschema%2Ftei_all.rng';
-const CORE_URL = 'crcao://%2Fproj%2Fschema%2Ftei_all.tei.rng';
+const WRAPPER_URL = 'ljb://%2Fproj%2Fschema%2Ftei_all.rng';
+const CORE_URL = 'ljb://%2Fproj%2Fschema%2Ftei_all.tei.rng';
 
 const fakeWriter = {
   appDisplayName: 'Test',
