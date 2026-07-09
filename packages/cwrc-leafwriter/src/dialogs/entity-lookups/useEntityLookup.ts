@@ -9,6 +9,7 @@ import {
   type LookupSelectionInput,
 } from '../../autoTagging/lookupResolve';
 import type { AuthorityPackId } from '../../autoTagging/packPaths';
+import { packIdsForEntityType, readPackCached } from '../../services/authority-pack-lookup';
 import type { AuthorityLookupResult, EntityLink, NamedEntityType } from '../../types/index';
 import { log } from '../../utilities';
 import {
@@ -35,12 +36,14 @@ const installedPackIds = async (): Promise<AuthorityPackId[]> => {
   }
 };
 
-const resolveDeps = async (): Promise<LookupResolveDeps | null> => {
+const resolveDeps = async (entityType: NamedEntityType): Promise<LookupResolveDeps | null> => {
   const store = entityStoreFromDesktop();
   if (!store) return null;
-  const readPackFile = window.electronAPI?.authorityPackRead;
-  const packIds = readPackFile ? await installedPackIds() : [];
-  return { store, packIds, readPackFile };
+  if (!window.electronAPI?.authorityPackRead) return { store, packIds: [] };
+  // Only scan packs of the right kind, through the session content cache —
+  // the concordance scan is the slow part of resolve-on-select.
+  const packIds = packIdsForEntityType(await installedPackIds(), entityType);
+  return { store, packIds, readPackFile: readPackCached };
 };
 
 export const useEntityLookup = () => {
@@ -109,7 +112,7 @@ export const useEntityLookup = () => {
       return;
     }
 
-    const deps = await resolveDeps();
+    const deps = await resolveDeps(lookupType);
     if (!deps) {
       closeWith(plainLink());
       return;
@@ -154,7 +157,7 @@ export const useEntityLookup = () => {
 
   /** User confirmed linking to the existing entity found by the resolver. */
   const confirmPendingLink = async (input: LookupSelectionInput) => {
-    const deps = await resolveDeps();
+    const deps = await resolveDeps(lookupType);
     if (!deps) return;
     setResolution({ status: 'resolving' });
     try {
@@ -188,7 +191,7 @@ export const useEntityLookup = () => {
     candidates: { key: string; name: string; description?: string }[],
     input: LookupSelectionInput,
   ) => {
-    const deps = await resolveDeps();
+    const deps = await resolveDeps(lookupType);
     if (!deps) return;
     setResolution({ status: 'resolving' });
     try {
