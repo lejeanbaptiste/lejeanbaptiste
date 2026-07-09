@@ -22,9 +22,10 @@ import {
 } from './entities';
 import type { EntityStore } from './entityStore';
 import type { AuthorityPackId } from './packPaths';
+import { WARNINGS_FILE } from './lookupWarnings';
+import type { LookupWarning } from './lookupWarnings';
 
 export const LJB_LOOKUP_RESP = '#ljb-lookup';
-export const WARNINGS_FILE = 'entity-warnings.jsonl';
 
 /* ------------------------------------------------------------------------ */
 /* URI → (authority, id)                                                     */
@@ -401,16 +402,6 @@ export async function planLookupResolution(
 /* ------------------------------------------------------------------------ */
 /* Apply                                                                     */
 /* ------------------------------------------------------------------------ */
-
-export interface LookupWarning {
-  when: string;
-  kind: 'idno-conflict' | 'concordance-conflict';
-  entityIds: string[];
-  /** The clicked authority reference. */
-  authority: string;
-  value: string;
-  detail?: string;
-}
 
 async function appendWarnings(store: EntityStore, warnings: LookupWarning[]): Promise<void> {
   if (warnings.length === 0) return;

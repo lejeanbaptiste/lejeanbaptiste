@@ -1,5 +1,8 @@
 # Todo
 
+**Disambiguation**
+- [ ] Is AI working?
+
 **Schema editing**
 
 **Clean-up**
