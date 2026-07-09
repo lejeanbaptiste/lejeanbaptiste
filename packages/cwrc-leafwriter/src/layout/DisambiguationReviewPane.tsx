@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AutoTaggingSession, DisambiguationPanel, type MentionGroup } from '../autoTagging';
+import { runAuthorityPrefetch, type AuthorityPrefetchHandle } from '../autoTagging/authorityPrefetch';
 import { useActions, useAppState } from '../overmind';
 import { DockedResizeHandle, useStoredPanelWidth } from './DockedResizeHandle';
 import {
@@ -38,6 +39,7 @@ export const DisambiguationReviewPane = () => {
   const [loading, setLoading] = useState(false);
   const session = useRef<AutoTaggingSession | null>(null);
   const scanGeneration = useRef(0);
+  const prefetch = useRef<AuthorityPrefetchHandle | null>(null);
   const [panelWidth, setPanelWidth] = useStoredPanelWidth(
     'lw.disambiguation.panelWidth',
     DISAMBIGUATION_PANEL_WIDTH,
@@ -52,6 +54,8 @@ export const DisambiguationReviewPane = () => {
   useEffect(() => {
     if (!active) {
       scanGeneration.current += 1;
+      prefetch.current?.stop();
+      prefetch.current = null;
       setLoading(false);
       setGroups([]);
       setError(null);
@@ -60,6 +64,8 @@ export const DisambiguationReviewPane = () => {
     }
 
     const generation = ++scanGeneration.current;
+    prefetch.current?.stop();
+    prefetch.current = null;
     void (async () => {
       setLoading(true);
       setError(null);
@@ -76,6 +82,7 @@ export const DisambiguationReviewPane = () => {
         const scanned = await activeSession.scanMentions({ includeResolved: true });
         if (generation !== scanGeneration.current) return;
         setGroups(scanned);
+        prefetch.current = runAuthorityPrefetch(activeSession, scanned);
       } catch (e) {
         if (generation !== scanGeneration.current) return;
         setError(e instanceof Error ? e.message : String(e));
@@ -102,6 +109,8 @@ export const DisambiguationReviewPane = () => {
   }, [active]);
 
   const handleClose = useCallback(() => {
+    prefetch.current?.stop();
+    prefetch.current = null;
     if (session.current) void session.current.flushDecisions();
     session.current = null;
     exitDisambiguationReview();

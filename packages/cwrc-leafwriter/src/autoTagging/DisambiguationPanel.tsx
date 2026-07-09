@@ -16,7 +16,6 @@ import {
   Button,
   Checkbox,
   Chip,
-  CircularProgress,
   Collapse,
   Dialog,
   DialogActions,
@@ -495,6 +494,7 @@ export const DisambiguationPanel = ({
     ) => {
       setLoadingCandidates(true);
       setError(null);
+      setCandidates([]);
       setAiRationales({});
       setAiConfidences({});
       setAiSuggestCreateNew(false);
@@ -682,20 +682,8 @@ export const DisambiguationPanel = ({
   const aiSelectedCount = checkedCandidates.length;
   const aiStatus = useMemo(() => {
     if (!aiCuration || !group || !controller.isExpanded(group)) return null;
-    if (loadingCandidates) {
-      return {
-        severity: 'info' as const,
-        text: 'Loading candidates…',
-      };
-    }
-    if (rankingAi) {
-      return {
-        severity: rateLimitRetry ? ('warning' as const) : ('info' as const),
-        text: rateLimitRetry
-          ? `AI rate limited; retrying in ${rateLimitSecondsLeft}s (attempt ${rateLimitRetry.attempt}/${rateLimitRetry.maxAttempts}).`
-          : 'AI is ranking the current candidates.',
-      };
-    }
+    // Loading and AI-curating states have their own dedicated banners at the top of the panel.
+    if (loadingCandidates || rankingAi) return null;
     if (aiSuggestCreateNew) {
       return {
         severity: 'warning' as const,
@@ -733,8 +721,6 @@ export const DisambiguationPanel = ({
     group,
     loadingCandidates,
     rankingAi,
-    rateLimitRetry,
-    rateLimitSecondsLeft,
   ]);
 
   const afterChange = (targetGroup: MentionGroup) => {
@@ -883,6 +869,9 @@ export const DisambiguationPanel = ({
 
   const renderCandidateList = () => {
     if (!group) return null;
+    // Loading and AI-curating status now surface as dedicated banners at the
+    // top of the panel; avoid flashing "No candidates" while either is in flight.
+    if (loadingCandidates) return null;
     if (candidates.length === 0) {
       return (
         <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, py: 0.5 }}>
@@ -899,18 +888,6 @@ export const DisambiguationPanel = ({
     }
     return (
       <>
-        {(loadingCandidates || rankingAi) && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, gap: 1, alignItems: 'center' }}>
-            <CircularProgress size={18} />
-            {rankingAi && (
-              <Typography variant="caption" color={rateLimitRetry ? 'warning.main' : 'text.secondary'}>
-                {rateLimitRetry
-                  ? `Rate limited — retrying in ${rateLimitSecondsLeft}s (attempt ${rateLimitRetry.attempt}/${rateLimitRetry.maxAttempts})…`
-                  : 'AI curation…'}
-              </Typography>
-            )}
-          </Box>
-        )}
         {filteredCandidates.map((candidate) => {
           const checked = checkedIds.has(candidate.id);
           const links = candidateLinks(candidate);
@@ -1056,6 +1033,23 @@ export const DisambiguationPanel = ({
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 0.5, py: 0 }}>
           {error}
+        </Alert>
+      )}
+
+      {loadingCandidates && (
+        <Alert severity="info" sx={{ mx: 0.75, mb: 0.5, py: 0.25, flexShrink: 0 }}>
+          Reading authority data for this entity — this can take a moment…
+        </Alert>
+      )}
+
+      {rankingAi && (
+        <Alert
+          severity={rateLimitRetry ? 'warning' : 'info'}
+          sx={{ mx: 0.75, mb: 0.5, py: 0.25, flexShrink: 0 }}
+        >
+          {rateLimitRetry
+            ? `AI rate limited — retrying in ${rateLimitSecondsLeft}s (attempt ${rateLimitRetry.attempt}/${rateLimitRetry.maxAttempts})…`
+            : 'AI is curating candidates for this entity — this can take a moment…'}
         </Alert>
       )}
 
