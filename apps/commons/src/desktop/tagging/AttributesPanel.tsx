@@ -1,9 +1,12 @@
 import CloseIcon from '@mui/icons-material/Close';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import {
+  Alert,
   Box,
   Button,
+  Chip,
   IconButton,
   MenuItem,
   Paper,
@@ -23,24 +26,30 @@ import {
 } from '@cwrc/leafwriter';
 import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { CbdbIcon, DilaIcon, InitialsIcon } from '../../../../../packages/cwrc-leafwriter/src/icons/custom/AuthoritySource';
+import { WikipediaIcon } from '../../../../../packages/cwrc-leafwriter/src/icons/custom/Wikipedia';
+import {
+  EntitySummary,
+  listEntities,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
+import { entityStoreFromDesktop } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import {
   applyAttributeToTag,
   commitTagAttributes,
   readTagAttributes,
   removeAttributeFromTag,
 } from './attributeCommand';
+import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { openEntityLookupForTag, getLookupEntityTypeForTag } from './attributeLookup';
-import {
-  fetchSchemaAttributes,
-  type SchemaAttributeDetail,
-} from './attributeSuggestions';
+import { fetchSchemaAttributes, SchemaAttributeDetail } from './attributeSuggestions';
 import { getEditorTagContext } from './tagSuggestions';
 import {
   loadTagColors,
   resolveTagColor,
   updateTagColor,
-  type TagColorEntry,
-  type TagColorsFile,
+  TagColorEntry,
+  TagColorsFile,
 } from './tagColors';
 
 const isVisualEditorActive = (): boolean =>
@@ -49,6 +58,27 @@ const isVisualEditorActive = (): boolean =>
 
 const isFocusInAttributesPanel = (): boolean =>
   Boolean(document.activeElement?.closest('[data-attributes-panel]'));
+
+interface LinkedEntityInfo {
+  entity: EntitySummary;
+  urls: { type: string; url: string }[];
+}
+
+const authorityIcon = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'wikidata':
+    case 'wikipedia':
+      return <WikipediaIcon sx={{ fontSize: 14 }} />;
+    case 'cbdb':
+      return <CbdbIcon sx={{ fontSize: 14 }} />;
+    case 'viaf':
+      return <InitialsIcon top="VI" bottom="AF" sx={{ fontSize: 14 }} />;
+    case 'dila':
+      return <DilaIcon sx={{ fontSize: 14 }} />;
+    default:
+      return <OpenInNewIcon sx={{ fontSize: 12 }} />;
+  }
+};
 
 export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const { activeTabPath, rootPath } = useAppState().project;
@@ -63,6 +93,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const [tagColors, setTagColors] = useState<TagColorsFile | null>(null);
   const [addAttrName, setAddAttrName] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
+  const [linkedEntityInfo, setLinkedEntityInfo] = useState<LinkedEntityInfo | null>(null);
 
   const eastAsianDates =
     tagName === 'date' && isEastAsianCalendarLanguageCode(sourceLanguage);
@@ -203,6 +234,51 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     if (!visible) return;
     void syncFromEditor();
   }, [visible, syncFromEditor]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLinkedEntityInfo = async () => {
+      const key = values.key?.trim();
+      if (!key) {
+        setLinkedEntityInfo(null);
+        return;
+      }
+
+      const store = entityStoreFromDesktop();
+      if (!store) {
+        setLinkedEntityInfo(null);
+        return;
+      }
+
+      try {
+        const doc = await store.loadEntities();
+        if (cancelled) return;
+        const entity = listEntities(doc).find((item: EntitySummary) => item.id === key) ?? null;
+        if (!entity) {
+          setLinkedEntityInfo(null);
+          return;
+        }
+        const urls = entity.authorities
+          .map((authority: EntitySummary['authorities'][number]) => ({
+            type: authority.type,
+            url: authorityLookupUrl(authority),
+          }))
+          .filter(
+            (authority: { type: string; url: string | null }): authority is { type: string; url: string } =>
+              Boolean(authority.url),
+          );
+        setLinkedEntityInfo({ entity, urls });
+      } catch {
+        if (!cancelled) setLinkedEntityInfo(null);
+      }
+    };
+
+    void loadLinkedEntityInfo();
+    return () => {
+      cancelled = true;
+    };
+  }, [values.key]);
 
   useEffect(() => {
     if (!rootPath) {
@@ -368,15 +444,75 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
         </Stack>
 
         {lookupAvailable ? (
-          <Button
-            disabled={readonly}
-            onClick={handleLookup}
-            size="small"
-            startIcon={<SearchIcon />}
-            variant="outlined"
-          >
-            Lookup…
-          </Button>
+          <Stack spacing={1}>
+            <Button
+              disabled={readonly}
+              onClick={handleLookup}
+              size="small"
+              startIcon={<SearchIcon />}
+              variant="outlined"
+            >
+              Lookup…
+            </Button>
+            {linkedEntityInfo ? (
+              <Alert
+                icon={false}
+                severity="info"
+                sx={{
+                  py: 0.75,
+                  px: 1,
+                  '& .MuiAlert-message': { width: '100%' },
+                }}
+              >
+                <Stack spacing={0.75}>
+                  <Stack
+                    alignItems="center"
+                    direction="row"
+                    flexWrap="wrap"
+                    gap={0.75}
+                    justifyContent="space-between"
+                  >
+                    <Stack alignItems="center" direction="row" flexWrap="wrap" gap={0.75}>
+                      <Chip
+                        label={linkedEntityInfo.entity.id}
+                        size="small"
+                        sx={{ fontFamily: 'monospace', height: 20 }}
+                        variant="outlined"
+                      />
+                      <Typography variant="body2">
+                        {linkedEntityInfo.entity.names[0] ?? linkedEntityInfo.entity.id}
+                      </Typography>
+                    </Stack>
+                    {linkedEntityInfo.urls.length > 0 ? (
+                      <Stack alignItems="center" direction="row" spacing={0.25}>
+                        {linkedEntityInfo.urls.map((authority) => (
+                          <Tooltip key={`${authority.type}:${authority.url}`} title={authority.type}>
+                            <IconButton
+                              aria-label={`Open ${authority.type}`}
+                              onClick={() => openExternalUrl(authority.url)}
+                              size="small"
+                              sx={{ p: 0.25 }}
+                            >
+                              {authorityIcon(authority.type)}
+                            </IconButton>
+                          </Tooltip>
+                        ))}
+                      </Stack>
+                    ) : null}
+                  </Stack>
+                  {linkedEntityInfo.entity.description ? (
+                    <Typography color="text.secondary" variant="caption">
+                      {linkedEntityInfo.entity.description}
+                    </Typography>
+                  ) : (
+                    <Typography color="text.secondary" variant="caption">
+                      This tag is already linked to an entity in the project database.
+                    </Typography>
+                  )}
+                </Stack>
+              </Alert>
+            ) : null}
+          </Stack>
         ) : null}
       </Stack>
 

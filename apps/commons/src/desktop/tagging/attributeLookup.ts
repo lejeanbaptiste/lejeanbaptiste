@@ -1,7 +1,7 @@
 import { entityLookupDialogAtom, Types } from '@cwrc/leafwriter';
 import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
-import { applyLookupAttributes } from './attributeCommand';
+import { commitTagAttributes, readTagAttributes } from './attributeCommand';
 
 const { namedEntityTypesSchema } = Types;
 type NamedEntityType = Types.NamedEntityType;
@@ -38,11 +38,11 @@ export const openEntityLookupForTag = (
     type: entityType,
     onClose: (response?: EntityLink) => {
       store.set(entityLookupDialogAtom, RESET);
-      if (response?.properties?.uri) {
-        applyLookupAttributes(tagElement, {
-          ref: response.properties.uri,
-          key: response.properties.lemma || response.name,
-        });
+      if (response?.key) {
+        const nextAttributes = readTagAttributes(tagElement);
+        delete nextAttributes.ref;
+        nextAttributes.key = String(response.key);
+        commitTagAttributes(tagElement, nextAttributes);
         onApplied?.();
       }
     },

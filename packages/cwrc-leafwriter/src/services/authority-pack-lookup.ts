@@ -10,7 +10,7 @@ import type {
   AuthorityService,
   NamedEntityType,
 } from '../types';
-import type { AuthorityPackId } from '../autoTagging/packPaths';
+import { AUTHORITY_PACKS, type AuthorityPackId } from '../autoTagging/packPaths';
 
 interface PackRow {
   authorityId?: string;
@@ -159,10 +159,30 @@ export function searchPackContent(
   return [...exact, ...partial].slice(0, limit);
 }
 
+const ENTITY_TYPE_TAG: Partial<Record<NamedEntityType, string>> = {
+  person: 'persName',
+  place: 'placeName',
+  organization: 'orgName',
+  work: 'title',
+  citation: 'title',
+};
+
+/** Restrict a pack list to those holding the given entity type (by pack tag). */
+export function packIdsForEntityType(
+  packIds: AuthorityPackId[],
+  entityType: NamedEntityType,
+): AuthorityPackId[] {
+  const tag = ENTITY_TYPE_TAG[entityType];
+  if (!tag) return [];
+  return packIds.filter(
+    (id) => AUTHORITY_PACKS.find((spec) => spec.id === id)?.defaultTag === tag,
+  );
+}
+
 /** Session-lifetime cache of pack contents (packs only change on reinstall). */
 const packContentCache = new Map<AuthorityPackId, Promise<string>>();
 
-function readPackCached(packId: AuthorityPackId): Promise<string> {
+export function readPackCached(packId: AuthorityPackId): Promise<string> {
   const readPack = window.electronAPI?.authorityPackRead;
   if (!readPack) return Promise.reject(new Error('Authority packs unavailable'));
   let cached = packContentCache.get(packId);
