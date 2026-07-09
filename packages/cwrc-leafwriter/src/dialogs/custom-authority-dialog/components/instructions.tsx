@@ -1,6 +1,6 @@
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Alert, Link } from '@mui/material';
 import { Trans } from 'react-i18next';
-import { TbExternalLink } from 'react-icons/tb';
 
 export const Instructions = () => (
   <Alert severity="info">
@@ -13,6 +13,6 @@ export const Instructions = () => (
         this guide
       </Link>
     </Trans>
-    <TbExternalLink style={{ marginLeft: '0.1rem', verticalAlign: 'middle' }} />.
+    <OpenInNewIcon sx={{ ml: 0.1, verticalAlign: 'middle', fontSize: 'inherit' }} />.
   </Alert>
 );

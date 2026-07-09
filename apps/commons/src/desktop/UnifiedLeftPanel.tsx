@@ -14,6 +14,7 @@ import {
   LEFT_PANEL_MIN_WIDTH,
   LEFT_PANEL_WIDTH_STORAGE_KEY,
 } from './sidebarConstants';
+import { SidebarDatabaseTab } from './sidebar/SidebarDatabaseTab';
 import { SidebarExplorerTab } from './sidebar/SidebarExplorerTab';
 import { SidebarFindTab } from './sidebar/SidebarFindTab';
 import { SidebarXPathTab } from './sidebar/SidebarXPathTab';
@@ -193,6 +194,9 @@ export const UnifiedLeftPanel = () => {
         <Box id="desktop-panel-toc" sx={panelSx('toc')} />
         <Box id="desktop-panel-markup" sx={panelSx('markup')} />
         <Box id="desktop-panel-entities" sx={panelSx('entities')} />
+        <Box sx={panelSx('database')}>
+          <SidebarDatabaseTab active={activeTab === 'database'} />
+        </Box>
       </Box>
 
       {!collapsed && (

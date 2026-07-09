@@ -1,7 +1,7 @@
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { IconButton, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
 import { useAtom, useAtomValue } from 'jotai';
 import { useState } from 'react';
-import { RxExternalLink } from 'react-icons/rx';
 import type { Authority, AuthorityLookupResult } from '../../../../types/authority';
 import { lookupTypeAtom, onCloseAtom, selectedAtom } from '../../store';
 import { useEntityLookup } from '../../useEntityLookup';
@@ -37,7 +37,7 @@ export const Item = ({ authority, description, label, uri }: Props) => {
       onMouseLeave={() => setHover(false)}
       secondaryAction={
         <IconButton aria-label="open-uri" edge="end" href={uri} size="small" target="_blank">
-          {hover && <RxExternalLink fontSize="inherit" />}
+          {hover && <OpenInNewIcon fontSize="inherit" />}
         </IconButton>
       }
       sx={{ my: 0.5 }}

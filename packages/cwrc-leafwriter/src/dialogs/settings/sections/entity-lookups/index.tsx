@@ -1,7 +1,7 @@
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Stack, Grid, Typography } from '@mui/material';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
-import { IoMdInformationCircleOutline } from 'react-icons/io';
 import { db } from '../../../../db';
 import { namedEntityTypes, type NamedEntityType } from '../../../../types';
 import { EntityType } from './entity-type';
@@ -22,9 +22,7 @@ export const EntityLookups = () => {
   return (
     <Stack width="100%" py={1} spacing={2}>
       <Stack direction="row" mx={1} gap={1.5}>
-        <IoMdInformationCircleOutline
-          style={{ height: 16, width: 16, marginLeft: 8, marginTop: 2 }}
-        />
+        <InfoOutlinedIcon sx={{ height: 16, width: 16, ml: 1, mt: '2px' }} />
         <Typography color="textSecondary" variant="body2">
           {t('LW.settings.authorities.messages.rearrange authorities to prioritize results')}.{' '}
           {t(

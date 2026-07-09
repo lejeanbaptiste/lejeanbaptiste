@@ -68,7 +68,14 @@ const plugins = [
     favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon.svg'),
   }),
   new MiniCssExtractPlugin({ filename: 'css/[name].css' }),
-  new MonacoWebpackPlugin({ filename: 'monaco-[name].[ext].js', languages: ['xml', 'json'] }),
+  // Editor features and XML support are imported by the lazy editor roots. Keeping
+  // them out of this plugin avoids its include-loader pinning Monaco to app.js.
+  new MonacoWebpackPlugin({
+    filename: 'monaco-[name].[ext].js',
+    // The plugin treats [] as "all defaults"; an unmatched id resolves to none.
+    features: ['leafwriter-lazy-features' as never],
+    languages: ['leafwriter-lazy-languages' as never],
+  }),
   new WebpackBar({ color: isDev ? '#7e57c2' : '#9ccc65' }),
   new webpack.DefinePlugin({
     webpackEnv: {
@@ -173,6 +180,17 @@ const webpackConfig: webpack.Configuration = {
     minimize: isDev ? false : true,
     minimizer: isDev ? [] : [new EsbuildPlugin({ css: true })],
     sideEffects: isDev ? false : true,
+    splitChunks: {
+      cacheGroups: {
+        monaco: {
+          test: /[\\/]node_modules[\\/]monaco-editor[\\/]/,
+          name: 'leafwriter-monaco-vendor',
+          chunks: 'async',
+          enforce: true,
+          reuseExistingChunk: true,
+        },
+      },
+    },
     usedExports: isDev ? false : true,
   },
   resolve: {

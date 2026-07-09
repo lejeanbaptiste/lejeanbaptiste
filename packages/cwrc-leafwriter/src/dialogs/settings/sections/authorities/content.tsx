@@ -1,9 +1,9 @@
+import ExtensionIcon from '@mui/icons-material/Extension';
+import LockOutlineIcon from '@mui/icons-material/LockOutline';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { AccordionDetails, Link, Stack, Tooltip, Typography } from '@mui/material';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
-import { IoExtensionPuzzleOutline } from 'react-icons/io5';
-import { MdLockOutline } from 'react-icons/md';
-import { RxExternalLink } from 'react-icons/rx';
 import { db } from '../../../../db';
 import { Icon } from '../../../../icons';
 import type { NamedEntityType } from '../../../../types';
@@ -45,7 +45,7 @@ export const Content = ({
               variant="body2"
             >
               {t('LW.commons.Learn more')}
-              <RxExternalLink fontSize="inherit" />
+              <OpenInNewIcon fontSize="inherit" />
             </Link>
           </>
         )}
@@ -93,7 +93,7 @@ const CustomInfo = ({
   return (
     <Stack gap={1}>
       <Stack direction="row" alignItems="center" gap={1}>
-        <IoExtensionPuzzleOutline style={{ height: 14, width: 14 }} />
+        <ExtensionIcon sx={{ height: 14, width: 14 }} />
         {author && (
           <Typography variant="caption">
             {t('LW.commons.added by')}{' '}
@@ -108,7 +108,7 @@ const CustomInfo = ({
                 variant="caption"
               >
                 {author.name}
-                <RxExternalLink fontSize="inherit" />
+                <OpenInNewIcon fontSize="inherit" />
               </Link>
             ) : (
               <Typography variant="caption">{author.name}</Typography>
@@ -118,7 +118,7 @@ const CustomInfo = ({
       </Stack>
       {isLocal && (
         <Stack direction="row" alignItems="center" gap={1}>
-          <MdLockOutline style={{ height: 14, width: 14 }} />
+          <LockOutlineIcon sx={{ height: 14, width: 14 }} />
           <Typography variant="caption">
             {t('LW.messages.Only available on this browser')}
           </Typography>

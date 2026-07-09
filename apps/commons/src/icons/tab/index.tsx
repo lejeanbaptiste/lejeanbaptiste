@@ -1,3 +1,4 @@
+import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
 import { Box, type SxProps, type Theme } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { useAppState } from '@src/overmind';
@@ -14,9 +15,17 @@ import treeDarkPng from './tab_tree.dark.png';
 import entityPng from './tab_entity.png';
 import entityDarkPng from './tab_entity.dark.png';
 
-export type SidebarTabId = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup' | 'entities';
+export type SidebarTabId =
+  | 'explorer'
+  | 'find'
+  | 'xpath'
+  | 'toc'
+  | 'markup'
+  | 'entities'
+  | 'database';
 
-const tabIconSources: Record<SidebarTabId, string> = {
+/** Tabs without a PNG pair fall back to an MUI icon in TabIcon. */
+const tabIconSources: Partial<Record<SidebarTabId, string>> = {
   explorer: explorerPng,
   find: findPng,
   xpath: xpathPng,
@@ -25,7 +34,7 @@ const tabIconSources: Record<SidebarTabId, string> = {
   entities: entityPng,
 };
 
-const tabIconSourcesDark: Record<SidebarTabId, string> = {
+const tabIconSourcesDark: Partial<Record<SidebarTabId, string>> = {
   explorer: explorerDarkPng,
   find: findDarkPng,
   xpath: xpathDarkPng,
@@ -41,6 +50,7 @@ export const sidebarTabLabels: Record<SidebarTabId, string> = {
   toc: 'Table of Contents',
   markup: 'Markup',
   entities: 'Entities',
+  database: 'Entity Database',
 };
 
 export const sidebarTabOrder: SidebarTabId[] = [
@@ -50,6 +60,7 @@ export const sidebarTabOrder: SidebarTabId[] = [
   'toc',
   'markup',
   'entities',
+  'database',
 ];
 
 interface TabIconProps {
@@ -63,6 +74,10 @@ export const TabIcon = ({ tabId, size = 16, sx }: TabIconProps) => {
   const { darkMode } = useAppState().ui;
   const isDark = darkMode || mode === 'dark' || (mode === 'system' && systemMode === 'dark');
   const src = isDark ? tabIconSourcesDark[tabId] : tabIconSources[tabId];
+
+  if (!src) {
+    return <StorageOutlinedIcon sx={{ fontSize: size, flexShrink: 0, ...sx }} />;
+  }
 
   return (
     <Box

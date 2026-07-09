@@ -1,3 +1,4 @@
+import ForumIcon from '@mui/icons-material/Forum';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -60,13 +61,9 @@ import OrderAlphabeticalAscendingIcon from 'mdi-material-ui/OrderAlphabeticalAsc
 import PlaylistCheckIcon from 'mdi-material-ui/PlaylistCheck';
 import ShuffleVariantIcon from 'mdi-material-ui/ShuffleVariant';
 import TagPlusIcon from 'mdi-material-ui/TagPlus';
-import { SvgIcon, type SvgIconProps, createSvgIcon } from '@mui/material';
-import type { IconBaseProps, IconType } from 'react-icons';
-import { FaBoxOpen, FaUserAlt, FaUsers } from 'react-icons/fa';
-import { ImBook } from 'react-icons/im';
-import { TbChartBubbleFilled } from 'react-icons/tb';
+import { SvgIcon, type SvgIconProps } from '@mui/material';
 
-import { BookOutlinedIcon } from './custom/Book';
+import { BookIcon, BookOutlinedIcon } from './custom/Book';
 import { DisambiguateIcon } from './custom/Disambiguate';
 import { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 import workIcon from './svg/book-solid.svg';
@@ -97,19 +94,15 @@ export { BookIcon, BookOutlinedIcon } from './custom/Book';
 export { DisambiguateIcon } from './custom/Disambiguate';
 export { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
 
-const asMuiIcon = (ReactIcon: IconType, props?: IconBaseProps) => {
-  return createSvgIcon(<ReactIcon {...props} />, ReactIcon.name);
-};
-
 const icons = {
   accept: CheckIcon,
   add: AddCircleOutlineIcon,
   arrowDownwardIcon: ArrowDownwardIcon,
   arrowForwardIosIcon: ArrowForwardIosIcon,
   block: BlockIcon,
-  BookIcon: asMuiIcon(ImBook),
+  BookIcon: BookIcon,
   BookOutlinedIcon: BookOutlinedIcon,
-  BoxIcon: asMuiIcon(FaBoxOpen),
+  BoxIcon: BoxIcon,
   BoxOutlinedIcon: BoxOutlinedIcon,
   lock: LockIcon,
   lockOpen: LockOpenIcon,
@@ -125,7 +118,7 @@ const icons = {
   code: CodeRoundedIcon,
   CodeRoundedIcon: CodeRoundedIcon,
   computer: ComputerIcon,
-  concept: asMuiIcon(TbChartBubbleFilled),
+  concept: ForumIcon,
   copy: ContentCopyIcon,
   correction: WarningRoundedIcon,
   date: EventIcon,
@@ -162,15 +155,15 @@ const icons = {
   MergeRoundedIcon: MergeRoundedIcon,
   note: StickyNote2Icon,
   OrderAlphabeticalAscending: OrderAlphabeticalAscendingIcon,
-  organization: asMuiIcon(FaUsers),
+  organization: PeopleAltIcon,
   organizationDraft: PeopleOutlineOutlinedIcon,
   PanoramaFishEyeIcon: PanoramaFishEyeIcon,
   paste: ContentPasteIcon,
   PeopleAltIcon: PeopleAltIcon,
   PeopleOutlineOutlinedIcon: PeopleOutlineOutlinedIcon,
-  person: asMuiIcon(FaUserAlt),
+  person: PersonOutlineOutlinedIcon,
   personDraft: PersonOutlineOutlinedIcon,
-  PersonIcon: asMuiIcon(FaUserAlt),
+  PersonIcon: PersonOutlineOutlinedIcon,
   PersonOutlineOutlinedIcon: PersonOutlineOutlinedIcon,
   place: PlaceIcon,
   placeDraft: PlaceOutlinedIcon,
@@ -202,7 +195,7 @@ const icons = {
   textNode: TagRoundedIcon,
   thing: BoxIcon,
   thingDraft: BoxOutlinedIcon,
-  work: asMuiIcon(ImBook),
+  work: BookIcon,
   workDraft: BookOutlinedIcon,
   xpathSearch: SearchIcon,
   toc: FormatListBulletedIcon,

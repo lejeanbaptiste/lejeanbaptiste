@@ -18,7 +18,7 @@ import { I18nextProvider } from 'react-i18next';
 import { Subject } from 'rxjs';
 import './i18n';
 import i18next from './i18n';
-import Writer from './js/Writer';
+import type Writer from './js/Writer';
 import { config } from './overmind';
 import type { EditorStateType } from './overmind/editor/state';
 import Providers from './Providers';

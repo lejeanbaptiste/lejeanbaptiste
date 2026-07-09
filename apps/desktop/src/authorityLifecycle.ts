@@ -74,17 +74,32 @@ const PROFILE_SPECS: Record<
       'cbdb-offices',
       'dila-persons',
       'dila-places',
-      'wikidata-persons-tang',
       'wikidata-persons-pre-ming',
       'wikidata-persons-ming',
       'wikidata-persons-qing',
+      'wikidata-orgs-zh-hant',
+      'wikidata-works-zh-hant',
     ],
     rawSourceIds: ['cbdb', 'dila'],
     supportsReferenceData: true,
   },
   japanese: {
-    label: 'Offline Japanese authorities (NDL)',
-    packIds: ['ndl-persons', 'ndl-places', 'ndl-orgs', 'ndl-works'],
+    label: 'Offline Japanese authorities (NDL + Wikidata)',
+    packIds: [
+      'ndl-persons',
+      'ndl-places',
+      'ndl-orgs',
+      'ndl-works',
+      'wikidata-persons-ja',
+      'wikidata-orgs-ja',
+      'wikidata-works-ja',
+    ],
+    rawSourceIds: [],
+    supportsReferenceData: false,
+  },
+  tibetan: {
+    label: 'Offline Tibetan authorities (Wikidata)',
+    packIds: ['wikidata-persons-bo', 'wikidata-places-bo', 'wikidata-orgs-bo'],
     rawSourceIds: [],
     supportsReferenceData: false,
   },
@@ -103,7 +118,8 @@ const useCompileFallback = (): boolean =>
 
 const normalizeProfile = (
   profile: AuthorityLifecycleProfile | null | undefined,
-): AuthorityLifecycleProfile => (profile === 'japanese' ? 'japanese' : 'chinese');
+): AuthorityLifecycleProfile =>
+  profile === 'japanese' || profile === 'tibetan' ? profile : 'chinese';
 
 const profileSpec = (profile: AuthorityLifecycleProfile) => PROFILE_SPECS[profile];
 

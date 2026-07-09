@@ -20,7 +20,11 @@ import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 import ImportExportRoundedIcon from '@mui/icons-material/ImportExportRounded';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import MailOutlinedIcon from '@mui/icons-material/MailOutlined';
+import LogoutIcon from '@mui/icons-material/Logout';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import PublishIcon from '@mui/icons-material/Publish';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
+import StyleIcon from '@mui/icons-material/Style';
 import ReportOutlinedIcon from '@mui/icons-material/ReportOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
@@ -28,19 +32,13 @@ import TranslateIcon from '@mui/icons-material/Translate';
 import FileExportOutlineIcon from 'mdi-material-ui/FileExportOutline';
 import GitlabIcon from 'mdi-material-ui/Gitlab';
 import { SvgIcon, type SvgIconProps, createSvgIcon } from '@mui/material';
-import type { IconBaseProps, IconType } from 'react-icons';
-import { BiArrowToTop, BiDownload } from 'react-icons/bi';
-import { FaFeather, FaOrcid } from 'react-icons/fa';
-import { FiExternalLink } from 'react-icons/fi';
-import { LuDrama } from 'react-icons/lu';
-import { MdOutlineLogout } from 'react-icons/md';
-import { RxFileText } from 'react-icons/rx';
 
 export * from './components';
 
-const asMuiIcon = (ReactIcon: IconType, props?: IconBaseProps) => {
-  return createSvgIcon(<ReactIcon {...props} />, ReactIcon.name);
-};
+const OrcidIcon = createSvgIcon(
+  <path d="M294.75 188.19h-45.92V342h47.47c67.62 0 83.12-51.34 83.12-76.91 0-41.64-26.54-76.9-84.67-76.9zM256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm-80.79 360.76h-29.84v-207.5h29.84zm-14.92-231.14a19.57 19.57 0 1 1 19.57-19.57 19.64 19.64 0 0 1-19.57 19.57zM300 369h-81V161.26h80.6c76.73 0 110.44 54.83 110.44 103.85C410 318.39 368.38 369 300 369z" />,
+  'Orcid',
+);
 
 const icons = {
   article: ArticleOutlinedIcon,
@@ -58,12 +56,12 @@ const icons = {
   contentPaste: ContentPasteIcon,
   darkModeIcon: DarkModeIcon,
   description: DescriptionOutlinedIcon,
-  download: asMuiIcon(BiDownload, { x: 1, y: 1 }),
-  drama: LuDrama,
-  externalLink: asMuiIcon(FiExternalLink, { x: 1, y: 1 }),
-  feather: asMuiIcon(FaFeather, { x: 1, y: 1 }),
+  download: CloudDownloadOutlinedIcon,
+  drama: FilterDramaOutlinedIcon,
+  externalLink: OpenInNewIcon,
+  feather: StyleIcon,
   fileExportOutline: FileExportOutlineIcon,
-  fileText: asMuiIcon(RxFileText, { x: 1, y: 1 }),
+  fileText: DescriptionOutlinedIcon,
   filterDrama: FilterDramaOutlinedIcon,
   fingerPrint: FingerprintIcon,
   folderOpen: FolderOpenIcon,
@@ -71,13 +69,13 @@ const icons = {
   github: GitHubIcon,
   gitlab: GitlabIcon,
   helpOutlineRoundedIcon: HelpOutlineRoundedIcon,
-  importIcon: asMuiIcon(BiArrowToTop, { x: 1, y: 1 }),
+  importIcon: PublishIcon,
   importExportRoundedIcon: ImportExportRoundedIcon,
   insertDriveFile: InsertDriveFileOutlinedIcon,
   letter: MailOutlinedIcon,
-  logout: asMuiIcon(MdOutlineLogout),
+  logout: LogoutIcon,
   mail: MailOutlinedIcon,
-  orcid: asMuiIcon(FaOrcid),
+  orcid: OrcidIcon,
   paste: ContentPasteIcon,
   privacyTip: PrivacyTipOutlinedIcon,
   prose: FormatAlignLeftOutlinedIcon,

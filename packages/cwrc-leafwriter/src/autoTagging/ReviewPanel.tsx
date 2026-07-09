@@ -13,12 +13,14 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import {
   handleReviewKey,
   ReviewController,
   type DecisionEvent,
   type PendingGroup,
 } from './reviewController';
+import { SourceBadges } from './SourceBadges';
 import type { Suggestion } from './types';
 import { getValidationColor, getConfidenceLabel } from './llmValidationRank';
 
@@ -97,7 +99,7 @@ const SuggestionRow = ({
         <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
           {suggestion.anchor.surface}
         </Typography>
-        <Chip size="small" variant="outlined" label={sourceBadgeLabel(suggestion)} />
+        <SourceBadges label={sourceBadgeLabel(suggestion)} />
         {suggestion.confidence !== undefined && (
           <Chip size="small" variant="outlined" label={suggestion.confidence.toFixed(2)} />
         )}
@@ -316,7 +318,7 @@ const AlternativeGroupRow = ({
             <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
               {suggestion.anchor.surface}
             </Typography>
-            <Chip size="small" variant="outlined" label={sourceBadgeLabel(suggestion)} />
+            <SourceBadges label={sourceBadgeLabel(suggestion)} />
             {suggestion.confidence !== undefined && (
               <Chip size="small" variant="outlined" label={suggestion.confidence.toFixed(2)} />
             )}
@@ -424,6 +426,7 @@ export const ReviewPanel = ({
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const pendingListRef = useRef<VirtuosoHandle>(null);
   const [acceptedOpen, setAcceptedOpen] = useState(false);
   const [rejectedOpen, setRejectedOpen] = useState(false);
 
@@ -488,6 +491,10 @@ export const ReviewPanel = ({
   const rejected = controller.rejectedVisible();
   const current = controller.current();
   const remainingCount = counts.pending + counts.accepted;
+  const currentPendingIndex = useMemo(
+    () => (current ? pendingGroups.findIndex((group) => group.suggestions.includes(current)) : -1),
+    [current, pendingGroups],
+  );
 
   useEffect(() => {
     if (pendingGroups.length === 0) {
@@ -497,11 +504,22 @@ export const ReviewPanel = ({
   }, [pendingGroups.length, accepted.length, rejected.length]);
 
   useEffect(() => {
-    if (!current || !listRef.current) return;
+    if (!current) return;
+
+    if (currentPendingIndex >= 0) {
+      pendingListRef.current?.scrollIntoView({
+        index: currentPendingIndex,
+        align: 'center',
+        behavior: 'auto',
+      });
+      return;
+    }
+
+    if (!listRef.current) return;
     listRef.current
       .querySelector(`[data-testid="review-item-${current.id}"]`)
       ?.scrollIntoView?.({ block: 'nearest' });
-  }, [current?.id]);
+  }, [current?.id, currentPendingIndex]);
 
   return (
     <Box
@@ -526,48 +544,54 @@ export const ReviewPanel = ({
         sx={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
         onClick={() => containerRef.current?.focus()}
       >
-        <Box role="list" sx={{ flexGrow: 1 }}>
-          {pendingGroups.map((group, index) =>
-            group.suggestions.length > 1 ? (
-              <AlternativeGroupRow
-                key={group.suggestions[0]!.id}
-                group={group}
-                isCurrent={group.suggestions.includes(current!)}
-                onSelectGroup={() => {
-                  controller.moveToPendingIndex(index);
-                  forceRender();
-                }}
-                onSelectAlternative={selectAlternative}
-                onAccept={() => decidePending(index, 'accepted')}
-                onReject={() => decidePending(index, 'rejected')}
-                onPreview={(suggestion) => controller.preview(suggestion)}
-              />
-            ) : (
-              <SuggestionRow
-                key={group.suggestions[0]!.id}
-                suggestion={group.suggestions[0]!}
-                isCurrent={group.suggestions[0] === current}
-                onSelect={() => {
-                  controller.moveToPendingIndex(index);
-                  forceRender();
-                }}
-                onAccept={() => decidePending(index, 'accepted')}
-                onReject={() => decidePending(index, 'rejected')}
-                onPreview={() => controller.preview(group.suggestions[0]!)}
-              />
-            ),
-          )}
-          {pendingGroups.length === 0 && accepted.length === 0 && rejected.length === 0 && (
-            <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
-              Nothing to review.
-            </Typography>
-          )}
-          {pendingGroups.length === 0 && (accepted.length > 0 || rejected.length > 0) && (
-            <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
-              No pending items — apply tags or expand groups below to review decisions.
-            </Typography>
-          )}
-        </Box>
+        {pendingGroups.length > 0 ? (
+          <Box role="list" sx={{ flexGrow: 1, minHeight: 0 }}>
+            <Virtuoso
+              ref={pendingListRef}
+              data={pendingGroups}
+              overscan={600}
+              itemContent={(index, group) =>
+                group.suggestions.length > 1 ? (
+                  <AlternativeGroupRow
+                    key={group.suggestions[0]!.id}
+                    group={group}
+                    isCurrent={!!current && group.suggestions.includes(current)}
+                    onSelectGroup={() => {
+                      controller.moveToPendingIndex(index);
+                      forceRender();
+                    }}
+                    onSelectAlternative={selectAlternative}
+                    onAccept={() => decidePending(index, 'accepted')}
+                    onReject={() => decidePending(index, 'rejected')}
+                    onPreview={(suggestion) => controller.preview(suggestion)}
+                  />
+                ) : (
+                  <SuggestionRow
+                    key={group.suggestions[0]!.id}
+                    suggestion={group.suggestions[0]!}
+                    isCurrent={group.suggestions[0] === current}
+                    onSelect={() => {
+                      controller.moveToPendingIndex(index);
+                      forceRender();
+                    }}
+                    onAccept={() => decidePending(index, 'accepted')}
+                    onReject={() => decidePending(index, 'rejected')}
+                    onPreview={() => controller.preview(group.suggestions[0]!)}
+                  />
+                )
+              }
+              style={{ height: '100%' }}
+            />
+          </Box>
+        ) : accepted.length === 0 && rejected.length === 0 ? (
+          <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
+            Nothing to review.
+          </Typography>
+        ) : (
+          <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
+            No pending items — apply tags or expand groups below to review decisions.
+          </Typography>
+        )}
 
         {accepted.length > 0 && (
           <DecisionGroup

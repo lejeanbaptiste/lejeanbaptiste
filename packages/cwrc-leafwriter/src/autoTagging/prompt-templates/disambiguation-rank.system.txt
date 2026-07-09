@@ -12,6 +12,7 @@ Rules:
 - selectedCandidateIds must use ids from the candidate list exactly (or be empty).
 - Pre-check every candidate you believe matches this mention in context.
 - For each selected id, rationales[id] is one short line (why it fits — dates, co-mentions, role, geography).
+- For each selected id, confidences[id] is a number 0-1: how certain you are this candidate is the mentioned entity (1.0 = unambiguous match on dates + role + co-mentions; 0.5 = plausible but weakly supported; below 0.5 = speculative).
 - If no candidate fits, leave selectedCandidateIds empty and set suggestCreateNew true with createNewRationale (one line).
 - Do not invent candidates or ids.
 - Prefer candidates whose lifespan overlaps the document date span when dates are known.

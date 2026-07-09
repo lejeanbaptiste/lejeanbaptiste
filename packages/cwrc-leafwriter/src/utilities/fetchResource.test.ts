@@ -50,7 +50,7 @@ describe('localSchemaToBlobUrl include override merge', () => {
   });
 
   it('passes through already-flat local schemas without merging', async () => {
-    const FLAT_URL = 'https://example.test/schema/tei_all.rng';
+    const FLAT_URL = 'https://example.test/schema/flat.rng';
     const FLAT_XML = `<?xml version="1.0"?><grammar xmlns="http://relaxng.org/ns/structure/1.0"><define name="date"><element name="date"><ref name="ljb.sanmiao.era"/></element></define></grammar>`;
 
     (global as any).fetch = jest.fn(async (url: string) => {

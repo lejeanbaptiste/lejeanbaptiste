@@ -4,7 +4,6 @@ import 'tinymce/plugins/paste';
 import 'tinymce/themes/silver';
 import tinymce, { type TinyMCE } from 'tinymce/tinymce';
 import type { LeafWriterEditor } from '../../types';
-import { dispatchDesktopOpenFind } from '../../sourceEditor/findInSourceEditor';
 import { isElement, log } from '../../utilities';
 import './plugins/prevent_delete';
 //TODO: Reassess plugins on tinymce 5.0
@@ -777,7 +776,9 @@ export const tinymceWrapperInit = function ({
             (event: KeyboardEvent) => {
               if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
                 event.preventDefault();
-                dispatchDesktopOpenFind();
+                void import('../../sourceEditor/findInSourceEditor').then((module) => {
+                  module.dispatchDesktopOpenFind();
+                });
               }
               // Use event.key (layout-aware) rather than event.code/keyCode
               // (physical position) so this fires on Dvorak and other

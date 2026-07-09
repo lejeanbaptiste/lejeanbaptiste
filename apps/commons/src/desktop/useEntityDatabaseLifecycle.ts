@@ -40,6 +40,10 @@ export const useEntityDatabaseLifecycle = () => {
     checkedProjectRef.current = projectFilePath;
 
     void (async () => {
+      // Check this project into the shared-database registry so merge/delete
+      // key propagation knows every project tree using this entities.xml.
+      await store.registerProjectInRegistry().catch(() => undefined);
+
       if (config?.entityStore !== 'project') {
         const globals = window as unknown as {
           __ljbLspProject?: { entityDbFolder?: string | null };

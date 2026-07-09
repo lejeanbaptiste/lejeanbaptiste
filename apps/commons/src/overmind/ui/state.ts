@@ -10,6 +10,7 @@ export interface State {
   notifications: NotificationProps[];
   page: string;
   skipCopyPasteHelp: boolean;
+  skipEntityDetachConfirm: boolean;
   skipExplorerDeleteConfirm: boolean;
   themeAppearance: PaletteMode;
 }
@@ -22,6 +23,7 @@ export const state: State = {
   notifications: [],
   page: 'home',
   skipCopyPasteHelp: false,
+  skipEntityDetachConfirm: false,
   skipExplorerDeleteConfirm: false,
   themeAppearance: 'system',
 };

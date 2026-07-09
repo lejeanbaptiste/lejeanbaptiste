@@ -1,7 +1,7 @@
+import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 import { Button, Paper, Stack, ToggleButton, Tooltip } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TbVectorTriangle } from 'react-icons/tb';
 import { useActions } from '../../overmind';
 import { Editor } from './Editor';
 
@@ -48,7 +48,7 @@ export const CodePanel = () => {
               sx={{ height: 28 }}
               value="check"
             >
-              <TbVectorTriangle fontSize="inherit" style={{ transform: 'rotate(27deg)' }} />
+              <ChangeHistoryIcon fontSize="inherit" sx={{ transform: 'rotate(27deg)' }} />
             </ToggleButton>
           </Tooltip>
           <Tooltip enterDelay={1000} title={t('LW.edit_raw_xml')}>

@@ -1,12 +1,12 @@
+import CloseIcon from '@mui/icons-material/Close';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Button, IconButton, Stack, Typography, useTheme } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { useActions } from '@src/overmind';
 import { motion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BiCopyAlt } from 'react-icons/bi';
-import { IoMdClose } from 'react-icons/io';
-import { TbExternalLink } from 'react-icons/tb';
 
 export const BugReport = () => {
   const theme = useTheme();
@@ -79,7 +79,7 @@ export const BugReport = () => {
             size="small"
             sx={{ borderRadius: 1, position: 'absolute', top: 4, right: 4 }}
           >
-            <IoMdClose fontSize="inherit" />
+            <CloseIcon fontSize="inherit" />
           </IconButton>
           <Stack justifyContent="center" alignItems="center" gap={2} mt={1}>
             <GitLabTIcket />
@@ -96,7 +96,7 @@ const GitLabTIcket = () => {
 
   return (
     <Button
-      endIcon={<TbExternalLink />}
+      endIcon={<OpenInNewIcon />}
       href="https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new"
       size="small"
       sx={{ borderRadius: 1, textTransform: 'none' }}
@@ -138,7 +138,7 @@ const DisplayEmail = () => {
           contact-project+calincs-cwrc-leaf-writer-leaf-writer-31283590-issue-@incoming.gitlab.com
         </Typography>
         <IconButton onClick={handleCopyToClipboard} size="small" sx={{ borderRadius: 1 }}>
-          <BiCopyAlt fontSize="inherit" />
+          <ContentCopyIcon fontSize="inherit" />
         </IconButton>
       </Stack>
     </Stack>

@@ -1,8 +1,8 @@
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Box, Button, ButtonGroup, CircularProgress, Tooltip, Typography } from '@mui/material';
 import { useAtomValue } from 'jotai';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CiWarning } from 'react-icons/ci';
 import type { Authority } from '../../../types';
 import { authoritiesAtom } from '../store';
 
@@ -95,7 +95,7 @@ const Badge = ({ count, status }: { count?: number; status?: 'success' | 'error'
     {status === 'loading' ? (
       <CircularProgress size={12} />
     ) : status === 'error' ? (
-      <CiWarning size={12} />
+      <WarningAmberIcon sx={{ fontSize: 12 }} />
     ) : status === 'success' ? (
       <Typography variant="caption">{count}</Typography>
     ) : null}

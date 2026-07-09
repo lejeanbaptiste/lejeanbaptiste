@@ -1,4 +1,6 @@
 import { Box, useColorScheme } from '@mui/material';
+import 'monaco-editor/esm/vs/basic-languages/xml/xml.contribution';
+import 'monaco-editor/esm/vs/editor/editor.main';
 import 'monaco-editor/esm/vs/editor/contrib/linkedEditing/browser/linkedEditing.js';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useEffect, useRef, useState } from 'react';

@@ -1,4 +1,5 @@
-import { MarkupPanel, TocPanel } from '../panels';
+import { MarkupPanel } from '../panels/markup';
+import { TocPanel } from '../panels/toc';
 import { PanelId, PanelProp } from '../types';
 import { Entities } from './Entities';
 

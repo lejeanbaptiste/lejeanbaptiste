@@ -481,6 +481,7 @@
       "warnings": {
         "skip_copy_paste_help": "Kopieren-Einfügen-Hilfe nicht anzeigen",
         "skip_delete_confirm": "Dateien und Ordner ohne Rückfrage löschen",
+        "skip_entity_detach_confirm": "Autoritäts-IDs ohne Rückfrage von Entitäten trennen",
         "title": "Warnungen"
       }
     },

@@ -8,8 +8,10 @@ const getCommonsUiBridge = () =>
     window as Window & {
       __ljbCommonsUi?: {
         skipCopyPasteHelp: boolean;
+        skipEntityDetachConfirm: boolean;
         skipExplorerDeleteConfirm: boolean;
         setSkipCopyPasteHelp: (value: boolean) => void;
+        setSkipEntityDetachConfirm: (value: boolean) => void;
         setSkipExplorerDeleteConfirm: (value: boolean) => void;
       };
     }
@@ -24,12 +26,16 @@ export const DesktopWarnings = () => {
   const [skipCopyPasteHelp, setSkipCopyPasteHelpLocal] = useState(
     bridge?.skipCopyPasteHelp ?? false,
   );
+  const [skipDetachConfirm, setSkipDetachConfirmLocal] = useState(
+    bridge?.skipEntityDetachConfirm ?? false,
+  );
 
   useEffect(() => {
     if (!bridge) return;
     setSkipDeleteConfirm(bridge.skipExplorerDeleteConfirm);
     setSkipCopyPasteHelpLocal(bridge.skipCopyPasteHelp);
-  }, [bridge?.skipCopyPasteHelp, bridge?.skipExplorerDeleteConfirm]);
+    setSkipDetachConfirmLocal(bridge.skipEntityDetachConfirm);
+  }, [bridge?.skipCopyPasteHelp, bridge?.skipEntityDetachConfirm, bridge?.skipExplorerDeleteConfirm]);
 
   if (!bridge) return null;
 
@@ -57,6 +63,16 @@ export const DesktopWarnings = () => {
         title={t('LW.settings.warnings.skip_copy_paste_help')}
         type="toggle"
         value={skipCopyPasteHelp}
+      />
+      <Toggler
+        icon="link"
+        onChange={(value) => {
+          bridge.setSkipEntityDetachConfirm(value);
+          setSkipDetachConfirmLocal(value);
+        }}
+        title={t('LW.settings.warnings.skip_entity_detach_confirm')}
+        type="toggle"
+        value={skipDetachConfirm}
       />
     </>
   );

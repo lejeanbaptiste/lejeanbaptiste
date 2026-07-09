@@ -11,7 +11,7 @@ import {
 } from './disambiguationContext';
 import type { DisambiguationAiCache, DisambiguationAiRankResult } from './disambiguationAiCache';
 import type { DisambiguationCandidate } from './disambiguationCandidates';
-import type { LlmClient } from './llmClient';
+import type { LlmClient, RateLimitRetryInfo } from './llmClient';
 import type { MentionInstance } from './mentions';
 
 export const DISAMBIGUATION_RANK_PROMPT_VERSION = versions['disambiguation-rank'];
@@ -24,10 +24,14 @@ const responseSchema: Record<string, unknown> = {
       type: 'object',
       additionalProperties: { type: 'string' },
     },
+    confidences: {
+      type: 'object',
+      additionalProperties: { type: 'number', minimum: 0, maximum: 1 },
+    },
     suggestCreateNew: { type: 'boolean' },
     createNewRationale: { type: 'string' },
   },
-  required: ['selectedCandidateIds', 'rationales', 'suggestCreateNew'],
+  required: ['selectedCandidateIds', 'rationales', 'confidences', 'suggestCreateNew'],
   additionalProperties: false,
 };
 
@@ -58,6 +62,20 @@ function parseRankResponse(
     }
   }
 
+  const confidences: Record<string, number> = {};
+  if (body.confidences && typeof body.confidences === 'object') {
+    for (const [id, value] of Object.entries(body.confidences as Record<string, unknown>)) {
+      if (
+        typeof value === 'number' &&
+        value >= 0 &&
+        value <= 1 &&
+        selectedCandidateIds.includes(id)
+      ) {
+        confidences[id] = value;
+      }
+    }
+  }
+
   const suggestCreateNew = body.suggestCreateNew === true;
   const createNewRationale =
     typeof body.createNewRationale === 'string' ? body.createNewRationale.trim() : undefined;
@@ -65,6 +83,7 @@ function parseRankResponse(
   return {
     selectedCandidateIds,
     rationales,
+    confidences,
     suggestCreateNew: suggestCreateNew && selectedCandidateIds.length === 0,
     createNewRationale,
   };
@@ -77,8 +96,9 @@ export async function rankDisambiguationCandidates(options: {
   client: LlmClient;
   cache?: DisambiguationAiCache | null;
   promptProfile?: AiPromptProfile | null;
+  onRateLimitRetry?: (info: RateLimitRetryInfo) => void;
 }): Promise<DisambiguationAiRankResult | null> {
-  const { doc, instance, candidates, client, cache, promptProfile } = options;
+  const { doc, instance, candidates, client, cache, promptProfile, onRateLimitRetry } = options;
   if (candidates.length === 0) return null;
 
   const ctx = buildDisambiguationRankContext(doc, instance, candidates);
@@ -109,6 +129,7 @@ export async function rankDisambiguationCandidates(options: {
     system: taskText,
     user,
     jsonSchema: responseSchema,
+    onRateLimitRetry,
   });
 
   const result = parseRankResponse(response.json, validIds);

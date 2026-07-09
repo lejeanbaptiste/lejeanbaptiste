@@ -15,7 +15,7 @@ describe('countAuthorityPackStrings', () => {
         metadata: { startYear: 1021, endYear: 1086 },
       },
     ]),
-    'wikidata-persons-tang': ndjson([
+    'wikidata-persons-pre-ming': ndjson([
       {
         source: 'Wikidata',
         authorityId: 'Q1',
@@ -42,7 +42,7 @@ describe('countAuthorityPackStrings', () => {
   it('counts per UI pack and unions wikidata child packs', async () => {
     const installed = new Set([
       'cbdb-persons',
-      'wikidata-persons-tang',
+      'wikidata-persons-pre-ming',
       'wikidata-persons-ming',
     ] as const);
     const counts = await countAuthorityPackStrings(
@@ -55,7 +55,7 @@ describe('countAuthorityPackStrings', () => {
   });
 
   it('applies the year filter', async () => {
-    const installed = new Set(['wikidata-persons-tang', 'wikidata-persons-ming'] as const);
+    const installed = new Set(['wikidata-persons-pre-ming', 'wikidata-persons-ming'] as const);
     const counts = await countAuthorityPackStrings(
       ['wikidata-persons'],
       readPackFile,

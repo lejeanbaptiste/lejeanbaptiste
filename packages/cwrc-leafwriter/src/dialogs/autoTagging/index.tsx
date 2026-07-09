@@ -59,7 +59,9 @@ import {
   type Suggestion,
 } from '../../autoTagging';
 import {
+  isChineseLanguageCode,
   isJapaneseLanguageCode,
+  isTibetanLanguageCode,
 } from '../../utilities/languageCodes';
 import { AutoTaggingApplyOverlay } from '../../layout/AutoTaggingApplyOverlay';
 import { useActions } from '../../overmind';
@@ -73,14 +75,38 @@ type AiMode = 'suggest' | 'audit';
 
 const defaultAuthorityPacksForLanguage = (language: string | null): Record<AuthorityPackId, boolean> =>
   defaultAuthorityPacksRecord({
-    'dila-persons': !isJapaneseLanguageCode(language),
+    'dila-persons': !isJapaneseLanguageCode(language) && !isTibetanLanguageCode(language),
     'ndl-persons': isJapaneseLanguageCode(language),
+    'wikidata-persons-ja': isJapaneseLanguageCode(language),
+    'wikidata-persons-bo': isTibetanLanguageCode(language),
   });
 
 const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityPackId[] =>
   isJapaneseLanguageCode(language)
-    ? ['ndl-persons', 'ndl-places', 'ndl-works']
-    : UI_AUTHORITY_PACK_IDS.filter((id) => !id.startsWith('ndl-'));
+    ? [
+        'ndl-persons',
+        'ndl-places',
+        'ndl-orgs',
+        'ndl-works',
+        'wikidata-persons-ja',
+        'wikidata-orgs-ja',
+        'wikidata-works-ja',
+      ]
+    : isTibetanLanguageCode(language)
+      ? ['wikidata-persons-bo', 'wikidata-places-bo', 'wikidata-orgs-bo']
+      : isChineseLanguageCode(language) || !language
+        ? [
+            'cbdb-persons',
+            'cbdb-places',
+            'cbdb-offices',
+            'dila-persons',
+            'dila-places',
+            'chgis-places',
+            'wikidata-persons',
+            'wikidata-orgs-zh-hant',
+            'wikidata-works-zh-hant',
+          ]
+        : UI_AUTHORITY_PACK_IDS.filter((id) => !id.startsWith('ndl-'));
 
 /** CE presets for dynasty-scoped tag bombs. */
 const AUTHORITY_YEAR_PRESETS = [
@@ -352,8 +378,10 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     visibleAuthorityPackIds,
   ]);
   const authorityPackGroupLabel = isJapaneseLanguageCode(sourceLanguage)
-    ? 'NDL'
-    : 'CBDB / DILA';
+    ? 'NDL / Wikidata'
+    : isTibetanLanguageCode(sourceLanguage)
+      ? 'Wikidata'
+      : 'CBDB / DILA / Wikidata';
 
   const beginReview = (produced: Suggestion[], notice?: string) => {
     startAutoTaggingReview({ suggestions: produced, notice, aiValidation });

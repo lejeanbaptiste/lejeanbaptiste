@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AutoTaggingSession, DisambiguationPanel, type MentionGroup } from '../autoTagging';
 import { useActions, useAppState } from '../overmind';
+import { DockedResizeHandle, useStoredPanelWidth } from './DockedResizeHandle';
 import {
   DOCKED_DISAMBIGUATION_MOUNT_ID,
   scheduleDesktopEditorRelayout,
@@ -37,6 +38,10 @@ export const DisambiguationReviewPane = () => {
   const [loading, setLoading] = useState(false);
   const session = useRef<AutoTaggingSession | null>(null);
   const scanGeneration = useRef(0);
+  const [panelWidth, setPanelWidth] = useStoredPanelWidth(
+    'lw.disambiguation.panelWidth',
+    DISAMBIGUATION_PANEL_WIDTH,
+  );
 
   const getSession = useCallback(() => {
     if (!window.writer) throw new Error('Editor not ready');
@@ -80,14 +85,16 @@ export const DisambiguationReviewPane = () => {
     })();
   }, [active, getSession]);
 
+  // Width updates re-run only the open path so a drag never flashes the
+  // mount closed; the close cleanup is keyed on `active` alone.
   useEffect(() => {
-    if (!isDesktopApp()) return;
-    setDockedReviewMountOpen(
-      DOCKED_DISAMBIGUATION_MOUNT_ID,
-      active,
-      DISAMBIGUATION_PANEL_WIDTH,
-    );
+    if (!isDesktopApp() || !active) return;
+    setDockedReviewMountOpen(DOCKED_DISAMBIGUATION_MOUNT_ID, true, panelWidth);
     scheduleDesktopEditorRelayout();
+  }, [active, panelWidth]);
+
+  useEffect(() => {
+    if (!isDesktopApp() || !active) return;
     return () => {
       setDockedReviewMountOpen(DOCKED_DISAMBIGUATION_MOUNT_ID, false);
       scheduleDesktopEditorRelayout();
@@ -105,6 +112,7 @@ export const DisambiguationReviewPane = () => {
   return (
     <Box
       sx={{
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
@@ -113,6 +121,7 @@ export const DisambiguationReviewPane = () => {
         bgcolor: 'background.paper',
       }}
     >
+      {isDesktopApp() && <DockedResizeHandle width={panelWidth} onResize={setPanelWidth} />}
       <Stack
         direction="row"
         alignItems="center"

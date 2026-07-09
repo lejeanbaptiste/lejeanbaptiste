@@ -1,4 +1,3 @@
-import { getCursorOffsetInSourceEditor, setCursorOffsetInSourceEditor } from '../sourceEditor/findInSourceEditor';
 import { getVisualCaretForSourceSync, type VisualCaretPosition } from './sourceCursorSync';
 
 export type { StoredCursorPosition } from './cursorPositionFilter';
@@ -91,7 +90,7 @@ const setVisualCaret = ({ offsetInElementText, teiXPath }: VisualCaretPosition):
 export const captureLeafWriterCursorPosition = (): LeafWriterCursorPosition | null => {
   const mode = window.writer?.overmindState?.ui?.editorViewMode;
   if (mode === 'source') {
-    const offset = getCursorOffsetInSourceEditor();
+    const offset = window.__leafWriterSourceFind?.getCursorOffset?.();
     return typeof offset === 'number' ? { mode: 'source', offset } : null;
   }
 
@@ -104,7 +103,12 @@ export const restoreLeafWriterCursorPosition = async (
 ): Promise<boolean> => {
   if (position.mode === 'source') {
     await window.writer?.overmindActions?.ui?.enterSourceMode?.();
-    return setCursorOffsetInSourceEditor({ offset: position.offset, focusEditor: true });
+    return (
+      window.__leafWriterSourceFind?.setCursorOffset?.({
+        offset: position.offset,
+        focusEditor: true,
+      }) ?? false
+    );
   }
 
   window.writer?.overmindActions?.ui?.setEditorViewMode?.('visual');

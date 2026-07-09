@@ -17,9 +17,20 @@ describe('flattenRelaxNgGrammar', () => {
     expect(flat).toContain('ljb.sanmiao.era');
 
     const doc = new DOMParser().parseFromString(flat, 'application/xml');
-    const dateDefines = Array.from(doc.querySelectorAll('define[name="date"]'));
+    const allDefines = doc.getElementsByTagName('define');
+    const dateDefines = Array.from(allDefines).filter(
+      (el: Element) => el.getAttribute('name') === 'date',
+    );
     expect(dateDefines).toHaveLength(1);
-    expect(dateDefines[0]!.querySelector('ref[name="ljb.sanmiao.era"]')).not.toBeNull();
-    expect(dateDefines[0]!.querySelector('ref[name="model.phrase"]')).toBeNull();
+    const dateDefine = dateDefines[0] as Element;
+    const refs = dateDefine.getElementsByTagName('ref');
+    const hasSanmiaoRef = Array.from(refs).some(
+      (ref: Element) => ref.getAttribute('name') === 'ljb.sanmiao.era',
+    );
+    const hasModelPhraseRef = Array.from(refs).some(
+      (ref: Element) => ref.getAttribute('name') === 'model.phrase',
+    );
+    expect(hasSanmiaoRef).toBe(true);
+    expect(hasModelPhraseRef).toBe(false);
   });
 });

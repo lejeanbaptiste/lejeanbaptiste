@@ -20,6 +20,7 @@ import {
 } from '../autoTagging';
 import { useActions, useAppState } from '../overmind';
 import { AutoTaggingApplyOverlay, type AutoTaggingBusyLabel } from './AutoTaggingApplyOverlay';
+import { DockedResizeHandle, useStoredPanelWidth } from './DockedResizeHandle';
 import {
   DOCKED_AUTO_TAGGING_MOUNT_ID,
   scheduleDesktopEditorRelayout,
@@ -52,6 +53,10 @@ export const AutoTaggingReviewPane = () => {
     'info',
   );
   const session = useRef<AutoTaggingSession | null>(null);
+  const [panelWidth, setPanelWidth] = useStoredPanelWidth(
+    'lw.autoTagging.panelWidth',
+    AUTO_TAGGING_PANEL_WIDTH,
+  );
 
   const getSession = useCallback(() => {
     if (!window.writer) throw new Error('Editor not ready');
@@ -118,14 +123,16 @@ export const AutoTaggingReviewPane = () => {
   }, [active]);
 
   // Desktop: expand/collapse the shell mount between editor and right sidebar.
+  // Width updates re-run only the open path so a drag never flashes the
+  // mount closed; the close cleanup is keyed on `active` alone.
   useEffect(() => {
-    if (!isDesktopApp()) return;
-    setDockedReviewMountOpen(
-      DOCKED_AUTO_TAGGING_MOUNT_ID,
-      active,
-      AUTO_TAGGING_PANEL_WIDTH,
-    );
+    if (!isDesktopApp() || !active) return;
+    setDockedReviewMountOpen(DOCKED_AUTO_TAGGING_MOUNT_ID, true, panelWidth);
     scheduleDesktopEditorRelayout();
+  }, [active, panelWidth]);
+
+  useEffect(() => {
+    if (!isDesktopApp() || !active) return;
     return () => {
       setDockedReviewMountOpen(DOCKED_AUTO_TAGGING_MOUNT_ID, false);
       scheduleDesktopEditorRelayout();
@@ -256,6 +263,7 @@ export const AutoTaggingReviewPane = () => {
       />
       <Box
         sx={{
+          position: 'relative',
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
@@ -264,6 +272,7 @@ export const AutoTaggingReviewPane = () => {
           bgcolor: 'background.paper',
         }}
       >
+        {isDesktopApp() && <DockedResizeHandle width={panelWidth} onResize={setPanelWidth} />}
         <Stack
           direction="row"
           alignItems="center"

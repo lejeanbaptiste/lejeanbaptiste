@@ -122,3 +122,10 @@ export const isKoreanLanguageCode = (code: string | null | undefined): boolean =
  */
 export const isEastAsianCalendarLanguageCode = (code: string | null | undefined): boolean =>
   isChineseLanguageCode(code) || isJapaneseLanguageCode(code) || isKoreanLanguageCode(code);
+
+/** Tibetan gate for authority packs (Wikidata bo persons/places/orgs). */
+export const isTibetanLanguageCode = (code: string | null | undefined): boolean => {
+  if (!code) return false;
+  const primary = canonicalLanguageCode(code).split('-')[0].toLowerCase();
+  return primary === 'bo' || primary === 'tib' || primary === 'bod';
+};

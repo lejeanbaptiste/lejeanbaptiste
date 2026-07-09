@@ -6,11 +6,20 @@
  * the real portability layer, so adding another provider later means one
  * more class here, not a redesign.
  */
+export interface RateLimitRetryInfo {
+  /** 1-based retry attempt number. */
+  attempt: number;
+  maxAttempts: number;
+  delayMs: number;
+}
+
 export interface LlmRequest {
   system: string;
   user: string;
   /** JSON schema the response must conform to (best-effort — always validate the parsed result). */
   jsonSchema: Record<string, unknown>;
+  /** Called before each 429 retry sleep so callers can surface live progress. */
+  onRateLimitRetry?: (info: RateLimitRetryInfo) => void;
 }
 
 export interface LlmUsage {
@@ -100,7 +109,7 @@ export interface MistralClientOptions {
    * llmParse validates). Override with json_object/json_schema if needed.
    */
   structuredOutput?: 'json_schema' | 'json_object' | 'prompt_only';
-  /** Retries on HTTP 429 (rate limit). Defaults to 4. */
+  /** Retries on HTTP 429 (rate limit), each waiting 30-60s. Defaults to 6. */
   maxRateLimitRetries?: number;
 }
 
@@ -128,6 +137,26 @@ export function parseRateLimitRetryMs(bodyText: string): number | null {
   return Math.ceil(parseFloat(match[1]!) * 1000) + 500;
 }
 
+/**
+ * Backoff floor/ceiling for 429 retries. Providers sometimes report a very
+ * short "try again in Xs" (a few seconds) that just triggers another
+ * near-immediate 429 under sustained rate limiting — always wait at least
+ * 30s, and cap the per-attempt wait at 60s so a single huge reported delay
+ * doesn't stall one attempt for minutes (subsequent attempts pick up the
+ * remainder via the retry loop). Grows slightly per attempt within the band.
+ */
+const MIN_RATE_LIMIT_DELAY_MS = 30_000;
+const MAX_RATE_LIMIT_DELAY_MS = 60_000;
+
+export function rateLimitDelayMs(suggestedMs: number | null, attempt: number): number {
+  const floorForAttempt = Math.min(
+    MIN_RATE_LIMIT_DELAY_MS + attempt * 15_000,
+    MAX_RATE_LIMIT_DELAY_MS,
+  );
+  if (suggestedMs == null) return floorForAttempt;
+  return Math.min(Math.max(suggestedMs, floorForAttempt), MAX_RATE_LIMIT_DELAY_MS);
+}
+
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -153,7 +182,7 @@ export class MistralLlmClient implements LlmClient {
     this.structuredOutput =
       options.structuredOutput ??
       (this.isGroq ? 'prompt_only' : 'json_schema');
-    this.maxRateLimitRetries = options.maxRateLimitRetries ?? 4;
+    this.maxRateLimitRetries = options.maxRateLimitRetries ?? 6;
   }
 
   private groqExtras(): Record<string, unknown> {
@@ -212,8 +241,13 @@ export class MistralLlmClient implements LlmClient {
     while (true) {
       let result = await this.postCompletion(request, mode);
       if (!result.ok && result.status === 429 && rateLimitAttempt < this.maxRateLimitRetries) {
-        const delayMs = parseRateLimitRetryMs(result.text) ?? 15_000;
+        const delayMs = rateLimitDelayMs(parseRateLimitRetryMs(result.text), rateLimitAttempt);
         rateLimitAttempt++;
+        request.onRateLimitRetry?.({
+          attempt: rateLimitAttempt,
+          maxAttempts: this.maxRateLimitRetries,
+          delayMs,
+        });
         await sleep(delayMs);
         continue;
       }
