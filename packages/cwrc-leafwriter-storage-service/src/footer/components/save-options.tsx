@@ -80,7 +80,7 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
           aria-controls={open ? 'split-button-menu' : undefined}
           aria-expanded={open ? 'true' : undefined}
           aria-haspopup="menu"
-          aria-label="select save option"
+          aria-label={t('SS.commons.select_save_option')}
           data-testid="save-options-button"
           disabled={!enabled || resource?.filename === '' || isSaving}
           onClick={handleToggle}

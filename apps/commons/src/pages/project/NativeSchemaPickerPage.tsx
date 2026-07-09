@@ -97,7 +97,7 @@ export const NativeSchemaPickerPage = () => {
   if (!isDesktop()) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography>This page is only available in the desktop app.</Typography>
+        <Typography>{t('LWC.desktop.only_available_desktop')}</Typography>
       </Box>
     );
   }
@@ -114,13 +114,13 @@ export const NativeSchemaPickerPage = () => {
         }}
       >
         <Typography sx={{ textTransform: 'capitalize' }} variant="h6">
-          {t('LW.Select schema')}
+          {t('LWC.desktop.project.select_schema')}
         </Typography>
       </Box>
 
       <Stack spacing={2} sx={{ flex: 1, p: 2, WebkitAppRegion: 'no-drag' }}>
         {loading || !state ? (
-          <Typography color="text.secondary">Loading…</Typography>
+          <Typography color="text.secondary">{t('LWC.commons.loading')}</Typography>
         ) : (
           <>
             <FormControl fullWidth size="small">
@@ -148,7 +148,7 @@ export const NativeSchemaPickerPage = () => {
                 {t('LW.note')}:
               </Box>
               {` ${t(
-                'LW.LEAF-Writer cannot guarantee that the document will work correctly with the selected schema',
+                'LWC.desktop.project.schema_warning',
               )}. ${t('LW.Tagging might not work as expected')}.`}
             </Typography>
           </>
@@ -174,7 +174,7 @@ export const NativeSchemaPickerPage = () => {
           onClick={() => void handleSelect()}
           variant="outlined"
         >
-          {t('LW.commons.select')}
+          {t('LWC.commons.select')}
         </Button>
       </Box>
     </Box>

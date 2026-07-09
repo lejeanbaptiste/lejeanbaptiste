@@ -16,4 +16,4 @@ Rules:
 - If no candidate fits, leave selectedCandidateIds empty and set suggestCreateNew true with createNewRationale (one line).
 - Do not invent candidates or ids.
 - Prefer candidates whose lifespan overlaps the document date span when dates are known.
-- Use co-mentioned resolved @key names as anchors (e.g. if 太宗 is keyed nearby, a person mentioned with him is likely contemporary).
+- Use co-mentioned resolved @key names as anchors (e.g. if 太宗 is keyed nearby, a person mentioned with him is likely contemporary).%s

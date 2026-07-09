@@ -64,7 +64,7 @@ export const Storage = ({ onBack, onClose }: SubMenu) => {
         if (analytics) analytics.track('storage', { storage: id });
       }
 
-      notifyViaSnackbar('Account Linked');
+      notifyViaSnackbar(t('LWC.profile.account_linked'));
     };
 
     window.open(linkAccountUrl);

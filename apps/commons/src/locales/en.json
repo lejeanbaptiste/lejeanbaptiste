@@ -18,6 +18,7 @@
       "document": "Document",
       "download": "download",
       "editing": "editing",
+      "loading": "Loading…",
       "export": "export",
       "export as format": "export as {{format}}",
       "export_document": "export document",
@@ -99,6 +100,8 @@
     },
     "error": {
       "message404": "You either tried some shady route, or you came here by mistake. Go back to the <1>main page.</1>",
+      "page_not_found": "Page not found",
+      "illustration_from": "Illustration from",
       "page_not_Found": "Page not found",
       "something_went_wrong": "Something went wrong"
     },
@@ -115,11 +118,13 @@
     },
     "dialogs": {
       "importExport": {
+      "document": "document.",
       "Learn more about importing files": "Learn more about importing files",
       "convert and open": "convert and open",
       "convert document": "convert document",
       "message": {
         "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer needs to convert it to be able to use it.",
+        "this_looks_like_a": "This looks like a ",
         "intercept_load_file_format": "<0>This looks like a </0> <1>{{format}}</1> <2>document.</2>"
       },
       "try to open it without converting": "try to open it without converting"
@@ -147,7 +152,13 @@
     },
       "on this page": "On this page",
       "profile": {
+        "account_linked": "Account linked",
         "manage_your_lincs_account": "Manage your LINCS account"
+      },
+      "components": {
+        "bottombar": {
+          "annotation_mode": "Annotation Mode"
+        }
       },
       "error": {
         "something_went_wrong": "Something went wrong",
@@ -188,6 +199,8 @@
       "aria_labels": {
         "save": "save",
         "main_menu": "Main Menu",
+        "collapse_sidebar_panel": "Collapse sidebar panel",
+        "expand_sidebar_panel": "Expand sidebar panel",
         "resize_left_panel": "Resize left panel",
         "resize_right_panel": "Resize right panel",
         "toggle_sidebar_panel": "Toggle sidebar panel",
@@ -195,6 +208,15 @@
         "collapse_right_panel": "Collapse right panel",
         "help": "help",
         "document_location": "Document location"
+      },
+      "sidebar_tabs": {
+        "explorer": "Explorer",
+        "find": "Find",
+        "xpath": "XPath",
+        "toc": "Table of Contents",
+        "markup": "Markup",
+        "entities": "Entities",
+        "database": "Entity Database"
       },
       "ui": {
         "appearance": "appearance",
@@ -222,6 +244,7 @@
       "only_available_desktop": "This page is only available in the desktop app.",
       "file_metadata": {
         "book_title": "Book title",
+        "open_file_prompt": "Open a file to edit its metadata.",
         "not_before": "Not before",
         "not_after": "Not after",
         "year": "Year",
@@ -238,6 +261,51 @@
       "project": {
         "settings": "Project settings",
         "schema_setup": "Project schema setup",
+        "errors": {
+          "could_not_load_edition_metadata": "Could not load edition metadata.",
+          "could_not_save_metadata": "Could not save metadata.",
+          "could_not_load_project_settings": "Could not load project settings."
+        },
+        "dialogs": {
+          "cancel_button": "Cancel",
+          "close_without_saving": "{{filename}} has unsaved changes. Close without saving?",
+          "discard_changes_button": "Discard changes",
+          "dont_save_button": "Don't Save",
+          "import_diagnostics_title": "Import diagnostics",
+          "imported_documents_with_problems": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}} with {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}.",
+          "ok_button": "OK",
+          "save_all_button": "Save All",
+          "save_before_closing": "Save \"{{filename}}\" to your project folder before closing?",
+          "save_before_opening_project": "Save the new document to your project folder before opening another project?",
+          "save_before_opening_project_with_list": "Save changes before opening another project?\n\n{{fileList}}",
+          "save_button": "Save",
+          "unsaved_changes_title": "Unsaved changes",
+          "unsaved_documents_title": "Unsaved documents",
+          "unsaved_new_document_title": "Unsaved new document"
+        },
+        "messages": {
+          "could_not_create_new_file": "Could not create a new file.",
+          "could_not_open_project_folder": "Could not open the project folder. Check the console for details.",
+          "could_not_read_document_content": "Could not read document content.",
+          "could_not_save_all_files": "Could not save all files.",
+          "desktop_file_access_unavailable_restart": "Desktop file access is unavailable. Restart the desktop app.",
+          "document_import_unavailable_restart": "Document import is unavailable. Restart the desktop app.",
+          "complete_metadata_setup_before_creating_file": "Complete project metadata setup before creating a file.",
+          "new_file_unavailable_restart": "New File is unavailable. Restart the desktop app.",
+          "no_supported_files_found": "No supported files found. Import supports TXT, Markdown, and RTF for now.",
+          "open_project_first": "Open a project first.",
+          "open_xml_before_saving": "Open an XML file before saving.",
+          "project_not_fully_loaded": "Project is not fully loaded.",
+          "imported_documents_success": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}.",
+          "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details."
+        },
+        "select_language": "Select language…",
+        "use_local_schema_file": "Use local schema file…",
+        "schema_download_failed": "Schema download failed.",
+        "copy_schema_failed": "Could not copy schema file.",
+        "download": "Download",
+        "select_schema": "Select schema",
+        "schema_warning": "LEAF-Writer cannot guarantee that the document will work correctly with the selected schema",
         "tei_path": "TEI path",
         "schema": "Schema",
         "central_database": "Central database",
@@ -251,9 +319,19 @@
         "remove_language": "Remove language",
         "add_translation_language": "Add translation language",
         "add_custom_field": "Add custom field",
+        "custom_fields": "Custom fields",
+        "entity_database": "Entity database",
+        "entity_database_hint": "Use your central database (App Settings) or keep a separate entities.xml in this project folder.",
         "first_setup_message": "Save once to finish project setup. Source language is required; other fields may be left blank.",
         "defaults_message": "Project-wide defaults and entity database choice.",
-        "choose_schema_message": "Choose a schema for this project. Files are copied into the project folder."
+        "choose_schema_message": "Choose a schema for this project. Files are copied into the project folder.",
+        "languages": "Languages",
+        "save_button": "Save",
+        "save_defaults_only": "Save defaults only",
+        "save_and_update_documents_button": "Save and update documents…",
+        "alignment_unit_locked": "Alignment unit is locked once translations have started.",
+        "alignment_granularity_hint": "Choose the granularity at which source and translation are linked. This cannot be changed later.",
+        "translation": "Translation"
       },
       "external_file_changed": {
         "title": "File changed on disk",
@@ -262,12 +340,36 @@
         "reload": "Reload",
         "keep_editing": "Keep editing"
       },
-      "translation_links_restored_one": "Restored {{count}} translation link after external change",
-      "translation_links_restored_other": "Restored {{count}} translation links after external change",
-      "close_unsaved": {
-        "title": "Unsaved changes",
-        "message": "{{filename}} has unsaved changes. Close without saving?"
-      },
+    "translation_links_restored_one": "Restored {{count}} translation link after external change",
+    "translation_links_restored_other": "Restored {{count}} translation links after external change",
+    "translation": {
+      "indexing_document": "Indexing document for translation…",
+      "no_languages_configured": "No translation languages configured yet. Add them in Project → Edition metadata…",
+      "open_project_to_use_translations": "Open a project to use translations.",
+      "translate_failed": "Translate failed: {{error}}"
+    },
+    "desktop": {
+      "ai_api_bridge_unavailable": "Desktop AI API bridge is unavailable.",
+      "bulk_update_warning": "{{count}} open document(s) have unsaved changes. Bulk update writes to disk and may overwrite in-memory edits.",
+      "copy_schema_failed": "Could not copy schema file.",
+      "could_not_open_settings": "Could not open settings.",
+      "could_not_save_metadata": "Could not save metadata.",
+      "could_not_save_translation_settings": "Could not save translation settings.",
+      "document_saved": "Document saved.",
+      "open_project_first": "Open a project first.",
+      "open_translation_tab_for_zotero": "Open the Translation tab to choose Zotero citation style.",
+      "open_xml_before_saving": "Open an XML file before saving.",
+      "project_settings_saved": "Project settings saved.",
+      "refreshing_zotero_citations": "Refreshing Zotero citations.",
+      "schema_download_failed": "Schema download failed.",
+      "unsaved_documents": "Unsaved documents",
+      "updated_files_overrides_skipped": "{{count}} field(s) left unchanged due to per-file edits.",
+      "updated_files_summary": "Updated {{updated}} file(s); {{skipped}} unchanged."
+    },
+    "close_unsaved": {
+      "title": "Unsaved changes",
+      "message": "{{filename}} has unsaved changes. Close without saving?"
+    },
       "settings": {
         "editor_options_hint": "Schema, authorities, and other editor options are available from the ⚙ toolbar while a document is open.",
         "remember_workspace_on_startup": "Reopen project and tabs on startup",

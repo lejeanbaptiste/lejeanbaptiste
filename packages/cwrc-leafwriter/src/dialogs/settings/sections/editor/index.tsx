@@ -26,14 +26,14 @@ export const Editor = () => {
       <Toggler
         icon="entitiesTag"
         onChange={setShowEntities}
-        title={t('LW.settings.editor.Show Entities')}
+        title={t('LW.settings.editor.show_entities')}
         type="toggle"
         value={showEntities}
       />
       <Toggler
         icon="translate"
         onChange={setStripCjkWhitespace}
-        title={t('LW.settings.editor.Strip East Asian whitespace')}
+        title={t('LW.settings.editor.strip_east_asian_whitespace')}
         type="toggle"
         value={stripCjkWhitespace}
       />

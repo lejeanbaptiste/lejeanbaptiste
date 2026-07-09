@@ -38,7 +38,7 @@ export const SettingsDialog = ({ anchor, onDone, open }: SettingsDialogProps) =>
               data-testid="global_settings-dialog-allow_all_files-switch"
               inputProps={{ 'aria-label': 'allow-all-files' }}
               onChange={handleToggleAllowAllFiles}
-              title="Allow all files"
+              title={t('SS.settings.allow_all_files')}
               size="small"
             />
           </ListItemIcon>

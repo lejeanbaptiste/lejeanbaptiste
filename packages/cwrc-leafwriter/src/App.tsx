@@ -11,7 +11,6 @@ import type Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import { MarkupPanel } from './panels/markup';
 import { TocPanel } from './panels/toc';
-import { DesktopEntitiesPanel } from './panels/entities/DesktopEntitiesPanel';
 import { AutoTaggingReviewPane } from './layout/AutoTaggingReviewPane';
 import { DisambiguationReviewPane, DISAMBIGUATION_PANEL_WIDTH } from './layout/DisambiguationReviewPane';
 import { TranslationPane } from './layout/TranslationPane';
@@ -105,7 +104,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const [structureTreePanelContainer, setStructureTreePanelContainer] = useState<Element | null>(
     null,
   );
-  const [entitiesPanelReady, setEntitiesPanelReady] = useState(false);
   const [translationPaneContainer, setTranslationPaneContainer] = useState<Element | null>(null);
   const [autoTaggingPaneContainer, setAutoTaggingPaneContainer] = useState<Element | null>(null);
   const [disambiguationPaneContainer, setDisambiguationPaneContainer] = useState<Element | null>(null);
@@ -170,14 +168,10 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       '#desktop-panel-markup',
       setStructureTreePanelContainer,
     );
-    const disconnectEntities = observeElement('#desktop-panel-entities', (element) => {
-      setEntitiesPanelReady(!!element);
-    });
 
     return () => {
       disconnectToc();
       disconnectMarkup();
-      disconnectEntities();
     };
   }, [writer]);
 
@@ -254,16 +248,13 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       if (isDesktopApp()) {
         void (async () => {
           try {
-            const [_tocPanelContainer, _structureTreePanelContainer, _entitiesPanelContainer] =
-              await Promise.all([
-                waitForElement('#desktop-panel-toc'),
-                waitForElement('#desktop-panel-markup'),
-                waitForElement('#desktop-panel-entities'),
-              ]);
+            const [_tocPanelContainer, _structureTreePanelContainer] = await Promise.all([
+              waitForElement('#desktop-panel-toc'),
+              waitForElement('#desktop-panel-markup'),
+            ]);
 
             setTocPanelContainer(_tocPanelContainer);
             setStructureTreePanelContainer(_structureTreePanelContainer);
-            setEntitiesPanelReady(!!_entitiesPanelContainer);
           } catch {
             console.warn('Desktop left panel mount points not found');
           }
@@ -330,7 +321,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
               </Suspense>,
               codePanelContainer,
             )}
-          {entitiesPanelReady && isDesktopApp() && <DesktopEntitiesPanel />}
           {translationPaneContainer &&
             createPortal(<TranslationPane />, translationPaneContainer)}
           {autoTaggingPaneContainer &&

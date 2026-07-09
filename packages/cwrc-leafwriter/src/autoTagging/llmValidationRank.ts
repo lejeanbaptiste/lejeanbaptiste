@@ -8,8 +8,8 @@ import type { LlmClient } from './llmClient';
 import type { ChunkOptions } from './chunk';
 
 /**
- * Validates suggestions using LLM to identify incorrect tags and pre-select
- * the best candidate when multiple tags match the same surface.
+ * Validates suggestions using LLM to identify incorrect tags without letting
+ * the model collapse same-span alternatives into a single winner.
  */
 
 export interface ValidationContextOptions extends ChunkOptions {
@@ -55,10 +55,10 @@ function chunkSuggestions<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * Single validation result from LLM for a suggestion or group of alternatives.
+ * Single validation result from LLM for one suggestion.
  */
 export interface RawValidationResult {
-  /** Suggestion ID or group identifier. */
+  /** Suggestion ID. */
   id: string;
   /** Validation confidence score (0-1). */
   confidence: number;
@@ -66,8 +66,6 @@ export interface RawValidationResult {
   warning?: string;
   /** True if AI recommends this suggestion. */
   recommended: boolean;
-  /** For multi-tag alternatives: the preferred tag. */
-  preferredTag?: string;
   /** AI's rationale for its decision. */
   rationale?: string;
 }
@@ -87,7 +85,6 @@ const validationResponseSchema: Record<string, unknown> = {
           confidence: { type: 'number', minimum: 0, maximum: 1 },
           warning: { type: 'string' },
           recommended: { type: 'boolean' },
-          preferredTag: { type: 'string' },
           rationale: { type: 'string' },
         },
         required: ['id', 'confidence', 'recommended'],
@@ -111,7 +108,7 @@ function buildValidationUserPrompt(params: {
     `Validate the following auto-tagging suggestions for ${langLabel}historical texts. For each suggestion, assess:`,
     '1. Whether the tag is semantically correct for the surface string in its local context',
     '2. Whether the boundary spans are accurate',
-    '3. If multiple tags are proposed for the same surface, pick the most appropriate one',
+    '3. Score each suggestion independently, even when the same surface appears with multiple tags',
     '',
     'Suggestions (use exact id in your response):',
   ];
@@ -131,25 +128,10 @@ function buildValidationUserPrompt(params: {
 
   lines.push('');
   lines.push('Respond with a JSON object containing a "validations" array.');
-  lines.push('Each validation must include: id, confidence (0-1), recommended (boolean), and optionally warning, preferredTag, rationale.');
+  lines.push('Each validation must include: id, confidence (0-1), recommended (boolean), and optionally warning, rationale.');
+  lines.push('Do not choose or infer a single winner for same-surface alternatives; evaluate each listed suggestion on its own.');
 
   return lines.join('\n');
-}
-
-/**
- * Group suggestions by their anchor position for batch validation.
- * Same-span alternatives (same surface + occurrence) are grouped together.
- */
-function groupSuggestionsBySpan(suggestions: Suggestion[]): Map<string, Suggestion[]> {
-  const groups = new Map<string, Suggestion[]>();
-  for (const s of suggestions) {
-    const key = `${s.anchor.surface}\0${s.anchor.occurrence}`;
-    if (!groups.has(key)) {
-      groups.set(key, []);
-    }
-    groups.get(key)!.push(s);
-  }
-  return groups;
 }
 
 /**
@@ -186,9 +168,6 @@ function parseValidationResponse(
 
     const warning = typeof v.warning === 'string' && v.warning.trim() !== '' ? v.warning.trim() : undefined;
     const recommended = v.recommended === true;
-    const preferredTag = typeof v.preferredTag === 'string' && v.preferredTag.trim() !== ''
-      ? v.preferredTag.trim()
-      : undefined;
     const rationale = typeof v.rationale === 'string' && v.rationale.trim() !== ''
       ? v.rationale.trim()
       : undefined;
@@ -197,7 +176,6 @@ function parseValidationResponse(
       confidence,
       warning,
       recommended,
-      preferredTag,
       rationale,
       validatedAt: new Date().toISOString(),
     });
@@ -208,7 +186,6 @@ function parseValidationResponse(
 
 /**
  * Validate a batch of suggestions using LLM.
- * Groups same-span alternatives together for joint validation.
  */
 export async function validateSuggestions(
   options: ValidateSuggestionsOptions,
@@ -227,7 +204,6 @@ export async function validateSuggestions(
     return new Map();
   }
 
-  const groups = groupSuggestionsBySpan(suggestions);
   const result = new Map<string, AiValidationResult>();
 
   const taskText = resolveValidationTaskText(promptProfile);
@@ -261,34 +237,6 @@ export async function validateSuggestions(
     }
 
     onProgress?.(i + 1, batches.length);
-  }
-
-  // For grouped alternatives, propagate preferredTag to all members.
-  for (const groupSuggestions of groups.values()) {
-    if (groupSuggestions.length <= 1) continue;
-
-    let preferredTag: string | undefined;
-    for (const s of groupSuggestions) {
-      const validation = result.get(s.id);
-      if (validation?.preferredTag) {
-        preferredTag = validation.preferredTag;
-        break;
-      }
-    }
-
-    if (preferredTag) {
-      for (const s of groupSuggestions) {
-        const existing = result.get(s.id);
-        result.set(s.id, {
-          confidence: existing?.confidence ?? 0.5,
-          recommended: existing?.recommended ?? false,
-          warning: existing?.warning,
-          preferredTag,
-          rationale: existing?.rationale,
-          validatedAt: existing?.validatedAt,
-        });
-      }
-    }
   }
 
   return result;

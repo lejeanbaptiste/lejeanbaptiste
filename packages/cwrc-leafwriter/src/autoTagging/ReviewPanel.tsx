@@ -250,14 +250,7 @@ const AlternativeGroupRow = ({
   onPreview,
 }: AlternativeGroupRowProps) => {
   const first = group.suggestions[0]!;
-  
-  // Check if AI has pre-selected a candidate for this group
-  // Find the AI preferred tag from any suggestion in the group
-  const preferredTag = group.suggestions.find(s => s.aiValidation?.preferredTag)?.aiValidation?.preferredTag;
-  const recommendedIndex = preferredTag 
-    ? group.suggestions.findIndex(s => s.tag === preferredTag)
-    : -1;
-  
+
   // Also find if any suggestion in the group has an AI warning
   const hasAiWarning = group.suggestions.some(s => s.aiValidation?.warning);
   
@@ -287,7 +280,7 @@ const AlternativeGroupRow = ({
         const showValidation = aiValidation !== undefined;
         const validationColor = getValidationColor(aiValidation?.confidence);
         const confidenceLabel = getConfidenceLabel(aiValidation?.confidence);
-        const isRecommended = aiValidation?.recommended || index === recommendedIndex;
+        const isRecommended = aiValidation?.recommended === true;
         
         return (
           <Box
@@ -312,9 +305,6 @@ const AlternativeGroupRow = ({
               color={isRecommended ? 'primary' : 'default'}
               variant={isRecommended ? 'filled' : 'outlined'}
             />
-            {recommendedIndex === index && (
-              <Chip size="small" color="primary" label="AI pick" />
-            )}
             <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>
               {suggestion.anchor.surface}
             </Typography>

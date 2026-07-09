@@ -317,7 +317,7 @@ export const FileMetadataPanel = () => {
     return (
       <Paper elevation={0} square sx={{ height: '100%', p: 2 }}>
         <Typography color="text.secondary" variant="body2">
-          Open a file to edit its metadata.
+          {t('LWC.desktop.file_metadata.open_file_prompt')}
         </Typography>
       </Paper>
     );

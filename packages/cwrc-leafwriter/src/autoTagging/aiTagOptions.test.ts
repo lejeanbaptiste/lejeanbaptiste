@@ -29,4 +29,8 @@ describe('aiTagOptions', () => {
       'placeName',
     ]);
   });
+
+  it('exposes roleName to the AI tag guide', () => {
+    expect(listAiTagOptions(null)).toContain('roleName');
+  });
 });

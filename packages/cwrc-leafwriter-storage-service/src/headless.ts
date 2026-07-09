@@ -145,7 +145,7 @@ export const saveDocument = async (
   const response = await provider.saveDocument({
     branch: repository.default_branch,
     content,
-    message: 'Updated',
+    message: t('SS.commons.message.updated'),
     ownerUsername: owner,
     path: filePath,
     repoId: repository.id,

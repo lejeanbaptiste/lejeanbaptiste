@@ -25,14 +25,13 @@ export const createConfig = async (settings: LeafWriterOptionsSettings = {}) => 
 
   const defaultModules = {
     west: [
-      { id: 'toc' as const, title: 'Table of Contents' },
-      { id: 'markup' as const, title: 'Markup' },
-      { id: 'entities' as const, title: 'Entities' },
+      { id: 'toc' as const, title: 'LW.panels.toc' },
+      { id: 'markup' as const, title: 'LW.panels.markup' },
     ],
     east: [
-      { id: 'code' as const, title: 'Raw XML' },
-      { id: 'imageViewer' as const, title: 'Image Viewer' },
-      { id: 'validation' as const, title: 'Validation' },
+      { id: 'code' as const, title: 'LW.panels.code' },
+      { id: 'imageViewer' as const, title: 'LW.panels.imageViewer' },
+      { id: 'validation' as const, title: 'LW.panels.validation' },
     ],
   };
 

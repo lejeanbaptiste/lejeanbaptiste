@@ -13,7 +13,7 @@ export const Language = ({ onBack, onClose }: SubMenu) => {
   const { currentLocale } = useAppState().ui;
   const { switchLanguage } = useActions().ui;
 
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { analytics } = useAnalytics();
 
   const { switchLanguage: switchLanguageConsent } = useCookieConsent();
@@ -23,7 +23,6 @@ export const Language = ({ onBack, onClose }: SubMenu) => {
 
     switchLanguage(locale);
     switchLanguageConsent(locale);
-    i18n.changeLanguage(locale);
 
     if (analytics) analytics.track('language', { language: locale });
     onClose();

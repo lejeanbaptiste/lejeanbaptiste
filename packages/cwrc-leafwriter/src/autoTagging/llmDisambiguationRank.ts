@@ -3,6 +3,7 @@ import {
   promptVersionWithProfile,
   resolveDisambiguationRankTaskText,
 } from './aiPromptProfiles';
+import { injectPlaceholder } from './prompts';
 import rankSystemTemplate from './prompt-templates/disambiguation-rank.system.txt';
 import versions from './prompt-templates/versions.json';
 import {
@@ -109,7 +110,11 @@ export async function rankDisambiguationCandidates(options: {
     DISAMBIGUATION_RANK_PROMPT_VERSION,
     promptProfile,
   );
-  const taskText = resolveDisambiguationRankTaskText(promptProfile) ?? rankSystemTemplate.trimStart();
+  const taskTextTemplate = resolveDisambiguationRankTaskText(promptProfile) ?? rankSystemTemplate.trimStart();
+  const taskText = injectPlaceholder(
+    taskTextTemplate,
+    '\n- Use @key only for disambiguation; do not resolve or prefer @ref in this step.',
+  );
 
   const cacheKey = cache?.cacheKey(
     instance.tag,

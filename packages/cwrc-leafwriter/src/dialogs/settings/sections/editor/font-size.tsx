@@ -13,7 +13,7 @@ export const FontSize = () => {
     <ListItem dense disableGutters>
       <FormatSizeIcon sx={{ mx: 1, height: 18, width: 18 }} />
       <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
-        {t('LW.settings.editor.font size')}
+        {t('LW.settings.editor.font_size')}
       </Typography>
       <Box flexGrow={1} />
       <Slider

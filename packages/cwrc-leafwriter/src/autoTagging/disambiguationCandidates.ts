@@ -16,6 +16,8 @@ import type { EntityStore } from './entityStore';
 import { filterReconcileByExactSurface, stringsMatchExactly } from './disambiguationMatch';
 import { fetchWikidataLifespan, prefixDescriptionWithLifespan } from './wikidataDates';
 import { wikidataQidsMatchingKind } from './wikidataKindFilter';
+import { packIdsForEntityType, searchPackContent } from '../services/authority-pack-lookup';
+import { AUTHORITY_PACKS } from './packPaths';
 import {
   iterateAuthorityNdjson,
   normalizeDateRangeFilter,
@@ -407,6 +409,10 @@ async function filterWikidataByKind<T extends { uri: string; description?: strin
 
 export type ReadAuthorityPackFile = (packId: AuthorityPackId) => Promise<string>;
 
+export function clearPersonPackIndexForTests(): void {
+  chgisIndexPromise = null;
+}
+
 /** Session-lifetime cache of parsed CHGIS rows, keyed by exact search string. */
 let chgisIndexPromise: Promise<Map<string, { startYear?: number; endYear?: number }>> | null = null;
 
@@ -439,92 +445,76 @@ async function chgisYearsForSurface(
   return index.get(surface) ?? null;
 }
 
-interface PersonPackEntry {
-  source: 'CBDB' | 'DILA';
-  authorityId: string;
-  primaryName: string;
-  description?: string;
-  startYear?: number;
-  endYear?: number;
-  wikidataQids?: string[];
-}
-
-/**
- * Session-lifetime index of installed CBDB/DILA person packs, keyed by exact search
- * string. Local, offline lookup is faster and more reliable than either authority's
- * live API — we already compile the same underlying source data into these packs.
- */
-let personPackIndexPromise: Promise<Map<string, PersonPackEntry[]>> | null = null;
-
-export function clearPersonPackIndexForTests(): void {
-  personPackIndexPromise = null;
-}
-
-function indexPersonPackContent(
-  content: string,
-  source: PersonPackEntry['source'],
-  index: Map<string, PersonPackEntry[]>,
-): void {
-  for (const row of iterateAuthorityNdjson(content)) {
-    if (row.kind !== 'person') continue;
-    const entry: PersonPackEntry = {
-      source,
-      authorityId: row.authorityId,
-      primaryName: row.primaryName,
-      description: row.metadata?.description,
-      startYear: row.metadata?.startYear,
-      endYear: row.metadata?.endYear,
-      wikidataQids: row.metadata?.crosswalk?.wikidata,
-    };
-    for (const str of row.searchStrings) {
-      const list = index.get(str);
-      if (list) list.push(entry);
-      else index.set(str, [entry]);
-    }
-  }
-}
-
-async function personPackIndex(readPackFile: ReadAuthorityPackFile): Promise<Map<string, PersonPackEntry[]>> {
-  personPackIndexPromise ??= (async () => {
-    const index = new Map<string, PersonPackEntry[]>();
-    const sources: Array<[AuthorityPackId, PersonPackEntry['source']]> = [
-      ['cbdb-persons', 'CBDB'],
-      ['dila-persons', 'DILA'],
-    ];
-    for (const [packId, source] of sources) {
-      try {
-        indexPersonPackContent(await readPackFile(packId), source, index);
-      } catch {
-        // Pack not installed — skip.
-      }
-    }
-    return index;
-  })();
-  return personPackIndexPromise;
-}
-
-/** Candidates from installed CBDB/DILA person packs matching the surface exactly. */
-async function candidatesFromPersonPacks(
+async function candidatesFromAuthorityPacks(
+  tag: string,
   surface: string,
   readPackFile: ReadAuthorityPackFile,
 ): Promise<DisambiguationCandidate[]> {
-  const index = await personPackIndex(readPackFile);
-  const entries = index.get(surface) ?? [];
-  return entries.map((entry) => {
-    const authorityIds: AuthorityId[] = [{ type: entry.source, value: entry.authorityId }];
-    for (const qid of entry.wikidataQids ?? []) {
-      authorityIds.push({ type: 'Wikidata', value: WIKIDATA_ITEM_URL(qid) });
+  const entityType = TAG_TO_ENTITY_TYPE[tag] ?? 'person';
+  const packIds = packIdsForEntityType(
+    ['cbdb-persons', 'cbdb-places', 'cbdb-offices', 'dila-persons', 'dila-places', 'chgis-places', 'ndl-persons', 'ndl-places', 'ndl-orgs', 'ndl-works'],
+    entityType,
+  );
+  const results: DisambiguationCandidate[] = [];
+  for (const packId of packIds) {
+    try {
+      const content = await readPackFile(packId);
+      const spec = AUTHORITY_PACKS.find((item) => item.id === packId);
+      if (!spec) continue;
+      const rows = content
+        .split('\n')
+        .filter((line) => line.trim())
+        .map((line) => {
+          try {
+            return JSON.parse(line) as {
+              source?: string;
+              authorityId?: string;
+              kind?: string;
+              primaryName?: string;
+              searchStrings?: string[];
+              metadata?: { startYear?: number; endYear?: number };
+            };
+          } catch {
+            return null;
+          }
+        })
+        .filter(
+          (
+            row,
+          ): row is {
+            source?: string;
+            authorityId?: string;
+            kind?: string;
+            primaryName?: string;
+            searchStrings?: string[];
+            metadata?: { startYear?: number; endYear?: number };
+          } => Boolean(row),
+        );
+      const packSource = spec.source as 'cbdb' | 'dila' | 'ndl';
+      for (const match of searchPackContent(content, packSource, entityType, surface)) {
+        const row = rows.find((entry) => {
+          if (!entry?.authorityId) return false;
+          if (entry.primaryName !== match.label) return false;
+          return true;
+        });
+        results.push({
+          id: match.uri,
+          label: match.label,
+          description: match.description,
+          sources: [spec.source.toUpperCase()],
+          uri: match.uri,
+          authorityIds: dedupeAuthorityIds(
+            authorityIdsFromCrossRefs([{ type: packSource.toUpperCase(), value: match.uri }], match.description),
+          ),
+          startYear: row?.metadata?.startYear,
+          endYear: row?.metadata?.endYear,
+        });
+      }
+    } catch {
+      // Missing or unreadable pack; skip it.
     }
-    return {
-      id: `${entry.source}:${entry.authorityId}`,
-      label: entry.primaryName,
-      description: entry.description,
-      sources: [entry.source],
-      authorityIds,
-      startYear: entry.startYear,
-      endYear: entry.endYear,
-    };
-  });
+  }
+  return results;
 }
 
 /**
@@ -660,8 +650,7 @@ export async function buildDisambiguationCandidates(
   readPackFile?: ReadAuthorityPackFile,
 ): Promise<DisambiguationCandidate[]> {
   const local = candidatesFromEntityFile(entitiesDoc, tag, surface);
-  const packLocal =
-    tag === 'persName' && readPackFile ? await candidatesFromPersonPacks(surface, readPackFile) : [];
+  const packLocal = readPackFile ? await candidatesFromAuthorityPacks(tag, surface, readPackFile) : [];
   const live = await fetchLiveCandidates(tag, surface, cache, enabledAuthorities, forceRefresh, readPackFile);
   return collapseCrossAuthorityCandidates(
     mergeCandidates([local, packLocal, live]).map(enrichCandidateCrossRefs),

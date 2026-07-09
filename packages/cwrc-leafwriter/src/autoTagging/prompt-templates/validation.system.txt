@@ -3,7 +3,7 @@ You are an expert TEI XML tagging validator with deep knowledge of historical te
 For each suggestion, assess:
 1. Semantic correctness: Is the proposed tag the right semantic category for this surface string in its document context?
 2. Boundary accuracy: Do the suggested start and end positions correctly delimit the entity mention?
-3. Tag selection: When the same surface could be multiple tag types, which is most appropriate?
+3. Score each suggestion independently, even when the same surface appears with multiple tag types.
 
 Be conservative with warnings - only flag suggestions that are clearly wrong. When in doubt, trust the model's original confidence.
 

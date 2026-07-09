@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type AuthorityLifecycleProgress = {
   phase: 'compiling' | 'downloading' | 'extracting' | 'idle';
@@ -58,6 +59,7 @@ const getBridge = (): CommonsUiBridge | undefined =>
   (window as Window & { __ljbCommonsUi?: CommonsUiBridge }).__ljbCommonsUi;
 
 export const DesktopOfflineAuthorities = () => {
+  const { t } = useTranslation();
   const bridge = getBridge();
   const [status, setStatus] = useState<AuthorityLifecycleStatus | null>(
     bridge?.authorityLifecycleStatus ?? null,
@@ -105,8 +107,10 @@ export const DesktopOfflineAuthorities = () => {
       const totalBytes = disk ? disk.rawBytes + disk.packBytes : 0;
       const detail =
         totalBytes > 0
-          ? `Delete downloaded databases and compiled packs (${formatBytes(totalBytes)})?`
-          : 'Delete downloaded databases and compiled packs?';
+          ? t('LW.settings.authorities.offline.delete_detail_with_bytes', {
+              bytes: formatBytes(totalBytes),
+            })
+          : t('LW.settings.authorities.offline.delete_detail');
 
       const response = await (
         window as Window & {
@@ -124,10 +128,14 @@ export const DesktopOfflineAuthorities = () => {
         }
       ).electronAPI?.showNativeMessageBox?.({
         type: 'question',
-        title: 'Disable offline authorities',
-        message: 'Stop updating offline authority data.',
+        title: t('LW.settings.authorities.offline.disable_title'),
+        message: t('LW.settings.authorities.offline.disable_message'),
         detail,
-        buttons: ['Keep files', 'Delete files', 'Cancel'],
+        buttons: [
+          t('LW.settings.authorities.offline.keep_files'),
+          t('LW.settings.authorities.offline.delete_files'),
+          t('LW.commons.cancel'),
+        ],
         defaultId: 0,
         cancelId: 2,
       });
@@ -142,9 +150,9 @@ export const DesktopOfflineAuthorities = () => {
           deleteFiles: response.response === 1,
         });
         if (!result.ok) {
-          setMessage({ severity: 'error', text: result.error ?? 'Could not disable authorities.' });
+          setMessage({ severity: 'error', text: result.error ?? t('LW.settings.authorities.offline.disable_failed') });
         } else {
-          setMessage({ severity: 'info', text: 'Offline authority updates disabled.' });
+          setMessage({ severity: 'info', text: t('LW.settings.authorities.offline.disabled') });
         }
         await refresh();
       } finally {
@@ -161,10 +169,7 @@ export const DesktopOfflineAuthorities = () => {
         profile: status?.profile,
       });
       if (!result.ok) {
-        setMessage({
-          severity: 'error',
-          text: result.error ?? 'Download or compile failed. Try again from Settings.',
-        });
+        setMessage({ severity: 'error', text: result.error ?? t('LW.settings.authorities.offline.enable_failed') });
       } else {
         setMessage({
           severity: 'success',
@@ -184,9 +189,9 @@ export const DesktopOfflineAuthorities = () => {
     try {
       const result = await bridge.runAuthorityLifecycleUpdate();
       if (!result.ok) {
-        setMessage({ severity: 'error', text: result.error ?? 'Update failed.' });
+        setMessage({ severity: 'error', text: result.error ?? t('LW.settings.authorities.offline.update_failed') });
       } else {
-        setMessage({ severity: 'success', text: 'Authority data updated.' });
+        setMessage({ severity: 'success', text: t('LW.settings.authorities.offline.updated') });
       }
       await refresh();
     } finally {
@@ -198,17 +203,17 @@ export const DesktopOfflineAuthorities = () => {
   const working = busy || status?.busy;
   const disk = status?.diskUsage;
   const totalDisk = disk ? disk.rawBytes + disk.packBytes : 0;
-  const authorityLabel = status?.label ?? 'Offline authorities';
+  const authorityLabel = status?.label ?? t('LW.settings.authorities.offline.title');
   const setupDescription =
     status?.profile === 'japanese' || status?.profile === 'tibetan'
-      ? 'Download and update tagging packs beside your entity database.'
-      : 'Download, compile, and update tagging packs beside your entity database.';
+      ? t('LW.settings.authorities.offline.setup_description_simple')
+      : t('LW.settings.authorities.offline.setup_description_full');
   const readyMessage =
     status?.profile === 'japanese'
-      ? 'NDL authority packs are ready for auto-tagging.'
+      ? t('LW.settings.authorities.offline.ready_japanese')
       : status?.profile === 'tibetan'
-        ? 'Wikidata authority packs are ready for auto-tagging.'
-        : 'CBDB, DILA, and Wikidata authority packs are ready for auto-tagging.';
+        ? t('LW.settings.authorities.offline.ready_tibetan')
+        : t('LW.settings.authorities.offline.ready_default');
   const wikidataPacks = status?.packs.filter((pack) => pack.id.startsWith('wikidata-')) ?? [];
   const installedWikidataPacks = wikidataPacks.filter((pack) => pack.installed).length;
 
@@ -232,8 +237,7 @@ export const DesktopOfflineAuthorities = () => {
 
         {!status?.entityDbReady && (
           <Alert severity="warning">
-            Choose an entity database folder (with entities.xml) in App Settings before enabling
-            offline authorities.
+            {t('LW.settings.authorities.offline.entity_db_required')}
           </Alert>
         )}
 

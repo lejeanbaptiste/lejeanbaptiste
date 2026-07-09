@@ -83,7 +83,6 @@ interface ISettingsModulesPanel {
 export type ISettingsModuleName =
   | 'toc'
   | 'markup'
-  | 'entities'
   | 'fileMetadata'
   | 'attributes'
   | 'imageViewer'
@@ -177,7 +176,7 @@ export interface ScreenshotParams {
 
 export type Side = 'left' | 'right';
 
-export type PanelId = 'toc' | 'markup' | 'entities' | 'validate' | 'xmlViewer' | 'imageViewer';
+export type PanelId = 'toc' | 'markup' | 'validate' | 'xmlViewer' | 'imageViewer';
 
 export interface PanelProp {
   id: PanelId;

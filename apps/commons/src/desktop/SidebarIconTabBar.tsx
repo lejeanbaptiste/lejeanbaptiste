@@ -12,6 +12,7 @@ import {
   SIDEBAR_TAB_ICON_SIZE,
   TOOLBAR_ROW_HEIGHT,
 } from './sidebarConstants';
+import { useTranslation } from 'react-i18next';
 import { TabIcon, sidebarTabLabels, sidebarTabOrder, type SidebarTabId } from '@src/icons/tab';
 
 interface SidebarIconTabBarProps {
@@ -29,6 +30,7 @@ export const SidebarIconTabBar = ({
   onToggleCollapse,
   orientation,
 }: SidebarIconTabBarProps) => {
+  const { t } = useTranslation();
   const isVertical = orientation === 'vertical';
   const tooltipPlacement = isVertical ? 'right' : 'bottom';
 
@@ -61,12 +63,16 @@ export const SidebarIconTabBar = ({
       {/* Collapse/expand button first — top in vertical (collapsed), left in horizontal (expanded) */}
       <Tooltip
         placement={tooltipPlacement}
-        title={collapsed ? 'Expand panel' : 'Collapse panel'}
+        title={
+          collapsed
+            ? t('LWC.dialogs.aria_labels.expand_sidebar_panel')
+            : t('LWC.dialogs.aria_labels.collapse_sidebar_panel')
+        }
       >
         <IconButton
           size="small"
           onClick={onToggleCollapse}
-          aria-label="Toggle sidebar panel"
+          aria-label={t('LWC.dialogs.aria_labels.toggle_sidebar_panel')}
           sx={{ width: SIDEBAR_TAB_BUTTON_SIZE, height: SIDEBAR_TAB_BUTTON_SIZE, flexShrink: 0 }}
         >
           {collapsed ? (
@@ -107,7 +113,7 @@ export const SidebarIconTabBar = ({
               flexShrink: 0,
             }}
           >
-            <Tooltip placement={tooltipPlacement} title={sidebarTabLabels[tabId]}>
+            <Tooltip placement={tooltipPlacement} title={t(sidebarTabLabels[tabId])}>
               <Box component="span" sx={{ display: 'inline-flex', color: 'text.primary' }}>
                 <TabIcon tabId={tabId} size={SIDEBAR_TAB_ICON_SIZE} />
               </Box>

@@ -1,5 +1,6 @@
 import { Icon, Paper, Stack, ToggleButton, Tooltip } from '@mui/material';
 import { MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ToggleButtonGroup } from '../components';
 import { getIcon, IconLeafWriter } from '../icons';
 import { useActions, useAppState } from '../overmind';
@@ -10,6 +11,7 @@ type LateralBarProps = {
 };
 
 export const LateralBar = ({ side }: LateralBarProps) => {
+  const { t } = useTranslation('LW');
   const { layout } = useAppState().ui;
   const { changePanel } = useActions().ui;
 
@@ -43,7 +45,7 @@ export const LateralBar = ({ side }: LateralBarProps) => {
             >
               {layout[`outer${side}`]?.items.map(({ id, label }) => (
                 <ToggleButton key={id} size="small" value={id}>
-                  <Tooltip placement={side === 'Left' ? 'right' : 'left'} title={label}>
+                  <Tooltip placement={side === 'Left' ? 'right' : 'left'} title={t(label)}>
                     <Icon component={getIcon(id as IconLeafWriter)} fontSize="inherit" />
                   </Tooltip>
                 </ToggleButton>

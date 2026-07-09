@@ -266,6 +266,7 @@ export const DisambiguationPanel = ({
   const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set());
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [rankingAi, setRankingAi] = useState(false);
+  const [aiRanked, setAiRanked] = useState(false);
   const [aiRationales, setAiRationales] = useState<Record<string, string>>({});
   const [aiConfidences, setAiConfidences] = useState<Record<string, number>>({});
   const [rateLimitRetry, setRateLimitRetry] = useState<{
@@ -311,6 +312,7 @@ export const DisambiguationPanel = ({
   const [newEntityDialogOpen, setNewEntityDialogOpen] = useState(false);
   const [newEntityDescription, setNewEntityDescription] = useState('');
   const [newEntityBusy, setNewEntityBusy] = useState(false);
+  const [commonsUiRevision, setCommonsUiRevision] = useState(0);
 
   const activePromptProfile = useMemo(
     () => getActiveAiPromptProfile(aiPromptProfiles),
@@ -319,6 +321,13 @@ export const DisambiguationPanel = ({
 
   useEffect(() => {
     void readAiPromptProfilesFromDesktop().then(setAiPromptProfiles);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onCommonsUiChanged = () => setCommonsUiRevision((value) => value + 1);
+    window.addEventListener('ljbCommonsUiChanged', onCommonsUiChanged);
+    return () => window.removeEventListener('ljbCommonsUiChanged', onCommonsUiChanged);
   }, []);
 
   useEffect(() => {
@@ -386,6 +395,7 @@ export const DisambiguationPanel = ({
       setAiSuggestCreateNew(false);
       setAiCreateRationale(null);
       setRateLimitRetry(null);
+      setAiRanked(false);
 
       if (!aiCuration || rows.length === 0) return;
 
@@ -422,8 +432,10 @@ export const DisambiguationPanel = ({
           setAiSuggestCreateNew(true);
           setAiCreateRationale(rank.createNewRationale ?? null);
         }
+        setAiRanked(true);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
+        setAiRanked(true);
       } finally {
         setRankingAi(false);
         setRateLimitRetry(null);
@@ -480,91 +492,6 @@ export const DisambiguationPanel = ({
     [applyAiRank, session],
   );
 
-  const prefetchGenerationRef = useRef(0);
-
-  /**
-   * Quietly fetch candidates + AI rank for one pending group and leave the
-   * result in `session`'s caches (pendingCache / disambiguationAiCache) —
-   * no visible state changes. When the user later opens this group, the
-   * existing cache-hit paths in `loadCandidates`/`rankDisambiguationCandidates`
-   * return instantly, so walking the list top-down ahead of the user makes
-   * later groups feel just as fast as the first one instead of visibly
-   * queuing behind AI rate limits.
-   */
-  const prefetchGroup = useCallback(
-    async (targetGroup: MentionGroup, generation: number): Promise<void> => {
-      if (generation !== prefetchGenerationRef.current) return;
-      if (controller.isExpanded(targetGroup)) return; // foreground path owns this one
-      const targetInstance = pendingInstances(targetGroup)[0];
-      if (!targetInstance) return;
-
-      let rows = session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
-      if (!rows) {
-        const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
-        const cache = session.cache;
-        if (!cache) return;
-        rows = await buildDisambiguationCandidates(
-          entitiesDoc,
-          targetGroup.tag,
-          targetGroup.surface,
-          cache,
-          ['Wikidata', 'VIAF'],
-          false,
-          window.electronAPI?.authorityPackRead,
-        );
-        if (generation !== prefetchGenerationRef.current) return;
-        session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);
-        await session.savePendingCache();
-      }
-      if (generation !== prefetchGenerationRef.current) return;
-
-      if (!aiCuration || rows.length === 0) return;
-      const settings = aiApiSettingsFromDesktop();
-      if (!settings || !isAiSuggestReady(settings)) return;
-
-      const collapsedRows = collapseCrossAuthorityCandidates(rows.map(enrichCandidateCrossRefs));
-      if (collapsedRows.length === 0) return;
-
-      try {
-        const doc = await session.getDocument();
-        if (generation !== prefetchGenerationRef.current) return;
-        const client = createLlmClientFromSettings(settings);
-        // Cache-hit is checked inside rankDisambiguationCandidates before any
-        // network call, so re-running this for an already-ranked group is cheap.
-        await rankDisambiguationCandidates({
-          doc,
-          instance: targetInstance,
-          candidates: collapsedRows,
-          client,
-          cache: session.disambiguationAiCache,
-          promptProfile: activePromptProfile,
-        });
-      } catch {
-        // Best-effort — the foreground path will retry (and surface errors) if
-        // the user opens this group before a later prefetch pass succeeds.
-      }
-    },
-    [activePromptProfile, aiCuration, controller, session],
-  );
-
-  const runBackgroundPrefetch = useCallback(async () => {
-    // Minting a new generation here (not in the triggering effect) makes
-    // overlapping calls race-free: whichever call ran last owns the current
-    // generation, and every earlier in-flight walk notices the mismatch at
-    // its next check and stops — no separate "is a walk running" flag to
-    // keep in sync.
-    const generation = ++prefetchGenerationRef.current;
-    for (const targetGroup of controller.pendingGroups()) {
-      if (generation !== prefetchGenerationRef.current) return;
-      if (pendingInstances(targetGroup).length === 0) continue;
-      await prefetchGroup(targetGroup, generation);
-    }
-  }, [controller, prefetchGroup]);
-
-  useEffect(() => {
-    void runBackgroundPrefetch();
-  }, [groups, runBackgroundPrefetch]);
-
   useEffect(() => {
     if (!group || !controller.isExpanded(group)) {
       setCandidates([]);
@@ -583,6 +510,29 @@ export const DisambiguationPanel = ({
     () => candidates.filter((candidate) => candidatePassesYearFilter(candidate, dateFilter)),
     [candidates, dateFilter],
   );
+
+  useEffect(() => {
+    if (!aiCuration || rankingAi || loadingCandidates || aiRanked) return;
+    if (!group || !controller.isExpanded(group) || candidates.length === 0) return;
+    if (Object.keys(aiRationales).length > 0 || aiSuggestCreateNew) return;
+    const inst = instance ?? controllerRef.current?.currentInstance();
+    if (!inst) return;
+    void applyAiRank(group, filteredCandidates, inst);
+  }, [
+    aiCuration,
+    aiRationales,
+    aiSuggestCreateNew,
+    applyAiRank,
+    candidates.length,
+    controller,
+    filteredCandidates,
+    group,
+    instance,
+    loadingCandidates,
+    aiRanked,
+    rankingAi,
+    commonsUiRevision,
+  ]);
 
   useEffect(() => {
     if (filteredCandidates.length === 1 && !aiCuration) {
@@ -822,20 +772,6 @@ export const DisambiguationPanel = ({
 
   const renderCandidateList = () => {
     if (!group) return null;
-    if (loadingCandidates || rankingAi) {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, gap: 1, alignItems: 'center' }}>
-          <CircularProgress size={18} />
-          {rankingAi && (
-            <Typography variant="caption" color={rateLimitRetry ? 'warning.main' : 'text.secondary'}>
-              {rateLimitRetry
-                ? `Rate limited — retrying in ${rateLimitSecondsLeft}s (attempt ${rateLimitRetry.attempt}/${rateLimitRetry.maxAttempts})…`
-                : 'AI curation…'}
-            </Typography>
-          )}
-        </Box>
-      );
-    }
     if (candidates.length === 0) {
       return (
         <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, py: 0.5 }}>
@@ -850,73 +786,89 @@ export const DisambiguationPanel = ({
         </Typography>
       );
     }
-    return filteredCandidates.map((candidate) => {
-      const checked = checkedIds.has(candidate.id);
-      const links = candidateLinks(candidate);
-      const confidence = aiConfidences[candidate.id];
-      return (
-        <Box
-          key={candidate.id}
-          onClick={() => toggleCandidate(candidate.id, !checked)}
-          sx={{
-            display: 'flex',
-            gap: 0.25,
-            alignItems: 'flex-start',
-            py: 0.5,
-            px: 0.75,
-            cursor: 'pointer',
-            borderLeft: '3px solid',
-            borderLeftColor: checked ? 'primary.main' : 'transparent',
-            bgcolor: checked ? 'action.selected' : undefined,
-          }}
-        >
-          <Checkbox
-            size="small"
-            checked={checked}
-            sx={{ p: 0, mt: 0.125 }}
-            onMouseDown={stopRowClick}
-            onClick={stopRowClick}
-            onChange={(event) => toggleCandidate(candidate.id, event.target.checked)}
-          />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, minWidth: 0 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500, flex: 1, minWidth: 0 }} noWrap>
-                {candidate.label}
-              </Typography>
-              {links.map((link) => (
-                <AuthorityLinkIcon key={link.url} link={link} />
-              ))}
-              {candidate.fromEntityFile && (
-                <Chip
-                  label="local"
-                  size="small"
-                  sx={{ height: 16, fontSize: 10, bgcolor: '#1b5e20', color: '#fff', fontWeight: 600 }}
-                />
-              )}
-              {confidence !== undefined && (
-                <Chip
-                  label={getConfidenceLabel(confidence)}
-                  size="small"
-                  color={getValidationColor(confidence)}
-                  title={`AI confidence: ${confidence.toFixed(2)}`}
-                  sx={{ height: 16, fontSize: 10, fontWeight: 600 }}
-                />
-              )}
-            </Box>
-            {candidate.description && (
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.3 }}>
-                {candidate.description}
-              </Typography>
-            )}
-            {aiRationales[candidate.id] && (
-              <Typography variant="caption" color="primary.main" display="block" sx={{ lineHeight: 1.3 }}>
-                AI: {aiRationales[candidate.id]}
+    return (
+      <>
+        {(loadingCandidates || rankingAi) && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, gap: 1, alignItems: 'center' }}>
+            <CircularProgress size={18} />
+            {rankingAi && (
+              <Typography variant="caption" color={rateLimitRetry ? 'warning.main' : 'text.secondary'}>
+                {rateLimitRetry
+                  ? `Rate limited — retrying in ${rateLimitSecondsLeft}s (attempt ${rateLimitRetry.attempt}/${rateLimitRetry.maxAttempts})…`
+                  : 'AI curation…'}
               </Typography>
             )}
           </Box>
-        </Box>
-      );
-    });
+        )}
+        {filteredCandidates.map((candidate) => {
+          const checked = checkedIds.has(candidate.id);
+          const links = candidateLinks(candidate);
+          const confidence = aiConfidences[candidate.id];
+          return (
+            <Box
+              key={candidate.id}
+              onClick={() => toggleCandidate(candidate.id, !checked)}
+              sx={{
+                display: 'flex',
+                gap: 0.25,
+                alignItems: 'flex-start',
+                py: 0.5,
+                px: 0.75,
+                cursor: 'pointer',
+                borderLeft: '3px solid',
+                borderLeftColor: checked ? 'primary.main' : 'transparent',
+                bgcolor: checked ? 'action.selected' : undefined,
+              }}
+            >
+              <Checkbox
+                size="small"
+                checked={checked}
+                sx={{ p: 0, mt: 0.125 }}
+                onMouseDown={stopRowClick}
+                onClick={stopRowClick}
+                onChange={(event) => toggleCandidate(candidate.id, event.target.checked)}
+              />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500, flex: 1, minWidth: 0 }} noWrap>
+                    {candidate.label}
+                  </Typography>
+                  {links.map((link) => (
+                    <AuthorityLinkIcon key={link.url} link={link} />
+                  ))}
+                  {candidate.fromEntityFile && (
+                    <Chip
+                      label="local"
+                      size="small"
+                      sx={{ height: 16, fontSize: 10, bgcolor: '#1b5e20', color: '#fff', fontWeight: 600 }}
+                    />
+                  )}
+                  {confidence !== undefined && (
+                    <Chip
+                      label={getConfidenceLabel(confidence)}
+                      size="small"
+                      color={getValidationColor(confidence)}
+                      title={`AI confidence: ${confidence.toFixed(2)}`}
+                      sx={{ height: 16, fontSize: 10, fontWeight: 600 }}
+                    />
+                  )}
+                </Box>
+                {candidate.description && (
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.3 }}>
+                    {candidate.description}
+                  </Typography>
+                )}
+                {aiRationales[candidate.id] && (
+                  <Typography variant="caption" color="primary.main" display="block" sx={{ lineHeight: 1.3 }}>
+                    AI: {aiRationales[candidate.id]}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          );
+        })}
+      </>
+    );
   };
 
   const renderPendingGroupBody = (targetGroup: MentionGroup) => {

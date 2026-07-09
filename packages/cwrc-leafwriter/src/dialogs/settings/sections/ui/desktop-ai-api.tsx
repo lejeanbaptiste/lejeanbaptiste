@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface AiApiSettings {
   apiKey: string;
@@ -44,6 +45,7 @@ const getCommonsUiBridge = () =>
   ).__ljbCommonsUi;
 
 export const DesktopAiApi = () => {
+  const { t } = useTranslation();
   const bridge = getCommonsUiBridge();
   const [settings, setSettings] = useState<AiApiSettings>(
     bridge?.aiApiSettings ?? DEFAULT_AI_API_SETTINGS,
@@ -72,11 +74,11 @@ export const DesktopAiApi = () => {
     setStatus(null);
     try {
       await bridge.setAiApiSettings(settings);
-      setStatus({ severity: 'success', message: 'AI API settings saved.' });
+      setStatus({ severity: 'success', message: t('LW.settings.ai_api.saved') });
     } catch (error) {
       setStatus({
         severity: 'error',
-        message: error instanceof Error ? error.message : 'Could not save AI API settings.',
+        message: error instanceof Error ? error.message : t('LW.settings.ai_api.save_failed'),
       });
     } finally {
       setSaving(false);
@@ -85,13 +87,13 @@ export const DesktopAiApi = () => {
 
   const checkConnection = async () => {
     setChecking(true);
-    setStatus({ severity: 'info', message: 'Checking AI API connection...' });
+    setStatus({ severity: 'info', message: t('LW.settings.ai_api.checking') });
     try {
       const result = await bridge.testAiConnection(settings);
       if (!result.ok) {
         setStatus({
           severity: 'error',
-          message: result.error ?? 'Could not reach the AI API.',
+          message: result.error ?? t('LW.settings.ai_api.connection_failed'),
         });
         return;
       }
@@ -101,8 +103,8 @@ export const DesktopAiApi = () => {
         severity: 'success',
         message:
           modelCount > 0
-            ? `Connected. Found ${modelCount} model${modelCount === 1 ? '' : 's'}.`
-            : 'Connected. The server did not list any models.',
+            ? t('LW.settings.ai_api.connected_with_models', { count: modelCount })
+            : t('LW.settings.ai_api.connected_without_models'),
       });
 
       if (!settings.model && result.models?.[0]) {
@@ -111,7 +113,7 @@ export const DesktopAiApi = () => {
     } catch (error) {
       setStatus({
         severity: 'error',
-        message: error instanceof Error ? error.message : 'Could not reach the AI API.',
+        message: error instanceof Error ? error.message : t('LW.settings.ai_api.connection_failed'),
       });
     } finally {
       setChecking(false);
@@ -128,14 +130,14 @@ export const DesktopAiApi = () => {
         <Stack spacing={0.75}>
           <TextField
             fullWidth
-            label="Base URL"
+            label={t('LW.settings.ai_api.base_url')}
             onChange={(event) => updateSetting('baseUrl', event.target.value)}
             size="small"
             value={settings.baseUrl}
           />
           <TextField
             fullWidth
-            label="API key"
+            label={t('LW.settings.ai_api.api_key')}
             onChange={(event) => updateSetting('apiKey', event.target.value)}
             size="small"
             type="password"
@@ -143,7 +145,7 @@ export const DesktopAiApi = () => {
           />
           <TextField
             fullWidth
-            label="Model"
+            label={t('LW.settings.ai_api.model')}
             onChange={(event) => updateSetting('model', event.target.value)}
             size="small"
             value={settings.model}
@@ -151,7 +153,7 @@ export const DesktopAiApi = () => {
           <TextField
             fullWidth
             inputProps={{ max: 2, min: 0, step: 0.1 }}
-            label="Temperature"
+            label={t('LW.settings.ai_api.temperature')}
             onChange={(event) => {
               const next = Number(event.target.value);
               updateSetting('temperature', Number.isFinite(next) ? next : 0.1);
@@ -186,7 +188,7 @@ export const DesktopAiApi = () => {
               size="small"
               variant="contained"
             >
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? t('LW.commons.saving') : t('LW.commons.save')}
             </Button>
             <Button
               disabled={checking}
@@ -194,7 +196,7 @@ export const DesktopAiApi = () => {
               size="small"
               variant="outlined"
             >
-              {checking ? 'Checking...' : 'Check connection'}
+              {checking ? t('LW.settings.ai_api.checking_button') : t('LW.settings.ai_api.check_connection')}
             </Button>
           </Stack>
         </Stack>

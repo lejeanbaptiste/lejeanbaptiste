@@ -76,9 +76,10 @@ export const listenChangeLanguage = async ({ state, effects }: Context) => {
   }
 };
 
-export const switchLocal = ({ state }: Context, locale: Locales | (string & {})) => {
+export const switchLocal = ({ state, effects }: Context, locale: Locales | (string & {})) => {
   const supportedLocaled = localesSchema.safeParse(locale).success ? (locale as Locales) : 'en';
   state.ui.currentLocale = supportedLocaled;
+  effects.editor.api.saveToLocalStorage('i18nextLng', supportedLocaled);
   void i18n.changeLanguage(supportedLocaled);
 };
 
@@ -114,9 +115,11 @@ export const resetPreferences = ({ effects }: Context) => {
   effects.editor.api.removeFromLocalStorage('themeAppearance');
 };
 
-export const switchLocale = ({ state }: Context, locale: string) => {
+export const switchLocale = ({ state, effects }: Context, locale: string) => {
   const supportedLocale = localesSchema.safeParse(locale).success ? (locale as Locales) : 'en';
   state.ui.currentLocale = supportedLocale;
+  effects.editor.api.saveToLocalStorage('i18nextLng', supportedLocale);
+  void i18n.changeLanguage(supportedLocale);
   setTimeout(() => window.dispatchEvent(new Event('changeLanguage')), 0);
   return supportedLocale;
 };

@@ -12,7 +12,7 @@ export const NotFoundPage = () => {
       <Stack justifyContent="center" alignItems="center" py={8}>
         <Logo height={70} sx={{ mb: 4, opacity: 0.7 }} />
         <Typography align="center" component="h2" mb={2} variant="h4">
-          Page not found
+          {t('LWC.error.page_not_found')}
         </Typography>
         <Box maxWidth={350}>
           <Typography align="center">
@@ -27,7 +27,7 @@ export const NotFoundPage = () => {
         <Stack textAlign="center" mt={3}>
           <img alt="Absurd Illustration" src="/assets/images/07.png" style={{ width: 400 }} />
           <Typography variant="caption">
-            Illustration from{' '}
+            {t('LWC.error.illustration_from')}{' '}
             <Link underline="hover" href="https://absurd.design" target="_blank" rel="noopener">
               absurd.design
             </Link>

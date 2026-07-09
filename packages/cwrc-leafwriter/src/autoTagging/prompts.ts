@@ -24,6 +24,23 @@ function fillTemplate(template: string, vars: Record<string, string>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? '');
 }
 
+export function injectPlaceholder(template: string, value: string, placeholder = '%s'): string {
+  if (template.includes(placeholder)) {
+    return template.replace(placeholder, value);
+  }
+  return template;
+}
+
+function injectTagGuide(template: string, tagGuide: string): string {
+  if (template.includes('%s')) {
+    return injectPlaceholder(template, tagGuide);
+  }
+  if (template.includes('{{TAG_GUIDE}}')) {
+    return fillTemplate(template, { TAG_GUIDE: tagGuide });
+  }
+  return `${template}${tagGuide}`;
+}
+
 /** Tag-specific instructions included only for tags the caller requested. */
 export function buildSuggestTagGuide(tags: string[]): string {
   const lines = tags
@@ -43,10 +60,12 @@ export function buildSuggestPrompt(params: {
 }): { system: string; user: string } {
   const tagGuide = buildSuggestTagGuide(params.tags);
   const taskTemplate = params.suggestTaskText ?? suggestSystemTemplate;
-  const system = `${preambleTemplate}${fillTemplate(taskTemplate, {
+  const system = `${preambleTemplate}${injectTagGuide(
+    fillTemplate(taskTemplate, {
     TAGS: params.tags.join(', '),
-    TAG_GUIDE: tagGuide,
-  })}`;
+    }),
+    tagGuide,
+  )}`;
 
   const user = fillTemplate(userWrapperTemplate, {
     BEFORE: params.before,
@@ -77,10 +96,12 @@ function buildTaggedChunkPrompt(
 ): { system: string; user: string } {
   const tagGuide = buildAuditTagGuide(params.tags);
   const taskTemplate = params.taskText ?? systemTemplate;
-  const system = `${preambleTemplate}${fillTemplate(taskTemplate, {
+  const system = `${preambleTemplate}${injectTagGuide(
+    fillTemplate(taskTemplate, {
     TAGS: params.tags.join(', '),
-    TAG_GUIDE: tagGuide,
-  })}`;
+    }),
+    tagGuide,
+  )}`;
 
   const user = fillTemplate(userWrapperTemplate, {
     BEFORE: params.before,

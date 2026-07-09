@@ -4,7 +4,7 @@ import { locales } from '../../../../i18n';
 import { useActions, useAppState } from '../../../../overmind';
 
 export const Language = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   const { currentLocale } = useAppState().ui;
   const { switchLocale } = useActions().ui;
@@ -17,12 +17,14 @@ export const Language = () => {
         label={t('LW.commons.language')}
         onChange={(event) => {
           switchLocale(event.target.value);
-          i18n.changeLanguage(event.target.value);
         }}
         select
         size="small"
         value={currentLocale}
       >
+        <MenuItem disabled value="">
+          {t('LW.commons.select_language')}
+        </MenuItem>
         {locales.map((locale) => (
           <MenuItem key={locale} aria-label={locale} color="primary" value={locale}>
             {t(`LW.languages.${locale}`, { lng: locale, fallbackLng: 'en' })}

@@ -80,8 +80,8 @@ export const state: State = {
   sourcePendingCursorOffset: null,
   fullscreen: false,
   layout: {
-    outerLeft: { id: 'left', items: [Panel.toc, Panel.markup, Panel.entities] },
-    left: { activePanel: 'markup', id: 'left', panels: ['toc', 'markup', 'entities'] },
+    outerLeft: { id: 'left', items: [Panel.toc, Panel.markup] },
+    left: { activePanel: 'markup', id: 'left', panels: ['toc', 'markup'] },
     right: {
       activePanel: 'imageViewer',
       collapsed: true,

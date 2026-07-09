@@ -57,7 +57,7 @@ export const NativeProjectMetadataPage = () => {
       setLanguages(dialogState.translation.languages);
       setError(null);
     } else {
-      setError('Could not load edition metadata.');
+      setError(t('LWC.desktop.project.errors.could_not_load_edition_metadata'));
     }
     setLoading(false);
   }, []);
@@ -169,12 +169,12 @@ export const NativeProjectMetadataPage = () => {
         entityStore: state.entityStore,
       })) as { ok: boolean; error?: string; summary?: string };
       if (!result?.ok) {
-        setError(result?.error ?? 'Could not save metadata.');
+        setError(result?.error ?? t('LWC.desktop.project.errors.could_not_save_metadata'));
         return;
       }
       closeDialog();
     } catch {
-      setError('Could not save metadata.');
+      setError(t('LWC.desktop.project.errors.could_not_save_metadata'));
     } finally {
       setSubmitting(false);
     }
@@ -212,10 +212,10 @@ export const NativeProjectMetadataPage = () => {
 
       <Stack spacing={2} sx={{ flex: 1, p: 2, WebkitAppRegion: 'no-drag', overflow: 'auto' }}>
         {loading ? (
-          <Typography color="text.secondary">Loading…</Typography>
+          <Typography color="text.secondary">{t('LWC.commons.loading')}</Typography>
         ) : !state ? (
           <Typography color="error" variant="body2">
-            {error ?? 'Could not load project settings.'}
+            {error ?? t('LWC.desktop.project.errors.could_not_load_project_settings')}
           </Typography>
         ) : (
           <>
@@ -239,7 +239,7 @@ export const NativeProjectMetadataPage = () => {
                   SelectProps={{ native: true }}
                   value={state.values[field.path] ?? ''}
                 >
-                  <option value="">Select language…</option>
+                  <option value="">{t('LWC.desktop.project.select_language')}</option>
                   {/* Legacy free-text value from an older project: keep it selectable so
                       opening the dialog doesn't silently drop it. */}
                   {(state.values[field.path] ?? '') !== '' &&
@@ -268,7 +268,7 @@ export const NativeProjectMetadataPage = () => {
             )}
 
             <Typography sx={{ pt: 1 }} variant="subtitle2">
-              Custom fields
+              {t('LWC.desktop.project.custom_fields')}
             </Typography>
 
             {state.custom.map((row, index) => (
@@ -305,11 +305,10 @@ export const NativeProjectMetadataPage = () => {
             </Button>
 
             <Typography sx={{ pt: 1 }} variant="subtitle2">
-              Entity database
+              {t('LWC.desktop.project.entity_database')}
             </Typography>
             <Typography color="text.secondary" variant="body2">
-              Use your central database (App Settings) or keep a separate entities.xml in this
-              project folder.
+              {t('LWC.desktop.project.entity_database_hint')}
             </Typography>
             <RadioGroup
               value={state.entityStore}
@@ -330,12 +329,12 @@ export const NativeProjectMetadataPage = () => {
             </RadioGroup>
 
             <Typography sx={{ pt: 1 }} variant="subtitle2">
-              Translation
+              {t('LWC.desktop.project.translation')}
             </Typography>
             <Typography color="text.secondary" variant="body2">
               {state.translation.locked
-                ? 'Alignment unit is locked once translations have started.'
-                : 'Choose the granularity at which source and translation are linked. This cannot be changed later.'}
+                ? t('LWC.desktop.project.alignment_unit_locked')
+                : t('LWC.desktop.project.alignment_granularity_hint')}
             </Typography>
             <RadioGroup
               row
@@ -355,7 +354,7 @@ export const NativeProjectMetadataPage = () => {
             </RadioGroup>
 
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              Languages
+              {t('LWC.desktop.project.languages')}
             </Typography>
 
             {languages.map((lang) => (
@@ -395,7 +394,7 @@ export const NativeProjectMetadataPage = () => {
                 ))}
               </TextField>
               <Button disabled={!newLangCode} onClick={addLanguage} size="small" variant="text">
-                Add
+                {t('LWC.commons.add')}
               </Button>
             </Stack>
 
@@ -421,7 +420,7 @@ export const NativeProjectMetadataPage = () => {
       >
         {!isFirstSetup && (
           <Button disabled={submitting} onClick={() => void handleCancel()}>
-            Cancel
+            {t('LWC.commons.cancel')}
           </Button>
         )}
         {!isFirstSetup && (
@@ -430,7 +429,7 @@ export const NativeProjectMetadataPage = () => {
             onClick={() => void handleSave(false)}
             variant="outlined"
           >
-            Save defaults only
+            {t('LWC.desktop.project.save_defaults_only')}
           </Button>
         )}
         <Button
@@ -439,7 +438,7 @@ export const NativeProjectMetadataPage = () => {
           onClick={() => void handleSave(!isFirstSetup)}
           variant="contained"
         >
-          {isFirstSetup ? 'Save' : 'Save and update documents…'}
+          {isFirstSetup ? t('LWC.desktop.project.save_button') : t('LWC.desktop.project.save_and_update_documents_button')}
         </Button>
       </Box>
     </Box>
