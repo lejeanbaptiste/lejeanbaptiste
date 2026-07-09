@@ -2,6 +2,11 @@ import { getDefaultStore } from 'jotai';
 import { authorityServicesAtom } from '.';
 import { authoritiesInitialConfig } from '../../config/authorities';
 import { db } from '../../db';
+import { authorityPackLookupServices } from '../../services/authority-pack-lookup';
+import {
+  ENTITY_DATABASE_SERVICE_ID,
+  entityDatabaseLookupService,
+} from '../../services/entity-database-lookup';
 import { teiFileBasedSearch } from '../../services/loader-authority-tei';
 import type {
   AuthorityService,
@@ -15,12 +20,25 @@ import { log, slugify } from '../../utilities';
 
 const defaultStore = getDefaultStore();
 
+/** Entity-database service is pinned above every configured authority. */
+const defaultPriority = (serviceId: string) =>
+  serviceId === ENTITY_DATABASE_SERVICE_ID ? -1 : Infinity;
+
 export const configureAuthorityServices = async (
   customAuthorityServices: AuthorityServiceConfig[] = [],
 ) => {
   const authorityServices: AuthorityServices = new Map();
 
   const validCustomServices = validateAuthorityServiceConfig(customAuthorityServices);
+
+  // The project's own entity database always comes first (desktop only).
+  const entityDbService = entityDatabaseLookupService();
+  if (entityDbService) authorityServices.set(entityDbService.id, entityDbService);
+
+  // Pack-backed authorities (CBDB, DILA, NDL) — local, offline (desktop only).
+  authorityPackLookupServices().forEach((service) => {
+    authorityServices.set(service.id, service);
+  });
 
   authoritiesInitialConfig
     .map((service) => convertConfigIntoServiceObject(service))
@@ -129,7 +147,7 @@ export const initializeLookupPreferences = async (authorityServices: AuthoritySe
     const intServ = authoritiesInitialConfig.find((s) => s.name === name);
 
     entityTypes.forEach(({ name: entityType }) => {
-      let priority = Infinity;
+      let priority = defaultPriority(id);
 
       intServ?.entityTypes.forEach((type) => {
         if (typeof type !== 'string' && type.name === entityType) {
@@ -195,7 +213,7 @@ const updateLookupPreferences = async (authorityServices: AuthorityServices) => 
       const lookupPreferences: LookupServicePreference[] = [];
 
       authorityService.entityTypes.forEach(({ name: entityType }) => {
-        let priority = Infinity;
+        let priority = defaultPriority(authorityService.id);
 
         intServ?.entityTypes.forEach((type) => {
           if (typeof type !== 'string' && type.name === entityType) {
@@ -229,7 +247,7 @@ const updateLookupPreferences = async (authorityServices: AuthorityServices) => 
       const lookupPreferences: LookupServicePreference[] = [];
 
       entityTypeToBeAdded.forEach((entityType) => {
-        let priority = Infinity;
+        let priority = defaultPriority(authorityService.id);
 
         intServ?.entityTypes.forEach((type) => {
           if (typeof type !== 'string' && type.name === entityType) {

@@ -56,13 +56,6 @@ import { useActions, useAppState } from '@src/overmind';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 
-const KIND_LABELS: Record<EntityKind, string> = {
-  person: 'People',
-  place: 'Places',
-  org: 'Organizations',
-  work: 'Works',
-};
-
 /** Lower ordinal = older entity; the merge survivor defaults to the oldest id. */
 const idOrdinal = (id: string): number => {
   const match = id.match(/(\d+)$/);

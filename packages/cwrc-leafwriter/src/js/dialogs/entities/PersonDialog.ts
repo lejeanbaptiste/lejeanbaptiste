@@ -95,7 +95,7 @@ class PersonDialog implements SchemaDialog {
               this.updateTagAs();
               return;
             }
-            this.updateLink(response.name, response.uri);
+            this.updateLink(response.name, response.uri, response.key);
             this.updateTagAs(response.name, response.uri);
           },
           query: this.entry?.getContent()?.trim() ?? '',
@@ -124,7 +124,7 @@ class PersonDialog implements SchemaDialog {
     // this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {});
   }
 
-  private updateLink(lemma: string, uri: string) {
+  private updateLink(lemma: string, uri: string, key?: string) {
     if (this.entry) {
       this.writer.entitiesManager.setURIForEntity(this.entry.getId(), uri);
       this.writer.entitiesManager.setLemmaForEntity(this.entry.getId(), lemma);
@@ -133,8 +133,9 @@ class PersonDialog implements SchemaDialog {
 
     this.updateTagAs(lemma, uri);
 
-    this.dialog.attributesWidget?.setAttribute('key', lemma);
-    this.dialog.attributesWidget?.setAttribute('ref', uri);
+    this.dialog.attributesWidget?.setAttribute('key', key ?? lemma);
+    // Internal-only links (ljb-entity:) are keyed via @key, not @ref.
+    if (/^https?:/i.test(uri)) this.dialog.attributesWidget?.setAttribute('ref', uri);
   }
 
   private updateTagAs(lemma?: string, uri?: string) {

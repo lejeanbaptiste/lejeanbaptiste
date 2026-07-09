@@ -1,6 +1,11 @@
 import { atom } from 'jotai';
 import { atomWithReset } from 'jotai/utils';
 import type {
+  LookupConflictCandidate,
+  LookupResolutionPlan,
+  LookupSelectionInput,
+} from '../../autoTagging/lookupResolve';
+import type {
   AuthorityLookupResult,
   AuthorityService,
   EntityLink,
@@ -54,6 +59,20 @@ export const isUriValidAtom = atom((get) => {
   return urlRegex.test(input);
 });
 isUriValidAtom.debugLabel = 'isUriValid.Atom';
+
+/** Pending resolve-on-select state: confirm/conflict steps before entities.xml is touched. */
+export type PendingResolution =
+  | { status: 'resolving' }
+  | {
+      status: 'confirm';
+      plan: Extract<LookupResolutionPlan, { action: 'link' }>;
+      input: LookupSelectionInput;
+    }
+  | { status: 'conflict'; candidates: LookupConflictCandidate[]; input: LookupSelectionInput }
+  | { status: 'error'; message: string };
+
+export const resolutionAtom = atomWithReset<PendingResolution | null>(null);
+resolutionAtom.debugLabel = 'resolution.Atom';
 
 export const onCloseAtom = atom<
   ((response?: EntityLink | Pick<EntityLink, 'query' | 'type'>) => void) | undefined
