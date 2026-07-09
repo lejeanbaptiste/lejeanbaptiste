@@ -34,6 +34,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AuthorityId, EntityKind } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import {
   addEntityName,
@@ -88,6 +89,7 @@ interface SidebarDatabaseTabProps {
 }
 
 export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) => {
+  const { t } = useTranslation();
   const { skipEntityDetachConfirm } = useAppState().ui;
   const { setSkipEntityDetachConfirm } = useActions().ui;
   const [store, setStore] = useState<EntityStore | null>(null);
@@ -350,7 +352,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           fullWidth
           inputRef={searchInputRef}
           size="small"
-          placeholder="Search (regex) — name, id, description"
+          placeholder={t('LWC.desktop.sidebar.database.search_placeholder')}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           error={!!regexError}
@@ -358,7 +360,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           InputProps={{
             endAdornment: search ? (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearch('')} aria-label="Clear search">
+                <IconButton size="small" onClick={() => setSearch('')} aria-label={t('LWC.desktop.sidebar.database.clear_search')}>
                   ×
                 </IconButton>
               </InputAdornment>
@@ -374,11 +376,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               if (value) setKindFilter(value);
             }}
           >
-            <ToggleButton value="all">All</ToggleButton>
-            <ToggleButton value="person">Per</ToggleButton>
-            <ToggleButton value="place">Pla</ToggleButton>
-            <ToggleButton value="org">Org</ToggleButton>
-            <ToggleButton value="work">Wrk</ToggleButton>
+            <ToggleButton value="all">{t('LWC.desktop.sidebar.database.entity_types.all')}</ToggleButton>
+            <ToggleButton value="person">{t('LWC.desktop.sidebar.database.entity_types.person')}</ToggleButton>
+            <ToggleButton value="place">{t('LWC.desktop.sidebar.database.entity_types.place')}</ToggleButton>
+            <ToggleButton value="org">{t('LWC.desktop.sidebar.database.entity_types.organization')}</ToggleButton>
+            <ToggleButton value="work">{t('LWC.desktop.sidebar.database.entity_types.work')}</ToggleButton>
           </ToggleButtonGroup>
           <Box sx={{ flex: 1 }} />
           <Tooltip title={selected.size >= 2 ? `Merge ${selected.size} entities` : 'Select 2+ entities to merge, or click to add an |alternative to the search'}>
@@ -393,8 +395,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title="Reload database">
-            <IconButton size="small" onClick={() => void reload()} aria-label="Reload entities">
+          <Tooltip title={t('LWC.desktop.sidebar.database.reload_entities')}>
+            <IconButton size="small" onClick={() => void reload()} aria-label={t('LWC.desktop.sidebar.database.reload_entities')}>
               <RefreshIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -626,12 +628,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   onChange={(event) => setSkipDetachChecked(event.target.checked)}
                 />
               }
-              label="Don't warn me about detaching again"
+              label={t('LWC.desktop.sidebar.database.dont_warn_detach')}
             />
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirm(null)}>Cancel</Button>
+          <Button onClick={() => setConfirm(null)}>{t('LWC.desktop.sidebar.database.dialogs.cancel')}</Button>
           <Button
             color={confirm?.destructive ? 'error' : 'primary'}
             variant="contained"
@@ -682,9 +684,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMergeIds(null)}>Cancel</Button>
+          <Button onClick={() => setMergeIds(null)}>{t('LWC.desktop.sidebar.database.dialogs.cancel')}</Button>
           <Button variant="contained" onClick={confirmMerge}>
-            Merge
+            {t('LWC.desktop.sidebar.database.merge')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -701,7 +703,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           <TextField
             fullWidth
             size="small"
-            label="One-line description"
+            label={t('LWC.desktop.sidebar.database.one_line_description')}
             value={editDescription}
             onChange={(event) => setEditDescription(event.target.value)}
             sx={{ mt: 1 }}
@@ -709,7 +711,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           <TextField
             fullWidth
             size="small"
-            label="Add a name for matching (alternative name)"
+            label={t('LWC.desktop.sidebar.database.add_alternative_name')}
             value={editNewName}
             onChange={(event) => setEditNewName(event.target.value)}
             helperText={
@@ -721,32 +723,29 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditEntity(null)}>Cancel</Button>
+          <Button onClick={() => setEditEntity(null)}>{t('LWC.desktop.sidebar.database.dialogs.cancel')}</Button>
           <Button variant="contained" onClick={saveEdit}>
-            Save
+            {t('LWC.desktop.sidebar.database.save')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Split info */}
       <Dialog open={splitInfoOpen} onClose={() => setSplitInfoOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Splitting an entity</DialogTitle>
+        <DialogTitle>{t('LWC.desktop.sidebar.database.dialogs.splitting_entity')}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            There is no automatic split: the database cannot know which mentions belong to which
-            of the two people. The reliable way is to delete this entity (tags stay, keys are
-            stripped) and re-run tagging or re-link the mentions — each group to its own new
-            entity.
+            {t('LWC.desktop.sidebar.database.dialogs.split_info_message')}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSplitInfoOpen(false)}>Got it</Button>
+          <Button onClick={() => setSplitInfoOpen(false)}>{t('LWC.desktop.sidebar.database.dialogs.got_it')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Post-remap summary */}
       <Dialog open={!!lastSummary} onClose={() => setLastSummary(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Keys updated</DialogTitle>
+        <DialogTitle>{t('LWC.desktop.sidebar.database.dialogs.keys_updated')}</DialogTitle>
         <DialogContent>
           <DialogContentText>
             {lastSummary
@@ -766,7 +765,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setLastSummary(null)}>Close</Button>
+          <Button onClick={() => setLastSummary(null)}>{t('LWC.desktop.sidebar.database.dialogs.close')}</Button>
         </DialogActions>
       </Dialog>
 

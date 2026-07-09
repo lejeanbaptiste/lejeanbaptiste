@@ -6,6 +6,8 @@ export const TAG_COLORS_CSS_RELATIVE_PATH = 'schema/tag-colors.css';
 export interface TagColorEntry {
   highlight?: string;
   text?: string;
+  highlightEnabled?: boolean;
+  textEnabled?: boolean;
 }
 
 export interface TagColorsFile {
@@ -35,10 +37,21 @@ export const getTagColorsCssPath = (rootPath: string) =>
 export const getDefaultTagColor = (tagName: string): TagColorEntry | undefined =>
   DEFAULT_TAG_COLORS[tagName];
 
+export const normalizeTagColorEntry = (entry?: TagColorEntry | null): TagColorEntry | undefined => {
+  if (!entry) return undefined;
+  const normalized: TagColorEntry = {};
+  if (entry.highlight) normalized.highlight = entry.highlight;
+  if (entry.text) normalized.text = entry.text;
+  if (entry.highlightEnabled === false) normalized.highlightEnabled = false;
+  if (entry.textEnabled === false) normalized.textEnabled = false;
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+};
+
 export const resolveTagColor = (
   file: TagColorsFile,
   tagName: string,
-): TagColorEntry | undefined => file.tags[tagName] ?? getDefaultTagColor(tagName);
+): TagColorEntry | undefined =>
+  normalizeTagColorEntry(file.tags[tagName]) ?? normalizeTagColorEntry(getDefaultTagColor(tagName));
 
 const parseHex = (hex: string): [number, number, number] | null => {
   const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
@@ -102,7 +115,8 @@ export const contrastTextOn = (background: string): '#000000' | '#ffffff' => {
 export const pillColorsFromEntry = (
   colors: TagColorEntry,
 ): { background?: string; text?: string } => {
-  const { highlight, text } = colors;
+  const highlight = colors.highlightEnabled === false ? undefined : colors.highlight;
+  const text = colors.textEnabled === false ? undefined : colors.text;
   if (!highlight && !text) return {};
 
   const background = highlight
@@ -120,17 +134,21 @@ export const generateTagColorsCss = (file: TagColorsFile): string => {
   ];
 
   for (const [tagName, colors] of Object.entries(mergedTags)) {
-    if (!colors.highlight && !colors.text) continue;
+    const normalized = normalizeTagColorEntry(colors);
+    if (!normalized) continue;
+    const highlight = normalized.highlightEnabled === false ? undefined : normalized.highlight;
+    const text = normalized.textEnabled === false ? undefined : normalized.text;
+    if (!highlight && !text) continue;
     const selector = `*[_tag='${tagName}'], *[_tag='${tagName}'] *`;
     const rules: string[] = [
       'box-decoration-break: clone',
       '-webkit-box-decoration-break: clone',
     ];
-    if (colors.highlight) rules.push(`background-color: ${colors.highlight}`);
-    if (colors.text) rules.push(`color: ${colors.text} !important`);
+    if (highlight) rules.push(`background-color: ${highlight}`);
+    if (text) rules.push(`color: ${text} !important`);
     lines.push(`${selector} { ${rules.join('; ')}; }`);
 
-    const pill = pillColorsFromEntry(colors);
+    const pill = pillColorsFromEntry(normalized);
     if (pill.background || pill.text) {
       const pillRules: string[] = [];
       if (pill.background) pillRules.push(`background-color: ${pill.background}`);
@@ -158,7 +176,14 @@ export const loadTagColors = async (rootPath: string): Promise<TagColorsFile> =>
     }
     const raw = await window.electronAPI.readFile(colorsPath);
     const parsed = JSON.parse(raw) as TagColorsFile;
-    return { version: 1, tags: parsed.tags ?? {} };
+    return {
+      version: 1,
+      tags: Object.fromEntries(
+        Object.entries(parsed.tags ?? {})
+          .map(([tagName, entry]) => [tagName, normalizeTagColorEntry(entry)])
+          .filter((entry): entry is [string, TagColorEntry] => Boolean(entry[1])),
+      ),
+    };
   } catch {
     return emptyTagColorsFile();
   }
@@ -238,10 +263,11 @@ const applyTagColorUpdate = (
   colors: TagColorEntry | null,
 ): TagColorsFile => {
   const nextTags = { ...file.tags };
-  if (!colors || (!colors.highlight && !colors.text)) {
+  const normalized = normalizeTagColorEntry(colors);
+  if (!normalized) {
     delete nextTags[tagName];
   } else {
-    nextTags[tagName] = colors;
+    nextTags[tagName] = normalized;
   }
   return { version: 1, tags: nextTags };
 };

@@ -13,6 +13,7 @@ import { Provider } from 'overmind-react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import App from './App';
 import './i18n';
 import { config } from './overmind';
@@ -24,6 +25,19 @@ import './utilities/log';
 const isNativeDialogRoute =
   typeof window !== 'undefined' && window.location.pathname.startsWith('/project/native/');
 
+const ErrorFallback = ({ error }: { error: unknown }) => {
+  const { t } = useTranslation();
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem' }}>
+      <h1>{t('LWC.error.something_went_wrong')}</h1>
+      <p>{error instanceof Error ? error.message : t('LWC.error.unknown_error')}</p>
+      <p style={{ color: '#666', fontSize: '0.9rem' }}>
+        {t('LWC.error.webpack_wait')}
+      </p>
+    </div>
+  );
+};
+
 const overmind = createOvermind(config, {
   name: isNativeDialogRoute ? 'Commons-NativeDialog' : 'Commons',
   devtools: !isNativeDialogRoute,
@@ -34,19 +48,9 @@ const container = document.getElementById('app');
 if (!container) throw new Error(`HTML element id 'app' not found`);
 
 const root = createRoot(container);
-const errorFallback = ({ error }: { error: unknown }) => (
-  <div style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem' }}>
-    <h1>Something went wrong</h1>
-    <p>{error instanceof Error ? error.message : 'An unknown error occurred.'}</p>
-    <p style={{ color: '#666', fontSize: '0.9rem' }}>
-      If you just started the desktop app, wait for webpack to finish compiling and reload the
-      window.
-    </p>
-  </div>
-);
 
 root.render(
-  <Sentry.ErrorBoundary fallback={errorFallback}>
+  <Sentry.ErrorBoundary fallback={({ error }) => <ErrorFallback error={error} />}>
     <Provider value={overmind}>
       <HelmetProvider>
         <BrowserRouter>

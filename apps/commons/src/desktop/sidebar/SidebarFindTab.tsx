@@ -38,6 +38,7 @@ import { ScopeFields } from '@src/desktop/shared/ScopeFields';
 import type { SearchScope } from '@src/desktop/shared/searchScope';
 import { useAppState } from '@src/overmind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface FlatFindResult {
   column: number;
@@ -81,6 +82,7 @@ const flattenResults = (
 const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 export const SidebarFindTab = () => {
+  const { t } = useTranslation();
   const { activeTabPath, openTabs, rootPath } = useAppState().project;
 
   const [findQuery, setFindQuery] = useState('');
@@ -547,8 +549,8 @@ export const SidebarFindTab = () => {
           <TextField
             fullWidth
             size="small"
-            label="Find"
-            placeholder="Search text"
+            label={t('LWC.desktop.sidebar.find.find_label')}
+            placeholder={t('LWC.desktop.sidebar.find.search_placeholder')}
             value={findQuery}
             inputRef={findInputRef}
             onChange={(event) => setFindQuery(event.target.value)}
@@ -598,7 +600,7 @@ export const SidebarFindTab = () => {
               <ToggleButton
                 selected={ignoreCase}
                 value="ignore-case"
-                aria-label="Ignore case"
+                aria-label={t('LWC.desktop.sidebar.find.ignore_case')}
                 tabIndex={-1}
                 onChange={() => setIgnoreCase((value) => !value)}
                 sx={{
@@ -615,11 +617,11 @@ export const SidebarFindTab = () => {
                 Aa
               </ToggleButton>
             </Tooltip>
-            <Tooltip title="Use regular expression">
+            <Tooltip title={t('LWC.desktop.sidebar.find.use_regex')}>
               <ToggleButton
                 selected={useRegex}
                 value="regex"
-                aria-label="Use regular expression"
+                aria-label={t('LWC.desktop.sidebar.find.use_regex')}
                 tabIndex={-1}
                 onChange={() => setUseRegex((value) => !value)}
                 sx={{
@@ -641,8 +643,8 @@ export const SidebarFindTab = () => {
         <TextField
           fullWidth
           size="small"
-          label="Replace"
-          placeholder="Replacement text"
+          label={t('LWC.desktop.sidebar.find.replace_label')}
+          placeholder={t('LWC.desktop.sidebar.find.replacement_placeholder')}
           value={replaceQuery}
           inputRef={replaceInputRef}
           onChange={(event) => setReplaceQuery(event.target.value)}
@@ -718,9 +720,9 @@ export const SidebarFindTab = () => {
             />
           </Box>
           <FormControl size="small" sx={{ flex: '1 1 0', minWidth: 0 }}>
-            <InputLabel id="find-doc-scope-label">Documents</InputLabel>
+            <InputLabel id="find-doc-scope-label">{t('LWC.desktop.sidebar.find.documents_label')}</InputLabel>
             <Select
-              label="Documents"
+              label={t('LWC.desktop.sidebar.find.documents_label')}
               labelId="find-doc-scope-label"
               onChange={(event) => setDocScope(event.target.value as DocScope)}
               value={docScope}

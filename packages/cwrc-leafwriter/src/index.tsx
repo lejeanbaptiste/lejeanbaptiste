@@ -149,7 +149,7 @@ export class Leafwriter {
         beforeCapture={(scope) => {
           scope.setTags({ section: 'LEAF-Writer-Editor' });
         }}
-        fallback={<p>An error has occurred</p>}
+        fallback={<p>{i18next.t('LW.error.an_error_has_occurred')}</p>}
       >
         <JotaiProvider>
           <Provider value={overmind}>

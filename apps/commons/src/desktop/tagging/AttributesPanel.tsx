@@ -40,17 +40,21 @@ import {
   readTagAttributes,
   removeAttributeFromTag,
 } from './attributeCommand';
+import {
+  countExactUnkeyedTagMatches,
+  listExactUnkeyedTagMatches,
+  propagateAttributesToExactUnkeyedMatches,
+} from './attributePropagate';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { openEntityLookupForTag, getLookupEntityTypeForTag } from './attributeLookup';
-import { fetchSchemaAttributes, SchemaAttributeDetail } from './attributeSuggestions';
+import { fetchSchemaAttributes } from './attributeSuggestions';
+import type { SchemaAttributeDetail } from './attributeSuggestions';
 import { getEditorTagContext } from './tagSuggestions';
 import {
-  loadTagColors,
-  resolveTagColor,
-  updateTagColor,
-  TagColorEntry,
-  TagColorsFile,
-} from './tagColors';
+  clearTagWalkHighlight,
+  highlightTagWalkElement,
+  scrollTagWalkTargetIntoView,
+} from './tagWalkHighlight';
 
 const isVisualEditorActive = (): boolean =>
   Boolean(window.writer?.editor) &&
@@ -81,7 +85,7 @@ const authorityIcon = (type: string) => {
 };
 
 export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
-  const { activeTabPath, rootPath } = useAppState().project;
+  const { activeTabPath } = useAppState().project;
   const { readonly } = useAppState().editor;
   const leafWriter = useAtomValue(leafwriterAtom);
   const { notifyViaSnackbar } = useActions().ui;
@@ -90,10 +94,13 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const [tagName, setTagName] = useState('');
   const [schemaAttributes, setSchemaAttributes] = useState<SchemaAttributeDetail[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
-  const [tagColors, setTagColors] = useState<TagColorsFile | null>(null);
   const [addAttrName, setAddAttrName] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
   const [linkedEntityInfo, setLinkedEntityInfo] = useState<LinkedEntityInfo | null>(null);
+  const [propagatableMatchCount, setPropagatableMatchCount] = useState(0);
+  const [walkMatches, setWalkMatches] = useState<Element[]>([]);
+  const [walkIndex, setWalkIndex] = useState(0);
+  const [walkActive, setWalkActive] = useState(false);
 
   const eastAsianDates =
     tagName === 'date' && isEastAsianCalendarLanguageCode(sourceLanguage);
@@ -102,8 +109,6 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   );
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const colorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingColorRef = useRef<{ tagName: string; colors: TagColorEntry } | null>(null);
   const syncGenerationRef = useRef(0);
   const valuesRef = useRef(values);
   const tagElementRef = useRef(tagElement);
@@ -125,15 +130,13 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       cancelled = true;
     };
   }, [activeTabPath]);
-
-  const persistPendingColorRef = useRef<() => Promise<void>>(async () => {});
-
   const syncFromEditor = useCallback(async () => {
     if (!isVisualEditorActive()) {
       setTagElement(null);
       setTagName('');
       setSchemaAttributes([]);
       setValues({});
+      setPropagatableMatchCount(0);
       return;
     }
 
@@ -149,6 +152,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       setTagName('');
       setSchemaAttributes([]);
       setValues({});
+      setPropagatableMatchCount(0);
       return;
     }
 
@@ -156,6 +160,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     setTagElement(element);
     setTagName(name);
     setValues(readTagAttributes(element));
+    setPropagatableMatchCount(countExactUnkeyedTagMatches(element));
     const attrs = await fetchSchemaAttributes(element);
     if (generation !== syncGenerationRef.current) return;
     setSchemaAttributes(attrs);
@@ -236,6 +241,17 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   }, [visible, syncFromEditor]);
 
   useEffect(() => {
+    if (!walkActive) {
+      clearTagWalkHighlight();
+      return;
+    }
+    const current = walkMatches[walkIndex];
+    if (!current?.isConnected) return;
+    highlightTagWalkElement(current);
+    scrollTagWalkTargetIntoView(current);
+  }, [walkActive, walkIndex, walkMatches]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const loadLinkedEntityInfo = async () => {
@@ -280,14 +296,6 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     };
   }, [values.key]);
 
-  useEffect(() => {
-    if (!rootPath) {
-      setTagColors(null);
-      return;
-    }
-    void loadTagColors(rootPath).then(setTagColors);
-  }, [rootPath]);
-
   const commitValues = useCallback(
     (nextValues: Record<string, string>) => {
       const element = tagElementRef.current;
@@ -330,51 +338,117 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     if (!element || readonly) return;
     openEntityLookupForTag(element, () => {
       setValues(readTagAttributes(element));
+      setPropagatableMatchCount(countExactUnkeyedTagMatches(element));
     });
   };
 
-  const persistPendingColor = useCallback(async () => {
-    const pending = pendingColorRef.current;
-    if (!pending || !rootPath) return;
-    pendingColorRef.current = null;
-    const updated = await updateTagColor(rootPath, pending.tagName, pending.colors);
-    setTagColors(updated);
-  }, [rootPath]);
+  const refreshWalkMatches = useCallback(() => {
+    const element = tagElementRef.current;
+    if (!element) {
+      setWalkMatches([]);
+      setWalkIndex(0);
+      return [];
+    }
+    const matches = listExactUnkeyedTagMatches(element);
+    setWalkMatches(matches);
+    setWalkIndex((current) => Math.min(current, Math.max(matches.length - 1, 0)));
+    return matches;
+  }, []);
 
-  useEffect(() => {
-    persistPendingColorRef.current = persistPendingColor;
-  }, [persistPendingColor]);
+  const stopWalk = useCallback(() => {
+    setWalkActive(false);
+    setWalkMatches([]);
+    setWalkIndex(0);
+    clearTagWalkHighlight();
+  }, []);
 
-  const handleColorChange = (field: keyof TagColorEntry, color: string) => {
-    if (!rootPath || !tagName) return;
-    const current = resolveTagColor(tagColors ?? { version: 1, tags: {} }, tagName) ?? {};
-    const next: TagColorEntry = { ...current, [field]: color };
+  const startWalk = useCallback(() => {
+    const matches = refreshWalkMatches();
+    if (matches.length === 0) {
+      notifyViaSnackbar({
+        message: 'No exact unkeyed matches were found for this tag.',
+        options: { variant: 'info' },
+      });
+      return;
+    }
+    setWalkActive(true);
+  }, [notifyViaSnackbar, refreshWalkMatches]);
 
-    setTagColors((prev) => {
-      const base = prev ?? { version: 1, tags: {} };
-      return { version: 1, tags: { ...base.tags, [tagName]: next } };
+  const applyToMatch = useCallback(
+    (target: Element) => {
+      const source = tagElementRef.current;
+      if (!source || readonly) return false;
+      const attrs = readTagAttributes(source);
+      const result = commitTagAttributes(target, attrs);
+      if (result.applied) {
+        setValues(readTagAttributes(source));
+      }
+      return result.applied;
+    },
+    [readonly],
+  );
+
+  const handleWalkApply = useCallback(() => {
+    const current = walkMatches[walkIndex];
+    if (!current) {
+      stopWalk();
+      return;
+    }
+    const applied = applyToMatch(current);
+    if (!applied) {
+      notifyViaSnackbar({
+        message: 'Could not apply attributes to the current match.',
+        options: { variant: 'warning' },
+      });
+      return;
+    }
+
+    const nextMatches = refreshWalkMatches();
+    if (nextMatches.length === 0) {
+      notifyViaSnackbar({ message: 'Walk complete.', options: { variant: 'success' } });
+      stopWalk();
+      return;
+    }
+    setWalkIndex((currentIndex) => Math.min(currentIndex, nextMatches.length - 1));
+  }, [applyToMatch, notifyViaSnackbar, refreshWalkMatches, stopWalk, walkIndex, walkMatches]);
+
+  const handleWalkSkip = useCallback(() => {
+    const nextIndex = walkIndex + 1;
+    if (nextIndex >= walkMatches.length) {
+      notifyViaSnackbar({
+        message: 'No more matches to skip to.',
+        options: { variant: 'info' },
+      });
+      return;
+    }
+    setWalkIndex(nextIndex);
+  }, [notifyViaSnackbar, walkIndex, walkMatches.length]);
+
+  const handlePropagateAttributes = () => {
+    const element = tagElementRef.current;
+    if (!element || readonly) return;
+    const result = propagateAttributesToExactUnkeyedMatches(element);
+    setValues(readTagAttributes(element));
+    setPropagatableMatchCount(countExactUnkeyedTagMatches(element));
+    if (result.applied > 0) {
+      notifyViaSnackbar({
+        message:
+          result.skipped > 0
+            ? `Propagated key and attributes to ${result.applied} exact matches (${result.skipped} skipped).`
+            : `Propagated key and attributes to ${result.applied} exact matches.`,
+        options: { variant: 'success' },
+      });
+      return;
+    }
+    notifyViaSnackbar({
+      message: 'No exact unkeyed matches were updated.',
+      options: { variant: 'info' },
     });
-    pendingColorRef.current = { tagName, colors: next };
-
-    if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
-    colorDebounceRef.current = setTimeout(() => {
-      void persistPendingColor();
-    }, 300);
-  };
-
-  const handleResetColors = async () => {
-    if (!rootPath || !tagName) return;
-    if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
-    pendingColorRef.current = null;
-    const updated = await updateTagColor(rootPath, tagName, null);
-    setTagColors(updated);
   };
 
   useEffect(
     () => () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (colorDebounceRef.current) clearTimeout(colorDebounceRef.current);
-      void persistPendingColorRef.current();
     },
     [],
   );
@@ -408,7 +482,6 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   };
 
   const lookupAvailable = Boolean(getLookupEntityTypeForTag(tagName));
-  const resolvedColors = resolveTagColor(tagColors ?? { version: 1, tags: {} }, tagName);
   const unsetSchemaAttrs = schemaAttributes.filter((attr) => !(attr.name in values));
   const eastAsianAttrNames = new Set([
     'dyn_id',
@@ -509,6 +582,61 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
                       This tag is already linked to an entity in the project database.
                     </Typography>
                   )}
+                  {propagatableMatchCount > 0 ? (
+                    <Stack
+                      alignItems="center"
+                      direction="row"
+                      flexWrap="wrap"
+                      gap={0.75}
+                      justifyContent="space-between"
+                    >
+                      <Typography color="text.secondary" variant="caption">
+                        {propagatableMatchCount} exact unkeyed{' '}
+                        {propagatableMatchCount === 1 ? 'match' : 'matches'} found in this file.
+                      </Typography>
+                      <Stack direction="row" spacing={0.75}>
+                        <Button disabled={readonly} onClick={startWalk} size="small" variant="outlined">
+                          Walk
+                        </Button>
+                        <Button
+                          disabled={readonly}
+                          onClick={handlePropagateAttributes}
+                          size="small"
+                          variant="outlined"
+                        >
+                          Propagate all
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  ) : null}
+                </Stack>
+              </Alert>
+            ) : null}
+            {walkActive ? (
+              <Alert
+                icon={false}
+                severity="warning"
+                sx={{
+                  py: 0.75,
+                  px: 1,
+                  '& .MuiAlert-message': { width: '100%' },
+                }}
+              >
+                <Stack spacing={0.75}>
+                  <Typography variant="body2">
+                    Walk {walkIndex + 1} of {walkMatches.length}
+                  </Typography>
+                  <Stack direction="row" spacing={0.75}>
+                    <Button disabled={readonly} onClick={handleWalkApply} size="small" variant="contained">
+                      Apply
+                    </Button>
+                    <Button disabled={readonly} onClick={handleWalkSkip} size="small" variant="outlined">
+                      Skip
+                    </Button>
+                    <Button onClick={stopWalk} size="small" variant="text">
+                      Exit
+                    </Button>
+                  </Stack>
                 </Stack>
               </Alert>
             ) : null}
@@ -614,39 +742,6 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
           ) : null}
         </Stack>
       </Box>
-
-      <Stack
-        alignItems="center"
-        direction="row"
-        spacing={1}
-        sx={{ borderTop: 1, borderColor: 'divider', flexShrink: 0, p: 1.5 }}
-      >
-        <Tooltip title="Highlight colour (all tags of this type)">
-          <TextField
-            disabled={readonly || !rootPath}
-            label="Highlight"
-            size="small"
-            type="color"
-            value={resolvedColors?.highlight ?? '#ffffff'}
-            onChange={(event) => void handleColorChange('highlight', event.target.value)}
-            sx={{ width: 120 }}
-          />
-        </Tooltip>
-        <Tooltip title="Text colour (all tags of this type)">
-          <TextField
-            disabled={readonly || !rootPath}
-            label="Text"
-            size="small"
-            type="color"
-            value={resolvedColors?.text ?? '#000000'}
-            onChange={(event) => void handleColorChange('text', event.target.value)}
-            sx={{ width: 120 }}
-          />
-        </Tooltip>
-        <Button disabled={readonly || !rootPath} onClick={() => void handleResetColors()} size="small">
-          Reset
-        </Button>
-      </Stack>
     </Paper>
   );
 };

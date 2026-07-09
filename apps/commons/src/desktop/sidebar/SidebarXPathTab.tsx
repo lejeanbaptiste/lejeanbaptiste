@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useAppState } from '@src/overmind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { searchXPath } from '../xpath/searchXPath';
 import type { XPathFileResult } from '../xpath/types';
 import { ScopeFields } from '../shared/ScopeFields';
@@ -49,6 +50,7 @@ const flattenResults = (
 };
 
 export const SidebarXPathTab = () => {
+  const { t } = useTranslation();
   const { activeTabPath, openTabs, rootPath } = useAppState().project;
   const { resource } = useAppState().editor;
 
@@ -217,7 +219,7 @@ export const SidebarXPathTab = () => {
         <TextField
           fullWidth
           size="small"
-          placeholder="TEI/text/body//p"
+          placeholder={t('LWC.desktop.sidebar.xpath.xpath_placeholder')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={(event) => {

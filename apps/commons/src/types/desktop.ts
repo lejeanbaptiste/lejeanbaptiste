@@ -134,6 +134,7 @@ export type WorkspaceCursorPosition =
 export type DesktopRightPanelTab =
   | 'fileMetadata'
   | 'attributes'
+  | 'css'
   | 'imageViewer'
   | 'validation'
   | 'translation';

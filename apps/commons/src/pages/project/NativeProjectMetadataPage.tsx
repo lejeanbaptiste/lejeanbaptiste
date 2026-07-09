@@ -21,8 +21,10 @@ import { SOURCE_LANGUAGE_PATH } from '@src/desktop/projectLanguage';
 import type { ProjectMetadataDialogState } from '@src/desktop/projectMetadataDialogState';
 import type { TranslationLanguage } from '@src/desktop/translationTypes';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const NativeProjectMetadataPage = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const initialDialogId = searchParams.get('dialogId') ?? '';
   const [activeDialogId, setActiveDialogId] = useState(initialDialogId);
@@ -186,7 +188,7 @@ export const NativeProjectMetadataPage = () => {
   if (!isDesktop()) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography>This page is only available in the desktop app.</Typography>
+        <Typography>{t('LWC.desktop.only_available_desktop')}</Typography>
       </Box>
     );
   }
@@ -200,11 +202,11 @@ export const NativeProjectMetadataPage = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
       <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', WebkitAppRegion: 'drag' }}>
-        <Typography variant="h6">Project settings</Typography>
+        <Typography variant="h6">{t('LWC.desktop.project.settings')}</Typography>
         <Typography color="text.secondary" variant="body2">
           {isFirstSetup
-            ? 'Save once to finish project setup. Source language is required; other fields may be left blank.'
-            : 'Project-wide defaults and entity database choice.'}
+            ? t('LWC.desktop.project.first_setup_message')
+            : t('LWC.desktop.project.defaults_message')}
         </Typography>
       </Box>
 
@@ -272,34 +274,34 @@ export const NativeProjectMetadataPage = () => {
             {state.custom.map((row, index) => (
               <Stack direction="row" key={`custom-${index}`} spacing={1}>
                 <TextField
-                  label="TEI path"
+                  label={t('LWC.desktop.project.tei_path')}
                   onChange={(event) => updateCustom(index, 'path', event.target.value)}
                   size="small"
                   sx={{ flex: 1.2 }}
                   value={row.path}
                 />
                 <TextField
-                  label="Label"
+                  label={t('LWC.desktop.project.label')}
                   onChange={(event) => updateCustom(index, 'label', event.target.value)}
                   size="small"
                   sx={{ flex: 1 }}
                   value={row.label}
                 />
                 <TextField
-                  label="Value"
+                  label={t('LWC.desktop.project.value')}
                   onChange={(event) => updateCustom(index, 'value', event.target.value)}
                   size="small"
                   sx={{ flex: 1.2 }}
                   value={row.value}
                 />
-                <IconButton aria-label="Remove custom field" onClick={() => removeCustomRow(index)}>
+                <IconButton aria-label={t('LWC.desktop.project.remove_custom_field')} onClick={() => removeCustomRow(index)}>
                   <DeleteOutlineIcon />
                 </IconButton>
               </Stack>
             ))}
 
             <Button onClick={addCustomRow} size="small" variant="text">
-              Add custom field
+              {t('LWC.desktop.project.add_custom_field')}
             </Button>
 
             <Typography sx={{ pt: 1 }} variant="subtitle2">
@@ -319,10 +321,10 @@ export const NativeProjectMetadataPage = () => {
                 )
               }
             >
-              <FormControlLabel control={<Radio size="small" />} label="Central database" value="central" />
+              <FormControlLabel control={<Radio size="small" />} label={t('LWC.desktop.project.central_database')} value="central" />
               <FormControlLabel
                 control={<Radio size="small" />}
-                label="This project's database"
+                label={t('LWC.desktop.project.project_database')}
                 value="project"
               />
             </RadioGroup>
@@ -342,12 +344,12 @@ export const NativeProjectMetadataPage = () => {
             >
               <FormControlLabel
                 control={<Radio disabled={state.translation.locked} />}
-                label="Div (section-level, looser)"
+                label={t('LWC.desktop.project.div_alignment')}
                 value="div"
               />
               <FormControlLabel
                 control={<Radio disabled={state.translation.locked} />}
-                label="Paragraph (1:1)"
+                label={t('LWC.desktop.project.paragraph_alignment')}
                 value="p"
               />
             </RadioGroup>
@@ -358,15 +360,15 @@ export const NativeProjectMetadataPage = () => {
 
             {languages.map((lang) => (
               <Stack alignItems="center" direction="row" key={lang.code} spacing={1}>
-                <TextField disabled label="Code" size="small" sx={{ flex: 1 }} value={lang.code} />
+                <TextField disabled label={t('LWC.desktop.project.code')} size="small" sx={{ flex: 1 }} value={lang.code} />
                 <TextField
                   disabled
-                  label="Label"
+                  label={t('LWC.desktop.project.label')}
                   size="small"
                   sx={{ flex: 2 }}
                   value={lang.label}
                 />
-                <IconButton aria-label="Remove language" onClick={() => removeLanguage(lang.code)}>
+                <IconButton aria-label={t('LWC.desktop.project.remove_language')} onClick={() => removeLanguage(lang.code)}>
                   <DeleteOutlineIcon />
                 </IconButton>
               </Stack>
@@ -374,7 +376,7 @@ export const NativeProjectMetadataPage = () => {
 
             <Stack alignItems="center" direction="row" spacing={1}>
               <TextField
-                label="Add translation language"
+                label={t('LWC.desktop.project.add_translation_language')}
                 InputLabelProps={{ shrink: true }}
                 onChange={(event) => setNewLangCode(event.target.value)}
                 select

@@ -12,6 +12,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileMetadataPanel } from './FileMetadataPanel';
 import { describePanelNode, panelTrace } from './panelTrace';
 import { AttributesPanel } from './tagging/AttributesPanel';
+import { CssPanel } from './tagging/CssPanel';
+import { HighlighterIcon } from './tagging/HighlighterIcon';
 import { RightPanelResizeHandle } from './RightPanelResizeHandle';
 import { TranslationTabContent } from './TranslationTabContent';
 import {
@@ -25,7 +27,13 @@ import {
   TOOLBAR_ROW_HEIGHT,
 } from './sidebarConstants';
 
-type RightTabId = 'fileMetadata' | 'attributes' | 'imageViewer' | 'validation' | 'translation';
+type RightTabId =
+  | 'fileMetadata'
+  | 'attributes'
+  | 'css'
+  | 'imageViewer'
+  | 'validation'
+  | 'translation';
 
 const TAB_CONFIG: Record<RightTabId, { label: string; icon: React.ReactNode }> = {
   fileMetadata: {
@@ -35,6 +43,10 @@ const TAB_CONFIG: Record<RightTabId, { label: string; icon: React.ReactNode }> =
   attributes: {
     label: 'Attributes',
     icon: <LabelOutlinedIcon sx={{ fontSize: SIDEBAR_TAB_ICON_SIZE }} />,
+  },
+  css: {
+    label: 'CSS',
+    icon: <HighlighterIcon sx={{ fontSize: SIDEBAR_TAB_ICON_SIZE }} />,
   },
   imageViewer: {
     label: 'Image Viewer',
@@ -53,6 +65,7 @@ const TAB_CONFIG: Record<RightTabId, { label: string; icon: React.ReactNode }> =
 const TAB_ORDER: RightTabId[] = [
   'fileMetadata',
   'attributes',
+  'css',
   'imageViewer',
   'validation',
   'translation',
@@ -453,6 +466,9 @@ export const UnifiedRightPanel = () => {
         </Box>
         <Box sx={panelSx('attributes')}>
           <AttributesPanel visible={activeTab === 'attributes' && !collapsed} />
+        </Box>
+        <Box sx={panelSx('css')}>
+          <CssPanel visible={activeTab === 'css' && !collapsed} />
         </Box>
         <Box sx={panelSx('translation')}>
           <TranslationTabContent active={activeTab === 'translation'} />
