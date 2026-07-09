@@ -89,9 +89,9 @@ export const Tree = () => {
   }, [nodeChanged]);
 
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       const selectedItemIndex = visibleTree.findIndex(({ id }) => id === selectedItem);
-      if (selectedItemIndex) {
+      if (selectedItemIndex >= 0) {
         virtuoso?.current?.scrollIntoView({
           index: selectedItemIndex,
           align: 'center',
@@ -99,6 +99,8 @@ export const Tree = () => {
         });
       }
     }, 1);
+
+    return () => clearTimeout(timer);
   }, [selectedItem]);
 
   const initialize = (success?: boolean) => {

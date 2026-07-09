@@ -1,4 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { createAnchor } from './anchor';
 import type { MentionGroup } from './mentions';
 import * as disambiguationSettings from './disambiguationSettings';
 
@@ -28,9 +30,13 @@ jest.mock('./disambiguationCandidates', () => {
 });
 
 jest.mock('react-virtuoso', () => ({
-  Virtuoso: ({ data, itemContent }: { data: unknown[]; itemContent: (index: number, row: unknown) => unknown }) => (
-    <div>{data.map((row, index) => <div key={index}>{itemContent(index, row)}</div>)}</div>
-  ),
+  Virtuoso: ({
+    data,
+    itemContent,
+  }: {
+    data: unknown[];
+    itemContent: (index: number, row: unknown) => ReactNode;
+  }) => <div>{data.map((row, index) => <div key={index}>{itemContent(index, row)}</div>)}</div>,
 }));
 
 import { DisambiguationPanel } from './DisambiguationPanel';
@@ -42,6 +48,7 @@ function createGroup(): MentionGroup {
   );
   const element = doc.getElementsByTagName('persName')[0]!;
   const textNode = element.firstChild as Text;
+  const anchor = createAnchor('doc-1', doc, textNode, 0, textNode.data.length, 'ignore');
   return {
     tag: 'persName',
     surface: '沈攸之',
@@ -52,17 +59,7 @@ function createGroup(): MentionGroup {
         tag: 'persName',
         surface: '沈攸之',
         element,
-        anchor: {
-          documentId: 'doc-1',
-          surface: '沈攸之',
-          contextBefore: '',
-          contextAfter: '',
-          occurrence: 0,
-          nodeHash: 'hash',
-          textNode,
-          startOffset: 0,
-          endOffset: textNode.data.length,
-        },
+        anchor,
         hasKey: false,
         isUnresolved: true,
       },

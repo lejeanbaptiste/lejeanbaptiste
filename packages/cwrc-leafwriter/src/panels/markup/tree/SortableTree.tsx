@@ -90,11 +90,11 @@ export const SortableTree = () => {
   }, [items, offsetLeft, selectedItems, visibleTree]);
 
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       if (selectedItems === null || selectedItems.length === 0) setMultiselectAnchor(null);
       const selectedItemIndex = visibleTree.findIndex(({ id }) => id === selectedItems[0]);
 
-      if (selectedItemIndex) {
+      if (selectedItemIndex >= 0) {
         virtuoso?.current?.scrollIntoView({
           index: selectedItemIndex,
           align: 'center',
@@ -102,6 +102,8 @@ export const SortableTree = () => {
         });
       }
     }, 1);
+
+    return () => clearTimeout(timer);
   }, [selectedItems[0]]);
 
   useEffect(() => {

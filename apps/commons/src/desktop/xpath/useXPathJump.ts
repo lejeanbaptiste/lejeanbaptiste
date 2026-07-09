@@ -67,6 +67,7 @@ export const useXPathJump = (onAfterJump?: () => void) => {
   const onAfterJumpRef = useRef(onAfterJump);
   const resourceFilePathRef = useRef(resource?.filePath);
   const activeTabPathRef = useRef(activeTabPath);
+  const retryTimersRef = useRef<number[]>([]);
   onAfterJumpRef.current = onAfterJump;
   resourceFilePathRef.current = resource?.filePath;
   activeTabPathRef.current = activeTabPath;
@@ -102,10 +103,14 @@ export const useXPathJump = (onAfterJump?: () => void) => {
   }, [completeJump]);
 
   const schedulePendingJumpRetries = useCallback(() => {
+    retryTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    retryTimersRef.current = [];
+
     for (const delay of [0, 100, 350, 800, 1500, 2500]) {
-      setTimeout(() => {
+      const timer = window.setTimeout(() => {
         if (pendingJumpRef.current) tryPerformPendingJump();
       }, delay);
+      retryTimersRef.current.push(timer);
     }
   }, [tryPerformPendingJump]);
 
@@ -121,6 +126,8 @@ export const useXPathJump = (onAfterJump?: () => void) => {
     writer.event('documentLoaded').subscribe(onDocumentLoaded);
     return () => {
       writer.event('documentLoaded').unsubscribe(onDocumentLoaded);
+      retryTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      retryTimersRef.current = [];
     };
   }, [schedulePendingJumpRetries]);
 
