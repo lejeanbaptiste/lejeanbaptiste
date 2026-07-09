@@ -7,11 +7,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { AuthorPillField } from '@src/desktop/AuthorPillField';
+import { EntityLookupField, type EntityLookupValue } from '@src/desktop/EntityLookupField';
+import { isoYearString } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import { useTranslation } from 'react-i18next';
 import {
   applyFileHeaderFields,
   documentSupportsFileMetadata,
+  getActiveTabXml,
   isTeiCatalogForFileMetadata,
   pushXmlToActiveEditor,
   readFileMetadataFromXml,
@@ -25,25 +27,10 @@ import {
   applySourceDescriptionToXml,
   emptySourceDescription,
   readSourceDescriptionFromXml,
-  type SourceAuthor,
   type SourceDescription,
 } from '@src/desktop/sourceDescription';
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-const getActiveXmlContent = (
-  filePath: string,
-  openTabs: { content: string; filePath: string }[],
-  activeTabPath: string | null,
-): string => {
-  if (activeTabPath === filePath && window.writer?.overmindState?.ui?.editorViewMode === 'source') {
-    return window.writer.overmindState.ui.sourceCurrentContent;
-  }
-  if (activeTabPath === filePath && window.__desktopStoredDocumentXml) {
-    return window.__desktopStoredDocumentXml;
-  }
-  return openTabs.find((tab) => tab.filePath === filePath)?.content ?? '';
-};
 
 /** Structured TEI source metadata: book title, authors, dates, edition, source. */
 const TeiSourceFields = ({
@@ -66,7 +53,18 @@ const TeiSourceFields = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRange]);
 
-  const update = (patch: Partial<SourceDescription>) => onChange({ ...value, ...patch });
+  // EntityLookupField's work-title flow calls onChange (title link) and then,
+  // after awaiting a Wikidata fetch, onWorkDetails (author/date backfill).
+  // Both merge onto "the current value" — but the async gap means onWorkDetails
+  // would otherwise close over the pre-link value and revert the title update
+  // when it fires. Merge against a ref instead so the second merge always sees
+  // whatever the first one already committed.
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  const update = (patch: Partial<SourceDescription>) => onChange({ ...valueRef.current, ...patch });
 
   const toggleRange = (checked: boolean) => {
     setRangeMode(checked);
@@ -85,19 +83,39 @@ const TeiSourceFields = ({
 
   return (
     <>
-      <TextField
+      <EntityLookupField
         disabled={disabled}
-        fullWidth
+        kind="work"
         label={t('LWC.desktop.file_metadata.book_title')}
-        onChange={(event) => update({ title: event.target.value })}
-        size="small"
-        value={value.title}
+        mode="single"
+        onChange={([item]: EntityLookupValue[]) =>
+          update({ title: item?.name ?? '', titleRef: item?.ref, titleKey: item?.key })
+        }
+        onWorkDetails={({ workYear, authors }) => {
+          const current = valueRef.current;
+          const patch: Partial<SourceDescription> = {};
+          const dateIsEmpty =
+            !current.workDate.when && !current.workDate.notBefore && !current.workDate.notAfter;
+          if (workYear != null && dateIsEmpty) {
+            patch.workDate = { when: isoYearString(workYear) };
+          }
+          if (authors.length > 0 && current.authors.length === 0) {
+            patch.authors = authors;
+          }
+          if (Object.keys(patch).length > 0) update(patch);
+        }}
+        tag="title"
+        values={value.title ? [{ name: value.title, ref: value.titleRef, key: value.titleKey }] : []}
       />
 
-      <AuthorPillField
-        authors={value.authors}
+      <EntityLookupField
         disabled={disabled}
-        onChange={(authors: SourceAuthor[]) => update({ authors })}
+        kind="person"
+        label={t('LWC.desktop.author_pill.authors_label')}
+        mode="multi"
+        onChange={(authors: EntityLookupValue[]) => update({ authors })}
+        tag="persName"
+        values={value.authors}
       />
 
       <Box>
@@ -225,7 +243,7 @@ export const FileMetadataPanel = () => {
   const structured =
     isTeiCatalogForFileMetadata(catalogId) && !(fieldsTemplate?.file?.length ?? 0);
   const metadataFields = resolveFileMetadataFields(fieldsTemplate, catalogId);
-  const xml = activeTabPath ? getActiveXmlContent(activeTabPath, openTabs, activeTabPath) : '';
+  const xml = activeTabPath ? getActiveTabXml(activeTabPath, openTabs) : '';
   const supported = Boolean(activeTabPath && xml && documentSupportsFileMetadata(xml, catalogId));
 
   useEffect(() => {
@@ -272,7 +290,7 @@ export const FileMetadataPanel = () => {
   const commitChanges = useCallback(
     (nextValues: Record<string, string>) => {
       if (!activeTabPath || readonly) return;
-      const currentXml = getActiveXmlContent(activeTabPath, openTabs, activeTabPath);
+      const currentXml = getActiveTabXml(activeTabPath, openTabs);
       if (!currentXml) return;
       pushUpdatedXml(applyFileHeaderFields(currentXml, nextValues, catalogId), currentXml);
     },
@@ -282,7 +300,7 @@ export const FileMetadataPanel = () => {
   const commitSourceChanges = useCallback(
     (next: SourceDescription) => {
       if (!activeTabPath || readonly) return;
-      const currentXml = getActiveXmlContent(activeTabPath, openTabs, activeTabPath);
+      const currentXml = getActiveTabXml(activeTabPath, openTabs);
       if (!currentXml) return;
       pushUpdatedXml(applySourceDescriptionToXml(currentXml, next), currentXml);
     },

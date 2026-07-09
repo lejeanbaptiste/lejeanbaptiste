@@ -16,6 +16,25 @@ export interface FileMetadataFieldDefinition {
   path: string;
 }
 
+/**
+ * Current XML for the active tab, preferring live unsaved editor content
+ * (source-mode buffer, or the desktop's stored-document snapshot for
+ * visual-mode edits) over the last-loaded tab content.
+ */
+export const getActiveTabXml = (
+  activeTabPath: string | null,
+  openTabs: { content: string; filePath: string }[],
+): string => {
+  if (!activeTabPath) return '';
+  if (window.writer?.overmindState?.ui?.editorViewMode === 'source') {
+    return window.writer.overmindState.ui.sourceCurrentContent;
+  }
+  if (window.__desktopStoredDocumentXml) {
+    return window.__desktopStoredDocumentXml;
+  }
+  return openTabs.find((tab) => tab.filePath === activeTabPath)?.content ?? '';
+};
+
 export const TEI_FILE_METADATA_FIELDS: FileMetadataFieldDefinition[] = [
   { label: 'Title', path: 'titleStmt/title' },
   { label: 'Source', path: 'sourceDesc/p' },

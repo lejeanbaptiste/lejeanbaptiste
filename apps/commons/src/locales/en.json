@@ -253,10 +253,22 @@
         "transcription_source": "Transcription source"
       },
       "author_pill": {
+        "authors_label": "Authors",
         "add_author": "Add author",
         "type_name_search": "Type a name, then search",
         "search_authorities": "Search authorities",
-        "add_without_authority_match": "Add without authority match"
+        "add_without_authority_match": "Add without authority match",
+        "lookup_failed": "Lookup failed — check your connection, or create it without a match.",
+        "local_entity": "Local entity",
+        "no_authority_link": "No authority link",
+        "create_new": "Create new",
+        "create_new_help": "Not in any authority — add it with a canonical name and a one-line description.",
+        "canonical_name": "Name",
+        "one_line_description": "One-line description",
+        "add": "Add",
+        "no_matches": "No matches — create it below, or refine the spelling.",
+        "link_selected": "Link selected",
+        "link_selected_count": "Link {{count}} as one entity"
       },
       "project": {
         "settings": "Project settings",

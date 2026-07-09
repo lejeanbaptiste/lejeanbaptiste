@@ -34,10 +34,33 @@ export function defaultAuthorityPacksRecord(
   };
 }
 
-export function migrateDateFilter(settings?: AutoTaggingAuthoritySettings): DateFilterMode {
+/**
+ * Explicit persisted settings always win. Absent those, once the active
+ * file's work year is known, default to excluding candidates from that year
+ * through {@link AUTHORITY_YEAR_MAX} (anachronistic for a text written that
+ * early) rather than the fixed Eastern Han preset.
+ */
+export function migrateDateFilter(
+  settings?: AutoTaggingAuthoritySettings,
+  workYear?: number | null,
+): DateFilterMode {
   if (settings?.dateFilter) return settings.dateFilter;
   if (settings?.yearFilterEnabled === false) return 'none';
+  if (workYear != null) return 'exclude';
   return 'limit';
+}
+
+function yearRangeFromAuthoritySettings(
+  settings?: AutoTaggingAuthoritySettings,
+  workYear?: number | null,
+): [number, number] {
+  if (settings?.yearStart != null || settings?.yearEnd != null) {
+    const yearStart = settings.yearStart ?? DEFAULT_AUTHORITY_YEAR_RANGE[0];
+    const yearEnd = settings.yearEnd ?? DEFAULT_AUTHORITY_YEAR_RANGE[1];
+    return [Math.min(yearStart, yearEnd), Math.max(yearStart, yearEnd)];
+  }
+  if (workYear != null) return [Math.min(workYear, AUTHORITY_YEAR_MAX), AUTHORITY_YEAR_MAX];
+  return DEFAULT_AUTHORITY_YEAR_RANGE;
 }
 
 export function packsRecordFromSettings(
@@ -60,17 +83,19 @@ export function settingsFromUiState(input: {
   };
 }
 
-export function uiStateFromSettings(settings?: AutoTaggingAuthoritySettings): {
+/** @param workYear Signed year of the active file's work, when known — see {@link migrateDateFilter}. */
+export function uiStateFromSettings(
+  settings?: AutoTaggingAuthoritySettings,
+  workYear?: number | null,
+): {
   packs: Record<AuthorityPackId, boolean>;
   dateFilter: DateFilterMode;
   yearRange: [number, number];
 } {
-  const yearStart = settings?.yearStart ?? DEFAULT_AUTHORITY_YEAR_RANGE[0];
-  const yearEnd = settings?.yearEnd ?? DEFAULT_AUTHORITY_YEAR_RANGE[1];
   return {
     packs: packsRecordFromSettings(settings),
-    dateFilter: migrateDateFilter(settings),
-    yearRange: [Math.min(yearStart, yearEnd), Math.max(yearStart, yearEnd)],
+    dateFilter: migrateDateFilter(settings, workYear),
+    yearRange: yearRangeFromAuthoritySettings(settings, workYear),
   };
 }
 
