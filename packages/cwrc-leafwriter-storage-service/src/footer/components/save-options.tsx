@@ -12,6 +12,7 @@ import {
 import { useAppState } from '@cwrc/leafwriter-storage-service/overmind';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { VirtualElement } from '@popperjs/core';
 
 type SaveType = 'save' | 'pullRequest';
 
@@ -34,6 +35,22 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
   const [open, setOpen] = useState(false);
   const anchor = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const anchorRect = anchor.current?.getBoundingClientRect();
+  const hasAnchorLayout = !!anchorRect && (anchorRect.width > 0 || anchorRect.height > 0);
+  const fallbackAnchor: VirtualElement = {
+    getBoundingClientRect: () =>
+      ({
+        bottom: 0,
+        height: 0,
+        left: 0,
+        right: 0,
+        top: 0,
+        width: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => '',
+      }) as DOMRect,
+  };
 
   const saveOptions: SaveOption[] = [
     { label: t('SS.commons.save'), value: 'save' },
@@ -89,7 +106,13 @@ export const SaveOptions = ({ enabled, onSelect }: Props) => {
           <ArrowDropDownIcon />
         </Button>
       </ButtonGroup>
-      <Popper open={open} anchorEl={anchor.current} role={undefined} transition disablePortal>
+      <Popper
+        open={open}
+        anchorEl={hasAnchorLayout ? anchor.current : fallbackAnchor}
+        role={undefined}
+        transition
+        disablePortal
+      >
         {({ TransitionProps, placement }) => (
           <Grow
             {...TransitionProps}

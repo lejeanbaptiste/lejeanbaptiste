@@ -14,6 +14,9 @@ export const SettingsDialog = ({ anchor, onDone, open }: SettingsDialogProps) =>
 
   const { t } = useTranslation();
 
+  const anchorRect = anchor?.getBoundingClientRect();
+  const hasAnchorLayout = !!anchorRect && (anchorRect.width > 0 || anchorRect.height > 0);
+
   const handleToggleAllowAllFiles = () => {
     setAllowedAllFileTypes(!allowAllFileTypes);
   };
@@ -22,7 +25,9 @@ export const SettingsDialog = ({ anchor, onDone, open }: SettingsDialogProps) =>
 
   return (
     <Menu
-      anchorEl={anchor}
+      anchorEl={hasAnchorLayout ? anchor : undefined}
+      anchorPosition={hasAnchorLayout ? undefined : { top: 0, left: 0 }}
+      anchorReference={hasAnchorLayout ? 'anchorEl' : 'anchorPosition'}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       data-testid="global_settings-dialog"
       id="settings-popper"

@@ -231,7 +231,7 @@ export const DesktopOfflineAuthorities = () => {
             checked={!!status?.enabled}
             disabled={working || !status?.entityDbReady}
             onChange={(_event, checked) => void handleEnableChange(checked)}
-            inputProps={{ 'aria-label': 'Enable offline authorities' }}
+            inputProps={{ 'aria-label': t('LW.settings.authorities.offline.enable') }}
           />
         </Stack>
 

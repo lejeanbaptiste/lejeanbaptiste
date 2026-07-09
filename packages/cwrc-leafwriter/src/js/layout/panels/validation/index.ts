@@ -30,9 +30,16 @@ class Validation {
 
   progressBar?: Circle; //typeof ProgressBar | null = null;
 
+  private readonly progressContainerId: string;
+  private readonly progressBarId: string;
+  private readonly statsContainerSelector: string;
+
   constructor({ parentId, writer }: ValidationProps) {
     this.writer = writer;
     this.id = this.writer.getUniqueId('validation_');
+    this.progressContainerId = `${this.id}_progress`;
+    this.progressBarId = `${this.id}_progress_bar`;
+    this.statsContainerSelector = `#${this.id}_buttons > div.stats`;
 
     $(`#${parentId}`).append(`
 			<div class="moduleParent">
@@ -73,15 +80,17 @@ class Validation {
       const list = $(`#${this.id} > div.validationList`);
       if (list.length) {
         list.empty();
+        this.progressBar?.destroy();
+        this.progressBar = undefined;
 
         const loader = `
-          <div id="validation-progress">
-            <div id="validation-progress-bar"/>
+          <div id="${this.progressContainerId}">
+            <div id="${this.progressBarId}"/>
           </div>
         `;
         list.append(loader);
 
-        this.progressBar = new ProgressBar.Circle('#validation-progress-bar');
+        this.progressBar = new ProgressBar.Circle(`#${this.progressBarId}`);
       }
 
       void this.validate();
@@ -151,11 +160,11 @@ class Validation {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       //@ts-ignore
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-      const $validateButton = $(`.revalidate-bt`).button();
+      const $validateButton = list.find(`.revalidate-button`).button();
       $validateButton.on('click', () => this.writer.validate());
 
       // Make sure validation error counter get's removed if it has been shown before
-      const $stats = $('.moduleFooter > div.stats');
+      const $stats = $(this.statsContainerSelector);
       $stats.empty();
 
       return;
@@ -168,8 +177,8 @@ class Validation {
 
       list.append(`
         <li>
-          <div id="header">
-            <div id="headerIcon">
+          <div class="validation-header">
+            <div class="validation-header-icon">
               <i class="fas fa-exclamation-circle" />
             </div>
             <div style="flex-grow: 1;">
@@ -179,11 +188,11 @@ class Validation {
         </li>
       `);
 
-      const $stats = $(`.moduleFooter > div.stats`);
+      const $stats = $(this.statsContainerSelector);
       $stats.empty();
       $stats.append(`
-        <div id="stats-container">
-          <div id="info" title="Rerun validator">
+        <div class="stats-container">
+          <div class="validation-info" title="Rerun validator">
             <i class="fas fa-exclamation-circle"></i>
             1
           </div>
@@ -191,7 +200,7 @@ class Validation {
       `);
 
       //@ts-ignore
-      $stats.find('#info').button().on('click', () => this.writer.validate());
+      $stats.find('.validation-info').button().on('click', () => this.writer.validate());
 
       return;
     }
@@ -212,8 +221,8 @@ class Validation {
       parseErrors.forEach(({ message }) => {
         list.append(`
         <li>
-          <div id="header">
-            <div id="headerIcon">
+          <div class="validation-header">
+            <div class="validation-header-icon">
               <i class="fas fa-exclamation-circle" />
             </div>
             <div style="flex-grow: 1;">
@@ -224,11 +233,11 @@ class Validation {
       `);
       });
 
-      const $stats = $(`.moduleFooter > div.stats`);
+      const $stats = $(this.statsContainerSelector);
       $stats.empty();
       $stats.append(`
-        <div id="stats-container">
-          <div id="info" title="Rerun validator">
+        <div class="stats-container">
+          <div class="validation-info" title="Rerun validator">
             <i class="fas fa-exclamation-circle"></i>
             ${parseErrors.length}
           </div>
@@ -236,7 +245,7 @@ class Validation {
       `);
 
       //@ts-ignore
-      $stats.find('#info').button().on('click', () => this.writer.validate());
+      $stats.find('.validation-info').button().on('click', () => this.writer.validate());
 
       return;
     }
@@ -272,16 +281,16 @@ class Validation {
         event.stopImmediatePropagation();
 
         $(this).find('i').removeClass('icon-rotate-180').addClass('icon-rotate-0');
-        parentContainer.find('#details').empty();
+        parentContainer.find('.validation-details').empty();
         parentContainer.removeClass('selected');
       });
     });
 
-    const $stats = $(`.moduleFooter > div.stats`);
+    const $stats = $(this.statsContainerSelector);
     $stats.empty();
     $stats.append(`
-    <div id="stats-container">
-      <div id="info" title="Rerun validator">
+    <div class="stats-container">
+      <div class="validation-info" title="Rerun validator">
         <i class="fas fa-exclamation-circle"></i>
         ${errors?.length}
       </div>
@@ -289,7 +298,7 @@ class Validation {
     `);
 
     //@ts-ignore
-    const $infoBadge = $stats.find('#info').button();
+    const $infoBadge = $stats.find('.validation-info').button();
     $infoBadge.on('click', () => this.writer.validate());
 
     $infoBadge.on('mouseover', (event: JQuery.MouseOverEvent) => {
@@ -323,7 +332,7 @@ class Validation {
   private collapseAll() {
     const list = $(`#${this.id} > div.validationList`);
     list.find('li').each(function () {
-      $(this).find('#details').empty();
+      $(this).find('.validation-details').empty();
       $(this).removeClass('selected');
       $(this).find('.expandButton > i').removeClass('icon-rotate-180').addClass('icon-rotate-0');
     });
@@ -361,7 +370,7 @@ class Validation {
         </path>
       </svg>
         <span>Document is valid!</span>
-        <div class="revalidate-bt">
+        <div class="revalidate-button">
           <i class="fas fa-redo-alt"></i>
         </div>
       </div>
@@ -477,8 +486,8 @@ class Validation {
 
     const html = `
       <li>
-        <div id="header">
-          <div id="headerIcon">
+        <div class="validation-header">
+          <div class="validation-header-icon">
             <i
               class="fas fa-exclamation-${type === 'ValidationError' ? 'triangle' : 'circle'}"
             />
@@ -490,7 +499,7 @@ class Validation {
             <i class="fas fa-angle-down" style="font-size: 0.9em;"/>
           </div>
         </div>
-        <div id="details"></div>
+        <div class="validation-details"></div>
       </li>
     `;
 
@@ -502,7 +511,7 @@ class Validation {
     if (!element) return;
 
     $($item).show();
-    const $details = $item.find('#details');
+    const $details = $item.find('.validation-details');
 
     const html = `
       <div class="documentation">
@@ -587,9 +596,15 @@ class Validation {
   clearResult = () => {
     $(`#${this.id}_indicator`).hide();
     $(`#${this.id} > div.validationList`).empty();
+    this.progressBar?.destroy();
+    this.progressBar = undefined;
   };
 
   destroy = () => {
+    if (this.autoValidateTimerActive) {
+      clearTimeout(this.autoValidateTimer);
+      this.autoValidateTimerActive = false;
+    }
     if (this.progressBar) this.progressBar.destroy();
   };
 }

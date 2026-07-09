@@ -5,6 +5,7 @@ import type { EntityType, SchemaMappingType } from '../../../types';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
+import i18next from 'i18next';
 
 class DateDialog implements SchemaDialog {
   readonly writer: Writer;
@@ -129,7 +130,7 @@ class DateDialog implements SchemaDialog {
   }
 
   private selectedTextField(id: string) {
-    const fieldTitle = 'Selected Text';
+    const fieldTitle = i18next.t('LW.Selected Text');
 
     return `
       <div id="${id}_selectedText" class="attribute">

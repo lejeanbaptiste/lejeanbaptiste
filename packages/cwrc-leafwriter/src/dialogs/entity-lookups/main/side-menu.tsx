@@ -31,7 +31,7 @@ export const SideMenu = ({ authorityInView }: { authorityInView: string[] }) => 
     >
       {authorities.length > 0 && (
         <ButtonGroup
-          aria-label="Side menu"
+          aria-label={t('LW.entityLookups.side_menu')}
           orientation="vertical"
           size="small"
           sx={{ alignItems: 'flex-end', gap: 0.5 }}

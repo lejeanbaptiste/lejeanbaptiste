@@ -9,6 +9,7 @@ import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import { SchemaDialog } from './types';
 import { getSourceNameFromUrl } from './util';
+import i18next from 'i18next';
 
 const defaultJotaiStore = getDefaultStore();
 
@@ -149,7 +150,7 @@ class CitationDialog implements SchemaDialog {
   }
 
   private selectedTextField(id: string) {
-    const fieldTitle = 'Selected Text';
+    const fieldTitle = i18next.t('LW.Selected Text');
 
     return `
       <div id="${id}_selectedText" class="attribute">

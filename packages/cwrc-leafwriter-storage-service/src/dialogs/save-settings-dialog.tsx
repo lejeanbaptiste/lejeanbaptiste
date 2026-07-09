@@ -26,6 +26,8 @@ export const SaveSettingsDialog = ({ anchor, onDone, open }: SaveSettingsDialogP
 
   const { breakpoints } = useTheme();
   const isSM = useMediaQuery(breakpoints.down('sm'));
+  const anchorRect = anchor?.getBoundingClientRect();
+  const hasAnchorLayout = !!anchorRect && (anchorRect.width > 0 || anchorRect.height > 0);
 
   const [commitMessageLocal, setCommitMessageLocal] = useState(commitMessage);
 
@@ -43,7 +45,9 @@ export const SaveSettingsDialog = ({ anchor, onDone, open }: SaveSettingsDialogP
 
   return (
     <Popover
-      anchorEl={anchor}
+      anchorEl={hasAnchorLayout ? anchor : undefined}
+      anchorPosition={hasAnchorLayout ? undefined : { top: 0, left: 0 }}
+      anchorReference={hasAnchorLayout ? 'anchorEl' : 'anchorPosition'}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       id="save-settings-popper"
       onClose={handleDone}

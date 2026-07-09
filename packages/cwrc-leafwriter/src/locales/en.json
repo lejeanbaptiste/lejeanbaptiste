@@ -3,6 +3,54 @@
     "error": {
       "an_error_has_occurred": "An error has occurred"
     },
+    "dateAuthority": {
+      "loading_calendar_tables": "Loading calendar tables…",
+      "calendar_lookup_unavailable": "Calendar lookup is unavailable. Install sanmiao and restart the app.",
+      "calendar_context_hint": "Calendar context (dynasty, emperor, era) — used by sanmiao when resolving dates.",
+      "dynasty": "Dynasty",
+      "emperor": "Emperor",
+      "era": "Era",
+      "type_to_search": "Type to search…",
+      "year": "Year",
+      "year_placeholder": "元年, 3, 十八",
+      "month": "Month",
+      "month_placeholder": "3, 十八",
+      "day": "Day",
+      "optional": "optional",
+      "sexagenary_year": "Sexagenary year",
+      "sex_year_placeholder": "sex_year",
+      "sexagenary_day": "Sexagenary day",
+      "gz_placeholder": "gz",
+      "new_moon_gz": "New-moon gz",
+      "nmd_gz_placeholder": "nmd_gz"
+    },
+    "autoTagging": {
+      "tag_types": "Tag types",
+      "tag_types_placeholder": "persName, placeName…",
+      "tag_types_helper": "Pick from the schema or type a tag name."
+    },
+    "entityLookups": {
+      "trigger_search": "Trigger search",
+      "side_menu": "Side menu"
+    },
+    "editorLocationBar": {
+      "document_location": "Document location",
+      "go_to": "Go to {{segment}}"
+    },
+    "settings": {
+      "ai_api": {
+        "translation_instructions": "Translation instructions",
+        "translation_instructions_placeholder": "Translate in a concise scholarly style."
+      },
+      "editor": {
+        "font_size_slider": "Font size"
+      },
+      "authorities": {
+        "offline": {
+          "enable": "Enable offline authorities"
+        }
+      }
+    },
     "status": "Status",
     "Accept All": "",
     "Add Entity Annotation": "Add Entity Annotation",
@@ -23,6 +71,7 @@
     "Annotations that overlap will be created in RDF only with no equivalent XML tags": "Annotations that overlap will be created in RDF only, with no equivalent XML tags",
     "Applying this schema change will cause a document loading error": "Applying this schema change will cause a document loading error",
     "Applying tags…": "Applying tags…",
+    "Attributes": "",
     "Apply accepted ({{count}})": "Apply accepted ({{count}})",
     "Apply all remaining ({{count}})": "Apply all remaining ({{count}})",
     "Auto-tagging": "Auto-tagging",
@@ -59,6 +108,7 @@
     "Date Picker": "",
     "Date Range": "",
     "Date type": "",
+    "Day": "",
     "Define Role": "",
     "Define Type": "",
     "Document is valid!": "",
@@ -72,6 +122,7 @@
     "Editor Mode has changed": "Editor Mode restored",
     "Editor Mode restored": "Editor Mode restored",
     "End date": "",
+    "Emperor": "",
     "Entities": "",
     "Entities Lookup Sources": "Entities Lookup Sources",
     "Error": "",
@@ -87,6 +138,7 @@
     "LOD Annotation": "",
     "Level of certainty": "",
     "Link": "",
+    "Loading calendar tables…": "",
     "Loading": "",
     "Loading Document": "",
     "Loading Schema": "",
@@ -105,6 +157,7 @@
     "Paste Entity": "Paste Entity",
     "Paste Tag": "Paste Tag",
     "Person": "",
+    "Person type": "",
     "Place": "",
     "Please select a {tagName} tag to translate": "Please select a {{tagName}} tag to translate",
     "Please select some text before adding an entity": "Please select some text before adding an entity",
@@ -144,9 +197,12 @@
     "Show Tags": "",
     "Show Text Nodes": "",
     "Single Date": "",
+    "Sexagenary day": "",
+    "Sexagenary year": "",
     "some_features_are_not_fully_implemented": "Some features are not fully implemented",
     "Split Tag": "Split Tag",
     "Start date": "",
+    "Tag as": "",
     "Table of Contents": "Table of Contents",
     "Tag Citation": "",
     "panels": {
@@ -168,7 +224,8 @@
     "Tag Place": "",
     "Tag Thing": "",
     "Tag Title": "",
-    "Tag as": "",
+    "Type of place": "",
+    "Type to search…": "",
     "Tagging might not work as expected": "Tagging might not work as expected",
     "text_nodes_required_for_accuracy": "Text Nodes must be displayed for better accuracy",
     "The current document is using this schema": "The current document is using this schema",
@@ -179,10 +236,29 @@
     "Toggle Fullscreen": "",
     "Translation": "",
     "Type": "",
-    "Type of place": "",
     "URL must start with HTTPS secured connection": "URL must start with HTTPS (secured connection)",
     "Unknown": "",
     "Unknown date": "",
+    "Year": "",
+    "Month": "",
+    "New style": "",
+    "BC": "",
+    "Era": "",
+    "Dynasty": "",
+    "Season/Occasion": "",
+    "Rough certainty": "",
+    "Certain": "",
+    "Circa": "",
+    "By this date": "",
+    "After this date": "",
+    "optional": "",
+    "sex_year": "",
+    "gz": "",
+    "nmd_gz": "",
+    "Date type": "",
+    "Calendar type": "",
+    "Calendar context (dynasty, emperor, era) — used by sanmiao when resolving dates.": "",
+    "Calendar lookup is unavailable. Install sanmiao and restart the app.": "",
     "use_with_caution": "Use with caution",
     "Validate": "",
     "Validation": "",

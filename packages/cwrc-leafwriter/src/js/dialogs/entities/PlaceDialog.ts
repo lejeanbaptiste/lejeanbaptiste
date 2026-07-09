@@ -10,6 +10,7 @@ import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import { certaintyOptions, getSourceNameFromUrl } from './util';
+import i18next from 'i18next';
 
 const defaultJotaiStore = getDefaultStore();
 
@@ -99,7 +100,7 @@ class PlaceDialog implements SchemaDialog {
       writer,
       $el,
       type: 'place',
-      title: 'Tag Place',
+      title: i18next.t('LW.Tag Place'),
     });
   }
 
@@ -118,7 +119,7 @@ class PlaceDialog implements SchemaDialog {
   }
 
   private selectedTextField(id: string) {
-    const fieldTitle = 'Selected Text';
+    const fieldTitle = i18next.t('LW.Selected Text');
 
     return `
       <div id="${id}_selectedText" class="attribute">
@@ -152,7 +153,7 @@ class PlaceDialog implements SchemaDialog {
   }
 
   private tagAsField(id: string) {
-    const fieldTitle = 'Tag as';
+    const fieldTitle = i18next.t('LW.Tag as');
 
     return `
       <div id="${id}_tagAs" class="attribute">
@@ -176,7 +177,7 @@ class PlaceDialog implements SchemaDialog {
   }
 
   private certaintyField(id: string) {
-    const fieldTitle = 'Level of certainty';
+    const fieldTitle = i18next.t('LW.Level of certainty');
 
     const html = `
       <div
@@ -212,7 +213,7 @@ class PlaceDialog implements SchemaDialog {
   }
 
   private precisionField(id: string) {
-    const fieldTitle = 'Precision of location of place name';
+    const fieldTitle = i18next.t('LW.Precision of location of place name');
 
     const html = `
       <div
@@ -248,7 +249,7 @@ class PlaceDialog implements SchemaDialog {
   }
 
   private placeTypeField(id: string) {
-    const fieldTitle = 'Type of place';
+    const fieldTitle = i18next.t('LW.Type of place');
 
     const html = `
       <div

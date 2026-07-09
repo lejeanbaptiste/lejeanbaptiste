@@ -12,7 +12,6 @@ export const DEFAULT_CRAWL_TAGS = [
   'name',
   'roleName',
   'title',
-  'date',
 ];
 
 function isInsideDateElement(el: Element): boolean {
@@ -41,7 +40,7 @@ export function crawlEntities(
 
   for (const tag of tags) {
     for (const el of Array.from(doc.getElementsByTagName(tag))) {
-      if (tag !== 'date' && isInsideDateElement(el)) continue;
+      if (isInsideDateElement(el)) continue;
       const surface = buildSearchText(el.textContent ?? '', policy).text;
       if (surface.length === 0) continue;
       const mapKey = `${tag}\t${surface}`;

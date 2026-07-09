@@ -142,7 +142,7 @@ describe('publicationStmt normalization', () => {
     ]);
 
     expect(updated).toContain(
-      '<publicationStmt><distributor>CNRS</distributor><availability><licence>CC BY</licence></availability></publicationStmt>',
+      '<publicationStmt><distributor>CNRS</distributor><authority/><availability><licence>CC BY</licence></availability></publicationStmt>',
     );
     expect(updated).not.toContain('<publicationStmt><p/>');
   });

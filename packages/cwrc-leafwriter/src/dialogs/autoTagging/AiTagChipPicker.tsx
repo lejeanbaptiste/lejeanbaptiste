@@ -1,4 +1,5 @@
 import { Autocomplete, Chip, TextField } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 interface AiTagChipPickerProps {
   options: string[];
@@ -9,6 +10,8 @@ interface AiTagChipPickerProps {
 
 /** Multi-select tag field with schema-backed autocomplete and free-text entry. */
 export function AiTagChipPicker({ options, value, disabled, onChange }: AiTagChipPickerProps) {
+  const { t } = useTranslation();
+
   return (
     <Autocomplete
       multiple
@@ -31,9 +34,9 @@ export function AiTagChipPicker({ options, value, disabled, onChange }: AiTagChi
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Tag types"
-          placeholder={value.length === 0 ? 'persName, placeName…' : undefined}
-          helperText="Pick from the schema or type a tag name."
+          label={t('LW.autoTagging.tag_types')}
+          placeholder={value.length === 0 ? t('LW.autoTagging.tag_types_placeholder') : undefined}
+          helperText={t('LW.autoTagging.tag_types_helper')}
         />
       )}
     />

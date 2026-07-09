@@ -96,9 +96,8 @@ describe('crawlEntities', () => {
       </p></TEI>`,
     );
     const entries = crawlEntities(doc, 'ignore');
-    expect(entries).toEqual([{ string: '洛陽', tag: 'placeName' }]);
+    expect(entries).toEqual([]);
     const suggestions = dictionaryTag(doc, entries, 'ignore');
-    expect(suggestions).toHaveLength(1);
-    expect(suggestions[0]!.anchor.contextBefore).toContain('又到');
+    expect(suggestions).toHaveLength(0);
   });
 });

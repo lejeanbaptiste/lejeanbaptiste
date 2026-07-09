@@ -11,6 +11,7 @@ import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import { certaintyOptions, getSourceNameFromUrl } from './util';
+import i18next from 'i18next';
 
 const defaultJotaiStore = getDefaultStore();
 
@@ -157,7 +158,7 @@ class OrgDialog implements SchemaDialog {
   }
 
   private selectedTextField(id: string) {
-    const fieldTitle = 'Selected Text';
+    const fieldTitle = i18next.t('LW.Selected Text');
 
     return `
       <div id="${id}_selectedText" class="attribute">
@@ -174,7 +175,7 @@ class OrgDialog implements SchemaDialog {
   }
 
   private tagAsField(id: string) {
-    const fieldTitle = 'Tag as';
+    const fieldTitle = i18next.t('LW.Tag as');
 
     const dataMapping =
       this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
@@ -203,7 +204,7 @@ class OrgDialog implements SchemaDialog {
   }
 
   private certaintyField(id: string) {
-    const fieldTitle = 'Level of certainty';
+    const fieldTitle = i18next.t('LW.Level of certainty');
 
     const html = `
       <div

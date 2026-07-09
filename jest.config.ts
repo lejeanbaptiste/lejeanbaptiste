@@ -1,5 +1,7 @@
 import type { Config } from '@jest/types';
 
+const dexieModulePath = '<rootDir>/node_modules/dexie/dist/dexie.js';
+
 const config: Config.InitialOptions = {
   // collectCoverage: true,
   // coverageProvider: 'v8',
@@ -19,7 +21,7 @@ const config: Config.InitialOptions = {
       automock: false,
       clearMocks: true,
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/docs', '/lib', '/lib-esm', '/test'],
-      moduleNameMapper: { '^dexie$': require.resolve('dexie') },
+      moduleNameMapper: { '^dexie$': dexieModulePath },
       resetMocks: false,
       setupFiles: [
         'fake-indexeddb/auto',
@@ -40,11 +42,14 @@ const config: Config.InitialOptions = {
         '^@cwrc/leafwriter-storage-service/(.*)$':
           '<rootDir>/packages/cwrc-leafwriter-storage-service/src/$1',
         '^@octokit/rest$': '<rootDir>/packages/cwrc-leafwriter-storage-service/test/mocks/octokit.ts',
-        '^dexie$': require.resolve('dexie'),
+        '^dexie$': dexieModulePath,
         '^nanoid$': '<rootDir>/packages/cwrc-leafwriter-storage-service/test/mocks/nanoid.ts',
       },
       resetMocks: false,
       setupFiles: ['fake-indexeddb/auto'],
+      setupFilesAfterEnv: [
+        '<rootDir>/packages/cwrc-leafwriter-storage-service/test/setup/afterEnv.ts',
+      ],
       testEnvironment: 'jsdom',
       testMatch: [
         '<rootDir>/packages/cwrc-leafwriter-storage-service/**/?(*.)+(spec|test).[jt]s?(x)',
@@ -57,12 +62,13 @@ const config: Config.InitialOptions = {
       displayName: { name: 'Core', color: 'blue' },
       clearMocks: true,
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
-      moduleNameMapper: { '^dexie$': require.resolve('dexie') },
+      moduleNameMapper: { '^dexie$': dexieModulePath },
       resetMocks: false,
       setupFiles: [
         '<rootDir>/packages/cwrc-leafwriter/test/setup/structuredClone.ts',
         'fake-indexeddb/auto',
       ],
+      setupFilesAfterEnv: ['<rootDir>/packages/cwrc-leafwriter/test/setup/jestAfterEnv.ts'],
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/packages/cwrc-leafwriter/**/?(*.)+(spec|test).[jt]s?(x)'],
       testPathIgnorePatterns: ['<rootDir>/packages/cwrc-leafwriter/lib*'],
@@ -86,13 +92,14 @@ const config: Config.InitialOptions = {
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       moduleNameMapper: {
         '^@src/(.*)$': '<rootDir>/apps/commons/src/$1',
-        '^dexie$': require.resolve('dexie'),
+        '^dexie$': dexieModulePath,
       },
       resetMocks: false,
       setupFiles: [
         'fake-indexeddb/auto',
         '<rootDir>/apps/commons/test/setup/index.ts',
       ],
+      setupFilesAfterEnv: ['<rootDir>/packages/cwrc-leafwriter/test/setup/jestAfterEnv.ts'],
       testEnvironment:
         '<rootDir>/packages/cwrc-leafwriter-validator/test/setup/FixJSDOMEnvironment.ts',
       testMatch: ['<rootDir>/apps/commons/**/?(*.)+(spec|test).[jt]s?(x)'],

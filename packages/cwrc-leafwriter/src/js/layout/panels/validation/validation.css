@@ -17,7 +17,7 @@
   padding: 4px 8px;
 }
 
-.validationList li #header {
+.validationList li .validation-header {
   display: flex;
   flex-direction: row;
   align-items: baseline;
@@ -33,7 +33,7 @@
   cursor: pointer;
 }
 
-.validationList li #headerIcon {
+.validationList li .validation-header-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,7 +56,7 @@
   background-color: #eee;
   cursor: pointer;
 
-  & #headerIcon i {
+  & .validation-header-icon i {
     color: #000 !important;
   }
 }
@@ -70,27 +70,27 @@
   cursor: auto;
 }
 
-.validationList li #details {
+.validationList li .validation-details {
   font-size: 0.85em;
 }
 
-.validationList li #details .documentation {
+.validationList li .validation-details .documentation {
   border-left: 1px solid #000;
   margin-left: 8px;
 }
 
-.validationList li #details .documentation .text {
+.validationList li .validation-details .documentation .text {
   margin-left: 12px;
   margin-top: 8px;
 }
 
-.validationList li #details .xpath {
+.validationList li .validation-details .xpath {
   margin-left: 8px;
   margin-top: 8px;
   word-break: break-all;
 }
 
-.validationList li #details .possible {
+.validationList li .validation-details .possible {
   margin-left: 8px;
   margin-top: 8px;
   line-height: 1.5;
@@ -127,13 +127,13 @@
   border-radius: 2px;
 }
 
-.moduleParent .stats #stats-container {
+.moduleParent .stats .stats-container {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.moduleParent .stats #stats-container #info {
+.moduleParent .stats .stats-container .validation-info {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -148,7 +148,7 @@
   }
 }
 
-.moduleParent .revalidate-bt {
+.moduleParent .revalidate-button {
   height: 24px;
   width: 24px;
   padding: 0;
@@ -165,21 +165,21 @@
   }
 }
 
-.moduleParent .revalidate-bt:hover {
+.moduleParent .revalidate-button:hover {
   background-color: #ddd;
   & i {
     transform: rotate(30deg);
   }
 }
 
-.validationList #validation-progress {
+.validationList [id$="_progress"] {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100%;
 }
 
-.validationList #validation-progress-bar {
+.validationList [id$="_progress_bar"] {
   position: relative;
   max-width: 200px;
   font-size: 2rem;
@@ -214,7 +214,7 @@
     border-top-color: #3a3a3a;
   }
   
-  .validationList li #headerIcon {
+  .validationList li .validation-header-icon {
     color: #999;
   }
   
@@ -222,11 +222,11 @@
     color: #999;
   }
   
-  .validationList li:hover #headerIcon i {
+  .validationList li:hover .validation-header-icon i {
     color: #e0e0e0 !important;
   }
   
-  .validationList li #details .documentation {
+  .validationList li .validation-details .documentation {
     border-left-color: #555;
   }
   
@@ -239,11 +239,11 @@
     color: #e0e0e0;
   }
   
-  .moduleParent .revalidate-bt:hover {
+  .moduleParent .revalidate-button:hover {
     background-color: #3a3a3a;
   }
   
-  .moduleParent .revalidate-bt i {
+  .moduleParent .revalidate-button i {
     color: #999;
   }
 }

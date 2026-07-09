@@ -9,6 +9,18 @@ class OctokitMock {
   };
 
   readonly rest = {
+    git: {
+      getTree: async () => ({
+        data: {
+          truncated: false,
+          tree: [
+            { path: 'folder1', type: 'tree' },
+            { path: 'folder1/language.xml', type: 'blob' },
+            { path: 'language.xml', type: 'blob' },
+          ],
+        },
+      }),
+    },
     repos: {
       listForAuthenticatedUser: async () => {
         throw new Error('Octokit mock not configured for listForAuthenticatedUser');
@@ -22,6 +34,15 @@ class OctokitMock {
       createForAuthenticatedUser: async () => {
         throw new Error('Octokit mock not configured for createForAuthenticatedUser');
       },
+      getBranch: async () => ({
+        data: {
+          commit: {
+            commit: {
+              tree: { sha: 'tree-sha' },
+            },
+          },
+        },
+      }),
     },
   };
 
