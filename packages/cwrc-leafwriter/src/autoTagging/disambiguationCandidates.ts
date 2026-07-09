@@ -15,8 +15,10 @@ import {
 import type { EntityStore } from './entityStore';
 import { filterReconcileByExactSurface, stringsMatchExactly } from './disambiguationMatch';
 import { fetchWikidataLifespan, prefixDescriptionWithLifespan } from './wikidataDates';
+import { fetchDilaPlaceDetail, type DilaFetchFn } from './dilaPlaceDetail';
+import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import { wikidataQidsMatchingKind } from './wikidataKindFilter';
-import { packIdsForEntityType, searchPackContent } from '../services/authority-pack-lookup';
+import { packIdsForEntityType, packResultUri, searchPackContent } from '../services/authority-pack-lookup';
 import { AUTHORITY_PACKS } from './packPaths';
 import {
   iterateAuthorityNdjson,
@@ -40,6 +42,8 @@ export interface DisambiguationCandidate {
   startYear?: number;
   /** Death/dissolution year (persons: Wikidata P570; CHGIS places: metadata.endYear). */
   endYear?: number;
+  /** DILA place records are split one-per-dynasty (e.g. 東晉); kept for a future dynasty filter/picker. */
+  dynasty?: string;
 }
 
 const TAG_TO_ENTITY_TYPE: Record<string, NamedEntityType> = {
@@ -90,7 +94,9 @@ export function extractCbdbId(text: string): string | null {
 }
 
 export const CBDB_PERSON_URL = (id: string) => `https://cbdb.fas.harvard.edu/person?id=${id}`;
-export const DILA_PERSON_URL = (id: string) => `https://authority.dila.edu.tw/person/search.php?aid=${id}`;
+export const DILA_PERSON_URL = (id: string) => `https://authority.dila.edu.tw/person/search.php?code=${id}`;
+export const DILA_PLACE_URL = (id: string) => `https://authority.dila.edu.tw/place/search.php?code=${id}`;
+export const DILA_URL = (id: string) => (id.startsWith('PL') ? DILA_PLACE_URL(id) : DILA_PERSON_URL(id));
 
 export type WikipediaSite = 'enwiki' | 'zhwiki';
 
@@ -152,7 +158,7 @@ export function candidateLinks(
       add('cbdb', CBDB_PERSON_URL(auth.value), `CBDB ${auth.value}`);
     }
     if (auth.type === 'DILA') {
-      add('dila', DILA_PERSON_URL(auth.value), `DILA ${auth.value}`);
+      add('dila', DILA_URL(auth.value), `DILA ${auth.value}`);
     }
     scan(auth.value);
   }
@@ -257,6 +263,7 @@ export function mergeSelectedCandidates(
     authorityIds: dedupeAuthorityIds(candidates.flatMap((c) => c.authorityIds ?? [])),
     startYear: startYears.length ? Math.min(...startYears) : undefined,
     endYear: endYears.length ? Math.max(...endYears) : undefined,
+    dynasty: candidates.find((c) => c.dynasty)?.dynasty,
   };
 }
 
@@ -445,10 +452,35 @@ async function chgisYearsForSurface(
   return index.get(surface) ?? null;
 }
 
+/**
+ * Fetch and cache live 備註/朝代 dates for a DILA place id in the background.
+ * Local pack metadata already covers a handful of places whose remark date range
+ * was extractable from the bulk XML export; this fills in the rest on demand,
+ * scraping the live record page (there is no by-string search API — only by id).
+ * Fire-and-forget: the disambiguation panel must not block on a live network
+ * scrape just to open, so misses are queued rather than awaited inline.
+ */
+async function fetchAndCacheDilaPlaceDetail(
+  authorityId: string,
+  dilaDetailCache: DilaPlaceDetailCache,
+  fetchImpl?: DilaFetchFn,
+): Promise<void> {
+  await dilaDetailCache.throttle();
+  try {
+    const detail = await fetchDilaPlaceDetail(authorityId, fetchImpl);
+    if (detail) await dilaDetailCache.set(authorityId, detail);
+  } catch {
+    // best-effort; the candidate stays undated until a later lookup retries
+  }
+}
+
 async function candidatesFromAuthorityPacks(
   tag: string,
   surface: string,
   readPackFile: ReadAuthorityPackFile,
+  dilaDetailCache?: DilaPlaceDetailCache,
+  dilaFetchImpl?: DilaFetchFn,
+  onDilaDatesReady?: () => void,
 ): Promise<DisambiguationCandidate[]> {
   const entityType = TAG_TO_ENTITY_TYPE[tag] ?? 'person';
   const packIds = packIdsForEntityType(
@@ -456,6 +488,7 @@ async function candidatesFromAuthorityPacks(
     entityType,
   );
   const results: DisambiguationCandidate[] = [];
+  const pendingDilaFetches: Promise<void>[] = [];
   for (const packId of packIds) {
     try {
       const content = await readPackFile(packId);
@@ -491,28 +524,77 @@ async function candidatesFromAuthorityPacks(
           } => Boolean(row),
         );
       const packSource = spec.source as 'cbdb' | 'dila' | 'ndl';
+      // Keyed by the exact record URI (which embeds authorityId) rather than by
+      // name — multiple records can share a primaryName (e.g. DILA splits a
+      // place into one row per dynasty), and a name-only lookup would silently
+      // attach the wrong record's metadata/dates to every same-named candidate.
+      const rowsByUri = new Map(
+        rows
+          .filter((entry) => entry?.authorityId)
+          .map((entry) => [packResultUri(packSource, entityType, String(entry.authorityId)), entry] as const),
+      );
       for (const match of searchPackContent(content, packSource, entityType, surface)) {
-        const row = rows.find((entry) => {
-          if (!entry?.authorityId) return false;
-          if (entry.primaryName !== match.label) return false;
-          return true;
-        });
+        const row = rowsByUri.get(match.uri);
+        let description = match.description;
+        let startYear = row?.metadata?.startYear;
+        let endYear = row?.metadata?.endYear;
+        let dynasty: string | undefined;
+
+        if (
+          packSource === 'dila' &&
+          entityType === 'place' &&
+          dilaDetailCache &&
+          row?.authorityId &&
+          startYear == null &&
+          endYear == null
+        ) {
+          const cached = await dilaDetailCache.get(row.authorityId);
+          if (cached) {
+            startYear = cached.startYear ?? startYear;
+            endYear = cached.endYear ?? endYear;
+            if (cached.remark) description = cached.remark;
+            // DILA splits a place into one record per dynasty — lead with it so
+            // same-named candidates read as distinct entries, and keep it on the
+            // candidate/cache for a future dynasty filter/picker.
+            if (cached.dynasty) {
+              dynasty = cached.dynasty;
+              description = description ? `${cached.dynasty}：${description}` : cached.dynasty;
+            }
+          } else {
+            // Don't block opening the panel on a live scrape; queue it and
+            // let the caller refresh once every queued id has resolved.
+            pendingDilaFetches.push(
+              fetchAndCacheDilaPlaceDetail(row.authorityId, dilaDetailCache, dilaFetchImpl),
+            );
+          }
+        }
+
         results.push({
           id: match.uri,
           label: match.label,
-          description: match.description,
+          description,
           sources: [spec.source.toUpperCase()],
           uri: match.uri,
           authorityIds: dedupeAuthorityIds(
-            authorityIdsFromCrossRefs([{ type: packSource.toUpperCase(), value: match.uri }], match.description),
+            // The bare authorityId, not match.uri — auth.value must be an id a
+            // *_URL() builder can format, not an already-fully-formed URL (which
+            // would otherwise get wrapped inside another URL and break the link).
+            authorityIdsFromCrossRefs(
+              [{ type: packSource.toUpperCase(), value: row?.authorityId ?? match.uri }],
+              match.description,
+            ),
           ),
-          startYear: row?.metadata?.startYear,
-          endYear: row?.metadata?.endYear,
+          startYear,
+          endYear,
+          dynasty,
         });
       }
     } catch {
       // Missing or unreadable pack; skip it.
     }
+  }
+  if (pendingDilaFetches.length > 0 && onDilaDatesReady) {
+    void Promise.all(pendingDilaFetches).then(onDilaDatesReady);
   }
   return results;
 }
@@ -648,9 +730,21 @@ export async function buildDisambiguationCandidates(
   enabledAuthorities: Array<keyof typeof AUTHORITY_MAP> = ['Wikidata', 'VIAF'],
   forceRefresh = false,
   readPackFile?: ReadAuthorityPackFile,
+  dilaDetailCache?: DilaPlaceDetailCache,
+  dilaFetchImpl?: DilaFetchFn,
+  onDilaDatesReady?: () => void,
 ): Promise<DisambiguationCandidate[]> {
   const local = candidatesFromEntityFile(entitiesDoc, tag, surface);
-  const packLocal = readPackFile ? await candidatesFromAuthorityPacks(tag, surface, readPackFile) : [];
+  const packLocal = readPackFile
+    ? await candidatesFromAuthorityPacks(
+        tag,
+        surface,
+        readPackFile,
+        dilaDetailCache,
+        dilaFetchImpl,
+        onDilaDatesReady,
+      )
+    : [];
   const live = await fetchLiveCandidates(tag, surface, cache, enabledAuthorities, forceRefresh, readPackFile);
   return collapseCrossAuthorityCandidates(
     mergeCandidates([local, packLocal, live]).map(enrichCandidateCrossRefs),

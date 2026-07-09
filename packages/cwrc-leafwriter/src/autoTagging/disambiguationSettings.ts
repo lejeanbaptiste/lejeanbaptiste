@@ -4,6 +4,8 @@ import type { DateFilterMode } from './packLoader';
 export interface DisambiguationSettings {
   /** When true, the disambiguation panel asks the configured model to pre-check candidates. */
   aiCuration?: boolean;
+  /** When true, bypass saved pending candidates and saved AI disambiguation results. */
+  disableCaching?: boolean;
   /** Date-range filter mode for the disambiguation panel's own filter (separate from the tag-bomb one). */
   dateFilter?: DateFilterMode;
   yearStart?: number;
@@ -18,6 +20,12 @@ export const DEFAULT_DISAMBIGUATION_YEAR_RANGE: [number, number] = [25, 220];
 
 export function aiCurationFromSettings(settings?: DisambiguationSettings): boolean {
   return settings?.aiCuration ?? DEFAULT_DISAMBIGUATION_AI_CURATION;
+}
+
+export function disambiguationCachingDisabledFromSettings(
+  settings?: DisambiguationSettings,
+): boolean {
+  return settings?.disableCaching === true;
 }
 
 export function dateFilterFromSettings(settings?: DisambiguationSettings): DateFilterMode {
@@ -36,6 +44,7 @@ export function readPersistedDisambiguationSettings(): DisambiguationSettings | 
   return {
     aiCuration:
       typeof raw.aiCuration === 'boolean' ? raw.aiCuration : DEFAULT_DISAMBIGUATION_AI_CURATION,
+    disableCaching: raw.disableCaching === true,
     dateFilter: raw.dateFilter,
     yearStart: raw.yearStart,
     yearEnd: raw.yearEnd,

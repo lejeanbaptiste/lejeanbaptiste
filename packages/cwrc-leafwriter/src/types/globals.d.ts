@@ -190,6 +190,7 @@ declare global {
       getDisambiguationSettings: () =>
         | {
             aiCuration?: boolean;
+            disableCaching?: boolean;
             dateFilter?: 'none' | 'limit' | 'exclude';
             yearStart?: number;
             yearEnd?: number;
@@ -197,6 +198,7 @@ declare global {
         | undefined;
       setDisambiguationSettings: (settings: {
         aiCuration?: boolean;
+        disableCaching?: boolean;
         dateFilter?: 'none' | 'limit' | 'exclude';
         yearStart?: number;
         yearEnd?: number;

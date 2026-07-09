@@ -9,6 +9,8 @@ import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
@@ -419,11 +421,18 @@ export const ReviewPanel = ({
   const pendingListRef = useRef<VirtuosoHandle>(null);
   const [acceptedOpen, setAcceptedOpen] = useState(false);
   const [rejectedOpen, setRejectedOpen] = useState(false);
+  const [tagFilter, setTagFilter] = useState<string>('');
+  const filteredSuggestions = useMemo(
+    () => suggestions.filter((suggestion) => !tagFilter || suggestion.tag === tagFilter),
+    [suggestions, tagFilter],
+  );
 
   const controller = useMemo(
-    () => new ReviewController(suggestions, { onFocus, onDecision }),
-    [suggestions, onFocus, onDecision],
+    () => new ReviewController(filteredSuggestions, { onFocus, onDecision }),
+    [filteredSuggestions, onFocus, onDecision],
   );
+
+  const tagOptions = useMemo(() => [...new Set(suggestions.map((suggestion) => suggestion.tag))], [suggestions]);
 
   useEffect(() => {
     if (autoFocus) containerRef.current?.focus();
@@ -527,6 +536,23 @@ export const ReviewPanel = ({
           {counts.pending} pending · {counts.accepted} accepted · {counts.rejected} rejected
           {counts.unresolvable > 0 ? ` · ${counts.unresolvable} unresolvable` : ''}
         </Typography>
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', px: 1, pb: 0.5, flexShrink: 0 }}>
+        <Select
+          size="small"
+          value={tagFilter}
+          displayEmpty
+          onChange={(event) => setTagFilter(event.target.value)}
+          sx={{ flex: 1, fontSize: 12 }}
+        >
+          <MenuItem value="">All tags</MenuItem>
+          {tagOptions.map((tag) => (
+            <MenuItem key={tag} value={tag}>
+              {tag}
+            </MenuItem>
+          ))}
+        </Select>
       </Box>
 
       <Box

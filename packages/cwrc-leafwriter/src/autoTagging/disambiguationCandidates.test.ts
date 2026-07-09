@@ -15,6 +15,8 @@ import {
   type DisambiguationCandidate,
 } from './disambiguationCandidates';
 import { AuthorityCache } from './authorityCache';
+import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
+import type { DilaFetchFn } from './dilaPlaceDetail';
 import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
 
 jest.mock('../services/lincs-api', () => ({ reconcile: jest.fn() }));
@@ -304,6 +306,129 @@ describe('disambiguationCandidates', () => {
     const chgisRow = rows.find((row) => row.sources.includes('CHGIS'));
     expect(chgisRow?.startYear).toBe(618);
     expect(chgisRow?.endYear).toBe(907);
+  });
+
+  it('does not leak one DILA place record\'s dates onto another record sharing the same name', async () => {
+    mockReconcile.mockResolvedValue([]);
+    // DILA splits a place into one row per dynasty/era — same primaryName, distinct authorityId.
+    const dilaPlacesPack = [
+      JSON.stringify({
+        source: 'DILA',
+        authorityId: 'PL000000000001',
+        kind: 'place',
+        primaryName: '始興',
+        searchStrings: ['始興'],
+        metadata: { description: '始興 (265~316)', startYear: 265, endYear: 316 },
+      }),
+      JSON.stringify({
+        source: 'DILA',
+        authorityId: 'PL000000000002',
+        kind: 'place',
+        primaryName: '始興',
+        searchStrings: ['始興'],
+        metadata: { description: '始興 (589~618)', startYear: 589, endYear: 618 },
+      }),
+    ].join('\n');
+    const readPackFile = jest.fn(async (packId: string) => {
+      if (packId === 'dila-places') return dilaPlacesPack;
+      throw new Error(`not installed: ${packId}`);
+    });
+    const doc = parseEntities(createEntitiesScaffold());
+    const cache = new AuthorityCache(null, null);
+
+    const rows = await buildDisambiguationCandidates(
+      doc,
+      'placeName',
+      '始興',
+      cache,
+      [],
+      false,
+      readPackFile,
+    );
+
+    const dilaRows = rows.filter((row) => row.sources.includes('DILA'));
+    expect(dilaRows).toHaveLength(2);
+    const byUri = new Map(dilaRows.map((row) => [row.uri, row]));
+    const first = byUri.get('https://authority.dila.edu.tw/place/search.php?code=PL000000000001');
+    const second = byUri.get('https://authority.dila.edu.tw/place/search.php?code=PL000000000002');
+    expect(first?.startYear).toBe(265);
+    expect(first?.endYear).toBe(316);
+    expect(second?.startYear).toBe(589);
+    expect(second?.endYear).toBe(618);
+
+    // authorityIds must hold the bare id, not the already-formatted record URL —
+    // otherwise DILA_URL()/candidateLinks() wraps a full URL inside another URL
+    // (e.g. ".../person/search.php?code=https://authority.dila.edu.tw/place/...").
+    expect(first?.authorityIds).toContainEqual({ type: 'DILA', value: 'PL000000000001' });
+    expect(second?.authorityIds).toContainEqual({ type: 'DILA', value: 'PL000000000002' });
+  });
+
+  it('prefixes the description with the dynasty from a lazily-fetched DILA place record', async () => {
+    mockReconcile.mockResolvedValue([]);
+    const dilaPlacesPack = [
+      JSON.stringify({
+        source: 'DILA',
+        authorityId: 'PL000000029418',
+        kind: 'place',
+        primaryName: '武陵郡',
+        searchStrings: ['武陵郡'],
+        metadata: { description: '武陵郡 (中研院歷史地名 — 中國-湖南省-常德市-武陵區)' },
+      }),
+    ].join('\n');
+    const readPackFile = jest.fn(async (packId: string) => {
+      if (packId === 'dila-places') return dilaPlacesPack;
+      throw new Error(`not installed: ${packId}`);
+    });
+    const doc = parseEntities(createEntitiesScaffold());
+    const cache = new AuthorityCache(null, null);
+    const dilaDetailCache = new DilaPlaceDetailCache(null, null);
+    // Pre-populate the cache as if the background fetch already landed.
+    await dilaDetailCache.set('PL000000029418', {
+      remark: '（317 ~ 420）郡級行政中心所在地。',
+      dynasty: '東晉',
+      startYear: 317,
+      endYear: 420,
+    });
+
+    const rows = await buildDisambiguationCandidates(
+      doc,
+      'placeName',
+      '武陵郡',
+      cache,
+      [],
+      false,
+      readPackFile,
+      dilaDetailCache,
+    );
+
+    const dilaRow = rows.find((row) => row.sources.includes('DILA'));
+    expect(dilaRow?.dynasty).toBe('東晉');
+    expect(dilaRow?.description).toBe('東晉：（317 ~ 420）郡級行政中心所在地。');
+  });
+
+  it('accepts dilaDetailCache and onDilaDatesReady parameters for lazy date enrichment', async () => {
+    const dilaDetailCache = new DilaPlaceDetailCache(null, null);
+    const onDilaDatesReady = jest.fn();
+
+    const doc = parseEntities(createEntitiesScaffold());
+    const cache = new AuthorityCache(null, null);
+
+    // Call with the new optional parameters; should not throw or crash.
+    const rows = await buildDisambiguationCandidates(
+      doc,
+      'placeName',
+      'nonexistent',
+      cache,
+      [],  // no enabled authorities to keep results deterministic
+      false,
+      undefined,
+      dilaDetailCache,
+      undefined,
+      onDilaDatesReady,
+    );
+
+    // Should return an array (possibly empty with no authorities/packs/entities).
+    expect(Array.isArray(rows)).toBe(true);
   });
 
   it('merges manually selected candidates', () => {

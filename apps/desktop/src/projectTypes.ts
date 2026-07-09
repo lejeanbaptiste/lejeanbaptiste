@@ -31,6 +31,7 @@ export interface ProjectFileConfig {
 
 export interface DisambiguationSettings {
   aiCuration?: boolean;
+  disableCaching?: boolean;
   /** Date-range filter for the disambiguation panel's own candidate filter. */
   dateFilter?: 'none' | 'limit' | 'exclude';
   yearStart?: number;

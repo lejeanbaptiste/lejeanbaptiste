@@ -41,8 +41,8 @@ function candidateOverlapsYearRange(
 }
 
 /**
- * Limit — keep entries overlapping the range (undated excluded; DILA places always kept).
- * Exclude — drop entries overlapping the range (undated kept; DILA places always kept).
+ * Limit — keep entries overlapping the range (undated excluded; undated DILA places always kept).
+ * Exclude — drop entries overlapping the range (undated kept; undated DILA places always kept).
  */
 export function candidatePassesDateFilter(
   candidate: AuthorityCandidate,
@@ -50,15 +50,18 @@ export function candidatePassesDateFilter(
 ): boolean {
   if (!filter || filter.mode === 'none') return true;
 
-  if (candidate.kind === 'place' && candidate.source === 'DILA') return true;
-
   const { start, end } = normalizeDateRangeFilter(filter);
   const meta = candidate.metadata;
   const yearStart = meta?.startYear;
   const yearEnd = meta?.endYear ?? meta?.startYear;
   const undated = yearStart == null && yearEnd == null;
 
-  if (undated) return filter.mode === 'exclude';
+  if (undated) {
+    // Most DILA places have no date range in the authority file; still match in
+    // text rather than being silently excluded by a date filter.
+    if (candidate.kind === 'place' && candidate.source === 'DILA') return true;
+    return filter.mode === 'exclude';
+  }
 
   const overlaps = candidateOverlapsYearRange(candidate, start, end);
   return filter.mode === 'limit' ? overlaps : !overlaps;

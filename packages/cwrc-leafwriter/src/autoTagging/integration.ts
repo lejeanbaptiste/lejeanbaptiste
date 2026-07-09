@@ -4,6 +4,7 @@ import { applySuggestions, assignEntity, markUnresolved as markMentionUnresolved
 import { withApplyDiagnostics } from './applyDiagnostics';
 import { canContainForAutoTagging } from './schemaContainment';
 import { AuthorityCache } from './authorityCache';
+import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import type { DisambiguationCandidate } from './disambiguationCandidates';
 import { resolveEntityInDocument } from './disambiguationCandidates';
 import {
@@ -109,6 +110,7 @@ export class AutoTaggingSession {
   private readonly store: EntityStore | null;
   private entitiesDoc: Document | null = null;
   private authorityCache: AuthorityCache | null = null;
+  private dilaPlaceDetailCacheStore: DilaPlaceDetailCache | null = null;
   private llmCache: LlmCache | null = null;
   private disambiguationAiCacheStore: DisambiguationAiCache | null = null;
   private pendingCache: PendingCache = { version: 1, entries: {} };
@@ -132,6 +134,7 @@ export class AutoTaggingSession {
       const api = globals.electronAPI;
       if (api) {
         this.authorityCache = new AuthorityCache(api, store.authorityCacheDir);
+        this.dilaPlaceDetailCacheStore = new DilaPlaceDetailCache(api, store.dilaPlaceDetailCacheDir);
         this.llmCache = new LlmCache(api, store.aiCacheDir);
         this.disambiguationAiCacheStore = new DisambiguationAiCache(api, store.aiDisambiguationCacheDir);
       }
@@ -144,6 +147,10 @@ export class AutoTaggingSession {
 
   get cache(): AuthorityCache | null {
     return this.authorityCache;
+  }
+
+  get dilaPlaceDetailCache(): DilaPlaceDetailCache | null {
+    return this.dilaPlaceDetailCacheStore;
   }
 
   get aiCache(): LlmCache | null {

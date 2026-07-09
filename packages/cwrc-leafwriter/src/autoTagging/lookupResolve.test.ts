@@ -76,6 +76,16 @@ describe('parseAuthorityUri', () => {
       value: '31305',
     });
     expect(
+      parseAuthorityUri('https://authority.dila.edu.tw/person/search.php?code=A001492'),
+    ).toMatchObject({ idnoType: 'DILA', value: 'A001492' });
+    expect(
+      parseAuthorityUri('https://authority.dila.edu.tw/place/search.php?code=PL000000030584'),
+    ).toMatchObject({ idnoType: 'DILA', value: 'PL000000030584' });
+    // legacy link formats, still parseable
+    expect(
+      parseAuthorityUri('https://authority.dila.edu.tw/person/?fromInner=A001492'),
+    ).toMatchObject({ idnoType: 'DILA', value: 'A001492' });
+    expect(
       parseAuthorityUri('https://authority.dila.edu.tw/person/search.php?aid=A001492'),
     ).toMatchObject({ idnoType: 'DILA', value: 'A001492' });
     expect(parseAuthorityUri('https://id.ndl.go.jp/auth/ndlna/00270123')).toMatchObject({

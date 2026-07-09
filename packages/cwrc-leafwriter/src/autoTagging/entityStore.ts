@@ -34,6 +34,7 @@ export const DECISIONS_FILE = 'entity-decisions.jsonl';
 export const AUTHORITY_CACHE_DIR = 'authority-cache';
 export const AI_CACHE_DIR = 'ai-cache';
 export const AI_DISAMBIGUATION_CACHE_DIR = 'ai-disambiguation-cache';
+export const DILA_PLACE_DETAIL_CACHE_DIR = 'dila-place-detail-cache';
 export const DISAMBIGUATION_PENDING_FILE = 'disambiguation-pending.json';
 
 /** @deprecated Use LJB_DIR */
@@ -51,6 +52,7 @@ export class EntityStore {
   readonly authorityCacheDir: string;
   readonly aiCacheDir: string;
   readonly aiDisambiguationCacheDir: string;
+  readonly dilaPlaceDetailCacheDir: string;
   readonly disambiguationPendingPath: string;
 
   constructor(
@@ -66,6 +68,7 @@ export class EntityStore {
     this.authorityCacheDir = joinPath(paths.projectLjbDir, AUTHORITY_CACHE_DIR);
     this.aiCacheDir = joinPath(paths.projectLjbDir, AI_CACHE_DIR);
     this.aiDisambiguationCacheDir = joinPath(paths.projectLjbDir, AI_DISAMBIGUATION_CACHE_DIR);
+    this.dilaPlaceDetailCacheDir = joinPath(paths.projectLjbDir, DILA_PLACE_DETAIL_CACHE_DIR);
     this.disambiguationPendingPath = joinPath(
       paths.projectLjbDir,
       DISAMBIGUATION_PENDING_FILE,
