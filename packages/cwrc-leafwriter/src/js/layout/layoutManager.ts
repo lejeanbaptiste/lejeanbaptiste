@@ -6,11 +6,10 @@ import { ISettingsModuleName } from '../../types/index.js';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import { describePanelNode, panelTrace } from '../../utilities/panelTrace';
-import EntitiesList from './panels/entitiesList';
 import ImageViewer from './panels/imageViewer';
 import Validation from './panels/validation';
 
-type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup' | 'entities';
+type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup';
 type DesktopRightPanelTab =
   | 'fileMetadata'
   | 'attributes'
@@ -54,7 +53,7 @@ class LayoutManager {
   readonly PANEL_MIN_WIDTH = 320;
 
   modulesLayout = new Map<LayoutLocation, ModuleConfig | ModuleConfig[]>([
-    ['west', [{ id: 'markup' }, { id: 'entities' }]],
+    ['west', [{ id: 'markup' }]],
     ['east', [{ id: 'code' }]],
   ]);
 
@@ -344,7 +343,7 @@ class LayoutManager {
   }
 
   showModule(moduleId: ISettingsModuleName) {
-    const westModules: DesktopLeftPanelTab[] = ['toc', 'markup', 'entities'];
+    const westModules: DesktopLeftPanelTab[] = ['toc', 'markup'];
     if (!this.modulesLayout.has('west') && westModules.includes(moduleId as DesktopLeftPanelTab)) {
       window.__desktopLeftPanel?.showTab(moduleId as DesktopLeftPanelTab);
       window.__desktopLeftPanel?.expand();
@@ -631,7 +630,6 @@ class LayoutManager {
     }
 
     let instance = null;
-    if (module.id === 'entities') instance = new EntitiesList(config);
     if (module.id === 'validation') instance = new Validation(config);
     if (module.id === 'imageViewer') instance = new ImageViewer(config);
 

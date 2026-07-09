@@ -1,5 +1,6 @@
 import { ListItem, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const getCommonsUiBridge = () =>
   (
@@ -12,6 +13,7 @@ const getCommonsUiBridge = () =>
   ).__ljbCommonsUi;
 
 export const DesktopEncoderName = () => {
+  const { t } = useTranslation();
   const bridge = getCommonsUiBridge();
   const [encoderName, setEncoderNameLocal] = useState(bridge?.encoderName ?? '');
 
@@ -26,10 +28,10 @@ export const DesktopEncoderName = () => {
     <ListItem dense disableGutters sx={{ py: 0.25 }}>
       <TextField
         fullWidth
-        label="User name"
+        label={t('LW.desktop.settings.user_name')}
         onBlur={() => void bridge.setEncoderName(encoderName)}
         onChange={(event) => setEncoderNameLocal(event.target.value)}
-        placeholder="Your name"
+        placeholder={t('LW.desktop.settings.your_name')}
         size="small"
         value={encoderName}
       />

@@ -2,6 +2,7 @@ import { Box, LinearProgress, Typography } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getActiveProjectBundle } from './activeProjectBundle';
 import { installCitationBridge } from './citations/citationBridge';
 import { startTranslationForLang } from './translationEntry';
@@ -36,6 +37,7 @@ interface TranslationTabContentProps {
 }
 
 export const TranslationTabContent = ({ active }: TranslationTabContentProps) => {
+  const { t } = useTranslation();
   const { activeTabPath, openTabs, projectFilePath } = useAppState().project;
   const { notifyViaSnackbar } = useActions().ui;
   const { reloadTabFromDisk } = useActions().project;
@@ -145,9 +147,7 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
       .catch((error) => {
         resolvedKeyRef.current = null;
         console.error('[translation] startTranslationForLang threw', error);
-        notifyViaSnackbar(
-          `Translate failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        notifyViaSnackbar(t('LWC.translation.translate_failed', { error: error instanceof Error ? error.message : String(error) }));
       })
       .finally(() => {
         setIndexing(false);
@@ -156,22 +156,22 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
 
   if (languages === null) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Typography color="text.secondary" variant="body2">
-          Open a project to use translations.
-        </Typography>
-      </Box>
-    );
+        <Box sx={{ p: 2 }}>
+          <Typography color="text.secondary" variant="body2">
+          {t('LWC.translation.open_project_to_use_translations')}
+          </Typography>
+        </Box>
+      );
   }
 
   if (languages.length === 0) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Typography color="text.secondary" variant="body2">
-          No translation languages configured yet. Add them in Project → Edition metadata…
-        </Typography>
-      </Box>
-    );
+        <Box sx={{ p: 2 }}>
+          <Typography color="text.secondary" variant="body2">
+          {t('LWC.translation.no_languages_configured')}
+          </Typography>
+        </Box>
+      );
   }
 
   return (
@@ -180,7 +180,7 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
         <Box sx={{ px: 1, py: 2 }}>
           <LinearProgress />
           <Typography color="text.secondary" sx={{ mt: 1 }} variant="caption">
-            Indexing document for translation…
+            {t('LWC.translation.indexing_document')}
           </Typography>
         </Box>
       )}

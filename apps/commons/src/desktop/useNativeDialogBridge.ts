@@ -5,6 +5,7 @@ import type { PaletteMode } from '@src/types';
 import { isDesktop, type AiApiSettings } from '@src/types/desktop';
 import { useAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { buildProjectSchemas, type ProjectBundle } from './projectFile';
 import { getProjectSourceLanguage } from './projectLanguage';
@@ -98,6 +99,7 @@ const getWriterSchemasList = (): Array<{
 };
 
 export const useNativeDialogBridge = () => {
+  const { t } = useTranslation();
   const { currentLocale, skipCopyPasteHelp, skipExplorerDeleteConfirm, themeAppearance } =
     useAppState().ui;
   const { config, openTabs, projectFilePath, rootPath } = useAppState().project;
@@ -199,7 +201,7 @@ export const useNativeDialogBridge = () => {
             return (
               (await electronAPI.testAiConnection?.((args ?? {}) as Partial<AiApiSettings>)) ?? {
                 ok: false,
-                error: 'Desktop AI API bridge is unavailable.',
+                error: t('LWC.desktop.ai_api_bridge_unavailable'),
               }
             );
           case 'setThemeAppearance': {
@@ -294,7 +296,7 @@ export const useNativeDialogBridge = () => {
             } catch (error) {
               return {
                 ok: false,
-                error: error instanceof Error ? error.message : 'Schema download failed.',
+                error: error instanceof Error ? error.message : t('LWC.desktop.schema_download_failed'),
               };
             }
           }
@@ -321,7 +323,7 @@ export const useNativeDialogBridge = () => {
             } catch (error) {
               return {
                 ok: false,
-                error: error instanceof Error ? error.message : 'Could not copy schema file.',
+                error: error instanceof Error ? error.message : t('LWC.desktop.copy_schema_failed'),
               };
             }
           }
@@ -391,7 +393,7 @@ export const useNativeDialogBridge = () => {
             } catch (error) {
               return {
                 ok: false,
-                error: error instanceof Error ? error.message : 'Could not save metadata.',
+                error: error instanceof Error ? error.message : t('LWC.desktop.could_not_save_metadata'),
               };
             }
 
@@ -419,12 +421,12 @@ export const useNativeDialogBridge = () => {
                 }
 
               } catch (error) {
-                return {
+                  return {
                   ok: false,
                   error:
                     error instanceof Error
                       ? error.message
-                      : 'Could not save translation settings.',
+                      : t('LWC.desktop.could_not_save_translation_settings'),
                 };
               }
             }
@@ -437,9 +439,9 @@ export const useNativeDialogBridge = () => {
               if (dirtyTabs.length > 0) {
                 const warn = await electronAPI.showNativeMessageBox({
                   type: 'warning',
-                  title: 'Unsaved documents',
-                  message: `${dirtyTabs.length} open document(s) have unsaved changes. Bulk update writes to disk and may overwrite in-memory edits.`,
-                  buttons: ['Continue', 'Cancel'],
+                  title: t('LWC.desktop.unsaved_documents'),
+                  message: t('LWC.desktop.bulk_update_warning', { count: dirtyTabs.length }),
+                  buttons: [t('LWC.commons.continue'), t('LWC.commons.cancel')],
                   cancelId: 1,
                   defaultId: 1,
                 });
@@ -465,9 +467,12 @@ export const useNativeDialogBridge = () => {
                 await reloadTabFromDisk(tab.filePath);
               }
 
-              summary = `Updated ${result.updated} file(s); ${result.skipped} unchanged.`;
+              summary = t('LWC.desktop.updated_files_summary', {
+                updated: result.updated,
+                skipped: result.skipped,
+              });
               if (result.overridesSkipped > 0) {
-                summary += ` ${result.overridesSkipped} field(s) left unchanged due to per-file edits.`;
+                summary += ` ${t('LWC.desktop.updated_files_overrides_skipped', { count: result.overridesSkipped })}`;
               }
               if (result.errors.length > 0) {
                 notifyViaSnackbar({
@@ -486,7 +491,7 @@ export const useNativeDialogBridge = () => {
             session.onSave();
             if (!applyToDocuments && session.mode === 'edition') {
               notifyViaSnackbar({
-                message: 'Project settings saved.',
+                message: t('LWC.desktop.project_settings_saved'),
                 options: { variant: 'success' },
               });
             }

@@ -2,7 +2,7 @@
 Task: SUGGEST. Find every mention of the following entity types in the
 chunk and propose a tag for each: {{TAGS}}. Only report
 mentions that are not already inside one of these tags in the surrounding
-markup (there is none here — the chunk is plain text).{{TAG_GUIDE}}
+markup (there is none here — the chunk is plain text).%s
 
 Include every plausible persName and placeName in the chunk — use action
 "add" on each suggestion. Prefer listing uncertain mentions with lower

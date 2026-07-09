@@ -110,7 +110,7 @@ export const FontFamily = () => {
     <ListItem dense disableGutters>
       <FontDownloadIcon sx={{ mx: 1, height: 18, width: 18 }} />
       <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
-        {t('LW.settings.editor.default fonts')}
+        {t('LW.settings.editor.default_fonts')}
       </Typography>
       <Box flexGrow={1} />
       <Stack alignItems="center" direction="row" spacing={1}>
@@ -133,7 +133,7 @@ export const FontFamily = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label={t('LW.settings.editor.latin font')}
+                label={t('LW.settings.editor.latin_font')}
                 size="small"
                 slotProps={{
                   input: {
@@ -168,12 +168,12 @@ export const FontFamily = () => {
             }}
             options={asianOptions}
             renderInput={(params) => (
-              <TextField {...params} label={t('LW.settings.editor.asian font')} size="small" />
+            <TextField {...params} label={t('LW.settings.editor.asian_font')} size="small" />
             )}
             value={getOptionFromValue(asianFont, asianOptions)}
           />
         </FormControl>
-        <Tooltip title={t('LW.settings.editor.refresh system fonts')}>
+        <Tooltip title={t('LW.settings.editor.refresh_system_fonts')}>
           <span>
             <IconButton disabled={fontsLoading} onClick={() => void loadFonts()} size="small">
               <RefreshIcon fontSize="small" />

@@ -39,7 +39,7 @@ export const EntityTypes = () => {
         sx={{ textTransform: 'capitalize' }}
         variant="subtitle1"
       >
-        {t('LW.commons.entity types')}
+        {t('LW.commons.entity_types')}
       </Typography>
       <FieldArray name="entityTypes">
         {({ push, remove, replace }) => (

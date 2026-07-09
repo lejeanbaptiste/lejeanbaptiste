@@ -117,11 +117,12 @@ export const setDarkMode = ({ state }: Context, value: boolean) => {
  * @param {string} locale - The value of the language code that was selected.
  * @returns The value of the language code.
  */
-export const switchLanguage = ({ state }: Context, locale: string) => {
+export const switchLanguage = ({ state, effects }: Context, locale: string) => {
   const localeSupported = localesSchema.safeParse(locale).success ? (locale as Locales) : 'en';
 
   i18next.changeLanguage(localeSupported);
   state.ui.currentLocale = localeSupported;
+  effects.storage.api.saveToLocalStorage('i18nextLng', localeSupported);
 
   // Propagate the changes to other modules that might be listening in the page
   setTimeout(() => window.dispatchEvent(new Event('changeLanguage')), 0);

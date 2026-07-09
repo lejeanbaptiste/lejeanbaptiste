@@ -25,7 +25,7 @@ export const SideMenu = ({ items }: SideMenuProps) => {
   return (
     <Box
       ref={refElemennt}
-      aria-label={t('LW.commons.side menu')}
+      aria-label={t('LW.commons.side_menu')}
       minWidth={128}
       mt={1}
       gap={0.5}

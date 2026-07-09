@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type ChgisInstallProgress = {
   phase: 'extracting' | 'compiling' | 'idle';
@@ -43,6 +44,7 @@ const formatBytes = (bytes: number): string => {
 };
 
 export const DesktopChgisAuthorities = () => {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<ChgisStatus | null>(null);
   const [progress, setProgress] = useState<ChgisInstallProgress | null>(null);
   const [busy, setBusy] = useState(false);
@@ -76,11 +78,13 @@ export const DesktopChgisAuthorities = () => {
           error: 'CHGIS install is unavailable in this build.',
         };
       if (!result.ok) {
-        setMessage({ severity: 'error', text: result.error ?? 'CHGIS install failed.' });
+        setMessage({ severity: 'error', text: result.error ?? t('LW.settings.authorities.chgis.install_failed') });
       } else {
         setMessage({
           severity: 'success',
-          text: `CHGIS places compiled (${result.placeCount?.toLocaleString() ?? 'ready'} records). Enable “CHGIS historical places” in the auto-tag dialog.`,
+          text: t('LW.settings.authorities.chgis.install_success', {
+            count: result.placeCount ?? 0,
+          }),
         });
       }
       await refresh();
@@ -94,9 +98,9 @@ export const DesktopChgisAuthorities = () => {
     setMessage(null);
     const response = await window.electronAPI?.showNativeMessageBox?.({
       type: 'question',
-      title: 'Remove CHGIS data',
-      message: 'Delete compiled CHGIS pack and raw download from this entity database?',
-      buttons: ['Cancel', 'Delete'],
+      title: t('LW.settings.authorities.chgis.remove_title'),
+      message: t('LW.settings.authorities.chgis.remove_message'),
+      buttons: [t('LW.commons.cancel'), t('LW.commons.delete')],
       defaultId: 0,
       cancelId: 0,
     });
@@ -106,9 +110,9 @@ export const DesktopChgisAuthorities = () => {
     try {
       const result = await window.electronAPI?.authorityChgisRemove?.();
       if (!result?.ok) {
-        setMessage({ severity: 'error', text: result?.error ?? 'Could not remove CHGIS data.' });
+        setMessage({ severity: 'error', text: result?.error ?? t('LW.settings.authorities.chgis.remove_failed') });
       } else {
-        setMessage({ severity: 'info', text: 'CHGIS data removed.' });
+        setMessage({ severity: 'info', text: t('LW.settings.authorities.chgis.removed') });
       }
       await refresh();
     } finally {
@@ -122,13 +126,13 @@ export const DesktopChgisAuthorities = () => {
     <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch', px: 0, py: 1.5 }}>
       <Stack spacing={1.5} width="100%">
         <Box>
-          <Typography variant="subtitle2">CHGIS historical places (optional)</Typography>
+          <Typography variant="subtitle2">{t('LW.settings.authorities.chgis.title')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Download from{' '}
+            {t('LW.settings.authorities.chgis.download_from')}{' '}
             <a href="https://dataverse.harvard.edu/dataverse/chgis_v6" target="_blank" rel="noreferrer">
               Harvard Dataverse
             </a>
-            , then install here. LEAF-Writer compiles a local pack only — nothing is redistributed.
+            , {t('LW.settings.authorities.chgis.install_here')}
           </Typography>
         </Box>
 
@@ -138,15 +142,14 @@ export const DesktopChgisAuthorities = () => {
 
         {!status?.entityDbReady && (
           <Alert severity="warning">
-            Choose an entity database folder (with entities.xml) in App Settings before installing
-            CHGIS.
+            {t('LW.settings.authorities.chgis.entity_db_required')}
           </Alert>
         )}
 
         {status?.entityDbReady && (
           <Stack spacing={0.75}>
             <Typography variant="body2" color="text.secondary">
-              Status:{' '}
+              {t('LW.commons.status')}{' '}
               {status.installed
                 ? `installed · ${status.placeCount?.toLocaleString() ?? '?'} places`
                 : 'not installed'}
@@ -154,7 +157,7 @@ export const DesktopChgisAuthorities = () => {
             </Typography>
             {status.layers?.length ? (
               <Typography variant="caption" color="text.secondary">
-                Layers: {status.layers.join(', ')}
+                {t('LW.settings.authorities.chgis.layers')}: {status.layers.join(', ')}
               </Typography>
             ) : null}
             {status.crosswalkCount ? (
@@ -192,7 +195,9 @@ export const DesktopChgisAuthorities = () => {
             disabled={working || !status?.entityDbReady}
             onClick={() => void handleInstall()}
           >
-            {status?.installed ? 'Reinstall from download…' : 'Install from download…'}
+            {status?.installed
+              ? t('LW.settings.authorities.chgis.reinstall_from_download')
+              : t('LW.settings.authorities.chgis.install_from_download')}
           </Button>
           <Button
             size="small"
@@ -201,10 +206,10 @@ export const DesktopChgisAuthorities = () => {
             disabled={working || !status?.installed}
             onClick={() => void handleRemove()}
           >
-            Remove
+            {t('LW.commons.remove')}
           </Button>
           <Button size="small" variant="text" disabled={working} onClick={() => void refresh()}>
-            Refresh
+            {t('LW.commons.refresh')}
           </Button>
         </Stack>
       </Stack>

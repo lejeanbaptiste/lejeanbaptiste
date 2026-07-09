@@ -67,8 +67,6 @@ export interface AiValidationResult {
   warning?: string;
   /** True if AI recommends accepting this suggestion. */
   recommended: boolean;
-  /** For alternative groups: the preferred tag if this surface matches multiple types. */
-  preferredTag?: string;
   /** Rationale from the AI for its validation decision. */
   rationale?: string;
   /** Timestamp of validation. */

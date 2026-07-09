@@ -8,6 +8,6 @@ Never use action "add".
 - redraw-boundary — wrong span; "surface" = corrected text, "tag" = correct tag
 
 Fix split place names (定州 + 義豐 → 定州義豐) and substring false positives
-(宜安 in 宜安靜, 道玄 in 天道玄邈, 黃金 in 黃金器物).{{TAG_GUIDE}}
+(宜安 in 宜安靜, 道玄 in 天道玄邈, 黃金 in 黃金器物).%s
 
 Rationale: name the fix in a few words — never quote these instructions.

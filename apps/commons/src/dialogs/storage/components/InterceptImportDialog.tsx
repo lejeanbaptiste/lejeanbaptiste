@@ -13,9 +13,9 @@ export const InterceptImportDialog = ({ format }: InterceptImportDialogProps) =>
     <Stack alignItems="flex-start">
       <Typography lineHeight={1.75}>
         <Trans i18nKey="LWC.importExport.message.intercept_load_file_format" values={{ format }}>
-          <Typography component="span">This looks like a </Typography>
+          <Typography component="span">{t('LWC.importExport.message.this_looks_like_a')}</Typography>
           <TextEmphasis color="primary">{format}</TextEmphasis>
-          <Typography component="span">document.</Typography>
+          <Typography component="span">{t('LWC.importExport.message.document')}</Typography>
         </Trans>{' '}
         <Typography component="span">
           {`${t(

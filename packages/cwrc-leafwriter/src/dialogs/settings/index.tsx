@@ -37,7 +37,7 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
         <SideMenu
           items={[
             { id: 'interface', label: t('LW.commons.interface') },
-            { id: 'ai-api', label: 'AI API', hide: !isDesktop },
+            { id: 'ai-api', label: t('LW.settings.ai_api.title'), hide: !isDesktop },
             { id: 'editor', label: t('LW.commons.editor') },
             { id: 'authorities', label: t('LW.commons.authorities'), hide: isReadonly },
             { id: 'entityLookups', label: t('LW.commons.Entity Lookups'), hide: isReadonly },
@@ -51,7 +51,7 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
               <UI />
             </Section>
             {isDesktop && (
-              <Section id="ai-api" title="AI API">
+              <Section id="ai-api" title={t('LW.settings.ai_api.title')}>
                 <List dense>
                   <DesktopAiApi />
                 </List>

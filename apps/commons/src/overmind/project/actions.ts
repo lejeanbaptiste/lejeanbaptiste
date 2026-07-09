@@ -58,7 +58,12 @@ import {
 } from '@src/desktop/teiHeaderXml';
 import { isDesktop, type WorkspaceCursorPosition } from '@src/types/desktop';
 import { buildSkeletonForCatalog } from '@src/desktop/schemaTemplates';
+import i18next from 'i18next';
 import type { FileTreeNode } from './state';
+
+// * The following line is need for VSC extension i18n ally to work
+// useTranslation()
+const { t } = i18next;
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
 
@@ -102,9 +107,13 @@ export const promptCloseDirtyTab = async (
   if (isTempTab(tab)) {
     const response = await window.electronAPI.showNativeMessageBox({
       type: 'warning',
-      title: 'Unsaved new document',
-      message: `Save "${tab.filename}" to your project folder before closing?`,
-      buttons: ['Save…', "Don't Save", 'Cancel'],
+      title: t('LWC.project.dialogs.unsaved_new_document_title'),
+      message: t('LWC.project.dialogs.save_before_closing', { filename: tab.filename }),
+      buttons: [
+        t('LWC.project.dialogs.save_button'),
+        t('LWC.project.dialogs.dont_save_button'),
+        t('LWC.project.dialogs.cancel_button'),
+      ],
       cancelId: 2,
       defaultId: 0,
     });
@@ -123,7 +132,7 @@ export const promptCloseDirtyTab = async (
       null;
 
     if (!content) {
-      context.actions.ui.notifyViaSnackbar('Could not read document content.');
+      context.actions.ui.notifyViaSnackbar('LWC.project.messages.could_not_read_document_content');
       return 'abort';
     }
 
@@ -139,9 +148,12 @@ export const promptCloseDirtyTab = async (
 
   const response = await window.electronAPI.showNativeMessageBox({
     type: 'warning',
-    title: 'Unsaved changes',
-    message: `${tab.filename} has unsaved changes. Close without saving?`,
-    buttons: ['Discard changes', 'Cancel'],
+    title: t('LWC.project.dialogs.unsaved_changes_title'),
+    message: t('LWC.project.dialogs.close_without_saving', { filename: tab.filename }),
+    buttons: [
+      t('LWC.project.dialogs.discard_changes_button'),
+      t('LWC.project.dialogs.cancel_button'),
+    ],
     defaultId: 0,
     cancelId: 1,
   });
@@ -236,9 +248,13 @@ const promptUnsavedBeforeProjectSwitch = async (context: Context): Promise<'proc
   if (persistentDirtyTabs.length === 0 && tempDirtyTabs.length > 0) {
     const response = await window.electronAPI.showNativeMessageBox({
       type: 'warning',
-      title: 'Unsaved new document',
-      message: 'Save the new document to your project folder before opening another project?',
-      buttons: ['Save…', "Don't Save", 'Cancel'],
+      title: t('LWC.project.dialogs.unsaved_new_document_title'),
+      message: t('LWC.project.dialogs.save_before_opening_project'),
+      buttons: [
+        t('LWC.project.dialogs.save_button'),
+        t('LWC.project.dialogs.dont_save_button'),
+        t('LWC.project.dialogs.cancel_button'),
+      ],
       cancelId: 2,
       defaultId: 0,
     });
@@ -255,7 +271,7 @@ const promptUnsavedBeforeProjectSwitch = async (context: Context): Promise<'proc
       null;
 
     if (!content) {
-      context.actions.ui.notifyViaSnackbar('Open an XML file before saving.');
+      context.actions.ui.notifyViaSnackbar('LWC.project.messages.open_xml_before_saving');
       return 'abort';
     }
 
@@ -267,9 +283,15 @@ const promptUnsavedBeforeProjectSwitch = async (context: Context): Promise<'proc
   const fileList = persistentDirtyTabs.map((tab) => tab.filename).join('\n');
   const response = await window.electronAPI.showNativeMessageBox({
     type: 'warning',
-    title: 'Unsaved documents',
-    message: `Save changes before opening another project?\n\n${fileList}`,
-    buttons: ['Save All', "Don't Save", 'Cancel'],
+    title: t('LWC.project.dialogs.unsaved_documents_title'),
+    message: t('LWC.project.dialogs.save_before_opening_project_with_list', {
+      fileList,
+    }),
+    buttons: [
+      t('LWC.project.dialogs.save_all_button'),
+      t('LWC.project.dialogs.dont_save_button'),
+      t('LWC.project.dialogs.cancel_button'),
+    ],
     cancelId: 2,
     defaultId: 0,
   });
@@ -278,7 +300,9 @@ const promptUnsavedBeforeProjectSwitch = async (context: Context): Promise<'proc
   if (response.response === 0) {
     const saveResult = await saveAllDirtyTabs(context);
     if (!saveResult.ok) {
-      context.actions.ui.notifyViaSnackbar(saveResult.error ?? 'Could not save all files.');
+      context.actions.ui.notifyViaSnackbar(
+        saveResult.error ?? 'LWC.project.messages.could_not_save_all_files',
+      );
       return 'abort';
     }
   }
@@ -290,7 +314,8 @@ export const saveAllDirtyTabs = async (
   context: Context,
 ): Promise<{ ok: boolean; error?: string }> => {
   const { state } = context;
-  if (!window.electronAPI) return { ok: false, error: 'Desktop file access unavailable.' };
+  if (!window.electronAPI)
+    return { ok: false, error: 'LWC.project.errors.desktop_file_access_unavailable' };
 
   const activePath = state.project.activeTabPath;
   let activeContent: string | null = null;
@@ -312,7 +337,7 @@ export const saveAllDirtyTabs = async (
     if (isTempTab(tab)) {
       return {
         ok: false,
-        error: 'Save new documents to the project folder before switching projects.',
+        error: 'LWC.project.errors.save_new_documents_before_switching_projects',
       };
     }
 
@@ -322,7 +347,7 @@ export const saveAllDirtyTabs = async (
       await window.electronAPI.writeFile(tab.filePath, content);
       await ignoreSavedFileChange(tab.filePath);
     } catch {
-      return { ok: false, error: `Could not save ${tab.filename}.` };
+      return { ok: false, error: t('LWC.project.errors.could_not_save_file', { filename: tab.filename }) };
     }
   }
 
@@ -408,7 +433,7 @@ export const openProject = async (context: Context) => {
   const { notifyViaSnackbar } = context.actions.ui;
 
   if (!window.electronAPI) {
-    notifyViaSnackbar('Desktop file access is unavailable. Restart the desktop app.');
+    notifyViaSnackbar(t('LWC.project.messages.desktop_file_access_unavailable_restart'));
     return;
   }
 
@@ -435,7 +460,7 @@ export const openProject = async (context: Context) => {
     await loadProjectBundle(context, onboarded);
   } catch (error) {
     console.error('[project] openProject failed:', error);
-    notifyViaSnackbar('Could not open the project folder. Check the console for details.');
+    notifyViaSnackbar(t('LWC.project.messages.could_not_open_project_folder'));
     context.state.project.isProjectReady = true;
   }
 };
@@ -557,18 +582,18 @@ export const newFile = async (context: Context) => {
   const { state, actions } = context;
 
   if (!window.electronAPI?.createTempDocument) {
-    notifyViaSnackbar('New File is unavailable. Restart the desktop app.');
+    notifyViaSnackbar(t('LWC.project.messages.new_file_unavailable_restart'));
     return;
   }
 
   if (!state.project.isProjectReady || !state.project.rootPath || !state.project.config) {
-    notifyViaSnackbar('Open a project first.');
+    notifyViaSnackbar(t('LWC.project.messages.open_project_first'));
     void actions.project.openProject();
     return;
   }
 
   if (!state.project.projectFilePath) {
-    notifyViaSnackbar('Project is not fully loaded.');
+    notifyViaSnackbar(t('LWC.project.messages.project_not_fully_loaded'));
     return;
   }
 
@@ -579,7 +604,7 @@ export const newFile = async (context: Context) => {
   };
 
   if (!(await metadataFileExists(bundle))) {
-    notifyViaSnackbar('Complete project metadata setup before creating a file.');
+    notifyViaSnackbar(t('LWC.project.messages.complete_metadata_setup_before_creating_file'));
     return;
   }
 
@@ -621,7 +646,7 @@ export const newFile = async (context: Context) => {
     state.editor.contentLastSaved = content;
   } catch (error) {
     console.error('[project] newFile failed:', error);
-    notifyViaSnackbar('Could not create a new file.');
+    notifyViaSnackbar(t('LWC.project.messages.could_not_create_new_file'));
   }
 };
 
@@ -742,25 +767,25 @@ export const importDocuments = async (context: Context) => {
   const { notifyViaSnackbar } = actions.ui;
 
   if (!window.electronAPI?.pickDocumentImportSources) {
-    notifyViaSnackbar('Document import is unavailable. Restart the desktop app.');
+    notifyViaSnackbar(t('LWC.project.messages.document_import_unavailable_restart'));
     return;
   }
 
   if (!state.project.isProjectReady || !state.project.rootPath || !state.project.config) {
-    notifyViaSnackbar('Open a project first.');
+    notifyViaSnackbar(t('LWC.project.messages.open_project_first'));
     void actions.project.openProject();
     return;
   }
 
   if (!state.project.projectFilePath) {
-    notifyViaSnackbar('Project is not fully loaded.');
+    notifyViaSnackbar(t('LWC.project.messages.project_not_fully_loaded'));
     return;
   }
 
   const sources = await window.electronAPI.pickDocumentImportSources();
   if (!sources) return;
   if (sources.length === 0) {
-    notifyViaSnackbar('No supported files found. Import supports TXT, Markdown, and RTF for now.');
+    notifyViaSnackbar(t('LWC.project.messages.no_supported_files_found'));
     return;
   }
 
@@ -830,29 +855,31 @@ export const importDocuments = async (context: Context) => {
     const detail = formatDocumentImportProblems(problems);
     if (window.electronAPI?.showNativeMessageBox) {
       void window.electronAPI.showNativeMessageBox({
-        buttons: ['OK'],
+        buttons: [t('LWC.project.dialogs.ok_button')],
         defaultId: 0,
-        message: `Imported ${writtenPaths.length} document${
-          writtenPaths.length === 1 ? '' : 's'
-        } with ${problems.length} problem file${problems.length === 1 ? '' : 's'}.`,
-        title: 'Import diagnostics',
+        message: t('LWC.project.dialogs.imported_documents_with_problems', {
+          documentCount: writtenPaths.length,
+          problemCount: problems.length,
+        }),
+        title: t('LWC.project.dialogs.import_diagnostics_title'),
         type: writtenPaths.length > 0 ? 'warning' : 'error',
         ...(detail ? { detail } : {}),
       });
     }
     notifyViaSnackbar({
-      message: `Imported ${writtenPaths.length} document${
-        writtenPaths.length === 1 ? '' : 's'
-      }; ${problems.length} problem file${
-        problems.length === 1 ? '' : 's'
-      }. See console for details.`,
+      message: t('LWC.project.messages.imported_documents_with_problems_snackbar', {
+        documentCount: writtenPaths.length,
+        problemCount: problems.length,
+      }),
       options: { variant: writtenPaths.length > 0 ? 'warning' : 'error' },
     });
     return;
   }
 
   notifyViaSnackbar({
-    message: `Imported ${writtenPaths.length} document${writtenPaths.length === 1 ? '' : 's'}.`,
+    message: t('LWC.project.messages.imported_documents_success', {
+      documentCount: writtenPaths.length,
+    }),
     options: { variant: 'success' },
   });
 };

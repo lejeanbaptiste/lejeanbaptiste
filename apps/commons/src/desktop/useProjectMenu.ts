@@ -8,11 +8,13 @@ import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { mergeEditorBodyWithStoredHeader, stripTeiHeaderForVisualEditor } from './teiHeaderXml';
 
 const openSettings = async (
   leafWriter: { showSettingsDialog: () => Promise<void> } | null,
   notify: (message: string) => void,
+  openSettingsMessage: string,
 ) => {
   if (await openApplicationSettings()) return;
 
@@ -26,7 +28,7 @@ const openSettings = async (
     return;
   }
 
-  notify('Could not open settings.');
+  notify(openSettingsMessage);
 };
 
 const getEditorContent = async (
@@ -46,6 +48,7 @@ const getEditorContent = async (
 };
 
 export const useProjectMenu = () => {
+  const { t } = useTranslation();
   const {
     closeTab,
     importDocuments,
@@ -84,14 +87,14 @@ export const useProjectMenu = () => {
     const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
     const content = await getEditorContent(leafWriter, activeTab?.content);
     if (!content) {
-      notifyViaSnackbar('Open an XML file before saving.');
+      notifyViaSnackbar(t('LWC.desktop.project.open_xml_before_saving'));
       return;
     }
 
     const result = await saveActiveTab({ content });
     if (result.success) {
       finalizeSavedDocument(result.content ?? content);
-      notifyViaSnackbar({ message: 'Document saved.', options: { variant: 'success' } });
+      notifyViaSnackbar({ message: t('LWC.desktop.project.document_saved'), options: { variant: 'success' } });
       return;
     }
 
@@ -114,7 +117,7 @@ export const useProjectMenu = () => {
     const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
     const content = await getEditorContent(leafWriter, activeTab?.content);
     if (!content) {
-      notifyViaSnackbar('Open an XML file before saving.');
+      notifyViaSnackbar(t('LWC.desktop.project.open_xml_before_saving'));
       return;
     }
 
@@ -123,7 +126,7 @@ export const useProjectMenu = () => {
 
     if (result.success) {
       finalizeSavedDocument(result.content ?? content);
-      notifyViaSnackbar({ message: 'Document saved.', options: { variant: 'success' } });
+      notifyViaSnackbar({ message: t('LWC.desktop.project.document_saved'), options: { variant: 'success' } });
       return;
     }
 
@@ -201,7 +204,7 @@ export const useProjectMenu = () => {
 
       if (action === 'open-time-machine') {
         if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar('Open a project first.');
+          notifyViaSnackbar(t('LWC.desktop.project.open_project_first'));
           return;
         }
 
@@ -210,13 +213,13 @@ export const useProjectMenu = () => {
       }
 
       if (action === 'open-settings') {
-        void openSettings(leafWriter, (message) => notifyViaSnackbar(message));
+        void openSettings(leafWriter, (message) => notifyViaSnackbar(message), t('LWC.desktop.project.could_not_open_settings'));
         return;
       }
 
       if (action === 'edition-metadata') {
         if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar('Open a project first.');
+          notifyViaSnackbar(t('LWC.desktop.project.open_project_first'));
           return;
         }
 
@@ -226,12 +229,12 @@ export const useProjectMenu = () => {
 
       if (action === 'zotero-preferences') {
         if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar('Open a project first.');
+          notifyViaSnackbar(t('LWC.desktop.project.open_project_first'));
           return;
         }
 
         if (!(window as Window & { __desktopCitationBridge?: unknown }).__desktopCitationBridge) {
-          notifyViaSnackbar('Open the Translation tab to choose Zotero citation style.');
+          notifyViaSnackbar(t('LWC.desktop.project.open_translation_tab_for_zotero'));
           return;
         }
 
@@ -241,13 +244,13 @@ export const useProjectMenu = () => {
 
       if (action === 'zotero-refresh') {
         window.dispatchEvent(new CustomEvent('desktop:zotero-refresh-citations'));
-        notifyViaSnackbar('Refreshing Zotero citations.');
+        notifyViaSnackbar(t('LWC.desktop.project.refreshing_zotero_citations'));
         return;
       }
 
       if (action === 'check-schema-update') {
         if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar('Open a project first.');
+          notifyViaSnackbar(t('LWC.desktop.project.open_project_first'));
           return;
         }
 
@@ -300,7 +303,11 @@ export const useProjectMenu = () => {
       if (event.metaKey && event.key === ',') {
         event.preventDefault();
         event.stopPropagation();
-        await openSettings(leafWriter, (message) => notifyViaSnackbar(message));
+        await openSettings(
+          leafWriter,
+          (message) => notifyViaSnackbar(message),
+          t('LWC.desktop.project.could_not_open_settings'),
+        );
         return;
       }
 

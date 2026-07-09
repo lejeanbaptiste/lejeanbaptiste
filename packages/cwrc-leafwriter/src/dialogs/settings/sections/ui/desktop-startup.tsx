@@ -13,7 +13,7 @@ const getCommonsUiBridge = () =>
   ).__ljbCommonsUi;
 
 export const DesktopStartup = () => {
-  const { t } = useTranslation('LWC');
+  const { t } = useTranslation();
   const bridge = getCommonsUiBridge();
   const [rememberWorkspaceOnStartup, setRememberWorkspaceOnStartupLocal] = useState(
     bridge?.rememberWorkspaceOnStartup ?? true,
@@ -33,7 +33,7 @@ export const DesktopStartup = () => {
         void bridge.setRememberWorkspaceOnStartup(value);
         setRememberWorkspaceOnStartupLocal(value);
       }}
-      title={t('desktop.settings.remember_workspace_on_startup')}
+      title={t('LW.desktop.settings.remember_workspace_on_startup')}
       type="toggle"
       value={rememberWorkspaceOnStartup}
     />

@@ -6,7 +6,7 @@ declare global {
     dialog(...args: unknown[]): JQuery;
   }
 
-  type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup' | 'entities';
+  type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup';
 
   interface DesktopLeftPanelBridge {
     expand: () => void;

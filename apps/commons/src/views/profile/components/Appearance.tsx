@@ -43,7 +43,7 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
         <IconButton onPointerDown={() => onBack()} size="small" sx={{ mr: 1 }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <ListItemText primary={t('LWC.commons.identity')} sx={{ textTransform: 'capitalize' }} />
+        <ListItemText primary={t('LWC.ui.appearance')} sx={{ textTransform: 'capitalize' }} />
       </ListItem>
       {options.map(({ id, icon, label }) => (
         <ListItem key={id} color="primary" sx={{ px: 0.5 }}>

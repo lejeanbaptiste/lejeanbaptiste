@@ -259,6 +259,53 @@ describe('disambiguationCandidates', () => {
     expect(dilaRow?.description).toContain('曾廢晉安帝自立為帝');
   });
 
+  it('surfaces DILA and CHGIS place candidates from installed packs for placeName lookups', async () => {
+    mockReconcile.mockResolvedValue([]);
+    const dilaPlacesPack = [
+      JSON.stringify({
+        source: 'DILA',
+        authorityId: 'PL-0001',
+        kind: 'place',
+        primaryName: '長安',
+        searchStrings: ['長安'],
+        metadata: { description: 'DILA place' },
+      }),
+    ].join('\n');
+    const chgisPlacesPack = [
+      JSON.stringify({
+        source: 'CHGIS',
+        authorityId: 'CH-001',
+        kind: 'place',
+        primaryName: '長安',
+        searchStrings: ['長安'],
+        metadata: { startYear: 618, endYear: 907, description: 'CHGIS place' },
+      }),
+    ].join('\n');
+    const readPackFile = jest.fn(async (packId: string) => {
+      if (packId === 'dila-places') return dilaPlacesPack;
+      if (packId === 'chgis-places') return chgisPlacesPack;
+      throw new Error(`not installed: ${packId}`);
+    });
+    const doc = parseEntities(createEntitiesScaffold());
+    const cache = new AuthorityCache(null, null);
+
+    const rows = await buildDisambiguationCandidates(
+      doc,
+      'placeName',
+      '長安',
+      cache,
+      ['Wikidata', 'VIAF'],
+      false,
+      readPackFile,
+    );
+
+    expect(rows.some((row) => row.sources.includes('DILA'))).toBe(true);
+    expect(rows.some((row) => row.sources.includes('CHGIS'))).toBe(true);
+    const chgisRow = rows.find((row) => row.sources.includes('CHGIS'));
+    expect(chgisRow?.startYear).toBe(618);
+    expect(chgisRow?.endYear).toBe(907);
+  });
+
   it('merges manually selected candidates', () => {
     const merged = mergeSelectedCandidates([
       {

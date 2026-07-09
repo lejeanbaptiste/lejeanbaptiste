@@ -44,13 +44,13 @@ const tabIconSourcesDark: Partial<Record<SidebarTabId, string>> = {
 };
 
 export const sidebarTabLabels: Record<SidebarTabId, string> = {
-  explorer: 'Explorer',
-  find: 'Find',
-  xpath: 'XPath',
-  toc: 'Table of Contents',
-  markup: 'Markup',
-  entities: 'Entities',
-  database: 'Entity Database',
+  explorer: 'LWC.dialogs.sidebar_tabs.explorer',
+  find: 'LWC.dialogs.sidebar_tabs.find',
+  xpath: 'LWC.dialogs.sidebar_tabs.xpath',
+  toc: 'LWC.dialogs.sidebar_tabs.toc',
+  markup: 'LWC.dialogs.sidebar_tabs.markup',
+  entities: 'LWC.dialogs.sidebar_tabs.entities',
+  database: 'LWC.dialogs.sidebar_tabs.database',
 };
 
 export const sidebarTabOrder: SidebarTabId[] = [

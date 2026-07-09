@@ -67,7 +67,7 @@ const SupportedEntityTypes = ({ entityTypes }: { entityTypes: NamedEntityType[] 
   return (
     <Stack direction="row" alignItems="center" gap={1}>
       <Typography fontWeight={700} sx={{ textTransform: 'capitalize' }} variant="body2">
-        {t('LW.commons.entity types')}
+        {t('LW.commons.entity_types')}
       </Typography>
       <Stack direction="row" gap={1}>
         {entityTypes.map((entityType) => (
@@ -96,7 +96,7 @@ const CustomInfo = ({
         <ExtensionIcon sx={{ height: 14, width: 14 }} />
         {author && (
           <Typography variant="caption">
-            {t('LW.commons.added by')}{' '}
+            {t('LW.commons.added_by')}{' '}
             {author.url ? (
               <Link
                 aria-label="navigate to url"
@@ -120,7 +120,7 @@ const CustomInfo = ({
         <Stack direction="row" alignItems="center" gap={1}>
           <LockOutlineIcon sx={{ height: 14, width: 14 }} />
           <Typography variant="caption">
-            {t('LW.messages.Only available on this browser')}
+            {t('LW.messages.only_available_on_this_browser')}
           </Typography>
         </Stack>
       )}

@@ -1,0 +1,129 @@
+import { render, waitFor } from '@testing-library/react';
+import type { MentionGroup } from './mentions';
+
+const mockRankDisambiguationCandidates = jest.fn();
+const mockBuildDisambiguationCandidates = jest.fn();
+const mockAiApiSettingsFromDesktop = jest.fn();
+
+jest.mock('./llmDisambiguationRank', () => ({
+  rankDisambiguationCandidates: (...args: unknown[]) => mockRankDisambiguationCandidates(...args),
+}));
+
+jest.mock('./llmClientFromSettings', () => ({
+  aiApiSettingsFromDesktop: () => mockAiApiSettingsFromDesktop(),
+  createLlmClientFromSettings: () => ({ modelId: 'mock:model', complete: jest.fn() }),
+  isAiSuggestReady: (settings: { baseUrl?: string; model?: string }) =>
+    Boolean(settings?.baseUrl?.trim() && settings?.model?.trim()),
+}));
+
+jest.mock('./disambiguationCandidates', () => {
+  const actual = jest.requireActual('./disambiguationCandidates');
+  return {
+    ...actual,
+    buildDisambiguationCandidates: (...args: unknown[]) => mockBuildDisambiguationCandidates(...args),
+    collapseCrossAuthorityCandidates: (rows: unknown[]) => rows,
+    enrichCandidateCrossRefs: (row: unknown) => row,
+  };
+});
+
+jest.mock('react-virtuoso', () => ({
+  Virtuoso: ({ data, itemContent }: { data: unknown[]; itemContent: (index: number, row: unknown) => unknown }) => (
+    <div>{data.map((row, index) => <div key={index}>{itemContent(index, row)}</div>)}</div>
+  ),
+}));
+
+import { DisambiguationPanel } from './DisambiguationPanel';
+
+function createGroup(): MentionGroup {
+  const doc = new DOMParser().parseFromString(
+    '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><persName>沈攸之</persName></p></body></text></TEI>',
+    'application/xml',
+  );
+  const element = doc.getElementsByTagName('persName')[0]!;
+  const textNode = element.firstChild as Text;
+  return {
+    tag: 'persName',
+    surface: '沈攸之',
+    fullyResolved: false,
+    instances: [
+      {
+        documentId: 'doc-1',
+        tag: 'persName',
+        surface: '沈攸之',
+        element,
+        anchor: {
+          documentId: 'doc-1',
+          surface: '沈攸之',
+          contextBefore: '',
+          contextAfter: '',
+          occurrence: 0,
+          nodeHash: 'hash',
+          textNode,
+          startOffset: 0,
+          endOffset: textNode.data.length,
+        },
+        hasKey: false,
+        isUnresolved: true,
+      },
+    ],
+  };
+}
+
+function createSession() {
+  const entitiesDoc = new DOMParser().parseFromString(
+    '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body/></text></TEI>',
+    'application/xml',
+  );
+  return {
+    getPendingCandidates: jest.fn().mockReturnValue(null),
+    rememberPendingCandidates: jest.fn(),
+    savePendingCache: jest.fn().mockResolvedValue(undefined),
+    loadEntities: jest.fn().mockResolvedValue(entitiesDoc),
+    getEntitiesDocument: jest.fn().mockReturnValue(entitiesDoc),
+    cache: { throttle: jest.fn().mockResolvedValue(undefined) },
+    disambiguationAiCache: null,
+    getDocument: jest.fn().mockResolvedValue(entitiesDoc),
+  } as any;
+}
+
+describe('DisambiguationPanel', () => {
+  beforeEach(() => {
+    mockBuildDisambiguationCandidates.mockResolvedValue([
+      {
+        id: 'cbdb:1',
+        label: '沈攸之',
+        description: 'CBDB person',
+        sources: ['CBDB'],
+        uri: 'https://cbdb.fas.harvard.edu/person?id=1',
+        authorityIds: [],
+      },
+    ]);
+    mockAiApiSettingsFromDesktop.mockReturnValue(null);
+    mockRankDisambiguationCandidates.mockResolvedValue({
+      selectedCandidateIds: ['cbdb:1'],
+      rationales: { 'cbdb:1': 'Best match' },
+      confidences: { 'cbdb:1': 0.91 },
+      suggestCreateNew: false,
+    });
+  });
+
+  it('applies AI curation results back into the panel', async () => {
+    render(<DisambiguationPanel session={createSession()} groups={[createGroup()]} aiCuration />);
+
+    mockAiApiSettingsFromDesktop.mockReturnValue({
+      apiKey: '',
+      baseUrl: 'http://localhost:11434',
+      model: 'mock-model',
+    });
+    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
+
+    await waitFor(() => expect(mockRankDisambiguationCandidates).toHaveBeenCalled());
+    expect(mockRankDisambiguationCandidates.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        candidates: expect.arrayContaining([
+          expect.objectContaining({ id: 'cbdb:1', label: '沈攸之' }),
+        ]),
+      }),
+    );
+  });
+});

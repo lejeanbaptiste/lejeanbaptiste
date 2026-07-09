@@ -74,12 +74,12 @@ export const NativeSchemaSetupPage = () => {
         catalogId: selectedCatalogId,
       })) as { ok: boolean; error?: string };
       if (!result?.ok) {
-        setError(result?.error ?? 'Schema download failed.');
+        setError(result?.error ?? t('LWC.desktop.project.schema_download_failed'));
         return;
       }
       closeDialog();
     } catch {
-      setError('Schema download failed.');
+      setError(t('LWC.desktop.project.schema_download_failed'));
     } finally {
       setSubmitting(false);
     }
@@ -96,13 +96,13 @@ export const NativeSchemaSetupPage = () => {
       };
       if (!result?.ok) {
         if (result?.error !== 'cancelled') {
-          setError(result?.error ?? 'Could not copy schema file.');
+          setError(result?.error ?? t('LWC.desktop.project.copy_schema_failed'));
         }
         return;
       }
       closeDialog();
     } catch {
-      setError('Could not copy schema file.');
+      setError(t('LWC.desktop.project.copy_schema_failed'));
     } finally {
       setSubmitting(false);
     }
@@ -127,7 +127,7 @@ export const NativeSchemaSetupPage = () => {
 
       <Stack spacing={2} sx={{ flex: 1, p: 2, WebkitAppRegion: 'no-drag', overflow: 'auto' }}>
         {loading || !state ? (
-          <Typography color="text.secondary">Loading…</Typography>
+          <Typography color="text.secondary">{t('LWC.commons.loading')}</Typography>
         ) : (
           <>
             <FormControl fullWidth size="small">
@@ -172,7 +172,7 @@ export const NativeSchemaSetupPage = () => {
         }}
       >
         <Button disabled={submitting} onClick={() => void handleLocalSchema()} variant="outlined">
-          Use local schema file…
+          {t('LWC.desktop.project.use_local_schema_file')}
         </Button>
         <Button
           color="primary"
@@ -180,7 +180,7 @@ export const NativeSchemaSetupPage = () => {
           onClick={() => void handleDownload()}
           variant="contained"
         >
-          Download
+          {t('LWC.commons.download')}
         </Button>
       </Box>
     </Box>
