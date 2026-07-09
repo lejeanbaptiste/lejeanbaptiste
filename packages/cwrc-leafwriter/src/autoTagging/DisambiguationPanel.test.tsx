@@ -1,5 +1,6 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { MentionGroup } from './mentions';
+import * as disambiguationSettings from './disambiguationSettings';
 
 const mockRankDisambiguationCandidates = jest.fn();
 const mockBuildDisambiguationCandidates = jest.fn();
@@ -87,6 +88,10 @@ function createSession() {
 }
 
 describe('DisambiguationPanel', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   beforeEach(() => {
     mockBuildDisambiguationCandidates.mockResolvedValue([
       {
@@ -125,5 +130,61 @@ describe('DisambiguationPanel', () => {
         ]),
       }),
     );
+    expect(await screen.findByText('AI pre-selected 1 candidate.')).toBeTruthy();
+  });
+
+  it('bypasses saved caches when disambiguation caching is disabled', async () => {
+    jest
+      .spyOn(disambiguationSettings, 'readPersistedDisambiguationSettings')
+      .mockReturnValue({ aiCuration: true, disableCaching: true });
+
+    const session = createSession();
+    session.getPendingCandidates = jest.fn().mockReturnValue([
+      {
+        id: 'cached:1',
+        label: 'cached row',
+        sources: ['Wikidata'],
+      },
+    ]);
+    session.disambiguationAiCache = { get: jest.fn(), set: jest.fn(), cacheKey: jest.fn() };
+
+    render(<DisambiguationPanel session={session} groups={[createGroup()]} aiCuration />);
+
+    mockAiApiSettingsFromDesktop.mockReturnValue({
+      apiKey: '',
+      baseUrl: 'http://localhost:11434',
+      model: 'mock-model',
+    });
+    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
+
+    await waitFor(() => expect(mockBuildDisambiguationCandidates).toHaveBeenCalled());
+    await waitFor(() => expect(mockRankDisambiguationCandidates).toHaveBeenCalled());
+
+    expect(session.getPendingCandidates).not.toHaveBeenCalled();
+    expect(session.rememberPendingCandidates).not.toHaveBeenCalled();
+    expect(session.savePendingCache).not.toHaveBeenCalled();
+    expect(mockRankDisambiguationCandidates.mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({ cache: null }),
+    );
+  });
+
+  it('shows when AI reviewed candidates but abstained', async () => {
+    mockRankDisambiguationCandidates.mockResolvedValueOnce({
+      selectedCandidateIds: [],
+      rationales: {},
+      confidences: {},
+      suggestCreateNew: false,
+    });
+
+    render(<DisambiguationPanel session={createSession()} groups={[createGroup()]} aiCuration />);
+
+    mockAiApiSettingsFromDesktop.mockReturnValue({
+      apiKey: '',
+      baseUrl: 'http://localhost:11434',
+      model: 'mock-model',
+    });
+    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
+
+    expect(await screen.findByText('AI reviewed these candidates and did not pre-select any.')).toBeTruthy();
   });
 });

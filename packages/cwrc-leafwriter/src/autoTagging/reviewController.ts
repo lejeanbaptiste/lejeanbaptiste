@@ -7,6 +7,8 @@ export interface ReviewFilters {
   sources: Set<SuggestionSource>;
   /** Only show suggestions with confidence >= this (undefined confidence always shows). */
   minConfidence: number;
+  /** Only show suggestions for this TEI tag. Null = all tags. */
+  tag: string | null;
 }
 
 export interface DecisionEvent {
@@ -49,7 +51,7 @@ function alternativeGroupKey(s: Suggestion): string | null {
  */
 export class ReviewController {
   private suggestions: Suggestion[];
-  private filters: ReviewFilters = { sources: new Set(), minConfidence: 0 };
+  private filters: ReviewFilters = { sources: new Set(), minConfidence: 0, tag: null };
   /** Index into {@link pendingGroups}. */
   private cursorPendingIndex = -1;
   /** Which alternative is selected within each alternative group, keyed by group key. */
@@ -132,7 +134,8 @@ export class ReviewController {
     return this.suggestions.filter(
       (s) =>
         (this.filters.sources.size === 0 || this.filters.sources.has(s.source)) &&
-        (s.confidence === undefined || s.confidence >= this.filters.minConfidence),
+        (s.confidence === undefined || s.confidence >= this.filters.minConfidence) &&
+        (!this.filters.tag || s.tag === this.filters.tag),
     );
   }
 

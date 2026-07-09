@@ -300,11 +300,11 @@ export const XmlMonacoEditor = ({
       monacoEditor.dispose();
       setEditor(null);
     };
-  }, [mode, systemMode]);
+  }, []);
 
   useEffect(() => {
-    editor?.updateOptions({ theme });
-  }, [editor, theme]);
+    monaco.editor.setTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!editor) return;

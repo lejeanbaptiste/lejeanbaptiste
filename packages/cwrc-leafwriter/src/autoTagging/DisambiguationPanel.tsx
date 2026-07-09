@@ -59,12 +59,14 @@ import {
 import { AUTHORITY_YEAR_MAX, AUTHORITY_YEAR_MIN } from './authoritySettings';
 import {
   dateFilterFromSettings,
+  disambiguationCachingDisabledFromSettings,
   persistDisambiguationDateFilter,
   readPersistedDisambiguationSettings,
   yearRangeFromSettings,
 } from './disambiguationSettings';
 import { normalizeDateRangeFilter, type DateFilterMode, type DateRangeFilter } from './packLoader';
 import { resolveManualAuthorityLink } from './manualAuthorityLink';
+import type { AuthorityCache } from './authorityCache';
 import { fetchWikidataSummary, type WikidataSummary } from './wikidataDates';
 import {
   DisambiguationController,
@@ -258,7 +260,7 @@ export const DisambiguationPanel = ({
   groups,
   aiCuration = false,
 }: DisambiguationPanelProps) => {
-  const { t } = useTranslation('LW');
+  const { t, i18n } = useTranslation('LW');
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
   const containerRef = useRef<HTMLDivElement>(null);
   const groupListRef = useRef<VirtuosoHandle>(null);
@@ -313,6 +315,9 @@ export const DisambiguationPanel = ({
   const [newEntityDescription, setNewEntityDescription] = useState('');
   const [newEntityBusy, setNewEntityBusy] = useState(false);
   const [commonsUiRevision, setCommonsUiRevision] = useState(0);
+  const cacheDisabled = disambiguationCachingDisabledFromSettings(
+    readPersistedDisambiguationSettings(),
+  );
 
   const activePromptProfile = useMemo(
     () => getActiveAiPromptProfile(aiPromptProfiles),
@@ -377,6 +382,8 @@ export const DisambiguationPanel = ({
   const pending = controller.pendingGroups();
   const resolved = controller.resolvedGroups();
   const currentKey = group ? mentionGroupKey(group) : null;
+  const currentKeyRef = useRef<string | null>(null);
+  currentKeyRef.current = currentKey;
   const tagOptions = useMemo(() => [...new Set(groups.map((item) => item.tag))], [groups]);
 
   const toggleCandidate = (candidateId: string, checked: boolean) => {
@@ -411,8 +418,9 @@ export const DisambiguationPanel = ({
           instance: targetInstance,
           candidates: rows,
           client,
-          cache: session.disambiguationAiCache,
+          cache: cacheDisabled ? null : session.disambiguationAiCache,
           promptProfile: activePromptProfile,
+          preferredLanguage: i18n.language,
           onRateLimitRetry: (info) =>
             setRateLimitRetry({
               attempt: info.attempt,
@@ -441,7 +449,42 @@ export const DisambiguationPanel = ({
         setRateLimitRetry(null);
       }
     },
-    [activePromptProfile, aiCuration, session],
+    [activePromptProfile, aiCuration, i18n.language, session],
+  );
+
+  /**
+   * DILA place dates are fetched lazily (there is no by-string search API — only
+   * by id), so the first pass over a surface can come back with undated DILA
+   * candidates while their detail scrapes complete in the background. Once every
+   * queued fetch for a group lands in the cache, this re-runs the (now all-cached,
+   * no-network) lookup and quietly swaps in the dated rows — but only if the panel
+   * is still showing that same group; otherwise the update is dropped.
+   */
+  const refreshDilaDates = useCallback(
+    async (targetGroup: MentionGroup, cache: AuthorityCache, entitiesDoc: Document) => {
+      const groupKey = mentionGroupKey(targetGroup);
+      try {
+        const rows = await buildDisambiguationCandidates(
+          entitiesDoc,
+          targetGroup.tag,
+          targetGroup.surface,
+          cache,
+          ['Wikidata', 'VIAF'],
+          false,
+          window.electronAPI?.authorityPackRead,
+          session.dilaPlaceDetailCache ?? undefined,
+        );
+        if (currentKeyRef.current !== groupKey) return;
+        setCandidates(rows);
+        if (!cacheDisabled) {
+          session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);
+          await session.savePendingCache();
+        }
+      } catch {
+        // Best-effort silent refresh; leave the existing (undated) candidates as-is.
+      }
+    },
+    [cacheDisabled, session],
   );
 
   const loadCandidates = useCallback(
@@ -457,7 +500,9 @@ export const DisambiguationPanel = ({
       setAiSuggestCreateNew(false);
       setAiCreateRationale(null);
       try {
-        const cached = session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
+        const cached = cacheDisabled
+          ? null
+          : session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
         if (cached && !forceRefresh) {
           const rows = collapseCrossAuthorityCandidates(cached.map(enrichCandidateCrossRefs));
           setCandidates(rows);
@@ -468,6 +513,7 @@ export const DisambiguationPanel = ({
         const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
         const cache = session.cache;
         if (!cache) throw new Error('Authority cache is unavailable.');
+        const groupKey = mentionGroupKey(targetGroup);
         const rows = await buildDisambiguationCandidates(
           entitiesDoc,
           targetGroup.tag,
@@ -476,9 +522,17 @@ export const DisambiguationPanel = ({
           ['Wikidata', 'VIAF'],
           forceRefresh,
           window.electronAPI?.authorityPackRead,
+          session.dilaPlaceDetailCache ?? undefined,
+          undefined,
+          () => {
+            if (currentKeyRef.current !== groupKey) return;
+            void refreshDilaDates(targetGroup, cache, entitiesDoc);
+          },
         );
-        session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);
-        await session.savePendingCache();
+        if (!cacheDisabled) {
+          session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);
+          await session.savePendingCache();
+        }
         setCandidates(rows);
         const inst = targetInstance ?? controllerRef.current?.currentInstance();
         if (inst) await applyAiRank(targetGroup, rows, inst);
@@ -489,7 +543,7 @@ export const DisambiguationPanel = ({
         setLoadingCandidates(false);
       }
     },
-    [applyAiRank, session],
+    [applyAiRank, cacheDisabled, refreshDilaDates, session],
   );
 
   useEffect(() => {
@@ -625,6 +679,63 @@ export const DisambiguationPanel = ({
   const checkedCandidates = filteredCandidates.filter((candidate) => checkedIds.has(candidate.id));
   const selected = mergeSelectedCandidates(checkedCandidates);
   const showCandidateUi = !!group && pendingInstances(group).length > 0;
+  const aiSelectedCount = checkedCandidates.length;
+  const aiStatus = useMemo(() => {
+    if (!aiCuration || !group || !controller.isExpanded(group)) return null;
+    if (loadingCandidates) {
+      return {
+        severity: 'info' as const,
+        text: 'Loading candidates…',
+      };
+    }
+    if (rankingAi) {
+      return {
+        severity: rateLimitRetry ? ('warning' as const) : ('info' as const),
+        text: rateLimitRetry
+          ? `AI rate limited; retrying in ${rateLimitSecondsLeft}s (attempt ${rateLimitRetry.attempt}/${rateLimitRetry.maxAttempts}).`
+          : 'AI is ranking the current candidates.',
+      };
+    }
+    if (aiSuggestCreateNew) {
+      return {
+        severity: 'warning' as const,
+        text: aiCreateRationale
+          ? `AI suggests creating a new entity: ${aiCreateRationale}`
+          : 'AI suggests creating a new entity.',
+      };
+    }
+    if (aiSelectedCount > 0) {
+      return {
+        severity: 'success' as const,
+        text:
+          aiSelectedCount === 1
+            ? 'AI pre-selected 1 candidate.'
+            : `AI pre-selected ${aiSelectedCount} candidates.`,
+      };
+    }
+    if (aiRanked) {
+      return {
+        severity: 'info' as const,
+        text: 'AI reviewed these candidates and did not pre-select any.',
+      };
+    }
+    return {
+      severity: 'info' as const,
+      text: 'AI curation is enabled for this group.',
+    };
+  }, [
+    aiCreateRationale,
+    aiCuration,
+    aiRanked,
+    aiSelectedCount,
+    aiSuggestCreateNew,
+    controller,
+    group,
+    loadingCandidates,
+    rankingAi,
+    rateLimitRetry,
+    rateLimitSecondsLeft,
+  ]);
 
   const afterChange = (targetGroup: MentionGroup) => {
     syncMentionGroupFromElements(targetGroup);
@@ -1055,7 +1166,16 @@ export const DisambiguationPanel = ({
           >
             Edit prompt…
           </Link>
+          {cacheDisabled && (
+            <Chip size="small" variant="outlined" label="Cache off" sx={{ height: 18, fontSize: 10 }} />
+          )}
         </Stack>
+      )}
+
+      {aiStatus && (
+        <Alert severity={aiStatus.severity} sx={{ mx: 0.75, mb: 0.5, py: 0.25, flexShrink: 0 }}>
+          {aiStatus.text}
+        </Alert>
       )}
 
       <Box sx={{ flex: 1, minHeight: 0 }} onClick={() => containerRef.current?.focus()}>

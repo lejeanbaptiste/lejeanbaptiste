@@ -58,7 +58,7 @@ const URI_PATTERNS: {
     crosswalkKey: 'cbdb',
   },
   {
-    pattern: /authority\.dila\.edu\.tw\/[^\s]*?(?:aid=|\/)([A-Z]{1,2}\d+)/,
+    pattern: /authority\.dila\.edu\.tw\/[^\s]*?(?:aid=|fromInner=|code=|\/)([A-Z]{1,2}\d+)/,
     idnoType: 'DILA',
     crosswalkKey: 'dila',
   },

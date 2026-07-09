@@ -37,7 +37,7 @@ export function createLlmClientFromSettings(
 ): LlmClient {
   const model = settings.model.trim();
   const baseUrl = normalizeLlmChatBaseUrl(settings.baseUrl);
-  const apiKey = settings.apiKey?.trim() || 'not-needed-for-local-server';
+  const apiKey = isLocalAiBaseUrl(settings.baseUrl) ? '' : settings.apiKey?.trim() || '';
   return new MistralLlmClient({ apiKey, model, baseUrl, fetchImpl });
 }
 

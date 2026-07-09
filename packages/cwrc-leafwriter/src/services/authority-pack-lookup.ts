@@ -11,6 +11,7 @@ import type {
   NamedEntityType,
 } from '../types';
 import { AUTHORITY_PACKS, type AuthorityPackId } from '../autoTagging/packPaths';
+import { stringsMatchExactly } from '../autoTagging/disambiguationMatch';
 
 interface PackRow {
   authorityId?: string;
@@ -79,8 +80,8 @@ export function packResultUri(source: PackSource, entityType: NamedEntityType, i
         : `https://cbdb.fas.harvard.edu/person?id=${id}`;
     case 'dila':
       return entityType === 'place'
-        ? `https://authority.dila.edu.tw/place/search.php?aid=${id}`
-        : `https://authority.dila.edu.tw/person/search.php?aid=${id}`;
+        ? `https://authority.dila.edu.tw/place/search.php?code=${id}`
+        : `https://authority.dila.edu.tw/person/search.php?code=${id}`;
     case 'ndl':
       // Assumes name authorities (ndlna); refine if a pack ships ndlsh ids.
       return `https://id.ndl.go.jp/auth/ndlna/${id}`;
@@ -100,8 +101,11 @@ function describeRow(row: PackRow): string | undefined {
 }
 
 /**
- * Scan pack ndjson for rows whose search strings match the query (CJK-style
- * mutual substring). Exact matches rank first. Lines are substring-prefiltered
+ * Scan pack ndjson for rows whose search strings match the query exactly
+ * (Unicode-normalized). A row's alternate names (e.g. 王導's alt name
+ * 王茂弘) are only ever compared for equality against the query — never
+ * substring-contained — so a query like 王茂 cannot spuriously match a
+ * longer alt name that merely contains it. Lines are substring-prefiltered
  * before JSON parsing, so scanning a large pack per search stays cheap.
  */
 export function searchPackContent(
@@ -114,23 +118,28 @@ export function searchPackContent(
   const trimmed = query.trim();
   if (!trimmed) return [];
 
+  // For place names, also try stripping a trailing administrative division
+  // marker (省 市 區 府 縣 郡) so "會稽省" matches a pack row named "會稽" — but
+  // keep the raw query too, since many DILA/CBDB place names legitimately end
+  // in one of these characters as part of the canonical name (e.g. "武陵郡").
+  const queries = [trimmed];
+  if (entityType === 'place') {
+    const stripped = trimmed.replace(/[省市區府縣郡]$/, '');
+    if (stripped && stripped !== trimmed) queries.push(stripped);
+  }
+  // The shortest query is a prefix of every other query, so requiring the line
+  // to contain it is a safe (inclusive) prefilter before the exact-match check.
+  const shortestQuery = queries.reduce((a, b) => (b.length < a.length ? b : a));
+
   const exact: AuthorityLookupResult[] = [];
-  const partial: AuthorityLookupResult[] = [];
   const seen = new Set<string>();
 
   for (const line of content.split('\n')) {
     if (exact.length >= limit) break;
     if (!line.trim()) continue;
-    // Prefilter before JSON.parse: a `query ⊆ name` hit contains the query
-    // verbatim; a `name ⊆ query` hit (e.g. stored 攸之 under query 沈攸之)
-    // must contain some 2-char slice of the query.
-    let cheapHit = line.includes(trimmed);
-    if (!cheapHit) {
-      for (let i = 0; i + 2 <= trimmed.length && !cheapHit; i++) {
-        cheapHit = line.includes(trimmed.slice(i, i + 2));
-      }
-    }
-    if (!cheapHit) continue;
+    // Cheap prefilter before JSON.parse: a matching row must contain at least
+    // the shortest candidate query verbatim somewhere in the line.
+    if (!line.includes(shortestQuery)) continue;
     let row: PackRow;
     try {
       row = JSON.parse(line) as PackRow;
@@ -140,23 +149,33 @@ export function searchPackContent(
     if (!row.authorityId || !row.primaryName) continue;
 
     const strings = row.searchStrings?.length ? row.searchStrings : [row.primaryName];
-    const isExact = strings.some((s) => s === trimmed);
-    const isPartial =
-      !isExact && strings.some((s) => s.includes(trimmed) || trimmed.includes(s));
-    if (!isExact && !isPartial) continue;
+    // Track which search string actually matched — for places it may be an
+    // alternate/historical name (e.g. DILA tags 吳興 as an alias of 湖州府),
+    // not the row's primary name, so it's worth surfacing why this row matched.
+    let matchedString: string | undefined;
+    for (const q of queries) {
+      matchedString = strings.find((s) => stringsMatchExactly(s, q));
+      if (matchedString) break;
+    }
+    if (!matchedString) continue;
 
     const uri = packResultUri(source, entityType, String(row.authorityId));
     if (seen.has(uri)) continue;
     seen.add(uri);
 
-    (isExact ? exact : partial).push({
-      label: row.primaryName,
+    const label =
+      entityType === 'place' && matchedString !== row.primaryName
+        ? `${row.primaryName}（${matchedString}）`
+        : row.primaryName;
+
+    exact.push({
+      label,
       description: describeRow(row),
       uri,
     });
   }
 
-  return [...exact, ...partial].slice(0, limit);
+  return exact.slice(0, limit);
 }
 
 const ENTITY_TYPE_TAG: Partial<Record<NamedEntityType, string>> = {

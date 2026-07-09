@@ -26,7 +26,7 @@ interface AiConnectionResult {
 }
 
 const DEFAULT_AI_API_SETTINGS: AiApiSettings = {
-  apiKey: 'lm-studio',
+  apiKey: '',
   baseUrl: 'http://localhost:1234/v1',
   customInstructions: '',
   model: '',

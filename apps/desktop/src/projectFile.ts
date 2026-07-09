@@ -49,6 +49,7 @@ const normalizeDisambiguationSettings = (
   const value = raw as DisambiguationSettings;
   const out: DisambiguationSettings = {};
   if (typeof value.aiCuration === 'boolean') out.aiCuration = value.aiCuration;
+  if (typeof value.disableCaching === 'boolean') out.disableCaching = value.disableCaching;
   if (value.dateFilter === 'none' || value.dateFilter === 'limit' || value.dateFilter === 'exclude') {
     out.dateFilter = value.dateFilter;
   }

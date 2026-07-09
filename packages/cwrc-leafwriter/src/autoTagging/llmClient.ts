@@ -214,12 +214,11 @@ export class MistralLlmClient implements LlmClient {
       mode === 'prompt_only'
         ? '\n\nRespond with one JSON object only, no markdown fences: {"suggestions":[{"surface":"…","occurrence":1,"tag":"persName","action":"add","confidence":0.9,"rationale":"…"}]}. Use {"suggestions":[]} if none.'
         : '';
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (this.apiKey) headers.authorization = `Bearer ${this.apiKey}`;
     const res = await this.fetchImpl(`${this.baseUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${this.apiKey}`,
-      },
+      headers,
       body: JSON.stringify({
         model: this.modelId.replace(/^mistral:/, ''),
         ...(responseFormat ? { response_format: responseFormat } : {}),

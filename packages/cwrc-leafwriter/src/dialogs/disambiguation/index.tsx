@@ -18,6 +18,7 @@ import {
 } from '../../autoTagging/aiPromptProfiles';
 import {
   aiCurationFromSettings,
+  disambiguationCachingDisabledFromSettings,
   persistDisambiguationSettings,
   readPersistedDisambiguationSettings,
 } from '../../autoTagging/disambiguationSettings';
@@ -29,6 +30,7 @@ import { AiPromptEditorDialog } from '../autoTagging/AiPromptEditorDialog';
 export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
   const { startDisambiguationReview } = useActions().ui;
   const [aiCuration, setAiCuration] = useState(true);
+  const [disableCaching, setDisableCaching] = useState(false);
   const [aiPromptProfiles, setAiPromptProfiles] = useState<AiPromptProfilesState>(
     createDefaultAiPromptProfilesState(),
   );
@@ -42,7 +44,9 @@ export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
 
   useEffect(() => {
     if (!open) return;
-    setAiCuration(aiCurationFromSettings(readPersistedDisambiguationSettings()));
+    const settings = readPersistedDisambiguationSettings();
+    setAiCuration(aiCurationFromSettings(settings));
+    setDisableCaching(disambiguationCachingDisabledFromSettings(settings));
     void readAiPromptProfilesFromDesktop().then(setAiPromptProfiles);
     window.setTimeout(() => startButtonRef.current?.focus(), 0);
   }, [open]);
@@ -50,7 +54,7 @@ export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
   const handleClose = () => onClose?.();
 
   const handleStart = async () => {
-    await persistDisambiguationSettings({ aiCuration });
+    await persistDisambiguationSettings({ aiCuration, disableCaching });
     startDisambiguationReview({ aiCuration });
     handleClose();
   };
@@ -89,6 +93,18 @@ export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
                 />
               }
               label="AI curation"
+              sx={{ ml: 0 }}
+            />
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={disableCaching}
+                  onChange={(event) => setDisableCaching(event.target.checked)}
+                />
+              }
+              label="Disable caching"
               sx={{ ml: 0 }}
             />
 
