@@ -111,6 +111,18 @@ describe('normalizePastedParagraphs', () => {
     expect(inner?.previousElementSibling).toBe(outer);
   });
 
+  test('preserves order when hoisting multiple nested pasted paragraphs', () => {
+    const root = document.createElement('div');
+    root.innerHTML =
+      '<div _tag="p" id="dom_outer"><div _tag="p" id="dom_inner_1">First</div><div _tag="p" id="dom_inner_2">Second</div><div _tag="p" id="dom_inner_3">Third</div></div>';
+
+    fixNestedPastedParagraphs(root);
+
+    expect(
+      Array.from(root.children).map((child) => child.getAttribute('id')),
+    ).toEqual(['dom_outer', 'dom_inner_1', 'dom_inner_2', 'dom_inner_3']);
+  });
+
   test('does not tag empty paste blocks', () => {
     const root = document.createElement('div');
     root.innerHTML = '<div><br></div><div>Real paragraph</div>';

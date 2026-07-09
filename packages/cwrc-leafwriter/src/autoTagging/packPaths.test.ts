@@ -17,7 +17,7 @@ describe('authority pack UI helpers', () => {
     const ui = uiPacksFromPersisted(['wikidata-persons-ming', 'cbdb-persons']);
     expect(ui['wikidata-persons']).toBe(true);
     expect(ui['cbdb-persons']).toBe(true);
-    expect(ui['wikidata-persons-tang']).toBeUndefined();
+    expect(ui['wikidata-persons-ja']).toBe(false);
   });
 
   it('persists wikidata-persons without dynasty child ids', () => {

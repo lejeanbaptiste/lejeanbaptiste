@@ -1,7 +1,8 @@
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import { Box, IconButton, Stack, Typography } from '@mui/material';
 import { useField } from 'formik';
 import { useTranslation } from 'react-i18next';
-import { FiMinus, FiPlus } from 'react-icons/fi';
 
 export const AdvancedOptions = () => {
   const { t } = useTranslation();
@@ -58,7 +59,7 @@ export const MaxResultsControl = () => {
           onClick={() => changeMaxResultBy(-1)}
           size="small"
         >
-          <FiMinus />
+          <RemoveIcon />
         </IconButton>
         <Typography
           sx={{ width: '1.2rem', textAlign: 'right', transition: 'all 4s ease' }}
@@ -67,7 +68,7 @@ export const MaxResultsControl = () => {
           {field.value ?? '∞'}
         </Typography>
         <IconButton disabled={!field.value} onClick={() => changeMaxResultBy(1)} size="small">
-          <FiPlus />
+          <AddIcon />
         </IconButton>
       </Stack>
     </Stack>

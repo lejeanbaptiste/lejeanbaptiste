@@ -1,4 +1,6 @@
 import { Box, useColorScheme } from '@mui/material';
+import 'monaco-editor/esm/vs/basic-languages/xml/xml.contribution';
+import 'monaco-editor/esm/vs/editor/editor.main';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useEffect, useMemo, useRef, useState } from 'react';
 

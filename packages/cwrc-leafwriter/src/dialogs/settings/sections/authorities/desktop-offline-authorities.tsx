@@ -19,7 +19,7 @@ type AuthorityLifecycleProgress = {
 type AuthorityLifecycleStatus = {
   busy: boolean;
   enabled: boolean;
-  profile: 'chinese' | 'japanese';
+  profile: 'chinese' | 'japanese' | 'tibetan';
   label: string;
   entityDbFolder: string | null;
   entityDbReady: boolean;
@@ -40,7 +40,7 @@ type CommonsUiBridge = {
   refreshAuthorityLifecycle: () => Promise<void>;
   setAuthorityLifecycleEnabled: (options: {
     enabled: boolean;
-    profile?: 'chinese' | 'japanese';
+    profile?: 'chinese' | 'japanese' | 'tibetan';
     deleteFiles?: boolean;
   }) => Promise<AuthorityLifecycleRunResult>;
   runAuthorityLifecycleUpdate: () => Promise<AuthorityLifecycleRunResult>;
@@ -200,13 +200,17 @@ export const DesktopOfflineAuthorities = () => {
   const totalDisk = disk ? disk.rawBytes + disk.packBytes : 0;
   const authorityLabel = status?.label ?? 'Offline authorities';
   const setupDescription =
-    status?.profile === 'japanese'
+    status?.profile === 'japanese' || status?.profile === 'tibetan'
       ? 'Download and update tagging packs beside your entity database.'
       : 'Download, compile, and update tagging packs beside your entity database.';
   const readyMessage =
     status?.profile === 'japanese'
       ? 'NDL authority packs are ready for auto-tagging.'
-      : 'CBDB and DILA authority packs are ready for auto-tagging.';
+      : status?.profile === 'tibetan'
+        ? 'Wikidata authority packs are ready for auto-tagging.'
+        : 'CBDB, DILA, and Wikidata authority packs are ready for auto-tagging.';
+  const wikidataPacks = status?.packs.filter((pack) => pack.id.startsWith('wikidata-')) ?? [];
+  const installedWikidataPacks = wikidataPacks.filter((pack) => pack.installed).length;
 
   return (
     <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch', px: 0, py: 1.5 }}>
@@ -243,8 +247,14 @@ export const DesktopOfflineAuthorities = () => {
                   : 'not installed'}
               </Typography>
             ))}
+            {wikidataPacks.length > 0 && (
+              <Typography variant="body2" color="text.secondary">
+                Wikidata — compiled tagging packs: {installedWikidataPacks} of{' '}
+                {wikidataPacks.length} ready
+              </Typography>
+            )}
             <Typography variant="body2" color="text.secondary">
-              Compiled packs:{' '}
+              All compiled packs:{' '}
               {status.packsReady
                 ? `${status.packs.filter((p) => p.installed).length} of ${status.packs.length} ready`
                 : 'not ready'}
@@ -260,7 +270,12 @@ export const DesktopOfflineAuthorities = () => {
         )}
 
         {status?.updateAvailable && status.enabled && (
-          <Chip color="warning" label="Update available" size="small" sx={{ alignSelf: 'flex-start' }} />
+          <Chip
+            color="warning"
+            label="Update available"
+            size="small"
+            sx={{ alignSelf: 'flex-start' }}
+          />
         )}
 
         {progress && working && (
@@ -274,9 +289,7 @@ export const DesktopOfflineAuthorities = () => {
 
         {message && <Alert severity={message.severity}>{message.text}</Alert>}
 
-        {status?.lastError && !message && (
-          <Alert severity="error">{status.lastError}</Alert>
-        )}
+        {status?.lastError && !message && <Alert severity="error">{status.lastError}</Alert>}
 
         <Stack direction="row" spacing={1}>
           <Button

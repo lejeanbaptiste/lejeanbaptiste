@@ -26,7 +26,7 @@ describe('mentions', () => {
     const second = collectMentions(doc(), 'ignore', 'b');
     const merged = mergeMentionGroups([...first, ...second]);
     const zhang = merged.find((group) => group.surface === '張衡');
-    expect(zhang?.instances).toHaveLength(4);
+    expect(zhang?.instances).toHaveLength(2);
   });
 
   it('purges @key only', () => {

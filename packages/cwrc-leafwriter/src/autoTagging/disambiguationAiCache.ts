@@ -3,6 +3,8 @@ import { hashText } from './normalize';
 export interface DisambiguationAiRankResult {
   selectedCandidateIds: string[];
   rationales: Record<string, string>;
+  /** Per-selected-candidate confidence (0-1); absent on cache entries written before this field existed. */
+  confidences?: Record<string, number>;
   suggestCreateNew: boolean;
   createNewRationale?: string;
 }

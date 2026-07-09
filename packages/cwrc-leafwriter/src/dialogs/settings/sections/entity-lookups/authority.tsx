@@ -1,10 +1,11 @@
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { IconButton, Paper, Stack, Typography } from '@mui/material';
 import { useAtomValue } from 'jotai';
 import { useState } from 'react';
-import { MdAdjust, MdOutlineCircle } from 'react-icons/md';
-import { RxDragHandleDots2 } from 'react-icons/rx';
 import { authorityServicesAtom } from '../../../../jotai/entity-lookup';
 import type { LookupServicePreference } from '../../../../types';
 import { useLookupServicePrefeneces } from './useLookupEntity';
@@ -76,9 +77,11 @@ export const Authority = ({
         <Stack direction="row" spacing={1} alignItems="center">
           <IconButton id="toogle-lookup-entity" color="primary" size="small" sx={{ border: 0 }}>
             {!!disabled ? (
-              <MdOutlineCircle style={{ height: 12, width: 12, pointerEvents: 'none' }} />
+              <RadioButtonUncheckedIcon
+                sx={{ height: 12, width: 12, pointerEvents: 'none' }}
+              />
             ) : (
-              <MdAdjust style={{ height: 12, width: 12, pointerEvents: 'none' }} />
+              <RadioButtonCheckedIcon sx={{ height: 12, width: 12, pointerEvents: 'none' }} />
             )}
           </IconButton>
           <Typography
@@ -93,8 +96,8 @@ export const Authority = ({
             {serviceAuthority?.name}
           </Typography>
         </Stack>
-        <RxDragHandleDots2
-          style={{
+        <DragIndicatorIcon
+          sx={{
             width: hover && !disabled ? 14 : 0,
             height: hover && !disabled ? 14 : 0,
             pointerEvents: 'none',

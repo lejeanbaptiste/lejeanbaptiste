@@ -1,7 +1,7 @@
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { IconButton, Tooltip } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IoMdAddCircleOutline } from 'react-icons/io';
 import { CustomAuthorityDialog } from '.';
 
 export const AddCustomAuthority = () => {
@@ -13,7 +13,7 @@ export const AddCustomAuthority = () => {
     <>
       <Tooltip title={t('LW.settings.authorities.Add Custom Authority')}>
         <IconButton onClick={() => setOpen(true)} size="small" sx={{ mr: 0.75, borderRadius: 2 }}>
-          <IoMdAddCircleOutline />
+          <AddCircleOutlineIcon />
         </IconButton>
       </Tooltip>
       <CustomAuthorityDialog open={open} onClose={() => setOpen(false)} />

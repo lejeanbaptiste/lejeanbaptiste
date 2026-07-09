@@ -11,10 +11,20 @@ import { createEntitiesScaffold } from '../../../../packages/cwrc-leafwriter/src
 import { AUTHORITY_PACKS_DIRNAME } from '@src/desktop/authorityPackTypes';
 
 export const useCommonsUiBridge = () => {
-  const { skipCopyPasteHelp, skipExplorerDeleteConfirm, themeAppearance, currentLocale } =
-    useAppState().ui;
-  const { setSkipCopyPasteHelp, setSkipExplorerDeleteConfirm, setThemeAppearance, switchLanguage } =
-    useActions().ui;
+  const {
+    skipCopyPasteHelp,
+    skipEntityDetachConfirm,
+    skipExplorerDeleteConfirm,
+    themeAppearance,
+    currentLocale,
+  } = useAppState().ui;
+  const {
+    setSkipCopyPasteHelp,
+    setSkipEntityDetachConfirm,
+    setSkipExplorerDeleteConfirm,
+    setThemeAppearance,
+    switchLanguage,
+  } = useActions().ui;
   const [encoderName, setEncoderNameState] = useState('');
   const [aiApiSettings, setAiApiSettingsState] = useState<AiApiSettings | null>(null);
   const [entityDbFolder, setEntityDbFolderState] = useState<string | null>(null);
@@ -208,12 +218,14 @@ export const useCommonsUiBridge = () => {
       entityDbFolder,
       rememberWorkspaceOnStartup,
       skipCopyPasteHelp,
+      skipEntityDetachConfirm,
       skipExplorerDeleteConfirm,
       authorityLifecycleStatus,
       setAiApiSettings,
       setEncoderName,
       setRememberWorkspaceOnStartup,
       setSkipCopyPasteHelp,
+      setSkipEntityDetachConfirm,
       setSkipExplorerDeleteConfirm,
       pickEntityDbFolder,
       testAiConnection,
@@ -243,8 +255,10 @@ export const useCommonsUiBridge = () => {
     setEncoderName,
     setRememberWorkspaceOnStartup,
     setSkipCopyPasteHelp,
+    setSkipEntityDetachConfirm,
     setSkipExplorerDeleteConfirm,
     skipCopyPasteHelp,
+    skipEntityDetachConfirm,
     skipExplorerDeleteConfirm,
     testAiConnection,
   ]);

@@ -1,3 +1,4 @@
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Box,
   FormControl,
@@ -12,7 +13,6 @@ import { useAtom, useAtomValue } from 'jotai';
 import { useResetAtom } from 'jotai/utils';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RxExternalLink } from 'react-icons/rx';
 import { useInView } from 'react-intersection-observer';
 import { isUriValidAtom, manualInputAtom, selectedAtom } from '../store';
 
@@ -77,7 +77,7 @@ export const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) 
                     size="small"
                     target="_blank"
                   >
-                    <RxExternalLink fontSize="inherit" />
+                    <OpenInNewIcon fontSize="inherit" />
                   </IconButton>
                 )}
               </InputAdornment>

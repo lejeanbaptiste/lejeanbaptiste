@@ -11,10 +11,17 @@ export type AuthorityPackId =
   | 'chgis-places'
   /** UI-only: expands to {@link WIKIDATA_PERSON_CHILD_PACK_IDS} at load time. */
   | 'wikidata-persons'
-  | 'wikidata-persons-tang'
   | 'wikidata-persons-ming'
   | 'wikidata-persons-qing'
   | 'wikidata-persons-pre-ming'
+  | 'wikidata-persons-ja'
+  | 'wikidata-persons-bo'
+  | 'wikidata-places-bo'
+  | 'wikidata-orgs-zh-hant'
+  | 'wikidata-orgs-ja'
+  | 'wikidata-orgs-bo'
+  | 'wikidata-works-zh-hant'
+  | 'wikidata-works-ja'
   | 'ndl-persons'
   | 'ndl-places'
   | 'ndl-orgs'
@@ -22,7 +29,6 @@ export type AuthorityPackId =
 
 /** Dynasty-scoped Wikidata NDJSON packs (installed separately; selected via `wikidata-persons`). */
 export const WIKIDATA_PERSON_CHILD_PACK_IDS = [
-  'wikidata-persons-tang',
   'wikidata-persons-pre-ming',
   'wikidata-persons-ming',
   'wikidata-persons-qing',
@@ -92,13 +98,6 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     virtual: true,
   },
   {
-    id: 'wikidata-persons-tang',
-    label: 'Wikidata persons (Tang, zh-hant)',
-    source: 'wikidata',
-    relativePath: 'wikidata/person-zh-hant-tang/persons.ndjson',
-    defaultTag: 'persName',
-  },
-  {
     id: 'wikidata-persons-ming',
     label: 'Wikidata persons (Ming, zh-hant)',
     source: 'wikidata',
@@ -118,6 +117,62 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     source: 'wikidata',
     relativePath: 'wikidata/person-zh-hant-pre-ming/persons.ndjson',
     defaultTag: 'persName',
+  },
+  {
+    id: 'wikidata-persons-ja',
+    label: 'Wikidata persons (Japan, ja)',
+    source: 'wikidata',
+    relativePath: 'wikidata/person-ja-japan/persons.ndjson',
+    defaultTag: 'persName',
+  },
+  {
+    id: 'wikidata-persons-bo',
+    label: 'Wikidata persons (bo)',
+    source: 'wikidata',
+    relativePath: 'wikidata/person-bo/persons.ndjson',
+    defaultTag: 'persName',
+  },
+  {
+    id: 'wikidata-places-bo',
+    label: 'Wikidata places (bo)',
+    source: 'wikidata',
+    relativePath: 'wikidata/place-bo/places.ndjson',
+    defaultTag: 'placeName',
+  },
+  {
+    id: 'wikidata-orgs-zh-hant',
+    label: 'Wikidata organizations (zh-hant)',
+    source: 'wikidata',
+    relativePath: 'wikidata/org-zh-hant/orgs.ndjson',
+    defaultTag: 'orgName',
+  },
+  {
+    id: 'wikidata-orgs-ja',
+    label: 'Wikidata organizations (ja)',
+    source: 'wikidata',
+    relativePath: 'wikidata/org-ja/orgs.ndjson',
+    defaultTag: 'orgName',
+  },
+  {
+    id: 'wikidata-orgs-bo',
+    label: 'Wikidata organizations (bo)',
+    source: 'wikidata',
+    relativePath: 'wikidata/org-bo/orgs.ndjson',
+    defaultTag: 'orgName',
+  },
+  {
+    id: 'wikidata-works-zh-hant',
+    label: 'Wikidata works (zh-hant)',
+    source: 'wikidata',
+    relativePath: 'wikidata/work-zh-hant/works.ndjson',
+    defaultTag: 'title',
+  },
+  {
+    id: 'wikidata-works-ja',
+    label: 'Wikidata works (ja)',
+    source: 'wikidata',
+    relativePath: 'wikidata/work-ja/works.ndjson',
+    defaultTag: 'title',
   },
   {
     id: 'ndl-persons',
@@ -182,6 +237,14 @@ export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
   'dila-places',
   'chgis-places',
   'wikidata-persons',
+  'wikidata-persons-ja',
+  'wikidata-persons-bo',
+  'wikidata-places-bo',
+  'wikidata-orgs-zh-hant',
+  'wikidata-orgs-ja',
+  'wikidata-orgs-bo',
+  'wikidata-works-zh-hant',
+  'wikidata-works-ja',
   'ndl-persons',
   'ndl-places',
   'ndl-orgs',
@@ -293,6 +356,14 @@ export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string
   'dila-places': 'Places',
   'chgis-places': 'Places',
   'wikidata-persons': 'Persons',
+  'wikidata-persons-ja': 'Persons (ja)',
+  'wikidata-persons-bo': 'Persons (bo)',
+  'wikidata-places-bo': 'Places (bo)',
+  'wikidata-orgs-zh-hant': 'Organizations (zh-hant)',
+  'wikidata-orgs-ja': 'Organizations (ja)',
+  'wikidata-orgs-bo': 'Organizations (bo)',
+  'wikidata-works-zh-hant': 'Works (zh-hant)',
+  'wikidata-works-ja': 'Works (ja)',
   'ndl-persons': 'Persons',
   'ndl-places': 'Places',
   'ndl-orgs': 'Organizations',

@@ -64,11 +64,7 @@ import {
   runAuthorityLifecyclePipeline,
   setAuthorityLifecycleEnabled,
 } from './authorityLifecycle';
-import {
-  getChgisStatus,
-  installChgisFromArchive,
-  removeChgisData,
-} from './authorityChgis';
+import { getChgisStatus, installChgisFromArchive, removeChgisData } from './authorityChgis';
 import { loadOrCreateProject, loadProjectFile, writeProjectConfig } from './projectFile';
 import mammoth from 'mammoth';
 import { extractOdtText } from './odtText';
@@ -100,7 +96,14 @@ import {
   restoreTimeMachineSnapshotToProject,
   restoreTimeMachineSnapshotToDirectory,
 } from './timeMachine';
-import { sanmiaoListDateAuthority, sanmiaoProposeDates, sanmiaoProposeDatesBatch, sanmiaoResolveDatesBatch, sanmiaoTagDatesBatch, type SanmiaoProposeOptions } from './sanmiaoBridge';
+import {
+  sanmiaoListDateAuthority,
+  sanmiaoProposeDates,
+  sanmiaoProposeDatesBatch,
+  sanmiaoResolveDatesBatch,
+  sanmiaoTagDatesBatch,
+  type SanmiaoProposeOptions,
+} from './sanmiaoBridge';
 
 const APP_NAME = 'Le Jean-Baptiste';
 
@@ -311,14 +314,7 @@ const postAiTranslationWithStructuredOutputFallback = async (
     let error = await readErrorResponse(response.clone());
     for (let i = 1; i < modes.length; i++) {
       if (!isStructuredOutputRetryable(response.status, error)) break;
-      response = await postAiTranslation(
-        baseUrl,
-        settings,
-        request,
-        model,
-        signal,
-        modes[i]!,
-      );
+      response = await postAiTranslation(baseUrl, settings, request, model, signal, modes[i]!);
       if (response.ok) break;
       error = await readErrorResponse(response.clone());
     }
@@ -640,8 +636,7 @@ const sendMenuAction = (action: string) => {
   mainWindow?.webContents.send('app:menu-action', action);
 };
 
-const isMainWindowLive = (): boolean =>
-  mainWindow !== null && !mainWindow.isDestroyed();
+const isMainWindowLive = (): boolean => mainWindow !== null && !mainWindow.isDestroyed();
 
 const waitForMainWindowLoad = (window: BrowserWindow): Promise<void> =>
   new Promise((resolve) => {
@@ -1208,7 +1203,10 @@ const registerIpcHandlers = () => {
     mainWindow.focus();
     const result = await dialog.showOpenDialog(mainWindow, {
       filters: [
-        { name: 'Importable documents', extensions: ['txt', 'md', 'markdown', 'rtf', 'docx', 'odt'] },
+        {
+          name: 'Importable documents',
+          extensions: ['txt', 'md', 'markdown', 'rtf', 'docx', 'odt'],
+        },
         { name: 'All files', extensions: ['*'] },
       ],
       message: 'Choose text, Markdown, RTF files, or folders to import.',
@@ -1305,7 +1303,7 @@ const registerIpcHandlers = () => {
       detail:
         'This project uses Chinese as its source language. LEAF-Writer can download ' +
         'CBDB (China Biographical Database, ~600 MB) and the DILA Buddhist Studies ' +
-        'authorities (~85 MB) for automated tagging. They are stored next to your ' +
+        'authorities (~85 MB), plus compiled Wikidata packs, for automated tagging. They are stored next to your ' +
         'central entity database and download in the background.',
     });
     if (result.response !== 0) {
@@ -1334,12 +1332,16 @@ const registerIpcHandlers = () => {
   ipcMain.handle('authorityPack:read', async (_event, packId: string) => {
     const folder = await getEntityDbFolderOrNull();
     if (!folder) throw new Error('No entity database folder configured.');
-    return readAuthorityPackFile(folder, packId as import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId);
+    return readAuthorityPackFile(
+      folder,
+      packId as import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId,
+    );
   });
 
   ipcMain.handle(
     'sanmiao:proposeDates',
-    async (_event, text: string, options?: SanmiaoProposeOptions) => sanmiaoProposeDates(text, options ?? {}),
+    async (_event, text: string, options?: SanmiaoProposeOptions) =>
+      sanmiaoProposeDates(text, options ?? {}),
   );
 
   ipcMain.handle(
@@ -1366,27 +1368,23 @@ const registerIpcHandlers = () => {
       }),
   );
 
-  ipcMain.handle(
-    'sanmiao:listDateAuthority',
-    async (_event, options?: SanmiaoProposeOptions) => sanmiaoListDateAuthority(options ?? {}),
+  ipcMain.handle('sanmiao:listDateAuthority', async (_event, options?: SanmiaoProposeOptions) =>
+    sanmiaoListDateAuthority(options ?? {}),
   );
 
-  ipcMain.handle(
-    'authorityPack:installFrom',
-    async (_event, sourcePacksRoot: string) => {
-      const folder = await getEntityDbFolderOrNull();
-      if (!folder) return { ok: false, error: 'No entity database folder configured.' };
-      try {
-        const { copied } = await installAuthorityPacksFrom(sourcePacksRoot, folder);
-        return { ok: true, copied };
-      } catch (error) {
-        return {
-          ok: false,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
-    },
-  );
+  ipcMain.handle('authorityPack:installFrom', async (_event, sourcePacksRoot: string) => {
+    const folder = await getEntityDbFolderOrNull();
+    if (!folder) return { ok: false, error: 'No entity database folder configured.' };
+    try {
+      const { copied } = await installAuthorityPacksFrom(sourcePacksRoot, folder);
+      return { ok: true, copied };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  });
 
   const emitAuthorityLifecycleProgress = (
     event: Electron.IpcMainInvokeEvent,
@@ -1423,7 +1421,12 @@ const registerIpcHandlers = () => {
         emitAuthorityLifecycleProgress(event, progress),
       );
       if (result.ok && options.enabled) {
-        const label = options.profile === 'japanese' ? 'NDL tagging packs' : 'CBDB and DILA tagging packs';
+        const label =
+          options.profile === 'japanese'
+            ? 'NDL and Wikidata tagging packs'
+            : options.profile === 'tibetan'
+              ? 'Wikidata tagging packs'
+              : 'CBDB, DILA, and Wikidata tagging packs';
         new Notification({
           title: 'Offline authorities ready',
           body: `${label} were installed from the registry.`,
@@ -1449,7 +1452,12 @@ const registerIpcHandlers = () => {
       onProgress: (progress) => emitAuthorityLifecycleProgress(event, progress),
     });
     if (result.ok) {
-      const label = lifecycle.profile === 'japanese' ? 'NDL tagging packs' : 'CBDB and DILA tagging packs';
+      const label =
+        lifecycle.profile === 'japanese'
+          ? 'NDL and Wikidata tagging packs'
+          : lifecycle.profile === 'tibetan'
+            ? 'Wikidata tagging packs'
+            : 'CBDB, DILA, and Wikidata tagging packs';
       new Notification({
         title: 'Authority data updated',
         body: `${label} were refreshed from the registry.`,
@@ -1487,11 +1495,15 @@ const registerIpcHandlers = () => {
       message:
         profile === 'japanese'
           ? 'Download Japanese authority packs?'
-          : 'Download Chinese authority databases?',
+          : profile === 'tibetan'
+            ? 'Download Tibetan authority packs?'
+            : 'Download Chinese authority databases?',
       detail:
         profile === 'japanese'
-          ? 'This project uses Japanese as its source language. LEAF-Writer can download NDL authority packs for automated tagging. They are stored next to your central entity database.'
-          : 'This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB) and the DILA Buddhist Studies authorities (~85 MB), then compile them for automated tagging. They are stored next to your central entity database.',
+          ? 'This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging. They are stored next to your central entity database.'
+          : profile === 'tibetan'
+            ? 'This project uses Tibetan as its source language. LEAF-Writer can download Wikidata authority packs for automated tagging. They are stored next to your central entity database.'
+            : 'This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored next to your central entity database.',
     });
     if (result.response !== 0) {
       await recordDeclinedFirstPrompt(folder, profile);
@@ -1517,8 +1529,7 @@ const registerIpcHandlers = () => {
     const options: Electron.OpenDialogOptions = {
       properties: ['openFile', 'openDirectory'],
       title: 'Choose CHGIS download',
-      message:
-        'Select a .zip from Harvard Dataverse, an unzipped layer folder, or a .shp file.',
+      message: 'Select a .zip from Harvard Dataverse, an unzipped layer folder, or a .shp file.',
       filters: [
         { name: 'CHGIS archives', extensions: ['zip'] },
         { name: 'Shapefiles', extensions: ['shp'] },
@@ -1601,8 +1612,7 @@ const registerIpcHandlers = () => {
     const options: Electron.OpenDialogOptions = {
       properties: ['openDirectory'],
       title: 'Choose compiled authority packs folder',
-      message:
-        'Select the folder that contains cbdb/ and dila/ (e.g. authority extraction/packs).',
+      message: 'Select the folder that contains cbdb/ and dila/ (e.g. authority extraction/packs).',
     };
     const result = parent
       ? await dialog.showOpenDialog(parent, options)

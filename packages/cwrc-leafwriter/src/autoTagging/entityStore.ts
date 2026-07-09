@@ -5,6 +5,7 @@ import {
   parseEntities,
   serializeEntities,
 } from './entities';
+import { registerProject, resolveProjectRoots } from './entityProjectRegistry';
 import {
   resolveEntityStorePaths,
   type EntityStoreMode,
@@ -129,6 +130,16 @@ export class EntityStore {
     await this.api.ensureDirectory(entitiesDir);
     await this.api.writeFile(this.entitiesPath, serializeEntities(doc));
     await this.api.notifyOwnWrite?.(this.entitiesPath);
+  }
+
+  /** Check this project into the shared-database registry (entity-projects.json). */
+  async registerProjectInRegistry(): Promise<string[]> {
+    return registerProject(this.api, this.entitiesPath, this.projectRoot);
+  }
+
+  /** Registered project roots that still exist, always including this project. */
+  async registryProjectRoots(): Promise<string[]> {
+    return resolveProjectRoots(this.api, this.entitiesPath, this.projectRoot);
   }
 
   /** Append decision records to the JSONL log, creating it if needed. */

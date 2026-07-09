@@ -7,6 +7,7 @@
 import {
   isChineseLanguageCode,
   isJapaneseLanguageCode,
+  isTibetanLanguageCode,
 } from '@cwrc/leafwriter/languageCodes';
 
 import { getProjectSourceLanguage } from './projectLanguage';
@@ -15,9 +16,10 @@ import { isDesktop } from '@src/types/desktop';
 
 const authorityProfileForLanguage = (
   language: string | null | undefined,
-): 'chinese' | 'japanese' | null => {
+): 'chinese' | 'japanese' | 'tibetan' | null => {
   if (isChineseLanguageCode(language)) return 'chinese';
   if (isJapaneseLanguageCode(language)) return 'japanese';
+  if (isTibetanLanguageCode(language)) return 'tibetan';
   return null;
 };
 

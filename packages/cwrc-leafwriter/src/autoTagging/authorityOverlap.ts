@@ -111,9 +111,18 @@ function maxDefined(a?: number, b?: number): number | undefined {
   return Math.max(a, b);
 }
 
+/**
+ * Merge two `+`-joined source labels into one, deduped token-by-token.
+ * Trims each token before comparing — a stray space in one pack's `source`
+ * field (e.g. "CBDB " vs "CBDB") must not survive as a second, visually
+ * duplicate pill in the combined label.
+ */
 function combinedSource(a: string, b: string): string {
-  if (a === b) return a;
-  const parts = [...new Set([...a.split('+'), ...b.split('+')])].sort();
+  const trimmedA = a.trim();
+  const trimmedB = b.trim();
+  if (trimmedA === trimmedB) return trimmedA;
+  const tokens = [...trimmedA.split('+'), ...trimmedB.split('+')].map((token) => token.trim());
+  const parts = [...new Set(tokens)].sort();
   return parts.join('+');
 }
 

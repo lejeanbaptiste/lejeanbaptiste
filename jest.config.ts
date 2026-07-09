@@ -1,4 +1,7 @@
 import type { Config } from '@jest/types';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const config: Config.InitialOptions = {
   // collectCoverage: true,
@@ -34,7 +37,15 @@ const config: Config.InitialOptions = {
       displayName: { name: 'Storage Dialog', color: 'cyanBright' },
       clearMocks: true,
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
-      moduleNameMapper: { '^dexie$': require.resolve('dexie') },
+      moduleNameMapper: {
+        '^@cwrc/leafwriter-storage-service$':
+          '<rootDir>/packages/cwrc-leafwriter-storage-service/src/index.tsx',
+        '^@cwrc/leafwriter-storage-service/(.*)$':
+          '<rootDir>/packages/cwrc-leafwriter-storage-service/src/$1',
+        '^@octokit/rest$': '<rootDir>/packages/cwrc-leafwriter-storage-service/test/mocks/octokit.ts',
+        '^dexie$': require.resolve('dexie'),
+        '^nanoid$': '<rootDir>/packages/cwrc-leafwriter-storage-service/test/mocks/nanoid.ts',
+      },
       resetMocks: false,
       setupFiles: ['fake-indexeddb/auto'],
       testEnvironment: 'jsdom',

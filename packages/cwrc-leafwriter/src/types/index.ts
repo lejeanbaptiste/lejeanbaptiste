@@ -1,7 +1,7 @@
 import { OptionsObject, SnackbarMessage } from 'notistack';
 import type { Bookmark, Editor } from 'tinymce/tinymce';
 import { Locales } from '../i18n';
-import Writer from '../js/Writer';
+import type Writer from '../js/Writer';
 import type { AuthorityServiceConfig } from './authority';
 
 export * from './assert';

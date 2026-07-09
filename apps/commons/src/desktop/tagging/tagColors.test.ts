@@ -80,8 +80,11 @@ describe('tagColors', () => {
       if (!stored) throw new Error('missing');
       return stored;
     });
-    const writeFile = jest.fn().mockImplementation(async (_path: string, content: string) => {
-      stored = content;
+    const writeFile = jest.fn().mockImplementation(async (path: string, content: string) => {
+      // Only store JSON file content, not CSS
+      if (path.endsWith('.json')) {
+        stored = content;
+      }
     });
     (window as unknown as { electronAPI: { writeFile: typeof writeFile; readFile: typeof readFile } }).electronAPI = {
       writeFile,

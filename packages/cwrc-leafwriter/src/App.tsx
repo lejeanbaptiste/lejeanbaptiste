@@ -1,16 +1,16 @@
 import { Box } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { BottomBar, ContextMenu, EditorLocationBar, EditorToolbar } from './components';
-import { SourceEditorPane } from './components/sourceEditor';
 import { createConfig } from './config';
 import { EntityLookupDialog } from './dialogs';
 import { useDialog, useNotifier } from './hooks';
 import { configureAuthorityServices } from './jotai/entity-lookup/utilities';
-import Writer from './js/Writer';
+import type Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
-import { CodePanel, MarkupPanel, TocPanel } from './panels';
+import { MarkupPanel } from './panels/markup';
+import { TocPanel } from './panels/toc';
 import { DesktopEntitiesPanel } from './panels/entities/DesktopEntitiesPanel';
 import { AutoTaggingReviewPane } from './layout/AutoTaggingReviewPane';
 import { DisambiguationReviewPane, DISAMBIGUATION_PANEL_WIDTH } from './layout/DisambiguationReviewPane';
@@ -20,6 +20,20 @@ import './utilities/cursorSession';
 // import { Layout } from './layout';
 
 const CONTAINER = 'lw-layout-container';
+
+const SourceEditorPane = lazy(() =>
+  import(
+    /* webpackChunkName: "leafwriter-monaco" */ './components/sourceEditor/SourceEditorPane'
+  ).then((module) => ({
+    default: module.SourceEditorPane,
+  })),
+);
+
+const CodePanel = lazy(() =>
+  import(/* webpackChunkName: "leafwriter-monaco" */ './panels/code').then((module) => ({
+    default: module.CodePanel,
+  })),
+);
 
 declare global {
   interface Window {
@@ -46,6 +60,27 @@ const waitForElement = (selector: string, timeoutMs = 5000): Promise<Element> =>
     };
     check();
   });
+
+const observeElement = (
+  selector: string,
+  onChange: (element: Element | null) => void,
+): (() => void) => {
+  let lastElement: Element | null = null;
+
+  const publish = () => {
+    const nextElement = document.querySelector(selector);
+    if (nextElement === lastElement) return;
+    lastElement = nextElement;
+    onChange(nextElement);
+  };
+
+  publish();
+
+  const observer = new MutationObserver(() => publish());
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  return () => observer.disconnect();
+};
 
 const App = ({ document, settings, user }: LeafWriterOptions) => {
   const actions = useActions();
@@ -115,87 +150,34 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   // metadata) — so keep retrying rather than waiting once at startup.
   useEffect(() => {
     if (!isDesktopApp()) return;
-    let cancelled = false;
-
-    const tryFind = () => {
-      const el = window.document.querySelector('#desktop-panel-translation');
-      if (el) {
-        if (!cancelled) setTranslationPaneContainer(el);
-        return;
-      }
-      if (!cancelled) setTimeout(tryFind, 1000);
-    };
-    tryFind();
-
-    return () => {
-      cancelled = true;
-    };
+    return observeElement('#desktop-panel-translation', setTranslationPaneContainer);
   }, []);
 
   useEffect(() => {
     if (!isDesktopApp()) return;
-    let cancelled = false;
-
-    const tryFind = () => {
-      const el = window.document.querySelector('#desktop-panel-auto-tagging');
-      if (el) {
-        if (!cancelled) setAutoTaggingPaneContainer(el);
-        return;
-      }
-      if (!cancelled) setTimeout(tryFind, 500);
-    };
-    tryFind();
-
-    return () => {
-      cancelled = true;
-    };
+    return observeElement('#desktop-panel-auto-tagging', setAutoTaggingPaneContainer);
   }, []);
 
   useEffect(() => {
     if (!isDesktopApp()) return;
-    let cancelled = false;
-
-    const tryFind = () => {
-      const el = window.document.querySelector('#desktop-panel-disambiguation');
-      if (el) {
-        if (!cancelled) setDisambiguationPaneContainer(el);
-        return;
-      }
-      if (!cancelled) setTimeout(tryFind, 500);
-    };
-    tryFind();
-
-    return () => {
-      cancelled = true;
-    };
+    return observeElement('#desktop-panel-disambiguation', setDisambiguationPaneContainer);
   }, []);
 
   useEffect(() => {
     if (!isDesktopApp() || !writer) return;
-
-    const syncPanelContainers = () => {
-      const toc = window.document.querySelector('#desktop-panel-toc');
-      const markup = window.document.querySelector('#desktop-panel-markup');
-      const entities = window.document.querySelector('#desktop-panel-entities');
-
-      if (toc?.isConnected) {
-        setTocPanelContainer((current) => (current === toc ? current : toc));
-      }
-      if (markup?.isConnected) {
-        setStructureTreePanelContainer((current) => (current === markup ? current : markup));
-      }
-      if (entities?.isConnected) {
-        setEntitiesPanelReady(true);
-      }
-    };
-
-    syncPanelContainers();
-    const intervalId = window.setInterval(syncPanelContainers, 300);
-    const stopId = window.setTimeout(() => window.clearInterval(intervalId), 10_000);
+    const disconnectToc = observeElement('#desktop-panel-toc', setTocPanelContainer);
+    const disconnectMarkup = observeElement(
+      '#desktop-panel-markup',
+      setStructureTreePanelContainer,
+    );
+    const disconnectEntities = observeElement('#desktop-panel-entities', (element) => {
+      setEntitiesPanelReady(!!element);
+    });
 
     return () => {
-      window.clearInterval(intervalId);
-      window.clearTimeout(stopId);
+      disconnectToc();
+      disconnectMarkup();
+      disconnectEntities();
     };
   }, [writer]);
 
@@ -224,6 +206,9 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
     await waitForElement(`#${CONTAINER}`);
 
+    const { default: Writer } = await import(
+      /* webpackChunkName: "leafwriter-visual-editor" */ './js/Writer'
+    );
     const _writer = new Writer(config);
 
     //@ts-ignore
@@ -325,7 +310,11 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
             !isReadonly &&
             editorViewMode === 'source' &&
             createPortal(
-              <SourceEditorPane key={state.document.url ?? state.document.schemaId ?? 'source'} />,
+              <Suspense fallback={null}>
+                <SourceEditorPane
+                  key={state.document.url ?? state.document.schemaId ?? 'source'}
+                />
+              </Suspense>,
               sourceEditorPaneContainer,
             )}
           {tocPanelContainer && createPortal(<TocPanel />, tocPanelContainer)}
@@ -335,7 +324,12 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
           {codePanelContainer &&
             !isReadonly &&
             showRawXmlPanel &&
-            createPortal(<CodePanel />, codePanelContainer)}
+            createPortal(
+              <Suspense fallback={null}>
+                <CodePanel />
+              </Suspense>,
+              codePanelContainer,
+            )}
           {entitiesPanelReady && isDesktopApp() && <DesktopEntitiesPanel />}
           {translationPaneContainer &&
             createPortal(<TranslationPane />, translationPaneContainer)}

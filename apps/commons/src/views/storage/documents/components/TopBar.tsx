@@ -1,4 +1,5 @@
-import { GridViewRounded, ViewStream } from '@mui/icons-material';
+import GridViewRoundedIcon from '@mui/icons-material/GridViewRounded';
+import ViewStreamIcon from '@mui/icons-material/ViewStream';
 import {
   Divider,
   Icon,
@@ -58,8 +59,8 @@ export const TopBar = ({
   };
 
   const options = [
-    { icon: ViewStream, value: 'list' },
-    { icon: GridViewRounded, value: 'grid' },
+    { icon: ViewStreamIcon, value: 'list' },
+    { icon: GridViewRoundedIcon, value: 'grid' },
   ];
 
   return (

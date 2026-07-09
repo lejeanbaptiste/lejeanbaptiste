@@ -38,6 +38,8 @@ export const onInitializeOvermind = async (
     effects.storage.api.getFromLocalStorage<boolean>('skipExplorerDeleteConfirm') ?? false;
   state.ui.skipCopyPasteHelp =
     effects.storage.api.getFromLocalStorage<boolean>('skipCopyPasteHelp') ?? false;
+  state.ui.skipEntityDetachConfirm =
+    effects.storage.api.getFromLocalStorage<boolean>('skipEntityDetachConfirm') ?? false;
 };
 
 /**
@@ -88,6 +90,11 @@ export const setSkipExplorerDeleteConfirm = (
 export const setSkipCopyPasteHelp = ({ state, effects }: Context, value: boolean) => {
   state.ui.skipCopyPasteHelp = value;
   effects.storage.api.saveToLocalStorage('skipCopyPasteHelp', value);
+};
+
+export const setSkipEntityDetachConfirm = ({ state, effects }: Context, value: boolean) => {
+  state.ui.skipEntityDetachConfirm = value;
+  effects.storage.api.saveToLocalStorage('skipEntityDetachConfirm', value);
 };
 
 export const setDarkMode = ({ state }: Context, value: boolean) => {

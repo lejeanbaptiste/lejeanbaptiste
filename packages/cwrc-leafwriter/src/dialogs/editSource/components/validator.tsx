@@ -1,11 +1,11 @@
+import CheckIcon from '@mui/icons-material/Check';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { useAtomValue } from 'jotai';
 import { useAnimate } from 'motion/react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IoMdCheckmark } from 'react-icons/io';
-import { RiErrorWarningLine } from 'react-icons/ri';
-import { TbPencilCheck } from 'react-icons/tb';
 import { useValidation } from '../hooks/useValidation';
 import { xmlValidityAtom } from '../store';
 
@@ -35,11 +35,11 @@ export const Validator = () => {
     <Stack direction="row" alignItems="center" spacing={1}>
       {xmlValidity.valid ? (
         <Box ref={scope}>
-          <IoMdCheckmark style={{ opacity: 0 }} />
+          <CheckIcon sx={{ opacity: 0 }} />
         </Box>
       ) : (
         <Stack direction="row" alignItems="center" spacing={1}>
-          <RiErrorWarningLine />
+          <WarningAmberIcon />
           <Typography align="right" color="error" variant="body2">
             {xmlValidity.error.message}
           </Typography>
@@ -47,7 +47,7 @@ export const Validator = () => {
       )}
       <Tooltip placement="top" title={t('LW.check_well-formedness')}>
         <IconButton onClick={handleChecKDocument} sx={{ borderRadius: 2 }}>
-          <TbPencilCheck strokeWidth={1.5} />
+          <EditNoteIcon />
         </IconButton>
       </Tooltip>
     </Stack>

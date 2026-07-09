@@ -5,7 +5,7 @@
 import type { AuthoritySourceId, AuthoritySourceStatus } from './authorityDbTypes';
 import type { AuthorityPackStatus } from './authorityPackTypes';
 
-export type AuthorityLifecycleProfile = 'chinese' | 'japanese';
+export type AuthorityLifecycleProfile = 'chinese' | 'japanese' | 'tibetan';
 
 /** Matches `policy.version` in compiled pack manifests (authority extraction). */
 export const COMPILE_POLICY_VERSION = '2026-07-05';

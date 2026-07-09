@@ -1149,6 +1149,14 @@ export const saveActiveTabAs = async (
     await window.electronAPI.writeFile(filePath, stamped);
     const filename = getFilename(filePath);
 
+    // The save dialog can return a path another open tab already occupies (e.g. saving
+    // two different "New File" tabs to the same destination). Drop that tab first so we
+    // never end up with two openTabs entries sharing one filePath (duplicate React key,
+    // stale editor state on switch).
+    state.project.openTabs = state.project.openTabs.filter(
+      (tab) => tab.filePath !== filePath || tab.filePath === previousPath,
+    );
+
     if (previousPath) {
       state.project.openTabs = state.project.openTabs.map((tab) =>
         tab.filePath === previousPath

@@ -145,9 +145,20 @@ export const fixNestedPastedParagraphs = (body: ParentNode) => {
   const nestedParagraphs = Array.from(
     body.querySelectorAll(`[_tag="${PARAGRAPH_TAG}"] [_tag="${PARAGRAPH_TAG}"]`),
   );
+  const lastHoistedSiblingByParagraph = new WeakMap<Element, Element>();
 
   for (const nested of nestedParagraphs) {
-    hoistOutOfParagraph(nested);
+    const paragraph = findStructuralParent(nested.parentElement, null);
+    if (!paragraph || paragraph.getAttribute('_tag') !== PARAGRAPH_TAG) {
+      continue;
+    }
+
+    const parent = paragraph.parentElement;
+    if (!parent) continue;
+
+    const insertAfter = lastHoistedSiblingByParagraph.get(paragraph) ?? paragraph;
+    parent.insertBefore(nested, insertAfter.nextSibling);
+    lastHoistedSiblingByParagraph.set(paragraph, nested);
   }
 };
 

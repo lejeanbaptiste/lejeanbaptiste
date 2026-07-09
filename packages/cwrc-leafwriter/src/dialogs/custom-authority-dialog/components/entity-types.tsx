@@ -1,3 +1,6 @@
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Box,
   Button,
@@ -15,9 +18,6 @@ import {
 import { FieldArray, useField } from 'formik';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BiError } from 'react-icons/bi';
-import { MdKeyboardArrowDown } from 'react-icons/md';
-import { RxExternalLink } from 'react-icons/rx';
 import z from 'zod';
 import { Icon } from '../../../icons';
 import { namedEntityTypes, type EntityTypeProps, type NamedEntityType } from '../../../types';
@@ -175,7 +175,7 @@ const EntityType = ({
                 url &&
                 url !== '' && (
                   <InputAdornment position="end" sx={{ gap: 1 }}>
-                    {!isValidUrl && <BiError />}
+                    {!isValidUrl && <ErrorOutlineIcon fontSize="inherit" />}
                     <IconButton
                       aria-label={t('LW.messages.navigate to url')}
                       color="primary"
@@ -186,7 +186,7 @@ const EntityType = ({
                       sx={{ borderRadius: 1, transition: 'all 0.4s ease' }}
                       target="_blank"
                     >
-                      <RxExternalLink />
+                      <OpenInNewIcon fontSize="inherit" />
                     </IconButton>
                   </InputAdornment>
                 )
@@ -242,7 +242,7 @@ export const AddEntityType = ({ onChange }: { onChange: (type: EntityTypeProps) 
             aria-haspopup="true"
             aria-expanded={open ? 'true' : undefined}
             disableElevation
-            endIcon={<MdKeyboardArrowDown />}
+            endIcon={<KeyboardArrowDownIcon />}
             fullWidth
             id="add-entity-type"
             onClick={(event) => setAnchorEl(event.currentTarget)}

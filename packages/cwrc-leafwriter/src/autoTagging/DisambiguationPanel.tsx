@@ -39,9 +39,10 @@ import {
   useReducer,
   useRef,
   useState,
-  type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
+import { CbdbIcon, DilaIcon, InitialsIcon } from '../icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 import { openExternalUrl } from '../utilities/DOM';
 import {
@@ -80,6 +81,7 @@ import {
   isAiSuggestReady,
 } from './llmClientFromSettings';
 import { rankDisambiguationCandidates } from './llmDisambiguationRank';
+import { getConfidenceLabel, getValidationColor } from './llmValidationRank';
 import {
   createDefaultAiPromptProfilesState,
   getActiveAiPromptProfile,
@@ -113,32 +115,25 @@ const AuthorityLinkIcon = ({ link }: { link: CandidateLink }) => (
     {link.kind === 'wikidata' ? (
       <WikipediaIcon sx={{ fontSize: 15 }} />
     ) : link.kind === 'cbdb' ? (
-      <Typography component="span" variant="caption" sx={{ fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
-        CBDB
-      </Typography>
+      <CbdbIcon sx={{ fontSize: 15 }} />
     ) : link.kind === 'viaf' ? (
-      <Typography component="span" variant="caption" sx={{ fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
-        VIAF
-      </Typography>
+      <InitialsIcon top="VI" bottom="AF" sx={{ fontSize: 15 }} />
     ) : link.kind === 'dila' ? (
-      <Typography component="span" variant="caption" sx={{ fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
-        DILA
-      </Typography>
+      <DilaIcon sx={{ fontSize: 15 }} />
     ) : (
       <OpenInNewIcon sx={{ fontSize: 13 }} />
     )}
   </IconButton>
 );
 
-interface SectionToggleProps {
+interface SectionHeaderRowProps {
   title: string;
   count: number;
   open: boolean;
   onToggle: () => void;
-  children: ReactNode;
 }
 
-const SectionToggle = ({ title, count, open, onToggle, children }: SectionToggleProps) => (
+const SectionHeaderRow = ({ title, count, open, onToggle }: SectionHeaderRowProps) => (
   <Box sx={{ borderTop: 1, borderColor: 'divider', flexShrink: 0 }}>
     <Button
       fullWidth
@@ -151,7 +146,6 @@ const SectionToggle = ({ title, count, open, onToggle, children }: SectionToggle
     >
       {title} ({count})
     </Button>
-    <Collapse in={open}>{children}</Collapse>
   </Box>
 );
 
@@ -253,6 +247,12 @@ const InstanceContext = ({ instance, isCurrent, onSelect }: InstanceContextProps
   </Box>
 );
 
+type DisambiguationListRow =
+  | { kind: 'pending-group'; group: MentionGroup }
+  | { kind: 'empty'; message: string }
+  | { kind: 'resolved-header' }
+  | { kind: 'resolved-group'; group: MentionGroup };
+
 export const DisambiguationPanel = ({
   session,
   groups,
@@ -261,12 +261,19 @@ export const DisambiguationPanel = ({
   const { t } = useTranslation('LW');
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const groupListRef = useRef<VirtuosoHandle>(null);
   const [candidates, setCandidates] = useState<DisambiguationCandidate[]>([]);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set());
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [rankingAi, setRankingAi] = useState(false);
   const [aiRationales, setAiRationales] = useState<Record<string, string>>({});
+  const [aiConfidences, setAiConfidences] = useState<Record<string, number>>({});
+  const [rateLimitRetry, setRateLimitRetry] = useState<{
+    attempt: number;
+    maxAttempts: number;
+    retryAtMs: number;
+  } | null>(null);
+  const [rateLimitSecondsLeft, setRateLimitSecondsLeft] = useState(0);
   const [aiSuggestCreateNew, setAiSuggestCreateNew] = useState(false);
   const [aiCreateRationale, setAiCreateRationale] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -313,6 +320,16 @@ export const DisambiguationPanel = ({
   useEffect(() => {
     void readAiPromptProfilesFromDesktop().then(setAiPromptProfiles);
   }, []);
+
+  useEffect(() => {
+    if (!rateLimitRetry) return;
+    const tick = () => {
+      setRateLimitSecondsLeft(Math.max(0, Math.ceil((rateLimitRetry.retryAtMs - Date.now()) / 1000)));
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [rateLimitRetry]);
 
   const focusMention = useCallback(
     (instance: MentionInstance) => {
@@ -365,8 +382,10 @@ export const DisambiguationPanel = ({
   const applyAiRank = useCallback(
     async (_targetGroup: MentionGroup, rows: DisambiguationCandidate[], targetInstance: MentionInstance) => {
       setAiRationales({});
+      setAiConfidences({});
       setAiSuggestCreateNew(false);
       setAiCreateRationale(null);
+      setRateLimitRetry(null);
 
       if (!aiCuration || rows.length === 0) return;
 
@@ -384,10 +403,17 @@ export const DisambiguationPanel = ({
           client,
           cache: session.disambiguationAiCache,
           promptProfile: activePromptProfile,
+          onRateLimitRetry: (info) =>
+            setRateLimitRetry({
+              attempt: info.attempt,
+              maxAttempts: info.maxAttempts,
+              retryAtMs: Date.now() + info.delayMs,
+            }),
         });
         if (!rank) return;
 
         setAiRationales(rank.rationales);
+        setAiConfidences(rank.confidences ?? {});
         if (rank.selectedCandidateIds.length > 0) {
           setCheckedIds(new Set(rank.selectedCandidateIds));
           setAiSuggestCreateNew(false);
@@ -400,6 +426,7 @@ export const DisambiguationPanel = ({
         setError(e instanceof Error ? e.message : String(e));
       } finally {
         setRankingAi(false);
+        setRateLimitRetry(null);
       }
     },
     [activePromptProfile, aiCuration, session],
@@ -414,6 +441,7 @@ export const DisambiguationPanel = ({
       setLoadingCandidates(true);
       setError(null);
       setAiRationales({});
+      setAiConfidences({});
       setAiSuggestCreateNew(false);
       setAiCreateRationale(null);
       try {
@@ -451,6 +479,91 @@ export const DisambiguationPanel = ({
     },
     [applyAiRank, session],
   );
+
+  const prefetchGenerationRef = useRef(0);
+
+  /**
+   * Quietly fetch candidates + AI rank for one pending group and leave the
+   * result in `session`'s caches (pendingCache / disambiguationAiCache) —
+   * no visible state changes. When the user later opens this group, the
+   * existing cache-hit paths in `loadCandidates`/`rankDisambiguationCandidates`
+   * return instantly, so walking the list top-down ahead of the user makes
+   * later groups feel just as fast as the first one instead of visibly
+   * queuing behind AI rate limits.
+   */
+  const prefetchGroup = useCallback(
+    async (targetGroup: MentionGroup, generation: number): Promise<void> => {
+      if (generation !== prefetchGenerationRef.current) return;
+      if (controller.isExpanded(targetGroup)) return; // foreground path owns this one
+      const targetInstance = pendingInstances(targetGroup)[0];
+      if (!targetInstance) return;
+
+      let rows = session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
+      if (!rows) {
+        const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
+        const cache = session.cache;
+        if (!cache) return;
+        rows = await buildDisambiguationCandidates(
+          entitiesDoc,
+          targetGroup.tag,
+          targetGroup.surface,
+          cache,
+          ['Wikidata', 'VIAF'],
+          false,
+          window.electronAPI?.authorityPackRead,
+        );
+        if (generation !== prefetchGenerationRef.current) return;
+        session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);
+        await session.savePendingCache();
+      }
+      if (generation !== prefetchGenerationRef.current) return;
+
+      if (!aiCuration || rows.length === 0) return;
+      const settings = aiApiSettingsFromDesktop();
+      if (!settings || !isAiSuggestReady(settings)) return;
+
+      const collapsedRows = collapseCrossAuthorityCandidates(rows.map(enrichCandidateCrossRefs));
+      if (collapsedRows.length === 0) return;
+
+      try {
+        const doc = await session.getDocument();
+        if (generation !== prefetchGenerationRef.current) return;
+        const client = createLlmClientFromSettings(settings);
+        // Cache-hit is checked inside rankDisambiguationCandidates before any
+        // network call, so re-running this for an already-ranked group is cheap.
+        await rankDisambiguationCandidates({
+          doc,
+          instance: targetInstance,
+          candidates: collapsedRows,
+          client,
+          cache: session.disambiguationAiCache,
+          promptProfile: activePromptProfile,
+        });
+      } catch {
+        // Best-effort — the foreground path will retry (and surface errors) if
+        // the user opens this group before a later prefetch pass succeeds.
+      }
+    },
+    [activePromptProfile, aiCuration, controller, session],
+  );
+
+  const runBackgroundPrefetch = useCallback(async () => {
+    // Minting a new generation here (not in the triggering effect) makes
+    // overlapping calls race-free: whichever call ran last owns the current
+    // generation, and every earlier in-flight walk notices the mismatch at
+    // its next check and stops — no separate "is a walk running" flag to
+    // keep in sync.
+    const generation = ++prefetchGenerationRef.current;
+    for (const targetGroup of controller.pendingGroups()) {
+      if (generation !== prefetchGenerationRef.current) return;
+      if (pendingInstances(targetGroup).length === 0) continue;
+      await prefetchGroup(targetGroup, generation);
+    }
+  }, [controller, prefetchGroup]);
+
+  useEffect(() => {
+    void runBackgroundPrefetch();
+  }, [groups, runBackgroundPrefetch]);
 
   useEffect(() => {
     if (!group || !controller.isExpanded(group)) {
@@ -490,12 +603,59 @@ export const DisambiguationPanel = ({
     if (pending.length === 0 && resolved.length > 0) setResolvedOpen(true);
   }, [pending.length, resolved.length]);
 
+  const listRows = useMemo<DisambiguationListRow[]>(() => {
+    const rows: DisambiguationListRow[] = pending.map((targetGroup) => ({
+      kind: 'pending-group',
+      group: targetGroup,
+    }));
+
+    if (pending.length === 0 && resolved.length === 0) {
+      rows.push({
+        kind: 'empty',
+        message: 'No mentions need disambiguation in the current filter.',
+      });
+      return rows;
+    }
+
+    if (pending.length === 0 && resolved.length > 0) {
+      rows.push({
+        kind: 'empty',
+        message: 'No pending items — expand resolved below to review or redo.',
+      });
+    }
+
+    if (resolved.length > 0) {
+      rows.push({ kind: 'resolved-header' });
+      if (resolvedOpen) {
+        rows.push(
+          ...resolved.map((targetGroup) => ({
+            kind: 'resolved-group' as const,
+            group: targetGroup,
+          })),
+        );
+      }
+    }
+
+    return rows;
+  }, [pending, resolved, resolvedOpen]);
+
+  const currentRowIndex = useMemo(() => {
+    if (!currentKey) return -1;
+    return listRows.findIndex((row) =>
+      row.kind === 'pending-group' || row.kind === 'resolved-group'
+        ? mentionGroupKey(row.group) === currentKey
+        : false,
+    );
+  }, [currentKey, listRows]);
+
   useEffect(() => {
-    if (!currentKey || !listRef.current) return;
-    listRef.current
-      .querySelector(`[data-testid="disambiguation-group-${group?.surface}"]`)
-      ?.scrollIntoView?.({ block: 'nearest' });
-  }, [currentKey, group?.surface]);
+    if (!currentKey || currentRowIndex < 0) return;
+    groupListRef.current?.scrollIntoView({
+      index: currentRowIndex,
+      align: 'center',
+      behavior: 'auto',
+    });
+  }, [currentKey, currentRowIndex]);
 
   const rerender = () => {
     containerRef.current?.focus();
@@ -667,8 +827,10 @@ export const DisambiguationPanel = ({
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, gap: 1, alignItems: 'center' }}>
           <CircularProgress size={18} />
           {rankingAi && (
-            <Typography variant="caption" color="text.secondary">
-              AI curation…
+            <Typography variant="caption" color={rateLimitRetry ? 'warning.main' : 'text.secondary'}>
+              {rateLimitRetry
+                ? `Rate limited — retrying in ${rateLimitSecondsLeft}s (attempt ${rateLimitRetry.attempt}/${rateLimitRetry.maxAttempts})…`
+                : 'AI curation…'}
             </Typography>
           )}
         </Box>
@@ -691,6 +853,7 @@ export const DisambiguationPanel = ({
     return filteredCandidates.map((candidate) => {
       const checked = checkedIds.has(candidate.id);
       const links = candidateLinks(candidate);
+      const confidence = aiConfidences[candidate.id];
       return (
         <Box
           key={candidate.id}
@@ -728,6 +891,15 @@ export const DisambiguationPanel = ({
                   label="local"
                   size="small"
                   sx={{ height: 16, fontSize: 10, bgcolor: '#1b5e20', color: '#fff', fontWeight: 600 }}
+                />
+              )}
+              {confidence !== undefined && (
+                <Chip
+                  label={getConfidenceLabel(confidence)}
+                  size="small"
+                  color={getValidationColor(confidence)}
+                  title={`AI confidence: ${confidence.toFixed(2)}`}
+                  sx={{ height: 16, fontSize: 10, fontWeight: 600 }}
                 />
               )}
             </Box>
@@ -934,82 +1106,62 @@ export const DisambiguationPanel = ({
         </Stack>
       )}
 
-      <Box
-        ref={listRef}
-        sx={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
-        onClick={() => containerRef.current?.focus()}
-      >
-        {pending.map((targetGroup) => {
-          const key = mentionGroupKey(targetGroup);
-          const expanded = controller.isExpanded(targetGroup);
-          const isCurrent = key === currentKey;
-          return (
-            <Box key={key} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <GroupHeader
-                group={targetGroup}
-                isCurrent={isCurrent}
-                expanded={expanded}
-                onSelect={() => {
-                  controller.selectGroup(key, { focus: true, expand: expanded });
-                  rerender();
-                }}
-                onToggle={() => {
-                  controller.toggleExpanded(targetGroup);
-                  if (!expanded) controller.selectGroup(key, { focus: true, expand: true });
-                  rerender();
-                }}
-              />
-              <Collapse in={expanded}>{renderPendingGroupBody(targetGroup)}</Collapse>
-            </Box>
-          );
-        })}
-
-        {pending.length === 0 && resolved.length === 0 && (
-          <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, py: 0.5 }}>
-            No mentions need disambiguation in the current filter.
-          </Typography>
-        )}
-
-        {pending.length === 0 && resolved.length > 0 && (
-          <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, py: 0.5 }}>
-            No pending items — expand resolved below to review or redo.
-          </Typography>
-        )}
-
-        {resolved.length > 0 && (
-          <SectionToggle
-            title={t('Resolved')}
-            count={resolved.length}
-            open={resolvedOpen}
-            onToggle={() => setResolvedOpen((open) => !open)}
-          >
-            {resolved.map((targetGroup) => {
-              const key = mentionGroupKey(targetGroup);
-              const expanded = controller.isExpanded(targetGroup);
-              const isCurrent = key === currentKey;
+      <Box sx={{ flex: 1, minHeight: 0 }} onClick={() => containerRef.current?.focus()}>
+        <Virtuoso
+          ref={groupListRef}
+          data={listRows}
+          overscan={600}
+          itemContent={(_index, row) => {
+            if (row.kind === 'empty') {
               return (
-                <Box key={key} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                  <GroupHeader
-                    group={targetGroup}
-                    isCurrent={isCurrent}
-                    expanded={expanded}
-                    resolved
-                    onSelect={() => {
-                      controller.selectGroup(key, { focus: true, expand: expanded });
-                      rerender();
-                    }}
-                    onToggle={() => {
-                      controller.toggleExpanded(targetGroup);
-                      if (!expanded) controller.selectGroup(key, { focus: true, expand: true });
-                      rerender();
-                    }}
-                  />
-                  <Collapse in={expanded}>{renderResolvedGroupBody(targetGroup)}</Collapse>
-                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, py: 0.5 }}>
+                  {row.message}
+                </Typography>
               );
-            })}
-          </SectionToggle>
-        )}
+            }
+
+            if (row.kind === 'resolved-header') {
+              return (
+                <SectionHeaderRow
+                  title={t('Resolved')}
+                  count={resolved.length}
+                  open={resolvedOpen}
+                  onToggle={() => setResolvedOpen((open) => !open)}
+                />
+              );
+            }
+
+            const targetGroup = row.group;
+            const key = mentionGroupKey(targetGroup);
+            const expanded = controller.isExpanded(targetGroup);
+            const isCurrent = key === currentKey;
+            const resolvedRow = row.kind === 'resolved-group';
+
+            return (
+              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <GroupHeader
+                  group={targetGroup}
+                  isCurrent={isCurrent}
+                  expanded={expanded}
+                  resolved={resolvedRow}
+                  onSelect={() => {
+                    controller.selectGroup(key, { focus: true, expand: expanded });
+                    rerender();
+                  }}
+                  onToggle={() => {
+                    controller.toggleExpanded(targetGroup);
+                    if (!expanded) controller.selectGroup(key, { focus: true, expand: true });
+                    rerender();
+                  }}
+                />
+                <Collapse in={expanded}>
+                  {resolvedRow ? renderResolvedGroupBody(targetGroup) : renderPendingGroupBody(targetGroup)}
+                </Collapse>
+              </Box>
+            );
+          }}
+          style={{ height: '100%' }}
+        />
       </Box>
 
       {showCandidateUi && instance && (
