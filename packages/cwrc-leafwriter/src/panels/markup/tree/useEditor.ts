@@ -1,6 +1,6 @@
 import { UniqueIdentifier } from '@dnd-kit/core';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { log } from '../../../utilities';
 import {
   displayTextNodesAtom,
@@ -26,6 +26,18 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
   const [enabled, setEnabled] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [updatePending, setUpdatePending] = useState(false);
+  const updateTimerRef = useRef<number | null>(null);
+
+  const scheduleUpdatePending = () => {
+    if (updateTimerRef.current !== null) {
+      window.clearTimeout(updateTimerRef.current);
+    }
+
+    updateTimerRef.current = window.setTimeout(() => {
+      updateTimerRef.current = null;
+      setUpdatePending(true);
+    }, 1);
+  };
 
   useEffect(() => {
     writer.event('documentLoaded').subscribe(handleDocumentLoaded);
@@ -39,7 +51,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
 
     const onViewModeChanged = () => {
       if (window.writer?.overmindState?.ui?.editorViewMode === 'visual') {
-        setTimeout(() => setUpdatePending(true), 1);
+        scheduleUpdatePending();
       }
     };
     window.addEventListener('desktop:editor-view-mode-changed', onViewModeChanged);
@@ -63,6 +75,10 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
       writer.event('massUpdateCompleted').unsubscribe(handleMassUpdateCompleted);
       writer.event('writerKeyup').unsubscribe(handleWriterKeyup);
       window.removeEventListener('desktop:editor-view-mode-changed', onViewModeChanged);
+      if (updateTimerRef.current !== null) {
+        window.clearTimeout(updateTimerRef.current);
+        updateTimerRef.current = null;
+      }
     };
   }, [initialized, enabled, items]);
 
@@ -90,7 +106,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
 
     if (initialized && enabled) {
       // This will force a rebuild of the tree after manual XML editing.
-      setTimeout(() => setUpdatePending(true), 1);
+      scheduleUpdatePending();
       return;
     }
     setInitialized(true);
@@ -214,7 +230,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
   };
 
   const handleContentChanged = () => {
-    setTimeout(() => setUpdatePending(true), 1);
+    scheduleUpdatePending();
   };
 
   const handleMassUpdateStarted = () => setEnabled(false);

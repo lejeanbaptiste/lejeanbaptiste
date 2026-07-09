@@ -21,7 +21,6 @@ import { wikidataQidsMatchingKind } from './wikidataKindFilter';
 import { packIdsForEntityType, packResultUri, searchPackContent } from '../services/authority-pack-lookup';
 import { AUTHORITY_PACKS } from './packPaths';
 import {
-  iterateAuthorityNdjson,
   normalizeDateRangeFilter,
   parseAuthorityNdjson,
   type DateRangeFilter,

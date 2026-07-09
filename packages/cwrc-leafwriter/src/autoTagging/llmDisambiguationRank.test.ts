@@ -1,5 +1,6 @@
 import type { LlmClient, LlmRequest, LlmResponse } from './llmClient';
 import { DisambiguationAiCache } from './disambiguationAiCache';
+import { createAnchor } from './anchor';
 import { rankDisambiguationCandidates } from './llmDisambiguationRank';
 import type { DisambiguationCandidate } from './disambiguationCandidates';
 import type { MentionInstance } from './mentions';
@@ -35,22 +36,13 @@ const makeInstance = (): MentionInstance => {
   const doc = makeDoc();
   const element = doc.getElementsByTagName('p')[0]!;
   const textNode = element.firstChild as Text;
+  const anchor = createAnchor('doc-1', doc, textNode, 0, textNode.data.length, 'ignore');
   return {
     documentId: 'doc-1',
     tag: 'persName',
     surface: '沈攸之',
     element,
-    anchor: {
-      documentId: 'doc-1',
-      surface: '沈攸之',
-      contextBefore: '',
-      contextAfter: '',
-      occurrence: 0,
-      nodeHash: 'hash',
-      textNode,
-      startOffset: 0,
-      endOffset: textNode.data.length,
-    },
+    anchor,
     hasKey: false,
     isUnresolved: true,
   };
@@ -172,22 +164,13 @@ describe('rankDisambiguationCandidates', () => {
     const doc = makeDatedDoc();
     const element = doc.getElementsByTagName('p')[0]!;
     const textNode = element.lastChild as Text;
+    const anchor = createAnchor('doc-1', doc, textNode, 0, textNode.data.length, 'ignore');
     const instance: MentionInstance = {
       documentId: 'doc-1',
       tag: 'placeName',
       surface: '廣州',
       element,
-      anchor: {
-        documentId: 'doc-1',
-        surface: '廣州',
-        contextBefore: '',
-        contextAfter: '',
-        occurrence: 0,
-        nodeHash: 'hash',
-        textNode,
-        startOffset: 0,
-        endOffset: textNode.data.length,
-      },
+      anchor,
       hasKey: false,
       isUnresolved: true,
     };

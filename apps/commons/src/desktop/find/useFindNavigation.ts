@@ -13,6 +13,7 @@ export const useFindNavigation = (onAfterJump?: () => void) => {
   const resourceFilePathRef = useRef(resource?.filePath);
   const activeTabPathRef = useRef(activeTabPath);
   const openTabsRef = useRef(openTabs);
+  const retryTimersRef = useRef<number[]>([]);
 
   onAfterJumpRef.current = onAfterJump;
   resourceFilePathRef.current = resource?.filePath;
@@ -75,10 +76,14 @@ export const useFindNavigation = (onAfterJump?: () => void) => {
   }, [completeJump, getContentForJump]);
 
   const schedulePendingJumpRetries = useCallback(() => {
+    retryTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    retryTimersRef.current = [];
+
     for (const delay of [0, 100, 350, 800, 1500]) {
-      setTimeout(() => {
+      const timer = window.setTimeout(() => {
         if (pendingJumpRef.current) tryPerformPendingJump();
       }, delay);
+      retryTimersRef.current.push(timer);
     }
   }, [tryPerformPendingJump]);
 
@@ -94,6 +99,8 @@ export const useFindNavigation = (onAfterJump?: () => void) => {
     writer.event('documentLoaded').subscribe(onDocumentLoaded);
     return () => {
       writer.event('documentLoaded').unsubscribe(onDocumentLoaded);
+      retryTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      retryTimersRef.current = [];
     };
   }, [schedulePendingJumpRetries]);
 

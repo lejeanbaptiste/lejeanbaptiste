@@ -16,7 +16,6 @@ import {
 } from './disambiguationCandidates';
 import { AuthorityCache } from './authorityCache';
 import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
-import type { DilaFetchFn } from './dilaPlaceDetail';
 import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
 
 jest.mock('../services/lincs-api', () => ({ reconcile: jest.fn() }));
