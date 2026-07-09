@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AuthorityCache } from '../../../../packages/cwrc-leafwriter/src/autoTagging/authorityCache';
 import {
   buildDisambiguationCandidates,
@@ -74,6 +75,7 @@ const createLookupSession = async (): Promise<LookupSession> => {
  * store it in the entity database — or add the raw name without a match.
  */
 export const AuthorPillField = ({ authors, disabled, onChange }: AuthorPillFieldProps) => {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [candidates, setCandidates] = useState<DisambiguationCandidate[] | null>(null);
@@ -179,7 +181,7 @@ export const AuthorPillField = ({ authors, disabled, onChange }: AuthorPillField
         <TextField
           disabled={disabled}
           fullWidth
-          label="Add author"
+          label={t('LWC.desktop.author_pill.add_author')}
           onChange={(event) => {
             setQuery(event.target.value);
             resetLookup();
@@ -190,11 +192,11 @@ export const AuthorPillField = ({ authors, disabled, onChange }: AuthorPillField
               void handleSearch();
             }
           }}
-          placeholder="Type a name, then search"
+          placeholder={t('LWC.desktop.author_pill.type_name_search')}
           size="small"
           value={query}
         />
-        <Tooltip title="Search authorities">
+        <Tooltip title={t('LWC.desktop.author_pill.search_authorities')}>
           <span>
             <IconButton
               disabled={disabled || !query.trim() || searching}
@@ -205,7 +207,7 @@ export const AuthorPillField = ({ authors, disabled, onChange }: AuthorPillField
             </IconButton>
           </span>
         </Tooltip>
-        <Tooltip title="Add without authority match">
+        <Tooltip title={t('LWC.desktop.author_pill.add_without_authority_match')}>
           <span>
             <IconButton
               disabled={disabled || !query.trim()}

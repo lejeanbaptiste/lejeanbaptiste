@@ -3,8 +3,6 @@
 **Disambiguation**
 - [ ] Is AI working?
 
-**Schema editing**
-
 **Clean-up**
 - [ ] Double clicking contents should not select the node as well (?)
 

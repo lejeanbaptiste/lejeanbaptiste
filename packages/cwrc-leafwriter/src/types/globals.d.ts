@@ -16,6 +16,7 @@ declare global {
   type DesktopRightPanelTab =
     | 'fileMetadata'
     | 'attributes'
+    | 'css'
     | 'imageViewer'
     | 'validation'
     | 'translation';

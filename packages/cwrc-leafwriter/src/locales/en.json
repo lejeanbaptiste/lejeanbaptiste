@@ -1,5 +1,8 @@
 {
   "LW": {
+    "error": {
+      "an_error_has_occurred": "An error has occurred"
+    },
     "Accept All": "",
     "Add Entity Annotation": "Add Entity Annotation",
     "Add Tag": "Add Tag",

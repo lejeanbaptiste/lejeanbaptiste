@@ -12,6 +12,7 @@ import {
 import { getTieredCatalogForSetup } from '@src/desktop/schemaCatalog';
 import { isDesktop } from '@src/types/desktop';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SchemaSetupState {
   primary: Array<{ id: string; name: string; enabled: boolean }>;
@@ -20,6 +21,7 @@ interface SchemaSetupState {
 }
 
 export const NativeSchemaSetupPage = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const dialogId = searchParams.get('dialogId') ?? '';
   const [state, setState] = useState<SchemaSetupState | null>(null);
@@ -109,7 +111,7 @@ export const NativeSchemaSetupPage = () => {
   if (!isDesktop()) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography>This page is only available in the desktop app.</Typography>
+        <Typography>{t('LWC.desktop.only_available_desktop')}</Typography>
       </Box>
     );
   }
@@ -117,9 +119,9 @@ export const NativeSchemaSetupPage = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
       <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', WebkitAppRegion: 'drag' }}>
-        <Typography variant="h6">Project schema setup</Typography>
+        <Typography variant="h6">{t('LWC.desktop.project.schema_setup')}</Typography>
         <Typography color="text.secondary" variant="body2">
-          Choose a schema for this project. Files are copied into the project folder.
+          {t('LWC.desktop.project.choose_schema_message')}
         </Typography>
       </Box>
 
@@ -129,9 +131,9 @@ export const NativeSchemaSetupPage = () => {
         ) : (
           <>
             <FormControl fullWidth size="small">
-              <InputLabel id="schema-setup-label">Schema</InputLabel>
+              <InputLabel id="schema-setup-label">{t('LWC.desktop.project.schema')}</InputLabel>
               <Select
-                label="Schema"
+                label={t('LWC.desktop.project.schema')}
                 labelId="schema-setup-label"
                 onChange={(event) => setSelectedCatalogId(event.target.value)}
                 value={selectedCatalogId}

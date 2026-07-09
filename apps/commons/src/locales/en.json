@@ -113,7 +113,8 @@
       "subtitle": "The XML & RDF online editor of the Linked Editing Academic Framework",
       "team": "team"
     },
-    "importExport": {
+    "dialogs": {
+      "importExport": {
       "Learn more about importing files": "Learn more about importing files",
       "convert and open": "convert and open",
       "convert document": "convert document",
@@ -123,7 +124,7 @@
       },
       "try to open it without converting": "try to open it without converting"
     },
-    "languages": {
+      "languages": {
       "de": "German",
       "en": "English",
       "es": "Spanish",
@@ -131,7 +132,7 @@
       "pt": "Portuguese",
       "ro": "Romanian"
     },
-    "messages": {
+      "messages": {
       "annotation_need_space": "Annotating documents requires more space.",
       "link_to_storage_provider_instructions": "You can do that by clicking on the user icon in the top-right corner of the screen and then selecting an option in the list of storage providers.",
       "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large screen.",
@@ -141,14 +142,19 @@
       "you_must_sign_in_to_open_and_save_document_from_the_cloud": "You must sign in to open and save documents from the cloud",
       "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "You must sign in witn a storage provider to open and save document from the cloud"
     },
-    "messsages": {
+      "messsages": {
       "authentication_server_is_currently_unavailable": "Authentication server is currently unavailable"
     },
-    "on this page": "On this page",
-    "profile": {
-      "manage_your_lincs_account": "Manage your LINCS account"
-    },
-    "storage": {
+      "on this page": "On this page",
+      "profile": {
+        "manage_your_lincs_account": "Manage your LINCS account"
+      },
+      "error": {
+        "something_went_wrong": "Something went wrong",
+        "unknown_error": "An unknown error occurred.",
+        "webpack_wait": "If you just started the desktop app, wait for webpack to finish compiling and reload the window."
+      },
+      "storage": {
       "all_changes_salved": "all changes saved",
       "click to upload": "click to upload",
       "click_to_save": "click to save",
@@ -176,16 +182,79 @@
       },
       "you_will_lose_any_unsaved_changes": "You will lose any unsaved changes"
     },
-    "templates": {
-      "choose_a_template": "choose a template"
-    },
-    "ui": {
-      "appearance": "appearance",
-      "dark_theme": "Dark theme",
-      "device_theme": "Device theme",
-      "light_theme": "Light theme"
+      "templates": {
+        "choose_a_template": "choose a template"
+      },
+      "aria_labels": {
+        "save": "save",
+        "main_menu": "Main Menu",
+        "resize_left_panel": "Resize left panel",
+        "resize_right_panel": "Resize right panel",
+        "toggle_sidebar_panel": "Toggle sidebar panel",
+        "expand_right_panel": "Expand right panel",
+        "collapse_right_panel": "Collapse right panel",
+        "help": "help",
+        "document_location": "Document location"
+      },
+      "ui": {
+        "appearance": "appearance",
+        "dark_theme": "Dark theme",
+        "device_theme": "Device theme",
+        "light_theme": "Light theme"
+      },
+      "east_asian_dates": {
+        "dynasty": "Dynasty",
+        "emperor": "Emperor",
+        "era": "Era",
+        "year": "Year",
+        "month": "Month",
+        "day": "Day",
+        "sexagenary_year": "Sexagenary year",
+        "sexagenary_day": "Sexagenary day",
+        "new_moon_gz": "New-moon gz",
+        "nmd_gz": "Nmd gz",
+        "type_to_search": "Type to search…",
+        "placeholder_example": "元年, 3, 十八",
+        "optional": "optional"
+      }
     },
     "desktop": {
+      "only_available_desktop": "This page is only available in the desktop app.",
+      "file_metadata": {
+        "book_title": "Book title",
+        "not_before": "Not before",
+        "not_after": "Not after",
+        "year": "Year",
+        "edition": "Edition",
+        "year_of_edition": "Year of edition",
+        "transcription_source": "Transcription source"
+      },
+      "author_pill": {
+        "add_author": "Add author",
+        "type_name_search": "Type a name, then search",
+        "search_authorities": "Search authorities",
+        "add_without_authority_match": "Add without authority match"
+      },
+      "project": {
+        "settings": "Project settings",
+        "schema_setup": "Project schema setup",
+        "tei_path": "TEI path",
+        "schema": "Schema",
+        "central_database": "Central database",
+        "project_database": "This project's database",
+        "div_alignment": "Div (section-level, looser)",
+        "paragraph_alignment": "Paragraph (1:1)",
+        "code": "Code",
+        "label": "Label",
+        "value": "Value",
+        "remove_custom_field": "Remove custom field",
+        "remove_language": "Remove language",
+        "add_translation_language": "Add translation language",
+        "add_custom_field": "Add custom field",
+        "first_setup_message": "Save once to finish project setup. Source language is required; other fields may be left blank.",
+        "defaults_message": "Project-wide defaults and entity database choice.",
+        "choose_schema_message": "Choose a schema for this project. Files are copied into the project folder."
+      },
       "external_file_changed": {
         "title": "File changed on disk",
         "message": "{{filename}} was modified outside the app.",
@@ -241,6 +310,60 @@
         "rename": "Rename",
         "rename_placeholder": "New name",
         "rename_title": "Rename"
+      },
+      "tagging": {
+        "add_attribute": "Add attribute",
+        "highlight": "Highlight",
+        "text": "Text",
+        "filter_attributes": "Filter attributes...",
+        "attribute_value": "Attribute value",
+        "attribute_name": "Attribute name",
+        "filter_tags": "Filter tags..."
+      },
+      "scope_fields": {
+        "scope": "Scope",
+        "folder_placeholder": "/path/to/folder"
+      },
+      "sidebar": {
+        "find": {
+          "find_label": "Find",
+          "replace_label": "Replace",
+          "search_placeholder": "Search text",
+          "replacement_placeholder": "Replacement text",
+          "ignore_case": "Ignore case",
+          "use_regex": "Use regular expression",
+          "documents_label": "Documents"
+        },
+        "xpath": {
+          "xpath_placeholder": "TEI/text/body//p"
+        },
+        "database": {
+          "search_placeholder": "Search (regex) — name, id, description",
+          "clear_search": "Clear search",
+          "reload_entities": "Reload entities",
+          "dont_warn_detach": "Don't warn me about detaching again",
+          "one_line_description": "One-line description",
+          "add_alternative_name": "Add a name for matching (alternative name)",
+          "entity_types": {
+            "all": "All",
+            "person": "Per",
+            "place": "Pla",
+            "organization": "Org",
+            "work": "Wrk"
+          },
+          "save": "Save",
+          "merge": "Merge",
+          "dialogs": {
+            "splitting_entity": "Splitting an entity",
+            "split_info_message": "There is no automatic split: the database cannot know which mentions belong to which of the two people. The reliable way is to delete this entity (tags stay, keys are stripped) and re-run tagging or re-link the mentions — each group to its own new entity.",
+            "keys_updated": "Keys updated",
+            "got_it": "Got it",
+            "cancel": "Cancel",
+            "close": "Close",
+            "reload_database": "Reload database",
+            "keep_current": "Keep current copy"
+          }
+        }
       }
     }
   },

@@ -29,6 +29,19 @@ describe('tagColors', () => {
     expect(css).toContain('box-decoration-break: clone');
   });
 
+  test('generateTagColorsCss respects disabled highlight and text toggles', () => {
+    const file = emptyTagColorsFile();
+    file.tags.persName = {
+      highlight: '#abcabc',
+      text: '#123123',
+      highlightEnabled: false,
+      textEnabled: false,
+    };
+    const css = generateTagColorsCss(file);
+    expect(css).not.toContain('background-color: #abcabc');
+    expect(css).not.toContain('color: #123123');
+  });
+
   test('mixHex blends colours toward a target weight', () => {
     expect(mixHex('#000000', '#ffffff', 0.5)).toBe('#808080');
   });

@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { AuthorPillField } from '@src/desktop/AuthorPillField';
+import { useTranslation } from 'react-i18next';
 import {
   applyFileHeaderFields,
   documentSupportsFileMetadata,
@@ -54,6 +55,7 @@ const TeiSourceFields = ({
   onChange: (next: SourceDescription) => void;
   value: SourceDescription;
 }) => {
+  const { t } = useTranslation();
   const isRange = value.workDate.when === undefined &&
     (value.workDate.notBefore !== undefined || value.workDate.notAfter !== undefined);
   const [rangeMode, setRangeMode] = useState(isRange);
@@ -86,7 +88,7 @@ const TeiSourceFields = ({
       <TextField
         disabled={disabled}
         fullWidth
-        label="Book title"
+        label={t('LWC.desktop.file_metadata.book_title')}
         onChange={(event) => update({ title: event.target.value })}
         size="small"
         value={value.title}
@@ -104,7 +106,7 @@ const TeiSourceFields = ({
             <>
               <TextField
                 disabled={disabled}
-                label="Not before"
+                label={t('LWC.desktop.file_metadata.not_before')}
                 onChange={(event) =>
                   update({
                     workDate: { ...value.workDate, when: undefined, notBefore: event.target.value },
@@ -116,7 +118,7 @@ const TeiSourceFields = ({
               />
               <TextField
                 disabled={disabled}
-                label="Not after"
+                label={t('LWC.desktop.file_metadata.not_after')}
                 onChange={(event) =>
                   update({
                     workDate: { ...value.workDate, when: undefined, notAfter: event.target.value },
@@ -130,7 +132,7 @@ const TeiSourceFields = ({
           ) : (
             <TextField
               disabled={disabled}
-              label="Year"
+              label={t('LWC.desktop.file_metadata.year')}
               onChange={(event) => update({ workDate: { when: event.target.value } })}
               size="small"
               sx={{ flex: 1 }}
@@ -158,7 +160,7 @@ const TeiSourceFields = ({
       <Stack direction="row" spacing={1}>
         <TextField
           disabled={disabled}
-          label="Edition"
+          label={t('LWC.desktop.file_metadata.edition')}
           onChange={(event) => update({ edition: event.target.value })}
           size="small"
           sx={{ flex: 2 }}
@@ -166,7 +168,7 @@ const TeiSourceFields = ({
         />
         <TextField
           disabled={disabled}
-          label="Year of edition"
+          label={t('LWC.desktop.file_metadata.year_of_edition')}
           onChange={(event) => update({ editionDate: event.target.value })}
           size="small"
           sx={{ flex: 1 }}
@@ -177,7 +179,7 @@ const TeiSourceFields = ({
       <TextField
         disabled={disabled}
         fullWidth
-        label="Transcription source"
+        label={t('LWC.desktop.file_metadata.transcription_source')}
         minRows={3}
         multiline
         onChange={(event) => update({ sourceNote: event.target.value })}
@@ -189,6 +191,7 @@ const TeiSourceFields = ({
 };
 
 export const FileMetadataPanel = () => {
+  const { t } = useTranslation();
   const { activeTabPath, config, openTabs, rootPath } = useAppState().project;
   const { readonly } = useAppState().editor;
   const { markTabDirty, updateTabContent } = useActions().project;
