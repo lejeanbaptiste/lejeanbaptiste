@@ -51,6 +51,12 @@ import {
   entityStoreFromDesktop,
   type EntityStore,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import {
+  loadOpenWarnings,
+  resolveWarning,
+  warningKey,
+  type LookupWarning,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/lookupWarnings';
 import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import { useActions, useAppState } from '@src/overmind';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
@@ -64,6 +70,8 @@ const idOrdinal = (id: string): number => {
 
 const oldestId = (ids: string[]): string =>
   [...ids].sort((a, b) => idOrdinal(a) - idOrdinal(b))[0]!;
+
+const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 interface ConfirmState {
   title: string;
@@ -85,6 +93,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [store, setStore] = useState<EntityStore | null>(null);
   const [entities, setEntities] = useState<EntitySummary[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
+  const [warnings, setWarnings] = useState<LookupWarning[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyMessage, setBusyMessage] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -115,6 +124,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (!currentStore) {
       setEntities([]);
       setDuplicates([]);
+      setWarnings([]);
       return;
     }
     setLoading(true);
@@ -123,6 +133,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       const doc = await currentStore.loadEntities();
       setEntities(listEntities(doc));
       setDuplicates(findAuthorityDuplicates(doc));
+      setWarnings(await loadOpenWarnings(currentStore));
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -293,6 +304,34 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   const entityById = (id: string) => entities.find((entity) => entity.id === id);
 
+  /** Jump the list to one entity (search pins it, checkbox selects it). */
+  const jumpToEntity = (id: string) => {
+    setKindFilter('all');
+    setSearch(`^${escapeRegExp(id)}$`);
+    setSelected(new Set([id]));
+  };
+
+  /** Show every implicated entity together, preselected so Merge is one click away. */
+  const reviewWarningEntities = (warning: LookupWarning) => {
+    setKindFilter('all');
+    setSearch(`^(${warning.entityIds.map(escapeRegExp).join('|')})$`);
+    setSelected(new Set(warning.entityIds));
+  };
+
+  const dismissWarning = (warning: LookupWarning) => {
+    if (!store) return;
+    void (async () => {
+      try {
+        await resolveWarning(store, warning);
+        setWarnings((previous) =>
+          previous.filter((candidate) => warningKey(candidate) !== warningKey(warning)),
+        );
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      }
+    })();
+  };
+
   if (!store) {
     return (
       <Box sx={{ p: 2 }}>
@@ -391,6 +430,48 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 Intentional
               </Button>
             </Stack>
+          ))}
+        </Alert>
+      )}
+
+      {/* Lookup curation warnings (filed by the entity lookup dialog) */}
+      {warnings.length > 0 && (
+        <Alert severity="warning" icon={<WarningAmberIcon fontSize="small" />} sx={{ m: 1, py: 0 }}>
+          <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
+            {warnings.length === 1
+              ? '1 lookup warning to review'
+              : `${warnings.length} lookup warnings to review`}
+          </Typography>
+          {warnings.map((warning) => (
+            <Box key={warningKey(warning)} sx={{ mt: 0.5 }}>
+              <Tooltip title={warning.detail ?? ''}>
+                <Typography variant="caption" component="div">
+                  {warning.kind === 'concordance-conflict'
+                    ? `${warning.authority} ${warning.value} matched several entities — possible duplicates:`
+                    : `A lookup implied ${warning.authority} ${warning.value}, but the entity already carries a different ${warning.authority} id — verify, or split the entity:`}
+                </Typography>
+              </Tooltip>
+              <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" alignItems="center">
+                {warning.entityIds.map((id) => (
+                  <Chip
+                    key={id}
+                    label={entityById(id)?.names[0] ?? id}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => jumpToEntity(id)}
+                    sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: 11 } }}
+                  />
+                ))}
+                {warning.kind === 'concordance-conflict' && warning.entityIds.length > 1 && (
+                  <Button size="small" onClick={() => reviewWarningEntities(warning)}>
+                    Review
+                  </Button>
+                )}
+                <Button size="small" onClick={() => dismissWarning(warning)}>
+                  Dismiss
+                </Button>
+              </Stack>
+            </Box>
           ))}
         </Alert>
       )}
