@@ -26,4 +26,12 @@ describe('disambiguationSettings', () => {
     expect(yearRangeFromSettings({ yearStart: 618, yearEnd: 907 })).toEqual([618, 907]);
     expect(yearRangeFromSettings({ yearStart: 907, yearEnd: 618 })).toEqual([618, 907]);
   });
+
+  it('defaults to excluding from the work year to 2000 once the active file has one', () => {
+    expect(dateFilterFromSettings(undefined, 400)).toBe('exclude');
+    expect(yearRangeFromSettings(undefined, 400)).toEqual([400, 2000]);
+    // An explicit persisted override still wins over the work-year default.
+    expect(dateFilterFromSettings({ dateFilter: 'limit' }, 400)).toBe('limit');
+    expect(yearRangeFromSettings({ yearStart: 618, yearEnd: 907 }, 400)).toEqual([618, 907]);
+  });
 });

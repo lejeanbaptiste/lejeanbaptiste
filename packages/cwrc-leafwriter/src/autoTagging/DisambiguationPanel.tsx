@@ -282,10 +282,16 @@ export const DisambiguationPanel = ({
   const [tagFilter, setTagFilter] = useState<string>('');
   const [resolvedOpen, setResolvedOpen] = useState(false);
   const [dateFilterMode, setDateFilterMode] = useState<DateFilterMode>(() =>
-    dateFilterFromSettings(readPersistedDisambiguationSettings()),
+    dateFilterFromSettings(
+      readPersistedDisambiguationSettings(),
+      window.__leafWriterProject?.getActiveFileWorkYear?.(),
+    ),
   );
   const [yearRange, setYearRange] = useState<[number, number]>(() =>
-    yearRangeFromSettings(readPersistedDisambiguationSettings()),
+    yearRangeFromSettings(
+      readPersistedDisambiguationSettings(),
+      window.__leafWriterProject?.getActiveFileWorkYear?.(),
+    ),
   );
   const dateFilter: DateRangeFilter = useMemo(
     () => normalizeDateRangeFilter({ mode: dateFilterMode, start: yearRange[0], end: yearRange[1] }),

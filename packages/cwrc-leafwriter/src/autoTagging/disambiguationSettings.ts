@@ -1,3 +1,4 @@
+import { AUTHORITY_YEAR_MAX } from './authoritySettings';
 import type { DateFilterMode } from './packLoader';
 
 /** Per-project disambiguation UI settings (stored in jean-baptiste.project.json). */
@@ -28,14 +29,32 @@ export function disambiguationCachingDisabledFromSettings(
   return settings?.disableCaching === true;
 }
 
-export function dateFilterFromSettings(settings?: DisambiguationSettings): DateFilterMode {
-  return settings?.dateFilter ?? DEFAULT_DISAMBIGUATION_DATE_FILTER;
+/**
+ * Explicit persisted settings always win. Absent those, once the active
+ * file's work year is known, default to excluding candidates from that year
+ * through {@link AUTHORITY_YEAR_MAX} (anachronistic for a text written that
+ * early) rather than the unfiltered default.
+ */
+export function dateFilterFromSettings(
+  settings?: DisambiguationSettings,
+  workYear?: number | null,
+): DateFilterMode {
+  if (settings?.dateFilter) return settings.dateFilter;
+  if (workYear != null) return 'exclude';
+  return DEFAULT_DISAMBIGUATION_DATE_FILTER;
 }
 
-export function yearRangeFromSettings(settings?: DisambiguationSettings): [number, number] {
-  const start = settings?.yearStart ?? DEFAULT_DISAMBIGUATION_YEAR_RANGE[0];
-  const end = settings?.yearEnd ?? DEFAULT_DISAMBIGUATION_YEAR_RANGE[1];
-  return [Math.min(start, end), Math.max(start, end)];
+export function yearRangeFromSettings(
+  settings?: DisambiguationSettings,
+  workYear?: number | null,
+): [number, number] {
+  if (settings?.yearStart != null || settings?.yearEnd != null) {
+    const start = settings.yearStart ?? DEFAULT_DISAMBIGUATION_YEAR_RANGE[0];
+    const end = settings.yearEnd ?? DEFAULT_DISAMBIGUATION_YEAR_RANGE[1];
+    return [Math.min(start, end), Math.max(start, end)];
+  }
+  if (workYear != null) return [Math.min(workYear, AUTHORITY_YEAR_MAX), AUTHORITY_YEAR_MAX];
+  return DEFAULT_DISAMBIGUATION_YEAR_RANGE;
 }
 
 export function readPersistedDisambiguationSettings(): DisambiguationSettings | undefined {

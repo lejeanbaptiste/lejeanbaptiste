@@ -257,7 +257,10 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   useEffect(() => {
     if (!open || !isDesktopApp()) return;
     void refreshAuthoritySetup();
-    const saved = uiStateFromSettings(readPersistedAuthoritySettings());
+    const saved = uiStateFromSettings(
+      readPersistedAuthoritySettings(),
+      window.__leafWriterProject?.getActiveFileWorkYear?.(),
+    );
     setAuthorityDateFilter(saved.dateFilter);
     setAuthorityYearRange(saved.yearRange);
   }, [open]);

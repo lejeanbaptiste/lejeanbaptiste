@@ -7,8 +7,11 @@ import { useAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { parseIsoYear } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { getActiveTabXml } from './fileMetadata';
 import { buildProjectSchemas, type ProjectBundle } from './projectFile';
 import { getProjectSourceLanguage } from './projectLanguage';
+import { readSourceDescriptionFromXml } from './sourceDescription';
 import {
   applyMetadataToProjectFiles,
   buildLastAppliedSnapshot,
@@ -52,6 +55,8 @@ declare global {
     __leafWriterProject?: {
       getProjectFilePath: () => string;
       getProjectSourceLanguage?: () => Promise<string | null>;
+      /** Signed year (negative = BCE) from the active file's profileDesc/creation/date, or null if unset/no file. */
+      getActiveFileWorkYear?: () => number | null;
       getAutoTaggingAuthoritySettings: () => AutoTaggingAuthoritySettings | undefined;
       setAutoTaggingAuthoritySettings: (settings: AutoTaggingAuthoritySettings) => void;
       getDisambiguationSettings: () => DisambiguationSettings | undefined;
@@ -102,13 +107,19 @@ export const useNativeDialogBridge = () => {
   const { t } = useTranslation();
   const { currentLocale, skipCopyPasteHelp, skipExplorerDeleteConfirm, themeAppearance } =
     useAppState().ui;
-  const { config, openTabs, projectFilePath, rootPath } = useAppState().project;
+  const { activeTabPath, config, openTabs, projectFilePath, rootPath } = useAppState().project;
   const { setSkipCopyPasteHelp, setSkipExplorerDeleteConfirm, setThemeAppearance, switchLanguage, notifyViaSnackbar } =
     useActions().ui;
   const { reloadTabFromDisk } = useActions().project;
   const [leafWriter] = useAtom(leafwriterAtom);
   const authoritySettingsCache = useRef<AutoTaggingAuthoritySettings | undefined>(undefined);
   const disambiguationSettingsCache = useRef<DisambiguationSettings | undefined>(undefined);
+  const activeTabPathRef = useRef(activeTabPath);
+  const openTabsRef = useRef(openTabs);
+  useEffect(() => {
+    activeTabPathRef.current = activeTabPath;
+    openTabsRef.current = openTabs;
+  }, [activeTabPath, openTabs]);
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -140,6 +151,12 @@ export const useNativeDialogBridge = () => {
       getProjectFilePath: () => projectFilePath,
       getProjectSourceLanguage: () =>
         getProjectSourceLanguage({ rootPath, projectFilePath, config }),
+      getActiveFileWorkYear: () => {
+        const xml = getActiveTabXml(activeTabPathRef.current, openTabsRef.current);
+        if (!xml) return null;
+        const { workDate } = readSourceDescriptionFromXml(xml);
+        return parseIsoYear(workDate.when) ?? parseIsoYear(workDate.notBefore);
+      },
       getAutoTaggingAuthoritySettings: () =>
         authoritySettingsCache.current ?? config.autoTaggingAuthority,
       setAutoTaggingAuthoritySettings: (settings) => {

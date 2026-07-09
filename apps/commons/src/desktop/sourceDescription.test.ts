@@ -99,4 +99,31 @@ describe('applySourceDescriptionToXml', () => {
     const other = '<root><child/></root>';
     expect(applySourceDescriptionToXml(other, fullData())).toBe(other);
   });
+
+  test('round-trips a title @ref (authority link) onto both title elements', () => {
+    const data = { ...fullData(), titleRef: 'https://www.wikidata.org/wiki/Q180736' };
+    const xml = applySourceDescriptionToXml(skeleton, data);
+    expect(xml).toContain(
+      '<title ref="https://www.wikidata.org/wiki/Q180736">Les Misérables</title>',
+    );
+    expect((xml.match(/<title ref="https:\/\/www\.wikidata\.org\/wiki\/Q180736">/g) ?? []).length).toBe(2);
+    expect(readSourceDescriptionFromXml(xml)).toEqual(data);
+  });
+
+  test('round-trips a title @key (local-only entity) when there is no authority ref', () => {
+    const data = { ...fullData(), titleKey: 'work-000010' };
+    const xml = applySourceDescriptionToXml(skeleton, data);
+    expect(xml).toContain('<title key="work-000010">Les Misérables</title>');
+    expect(readSourceDescriptionFromXml(xml)).toEqual(data);
+  });
+
+  test('round-trips an author @key (local-only entity) when there is no authority ref', () => {
+    const data = {
+      ...fullData(),
+      authors: [{ name: 'A Local Collaborator', key: 'person-000042' }],
+    };
+    const xml = applySourceDescriptionToXml(skeleton, data);
+    expect(xml).toContain('<author key="person-000042">A Local Collaborator</author>');
+    expect(readSourceDescriptionFromXml(xml).authors).toEqual(data.authors);
+  });
 });

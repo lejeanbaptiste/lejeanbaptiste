@@ -19,6 +19,8 @@ export interface SourceAuthor {
   name: string;
   /** Authority URI (Wikidata/VIAF/…) carried on author/@ref. */
   ref?: string;
+  /** Local-only entities.xml id (bare, e.g. "person-000100"), carried on author/@key. */
+  key?: string;
 }
 
 export interface SourceWorkDate {
@@ -30,6 +32,10 @@ export interface SourceWorkDate {
 
 export interface SourceDescription {
   title: string;
+  /** Authority URI (Wikidata/VIAF/…) carried on title/@ref. */
+  titleRef?: string;
+  /** Local-only entities.xml id (bare, e.g. "work-000010"), carried on title/@key. */
+  titleKey?: string;
   authors: SourceAuthor[];
   workDate: SourceWorkDate;
   edition: string;
@@ -39,6 +45,8 @@ export interface SourceDescription {
 
 export const emptySourceDescription = (): SourceDescription => ({
   title: '',
+  titleRef: undefined,
+  titleKey: undefined,
   authors: [],
   workDate: {},
   edition: '',
@@ -66,6 +74,7 @@ const readAuthors = (parent: Element): SourceAuthor[] =>
     .map((el) => ({
       name: el.textContent?.trim() ?? '',
       ref: el.getAttribute('ref') ?? undefined,
+      key: el.getAttribute('key') ?? undefined,
     }))
     .filter((author) => author.name);
 
@@ -78,9 +87,13 @@ export const readSourceDescription = (header: Element): SourceDescription => {
   const biblStruct = sourceDesc ? childNS(sourceDesc, 'biblStruct') : null;
   const monogr = biblStruct ? childNS(biblStruct, 'monogr') : null;
 
-  result.title =
-    titleStmt?.getElementsByTagNameNS(TEI_NS, 'title')[0]?.textContent?.trim() ??
-    (monogr ? (childNS(monogr, 'title')?.textContent?.trim() ?? '') : '');
+  const titleStmtTitle = titleStmt?.getElementsByTagNameNS(TEI_NS, 'title')[0];
+  const monogrTitle = monogr ? childNS(monogr, 'title') : null;
+  const titleEl = titleStmtTitle ?? monogrTitle;
+
+  result.title = titleEl?.textContent?.trim() ?? '';
+  result.titleRef = titleEl?.getAttribute('ref') ?? undefined;
+  result.titleKey = titleEl?.getAttribute('key') ?? undefined;
 
   const titleAuthors = titleStmt ? readAuthors(titleStmt) : [];
   result.authors = titleAuthors.length > 0 ? titleAuthors : monogr ? readAuthors(monogr) : [];
@@ -128,6 +141,7 @@ const makeAuthorElement = (doc: Document, author: SourceAuthor): Element => {
   const el = doc.createElementNS(TEI_NS, 'author');
   el.textContent = author.name;
   if (author.ref?.trim()) el.setAttribute('ref', author.ref.trim());
+  else if (author.key?.trim()) el.setAttribute('key', author.key.trim());
   return el;
 };
 
@@ -171,6 +185,13 @@ const ensureHeaderChild = (header: Element, localName: string): Element => {
   return el;
 };
 
+const applyTitleRefKey = (title: Element, data: SourceDescription) => {
+  title.removeAttribute('ref');
+  title.removeAttribute('key');
+  if (data.titleRef?.trim()) title.setAttribute('ref', data.titleRef.trim());
+  else if (data.titleKey?.trim()) title.setAttribute('key', data.titleKey.trim());
+};
+
 const applyTitleStmt = (fileDesc: Element, data: SourceDescription) => {
   const doc = fileDesc.ownerDocument!;
   const titleStmt = ensureChild(fileDesc, 'titleStmt');
@@ -181,6 +202,7 @@ const applyTitleStmt = (fileDesc: Element, data: SourceDescription) => {
     titleStmt.insertBefore(title, titleStmt.firstChild);
   }
   title.textContent = data.title;
+  applyTitleRefKey(title, data);
 
   removeChildrenNS(titleStmt, 'author');
   const anchor: Node | null = title.nextSibling;
@@ -269,6 +291,7 @@ const applySourceDesc = (fileDesc: Element, data: SourceDescription) => {
 
   const title = doc.createElementNS(TEI_NS, 'title');
   title.textContent = data.title.trim();
+  applyTitleRefKey(title, data);
   monogr.appendChild(title);
 
   if (data.edition.trim()) {

@@ -169,6 +169,8 @@ declare global {
     __leafWriterProject?: {
       getProjectFilePath: () => string;
       getProjectSourceLanguage?: () => Promise<string | null>;
+      /** Signed year (negative = BCE) from the active file's profileDesc/creation/date, or null if unset/no file. */
+      getActiveFileWorkYear?: () => number | null;
       getAutoTaggingAuthoritySettings: () =>
         | {
             packs?: string[];
