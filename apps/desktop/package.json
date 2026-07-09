@@ -35,6 +35,7 @@
   "build": {
     "appId": "fr.huma-num.le-jean-baptiste",
     "productName": "Le Jean-Baptiste",
+    "electronVersion": "35.7.5",
     "directories": {
       "output": "release"
     },

@@ -60,6 +60,7 @@ jspm_packages/
 
 # Desktop dev bundle (generated from Electron.app)
 apps/desktop/.dev/
+apps/desktop/release/
 web_modules/
 
 # TypeScript cache
