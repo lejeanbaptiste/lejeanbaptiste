@@ -1,10 +1,12 @@
 import SearchIcon from '@mui/icons-material/Search';
 import { Box, CircularProgress, IconButton, InputAdornment, OutlinedInput } from '@mui/material';
 import { useAtom, useAtomValue } from 'jotai';
+import { useTranslation } from 'react-i18next';
 import { authoritiesAtom, lookupsBeenFetchedAtom, lookupTypeAtom, queryAtom } from './store';
 import { useEntityLookup } from './useEntityLookup';
 
 export const QueryField = () => {
+  const { t } = useTranslation();
   const authorities = useAtomValue(authoritiesAtom);
   const lookupsBeenFetched = useAtomValue(lookupsBeenFetchedAtom);
   const lookupType = useAtomValue(lookupTypeAtom);
@@ -25,7 +27,7 @@ export const QueryField = () => {
               />
             ) : (
               <IconButton
-                aria-label="trigger-search"
+                aria-label={t('LW.entityLookups.trigger_search')}
                 onClick={() => query && search({ query, type: lookupType })}
                 size="small"
               >

@@ -157,7 +157,7 @@ describe('mergeMetadataIntoHeader', () => {
     });
 
     expect(xml).toContain(
-      '<publicationStmt><distributor>CNRS</distributor><availability><licence>CC BY</licence></availability></publicationStmt>',
+      '<publicationStmt><distributor>CNRS</distributor><authority/><availability><licence>CC BY</licence></availability></publicationStmt>',
     );
     expect(xml).not.toContain('<publicationStmt><p/>');
   });

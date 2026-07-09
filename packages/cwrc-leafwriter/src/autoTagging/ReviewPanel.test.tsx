@@ -1,9 +1,32 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { forwardRef, type ReactNode } from 'react';
 import { collectTextNodes } from './anchor';
 import { applySuggestions } from './apply';
 import { dictionaryTag } from './dictionary';
 import { generateFakeSuggestions } from './fakeSuggestions';
 import { normalizeDomText } from './normalize';
+
+jest.mock('react-virtuoso', () => ({
+  Virtuoso: forwardRef(function MockVirtuoso(
+    {
+      data,
+      itemContent,
+    }: {
+      data: unknown[];
+      itemContent: (index: number, row: unknown) => ReactNode;
+    },
+    _ref,
+  ) {
+    return (
+      <div data-testid="virtuoso-item-list">
+        {data.map((row, index) => (
+          <div key={index}>{itemContent(index, row)}</div>
+        ))}
+      </div>
+    );
+  }),
+}));
+
 import { ReviewPanel } from './ReviewPanel';
 
 const parse = (xml: string) => {

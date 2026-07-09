@@ -102,7 +102,7 @@ describe('dictionaryTag', () => {
 
   it('skips text inside <date> elements', () => {
     const doc = parse(
-      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>洛陽 outside <date>洛陽 inside</date></p></body></text></TEI>',
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>outside 洛陽 <date>洛陽 inside</date></p></body></text></TEI>',
     );
     const suggestions = dictionaryTag(doc, [{ string: '洛陽', tag: 'placeName' }], 'ignore');
     expect(suggestions).toHaveLength(1);

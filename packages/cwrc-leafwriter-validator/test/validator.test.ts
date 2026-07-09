@@ -51,7 +51,6 @@ describe('Validator', () => {
 
     test('load schema from cache', async () => {
       expect.assertions(1);
-      Validator.reset();
       const { success } = await Validator.initialize({ id: cwrcTeiLite.id, url: cwrcTeiLite.url });
       expect(success).toBe(true);
     });
@@ -253,7 +252,7 @@ describe('Validator', () => {
         );
         expect(attributeValues).toHaveLength(4);
         expect(attributeValues).toContainEqual({
-          documentation: undefined,
+          documentation: '',
           eventType: 'attributeValue',
           fullName: undefined,
           name: 'high',

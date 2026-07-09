@@ -445,6 +445,19 @@ function firstTextNodeIn(element: Element): Text | null {
   return null;
 }
 
+function anchorRangeForDateText(text: Text, policy: WhitespacePolicy): { rawStart: number; rawEnd: number } {
+  const search = buildSearchText(text.data, policy);
+  if (search.text.length === 0) return { rawStart: 0, rawEnd: 0 };
+  const parentName = text.parentElement?.localName;
+  if (parentName === 'year' && search.text.length > 1) {
+    const rawStart = search.map[0] ?? 0;
+    return { rawStart, rawEnd: rawStart + 1 };
+  }
+  const rawStart = search.map[0] ?? 0;
+  const rawEnd = (search.map[search.text.length - 1] ?? rawStart) + 1;
+  return { rawStart, rawEnd };
+}
+
 /**
  * Anchor the first text node inside an existing `<date>` for resolve-date apply.
  * The anchor surface matches that node (e.g. "魏" inside `<dyn>`) so resolveAnchor
@@ -460,8 +473,7 @@ export function anchorForDateElement(
   if (!textNode) return null;
   const search = buildSearchText(textNode.data, policy);
   if (search.text.length === 0) return null;
-  const rawStart = search.map[0] ?? 0;
-  const rawEnd = (search.map[search.text.length - 1] ?? rawStart) + 1;
+  const { rawStart, rawEnd } = anchorRangeForDateText(textNode, policy);
   try {
     return createAnchor('', bodyRoot, textNode, rawStart, rawEnd, policy, prebuiltIndex);
   } catch {

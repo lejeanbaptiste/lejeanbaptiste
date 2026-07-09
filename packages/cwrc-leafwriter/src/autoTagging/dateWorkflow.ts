@@ -92,7 +92,7 @@ export function inferEastAsianLanguageFromText(text: string): 'zh-Hans' | 'ja' |
     if (sampled >= 4000) break;
   }
 
-  if (sampled < 40) return null;
+  if (sampled < 20) return null;
 
   const cjk = han + kana;
   const cjkRatio = cjk / sampled;

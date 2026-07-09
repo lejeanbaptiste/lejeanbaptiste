@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   dynastySubtitle,
   eraSubtitle,
@@ -43,6 +44,7 @@ export const EastAsianDateFields = ({
   onChange,
   values,
 }: EastAsianDateFieldsProps) => {
+  const { t } = useTranslation();
   const dynastyOptions = authority?.dynasties ?? [];
   const rulerOptions = useMemo(
     () => (authority ? filterRulers(authority.rulers, values.dynId, '') : []),
@@ -115,7 +117,7 @@ export const EastAsianDateFields = ({
       <Stack alignItems="center" direction="row" spacing={1} sx={{ py: 1 }}>
         <CircularProgress size={18} />
         <Typography color="text.secondary" variant="body2">
-          Loading calendar tables…
+          {t('LW.dateAuthority.loading_calendar_tables')}
         </Typography>
       </Stack>
     );
@@ -124,7 +126,7 @@ export const EastAsianDateFields = ({
   if (!authority) {
     return (
       <Typography color="text.secondary" variant="body2">
-        {error ?? 'Calendar lookup is unavailable. Install sanmiao and restart the app.'}
+        {error ?? t('LW.dateAuthority.calendar_lookup_unavailable')}
       </Typography>
     );
   }
@@ -132,7 +134,7 @@ export const EastAsianDateFields = ({
   return (
     <Stack spacing={1.5}>
       <Typography color="text.secondary" variant="caption">
-        Calendar context (dynasty, emperor, era) — used by sanmiao when resolving dates.
+        {t('LW.dateAuthority.calendar_context_hint')}
       </Typography>
 
       <Autocomplete
@@ -145,7 +147,12 @@ export const EastAsianDateFields = ({
         onChange={(_event, option) => handleDynasty(option)}
         options={dynastyOptions}
         renderInput={(params) => (
-          <TextField {...params} label="Dynasty" placeholder="Type to search…" size="small" />
+          <TextField
+            {...params}
+            label={t('LW.dateAuthority.dynasty')}
+            placeholder={t('LW.dateAuthority.type_to_search')}
+            size="small"
+          />
         )}
         renderOption={(props, option) => (
           <Box component="li" {...props} key={optionKey('dyn', option.dynId)}>
@@ -168,7 +175,12 @@ export const EastAsianDateFields = ({
         onChange={(_event, option) => handleRuler(option)}
         options={rulerOptions}
         renderInput={(params) => (
-          <TextField {...params} label="Emperor" placeholder="Type to search…" size="small" />
+          <TextField
+            {...params}
+            label={t('LW.dateAuthority.emperor')}
+            placeholder={t('LW.dateAuthority.type_to_search')}
+            size="small"
+          />
         )}
         renderOption={(props, option) => (
           <Box component="li" {...props} key={optionKey('ruler', option.rulerId)}>
@@ -188,7 +200,12 @@ export const EastAsianDateFields = ({
         onChange={(_event, option) => handleEra(option)}
         options={eraOptions}
         renderInput={(params) => (
-          <TextField {...params} label="Era" placeholder="Type to search…" size="small" />
+          <TextField
+            {...params}
+            label={t('LW.dateAuthority.era')}
+            placeholder={t('LW.dateAuthority.type_to_search')}
+            size="small"
+          />
         )}
         renderOption={(props, option) => (
           <Box component="li" {...props} key={optionKey('era', option.eraId)}>
@@ -202,27 +219,27 @@ export const EastAsianDateFields = ({
         <TextField
           disabled={disabled}
           fullWidth
-          label="Year"
+          label={t('LW.dateAuthority.year')}
           onChange={(event) => patch({ year: event.target.value })}
-          placeholder="元年, 3, 十八"
+          placeholder={t('LW.dateAuthority.year_placeholder')}
           size="small"
           value={values.year}
         />
         <TextField
           disabled={disabled}
           fullWidth
-          label="Month"
+          label={t('LW.dateAuthority.month')}
           onChange={(event) => patch({ month: event.target.value })}
-          placeholder="3, 十八"
+          placeholder={t('LW.dateAuthority.month_placeholder')}
           size="small"
           value={values.month}
         />
         <TextField
           disabled={disabled}
           fullWidth
-          label="Day"
+          label={t('LW.dateAuthority.day')}
           onChange={(event) => patch({ day: event.target.value })}
-          placeholder="optional"
+          placeholder={t('LW.dateAuthority.optional')}
           size="small"
           value={values.day}
         />
@@ -232,9 +249,9 @@ export const EastAsianDateFields = ({
         <TextField
           disabled={disabled}
           fullWidth
-          label="Sexagenary year"
+          label={t('LW.dateAuthority.sexagenary_year')}
           onChange={(event) => patch({ sexYear: event.target.value })}
-          placeholder="sex_year"
+          placeholder={t('LW.dateAuthority.sex_year_placeholder')}
           size="small"
           value={values.sexYear}
         />
@@ -242,9 +259,9 @@ export const EastAsianDateFields = ({
           disabled={disabled}
           fullWidth
           helperText="1–60, or paste 甲子"
-          label="Sexagenary day"
+          label={t('LW.dateAuthority.sexagenary_day')}
           onChange={(event) => patch({ gz: event.target.value })}
-          placeholder="gz"
+          placeholder={t('LW.dateAuthority.gz_placeholder')}
           size="small"
           value={values.gz}
         />
@@ -252,9 +269,9 @@ export const EastAsianDateFields = ({
           disabled={disabled}
           fullWidth
           helperText="1–60, or paste 甲子"
-          label="New-moon gz"
+          label={t('LW.dateAuthority.new_moon_gz')}
           onChange={(event) => patch({ nmdGz: event.target.value })}
-          placeholder="nmd_gz"
+          placeholder={t('LW.dateAuthority.nmd_gz_placeholder')}
           size="small"
           value={values.nmdGz}
         />

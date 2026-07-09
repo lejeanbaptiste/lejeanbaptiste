@@ -5,6 +5,12 @@ import type { CachedSchema, InitializeParameters } from './types';
 
 const HASH_ALGORITHM = 'SHA-256';
 
+if (typeof globalThis.structuredClone !== 'function') {
+  (globalThis as typeof globalThis & {
+    structuredClone: <T>(value: T) => T;
+  }).structuredClone = <T>(value: T) => JSON.parse(JSON.stringify(value));
+}
+
 /** Feed RelaxNG text directly to Salve — avoids fetch/blob issues in web workers. */
 class StringResourceLoader {
   constructor(private readonly text: string) {}

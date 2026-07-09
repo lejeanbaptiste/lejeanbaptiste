@@ -164,11 +164,11 @@ export const DesktopAiApi = () => {
           />
           <TextField
             fullWidth
-            label="Translation instructions"
+            label={t('LW.settings.ai_api.translation_instructions')}
             minRows={3}
             multiline
             onChange={(event) => updateSetting('customInstructions', event.target.value)}
-            placeholder="Translate in a concise scholarly style."
+            placeholder={t('LW.settings.ai_api.translation_instructions_placeholder')}
             size="small"
             value={settings.customInstructions}
           />

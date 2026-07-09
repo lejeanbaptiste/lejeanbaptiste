@@ -1,5 +1,6 @@
 import { Box, Typography, useTheme } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
 import {
   getTeiXPathAtOffset,
@@ -24,6 +25,7 @@ const XPathBreadcrumb = ({
   onSegmentClick: (segmentXpath: string) => void;
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const segments = useMemo(() => parseTeiXPathToBreadcrumbSegments(xpath), [xpath]);
 
   if (segments.length === 0) return null;
@@ -36,7 +38,7 @@ const XPathBreadcrumb = ({
 
   return (
     <Box
-      aria-label="Document location"
+      aria-label={t('LW.editorLocationBar.document_location')}
       component="nav"
       sx={{
         alignItems: 'center',
@@ -77,7 +79,7 @@ const XPathBreadcrumb = ({
             )}
             <Box
               aria-current={isCurrent ? 'location' : undefined}
-              aria-label={`Go to ${segment.label}`}
+              aria-label={t('LW.editorLocationBar.go_to', { segment: segment.label })}
               component="button"
               onClick={() => onSegmentClick(segment.xpath)}
               sx={{

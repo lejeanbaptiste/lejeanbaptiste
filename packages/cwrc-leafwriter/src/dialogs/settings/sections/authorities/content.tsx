@@ -99,7 +99,7 @@ const CustomInfo = ({
             {t('LW.commons.added_by')}{' '}
             {author.url ? (
               <Link
-                aria-label="navigate to url"
+                aria-label={t('LW.messages.navigate to url')}
                 display="inline-flex"
                 alignItems="center"
                 gap={0.25}

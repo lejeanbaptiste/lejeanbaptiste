@@ -17,7 +17,7 @@ export const FontSize = () => {
       </Typography>
       <Box flexGrow={1} />
       <Slider
-        aria-label="Font Size"
+        aria-label={t('LW.settings.editor.font_size_slider')}
         getAriaLabel={(val) => `${val} pt`}
         getAriaValueText={(val) => `${val} pt`}
         marks

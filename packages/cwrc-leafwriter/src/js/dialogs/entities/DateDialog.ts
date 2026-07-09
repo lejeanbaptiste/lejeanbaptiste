@@ -19,39 +19,40 @@ import {
   readEastAsianDateValues,
 } from '../../../dateAuthority/values';
 import { isEastAsianCalendarLanguageCode } from '../../../utilities/languageCodes';
+import i18next from 'i18next';
 
 type DateTypes = 'date' | 'range' | 'DATE' | 'DATERANGE' | 'DATESTRUCT';
 
 const dateTypeTeiOptions = [
-  { label: 'Single Date', value: 'date' },
-  { label: 'Date Range', value: 'range' },
+  { label: i18next.t('LW.Single Date'), value: 'date' },
+  { label: i18next.t('LW.Date Range'), value: 'range' },
 ];
 
 const dateTypeOrlandoOptions = [
-  { label: 'Single Date', value: 'DATE' },
-  { label: 'Date Range', value: 'DATERANGE' },
-  { label: 'Season/Occasion', value: 'DATESTRUCT' },
+  { label: i18next.t('LW.Single Date'), value: 'DATE' },
+  { label: i18next.t('LW.Date Range'), value: 'DATERANGE' },
+  { label: i18next.t('LW.Season/Occasion'), value: 'DATESTRUCT' },
 ];
 
 const certaintyTeiOptions = [
   { label: 'high', value: 'high' },
   { label: 'medium', value: 'medium' },
   { label: 'low', value: 'low' },
-  { label: 'Unknown', value: 'Unknown' },
+  { label: i18next.t('LW.Unknown'), value: 'Unknown' },
 ];
 
 const certaintyOrlandoOptions = [
-  { label: 'Certain', value: 'CERT' },
-  { label: 'Circa', value: 'C' },
-  { label: 'By this date', value: 'BY' },
-  { label: 'After this date', value: 'AFTER' },
-  { label: 'Unknown date', value: 'UNKNOWN' },
-  { label: 'Rough certainty', value: 'ROUGHLYDATED' },
+  { label: i18next.t('LW.Certain'), value: 'CERT' },
+  { label: i18next.t('LW.Circa'), value: 'C' },
+  { label: i18next.t('LW.By this date'), value: 'BY' },
+  { label: i18next.t('LW.After this date'), value: 'AFTER' },
+  { label: i18next.t('LW.Unknown date'), value: 'UNKNOWN' },
+  { label: i18next.t('LW.Rough certainty'), value: 'ROUGHLYDATED' },
 ];
 
 const calendarTypeOptions = [
-  { type: 'NEWSTYLE', label: 'New style' },
-  { type: 'BC', label: 'BC' },
+  { type: 'NEWSTYLE', label: i18next.t('LW.New style') },
+  { type: 'BC', label: i18next.t('LW.BC') },
 ];
 
 class DateDialog implements SchemaDialog {
@@ -127,14 +128,14 @@ class DateDialog implements SchemaDialog {
           </div>
 
           <div class="attributeSelector">
-            <h3 style="border-bottom: 1px solid #ddd; padding-bottom: 4px;">Attributes</h3>
+            <h3 style="border-bottom: 1px solid #ddd; padding-bottom: 4px;">${i18next.t('LW.Attributes')}</h3>
             <ul></ul>
           </div>
         </div>
       </div>
     `).appendTo(parentEl);
 
-    this.dialog = new DialogForm({ writer, $el, type: 'date', title: 'Tag Date' });
+    this.dialog = new DialogForm({ writer, $el, type: 'date', title: i18next.t('LW.Tag Date') });
 
     //date type event
     $(`#${id}_type input`).on('click', function () {
@@ -159,7 +160,7 @@ class DateDialog implements SchemaDialog {
       minDate: new Date(1800, 0, 1),
       maxDate: new Date(upperLimit, 11, 31),
       showOn: 'button',
-      buttonText: 'Date Picker',
+      buttonText: i18next.t('LW.Date Picker'),
       buttonImage: `${writer.baseUrl}/images/calendar-alt-regular.svg`,
       buttonImageOnly: true,
     });
@@ -192,7 +193,7 @@ class DateDialog implements SchemaDialog {
       minDate: new Date(1800, 0, 1),
       maxDate: new Date(upperLimit, 11, 31),
       showOn: 'button',
-      buttonText: 'Date Picker',
+      buttonText: i18next.t('LW.Date Picker'),
       buttonImage: `${writer.baseUrl}/images/calendar-alt-regular.svg`,
       buttonImageOnly: true,
       onSelect: function (selectedDate: any) {
@@ -442,7 +443,7 @@ class DateDialog implements SchemaDialog {
   }
 
   private selectedTextField(id: string) {
-    const fieldTitle = 'Selected Text';
+    const fieldTitle = i18next.t('LW.Selected Text');
 
     return `
       <div id="${id}_selectedText" class="attribute">
@@ -459,7 +460,7 @@ class DateDialog implements SchemaDialog {
   }
 
   private dateTypeField(id: string) {
-    const fieldTitle = 'Date type';
+    const fieldTitle = i18next.t('LW.Date type');
 
     const options = this.schemaMappingMatch(['orlando', 'cwrcEntry'])
       ? dateTypeOrlandoOptions
@@ -503,7 +504,7 @@ class DateDialog implements SchemaDialog {
   }
 
   private dateField(id: string) {
-    const fieldTitle = 'Date';
+    const fieldTitle = i18next.t('LW.Date');
 
     const html = `
       <div id="${id}_date" class="attribute">
@@ -530,8 +531,8 @@ class DateDialog implements SchemaDialog {
   }
 
   private rangeField(id: string) {
-    const fieldStartTitle = 'Start date';
-    const fieldEndTitle = 'End date';
+    const fieldStartTitle = i18next.t('LW.Start date');
+    const fieldEndTitle = i18next.t('LW.End date');
 
     const html = `
       <div
@@ -582,7 +583,7 @@ class DateDialog implements SchemaDialog {
   }
 
   private certaintyField(id: string) {
-    const fieldTitle = 'Level of certainty';
+    const fieldTitle = i18next.t('LW.Level of certainty');
 
     const options = this.schemaMappingMatch(['orlando', 'cwrcEntry'])
       ? certaintyOrlandoOptions
@@ -622,7 +623,7 @@ class DateDialog implements SchemaDialog {
   }
 
   private calendarField(id: string) {
-    const fieldTitle = 'Calendar type';
+    const fieldTitle = i18next.t('LW.Calendar type');
 
     const html = `
       <div
