@@ -62,7 +62,10 @@ const config: Config.InitialOptions = {
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       moduleNameMapper: { '^dexie$': require.resolve('dexie') },
       resetMocks: false,
-      setupFiles: ['fake-indexeddb/auto'],
+      setupFiles: [
+        '<rootDir>/packages/cwrc-leafwriter/test/setup/structuredClone.ts',
+        'fake-indexeddb/auto',
+      ],
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/packages/cwrc-leafwriter/**/?(*.)+(spec|test).[jt]s?(x)'],
       testPathIgnorePatterns: ['<rootDir>/packages/cwrc-leafwriter/lib*'],

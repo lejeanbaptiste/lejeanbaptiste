@@ -133,7 +133,7 @@ export class AutoTaggingSession {
       };
       const api = globals.electronAPI;
       if (api) {
-        this.authorityCache = new AuthorityCache(api, store.authorityCacheDir);
+        this.authorityCache = new AuthorityCache(api, store.authorityCacheDir, { enableGlobalCache: true });
         this.dilaPlaceDetailCacheStore = new DilaPlaceDetailCache(api, store.dilaPlaceDetailCacheDir);
         this.llmCache = new LlmCache(api, store.aiCacheDir);
         this.disambiguationAiCacheStore = new DisambiguationAiCache(api, store.aiDisambiguationCacheDir);
