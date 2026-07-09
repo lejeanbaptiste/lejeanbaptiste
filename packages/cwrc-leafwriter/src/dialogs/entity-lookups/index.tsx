@@ -9,6 +9,7 @@ import { Footer } from './footer';
 import { Header } from './header';
 import { Main } from './main';
 import { QueryField } from './query-field';
+import { ResolutionPanel } from './resolution-panel';
 import {
   authoritiesAtom,
   entityTypeAtom,
@@ -36,6 +37,7 @@ export const EntityLookupDialog = () => {
             <Header />
             <QueryField />
             <Main />
+            <ResolutionPanel />
             <Footer />
           </Wrapper>
         </Provider>

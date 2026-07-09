@@ -1,10 +1,5 @@
 # Todo
 
-**Database**
-- [x] Confidence stickers for disambiguation. (AI-curation rank returns per-candidate confidence; colored chip in candidate row)
-- [ ] viewer / entities / lookup
-- [ ] split and merge + update in XML
-
 **Schema editing**
 
 **Clean-up**
@@ -16,6 +11,7 @@
 - [ ] Test on Mac
 
 ---
+
 **Testing**
 - [ ] Improve AI
 

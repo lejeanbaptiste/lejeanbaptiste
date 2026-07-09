@@ -31,10 +31,21 @@ export const authorityLookupParamsSchema = z.object({
 });
 export type AuthorityLookupParams = z.infer<typeof authorityLookupParamsSchema>;
 
+/** Present only on results from the project entity database (entities.xml). */
+export const internalEntityInfoSchema = z.object({
+  /** Local xml:id, e.g. `person-000012`. */
+  id: z.string(),
+  /** Authority `<idno>`s attached to the entity. */
+  idnos: z.array(z.object({ type: z.string(), value: z.string() })),
+  description: z.string().optional(),
+});
+export type InternalEntityInfo = z.infer<typeof internalEntityInfoSchema>;
+
 export const authorityLookupResultSchema = z.object({
   description: z.string().optional(),
   label: z.string(),
   uri: z.url(),
+  internal: internalEntityInfoSchema.optional(),
 });
 export type AuthorityLookupResult = z.infer<typeof authorityLookupResultSchema>;
 
@@ -121,6 +132,8 @@ export interface EntryLink {
   entityType: NamedEntityType;
   label: string;
   uri: string;
+  description?: string;
+  internal?: InternalEntityInfo;
 }
 
 export interface EntityLink {
@@ -134,4 +147,8 @@ export interface EntityLink {
   repository: string;
   type: string;
   uri: string;
+  /** Local entity-database id (entities.xml xml:id) this link resolved to. */
+  key?: string;
+  /** True when the resolution minted a new entity in entities.xml. */
+  wasCreated?: boolean;
 }

@@ -257,6 +257,16 @@ export function addEntity(
   return { id, element: item };
 }
 
+/** Append authority `<idno>`s to an existing entity element. */
+export function appendAuthorityIdnos(doc: Document, element: Element, ids: AuthorityId[]): void {
+  for (const authority of ids) {
+    const idno = doc.createElementNS(TEI_NS, 'idno');
+    idno.setAttribute('type', authority.type);
+    idno.textContent = authority.value;
+    element.appendChild(idno);
+  }
+}
+
 /** Find an entity element by its local id. */
 export function findEntity(doc: Document, id: string): Element | null {
   const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_ELEMENT);

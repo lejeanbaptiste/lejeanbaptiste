@@ -8,6 +8,7 @@ import {
   manualInputAtom,
   onCloseAtom,
   queryAtom,
+  resolutionAtom,
   selectedAtom,
 } from './store';
 import { useEntityLookup } from './useEntityLookup';
@@ -20,16 +21,12 @@ export const Footer = () => {
   const manualInput = useAtomValue(manualInputAtom);
   const onClose = useAtomValue(onCloseAtom);
   const query = useAtomValue(queryAtom);
+  const resolution = useAtomValue(resolutionAtom);
   const selected = useAtomValue(selectedAtom);
 
-  const { processSelected } = useEntityLookup();
+  const { confirmSelected } = useEntityLookup();
 
-  const handlSelectLink = () => {
-    const link = processSelected();
-    if (!link) return;
-
-    handleClose(link);
-  };
+  const handlSelectLink = () => void confirmSelected();
 
   const handleClose = (link?: EntityLink | Pick<EntityLink, 'query' | 'type'>) => {
     onClose?.(link);
@@ -52,7 +49,7 @@ export const Footer = () => {
       </Button>
       <Button
         autoFocus
-        disabled={!selected && (manualInput === '' || !isUriValid)}
+        disabled={(!selected && (manualInput === '' || !isUriValid)) || resolution !== null}
         onClick={handlSelectLink}
         variant="contained"
       >

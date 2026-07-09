@@ -1,44 +1,51 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { IconButton, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
+import {
+  Chip,
+  IconButton,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useAtom, useAtomValue } from 'jotai';
 import { useState } from 'react';
 import type { Authority, AuthorityLookupResult } from '../../../../types/authority';
-import { lookupTypeAtom, onCloseAtom, selectedAtom } from '../../store';
+import { lookupTypeAtom, selectedAtom } from '../../store';
 import { useEntityLookup } from '../../useEntityLookup';
 
 interface Props extends AuthorityLookupResult {
   authority: Authority | (string & {});
 }
 
-export const Item = ({ authority, description, label, uri }: Props) => {
+export const Item = ({ authority, description, internal, label, uri }: Props) => {
   const lookupType = useAtomValue(lookupTypeAtom);
-  const onClose = useAtomValue(onCloseAtom);
   const [selected, setSelected] = useAtom(selectedAtom);
 
-  const { processSelected } = useEntityLookup();
+  const { confirmSelected } = useEntityLookup();
   const [hover, setHover] = useState(false);
 
   const handleOnDoubleClick = () => {
     if (uri !== selected?.uri) return;
-
-    const link = processSelected();
-    if (!link) return;
-
-    onClose?.(link);
+    void confirmSelected();
   };
 
   return (
     <ListItem
       dense
       disablePadding
-      onClick={() => setSelected({ authority, entityType: lookupType, label, uri })}
+      onClick={() =>
+        setSelected({ authority, entityType: lookupType, label, uri, description, internal })
+      }
       onDoubleClick={handleOnDoubleClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       secondaryAction={
-        <IconButton aria-label="open-uri" edge="end" href={uri} size="small" target="_blank">
-          {hover && <OpenInNewIcon fontSize="inherit" />}
-        </IconButton>
+        !internal && (
+          <IconButton aria-label="open-uri" edge="end" href={uri} size="small" target="_blank">
+            {hover && <OpenInNewIcon fontSize="inherit" />}
+          </IconButton>
+        )
       }
       sx={{ my: 0.5 }}
     >
@@ -46,23 +53,53 @@ export const Item = ({ authority, description, label, uri }: Props) => {
         <ListItemText
           primary={label}
           secondary={
-            description && (
-              <Typography
-                color="textSecondary"
-                sx={[
-                  {
-                    overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: '2',
-                    transition: '0.4s',
-                    WebkitBoxOrient: 'vertical', // TODO: Still works, but is flagged as deprecated. See: https://developer.mozilla.org/en-US/docs/Web/CSS/box-orient
-                  },
-                  selected?.uri === uri && { display: 'block', overflow: 'auto' },
-                ]}
-                variant="body2"
-              >
-                {description}
-              </Typography>
+            internal ? (
+              <Stack component="span" spacing={0.25}>
+                <Stack alignItems="center" component="span" direction="row" spacing={0.5}>
+                  <Typography
+                    component="span"
+                    sx={{ fontFamily: 'monospace' }}
+                    variant="caption"
+                  >
+                    {internal.id}
+                  </Typography>
+                  {[...new Set(internal.idnos.map((idno) => idno.type))]
+                    .filter((type) => type !== 'ljb-entity-database')
+                    .map((type) => (
+                      <Chip
+                        key={type}
+                        label={type}
+                        size="small"
+                        sx={{ fontSize: '0.65rem', height: 16 }}
+                        variant="outlined"
+                      />
+                    ))}
+                </Stack>
+                {internal.description && (
+                  <Typography color="textSecondary" component="span" noWrap variant="caption">
+                    {internal.description}
+                  </Typography>
+                )}
+              </Stack>
+            ) : (
+              description && (
+                <Typography
+                  color="textSecondary"
+                  sx={[
+                    {
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: '2',
+                      transition: '0.4s',
+                      WebkitBoxOrient: 'vertical', // TODO: Still works, but is flagged as deprecated. See: https://developer.mozilla.org/en-US/docs/Web/CSS/box-orient
+                    },
+                    selected?.uri === uri && { display: 'block', overflow: 'auto' },
+                  ]}
+                  variant="body2"
+                >
+                  {description}
+                </Typography>
+              )
             )
           }
         />
