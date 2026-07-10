@@ -11,8 +11,9 @@ import {
 import { useActions } from '@src/overmind';
 
 const APP_VERSION = '0.0.1';
+const PROJECT_URL = 'https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste';
 const BUG_REPORT_URL =
-  'https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report';
+  'https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste/-/issues/new?issuable_template=Bug%20Report';
 
 interface AboutDialogProps {
   onClose: () => void;
@@ -35,6 +36,9 @@ export const AboutDialog = ({ onClose, open }: AboutDialogProps) => {
           <Typography variant="body2">
             A desktop XML editor for scholarly text encoding, built on LEAF-Writer.
           </Typography>
+          <Link href={PROJECT_URL} rel="noopener noreferrer" target="_blank" variant="body2">
+            Project website
+          </Link>
           <Typography color="text.secondary" variant="caption">
             Version {APP_VERSION}
           </Typography>

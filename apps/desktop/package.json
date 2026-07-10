@@ -7,7 +7,7 @@
     "name": "Daniel Patrick Morgan",
     "email": "daniel.morgan@college-de-france.fr"
   },
-  "homepage": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer",
+  "homepage": "https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsup",
