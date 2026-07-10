@@ -68,6 +68,15 @@
       {
         "from": "../commons/server",
         "to": "commons/server"
+      },
+      {
+        "from": "../../../sanmiao/src/sanmiao",
+        "to": "sanmiao/src/sanmiao",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
       }
     ],
     "linux": {
