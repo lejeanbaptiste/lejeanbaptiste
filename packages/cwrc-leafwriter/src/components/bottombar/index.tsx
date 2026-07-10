@@ -5,6 +5,7 @@ import pck from '../../../package.json';
 import { PrivacyDialog } from '../../dialogs/privacy-dialog';
 import { useAppState } from '../../overmind';
 import { AuthorityLoadIndicator } from './AuthorityLoadIndicator';
+import { AiRunIndicator } from './AiRunIndicator';
 import { ValdidationErrors } from './ValdidationErrors';
 import AnnotationMode from './annotationMode';
 import EditorMode from './editorMode';
@@ -12,8 +13,7 @@ import { Schema } from './schema';
 import { SourceView } from './sourceView';
 
 const isDesktopApp = () =>
-  typeof window !== 'undefined' &&
-  !!(window as Window & { electronAPI?: unknown }).electronAPI;
+  typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
 export const BottomBar = () => {
   const { isReadonly } = useAppState().editor;
@@ -51,6 +51,7 @@ export const BottomBar = () => {
         <Box flexGrow={1} />
 
         <AuthorityLoadIndicator />
+        <AiRunIndicator />
 
         {!desktop && (
           <>

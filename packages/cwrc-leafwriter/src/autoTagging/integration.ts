@@ -1,6 +1,12 @@
 import { buildDocIndex } from './anchor';
 import { dateCuratorDisplaySurface } from './dateCurator';
-import { applySuggestions, assignEntity, markUnresolved as markMentionUnresolved, type BatchResult, type UserRule } from './apply';
+import {
+  applySuggestions,
+  assignEntity,
+  markUnresolved as markMentionUnresolved,
+  type BatchResult,
+  type UserRule,
+} from './apply';
 import { withApplyDiagnostics } from './applyDiagnostics';
 import { canContainForAutoTagging } from './schemaContainment';
 import { AuthorityCache } from './authorityCache';
@@ -25,11 +31,14 @@ import { filterNestedSameTagAdds } from './suggestionFilters';
 import { llmAudit, collectTaggedSpans, type LlmAuditResult } from './llmAudit';
 import { normalizeDomText } from './normalize';
 import type { AuthorityPackId } from './packPaths';
+import { MAX_AUTHORITY_SUGGESTIONS, runAuthorityTagBombOnDocument } from './authorityTagBomb';
 import {
-  MAX_AUTHORITY_SUGGESTIONS,
-  runAuthorityTagBombOnDocument,
-} from './authorityTagBomb';
-import { dateTagOnlyFromSanmiao, dateResolveFromDocument, type DateTagOptions, type SanmiaoBatchResolveFn, type SanmiaoBatchTagFn } from './dates';
+  dateTagOnlyFromSanmiao,
+  dateResolveFromDocument,
+  type DateTagOptions,
+  type SanmiaoBatchResolveFn,
+  type SanmiaoBatchTagFn,
+} from './dates';
 import {
   collectMentions,
   mergeMentionGroups,
@@ -39,6 +48,8 @@ import {
 import type { DecisionEvent } from './reviewController';
 import type { Suggestion, WhitespacePolicy } from './types';
 import type { DateRangeFilter } from './packLoader';
+import type { SearchTextRange } from './chunk';
+import { findSelectionRangeInDocument, searchTextForDomRange } from './selectionScope';
 
 export { MAX_AUTHORITY_SUGGESTIONS } from './authorityTagBomb';
 
@@ -53,7 +64,11 @@ export interface WriterLike {
   editor?: {
     getBody: () => HTMLElement;
     isNotDirty?: boolean;
-    selection: { setRng: (range: Range) => void; scrollIntoView?: () => void };
+    selection: {
+      setRng: (range: Range) => void;
+      getRng?: () => Range | null;
+      scrollIntoView?: () => void;
+    };
     getDoc: () => Document;
   };
   overmindActions?: {
@@ -133,10 +148,18 @@ export class AutoTaggingSession {
       };
       const api = globals.electronAPI;
       if (api) {
-        this.authorityCache = new AuthorityCache(api, store.authorityCacheDir, { enableGlobalCache: true });
-        this.dilaPlaceDetailCacheStore = new DilaPlaceDetailCache(api, store.dilaPlaceDetailCacheDir);
+        this.authorityCache = new AuthorityCache(api, store.authorityCacheDir, {
+          enableGlobalCache: true,
+        });
+        this.dilaPlaceDetailCacheStore = new DilaPlaceDetailCache(
+          api,
+          store.dilaPlaceDetailCacheDir,
+        );
         this.llmCache = new LlmCache(api, store.aiCacheDir);
-        this.disambiguationAiCacheStore = new DisambiguationAiCache(api, store.aiDisambiguationCacheDir);
+        this.disambiguationAiCacheStore = new DisambiguationAiCache(
+          api,
+          store.aiDisambiguationCacheDir,
+        );
       }
     }
   }
@@ -162,8 +185,31 @@ export class AutoTaggingSession {
   }
 
   /**
+   * The current editor selection as a whole-document search-text range, for
+   * scoping producers to the selected blocks. Null when nothing is selected
+   * or the selected text cannot be located in the serialized document (the
+   * caller then runs on the whole document).
+   */
+  async getSelectionRange(): Promise<SearchTextRange | null> {
+    const editor = this.writer.editor;
+    const range = editor?.selection.getRng?.();
+    if (!editor || !range || range.collapsed) return null;
+
+    try {
+      const bodyIndex = buildDocIndex(editor.getBody(), this.policy);
+      const selected = searchTextForDomRange(bodyIndex, range);
+      const doc = await this.getDocument();
+      return findSelectionRangeInDocument(doc, selected, this.policy);
+    } catch {
+      // Selection scoping is a convenience — never let it block a run.
+      return null;
+    }
+  }
+
+  /**
    * Run AI suggest on the live document. Uses `.ljb/ai-cache/` when a project
-   * store is available. `onProgress` reports completed chunk count.
+   * store is available. `onProgress` reports completed chunk count. Pass
+   * `range` (from getSelectionRange) to tag only the blocks it intersects.
    */
   async runAiSuggest(
     tags: string[],
@@ -171,6 +217,8 @@ export class AutoTaggingSession {
     onProgress?: (done: number, total: number) => void,
     promptProfile?: AiPromptProfile,
     signal?: AbortSignal,
+    range?: SearchTextRange | null,
+    onChunk?: (suggestions: Suggestion[]) => void,
   ): Promise<LlmSuggestResult> {
     const doc = await this.getDocument();
     const result = await llmSuggest(doc, {
@@ -181,6 +229,8 @@ export class AutoTaggingSession {
       onProgress,
       promptProfile,
       signal,
+      range,
+      onChunk,
     });
     const { suggestions, dropped } = filterNestedSameTagAdds(doc, this.policy, result.suggestions);
     return {
@@ -199,6 +249,8 @@ export class AutoTaggingSession {
     onProgress?: (done: number, total: number) => void,
     promptProfile?: AiPromptProfile,
     signal?: AbortSignal,
+    range?: SearchTextRange | null,
+    onChunk?: (suggestions: Suggestion[]) => void,
   ): Promise<LlmAuditResult> {
     const doc = await this.getDocument();
     const result = await llmAudit(doc, {
@@ -209,6 +261,8 @@ export class AutoTaggingSession {
       onProgress,
       promptProfile,
       signal,
+      range,
+      onChunk,
     });
     const { suggestions, dropped } = filterNestedSameTagAdds(doc, this.policy, result.suggestions);
     return {
@@ -409,8 +463,7 @@ export class AutoTaggingSession {
       const globals = window as unknown as {
         writer?: { overmindState?: { editor?: { resource?: { filePath?: string } } } };
       };
-      const documentId =
-        globals.writer?.overmindState?.editor?.resource?.filePath ?? 'current';
+      const documentId = globals.writer?.overmindState?.editor?.resource?.filePath ?? 'current';
       this.documentPaths.set(doc, documentId);
       const groups = collectMentions(doc, this.policy, documentId, options);
       options.onProgress?.(1, 1);
@@ -425,12 +478,7 @@ export class AutoTaggingSession {
       const doc = documents[i]!;
       options.onProgress?.(i, total);
       groups.push(
-        ...collectMentions(
-          doc,
-          this.policy,
-          this.documentPaths.get(doc) ?? `doc-${i}`,
-          options,
-        ),
+        ...collectMentions(doc, this.policy, this.documentPaths.get(doc) ?? `doc-${i}`, options),
       );
       if (i < documents.length - 1) await yieldToUi();
     }
@@ -445,8 +493,7 @@ export class AutoTaggingSession {
    */
   private syncUnsavedStateAfterReload(editorXml: string): void {
     const merge = window.__desktopMergeEditorBodyWithStoredHeader;
-    const contentForStorage =
-      typeof merge === 'function' ? merge(editorXml) : editorXml;
+    const contentForStorage = typeof merge === 'function' ? merge(editorXml) : editorXml;
 
     const filePath =
       this.writer.overmindState?.editor?.resource?.filePath ??
@@ -563,7 +610,10 @@ export class AutoTaggingSession {
     return entityId;
   }
 
-  async markUnresolved(instance: MentionInstance, candidates: DisambiguationCandidate[]): Promise<void> {
+  async markUnresolved(
+    instance: MentionInstance,
+    candidates: DisambiguationCandidate[],
+  ): Promise<void> {
     markMentionUnresolved(instance.element);
     this.rememberPendingCandidates(instance.tag, instance.surface, candidates);
     await this.savePendingCache();

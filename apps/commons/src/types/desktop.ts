@@ -94,6 +94,10 @@ export interface AiApiSettings {
   customInstructions: string;
   model: string;
   temperature: number;
+  streamResults: boolean;
+  verifiedAt: string | null;
+  verifiedBaseUrl: string;
+  verifiedModel: string;
 }
 
 export interface AiConnectionResult {
@@ -132,12 +136,7 @@ export type WorkspaceCursorPosition =
   | { mode: 'visual'; offsetInElementText: number; teiXPath: string };
 
 export type DesktopRightPanelTab =
-  | 'fileMetadata'
-  | 'attributes'
-  | 'css'
-  | 'imageViewer'
-  | 'validation'
-  | 'translation';
+  'fileMetadata' | 'attributes' | 'css' | 'imageViewer' | 'validation' | 'translation';
 
 export type DesktopValidatorInstrumentation = {
   workerLoading: boolean;
@@ -245,14 +244,12 @@ export interface ElectronAPI {
   pickEntityDbFolder: () => Promise<string | null>;
   pickAuthorityPacksSource?: () => Promise<string | null>;
   authorityDbStatuses?: () => Promise<AuthoritySourceStatus[]>;
-  authorityDbDownload?: (
-    sourceId: AuthoritySourceId,
-  ) => Promise<{ ok: boolean; error?: string }>;
+  authorityDbDownload?: (sourceId: AuthoritySourceId) => Promise<{ ok: boolean; error?: string }>;
   authorityDbPromptDownload?: () => Promise<'accepted' | 'declined'>;
-  onAuthorityDbProgress?: (
-    callback: (progress: AuthorityDownloadProgress) => void,
-  ) => () => void;
-  authorityPackStatuses?: () => Promise<import('@src/desktop/authorityPackTypes').AuthorityPackStatus[]>;
+  onAuthorityDbProgress?: (callback: (progress: AuthorityDownloadProgress) => void) => () => void;
+  authorityPackStatuses?: () => Promise<
+    import('@src/desktop/authorityPackTypes').AuthorityPackStatus[]
+  >;
   authorityPackRead?: (
     packId: import('@src/desktop/authorityPackTypes').AuthorityPackId,
   ) => Promise<string>;
@@ -284,22 +281,32 @@ export interface ElectronAPI {
   sanmiaoProposeDates?: (
     text: string,
     options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
-  ) => Promise<import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[]>;
+  ) => Promise<
+    import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[]
+  >;
   sanmiaoProposeDatesBatch?: (
     chunks: string[],
     options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
-  ) => Promise<import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[][]>;
+  ) => Promise<
+    import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[][]
+  >;
   sanmiaoTagDatesBatch?: (
     chunks: string[],
     options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
-  ) => Promise<import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[][]>;
+  ) => Promise<
+    import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[][]
+  >;
   sanmiaoResolveDatesBatch?: (
     dates: string[],
     options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
-  ) => Promise<(import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal | null)[]>;
+  ) => Promise<
+    (import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal | null)[]
+  >;
   sanmiaoListDateAuthority?: (options?: {
     civ?: string[];
-  }) => Promise<import('../../../../packages/cwrc-leafwriter/src/dateAuthority/types').DateAuthorityIndex>;
+  }) => Promise<
+    import('../../../../packages/cwrc-leafwriter/src/dateAuthority/types').DateAuthorityIndex
+  >;
   onSanmiaoProgress?: (
     callback: (
       progress: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoChunkProgressEvent,

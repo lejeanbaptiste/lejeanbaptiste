@@ -1,8 +1,5 @@
 import type { AiPromptProfile } from './aiPromptProfiles';
-import {
-  promptVersionWithProfile,
-  resolveSuggestTaskText,
-} from './aiPromptProfiles';
+import { promptVersionWithProfile, resolveSuggestTaskText } from './aiPromptProfiles';
 import { buildDocIndex } from './anchor';
 import { createAnchor } from './anchor';
 import { chunkDocument, llmChunkOptions, type ChunkOptions } from './chunk';
@@ -19,6 +16,8 @@ export interface LlmSuggestOptions extends ChunkOptions {
   promptProfile?: AiPromptProfile;
   /** Called after each chunk finishes (done/total). */
   onProgress?: (done: number, total: number) => void;
+  /** Suggestions verified from one completed document chunk. */
+  onChunk?: (suggestions: Suggestion[]) => void;
   /** Stops between chunks and aborts the in-flight request when triggered. */
   signal?: AbortSignal;
 }
@@ -37,8 +36,11 @@ const SUGGEST_ACTIONS = ['add'];
  * document (surface + occurrence, not offsets), and emit plain 'add'
  * suggestions through the same review walk as every other producer.
  */
-export async function llmSuggest(doc: Document, options: LlmSuggestOptions): Promise<LlmSuggestResult> {
-  const { tags, client, cache, policy, onProgress, promptProfile, signal } = options;
+export async function llmSuggest(
+  doc: Document,
+  options: LlmSuggestOptions,
+): Promise<LlmSuggestResult> {
+  const { tags, client, cache, policy, onProgress, onChunk, promptProfile, signal } = options;
   const chunks = chunkDocument(doc, llmChunkOptions(options));
   const index = buildDocIndex(doc, policy);
   const schema = suggestionResponseSchema(SUGGEST_ACTIONS);
@@ -66,26 +68,39 @@ export async function llmSuggest(doc: Document, options: LlmSuggestOptions): Pro
       await cache?.set(chunk.text, tags, client.modelId, promptVersion, items);
     }
 
+    const chunkSuggestions: Suggestion[] = [];
     for (const item of items) {
       const offset = findOccurrenceOffset(chunk.text, item.surface, item.occurrence);
-      const located = offset === null ? null : locateInDoc(index, chunk.start + offset, item.surface.length);
+      const located =
+        offset === null ? null : locateInDoc(index, chunk.start + offset, item.surface.length);
       if (!located) {
         unverifiableCount++;
         continue;
       }
-      suggestions.push({
+      const suggestion: Suggestion = {
         id: `ai_${counter++}`,
         source: 'ai',
         sourceDetail: client.modelId,
         action: 'add',
         tag: item.tag,
-        anchor: createAnchor('', doc, located.node, located.rawStart, located.rawEnd, policy, index),
+        anchor: createAnchor(
+          '',
+          doc,
+          located.node,
+          located.rawStart,
+          located.rawEnd,
+          policy,
+          index,
+        ),
         confidence: item.confidence,
         rationale: item.rationale,
         status: 'pending',
-      });
+      };
+      suggestions.push(suggestion);
+      chunkSuggestions.push(suggestion);
     }
 
+    if (chunkSuggestions.length > 0) onChunk?.(chunkSuggestions);
     onProgress?.(chunkIndex + 1, chunks.length);
   }
 
