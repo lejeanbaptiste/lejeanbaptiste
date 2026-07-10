@@ -28,6 +28,9 @@
     "Accepted": "Acceptées",
     "Close auto-tagging review": "Fermer la revue de balisage automatique",
     "Close review": "Fermer la revue",
+    "messages": {
+      "some_features_are_not_fully_implemented": "Certaines fonctionnalités ne sont pas entièrement implémentées"
+    },
     "Rejected": "Rejetées",
     "Reverting tags…": "Annulation des balises…",
     "Revert": "Annuler",
@@ -204,6 +207,9 @@
       "change": "changer",
       "close": "fermer",
       "delete": "supprimer",
+      "refresh": "actualiser",
+      "remove": "supprimer",
+      "status_installed": "installé",
       "description": "Description",
       "discard_changes": "annuler les modifications",
       "edit": "modifier",
@@ -424,6 +430,24 @@
       "defaultUnitLabel": "section"
     },
     "settings": {
+      "ai_api": {
+        "api_key": "Clé API",
+        "base_url": "URL de base",
+        "description": "Configurez un point de terminaison compatible OpenAI pour la traduction assistée par IA.",
+        "check_connection": "Vérifier la connexion",
+        "checking": "Vérification de la connexion à l'API IA…",
+        "checking_button": "Vérification…",
+        "connected_with_models": "Connecté. {{count}} modèle{{count, plural, one {} other {s}}} trouvé{{count, plural, one {} other {s}}}.",
+        "connected_without_models": "Connecté. Le serveur n'a listé aucun modèle.",
+        "connection_failed": "Impossible de joindre l'API IA.",
+        "model": "Modèle",
+        "save_failed": "Impossible d'enregistrer les paramètres de l'API IA.",
+        "saved": "Paramètres de l'API IA enregistrés.",
+        "temperature": "Température",
+        "translation_instructions": "Instructions de traduction",
+        "translation_instructions_placeholder": "Saisissez ici les consignes de traduction à appliquer.",
+        "title": "API IA"
+      },
       "authorities": {
         "Add Custom Authority": "Ajouter une autorité personnalisée",
         "messages": {
@@ -438,10 +462,15 @@
       },
       "editor": {
         "Show Entities": "Afficher les entités",
+        "show_entities": "Afficher les entités",
         "Show Raw XML panel": "Afficher le panneau XML brut",
+        "strip_east_asian_whitespace": "Supprimer les espaces entre les caractères est-asiatiques",
         "asian font": "Police asiatique",
+        "asian_font": "Police asiatique",
         "default fonts": "polices par défaut",
+        "default_fonts": "polices par défaut",
         "latin font": "Police latine",
+        "latin_font": "Police latine",
         "refresh system fonts": "Actualiser les polices système",
         "font size": "taille de police",
         "show_tag_bubble": "Afficher la bulle du nom de balise"
@@ -455,8 +484,11 @@
       },
       "reset": {
         "Clear Cache": "Vider le cache",
+        "clear_cache": "Vider le cache",
         "Reset Dialog Warnings": "Réinitialiser les avertissements de la boîte de dialogue",
+        "reset_dialog_warnings": "Réinitialiser les avertissements de la boîte de dialogue",
         "Reset Settings": "Réinitialiser les paramètres",
+        "reset_settings": "Réinitialiser les paramètres",
         "message": {
           "Cache cleared": "Cache vidé",
           "Confirmation dialog preferences have been reset": "Les préférences de la boîte de dialogue de confirmation ont été réinitialisées",
@@ -481,18 +513,18 @@
         "skip_delete_confirm": "Supprimer fichiers et dossiers sans confirmation",
         "skip_entity_detach_confirm": "Détacher les identifiants d’autorité des entités sans confirmation",
         "title": "Avertissements"
-      },
-      "desktop": {
-        "settings": {
-          "entity_database": "Base d’entités",
-          "entity_database_change": "Changer de dossier…",
-          "entity_database_folder": "Dossier de la base",
-          "entity_database_hint": "Choisissez le dossier qui contient entities.xml (pas un sous-dossier du projet). Les packs d’autorité et les téléchargements CBDB/DILA bruts s’y trouvent aussi.",
-          "entity_database_missing": "Aucun dossier de base d’entités n’est configuré. La désambiguïsation est bloquée jusqu’à ce que vous en choisissiez un.",
-          "remember_workspace_on_startup": "Rouvrir le projet et les onglets au démarrage",
-          "user_name": "Nom d’utilisateur",
-          "your_name": "Votre nom"
-        }
+      }
+    },
+    "desktop": {
+      "settings": {
+        "entity_database": "Base d’entités",
+        "entity_database_change": "Changer de dossier…",
+        "entity_database_folder": "Dossier de la base",
+        "entity_database_hint": "Choisissez le dossier qui contient entities.xml (pas un sous-dossier du projet). Les packs d’autorité et les téléchargements CBDB/DILA bruts s’y trouvent aussi.",
+        "entity_database_missing": "Aucun dossier de base d’entités n’est configuré. La désambiguïsation est bloquée jusqu’à ce que vous en choisissiez un.",
+        "remember_workspace_on_startup": "Rouvrir le projet et les onglets au démarrage",
+        "user_name": "Nom d’utilisateur",
+        "your_name": "Votre nom"
       }
     },
     "copyPasteHelp": {

@@ -426,6 +426,7 @@ export const TranslationPane = () => {
   const savedBodyRangeRef = useRef<Range | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
   const savedFootnoteRangeRef = useRef<{ index: number; range: Range } | null>(null);
+  const zoteroStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCitationTargetRef = useRef<'body' | 'footnote'>('body');
   const focusFootnoteIndexRef = useRef<number | null>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -469,6 +470,7 @@ export const TranslationPane = () => {
   useEffect(
     () => () => {
       if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+      if (zoteroStatusTimeoutRef.current) clearTimeout(zoteroStatusTimeoutRef.current);
     },
     [],
   );
@@ -947,6 +949,12 @@ export const TranslationPane = () => {
   const getEditableRange = (): Range | null => {
     const selection = window.getSelection();
     const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (range) {
+      const inFootnoteEditor = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-leaf-footnote-editor]'),
+      ).some((element) => element.contains(range.commonAncestorContainer));
+      if (inFootnoteEditor) return null;
+    }
     if (range && editableRef.current?.contains(range.commonAncestorContainer)) {
       savedBodyRangeRef.current = range.cloneRange();
       lastCitationTargetRef.current = 'body';
@@ -1196,9 +1204,6 @@ export const TranslationPane = () => {
     const range = getEditableRange();
     if (!range) return;
 
-    // Caret inside an existing footnote anchor: nothing to insert.
-    if (findAncestorTag(range, 'note')) return;
-
     const note = document.createElement('note');
     note.setAttribute('place', 'foot');
     note.setAttribute('contenteditable', 'false');
@@ -1223,8 +1228,8 @@ export const TranslationPane = () => {
   const chooseCitationStyleForFirstReference = async (
     bridge: DesktopCitationBridge,
   ): Promise<string | null> => {
-    if (translationMode.citationStyle) return translationMode.citationStyle;
     if (pendingCitationStyle) return pendingCitationStyle;
+    if (translationMode.citationStyle) return translationMode.citationStyle;
 
     return openCitationStylePicker(bridge);
   };
@@ -1340,7 +1345,15 @@ export const TranslationPane = () => {
     if (!insertionTarget) return;
 
     setAiStatus({ severity: 'info', message: t('LW.translationPane.waitingForZoteroCitation') });
+    zoteroStatusTimeoutRef.current = setTimeout(() => {
+      setAiStatus(null);
+      zoteroStatusTimeoutRef.current = null;
+    }, 30_000);
     const result = await bridge.pickZoteroCitation();
+    if (zoteroStatusTimeoutRef.current) {
+      clearTimeout(zoteroStatusTimeoutRef.current);
+      zoteroStatusTimeoutRef.current = null;
+    }
     if (!result.ok) {
       if (!result.cancelled) {
         setAiStatus({
@@ -1899,8 +1912,11 @@ export const TranslationPane = () => {
               // collapsed here and edited in the numbered list below the text.
               '& note': {
                 counterIncrement: 'footnote',
+                display: 'inline-block',
                 fontSize: '0px',
+                position: 'relative',
                 userSelect: 'none',
+                width: 0,
               },
               '& note::after': {
                 content: 'counter(footnote)',
@@ -1908,7 +1924,8 @@ export const TranslationPane = () => {
                 lineHeight: 0,
                 // vertical-align: super is relative to the parent's font metrics,
                 // which are 0px here (the note text is collapsed) — raise manually.
-                position: 'relative',
+                position: 'absolute',
+                left: 0,
                 top: '-0.5em',
                 fontWeight: 600,
                 color: 'primary.main',
