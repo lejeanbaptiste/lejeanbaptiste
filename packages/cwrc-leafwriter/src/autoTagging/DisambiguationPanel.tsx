@@ -44,6 +44,7 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { CbdbIcon, DilaIcon, InitialsIcon } from '../icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 import { openExternalUrl } from '../utilities/DOM';
+import { cachedPackReader } from '../services/authority-pack-lookup';
 import {
   buildDisambiguationCandidates,
   candidateLinks,
@@ -198,7 +199,7 @@ const GroupHeader = ({
         <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
           {group.surface}
         </Typography>
-        <Chip size="small" label={group.tag} sx={{ height: 18, fontSize: 10 }} />
+        <Chip size="small" label={group.tag} sx={{ height: 18, fontSize: 10, '& .MuiChip-label': { fontWeight: 400 } }} />
         {resolved ? (
           <Chip
             size="small"
@@ -466,7 +467,12 @@ export const DisambiguationPanel = ({
    * is still showing that same group; otherwise the update is dropped.
    */
   const refreshDilaDates = useCallback(
-    async (targetGroup: MentionGroup, cache: AuthorityCache, entitiesDoc: Document) => {
+    async (
+      targetGroup: MentionGroup,
+      cache: AuthorityCache,
+      entitiesDoc: Document,
+      retryWhenPending = false,
+    ) => {
       const groupKey = mentionGroupKey(targetGroup);
       try {
         const rows = await buildDisambiguationCandidates(
@@ -476,8 +482,18 @@ export const DisambiguationPanel = ({
           cache,
           ['Wikidata', 'VIAF'],
           false,
-          window.electronAPI?.authorityPackRead,
+          cachedPackReader(),
           session.dilaPlaceDetailCache ?? undefined,
+          undefined,
+          // When healing stale cached rows, the detail scrapes may still be in
+          // flight; retry exactly once after they land (bounded, so permanently
+          // failing scrapes can't loop).
+          retryWhenPending
+            ? () => {
+                if (currentKeyRef.current !== groupKey) return;
+                void refreshDilaDates(targetGroup, cache, entitiesDoc, false);
+              }
+            : undefined,
         );
         if (currentKeyRef.current !== groupKey) return;
         setCandidates(rows);
@@ -512,6 +528,26 @@ export const DisambiguationPanel = ({
         if (cached && !forceRefresh) {
           const rows = collapseCrossAuthorityCandidates(cached.map(enrichCandidateCrossRefs));
           setCandidates(rows);
+          // The prefetcher can cache DILA place rows before their lazy detail
+          // scrapes (dynasty/dates) have landed. Heal such rows in the
+          // background: rebuild from the now-warm caches and swap in the dated
+          // candidates, kicking off (and retrying once after) any still-missing
+          // scrapes.
+          const needsDilaDates = rows.some(
+            (row) =>
+              row.sources.includes('DILA') &&
+              targetGroup.tag === 'placeName' &&
+              row.startYear == null &&
+              row.endYear == null &&
+              !row.dynasty,
+          );
+          if (needsDilaDates && session.cache) {
+            const cacheForRefresh = session.cache;
+            void (async () => {
+              const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
+              void refreshDilaDates(targetGroup, cacheForRefresh, entitiesDoc, true);
+            })();
+          }
           const inst = targetInstance ?? controllerRef.current?.currentInstance();
           if (inst) await applyAiRank(targetGroup, rows, inst);
           return;
@@ -527,7 +563,7 @@ export const DisambiguationPanel = ({
           cache,
           ['Wikidata', 'VIAF'],
           forceRefresh,
-          window.electronAPI?.authorityPackRead,
+          cachedPackReader(),
           session.dilaPlaceDetailCache ?? undefined,
           undefined,
           () => {

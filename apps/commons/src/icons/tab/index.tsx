@@ -12,8 +12,6 @@ import tocPng from './tab_toc.png';
 import tocDarkPng from './tab_toc.dark.png';
 import treePng from './tab_tree.png';
 import treeDarkPng from './tab_tree.dark.png';
-import entityPng from './tab_entity.png';
-import entityDarkPng from './tab_entity.dark.png';
 
 export type SidebarTabId =
   | 'explorer'
@@ -21,7 +19,6 @@ export type SidebarTabId =
   | 'xpath'
   | 'toc'
   | 'markup'
-  | 'entities'
   | 'database';
 
 /** Tabs without a PNG pair fall back to an MUI icon in TabIcon. */
@@ -31,7 +28,6 @@ const tabIconSources: Partial<Record<SidebarTabId, string>> = {
   xpath: xpathPng,
   toc: tocPng,
   markup: treePng,
-  entities: entityPng,
 };
 
 const tabIconSourcesDark: Partial<Record<SidebarTabId, string>> = {
@@ -40,7 +36,6 @@ const tabIconSourcesDark: Partial<Record<SidebarTabId, string>> = {
   xpath: xpathDarkPng,
   toc: tocDarkPng,
   markup: treeDarkPng,
-  entities: entityDarkPng,
 };
 
 export const sidebarTabLabels: Record<SidebarTabId, string> = {
@@ -49,7 +44,6 @@ export const sidebarTabLabels: Record<SidebarTabId, string> = {
   xpath: 'LWC.dialogs.sidebar_tabs.xpath',
   toc: 'LWC.dialogs.sidebar_tabs.toc',
   markup: 'LWC.dialogs.sidebar_tabs.markup',
-  entities: 'LWC.dialogs.sidebar_tabs.entities',
   database: 'LWC.dialogs.sidebar_tabs.database',
 };
 
@@ -59,7 +53,6 @@ export const sidebarTabOrder: SidebarTabId[] = [
   'xpath',
   'toc',
   'markup',
-  'entities',
   'database',
 ];
 

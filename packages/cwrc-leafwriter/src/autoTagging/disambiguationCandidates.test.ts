@@ -122,6 +122,52 @@ describe('disambiguationCandidates', () => {
     expect(links.some((link) => link.kind === 'cbdb' && link.url.includes('392870'))).toBe(true);
   });
 
+  it('extracts concordance ids beyond CBDB from free-text cross references', async () => {
+    mockReconcile.mockImplementation(async ({ options }) => {
+      const authorityId = (options as { authorityId?: string })?.authorityId;
+      if (authorityId === 'wikidata') {
+        return [
+          {
+            uri: 'https://www.wikidata.org/wiki/Q1137864',
+            label: 'Example Person',
+            description:
+              'Sources: https://viaf.org/viaf/404064183, https://authority.dila.edu.tw/person/search.php?code=A001492, https://id.ndl.go.jp/auth/ndlna/00270123',
+          },
+        ];
+      }
+      if (authorityId === 'viaf') {
+        return [
+          {
+            uri: 'https://viaf.org/viaf/404064183',
+            label: 'Example Person',
+            description:
+              'Sources: https://www.wikidata.org/wiki/Q1137864, https://authority.dila.edu.tw/person/search.php?code=A001492, https://id.ndl.go.jp/auth/ndlna/00270123',
+          },
+        ];
+      }
+      return [];
+    });
+
+    const cache = new AuthorityCache(null, null);
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, json: async () => ({}) } as Response);
+
+    try {
+      const rows = await fetchLiveCandidates('persName', 'Example Person', cache, ['Wikidata', 'VIAF']);
+      const row = rows[0];
+      expect(row?.authorityIds).toEqual(
+        expect.arrayContaining([
+          { type: 'Wikidata', value: 'Q1137864' },
+          { type: 'VIAF', value: 'https://viaf.org/viaf/404064183' },
+          { type: 'DILA', value: 'A001492' },
+          { type: 'NDL', value: '00270123' },
+        ]),
+      );
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
   it('collapses Wikidata and VIAF when they share a Q id', () => {
     const rows = collapseCrossAuthorityCandidates([
       {

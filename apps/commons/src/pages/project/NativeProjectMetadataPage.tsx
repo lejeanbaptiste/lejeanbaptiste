@@ -185,6 +185,20 @@ export const NativeProjectMetadataPage = () => {
     closeDialog();
   };
 
+  useEffect(() => {
+    if (!isDesktop()) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      void handleCancel();
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [handleCancel]);
+
   if (!isDesktop()) {
     return (
       <Box sx={{ p: 3 }}>
@@ -421,6 +435,11 @@ export const NativeProjectMetadataPage = () => {
         {!isFirstSetup && (
           <Button disabled={submitting} onClick={() => void handleCancel()}>
             {t('LWC.commons.cancel')}
+          </Button>
+        )}
+        {isFirstSetup && !state && (
+          <Button disabled={submitting} onClick={() => void handleCancel()}>
+            {t('LWC.commons.close')}
           </Button>
         )}
         {!isFirstSetup && (

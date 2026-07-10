@@ -50,6 +50,7 @@ import { copyUnitsForExport } from '../js/conversion/copyForExport';
 import { useActions, useAppState } from '../overmind';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
+const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
 
 const getElementsByLocalName = (root: Document | Element, localName: string): Element[] => {
   const namespaced = Array.from(root.getElementsByTagNameNS(TEI_NS, localName));
@@ -1228,7 +1229,18 @@ export const TranslationPane = () => {
     bridge: DesktopCitationBridge,
     initialStyleId = pendingCitationStyle || translationMode.citationStyle || undefined,
   ): Promise<string | null> => {
-    const { defaultStyleId, options } = await bridge.getCitationStyleOptions();
+    let defaultStyleId = DEFAULT_CITATION_STYLE_ID;
+    let options: Awaited<ReturnType<DesktopCitationBridge['getCitationStyleOptions']>>['options'] =
+      [];
+    try {
+      const result = await bridge.getCitationStyleOptions();
+      defaultStyleId = result.defaultStyleId;
+      options = result.options;
+    } catch {
+      setAiStatus({ severity: 'error', message: 'Zotero preferences failed to load.' });
+      return null;
+    }
+
     const fallbackStyleId = options[0]?.id ?? defaultStyleId;
     setCitationStyleChoices(options);
     setPendingCitationStyle(initialStyleId ?? fallbackStyleId);
@@ -1948,6 +1960,7 @@ export const TranslationPane = () => {
                         if (el) prepareAtomicCitationFields(el, zoteroCitationLabel);
                         if (el && focusFootnoteIndexRef.current === index) {
                           focusFootnoteIndexRef.current = null;
+                          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
                           el.focus();
                         }
                       }}

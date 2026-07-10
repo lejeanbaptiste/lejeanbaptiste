@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import pck from '../../../package.json';
 import { PrivacyDialog } from '../../dialogs/privacy-dialog';
 import { useAppState } from '../../overmind';
+import { AuthorityLoadIndicator } from './AuthorityLoadIndicator';
 import { ValdidationErrors } from './ValdidationErrors';
 import AnnotationMode from './annotationMode';
 import EditorMode from './editorMode';
@@ -48,6 +49,8 @@ export const BottomBar = () => {
         {validationErrors > 0 && !isReadonly && <ValdidationErrors />}
 
         <Box flexGrow={1} />
+
+        <AuthorityLoadIndicator />
 
         {!desktop && (
           <>

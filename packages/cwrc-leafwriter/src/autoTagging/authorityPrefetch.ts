@@ -1,4 +1,6 @@
 import type { AuthorityCache } from './authorityCache';
+import { cachedPackReader } from '../services/authority-pack-lookup';
+import { prefetchFinished, prefetchProgress } from './authorityLoadProgress';
 import { buildDisambiguationCandidates, type DisambiguationCandidate } from './disambiguationCandidates';
 import {
   disambiguationCachingDisabledFromSettings,
@@ -96,9 +98,11 @@ export function runAuthorityPrefetch(
   const tick = async () => {
     if (stopped) return;
     if (index >= queue.length) {
+      prefetchFinished();
       flushSave();
       return;
     }
+    prefetchProgress(index, queue.length);
     const group = queue[index++]!;
     try {
       // A foreground lookup may have already resolved this group since it was queued.
@@ -112,8 +116,36 @@ export function runAuthorityPrefetch(
           cache,
           ['Wikidata', 'VIAF'],
           false,
-          window.electronAPI?.authorityPackRead,
+          cachedPackReader(),
           session.dilaPlaceDetailCache ?? undefined,
+          undefined,
+          // DILA place details scrape lazily in the background. Once every
+          // queued fetch for this group lands, rebuild from the (now warm)
+          // caches and overwrite the remembered rows — otherwise the pending
+          // cache permanently holds the undated first-pass candidates and the
+          // panel never shows dynasties/dates for prefetched groups.
+          () => {
+            if (stopped) return;
+            void (async () => {
+              try {
+                const refreshed = await buildDisambiguationCandidates(
+                  entitiesDoc,
+                  group.tag,
+                  group.surface,
+                  cache,
+                  ['Wikidata', 'VIAF'],
+                  false,
+                  cachedPackReader(),
+                  session.dilaPlaceDetailCache ?? undefined,
+                );
+                if (stopped) return;
+                session.rememberPendingCandidates(group.tag, group.surface, refreshed);
+                scheduleSave();
+              } catch {
+                // Best-effort — the undated rows stay until a foreground lookup.
+              }
+            })();
+          },
         );
         if (stopped) return;
         session.rememberPendingCandidates(group.tag, group.surface, rows);
@@ -132,6 +164,7 @@ export function runAuthorityPrefetch(
       if (stopped) return;
       stopped = true;
       cancelIdle?.();
+      prefetchFinished();
       flushSave();
     },
   };

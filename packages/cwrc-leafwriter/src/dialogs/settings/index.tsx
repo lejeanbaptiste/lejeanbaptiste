@@ -31,9 +31,17 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
       maxWidth={isDesktop ? 'lg' : 'md'}
       onClose={handleClose}
       open={open}
+      PaperProps={{
+        sx: {
+          borderRadius: 3.5,
+          overflow: 'hidden',
+          m: 1,
+          bgcolor: 'background.paper',
+        },
+      }}
     >
       <Header onClose={handleClose} />
-      <Stack direction="row" overflow="hidden" px={1.5}>
+      <Stack direction="row" overflow="hidden" px={0.75} pb={0.75}>
         <SideMenu
           items={[
             { id: 'interface', label: t('LW.commons.interface') },
@@ -45,8 +53,8 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
             { id: 'reset', label: t('LW.commons.reset'), hide: isReadonly },
           ]}
         />
-        <DialogContent>
-          <Stack component={motion.div} layout spacing={3}>
+        <DialogContent sx={{ pt: 0.25, px: 1, pb: 1, minWidth: 0 }}>
+          <Stack component={motion.div} layout spacing={1.75}>
             <Section id="interface" title={t('LW.commons.interface')}>
               <UI />
             </Section>

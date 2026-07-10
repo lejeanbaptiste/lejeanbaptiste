@@ -26,10 +26,15 @@ export const SideMenu = ({ items }: SideMenuProps) => {
     <Box
       ref={refElemennt}
       aria-label={t('LW.commons.side_menu')}
-      minWidth={128}
-      mt={1}
-      gap={0.5}
-      ml={-1}
+      minWidth={148}
+      mt={0.75}
+      gap={0.25}
+      ml={-0.25}
+      sx={{
+        '& .MuiMenuList-root': {
+          py: 0,
+        },
+      }}
     >
       <MenuList>
         {items
@@ -40,12 +45,12 @@ export const SideMenu = ({ items }: SideMenuProps) => {
               dense
               onClick={() => handleClick(id)}
               sx={{
-                borderTopRightRadius: 4,
-                borderBottomRightRadius: 4,
+                borderRadius: 1,
                 fontSize: '0.875rem',
-                minHeight: 30,
-                py: 0.15,
-                textTransform: 'capitalize',
+                minHeight: 26,
+                mx: 0.25,
+                my: 0.15,
+                py: 0.1,
               }}
             >
               {label}

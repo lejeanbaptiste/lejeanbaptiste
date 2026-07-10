@@ -26,17 +26,22 @@ export const useNotifier = () => {
       if (!key) return;
       if (displayed.includes(key)) return;
 
+      const cleanup = (myKey?: string | number) => {
+        if (myKey === undefined || myKey === null) return;
+        removeNotificationSnackbar(myKey);
+        removeDisplayed(myKey);
+      };
+
       // display snackbar using notistack
       enqueueSnackbar(message, {
         key,
         ...options,
         onClose: (_event, reason, myKey) => {
           if (options.onClose) options.onClose(_event, reason, myKey);
+          cleanup(myKey);
         },
         onExited: (_event, myKey) => {
-          // remove this snackbar from overmind store
-          removeNotificationSnackbar(myKey);
-          removeDisplayed(myKey);
+          cleanup(myKey);
         },
       });
 

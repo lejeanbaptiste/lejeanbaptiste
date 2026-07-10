@@ -100,4 +100,23 @@ describe('crawlEntities', () => {
     const suggestions = dictionaryTag(doc, entries, 'ignore');
     expect(suggestions).toHaveLength(0);
   });
+
+  it('does not crawl entity tags from the TEI header', () => {
+    const doc = parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0">
+        <teiHeader>
+          <fileDesc>
+            <titleStmt><title><persName>沈攸之</persName></title></titleStmt>
+          </fileDesc>
+        </teiHeader>
+        <text>
+          <body>
+            <p>沈攸之</p>
+          </body>
+        </text>
+      </TEI>`,
+    );
+    const entries = crawlEntities(doc, 'ignore');
+    expect(entries).toEqual([]);
+  });
 });

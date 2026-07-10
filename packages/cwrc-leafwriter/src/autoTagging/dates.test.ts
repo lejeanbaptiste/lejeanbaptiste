@@ -142,6 +142,26 @@ describe('dateResolveFromDocument', () => {
     expect(suggestions[0]!.anchor.surface).toBe('魏');
     expect(suggestions[0]!.dateResolution?.displaySurface).toBe('魏文帝黃初二年六月戊辰晦');
   });
+
+  it('strips entity tags from parsed date xml before storing resolution', async () => {
+    const doc = docFromBody('<p>義熙八年</p>');
+    const suggestions = await dateTagOnlyFromSanmiao(doc, policy, async () => [
+      [
+        {
+          date_index: 0,
+          date_string: '義熙八年',
+          status: 'tagged',
+          candidates: [],
+          parseInnerXml: '<era>義熙</era><placeName>洛陽</placeName><year>八年</year>',
+        },
+      ],
+    ]);
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]!.dateResolution?.parseXml).toContain('<era>義熙</era>');
+    expect(suggestions[0]!.dateResolution?.parseXml).toContain('<year>八年</year>');
+    expect(suggestions[0]!.dateResolution?.parseXml).not.toContain('placeName');
+    expect(suggestions[0]!.dateResolution?.parseXml).toContain('洛陽');
+  });
 });
 
 describe('offsetToRawRange', () => {

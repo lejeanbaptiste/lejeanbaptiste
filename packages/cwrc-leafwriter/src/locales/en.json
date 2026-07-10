@@ -39,15 +39,136 @@
     },
     "settings": {
       "ai_api": {
-        "translation_instructions": "Translation instructions",
-        "translation_instructions_placeholder": "Translate in a concise scholarly style."
-      },
-      "editor": {
-        "font_size_slider": "Font size"
+        "api_key": "API key",
+        "base_url": "Base URL",
+        "check_connection": "Check connection",
+        "checking": "Checking AI API connection...",
+        "checking_button": "Checking...",
+        "connected_with_models": "Connected. Found {{count}} model{{count, plural, one {} other {s}}}.",
+        "connected_without_models": "Connected. The server did not list any models.",
+        "connection_failed": "Could not reach the AI API.",
+        "model": "Model",
+        "save_failed": "Could not save AI API settings.",
+        "saved": "AI API settings saved.",
+        "temperature": "Temperature",
+        "title": "AI API"
       },
       "authorities": {
+        "Add Custom Authority": "Add Custom Authority",
+        "chgis": {
+          "download_from": "Download from",
+          "entity_db_required": "Choose an entity database folder (with entities.xml) in App Settings before installing CHGIS.",
+          "install_here": "then install here. LEAF-Writer compiles a local pack only - nothing is redistributed.",
+          "install_failed": "CHGIS install failed.",
+          "install_from_download": "Install from download…",
+          "install_success": "CHGIS places compiled ({{count}} records). Enable CHGIS historical places in the auto-tag dialog.",
+          "layers": "Layers",
+          "remove_failed": "Could not remove CHGIS data.",
+          "remove_message": "Delete compiled CHGIS pack and raw download from this entity database?",
+          "remove_title": "Remove CHGIS data",
+          "removed": "CHGIS data removed.",
+          "reinstall_from_download": "Reinstall from download…",
+          "title": "CHGIS historical places (optional)"
+        },
         "offline": {
-          "enable": "Enable offline authorities"
+          "delete_detail": "Delete downloaded databases and compiled packs?",
+          "delete_detail_with_bytes": "Delete downloaded databases and compiled packs ({{bytes}})?",
+          "delete_files": "Delete files",
+          "disable_failed": "Could not disable authorities.",
+          "disable_message": "Stop updating offline authority data.",
+          "disable_title": "Disable offline authorities",
+          "disabled": "Offline authority updates disabled.",
+          "enable_failed": "Download or compile failed. Try again from Settings.",
+          "entity_db_required": "Choose an entity database folder (with entities.xml) in App Settings before enabling offline authorities.",
+          "keep_files": "Keep files",
+          "ready_default": "CBDB, DILA, and Wikidata authority packs are ready for auto-tagging.",
+          "ready_japanese": "NDL authority packs are ready for auto-tagging.",
+          "ready_tibetan": "Wikidata authority packs are ready for auto-tagging.",
+          "setup_description_full": "Download, compile, and update tagging packs beside your entity database.",
+          "setup_description_simple": "Download and update tagging packs beside your entity database.",
+          "title": "Offline authorities",
+          "update_failed": "Update failed.",
+          "updated": "Authority data updated."
+        },
+        "messages": {
+          "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
+          "Authority deleted successfully": "Authority deleted successfully",
+          "Authority saved successfully": "Authority saved successfully",
+          "Deactivated authorities will not be shown in entity lookups": "Deactivated authorities will not be shown in entity lookups",
+          "activate or deactivate authorities for each entity type": "Activate or deactivate authorities for each entity type",
+          "learn how to set up a custom TEI-based authority file with this guide": "Learn how to set up a custom TEI-based authority file with <2>this guide</2>",
+          "rearrange authorities to prioritize results": "Rearrange authorities to prioritize results"
+        }
+      },
+      "editor": {
+        "Show Entities": "Show Entities",
+        "Strip East Asian whitespace": "Remove spaces between East Asian characters",
+        "Show Raw XML panel": "Show Raw XML panel",
+        "asian font": "Asian font",
+        "default fonts": "default fonts",
+        "latin font": "Latin font",
+        "refresh system fonts": "Refresh system fonts",
+        "font_size": "Font size",
+        "show_tag_bubble": "Show tag name bubble"
+      },
+      "markupPanel": {
+        "Allow drag and drop": "Allow drag and drop",
+        "Show Text Nodes": "Show Text Nodes",
+        "message": {
+          "Text Nodes must be displayed for better accuracy": "Text Nodes must be displayed for better accuracy"
+        }
+      },
+      "reset": {
+        "Clear Cache": "Clear Cache",
+        "Reset Dialog Warnings": "Reset Dialog Warnings",
+        "Reset Settings": "Reset Settings",
+        "message": {
+          "Cache cleared": "Cache cleared",
+          "Confirmation dialog preferences have been reset": "Confirmation dialog preferences have been reset",
+          "Settings preferences have been reset to default": "Settings preferences have been reset to default",
+          "You might need to reload the document": "You might need to reload the document"
+        }
+      },
+      "schemas": {
+        "messages": {
+          "Schema deleted successfully": "Schema deleted successfully",
+          "Schema saved successfully": "Schema saved successfully"
+        }
+      },
+      "theme": {
+        "appearance": "appearance",
+        "dark": "dark",
+        "light": "light",
+        "system": "system"
+      },
+      "desktop": {
+        "settings": {
+          "entity_database": "Entity database",
+          "entity_database_change": "Change folder…",
+          "entity_database_folder": "Database folder",
+          "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs and raw CBDB/DILA downloads also live here.",
+          "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
+          "remember_workspace_on_startup": "Reopen project and tabs on startup",
+          "user_name": "User name",
+          "your_name": "Your name"
+        }
+      },
+      "warnings": {
+        "skip_copy_paste_help": "Don't show copy and paste help",
+        "skip_delete_confirm": "Delete files and folders without asking",
+        "skip_entity_detach_confirm": "Detach authority ids from entities without asking",
+        "title": "Warnings"
+      },
+      "desktop": {
+        "settings": {
+          "entity_database": "Entity database",
+          "entity_database_change": "Change folder…",
+          "entity_database_folder": "Database folder",
+          "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs and raw CBDB/DILA downloads also live here.",
+          "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
+          "remember_workspace_on_startup": "Reopen project and tabs on startup",
+          "user_name": "User name",
+          "your_name": "Your name"
         }
       }
     },
@@ -245,17 +366,10 @@
     "BC": "",
     "Era": "",
     "Dynasty": "",
-    "Season/Occasion": "",
-    "Rough certainty": "",
-    "Certain": "",
-    "Circa": "",
-    "By this date": "",
-    "After this date": "",
     "optional": "",
     "sex_year": "",
     "gz": "",
     "nmd_gz": "",
-    "Date type": "",
     "Calendar type": "",
     "Calendar context (dynasty, emperor, era) — used by sanmiao when resolving dates.": "",
     "Calendar lookup is unavailable. Install sanmiao and restart the app.": "",
@@ -527,128 +641,6 @@
       "selectUnitMessage": "Select a {{unit}} in the source to translate it.",
       "defaultUnitLabel": "section"
     },
-    "settings": {
-      "ai_api": {
-        "api_key": "API key",
-        "base_url": "Base URL",
-        "check_connection": "Check connection",
-        "checking": "Checking AI API connection...",
-        "checking_button": "Checking...",
-        "connected_with_models": "Connected. Found {{count}} model{{count, plural, one {} other {s}}}.",
-        "connected_without_models": "Connected. The server did not list any models.",
-        "connection_failed": "Could not reach the AI API.",
-        "model": "Model",
-        "save_failed": "Could not save AI API settings.",
-        "saved": "AI API settings saved.",
-        "temperature": "Temperature",
-        "title": "AI API"
-      },
-      "authorities": {
-        "Add Custom Authority": "Add Custom Authority",
-        "chgis": {
-          "download_from": "Download from",
-          "entity_db_required": "Choose an entity database folder (with entities.xml) in App Settings before installing CHGIS.",
-          "install_here": "then install here. LEAF-Writer compiles a local pack only - nothing is redistributed.",
-          "install_failed": "CHGIS install failed.",
-          "install_from_download": "Install from download…",
-          "install_success": "CHGIS places compiled ({{count}} records). Enable CHGIS historical places in the auto-tag dialog.",
-          "layers": "Layers",
-          "remove_failed": "Could not remove CHGIS data.",
-          "remove_message": "Delete compiled CHGIS pack and raw download from this entity database?",
-          "remove_title": "Remove CHGIS data",
-          "removed": "CHGIS data removed.",
-          "reinstall_from_download": "Reinstall from download…",
-          "title": "CHGIS historical places (optional)"
-        },
-        "offline": {
-          "delete_detail": "Delete downloaded databases and compiled packs?",
-          "delete_detail_with_bytes": "Delete downloaded databases and compiled packs ({{bytes}})?",
-          "delete_files": "Delete files",
-          "disable_failed": "Could not disable authorities.",
-          "disable_message": "Stop updating offline authority data.",
-          "disable_title": "Disable offline authorities",
-          "disabled": "Offline authority updates disabled.",
-          "enable_failed": "Download or compile failed. Try again from Settings.",
-          "entity_db_required": "Choose an entity database folder (with entities.xml) in App Settings before enabling offline authorities.",
-          "keep_files": "Keep files",
-          "ready_default": "CBDB, DILA, and Wikidata authority packs are ready for auto-tagging.",
-          "ready_japanese": "NDL authority packs are ready for auto-tagging.",
-          "ready_tibetan": "Wikidata authority packs are ready for auto-tagging.",
-          "setup_description_full": "Download, compile, and update tagging packs beside your entity database.",
-          "setup_description_simple": "Download and update tagging packs beside your entity database.",
-          "title": "Offline authorities",
-          "update_failed": "Update failed.",
-          "updated": "Authority data updated."
-        },
-        "messages": {
-          "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
-          "Authority deleted successfully": "Authority deleted successfully",
-          "Authority saved successfully": "Authority saved successfully",
-          "Deactivated authorities will not be shown in entity lookups": "Deactivated authorities will not be shown in entity lookups",
-          "activate or deactivate authorities for each entity type": "Activate or deactivate authorities for each entity type",
-          "learn how to set up a custom TEI-based authority file with this guide": "Learn how to set up a custom TEI-based authority file with <2>this guide</2>",
-          "rearrange authorities to prioritize results": "Rearrange authorities to prioritize results"
-        }
-      },
-      "editor": {
-        "Show Entities": "Show Entities",
-        "Strip East Asian whitespace": "Remove spaces between East Asian characters",
-        "Show Raw XML panel": "Show Raw XML panel",
-        "asian font": "Asian font",
-        "default fonts": "default fonts",
-        "latin font": "Latin font",
-        "refresh system fonts": "Refresh system fonts",
-        "font_size": "Font size"
-      },
-      "markupPanel": {
-        "Allow drag and drop": "Allow drag and drop",
-        "Show Text Nodes": "Show Text Nodes",
-        "message": {
-          "Text Nodes must be displayed for better accuracy": "Text Nodes must be displayed for better accuracy"
-        }
-      },
-      "reset": {
-        "Clear Cache": "Clear Cache",
-        "Reset Dialog Warnings": "Reset Dialog Warnings",
-        "Reset Settings": "Reset Settings",
-        "message": {
-          "Cache cleared": "Cache cleared",
-          "Confirmation dialog preferences have been reset": "Confirmation dialog preferences have been reset",
-          "Settings preferences have been reset to default": "Settings preferences have been reset to default",
-          "You might need to reload the document": "You might need to reload the document"
-        }
-      },
-      "schemas": {
-        "messages": {
-          "Schema deleted successfully": "Schema deleted successfully",
-          "Schema saved successfully": "Schema saved successfully"
-        }
-      },
-      "theme": {
-        "appearance": "appearance",
-        "dark": "dark",
-        "light": "light",
-        "system": "system"
-      },
-      "desktop": {
-        "settings": {
-          "entity_database": "Entity database",
-          "entity_database_change": "Change folder…",
-          "entity_database_folder": "Database folder",
-          "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs and raw CBDB/DILA downloads also live here.",
-          "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
-          "remember_workspace_on_startup": "Reopen project and tabs on startup",
-          "user_name": "User name",
-          "your_name": "Your name"
-        }
-      },
-      "warnings": {
-        "skip_copy_paste_help": "Don't show copy and paste help",
-        "skip_delete_confirm": "Delete files and folders without asking",
-        "skip_entity_detach_confirm": "Detach authority ids from entities without asking",
-        "title": "Warnings"
-      }
-    },
     "copyPasteHelp": {
       "title": "Copy & Paste Help",
       "ok": "Ok",
@@ -667,6 +659,7 @@
     "title": "",
     "unknown": "",
     "xml_document_invalid": "XML document invalid",
-    "Copy Source and Translation": "Copy Source and Translation"
+    "Copy Source and Translation": "Copy Source and Translation",
+    "Loading authorities": "Loading authorities"
   }
 }

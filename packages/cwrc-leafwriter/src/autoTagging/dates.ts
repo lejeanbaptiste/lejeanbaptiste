@@ -225,8 +225,35 @@ function toDateResolution(proposal: SanmiaoProposal): DateResolution {
   return {
     status: proposal.status === 'tagged' ? 'tagged' : proposal.status,
     candidates,
-    ...(proposal.parseInnerXml ? { parseXml: proposal.parseInnerXml } : {}),
+    ...(proposal.parseInnerXml ? { parseXml: sanitizeDateParseXml(proposal.parseInnerXml) } : {}),
   };
+}
+
+function sanitizeDateParseXml(parseInnerXml: string): string {
+  const xml = new DOMParser().parseFromString(`<root>${parseInnerXml}</root>`, 'application/xml');
+  const root = xml.documentElement;
+  const walker = xml.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+  const forbidden = new Set(ENTITY_TAGS_FORBIDDEN_IN_DATE);
+
+  const toRemove: Element[] = [];
+  let node = walker.nextNode() as Element | null;
+  while (node) {
+    if (forbidden.has(node.localName)) {
+      toRemove.push(node);
+    }
+    node = walker.nextNode() as Element | null;
+  }
+
+  for (const el of toRemove) {
+    const parent = el.parentNode;
+    if (!parent) continue;
+    while (el.firstChild) parent.insertBefore(el.firstChild, el);
+    parent.removeChild(el);
+  }
+
+  return Array.from(root.childNodes)
+    .map((child) => new XMLSerializer().serializeToString(child))
+    .join('');
 }
 
 function proposalsToSuggestions(

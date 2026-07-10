@@ -5,6 +5,7 @@ import { db } from '../../db';
 import { resetLookupPreferences } from '../../jotai/entity-lookup/utilities';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
 import { DEFAULT_ASIAN_FONT, DEFAULT_LATIN_FONT, getValidFontFamily } from './fontFamilies';
+import { DEFAULT_EDITOR_FONT_SIZE } from './state';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 const ASIAN_FONT_KEY = 'asianFont';
@@ -435,7 +436,7 @@ export const clear = ({ state }: Context) => {
   state.editor.contentHasChanged = false;
   state.editor.editorMode = 'xmlrdf';
   state.editor.asianFont = DEFAULT_ASIAN_FONT;
-  state.editor.fontSize = 11;
+  state.editor.fontSize = DEFAULT_EDITOR_FONT_SIZE;
   state.editor.latinFont = DEFAULT_LATIN_FONT;
   state.editor.isAnnotator = false;
   state.editor.isReadonly = false;

@@ -18,7 +18,7 @@ import { fetchWikidataLifespan, prefixDescriptionWithLifespan } from './wikidata
 import { fetchDilaPlaceDetail, type DilaFetchFn } from './dilaPlaceDetail';
 import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import { wikidataQidsMatchingKind } from './wikidataKindFilter';
-import { packIdsForEntityType, packResultUri, searchPackContent } from '../services/authority-pack-lookup';
+import { packIdsForEntityType, searchPackRows } from '../services/authority-pack-lookup';
 import { AUTHORITY_PACKS } from './packPaths';
 import {
   normalizeDateRangeFilter,
@@ -224,16 +224,28 @@ function authorityIdsFromCrossRefs(
 ): AuthorityId[] {
   const out = [...base];
   const seen = new Set(out.map((id) => `${id.type}\0${id.value}`));
+  const add = (type: AuthorityId['type'], value: string) => {
+    const key = `${type}\0${value}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ type, value });
+  };
   for (const text of texts) {
     if (!text) continue;
+    const wikidata = text.match(/wikidata\.org\/(?:wiki|entity)\/(Q\d+)/i)?.[1]?.toUpperCase();
+    if (wikidata) add('Wikidata', wikidata);
+
+    const viaf = text.match(/viaf\.org\/(?:[a-z]{2}\/)?viaf\/(\d+)/i)?.[1];
+    if (viaf) add('VIAF', viaf);
+
     const cbdb = extractCbdbId(text);
-    if (cbdb) {
-      const key = `CBDB\0${cbdb}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        out.push({ type: 'CBDB', value: cbdb });
-      }
-    }
+    if (cbdb) add('CBDB', cbdb);
+
+    const dila = text.match(/authority\.dila\.edu\.tw\/[^\s]*?(?:aid=|fromInner=|code=|\/)([A-Z]{1,2}\d+)/)?.[1];
+    if (dila) add('DILA', dila);
+
+    const ndl = text.match(/id\.ndl\.go\.jp\/auth\/(?:ndlna|ndlsh)\/([\w-]+)/i)?.[1];
+    if (ndl) add('NDL', ndl);
   }
   return out;
 }
@@ -493,47 +505,11 @@ async function candidatesFromAuthorityPacks(
       const content = await readPackFile(packId);
       const spec = AUTHORITY_PACKS.find((item) => item.id === packId);
       if (!spec) continue;
-      const rows = content
-        .split('\n')
-        .filter((line) => line.trim())
-        .map((line) => {
-          try {
-            return JSON.parse(line) as {
-              source?: string;
-              authorityId?: string;
-              kind?: string;
-              primaryName?: string;
-              searchStrings?: string[];
-              metadata?: { startYear?: number; endYear?: number };
-            };
-          } catch {
-            return null;
-          }
-        })
-        .filter(
-          (
-            row,
-          ): row is {
-            source?: string;
-            authorityId?: string;
-            kind?: string;
-            primaryName?: string;
-            searchStrings?: string[];
-            metadata?: { startYear?: number; endYear?: number };
-          } => Boolean(row),
-        );
       const packSource = spec.source as 'cbdb' | 'dila' | 'ndl';
-      // Keyed by the exact record URI (which embeds authorityId) rather than by
-      // name — multiple records can share a primaryName (e.g. DILA splits a
-      // place into one row per dynasty), and a name-only lookup would silently
-      // attach the wrong record's metadata/dates to every same-named candidate.
-      const rowsByUri = new Map(
-        rows
-          .filter((entry) => entry?.authorityId)
-          .map((entry) => [packResultUri(packSource, entityType, String(entry.authorityId)), entry] as const),
-      );
-      for (const match of searchPackContent(content, packSource, entityType, surface)) {
-        const row = rowsByUri.get(match.uri);
+      // searchPackRows hands back each match's parsed ndjson row, so the
+      // metadata (years, dynasty, authorityId) comes straight from the ≤10
+      // matched lines — no full-pack parse per lookup.
+      for (const { result: match, row } of searchPackRows(content, packSource, entityType, surface)) {
         let description = match.description;
         let startYear = row?.metadata?.startYear;
         let endYear = row?.metadata?.endYear;

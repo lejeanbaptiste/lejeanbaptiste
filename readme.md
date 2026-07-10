@@ -12,6 +12,12 @@ Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool 
 [![version](https://img.shields.io/badge/LEAF--Writer-Storage--Service-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-storage-service)
 [![version](https://img.shields.io/badge/LEAF--Writer-Validator-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-validator)
 
+## License and attribution
+
+This repository is licensed under `GPL-2.0`. Third-party runtime components keep their own upstream licenses, including the heavily customized `TinyMCE` editor used by LEAF-Writer.
+
+For a concise list of the major bundled components and where to verify their license terms, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 
 ## Desktop paradigm
 
