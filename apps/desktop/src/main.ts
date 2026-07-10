@@ -1767,12 +1767,17 @@ const createWindow = async () => {
     await mainWindow.loadURL(url);
   } catch (error) {
     console.error('[le-jean-baptiste] Failed to load app URL:', error);
+    const message = isDev
+      ? 'Could not connect to the LEAF-Writer dev server.'
+      : 'Could not start the bundled LEAF-Writer server.';
+    const detail = isDev
+      ? 'Make sure leafwriter-commons is running on port 3000, then restart the desktop app.\n\nFrom the repo root: npm run dev -w leafwriter-commons'
+      : 'The packaged app could not start its bundled server. Quit the app and open it again. If the problem persists, rebuild the DMG and make sure the app was copied fully out of the disk image.';
     await dialog.showMessageBox(mainWindow, {
       type: 'error',
       title: APP_NAME,
-      message: 'Could not connect to the LEAF-Writer dev server.',
-      detail:
-        'Make sure leafwriter-commons is running on port 3000, then restart the desktop app.\n\nFrom the repo root: npm run dev -w leafwriter-commons',
+      message,
+      detail,
     });
     app.quit();
     return;
