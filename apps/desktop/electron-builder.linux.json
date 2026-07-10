@@ -1,0 +1,17 @@
+{
+  "extends": "./electron-builder.base.json",
+  "linux": {
+    "target": [
+      "deb"
+    ],
+    "category": "Office",
+    "desktopName": "le-jean-baptiste",
+    "syncDesktopName": true,
+    "maintainer": "Daniel Patrick Morgan <daniel.morgan@college-de-france.fr>"
+  },
+  "win": {
+    "target": [
+      "nsis"
+    ]
+  }
+}
