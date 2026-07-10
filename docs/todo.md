@@ -15,6 +15,10 @@
 **Testing**
 - [ ]  
 
+**Final**
+- [ ] Change repo name
+- [ ] Change About page
+
 ---
 
 **Source import**

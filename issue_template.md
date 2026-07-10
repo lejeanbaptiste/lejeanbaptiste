@@ -1,25 +1,23 @@
-<!--- Provide a concise but specific and meaningful summary of the issue in the Title above -->
+<!--- Provide a concise but specific and meaningful summary of the issue in the title above. -->
 
 # Expected Behaviour
 
-<!--- If you're describing a bug, tell us what should happen -->
-<!--- If you're suggesting a change/improvement, tell us how it should work -->
+<!--- If you're describing a bug, tell us what should happen. -->
+<!--- If you're suggesting a change or improvement, tell us how it should work. -->
 
 # Current Behaviour
 
-<!--- If describing a bug, tell us what happens instead of the expected behaviour -->
-<!--- If suggesting a change/improvement, explain the difference from current behaviour -->
+<!--- If describing a bug, tell us what happens instead of the expected behavior. -->
+<!--- If suggesting a change or improvement, explain the difference from current behavior. -->
 
 # Possible Solution
 
-<!--- Not obligatory, but suggest a fix/reason for the bug, -->
-<!--- or suggestions on how to implement the addition or change -->
+<!--- Not required, but suggest a fix or implementation idea if you have one. -->
 
 # Steps to Reproduce (for bugs)
 
-<!--- Provide an unambiguous set of steps to -->
-<!--- reproduce this bug.  Screenshots are invaluable.  -->
-<!--- Links to screen videos or brief .gif files can help a lot too.   -->
+<!--- Provide an unambiguous set of steps to reproduce this bug. Screenshots are welcome. -->
+<!--- Links to short screen recordings or GIFs can help a lot too. -->
 
 1.
 2.
@@ -34,7 +32,7 @@
 
 - Operating System:
 
-- Attachements:
-<!--- Please attach any relevant files (XML documents, screenshots, etc.) or specify the document template you were using -->
+- Attachments:
+<!--- Please attach any relevant files (XML documents, screenshots, etc.) or specify the document template you were using. -->
 
-\*LINCS/Leaf user name if submitting an issue for the LINCS/Leaf research space, or the Github / GitLab username if using Leaf Writer.
+* LINCS/Leaf user name if submitting an issue for the LINCS/Leaf research space, or your GitHub / GitLab username if using Le Jean-Baptiste.

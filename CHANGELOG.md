@@ -1,4 +1,12 @@
-# @cwrc/leafwriter
+# Le Jean-Baptiste changelog
+
+## 0.0.1
+
+### Added
+
+- First internal release baseline for Le Jean-Baptiste.
+- Workspace package versions aligned to `0.0.1`.
+- Desktop app version display aligned to the new baseline.
 
 ## 1.2.0
 

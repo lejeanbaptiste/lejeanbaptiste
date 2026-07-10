@@ -28,17 +28,17 @@ The Electron window opens at `http://localhost:3000/project`.
 
 Optional: set `LJB_OPEN_DEVTOOLS=1` to open Chromium DevTools in development.
 
-## Production build (Mac)
+## Production build
 
 ```bash
 npm run build:desktop
 ```
 
-This builds Commons, compiles the Electron main/preload scripts, and produces a `.dmg` in `apps/desktop/release/`.
+This builds Commons, compiles the Electron main/preload scripts, and packages for the current host platform into `apps/desktop/release/`.
 
 ### Notes
 
-- **Mac-first:** Phase 1 packaging is tested on macOS. Linux (AppImage) and Windows (NSIS) targets are configured in `package.json` but not CI-validated yet.
+- **Host platform:** `npm run package` now follows the current platform automatically. Use `npm run package:mac` or `npm run package:linux` if you want to force a specific stream.
 - **No code signing:** Unsigned builds may require right-click → Open on first launch.
 - The packaged app starts a local Express server and loads the `/project` route.
 
