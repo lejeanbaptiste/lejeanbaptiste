@@ -26,8 +26,7 @@
   "scripts": {
     "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration",
     "clean": "rm -rf node_modules lib",
-    "lint": "eslint .",
-    "cm": "git-cz"
+    "lint": "eslint ."
   },
   "devDependencies": {
     "eslint": "^8.57.1",

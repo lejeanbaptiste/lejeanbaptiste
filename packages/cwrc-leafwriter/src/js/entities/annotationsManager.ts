@@ -1,16 +1,11 @@
 import $ from 'jquery';
 import { DateTime } from 'luxon';
-import {
-  graph as RDFgraph,
-  parse as RDFparse,
-  serialize as RDFserialize,
-  sym as RDFsym,
-} from 'rdflib';
 import pck from '../../../package.json';
 import { EntityType } from '../../types';
 import Writer from '../Writer';
 import { log } from './../../utilities';
 import Entity, { type AnnotationRange, type EntityConfig } from './Entity';
+import { jsonLdToRdfXml } from './jsonLdToRdfXml';
 import type {
   AnnotationContributor,
   AnnotationCreator,
@@ -387,7 +382,7 @@ class AnnotationsManager {
 
     if (format === 'xml') {
       const xmlAnnotation = await this.convertJSONAnnotationToXML(annotation).catch((err: any) => {
-        log.warn('rdflib:', err);
+        log.warn('RDF/XML serialization:', err);
 
         const message = this.writer.utilities.convertTextForExport(err.message);
         this.writer.dialogManager.show('message', {
@@ -419,38 +414,12 @@ class AnnotationsManager {
    * @param {Function} callback
    * @returns {Promise}
    */
-  convertJSONAnnotationToXML(annotation: AnnotationProps): string | any {
-    const _this = this;
-
-    const docId = this.writer.getDocumentURI();
-    const doc = RDFsym(docId);
-    const store = RDFgraph();
-
-    return new Promise((resolve, reject) => {
-      // need to use Promise because RDFparse uses callbacks
+  convertJSONAnnotationToXML(annotation: AnnotationProps) {
+    return new Promise<Document>((resolve, reject) => {
       try {
-        RDFparse(
-          JSON.stringify(annotation),
-          store,
-          doc.uri,
-          'application/ld+json',
-          (err: any, kb: any) => {
-            try {
-              const result = RDFserialize(doc, kb, doc.uri, 'application/rdf+xml');
-
-              if (result !== undefined) {
-                const xml = _this.writer.utilities.stringToXML(result);
-                resolve(xml);
-              } else {
-                reject(err);
-              }
-            } catch (e2) {
-              reject(e2);
-            }
-          },
-        );
-      } catch (error1) {
-        reject(error1);
+        resolve(this.writer.utilities.stringToXML(jsonLdToRdfXml(annotation)));
+      } catch (error) {
+        reject(error);
       }
     });
   }

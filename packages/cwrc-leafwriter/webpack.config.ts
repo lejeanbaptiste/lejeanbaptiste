@@ -153,6 +153,9 @@ const webpackConfig: webpack.Configuration = {
   resolve: {
     // alias: { '@src': path.resolve(import.meta.dirname, 'src/') },
     extensions: ['.tsx', '.ts', '.js', '.json'],
+    alias: {
+      jquery: path.resolve(import.meta.dirname, 'src', 'lib', 'jquery', 'jquery-shim.ts'),
+    },
     fallback: {
       buffer: false,
       events: false,
