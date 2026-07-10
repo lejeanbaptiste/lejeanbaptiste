@@ -11,11 +11,11 @@ export const MarkupPanel = () => {
   return (
     <List dense>
       <Toggler
-        description={`${t('LW.settings.markupPanel.text_nodes_required_for_accuracy')} (${t('LW.commons.experimental')})`}
+        description={`${t('LW.settings.markupPanel.message.Text Nodes must be displayed for better accuracy')} (${t('LW.commons.experimental')})`}
         disabled={!structurePanel.showTextNodes}
         icon="dragAndDrop"
         onChange={allowTagDragAndDrop}
-        title={t('LW.settings.markupPanel.allow_drag_and_drop')}
+        title={t('LW.settings.markupPanel.Allow drag and drop')}
         value={structurePanel.allowDragAndDrop}
       />
       <Toggler
@@ -24,7 +24,7 @@ export const MarkupPanel = () => {
         )}. ${t('LW.messages.use_with_caution')}.`}
         icon="textNode"
         onChange={showTextNodes}
-        title={t('LW.settings.markupPanel.show_text_nodes')}
+        title={t('LW.settings.markupPanel.Show Text Nodes')}
         type="toggle"
         value={structurePanel.showTextNodes}
       />

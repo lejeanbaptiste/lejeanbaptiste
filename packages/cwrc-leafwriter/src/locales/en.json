@@ -111,9 +111,26 @@
         "font_size": "Font size",
         "show_tag_bubble": "Show tag name bubble"
       },
+      "ai_api": {
+        "api_key": "API key",
+        "base_url": "Base URL",
+        "description": "Configure an OpenAI-compatible endpoint for AI-assisted translation.",
+        "check_connection": "Check connection",
+        "checking": "Checking AI API connection...",
+        "checking_button": "Checking...",
+        "connected_with_models": "Connected. Found {{count}} model{{count, plural, one {} other {s}}}.",
+        "connected_without_models": "Connected. The server did not list any models.",
+        "connection_failed": "Could not reach the AI API.",
+        "model": "Model",
+        "save_failed": "Could not save AI API settings.",
+        "saved": "AI API settings saved.",
+        "temperature": "Temperature",
+        "title": "AI API"
+      },
       "markupPanel": {
         "Allow drag and drop": "Allow drag and drop",
         "Show Text Nodes": "Show Text Nodes",
+        "title": "Markup panel",
         "message": {
           "Text Nodes must be displayed for better accuracy": "Text Nodes must be displayed for better accuracy"
         }

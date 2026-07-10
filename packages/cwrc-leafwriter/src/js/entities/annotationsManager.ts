@@ -393,7 +393,9 @@ class AnnotationsManager {
         return null;
       });
 
-      $('rdf\\:Description, Description', xmlAnnotation).each((_index, el) => {
+      if (!xmlAnnotation) return rdfString;
+
+      $('rdf\\:Description, Description', xmlAnnotation).each((_, el: Element) => {
         rdfString += '\n';
         rdfString += this.writer.utilities.xmlToString(el);
       });
@@ -417,7 +419,14 @@ class AnnotationsManager {
   convertJSONAnnotationToXML(annotation: AnnotationProps) {
     return new Promise<Document>((resolve, reject) => {
       try {
-        resolve(this.writer.utilities.stringToXML(jsonLdToRdfXml(annotation)));
+        const xml = this.writer.utilities.stringToXML(
+          jsonLdToRdfXml(annotation as unknown as Record<string, unknown>),
+        );
+        if (!xml) {
+          reject(new Error('Failed to convert JSON-LD annotation to XML'));
+          return;
+        }
+        resolve(xml);
       } catch (error) {
         reject(error);
       }

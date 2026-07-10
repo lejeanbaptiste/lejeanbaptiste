@@ -233,7 +233,7 @@ function sanitizeDateParseXml(parseInnerXml: string): string {
   const xml = new DOMParser().parseFromString(`<root>${parseInnerXml}</root>`, 'application/xml');
   const root = xml.documentElement;
   const walker = xml.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-  const forbidden = new Set(ENTITY_TAGS_FORBIDDEN_IN_DATE);
+  const forbidden = new Set<string>(ENTITY_TAGS_FORBIDDEN_IN_DATE);
 
   const toRemove: Element[] = [];
   let node = walker.nextNode() as Element | null;

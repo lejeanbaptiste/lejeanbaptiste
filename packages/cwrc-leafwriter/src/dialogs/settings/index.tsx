@@ -31,14 +31,17 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
       maxWidth={isDesktop ? 'lg' : 'md'}
       onClose={handleClose}
       open={open}
-      PaperProps={{
-        sx: {
-          borderRadius: 3.5,
-          overflow: 'hidden',
-          m: 1,
-          bgcolor: 'background.paper',
-        },
-      }}
+        PaperProps={{
+          sx: {
+            borderRadius: 3.5,
+            border: 'none',
+            outline: 'none',
+            overflow: 'hidden',
+            m: 1,
+            bgcolor: 'background.paper',
+            boxShadow: (theme) => theme.shadows[10],
+          },
+        }}
     >
       <Header onClose={handleClose} />
       <Stack direction="row" overflow="hidden" px={0.75} pb={0.75}>
@@ -48,8 +51,8 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
             { id: 'ai-api', label: t('LW.settings.ai_api.title'), hide: !isDesktop },
             { id: 'editor', label: t('LW.commons.editor') },
             { id: 'authorities', label: t('LW.commons.authorities'), hide: isReadonly },
-            { id: 'entityLookups', label: t('LW.commons.Entity Lookups'), hide: isReadonly },
-            { id: 'markup-panel', label: t('LW.commons.markup panel'), hide: isReadonly },
+            { id: 'entityLookups', label: t('LW.commons.entity_types'), hide: isReadonly },
+            { id: 'markup-panel', label: t('LW.settings.markupPanel.title'), hide: isReadonly },
             { id: 'reset', label: t('LW.commons.reset'), hide: isReadonly },
           ]}
         />
@@ -77,10 +80,10 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
                 >
                   <Authorities />
                 </Section>
-                <Section id="entityLookups" title={t('LW.commons.Entity Lookups')}>
+                <Section id="entityLookups" title={t('LW.commons.entity_types')}>
                   <EntityLookups />
                 </Section>
-                <Section id="markup-panel" title={t('LW.commons.markup panel')}>
+                <Section id="markup-panel" title={t('LW.settings.markupPanel.title')}>
                   <MarkupPanel />
                 </Section>
                 <Section id="reset" title={t('LW.commons.reset')}>

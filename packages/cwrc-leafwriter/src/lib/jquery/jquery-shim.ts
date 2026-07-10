@@ -1,4 +1,4 @@
-import jquery from '../../../../../node_modules/jquery/dist/jquery.js';
+import jquery from 'jquery';
 
 /**
  * Webpack/esbuild interop can sometimes hand legacy code a namespace object

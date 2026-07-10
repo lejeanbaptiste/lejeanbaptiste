@@ -123,8 +123,8 @@ export const DesktopAiApi = () => {
   return (
     <ListItem dense disableGutters sx={{ alignItems: 'flex-start', py: 0.25 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography color="text.secondary" sx={{ mb: 0.5 }} variant="caption">
-          Configure an OpenAI-compatible endpoint for AI-assisted translation.
+        <Typography color="text.secondary" sx={{ mb: 1 }} variant="caption">
+          {t('LW.settings.ai_api.description')}
         </Typography>
 
         <Stack spacing={0.75}>

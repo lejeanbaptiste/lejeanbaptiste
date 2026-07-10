@@ -30,7 +30,17 @@ export interface AuthorityPrefetchHandle {
   stop(): void;
 }
 
-const NOOP_HANDLE: AuthorityPrefetchHandle = { stop: () => {} };
+export interface AuthorityPrefetchOptions {
+  /**
+   * Minimum delay between groups. The default (0) yields only to idle
+   * callbacks — right when the user is already waiting inside the
+   * disambiguation panel. Unattended sweeps (e.g. right after auto-tagging)
+   * should pass a positive pace so the editor stays fully responsive.
+   */
+  paceMs?: number;
+}
+
+const NOOP_HANDLE: AuthorityPrefetchHandle = { stop: () => undefined };
 
 function scheduleIdle(callback: () => void): () => void {
   const scope = globalThis as typeof globalThis & {
@@ -54,7 +64,9 @@ function scheduleIdle(callback: () => void): () => void {
 export function runAuthorityPrefetch(
   session: AuthorityPrefetchSession,
   groups: MentionGroup[],
+  options: AuthorityPrefetchOptions = {},
 ): AuthorityPrefetchHandle {
+  const paceMs = options.paceMs ?? 0;
   if (disambiguationCachingDisabledFromSettings(readPersistedDisambiguationSettings())) {
     return NOOP_HANDLE;
   }
@@ -154,10 +166,19 @@ export function runAuthorityPrefetch(
     } catch {
       // Best-effort — a failed background prefetch just leaves the group to load on-demand.
     }
-    if (!stopped) cancelIdle = scheduleIdle(() => void tick());
+    if (!stopped) cancelIdle = scheduleNextTick();
   };
 
-  cancelIdle = scheduleIdle(() => void tick());
+  /** Idle-schedule the next tick, first waiting out the configured pace. */
+  const scheduleNextTick = (): (() => void) => {
+    if (paceMs <= 0) return scheduleIdle(() => void tick());
+    const timer = setTimeout(() => {
+      cancelIdle = scheduleIdle(() => void tick());
+    }, paceMs);
+    return () => clearTimeout(timer);
+  };
+
+  cancelIdle = scheduleNextTick();
 
   return {
     stop: () => {

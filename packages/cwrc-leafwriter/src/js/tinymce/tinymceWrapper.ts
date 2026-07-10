@@ -702,7 +702,7 @@ export const tinymceWrapperInit = function ({
         });
 
         // modify isBlock method to check _tag attributes
-        editor.dom.isBlock = (node) => {
+        editor.dom.isBlock = ((node: string | Node | null): boolean => {
           if (!node) return false;
 
           // If it's a node then check the type and use the nodeName
@@ -714,9 +714,8 @@ export const tinymceWrapperInit = function ({
             }
           }
 
-          const node_string = node as string;
-          return !!editor.schema.getBlockElements()[node_string];
-        };
+          return !!editor.schema.getBlockElements()[node as string];
+        }) as typeof editor.dom.isBlock;
 
         writer.overmindActions.editor.applyInitialSettings();
 

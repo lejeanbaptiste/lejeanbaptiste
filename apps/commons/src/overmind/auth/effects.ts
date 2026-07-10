@@ -1,7 +1,7 @@
-import { contract } from '@lincs.project/auth-api-contract';
+import { contract, type LinkedAccountsBodyOutputs } from '@lincs.project/auth-api-contract';
 import { Provider } from '@src/services';
 import { log } from '@src/utilities';
-import { initClient, type ClientInferResponseBody } from '@ts-rest/core';
+import { initClient } from '@ts-rest/core';
 import axios from 'axios';
 import Keycloak, { type KeycloakTokenParsed } from 'keycloak-js';
 import { logHttpError } from '../../services/utilities';
@@ -15,10 +15,7 @@ export interface HTTPRequestError {
   };
 }
 
-export type LinkedAccounts = ClientInferResponseBody<
-  typeof contract.v1.users.getLinkedAccounts,
-  200
->;
+export type LinkedAccounts = LinkedAccountsBodyOutputs;
 export type LinkedAccount = LinkedAccounts[0];
 
 interface tokenParsed extends KeycloakTokenParsed {
@@ -32,7 +29,8 @@ interface tokenParsed extends KeycloakTokenParsed {
 /* The Api class is a wrapper for the Keycloak object that provides a set of functions that are used to
 authenticate the user and get the user's profile data */
 
-const getLincsAuthApi = (baseUrl: string) => initClient(contract.v1, { baseUrl, baseHeaders: {} });
+const getLincsAuthApi = (baseUrl: string) =>
+  initClient(contract as any, { baseUrl, baseHeaders: {} }) as any;
 
 export class Api {
   readonly clientId: string;
@@ -242,7 +240,7 @@ export class Api {
       return { error: { message: 'AUTH API BASE URL is unedefined' } };
     }
 
-    const authApi = getLincsAuthApi(this.AUTH_API_URL);
+    const authApi = getLincsAuthApi(this.AUTH_API_URL) as any;
     const { body, status } = await authApi.users.getLinkedAccounts({
       headers: { authorization: `Bearer ${keycloakAccessCode}` },
       params: { username },
@@ -285,7 +283,7 @@ export class Api {
       return { error: { message: 'AUTH API URL is unedefined' } };
     }
 
-    const authApi = getLincsAuthApi(this.AUTH_API_URL);
+    const authApi = getLincsAuthApi(this.AUTH_API_URL) as any;
     const { body, status } = await authApi.users.getLinkAccountUrl({
       headers: { authorization: `Bearer ${keycloakAccessCode}` },
       params: { username },
@@ -320,7 +318,7 @@ export class Api {
       return new Error('AUTH API URL is unedefined');
     }
 
-    const authApi = getLincsAuthApi(this.AUTH_API_URL);
+    const authApi = getLincsAuthApi(this.AUTH_API_URL) as any;
     const { body, status } = await authApi.providers.getAll();
 
     if (status === 200) return body;
