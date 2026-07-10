@@ -9,6 +9,19 @@
   },
   "homepage": "https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste",
   "main": "dist/main.js",
+  "build": {
+    "appId": "fr.huma-num.le-jean-baptiste",
+    "productName": "Le Jean-Baptiste",
+    "linux": {
+      "category": "Office",
+      "desktopName": "le-jean-baptiste",
+      "syncDesktopName": true,
+      "target": [
+        "deb"
+      ],
+      "maintainer": "Daniel Patrick Morgan <daniel.morgan@college-de-france.fr>"
+    }
+  },
   "scripts": {
     "build": "tsup",
     "icon:export": "node ../../design/export-icon.mjs",
@@ -24,7 +37,7 @@
     "start": "node scripts/brand-electron-dev.mjs && node scripts/run-electron-dev.mjs",
     "package": "npm run build && electron-builder --config electron-builder.mac.json",
     "package:mac": "npm run build && electron-builder --config electron-builder.mac.json",
-    "package:linux": "npm run build && electron-builder --config electron-builder.linux.json",
+    "package:linux": "npm run build && electron-builder --config electron-builder.linux.json --linux deb",
     "package:dir": "npm run build && electron-builder --config electron-builder.linux.json --dir",
     "package:deb": "npm run build && electron-builder --config electron-builder.linux.json --linux deb"
   },
