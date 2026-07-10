@@ -68,6 +68,7 @@ import { useActions } from '../../overmind';
 import type { IDialog } from '../type';
 import { AiPromptEditorDialog } from './AiPromptEditorDialog';
 import { AiTagChipPicker } from './AiTagChipPicker';
+import { cachedPackReader } from '../../services/authority-pack-lookup';
 
 const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
 type DialogStep = 'methods' | 'ai' | 'authority';
@@ -329,7 +330,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       return;
     }
 
-    const readPack = window.electronAPI?.authorityPackRead;
+    const readPack = cachedPackReader();
     if (!readPack) return;
 
     const generation = ++authorityCountGeneration.current;
@@ -540,7 +541,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       setError('Select at least one authority pack.');
       return;
     }
-    const readPack = window.electronAPI?.authorityPackRead;
+    const readPack = cachedPackReader();
     if (!readPack) {
       setError('Authority pack API is not available.');
       return;

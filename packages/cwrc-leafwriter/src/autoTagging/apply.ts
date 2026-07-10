@@ -61,11 +61,106 @@ const ACTION_PRIORITY: Partial<Record<SuggestionAction, number>> = {
   add: 3,
 };
 
+const TEI_DATE_VALUE_PATTERNS = [
+  /^\s*-?(?:[1-9]\d*)?\d{4}(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
+  /^\s*-?(?:[1-9]\d*)?\d{4}-[01]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
+  /^\s*-?(?:[1-9]\d*)?\d{4}-[01]\d-[0-3]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
+  /^\s*-?(?:[1-9]\d*)?\d{4}-[01]\d-[0-3]\dT[012]\d:[0-5]\d:[0-5]\d(?:\.\d+)?(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
+  /^\s*[0-3]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
+  /^\s*[012]\d:[0-5]\d:[0-5]\d(?:\.\d+)?(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
+  /^\s*[01]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
+  /^\s*[01]\d-[0-3]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
+];
+
+const TEI_DATE_ATTR_NAMES = new Set(['when', 'from', 'to', 'notBefore', 'notAfter']);
+const TEI_DATE_COMPONENT_PATTERNS = [
+  /^(-?\d{1,4})(?:([+-][01]\d:[0-5]\d|Z))?$/,
+  /^(-?\d{1,4})-([01]\d)(?:([+-][01]\d:[0-5]\d|Z))?$/,
+  /^(-?\d{1,4})-([01]\d)-([0-3]\d)(?:([+-][01]\d:[0-5]\d|Z))?$/,
+  /^(-?\d{1,4})-([01]\d)-([0-3]\d)T([012]\d):([0-5]\d):([0-5]\d)(\.\d+)?(?:([+-][01]\d:[0-5]\d|Z))?$/,
+  /^([0-3]\d)(?:([+-][01]\d:[0-5]\d|Z))?$/,
+  /^([012]\d):([0-5]\d):([0-5]\d)(\.\d+)?(?:([+-][01]\d:[0-5]\d|Z))?$/,
+  /^([01]\d)(?:([+-][01]\d:[0-5]\d|Z))?$/,
+  /^([01]\d)-([0-3]\d)(?:([+-][01]\d:[0-5]\d|Z))?$/,
+];
+
 function compareSuggestions(a: Suggestion, b: Suggestion): number {
   const pa = ACTION_PRIORITY[a.action] ?? 99;
   const pb = ACTION_PRIORITY[b.action] ?? 99;
   if (pa !== pb) return pa - pb;
   return b.anchor.surface.length - a.anchor.surface.length;
+}
+
+function isValidTeiDateValue(value: string): boolean {
+  return TEI_DATE_VALUE_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+function normalizeTeiDateValue(value: string): string | null {
+  const trimmed = value.trim();
+  for (const pattern of TEI_DATE_COMPONENT_PATTERNS) {
+    const match = trimmed.match(pattern);
+    if (!match) continue;
+    if (pattern === TEI_DATE_COMPONENT_PATTERNS[0]) {
+      const year = match[1]!;
+      const suffix = match[2] ?? '';
+      const normalizedYear = year.startsWith('-')
+        ? `-${year.slice(1).padStart(4, '0')}`
+        : year.padStart(4, '0');
+      return `${normalizedYear}${suffix}`;
+    }
+    if (pattern === TEI_DATE_COMPONENT_PATTERNS[1]) {
+      const year = match[1]!;
+      const month = match[2]!;
+      const suffix = match[3] ?? '';
+      const normalizedYear = year.startsWith('-')
+        ? `-${year.slice(1).padStart(4, '0')}`
+        : year.padStart(4, '0');
+      return `${normalizedYear}-${month}${suffix}`;
+    }
+    if (pattern === TEI_DATE_COMPONENT_PATTERNS[2]) {
+      const year = match[1]!;
+      const month = match[2]!;
+      const day = match[3]!;
+      const suffix = match[4] ?? '';
+      const normalizedYear = year.startsWith('-')
+        ? `-${year.slice(1).padStart(4, '0')}`
+        : year.padStart(4, '0');
+      return `${normalizedYear}-${month}-${day}${suffix}`;
+    }
+    if (pattern === TEI_DATE_COMPONENT_PATTERNS[3]) {
+      const year = match[1]!;
+      const month = match[2]!;
+      const day = match[3]!;
+      const hour = match[4]!;
+      const minute = match[5]!;
+      const second = match[6]!;
+      const fraction = match[7] ?? '';
+      const suffix = match[8] ?? '';
+      const normalizedYear = year.startsWith('-')
+        ? `-${year.slice(1).padStart(4, '0')}`
+        : year.padStart(4, '0');
+      return `${normalizedYear}-${month}-${day}T${hour}:${minute}:${second}${fraction}${suffix}`;
+    }
+    if (pattern === TEI_DATE_COMPONENT_PATTERNS[4]) return trimmed;
+    if (pattern === TEI_DATE_COMPONENT_PATTERNS[5]) return trimmed;
+    if (pattern === TEI_DATE_COMPONENT_PATTERNS[6]) return trimmed;
+    if (pattern === TEI_DATE_COMPONENT_PATTERNS[7]) return trimmed;
+  }
+  return null;
+}
+
+function sanitizeResolvedDateAttributes(attrs: Record<string, string>): Record<string, string> {
+  const next: Record<string, string> = {};
+  for (const [name, value] of Object.entries(attrs)) {
+    if (!TEI_DATE_ATTR_NAMES.has(name)) {
+      next[name] = value;
+      continue;
+    }
+    const normalized = normalizeTeiDateValue(value);
+    if (!normalized) continue;
+    next[name] = normalized;
+  }
+  return next;
 }
 
 /**
@@ -188,7 +283,7 @@ function applyResolveDate(
   }
   if (!dateEl) return { suggestion, outcome: 'unresolvable' };
 
-  for (const [name, value] of Object.entries(suggestion.attributes ?? {})) {
+  for (const [name, value] of Object.entries(sanitizeResolvedDateAttributes(suggestion.attributes ?? {}))) {
     dateEl.setAttribute(name, value);
   }
 

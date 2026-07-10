@@ -56,7 +56,9 @@ const findTaggedAncestor = (start: Node | null, body: Node): Element | null => {
 export const getEditorTagContext = (): EditorTagContext | null => {
   const writer = getWriter();
   const editor = writer?.editor;
-  if (!editor) return null;
+  // editor.selection doesn't exist until TinyMCE finishes initializing;
+  // writer.editor is assigned earlier, in the init `setup` callback.
+  if (!editor?.selection) return null;
 
   const body = editor.getBody();
   const rng = getSelectionRange(editor);

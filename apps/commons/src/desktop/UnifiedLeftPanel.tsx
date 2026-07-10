@@ -147,8 +147,6 @@ export const UnifiedLeftPanel = () => {
   });
 
   // Collapse must not unmount panel slots: LEAF-Writer portals (TOC, markup) and the
-  // entities module render into #desktop-panel-* nodes for the lifetime of the editor.
-  // Destroying those nodes leaves permanently blank panels when the sidebar expands again.
   return (
     <Box
       sx={{
@@ -193,7 +191,6 @@ export const UnifiedLeftPanel = () => {
         </Box>
         <Box id="desktop-panel-toc" sx={panelSx('toc')} />
         <Box id="desktop-panel-markup" sx={panelSx('markup')} />
-        <Box id="desktop-panel-entities" sx={panelSx('entities')} />
         <Box sx={panelSx('database')}>
           <SidebarDatabaseTab active={activeTab === 'database'} />
         </Box>

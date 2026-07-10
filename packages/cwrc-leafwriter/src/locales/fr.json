@@ -224,7 +224,7 @@
       "only": "seul",
       "On this page": "Sur cette page",
       "other": "autre",
-    "Privacy Policy": "Politique de confidentialité",
+      "Privacy Policy": "Politique de confidentialité",
       "reset": "réinitialiser",
       "save": "sauvegarder",
       "schema": "schéma",
@@ -443,7 +443,8 @@
         "default fonts": "polices par défaut",
         "latin font": "Police latine",
         "refresh system fonts": "Actualiser les polices système",
-        "font size": "taille de police"
+        "font size": "taille de police",
+        "show_tag_bubble": "Afficher la bulle du nom de balise"
       },
       "markupPanel": {
         "Allow drag and drop": "Autoriser le glisser-déposer",
@@ -480,6 +481,18 @@
         "skip_delete_confirm": "Supprimer fichiers et dossiers sans confirmation",
         "skip_entity_detach_confirm": "Détacher les identifiants d’autorité des entités sans confirmation",
         "title": "Avertissements"
+      },
+      "desktop": {
+        "settings": {
+          "entity_database": "Base d’entités",
+          "entity_database_change": "Changer de dossier…",
+          "entity_database_folder": "Dossier de la base",
+          "entity_database_hint": "Choisissez le dossier qui contient entities.xml (pas un sous-dossier du projet). Les packs d’autorité et les téléchargements CBDB/DILA bruts s’y trouvent aussi.",
+          "entity_database_missing": "Aucun dossier de base d’entités n’est configuré. La désambiguïsation est bloquée jusqu’à ce que vous en choisissiez un.",
+          "remember_workspace_on_startup": "Rouvrir le projet et les onglets au démarrage",
+          "user_name": "Nom d’utilisateur",
+          "your_name": "Votre nom"
+        }
       }
     },
     "copyPasteHelp": {
@@ -494,12 +507,13 @@
     "settlement": "établissement",
     "show only valid tags": "afficher uniquement les balises valides",
     "show_lod_annotation": "Afficher l'annotation des données ouvertes liées",
-      "source": "source",
-      "tag without linking": "tag sans lien",
-      "thing": "chose",
-      "title": "titre",
-      "unknown": "inconnu",
+    "source": "source",
+    "tag without linking": "tag sans lien",
+    "thing": "chose",
+    "title": "titre",
+    "unknown": "inconnu",
     "xml_document_invalid": "document XML invalide",
-    "Copy Source and Translation": "Copier la source et la traduction"
+    "Copy Source and Translation": "Copier la source et la traduction",
+    "Loading authorities": "Chargement des autorités"
   }
 }

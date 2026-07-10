@@ -279,7 +279,49 @@ describe('applySuggestions', () => {
     const { results, applied } = await applySuggestions(doc, [suggestion], { policy: 'ignore' });
     expect(applied).toBe(1);
     expect(results[0]!.outcome).toBe('applied');
-    expect(dateEl.getAttribute('when')).toBe('221-08-05');
+    expect(dateEl.getAttribute('when')).toBe('0221-08-05');
+  });
+
+  it('drops non-standard TEI date attributes before applying resolve-date', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><date cert="low"><dyn>魏</dyn><era>文帝黃初</era><year>二年</year></date></p></body></text></TEI>',
+    );
+    const dateEl = doc.getElementsByTagName('date')[0] as Element;
+    const anchor = anchorForDateElement(dateEl, findTeiBodyRoot(doc), 'ignore');
+
+    const suggestion: Suggestion = {
+      id: 'date_resolve_1',
+      source: 'dates',
+      sourceDetail: 'sanmiao-resolve',
+      action: 'resolve-date',
+      tag: 'date',
+      anchor: anchor!,
+      status: 'pending',
+      attributes: {
+        resp: '#ljb-sanmiao',
+        cert: 'high',
+        when: '<era xmlns="http://www.tei-c.org/ns/1.0">永元</era><year xmlns="http://www.tei-c.org/ns/1.0">',
+      },
+      dateResolution: {
+        status: 'unique',
+        displaySurface: '魏文帝黃初二年',
+        candidates: [
+          {
+            displayLine: 'test',
+            attrs: {
+              when: '<era xmlns="http://www.tei-c.org/ns/1.0">永元</era><year xmlns="http://www.tei-c.org/ns/1.0">',
+            },
+          },
+        ],
+      },
+    };
+
+    const { results, applied } = await applySuggestions(doc, [suggestion], { policy: 'ignore' });
+    expect(applied).toBe(1);
+    expect(results[0]!.outcome).toBe('applied');
+    expect(dateEl.hasAttribute('when')).toBe(false);
+    expect(dateEl.getAttribute('resp')).toBe('#ljb-sanmiao');
+    expect(dateEl.getAttribute('cert')).toBe('high');
   });
 });
 

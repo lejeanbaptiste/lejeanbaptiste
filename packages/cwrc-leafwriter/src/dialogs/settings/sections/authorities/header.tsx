@@ -36,7 +36,6 @@ export const Header = ({ expanded, id, isLocal, name, onEditClick }: HeaderProps
             role="button"
             id={`edit-${id}`}
             size="small"
-            sx={{ textTransform: 'capitalize' }}
           >
             {t('LW.commons.edit')}
           </Button>

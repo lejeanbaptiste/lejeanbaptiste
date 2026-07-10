@@ -215,7 +215,6 @@
         "xpath": "XPath",
         "toc": "Table of Contents",
         "markup": "Markup",
-        "entities": "Entities",
         "database": "Entity Database"
       },
       "ui": {

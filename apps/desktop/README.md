@@ -42,6 +42,10 @@ This builds Commons, compiles the Electron main/preload scripts, and produces a 
 - **No code signing:** Unsigned builds may require right-click → Open on first launch.
 - The packaged app starts a local Express server and loads the `/project` route.
 
+## License notices
+
+The desktop build bundles third-party runtime components such as Electron, TinyMCE, `monaco-editor`, `jszip`, `mammoth`, and `@xmldom/xmldom`. Their license pointers are tracked in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md).
+
 ## Features (Phase 1)
 
 - Open a project folder and browse `.xml` files in a sidebar tree

@@ -104,6 +104,8 @@ describe('runAuthorityPrefetch', () => {
       false,
       undefined,
       undefined,
+      undefined,
+      expect.any(Function), // onDilaDatesReady: re-remember rows once lazy DILA scrapes land
     );
   });
 
@@ -154,7 +156,7 @@ describe('runAuthorityPrefetch', () => {
     expect(mockBuild).toHaveBeenCalledTimes(1);
   });
 
-  it('never triggers a DILA fetch implementation or AI ranking path', async () => {
+  it('passes no custom DILA fetch implementation, but re-remembers rows once scrapes land', async () => {
     const session = makeSession();
     mockBuild.mockResolvedValue(makeCandidates('r'));
 
@@ -163,6 +165,16 @@ describe('runAuthorityPrefetch', () => {
     await Promise.resolve();
 
     const call = mockBuild.mock.calls[0]!;
-    expect(call).toHaveLength(8); // no dilaFetchImpl, no onDilaDatesReady
+    expect(call[8]).toBeUndefined(); // no dilaFetchImpl override
+    expect(call[9]).toEqual(expect.any(Function)); // onDilaDatesReady refresh hook
+
+    // Simulate the lazy DILA details landing: the callback must rebuild and
+    // overwrite the remembered rows so the pending cache doesn't permanently
+    // hold undated first-pass candidates.
+    mockBuild.mockResolvedValue(makeCandidates('dated'));
+    (call[9] as () => void)();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(session.pendingEntries.get('persName\0甲')).toEqual(makeCandidates('dated'));
   });
 });

@@ -2,6 +2,8 @@ import { derived } from 'overmind';
 import type { Schema, SchemaMappingType } from '../../types';
 import { DEFAULT_ASIAN_FONT, DEFAULT_LATIN_FONT } from './fontFamilies';
 
+export const DEFAULT_EDITOR_FONT_SIZE = 11;
+
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type EditorStateType = {
   advancedSettings: boolean;
@@ -77,7 +79,7 @@ export const state: EditorStateType = {
     { key: 0, value: 'xmlrdfoverlap', label: 'Markup & Linking with overlap', disabled: true },
     { key: 2, value: 'rdf', label: 'Linking Only', disabled: true },
   ],
-  fontSize: 11,
+  fontSize: DEFAULT_EDITOR_FONT_SIZE,
   latinFont: DEFAULT_LATIN_FONT,
   isAnnotator: false,
   isReadonly: false,

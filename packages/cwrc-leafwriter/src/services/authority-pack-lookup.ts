@@ -11,9 +11,10 @@ import type {
   NamedEntityType,
 } from '../types';
 import { AUTHORITY_PACKS, type AuthorityPackId } from '../autoTagging/packPaths';
+import { packReadFinished, packReadStarted } from '../autoTagging/authorityLoadProgress';
 import { stringsMatchExactly } from '../autoTagging/disambiguationMatch';
 
-interface PackRow {
+export interface PackRow {
   authorityId?: string;
   primaryName?: string;
   searchStrings?: string[];
@@ -115,6 +116,27 @@ export function searchPackContent(
   query: string,
   limit: number = MAX_RESULTS,
 ): AuthorityLookupResult[] {
+  return searchPackRows(content, source, entityType, query, limit).map((match) => match.result);
+}
+
+export interface PackSearchMatch {
+  result: AuthorityLookupResult;
+  /** The parsed ndjson row the result came from (authorityId, metadata, …). */
+  row: PackRow;
+}
+
+/**
+ * Like {@link searchPackContent}, but also returns each match's parsed pack row
+ * so callers needing metadata (years, dynasty, authorityId) don't have to
+ * re-parse the whole pack to recover it.
+ */
+export function searchPackRows(
+  content: string,
+  source: PackSource,
+  entityType: NamedEntityType,
+  query: string,
+  limit: number = MAX_RESULTS,
+): PackSearchMatch[] {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
@@ -131,15 +153,25 @@ export function searchPackContent(
   // to contain it is a safe (inclusive) prefilter before the exact-match check.
   const shortestQuery = queries.reduce((a, b) => (b.length < a.length ? b : a));
 
-  const exact: AuthorityLookupResult[] = [];
+  const exact: PackSearchMatch[] = [];
   const seen = new Set<string>();
 
-  for (const line of content.split('\n')) {
-    if (exact.length >= limit) break;
+  // Scan with indexOf jumps instead of splitting into lines: a matching row
+  // must contain the shortest candidate query verbatim, and hits are rare, so
+  // letting the native string search skip over non-matching content avoids
+  // allocating a line array and iterating hundreds of thousands of lines on
+  // every lookup. Only the (few) lines containing a hit are sliced and parsed.
+  let searchFrom = 0;
+  while (exact.length < limit) {
+    const hit = content.indexOf(shortestQuery, searchFrom);
+    if (hit === -1) break;
+    const lineStart = content.lastIndexOf('\n', hit) + 1;
+    const nextNewline = content.indexOf('\n', hit);
+    const lineEnd = nextNewline === -1 ? content.length : nextNewline;
+    // Resume after this line — multiple hits within one line must not re-add it.
+    searchFrom = lineEnd + 1;
+    const line = content.slice(lineStart, lineEnd);
     if (!line.trim()) continue;
-    // Cheap prefilter before JSON.parse: a matching row must contain at least
-    // the shortest candidate query verbatim somewhere in the line.
-    if (!line.includes(shortestQuery)) continue;
     let row: PackRow;
     try {
       row = JSON.parse(line) as PackRow;
@@ -169,9 +201,12 @@ export function searchPackContent(
         : row.primaryName;
 
     exact.push({
-      label,
-      description: describeRow(row),
-      uri,
+      result: {
+        label,
+        description: describeRow(row),
+        uri,
+      },
+      row,
     });
   }
 
@@ -206,13 +241,26 @@ export function readPackCached(packId: AuthorityPackId): Promise<string> {
   if (!readPack) return Promise.reject(new Error('Authority packs unavailable'));
   let cached = packContentCache.get(packId);
   if (!cached) {
-    cached = readPack(packId).catch((error: unknown) => {
-      packContentCache.delete(packId);
-      throw error;
-    });
+    packReadStarted();
+    cached = readPack(packId)
+      .catch((error: unknown) => {
+        packContentCache.delete(packId);
+        throw error;
+      })
+      .finally(packReadFinished);
     packContentCache.set(packId, cached);
   }
   return cached;
+}
+
+/**
+ * Session-cached pack reader for callers that take an optional reader, or
+ * undefined when the desktop bridge is unavailable. Prefer this over passing
+ * `window.electronAPI?.authorityPackRead` directly — the raw bridge call
+ * re-reads the multi-megabyte ndjson file over IPC on every invocation.
+ */
+export function cachedPackReader(): ((packId: AuthorityPackId) => Promise<string>) | undefined {
+  return window.electronAPI?.authorityPackRead ? readPackCached : undefined;
 }
 
 async function installedPackIds(): Promise<Set<AuthorityPackId>> {

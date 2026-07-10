@@ -66,7 +66,7 @@ const SupportedEntityTypes = ({ entityTypes }: { entityTypes: NamedEntityType[] 
   const { t } = useTranslation();
   return (
     <Stack direction="row" alignItems="center" gap={1}>
-      <Typography fontWeight={700} sx={{ textTransform: 'capitalize' }} variant="body2">
+      <Typography fontWeight={700} variant="body2">
         {t('LW.commons.entity_types')}
       </Typography>
       <Stack direction="row" gap={1}>

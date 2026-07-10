@@ -23,6 +23,7 @@ import {
   textToLineBreakXml,
 } from './pasteSpecial';
 import { initEditorZoom } from './editorZoom';
+import { DEFAULT_EDITOR_FONT_SIZE } from '../../overmind/editor/state';
 
 declare global {
   interface Window {
@@ -49,7 +50,7 @@ export const tinymceWrapperInit = function ({
   const toolbarHeight = toolbar?.getBoundingClientRect().height ?? 0;
 
   const visualBodyStyle =
-    'body { margin: 8px !important; max-width: none !important; width: auto !important; }';
+    `body { margin: 8px !important; max-width: none !important; width: auto !important; font-size: ${DEFAULT_EDITOR_FONT_SIZE}pt; }`;
 
   const isNodeInEditorBody = (editor: LeafWriterEditor, node: Node | null | undefined) => {
     if (!node) return false;
@@ -999,7 +1000,7 @@ export const tinymceWrapperInit = function ({
       if (node.nodeName === 'BODY') return true;
       parents.push(node);
     });
-    writer.editor?.fire('NodeChange', { element, parents });
+    writer.editor?.dispatch('NodeChange', { element, parents });
   };
 
   // === Tag boundary visualization ===
@@ -1165,7 +1166,7 @@ export const tinymceWrapperInit = function ({
     if (event.isComposing) return false;
     if (NAVIGATION_KEYS.has(event.code)) return false;
 
-    const mod = tinymce.isMac ? event.metaKey : event.ctrlKey;
+    const mod = tinymce.Env.os.isMacOS() ? event.metaKey : event.ctrlKey;
     if (mod) {
       const key = event.key.toLowerCase();
       if (key === 'a' || key === 'f' || key === '.') return false;
@@ -1246,10 +1247,10 @@ export const tinymceWrapperInit = function ({
       }
     }
 
-    if (tinymce.isMac ? event.metaKey : event.ctrlKey) return;
+    if (tinymce.Env.os.isMacOS() ? event.metaKey : event.ctrlKey) return;
 
     //allow select all
-    if ((tinymce.isMac ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'a') {
+    if ((tinymce.Env.os.isMacOS() ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'a') {
       event.preventDefault();
       return;
     }
@@ -1365,7 +1366,7 @@ export const tinymceWrapperInit = function ({
         if (currentNode.getAttribute('_textallowed') === 'false') {
           if (event.key === 'Meta' || event.ctrlKey) {
             // if the Meta // command // crtl key -> do nothing
-          } else if (tinymce.isMac ? event.metaKey : event.ctrlKey) {
+          } else if (tinymce.Env.os.isMacOS() ? event.metaKey : event.ctrlKey) {
             // don't show message if we got here through undo/redo
             const node = $('[_textallowed="true"]', writer.editor?.getBody()).first();
             const rng = writer.editor?.selection.getRng();

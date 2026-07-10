@@ -1,4 +1,5 @@
 import type { DictionaryEntry } from './dictionary';
+import { findTeiBodyRoot } from './dates';
 import { buildSearchText } from './normalize';
 import type { WhitespacePolicy } from './types';
 
@@ -36,10 +37,11 @@ export function crawlEntities(
   policy: WhitespacePolicy,
   tags: string[] = DEFAULT_CRAWL_TAGS,
 ): DictionaryEntry[] {
+  const bodyRoot = findTeiBodyRoot(doc);
   const bySurfaceTag = new Map<string, DictionaryEntry>();
 
   for (const tag of tags) {
-    for (const el of Array.from(doc.getElementsByTagName(tag))) {
+    for (const el of Array.from(bodyRoot.getElementsByTagName(tag))) {
       if (isInsideDateElement(el)) continue;
       const surface = buildSearchText(el.textContent ?? '', policy).text;
       if (surface.length === 0) continue;

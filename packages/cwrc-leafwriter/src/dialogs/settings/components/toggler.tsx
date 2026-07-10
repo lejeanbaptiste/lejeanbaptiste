@@ -51,7 +51,7 @@ export const Toggler = ({
           flexGrow={1}
         >
           <Stack>
-            <Typography variant="body2" sx={{ fontSize: '0.875rem', textTransform: 'capitalize' }}>
+            <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
               {title}
             </Typography>
             {description && (
