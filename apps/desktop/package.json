@@ -22,11 +22,11 @@
     "prepackage:dir": "npm run icon:export",
     "dev": "node scripts/brand-electron-dev.mjs && tsup --watch --onSuccess \"node scripts/run-electron-dev.mjs\"",
     "start": "node scripts/brand-electron-dev.mjs && node scripts/run-electron-dev.mjs",
-    "package": "npm run build && electron-builder",
-    "package:mac": "npm run build && electron-builder --mac",
-    "package:linux": "npm run build && electron-builder --linux",
-    "package:dir": "npm run build && electron-builder --linux --dir",
-    "package:deb": "npm run build && electron-builder --linux deb"
+    "package": "npm run build && electron-builder --config electron-builder.mac.json",
+    "package:mac": "npm run build && electron-builder --config electron-builder.mac.json",
+    "package:linux": "npm run build && electron-builder --config electron-builder.linux.json",
+    "package:dir": "npm run build && electron-builder --config electron-builder.linux.json --dir",
+    "package:deb": "npm run build && electron-builder --config electron-builder.linux.json --linux deb"
   },
   "dependencies": {
     "@xmldom/xmldom": "^0.8.11",
@@ -38,64 +38,5 @@
     "electron-builder": "26.15.3",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
-  },
-  "build": {
-    "appId": "fr.huma-num.le-jean-baptiste",
-    "productName": "Le Jean-Baptiste",
-    "electronVersion": "43.1.0",
-    "directories": {
-      "output": "release",
-      "buildResources": "../../design"
-    },
-    "icon": "icon",
-    "files": [
-      "dist/**/*",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "../../THIRD_PARTY_NOTICES.md",
-        "to": "THIRD_PARTY_NOTICES.md"
-      },
-      {
-        "from": "../../design/icon.svg",
-        "to": "icon.svg"
-      },
-      {
-        "from": "../../design/icon.png",
-        "to": "icon.png"
-      },
-      {
-        "from": "../commons/public",
-        "to": "commons/public"
-      },
-      {
-        "from": "../commons/server",
-        "to": "commons/server"
-      },
-      {
-        "from": "../../../sanmiao/src/sanmiao",
-        "to": "sanmiao/src/sanmiao",
-        "filter": [
-          "**/*",
-          "!**/__pycache__/**",
-          "!**/*.pyc"
-        ]
-      }
-    ],
-    "linux": {
-      "target": [
-        "deb"
-      ],
-      "category": "Office",
-      "desktopName": "le-jean-baptiste",
-      "syncDesktopName": true,
-      "maintainer": "Daniel Patrick Morgan <daniel.morgan@college-de-france.fr>"
-    },
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    }
   }
 }
