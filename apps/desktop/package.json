@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "Le Jean-Baptiste — desktop XML editor",
-  "author": "Daniel Patrick Morgan (CNRS)",
+  "author": {
+    "name": "Daniel Patrick Morgan",
+    "email": "daniel.morgan@college-de-france.fr"
+  },
+  "homepage": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsup",
@@ -18,9 +22,9 @@
     "prepackage:dir": "npm run icon:export",
     "dev": "node scripts/brand-electron-dev.mjs && tsup --watch --onSuccess \"node scripts/run-electron-dev.mjs\"",
     "start": "node scripts/brand-electron-dev.mjs && node scripts/run-electron-dev.mjs",
-    "package": "npm run build && electron-builder --mac",
-    "package:dir": "npm run build && electron-builder --mac --dir",
-    "package:pkg": "npm run build && electron-builder --mac pkg"
+    "package": "npm run build && electron-builder --linux",
+    "package:dir": "npm run build && electron-builder --linux --dir",
+    "package:deb": "npm run build && electron-builder --linux deb"
   },
   "dependencies": {
     "@xmldom/xmldom": "^0.8.11",
@@ -64,29 +68,13 @@
       {
         "from": "../commons/server",
         "to": "commons/server"
-      },
-      {
-        "from": "resources/lemminx",
-        "to": "lemminx",
-        "filter": [
-          "**/*"
-        ]
       }
     ],
-    "mac": {
-      "category": "public.app-category.productivity",
-      "icon": "../../design/icon.png",
-      "hardenedRuntime": true,
-      "entitlements": "resources/entitlements.mac.plist",
-      "entitlementsInherit": "resources/entitlements.mac.plist",
-      "target": [
-        "pkg"
-      ]
-    },
     "linux": {
       "target": [
-        "AppImage"
-      ]
+        "deb"
+      ],
+      "maintainer": "Daniel Patrick Morgan <daniel.morgan@college-de-france.fr>"
     },
     "win": {
       "target": [
