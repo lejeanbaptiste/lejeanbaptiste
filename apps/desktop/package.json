@@ -10,6 +10,7 @@
     "icon:export": "node ../../design/export-icon.mjs",
     "brand-electron": "node scripts/brand-electron-dev.mjs",
     "lemminx:download": "node scripts/download-lemminx.mjs",
+    "notarize": "node scripts/notarize.cjs",
     "postinstall": "node scripts/download-lemminx.mjs",
     "predev": "npm run icon:export && npm run lemminx:download",
     "prestart": "npm run icon:export",
@@ -19,7 +20,8 @@
     "dev": "node scripts/brand-electron-dev.mjs && tsup --watch --onSuccess \"node scripts/run-electron-dev.mjs\"",
     "start": "node scripts/brand-electron-dev.mjs && node scripts/run-electron-dev.mjs",
     "package": "npm run build && electron-builder --mac",
-    "package:dir": "npm run build && electron-builder --mac --dir"
+    "package:dir": "npm run build && electron-builder --mac --dir",
+    "package:pkg": "npm run build && electron-builder --mac pkg"
   },
   "dependencies": {
     "@xmldom/xmldom": "^0.8.11",
@@ -27,15 +29,15 @@
     "mammoth": "^1.12.0"
   },
   "devDependencies": {
-    "electron": "^35.0.0",
-    "electron-builder": "^25.1.8",
+    "electron": "43.1.0",
+    "electron-builder": "26.15.3",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "build": {
     "appId": "fr.huma-num.le-jean-baptiste",
     "productName": "Le Jean-Baptiste",
-    "electronVersion": "35.7.5",
+    "electronVersion": "43.1.0",
     "directories": {
       "output": "release"
     },
@@ -70,11 +72,15 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "icon": "../../design/icon.svg",
+      "icon": "../../design/icon.png",
+      "hardenedRuntime": true,
+      "entitlements": "resources/entitlements.mac.plist",
+      "entitlementsInherit": "resources/entitlements.mac.plist",
       "target": [
-        "dmg"
+        "pkg"
       ]
     },
+    "afterSign": "scripts/notarize.cjs",
     "linux": {
       "target": [
         "AppImage"

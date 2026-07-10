@@ -46,7 +46,6 @@
     "lint": "eslint .",
     "test": "jest",
     "test-watch": "jest --watchAll --verbose",
-    "cm": "git-cz",
     "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {

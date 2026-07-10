@@ -25,7 +25,6 @@
     "packages/*"
   ],
   "scripts": {
-    "cm": "git-cz",
     "prepare": "husky",
     "test": "jest --silent --onlyChanged",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -50,12 +49,11 @@
     "@types/node": "^25.3.3",
     "app-builder-bin": "^5.0.0-alpha.10",
     "changeset": "^0.2.6",
-    "commitizen": "^4.3.1",
     "eslint": "^8.57.1",
     "eslint-config-custom": "*",
-    "git-cz": "^4.9.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
+    "monaco-editor": "0.52.2",
     "prettier": "^3.8.1",
     "shelljs": "^0.10.0",
     "ts-jest": "^29.4.6",
@@ -63,6 +61,13 @@
     "typescript": "^5.9.3",
     "webpack": "^5.105.4",
     "webpack-cli": "^6.0.1"
+  },
+  "overrides": {
+    "dompurify": "^3.4.11",
+    "esbuild": "^0.28.1",
+    "monaco-editor": "0.52.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "packageManager": "npm@11.4.2"
 }

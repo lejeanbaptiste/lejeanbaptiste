@@ -49,7 +49,6 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
-    "cm": "git-cz",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -79,7 +78,6 @@
     "html2canvas": "^1.4.1",
     "i18next": "^25.8.14",
     "jotai": "^2.18.0",
-    "jotai-devtools": "^0.13.0",
     "jquery": "3.7.1",
     "jquery-ui": "^1.14.2",
     "js-cookie": "^3.0.5",
@@ -98,7 +96,6 @@
     "overmind-react": "29.0.6",
     "pinyin-pro": "^3.27.0",
     "progressbar.js": "^1.1.1",
-    "rdflib": "^2.3.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^16.5.4",
@@ -108,7 +105,7 @@
     "react-virtuoso": "^4.18.3",
     "rxjs": "^7.8.2",
     "sax": "^1.4.1",
-    "tinymce": "5.10.9",
+    "tinymce": "8.7.0",
     "vscode-languageserver-protocol": "^3.18.1",
     "zod": "^4.3.6",
     "zod-formik-adapter": "^2.0.0"
@@ -130,7 +127,6 @@
     "@types/react-dom": "^18.3.7",
     "@types/sax": "^1.2.7",
     "@types/shelljs": "^0.10.0",
-    "@types/tinymce": "^4.6.9",
     "@types/uuid": "^10.0.0",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^14.0.0",

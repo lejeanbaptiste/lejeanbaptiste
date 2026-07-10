@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import 'tinymce/icons/default';
-import 'tinymce/plugins/paste';
+import 'tinymce/models/dom';
 import 'tinymce/themes/silver';
 import tinymce, { type TinyMCE } from 'tinymce/tinymce';
 import type { LeafWriterEditor } from '../../types';
@@ -22,7 +22,6 @@ import {
   parseXmlFragment,
   textToLineBreakXml,
 } from './pasteSpecial';
-import './plugins/treepaste';
 import { initEditorZoom } from './editorZoom';
 
 declare global {
@@ -593,6 +592,7 @@ export const tinymceWrapperInit = function ({
   };
 
   void tinymce.init({
+    license_key: 'gpl',
     selector: `#${editorId}`,
     ui_container: `#${layoutContainerId}`,
     skin_url: window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -647,11 +647,9 @@ export const tinymceWrapperInit = function ({
     // ? TRY TO IMPLEMENT PLUGIN SCHEMA TAG AS A WRAPPER FOR MENUITEM
     // ? PERHAPS IT IS BETTER TO HAVE THE RIBBON OUTSIDE OF TINYMCE (USING REACT)
 
-    //TODO: Reassess plugins on tinymce 5.0
     plugins: [
       // 'cwrcpath',  //!This was broken before the upgrade
-      'preventdelete', //TODO: need to be tested
-      'paste', //TODO: need to be tested,
+      'preventdelete', // paste handling is core in TinyMCE 6+; the old 'paste' plugin no longer exists
     ],
 
     toolbar1: '',
