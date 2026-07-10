@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webFrame } from 'electron';
 
 import type {
   ZoteroAvailability,
@@ -307,9 +307,14 @@ export interface ElectronAPI {
   lspStop: () => Promise<{ ok: boolean }>;
   lspSend: (message: unknown) => Promise<{ ok: boolean }>;
   onLspMessage: (callback: (message: unknown) => void) => () => void;
+  /** Interface (window chrome) zoom — scales the entire UI, unlike the per-pane text zooms. */
+  setUiZoomFactor: (factor: number) => void;
+  getUiZoomFactor: () => number;
 }
 
 const electronAPI: ElectronAPI = {
+  setUiZoomFactor: (factor: number) => webFrame.setZoomFactor(factor),
+  getUiZoomFactor: () => webFrame.getZoomFactor(),
   openProject: () => ipcRenderer.invoke('openProject'),
   openProjectFolder: () => ipcRenderer.invoke('openProject'),
   restoreLastProject: () => ipcRenderer.invoke('restoreLastProject'),

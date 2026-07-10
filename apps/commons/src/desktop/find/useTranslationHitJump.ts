@@ -31,6 +31,10 @@ const selectSourceUnit = (unitId: string): boolean => {
   // focusEditor=false, matching normal find/xpath navigation — keeps keyboard focus in the
   // Find panel so arrow-key/Enter result navigation keeps working after a jump.
   writer.utilities.selectNode({ xpath }, false, false);
+  // selectNode only calls selection.setRng, which does not broadcast NodeChange — and the
+  // Translation pane tracks the active unit via NodeChange. Without this, the pane never
+  // switches to the jumped-to unit's translation.
+  writer.editor.nodeChanged();
   log('selectSourceUnit: selected', unitId, xpath);
   return true;
 };

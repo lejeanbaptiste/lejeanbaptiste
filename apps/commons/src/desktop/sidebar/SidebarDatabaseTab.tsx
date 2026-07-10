@@ -44,6 +44,7 @@ import {
   listEntities,
   markDuplicateIntentional,
   mergeEntities,
+  renameEntityName,
   setEntityDescription,
   type DuplicateGroup,
   type EntitySummary,
@@ -109,6 +110,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [mergeIds, setMergeIds] = useState<string[] | null>(null);
   const [mergeKeepId, setMergeKeepId] = useState<string>('');
   const [editEntity, setEditEntity] = useState<EntitySummary | null>(null);
+  const [editCanonicalName, setEditCanonicalName] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const nameBeforeRename = useRef('');
   const [editDescription, setEditDescription] = useState('');
   const [editNewName, setEditNewName] = useState('');
   const [splitInfoOpen, setSplitInfoOpen] = useState(false);
@@ -277,17 +281,37 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   const openEdit = (entity: EntitySummary) => {
     setEditEntity(entity);
+    setEditCanonicalName(entity.names[0] ?? '');
+    setEditingName(false);
     setEditDescription(entity.description ?? '');
     setEditNewName('');
+  };
+
+  const startRename = () => {
+    nameBeforeRename.current = editCanonicalName;
+    setEditingName(true);
+  };
+
+  const acceptRename = () => {
+    const trimmed = editCanonicalName.trim();
+    setEditCanonicalName(trimmed || nameBeforeRename.current);
+    setEditingName(false);
+  };
+
+  const cancelRename = () => {
+    setEditCanonicalName(nameBeforeRename.current);
+    setEditingName(false);
   };
 
   const saveEdit = () => {
     if (!editEntity) return;
     const id = editEntity.id;
+    const canonicalName = editCanonicalName.trim();
     const description = editDescription;
     const newName = editNewName.trim();
     setEditEntity(null);
     void runMutation('Saving entity…', (doc) => {
+      if (canonicalName) renameEntityName(doc, id, canonicalName);
       setEntityDescription(doc, id, description);
       if (newName) addEntityName(doc, id, newName);
     });
@@ -338,7 +362,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     return (
       <Box sx={{ p: 2 }}>
         <Typography variant="body2" color="text.secondary">
-          Open a project to browse its entity database.
+          {t('LWC.desktop.sidebar.database.open_project_hint')}
         </Typography>
       </Box>
     );
@@ -356,7 +380,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           error={!!regexError}
-          helperText={regexError ? `Invalid regex: ${regexError}` : undefined}
+          helperText={regexError ? t('LWC.desktop.sidebar.database.invalid_regex', { detail: regexError }) : undefined}
           InputProps={{
             endAdornment: search ? (
               <InputAdornment position="end">
@@ -383,7 +407,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             <ToggleButton value="work">{t('LWC.desktop.sidebar.database.entity_types.work')}</ToggleButton>
           </ToggleButtonGroup>
           <Box sx={{ flex: 1 }} />
-          <Tooltip title={selected.size >= 2 ? `Merge ${selected.size} entities` : 'Select 2+ entities to merge, or click to add an |alternative to the search'}>
+          <Tooltip
+            title={
+              selected.size >= 2
+                ? t('LWC.desktop.sidebar.database.merge_selected', { count: selected.size })
+                : t('LWC.desktop.sidebar.database.merge_hint')
+            }
+          >
             <span>
               <Button
                 size="small"
@@ -391,7 +421,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 variant={selected.size >= 2 ? 'contained' : 'outlined'}
                 onClick={handleMergeClick}
               >
-                Merge{selected.size >= 2 ? ` (${selected.size})` : ''}
+                {t('LWC.desktop.sidebar.database.merge')}
+                {selected.size >= 2 ? ` (${selected.size})` : ''}
               </Button>
             </span>
           </Tooltip>
@@ -407,9 +438,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       {duplicates.length > 0 && (
         <Alert severity="warning" icon={<WarningAmberIcon fontSize="small" />} sx={{ m: 1, py: 0 }}>
           <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
-            {duplicates.length === 1
-              ? 'Two entities share the same authority id'
-              : `${duplicates.length} authority ids are shared by several entities`}
+              {duplicates.length === 1
+              ? t('LWC.desktop.sidebar.database.duplicate_authority_one')
+              : t('LWC.desktop.sidebar.database.duplicate_authority_many', { count: duplicates.length })}
           </Typography>
           {duplicates.slice(0, 5).map((group) => (
             <Stack
@@ -426,10 +457,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   .join(', ')}
               </Typography>
               <Button size="small" onClick={() => mergeDuplicateGroup(group)}>
-                Merge
+                {t('LWC.desktop.sidebar.database.merge')}
               </Button>
               <Button size="small" onClick={() => markGroupIntentional(group)}>
-                Intentional
+                {t('LWC.desktop.sidebar.database.intentional')}
               </Button>
             </Stack>
           ))}
@@ -441,16 +472,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         <Alert severity="warning" icon={<WarningAmberIcon fontSize="small" />} sx={{ m: 1, py: 0 }}>
           <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
             {warnings.length === 1
-              ? '1 lookup warning to review'
-              : `${warnings.length} lookup warnings to review`}
+              ? t('LWC.desktop.sidebar.database.lookup_warning_one')
+              : t('LWC.desktop.sidebar.database.lookup_warning_many', { count: warnings.length })}
           </Typography>
           {warnings.map((warning) => (
             <Box key={warningKey(warning)} sx={{ mt: 0.5 }}>
               <Tooltip title={warning.detail ?? ''}>
                 <Typography variant="caption" component="div">
                   {warning.kind === 'concordance-conflict'
-                    ? `${warning.authority} ${warning.value} matched several entities — possible duplicates:`
-                    : `A lookup implied ${warning.authority} ${warning.value}, but the entity already carries a different ${warning.authority} id — verify, or split the entity:`}
+                    ? t('LWC.desktop.sidebar.database.lookup_conflict_duplicates', {
+                        authority: warning.authority,
+                        value: warning.value,
+                      })
+                    : t('LWC.desktop.sidebar.database.lookup_conflict_mismatch', {
+                        authority: warning.authority,
+                        value: warning.value,
+                      })}
                 </Typography>
               </Tooltip>
               <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" alignItems="center">
@@ -466,11 +503,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 ))}
                 {warning.kind === 'concordance-conflict' && warning.entityIds.length > 1 && (
                   <Button size="small" onClick={() => reviewWarningEntities(warning)}>
-                    Review
+                    {t('LWC.desktop.sidebar.database.review')}
                   </Button>
                 )}
                 <Button size="small" onClick={() => dismissWarning(warning)}>
-                  Dismiss
+                  {t('LWC.desktop.sidebar.database.dismiss')}
                 </Button>
               </Stack>
             </Box>
@@ -492,7 +529,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           </Box>
         ) : visible.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-            {entities.length === 0 ? 'The entity database is empty.' : 'No entities match.'}
+            {entities.length === 0
+              ? t('LWC.desktop.sidebar.database.empty')
+              : t('LWC.desktop.sidebar.database.no_matches')}
           </Typography>
         ) : (
           visible.map((entity) => (
@@ -553,7 +592,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               <IconButton
                 size="small"
                 onClick={(event) => setMenuAnchor({ el: event.currentTarget, entity })}
-                aria-label={`Actions for ${entity.id}`}
+                aria-label={t('LWC.desktop.sidebar.database.actions_for', { id: entity.id })}
               >
                 <MoreVertIcon fontSize="small" />
               </IconButton>
@@ -587,7 +626,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           <ListItemIcon>
             <EditOutlinedIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Edit description / names" />
+          <ListItemText primary={t('LWC.desktop.sidebar.database.edit_description_names')} />
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -598,7 +637,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           <ListItemIcon>
             <CallSplitIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary="Split entity…" />
+          <ListItemText primary={t('LWC.desktop.sidebar.database.split_entity')} />
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -609,7 +648,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           <ListItemIcon>
             <DeleteOutlineIcon fontSize="small" color="error" />
           </ListItemIcon>
-          <ListItemText primary="Delete entity" primaryTypographyProps={{ color: 'error' }} />
+          <ListItemText primary={t('LWC.desktop.sidebar.database.delete_entity')} primaryTypographyProps={{ color: 'error' }} />
         </MenuItem>
       </Menu>
 
@@ -651,12 +690,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
       {/* Merge dialog */}
       <Dialog open={!!mergeIds} onClose={() => setMergeIds(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Merge {mergeIds?.length} entities</DialogTitle>
+        <DialogTitle>{t('LWC.desktop.sidebar.database.merge_dialog_title', { count: mergeIds?.length ?? 0 })}</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 1 }}>
-            Names, authority ids, and descriptions are combined onto the surviving entity. Every
-            tag in every project sharing this database is rewritten to the surviving key. Save
-            open documents first.
+            {t('LWC.desktop.sidebar.database.merge_dialog_message')}
           </DialogContentText>
           {mergeIds?.map((id) => {
             const entity = entityById(id);
@@ -680,7 +717,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             );
           })}
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            The selected entry survives; the others are folded into it.
+            {t('LWC.desktop.sidebar.database.merge_dialog_note')}
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -694,7 +731,47 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       {/* Edit dialog */}
       <Dialog open={!!editEntity} onClose={() => setEditEntity(null)} maxWidth="xs" fullWidth>
         <DialogTitle>
-          {editEntity?.names[0] ?? editEntity?.id}
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            {editingName ? (
+              <TextField
+                autoFocus
+                fullWidth
+                size="small"
+                variant="standard"
+                value={editCanonicalName}
+                onChange={(event) => setEditCanonicalName(event.target.value)}
+                onBlur={acceptRename}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    acceptRename();
+                  } else if (event.key === 'Escape') {
+                    // Keep the Escape from also closing the dialog.
+                    event.stopPropagation();
+                    cancelRename();
+                  }
+                }}
+                inputProps={{ 'aria-label': t('LWC.desktop.sidebar.database.rename_name') }}
+                InputProps={{ sx: { typography: 'h6' } }}
+              />
+            ) : (
+              <>
+                <Typography variant="h6" component="span" sx={{ minWidth: 0 }} noWrap>
+                  {editCanonicalName || editEntity?.id}
+                </Typography>
+                <Tooltip title={t('LWC.desktop.sidebar.database.rename_name')}>
+                  <IconButton
+                    size="small"
+                    onClick={startRename}
+                    aria-label={t('LWC.desktop.sidebar.database.rename_name')}
+                    sx={{ p: 0.25 }}
+                  >
+                    <EditOutlinedIcon fontSize="inherit" />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
+          </Stack>
           <Typography variant="caption" color="text.secondary" component="div">
             {editEntity?.id}
           </Typography>
@@ -716,7 +793,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             onChange={(event) => setEditNewName(event.target.value)}
             helperText={
               editEntity && editEntity.names.length > 0
-                ? `Current: ${editEntity.names.join(' · ')}`
+                ? t('LWC.desktop.sidebar.database.current_names', { names: editEntity.names.join(' · ') })
                 : undefined
             }
             sx={{ mt: 2 }}

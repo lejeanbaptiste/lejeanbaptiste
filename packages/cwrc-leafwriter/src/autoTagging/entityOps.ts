@@ -119,6 +119,32 @@ export function addEntityName(doc: Document, id: string, name: string): boolean 
   return true;
 }
 
+/**
+ * Rename the canonical/display name for an entity.
+ * This updates the first name element in place and removes duplicate entries
+ * that would otherwise repeat the same visible label.
+ */
+export function renameEntityName(doc: Document, id: string, name: string): boolean {
+  const item = requireEntity(doc, id);
+  const kind = kindOfElement(item);
+  if (!kind) throw new Error(`Unknown entity kind for: ${id}`);
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+
+  const names = nameElements(item, kind);
+  const current = names[0];
+  if (!current) return false;
+
+  const currentText = current.textContent?.trim() ?? '';
+  if (currentText === trimmed) return false;
+
+  current.textContent = trimmed;
+  for (const duplicate of names.slice(1)) {
+    if ((duplicate.textContent?.trim() ?? '') === trimmed) duplicate.remove();
+  }
+  return true;
+}
+
 /** Remove an alternative name. Refuses to remove the last remaining name. */
 export function removeEntityName(doc: Document, id: string, name: string): boolean {
   const item = requireEntity(doc, id);

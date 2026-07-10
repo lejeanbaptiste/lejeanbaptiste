@@ -1,5 +1,8 @@
+import i18next from 'i18next';
 import type { ProjectBundle } from './projectTypes';
 import type { SchemaUpdateCheckOptions, SchemaUpdateCheckResult } from './schemaUpdateTypes';
+
+const { t } = i18next;
 
 const buildUpdateMessage = (result: Extract<SchemaUpdateCheckResult, { status: 'updateAvailable' }>) => {
   const lines = [`A newer version of ${result.catalogLabel} may be available.`];
@@ -83,7 +86,7 @@ export const runSchemaUpdateFlow = async (
   const result = await window.electronAPI.checkSchemaUpdate(projectFilePath, checkOptions);
 
   if (result.status === 'current') {
-    if (force) notify('Schema is up to date.');
+    if (force) notify(t('LWC.desktop.project.schema_is_up_to_date'));
     return;
   }
 

@@ -28,7 +28,7 @@ import { AiPromptEditorDialog } from '../autoTagging/AiPromptEditorDialog';
 
 /** Disambiguation launcher — optional AI curation, preference persisted per project. */
 export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
-  const { startDisambiguationReview } = useActions().ui;
+  const { startDisambiguationReview, dismissReviewPanes } = useActions().ui;
   const [aiCuration, setAiCuration] = useState(true);
   const [disableCaching, setDisableCaching] = useState(false);
   const [aiPromptProfiles, setAiPromptProfiles] = useState<AiPromptProfilesState>(
@@ -41,6 +41,12 @@ export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
     () => getActiveAiPromptProfile(aiPromptProfiles),
     [aiPromptProfiles],
   );
+
+  // Opening the launcher abandons any in-progress review or disambiguation
+  // walk without saving — the new run starts from a clean slate.
+  useEffect(() => {
+    if (open) dismissReviewPanes();
+  }, [open, dismissReviewPanes]);
 
   useEffect(() => {
     if (!open) return;

@@ -359,6 +359,9 @@ export interface ElectronAPI {
   lspStop: () => Promise<{ ok: boolean }>;
   lspSend: (message: unknown) => Promise<{ ok: boolean }>;
   onLspMessage: (callback: (message: unknown) => void) => () => void;
+  /** Interface (window chrome) zoom — scales the entire UI, unlike the per-pane text zooms. */
+  setUiZoomFactor?: (factor: number) => void;
+  getUiZoomFactor?: () => number;
 }
 
 declare global {
@@ -423,6 +426,20 @@ declare global {
     __leafWriterSourceFind?: LeafWriterSourceFindBridge;
     /** Zoom the visual editor pane (published by cwrc-leafwriter on editor init). */
     __leafWriterEditorZoom?: {
+      zoomIn: () => void;
+      zoomOut: () => void;
+      reset: () => void;
+      get: () => number;
+    };
+    /** Zoom the source (Monaco) view font (published while a source editor is mounted). */
+    __leafWriterSourceZoom?: {
+      zoomIn: () => void;
+      zoomOut: () => void;
+      reset: () => void;
+      get: () => number;
+    };
+    /** Zoom the translation pane font (published while the pane is mounted). */
+    __leafWriterTranslationZoom?: {
       zoomIn: () => void;
       zoomOut: () => void;
       reset: () => void;

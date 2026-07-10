@@ -333,9 +333,10 @@ export const setSelectedTranslationUnit = ({ state }: Context, unitId: string | 
 };
 
 export const startAutoTaggingReview = (
-  { state }: Context,
+  { state, actions }: Context,
   { suggestions, notice, aiValidation }: { suggestions: Suggestion[]; notice?: string; aiValidation?: boolean },
 ) => {
+  if (state.ui.disambiguationReview.active) actions.ui.exitDisambiguationReview();
   stashAutoTaggingBatch(suggestions, notice);
   state.ui.autoTaggingReview.active = true;
   state.ui.autoTaggingReview.aiValidation = aiValidation;
@@ -349,9 +350,10 @@ export const exitAutoTaggingReview = ({ state }: Context) => {
 };
 
 export const startDisambiguationReview = (
-  { state }: Context,
+  { state, actions }: Context,
   options?: { aiCuration?: boolean },
 ) => {
+  if (state.ui.autoTaggingReview.active) actions.ui.exitAutoTaggingReview();
   state.ui.disambiguationReview.active = true;
   state.ui.disambiguationReview.aiCuration = options?.aiCuration ?? true;
   window.dispatchEvent(new CustomEvent('desktop:disambiguation-review-open'));
@@ -360,6 +362,15 @@ export const startDisambiguationReview = (
 export const exitDisambiguationReview = ({ state }: Context) => {
   state.ui.disambiguationReview.active = false;
   window.dispatchEvent(new CustomEvent('desktop:disambiguation-review-close'));
+};
+
+/**
+ * Close any open review walk without saving — opening the auto-tagging or
+ * disambiguation launcher abandons the in-progress walk.
+ */
+export const dismissReviewPanes = ({ state, actions }: Context) => {
+  if (state.ui.autoTaggingReview.active) actions.ui.exitAutoTaggingReview();
+  if (state.ui.disambiguationReview.active) actions.ui.exitDisambiguationReview();
 };
 
 export const resetSourceEditor = ({ state }: Context) => {

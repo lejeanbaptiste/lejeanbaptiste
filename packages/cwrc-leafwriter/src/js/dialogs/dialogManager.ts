@@ -83,8 +83,12 @@ const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
           // focus to its opener element. Re-claim it for the editor.
           // Suppress Enter in TinyMCE for 300ms so the dialog-confirmation Enter
           // doesn't leak through and re-open the tag command popup.
-          if (window.writer?.editor) (window.writer.editor as any)._suppressEnterUntil = Date.now() + 300;
-          window.writer?.editor?.focus();
+          // The editor may be mid-teardown by now (tab switch, file close) — focusing a
+          // removed editor crashes deep inside TinyMCE (querySelector on a null doc).
+          const editor = window.writer?.editor;
+          if (!editor || (editor as { removed?: boolean }).removed || !editor.getDoc()) return;
+          (editor as any)._suppressEnterUntil = Date.now() + 300;
+          editor.focus();
         });
     },
   });

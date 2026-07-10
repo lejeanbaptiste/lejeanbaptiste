@@ -10,6 +10,7 @@ import { DEFAULT_EDITOR_FONT_SIZE } from './state';
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 const ASIAN_FONT_KEY = 'asianFont';
 const FONT_FAMILY_STYLE_ID = 'leafwriter-default-font-families';
+const FONT_SIZE_KEY = 'fontSize';
 const LATIN_FONT_KEY = 'latinFont';
 const SHOW_RAW_XML_PANEL_KEY = 'showRawXmlPanel';
 const STRIP_CJK_WHITESPACE_KEY = 'stripCjkWhitespace';
@@ -81,7 +82,12 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
     state.editor.asianFont,
   );
 
-  actions.editor.setFontSize(state.editor.fontSize);
+  const storedFontSize = effects.editor.api.getFromLocalStorage<number>(FONT_SIZE_KEY);
+  actions.editor.setFontSize(
+    typeof storedFontSize === 'number' && Number.isFinite(storedFontSize)
+      ? storedFontSize
+      : state.editor.fontSize,
+  );
   actions.editor.applyFontFamilies();
   const body = window.writer.editor.getBody();
   if (state.editor.showEntities) $(body).addClass('showEntities');
@@ -119,12 +125,13 @@ export const suspendLWChangeEvent = async ({ state }: Context, value: boolean) =
   }
 };
 
-export const setFontSize = ({ state }: Context, value: number) => {
+export const setFontSize = ({ state, effects }: Context, value: number) => {
   if (!window.writer?.editor) return;
 
   const styles = { fontSize: `${value}pt` };
   window.writer.editor.dom.setStyles(window.writer.editor.dom.getRoot(), styles);
   state.editor.fontSize = value;
+  effects.editor.api.saveToLocalStorage(FONT_SIZE_KEY, value);
 };
 
 export const applyFontFamilies = ({ state }: Context) => {

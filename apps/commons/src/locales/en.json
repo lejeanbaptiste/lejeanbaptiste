@@ -60,7 +60,15 @@
       "viewing": "viewing",
       "what_would_you_like_to_do": "What would you like to do?",
       "with": "with",
-      "xml document": "XML Document"
+      "xml document": "XML Document",
+      "entity_types": {
+        "all": "All",
+        "person": "Per",
+        "place": "Pla",
+        "organization": "Org",
+        "work": "Wrk"
+      },
+      "status_installed": "installed"
     },
     "cookie consent": {
       "consent_banner": {
@@ -274,6 +282,7 @@
         "settings": "Project settings",
         "schema_setup": "Project schema setup",
         "refreshing": "Refreshing…",
+        "schema_is_up_to_date": "Schema is up to date.",
         "errors": {
           "could_not_load_edition_metadata": "Could not load edition metadata.",
           "could_not_save_metadata": "Could not save metadata.",
@@ -378,6 +387,37 @@
       "updated_files_overrides_skipped": "{{count}} field(s) left unchanged due to per-file edits.",
       "updated_files_summary": "Updated {{updated}} file(s); {{skipped}} unchanged."
     },
+    "time_machine": {
+      "title": "Time Machine",
+      "open_project_first": "Open a project before using Time Machine.",
+      "back_up_now": "Back Up Now",
+      "refresh_snapshots": "Refresh snapshots",
+      "restore_to_current_project": "Restore to current project",
+      "restore_snapshot": "Restore snapshot",
+      "restore_snapshot_message": "This will back up the current project, then replace the current project files with the selected snapshot.",
+      "restore": "Restore",
+      "cancel": "Cancel",
+      "close": "Close",
+      "no_snapshots_yet": "No snapshots yet.",
+      "snapshot_created": "Snapshot created.",
+      "project_restored": "Project restored from snapshot.",
+      "could_not_create_snapshot": "Could not create snapshot.",
+      "could_not_restore_snapshot": "Could not restore snapshot.",
+      "months": {
+        "january": "January",
+        "february": "February",
+        "march": "March",
+        "april": "April",
+        "may": "May",
+        "june": "June",
+        "july": "July",
+        "august": "August",
+        "september": "September",
+        "october": "October",
+        "november": "November",
+        "december": "December"
+      }
+    },
     "close_unsaved": {
       "title": "Unsaved changes",
       "message": "{{filename}} has unsaved changes. Close without saving?"
@@ -393,7 +433,7 @@
         "entity_database": "Entity database",
         "entity_database_folder": "Database folder",
         "entity_database_change": "Change folder…",
-        "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs and raw CBDB/DILA downloads also live here.",
+        "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs also live here.",
         "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one."
       },
       "entity_database_changed": {
@@ -438,6 +478,19 @@
         "scope": "Scope",
         "folder_placeholder": "/path/to/folder"
       },
+      "shared": {
+        "doc_scope": {
+          "source": "Source",
+          "translation": "Translation",
+          "both": "Both"
+        },
+        "search_scope": {
+          "current_file": "Current file",
+          "open_tabs": "Open tabs",
+          "project": "Project",
+          "custom": "Custom"
+        }
+      },
       "sidebar": {
         "find": {
           "find_label": "Find",
@@ -446,7 +499,10 @@
           "replacement_placeholder": "Replacement text",
           "ignore_case": "Ignore case",
           "use_regex": "Use regular expression",
-          "documents_label": "Documents"
+          "documents_label": "Documents",
+          "all": "All",
+          "match_summary": "{{count}} matches in {{files}} files",
+          "match_location": "Line {{line}}, column {{column}}"
         },
         "xpath": {
           "xpath_placeholder": "TEI/text/body//p"
@@ -458,13 +514,39 @@
           "dont_warn_detach": "Don't warn me about detaching again",
           "one_line_description": "One-line description",
           "add_alternative_name": "Add a name for matching (alternative name)",
+          "rename_name": "Rename canonical name",
+          "open_project_hint": "Open a project to browse its entity database.",
+          "invalid_regex": "Invalid regex: {{detail}}",
+          "merge_selected": "Merge {{count}} entities",
+          "merge_hint": "Select 2+ entities to merge, or click to add an |alternative to the search",
+          "duplicate_authority_one": "Two entities share the same authority id",
+          "duplicate_authority_many": "{{count}} authority ids are shared by several entities",
+          "intentional": "Intentional",
+          "lookup_warning_one": "1 lookup warning to review",
+          "lookup_warning_many": "{{count}} lookup warnings to review",
+          "lookup_conflict_duplicates": "{{authority}} {{value}} matched several entities - possible duplicates:",
+          "lookup_conflict_mismatch": "A lookup implied {{authority}} {{value}}, but the entity already carries a different {{authority}} id - verify, or split the entity:",
+          "review": "Review",
+          "dismiss": "Dismiss",
+          "empty": "The entity database is empty.",
+          "no_matches": "No entities match.",
+          "actions_for": "Actions for {{id}}",
+          "edit_description_names": "Edit description / names",
+          "split_entity": "Split entity…",
+          "delete_entity": "Delete entity",
+          "merge_dialog_title": "Merge {{count}} entities",
+          "merge_dialog_message": "Names, authority ids, and descriptions are combined onto the surviving entity. Every tag in every project sharing this database is rewritten to the surviving key. Save open documents first.",
+          "merge_dialog_note": "The selected entry survives; the others are folded into it.",
+          "current_names": "Current: {{names}}",
+          "keys_updated_summary": "{{keysUpdated}} tags updated in {{filesChanged}} files across {{projects}} projects.",
           "entity_types": {
-            "all": "All",
-            "person": "Per",
-            "place": "Pla",
-            "organization": "Org",
-            "work": "Wrk"
+          "all": "All",
+          "person": "Per",
+          "place": "Pla",
+          "organization": "Org",
+          "work": "Wrk"
           },
+          "status_installed": "installed",
           "save": "Save",
           "merge": "Merge",
           "dialogs": {

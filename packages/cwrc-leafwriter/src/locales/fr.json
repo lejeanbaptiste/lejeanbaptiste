@@ -393,7 +393,7 @@
         "italic": "Italique",
         "underline": "Souligné",
         "strikethrough": "Barré",
-        "smallCaps": "Petites capitales",
+        "smallCaps": "Petits majuscules",
         "superscript": "Exposant",
         "subscript": "Indice",
         "link": "Lien",
@@ -464,7 +464,7 @@
         "Show Entities": "Afficher les entités",
         "show_entities": "Afficher les entités",
         "Show Raw XML panel": "Afficher le panneau XML brut",
-        "strip_east_asian_whitespace": "Supprimer les espaces entre les caractères est-asiatiques",
+        "strip_east_asian_whitespace": "Supprimer les espaces entre les caractères asiatiques",
         "asian font": "Police asiatique",
         "asian_font": "Police asiatique",
         "default fonts": "polices par défaut",
@@ -473,6 +473,10 @@
         "latin_font": "Police latine",
         "refresh system fonts": "Actualiser les polices système",
         "font size": "taille de police",
+        "font_size": "Taille de police",
+        "font_size_slider": "Curseur de taille de police",
+        "interface_zoom": "Zoom de l'interface",
+        "interface_zoom_slider": "Curseur de zoom de l'interface",
         "show_tag_bubble": "Afficher la bulle du nom de balise"
       },
       "markupPanel": {
@@ -491,7 +495,7 @@
         "reset_settings": "Réinitialiser les paramètres",
         "message": {
           "Cache cleared": "Cache vidé",
-          "Confirmation dialog preferences have been reset": "Les préférences de la boîte de dialogue de confirmation ont été réinitialisées",
+          "Confirmation dialog preferences have been reset": "Les préférences de la fenêtre de confirmation ont été réinitialisées",
           "Settings preferences have been reset to default": "Les préférences de paramètres ont été réinitialisées par défaut",
           "You might need to reload the document": "Vous devrez peut-être recharger le document"
         }
@@ -518,7 +522,7 @@
     "desktop": {
       "settings": {
         "entity_database": "Base d’entités",
-        "entity_database_change": "Changer de dossier…",
+        "entity_database_change": "Changer de dossier",
         "entity_database_folder": "Dossier de la base",
         "entity_database_hint": "Choisissez le dossier qui contient entities.xml (pas un sous-dossier du projet). Les packs d’autorité et les téléchargements CBDB/DILA bruts s’y trouvent aussi.",
         "entity_database_missing": "Aucun dossier de base d’entités n’est configuré. La désambiguïsation est bloquée jusqu’à ce que vous en choisissiez un.",
@@ -540,7 +544,7 @@
     "show only valid tags": "afficher uniquement les balises valides",
     "show_lod_annotation": "Afficher l'annotation des données ouvertes liées",
     "source": "source",
-    "tag without linking": "tag sans lien",
+    "tag without linking": "balise sans lien",
     "thing": "chose",
     "title": "titre",
     "unknown": "inconnu",
