@@ -9,13 +9,13 @@
     "github",
     "gitlab"
   ],
-  "homepage": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer",
+  "homepage": "https://github.com/lejeanbaptiste/lejeanbaptiste",
   "bugs": {
-    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues"
+    "url": "https://github.com/lejeanbaptiste/lejeanbaptiste/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
+    "url": "https://github.com/lejeanbaptiste/lejeanbaptiste.git"
   },
   "publishConfig": {
     "access": "public"

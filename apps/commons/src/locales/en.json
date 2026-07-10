@@ -115,7 +115,7 @@
     },
     "home": {
       "bugReport": {
-        "Open a ticket on GitLab": "Open a ticket on GitLab",
+        "Open a ticket on GitLab": "Open a ticket on GitHub",
         "bugs": "bugs",
         "email copied to clipboard": "email copied to clipboard",
         "or send by email to": "Or send by email to",

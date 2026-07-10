@@ -7,7 +7,7 @@
     "name": "Daniel Patrick Morgan",
     "email": "daniel.morgan@college-de-france.fr"
   },
-  "homepage": "https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste",
+  "homepage": "https://github.com/lejeanbaptiste/lejeanbaptiste",
   "main": "dist/main.js",
   "build": {
     "appId": "fr.huma-num.le-jean-baptiste",

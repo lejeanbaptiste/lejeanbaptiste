@@ -11,9 +11,9 @@ import {
 import { useActions } from '@src/overmind';
 
 const APP_VERSION = '0.0.1';
-const PROJECT_URL = 'https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste';
+const PROJECT_URL = 'https://github.com/lejeanbaptiste/lejeanbaptiste';
 const BUG_REPORT_URL =
-  'https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste/-/issues/new?issuable_template=Bug%20Report';
+  'https://github.com/lejeanbaptiste/lejeanbaptiste/issues/new?template=bug_report.md';
 
 interface AboutDialogProps {
   onClose: () => void;

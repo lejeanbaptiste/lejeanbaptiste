@@ -95,15 +95,15 @@ const GitLabTIcket = () => {
   const { t } = useTranslation();
 
   return (
-    <Button
+      <Button
       endIcon={<OpenInNewIcon />}
-      href="https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new"
+      href="https://github.com/lejeanbaptiste/lejeanbaptiste/issues/new"
       size="small"
       sx={{ borderRadius: 1, textTransform: 'none' }}
       target="_blank"
       variant="outlined"
     >
-      {t('LWC.home.bugReport.Open a ticket on GitLab')}
+      {t('LWC.home.bugReport.Open a ticket on GitHub')}
     </Button>
   );
 };
@@ -114,7 +114,7 @@ const DisplayEmail = () => {
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(
-      'contact-project+calincs-cwrc-leaf-writer-leaf-writer-31283590-issue-@incoming.gitlab.com',
+      'daniel.morgan@college-de-france.fr',
     );
     notifyViaSnackbar({ message: t('LWC.home.bugReport.email copied to clipboard') });
   };
@@ -135,7 +135,7 @@ const DisplayEmail = () => {
         })}
       >
         <Typography variant="caption">
-          contact-project+calincs-cwrc-leaf-writer-leaf-writer-31283590-issue-@incoming.gitlab.com
+          daniel.morgan@college-de-france.fr
         </Typography>
         <IconButton onClick={handleCopyToClipboard} size="small" sx={{ borderRadius: 1 }}>
           <ContentCopyIcon fontSize="inherit" />
