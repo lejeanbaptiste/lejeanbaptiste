@@ -32,7 +32,7 @@
 
 ## Overview
 
-This is React File Storage component for listing, loading, and saving files from and to the local computer and Git hosting (GitHub and Gitlab). It was built to be used in conjunction with [LEAF-Writer-Commons](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer), but it is general enough to be freely used anywhere.
+This is React File Storage component for listing, loading, and saving files from and to the local computer and Git hosting (GitHub and GitLab). It was built to be used in conjunction with [LEAF-Writer-Commons](https://github.com/lejeanbaptiste/lejeanbaptiste), but it is general enough to be freely used anywhere.
 
 The **Load Dialog** supports pasting from the clipboard, selecting files from the local computer, dragging & drop a file directly to the UI, and load from an URL or Git provider (GitHub | Gitlab). On the git provider, users can access their own repositories, shared repositories, repositories owned by organizations/groups, and search public repositories. Git repositories are limited to the default branch (usually 'master' or 'main'). There are also search functionalities by file name and within files' content.
 
@@ -53,7 +53,7 @@ Extra features:
 
 ## Demo
 
-The [LEAF-Writer Commons](https://leaf-writer.leaf-vre.org/) is running an instance of [LEAF-Writer](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/core) that uses the NPM package published from this repository.
+The [LEAF-Writer Commons](https://leaf-writer.leaf-vre.org/) is running an instance of [LEAF-Writer](https://github.com/lejeanbaptiste/lejeanbaptiste/tree/main/packages/cwrc-leafwriter) that uses the NPM package published from this repository.
 
 ## Use
 
@@ -392,7 +392,7 @@ Since Leaf writer Storage Service is written in Typescript, you will get suggest
 
 ## Development
 
-This component is part of a leaf writer monorepo. Refer to [LEAF-Writer Dev Docs](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer) for the project's bigger picture.
+This component is part of a leaf writer monorepo. Refer to [LEAF-Writer Dev Docs](https://github.com/lejeanbaptiste/lejeanbaptiste) for the project's bigger picture.
 
 We use **Material** UI (@mui/material) to build the visual elements, **@octokit/rest** and **axios** to fetch data from and to Github and Gitlab, **overmind** to control react state, and **i18next** for localization.
 

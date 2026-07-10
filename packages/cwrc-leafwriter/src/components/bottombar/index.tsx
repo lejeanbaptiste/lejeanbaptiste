@@ -67,7 +67,7 @@ export const BottomBar = () => {
             <Link
               color="textSecondary"
               variant="caption"
-              href="https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues/new?issuable_template=Bug%20Report"
+              href="https://github.com/lejeanbaptiste/lejeanbaptiste/issues/new"
               target="_blank"
             >
               {t('LW.Bugs')} / {t('LW.Requests')}

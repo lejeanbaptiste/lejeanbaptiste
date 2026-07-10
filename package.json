@@ -9,13 +9,13 @@
     "editor",
     "annotation"
   ],
-  "homepage": "https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste",
+  "homepage": "https://github.com/lejeanbaptiste/lejeanbaptiste",
   "bugs": {
-    "url": "https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste/-/issues"
+    "url": "https://github.com/lejeanbaptiste/lejeanbaptiste/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste.git"
+    "url": "https://github.com/lejeanbaptiste/lejeanbaptiste.git"
   },
   "author": {
     "name": "Daniel Patrick Morgan",
@@ -39,6 +39,7 @@
     "dev:desktop": "npm run dev -w leafwriter-commons & npm run dev -w le-jean-baptiste-desktop",
     "build:desktop": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package -w le-jean-baptiste-desktop",
     "icon:export": "node design/export-icon.mjs",
+    "test:ci": "jest --silent",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"

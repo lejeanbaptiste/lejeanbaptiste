@@ -2,7 +2,7 @@
 
 <img src="design/splash_new.png" alt="splash" height="300">
 
-Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). The project website is [gitlab.huma-num.fr/dmorgan1/lejeanbaptiste](https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste). Le Jean-Baptiste wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
+Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). The project website is [github.com/lejeanbaptiste/lejeanbaptiste](https://github.com/lejeanbaptiste/lejeanbaptiste). Le Jean-Baptiste wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
 
 ![GPL-2.0](https://img.shields.io/badge/license-GPL--2.0-orange)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
@@ -88,7 +88,7 @@ Docker and Docker Compose are required. The easiest path is to install [Docker D
 
 Clone this repo:
 ```bash
-git clone https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste.git
+git clone https://github.com/lejeanbaptiste/lejeanbaptiste.git
 ```
 The `apps/desktop` package wraps our modified LEAF-Writer Commons in an Electron shell for local project editing (folder tree, tabs, save to disk, XPath search).
 ```bash
