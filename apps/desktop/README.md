@@ -38,7 +38,7 @@ This builds Commons, compiles the Electron main/preload scripts, and packages fo
 
 ### Notes
 
-- **Host platform:** `npm run package` uses the mac packaging config. Use `npm run package:linux` if you want the Linux stream, or `npm run package:mac` to be explicit.
+- **Host platform:** `npm run package` now builds the mac `.pkg` installer. Use `npm run package:linux` if you want the Linux stream, or `npm run package:mac` to be explicit.
 - **No code signing:** Unsigned builds may require right-click → Open on first launch.
 - The packaged app starts a local Express server and loads the `/project` route.
 
