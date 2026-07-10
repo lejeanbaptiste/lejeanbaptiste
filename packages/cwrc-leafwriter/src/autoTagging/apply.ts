@@ -61,17 +61,6 @@ const ACTION_PRIORITY: Partial<Record<SuggestionAction, number>> = {
   add: 3,
 };
 
-const TEI_DATE_VALUE_PATTERNS = [
-  /^\s*-?(?:[1-9]\d*)?\d{4}(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
-  /^\s*-?(?:[1-9]\d*)?\d{4}-[01]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
-  /^\s*-?(?:[1-9]\d*)?\d{4}-[01]\d-[0-3]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
-  /^\s*-?(?:[1-9]\d*)?\d{4}-[01]\d-[0-3]\dT[012]\d:[0-5]\d:[0-5]\d(?:\.\d+)?(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
-  /^\s*[0-3]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
-  /^\s*[012]\d:[0-5]\d:[0-5]\d(?:\.\d+)?(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
-  /^\s*[01]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
-  /^\s*[01]\d-[0-3]\d(?:[+-][01]\d:[0-5]\d|Z)?\s*$/,
-];
-
 const TEI_DATE_ATTR_NAMES = new Set(['when', 'from', 'to', 'notBefore', 'notAfter']);
 const TEI_DATE_COMPONENT_PATTERNS = [
   /^(-?\d{1,4})(?:([+-][01]\d:[0-5]\d|Z))?$/,
@@ -89,10 +78,6 @@ function compareSuggestions(a: Suggestion, b: Suggestion): number {
   const pb = ACTION_PRIORITY[b.action] ?? 99;
   if (pa !== pb) return pa - pb;
   return b.anchor.surface.length - a.anchor.surface.length;
-}
-
-function isValidTeiDateValue(value: string): boolean {
-  return TEI_DATE_VALUE_PATTERNS.some((pattern) => pattern.test(value));
 }
 
 function normalizeTeiDateValue(value: string): string | null {

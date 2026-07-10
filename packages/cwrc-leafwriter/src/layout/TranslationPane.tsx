@@ -402,6 +402,10 @@ const selectHighlightedMatch = (
 
 export const TranslationPane = () => {
   const { t } = useTranslation('LW');
+  // This is used by callbacks that also run while the pane is inactive. Keep it
+  // initialized before those callbacks so a later active render cannot reuse a
+  // closure with an uninitialized binding.
+  const zoteroCitationLabel = t('LW.translationPane.formatItems.zoteroCitation');
   const { translationMode } = useAppState().ui;
   const { notifyViaSnackbar, setSelectedTranslationUnit } = useActions().ui;
 
@@ -640,7 +644,7 @@ export const TranslationPane = () => {
       prepareAtomicCitationFields(note, zoteroCitationLabel);
     }
     setFootnotes(notes.map((note) => note.innerHTML));
-  }, []);
+  }, [zoteroCitationLabel]);
 
   const renderCitationRefs = useCallback(
     (doc: Document, styleId = activeCitationStyle) => {
@@ -1379,6 +1383,7 @@ export const TranslationPane = () => {
       selection?.removeAllRanges();
       selection?.addRange(insertionTarget.range);
       insertFragmentAtRange(insertionTarget.range, fragment);
+      rememberBodyRange();
     }
 
     renderCitationRefs(doc);
@@ -1480,7 +1485,6 @@ export const TranslationPane = () => {
 
   const languageOptions = languageState?.languages ?? [];
   const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
-  const zoteroCitationLabel = t('LW.translationPane.formatItems.zoteroCitation');
   const formatItems: Array<{
     command:
       | 'bold'

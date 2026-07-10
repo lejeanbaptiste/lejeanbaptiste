@@ -23,12 +23,12 @@ export const Header = ({ expanded, id, isLocal, name, onEditClick }: HeaderProps
 
   return (
     <>
-      <Stack direction="row" alignItems="center" gap={1}>
-        <Typography color="primary" fontWeight={700} variant="body1">
+      <Stack direction="row" alignItems="center" gap={0.75}>
+        <Typography color="primary" fontWeight={600} variant="body2" sx={{ fontSize: '0.92rem' }}>
           {name}
         </Typography>
       </Stack>
-      <Stack direction="row" alignItems="center" gap={1} mr={1}>
+      <Stack direction="row" alignItems="center" gap={0.5} mr={0.5}>
         {isLocal && expanded && (
           <Button
             component="div"
@@ -36,6 +36,7 @@ export const Header = ({ expanded, id, isLocal, name, onEditClick }: HeaderProps
             role="button"
             id={`edit-${id}`}
             size="small"
+            sx={{ minWidth: 0, px: 0.75, py: 0.15, fontSize: '0.78rem' }}
           >
             {t('LW.commons.edit')}
           </Button>

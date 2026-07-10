@@ -37,12 +37,12 @@ export const Toggler = ({
         disableGutters
         onClick={handleClick}
         sx={[
-          { minHeight: 30, py: 0.1, borderRadius: 1 },
+          { minHeight: 26, py: 0, borderRadius: 1 },
           !!description && { alignItems: 'flex-start' },
         ]}
       >
-        <ListItemIcon sx={[{ minWidth: 26, mt: 0 }, !!description && { mt: 0.15 }]}>
-          <Icon name={icon} sx={{ mx: 0.4, height: 15, width: 15 }} />
+        <ListItemIcon sx={[{ minWidth: 22, mt: 0 }, !!description && { mt: 0.1 }]}>
+          <Icon name={icon} sx={{ mx: 0.25, height: 14, width: 14 }} />
         </ListItemIcon>
         <Stack
           direction="row"
@@ -51,11 +51,11 @@ export const Toggler = ({
           flexGrow={1}
         >
           <Stack>
-            <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+            <Typography variant="body2" sx={{ fontSize: '0.86rem', lineHeight: 1.2 }}>
               {title}
             </Typography>
             {description && (
-              <Typography color="textSecondary" variant="caption">
+              <Typography color="textSecondary" variant="caption" sx={{ lineHeight: 1.15 }}>
                 {description}
               </Typography>
             )}

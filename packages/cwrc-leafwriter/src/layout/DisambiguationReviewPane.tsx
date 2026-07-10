@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AutoTaggingSession, DisambiguationPanel, type MentionGroup } from '../autoTagging';
 import { runAuthorityPrefetch, type AuthorityPrefetchHandle } from '../autoTagging/authorityPrefetch';
+import { stopBackgroundAuthorityPrefetch } from '../autoTagging/backgroundAuthorityPrefetch';
 import { useActions, useAppState } from '../overmind';
 import { DockedResizeHandle, useStoredPanelWidth } from './DockedResizeHandle';
 import {
@@ -66,6 +67,9 @@ export const DisambiguationReviewPane = () => {
     const generation = ++scanGeneration.current;
     prefetch.current?.stop();
     prefetch.current = null;
+    // The panel's own prefetch (below) covers the same groups at full pace,
+    // and the two sessions would otherwise race the same network throttle.
+    stopBackgroundAuthorityPrefetch();
     void (async () => {
       setLoading(true);
       setError(null);

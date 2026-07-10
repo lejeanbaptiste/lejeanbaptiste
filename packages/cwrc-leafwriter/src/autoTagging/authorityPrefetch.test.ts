@@ -126,6 +126,20 @@ describe('runAuthorityPrefetch', () => {
     expect(mockBuild).toHaveBeenCalledTimes(2);
   });
 
+  it('waits for the configured pace before each idle prefetch tick', async () => {
+    const session = makeSession();
+    mockBuild.mockResolvedValue(makeCandidates('r'));
+
+    runAuthorityPrefetch(session, [makeGroup('甲')], { paceMs: 2_000 });
+
+    await jest.advanceTimersByTimeAsync(2_199);
+    expect(mockBuild).not.toHaveBeenCalled();
+
+    await jest.advanceTimersByTimeAsync(1);
+    await Promise.resolve();
+    expect(mockBuild).toHaveBeenCalledTimes(1);
+  });
+
   it('debounces savePendingCache and flushes it on stop()', async () => {
     const session = makeSession();
     mockBuild.mockResolvedValue(makeCandidates('r'));

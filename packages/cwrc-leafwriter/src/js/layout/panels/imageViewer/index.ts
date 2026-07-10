@@ -176,7 +176,9 @@ class ImageViewer {
       const scrollBottom = scrollTop + scrollHeight;
       let index = -1;
 
-      this.$pageBreaks.each((i: number, el: any) => {
+      // A queued scroll event can run after reset(), before processDocument()
+      // has populated the page-break collection.
+      this.$pageBreaks?.each((i: number, el: any) => {
         const y = $(el).offset()?.top;
         if (!y) return;
 

@@ -2,6 +2,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Alert, Box, IconButton, Link, Stack, Tooltip, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  startBackgroundAuthorityPrefetch,
+  stopBackgroundAuthorityPrefetch,
+} from '../autoTagging/backgroundAuthorityPrefetch';
 import { takeAutoTaggingBatch, takeAutoTaggingNotice } from '../autoTagging/batchHolder';
 import {
   AutoTaggingSession,
@@ -172,6 +176,11 @@ export const AutoTaggingReviewPane = () => {
           }
           setApplied((n) => n + result.applied);
           setCanRevert(getSession().canRevert);
+          // Warm the disambiguation caches for the freshly applied tags while
+          // the user reviews — gently paced so the editor stays responsive.
+          if (result.applied > 0 && window.writer) {
+            startBackgroundAuthorityPrefetch(window.writer);
+          }
           if (result.diagnostics) {
             let text = result.diagnostics.summary;
             if (result.diagnostics.lines.length > 0) {
@@ -210,6 +219,7 @@ export const AutoTaggingReviewPane = () => {
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
         });
         getSession().revertLastApply();
+        stopBackgroundAuthorityPrefetch();
         setCanRevert(getSession().canRevert);
         setApplied(0);
       } catch (error) {

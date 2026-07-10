@@ -1,5 +1,5 @@
 import type { DictionaryEntry } from './dictionary';
-import { findTeiBodyRoot } from './dates';
+import { findTeiBodyRoot, isInsideDateElement } from './dates';
 import { buildSearchText } from './normalize';
 import type { WhitespacePolicy } from './types';
 
@@ -14,13 +14,6 @@ export const DEFAULT_CRAWL_TAGS = [
   'roleName',
   'title',
 ];
-
-function isInsideDateElement(el: Element): boolean {
-  for (let cur: Element | null = el; cur; cur = cur.parentElement) {
-    if (cur.localName === 'date') return true;
-  }
-  return false;
-}
 
 /**
  * Compile a dictionary from entities already tagged in a document: each
@@ -37,7 +30,7 @@ export function crawlEntities(
   policy: WhitespacePolicy,
   tags: string[] = DEFAULT_CRAWL_TAGS,
 ): DictionaryEntry[] {
-  const bodyRoot = findTeiBodyRoot(doc);
+  const bodyRoot = findTeiBodyRoot(doc) as Element;
   const bySurfaceTag = new Map<string, DictionaryEntry>();
 
   for (const tag of tags) {

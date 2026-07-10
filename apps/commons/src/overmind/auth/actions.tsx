@@ -209,10 +209,10 @@ export const getLinkedAccounts = async ({ state, actions, effects }: Context) =>
     if (state.auth.user.identities.get(providerName)) continue;
 
     if (!actions.providers.isProviderInitilized(providerName)) {
-      await actions.auth.setupLinkedAccountProvider(account);
+      await setupLinkedAccountProvider({ actions, effects } as Context, account);
     }
 
-    const userDetails = await actions.auth.getUserDetails(account);
+    const userDetails = await getUserDetails({ state } as Context, account);
     if (!userDetails) continue;
     state.auth.user.identities.set(providerName, userDetails);
   }

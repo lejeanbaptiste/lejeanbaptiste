@@ -30,8 +30,8 @@ export const Content = ({
   );
 
   return (
-    <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="body2">
+    <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 1, py: 1 }}>
+      <Typography variant="body2" sx={{ fontSize: '0.84rem', lineHeight: 1.4 }}>
         {description}
         {url && (
           <>
@@ -65,15 +65,15 @@ export const Content = ({
 const SupportedEntityTypes = ({ entityTypes }: { entityTypes: NamedEntityType[] }) => {
   const { t } = useTranslation();
   return (
-    <Stack direction="row" alignItems="center" gap={1}>
-      <Typography fontWeight={700} variant="body2">
+    <Stack direction="row" alignItems="center" gap={0.75}>
+      <Typography fontWeight={600} variant="body2" sx={{ fontSize: '0.82rem' }}>
         {t('LW.commons.entity_types')}
       </Typography>
-      <Stack direction="row" gap={1}>
+      <Stack direction="row" gap={0.75}>
         {entityTypes.map((entityType) => (
           <Tooltip key={entityType} title={capitalizeString(t(`LW.entity.${entityType}`))}>
-            <Stack sx={{ alignItems: 'center', justifyContent: 'center', p: 0.25 }}>
-              <Icon name={entityType} sx={{ height: 14, width: 14 }} />
+            <Stack sx={{ alignItems: 'center', justifyContent: 'center', p: 0.1 }}>
+              <Icon name={entityType} sx={{ height: 13, width: 13 }} />
             </Stack>
           </Tooltip>
         ))}
@@ -91,11 +91,11 @@ const CustomInfo = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <Stack gap={1}>
-      <Stack direction="row" alignItems="center" gap={1}>
-        <ExtensionIcon sx={{ height: 14, width: 14 }} />
+    <Stack gap={0.5}>
+      <Stack direction="row" alignItems="center" gap={0.5}>
+        <ExtensionIcon sx={{ height: 13, width: 13 }} />
         {author && (
-          <Typography variant="caption">
+          <Typography variant="caption" sx={{ fontSize: '0.76rem' }}>
             {t('LW.commons.added_by')}{' '}
             {author.url ? (
               <Link
@@ -111,15 +111,17 @@ const CustomInfo = ({
                 <OpenInNewIcon fontSize="inherit" />
               </Link>
             ) : (
-              <Typography variant="caption">{author.name}</Typography>
+              <Typography variant="caption" sx={{ fontSize: '0.76rem' }}>
+                {author.name}
+              </Typography>
             )}
           </Typography>
         )}
       </Stack>
       {isLocal && (
-        <Stack direction="row" alignItems="center" gap={1}>
-          <LockOutlineIcon sx={{ height: 14, width: 14 }} />
-          <Typography variant="caption">
+        <Stack direction="row" alignItems="center" gap={0.5}>
+          <LockOutlineIcon sx={{ height: 13, width: 13 }} />
+          <Typography variant="caption" sx={{ fontSize: '0.76rem' }}>
             {t('LW.messages.only_available_on_this_browser')}
           </Typography>
         </Stack>

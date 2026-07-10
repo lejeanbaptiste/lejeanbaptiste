@@ -1,5 +1,4 @@
-import { contract } from '@lincs.project/auth-api-contract';
-import { type ClientInferResponseBody } from '@ts-rest/core';
+import type { IdentityProviderRepresentation } from '@lincs.project/auth-api-contract';
 import { SupportedProviderIds } from '../config';
 
 export type ProviderId = (typeof SupportedProviderIds)[number];
@@ -23,9 +22,11 @@ export interface ProviderService {
   getUserName: () => string;
 }
 
-export type Providers = ClientInferResponseBody<typeof contract.v1.providers.getAll, 200>;
+export type Providers = IdentityProviderRepresentation[];
 export type Provider = Providers[0];
 
 export interface SupportedProvider extends Provider {
+  providerId?: string;
+  linkOnly?: boolean;
   service?: ProviderService;
 }
