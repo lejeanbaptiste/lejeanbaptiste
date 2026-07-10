@@ -9,13 +9,13 @@
     "editor",
     "annotation"
   ],
-  "homepage": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer",
+  "homepage": "https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste",
   "bugs": {
-    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/issues"
+    "url": "https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste/-/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git"
+    "url": "https://gitlab.huma-num.fr/dmorgan1/lejeanbaptiste.git"
   },
   "author": {
     "name": "Daniel Patrick Morgan",
