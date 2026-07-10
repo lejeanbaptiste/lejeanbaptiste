@@ -199,6 +199,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [workflowReady, setWorkflowReady] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const session = useRef<AutoTaggingSession | null>(null);
+  const aiAbort = useRef<AbortController | null>(null);
+
+  // Closing the dialog (or unmounting) aborts any in-flight AI request so a
+  // local model server stops generating instead of running to completion.
+  useEffect(() => () => aiAbort.current?.abort(), []);
   const { startAutoTaggingReview } = useActions().ui;
 
   const aiSettings = aiApiSettingsFromDesktop();
@@ -615,13 +620,16 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     setError(null);
     setBusy(true);
     setAiProgress({ done: 0, total: 0 });
+    aiAbort.current?.abort();
+    const abortController = new AbortController();
+    aiAbort.current = abortController;
     try {
       const client = createLlmClientFromSettings(settings);
       const onProgress = (done: number, total: number) => setAiProgress({ done, total });
       const result =
         aiMode === 'audit'
-          ? await getSession().runAiAudit(tags, client, onProgress, activePromptProfile)
-          : await getSession().runAiSuggest(tags, client, onProgress, activePromptProfile);
+          ? await getSession().runAiAudit(tags, client, onProgress, activePromptProfile, abortController.signal)
+          : await getSession().runAiSuggest(tags, client, onProgress, activePromptProfile, abortController.signal);
 
       if (result.suggestions.length === 0) {
         setError(
@@ -635,7 +643,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       }
       beginReview(result.suggestions);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (!abortController.signal.aborted) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
     } finally {
       setBusy(false);
       setAiProgress({ done: 0, total: 0 });
@@ -643,6 +653,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   };
 
   const handleClose = () => {
+    aiAbort.current?.abort();
     setStep('methods');
     setError(null);
     onClose?.(id);

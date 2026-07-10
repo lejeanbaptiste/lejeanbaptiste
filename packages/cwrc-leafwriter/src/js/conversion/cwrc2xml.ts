@@ -41,6 +41,14 @@ class CWRC2XML {
       $rootEl = $body.find('[_tag]:eq(0)'); // fallback
     }
 
+    if ($rootEl.length === 0) {
+      // No tagged content at all (e.g. schema root unresolved or the editor
+      // body is empty/being torn down) — bail out instead of crashing below.
+      throw new Error(
+        `Could not convert the document to XML: no root element found (schema root: ${root}).`,
+      );
+    }
+
     // Reset default namespace on export; preserve other xmlns declarations from the document.
     //@ts-ignore
     const rootAttributes = this.writer.tagger.getAttributesForTag($rootEl[0]);

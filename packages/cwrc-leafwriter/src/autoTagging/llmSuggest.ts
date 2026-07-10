@@ -19,6 +19,8 @@ export interface LlmSuggestOptions extends ChunkOptions {
   promptProfile?: AiPromptProfile;
   /** Called after each chunk finishes (done/total). */
   onProgress?: (done: number, total: number) => void;
+  /** Stops between chunks and aborts the in-flight request when triggered. */
+  signal?: AbortSignal;
 }
 
 export interface LlmSuggestResult {
@@ -36,7 +38,7 @@ const SUGGEST_ACTIONS = ['add'];
  * suggestions through the same review walk as every other producer.
  */
 export async function llmSuggest(doc: Document, options: LlmSuggestOptions): Promise<LlmSuggestResult> {
-  const { tags, client, cache, policy, onProgress, promptProfile } = options;
+  const { tags, client, cache, policy, onProgress, promptProfile, signal } = options;
   const chunks = chunkDocument(doc, llmChunkOptions(options));
   const index = buildDocIndex(doc, policy);
   const schema = suggestionResponseSchema(SUGGEST_ACTIONS);
@@ -48,6 +50,7 @@ export async function llmSuggest(doc: Document, options: LlmSuggestOptions): Pro
   let counter = 0;
 
   for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+    signal?.throwIfAborted();
     const chunk = chunks[chunkIndex]!;
     let items = (await cache?.get(chunk.text, tags, client.modelId, promptVersion)) ?? null;
     if (!items) {
@@ -58,7 +61,7 @@ export async function llmSuggest(doc: Document, options: LlmSuggestOptions): Pro
         after: chunk.after,
         suggestTaskText,
       });
-      const response = await client.complete({ ...prompt, jsonSchema: schema });
+      const response = await client.complete({ ...prompt, jsonSchema: schema, signal });
       items = parseValidItems(response.json, tags, SUGGEST_ACTIONS);
       await cache?.set(chunk.text, tags, client.modelId, promptVersion, items);
     }

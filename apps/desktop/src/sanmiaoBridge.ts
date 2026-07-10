@@ -88,8 +88,22 @@ const pythonCandidates = (): string[] => {
 let cachedPython: string | null | undefined;
 let cachedDevRoot: string | null | undefined;
 
-const SANMIAO_IMPORT_CHECK =
-  'import sanmiao; from sanmiao.tei_bridge import cli_main; assert hasattr(sanmiao, "__version__")';
+/**
+ * Oldest sanmiao whose tei_bridge CLI speaks the {"mode": ...} protocol.
+ * Older installs import fine but crash on the first tagDatesBatch call
+ * (propose_dates() got an unexpected keyword argument 'mode').
+ */
+const MIN_SANMIAO_VERSION = '0.2.10';
+
+const SANMIAO_IMPORT_CHECK = [
+  'import re, sanmiao',
+  'from sanmiao.tei_bridge import cli_main',
+  `minimum = tuple(int(x) for x in "${MIN_SANMIAO_VERSION}".split("."))`,
+  'found = tuple(int(x) for x in re.findall(r"\\d+", sanmiao.__version__)[:3])',
+  'assert found >= minimum, f"sanmiao {sanmiao.__version__} is too old (need >= ' +
+    MIN_SANMIAO_VERSION +
+    ')"',
+].join('; ');
 
 const logSanmiao = (message: string, data?: Record<string, unknown>) => {
   const suffix = data ? ` ${JSON.stringify(data)}` : '';
@@ -101,6 +115,15 @@ export const resolveSanmiaoPython = async (): Promise<string> => {
   if (cachedPython) return cachedPython;
 
   const root = resolveSanmiaoRoot();
+  const failures: string[] = [];
+
+  const recordFailure = (python: string, error: unknown) => {
+    const stderr = (error as { stderr?: string })?.stderr ?? String(error);
+    const assertion = stderr.match(/AssertionError: (.+)/)?.[1];
+    const reason = assertion ?? stderr.trim().split('\n').pop() ?? 'unknown error';
+    failures.push(`${python}: ${reason}`);
+    logSanmiao('candidate rejected', { python, reason });
+  };
 
   for (const python of pythonCandidates()) {
     try {
@@ -112,8 +135,8 @@ export const resolveSanmiaoPython = async (): Promise<string> => {
       cachedDevRoot = null;
       logSanmiao('using python', { python, root: root ?? undefined });
       return python;
-    } catch {
-      // try next candidate
+    } catch (error) {
+      recordFailure(python, error);
     }
   }
 
@@ -129,8 +152,8 @@ export const resolveSanmiaoPython = async (): Promise<string> => {
         cachedDevRoot = root;
         logSanmiao('using python with PYTHONPATH', { python, root });
         return python;
-      } catch {
-        // try next candidate
+      } catch (error) {
+        recordFailure(`${python} (PYTHONPATH=${root}/src)`, error);
       }
     }
   }
@@ -138,8 +161,10 @@ export const resolveSanmiaoPython = async (): Promise<string> => {
   const devHint = root
     ? ` Editable setup: cd ${root} && python3 -m venv .venv && .venv/bin/pip install -e ".[fuzzy]"`
     : '';
+  const failureHint = failures.length > 0 ? ` [${failures.join(' | ')}]` : '';
   throw new Error(
-    `Sanmiao is not available.${devHint} Or: pip install sanmiao — or set SANMIAO_PYTHON.`,
+    `Sanmiao >= ${MIN_SANMIAO_VERSION} is not available.${devHint} ` +
+      `Or: pip install -U sanmiao — or set SANMIAO_PYTHON.${failureHint}`,
   );
 };
 

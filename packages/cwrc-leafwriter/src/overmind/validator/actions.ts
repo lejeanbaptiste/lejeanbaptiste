@@ -315,10 +315,18 @@ export const validate = async ({ state, actions }: Context) => {
   // Ensure the worker exists and holds the current schema before validating.
   await actions.validator.loadValidator({ silent: true });
 
-  const documentString =
-    state.ui.editorViewMode === 'source'
-      ? state.ui.sourceCurrentContent
-      : await writer.converter.getDocumentContent(false);
+  let documentString: string | null | undefined;
+  try {
+    documentString =
+      state.ui.editorViewMode === 'source'
+        ? state.ui.sourceCurrentContent
+        : await writer.converter.getDocumentContent(false);
+  } catch {
+    // No convertible content (e.g. editor mid-teardown or schema root not
+    // resolved yet) — nothing meaningful to validate.
+    instrumentation.validationRunning = false;
+    return;
+  }
 
   const mergeForValidation = window.__desktopMergeHeaderForValidation;
   const validationString =

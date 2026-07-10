@@ -20,6 +20,8 @@ export interface LlmRequest {
   jsonSchema: Record<string, unknown>;
   /** Called before each 429 retry sleep so callers can surface live progress. */
   onRateLimitRetry?: (info: RateLimitRetryInfo) => void;
+  /** Aborts the in-flight HTTP request (and any retry wait) when triggered. */
+  signal?: AbortSignal;
 }
 
 export interface LlmUsage {
@@ -67,6 +69,7 @@ export class OllamaLlmClient implements LlmClient {
   async complete(request: LlmRequest): Promise<LlmResponse> {
     const res = await this.fetchImpl(`${this.baseUrl}/api/chat`, {
       method: 'POST',
+      signal: request.signal,
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         model: this.modelId.replace(/^ollama:/, ''),
@@ -157,7 +160,20 @@ export function rateLimitDelayMs(suggestedMs: number | null, attempt: number): n
   return Math.min(Math.max(suggestedMs, floorForAttempt), MAX_RATE_LIMIT_DELAY_MS);
 }
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+/** Sleep that wakes up (and rejects) immediately when the signal aborts. */
+const sleep = (ms: number, signal?: AbortSignal): Promise<void> =>
+  new Promise((resolve, reject) => {
+    signal?.throwIfAborted();
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal!.reason instanceof Error ? signal!.reason : new Error('aborted'));
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
 
 /**
  * OpenAI-compatible chat-completions client (Mistral API, Groq, LM Studio,
@@ -218,6 +234,7 @@ export class MistralLlmClient implements LlmClient {
     if (this.apiKey) headers.authorization = `Bearer ${this.apiKey}`;
     const res = await this.fetchImpl(`${this.baseUrl}/v1/chat/completions`, {
       method: 'POST',
+      signal: request.signal,
       headers,
       body: JSON.stringify({
         model: this.modelId.replace(/^mistral:/, ''),
@@ -247,7 +264,7 @@ export class MistralLlmClient implements LlmClient {
           maxAttempts: this.maxRateLimitRetries,
           delayMs,
         });
-        await sleep(delayMs);
+        await sleep(delayMs, request.signal);
         continue;
       }
       if (!result.ok && isJsonValidateFailed(result.status, result.text) && mode !== 'prompt_only') {

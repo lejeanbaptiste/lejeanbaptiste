@@ -170,6 +170,7 @@ export class AutoTaggingSession {
     client: LlmClient,
     onProgress?: (done: number, total: number) => void,
     promptProfile?: AiPromptProfile,
+    signal?: AbortSignal,
   ): Promise<LlmSuggestResult> {
     const doc = await this.getDocument();
     const result = await llmSuggest(doc, {
@@ -179,6 +180,7 @@ export class AutoTaggingSession {
       policy: this.policy,
       onProgress,
       promptProfile,
+      signal,
     });
     const { suggestions, dropped } = filterNestedSameTagAdds(doc, this.policy, result.suggestions);
     return {
@@ -196,6 +198,7 @@ export class AutoTaggingSession {
     client: LlmClient,
     onProgress?: (done: number, total: number) => void,
     promptProfile?: AiPromptProfile,
+    signal?: AbortSignal,
   ): Promise<LlmAuditResult> {
     const doc = await this.getDocument();
     const result = await llmAudit(doc, {
@@ -205,6 +208,7 @@ export class AutoTaggingSession {
       policy: this.policy,
       onProgress,
       promptProfile,
+      signal,
     });
     const { suggestions, dropped } = filterNestedSameTagAdds(doc, this.policy, result.suggestions);
     return {
