@@ -1,5 +1,11 @@
-FEATURE IDEAS:
-If there is a selection, auto-tagging should maybe run on the paragraphs selected? I ran AI suggest on a large document and it was VERY slow. 
-If in disambiguation or validation panel, exit that without saving if the user clicks on auto-tagging or disambiguation (maybe already implemented).
-In Database viewer, should be able to edit name, add name type
+OK, I have one last fix idea before getting back to binaries. The AI suggest and audit are very slow for long documents and free/local models, and they block everything while we wait. That's no good. I'm thinking that we present the user two options, with a checkbox in the auto-tagging pop-up.
 
+Option 1: streaming. The AI proceeds block by block, and when a block is in, the validation panel inserts everything in that block without flushing our accept/reject choices. As we go, the list grows until done. The disadvantage is that we will be missing information about what comes later, and won't really be able to 'accept everywhere', but that's life.
+
+Option 2: background. The AI does this in the background, we use a small, unobtrusive progress bar in on the right of the bottom panel with visual/source, but right-aligned (like the other autotag progress bar). The user can keep working, and the disambiguation panel opens when the AI is done and the results are cached for rapid access.
+
+We also should think about throttling. First, 'test connection' should be mandatory AND it should send a JSON prompt to the AI asking about relevant limits: prompt size, token limits, cooldown time, etc. We should store those limits for the model (maybe re-send prompt every month (?) for updates). Then, we should adapt our chunking and streaming parameters so that we're polite and efficient.
+
+Also, for local models we should offer an option to throttle based on heat, memory usage, or whatever... but that would require accessing telometry...
+
+What do you think?

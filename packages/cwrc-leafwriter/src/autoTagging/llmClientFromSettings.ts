@@ -5,6 +5,10 @@ export interface AiApiSettingsLike {
   apiKey: string;
   baseUrl: string;
   model: string;
+  verifiedAt?: string | null;
+  verifiedBaseUrl?: string;
+  verifiedModel?: string;
+  streamResults?: boolean;
 }
 
 /**
@@ -21,14 +25,22 @@ export function isLocalAiBaseUrl(baseUrl: string): boolean {
   return /localhost|127\.0\.0\.1/i.test(baseUrl);
 }
 
-/** True when base URL and model are set and a key is present for hosted endpoints. */
+const CONNECTION_TEST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** True when the configured endpoint has passed a recent test for this model. */
 export function isAiSuggestReady(settings: AiApiSettingsLike | null | undefined): boolean {
   if (!settings) return false;
   const baseUrl = settings.baseUrl?.trim();
   const model = settings.model?.trim();
   if (!baseUrl || !model) return false;
-  if (isLocalAiBaseUrl(baseUrl)) return true;
-  return Boolean(settings.apiKey?.trim());
+  if (!isLocalAiBaseUrl(baseUrl) && !settings.apiKey?.trim()) return false;
+  const testedAt = settings.verifiedAt ? Date.parse(settings.verifiedAt) : Number.NaN;
+  return (
+    Number.isFinite(testedAt) &&
+    Date.now() - testedAt < CONNECTION_TEST_TTL_MS &&
+    settings.verifiedBaseUrl?.trim() === baseUrl &&
+    settings.verifiedModel?.trim() === model
+  );
 }
 
 export function createLlmClientFromSettings(
@@ -56,6 +68,10 @@ export function aiApiSettingsFromDesktop(): AiApiSettingsLike | null {
     apiKey: settings.apiKey ?? '',
     baseUrl: settings.baseUrl ?? '',
     model: settings.model ?? '',
+    verifiedAt: settings.verifiedAt ?? null,
+    verifiedBaseUrl: settings.verifiedBaseUrl ?? '',
+    verifiedModel: settings.verifiedModel ?? '',
+    streamResults: settings.streamResults === true,
   };
 }
 

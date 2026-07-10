@@ -120,6 +120,10 @@ export const useCommonsUiBridge = () => {
           customInstructions: '',
           model: '',
           temperature: 0.1,
+          streamResults: false,
+          verifiedAt: null,
+          verifiedBaseUrl: '',
+          verifiedModel: '',
         }),
         ...settings,
       };
@@ -147,8 +151,7 @@ export const useCommonsUiBridge = () => {
     if (!entitiesHere) {
       const parent = folder.replace(/[/\\][^/\\]+$/, '');
       const entitiesInParent =
-        parent.length > 0 &&
-        (await window.electronAPI?.pathExists?.(`${parent}/entities.xml`));
+        parent.length > 0 && (await window.electronAPI?.pathExists?.(`${parent}/entities.xml`));
       if (entitiesInParent) {
         await window.electronAPI?.showNativeMessageBox?.({
           type: 'warning',
@@ -183,26 +186,25 @@ export const useCommonsUiBridge = () => {
 
   const setAuthorityLifecycleEnabled = useCallback(
     async (options: AuthorityLifecycleSetEnabledOptions): Promise<AuthorityLifecycleRunResult> => {
-      const result =
-        (await window.electronAPI?.authorityLifecycleSetEnabled?.(options)) ?? {
-          ok: false,
-          error: 'Authority lifecycle bridge is unavailable.',
-        };
+      const result = (await window.electronAPI?.authorityLifecycleSetEnabled?.(options)) ?? {
+        ok: false,
+        error: 'Authority lifecycle bridge is unavailable.',
+      };
       await refreshAuthorityLifecycle();
       return result;
     },
     [refreshAuthorityLifecycle],
   );
 
-  const runAuthorityLifecycleUpdate = useCallback(async (): Promise<AuthorityLifecycleRunResult> => {
-    const result =
-      (await window.electronAPI?.authorityLifecycleUpdate?.()) ?? {
+  const runAuthorityLifecycleUpdate =
+    useCallback(async (): Promise<AuthorityLifecycleRunResult> => {
+      const result = (await window.electronAPI?.authorityLifecycleUpdate?.()) ?? {
         ok: false,
         error: 'Authority lifecycle bridge is unavailable.',
       };
-    await refreshAuthorityLifecycle();
-    return result;
-  }, [refreshAuthorityLifecycle]);
+      await refreshAuthorityLifecycle();
+      return result;
+    }, [refreshAuthorityLifecycle]);
 
   const revealAuthorityLifecycleFolder = useCallback(async () => {
     await window.electronAPI?.authorityLifecycleRevealFolder?.();

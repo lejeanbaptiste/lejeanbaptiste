@@ -57,6 +57,10 @@ import {
   WIKIDATA_PERSON_CHILD_PACK_IDS,
   type DictionaryEntry,
   type Suggestion,
+  appendAutoTaggingBatch,
+  finishAiRunProgress,
+  startAiRunProgress,
+  updateAiRunProgress,
 } from '../../autoTagging';
 import {
   isChineseLanguageCode,
@@ -74,7 +78,9 @@ const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
 type DialogStep = 'methods' | 'ai' | 'authority';
 type AiMode = 'suggest' | 'audit';
 
-const defaultAuthorityPacksForLanguage = (language: string | null): Record<AuthorityPackId, boolean> =>
+const defaultAuthorityPacksForLanguage = (
+  language: string | null,
+): Record<AuthorityPackId, boolean> =>
   defaultAuthorityPacksRecord({
     'dila-persons': !isJapaneseLanguageCode(language) && !isTibetanLanguageCode(language),
     'ndl-persons': isJapaneseLanguageCode(language),
@@ -178,9 +184,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [promptEditorOpen, setPromptEditorOpen] = useState(false);
   const [aiProgress, setAiProgress] = useState({ done: 0, total: 0 });
   const [aiValidation, setAiValidation] = useState(true);
-  const [authorityPacks, setAuthorityPacks] = useState<
-    Record<AuthorityPackId, boolean>
-  >(defaultAuthorityPacksForLanguage(null));
+  const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
+  const [limitToSelection, setLimitToSelection] = useState(true);
+  const [authorityPacks, setAuthorityPacks] = useState<Record<AuthorityPackId, boolean>>(
+    defaultAuthorityPacksForLanguage(null),
+  );
   const [authorityStatus, setAuthorityStatus] = useState<
     { id: AuthorityPackId; installed: boolean }[]
   >([]);
@@ -190,7 +198,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [authorityDateFilter, setAuthorityDateFilter] = useState<DateFilterMode>('limit');
   const [authorityYearRange, setAuthorityYearRange] = useState<[number, number]>([25, 220]);
   const cycleAuthorityDateFilter = () => {
-    setAuthorityDateFilter((mode) => (mode === 'none' ? 'limit' : mode === 'limit' ? 'exclude' : 'none'));
+    setAuthorityDateFilter((mode) =>
+      mode === 'none' ? 'limit' : mode === 'limit' ? 'exclude' : 'none',
+    );
   };
   const [authorityPackCounts, setAuthorityPackCounts] = useState<AuthorityPackStringCounts>({});
   const [authorityPackCountsLoading, setAuthorityPackCountsLoading] = useState(false);
@@ -204,13 +214,29 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   // Closing the dialog (or unmounting) aborts any in-flight AI request so a
   // local model server stops generating instead of running to completion.
   useEffect(() => () => aiAbort.current?.abort(), []);
-  const { startAutoTaggingReview, dismissReviewPanes } = useActions().ui;
+  const { startAutoTaggingReview, dismissReviewPanes, notifyViaSnackbar } = useActions().ui;
 
   // Opening the launcher abandons any in-progress review or disambiguation
   // walk without saving — the new run starts from a clean slate.
   useEffect(() => {
     if (open) dismissReviewPanes();
   }, [open, dismissReviewPanes]);
+
+  // Capture the editor selection at open — TinyMCE keeps its range while the
+  // dialog has focus, but the user may click around before running AI.
+  useEffect(() => {
+    if (!open) {
+      setSelectionRange(null);
+      setLimitToSelection(true);
+      return;
+    }
+    void getSession()
+      .getSelectionRange()
+      .then(setSelectionRange)
+      .catch(() => setSelectionRange(null));
+    // getSession is stable for the dialog's lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const aiSettings = aiApiSettingsFromDesktop();
   const aiReady = isAiSuggestReady(aiSettings);
@@ -226,8 +252,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
 
   const refreshWorkflowState = async () => {
     const doc = await getSession().getDocument();
-    const lang = await resolveAutoTaggingSourceLanguage(doc, () =>
-      window.__leafWriterProject?.getProjectSourceLanguage?.() ?? Promise.resolve(null),
+    const lang = await resolveAutoTaggingSourceLanguage(
+      doc,
+      () => window.__leafWriterProject?.getProjectSourceLanguage?.() ?? Promise.resolve(null),
     );
     setSourceLanguage(lang);
     setWorkflowReady(true);
@@ -500,8 +527,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     if (!entitiesHere) {
       const parent = folder.replace(/[/\\][^/\\]+$/, '');
       const entitiesInParent =
-        parent.length > 0 &&
-        (await window.electronAPI?.pathExists?.(`${parent}/entities.xml`));
+        parent.length > 0 && (await window.electronAPI?.pathExists?.(`${parent}/entities.xml`));
       if (entitiesInParent) {
         setError(
           `No entities.xml in that folder. Your entity database is probably the parent folder (${parent}) — choose that, not the project subfolder inside it.`,
@@ -623,38 +649,92 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       }
     }
 
-    setError(null);
-    setBusy(true);
-    setAiProgress({ done: 0, total: 0 });
     aiAbort.current?.abort();
     const abortController = new AbortController();
     aiAbort.current = abortController;
-    try {
-      const client = createLlmClientFromSettings(settings);
-      const onProgress = (done: number, total: number) => setAiProgress({ done, total });
-      const result =
-        aiMode === 'audit'
-          ? await getSession().runAiAudit(tags, client, onProgress, activePromptProfile, abortController.signal)
-          : await getSession().runAiSuggest(tags, client, onProgress, activePromptProfile, abortController.signal);
+    const streaming = settings.streamResults === true;
+    let reviewStarted = false;
+    const onChunk = (suggestions: Suggestion[]) => {
+      if (!streaming || suggestions.length === 0) return;
+      if (!reviewStarted) {
+        reviewStarted = true;
+        beginReview([], undefined);
+      }
+      appendAutoTaggingBatch(suggestions);
+    };
+    const execute = async (background: boolean) => {
+      if (background) startAiRunProgress(`AI ${aiMode}`, () => abortController.abort());
+      else {
+        setBusy(true);
+        setAiProgress({ done: 0, total: 0 });
+      }
+      try {
+        const client = createLlmClientFromSettings(settings);
+        const onProgress = (done: number, total: number) => {
+          if (background) updateAiRunProgress(done, total);
+          else setAiProgress({ done, total });
+        };
+        const range = limitToSelection ? selectionRange : null;
+        const result =
+          aiMode === 'audit'
+            ? await getSession().runAiAudit(
+                tags,
+                client,
+                onProgress,
+                activePromptProfile,
+                abortController.signal,
+                range,
+                onChunk,
+              )
+            : await getSession().runAiSuggest(
+                tags,
+                client,
+                onProgress,
+                activePromptProfile,
+                abortController.signal,
+                range,
+                onChunk,
+              );
 
-      if (result.suggestions.length === 0) {
-        setError(
-          result.unverifiableCount > 0
-            ? `No verifiable ${aiMode === 'audit' ? 'findings' : 'suggestions'} (${result.unverifiableCount} model claims could not be anchored in the document).`
-            : aiMode === 'audit'
-              ? 'No issues found — the model did not propose any corrections.'
-              : 'No suggestions from the model for the selected tags.',
-        );
-        return;
+        if (result.suggestions.length === 0) {
+          if (!background)
+            setError(
+              result.unverifiableCount > 0
+                ? `No verifiable ${aiMode === 'audit' ? 'findings' : 'suggestions'} (${result.unverifiableCount} model claims could not be anchored in the document).`
+                : aiMode === 'audit'
+                  ? 'No issues found — the model did not propose any corrections.'
+                  : 'No suggestions from the model for the selected tags.',
+            );
+          return;
+        }
+        if (!reviewStarted) beginReview(result.suggestions);
+      } catch (e) {
+        if (!abortController.signal.aborted) {
+          if (!background) setError(e instanceof Error ? e.message : String(e));
+          else {
+            console.warn('[auto-tagging] background AI run failed:', e);
+            notifyViaSnackbar({
+              message: `AI ${aiMode} failed: ${e instanceof Error ? e.message : String(e)}`,
+              options: { variant: 'error' },
+            });
+          }
+        }
+      } finally {
+        if (background) finishAiRunProgress();
+        else {
+          setBusy(false);
+          setAiProgress({ done: 0, total: 0 });
+        }
       }
-      beginReview(result.suggestions);
-    } catch (e) {
-      if (!abortController.signal.aborted) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-    } finally {
-      setBusy(false);
-      setAiProgress({ done: 0, total: 0 });
+    };
+
+    setError(null);
+    if (streaming) {
+      await execute(false);
+    } else {
+      void execute(true);
+      setStep('methods');
+      onClose?.(id);
     }
   };
 
@@ -701,11 +781,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     <>
       <AutoTaggingApplyOverlay
         open={busy && (step === 'ai' || step === 'authority')}
-        label={
-          step === 'authority'
-            ? authorityProgress || 'Loading authority packs…'
-            : aiBusyLabel
-        }
+        label={step === 'authority' ? authorityProgress || 'Loading authority packs…' : aiBusyLabel}
         done={step === 'ai' ? aiProgress.done : 0}
         total={step === 'ai' ? aiProgress.total : 0}
       />
@@ -740,71 +816,68 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 </Typography>
               ) : (
                 <>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={aiValidation}
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={aiValidation}
+                        onChange={(event) => {
+                          setAiValidation(event.target.checked);
+                          void persistValidationSettings({ aiValidation: event.target.checked });
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography variant="caption">
+                        AI validation (pre-select best candidates, show warnings)
+                      </Typography>
+                    }
+                    sx={{ ml: 0, mb: 0.5 }}
+                  />
+                  {methodButton('Tag from a list (CSV, TSV, xlsx, ODS)', () =>
+                    fileInput.current?.click(),
+                  )}
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    accept=".csv,.tsv,.txt,.xlsx,.xlsm,.ods"
+                    hidden
+                    data-testid="dictionary-file-input"
                     onChange={(event) => {
-                      setAiValidation(event.target.checked);
-                      void persistValidationSettings({ aiValidation: event.target.checked });
+                      const file = event.target.files?.[0];
+                      if (file) void importList(file);
+                      event.target.value = '';
                     }}
                   />
-                }
-                label={
-                  <Typography variant="caption">
-                    AI validation (pre-select best candidates, show warnings)
-                  </Typography>
-                }
-                sx={{ ml: 0, mb: 0.5 }}
-              />
-              {methodButton(
-                'Tag from a list (CSV, TSV, xlsx, ODS)',
-                () => fileInput.current?.click(),
-              )}
-              <input
-                ref={fileInput}
-                type="file"
-                accept=".csv,.tsv,.txt,.xlsx,.xlsm,.ods"
-                hidden
-                data-testid="dictionary-file-input"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) void importList(file);
-                  event.target.value = '';
-                }}
-              />
-              {methodButton(
-                'From existing tags in this project',
-                () => void crawlProject(),
-              )}
-              {methodButton(
-                `Tag from authority packs (${authorityPackGroupLabel})`,
-                () => openAuthorityStep(),
-                !isDesktopApp(),
-                !isDesktopApp() ? 'Desktop app only' : undefined,
-              )}
-              {isDesktopApp() && !aiReady && (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ px: 1, py: 0.125, fontSize: '0.6875rem', lineHeight: 1.35 }}
-                >
-                  AI suggest and audit need an API key — set one in Application Settings.
-                </Typography>
-              )}
-              {methodButton(
-                'AI suggest',
-                () => openAiStep('suggest'),
-                aiDisabled,
-                aiDisabledReason,
-              )}
-              {methodButton(
-                'AI audit',
-                () => openAiStep('audit'),
-                aiDisabled,
-                aiDisabledReason,
-              )}
+                  {methodButton('From existing tags in this project', () => void crawlProject())}
+                  {methodButton(
+                    `Tag from authority packs (${authorityPackGroupLabel})`,
+                    () => openAuthorityStep(),
+                    !isDesktopApp(),
+                    !isDesktopApp() ? 'Desktop app only' : undefined,
+                  )}
+                  {isDesktopApp() && !aiReady && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ px: 1, py: 0.125, fontSize: '0.6875rem', lineHeight: 1.35 }}
+                    >
+                      AI suggest and audit need a tested API connection — configure and test it in
+                      Application Settings.
+                    </Typography>
+                  )}
+                  {methodButton(
+                    'AI suggest',
+                    () => openAiStep('suggest'),
+                    aiDisabled,
+                    aiDisabledReason,
+                  )}
+                  {methodButton(
+                    'AI audit',
+                    () => openAiStep('audit'),
+                    aiDisabled,
+                    aiDisabledReason,
+                  )}
                 </>
               )}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
@@ -821,7 +894,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   <code>entities.xml</code> — not the project subfolder inside it. Compiled packs
                   install to <code>authority-packs/</code> beside that file.
                   <Box sx={{ mt: 1 }}>
-                    <Button size="small" variant="outlined" disabled={busy} onClick={() => void chooseEntityDbFolder()}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={busy}
+                      onClick={() => void chooseEntityDbFolder()}
+                    >
                       Choose entity database folder…
                     </Button>
                   </Box>
@@ -838,7 +916,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   <br />
                   No compiled packs found in <code>authority-packs/</code> yet.
                   <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Button size="small" variant="outlined" disabled={busy} onClick={() => void installAuthorityPacks()}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={busy}
+                      onClick={() => void installAuthorityPacks()}
+                    >
                       Install from folder…
                     </Button>
                   </Box>
@@ -905,7 +988,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                           <FilterAltIcon
                             sx={{
                               fontSize: 16,
-                              color: authorityDateFilter === 'exclude' ? 'error.main' : 'primary.main',
+                              color:
+                                authorityDateFilter === 'exclude' ? 'error.main' : 'primary.main',
                             }}
                           />
                         )}
@@ -934,7 +1018,13 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   </Typography>
                 </Stack>
                 {authorityDateFilter !== 'none' && (
-                  <Stack direction="row" spacing={0.375} flexWrap="wrap" useFlexGap sx={{ pt: 0.5 }}>
+                  <Stack
+                    direction="row"
+                    spacing={0.375}
+                    flexWrap="wrap"
+                    useFlexGap
+                    sx={{ pt: 0.5 }}
+                  >
                     {AUTHORITY_YEAR_PRESETS.map((preset) => (
                       <Button
                         key={preset.label}
@@ -1009,6 +1099,25 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 disabled={busy}
                 onChange={setAiSelectedTags}
               />
+              {selectionRange && (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={limitToSelection}
+                      disabled={busy}
+                      onChange={(event) => setLimitToSelection(event.target.checked)}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2">
+                      Only the selected text (
+                      {(selectionRange.end - selectionRange.start).toLocaleString()} characters)
+                    </Typography>
+                  }
+                  sx={{ ml: 0 }}
+                />
+              )}
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Link
                   component="button"
@@ -1019,7 +1128,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 >
                   Back
                 </Link>
-                <Button size="small" variant="contained" disabled={busy} onClick={() => void runAi()}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  disabled={busy || !aiReady}
+                  onClick={() => void runAi()}
+                >
                   {aiMode === 'audit' ? 'Run AI audit' : 'Run AI suggest'}
                 </Button>
               </Stack>

@@ -2,8 +2,8 @@
 
 **Clean-up**
 - [ ] Double clicking contents should not select the node as well (?)
-- [ ] Autotag on selection
-- [ ] AI suggest + AI audit chunking
+- [x] Autotag on selection
+- [x] AI suggest + AI audit chunking
 - [ ] Last debug.
 
 **Packaging**

@@ -53,9 +53,9 @@ export const AutoTaggingReviewPane = () => {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [notice, setNotice] = useState<string | null>(null);
   const [applyDiagnostics, setApplyDiagnostics] = useState<string | null>(null);
-  const [applyDiagSeverity, setApplyDiagSeverity] = useState<'error' | 'warning' | 'success' | 'info'>(
-    'info',
-  );
+  const [applyDiagSeverity, setApplyDiagSeverity] = useState<
+    'error' | 'warning' | 'success' | 'info'
+  >('info');
   const session = useRef<AutoTaggingSession | null>(null);
   const [panelWidth, setPanelWidth] = useStoredPanelWidth(
     'lw.autoTagging.panelWidth',
@@ -127,6 +127,16 @@ export const AutoTaggingReviewPane = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
+  useEffect(() => {
+    if (!active) return;
+    const append = (event: Event) => {
+      const additions = (event as CustomEvent<Suggestion[]>).detail ?? [];
+      if (additions.length > 0) setSuggestions((current) => [...current, ...additions]);
+    };
+    window.addEventListener('desktop:auto-tagging-review-append', append);
+    return () => window.removeEventListener('desktop:auto-tagging-review-append', append);
+  }, [active]);
+
   // Desktop: expand/collapse the shell mount between editor and right sidebar.
   // Width updates re-run only the open path so a drag never flashes the
   // mount closed; the close cleanup is keyed on `active` alone.
@@ -192,7 +202,11 @@ export const AutoTaggingReviewPane = () => {
             }
             setApplyDiagnostics(text);
             setApplyDiagSeverity(
-              result.applied === 0 ? 'error' : result.applied < accepted.length ? 'warning' : 'success',
+              result.applied === 0
+                ? 'error'
+                : result.applied < accepted.length
+                  ? 'warning'
+                  : 'success',
             );
           }
         } catch (error) {

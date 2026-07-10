@@ -2,8 +2,11 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Collapse,
+  FormControlLabel,
   ListItem,
+  Paper,
   Stack,
   TextField,
   Typography,
@@ -17,6 +20,10 @@ interface AiApiSettings {
   customInstructions: string;
   model: string;
   temperature: number;
+  streamResults: boolean;
+  verifiedAt: string | null;
+  verifiedBaseUrl: string;
+  verifiedModel: string;
 }
 
 interface AiConnectionResult {
@@ -31,6 +38,10 @@ const DEFAULT_AI_API_SETTINGS: AiApiSettings = {
   customInstructions: '',
   model: '',
   temperature: 0.1,
+  streamResults: false,
+  verifiedAt: null,
+  verifiedBaseUrl: '',
+  verifiedModel: '',
 };
 
 const getCommonsUiBridge = () =>
@@ -54,8 +65,8 @@ export const DesktopAiApi = () => {
     message: string;
     severity: 'error' | 'info' | 'success';
   } | null>(null);
-  const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [forgetting, setForgetting] = useState(false);
 
   useEffect(() => {
     if (!bridge?.aiApiSettings) return;
@@ -69,25 +80,14 @@ export const DesktopAiApi = () => {
     setStatus(null);
   };
 
-  const saveSettings = async () => {
-    setSaving(true);
-    setStatus(null);
-    try {
-      await bridge.setAiApiSettings(settings);
-      setStatus({ severity: 'success', message: t('LW.settings.ai_api.saved') });
-    } catch (error) {
-      setStatus({
-        severity: 'error',
-        message: error instanceof Error ? error.message : t('LW.settings.ai_api.save_failed'),
-      });
-    } finally {
-      setSaving(false);
+  const establishConnection = async () => {
+    if (!settings.model.trim()) {
+      setStatus({ severity: 'error', message: 'Choose a model before establishing the connection.' });
+      return;
     }
-  };
 
-  const checkConnection = async () => {
     setChecking(true);
-    setStatus({ severity: 'info', message: t('LW.settings.ai_api.checking') });
+    setStatus(null);
     try {
       const result = await bridge.testAiConnection(settings);
       if (!result.ok) {
@@ -98,6 +98,15 @@ export const DesktopAiApi = () => {
         return;
       }
 
+      const verified = {
+        ...settings,
+        verifiedAt: new Date().toISOString(),
+        verifiedBaseUrl: settings.baseUrl.trim(),
+        verifiedModel: settings.model.trim(),
+      };
+      await bridge.setAiApiSettings(verified);
+      setSettings(verified);
+
       const modelCount = result.models?.length ?? 0;
       setStatus({
         severity: 'success',
@@ -106,10 +115,6 @@ export const DesktopAiApi = () => {
             ? t('LW.settings.ai_api.connected_with_models', { count: modelCount })
             : t('LW.settings.ai_api.connected_without_models'),
       });
-
-      if (!settings.model && result.models?.[0]) {
-        setSettings((current) => ({ ...current, model: result.models![0]! }));
-      }
     } catch (error) {
       setStatus({
         severity: 'error',
@@ -119,6 +124,28 @@ export const DesktopAiApi = () => {
       setChecking(false);
     }
   };
+
+  const forgetSettings = async () => {
+    setForgetting(true);
+    setStatus(null);
+    try {
+      await bridge.setAiApiSettings(DEFAULT_AI_API_SETTINGS);
+      setSettings(DEFAULT_AI_API_SETTINGS);
+      setStatus({ severity: 'info', message: 'AI settings cleared.' });
+    } catch (error) {
+      setStatus({
+        severity: 'error',
+        message: error instanceof Error ? error.message : 'Could not forget the AI settings.',
+      });
+    } finally {
+      setForgetting(false);
+    }
+  };
+
+  const hasSavedConnection =
+    Boolean(settings.verifiedAt) &&
+    settings.verifiedBaseUrl.trim() === settings.baseUrl.trim() &&
+    settings.verifiedModel.trim() === settings.model.trim();
 
   return (
     <ListItem dense disableGutters sx={{ alignItems: 'flex-start', py: 0.25 }}>
@@ -134,6 +161,21 @@ export const DesktopAiApi = () => {
             onChange={(event) => updateSetting('baseUrl', event.target.value)}
             size="small"
             value={settings.baseUrl}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={settings.streamResults}
+                onChange={(event) => updateSetting('streamResults', event.target.checked)}
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2">
+                Stream AI results into review as each block finishes
+              </Typography>
+            }
+            sx={{ ml: 0 }}
           />
           <TextField
             fullWidth
@@ -181,23 +223,38 @@ export const DesktopAiApi = () => {
             ) : null}
           </Collapse>
 
-          <Stack direction="row" spacing={1}>
+          <Stack alignItems="center" direction="row" spacing={1}>
             <Button
-              disabled={saving}
-              onClick={() => void saveSettings()}
+              disabled={checking || !settings.model.trim()}
+              onClick={() => void establishConnection()}
               size="small"
               variant="contained"
             >
-              {saving ? t('LW.commons.saving') : t('LW.commons.save')}
+              {checking ? 'Establishing...' : 'Establish connection'}
             </Button>
             <Button
-              disabled={checking}
-              onClick={() => void checkConnection()}
+              disabled={forgetting || (!settings.apiKey.trim() && !settings.baseUrl.trim() && !settings.model.trim())}
+              onClick={() => void forgetSettings()}
               size="small"
               variant="outlined"
             >
-              {checking ? t('LW.settings.ai_api.checking_button') : t('LW.settings.ai_api.check_connection')}
+              {forgetting ? 'Forgetting...' : 'Forget'}
             </Button>
+            <Paper
+              elevation={0}
+              sx={{
+                bgcolor: 'action.hover',
+                border: '1px solid',
+                borderColor: 'divider',
+                color: 'text.secondary',
+                px: 1.25,
+                py: 0.5,
+              }}
+            >
+              <Typography variant="caption">
+                {hasSavedConnection ? 'Saved' : 'Not saved'}
+              </Typography>
+            </Paper>
           </Stack>
         </Stack>
       </Box>

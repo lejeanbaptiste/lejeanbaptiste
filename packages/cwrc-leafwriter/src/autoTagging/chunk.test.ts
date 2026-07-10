@@ -66,4 +66,33 @@ describe('chunkDocument', () => {
     const doc = parse('<TEI><text></text></TEI>');
     expect(chunkDocument(doc, { policy: 'ignore' })).toEqual([]);
   });
+
+  describe('range scoping', () => {
+    const doc = () =>
+      parse('<TEI><text><body><p>alpha</p><p>beta</p><p>gamma</p></body></text></TEI>');
+    const options = { policy: 'ignore' as const, maxBlocksPerChunk: 1 };
+
+    it('keeps only chunks intersecting the range', () => {
+      // "beta" spans offsets 5..9 in "alphabetagamma".
+      const chunks = chunkDocument(doc(), { ...options, range: { start: 6, end: 8 } });
+      expect(chunks.map((c) => c.text)).toEqual(['beta']);
+    });
+
+    it('keeps a whole block on partial overlap', () => {
+      // Range straddles the alpha/beta boundary — both blocks stay whole.
+      const chunks = chunkDocument(doc(), { ...options, range: { start: 3, end: 7 } });
+      expect(chunks.map((c) => c.text)).toEqual(['alpha', 'beta']);
+    });
+
+    it('ignores an empty or inverted range', () => {
+      expect(chunkDocument(doc(), { ...options, range: { start: 5, end: 5 } })).toHaveLength(3);
+      expect(chunkDocument(doc(), { ...options, range: null })).toHaveLength(3);
+    });
+
+    it('chunk offsets stay in the whole-document space', () => {
+      const chunks = chunkDocument(doc(), { ...options, range: { start: 6, end: 8 } });
+      expect(chunks[0]!.start).toBe(5);
+      expect(chunks[0]!.end).toBe(9);
+    });
+  });
 });

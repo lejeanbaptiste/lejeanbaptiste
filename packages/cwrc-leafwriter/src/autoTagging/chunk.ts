@@ -4,6 +4,12 @@ import type { WhitespacePolicy } from './types';
 /** Block-level elements used as chunk-cut points. Never cut inside one. */
 export const DEFAULT_BLOCK_TAGS = ['p', 'div', 'l', 'lg', 'head', 'ab', 'item'];
 
+/** A span of the whole-document search text (e.g. the user's selection). */
+export interface SearchTextRange {
+  start: number;
+  end: number;
+}
+
 export interface ChunkOptions {
   policy: WhitespacePolicy;
   /** Target size (search-text chars) of the taggable span per chunk. */
@@ -18,6 +24,12 @@ export interface ChunkOptions {
   maxBlocksPerChunk?: number;
   /** When set, chunk only this subtree (e.g. TEI `<body>`). Offsets are relative to its index. */
   root?: Node;
+  /**
+   * When set, keep only chunks whose taggable span intersects this range —
+   * used to scope producers to the editor selection. Chunks are whole leaf
+   * blocks, so a partial overlap keeps the whole block.
+   */
+  range?: SearchTextRange | null;
 }
 
 /** Default for AI suggest/audit — one leaf block per request to stay under provider TPM limits. */
@@ -64,6 +76,7 @@ export function chunkDocument(doc: Document, options: ChunkOptions): Chunk[] {
     blockTags = DEFAULT_BLOCK_TAGS,
     maxBlocksPerChunk,
     root: rootOption,
+    range,
   } = options;
   const root = rootOption ?? doc.documentElement ?? doc;
   const index = buildDocIndex(root, policy);
@@ -99,6 +112,9 @@ export function chunkDocument(doc: Document, options: ChunkOptions): Chunk[] {
       after: index.text.slice(end, Math.min(index.text.length, end + marginChars)),
     });
     i = j;
+  }
+  if (range && range.end > range.start) {
+    return chunks.filter((chunk) => chunk.end > range.start && chunk.start < range.end);
   }
   return chunks;
 }

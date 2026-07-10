@@ -83,6 +83,10 @@ export interface AiApiSettings {
   customInstructions: string;
   model: string;
   temperature: number;
+  streamResults: boolean;
+  verifiedAt: string | null;
+  verifiedBaseUrl: string;
+  verifiedModel: string;
 }
 
 export interface AiConnectionResult {
@@ -181,15 +185,15 @@ export interface ElectronAPI {
   pickEntityDbFolder: () => Promise<string | null>;
   pickAuthorityPacksSource: () => Promise<string | null>;
   authorityDbStatuses: () => Promise<AuthoritySourceStatus[]>;
-  authorityDbDownload: (
-    sourceId: AuthoritySourceId,
-  ) => Promise<{ ok: boolean; error?: string }>;
+  authorityDbDownload: (sourceId: AuthoritySourceId) => Promise<{ ok: boolean; error?: string }>;
   authorityDbPromptDownload: () => Promise<'accepted' | 'declined'>;
-  onAuthorityDbProgress: (
-    callback: (progress: AuthorityDownloadProgress) => void,
-  ) => () => void;
-  authorityPackStatuses?: () => Promise<import('../../commons/src/desktop/authorityPackTypes').AuthorityPackStatus[]>;
-  authorityPackRead?: (packId: import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId) => Promise<string>;
+  onAuthorityDbProgress: (callback: (progress: AuthorityDownloadProgress) => void) => () => void;
+  authorityPackStatuses?: () => Promise<
+    import('../../commons/src/desktop/authorityPackTypes').AuthorityPackStatus[]
+  >;
+  authorityPackRead?: (
+    packId: import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId,
+  ) => Promise<string>;
   authorityPackInstallFrom?: (
     sourcePacksRoot: string,
   ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;
@@ -198,7 +202,9 @@ export interface ElectronAPI {
   >;
   authorityLifecycleSetEnabled?: (
     options: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleSetEnabledOptions,
-  ) => Promise<import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult>;
+  ) => Promise<
+    import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult
+  >;
   authorityLifecycleUpdate?: () => Promise<
     import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult
   >;
@@ -433,8 +439,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('sanmiao:tagDatesBatch', chunks, options),
   sanmiaoResolveDatesBatch: (dates, options) =>
     ipcRenderer.invoke('sanmiao:resolveDatesBatch', dates, options),
-  sanmiaoListDateAuthority: (options) =>
-    ipcRenderer.invoke('sanmiao:listDateAuthority', options),
+  sanmiaoListDateAuthority: (options) => ipcRenderer.invoke('sanmiao:listDateAuthority', options),
   onSanmiaoProgress: (callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,

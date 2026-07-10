@@ -1,8 +1,5 @@
 import type { AiPromptProfile } from './aiPromptProfiles';
-import {
-  promptVersionWithProfile,
-  resolveAuditCleanTaskText,
-} from './aiPromptProfiles';
+import { promptVersionWithProfile, resolveAuditCleanTaskText } from './aiPromptProfiles';
 import { buildDocIndex, createAnchor, type DocIndex } from './anchor';
 import { applySuggestions } from './apply';
 import { chunkDocument, llmChunkOptions, type Chunk, type ChunkOptions } from './chunk';
@@ -25,6 +22,8 @@ export interface LlmAuditOptions extends ChunkOptions {
   promptProfile?: AiPromptProfile;
   /** Called after each chunk finishes (done/total). Total spans clean + suggest passes. */
   onProgress?: (done: number, total: number) => void;
+  /** Suggestions verified from one completed document chunk. */
+  onChunk?: (suggestions: Suggestion[]) => void;
   /** Stops between chunks and aborts the in-flight request when triggered. */
   signal?: AbortSignal;
 }
@@ -45,7 +44,11 @@ export interface TaggedSpan {
   tag: string;
 }
 
-export function collectTaggedSpans(doc: Document, index: DocIndex, tagSet: Set<string>): TaggedSpan[] {
+export function collectTaggedSpans(
+  doc: Document,
+  index: DocIndex,
+  tagSet: Set<string>,
+): TaggedSpan[] {
   const walker = doc.createTreeWalker(doc.documentElement ?? doc, NodeFilter.SHOW_ELEMENT);
   const spans: TaggedSpan[] = [];
   let el = walker.nextNode() as Element | null;
@@ -73,7 +76,11 @@ function currentTagAt(spans: TaggedSpan[], docStart: number, docEnd: number): st
   return enclosing?.tag ?? null;
 }
 
-function renderChunkWithTags(index: DocIndex, chunk: Chunk, spans: TaggedSpan[]): { rendered: string; map: number[] } {
+function renderChunkWithTags(
+  index: DocIndex,
+  chunk: Chunk,
+  spans: TaggedSpan[],
+): { rendered: string; map: number[] } {
   const relevant = spans.filter((s) => s.start >= chunk.start && s.end <= chunk.end);
   let rendered = '';
   const map: number[] = [];
@@ -125,7 +132,7 @@ async function runAuditCleanPass(
   progressOffset: number,
   progressTotal: number,
 ): Promise<{ suggestions: Suggestion[]; unverifiableCount: number }> {
-  const { tags, client, cache, policy, onProgress, promptProfile, signal } = options;
+  const { tags, client, cache, policy, onProgress, onChunk, promptProfile, signal } = options;
   const chunks = chunkDocument(doc, llmChunkOptions(options));
   const index = buildDocIndex(doc, policy);
   const tagSet = new Set(tags);
@@ -157,6 +164,7 @@ async function runAuditCleanPass(
       await cache?.set(rendered, tags, client.modelId, promptVersion, items);
     }
 
+    const chunkSuggestions: Suggestion[] = [];
     for (const item of items) {
       const renderedOffset = findOccurrenceOffset(rendered, item.surface, item.occurrence);
       const docOffset = renderedOffset === null ? null : map[renderedOffset]!;
@@ -183,22 +191,33 @@ async function runAuditCleanPass(
       }
 
       try {
-        suggestions.push({
+        const suggestion: Suggestion = {
           id: `ai_audit_clean_${counter++}`,
           source: 'ai',
           sourceDetail: client.modelId,
           action: item.action as SuggestionAction,
           tag: item.tag,
-          anchor: createAnchor('', doc, located.node, located.rawStart, located.rawEnd, policy, index),
+          anchor: createAnchor(
+            '',
+            doc,
+            located.node,
+            located.rawStart,
+            located.rawEnd,
+            policy,
+            index,
+          ),
           confidence: item.confidence,
           rationale: item.rationale,
           status: 'pending',
-        });
+        };
+        suggestions.push(suggestion);
+        chunkSuggestions.push(suggestion);
       } catch {
         unverifiableCount++;
       }
     }
 
+    if (chunkSuggestions.length > 0) onChunk?.(chunkSuggestions);
     onProgress?.(progressOffset + chunkIndex + 1, progressTotal);
   }
 
@@ -206,9 +225,17 @@ async function runAuditCleanPass(
 }
 
 /** Clean pass only — remove, retag, redraw-boundary. */
-export async function llmAuditClean(doc: Document, options: LlmAuditOptions): Promise<LlmAuditResult> {
+export async function llmAuditClean(
+  doc: Document,
+  options: LlmAuditOptions,
+): Promise<LlmAuditResult> {
   const chunks = chunkDocument(doc, llmChunkOptions(options));
-  const { suggestions, unverifiableCount } = await runAuditCleanPass(doc, options, 0, chunks.length);
+  const { suggestions, unverifiableCount } = await runAuditCleanPass(
+    doc,
+    options,
+    0,
+    chunks.length,
+  );
   const deduped = dedupeSuggestions(suggestions);
   return {
     suggestions: deduped,
@@ -219,7 +246,10 @@ export async function llmAuditClean(doc: Document, options: LlmAuditOptions): Pr
 }
 
 /** Add pass — suggest.v3 on plain chunks. */
-export async function llmAuditAdd(doc: Document, options: LlmAuditOptions): Promise<LlmAuditResult> {
+export async function llmAuditAdd(
+  doc: Document,
+  options: LlmAuditOptions,
+): Promise<LlmAuditResult> {
   const suggestResult = await llmSuggest(doc, options);
   const deduped = dedupeSuggestions(suggestResult.suggestions);
   return {
@@ -246,6 +276,7 @@ export async function llmAudit(doc: Document, options: LlmAuditOptions): Promise
   const addResult = await llmSuggest(working, {
     ...options,
     onProgress: (done, _chunkTotal) => options.onProgress?.(chunks.length + done, total),
+    onChunk: options.onChunk,
   });
 
   const merged = dedupeSuggestions([...clean.suggestions, ...addResult.suggestions]);

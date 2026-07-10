@@ -30,6 +30,12 @@ export interface AiApiSettings {
   customInstructions: string;
   model: string;
   temperature: number;
+  /** Show verified chunks immediately instead of waiting for the full run. */
+  streamResults: boolean;
+  /** Successful connection test for this exact endpoint and model. */
+  verifiedAt: string | null;
+  verifiedBaseUrl: string;
+  verifiedModel: string;
 }
 
 export const DEFAULT_AI_API_SETTINGS: AiApiSettings = {
@@ -38,6 +44,10 @@ export const DEFAULT_AI_API_SETTINGS: AiApiSettings = {
   customInstructions: '',
   model: '',
   temperature: 0.1,
+  streamResults: false,
+  verifiedAt: null,
+  verifiedBaseUrl: '',
+  verifiedModel: '',
 };
 
 const sanitizeAiApiSettings = (value: Partial<AiApiSettings> | undefined): AiApiSettings => {
@@ -47,8 +57,7 @@ const sanitizeAiApiSettings = (value: Partial<AiApiSettings> | undefined): AiApi
       : DEFAULT_AI_API_SETTINGS.temperature;
 
   return {
-    apiKey:
-      typeof value?.apiKey === 'string' ? value.apiKey : DEFAULT_AI_API_SETTINGS.apiKey,
+    apiKey: typeof value?.apiKey === 'string' ? value.apiKey : DEFAULT_AI_API_SETTINGS.apiKey,
     baseUrl:
       typeof value?.baseUrl === 'string' && value.baseUrl.trim()
         ? value.baseUrl.trim()
@@ -57,6 +66,10 @@ const sanitizeAiApiSettings = (value: Partial<AiApiSettings> | undefined): AiApi
       typeof value?.customInstructions === 'string' ? value.customInstructions : '',
     model: typeof value?.model === 'string' ? value.model.trim() : '',
     temperature,
+    streamResults: value?.streamResults === true,
+    verifiedAt: typeof value?.verifiedAt === 'string' ? value.verifiedAt : null,
+    verifiedBaseUrl: typeof value?.verifiedBaseUrl === 'string' ? value.verifiedBaseUrl.trim() : '',
+    verifiedModel: typeof value?.verifiedModel === 'string' ? value.verifiedModel.trim() : '',
   };
 };
 

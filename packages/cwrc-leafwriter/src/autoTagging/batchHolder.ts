@@ -15,6 +15,15 @@ export function stashAutoTaggingBatch(suggestions: Suggestion[], notice?: string
   currentNotice = notice ?? null;
 }
 
+/** Add streamed chunk results without disturbing decisions already made in the review panel. */
+export function appendAutoTaggingBatch(suggestions: Suggestion[]): void {
+  if (!currentBatch) currentBatch = [];
+  currentBatch.push(...suggestions.map(cloneSuggestion));
+  window.dispatchEvent(
+    new CustomEvent('desktop:auto-tagging-review-append', { detail: suggestions }),
+  );
+}
+
 /** Optional warning shown once when the review panel opens (e.g. truncated tag bomb). */
 export function takeAutoTaggingNotice(): string | null {
   const notice = currentNotice;
