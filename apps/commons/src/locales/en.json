@@ -272,6 +272,7 @@
       "project": {
         "settings": "Project settings",
         "schema_setup": "Project schema setup",
+        "refreshing": "Refreshing…",
         "errors": {
           "could_not_load_edition_metadata": "Could not load edition metadata.",
           "could_not_save_metadata": "Could not save metadata.",

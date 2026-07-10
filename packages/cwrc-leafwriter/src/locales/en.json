@@ -102,11 +102,16 @@
       },
       "editor": {
         "Show Entities": "Show Entities",
+        "show_entities": "Show Entities",
         "Strip East Asian whitespace": "Remove spaces between East Asian characters",
+        "strip_east_asian_whitespace": "Remove spaces between East Asian characters",
         "Show Raw XML panel": "Show Raw XML panel",
         "asian font": "Asian font",
+        "asian_font": "Asian font",
         "default fonts": "default fonts",
+        "default_fonts": "default fonts",
         "latin font": "Latin font",
+        "latin_font": "Latin font",
         "refresh system fonts": "Refresh system fonts",
         "font_size": "Font size",
         "show_tag_bubble": "Show tag name bubble"
@@ -125,6 +130,8 @@
         "save_failed": "Could not save AI API settings.",
         "saved": "AI API settings saved.",
         "temperature": "Temperature",
+        "translation_instructions": "Translation instructions",
+        "translation_instructions_placeholder": "Describe the translation guidance to apply here.",
         "title": "AI API"
       },
       "markupPanel": {
@@ -137,8 +144,11 @@
       },
       "reset": {
         "Clear Cache": "Clear Cache",
+        "clear_cache": "Clear Cache",
         "Reset Dialog Warnings": "Reset Dialog Warnings",
+        "reset_dialog_warnings": "Reset Dialog Warnings",
         "Reset Settings": "Reset Settings",
+        "reset_settings": "Reset Settings",
         "message": {
           "Cache cleared": "Cache cleared",
           "Confirmation dialog preferences have been reset": "Confirmation dialog preferences have been reset",
@@ -158,38 +168,29 @@
         "light": "light",
         "system": "system"
       },
-      "desktop": {
-        "settings": {
-          "entity_database": "Entity database",
-          "entity_database_change": "Change folder…",
-          "entity_database_folder": "Database folder",
-          "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs and raw CBDB/DILA downloads also live here.",
-          "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
-          "remember_workspace_on_startup": "Reopen project and tabs on startup",
-          "user_name": "User name",
-          "your_name": "Your name"
-        }
-      },
       "warnings": {
         "skip_copy_paste_help": "Don't show copy and paste help",
         "skip_delete_confirm": "Delete files and folders without asking",
         "skip_entity_detach_confirm": "Detach authority ids from entities without asking",
         "title": "Warnings"
-      },
-      "desktop": {
-        "settings": {
-          "entity_database": "Entity database",
-          "entity_database_change": "Change folder…",
-          "entity_database_folder": "Database folder",
-          "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs and raw CBDB/DILA downloads also live here.",
-          "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
-          "remember_workspace_on_startup": "Reopen project and tabs on startup",
-          "user_name": "User name",
-          "your_name": "Your name"
-        }
+      }
+    },
+    "desktop": {
+      "settings": {
+        "entity_database": "Entity database",
+        "entity_database_change": "Change folder…",
+        "entity_database_folder": "Database folder",
+        "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs and raw CBDB/DILA downloads also live here.",
+        "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
+        "remember_workspace_on_startup": "Reopen project and tabs on startup",
+        "user_name": "User name",
+        "your_name": "Your name"
       }
     },
     "status": "Status",
+    "messages": {
+      "some_features_are_not_fully_implemented": "Some features are not fully implemented"
+    },
     "Accept All": "",
     "Add Entity Annotation": "Add Entity Annotation",
     "Add Tag": "Add Tag",
@@ -425,6 +426,9 @@
       "change": "change",
       "close": "close",
       "delete": "delete",
+      "refresh": "refresh",
+      "remove": "remove",
+      "status_installed": "installed",
       "description": "Description",
       "discard_changes": "discard changes",
       "edit": "edit",

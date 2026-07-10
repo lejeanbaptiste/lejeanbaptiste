@@ -195,6 +195,9 @@
       },
       "translation_links_restored_one": "{{count}} lien de traduction restauré après une modification externe",
       "translation_links_restored_other": "{{count}} liens de traduction restaurés après une modification externe",
+      "project": {
+        "refreshing": "Actualisation…"
+      },
       "close_unsaved": {
         "title": "Modifications non enregistrées",
         "message": "{{filename}} contient des modifications non enregistrées. Fermer sans enregistrer ?"
