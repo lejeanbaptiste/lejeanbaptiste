@@ -1,6 +1,6 @@
 {
   "name": "@cwrc/leafwriter-validator",
-  "version": "4.4.3",
+  "version": "0.0.1",
   "description": "webworker to handle validation on Leaf-Writer",
   "keywords": [
     "xml",

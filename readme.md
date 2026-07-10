@@ -2,15 +2,10 @@
 
 <img src="design/splash_new.png" alt="splash" height="300">
 
-Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). Le Jean-Baptiste offers an Electron wrapper for the web app for offline, individual desktop use as well as a variety of modifications to improve efficiency and functionality, aimed particularly at East Asian documents. 
+Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). Le Jean-Baptiste wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
 
-![GPL-2.0](https://img.shields.io/badge/license-GLP--2.0-orange)
+![GPL-2.0](https://img.shields.io/badge/license-GPL--2.0-orange)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
-
-[![version](https://img.shields.io/badge/LEAF--Writer-Commons-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/apps/commons)
-[![version](https://img.shields.io/badge/LEAF--Writer-Core-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter)
-[![version](https://img.shields.io/badge/LEAF--Writer-Storage--Service-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-storage-service)
-[![version](https://img.shields.io/badge/LEAF--Writer-Validator-9cf)](https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer/-/tree/main/packages/cwrc-leafwriter-validator)
 
 ## License and attribution
 
@@ -21,9 +16,9 @@ For a concise list of the major bundled components and where to verify their lic
 
 ## Desktop paradigm
 
-LEAF-Writer is designed for server deployment, connecting XML corpora via Git, which provides file versioning and easy group access for teams. The disadvantages of this model are that it requires internet access, running one's own server – if one wants to use a modified version – and using Git for corpus sharing, backup, and versioning. It is also necessarily slower and clunkier when working with local files. Le Jean-Baptiste is designed to work quickly and naturally with local files, with or without internet connection.
+LEAF-Writer is designed for server deployment, connecting XML corpora via Git, which provides file versioning and easy group access for teams. The disadvantages of this model are that it requires internet access, running one's own server if one wants to use a modified version, and using Git for corpus sharing, backup, and versioning. It is also necessarily slower and clunkier when working with local files. Le Jean-Baptiste is designed to work quickly and naturally with local files, with or without internet connection.
 
-LEAF-Writer is also wired to connect to five authorities – VIAF, Wikidata, Getty, DBpedia, and GeoNames – to pull identifiers and data about the named entities therein. Le Jean-Baptiste maintains this functionality but intends to implement auto-tagging from personal SQL databases and CSV tables at a later date, following the model of [MARKUS](https://dh.chinese-empires.eu/markus/).
+LEAF-Writer is also wired to connect to five authorities - VIAF, Wikidata, Getty, DBpedia, and GeoNames - to pull identifiers and data about the named entities therein. Le Jean-Baptiste keeps that functionality and leaves room for desktop-first workflows and later local-data enhancements.
 
 ## Overview
 
@@ -32,7 +27,7 @@ It is built around a heavily customized version of the [TinyMCE](https://www.tin
 
 A LEAF-Writer installation is a bundling of the main LEAF-WriterBase (the code in this repository) with a few other NPM packages that handle interaction with server-side services for document storage and named entity lookup.
 
-The information that follows is drawn from the previous documentation about CWRC-Writer and how to use it with GitHub. This information will be updated soon.
+This README now focuses on the desktop fork and its shared packages. Some of the older LEAF-Writer notes are still useful background, but the fork-specific workflow is the priority here.
 
 ## Enhanced functions
 
@@ -89,11 +84,11 @@ The information that follows is drawn from the previous documentation about CWRC
 
 ## Running Le Jean-Baptiste
 
-Docker and Docker Compose is required. Easiest is to install [Docker Desktop](https://www.docker.com/products/docker-desktop).
+Docker and Docker Compose are required. The easiest path is to install [Docker Desktop](https://www.docker.com/products/docker-desktop).
 
 Clone this repo:
 ```bash
-git clone https://gitlab.huma-num.fr/dmorgan1/leaf-writer-crcao
+git clone https://gitlab.com/calincs/cwrc/leaf-writer/leaf-writer.git
 ```
 The `apps/desktop` package wraps our modified LEAF-Writer Commons in an Electron shell for local project editing (folder tree, tabs, save to disk, XPath search).
 ```bash
