@@ -196,6 +196,7 @@
       "translation_links_restored_one": "{{count}} lien de traduction restauré après une modification externe",
       "translation_links_restored_other": "{{count}} liens de traduction restaurés après une modification externe",
       "project": {
+        "document_saved": "Document enregistré",
         "refreshing": "Actualisation…"
       },
       "close_unsaved": {

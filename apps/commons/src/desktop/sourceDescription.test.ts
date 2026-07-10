@@ -126,4 +126,24 @@ describe('applySourceDescriptionToXml', () => {
     expect(xml).toContain('<author key="person-000042">A Local Collaborator</author>');
     expect(readSourceDescriptionFromXml(xml).authors).toEqual(data.authors);
   });
+
+  test('zero-pads short years in date attributes (TEI @when needs 4-digit years)', () => {
+    const data = { ...fullData(), workDate: { when: '526' }, editionDate: '92' };
+    const xml = applySourceDescriptionToXml(skeleton, data);
+    expect(xml).toContain('<creation><date when="0526">526</date></creation>');
+    expect(xml).toContain('<imprint><date when="0092">92</date></imprint>');
+  });
+
+  test('zero-pads years in notBefore/notAfter ranges', () => {
+    const data = { ...fullData(), workDate: { notBefore: '526', notAfter: '530' } };
+    const xml = applySourceDescriptionToXml(skeleton, data);
+    expect(xml).toContain('notBefore="0526"');
+    expect(xml).toContain('notAfter="0530"');
+  });
+
+  test('leaves full dates and BCE years well-formed', () => {
+    const data = { ...fullData(), workDate: { when: '-52-03-01' } };
+    const xml = applySourceDescriptionToXml(skeleton, data);
+    expect(xml).toContain('when="-0052-03-01"');
+  });
 });

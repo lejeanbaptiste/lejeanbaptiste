@@ -380,11 +380,16 @@ const resolveSourceEditorContent = async (state: Context['state']): Promise<stri
   const writer = window.writer;
 
   if (writer) {
-    const fromEditor =
-      (await writer.converter.getDocumentContent(false)) ||
-      (await writer.converter.getDocumentContent(true)) ||
-      (await writer.getContent()) ||
-      '';
+    let fromEditor = '';
+    try {
+      fromEditor =
+        (await writer.converter.getDocumentContent(false)) ||
+        (await writer.converter.getDocumentContent(true)) ||
+        (await writer.getContent()) ||
+        '';
+    } catch {
+      // No convertible content (no root element) — fall through to state.document.xml.
+    }
 
     if (fromEditor) {
       const mergeForValidation = window.__desktopMergeHeaderForValidation;

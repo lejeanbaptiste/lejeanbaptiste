@@ -25,6 +25,8 @@ export interface LlmAuditOptions extends ChunkOptions {
   promptProfile?: AiPromptProfile;
   /** Called after each chunk finishes (done/total). Total spans clean + suggest passes. */
   onProgress?: (done: number, total: number) => void;
+  /** Stops between chunks and aborts the in-flight request when triggered. */
+  signal?: AbortSignal;
 }
 
 export interface LlmAuditResult {
@@ -123,7 +125,7 @@ async function runAuditCleanPass(
   progressOffset: number,
   progressTotal: number,
 ): Promise<{ suggestions: Suggestion[]; unverifiableCount: number }> {
-  const { tags, client, cache, policy, onProgress, promptProfile } = options;
+  const { tags, client, cache, policy, onProgress, promptProfile, signal } = options;
   const chunks = chunkDocument(doc, llmChunkOptions(options));
   const index = buildDocIndex(doc, policy);
   const tagSet = new Set(tags);
@@ -137,6 +139,7 @@ async function runAuditCleanPass(
   let counter = 0;
 
   for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+    signal?.throwIfAborted();
     const chunk = chunks[chunkIndex]!;
     const { rendered, map } = renderChunkWithTags(index, chunk, spans);
 
@@ -149,7 +152,7 @@ async function runAuditCleanPass(
         after: chunk.after,
         auditCleanTaskText,
       });
-      const response = await client.complete({ ...prompt, jsonSchema: schema });
+      const response = await client.complete({ ...prompt, jsonSchema: schema, signal });
       items = parseValidItems(response.json, tags, CLEAN_ACTIONS);
       await cache?.set(rendered, tags, client.modelId, promptVersion, items);
     }

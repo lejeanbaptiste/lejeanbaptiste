@@ -145,6 +145,18 @@ const makeAuthorElement = (doc: Document, author: SourceAuthor): Element => {
   return el;
 };
 
+/**
+ * TEI date attributes (@when/@notBefore/@notAfter) use W3C datatypes: years
+ * must be zero-padded to 4 digits ("526" → "0526", "-52-03" → "-0052-03").
+ * Values that aren't year-led dates are returned untouched.
+ */
+export const normalizeTeiDateValue = (value: string): string => {
+  const match = value.trim().match(/^(-?)(\d{1,4})((?:-\d{2}){0,2})$/);
+  if (!match) return value.trim();
+  const [, sign, year, rest] = match;
+  return `${sign}${year.padStart(4, '0')}${rest}`;
+};
+
 const workDateLabel = (date: SourceWorkDate): string => {
   if (date.when?.trim()) return date.when.trim();
   const notBefore = date.notBefore?.trim() ?? '';
@@ -242,10 +254,10 @@ const applyCreationDate = (header: Element, date: SourceWorkDate) => {
   dateEl.removeAttribute('notBefore');
   dateEl.removeAttribute('notAfter');
   if (date.when?.trim()) {
-    dateEl.setAttribute('when', date.when.trim());
+    dateEl.setAttribute('when', normalizeTeiDateValue(date.when));
   } else {
-    if (date.notBefore?.trim()) dateEl.setAttribute('notBefore', date.notBefore.trim());
-    if (date.notAfter?.trim()) dateEl.setAttribute('notAfter', date.notAfter.trim());
+    if (date.notBefore?.trim()) dateEl.setAttribute('notBefore', normalizeTeiDateValue(date.notBefore));
+    if (date.notAfter?.trim()) dateEl.setAttribute('notAfter', normalizeTeiDateValue(date.notAfter));
   }
   dateEl.textContent = workDateLabel(date);
 };
@@ -305,7 +317,7 @@ const applySourceDesc = (fileDesc: Element, data: SourceDescription) => {
   const imprintDate = doc.createElementNS(TEI_NS, 'date');
   const editionYear = data.editionDate.trim();
   if (editionYear) {
-    imprintDate.setAttribute('when', editionYear);
+    imprintDate.setAttribute('when', normalizeTeiDateValue(editionYear));
     imprintDate.textContent = editionYear;
   }
   imprint.appendChild(imprintDate);
