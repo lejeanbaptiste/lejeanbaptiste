@@ -74,6 +74,7 @@ export const AutoTaggingReviewPane = () => {
       setNotice(null);
       setApplyDiagnostics(null);
       setApplyDiagSeverity('info');
+      if (session.current) void session.current.flushDecisions();
       session.current = null;
       return;
     }

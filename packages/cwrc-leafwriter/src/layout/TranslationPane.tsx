@@ -47,7 +47,9 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyUnitsForExport } from '../js/conversion/copyForExport';
+import { translationFontZoom } from '../js/fontSizeZoom';
 import { useActions, useAppState } from '../overmind';
+import { isMacOS } from '../utils/platform';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
@@ -187,6 +189,21 @@ const prepareAtomicCitationFields = (root: ParentNode, title: string): void => {
     bibl.setAttribute('contenteditable', 'false');
     bibl.setAttribute('data-leaf-citation-field', 'true');
     bibl.setAttribute('title', title);
+  }
+};
+
+const stripInvisibleCaretSpacers = (root: ParentNode): void => {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  let node: Node | null;
+
+  while ((node = walker.nextNode())) {
+    const textNode = node as Text;
+    if (textNode.textContent?.includes('\uFEFF')) textNodes.push(textNode);
+  }
+
+  for (const textNode of textNodes) {
+    textNode.textContent = textNode.textContent?.replace(/\uFEFF/g, '') ?? '';
   }
 };
 
@@ -402,6 +419,7 @@ const selectHighlightedMatch = (
 
 export const TranslationPane = () => {
   const { t } = useTranslation('LW');
+  const mac = isMacOS();
   // This is used by callbacks that also run while the pane is inactive. Keep it
   // initialized before those callbacks so a later active render cannot reuse a
   // closure with an uninitialized binding.
@@ -422,6 +440,7 @@ export const TranslationPane = () => {
   );
   const [locked, setLocked] = useState(false);
   const [formatAnchor, setFormatAnchor] = useState<HTMLElement | null>(null);
+  const [paneFontSize, setPaneFontSize] = useState(() => translationFontZoom.get());
   const editableRef = useRef<HTMLDivElement>(null);
   const savedBodyRangeRef = useRef<Range | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
@@ -465,6 +484,25 @@ export const TranslationPane = () => {
     window.addEventListener('desktop:translation-language-state-changed', syncLanguageState);
     return () =>
       window.removeEventListener('desktop:translation-language-state-changed', syncLanguageState);
+  }, []);
+
+  // Pane text zoom (8–24px): keyboard Cmd/Ctrl +/-/0 while the pane has focus,
+  // plus a window bridge so the desktop menu accelerators can drive it.
+  useEffect(() => {
+    const unsubscribe = translationFontZoom.subscribe(setPaneFontSize);
+    const zoomBridge = {
+      zoomIn: () => translationFontZoom.zoomIn(),
+      zoomOut: () => translationFontZoom.zoomOut(),
+      reset: () => translationFontZoom.reset(),
+      get: () => translationFontZoom.get(),
+    };
+    window.__leafWriterTranslationZoom = zoomBridge;
+    return () => {
+      unsubscribe();
+      if (window.__leafWriterTranslationZoom === zoomBridge) {
+        delete window.__leafWriterTranslationZoom;
+      }
+    };
   }, []);
 
   useEffect(
@@ -705,6 +743,7 @@ export const TranslationPane = () => {
       bibl.removeAttribute('data-leaf-citation-field');
       bibl.removeAttribute('title');
     }
+    stripInvisibleCaretSpacers(clone);
     unit.innerHTML = clone.innerHTML;
     getCitationBridge()?.garbageCollectBibl(doc);
     const nextXml = new XMLSerializer().serializeToString(doc);
@@ -1219,6 +1258,17 @@ export const TranslationPane = () => {
     selection?.removeAllRanges();
     selection?.addRange(after);
 
+    // Give the browser a real text node to anchor the next keystroke outside the note.
+    note.after(document.createTextNode('\uFEFF'));
+    const spacer = note.nextSibling;
+    if (spacer?.nodeType === Node.TEXT_NODE) {
+      const spacerRange = document.createRange();
+      spacerRange.setStartAfter(spacer);
+      spacerRange.collapse(true);
+      selection?.removeAllRanges();
+      selection?.addRange(spacerRange);
+    }
+
     // Focus the new footnote's text field so the user can type its content.
     const notes = Array.from(editableRef.current?.querySelectorAll('note') ?? []);
     focusFootnoteIndexRef.current = notes.indexOf(note);
@@ -1498,6 +1548,7 @@ export const TranslationPane = () => {
 
   const languageOptions = languageState?.languages ?? [];
   const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
+  const shortcut = (macShortcut: string, otherShortcut: string) => (mac ? macShortcut : otherShortcut);
   const formatItems: Array<{
     command:
       | 'bold'
@@ -1519,55 +1570,55 @@ export const TranslationPane = () => {
       command: 'bold',
       icon: <FormatBoldIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.bold'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.bold'),
+      shortcut: shortcut('⌘B', 'Ctrl+B'),
     },
     {
       command: 'italic',
       icon: <FormatItalicIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.italic'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.italic'),
+      shortcut: shortcut('⌘I', 'Ctrl+I'),
     },
     {
       command: 'underline',
       icon: <FormatUnderlinedIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.underline'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.underline'),
+      shortcut: shortcut('⌘U', 'Ctrl+U'),
     },
     {
       command: 'strikeThrough',
       icon: <FormatStrikethroughIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.strikethrough'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.strikethrough'),
+      shortcut: shortcut('⌥⇧5', 'Alt+Shift+5'),
     },
     {
       command: 'smallCaps',
       icon: <TextFieldsIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.smallCaps'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.smallCaps'),
+      shortcut: shortcut('⌘⇧K', 'Ctrl+Shift+K'),
     },
     {
       command: 'superscript',
       icon: <SuperscriptIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.superscript'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.superscript'),
+      shortcut: shortcut('⌘.', 'Ctrl+.'),
     },
     {
       command: 'subscript',
       icon: <SubscriptIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.subscript'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.subscript'),
+      shortcut: shortcut('⌘,', 'Ctrl+,'),
     },
     {
       command: 'link',
       icon: <LinkIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.link'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.link'),
+      shortcut: shortcut('⌘K', 'Ctrl+K'),
     },
     {
       command: 'footnote',
       icon: <StickyNote2Icon fontSize="small" />,
       label: t('LW.translationPane.formatItems.footnote'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.footnote'),
+      shortcut: shortcut('⌘⌥F', 'Ctrl+Alt+F'),
     },
     {
       command: 'citation',
@@ -1579,7 +1630,7 @@ export const TranslationPane = () => {
       command: 'removeFormat',
       icon: <FormatClearIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.clearFormatting'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.clearFormatting'),
+      shortcut: shortcut('⌘M', 'Ctrl+M'),
     },
   ];
 
@@ -1828,12 +1879,22 @@ export const TranslationPane = () => {
 
       {selectedUnitId ? (
         <Box
+          onKeyDown={(event) => {
+            if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+            if (event.key === '=' || event.key === '+') translationFontZoom.zoomIn();
+            else if (event.key === '-') translationFontZoom.zoomOut();
+            else if (event.key === '0') translationFontZoom.reset();
+            else return;
+            event.preventDefault();
+            event.stopPropagation();
+          }}
           sx={{
             flex: 1,
             minHeight: 0,
             overflow: 'auto',
             display: 'flex',
             flexDirection: 'column',
+            fontSize: `${paneFontSize}px`,
           }}
         >
           <Box
@@ -1988,7 +2049,8 @@ export const TranslationPane = () => {
                       suppressContentEditableWarning
                       sx={{
                         flex: 1,
-                        fontSize: '0.85rem',
+                        // em, not rem — footnotes scale with the pane's text zoom.
+                        fontSize: '0.85em',
                         lineHeight: 1.4,
                         minHeight: 22,
                         outline: 'none',

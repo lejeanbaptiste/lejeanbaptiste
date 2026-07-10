@@ -59,7 +59,15 @@
       "viewing": "visualisation",
       "what_would_you_like_to_do": "Qu'est-ce que tu aimerais faire?",
       "with": "avec",
-      "xml document": "Document XML"
+      "xml document": "Document XML",
+      "entity_types": {
+        "all": "Tous",
+        "person": "Per",
+        "place": "Liu",
+        "organization": "Org",
+        "work": "Œuv"
+      },
+      "status_installed": "installé"
     },
     "cookie consent": {
       "consent_banner": {
@@ -179,6 +187,16 @@
     "templates": {
       "choose_a_template": "choisir un modèle"
     },
+    "dialogs": {
+      "sidebar_tabs": {
+        "explorer": "Explorateur",
+        "find": "Rechercher",
+        "xpath": "XPath",
+        "toc": "Table des matières",
+        "markup": "Balisage",
+        "database": "Base d’entités"
+      }
+    },
     "ui": {
       "appearance": "apparence",
       "dark_theme": "Thème sombre",
@@ -197,7 +215,8 @@
       "translation_links_restored_other": "{{count}} liens de traduction restaurés après une modification externe",
       "project": {
         "document_saved": "Document enregistré",
-        "refreshing": "Actualisation…"
+        "refreshing": "Actualisation…",
+        "schema_is_up_to_date": "Le schéma est déjà à jour."
       },
       "close_unsaved": {
         "title": "Modifications non enregistrées",
@@ -210,7 +229,27 @@
         "skip_delete_confirm": "Supprimer fichiers et dossiers sans confirmation",
         "startup": "Démarrage",
         "title": "Paramètres",
-        "warnings": "Avertissements"
+        "warnings": "Avertissements",
+        "entity_database": "Base d’entités",
+        "entity_database_change": "Changer de dossier…",
+        "entity_database_folder": "Dossier de la base",
+        "entity_database_hint": "Choisissez le dossier qui contient entities.xml (pas un sous-dossier du projet). Les paquets d’autorités externes s’y trouvent aussi.",
+        "entity_database_missing": "Aucun dossier de base d’entités n’est configuré. La désambiguïsation est bloquée jusqu’à ce que vous en choisissiez un.",
+        "user_name": "Nom d’utilisateur",
+        "your_name": "Votre nom"
+      },
+      "shared": {
+        "doc_scope": {
+          "source": "Source",
+          "translation": "Traduction",
+          "both": "Les deux"
+        },
+        "search_scope": {
+          "current_file": "Fichier courant",
+          "open_tabs": "Onglets ouverts",
+          "project": "Projet",
+          "custom": "Personnalisé"
+        }
       },
       "explorer": {
         "delete": "Supprimer",
@@ -231,9 +270,110 @@
         "new_folder_placeholder": "Nom du dossier",
         "new_folder_title": "Nouveau dossier",
         "open_project_hint": "Ouvrez un projet via Fichier → Ouvrir un projet (⌘O).",
-        "rename": "Renommer",
-        "rename_placeholder": "Nouveau nom",
-        "rename_title": "Renommer"
+      "rename": "Renommer",
+      "rename_placeholder": "Nouveau nom",
+      "rename_title": "Renommer"
+      },
+      "sidebar": {
+        "find": {
+          "find_label": "Rechercher",
+          "replace_label": "Remplacer",
+          "search_placeholder": "Texte à rechercher",
+          "replacement_placeholder": "Texte de remplacement",
+          "ignore_case": "Ignorer la casse",
+          "use_regex": "Utiliser une expression régulière",
+          "documents_label": "Documents",
+          "all": "Tous",
+          "match_summary": "{{count}} résultats dans {{files}} fichiers",
+          "match_location": "Ligne {{line}}, colonne {{column}}"
+        },
+        "xpath": {
+          "xpath_placeholder": "TEI/text/body//p"
+        },
+        "database": {
+          "search_placeholder": "Recherche (regex) — nom, id, description",
+          "clear_search": "Effacer la recherche",
+          "reload_entities": "Recharger les entités",
+          "dont_warn_detach": "Ne plus m’avertir lors du détachement",
+          "one_line_description": "Description en une ligne",
+          "add_alternative_name": "Ajouter un nom de correspondance (nom alternatif)",
+          "rename_name": "Renommer le nom canonique",
+          "open_project_hint": "Ouvrez un projet pour parcourir sa base d’entités.",
+          "invalid_regex": "Expression régulière invalide : {{detail}}",
+          "merge_selected": "Fusionner {{count}} entités",
+          "merge_hint": "Sélectionnez au moins 2 entités à fusionner, ou cliquez pour ajouter une |alternative à la recherche",
+          "duplicate_authority_one": "Deux entités partagent le même identifiant d’autorité",
+          "duplicate_authority_many": "{{count}} identifiants d’autorité sont partagés par plusieurs entités",
+          "intentional": "Intentionnel",
+          "lookup_warning_one": "1 avertissement de recherche à revoir",
+          "lookup_warning_many": "{{count}} avertissements de recherche à revoir",
+          "lookup_conflict_duplicates": "{{authority}} {{value}} a fait correspondre plusieurs entités - doublons possibles :",
+          "lookup_conflict_mismatch": "Une recherche a indiqué {{authority}} {{value}}, mais l’entité porte déjà un identifiant {{authority}} différent - vérifiez ou scindez l’entité :",
+          "review": "Réviser",
+          "dismiss": "Ignorer",
+          "empty": "La base d’entités est vide.",
+          "no_matches": "Aucune entité ne correspond.",
+          "actions_for": "Actions pour {{id}}",
+          "edit_description_names": "Modifier la description / les noms",
+          "split_entity": "Scinder l’entité…",
+          "delete_entity": "Supprimer l’entité",
+          "merge_dialog_title": "Fusionner {{count}} entités",
+          "merge_dialog_message": "Les noms, identifiants d’autorité et descriptions sont regroupés sur l’entité survivante. Chaque balise de chaque projet partageant cette base est réécrite avec la clé survivante. Enregistrez d’abord les documents ouverts.",
+          "merge_dialog_note": "L’entrée sélectionnée survit ; les autres sont fusionnées en elle.",
+          "current_names": "Actuel : {{names}}",
+          "keys_updated_summary": "{{keysUpdated}} balises mises à jour dans {{filesChanged}} fichiers sur {{projects}} projets.",
+          "entity_types": {
+            "all": "Tous",
+            "person": "Per",
+            "place": "Liu",
+            "organization": "Org",
+            "work": "Œuv"
+          },
+          "status_installed": "installé",
+          "save": "Enregistrer",
+          "merge": "Fusionner",
+          "dialogs": {
+            "splitting_entity": "Scinder une entité",
+            "split_info_message": "Il n’existe pas de scission automatique : la base ne peut pas savoir quels passages appartiennent à l’une ou l’autre des deux personnes. La méthode fiable consiste à supprimer cette entité (les balises restent, les clés sont retirées), puis à relancer le balisage ou à relier à nouveau les passages - chacun vers sa nouvelle entité.",
+            "keys_updated": "Clés mises à jour",
+            "got_it": "Compris",
+            "cancel": "Annuler",
+            "close": "Fermer",
+            "reload_database": "Recharger la base",
+            "keep_current": "Conserver la copie actuelle"
+          }
+        }
+      }
+    },
+    "time_machine": {
+      "title": "Machine à remonter le temps",
+      "open_project_first": "Ouvrez un projet avant d’utiliser la Machine à remonter le temps.",
+      "back_up_now": "Sauvegarder maintenant",
+      "refresh_snapshots": "Actualiser les instantanés",
+      "restore_to_current_project": "Restaurer au projet actuel",
+      "restore_snapshot": "Restaurer l’instantané",
+      "restore_snapshot_message": "Cela sauvegardera d’abord le projet actuel, puis remplacera les fichiers du projet actuel par l’instantané sélectionné.",
+      "restore": "Restaurer",
+      "cancel": "Annuler",
+      "close": "Fermer",
+      "no_snapshots_yet": "Aucun instantané pour le moment.",
+      "snapshot_created": "Instantané créé.",
+      "project_restored": "Projet restauré depuis l’instantané.",
+      "could_not_create_snapshot": "Impossible de créer l’instantané.",
+      "could_not_restore_snapshot": "Impossible de restaurer l’instantané.",
+      "months": {
+        "january": "janvier",
+        "february": "février",
+        "march": "mars",
+        "april": "avril",
+        "may": "mai",
+        "june": "juin",
+        "july": "juillet",
+        "august": "août",
+        "september": "septembre",
+        "october": "octobre",
+        "november": "novembre",
+        "december": "décembre"
       }
     }
   },

@@ -43,6 +43,9 @@ declare global {
     }) => Promise<{ ok: boolean; error?: string; initializationOptions?: unknown }>;
     lspSend: (message: unknown) => Promise<{ ok: boolean }>;
     onLspMessage: (callback: (message: unknown) => void) => () => void;
+    /** Interface (window chrome) zoom — scales the entire UI, unlike the per-pane text zooms. */
+    setUiZoomFactor?: (factor: number) => void;
+    getUiZoomFactor?: () => number;
     sanmiaoListDateAuthority?: (options?: {
       civ?: string[];
     }) => Promise<import('../dateAuthority/types').DateAuthorityIndex>;
@@ -150,6 +153,18 @@ declare global {
     /** DevTools helper: `await __ljbDebugValidator()` */
     __ljbDebugValidator?: (options?: { runValidation?: boolean }) => Promise<unknown>;
     __leafWriterEditorZoom?: {
+      zoomIn: () => void;
+      zoomOut: () => void;
+      reset: () => void;
+      get: () => number;
+    };
+    __leafWriterSourceZoom?: {
+      zoomIn: () => void;
+      zoomOut: () => void;
+      reset: () => void;
+      get: () => number;
+    };
+    __leafWriterTranslationZoom?: {
       zoomIn: () => void;
       zoomOut: () => void;
       reset: () => void;

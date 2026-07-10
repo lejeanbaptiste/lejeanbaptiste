@@ -60,6 +60,7 @@ export const DisambiguationReviewPane = () => {
       setLoading(false);
       setGroups([]);
       setError(null);
+      if (session.current) void session.current.flushDecisions();
       session.current = null;
       return;
     }

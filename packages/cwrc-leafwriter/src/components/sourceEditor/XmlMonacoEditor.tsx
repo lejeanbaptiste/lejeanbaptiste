@@ -4,6 +4,7 @@ import 'monaco-editor/esm/vs/editor/editor.main';
 import 'monaco-editor/esm/vs/editor/contrib/linkedEditing/browser/linkedEditing.js';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useEffect, useRef, useState } from 'react';
+import { sourceFontZoom } from '../../js/fontSizeZoom';
 import {
   dispatchDesktopOpenFind,
   registerSourceFindEditor,
@@ -153,6 +154,7 @@ export const XmlMonacoEditor = ({
 
     const monacoEditor = monaco.editor.create(divEl.current, {
       automaticLayout: true,
+      fontSize: sourceFontZoom.get(),
       lineNumbers: 'on',
       language: 'xml',
       linkedEditing: true,
@@ -162,6 +164,30 @@ export const XmlMonacoEditor = ({
       wordWrapColumn: 100,
       wrappingIndent: 'indent',
     });
+
+    const unsubscribeFontZoom = sourceFontZoom.subscribe((size) => {
+      monacoEditor.updateOptions({ fontSize: size });
+    });
+
+    // In-editor zoom shortcuts (web build; on desktop the menu accelerators
+    // intercept these keys first and route through __leafWriterSourceZoom).
+    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Equal, () =>
+      sourceFontZoom.zoomIn(),
+    );
+    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Minus, () =>
+      sourceFontZoom.zoomOut(),
+    );
+    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Digit0, () =>
+      sourceFontZoom.reset(),
+    );
+
+    const zoomBridge = {
+      zoomIn: () => sourceFontZoom.zoomIn(),
+      zoomOut: () => sourceFontZoom.zoomOut(),
+      reset: () => sourceFontZoom.reset(),
+      get: () => sourceFontZoom.get(),
+    };
+    window.__leafWriterSourceZoom = zoomBridge;
 
     monacoEditor.getModel()?.onDidChangeContent(() => {
       const nextValue = monacoEditor.getValue();
@@ -295,6 +321,10 @@ export const XmlMonacoEditor = ({
       closingTagDisposable.dispose();
       linkedTagDisposable.dispose();
       pairedTagUnwrapDisposable.dispose();
+      unsubscribeFontZoom();
+      if (window.__leafWriterSourceZoom === zoomBridge) {
+        delete window.__leafWriterSourceZoom;
+      }
       registerSourceFindEditor(null);
       onEditorInstanceRef.current?.(null);
       monacoEditor.dispose();

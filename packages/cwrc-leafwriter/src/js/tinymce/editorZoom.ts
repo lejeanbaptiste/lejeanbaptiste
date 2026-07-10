@@ -7,7 +7,7 @@ const MAX_ZOOM = 300;
 const ZOOM_STEP = 10;
 // Start a bit larger so the visual editor feels aligned with the rest of the UI,
 // especially on macOS where the default document text can look undersized.
-const DEFAULT_ZOOM = 125;
+const DEFAULT_ZOOM = 200;
 const MIGRATION_KEY = 'leafWriterEditorZoomMigratedTo125';
 
 const clampZoom = (level: number) =>

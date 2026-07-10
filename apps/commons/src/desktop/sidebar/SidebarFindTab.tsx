@@ -1,6 +1,5 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import SearchIcon from '@mui/icons-material/Search';
 import {
   Box,
   Button,
@@ -21,7 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
-import { DOC_SCOPE_LABELS, type DocScope } from '@src/desktop/find/docScope';
+import { DOC_SCOPE_LABEL_KEYS, type DocScope } from '@src/desktop/find/docScope';
 import { useFindPanelUndo } from '@src/desktop/find/findPanelUndo';
 import {
   DESKTOP_EDITOR_VIEW_MODE_EVENT,
@@ -596,7 +595,7 @@ export const SidebarFindTab = () => {
             }}
           />
           <ToggleButtonGroup size="small" sx={{ alignSelf: 'stretch', flexShrink: 0 }}>
-            <Tooltip title="Ignore case">
+            <Tooltip title={t('LWC.desktop.sidebar.find.ignore_case')}>
               <ToggleButton
                 selected={ignoreCase}
                 value="ignore-case"
@@ -682,12 +681,11 @@ export const SidebarFindTab = () => {
           <Button
             size="small"
             variant="outlined"
-            startIcon={<SearchIcon fontSize="small" />}
             onClick={runFindOrNext}
             disabled={loading || replacing || !findQuery.trim()}
             sx={{ flex: '1 1 0', minWidth: 0 }}
           >
-            Find
+            {t('LWC.desktop.sidebar.find.find_label')}
           </Button>
           <Button
             size="small"
@@ -696,7 +694,7 @@ export const SidebarFindTab = () => {
             disabled={!canReplace}
             sx={{ flex: '1 1 0', minWidth: 0 }}
           >
-            Replace
+            {t('LWC.desktop.sidebar.find.replace_label')}
           </Button>
           <Button
             size="small"
@@ -705,7 +703,7 @@ export const SidebarFindTab = () => {
             disabled={!canReplaceAll}
             sx={{ flex: '1 1 0', minWidth: 0 }}
           >
-            All
+            {t('LWC.desktop.sidebar.find.all')}
           </Button>
         </Box>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
@@ -727,9 +725,9 @@ export const SidebarFindTab = () => {
               onChange={(event) => setDocScope(event.target.value as DocScope)}
               value={docScope}
             >
-              {(Object.keys(DOC_SCOPE_LABELS) as DocScope[]).map((value) => (
+              {(Object.keys(DOC_SCOPE_LABEL_KEYS) as DocScope[]).map((value) => (
                 <MenuItem key={value} value={value}>
-                  {DOC_SCOPE_LABELS[value]}
+                  {t(DOC_SCOPE_LABEL_KEYS[value])}
                 </MenuItem>
               ))}
             </Select>
@@ -764,8 +762,7 @@ export const SidebarFindTab = () => {
             color="text.secondary"
             sx={{ px: 1.5, py: 0.75, display: 'block' }}
           >
-            {totalMatches} match{totalMatches === 1 ? '' : 'es'} in {results.length} file
-            {results.length === 1 ? '' : 's'}
+            {`${totalMatches} match${totalMatches === 1 ? '' : 'es'} in ${results.length} file${results.length === 1 ? '' : 's'}`}
           </Typography>
         )}
 
@@ -848,7 +845,10 @@ export const SidebarFindTab = () => {
                           >
                             <ListItemText
                               primary={<FindSnippetLine snippet={match.snippet} />}
-                              secondary={`Line ${match.line}, column ${match.column}`}
+                              secondary={t('LWC.desktop.sidebar.find.match_location', {
+                                line: match.line,
+                                column: match.column,
+                              })}
                               sx={{ my: 0, minWidth: 0 }}
                               slotProps={{ primary: { sx: { minWidth: 0 } } }}
                               secondaryTypographyProps={{

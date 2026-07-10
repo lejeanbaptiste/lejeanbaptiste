@@ -114,6 +114,9 @@
         "latin_font": "Latin font",
         "refresh system fonts": "Refresh system fonts",
         "font_size": "Font size",
+        "font_size_slider": "Font size slider",
+        "interface_zoom": "Interface zoom",
+        "interface_zoom_slider": "Interface zoom slider",
         "show_tag_bubble": "Show tag name bubble"
       },
       "ai_api": {

@@ -204,7 +204,13 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   // Closing the dialog (or unmounting) aborts any in-flight AI request so a
   // local model server stops generating instead of running to completion.
   useEffect(() => () => aiAbort.current?.abort(), []);
-  const { startAutoTaggingReview } = useActions().ui;
+  const { startAutoTaggingReview, dismissReviewPanes } = useActions().ui;
+
+  // Opening the launcher abandons any in-progress review or disambiguation
+  // walk without saving — the new run starts from a clean slate.
+  useEffect(() => {
+    if (open) dismissReviewPanes();
+  }, [open, dismissReviewPanes]);
 
   const aiSettings = aiApiSettingsFromDesktop();
   const aiReady = isAiSuggestReady(aiSettings);
