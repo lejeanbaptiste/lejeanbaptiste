@@ -2,7 +2,6 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   LinearProgress,
   ListItem,
   Stack,
@@ -12,15 +11,27 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+type AuthorityLifecycleProfile = 'chinese' | 'japanese' | 'tibetan';
+
 type AuthorityLifecycleProgress = {
   phase: 'compiling' | 'downloading' | 'extracting' | 'idle';
   message: string;
 };
 
+type AuthorityLifecycleProfileStatus = {
+  id: AuthorityLifecycleProfile;
+  label: string;
+  enabled: boolean;
+  installedPacks: number;
+  totalPacks: number;
+  packsReady: boolean;
+};
+
 type AuthorityLifecycleStatus = {
   busy: boolean;
   enabled: boolean;
-  profile: 'chinese' | 'japanese' | 'tibetan';
+  profile: AuthorityLifecycleProfile;
+  profileStatuses?: AuthorityLifecycleProfileStatus[];
   label: string;
   entityDbFolder: string | null;
   entityDbReady: boolean;
@@ -41,11 +52,23 @@ type CommonsUiBridge = {
   refreshAuthorityLifecycle: () => Promise<void>;
   setAuthorityLifecycleEnabled: (options: {
     enabled: boolean;
-    profile?: 'chinese' | 'japanese' | 'tibetan';
+    profile?: AuthorityLifecycleProfile;
     deleteFiles?: boolean;
   }) => Promise<AuthorityLifecycleRunResult>;
   runAuthorityLifecycleUpdate: () => Promise<AuthorityLifecycleRunResult>;
   revealAuthorityLifecycleFolder: () => Promise<void>;
+};
+
+const PROFILE_NAMES: Record<AuthorityLifecycleProfile, string> = {
+  chinese: 'Chinese',
+  japanese: 'Japanese',
+  tibetan: 'Tibetan',
+};
+
+const PROFILE_SOURCES: Record<AuthorityLifecycleProfile, string> = {
+  chinese: 'CBDB · DILA · Wikidata',
+  japanese: 'NDL · Wikidata',
+  tibetan: 'Wikidata',
 };
 
 const formatBytes = (bytes: number): string => {
@@ -100,59 +123,80 @@ export const DesktopOfflineAuthorities = () => {
 
   if (!bridge) return null;
 
-  const handleEnableChange = async (enabled: boolean) => {
+  const profileStatuses: AuthorityLifecycleProfileStatus[] =
+    status?.profileStatuses ??
+    (['chinese', 'japanese', 'tibetan'] as const).map((id) => ({
+      id,
+      label: PROFILE_NAMES[id],
+      enabled: !!status?.enabled && status.profile === id,
+      installedPacks: 0,
+      totalPacks: 0,
+      packsReady: false,
+    }));
+
+  const enabledCount = profileStatuses.filter((profile) => profile.enabled).length;
+
+  const handleToggleProfile = async (profile: AuthorityLifecycleProfile, enabled: boolean) => {
     setMessage(null);
+
     if (!enabled) {
-      const disk = status?.diskUsage;
-      const totalBytes = disk ? disk.rawBytes + disk.packBytes : 0;
-      const detail =
-        totalBytes > 0
-          ? t('LW.settings.authorities.offline.delete_detail_with_bytes', {
-              bytes: formatBytes(totalBytes),
-            })
-          : t('LW.settings.authorities.offline.delete_detail');
+      const isLastEnabled = enabledCount === 1;
+      let deleteFiles = false;
 
-      const response = await (
-        window as Window & {
-          electronAPI?: {
-            showNativeMessageBox?: (options: {
-              type: string;
-              title: string;
-              message: string;
-              detail?: string;
-              buttons: string[];
-              defaultId?: number;
-              cancelId?: number;
-            }) => Promise<{ response: number }>;
-          };
-        }
-      ).electronAPI?.showNativeMessageBox?.({
-        type: 'question',
-        title: t('LW.settings.authorities.offline.disable_title'),
-        message: t('LW.settings.authorities.offline.disable_message'),
-        detail,
-        buttons: [
-          t('LW.settings.authorities.offline.keep_files'),
-          t('LW.settings.authorities.offline.delete_files'),
-          t('LW.commons.cancel'),
-        ],
-        defaultId: 0,
-        cancelId: 2,
-      });
+      if (isLastEnabled) {
+        const disk = status?.diskUsage;
+        const totalBytes = disk ? disk.rawBytes + disk.packBytes : 0;
+        const detail =
+          totalBytes > 0
+            ? t('LW.settings.authorities.offline.delete_detail_with_bytes', {
+                bytes: formatBytes(totalBytes),
+              })
+            : t('LW.settings.authorities.offline.delete_detail');
 
-      if (!response || response.response === 2) return;
+        const response = await (
+          window as Window & {
+            electronAPI?: {
+              showNativeMessageBox?: (options: {
+                type: string;
+                title: string;
+                message: string;
+                detail?: string;
+                buttons: string[];
+                defaultId?: number;
+                cancelId?: number;
+              }) => Promise<{ response: number }>;
+            };
+          }
+        ).electronAPI?.showNativeMessageBox?.({
+          type: 'question',
+          title: t('LW.settings.authorities.offline.disable_title'),
+          message: t('LW.settings.authorities.offline.disable_message'),
+          detail,
+          buttons: [
+            t('LW.settings.authorities.offline.keep_files'),
+            t('LW.settings.authorities.offline.delete_files'),
+            t('LW.commons.cancel'),
+          ],
+          defaultId: 0,
+          cancelId: 2,
+        });
+
+        if (!response || response.response === 2) return;
+        deleteFiles = response.response === 1;
+      }
 
       setBusy(true);
       try {
         const result = await bridge.setAuthorityLifecycleEnabled({
           enabled: false,
-          profile: status?.profile,
-          deleteFiles: response.response === 1,
+          profile,
+          deleteFiles,
         });
         if (!result.ok) {
-          setMessage({ severity: 'error', text: result.error ?? t('LW.settings.authorities.offline.disable_failed') });
-        } else {
-          setMessage({ severity: 'info', text: t('LW.settings.authorities.offline.disabled') });
+          setMessage({
+            severity: 'error',
+            text: result.error ?? t('LW.settings.authorities.offline.disable_failed'),
+          });
         }
         await refresh();
       } finally {
@@ -164,16 +208,11 @@ export const DesktopOfflineAuthorities = () => {
 
     setBusy(true);
     try {
-      const result = await bridge.setAuthorityLifecycleEnabled({
-        enabled: true,
-        profile: status?.profile,
-      });
+      const result = await bridge.setAuthorityLifecycleEnabled({ enabled: true, profile });
       if (!result.ok) {
-        setMessage({ severity: 'error', text: result.error ?? t('LW.settings.authorities.offline.enable_failed') });
-      } else {
         setMessage({
-          severity: 'success',
-          text: readyMessage,
+          severity: 'error',
+          text: result.error ?? t('LW.settings.authorities.offline.enable_failed'),
         });
       }
       await refresh();
@@ -189,7 +228,10 @@ export const DesktopOfflineAuthorities = () => {
     try {
       const result = await bridge.runAuthorityLifecycleUpdate();
       if (!result.ok) {
-        setMessage({ severity: 'error', text: result.error ?? t('LW.settings.authorities.offline.update_failed') });
+        setMessage({
+          severity: 'error',
+          text: result.error ?? t('LW.settings.authorities.offline.update_failed'),
+        });
       } else {
         setMessage({ severity: 'success', text: t('LW.settings.authorities.offline.updated') });
       }
@@ -203,84 +245,64 @@ export const DesktopOfflineAuthorities = () => {
   const working = busy || status?.busy;
   const disk = status?.diskUsage;
   const totalDisk = disk ? disk.rawBytes + disk.packBytes : 0;
-  const authorityLabel = status?.label ?? t('LW.settings.authorities.offline.title');
-  const setupDescription =
-    status?.profile === 'japanese' || status?.profile === 'tibetan'
-      ? t('LW.settings.authorities.offline.setup_description_simple')
-      : t('LW.settings.authorities.offline.setup_description_full');
-  const readyMessage =
-    status?.profile === 'japanese'
-      ? t('LW.settings.authorities.offline.ready_japanese')
-      : status?.profile === 'tibetan'
-        ? t('LW.settings.authorities.offline.ready_tibetan')
-        : t('LW.settings.authorities.offline.ready_default');
-  const wikidataPacks = status?.packs.filter((pack) => pack.id.startsWith('wikidata-')) ?? [];
-  const installedWikidataPacks = wikidataPacks.filter((pack) => pack.installed).length;
+
+  const profileCaption = (profile: AuthorityLifecycleProfileStatus): string => {
+    const sources = PROFILE_SOURCES[profile.id];
+    if (!profile.enabled) return sources;
+    if (profile.packsReady) return `${sources} — ready`;
+    if (profile.totalPacks > 0) {
+      return `${sources} — ${profile.installedPacks}/${profile.totalPacks} packs`;
+    }
+    return `${sources} — not downloaded`;
+  };
 
   return (
-    <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch', px: 0, py: 1.5 }}>
-      <Stack spacing={1.5} width="100%">
-        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={2}>
-          <Box>
-            <Typography variant="subtitle2">{authorityLabel}</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {setupDescription}
-            </Typography>
-          </Box>
-          <Switch
-            checked={!!status?.enabled}
-            disabled={working || !status?.entityDbReady}
-            onChange={(_event, checked) => void handleEnableChange(checked)}
-            inputProps={{ 'aria-label': t('LW.settings.authorities.offline.enable') }}
-          />
-        </Stack>
+    <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch', px: 0, py: 1 }}>
+      <Stack spacing={1} width="100%">
+        <Box>
+          <Typography variant="subtitle2">
+            {t('LW.settings.authorities.offline.title')}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {[
+              status?.updateAvailable && enabledCount > 0 ? 'Update available' : null,
+              status?.packBundleVersion ? `bundle ${status.packBundleVersion}` : null,
+              totalDisk > 0 ? `${formatBytes(totalDisk)} on disk` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || 'Offline entity lookup and tagging, per language.'}
+          </Typography>
+        </Box>
 
         {!status?.entityDbReady && (
-          <Alert severity="warning">
+          <Alert severity="warning" sx={{ py: 0 }}>
             {t('LW.settings.authorities.offline.entity_db_required')}
           </Alert>
         )}
 
-        {status?.entityDbReady && (
-          <Stack spacing={0.75}>
-            {status.rawSources.map((source) => (
-              <Typography key={source.id} variant="body2" color="text.secondary">
-                {source.label}:{' '}
-                {source.installed
-                  ? `installed (${source.version ?? 'unknown version'})`
-                  : 'not installed'}
+        {profileStatuses.map((profile) => (
+          <Stack
+            key={profile.id}
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            gap={1}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="body2">{PROFILE_NAMES[profile.id]}</Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {profileCaption(profile)}
               </Typography>
-            ))}
-            {wikidataPacks.length > 0 && (
-              <Typography variant="body2" color="text.secondary">
-                Wikidata — compiled tagging packs: {installedWikidataPacks} of{' '}
-                {wikidataPacks.length} ready
-              </Typography>
-            )}
-            <Typography variant="body2" color="text.secondary">
-              All compiled packs:{' '}
-              {status.packsReady
-                ? `${status.packs.filter((p) => p.installed).length} of ${status.packs.length} ready`
-                : 'not ready'}
-              {status.packBundleVersion ? ` · bundle ${status.packBundleVersion}` : ''}
-              {totalDisk > 0 ? ` · ${formatBytes(totalDisk)} on disk` : ''}
-            </Typography>
-            {status.lastCheckAt && (
-              <Typography variant="caption" color="text.secondary">
-                Last check: {new Date(status.lastCheckAt).toLocaleString()}
-              </Typography>
-            )}
+            </Box>
+            <Switch
+              size="small"
+              checked={profile.enabled}
+              disabled={working || !status?.entityDbReady}
+              onChange={(_event, checked) => void handleToggleProfile(profile.id, checked)}
+              inputProps={{ 'aria-label': `${PROFILE_NAMES[profile.id]} authority pack` }}
+            />
           </Stack>
-        )}
-
-        {status?.updateAvailable && status.enabled && (
-          <Chip
-            color="warning"
-            label="Update available"
-            size="small"
-            sx={{ alignSelf: 'flex-start' }}
-          />
-        )}
+        ))}
 
         {progress && working && (
           <Box>
@@ -291,15 +313,23 @@ export const DesktopOfflineAuthorities = () => {
           </Box>
         )}
 
-        {message && <Alert severity={message.severity}>{message.text}</Alert>}
+        {message && (
+          <Alert severity={message.severity} sx={{ py: 0 }}>
+            {message.text}
+          </Alert>
+        )}
 
-        {status?.lastError && !message && <Alert severity="error">{status.lastError}</Alert>}
+        {status?.lastError && !message && (
+          <Alert severity="error" sx={{ py: 0 }}>
+            {status.lastError}
+          </Alert>
+        )}
 
         <Stack direction="row" spacing={1}>
           <Button
             size="small"
             variant="outlined"
-            disabled={working || !status?.enabled || !status?.entityDbReady}
+            disabled={working || enabledCount === 0 || !status?.entityDbReady}
             onClick={() => void handleUpdate()}
           >
             Update now

@@ -7,6 +7,21 @@ export const ensureEntityDbFolder = async (): Promise<boolean> => {
   const existing = await window.electronAPI.getEntityDbFolder?.();
   if (existing?.trim()) return true;
 
+  // Explain before showing the bare folder picker (its `message` option is macOS-only).
+  if (window.electronAPI.showNativeMessageBox) {
+    const { response } = await window.electronAPI.showNativeMessageBox({
+      type: 'info',
+      title: 'Entity database folder',
+      message: 'Choose a folder for your entity database.',
+      detail:
+        'Le Jean-Baptiste keeps named entities (people, places, organizations…) in a central database (entities.xml). Offline authority packs are also stored there. You can keep your projects in the same folder.',
+      buttons: ['Choose folder…', 'Not now'],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (response !== 0) return false;
+  }
+
   const picked = await window.electronAPI.pickEntityDbFolder?.();
   if (!picked) return false;
   await window.electronAPI.setEntityDbFolder?.(picked);

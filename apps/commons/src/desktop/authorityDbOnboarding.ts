@@ -37,15 +37,10 @@ export const maybeOfferAuthorityDatabases = async (bundle: ProjectBundle): Promi
 
   if (api.authorityLifecycleGet && api.authorityLifecyclePromptEnable && api.authorityLifecycleSetEnabled) {
     const status = await api.authorityLifecycleGet();
-    if (status.enabled && status.profile === profile) return;
-    if (status.declinedFirstPrompt && status.profile === profile) return;
-    if (
-      status.profile === profile &&
-      status.packsReady &&
-      status.rawSources.every((source) => source.installed)
-    ) {
-      return;
-    }
+    const profileStatus = status.profileStatuses?.find((entry) => entry.id === profile);
+    if (profileStatus?.enabled) return;
+    if (status.declinedFirstPrompt) return;
+    if (profileStatus?.packsReady) return;
 
     if ((await api.authorityLifecyclePromptEnable(profile)) !== 'accepted') return;
     await api.authorityLifecycleSetEnabled({ enabled: true, profile });

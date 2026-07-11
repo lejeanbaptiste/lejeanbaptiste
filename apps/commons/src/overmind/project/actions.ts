@@ -4,6 +4,7 @@ import type { Context } from '../';
 let suppressWorkspaceSessionSave = false;
 import { buildProjectSchemas, type ProjectBundle } from '@src/desktop/projectFile';
 import { completeProjectOnboarding } from '@src/desktop/projectOnboarding';
+import { ensureEntityDbFolder } from '@src/desktop/entityDbOnboarding';
 import {
   mergeMetadataIntoHeader,
   metadataFileExists,
@@ -478,10 +479,16 @@ export const restoreLastProject = async (context: Context) => {
 
   suppressWorkspaceSessionSave = true;
   try {
+    console.info('[restore] requesting workspace session');
     const session = await window.electronAPI.restoreWorkspaceSession?.();
+    console.info(`[restore] session: ${session ? 'found' : 'none'}`);
     const bundle = session?.bundle ?? (await window.electronAPI.restoreLastProject?.());
+    console.info(`[restore] bundle: ${bundle?.projectFilePath ?? 'none'}`);
     if (!bundle) {
       context.state.project.isProjectReady = true;
+      // Fresh install / no last project: set up the central entity database now
+      // rather than surprising the user mid project-open later.
+      await ensureEntityDbFolder();
       return;
     }
 
