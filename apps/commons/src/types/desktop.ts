@@ -332,6 +332,7 @@ export interface ElectronAPI {
   minimizeWindow: () => Promise<void>;
   maximizeWindow: () => Promise<void>;
   closeWindow: () => Promise<void>;
+  popupAppMenu?: (x?: number, y?: number) => Promise<void>;
   openExternalUrl: (url: string) => Promise<boolean>;
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;

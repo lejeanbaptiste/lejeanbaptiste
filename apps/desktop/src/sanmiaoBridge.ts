@@ -82,6 +82,12 @@ const pythonCandidates = (): string[] => {
     return [venvPython];
   }
 
+  // Relocatable CPython shipped with the packaged app (macOS), deps preinstalled.
+  const bundledPython = path.join(process.resourcesPath ?? '', 'python', 'bin', 'python3');
+  if (process.resourcesPath && fs.existsSync(bundledPython)) {
+    return [bundledPython, 'python3', 'python'];
+  }
+
   return ['python3', 'python'];
 };
 

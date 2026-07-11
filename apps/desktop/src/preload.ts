@@ -279,6 +279,7 @@ export interface ElectronAPI {
   minimizeWindow: () => Promise<void>;
   maximizeWindow: () => Promise<void>;
   closeWindow: () => Promise<void>;
+  popupAppMenu: (x?: number, y?: number) => Promise<void>;
   openExternalUrl: (url: string) => Promise<boolean>;
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
@@ -477,6 +478,7 @@ const electronAPI: ElectronAPI = {
   minimizeWindow: () => ipcRenderer.invoke('window-minimize'),
   maximizeWindow: () => ipcRenderer.invoke('window-maximize'),
   closeWindow: () => ipcRenderer.invoke('window-close'),
+  popupAppMenu: (x?: number, y?: number) => ipcRenderer.invoke('popup-app-menu', x, y),
   openExternalUrl: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
   isWindowMaximized: () => ipcRenderer.invoke('window-is-maximized'),
   onWindowMaximized: (callback: (maximized: boolean) => void) => {

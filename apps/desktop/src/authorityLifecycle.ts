@@ -7,6 +7,7 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 
 import {
+  ALL_AUTHORITY_PROFILES,
   COMPILE_POLICY_VERSION,
   LIFECYCLE_FILENAME,
   type AuthorityLifecycleProfile,
@@ -123,6 +124,35 @@ const normalizeProfile = (
 
 const profileSpec = (profile: AuthorityLifecycleProfile) => PROFILE_SPECS[profile];
 
+const isKnownProfile = (value: unknown): value is AuthorityLifecycleProfile =>
+  value === 'chinese' || value === 'japanese' || value === 'tibetan';
+
+/** Enabled profiles, deriving from legacy single-profile configs when needed. */
+export const enabledProfiles = (
+  lifecycle: AuthorityLifecycleConfig,
+): AuthorityLifecycleProfile[] => {
+  if (Array.isArray(lifecycle.profiles)) {
+    return ALL_AUTHORITY_PROFILES.filter((profile) => lifecycle.profiles!.includes(profile));
+  }
+  return lifecycle.enabled ? [normalizeProfile(lifecycle.profile)] : [];
+};
+
+const unionPackIds = (profiles: AuthorityLifecycleProfile[]): AuthorityPackId[] => {
+  const ids = new Set<AuthorityPackId>();
+  for (const profile of profiles) {
+    for (const id of profileSpec(profile).packIds) ids.add(id);
+  }
+  return [...ids];
+};
+
+const unionRawSourceIds = (profiles: AuthorityLifecycleProfile[]): ('cbdb' | 'dila')[] => {
+  const ids = new Set<'cbdb' | 'dila'>();
+  for (const profile of profiles) {
+    for (const id of profileSpec(profile).rawSourceIds) ids.add(id);
+  }
+  return [...ids];
+};
+
 export const parseLifecycleConfig = (raw: string): AuthorityLifecycleConfig | null => {
   try {
     const parsed = JSON.parse(raw) as Partial<AuthorityLifecycleConfig>;
@@ -132,6 +162,9 @@ export const parseLifecycleConfig = (raw: string): AuthorityLifecycleConfig | nu
       version: 1,
       enabled: parsed.enabled,
       profile: normalizeProfile(parsed.profile),
+      profiles: Array.isArray(parsed.profiles)
+        ? parsed.profiles.filter(isKnownProfile)
+        : undefined,
       referenceDataEnabled:
         typeof parsed.referenceDataEnabled === 'boolean' ? parsed.referenceDataEnabled : false,
       lastCheckAt: typeof parsed.lastCheckAt === 'string' ? parsed.lastCheckAt : undefined,
@@ -227,9 +260,9 @@ export const isUpdateAvailable = (
   remoteIndex: AuthorityPacksIndex | null,
   rawSources: Awaited<ReturnType<typeof getAuthorityStatuses>>,
 ): boolean => {
-  if (!lifecycle.enabled) return false;
-  const profile = normalizeProfile(lifecycle.profile);
-  const spec = profileSpec(profile);
+  const profiles = enabledProfiles(lifecycle);
+  if (!lifecycle.enabled || profiles.length === 0) return false;
+  const rawSourceIds = unionRawSourceIds(profiles);
 
   if (!packsReady(packStatuses)) return true;
 
@@ -241,9 +274,9 @@ export const isUpdateAvailable = (
 
   if (!localPackManifest && remoteIndex) return true;
 
-  if (lifecycle.referenceDataEnabled && spec.supportsReferenceData) {
+  if (lifecycle.referenceDataEnabled && rawSourceIds.length > 0) {
     for (const sourceSpec of AUTHORITY_SOURCES.filter((source) =>
-      spec.rawSourceIds.includes(source.id),
+      rawSourceIds.includes(source.id),
     )) {
       const status = rawSources.find((source) => source.id === sourceSpec.id);
       if (!status?.installed || status.version !== sourceSpec.version) return true;
@@ -259,14 +292,29 @@ export const getAuthorityLifecycleStatus = async (
   const ready = entityDbFolderReady(entityDbFolder);
   const rawDir = ready ? path.join(entityDbFolder!, AUTHORITY_DB_DIRNAME) : null;
   const lifecycle = await readLifecycleConfig(entityDbFolder);
-  const profile = normalizeProfile(lifecycle.profile);
-  const spec = profileSpec(profile);
+  const profiles = enabledProfiles(lifecycle);
+  const profile = profiles[0] ?? normalizeProfile(lifecycle.profile);
+  const rawSourceIds = unionRawSourceIds(profiles);
   const rawSources = (await getAuthorityStatuses(rawDir)).filter((source) =>
-    spec.rawSourceIds.includes(source.id),
+    rawSourceIds.includes(source.id),
   );
-  const packs = ready
-    ? getAuthorityPackStatuses(entityDbFolder!).filter((pack) => spec.packIds.includes(pack.id))
-    : [];
+  const allPackStatuses = ready ? getAuthorityPackStatuses(entityDbFolder!) : [];
+  const packIds = unionPackIds(profiles);
+  const packs = allPackStatuses.filter((pack) => packIds.includes(pack.id));
+
+  const profileStatuses = ALL_AUTHORITY_PROFILES.map((id) => {
+    const spec = profileSpec(id);
+    const profilePacks = allPackStatuses.filter((pack) => spec.packIds.includes(pack.id));
+    const installedPacks = profilePacks.filter((pack) => pack.installed).length;
+    return {
+      id,
+      label: spec.label,
+      enabled: profiles.includes(id),
+      installedPacks,
+      totalPacks: spec.packIds.length,
+      packsReady: profilePacks.length > 0 && installedPacks === profilePacks.length,
+    };
+  });
   const localPackManifest = ready ? await readInstalledPacksManifest(entityDbFolder!) : null;
   const remoteIndex = lifecycle.enabled ? await getRemotePacksIndexCached() : null;
 
@@ -278,11 +326,12 @@ export const getAuthorityLifecycleStatus = async (
   }
 
   return {
-    enabled: lifecycle.enabled,
+    enabled: profiles.length > 0,
     profile,
+    profileStatuses,
     entityDbFolder,
     entityDbReady: ready,
-    label: spec.label,
+    label: profileSpec(profile).label,
     rawSources,
     packs,
     packsReady: packsReady(packs),
@@ -382,8 +431,11 @@ export const runAuthorityLifecyclePipeline = async (
   pipelineBusy = true;
   const rawDir = path.join(entityDbFolder, AUTHORITY_DB_DIRNAME);
   const lifecycle = await readLifecycleConfig(entityDbFolder);
-  const profile = normalizeProfile(options.profile ?? lifecycle.profile);
-  const spec = profileSpec(profile);
+  const profiles = enabledProfiles(lifecycle);
+  const targetProfiles = options.profile
+    ? [...new Set([...profiles, normalizeProfile(options.profile)])]
+    : profiles;
+  const rawSourceIds = unionRawSourceIds(targetProfiles);
 
   const emitDownload = (progress: AuthorityDownloadProgress) => {
     onProgress?.({
@@ -404,10 +456,10 @@ export const runAuthorityLifecyclePipeline = async (
       packIndex = await installPacksFromGitLab(options);
     }
 
-    if (lifecycle.referenceDataEnabled && spec.supportsReferenceData) {
+    if (lifecycle.referenceDataEnabled && rawSourceIds.length > 0) {
       const statuses = await getAuthorityStatuses(rawDir);
       for (const sourceSpec of AUTHORITY_SOURCES.filter((source) =>
-        spec.rawSourceIds.includes(source.id),
+        rawSourceIds.includes(source.id),
       )) {
         const status = statuses.find((source) => source.id === sourceSpec.id);
         const needsDownload =
@@ -424,8 +476,9 @@ export const runAuthorityLifecyclePipeline = async (
     }
 
     await writeLifecycleConfig(entityDbFolder, {
-      enabled: true,
-      profile,
+      enabled: targetProfiles.length > 0,
+      profile: targetProfiles[0] ?? normalizeProfile(lifecycle.profile),
+      profiles: targetProfiles,
       compilePolicyVersion: packIndex?.compilePolicyVersion ?? COMPILE_POLICY_VERSION,
       packBundleVersion: packIndex?.bundleVersion,
       lastCheckAt: new Date().toISOString(),
@@ -452,13 +505,17 @@ export const setAuthorityLifecycleEnabled = async (
       return { ok: false, error: 'No entity database folder configured.' };
     }
     const profile = normalizeProfile(options.profile);
+    const current = await readLifecycleConfig(entityDbFolder);
+    const profiles = [...new Set([...enabledProfiles(current), profile])];
     await writeLifecycleConfig(entityDbFolder, {
       enabled: true,
-      profile,
+      profile: profiles[0],
+      profiles,
       declinedFirstPrompt: false,
     });
     const status = await getAuthorityLifecycleStatus(entityDbFolder);
-    if (status.profile === profile && status.packsReady && !status.updateAvailable) {
+    const profileStatus = status.profileStatuses.find((p) => p.id === profile);
+    if (profileStatus?.packsReady && !status.updateAvailable) {
       return { ok: true };
     }
     return runAuthorityLifecyclePipeline({ entityDbFolder, profile, onProgress });
@@ -468,13 +525,19 @@ export const setAuthorityLifecycleEnabled = async (
     return { ok: true };
   }
 
+  const current = await readLifecycleConfig(entityDbFolder);
+  const remaining = options.profile
+    ? enabledProfiles(current).filter((p) => p !== normalizeProfile(options.profile))
+    : [];
   await writeLifecycleConfig(entityDbFolder, {
-    enabled: false,
-    profile: normalizeProfile(options.profile),
+    enabled: remaining.length > 0,
+    profile: remaining[0] ?? normalizeProfile(options.profile),
+    profiles: remaining,
     lastError: undefined,
   });
 
-  if (options.deleteFiles) {
+  // Pack files are shared across languages; only delete once nothing is enabled.
+  if (options.deleteFiles && remaining.length === 0) {
     await fsp.rm(path.join(entityDbFolder, AUTHORITY_DB_DIRNAME), {
       recursive: true,
       force: true,
@@ -492,9 +555,13 @@ export const recordDeclinedFirstPrompt = async (
   entityDbFolder: string,
   profile: AuthorityLifecycleProfile = 'chinese',
 ): Promise<void> => {
+  // Declining an offer for one language must not disable packs already enabled.
+  const current = await readLifecycleConfig(entityDbFolder);
+  const profiles = enabledProfiles(current);
   await writeLifecycleConfig(entityDbFolder, {
-    enabled: false,
-    profile,
+    enabled: profiles.length > 0,
+    profile: profiles[0] ?? profile,
+    profiles,
     declinedFirstPrompt: true,
   });
 };
