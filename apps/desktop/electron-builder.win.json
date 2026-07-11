@@ -22,8 +22,12 @@
       "to": "commons/server"
     },
     {
-      "from": "./resources/sanmiao-runtime",
-      "to": "sanmiao-runtime"
+      "from": "resources/python",
+      "to": "python",
+      "filter": [
+        "**/*",
+        "!.deps-installed"
+      ]
     }
   ],
   "nsis": {

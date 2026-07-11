@@ -38,10 +38,21 @@ npm run build:desktop
 
 This builds Commons, compiles the Electron main/preload scripts, and packages a `.pkg` installer into `apps/desktop/release/`.
 
-The mac package bundles a relocatable CPython (python-build-standalone) with
-the Sanmiao date-tagger deps preinstalled — `scripts/download-python-runtime.mjs`
-fetches it during `npm install` / packaging, and the app prefers it over any
-system Python. End users need no Python setup.
+### Bundled Python runtime (all platforms)
+
+Every package (mac `.pkg`, Linux `.deb`, Windows NSIS) bundles a relocatable
+CPython (python-build-standalone) with the pinned `sanmiao` release
+pip-installed into it. `scripts/download-python-runtime.mjs` fetches the
+runtime for the host OS/architecture during `npm install` and before
+packaging, staging it at `apps/desktop/resources/python/` — the same
+repo-relative path on every dev machine and VM. The app prefers a sibling
+`../sanmiao` dev checkout (editable venv), then the bundled runtime, then
+system Python; `SANMIAO_PYTHON` overrides everything. End users need no
+Python setup.
+
+To bump Python or sanmiao, edit `PBS_TAG` / `PYTHON_VERSION` /
+`SANMIAO_SPEC` at the top of the script; the stamp file forces a
+re-download on the next install.
 
 ### Linux (.deb)
 
@@ -66,30 +77,16 @@ The `.deb` lands in `apps/desktop/release/` (e.g. `le-jean-baptiste-desktop_0.0.
 sudo apt install ./apps/desktop/release/le-jean-baptiste-desktop_*.deb
 ```
 
-The package declares the Python runtime deps for the bundled Sanmiao date tagger
-(`python3-pandas`, `python3-numpy`, `python3-lxml`), so apt installs them
-automatically — end users don't need to know Python is involved.
+Platform-specific electron-builder settings live in `electron-builder.mac.json`, `electron-builder.linux.json`, and `electron-builder.win.json`, all extending `electron-builder.base.json`.
 
-Platform-specific electron-builder settings live in `electron-builder.mac.json` and `electron-builder.linux.json`, both extending `electron-builder.base.json`.
+### Windows (NSIS)
 
-### Windows runtime layout
-
-Windows builds expect a portable Python runtime staged at `apps/desktop/resources/sanmiao-runtime/` before packaging.
-
-Recommended source layout for that runtime:
-
-```text
-sanmiao-runtime/
-  python.exe
-  python3.dll
-  python311.zip
-  Lib/
-    site-packages/
-      sanmiao/
-      <sanmiao dependencies>
+```bash
+npm run package:win -w le-jean-baptiste-desktop
 ```
 
-You can point the bundler at an existing prepared runtime with `SANMIAO_RUNTIME_DIR`, or place the prepared folder next to this repo as `../sanmiao-runtime`.
+The `prepackage:win` hook exports the icon and stages the bundled Python
+runtime (see above) before electron-builder assembles the installer.
 
 ### Notes
 

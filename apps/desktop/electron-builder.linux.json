@@ -7,7 +7,17 @@
     "icon": "icons",
     "category": "Office",
     "syncDesktopName": true,
-    "maintainer": "Daniel Patrick Morgan <daniel.morgan@college-de-france.fr>"
+    "maintainer": "Daniel Patrick Morgan <daniel.morgan@college-de-france.fr>",
+    "extraResources": [
+      {
+        "from": "resources/python",
+        "to": "python",
+        "filter": [
+          "**/*",
+          "!.deps-installed"
+        ]
+      }
+    ]
   },
   "deb": {
     "depends": [
@@ -19,11 +29,7 @@
       "xdg-utils",
       "libatspi2.0-0",
       "libuuid1",
-      "libsecret-1-0",
-      "python3 (>= 3.9)",
-      "python3-pandas",
-      "python3-numpy",
-      "python3-lxml"
+      "libsecret-1-0"
     ]
   },
   "win": {
