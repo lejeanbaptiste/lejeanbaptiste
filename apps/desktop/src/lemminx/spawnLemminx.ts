@@ -4,10 +4,16 @@ import path from 'path';
 import { app } from 'electron';
 
 export const getLemminxBinaryPath = (): string | null => {
-  if (process.platform !== 'darwin') return null;
-
+  const platform = process.platform;
   const arch = process.arch === 'arm64' ? 'aarch_64' : 'x86_64';
-  const binaryName = `lemminx-osx-${arch}`;
+  const binaryName =
+    platform === 'darwin'
+      ? `lemminx-osx-${arch}`
+      : platform === 'win32'
+        ? `lemminx-win-${arch}.exe`
+        : null;
+
+  if (!binaryName) return null;
 
   const base = app.isPackaged
     ? path.join(process.resourcesPath, 'lemminx')
@@ -21,7 +27,7 @@ export const spawnLemminxProcess = (): ChildProcessWithoutNullStreams => {
   const binaryPath = getLemminxBinaryPath();
   if (!binaryPath) {
     throw new Error(
-      'LemMinX binary not found. Run: npm run lemminx:download -w le-jean-baptiste-desktop',
+      'LemMinX binary not found for this platform. Run: npm run lemminx:download -w le-jean-baptiste-desktop',
     );
   }
 

@@ -1772,7 +1772,7 @@ const createWindow = async () => {
       : 'Could not start the bundled LEAF-Writer server.';
     const detail = isDev
       ? 'Make sure leafwriter-commons is running on port 3000, then restart the desktop app.\n\nFrom the repo root: npm run dev -w leafwriter-commons'
-      : 'The packaged app could not start its bundled server. Quit the app and open it again. If the problem persists, rebuild the DMG and make sure the app was copied fully out of the disk image.';
+      : 'The packaged app could not start its bundled server. Quit the app and open it again. If the problem persists, rebuild the installer and make sure the packaged Commons server was included.';
     await dialog.showMessageBox(mainWindow, {
       type: 'error',
       title: APP_NAME,
