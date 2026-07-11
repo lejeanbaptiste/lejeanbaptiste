@@ -1,38 +1,55 @@
 #!/usr/bin/env node
 /**
- * Downloads a relocatable CPython (python-build-standalone) and preinstalls the
- * Sanmiao runtime deps, so macOS users get date tagging with zero Python setup.
- * macOS only: the Linux .deb declares distro python3-* packages instead.
+ * Downloads a relocatable CPython (python-build-standalone) and pip-installs
+ * the pinned sanmiao release into it, so every platform ships date tagging
+ * with zero Python setup — and every dev machine/VM self-provisions the same
+ * runtime at the same repo-relative path (apps/desktop/resources/python).
  */
-import { existsSync, mkdirSync, rmSync, unlinkSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'fs';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 // https://github.com/astral-sh/python-build-standalone — "install_only" builds are relocatable.
-const PBS_TAG = '20241016';
-const PYTHON_VERSION = '3.12.7';
-const SANMIAO_DEPS = ['pandas', 'numpy', 'lxml'];
+const PBS_TAG = '20260623';
+const PYTHON_VERSION = '3.12.13';
+const SANMIAO_SPEC = 'sanmiao[fuzzy]==0.2.10';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RESOURCES_DIR = path.join(__dirname, '../resources/python');
 
-const platform = process.platform;
-if (platform !== 'darwin') {
-  console.log(`[python-runtime] Skipping download on ${platform} (macOS only; Linux uses apt deps).`);
-  process.exit(0);
+const TARGETS = {
+  'darwin-arm64': 'aarch64-apple-darwin',
+  'darwin-x64': 'x86_64-apple-darwin',
+  'linux-arm64': 'aarch64-unknown-linux-gnu',
+  'linux-x64': 'x86_64-unknown-linux-gnu',
+  'win32-arm64': 'aarch64-pc-windows-msvc',
+  'win32-x64': 'x86_64-pc-windows-msvc',
+};
+
+const target = TARGETS[`${process.platform}-${process.arch}`];
+if (!target) {
+  console.error(`[python-runtime] Unsupported platform: ${process.platform}-${process.arch}`);
+  process.exit(1);
 }
 
-const arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64';
-const asset = `cpython-${PYTHON_VERSION}+${PBS_TAG}-${arch}-apple-darwin-install_only.tar.gz`;
+const asset = `cpython-${PYTHON_VERSION}+${PBS_TAG}-${target}-install_only.tar.gz`;
 const url = `https://github.com/astral-sh/python-build-standalone/releases/download/${PBS_TAG}/${asset}`;
 
-const pythonBin = path.join(RESOURCES_DIR, 'bin', 'python3');
+const pythonBin =
+  process.platform === 'win32'
+    ? path.join(RESOURCES_DIR, 'python.exe')
+    : path.join(RESOURCES_DIR, 'bin', 'python3');
 const stampPath = path.join(RESOURCES_DIR, '.deps-installed');
+const stamp = `${asset} ${SANMIAO_SPEC}`;
 
-if (existsSync(pythonBin) && existsSync(stampPath)) {
+if (
+  existsSync(pythonBin) &&
+  existsSync(stampPath) &&
+  readFileSync(stampPath, 'utf-8').trim() === stamp
+) {
   console.log(`[python-runtime] Already present: ${pythonBin}`);
   process.exit(0);
 }
@@ -50,15 +67,19 @@ if (!response.ok) {
 await pipeline(response.body, createWriteStream(tarPath));
 
 console.log(`[python-runtime] Extracting ${asset}`);
-// Tarball root is python/ — strip it so bin/ lands directly in RESOURCES_DIR.
-execSync(`tar -xzf "${tarPath}" -C "${RESOURCES_DIR}" --strip-components=1`, { stdio: 'inherit' });
+// Tarball root is python/ — strip it so bin/ (or python.exe) lands directly in
+// RESOURCES_DIR. Windows 10+ ships bsdtar as tar.exe, which handles .tar.gz.
+execFileSync('tar', ['-xzf', tarPath, '-C', RESOURCES_DIR, '--strip-components=1'], {
+  stdio: 'inherit',
+});
 unlinkSync(tarPath);
 
-console.log(`[python-runtime] Installing Sanmiao deps: ${SANMIAO_DEPS.join(', ')}`);
-execSync(
-  `"${pythonBin}" -m pip install --no-warn-script-location --disable-pip-version-check ${SANMIAO_DEPS.join(' ')}`,
+console.log(`[python-runtime] Installing ${SANMIAO_SPEC}`);
+execFileSync(
+  pythonBin,
+  ['-m', 'pip', 'install', '--no-warn-script-location', '--disable-pip-version-check', SANMIAO_SPEC],
   { stdio: 'inherit' },
 );
 
-execSync(`touch "${stampPath}"`);
+writeFileSync(stampPath, `${stamp}\n`);
 console.log(`[python-runtime] Ready: ${pythonBin}`);
