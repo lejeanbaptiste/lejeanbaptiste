@@ -1,5 +1,5 @@
 /**
- * Offline CBDB/DILA lifecycle: fetch packs from GitLab → optional raw reference data.
+ * Offline CBDB/DILA lifecycle: fetch packs from GitHub → optional raw reference data.
  */
 
 import fs from 'node:fs';
@@ -235,7 +235,10 @@ export const isUpdateAvailable = (
 
   if (lifecycle.compilePolicyVersion !== COMPILE_POLICY_VERSION) return true;
 
-  if (remoteIndex && remotePackUpdateAvailable(localPackManifest, remoteIndex, COMPILE_POLICY_VERSION)) {
+  if (
+    remoteIndex &&
+    remotePackUpdateAvailable(localPackManifest, remoteIndex, COMPILE_POLICY_VERSION, profile)
+  ) {
     return true;
   }
 
@@ -311,8 +314,9 @@ export interface RunAuthorityLifecyclePipelineOptions {
   onProgress?: (progress: AuthorityLifecycleProgress) => void;
 }
 
-const installPacksFromGitLab = async ({
+const installPacksFromGitHub = async ({
   entityDbFolder,
+  profile,
   forceDownload,
   onProgress,
 }: RunAuthorityLifecyclePipelineOptions): Promise<AuthorityPacksIndex> => {
@@ -324,6 +328,7 @@ const installPacksFromGitLab = async ({
   await installPackBundle({
     entityDbFolder,
     index,
+    profile,
     force: forceDownload,
     onProgress: (message, receivedBytes, totalBytes) => {
       onProgress?.({
@@ -365,7 +370,7 @@ const installPacksViaCompileFallback = async ({
   await fsp.rm(bakDir, { recursive: true, force: true });
 };
 
-/** Fetch GitLab pack bundle; optionally refresh raw reference databases. */
+/** Fetch GitHub pack bundle; optionally refresh raw reference databases. */
 export const runAuthorityLifecyclePipeline = async (
   options: RunAuthorityLifecyclePipelineOptions,
 ): Promise<AuthorityLifecycleRunResult> => {
@@ -401,7 +406,7 @@ export const runAuthorityLifecyclePipeline = async (
     if (useCompileFallback()) {
       await installPacksViaCompileFallback(options);
     } else {
-      packIndex = await installPacksFromGitLab(options);
+      packIndex = await installPacksFromGitHub(options);
     }
 
     if (lifecycle.referenceDataEnabled && spec.supportsReferenceData) {

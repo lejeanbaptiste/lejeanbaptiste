@@ -8,12 +8,12 @@ import {
 import { remotePackUpdateAvailable } from './authorityPackRegistry';
 
 describe('authorityPackRegistryTypes', () => {
-  it('builds GitLab artifact URLs', () => {
+  it('builds GitHub release asset URLs', () => {
     expect(packsIndexUrl()).toBe(
-      'https://gitlab.huma-num.fr/dmorgan1/ljb-authorities/-/jobs/artifacts/main/raw/dist/packs-index.json?job=build-packs',
+      'https://github.com/lejeanbaptiste/authoritypacks/releases/latest/download/packs-index.json',
     );
     expect(artifactRawUrl(AUTHORITY_PACK_REGISTRY, 'authority-packs-x.tar.gz')).toBe(
-      'https://gitlab.huma-num.fr/dmorgan1/ljb-authorities/-/jobs/artifacts/main/raw/dist/authority-packs-x.tar.gz?job=build-packs',
+      'https://github.com/lejeanbaptiste/authoritypacks/releases/latest/download/authority-packs-x.tar.gz',
     );
   });
 
@@ -24,12 +24,16 @@ describe('authorityPackRegistryTypes', () => {
         bundleVersion: '2026-07-05+cbdb20260627',
         compilePolicyVersion: '2026-07-05',
         builtAt: '2026-07-05T00:00:00.000Z',
-        tarball: {
-          fileName: 'authority-packs-2026-07-05+cbdb20260627.tar.gz',
-          bytes: 100,
-          sha256: 'a'.repeat(64),
-        },
-        files: [{ path: 'cbdb/manifest.json', bytes: 1, sha256: 'b'.repeat(64) }],
+        defaultBundleId: 'chinese',
+        bundles: [
+          {
+            id: 'chinese',
+            fileName: 'authority-packs-chinese.tar.gz',
+            bytes: 100,
+            sha256: 'a'.repeat(64),
+            files: [{ path: 'cbdb/manifest.json', bytes: 1, sha256: 'b'.repeat(64) }],
+          },
+        ],
       }),
     );
     expect(parsed?.bundleVersion).toBe('2026-07-05+cbdb20260627');
@@ -54,12 +58,20 @@ describe('remotePackUpdateAvailable', () => {
     bundleVersion: '2026-07-05+cbdb20260627',
     compilePolicyVersion: '2026-07-05',
     builtAt: '',
-    tarball: { fileName: 'x.tar.gz', bytes: 1, sha256: 'a'.repeat(64) },
-    files: [],
+    defaultBundleId: 'chinese',
+    bundles: [
+      {
+        id: 'chinese',
+        fileName: 'authority-packs-chinese.tar.gz',
+        bytes: 1,
+        sha256: 'a'.repeat(64),
+        files: [{ path: 'cbdb/manifest.json', bytes: 1, sha256: 'b'.repeat(64) }],
+      },
+    ],
   };
 
   it('is true when nothing installed locally', () => {
-    expect(remotePackUpdateAvailable(null, remote, '2026-07-05')).toBe(true);
+    expect(remotePackUpdateAvailable(null, remote, '2026-07-05', 'chinese')).toBe(true);
   });
 
   it('is false when versions match', () => {
@@ -73,6 +85,7 @@ describe('remotePackUpdateAvailable', () => {
         },
         remote,
         '2026-07-05',
+        'chinese',
       ),
     ).toBe(false);
   });

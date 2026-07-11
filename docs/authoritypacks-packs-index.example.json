@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "bundleVersion": "2026-07-11",
+  "compilePolicyVersion": "2026-07-11",
+  "builtAt": "2026-07-11T00:00:00.000Z",
+  "defaultBundleId": "chinese",
+  "bundles": [
+    {
+      "id": "chinese",
+      "fileName": "authority-packs-chinese.tar.gz",
+      "bytes": 41369600,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "pathPrefix": "authority-packs",
+      "fileCount": 12,
+      "files": [
+        {
+          "path": "cbdb/manifest.json",
+          "bytes": 1,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    {
+      "id": "japanese",
+      "fileName": "authority-packs-japanese.tar.gz",
+      "bytes": 126877696,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "pathPrefix": "authority-packs",
+      "fileCount": 16,
+      "files": [
+        {
+          "path": "ndl/manifest.json",
+          "bytes": 1,
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ]
+    },
+    {
+      "id": "tibetan",
+      "fileName": "authority-packs-tibetan.tar.gz",
+      "bytes": 2048000,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "pathPrefix": "authority-packs",
+      "fileCount": 6,
+      "files": [
+        {
+          "path": "wikidata/person-bo/manifest.json",
+          "bytes": 1,
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ]
+    }
+  ]
+}

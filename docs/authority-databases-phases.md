@@ -69,7 +69,7 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 **Still to do:**
 
 - [x] Year-range slider + hide undated (A4)
-- [ ] In-app compile from downloaded sqlite/XML — **superseded**: GitLab packs + optional raw reference ([authority-data-lifecycle.md](authority-data-lifecycle.md))
+- [ ] In-app compile from downloaded sqlite/XML — **superseded**: GitHub release packs + optional raw reference ([authority-data-lifecycle.md](authority-data-lifecycle.md))
 - [ ] Progress / memory profile on full 659k-person load
 
 **Done when:** each downloaded source yields NDJSON artifacts; a golden test compiles a fixture slice of each source and snapshots the candidates (including clue lines). → **Met via authority extraction tests + packLoader tests.**
@@ -112,9 +112,9 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 
 ## Phase A5 — Update checking & lifecycle
 
-**Spec:** [authority-data-lifecycle.md](authority-data-lifecycle.md) (revised 2026-07-05) — **two-tier model**: tagging packs from **GitLab CI**, reference databases from **official upstream**.
+**Spec:** [authority-data-lifecycle.md](authority-data-lifecycle.md) (revised 2026-07-05) — **two-tier model**: tagging packs from **GitHub releases**, reference databases from **official upstream**.
 
-**Decision (2026-07-05):** Do **not** compile on user machines for CBDB/DILA in production. GitLab builds NDJSON; LJB downloads binaries. Raw sqlite/XML remains a **separate optional tier** for entity enrichment (posting history, full TEI, coords, etc.) — not for tag matching.
+**Decision (2026-07-05):** Do **not** compile on user machines for CBDB/DILA in production. GitHub Actions builds NDJSON and publishes release tarballs; LJB downloads binaries. Raw sqlite/XML remains a **separate optional tier** for entity enrichment (posting history, full TEI, coords, etc.) — not for tag matching.
 
 **Built (spike, 2026-07-05):**
 
@@ -125,14 +125,14 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 
 **Prepare (build next — in order):**
 
-1. [x] **C3/D3** — GitLab CI in `authority extraction`: compile → tarball + `packs-index.json`
-2. [x] LJB pack fetcher: `authorityPackRegistry.ts` — download bundle from GitLab artifacts, verify sha256, extract
+1. [x] **C3/D3** — GitHub Actions in `authoritypacks`: compile → tarball + `packs-index.json`
+2. [x] LJB pack fetcher: `authorityPackRegistry.ts` — download bundle from GitHub release assets, verify sha256, extract
 3. [ ] **Reference data** checkbox (default off): keep A1 fetcher for `authority-databases/` when enabled
 4. [ ] Throttled check (≤ weekly): pack registry manifest + upstream pins (if reference enabled)
 5. [ ] “Update available” badge; on accept: refresh packs (+ raw if enabled). Never auto-replace mid-review
 6. [ ] Disable: delete or keep both tiers
 
-**Done when:** per [authority-data-lifecycle.md](authority-data-lifecycle.md) exit criteria — packs from GitLab, reference optional, no terminal for normal users.
+**Done when:** per [authority-data-lifecycle.md](authority-data-lifecycle.md) exit criteria — packs from GitHub, reference optional, no terminal for normal users.
 
 ## Phase A6 — Reference lookup (disambiguation enrichment)
 
@@ -151,7 +151,7 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 
 ## Phase H — CHGIS
 
-Historical place pack + **local-only** delivery (Dataverse EULA — no GitLab redistribution). Compile track in `authority extraction` (`chgis/compile.mjs`); LJB **Settings → Authorities → Install from download…** (`authorityChgis.ts`).
+Historical place pack + **local-only** delivery (Dataverse EULA — no GitHub redistribution). Compile track in `authority extraction` (`chgis/compile.mjs`); LJB **Settings → Authorities → Install from download…** (`authorityChgis.ts`).
 
 ## Deferred / future
 
