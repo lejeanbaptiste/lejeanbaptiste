@@ -36,9 +36,29 @@ npm run build:desktop
 
 This builds Commons, compiles the Electron main/preload scripts, and packages for the current host platform into `apps/desktop/release/`.
 
+### Windows runtime layout
+
+Windows builds expect a portable Python runtime staged at `apps/desktop/resources/sanmiao-runtime/` before packaging.
+
+Recommended source layout for that runtime:
+
+```text
+sanmiao-runtime/
+  python.exe
+  python3.dll
+  python311.zip
+  Lib/
+    site-packages/
+      sanmiao/
+      <sanmiao dependencies>
+```
+
+You can point the bundler at an existing prepared runtime with `SANMIAO_RUNTIME_DIR`, or place the prepared folder next to this repo as `../sanmiao-runtime`.
+
 ### Notes
 
 - **Host platform:** `npm run package` now builds the mac `.pkg` installer. Use `npm run package:linux` if you want the Linux stream, or `npm run package:mac` to be explicit.
+- **Windows packaging:** run `npm run package:win` after staging the runtime; the `prepackage:win` hook copies it into the app resources automatically.
 - **No code signing:** Unsigned builds may require right-click → Open on first launch.
 - The packaged app starts a local Express server and loads the `/project` route.
 

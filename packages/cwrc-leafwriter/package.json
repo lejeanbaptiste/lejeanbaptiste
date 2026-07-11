@@ -45,7 +45,7 @@
     "build": "NODE_OPTIONS=--max_old_space_size=4096 webpack && npm run release-copy-assets",
     "build-documentation": "typedoc --out docs src/index.tsx",
     "release-copy-assets": "node release.js",
-    "clean": "rm -rf node_modules dist lib",
+    "clean": "npx rimraf node_modules dist lib",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Downloads the LemMinX binary matching vscode-xml release (same engine as Red Hat XML extension).
- * macOS only for now; extend platformMap for Linux/Windows when needed.
+ * macOS is supported today; Windows is intentionally skipped until we wire a Windows binary source.
  */
 import { chmodSync, createWriteStream, existsSync, mkdirSync, unlinkSync } from 'fs';
 import { pipeline } from 'stream/promises';
@@ -25,7 +25,9 @@ const platform = process.platform;
 const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
 
 if (platform !== 'darwin') {
-  console.log(`[lemminx] Skipping download on ${platform} (macOS only for now).`);
+  console.log(
+    `[lemminx] Skipping download on ${platform} (Windows/Linux binary source not wired yet).`,
+  );
   process.exit(0);
 }
 

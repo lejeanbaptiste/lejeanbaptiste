@@ -62,6 +62,7 @@ jspm_packages/
 apps/desktop/.dev/
 apps/desktop/dist/
 apps/desktop/release/
+apps/desktop/resources/sanmiao-runtime/
 dist/
 release/
 web_modules/

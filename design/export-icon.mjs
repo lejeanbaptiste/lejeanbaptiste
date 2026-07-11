@@ -2,6 +2,7 @@
  * Export design/icon.svg → design/icon.png (1024×1024) for Electron / macOS.
  * Requires rsvg-convert (librsvg), e.g. brew install librsvg.
  */
+import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,13 @@ try {
   );
   console.log(`[design] Exported ${pngPath}`);
 } catch {
-  console.error('[design] rsvg-convert not found. Install with: brew install librsvg');
+  if (existsSync(pngPath)) {
+    console.log(
+      '[design] rsvg-convert not found; keeping the existing icon.png (pre-generated asset).',
+    );
+    process.exit(0);
+  }
+
+  console.error('[design] rsvg-convert not found and icon.png is missing. Install with: brew install librsvg');
   process.exit(1);
 }
