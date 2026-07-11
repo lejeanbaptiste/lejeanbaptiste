@@ -25,14 +25,20 @@ export const completeProjectOnboarding = async (
 ): Promise<ProjectBundle | null> => {
   if (!isDesktop()) return bundle;
 
+  const log = (step: string) => console.info(`[onboarding] ${step}`);
   let current = bundle;
 
+  log(`start: ${bundle.projectFilePath}`);
   if (!(await projectHasSchema(current))) {
+    log('no schema — opening schema setup dialog');
     const setup = await openNativeSchemaSetup(current.projectFilePath);
+    log(`schema setup result: ${setup.result}`);
     if (setup.result !== 'installed' || !setup.bundle) return null;
     current = setup.bundle;
   } else if (window.electronAPI?.ensureSanmiaoDatesSchema) {
+    log('schema present — ensuring sanmiao dates schema');
     const mergeResult = await window.electronAPI.ensureSanmiaoDatesSchema(current.projectFilePath);
+    log(`sanmiao merge: ${mergeResult.merged}`);
     if (mergeResult.merged && window.writer) {
       await window.writer.overmindActions?.validator?.clearCache?.();
       window.writer.schemaManager?.clearSchemaRevision?.();
@@ -40,7 +46,9 @@ export const completeProjectOnboarding = async (
   }
 
   if (!(await metadataFileExists(current))) {
+    log('no metadata — opening project metadata dialog');
     const saved = await openNativeProjectMetadata(current.projectFilePath, 'firstSetup');
+    log(`metadata dialog result: ${saved}`);
     if (saved !== 'saved') return null;
 
     if (window.electronAPI?.reloadProjectBundle) {
@@ -52,7 +60,9 @@ export const completeProjectOnboarding = async (
   // Source language is mandatory (auto-tagging Phase A0): legacy projects
   // saved before the fixed-code picker must set one before proceeding.
   if (projectRequiresSourceLanguage(current) && !(await getProjectSourceLanguage(current))) {
+    log('missing source language — opening metadata dialog');
     const saved = await openNativeProjectMetadata(current.projectFilePath, 'edition');
+    log(`source language dialog result: ${saved}`);
     if (saved !== 'saved') return null;
     if (window.electronAPI?.reloadProjectBundle) {
       const reloaded = await window.electronAPI.reloadProjectBundle(current.projectFilePath);
@@ -61,10 +71,13 @@ export const completeProjectOnboarding = async (
     if (!(await getProjectSourceLanguage(current))) return null;
   }
 
+  log('ensuring entity db folder');
   if (!(await ensureEntityDbFolder())) return null;
 
   if (!(await projectHasEntityStorePreference(current.projectFilePath))) {
+    log('no entity store preference — opening metadata dialog');
     const saved = await openNativeProjectMetadata(current.projectFilePath, 'edition');
+    log(`entity store dialog result: ${saved}`);
     if (saved !== 'saved') return null;
     if (window.electronAPI?.reloadProjectBundle) {
       const reloaded = await window.electronAPI.reloadProjectBundle(current.projectFilePath);
@@ -76,6 +89,7 @@ export const completeProjectOnboarding = async (
   // not hold up project open, and downloads run in the main process.
   void maybeOfferAuthorityDatabases(current).catch(() => undefined);
 
+  log('complete');
   return current;
 };
 

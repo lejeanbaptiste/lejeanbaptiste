@@ -2,6 +2,8 @@
  * GitHub-published authority pack registry (authoritypacks release assets).
  */
 
+export type { AuthorityLifecycleProfile } from './authorityLifecycleTypes';
+
 /** Latest published authoritypacks release assets. */
 export const AUTHORITY_PACK_REGISTRY = {
   releaseDownloadBaseUrl: 'https://github.com/lejeanbaptiste/authoritypacks/releases/latest/download',
@@ -41,10 +43,16 @@ export interface AuthorityPacksIndexBundle {
   files: AuthorityPacksIndexFile[];
 }
 
+export interface AuthorityPacksManifestBundle {
+  sha256: string;
+  installedAt: string;
+}
+
 export interface AuthorityPacksManifest {
   bundleVersion: string;
   compilePolicyVersion: string;
-  tarballSha256: string;
+  /** Installed bundle tarballs keyed by bundle id, so per-profile bundles coexist. */
+  bundles: Record<string, AuthorityPacksManifestBundle>;
   installedAt: string;
 }
 
@@ -89,15 +97,32 @@ export const parsePacksIndex = (raw: string): AuthorityPacksIndex | null => {
   }
 };
 
+const SHA256_RE = /^[0-9a-f]{64}$/;
+
 export const parsePacksManifest = (raw: string): AuthorityPacksManifest | null => {
   try {
-    const parsed = JSON.parse(raw) as Partial<AuthorityPacksManifest>;
+    const parsed = JSON.parse(raw) as Partial<AuthorityPacksManifest> & { tarballSha256?: string };
     if (typeof parsed.bundleVersion !== 'string' || !parsed.bundleVersion) return null;
     if (typeof parsed.compilePolicyVersion !== 'string') return null;
-    if (typeof parsed.tarballSha256 !== 'string' || !/^[0-9a-f]{64}$/.test(parsed.tarballSha256)) {
-      return null;
-    }
     if (typeof parsed.installedAt !== 'string') return null;
+
+    // Legacy single-bundle manifests recorded one tarballSha256; those predate
+    // multi-profile support, when only the chinese bundle existed.
+    if (typeof parsed.tarballSha256 === 'string') {
+      if (!SHA256_RE.test(parsed.tarballSha256)) return null;
+      return {
+        bundleVersion: parsed.bundleVersion,
+        compilePolicyVersion: parsed.compilePolicyVersion,
+        bundles: { chinese: { sha256: parsed.tarballSha256, installedAt: parsed.installedAt } },
+        installedAt: parsed.installedAt,
+      };
+    }
+
+    if (!parsed.bundles || typeof parsed.bundles !== 'object') return null;
+    for (const bundle of Object.values(parsed.bundles)) {
+      if (typeof bundle?.sha256 !== 'string' || !SHA256_RE.test(bundle.sha256)) return null;
+      if (typeof bundle.installedAt !== 'string') return null;
+    }
     return parsed as AuthorityPacksManifest;
   } catch {
     return null;

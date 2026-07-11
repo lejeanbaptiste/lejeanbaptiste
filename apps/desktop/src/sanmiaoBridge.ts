@@ -57,7 +57,6 @@ export type SanmiaoProgressCallback = (event: SanmiaoChunkProgress) => void;
 export const resolveSanmiaoRoot = (): string | null => {
   const candidates = [
     path.join(process.resourcesPath, 'sanmiao'),
-    path.join(process.resourcesPath, 'sanmiao-runtime'),
     path.resolve(__dirname, '../../../../sanmiao'),
     path.resolve(process.cwd(), '../sanmiao'),
   ];
@@ -67,11 +66,25 @@ export const resolveSanmiaoRoot = (): string | null => {
   return null;
 };
 
+/** Relocatable CPython (sanmiao preinstalled) staged by download-python-runtime.mjs. */
+const bundledRuntimePython = (): string | null => {
+  const roots = [
+    process.resourcesPath ? path.join(process.resourcesPath, 'python') : null,
+    path.resolve(__dirname, '../resources/python'),
+  ].filter((root): root is string => Boolean(root));
+  for (const root of roots) {
+    const python =
+      process.platform === 'win32'
+        ? path.join(root, 'python.exe')
+        : path.join(root, 'bin', 'python3');
+    if (fs.existsSync(python)) return python;
+  }
+  return null;
+};
+
 const pythonCandidates = (): string[] => {
   const fromEnv = process.env.SANMIAO_PYTHON?.trim();
   const root = resolveSanmiaoRoot();
-  const bundledPython =
-    root && path.join(root, process.platform === 'win32' ? 'python.exe' : 'bin/python');
   const venvPython =
     root && process.platform === 'win32'
       ? path.join(root, '.venv', 'Scripts', 'python.exe')
@@ -81,12 +94,13 @@ const pythonCandidates = (): string[] => {
 
   if (fromEnv) return [fromEnv];
 
-  if (bundledPython && fs.existsSync(bundledPython)) {
-    return [bundledPython];
-  }
-
   if (root && venvPython && fs.existsSync(venvPython)) {
     return [venvPython];
+  }
+
+  const bundledPython = bundledRuntimePython();
+  if (bundledPython) {
+    return [bundledPython, 'python3', 'python'];
   }
 
   return ['python3', 'python'];
@@ -169,13 +183,10 @@ export const resolveSanmiaoPython = async (): Promise<string> => {
     ? ` Editable setup: cd ${root} && python3 -m venv .venv && .venv/bin/pip install -e ".[fuzzy]"`
     : '';
   const failureHint = failures.length > 0 ? ` [${failures.join(' | ')}]` : '';
-  const windowsHint =
-    process.platform === 'win32'
-      ? ' For Windows packaging, place a portable Python runtime in resources/sanmiao-runtime or set SANMIAO_RUNTIME_DIR.'
-      : '';
   throw new Error(
-    `Sanmiao >= ${MIN_SANMIAO_VERSION} is not available.${devHint}${windowsHint} ` +
-      `Or: bundle a runtime under resources/sanmiao-runtime, pip install -U sanmiao, or set SANMIAO_PYTHON.${failureHint}`,
+    `Sanmiao >= ${MIN_SANMIAO_VERSION} is not available.${devHint} ` +
+      `Or: stage the bundled runtime with "npm run python:download" (apps/desktop), ` +
+      `pip install -U sanmiao, or set SANMIAO_PYTHON.${failureHint}`,
   );
 };
 

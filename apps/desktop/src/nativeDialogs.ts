@@ -84,7 +84,7 @@ export const initNativeDialogs = (deps: {
 
 const notifyDialogClosed = (id: string) => {
   const parent = getParentWindow();
-  if (parent && !parent.isDestroyed()) {
+  if (parent && !parent.isDestroyed() && !parent.webContents.isDestroyed()) {
     parent.webContents.send('native-dialog:closed', id);
   }
 };
@@ -173,10 +173,14 @@ const loadPooledDialog = async (type: NativeDialogType): Promise<BrowserWindow> 
     const url = await getAppUrl(config.route);
     const warmupUrl = `${url}?dialogId=__prewarm__`;
     pooled.loadPromise = new Promise<void>((resolve, reject) => {
-      pooled!.window.once('ready-to-show', () => {
+      const done = () => {
         pooled!.loaded = true;
         resolve();
-      });
+      };
+      // ready-to-show never fires for hidden windows on some Linux/Wayland
+      // setups; did-finish-load is the reliable fallback.
+      pooled!.window.once('ready-to-show', done);
+      pooled!.window.webContents.once('did-finish-load', done);
       pooled!.window.webContents.once('did-fail-load', (_event, _code, description) => {
         reject(new Error(description));
       });
@@ -246,13 +250,23 @@ const openEphemeralNativeDialog = async (payload: {
   });
 
   const loadUrl = `${url}?dialogId=${encodeURIComponent(payload.id)}`;
+  console.log(`[nativeDialogs] opening ${payload.type} dialog: ${loadUrl}`);
   await new Promise<void>((resolve, reject) => {
-    dialogWindow.once('ready-to-show', () => {
+    let shown = false;
+    const showDialog = (source: string) => {
+      if (shown || dialogWindow.isDestroyed()) return;
+      shown = true;
+      console.log(`[nativeDialogs] ${payload.type} ready (${source}) — showing`);
       dialogWindow.show();
       dialogWindow.focus();
       resolve();
-    });
+    };
+    // ready-to-show never fires for hidden windows on some Linux/Wayland
+    // setups; did-finish-load is the reliable fallback.
+    dialogWindow.once('ready-to-show', () => showDialog('ready-to-show'));
+    dialogWindow.webContents.once('did-finish-load', () => showDialog('did-finish-load'));
     dialogWindow.webContents.once('did-fail-load', (_event, _code, description) => {
+      console.error(`[nativeDialogs] ${payload.type} failed to load: ${description}`);
       reject(new Error(description));
     });
     void dialogWindow.loadURL(loadUrl).catch(reject);

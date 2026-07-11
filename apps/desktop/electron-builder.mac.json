@@ -3,6 +3,16 @@
   "mac": {
     "target": [
       "pkg"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/python",
+        "to": "python",
+        "filter": [
+          "**/*",
+          "!.deps-installed"
+        ]
+      }
     ]
   },
   "linux": null,

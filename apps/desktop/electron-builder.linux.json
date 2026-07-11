@@ -4,10 +4,27 @@
     "target": [
       "deb"
     ],
+    "icon": "icons",
     "category": "Office",
-    "desktopName": "le-jean-baptiste",
     "syncDesktopName": true,
     "maintainer": "Daniel Patrick Morgan <daniel.morgan@college-de-france.fr>"
+  },
+  "deb": {
+    "depends": [
+      "libgtk-3-0",
+      "libnotify4",
+      "libnss3",
+      "libxss1",
+      "libxtst6",
+      "xdg-utils",
+      "libatspi2.0-0",
+      "libuuid1",
+      "libsecret-1-0",
+      "python3 (>= 3.9)",
+      "python3-pandas",
+      "python3-numpy",
+      "python3-lxml"
+    ]
   },
   "win": {
     "target": [

@@ -7,6 +7,12 @@ import type { AuthorityPackStatus } from './authorityPackTypes';
 
 export type AuthorityLifecycleProfile = 'chinese' | 'japanese' | 'tibetan';
 
+export const ALL_AUTHORITY_PROFILES: AuthorityLifecycleProfile[] = [
+  'chinese',
+  'japanese',
+  'tibetan',
+];
+
 /** Matches `policy.version` in compiled pack manifests (authority extraction). */
 export const COMPILE_POLICY_VERSION = '2026-07-05';
 
@@ -15,7 +21,10 @@ export const LIFECYCLE_FILENAME = 'lifecycle.json';
 export interface AuthorityLifecycleConfig {
   version: 1;
   enabled: boolean;
+  /** Legacy single profile; superseded by `profiles`. Still read from old lifecycle.json files. */
   profile?: AuthorityLifecycleProfile;
+  /** Independently enabled language packs. When absent, derived from `enabled` + `profile`. */
+  profiles?: AuthorityLifecycleProfile[];
   /** When true, also download raw CBDB/DILA into authority-databases/ for reference lookup. */
   referenceDataEnabled?: boolean;
   lastCheckAt?: string;
@@ -44,9 +53,20 @@ export interface AuthorityLifecycleDiskUsage {
   packBytes: number;
 }
 
+export interface AuthorityLifecycleProfileStatus {
+  id: AuthorityLifecycleProfile;
+  label: string;
+  enabled: boolean;
+  installedPacks: number;
+  totalPacks: number;
+  packsReady: boolean;
+}
+
 export interface AuthorityLifecycleStatus {
   enabled: boolean;
+  /** Legacy: first enabled profile (or 'chinese'). Prefer `profileStatuses`. */
   profile: AuthorityLifecycleProfile;
+  profileStatuses: AuthorityLifecycleProfileStatus[];
   entityDbFolder: string | null;
   entityDbReady: boolean;
   label: string;
