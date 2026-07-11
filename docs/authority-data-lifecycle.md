@@ -2,7 +2,7 @@
 
 **Status:** Spec (revised 2026-07-05) — two-tier model; **CI-first pack delivery** for normal users.
 
-**Related:** [authority-databases-phases.md](authority-databases-phases.md) (tracks A0–A6), [authority-databases-planning.md](authority-databases-planning.md) (field detail), [authority extraction/docs/phases.md](../../authority%20extraction/docs/phases.md) (compile + GitLab publish).
+**Related:** [authority-databases-phases.md](authority-databases-phases.md) (tracks A0–A6), [authority-databases-planning.md](authority-databases-planning.md) (field detail), [authority extraction/docs/phases.md](../../authority%20extraction/docs/phases.md) (compile + GitHub publish).
 
 **Scope (v1):** **CBDB** and **DILA**. **CHGIS** is planned as a third offline place source — see [CHGIS (planned)](#chgis-planned). These are Buddhist/Chinese **authority databases**, not CBETA corpus files.
 
@@ -20,11 +20,11 @@ Tag bomb and disambiguation need **fast, versioned tagging packs**, but scholars
 
 | Tier | Path | Source | Purpose |
 |------|------|--------|---------|
-| **Tagging packs** | `<entityDbFolder>/authority-packs/` | **GitLab CI** (pre-compiled NDJSON + manifest) | Tag bomb; offline disambiguation **shortlist** (names, ids, dynasty, dates, clue lines) |
+| **Tagging packs** | `<entityDbFolder>/authority-packs/` | **GitHub repo + Actions** (pre-compiled NDJSON + manifest) | Tag bomb; offline disambiguation **shortlist** (names, ids, dynasty, dates, clue lines) |
 | **Reference databases** | `<entityDbFolder>/authority-databases/` | **Official upstream** (HuggingFace CBDB, DILA GitHub, etc.) | Rich lookup when minting/enriching project entities — posting history, full TEI, coords, `CHGIS_PT_ID`, etc. |
 
 ```text
-GitLab CI (compile on tag / upstream pin change)
+GitHub Actions (compile on tag / upstream pin change)
         ↓
 Pack registry (manifest + NDJSON tarballs, sha256)
         ↓
@@ -39,7 +39,7 @@ authorityRef:lookup(source, id)         ← disambiguation detail pane (A6, plan
 entities.xml (<idno> + optional authority-cache note)
 ```
 
-**Why both:** Compiled packs are **lossy by design** — they keep only what string matching and one-line clues need. CBDB sqlite alone has dozens of tables; DILA XML has full `<note>`, `<placeOfOrigin>`, district hierarchy. Users building a serious entity database will want the reference layer even when packs come from GitLab.
+**Why both:** Compiled packs are **lossy by design** — they keep only what string matching and one-line clues need. CBDB sqlite alone has dozens of tables; DILA XML has full `<note>`, `<placeOfOrigin>`, district hierarchy. Users building a serious entity database will want the reference layer even when packs come from GitHub.
 
 **Runtime rules:**
 
@@ -56,7 +56,7 @@ Nothing in the **matcher** reads raw sqlite/XML. The **disambiguation panel** ma
 
 ## Licenses (distribution constraints)
 
-| Source | License | Tagging packs (GitLab) | Raw reference download |
+| Source | License | Tagging packs (GitHub releases) | Raw reference download |
 |--------|---------|------------------------|-------------------------|
 | **CBDB** | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | **OK** — attribute CBDB; release derivatives under NC-SA | User fetches from HuggingFace / Harvard (same license) |
 | **DILA** | CC-BY-SA 3.0 | **OK** — attribute DILA; share-alike on derivatives | User fetches from DILA GitHub |
@@ -74,10 +74,10 @@ Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not va
 
 | Control | Behavior |
 |---------|----------|
-| **Enable** (master toggle) | Download tagging packs from GitLab registry; optionally download reference databases from upstream. Weekly update checks. |
+| **Enable** (master toggle) | Download tagging packs from the GitHub `authoritypacks` repo; optionally download reference databases from upstream. Weekly update checks. |
 | **Reference databases** (checkbox, default **on**) | Also fetch raw CBDB sqlite + DILA XML into `authority-databases/` for disambiguation enrichment. Can turn off to save ~685 MB if user only tags. |
 | **Status** | Per tier: pack version, reference version, disk use, last check, update available / downloading / error. |
-| **Update now** | Refresh packs from GitLab; refresh reference data from upstream if enabled. |
+| **Update now** | Refresh packs from GitHub; refresh reference data from upstream if enabled. |
 | **Open folder** | Reveal `<entityDbFolder>` in the file manager. |
 
 **Not in scope:** Entity Lookups bubble order (VIAF, Wikidata) — online lookup at mint time (Phase 4b). Tag bomb source checkboxes stay in the auto-tag dialog.
@@ -91,7 +91,7 @@ Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not va
 ```
 <entityDbFolder>/
   entities.xml
-  authority-packs/              # Tier 1 — from GitLab (tagging binaries)
+  authority-packs/              # Tier 1 — from GitHub (tagging binaries)
     cbdb/
       manifest.json             # policy.version, license, sha256, upstream pin
       persons.ndjson
@@ -103,7 +103,7 @@ Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not va
       places.ndjson
   authority-databases/          # Tier 2 — from official upstream (reference)
     lifecycle.json              # app prefs (see below)
-    packs.manifest.json         # last-installed pack bundle from GitLab (version, sha256, url)
+    packs.manifest.json         # last-installed pack bundle from GitHub (version, sha256, url)
     cbdb.manifest.json
     cbdb.sqlite3
     dila.manifest.json
@@ -133,7 +133,7 @@ Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not va
 ```
 
 - **`referenceDataEnabled`** — when true, also maintain raw CBDB/DILA under `authority-databases/`.
-- **`packBundleVersion`** — matches the GitLab-published bundle (not necessarily the same as upstream CBDB release date).
+- **`packBundleVersion`** — matches the GitHub-published bundle (not necessarily the same as upstream CBDB release date).
 - **`compilePolicyVersion`** — matches `policy.version` in pack manifests.
 
 ---
@@ -143,7 +143,7 @@ Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not va
 When the user turns **Enable** on:
 
 1. **Validate** entity DB folder (`entities.xml` at root).
-2. **Download tagging packs** from the **pack registry** (GitLab Package Registry, GitLab Release assets, or HuggingFace dataset you control):
+2. **Download tagging packs** from the **pack registry** (GitHub contents, GitHub Release assets, or HuggingFace dataset you control):
    - Fetch bundle manifest → compare version / sha256.
    - Download tarball(s) → verify → extract to `authority-packs.new/` → atomic rename → `authority-packs/`.
 3. **If reference data enabled:** download missing/outdated **raw** sources (existing A1 fetcher):
@@ -186,16 +186,16 @@ Same as before: stop checks; confirm **Delete files** (both tiers) vs **Keep fil
 
 ---
 
-## GitLab pack registry (authority extraction)
+## GitHub pack registry (authority extraction)
 
-**Decision (C3, 2026-07-05):** Pre-compiled packs built in **GitLab CI**, not on user machines.
+**Decision (C3, 2026-07-05):** Pre-compiled packs built in **GitHub Actions**, not on user machines.
 
 **Pipeline (sketch):**
 
 1. Trigger: release tag, or manual pipeline when upstream pin / `policy.version` changes.
 2. Job: `npm run compile:cbdb && npm run compile:dila` in `authority extraction`.
 3. Artifact: `authority-packs-{version}.tar.gz` + root `packs-index.json` (version, policy, per-file sha256, licenses, attribution).
-4. Publish: GitLab Release asset or Package Registry (HTTPS, stable URL for LJB manifest check).
+4. Publish: commit generated `dist/` to the `authoritypacks` repo or attach GitHub Release assets with stable URLs for LJB manifest check.
 
 LJB desktop app **only downloads** this artifact for tier 1. Compile scripts remain in `authority extraction` for CI and local dev.
 
@@ -222,7 +222,7 @@ Historical China **places** — complements CBDB places and DILA. See [authority
 | Aspect | Plan |
 |--------|------|
 | Pack | `authority-packs/chgis/places.ndjson` (compile in `authority extraction`) |
-| Delivery | **Reference + compile on user machine only** — Dataverse EULA forbids redistributing compiled packs via GitLab |
+| Delivery | **Reference + compile on user machine only** — Dataverse EULA forbids redistributing compiled packs via GitHub |
 | Crosswalk | CBDB `CHGIS_PT_ID`; overlap merge at match/disambiguation time |
 | UI | Extend offline authorities block when CHGIS track ships |
 
@@ -245,14 +245,14 @@ Historical China **places** — complements CBDB places and DILA. See [authority
 | Step | Track | Deliverable | Status |
 |------|-------|-------------|--------|
 | 1 | A5 | This spec; lifecycle IPC + Settings UI (spike) | partial |
-| 2 | C3/D3 | GitLab CI → publish pack bundle + `packs-index.json` | done |
-| 3 | A5 | LJB: fetch packs from GitLab artifacts (`authorityPackRegistry.ts`) | done |
+| 2 | C3/D3 | GitHub Actions → publish pack bundle + `packs-index.json` | done |
+| 3 | A5 | LJB: fetch packs from GitHub contents (`authorityPackRegistry.ts`) | done |
 | 4 | A5 | Reference-data checkbox + keep A1 fetcher for tier 2 | planned |
 | 5 | A6 | `authorityRef:lookup` for disambiguation / entity enrichment | planned |
 | 6 | D1 | DILA recompile (D0 `<note>`/`<add>` variants); bump policy | planned |
 | 7 | H | CHGIS compile + local-only lifecycle | planned |
 
-**Exit criteria:** User enables once; packs install from GitLab without terminal; reference data optional; tag bomb works; update offers new pack bundle; disambiguation can show rich CBDB/DILA detail from local reference; disable + delete reclaims disk.
+**Exit criteria:** User enables once; packs install from GitHub without terminal; reference data optional; tag bomb works; update offers new pack bundle; disambiguation can show rich CBDB/DILA detail from local reference; disable + delete reclaims disk.
 
 ---
 
@@ -260,7 +260,7 @@ Historical China **places** — complements CBDB places and DILA. See [authority
 
 - Web app (no filesystem).
 - Auto-update without user confirmation.
-- Redistributing CHGIS-derived packs from GitLab.
+- Redistributing CHGIS-derived packs from GitHub.
 - CBETA corpus updates.
 - In-app editing of compile rules.
 
@@ -268,6 +268,5 @@ Historical China **places** — complements CBDB places and DILA. See [authority
 
 ## Open questions
 
-- [ ] Exact GitLab host path (Release vs Package Registry vs HuggingFace dataset for packs).
 - [ ] Pack bundle format: one tarball vs per-source files.
 - [ ] CBDB API as online fallback when reference sqlite missing — defer to 4b.

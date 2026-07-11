@@ -1,5 +1,5 @@
 /**
- * Download and install pre-compiled authority packs from GitLab CI (ljb-authorities).
+ * Download and install pre-compiled authority packs from GitHub release assets.
  */
 
 import { createHash } from 'node:crypto';
@@ -19,7 +19,9 @@ import {
   parsePacksIndex,
   parsePacksManifest,
   tarballArtifactUrl,
+  type AuthorityLifecycleProfile,
   type AuthorityPacksIndex,
+  type AuthorityPacksIndexBundle,
   type AuthorityPacksManifest,
 } from '../../commons/src/desktop/authorityPackRegistryTypes';
 
@@ -32,7 +34,9 @@ export {
   parsePacksIndex,
   parsePacksManifest,
   tarballArtifactUrl,
+  type AuthorityLifecycleProfile,
   type AuthorityPacksIndex,
+  type AuthorityPacksIndexBundle,
   type AuthorityPacksManifest,
 } from '../../commons/src/desktop/authorityPackRegistryTypes';
 
@@ -108,64 +112,85 @@ export const fetchRemotePacksIndex = async (
   const raw = await response.text();
   const parsed = parsePacksIndex(raw);
   if (!parsed) {
-    throw new Error('Pack index from GitLab is missing or malformed.');
+    throw new Error('Pack index from GitHub is missing or malformed.');
   }
   return parsed;
+};
+
+export const bundleForProfile = (
+  index: AuthorityPacksIndex,
+  profile: AuthorityLifecycleProfile,
+): AuthorityPacksIndexBundle => {
+  const bundles = index.bundles ?? [];
+  const match =
+    bundles.find((bundle) => bundle.id === profile) ??
+    bundles.find((bundle) => bundle.id === index.defaultBundleId) ??
+    bundles[0];
+  if (!match) {
+    throw new Error(`Pack index does not include a bundle for profile ${profile}.`);
+  }
+  return match;
 };
 
 export const remotePackUpdateAvailable = (
   local: AuthorityPacksManifest | null,
   remote: AuthorityPacksIndex,
   compilePolicyVersion: string,
+  profile: AuthorityLifecycleProfile = 'chinese',
 ): boolean => {
   if (!local) return true;
   if (local.bundleVersion !== remote.bundleVersion) return true;
   if (local.compilePolicyVersion !== remote.compilePolicyVersion) return true;
   if (local.compilePolicyVersion !== compilePolicyVersion) return true;
+  const remoteBundle = bundleForProfile(remote, profile);
+  if (local.tarballSha256 !== remoteBundle.sha256) return true;
   return false;
 };
 
 export interface InstallPackBundleOptions {
   entityDbFolder: string;
   index: AuthorityPacksIndex;
+  profile?: AuthorityLifecycleProfile;
   registry?: typeof AUTHORITY_PACK_REGISTRY;
   force?: boolean;
   onProgress?: (message: string, receivedBytes?: number, totalBytes?: number | null) => void;
 }
 
-/** Download tarball from GitLab, verify, extract to authority-packs/, write packs.manifest.json. */
+/** Download tarball from GitHub, verify, extract to authority-packs/, write packs.manifest.json. */
 export const installPackBundle = async ({
   entityDbFolder,
   index,
+  profile = 'chinese',
   registry = AUTHORITY_PACK_REGISTRY,
   force = false,
   onProgress,
 }: InstallPackBundleOptions): Promise<{ swapped: boolean }> => {
+  const bundle = bundleForProfile(index, profile);
   const local = await readInstalledPacksManifest(entityDbFolder);
   if (
     !force &&
     local &&
     local.bundleVersion === index.bundleVersion &&
-    local.tarballSha256 === index.tarball.sha256
+    local.tarballSha256 === bundle.sha256
   ) {
     return { swapped: false };
   }
 
-  const tarballUrl = tarballArtifactUrl(index.tarball.fileName, registry);
+  const tarballUrl = tarballArtifactUrl(bundle.fileName, registry);
   const tempDir = path.join(entityDbFolder, '.authority-pack-install');
-  const tarballPath = path.join(tempDir, index.tarball.fileName);
+  const tarballPath = path.join(tempDir, bundle.fileName);
   const extractDir = path.join(tempDir, 'extract');
 
   await fsp.rm(tempDir, { recursive: true, force: true });
   await fsp.mkdir(tempDir, { recursive: true });
 
-  onProgress?.(`Downloading ${index.tarball.fileName}…`, 0, index.tarball.bytes);
+  onProgress?.(`Downloading ${bundle.fileName}…`, 0, bundle.bytes);
   await downloadToFile(tarballUrl, tarballPath, (received, total) => {
-    onProgress?.(`Downloading authority packs…`, received, total ?? index.tarball.bytes);
+    onProgress?.(`Downloading authority packs…`, received, total ?? bundle.bytes);
   });
 
   const tarballDigest = await sha256File(tarballPath);
-  if (tarballDigest !== index.tarball.sha256) {
+  if (tarballDigest !== bundle.sha256) {
     throw new Error('Downloaded pack bundle failed checksum verification.');
   }
 
@@ -178,7 +203,7 @@ export const installPackBundle = async ({
     throw new Error('Pack bundle did not contain an authority-packs/ folder.');
   }
 
-  for (const fileSpec of index.files) {
+  for (const fileSpec of bundle.files) {
     const filePath = path.join(extractedRoot, ...fileSpec.path.split('/'));
     if (!fs.existsSync(filePath)) {
       throw new Error(`Pack bundle missing ${fileSpec.path}`);
@@ -209,7 +234,7 @@ export const installPackBundle = async ({
   await writeInstalledPacksManifest(entityDbFolder, {
     bundleVersion: index.bundleVersion,
     compilePolicyVersion: index.compilePolicyVersion,
-    tarballSha256: index.tarball.sha256,
+    tarballSha256: bundle.sha256,
     installedAt: new Date().toISOString(),
   });
 

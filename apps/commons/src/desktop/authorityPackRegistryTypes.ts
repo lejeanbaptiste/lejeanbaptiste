@@ -1,14 +1,10 @@
 /**
- * GitLab-published authority pack registry (ljb-authorities CI artifacts).
+ * GitHub-published authority pack registry (authoritypacks release assets).
  */
 
-/** Latest successful build-packs job on main (public project). */
+/** Latest published authoritypacks release assets. */
 export const AUTHORITY_PACK_REGISTRY = {
-  gitlabHost: 'https://gitlab.huma-num.fr',
-  projectPath: 'dmorgan1/ljb-authorities',
-  branch: 'main',
-  jobName: 'build-packs',
-  distPrefix: 'dist',
+  releaseDownloadBaseUrl: 'https://github.com/lejeanbaptiste/authoritypacks/releases/latest/download',
 } as const;
 
 export const PACKS_INDEX_FILENAME = 'packs-index.json';
@@ -25,18 +21,24 @@ export interface AuthorityPacksIndex {
   bundleVersion: string;
   compilePolicyVersion: string;
   builtAt: string;
-  tarball: {
-    fileName: string;
-    bytes: number;
-    sha256: string;
-  };
-  files: AuthorityPacksIndexFile[];
+  defaultBundleId?: 'chinese' | 'japanese' | 'tibetan';
+  bundles?: AuthorityPacksIndexBundle[];
   licenses?: { cbdb?: string; dila?: string };
   attribution?: { cbdb?: string; dila?: string };
   upstream?: {
     cbdb?: { version: string; sqliteSha256?: string };
     dila?: { commit: string; versionLabel?: string };
   };
+}
+
+export interface AuthorityPacksIndexBundle {
+  id: 'chinese' | 'japanese' | 'tibetan';
+  fileName: string;
+  bytes: number;
+  sha256: string;
+  pathPrefix?: string;
+  fileCount?: number;
+  files: AuthorityPacksIndexFile[];
 }
 
 export interface AuthorityPacksManifest {
@@ -50,9 +52,7 @@ export const artifactRawUrl = (
   registry: typeof AUTHORITY_PACK_REGISTRY,
   relativePath: string,
 ): string => {
-  const encoded = registry.projectPath.split('/').map(encodeURIComponent).join('/');
-  const filePath = `${registry.distPrefix}/${relativePath}`.replace(/^\//, '');
-  return `${registry.gitlabHost}/${encoded}/-/jobs/artifacts/${encodeURIComponent(registry.branch)}/raw/${filePath}?job=${encodeURIComponent(registry.jobName)}`;
+  return `${registry.releaseDownloadBaseUrl}/${relativePath.replace(/^\//, '')}`;
 };
 
 export const packsIndexUrl = (registry = AUTHORITY_PACK_REGISTRY): string =>
@@ -69,10 +69,19 @@ export const parsePacksIndex = (raw: string): AuthorityPacksIndex | null => {
     if (parsed.schemaVersion !== 1) return null;
     if (typeof parsed.bundleVersion !== 'string' || !parsed.bundleVersion) return null;
     if (typeof parsed.compilePolicyVersion !== 'string') return null;
-    if (!parsed.tarball?.fileName || !parsed.tarball?.sha256) return null;
-    if (!Array.isArray(parsed.files) || parsed.files.length === 0) return null;
-    for (const file of parsed.files) {
-      if (typeof file?.path !== 'string' || typeof file?.sha256 !== 'string') return null;
+    if (!Array.isArray(parsed.bundles) || parsed.bundles.length === 0) return null;
+    for (const bundle of parsed.bundles) {
+      if (
+        !bundle ||
+        (bundle.id !== 'chinese' && bundle.id !== 'japanese' && bundle.id !== 'tibetan')
+      ) {
+        return null;
+      }
+      if (typeof bundle.fileName !== 'string' || typeof bundle.sha256 !== 'string') return null;
+      if (!Array.isArray(bundle.files) || bundle.files.length === 0) return null;
+      for (const file of bundle.files) {
+        if (typeof file?.path !== 'string' || typeof file?.sha256 !== 'string') return null;
+      }
     }
     return parsed as AuthorityPacksIndex;
   } catch {
