@@ -38,6 +38,7 @@
     "build-commons": "npm run build -w @cwrc/leafwriter-storage-service && npm run build -w @cwrc/leafwriter-validator && npm run build -w leafwriter-commons",
     "dev:desktop": "npm run dev -w leafwriter-commons & npm run dev -w le-jean-baptiste-desktop",
     "build:desktop": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package -w le-jean-baptiste-desktop",
+    "build:desktop:linux": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux -w le-jean-baptiste-desktop",
     "icon:export": "node design/export-icon.mjs",
     "test:ci": "jest --silent",
     "authoritypacks:release": "node scripts/build-authority-pack-release.mjs",

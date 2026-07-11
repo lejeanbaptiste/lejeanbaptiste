@@ -4,6 +4,7 @@ import {
   parsePacksManifest,
   packsIndexUrl,
   AUTHORITY_PACK_REGISTRY,
+  type AuthorityPacksIndex,
 } from '../../commons/src/desktop/authorityPackRegistryTypes';
 import { remotePackUpdateAvailable } from './authorityPackRegistry';
 
@@ -44,16 +45,29 @@ describe('authorityPackRegistryTypes', () => {
       JSON.stringify({
         bundleVersion: '2026-07-05+cbdb20260627',
         compilePolicyVersion: '2026-07-05',
-        tarballSha256: 'c'.repeat(64),
+        bundles: { chinese: { sha256: 'c'.repeat(64), installedAt: '2026-07-05T00:00:00.000Z' } },
         installedAt: '2026-07-05T00:00:00.000Z',
       }),
     );
     expect(parsed?.bundleVersion).toContain('cbdb');
+    expect(parsed?.bundles.chinese?.sha256).toBe('c'.repeat(64));
+  });
+
+  it('upgrades a legacy single-bundle manifest to the chinese bundle', () => {
+    const parsed = parsePacksManifest(
+      JSON.stringify({
+        bundleVersion: '2026-07-05+cbdb20260627',
+        compilePolicyVersion: '2026-07-05',
+        tarballSha256: 'c'.repeat(64),
+        installedAt: '2026-07-05T00:00:00.000Z',
+      }),
+    );
+    expect(parsed?.bundles.chinese?.sha256).toBe('c'.repeat(64));
   });
 });
 
 describe('remotePackUpdateAvailable', () => {
-  const remote = {
+  const remote: AuthorityPacksIndex = {
     schemaVersion: 1,
     bundleVersion: '2026-07-05+cbdb20260627',
     compilePolicyVersion: '2026-07-05',
@@ -74,13 +88,13 @@ describe('remotePackUpdateAvailable', () => {
     expect(remotePackUpdateAvailable(null, remote, '2026-07-05', 'chinese')).toBe(true);
   });
 
-  it('is false when versions match', () => {
+  it('is false when the installed bundle hash matches', () => {
     expect(
       remotePackUpdateAvailable(
         {
           bundleVersion: '2026-07-05+cbdb20260627',
           compilePolicyVersion: '2026-07-05',
-          tarballSha256: 'a'.repeat(64),
+          bundles: { chinese: { sha256: 'a'.repeat(64), installedAt: '' } },
           installedAt: '',
         },
         remote,
@@ -88,5 +102,34 @@ describe('remotePackUpdateAvailable', () => {
         'chinese',
       ),
     ).toBe(false);
+  });
+
+  it('is true for a profile whose bundle is not installed yet', () => {
+    const multiRemote = {
+      ...remote,
+      bundles: [
+        ...(remote.bundles ?? []),
+        {
+          id: 'tibetan' as const,
+          fileName: 'authority-packs-tibetan.tar.gz',
+          bytes: 1,
+          sha256: 'd'.repeat(64),
+          files: [{ path: 'wikidata/person-bo/manifest.json', bytes: 1, sha256: 'e'.repeat(64) }],
+        },
+      ],
+    };
+    expect(
+      remotePackUpdateAvailable(
+        {
+          bundleVersion: '2026-07-05+cbdb20260627',
+          compilePolicyVersion: '2026-07-05',
+          bundles: { chinese: { sha256: 'a'.repeat(64), installedAt: '' } },
+          installedAt: '',
+        },
+        multiRemote,
+        '2026-07-05',
+        'tibetan',
+      ),
+    ).toBe(true);
   });
 });

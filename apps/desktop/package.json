@@ -8,32 +8,20 @@
     "email": "daniel.morgan@college-de-france.fr"
   },
   "homepage": "https://github.com/lejeanbaptiste/lejeanbaptiste",
+  "desktopName": "le-jean-baptiste",
   "main": "dist/main.js",
-  "build": {
-    "appId": "fr.huma-num.le-jean-baptiste",
-    "productName": "Le Jean-Baptiste",
-    "linux": {
-      "category": "Office",
-      "desktopName": "le-jean-baptiste",
-      "syncDesktopName": true,
-      "target": [
-        "deb"
-      ],
-      "maintainer": "Daniel Patrick Morgan <daniel.morgan@college-de-france.fr>"
-    }
-  },
   "scripts": {
     "build": "tsup",
     "icon:export": "node ../../design/export-icon.mjs",
     "brand-electron": "node scripts/brand-electron-dev.mjs",
     "lemminx:download": "node scripts/download-lemminx.mjs",
-    "sanmiao:bundle-runtime": "node scripts/bundle-sanmiao-runtime.mjs",
-    "postinstall": "node scripts/download-lemminx.mjs",
+    "python:download": "node scripts/download-python-runtime.mjs",
+    "postinstall": "node scripts/download-lemminx.mjs && node scripts/download-python-runtime.mjs",
     "predev": "npm run icon:export && npm run lemminx:download",
     "prestart": "npm run icon:export",
     "prebuild": "npm run icon:export",
-    "prepackage": "npm run icon:export",
-    "prepackage:win": "C:\\Progra~1\\nodejs\\node.exe ../../design/export-icon.mjs && C:\\Progra~1\\nodejs\\node.exe scripts/bundle-sanmiao-runtime.mjs",
+    "prepackage": "npm run icon:export && npm run python:download",
+    "prepackage:win": "C:\\Progra~1\\nodejs\\node.exe ../../design/export-icon.mjs && C:\\Progra~1\\nodejs\\node.exe scripts/download-python-runtime.mjs",
     "prepackage:dir": "npm run icon:export",
     "dev": "node scripts/brand-electron-dev.mjs && tsup --watch --onSuccess \"node scripts/run-electron-dev.mjs\"",
     "start": "node scripts/brand-electron-dev.mjs && node scripts/run-electron-dev.mjs",

@@ -139,12 +139,12 @@ export const remotePackUpdateAvailable = (
   profile: AuthorityLifecycleProfile = 'chinese',
 ): boolean => {
   if (!local) return true;
-  if (local.bundleVersion !== remote.bundleVersion) return true;
   if (local.compilePolicyVersion !== remote.compilePolicyVersion) return true;
   if (local.compilePolicyVersion !== compilePolicyVersion) return true;
+  // Per-bundle hashes are the authoritative signal: a bundleVersion bump without
+  // a new tarball for this profile must not re-trigger downloads forever.
   const remoteBundle = bundleForProfile(remote, profile);
-  if (local.tarballSha256 !== remoteBundle.sha256) return true;
-  return false;
+  return local.bundles[remoteBundle.id]?.sha256 !== remoteBundle.sha256;
 };
 
 export interface InstallPackBundleOptions {
@@ -167,12 +167,7 @@ export const installPackBundle = async ({
 }: InstallPackBundleOptions): Promise<{ swapped: boolean }> => {
   const bundle = bundleForProfile(index, profile);
   const local = await readInstalledPacksManifest(entityDbFolder);
-  if (
-    !force &&
-    local &&
-    local.bundleVersion === index.bundleVersion &&
-    local.tarballSha256 === bundle.sha256
-  ) {
+  if (!force && local && local.bundles[bundle.id]?.sha256 === bundle.sha256) {
     return { swapped: false };
   }
 
@@ -214,28 +209,39 @@ export const installPackBundle = async ({
     }
   }
 
+  // Merge per top-level entry rather than swapping the whole folder: profile
+  // bundles are disjoint (cbdb/, ndl/, …) and must not clobber each other.
   const liveDir = path.join(entityDbFolder, 'authority-packs');
-  const bakDir = path.join(entityDbFolder, 'authority-packs.bak');
-  await fsp.rm(bakDir, { recursive: true, force: true });
-  if (fs.existsSync(liveDir)) {
-    await fsp.rename(liveDir, bakDir);
-  }
-  try {
-    await fsp.rename(extractedRoot, liveDir);
-  } catch (error) {
-    if (fs.existsSync(bakDir) && !fs.existsSync(liveDir)) {
-      await fsp.rename(bakDir, liveDir);
+  await fsp.mkdir(liveDir, { recursive: true });
+  for (const entry of await fsp.readdir(extractedRoot)) {
+    const src = path.join(extractedRoot, entry);
+    const dest = path.join(liveDir, entry);
+    const bak = path.join(liveDir, `${entry}.bak`);
+    await fsp.rm(bak, { recursive: true, force: true });
+    if (fs.existsSync(dest)) {
+      await fsp.rename(dest, bak);
     }
-    throw error;
+    try {
+      await fsp.rename(src, dest);
+    } catch (error) {
+      if (fs.existsSync(bak) && !fs.existsSync(dest)) {
+        await fsp.rename(bak, dest);
+      }
+      throw error;
+    }
+    await fsp.rm(bak, { recursive: true, force: true });
   }
-  await fsp.rm(bakDir, { recursive: true, force: true });
   await fsp.rm(tempDir, { recursive: true, force: true });
 
+  const installedAt = new Date().toISOString();
   await writeInstalledPacksManifest(entityDbFolder, {
     bundleVersion: index.bundleVersion,
     compilePolicyVersion: index.compilePolicyVersion,
-    tarballSha256: bundle.sha256,
-    installedAt: new Date().toISOString(),
+    bundles: {
+      ...(local?.bundles ?? {}),
+      [bundle.id]: { sha256: bundle.sha256, installedAt },
+    },
+    installedAt,
   });
 
   return { swapped: true };

@@ -3,8 +3,9 @@
 notes.md
 Makefile
 
-# Desktop bundled binaries (downloaded via npm run lemminx:download)
+# Desktop bundled binaries (downloaded via npm run lemminx:download / python:download)
 apps/desktop/resources/lemminx/lemminx-*
+apps/desktop/resources/python/
 
 **/node_modules
 **/packates/dist
@@ -152,3 +153,4 @@ Users/daniel/Code/authority extraction/
 **/.claude/
 **/.cursor/
 **/v6_time_cnty_pts_utf/
+design/icons/

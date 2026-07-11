@@ -49,6 +49,23 @@ export const TitleBar = () => {
       {/* Space for macOS traffic lights, or a small left pad on other platforms */}
       <Box sx={{ width: mac ? MAC_TRAFFIC_LIGHT_WIDTH : 8, flexShrink: 0 }} />
 
+      {/* App menu button for Windows / Linux (macOS uses the system menu bar) */}
+      {!mac && (
+        <Box sx={{ flexShrink: 0 }} style={noDragStyle}>
+          <IconButton
+            size="small"
+            aria-label="Application menu"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              void window.electronAPI?.popupAppMenu?.(rect.left, rect.bottom);
+            }}
+            sx={{ borderRadius: 0, width: 40, height: TITLEBAR_HEIGHT }}
+          >
+            <Typography variant="caption" sx={{ lineHeight: 1 }}>☰</Typography>
+          </IconButton>
+        </Box>
+      )}
+
       {/* Document tabs — background stays draggable; individual tab buttons set no-drag */}
       <Box
         sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}

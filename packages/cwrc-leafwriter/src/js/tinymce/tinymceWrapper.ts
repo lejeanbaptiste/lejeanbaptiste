@@ -11,7 +11,7 @@ import './plugins/prevent_delete';
 import fscreen from 'fscreen';
 import Writer from '../Writer';
 import { stripCjkWhitespaceInElement } from '../../utilities/cjkWhitespace';
-import { normalizePastedParagraphs, fixNestedPastedParagraphs, removeEmptyParagraphs } from './normalizePastedParagraphs';
+import { normalizePastedParagraphs, fixNestedPastedParagraphs, removeEmptyParagraphs, PARAGRAPH_TAG } from './normalizePastedParagraphs';
 import {
   buildLeafWriterClipboardPayload,
   detectPasteAmbiguity,
@@ -207,15 +207,16 @@ export const tinymceWrapperInit = function ({
     return lastKnownEditorRange.cloneRange();
   };
 
+  // The enclosing paragraph (schema tag, not the editor's HTML block tag —
+  // getBlockTag() is 'div', which in TEI is a real, non-text section element).
   const findBlockElFromRange = (editor: LeafWriterEditor, range: Range | null): Element | null => {
     if (!range) return null;
-    const blockTag = writer.schemaManager.getBlockTag();
     const body = editor.getBody();
     let node: Node | null = range.commonAncestorContainer;
     while (node && node !== body) {
       if (
         node.nodeType === Node.ELEMENT_NODE &&
-        (node as Element).getAttribute('_tag') === blockTag
+        (node as Element).getAttribute('_tag') === PARAGRAPH_TAG
       ) {
         return node as Element;
       }
@@ -297,7 +298,7 @@ export const tinymceWrapperInit = function ({
     return `<${editorTagName} id="${id}" _tag="${tagName}" _textallowed="${canContainText}"${buildEditorTagAttributes(element)}>${children}${emptyText}</${editorTagName}>`;
   }
 
-  const textToParagraphXml = (text: string, blockTag = 'p') => {
+  const textToParagraphXml = (text: string) => {
     const normalized = text.replace(/\r\n?/g, '\n');
     // Blank lines separate paragraphs when present; otherwise every line break does,
     // since the paste dialog only offers this mode for text without blank lines.
@@ -308,7 +309,7 @@ export const tinymceWrapperInit = function ({
       .filter(Boolean)
       .map(
         (paragraph) =>
-          `<${blockTag}>${paragraph.split('\n').map(escapeHtml).join('<lb/>')}</${blockTag}>`,
+          `<${PARAGRAPH_TAG}>${paragraph.split('\n').map(escapeHtml).join('<lb/>')}</${PARAGRAPH_TAG}>`,
       )
       .join('');
   };
@@ -357,11 +358,10 @@ export const tinymceWrapperInit = function ({
     if (mode === 'paragraphs') {
       // Caret inside a paragraph: hoist the paste to paragraph level so beginners get
       // real paragraphs (the host paragraph is split at the caret on insertion).
-      const blockTag = writer.schemaManager.getBlockTag();
       if (
         context.blockEl &&
         context.blockParentTag &&
-        canInsertChildTag(blockTag, context.blockParentTag)
+        canInsertChildTag(PARAGRAPH_TAG, context.blockParentTag)
       ) {
         const hoisted = buildEditorFragmentFromXml(
           {
@@ -370,7 +370,7 @@ export const tinymceWrapperInit = function ({
             blockEl: null,
             blockParentTag: null,
           },
-          textToParagraphXml(text, blockTag),
+          textToParagraphXml(text),
         );
         if (hoisted.content) return { ...hoisted, splitBlock: true };
       }

@@ -84,7 +84,7 @@ describe('isUpdateAvailable', () => {
         {
           bundleVersion: '2026-07-05+cbdb20260627',
           compilePolicyVersion: '2020-01-01',
-          tarballSha256: 'a'.repeat(64),
+          bundles: { chinese: { sha256: 'a'.repeat(64), installedAt: '' } },
           installedAt: '',
         },
         null,
@@ -101,7 +101,7 @@ describe('isUpdateAvailable', () => {
         {
           bundleVersion: 'old',
           compilePolicyVersion: COMPILE_POLICY_VERSION,
-          tarballSha256: 'a'.repeat(64),
+          bundles: { chinese: { sha256: 'a'.repeat(64), installedAt: '' } },
           installedAt: '',
         },
         {
@@ -109,8 +109,16 @@ describe('isUpdateAvailable', () => {
           bundleVersion: '2026-07-05+cbdb20260627',
           compilePolicyVersion: COMPILE_POLICY_VERSION,
           builtAt: '',
-          tarball: { fileName: 'x.tar.gz', bytes: 1, sha256: 'b'.repeat(64) },
-          files: [],
+          defaultBundleId: 'chinese' as const,
+          bundles: [
+            {
+              id: 'chinese' as const,
+              fileName: 'authority-packs-chinese.tar.gz',
+              bytes: 1,
+              sha256: 'b'.repeat(64),
+              files: [{ path: 'cbdb/manifest.json', bytes: 1, sha256: 'c'.repeat(64) }],
+            },
+          ],
         },
         [],
       ),

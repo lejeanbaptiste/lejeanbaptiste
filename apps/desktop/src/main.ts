@@ -33,8 +33,10 @@ import {
   getAiApiSettings,
   getEncoderName,
   getEntityDbFolder,
+  getLastDialogDir,
   getRememberWorkspaceOnStartup,
   getValidLastProjectFile,
+  setLastDialogDir,
   getWorkspaceSession,
   saveWorkspaceSession,
   setAiApiSettings,
@@ -106,6 +108,16 @@ import {
 } from './sanmiaoBridge';
 
 const APP_NAME = 'Le Jean-Baptiste';
+
+// GTK4 (the Electron default on modern Linux desktops) renders popup menus
+// with the wrong font size; GTK3 follows the system font settings.
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('gtk-version', '3');
+  // The XDG portal file chooser silently drops folder selections on some
+  // GNOME/Wayland versions (dialog resolves as cancelled). Demand an
+  // impossible portal version so Electron falls back to its GTK chooser.
+  app.commandLine.appendSwitch('xdg-portal-required-version', '9999');
+}
 
 interface AiConnectionResult {
   error?: string;
@@ -925,6 +937,23 @@ const setMainWindowTitle = (title?: string) => {
   mainWindow?.setTitle(title?.trim() ? title : APP_NAME);
 };
 
+/**
+ * Where a system dialog should start: the last place the user was in one,
+ * else the entity database folder, else Documents.
+ */
+const getDialogDefaultPath = async (): Promise<string> => {
+  const lastDir = await getLastDialogDir();
+  if (lastDir && existsSync(lastDir)) return lastDir;
+  const entityDbFolder = await getEntityDbFolder();
+  if (entityDbFolder && existsSync(entityDbFolder)) return entityDbFolder;
+  return app.getPath('documents');
+};
+
+const rememberDialogDir = (pickedPath: string, kind: 'directory' | 'file') => {
+  const dir = kind === 'directory' ? pickedPath : path.dirname(pickedPath);
+  void setLastDialogDir(dir).catch(() => undefined);
+};
+
 const openProjectFromDialog = async () => {
   if (!mainWindow) {
     await createWindow();
@@ -936,8 +965,10 @@ const openProjectFromDialog = async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory', 'createDirectory'],
     title: 'Open project folder',
+    defaultPath: await getDialogDefaultPath(),
   });
   if (result.canceled || result.filePaths.length === 0) return null;
+  rememberDialogDir(result.filePaths[0], 'directory');
 
   try {
     const bundle = await loadOrCreateProject(result.filePaths[0]);
@@ -1182,8 +1213,10 @@ const registerIpcHandlers = () => {
       properties: ['openFile'],
       filters: [{ name: 'RelaxNG schema', extensions: ['rng', 'rnc'] }],
       title: 'Choose schema file (.rng)',
+      defaultPath: await getDialogDefaultPath(),
     });
     if (rngResult.canceled || !rngResult.filePaths[0]) return null;
+    rememberDialogDir(rngResult.filePaths[0], 'file');
 
     const cssResult = await dialog.showOpenDialog(dialogParent, {
       properties: ['openFile'],
@@ -1212,9 +1245,11 @@ const registerIpcHandlers = () => {
       message: 'Choose text, Markdown, RTF files, or folders to import.',
       properties: ['openFile', 'openDirectory', 'multiSelections'],
       title: 'Import documents',
+      defaultPath: await getDialogDefaultPath(),
     });
 
     if (result.canceled || result.filePaths.length === 0) return null;
+    rememberDialogDir(path.dirname(result.filePaths[0]), 'directory');
 
     const collected = await Promise.all(
       result.filePaths.map((filePath) => collectImportSourcesFromPath(filePath)),
@@ -1535,11 +1570,13 @@ const registerIpcHandlers = () => {
         { name: 'Shapefiles', extensions: ['shp'] },
         { name: 'All files', extensions: ['*'] },
       ],
+      defaultPath: await getDialogDefaultPath(),
     };
     const result = parent
       ? await dialog.showOpenDialog(parent, options)
       : await dialog.showOpenDialog(options);
     if (result.canceled || result.filePaths.length === 0) return null;
+    rememberDialogDir(result.filePaths[0], 'file');
     return result.filePaths[0] ?? null;
   });
 
@@ -1599,11 +1636,13 @@ const registerIpcHandlers = () => {
       title: 'Choose entity database folder',
       message:
         'This folder will hold your entity database (entities.xml). You can keep your projects here too.',
+      defaultPath: await getDialogDefaultPath(),
     };
     const result = parent
       ? await dialog.showOpenDialog(parent, options)
       : await dialog.showOpenDialog(options);
     if (result.canceled || result.filePaths.length === 0) return null;
+    rememberDialogDir(result.filePaths[0], 'directory');
     return result.filePaths[0] ?? null;
   });
 
@@ -1613,11 +1652,13 @@ const registerIpcHandlers = () => {
       properties: ['openDirectory'],
       title: 'Choose compiled authority packs folder',
       message: 'Select the folder that contains cbdb/ and dila/ (e.g. authority extraction/packs).',
+      defaultPath: await getDialogDefaultPath(),
     };
     const result = parent
       ? await dialog.showOpenDialog(parent, options)
       : await dialog.showOpenDialog(options);
     if (result.canceled || result.filePaths.length === 0) return null;
+    rememberDialogDir(result.filePaths[0], 'directory');
     return result.filePaths[0] ?? null;
   });
 
@@ -1678,11 +1719,12 @@ const registerIpcHandlers = () => {
 
     mainWindow.focus();
     const result = await dialog.showOpenDialog(mainWindow, {
-      defaultPath: defaultDir,
+      defaultPath: defaultDir ?? (await getDialogDefaultPath()),
       properties: ['openDirectory', 'createDirectory'],
     });
 
     if (result.canceled || !result.filePaths[0]) return null;
+    rememberDialogDir(result.filePaths[0], 'directory');
     return result.filePaths[0];
   });
 
@@ -1691,11 +1733,12 @@ const registerIpcHandlers = () => {
 
     mainWindow.focus();
     const result = await dialog.showSaveDialog(mainWindow, {
-      defaultPath,
+      defaultPath: defaultPath ?? (await getDialogDefaultPath()),
       filters: [{ name: 'XML Documents', extensions: ['xml'] }],
     });
 
     if (result.canceled || !result.filePath) return null;
+    rememberDialogDir(result.filePath, 'file');
     return result.filePath;
   });
 
@@ -1716,6 +1759,15 @@ const registerIpcHandlers = () => {
   });
   ipcMain.handle('window-close', () => mainWindow?.close());
   ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false);
+  ipcMain.handle('popup-app-menu', (_event, x?: number, y?: number) => {
+    if (!mainWindow) return;
+    Menu.getApplicationMenu()?.popup({
+      window: mainWindow,
+      ...(typeof x === 'number' && typeof y === 'number'
+        ? { x: Math.round(x), y: Math.round(y) }
+        : {}),
+    });
+  });
 };
 
 const createWindow = async () => {
@@ -1743,12 +1795,40 @@ const createWindow = async () => {
     event.preventDefault();
   });
 
+  // Surface renderer console output in the terminal for startup debugging.
+  mainWindow.webContents.on('console-message', (_event, level, message) => {
+    if (process.env.LJB_DEBUG === '1' || level >= 2) {
+      console.log(`[renderer:${level}] ${message}`);
+    }
+  });
+
   mainWindow.webContents.on('did-finish-load', () => {
     setMainWindowTitle(APP_NAME);
     prewarmNativeDialog('projectMetadata');
   });
 
+  // A bare Alt press-and-release opens the app menu (standard menu-bar
+  // behavior on Linux/Windows); any other key in between cancels it.
+  let altMenuPending = false;
+  mainWindow.on('blur', () => {
+    altMenuPending = false;
+  });
+
   mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (process.platform !== 'darwin') {
+      if (input.type === 'keyDown') {
+        altMenuPending =
+          input.key === 'Alt' && !input.control && !input.meta && !input.shift;
+      } else if (input.type === 'keyUp' && input.key === 'Alt') {
+        if (altMenuPending && mainWindow) {
+          altMenuPending = false;
+          event.preventDefault();
+          Menu.getApplicationMenu()?.popup({ window: mainWindow, x: 8, y: 36 });
+        }
+        altMenuPending = false;
+      }
+    }
+
     const isFindShortcut =
       input.type === 'keyDown' &&
       (input.meta || input.control) &&
@@ -1806,7 +1886,25 @@ initNativeDialogs({
   getPreloadPath: () => path.join(__dirname, 'preload.js'),
 });
 
+// Launching again (e.g. from the launcher icon) must focus the running app,
+// not race it for the server port and user data.
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+}
+
+app.on('second-instance', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  } else {
+    void createWindow();
+  }
+});
+
 app.whenReady().then(() => {
+  if (!hasSingleInstanceLock) return;
   if (process.platform === 'darwin') {
     const icon = getAppIcon();
     if (icon) app.dock?.setIcon(icon);
@@ -1831,4 +1929,11 @@ app.on('window-all-closed', () => {
   }
   disposeLemminx();
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('will-quit', () => {
+  if (serverProcess) {
+    serverProcess.kill();
+    serverProcess = null;
+  }
 });

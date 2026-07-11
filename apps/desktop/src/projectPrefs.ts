@@ -9,6 +9,8 @@ interface AppPrefs {
   rememberWorkspaceOnStartup?: boolean;
   workspaceSession?: WorkspaceSession;
   entityDbFolder?: string | null;
+  /** Last directory used in a system open/save dialog. */
+  lastDialogDir?: string | null;
 }
 
 const PREFS_FILENAME = 'project-prefs.json';
@@ -205,6 +207,18 @@ export const getEncoderName = async (): Promise<string> => {
 export const setEncoderName = async (encoderName: string) => {
   await mutateAppPrefs((prefs) => {
     prefs.encoderName = encoderName.trim();
+  });
+};
+
+export const getLastDialogDir = async (): Promise<string | null> => {
+  const prefs = await readAppPrefs();
+  const dir = prefs.lastDialogDir?.trim();
+  return dir || null;
+};
+
+export const setLastDialogDir = async (dir: string | null) => {
+  await mutateAppPrefs((prefs) => {
+    prefs.lastDialogDir = dir?.trim() || null;
   });
 };
 
