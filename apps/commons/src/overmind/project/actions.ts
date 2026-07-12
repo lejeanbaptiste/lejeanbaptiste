@@ -15,6 +15,7 @@ import {
   getParentPath,
   getPathBasename,
   getProjectSchemaDirPath,
+  isPathUnder,
   joinPath,
   removeTreeNode,
   repathFilePath,
@@ -164,6 +165,21 @@ export const promptCloseDirtyTab = async (
 };
 
 const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
+
+/**
+ * Call immediately before a known write starts, so a slow renderer (busy
+ * serializing/validating) can't lose the race against the watcher's debounce
+ * timer between the write landing on disk and `ignoreSavedFileChange` below
+ * confirming it — which otherwise surfaces as a false "modified outside" prompt.
+ */
+const armSavedFileWrite = async (filePath: string) => {
+  if (!window.electronAPI?.armFileWrite) return;
+  try {
+    await window.electronAPI.armFileWrite(filePath);
+  } catch {
+    // ignore
+  }
+};
 
 const ignoreSavedFileChange = async (filePath: string) => {
   if (!window.electronAPI?.statFile || !window.electronAPI?.ignoreFileChange) return;
@@ -345,6 +361,7 @@ export const saveAllDirtyTabs = async (
     const content = tab.filePath === activePath && activeContent ? activeContent : tab.content;
 
     try {
+      await armSavedFileWrite(tab.filePath);
       await window.electronAPI.writeFile(tab.filePath, content);
       await ignoreSavedFileChange(tab.filePath);
     } catch {
@@ -1053,6 +1070,7 @@ export const saveActiveTab = async (
     const stamped = separateBlockElements(
       await stampContentBeforeSave(merged, state.project.config?.schema?.catalogId),
     );
+    await armSavedFileWrite(filePath);
     await window.electronAPI.writeFile(filePath, stamped);
     if (state.project.rootPath) {
       void updateTagStatsForFile(state.project.rootPath, filePath, stamped);
@@ -1199,6 +1217,7 @@ export const saveActiveTabAs = async (
     const stamped = separateBlockElements(
       await stampContentBeforeSave(merged, state.project.config?.schema?.catalogId),
     );
+    await armSavedFileWrite(filePath);
     await window.electronAPI.writeFile(filePath, stamped);
     const filename = getFilename(filePath);
 
@@ -1463,8 +1482,12 @@ export const renameExplorerItem = async (
   // Resolve companions before the rename — their paths derive from the source filename.
   const companions = await findCompanionTranslationFiles(oldPath);
 
+  // The main process performs the actual `fs.rename` and returns the OS-native path
+  // (backslash-separated on Windows); using that instead of the forward-slash `newPath`
+  // built above keeps tree/tab state consistent with what readDirectory/watchers report.
+  let renamedPath: string;
   try {
-    await window.electronAPI.renamePath(oldPath, newPath);
+    renamedPath = await window.electronAPI.renamePath(oldPath, newPath);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to rename';
     if (message.includes('exists')) return { success: false, error: 'exists' };
@@ -1473,7 +1496,7 @@ export const renameExplorerItem = async (
 
   for (const companion of companions) {
     try {
-      const newCompanionPath = translationFilePathFor(newPath, companion.lang);
+      const newCompanionPath = translationFilePathFor(renamedPath, companion.lang);
       // eslint-disable-next-line no-await-in-loop
       await window.electronAPI.renamePath(companion.path, newCompanionPath);
 
@@ -1484,7 +1507,7 @@ export const renameExplorerItem = async (
       const rewritten = rewriteCompanionSourceReferences(
         companionXml,
         getFilename(oldPath),
-        getFilename(newPath),
+        getFilename(renamedPath),
       );
       if (rewritten && rewritten !== companionXml) {
         // eslint-disable-next-line no-await-in-loop
@@ -1495,10 +1518,10 @@ export const renameExplorerItem = async (
     }
   }
 
-  state.project.tree = repathTreeSubtree(state.project.tree, oldPath, newPath);
-  repathOpenTabsForMove({ state, actions } as Context, oldPath, newPath);
+  state.project.tree = repathTreeSubtree(state.project.tree, oldPath, renamedPath);
+  repathOpenTabsForMove({ state, actions } as Context, oldPath, renamedPath);
   await reloadDirectoryInTree({ state } as Context, parentDir);
-  await ignoreSavedFileChange(newPath);
+  await ignoreSavedFileChange(renamedPath);
   return { success: true };
 };
 
@@ -1550,11 +1573,7 @@ export const deleteExplorerItem = async (
   }
 
   const parentDir = getParentPath(targetPath);
-  const tabsToClose = state.project.openTabs.filter((tab) => {
-    if (tab.filePath === targetPath) return true;
-    const prefix = targetPath.endsWith('/') ? targetPath : `${targetPath}/`;
-    return tab.filePath.startsWith(prefix);
-  });
+  const tabsToClose = state.project.openTabs.filter((tab) => isPathUnder(tab.filePath, targetPath));
 
   const companions = await findCompanionTranslationFiles(targetPath);
 

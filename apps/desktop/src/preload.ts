@@ -145,6 +145,7 @@ export interface ElectronAPI {
   statFile: (filePath: string) => Promise<FileStat>;
   syncWatchedFiles: (paths: string[]) => Promise<void>;
   ignoreFileChange: (filePath: string, mtimeMs: number) => Promise<void>;
+  armFileWrite: (filePath: string) => Promise<void>;
   findXmlFilesByName: (rootPath: string, query: string) => Promise<NamedPath[]>;
   listProjectXmlFiles: (rootPath: string) => Promise<NamedPath[]>;
   reloadProjectBundle: (projectFilePath: string) => Promise<ProjectBundle | null>;
@@ -271,7 +272,7 @@ export interface ElectronAPI {
   zoteroListStyles: () => Promise<ZoteroStyle[]>;
   zoteroPickCitation: () => Promise<ZoteroCaywResult>;
   zoteroCancelPick: () => Promise<void>;
-  renamePath: (oldPath: string, newPath: string) => Promise<void>;
+  renamePath: (oldPath: string, newPath: string) => Promise<string>;
   movePath: (sourcePath: string, destDir: string) => Promise<string>;
   deletePath: (targetPath: string) => Promise<void>;
   createDirectory: (parentDir: string, folderName: string) => Promise<string>;
@@ -349,6 +350,7 @@ const electronAPI: ElectronAPI = {
   syncWatchedFiles: (paths: string[]) => ipcRenderer.invoke('syncWatchedFiles', paths),
   ignoreFileChange: (filePath: string, mtimeMs: number) =>
     ipcRenderer.invoke('ignoreFileChange', filePath, mtimeMs),
+  armFileWrite: (filePath: string) => ipcRenderer.invoke('armFileWrite', filePath),
   findXmlFilesByName: (rootPath: string, query: string) =>
     ipcRenderer.invoke('findXmlFilesByName', rootPath, query),
   listProjectXmlFiles: (rootPath: string) => ipcRenderer.invoke('listProjectXmlFiles', rootPath),

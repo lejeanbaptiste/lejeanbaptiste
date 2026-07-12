@@ -126,7 +126,7 @@
   "scripts": {
     "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration",
     "dev": "tsup --watch",
-    "clean": "npx rimraf node_modules lib coverage",
+    "clean": "npx rimraf lib coverage",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
