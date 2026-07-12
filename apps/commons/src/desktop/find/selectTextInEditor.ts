@@ -239,6 +239,6 @@ export const scrollToTextHitInEditor = (resolved: ResolvedTextHit): boolean => {
   );
 
   const scrollEl = range?.startNode.parentElement ?? element;
-  scrollEl.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+  scrollEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
   return true;
 };

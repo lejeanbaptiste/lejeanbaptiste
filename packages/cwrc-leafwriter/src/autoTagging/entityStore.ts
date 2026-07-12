@@ -24,6 +24,12 @@ export interface EntityFileApi {
   pathExists: (filePath: string) => Promise<boolean>;
   readFile: (filePath: string) => Promise<string>;
   writeFile: (filePath: string, content: string) => Promise<void>;
+  /**
+   * Arm the watcher immediately before a write starts, so a slow renderer can't lose
+   * the race against the watcher's debounce timer between the write landing on disk
+   * and `notifyOwnWrite` confirming it.
+   */
+  armOwnWrite?: (filePath: string) => Promise<void>;
   /** Tell the desktop file watcher to ignore the next change at this path (our own write). */
   notifyOwnWrite?: (filePath: string) => Promise<void>;
 }
@@ -112,6 +118,7 @@ export class EntityStore {
     const entitiesDir = this.entitiesPath.replace(/[/\\][^/\\]+$/, '');
     await this.api.ensureDirectory(entitiesDir);
     if (!(await this.api.pathExists(this.entitiesPath))) {
+      await this.api.armOwnWrite?.(this.entitiesPath);
       await this.api.writeFile(this.entitiesPath, createEntitiesScaffold());
       await this.api.notifyOwnWrite?.(this.entitiesPath);
     }
@@ -131,6 +138,7 @@ export class EntityStore {
     }
     const entitiesDir = this.entitiesPath.replace(/[/\\][^/\\]+$/, '');
     await this.api.ensureDirectory(entitiesDir);
+    await this.api.armOwnWrite?.(this.entitiesPath);
     await this.api.writeFile(this.entitiesPath, serializeEntities(doc));
     await this.api.notifyOwnWrite?.(this.entitiesPath);
   }
@@ -178,6 +186,7 @@ export class EntityStore {
   async writeProjectLjbFile(relativeName: string, content: string): Promise<void> {
     await this.api.ensureDirectory(this.projectLjbDir);
     const path = this.projectLjbFilePath(relativeName);
+    await this.api.armOwnWrite?.(path);
     await this.api.writeFile(path, content);
     await this.api.notifyOwnWrite?.(path);
   }
@@ -201,6 +210,7 @@ export function entityStoreFromDesktop(): EntityStore | null {
     electronAPI?: DesktopEntityStoreGlobals['electronAPI'] & {
       statFile?: (filePath: string) => Promise<{ mtimeMs: number }>;
       ignoreFileChange?: (filePath: string, mtimeMs: number) => Promise<void>;
+      armFileWrite?: (filePath: string) => Promise<void>;
     };
   };
   const rawApi = globals.electronAPI;
@@ -215,6 +225,14 @@ export function entityStoreFromDesktop(): EntityStore | null {
     pathExists: (filePath) => rawApi.pathExists!(filePath),
     readFile: (filePath) => rawApi.readFile!(filePath),
     writeFile: (filePath, content) => rawApi.writeFile!(filePath, content),
+    armOwnWrite: async (filePath) => {
+      if (!rawApi.armFileWrite) return;
+      try {
+        await rawApi.armFileWrite(filePath);
+      } catch {
+        // ignore — worst case is the old post-write-only race, not a hard failure
+      }
+    },
     notifyOwnWrite: async (filePath) => {
       if (!rawApi.statFile || !rawApi.ignoreFileChange) return;
       try {
