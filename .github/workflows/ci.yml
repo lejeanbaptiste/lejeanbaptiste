@@ -31,7 +31,7 @@ jobs:
         run: npm run lint
 
   desktop-linux:
-    name: Build desktop Linux (${{ matrix.arch }})
+    name: Build Linux desktop package (${{ matrix.arch }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -55,11 +55,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build desktop app
+      - name: Build Linux desktop package
         run: npm run ${{ matrix.script }}
 
   desktop-flatpak:
-    name: Build desktop Flatpak
+    name: Build Linux desktop Flatpak
     runs-on: ubuntu-latest
 
     steps:
@@ -85,7 +85,7 @@ jobs:
         run: npm run build:desktop:flatpak:ci
 
   desktop-macos:
-    name: Build desktop app
+    name: Build macOS desktop application
     runs-on: macos-latest
 
     steps:
@@ -101,11 +101,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build desktop app
+      - name: Build macOS desktop application
         run: npm run build:desktop
 
   desktop-windows:
-    name: Build desktop Windows
+    name: Build Windows installer (x64)
     runs-on: windows-latest
 
     steps:
@@ -121,7 +121,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build desktop app
+      - name: Build Windows installer (x64)
         run: npm run package:win
         working-directory: apps/desktop
 
