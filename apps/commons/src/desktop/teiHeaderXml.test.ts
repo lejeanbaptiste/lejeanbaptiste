@@ -13,7 +13,7 @@ const skeleton = `<?xml version="1.0" encoding="UTF-8"?>
 <teiHeader>
   <fileDesc>
     <titleStmt><title>Untitled</title></titleStmt>
-    <publicationStmt><authority/></publicationStmt>
+    <publicationStmt><publisher/></publicationStmt>
     <sourceDesc><p/></sourceDesc>
   </fileDesc>
 </teiHeader>
@@ -101,7 +101,7 @@ describe('language metadata path', () => {
 describe('inspectHeaderLooseText', () => {
   test('detects loose text in publicationStmt', () => {
     const bad = skeleton.replace(
-      '<publicationStmt><authority/></publicationStmt>',
+      '<publicationStmt><publisher/></publicationStmt>',
       '<publicationStmt>oops</publicationStmt>',
     );
     expect(inspectHeaderLooseText(bad)).toMatchObject({
@@ -142,7 +142,7 @@ describe('publicationStmt normalization', () => {
     ]);
 
     expect(updated).toContain(
-      '<publicationStmt><distributor>CNRS</distributor><authority/><availability><licence>CC BY</licence></availability></publicationStmt>',
+      '<publicationStmt><publisher/><distributor>CNRS</distributor><availability><licence>CC BY</licence></availability></publicationStmt>',
     );
     expect(updated).not.toContain('<publicationStmt><p/>');
   });
@@ -152,8 +152,8 @@ describe('publicationStmt normalization', () => {
       { path: 'publicationStmt/availability/licence', value: 'CC BY' },
     ]);
 
-    expect(updated).toContain('<authority/>');
+    expect(updated).toContain('<publisher/>');
     expect(updated).toContain('<availability><licence>CC BY</licence></availability>');
-    expect(updated).not.toContain('<publicationStmt><p');
+    expect(updated).not.toContain('<publicationStmt><p/>');
   });
 });

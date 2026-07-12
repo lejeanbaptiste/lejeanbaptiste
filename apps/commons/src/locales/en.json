@@ -370,23 +370,37 @@
       "open_project_to_use_translations": "Open a project to use translations.",
       "translate_failed": "Translate failed: {{error}}"
     },
-    "desktop": {
-      "ai_api_bridge_unavailable": "Desktop AI API bridge is unavailable.",
-      "bulk_update_warning": "{{count}} open document(s) have unsaved changes. Bulk update writes to disk and may overwrite in-memory edits.",
-      "copy_schema_failed": "Could not copy schema file.",
-      "could_not_open_settings": "Could not open settings.",
-      "could_not_save_metadata": "Could not save metadata.",
-      "could_not_save_translation_settings": "Could not save translation settings.",
-      "open_project_first": "Open a project first.",
-      "open_translation_tab_for_zotero": "Open the Translation tab to choose Zotero citation style.",
-      "open_xml_before_saving": "Open an XML file before saving.",
-      "project_settings_saved": "Project settings saved.",
-      "refreshing_zotero_citations": "Refreshing Zotero citations.",
-      "schema_download_failed": "Schema download failed.",
-      "unsaved_documents": "Unsaved documents",
-      "updated_files_overrides_skipped": "{{count}} field(s) left unchanged due to per-file edits.",
-      "updated_files_summary": "Updated {{updated}} file(s); {{skipped}} unchanged."
+    "ai_api_bridge_unavailable": "Desktop AI API bridge is unavailable.",
+    "authority_prompt": {
+      "download_button": "Download",
+      "not_now_button": "Not now",
+      "chinese": {
+        "message": "Download Chinese authority databases?",
+        "detail": "This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+      },
+      "japanese": {
+        "message": "Download Japanese authority packs?",
+        "detail": "This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+      },
+      "tibetan": {
+        "message": "Download Tibetan authority packs?",
+        "detail": "This project uses Tibetan as its source language. LEAF-Writer can download Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+      }
     },
+    "bulk_update_warning": "{{count}} open document(s) have unsaved changes. Bulk update writes to disk and may overwrite in-memory edits.",
+    "copy_schema_failed": "Could not copy schema file.",
+    "could_not_open_settings": "Could not open settings.",
+    "could_not_save_metadata": "Could not save metadata.",
+    "could_not_save_translation_settings": "Could not save translation settings.",
+    "open_project_first": "Open a project first.",
+    "open_translation_tab_for_zotero": "Open the Translation tab to choose Zotero citation style.",
+    "open_xml_before_saving": "Open an XML file before saving.",
+    "project_settings_saved": "Project settings saved.",
+    "refreshing_zotero_citations": "Refreshing Zotero citations.",
+    "schema_download_failed": "Schema download failed.",
+    "unsaved_documents": "Unsaved documents",
+    "updated_files_overrides_skipped": "{{count}} field(s) left unchanged due to per-file edits.",
+    "updated_files_summary": "Updated {{updated}} file(s); {{skipped}} unchanged.",
     "time_machine": {
       "title": "Time Machine",
       "open_project_first": "Open a project before using Time Machine.",

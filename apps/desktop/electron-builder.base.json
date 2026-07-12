@@ -6,6 +6,7 @@
     "output": "release",
     "buildResources": "../../design"
   },
+  "beforeBuild": "./scripts/skip-electron-builder-deps.mjs",
   "icon": "icon",
   "files": [
     "dist/**/*",

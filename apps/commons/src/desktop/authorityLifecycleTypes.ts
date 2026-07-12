@@ -13,6 +13,14 @@ export const ALL_AUTHORITY_PROFILES: AuthorityLifecycleProfile[] = [
   'tibetan',
 ];
 
+/** Renderer-supplied, already-translated strings for the promptEnable native dialog. */
+export interface AuthorityLifecyclePromptStrings {
+  message: string;
+  detail: string;
+  downloadButton: string;
+  notNowButton: string;
+}
+
 /** Matches `policy.version` in compiled pack manifests (authority extraction). */
 export const COMPILE_POLICY_VERSION = '2026-07-05';
 

@@ -6,6 +6,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  nativeTheme,
   net,
   Notification,
   protocol,
@@ -989,6 +990,19 @@ const openProjectFromDialog = async () => {
 };
 
 const registerIpcHandlers = () => {
+  // On Linux (GNOME/Wayland in particular), Chromium's `prefers-color-scheme`
+  // media query does not reliably live-update when the OS theme changes —
+  // Electron's nativeTheme module tracks it through the native APIs instead,
+  // so we rebroadcast its 'updated' event to the renderer.
+  ipcMain.handle('nativeTheme:shouldUseDarkColors', () => nativeTheme.shouldUseDarkColors);
+  nativeTheme.on('updated', () => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) {
+        window.webContents.send('nativeTheme:updated', nativeTheme.shouldUseDarkColors);
+      }
+    }
+  });
+
   ipcMain.handle('signalRendererReady', () => {
     const resolvers = [...pendingRendererReadyResolvers];
     pendingRendererReadyResolvers.length = 0;
@@ -1506,46 +1520,56 @@ const registerIpcHandlers = () => {
     return result;
   });
 
-  ipcMain.handle('authorityLifecycle:promptEnable', async (_event, profile = 'chinese') => {
-    if (!mainWindow) return 'declined';
+  ipcMain.handle(
+    'authorityLifecycle:promptEnable',
+    async (
+      _event,
+      profile = 'chinese',
+      strings?: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecyclePromptStrings,
+    ) => {
+      if (!mainWindow) return 'declined';
 
-    const folder = await getEntityDbFolderOrNull();
-    if (!folder) return 'declined';
+      const folder = await getEntityDbFolderOrNull();
+      if (!folder) return 'declined';
 
-    const lifecycle = await readLifecycleConfig(folder);
-    if (lifecycle.enabled && lifecycle.profile === profile) return 'declined';
-    if (lifecycle.declinedFirstPrompt && lifecycle.profile === profile) return 'declined';
+      const lifecycle = await readLifecycleConfig(folder);
+      if (lifecycle.enabled && lifecycle.profile === profile) return 'declined';
+      if (lifecycle.declinedFirstPrompt && lifecycle.profile === profile) return 'declined';
 
-    const legacyDeclined = path.join(folder, AUTHORITY_DB_DIRNAME, 'download-declined.json');
-    if (existsSync(legacyDeclined)) {
-      await recordDeclinedFirstPrompt(folder, profile);
-      return 'declined';
-    }
+      const legacyDeclined = path.join(folder, AUTHORITY_DB_DIRNAME, 'download-declined.json');
+      if (existsSync(legacyDeclined)) {
+        await recordDeclinedFirstPrompt(folder, profile);
+        return 'declined';
+      }
 
-    const result = await dialog.showMessageBox(mainWindow, {
-      type: 'question',
-      buttons: ['Download', 'Not now'],
-      defaultId: 0,
-      cancelId: 1,
-      message:
+      const fallbackMessage =
         profile === 'japanese'
           ? 'Download Japanese authority packs?'
           : profile === 'tibetan'
             ? 'Download Tibetan authority packs?'
-            : 'Download Chinese authority databases?',
-      detail:
+            : 'Download Chinese authority databases?';
+      const fallbackDetail =
         profile === 'japanese'
           ? 'This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging. They are stored next to your central entity database.'
           : profile === 'tibetan'
             ? 'This project uses Tibetan as its source language. LEAF-Writer can download Wikidata authority packs for automated tagging. They are stored next to your central entity database.'
-            : 'This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored next to your central entity database.',
-    });
-    if (result.response !== 0) {
-      await recordDeclinedFirstPrompt(folder, profile);
-      return 'declined';
-    }
-    return 'accepted';
-  });
+            : 'This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored next to your central entity database.';
+
+      const result = await dialog.showMessageBox(mainWindow, {
+        type: 'question',
+        buttons: [strings?.downloadButton ?? 'Download', strings?.notNowButton ?? 'Not now'],
+        defaultId: 0,
+        cancelId: 1,
+        message: strings?.message ?? fallbackMessage,
+        detail: strings?.detail ?? fallbackDetail,
+      });
+      if (result.response !== 0) {
+        await recordDeclinedFirstPrompt(folder, profile);
+        return 'declined';
+      }
+      return 'accepted';
+    },
+  );
 
   const emitChgisProgress = (
     event: Electron.IpcMainInvokeEvent,

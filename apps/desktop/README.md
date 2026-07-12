@@ -59,11 +59,14 @@ re-download on the next install.
 Extra system prerequisites (Debian/Ubuntu):
 
 ```bash
-sudo apt install librsvg2-bin ruby ruby-dev
-sudo gem install fpm
+sudo apt install librsvg2-bin
 ```
 
-`librsvg2-bin` provides `rsvg-convert` for icon export; `fpm` is what electron-builder uses to assemble the `.deb`.
+`librsvg2-bin` provides `rsvg-convert` for icon export. Assembling the `.deb`
+itself no longer needs the Ruby `fpm` gem — the build points
+`CUSTOM_FPM_PATH` at `scripts/fpm-deb.mjs`, a small Node reimplementation of
+the subset of `fpm` electron-builder needs, so nothing beyond Node has to be
+installed.
 
 Then, from the repo root:
 
@@ -78,6 +81,28 @@ sudo apt install ./apps/desktop/release/le-jean-baptiste-desktop_*.deb
 ```
 
 Platform-specific electron-builder settings live in `electron-builder.mac.json`, `electron-builder.linux.json`, and `electron-builder.win.json`, all extending `electron-builder.base.json`.
+
+### Linux (Flatpak)
+
+Flatpak packaging uses electron-builder’s `flatpak` target. On a machine with `flatpak-builder` installed, run:
+
+```bash
+npm run build:desktop:flatpak
+```
+
+The resulting `.flatpak` bundle lands in `apps/desktop/release/`.
+
+### Linux (Arch / CachyOS)
+
+For Arch-based systems, use the local PKGBUILD in `packaging/arch/`:
+
+```bash
+cd packaging/arch
+makepkg -si
+```
+
+This produces a native Arch package for the host architecture (`x86_64` or
+`aarch64`).
 
 ### Windows (NSIS)
 

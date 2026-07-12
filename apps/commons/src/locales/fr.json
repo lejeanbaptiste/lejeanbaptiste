@@ -204,6 +204,22 @@
       "light_theme": "Thème lumière"
     },
     "desktop": {
+      "authority_prompt": {
+        "download_button": "Télécharger",
+        "not_now_button": "Pas maintenant",
+        "chinese": {
+          "message": "Télécharger les bases d'autorité chinoises ?",
+          "detail": "Ce projet utilise le chinois comme langue source. LEAF-Writer peut télécharger CBDB (China Biographical Database, ~600 Mo), les autorités DILA Buddhist Studies (~85 Mo) et les paquets d'autorité Wikidata pour l'étiquetage automatisé. Ils sont stockés à côté de votre base de données d'entités centrale."
+        },
+        "japanese": {
+          "message": "Télécharger les paquets d'autorité japonais ?",
+          "detail": "Ce projet utilise le japonais comme langue source. LEAF-Writer peut télécharger les paquets d'autorité NDL et Wikidata pour l'étiquetage automatisé. Ils sont stockés à côté de votre base de données d'entités centrale."
+        },
+        "tibetan": {
+          "message": "Télécharger les paquets d'autorité tibétains ?",
+          "detail": "Ce projet utilise le tibétain comme langue source. LEAF-Writer peut télécharger les paquets d'autorité Wikidata pour l'étiquetage automatisé. Ils sont stockés à côté de votre base de données d'entités centrale."
+        }
+      },
       "external_file_changed": {
         "title": "Fichier modifié sur le disque",
         "message": "{{filename}} a été modifié en dehors de l'application.",

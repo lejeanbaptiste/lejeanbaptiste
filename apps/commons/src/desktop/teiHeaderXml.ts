@@ -184,7 +184,7 @@ const ensurePublicationStmtAgency = (publicationStmt: Element) => {
   const hasDetail = children.some((child) => isPublicationStmtDetail(child.localName));
   if (hasDetail && !hasAgency) {
     publicationStmt.insertBefore(
-      publicationStmt.ownerDocument!.createElementNS(TEI_NS, 'authority'),
+      publicationStmt.ownerDocument!.createElementNS(TEI_NS, 'publisher'),
       publicationStmt.firstChild,
     );
   }
@@ -261,7 +261,7 @@ export const normalizeParagraphContainersInHeader = (header: Element) => {
       (node) => node.nodeType === Node.ELEMENT_NODE,
     );
     if (!hasElementChild) {
-      const placeholder = name === 'publicationStmt' ? 'authority' : 'p';
+      const placeholder = name === 'publicationStmt' ? 'publisher' : 'p';
       container.appendChild(header.ownerDocument!.createElementNS(TEI_NS, placeholder));
     }
   }

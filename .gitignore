@@ -153,3 +153,8 @@ Users/daniel/Code/authority extraction/
 **/.cursor/
 **/v6_time_cnty_pts_utf/
 design/icons/
+
+# Arch PKGBUILD build scratch (rsync source copy, staged install tree, built package)
+packaging/arch/src/
+packaging/arch/pkg/
+packaging/arch/*.pkg.tar.*

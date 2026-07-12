@@ -264,8 +264,11 @@ export interface ElectronAPI {
   authorityLifecycleMaybeCheckUpdates?: () => Promise<AuthorityLifecycleStatus | null>;
   authorityLifecyclePromptEnable?: (
     profile?: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleProfile,
+    strings?: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecyclePromptStrings,
   ) => Promise<'accepted' | 'declined'>;
   authorityLifecycleRevealFolder?: () => Promise<boolean>;
+  getShouldUseDarkColors?: () => Promise<boolean>;
+  onNativeThemeChanged?: (callback: (shouldUseDarkColors: boolean) => void) => () => void;
   onAuthorityLifecycleProgress?: (
     callback: (progress: AuthorityLifecycleProgress) => void,
   ) => () => void;

@@ -30,7 +30,61 @@ jobs:
       - name: Run linter
         run: npm run lint
 
-  desktop-build:
+  desktop-linux:
+    name: Build desktop Linux (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            script: build:desktop:linux:amd64
+          - arch: arm64
+            script: build:desktop:linux:arm64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build desktop app
+        run: npm run ${{ matrix.script }}
+
+  desktop-flatpak:
+    name: Build desktop Flatpak
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install flatpak tooling
+        run: sudo apt-get update && sudo apt-get install -y flatpak flatpak-builder
+
+      - name: Add Flathub remote
+        run: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Flatpak
+        run: npm run build:desktop:flatpak:ci
+
+  desktop-macos:
     name: Build desktop app
     runs-on: macos-latest
 

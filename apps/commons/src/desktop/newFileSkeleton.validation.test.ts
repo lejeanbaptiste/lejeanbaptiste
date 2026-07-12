@@ -59,6 +59,13 @@ const buildNewFileXml = (catalogId: EnabledCatalogId) => {
 };
 
 describe('new file skeleton RelaxNG validation', () => {
+  const RUN_LIVE = process.env.TEI_LIVE_TEST === '1';
+
+  if (!RUN_LIVE) {
+    test.skip('live TEI catalog validation is opt-in (set TEI_LIVE_TEST=1)', () => {});
+    return;
+  }
+
   jest.setTimeout(120_000);
 
   beforeEach(() => {
