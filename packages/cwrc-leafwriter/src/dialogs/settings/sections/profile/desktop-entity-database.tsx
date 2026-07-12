@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSettingsValidation } from '../../settingsValidationContext';
 
 const getCommonsUiBridge = () =>
   (
@@ -24,6 +25,7 @@ export const DesktopEntityDatabase = () => {
   const { t } = useTranslation();
   const bridge = getCommonsUiBridge();
   const [entityDbFolder, setEntityDbFolder] = useState(bridge?.entityDbFolder ?? null);
+  const { attempted, entityDbFolderValid } = useSettingsValidation();
 
   useEffect(() => {
     const sync = () => setEntityDbFolder(getCommonsUiBridge()?.entityDbFolder ?? null);
@@ -41,19 +43,24 @@ export const DesktopEntityDatabase = () => {
       </Typography>
 
       {!entityDbFolder && (
-        <Alert severity="warning" sx={{ mb: 1, width: '100%' }}>
+        <Alert severity={attempted && !entityDbFolderValid ? 'error' : 'warning'} sx={{ mb: 1, width: '100%' }}>
           {t('LW.desktop.settings.entity_database_missing')}
         </Alert>
       )}
 
       <Stack spacing={1} sx={{ width: '100%' }}>
         <TextField
+          error={attempted && !entityDbFolderValid}
           fullWidth
           InputProps={{ readOnly: true }}
           label={t('LW.desktop.settings.entity_database_folder')}
           size="small"
           value={entityDbFolder ?? ''}
-          helperText={t('LW.desktop.settings.entity_database_hint')}
+          helperText={
+            attempted && !entityDbFolderValid
+              ? t('LW.desktop.settings.field_required')
+              : t('LW.desktop.settings.entity_database_hint')
+          }
         />
         <Box>
           <Button

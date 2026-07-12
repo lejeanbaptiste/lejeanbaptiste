@@ -122,10 +122,7 @@ export const bundleForProfile = (
   profile: AuthorityLifecycleProfile,
 ): AuthorityPacksIndexBundle => {
   const bundles = index.bundles ?? [];
-  const match =
-    bundles.find((bundle) => bundle.id === profile) ??
-    bundles.find((bundle) => bundle.id === index.defaultBundleId) ??
-    bundles[0];
+  const match = bundles.find((bundle) => bundle.id === profile);
   if (!match) {
     throw new Error(`Pack index does not include a bundle for profile ${profile}.`);
   }

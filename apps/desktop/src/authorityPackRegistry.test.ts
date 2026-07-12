@@ -6,7 +6,7 @@ import {
   AUTHORITY_PACK_REGISTRY,
   type AuthorityPacksIndex,
 } from '../../commons/src/desktop/authorityPackRegistryTypes';
-import { remotePackUpdateAvailable } from './authorityPackRegistry';
+import { bundleForProfile, remotePackUpdateAvailable } from './authorityPackRegistry';
 
 describe('authorityPackRegistryTypes', () => {
   it('builds GitHub release asset URLs', () => {
@@ -38,6 +38,44 @@ describe('authorityPackRegistryTypes', () => {
       }),
     );
     expect(parsed?.bundleVersion).toBe('2026-07-05+cbdb20260627');
+  });
+
+  it('keeps versioned language asset names from the index', () => {
+    const parsed = parsePacksIndex(
+      JSON.stringify({
+        schemaVersion: 1,
+        bundleVersion: '2026-07-05+ndl20260705',
+        compilePolicyVersion: '2026-07-05',
+        builtAt: '2026-07-12T00:00:00.000Z',
+        defaultBundleId: 'chinese',
+        bundles: [
+          {
+            id: 'chinese',
+            fileName: 'authority-packs-chinese-2026-07-05+ndl20260705.tar.gz',
+            bytes: 100,
+            sha256: 'a'.repeat(64),
+            files: [{ path: 'cbdb/manifest.json', bytes: 1, sha256: 'b'.repeat(64) }],
+          },
+          {
+            id: 'japanese',
+            fileName: 'authority-packs-japanese-2026-07-05+ndl20260705.tar.gz',
+            bytes: 200,
+            sha256: 'c'.repeat(64),
+            files: [{ path: 'ndl/manifest.json', bytes: 1, sha256: 'd'.repeat(64) }],
+          },
+        ],
+      }),
+    );
+
+    expect(bundleForProfile(parsed!, 'japanese').fileName).toBe(
+      'authority-packs-japanese-2026-07-05+ndl20260705.tar.gz',
+    );
+    expect(
+      artifactRawUrl(
+        AUTHORITY_PACK_REGISTRY,
+        'authority-packs-japanese-2026-07-05+ndl20260705.tar.gz',
+      ),
+    ).toContain('/authority-packs-japanese-2026-07-05+ndl20260705.tar.gz');
   });
 
   it('parses an installed packs manifest', () => {

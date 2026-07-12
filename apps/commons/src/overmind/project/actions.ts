@@ -3,7 +3,7 @@ import type { Context } from '../';
 /** Skip debounced saves while restoring tabs so we do not persist partial/empty session state. */
 let suppressWorkspaceSessionSave = false;
 import { buildProjectSchemas, type ProjectBundle } from '@src/desktop/projectFile';
-import { completeProjectOnboarding } from '@src/desktop/projectOnboarding';
+import { completeProjectOnboarding, completePostLoadOnboarding } from '@src/desktop/projectOnboarding';
 import { ensureEntityDbFolder } from '@src/desktop/entityDbOnboarding';
 import {
   mergeMetadataIntoHeader,
@@ -108,12 +108,12 @@ export const promptCloseDirtyTab = async (
   if (isTempTab(tab)) {
     const response = await window.electronAPI.showNativeMessageBox({
       type: 'warning',
-      title: t('LWC.project.dialogs.unsaved_new_document_title'),
-      message: t('LWC.project.dialogs.save_before_closing', { filename: tab.filename }),
+      title: t('LWC.desktop.project.dialogs.unsaved_new_document_title'),
+      message: t('LWC.desktop.project.dialogs.save_before_closing', { filename: tab.filename }),
       buttons: [
-        t('LWC.project.dialogs.save_button'),
-        t('LWC.project.dialogs.dont_save_button'),
-        t('LWC.project.dialogs.cancel_button'),
+        t('LWC.desktop.project.dialogs.save_button'),
+        t('LWC.desktop.project.dialogs.dont_save_button'),
+        t('LWC.desktop.project.dialogs.cancel_button'),
       ],
       cancelId: 2,
       defaultId: 0,
@@ -149,11 +149,11 @@ export const promptCloseDirtyTab = async (
 
   const response = await window.electronAPI.showNativeMessageBox({
     type: 'warning',
-    title: t('LWC.project.dialogs.unsaved_changes_title'),
-    message: t('LWC.project.dialogs.close_without_saving', { filename: tab.filename }),
+    title: t('LWC.desktop.project.dialogs.unsaved_changes_title'),
+    message: t('LWC.desktop.project.dialogs.close_without_saving', { filename: tab.filename }),
     buttons: [
-      t('LWC.project.dialogs.discard_changes_button'),
-      t('LWC.project.dialogs.cancel_button'),
+      t('LWC.desktop.project.dialogs.discard_changes_button'),
+      t('LWC.desktop.project.dialogs.cancel_button'),
     ],
     defaultId: 0,
     cancelId: 1,
@@ -249,12 +249,12 @@ const promptUnsavedBeforeProjectSwitch = async (context: Context): Promise<'proc
   if (persistentDirtyTabs.length === 0 && tempDirtyTabs.length > 0) {
     const response = await window.electronAPI.showNativeMessageBox({
       type: 'warning',
-      title: t('LWC.project.dialogs.unsaved_new_document_title'),
-      message: t('LWC.project.dialogs.save_before_opening_project'),
+      title: t('LWC.desktop.project.dialogs.unsaved_new_document_title'),
+      message: t('LWC.desktop.project.dialogs.save_before_opening_project'),
       buttons: [
-        t('LWC.project.dialogs.save_button'),
-        t('LWC.project.dialogs.dont_save_button'),
-        t('LWC.project.dialogs.cancel_button'),
+        t('LWC.desktop.project.dialogs.save_button'),
+        t('LWC.desktop.project.dialogs.dont_save_button'),
+        t('LWC.desktop.project.dialogs.cancel_button'),
       ],
       cancelId: 2,
       defaultId: 0,
@@ -284,14 +284,14 @@ const promptUnsavedBeforeProjectSwitch = async (context: Context): Promise<'proc
   const fileList = persistentDirtyTabs.map((tab) => tab.filename).join('\n');
   const response = await window.electronAPI.showNativeMessageBox({
     type: 'warning',
-    title: t('LWC.project.dialogs.unsaved_documents_title'),
-    message: t('LWC.project.dialogs.save_before_opening_project_with_list', {
+    title: t('LWC.desktop.project.dialogs.unsaved_documents_title'),
+    message: t('LWC.desktop.project.dialogs.save_before_opening_project_with_list', {
       fileList,
     }),
     buttons: [
-      t('LWC.project.dialogs.save_all_button'),
-      t('LWC.project.dialogs.dont_save_button'),
-      t('LWC.project.dialogs.cancel_button'),
+      t('LWC.desktop.project.dialogs.save_all_button'),
+      t('LWC.desktop.project.dialogs.dont_save_button'),
+      t('LWC.desktop.project.dialogs.cancel_button'),
     ],
     cancelId: 2,
     defaultId: 0,
@@ -348,7 +348,7 @@ export const saveAllDirtyTabs = async (
       await window.electronAPI.writeFile(tab.filePath, content);
       await ignoreSavedFileChange(tab.filePath);
     } catch {
-      return { ok: false, error: t('LWC.project.errors.could_not_save_file', { filename: tab.filename }) };
+      return { ok: false, error: t('LWC.desktop.project.errors.could_not_save_file', { filename: tab.filename }) };
     }
   }
 
@@ -430,11 +430,25 @@ const loadProjectBundle = async (context: Context, bundle: ProjectBundle) => {
   showExplorerLeftPanel();
 };
 
+/** Runs the onboarding steps that need `<ProjectEditor>` mounted (i.e.
+ * `window.writer`), which is only true once the project is already loaded.
+ * Re-applies any bundle changes (e.g. entity store metadata) to state. */
+const runPostLoadOnboarding = async (context: Context, bundle: ProjectBundle) => {
+  const updated = await completePostLoadOnboarding(bundle);
+  if (updated === bundle) return;
+
+  context.state.project.config = updated.config;
+  context.state.project.projectSchemas = buildProjectSchemas(updated.rootPath, updated.config);
+  if (window.writer) {
+    registerDesktopSchemas([...getEnabledCatalogSchemas(), ...context.state.project.projectSchemas]);
+  }
+};
+
 export const openProject = async (context: Context) => {
   const { notifyViaSnackbar } = context.actions.ui;
 
   if (!window.electronAPI) {
-    notifyViaSnackbar(t('LWC.project.messages.desktop_file_access_unavailable_restart'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.desktop_file_access_unavailable_restart'));
     return;
   }
 
@@ -448,7 +462,10 @@ export const openProject = async (context: Context) => {
     if (!bundle) return;
 
     const onboarded = await completeProjectOnboarding(bundle);
-    if (!onboarded) return;
+    if (!onboarded) {
+      notifyViaSnackbar(t('LWC.desktop.project.messages.could_not_open_project_folder'));
+      return;
+    }
 
     context.state.project.openTabs = [];
     context.state.project.activeTabPath = null;
@@ -459,9 +476,10 @@ export const openProject = async (context: Context) => {
     await context.actions.editor.clearResource();
     resetDesktopEditorSession();
     await loadProjectBundle(context, onboarded);
+    await runPostLoadOnboarding(context, onboarded);
   } catch (error) {
     console.error('[project] openProject failed:', error);
-    notifyViaSnackbar(t('LWC.project.messages.could_not_open_project_folder'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.could_not_open_project_folder'));
     context.state.project.isProjectReady = true;
   }
 };
@@ -499,6 +517,7 @@ export const restoreLastProject = async (context: Context) => {
     }
 
     await loadProjectBundle(context, onboarded);
+    await runPostLoadOnboarding(context, onboarded);
     context.state.project.cursorPositions = filterVisualCursorPositions(
       session?.cursorPositions ?? {},
     );
@@ -589,18 +608,18 @@ export const newFile = async (context: Context) => {
   const { state, actions } = context;
 
   if (!window.electronAPI?.createTempDocument) {
-    notifyViaSnackbar(t('LWC.project.messages.new_file_unavailable_restart'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.new_file_unavailable_restart'));
     return;
   }
 
   if (!state.project.isProjectReady || !state.project.rootPath || !state.project.config) {
-    notifyViaSnackbar(t('LWC.project.messages.open_project_first'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
     void actions.project.openProject();
     return;
   }
 
   if (!state.project.projectFilePath) {
-    notifyViaSnackbar(t('LWC.project.messages.project_not_fully_loaded'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.project_not_fully_loaded'));
     return;
   }
 
@@ -611,7 +630,7 @@ export const newFile = async (context: Context) => {
   };
 
   if (!(await metadataFileExists(bundle))) {
-    notifyViaSnackbar(t('LWC.project.messages.complete_metadata_setup_before_creating_file'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.complete_metadata_setup_before_creating_file'));
     return;
   }
 
@@ -653,7 +672,7 @@ export const newFile = async (context: Context) => {
     state.editor.contentLastSaved = content;
   } catch (error) {
     console.error('[project] newFile failed:', error);
-    notifyViaSnackbar(t('LWC.project.messages.could_not_create_new_file'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.could_not_create_new_file'));
   }
 };
 
@@ -774,25 +793,25 @@ export const importDocuments = async (context: Context) => {
   const { notifyViaSnackbar } = actions.ui;
 
   if (!window.electronAPI?.pickDocumentImportSources) {
-    notifyViaSnackbar(t('LWC.project.messages.document_import_unavailable_restart'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.document_import_unavailable_restart'));
     return;
   }
 
   if (!state.project.isProjectReady || !state.project.rootPath || !state.project.config) {
-    notifyViaSnackbar(t('LWC.project.messages.open_project_first'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
     void actions.project.openProject();
     return;
   }
 
   if (!state.project.projectFilePath) {
-    notifyViaSnackbar(t('LWC.project.messages.project_not_fully_loaded'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.project_not_fully_loaded'));
     return;
   }
 
   const sources = await window.electronAPI.pickDocumentImportSources();
   if (!sources) return;
   if (sources.length === 0) {
-    notifyViaSnackbar(t('LWC.project.messages.no_supported_files_found'));
+    notifyViaSnackbar(t('LWC.desktop.project.messages.no_supported_files_found'));
     return;
   }
 
@@ -862,19 +881,19 @@ export const importDocuments = async (context: Context) => {
     const detail = formatDocumentImportProblems(problems);
     if (window.electronAPI?.showNativeMessageBox) {
       void window.electronAPI.showNativeMessageBox({
-        buttons: [t('LWC.project.dialogs.ok_button')],
+        buttons: [t('LWC.desktop.project.dialogs.ok_button')],
         defaultId: 0,
-        message: t('LWC.project.dialogs.imported_documents_with_problems', {
+        message: t('LWC.desktop.project.dialogs.imported_documents_with_problems', {
           documentCount: writtenPaths.length,
           problemCount: problems.length,
         }),
-        title: t('LWC.project.dialogs.import_diagnostics_title'),
+        title: t('LWC.desktop.project.dialogs.import_diagnostics_title'),
         type: writtenPaths.length > 0 ? 'warning' : 'error',
         ...(detail ? { detail } : {}),
       });
     }
     notifyViaSnackbar({
-      message: t('LWC.project.messages.imported_documents_with_problems_snackbar', {
+      message: t('LWC.desktop.project.messages.imported_documents_with_problems_snackbar', {
         documentCount: writtenPaths.length,
         problemCount: problems.length,
       }),
@@ -884,7 +903,7 @@ export const importDocuments = async (context: Context) => {
   }
 
   notifyViaSnackbar({
-    message: t('LWC.project.messages.imported_documents_success', {
+    message: t('LWC.desktop.project.messages.imported_documents_success', {
       documentCount: writtenPaths.length,
     }),
     options: { variant: 'success' },

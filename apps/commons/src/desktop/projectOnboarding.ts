@@ -71,17 +71,34 @@ export const completeProjectOnboarding = async (
     if (!(await getProjectSourceLanguage(current))) return null;
   }
 
-  log('ensuring entity db folder');
-  if (!(await ensureEntityDbFolder())) return null;
+  log('complete');
+  return current;
+};
 
-  if (!(await projectHasEntityStorePreference(current.projectFilePath))) {
-    log('no entity store preference — opening metadata dialog');
-    const saved = await openNativeProjectMetadata(current.projectFilePath, 'edition');
-    log(`entity store dialog result: ${saved}`);
-    if (saved !== 'saved') return null;
-    if (window.electronAPI?.reloadProjectBundle) {
-      const reloaded = await window.electronAPI.reloadProjectBundle(current.projectFilePath);
-      if (reloaded) current = reloaded;
+/**
+ * Onboarding steps that need the app's embedded UI (e.g. the settings
+ * dialog), which only exists once the project has actually loaded and
+ * `<ProjectEditor>` has mounted. Must run *after* the caller has marked the
+ * project ready — running it earlier (as part of `completeProjectOnboarding`)
+ * deadlocks, since the embedded dialog can't open before that mount, and
+ * that mount can't happen before onboarding completes.
+ */
+export const completePostLoadOnboarding = async (bundle: ProjectBundle): Promise<ProjectBundle> => {
+  if (!isDesktop()) return bundle;
+
+  const log = (step: string) => console.info(`[onboarding] ${step}`);
+  let current = bundle;
+
+  log('ensuring entity db folder');
+  if (await ensureEntityDbFolder()) {
+    if (!(await projectHasEntityStorePreference(current.projectFilePath))) {
+      log('no entity store preference — opening metadata dialog');
+      const saved = await openNativeProjectMetadata(current.projectFilePath, 'edition');
+      log(`entity store dialog result: ${saved}`);
+      if (saved === 'saved' && window.electronAPI?.reloadProjectBundle) {
+        const reloaded = await window.electronAPI.reloadProjectBundle(current.projectFilePath);
+        if (reloaded) current = reloaded;
+      }
     }
   }
 
@@ -89,7 +106,7 @@ export const completeProjectOnboarding = async (
   // not hold up project open, and downloads run in the main process.
   void maybeOfferAuthorityDatabases(current).catch(() => undefined);
 
-  log('complete');
+  log('post-load onboarding complete');
   return current;
 };
 
