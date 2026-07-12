@@ -204,6 +204,7 @@ export interface ElectronAPI {
   statFile: (filePath: string) => Promise<FileStat>;
   syncWatchedFiles: (paths: string[]) => Promise<void>;
   ignoreFileChange: (filePath: string, mtimeMs: number) => Promise<void>;
+  armFileWrite: (filePath: string) => Promise<void>;
   findXmlFilesByName: (rootPath: string, query: string) => Promise<NamedPath[]>;
   listProjectXmlFiles: (rootPath: string) => Promise<NamedPath[]>;
   reloadProjectBundle: (projectFilePath: string) => Promise<ProjectBundle | null>;
@@ -324,7 +325,7 @@ export interface ElectronAPI {
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
   generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
   zoteroListStyles: () => Promise<ZoteroStyle[]>;
-  renamePath: (oldPath: string, newPath: string) => Promise<void>;
+  renamePath: (oldPath: string, newPath: string) => Promise<string>;
   movePath: (sourcePath: string, destDir: string) => Promise<string>;
   deletePath: (targetPath: string) => Promise<void>;
   createDirectory: (parentDir: string, folderName: string) => Promise<string>;

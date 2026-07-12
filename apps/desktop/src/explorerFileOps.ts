@@ -73,7 +73,7 @@ export const findXmlFilesByName = async (
   return results.sort((a, b) => a.name.localeCompare(b.name));
 };
 
-export const renamePath = async (oldPath: string, newPath: string): Promise<void> => {
+export const renamePath = async (oldPath: string, newPath: string): Promise<string> => {
   if (path.normalize(oldPath) === path.normalize(newPath)) {
     throw new Error('Same path');
   }
@@ -89,6 +89,10 @@ export const renamePath = async (oldPath: string, newPath: string): Promise<void
   }
 
   await fs.rename(oldPath, newPath);
+  // Renderer callers build `newPath` with forward slashes; return the OS-native form
+  // so it matches the separators readDirectory/watchers use, keeping later filePath
+  // equality checks (open tabs, tree nodes) consistent on Windows.
+  return path.normalize(newPath);
 };
 
 export const movePath = async (sourcePath: string, destDir: string): Promise<string> => {

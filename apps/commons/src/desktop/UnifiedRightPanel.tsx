@@ -66,7 +66,6 @@ const TAB_ORDER: RightTabId[] = [
   'fileMetadata',
   'attributes',
   'css',
-  'imageViewer',
   'validation',
   'translation',
 ];

@@ -1,0 +1,1 @@
+var i={name:"Custom Authority Service",description:"An example for a custom entity lookup service for LEAF-Writer",author:{name:"CWRC Team",url:"https://www.cwrc.ca/"},entityTypes:["person","place","organization","work","thing"],search:async({query:t,entityType:e})=>[]};export{i as customAuthority};

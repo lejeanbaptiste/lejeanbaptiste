@@ -3,6 +3,10 @@ import type { BrowserWindow } from 'electron';
 
 const DEBOUNCE_MS = 300;
 const IGNORE_TTL_MS = 2_000;
+// A caller may arm a path well before the actual disk write reaches us — e.g. the
+// renderer is busy serializing a large document — so this window is generous
+// compared to IGNORE_TTL_MS, which only needs to cover post-write notification lag.
+const ARM_TTL_MS = 10_000;
 
 interface IgnoredChange {
   expiresAt: number;
@@ -13,6 +17,7 @@ export class OpenFileWatcher {
   private watchers = new Map<string, FSWatcher>();
   private debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private ignoredChanges = new Map<string, IgnoredChange>();
+  private armedWrites = new Map<string, number>();
   private getWindow: () => BrowserWindow | null;
 
   constructor(getWindow: () => BrowserWindow | null) {
@@ -35,7 +40,18 @@ export class OpenFileWatcher {
     }
   }
 
+  /**
+   * Call before a known write starts, so a slow renderer (e.g. mid-serialization
+   * of a large document) can't lose the race against the debounce timer below —
+   * the notification is suppressed unconditionally until `ignoreChange` confirms
+   * the write's resulting mtime, or this arming window lapses.
+   */
+  armWrite(filePath: string) {
+    this.armedWrites.set(filePath, Date.now() + ARM_TTL_MS);
+  }
+
   ignoreChange(filePath: string, mtimeMs: number) {
+    this.armedWrites.delete(filePath);
     this.ignoredChanges.set(filePath, {
       mtimeMs,
       expiresAt: Date.now() + IGNORE_TTL_MS,
@@ -47,6 +63,7 @@ export class OpenFileWatcher {
       this.unwatch(filePath);
     }
     this.ignoredChanges.clear();
+    this.armedWrites.clear();
   }
 
   private watch(filePath: string) {
@@ -97,6 +114,12 @@ export class OpenFileWatcher {
   }
 
   private shouldIgnore(filePath: string): boolean {
+    const armedUntil = this.armedWrites.get(filePath);
+    if (armedUntil !== undefined) {
+      if (Date.now() <= armedUntil) return true;
+      this.armedWrites.delete(filePath);
+    }
+
     const ignored = this.ignoredChanges.get(filePath);
     if (!ignored) return false;
 
