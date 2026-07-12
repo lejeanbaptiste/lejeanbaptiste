@@ -28,6 +28,8 @@ The Electron window opens at `http://localhost:3000/project`.
 
 Optional: set `LJB_OPEN_DEVTOOLS=1` to open Chromium DevTools in development.
 
+The View menu's Reload / Force Reload / Toggle Developer Tools items only appear in development builds (`app.isPackaged === false`); they're stripped from packaged production builds.
+
 ## Production build
 
 ### macOS (.pkg)

@@ -232,7 +232,6 @@ export const useLeafWriter = () => {
               east: [
                 { id: 'fileMetadata', title: 'File metadata' },
                 { id: 'attributes', title: 'Attributes' },
-                { id: 'imageViewer', title: 'Image Viewer' },
                 { id: 'validation', title: 'Validation' },
               ],
             },
@@ -288,7 +287,6 @@ export const useLeafWriter = () => {
         east: [
           { id: 'fileMetadata', title: 'File metadata' },
           { id: 'attributes', title: 'Attributes' },
-          { id: 'imageViewer', title: 'Image Viewer' },
           { id: 'validation', title: 'Validation' },
         ],
       },

@@ -1,5 +1,5 @@
 import type { FileTreeNode } from '@src/overmind/project/state';
-import { isEntityDatabasePath } from '@src/desktop/infrastructurePaths';
+import { isEntityDatabasePath, pathsMatch } from '@src/desktop/infrastructurePaths';
 
 const splitPath = (filePath: string) => filePath.split(/[/\\]/);
 
@@ -115,7 +115,7 @@ export const shouldHideExplorerDirectoryEntry = (
   schemaDirPath: string | null | undefined,
   projectRoot?: string | null,
 ): boolean =>
-  Boolean(schemaDirPath && entryPath === schemaDirPath) ||
+  Boolean(schemaDirPath && pathsMatch(entryPath, schemaDirPath)) ||
   isTranslationCompanionFile(entryPath) ||
   Boolean(projectRoot && isEntityDatabasePath(entryPath, projectRoot));
 

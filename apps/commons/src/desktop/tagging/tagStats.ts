@@ -1,4 +1,5 @@
 import { joinProjectPath } from '@src/desktop/projectFile';
+import { normalizePathKey } from '@src/desktop/infrastructurePaths';
 
 export const TAG_STATS_RELATIVE_PATH = 'schema/tag-stats.json';
 
@@ -37,8 +38,13 @@ let cachedRootPath: string | null = null;
 export const getTagStatsPath = (rootPath: string) =>
   joinProjectPath(rootPath, TAG_STATS_RELATIVE_PATH);
 
-const toRelativePath = (rootPath: string, filePath: string): string =>
-  filePath.slice(rootPath.length).replace(/^[/\\]+/, '').replace(/\\/g, '/');
+const toRelativePath = (rootPath: string, filePath: string): string => {
+  const normalizedRoot = normalizePathKey(rootPath).replace(/\/+$/, '');
+  const normalizedFile = normalizePathKey(filePath);
+  return normalizedFile.startsWith(`${normalizedRoot}/`)
+    ? normalizedFile.slice(normalizedRoot.length + 1)
+    : normalizedFile;
+};
 
 const RESERVED_ATTR_NAMES = new Set([
   'id',

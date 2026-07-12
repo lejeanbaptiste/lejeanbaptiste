@@ -752,10 +752,14 @@ const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
 const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
   label: 'View',
   submenu: [
-    { role: 'reload' },
-    { role: 'forceReload' },
-    { role: 'toggleDevTools' },
-    menuSeparator(),
+    ...(isDev
+      ? ([
+          { role: 'reload' },
+          { role: 'forceReload' },
+          { role: 'toggleDevTools' },
+          menuSeparator(),
+        ] as Electron.MenuItemConstructorOptions[])
+      : []),
     {
       label: 'Actual Size',
       accelerator: 'CommandOrControl+0',
@@ -927,7 +931,6 @@ const buildApplicationMenu = () => {
     buildEditMenu(),
     buildToolsMenu(),
     buildViewMenu(),
-    { role: 'windowMenu' },
     buildHelpMenu(),
   ];
 
@@ -1144,6 +1147,10 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('ignoreFileChange', (_event, filePath: string, mtimeMs: number) => {
     openFileWatcher?.ignoreChange(filePath, mtimeMs);
+  });
+
+  ipcMain.handle('armFileWrite', (_event, filePath: string) => {
+    openFileWatcher?.armWrite(filePath);
   });
 
   ipcMain.handle('findXmlFilesByName', async (_event, rootPath: string, query: string) => {
@@ -1732,7 +1739,7 @@ const registerIpcHandlers = () => {
   });
 
   ipcMain.handle('renamePath', async (_event, oldPath: string, newPath: string) => {
-    await renamePath(oldPath, newPath);
+    return renamePath(oldPath, newPath);
   });
 
   ipcMain.handle('movePath', async (_event, sourcePath: string, destDir: string) => {
