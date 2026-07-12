@@ -334,8 +334,11 @@ export class Leafwriter {
     overmind.state.validator.validationErrors === 0;
   }
 
-  async showSettingsDialog() {
-    overmind.actions.ui.openDialog({ type: 'settings' });
+  async showSettingsDialog(options?: { onClose?: (action?: string) => void }) {
+    overmind.actions.ui.openDialog({
+      type: 'settings',
+      props: options?.onClose ? { onClose: options.onClose } : undefined,
+    });
   }
 
   closeForegroundPopup(): boolean {

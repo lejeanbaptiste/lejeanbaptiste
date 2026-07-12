@@ -1,6 +1,7 @@
 import { ListItem, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSettingsValidation } from '../../settingsValidationContext';
 
 const getCommonsUiBridge = () =>
   (
@@ -16,6 +17,7 @@ export const DesktopEncoderName = () => {
   const { t } = useTranslation();
   const bridge = getCommonsUiBridge();
   const [encoderName, setEncoderNameLocal] = useState(bridge?.encoderName ?? '');
+  const { attempted, encoderNameValid } = useSettingsValidation();
 
   useEffect(() => {
     if (!bridge) return;
@@ -27,7 +29,9 @@ export const DesktopEncoderName = () => {
   return (
     <ListItem dense disableGutters sx={{ py: 0.25 }}>
       <TextField
+        error={attempted && !encoderNameValid}
         fullWidth
+        helperText={attempted && !encoderNameValid ? t('LW.desktop.settings.field_required') : undefined}
         label={t('LW.desktop.settings.user_name')}
         onBlur={() => void bridge.setEncoderName(encoderName)}
         onChange={(event) => setEncoderNameLocal(event.target.value)}

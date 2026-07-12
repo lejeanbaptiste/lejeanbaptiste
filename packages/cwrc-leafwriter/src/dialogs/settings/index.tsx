@@ -1,20 +1,31 @@
-import { Dialog, DialogContent, List, Stack } from '@mui/material';
+import { Alert, Dialog, DialogContent, List, Stack } from '@mui/material';
 import { motion } from 'motion/react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppState } from '../../overmind';
 import { AddCustomAuthority } from '../custom-authority-dialog/add-custom-authority';
 import type { IDialog } from '../type';
 import { Section } from './components';
 import { Header } from './header';
-import { Authorities, Editor, EntityLookups, MarkupPanel, Reset, UI } from './sections';
+import { Authorities, Editor, EntityLookups, MarkupPanel, Profile, Reset, UI } from './sections';
 import { DesktopAiApi } from './sections/ui/desktop-ai-api';
+import { SettingsValidationContext } from './settingsValidationContext';
 import { SideMenu } from './side-menu';
+import { useRequiredFieldsValidity } from './useRequiredFieldsValidity';
 
 export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
   const { isReadonly, settings } = useAppState().editor;
   const { t } = useTranslation();
+  const validity = useRequiredFieldsValidity();
+  const [closeAttempted, setCloseAttempted] = useState(false);
 
-  const handleClose = () => onClose && onClose('close');
+  const handleClose = () => {
+    if (!validity.allValid) {
+      setCloseAttempted(true);
+      return;
+    }
+    onClose && onClose('close');
+  };
 
   const isDesktop =
     typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
@@ -47,6 +58,7 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
       <Stack direction="row" overflow="hidden" px={0.75} pb={0.75}>
         <SideMenu
           items={[
+            { id: 'profile', label: t('LW.commons.profile'), hide: !isDesktop },
             { id: 'interface', label: t('LW.commons.interface') },
             { id: 'ai-api', label: t('LW.settings.ai_api.title'), hide: !isDesktop },
             { id: 'editor', label: t('LW.commons.editor') },
@@ -57,41 +69,51 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
           ]}
         />
         <DialogContent sx={{ pt: 0.25, px: 1, pb: 1, minWidth: 0 }}>
-          <Stack component={motion.div} layout spacing={1.75}>
-            <Section id="interface" title={t('LW.commons.interface')}>
-              <UI />
-            </Section>
-            {isDesktop && (
-              <Section id="ai-api" title={t('LW.settings.ai_api.title')}>
-                <List dense>
-                  <DesktopAiApi />
-                </List>
+          <SettingsValidationContext.Provider value={{ ...validity, attempted: closeAttempted }}>
+            <Stack component={motion.div} layout spacing={1.75}>
+              {closeAttempted && !validity.allValid && (
+                <Alert severity="error">{t('LW.desktop.settings.setup_incomplete')}</Alert>
+              )}
+              {isDesktop && (
+                <Section id="profile" title={t('LW.commons.profile')}>
+                  <Profile />
+                </Section>
+              )}
+              <Section id="interface" title={t('LW.commons.interface')}>
+                <UI />
               </Section>
-            )}
-            <Section id="editor" title={t('LW.commons.editor')}>
-              <Editor />
-            </Section>
-            {!isReadonly && (
-              <>
-                <Section
-                  endDecorator={<AddCustomAuthority />}
-                  id="authorities"
-                  title={t('LW.commons.authorities')}
-                >
-                  <Authorities />
+              {isDesktop && (
+                <Section id="ai-api" title={t('LW.settings.ai_api.title')}>
+                  <List dense>
+                    <DesktopAiApi />
+                  </List>
                 </Section>
-                <Section id="entityLookups" title={t('LW.commons.entity_types')}>
-                  <EntityLookups />
-                </Section>
-                <Section id="markup-panel" title={t('LW.settings.markupPanel.title')}>
-                  <MarkupPanel />
-                </Section>
-                <Section id="reset" title={t('LW.commons.reset')}>
-                  <Reset />
-                </Section>
-              </>
-            )}
-          </Stack>
+              )}
+              <Section id="editor" title={t('LW.commons.editor')}>
+                <Editor />
+              </Section>
+              {!isReadonly && (
+                <>
+                  <Section
+                    endDecorator={<AddCustomAuthority />}
+                    id="authorities"
+                    title={t('LW.commons.authorities')}
+                  >
+                    <Authorities />
+                  </Section>
+                  <Section id="entityLookups" title={t('LW.commons.entity_types')}>
+                    <EntityLookups />
+                  </Section>
+                  <Section id="markup-panel" title={t('LW.settings.markupPanel.title')}>
+                    <MarkupPanel />
+                  </Section>
+                  <Section id="reset" title={t('LW.commons.reset')}>
+                    <Reset />
+                  </Section>
+                </>
+              )}
+            </Stack>
+          </SettingsValidationContext.Provider>
         </DialogContent>
       </Stack>
     </Dialog>

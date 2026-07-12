@@ -969,6 +969,19 @@ const openProjectFromDialog = async () => {
     defaultPath: await getDialogDefaultPath(),
   });
   if (result.canceled || result.filePaths.length === 0) return null;
+
+  const pickedFolder = result.filePaths[0].replace(/[/\\]+$/, '');
+  const entityDbFolder = await getEntityDbFolder();
+  if (entityDbFolder && pickedFolder === entityDbFolder.replace(/[/\\]+$/, '')) {
+    await dialog.showMessageBox(mainWindow, {
+      type: 'warning',
+      title: 'That folder is your entity database',
+      message: `${pickedFolder}\n\nThis folder is configured as your entity database folder and can't be used as a project folder. Choose a different folder for your project.`,
+      buttons: ['OK'],
+    });
+    return null;
+  }
+
   rememberDialogDir(result.filePaths[0], 'directory');
 
   try {

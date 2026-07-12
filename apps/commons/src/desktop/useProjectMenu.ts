@@ -87,7 +87,7 @@ export const useProjectMenu = () => {
     const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
     const content = await getEditorContent(leafWriter, activeTab?.content);
     if (!content) {
-      notifyViaSnackbar(t('LWC.desktop.project.open_xml_before_saving'));
+      notifyViaSnackbar(t('LWC.desktop.project.messages.open_xml_before_saving'));
       return;
     }
 
@@ -117,7 +117,7 @@ export const useProjectMenu = () => {
     const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
     const content = await getEditorContent(leafWriter, activeTab?.content);
     if (!content) {
-      notifyViaSnackbar(t('LWC.desktop.project.open_xml_before_saving'));
+      notifyViaSnackbar(t('LWC.desktop.project.messages.open_xml_before_saving'));
       return;
     }
 
@@ -204,7 +204,7 @@ export const useProjectMenu = () => {
 
       if (action === 'open-time-machine') {
         if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar(t('LWC.desktop.project.open_project_first'));
+          notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
           return;
         }
 
@@ -213,13 +213,13 @@ export const useProjectMenu = () => {
       }
 
       if (action === 'open-settings') {
-        void openSettings(leafWriter, (message) => notifyViaSnackbar(message), t('LWC.desktop.project.could_not_open_settings'));
+        void openSettings(leafWriter, (message) => notifyViaSnackbar(message), t('LWC.desktop.could_not_open_settings'));
         return;
       }
 
       if (action === 'edition-metadata') {
         if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar(t('LWC.desktop.project.open_project_first'));
+          notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
           return;
         }
 
@@ -229,12 +229,12 @@ export const useProjectMenu = () => {
 
       if (action === 'zotero-preferences') {
         if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar(t('LWC.desktop.project.open_project_first'));
+          notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
           return;
         }
 
         if (!(window as Window & { __desktopCitationBridge?: unknown }).__desktopCitationBridge) {
-          notifyViaSnackbar(t('LWC.desktop.project.open_translation_tab_for_zotero'));
+          notifyViaSnackbar(t('LWC.desktop.open_translation_tab_for_zotero'));
           return;
         }
 
@@ -244,13 +244,13 @@ export const useProjectMenu = () => {
 
       if (action === 'zotero-refresh') {
         window.dispatchEvent(new CustomEvent('desktop:zotero-refresh-citations'));
-        notifyViaSnackbar(t('LWC.desktop.project.refreshing_zotero_citations'));
+        notifyViaSnackbar(t('LWC.desktop.refreshing_zotero_citations'));
         return;
       }
 
       if (action === 'check-schema-update') {
         if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar(t('LWC.desktop.project.open_project_first'));
+          notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
           return;
         }
 
@@ -306,7 +306,7 @@ export const useProjectMenu = () => {
         await openSettings(
           leafWriter,
           (message) => notifyViaSnackbar(message),
-          t('LWC.desktop.project.could_not_open_settings'),
+          t('LWC.desktop.could_not_open_settings'),
         );
         return;
       }

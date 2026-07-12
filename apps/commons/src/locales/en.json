@@ -285,6 +285,7 @@
         "schema_is_up_to_date": "Schema is up to date.",
         "errors": {
           "could_not_load_edition_metadata": "Could not load edition metadata.",
+          "could_not_save_file": "Could not save {{filename}}.",
           "could_not_save_metadata": "Could not save metadata.",
           "could_not_load_project_settings": "Could not load project settings."
         },

@@ -9,6 +9,7 @@ import type {
 import { useCallback, useEffect, useState } from 'react';
 import { createEntitiesScaffold } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import { AUTHORITY_PACKS_DIRNAME } from '@src/desktop/authorityPackTypes';
+import { PROJECT_FILE_NAME } from '@src/desktop/projectFile';
 
 export const useCommonsUiBridge = () => {
   const {
@@ -147,6 +148,20 @@ export const useCommonsUiBridge = () => {
     if (!picked) return null;
 
     const folder = picked.replace(/[/\\]+$/, '');
+
+    const isProjectFolder = await window.electronAPI?.pathExists?.(
+      `${folder}/${PROJECT_FILE_NAME}`,
+    );
+    if (isProjectFolder) {
+      await window.electronAPI?.showNativeMessageBox?.({
+        type: 'warning',
+        title: 'That folder is a project',
+        message: `${folder}\n\nThis folder is already a Le Jean-Baptiste project. Choose a different folder for your entity database — you can keep it as the parent of your projects, just not a project folder itself.`,
+        buttons: ['OK'],
+      });
+      return null;
+    }
+
     const entitiesHere = await window.electronAPI?.pathExists?.(`${folder}/entities.xml`);
     if (!entitiesHere) {
       const parent = folder.replace(/[/\\][^/\\]+$/, '');
