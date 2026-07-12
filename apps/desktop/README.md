@@ -82,6 +82,26 @@ The `.deb` lands in `apps/desktop/release/` (e.g. `le-jean-baptiste-desktop_0.0.
 sudo apt install ./apps/desktop/release/le-jean-baptiste-desktop_*.deb
 ```
 
+For GitHub-hosted updates, the release workflow publishes a signed APT repo
+to GitHub Pages. In repository settings, set Pages source to `GitHub Actions`.
+The repository URL will look like:
+
+```text
+https://<owner>.github.io/<repo>/apt
+```
+
+After the signing key is added once, `apt update` will pick up new versions
+automatically:
+
+```bash
+curl -fsSL https://<owner>.github.io/<repo>/apt/le-jean-baptiste-archive-key.asc \
+  | sudo gpg --dearmor -o /usr/share/keyrings/le-jean-baptiste-archive-key.gpg
+echo "deb [signed-by=/usr/share/keyrings/le-jean-baptiste-archive-key.gpg] https://<owner>.github.io/<repo>/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/le-jean-baptiste.list
+sudo apt update
+sudo apt install le-jean-baptiste-desktop
+```
+
 Platform-specific electron-builder settings live in `electron-builder.mac.json`, `electron-builder.linux.json`, and `electron-builder.win.json`, all extending `electron-builder.base.json`.
 
 ### Linux (Flatpak)
@@ -92,7 +112,10 @@ Flatpak packaging uses electron-builder’s `flatpak` target. On a machine with 
 npm run build:desktop:flatpak
 ```
 
-The resulting `.flatpak` bundle lands in `apps/desktop/release/`.
+The resulting `.flatpak` bundle lands in `apps/desktop/release/`. This is a
+standalone install bundle, not an update channel. A true Flatpak update path
+would need a repository-based Flatpak manifest and signing flow, which is not
+set up yet.
 
 ### Linux (Arch / CachyOS)
 

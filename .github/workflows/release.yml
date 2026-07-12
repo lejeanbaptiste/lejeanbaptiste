@@ -1,0 +1,179 @@
+name: Release desktop builds
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  linux-deb:
+    name: Build Linux .deb (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            script: build:desktop:linux:amd64
+          - arch: arm64
+            script: build:desktop:linux:arm64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install packaging tools
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build desktop package
+        run: npm run ${{ matrix.script }}
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-deb-${{ matrix.arch }}
+          path: apps/desktop/release/*.deb
+          if-no-files-found: error
+
+  linux-flatpak:
+    name: Build Linux Flatpak
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install flatpak tooling
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin flatpak flatpak-builder
+
+      - name: Add Flathub remote
+        run: sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Flatpak
+        run: npm run build:desktop:flatpak:ci
+
+      - name: Upload Flatpak artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-flatpak
+          path: apps/desktop/release/*.flatpak
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub release and apt repo
+    needs:
+      - linux-deb
+      - linux-flatpak
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download .deb artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: linux-deb-*
+          path: release-assets/debs
+          merge-multiple: true
+
+      - name: Download Flatpak artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-flatpak
+          path: release-assets/flatpak
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install repo tooling
+        run: sudo apt-get update && sudo apt-get install -y apt-utils dpkg-dev gnupg
+
+      - name: Import APT signing key
+        env:
+          APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/gnupg"
+          chmod 700 "$RUNNER_TEMP/gnupg"
+          printf '%s' "$APT_GPG_PRIVATE_KEY" | gpg --batch --yes --homedir "$RUNNER_TEMP/gnupg" --import
+
+      - name: Build signed APT repository
+        env:
+          APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
+        run: |
+          GPG_KEY_ID="$(gpg --homedir "$RUNNER_TEMP/gnupg" --list-secret-keys --with-colons | awk -F: '/^sec:/ { print $5; exit }')"
+          node scripts/build-apt-repo.mjs \
+            --input release-assets/debs \
+            --output release-publish/apt \
+            --suite stable \
+            --component main \
+            --origin "Le Jean-Baptiste" \
+            --label "Le Jean-Baptiste" \
+            --codename stable \
+            --description "Le Jean-Baptiste desktop packages" \
+            --gpg-key "$GPG_KEY_ID" \
+            --gpg-home "$RUNNER_TEMP/gnupg" \
+            --export-public-key release-publish/apt/le-jean-baptiste-archive-key.asc
+
+      - name: Copy signing key into release assets
+        run: cp release-publish/apt/le-jean-baptiste-archive-key.asc release-assets/
+
+      - name: Generate checksums
+        run: sha256sum release-assets/debs/*.deb release-assets/flatpak/*.flatpak release-assets/le-jean-baptiste-archive-key.asc > release-assets/SHA256SUMS
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          if ! gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --generate-notes
+          fi
+          gh release upload "$TAG_NAME" \
+            release-assets/SHA256SUMS \
+            release-assets/le-jean-baptiste-archive-key.asc \
+            release-assets/debs/*.deb \
+            release-assets/flatpak/*.flatpak \
+            --clobber
+
+      - name: Upload apt repo to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: release-publish
+
+      - name: Deploy apt repo to GitHub Pages
+        id: deploy-pages
+        uses: actions/deploy-pages@v4
