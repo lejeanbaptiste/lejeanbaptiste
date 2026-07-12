@@ -29,7 +29,7 @@
     "package": "npm run build && electron-builder --config electron-builder.mac.json",
     "package:mac": "npm run build && electron-builder --config electron-builder.mac.json",
     "package:linux": "npm run build && CUSTOM_FPM_PATH=$PWD/scripts/fpm-deb.mjs XDG_CACHE_HOME=/tmp electron-builder --config electron-builder.linux.json --linux deb",
-    "package:linux:amd64": "npm run build && CUSTOM_FPM_PATH=$PWD/scripts/fpm-deb.mjs XDG_CACHE_HOME=/tmp electron-builder --config electron-builder.linux.amd64.json --linux deb -c.electronDist=/usr/lib/electron43 -c.electronVersion=43.1.0",
+    "package:linux:amd64": "npm run build && CUSTOM_FPM_PATH=$PWD/scripts/fpm-deb.mjs XDG_CACHE_HOME=/tmp electron-builder --config electron-builder.linux.amd64.json --linux deb",
     "package:linux:arm64": "npm run build && CUSTOM_FPM_PATH=$PWD/scripts/fpm-deb.mjs XDG_CACHE_HOME=/tmp electron-builder --config electron-builder.linux.arm64.json --linux deb",
     "package:linux:flatpak": "npm run build && XDG_CACHE_HOME=/tmp electron-builder --config electron-builder.flatpak.json --linux flatpak -c.electronDist=/usr/lib/electron43 -c.electronVersion=43.1.0",
     "package:linux:flatpak:ci": "npm run build && XDG_CACHE_HOME=/tmp electron-builder --config electron-builder.flatpak.json --linux flatpak",

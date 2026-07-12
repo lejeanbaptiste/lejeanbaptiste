@@ -76,7 +76,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y flatpak flatpak-builder
 
       - name: Add Flathub remote
-        run: sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+        run: flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
       - name: Install dependencies
         run: npm ci
