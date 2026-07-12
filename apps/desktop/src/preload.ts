@@ -213,8 +213,11 @@ export interface ElectronAPI {
   >;
   authorityLifecyclePromptEnable?: (
     profile?: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleProfile,
+    strings?: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecyclePromptStrings,
   ) => Promise<'accepted' | 'declined'>;
   authorityLifecycleRevealFolder?: () => Promise<boolean>;
+  getShouldUseDarkColors?: () => Promise<boolean>;
+  onNativeThemeChanged?: (callback: (shouldUseDarkColors: boolean) => void) => () => void;
   onAuthorityLifecycleProgress?: (
     callback: (
       progress: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
@@ -409,9 +412,16 @@ const electronAPI: ElectronAPI = {
   authorityLifecycleUpdate: () => ipcRenderer.invoke('authorityLifecycle:update'),
   authorityLifecycleMaybeCheckUpdates: () =>
     ipcRenderer.invoke('authorityLifecycle:maybeCheckUpdates'),
-  authorityLifecyclePromptEnable: (profile) =>
-    ipcRenderer.invoke('authorityLifecycle:promptEnable', profile),
+  authorityLifecyclePromptEnable: (profile, strings) =>
+    ipcRenderer.invoke('authorityLifecycle:promptEnable', profile, strings),
   authorityLifecycleRevealFolder: () => ipcRenderer.invoke('authorityLifecycle:revealFolder'),
+  getShouldUseDarkColors: () => ipcRenderer.invoke('nativeTheme:shouldUseDarkColors'),
+  onNativeThemeChanged: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, shouldUseDarkColors: boolean) =>
+      callback(shouldUseDarkColors);
+    ipcRenderer.on('nativeTheme:updated', listener);
+    return () => ipcRenderer.removeListener('nativeTheme:updated', listener);
+  },
   authorityChgisGet: () => ipcRenderer.invoke('authorityChgis:get'),
   pickChgisArchive: () => ipcRenderer.invoke('pickChgisArchive'),
   authorityChgisInstallFromArchive: (archivePath: string) =>

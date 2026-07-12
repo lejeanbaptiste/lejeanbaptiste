@@ -1,0 +1,68 @@
+pkgname=le-jean-baptiste-desktop
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Le Jean-Baptiste — desktop XML editor"
+arch=('x86_64' 'aarch64')
+url="https://github.com/lejeanbaptiste/lejeanbaptiste"
+license=('GPL2')
+# The bundled Electron binary and python-build-standalone interpreter are
+# prebuilt third-party artifacts, not compiled by this package. Running
+# binutils `strip` over them corrupts glibc symbol versioning on the Python
+# binary (manifests as "symbol lookup error: undefined symbol: , version"),
+# so packaging is left unstripped.
+options=('!strip')
+depends=(
+  'gtk3'
+  'libnotify'
+  'nss'
+  'libxss'
+  'libxtst'
+  'xdg-utils'
+  'at-spi2-core'
+  'util-linux-libs'
+  'libsecret'
+  'hicolor-icon-theme'
+  'gtk-update-icon-cache'
+  'desktop-file-utils'
+)
+makedepends=(
+  'nodejs'
+  'npm'
+  'rsync'
+)
+source=()
+sha256sums=()
+
+prepare() {
+  rm -rf "$srcdir/source"
+  mkdir -p "$srcdir/source"
+  rsync -a --delete \
+    --exclude '.git' \
+    --exclude 'node_modules' \
+    --exclude 'release' \
+    --exclude 'dist' \
+    --exclude 'apps/desktop/release' \
+    --exclude 'packaging/arch/src' \
+    --exclude 'packaging/arch/pkg' \
+    --exclude 'packaging/arch/*.pkg.tar.*' \
+    "$startdir/../../" "$srcdir/source/"
+}
+
+build() {
+  cd "$srcdir/source"
+  npm ci --ignore-scripts
+  npm run build:desktop:arch
+}
+
+package() {
+  cd "$srcdir/source"
+
+  install -d "$pkgdir/opt/$pkgname"
+  cp -a apps/desktop/release/linux-unpacked/. "$pkgdir/opt/$pkgname/"
+
+  install -d "$pkgdir/usr/bin"
+  ln -s "/opt/$pkgname/le-jean-baptiste-desktop" "$pkgdir/usr/bin/le-jean-baptiste"
+
+  install -Dm644 packaging/arch/le-jean-baptiste.desktop "$pkgdir/usr/share/applications/$pkgname.desktop"
+  install -Dm644 design/icon.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/$pkgname.png"
+}

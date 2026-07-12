@@ -23,7 +23,7 @@ describe('buildTeiSkeletonXml', () => {
       schema: { catalogId: 'teiAll', rng: 'schema/tei_all.rng', css: 'schema/tei.css' },
     });
 
-    expect(xml).toContain('<publicationStmt><authority/></publicationStmt>');
+    expect(xml).toContain('<publicationStmt><publisher/></publicationStmt>');
     expect(xml).not.toContain('<publicationStmt><p/>');
   });
 
@@ -137,9 +137,9 @@ describe('mergeMetadataIntoHeader', () => {
       custom: [],
     });
 
-    expect(xml).toContain('<authority/>');
+    expect(xml).toContain('<publisher/>');
     expect(xml).toContain('<availability><licence>CC BY</licence></availability>');
-    expect(xml).not.toContain('<publicationStmt><p');
+    expect(xml).not.toContain('<publicationStmt><p/>');
   });
 
   test('writes structured TEI publication metadata without the paragraph fallback', () => {
@@ -157,7 +157,7 @@ describe('mergeMetadataIntoHeader', () => {
     });
 
     expect(xml).toContain(
-      '<publicationStmt><distributor>CNRS</distributor><authority/><availability><licence>CC BY</licence></availability></publicationStmt>',
+      '<publicationStmt><publisher/><distributor>CNRS</distributor><availability><licence>CC BY</licence></availability></publicationStmt>',
     );
     expect(xml).not.toContain('<publicationStmt><p/>');
   });

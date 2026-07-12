@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Le Jean-Baptiste
+Comment=Desktop XML editor
+Exec=/usr/bin/le-jean-baptiste %U
+Icon=le-jean-baptiste-desktop
+Terminal=false
+Type=Application
+Categories=Office;TextEditor;Development;
+StartupNotify=true

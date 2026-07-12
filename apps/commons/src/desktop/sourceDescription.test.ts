@@ -10,7 +10,7 @@ const skeleton = `<?xml version="1.0" encoding="UTF-8"?>
 <teiHeader>
   <fileDesc>
     <titleStmt><title>Untitled</title></titleStmt>
-    <publicationStmt><authority/></publicationStmt>
+    <publicationStmt><publisher/></publicationStmt>
     <sourceDesc><p/></sourceDesc>
   </fileDesc>
 </teiHeader>

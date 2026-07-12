@@ -1,0 +1,43 @@
+{
+  "extends": "./electron-builder.base.json",
+  "linux": {
+    "target": [
+      {
+        "target": "deb",
+        "arch": "arm64"
+      }
+    ],
+    "icon": "icons",
+    "category": "Office",
+    "syncDesktopName": true,
+    "maintainer": "Daniel Patrick Morgan <daniel.morgan@college-de-france.fr>",
+    "extraResources": [
+      {
+        "from": "resources/python",
+        "to": "python",
+        "filter": [
+          "**/*",
+          "!.deps-installed"
+        ]
+      }
+    ]
+  },
+  "deb": {
+    "depends": [
+      "libgtk-3-0",
+      "libnotify4",
+      "libnss3",
+      "libxss1",
+      "libxtst6",
+      "xdg-utils",
+      "libatspi2.0-0",
+      "libuuid1",
+      "libsecret-1-0"
+    ]
+  },
+  "win": {
+    "target": [
+      "nsis"
+    ]
+  }
+}

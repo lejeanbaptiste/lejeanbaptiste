@@ -39,6 +39,11 @@
     "dev:desktop": "npm run dev -w leafwriter-commons & npm run dev -w le-jean-baptiste-desktop",
     "build:desktop": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package -w le-jean-baptiste-desktop",
     "build:desktop:linux": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux -w le-jean-baptiste-desktop",
+    "build:desktop:linux:amd64": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:amd64 -w le-jean-baptiste-desktop",
+    "build:desktop:linux:arm64": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:arm64 -w le-jean-baptiste-desktop",
+    "build:desktop:flatpak": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:flatpak -w le-jean-baptiste-desktop",
+    "build:desktop:flatpak:ci": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:flatpak:ci -w le-jean-baptiste-desktop",
+    "build:desktop:arch": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:dir -w le-jean-baptiste-desktop",
     "icon:export": "node design/export-icon.mjs",
     "test:ci": "jest --silent",
     "authoritypacks:release": "node scripts/build-authority-pack-release.mjs",
@@ -75,5 +80,5 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
-  "packageManager": "npm@11.4.2"
+  "packageManager": "npm@12.0.0"
 }

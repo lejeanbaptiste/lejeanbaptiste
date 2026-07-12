@@ -15,7 +15,7 @@ const clampZoom = (level: number) =>
 
 export const getEditorZoom = (): number => {
   const stored = Number(window.localStorage.getItem(STORAGE_KEY));
-  if (!Number.isFinite(stored)) return DEFAULT_ZOOM;
+  if (!Number.isFinite(stored) || stored <= 0) return DEFAULT_ZOOM;
   if (
     stored === LEGACY_DEFAULT_ZOOM &&
     window.localStorage.getItem(MIGRATION_KEY) !== 'true'

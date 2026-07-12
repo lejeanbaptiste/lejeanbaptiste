@@ -4,6 +4,7 @@
  * main process and a system notification reports the result.
  */
 
+import i18next from 'i18next';
 import {
   isChineseLanguageCode,
   isJapaneseLanguageCode,
@@ -12,7 +13,10 @@ import {
 
 import { getProjectSourceLanguage } from './projectLanguage';
 import type { ProjectBundle } from './projectFile';
+import type { AuthorityLifecyclePromptStrings } from './authorityLifecycleTypes';
 import { isDesktop } from '@src/types/desktop';
+
+const { t } = i18next;
 
 const authorityProfileForLanguage = (
   language: string | null | undefined,
@@ -22,6 +26,15 @@ const authorityProfileForLanguage = (
   if (isTibetanLanguageCode(language)) return 'tibetan';
   return null;
 };
+
+const promptStringsForProfile = (
+  profile: 'chinese' | 'japanese' | 'tibetan',
+): AuthorityLifecyclePromptStrings => ({
+  message: t(`LWC.desktop.authority_prompt.${profile}.message`),
+  detail: t(`LWC.desktop.authority_prompt.${profile}.detail`),
+  downloadButton: t('LWC.desktop.authority_prompt.download_button'),
+  notNowButton: t('LWC.desktop.authority_prompt.not_now_button'),
+});
 
 /**
  * Offer offline authority assets if this is a supported East Asian project and
@@ -42,7 +55,11 @@ export const maybeOfferAuthorityDatabases = async (bundle: ProjectBundle): Promi
     if (status.declinedFirstPrompt) return;
     if (profileStatus?.packsReady) return;
 
-    if ((await api.authorityLifecyclePromptEnable(profile)) !== 'accepted') return;
+    if (
+      (await api.authorityLifecyclePromptEnable(profile, promptStringsForProfile(profile))) !==
+      'accepted'
+    )
+      return;
     await api.authorityLifecycleSetEnabled({ enabled: true, profile });
     return;
   }
