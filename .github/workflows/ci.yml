@@ -147,12 +147,16 @@ jobs:
             printf '%s' "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/apple_api_key.p8"
             export APPLE_API_KEY="$RUNNER_TEMP/apple_api_key.p8"
           fi
-          # On release events electron-builder publishes pkg, zip and
-          # latest-mac.yml (the auto-update feed) to the GitHub release.
           if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            # On release events electron-builder publishes pkg, zip and
+            # latest-mac.yml (the auto-update feed) to the GitHub release.
             export GH_TOKEN="$GITHUB_TOKEN_FOR_PUBLISH"
+            npm run build:desktop
+          else
+            npm run build-commons
+            npm run build -w le-jean-baptiste-desktop
+            npx electron-builder --config apps/desktop/electron-builder.mac.json --publish never
           fi
-          npm run build:desktop
 
       - name: Upload macOS package artifact
         uses: actions/upload-artifact@v4
@@ -181,8 +185,25 @@ jobs:
         run: npm ci
 
       - name: Build Windows installer (x64)
-        run: npm run package:win
+        shell: pwsh
         working-directory: apps/desktop
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $attempts = 3
+          for ($attempt = 1; $attempt -le $attempts; $attempt++) {
+            Write-Host "Running package:win attempt $attempt of $attempts"
+            & npm run package:win
+            if ($LASTEXITCODE -eq 0) {
+              exit 0
+            }
+
+            if ($attempt -eq $attempts) {
+              throw "package:win failed after $attempts attempts"
+            }
+
+            Write-Host "package:win failed with exit code $LASTEXITCODE. Waiting before retry..."
+            Start-Sleep -Seconds (10 * $attempt)
+          }
 
       - name: Upload installer to release
         if: github.event_name == 'release' && github.event.action == 'created'
