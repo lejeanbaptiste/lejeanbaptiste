@@ -233,8 +233,8 @@ describe('Save Dialog', () => {
         await user.clear(inputName);
         expect(inputName).toHaveValue('');
 
-        await user.type(inputName, 'folder-name');
-        expect(inputName).toHaveValue('folder-name');
+        await user.type(inputName, 'folder-name', { delay: 10 });
+        await waitFor(() => expect(inputName).toHaveValue('folder-name'));
 
         // const createButton = getByTestId(createFolderDialog, 'save:create-folder:create-button');
         // await user.click(createButton);

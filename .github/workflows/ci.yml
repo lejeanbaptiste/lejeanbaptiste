@@ -142,6 +142,16 @@ jobs:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           GITHUB_TOKEN_FOR_PUBLISH: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build-commons
+
+      - name: Package macOS desktop application (arm64)
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GITHUB_TOKEN_FOR_PUBLISH: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: apps/desktop
         run: |
           if [ -n "$APPLE_API_KEY_CONTENT" ]; then
             printf '%s' "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/apple_api_key.p8"
@@ -151,11 +161,9 @@ jobs:
             # On release events electron-builder publishes pkg, zip and
             # latest-mac.yml (the auto-update feed) to the GitHub release.
             export GH_TOKEN="$GITHUB_TOKEN_FOR_PUBLISH"
-            npm run build:desktop
+            npm run package:mac
           else
-            npm run build-commons
-            npm run build -w le-jean-baptiste-desktop
-            npx electron-builder --config apps/desktop/electron-builder.mac.json --publish never
+            npm run package:mac -- --publish never
           fi
 
       - name: Upload macOS package artifact
