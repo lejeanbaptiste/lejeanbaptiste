@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import '@testing-library/jest-dom/jest-globals';
 import {
   act,
+  fireEvent,
   getByTestId,
   getByText,
   getByTitle,
@@ -233,7 +234,7 @@ describe('Save Dialog', () => {
         await user.clear(inputName);
         expect(inputName).toHaveValue('');
 
-        await user.type(inputName, 'folder-name', { delay: 10 });
+        fireEvent.change(inputName, { target: { value: 'folder-name' } });
         await waitFor(() => expect(inputName).toHaveValue('folder-name'));
 
         // const createButton = getByTestId(createFolderDialog, 'save:create-folder:create-button');
