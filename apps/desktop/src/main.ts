@@ -89,6 +89,7 @@ import {
   searchZoteroItems,
 } from './zoteroClient';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
+import { initAutoUpdater } from './updater';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
 import { ensureSanmiaoDatesSchemaMerged } from './sanmiaoSchemaMerge';
 import { applyCatalogSchemaUpdate, checkCatalogSchemaUpdate } from './checkSchemaUpdate';
@@ -1959,6 +1960,7 @@ app.whenReady().then(() => {
   registerIpcHandlers();
   registerNativeDialogIpc();
   registerLemminxIpc(() => mainWindow);
+  initAutoUpdater();
   void createWindow();
 
   app.on('activate', () => {

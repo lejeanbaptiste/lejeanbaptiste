@@ -5,6 +5,11 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
 
 jobs:
   test:
@@ -136,10 +141,16 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GITHUB_TOKEN_FOR_PUBLISH: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -n "$APPLE_API_KEY_CONTENT" ]; then
             printf '%s' "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/apple_api_key.p8"
             export APPLE_API_KEY="$RUNNER_TEMP/apple_api_key.p8"
+          fi
+          # On release events electron-builder publishes pkg, zip and
+          # latest-mac.yml (the auto-update feed) to the GitHub release.
+          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            export GH_TOKEN="$GITHUB_TOKEN_FOR_PUBLISH"
           fi
           npm run build:desktop
 
@@ -147,15 +158,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-pkg-arm64
-          path: apps/desktop/release/*.pkg
-
-      - name: Upload installer to release
-        if: github.event_name == 'release' && github.event.action == 'created'
-        uses: softprops/action-gh-release@v1
-        with:
-          files: apps/desktop/release/*.pkg
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: |
+            apps/desktop/release/*.pkg
+            apps/desktop/release/*.zip
+            apps/desktop/release/latest-mac.yml
 
   desktop-windows:
     name: Build Windows installer (x64)
