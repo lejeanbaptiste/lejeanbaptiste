@@ -22,76 +22,39 @@ LEAF-Writer is also wired to connect to five authorities - VIAF, Wikidata, Getty
 
 ## Overview
 
-LEAF-Writer is a WYSIWYG text editor for in-browser XML editing and stand-off RDF annotation.  
-It is built around a heavily customized version of the [TinyMCE](https://www.tiny.cloud/) editor, and includes a CWRC-hosted XML validation service.
+LEAF-Writer is a WYSIWYG text editor for in-browser XML editing and stand-off RDF annotation. It is built around a heavily customized version of the [TinyMCE](https://www.tiny.cloud/) editor, and includes a CWRC-hosted XML validation service.
 
 A LEAF-Writer installation is a bundling of the main LEAF-WriterBase (the code in this repository) with a few other NPM packages that handle interaction with server-side services for document storage and named entity lookup.
 
 This README now focuses on the desktop fork and its shared packages. Some of the older LEAF-Writer notes are still useful background, but the fork-specific workflow is the priority here.
 
-## Enhanced functions
+## What is built
 
+Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current build already supports:
 
+- Opening a local project folder and bootstrapping its schema and project metadata.
+- Browsing XML files in a project tree, with multiple tabs in one window.
+- Saving edits back to disk, including the new-file and Save As flow for untitled documents.
+- Editing in both visual and source modes.
+- Finding and replacing text across a file, open tabs, selected resources, or the whole project.
+- Running XPath queries across the same project scopes.
+- Inspecting project and file metadata in the side panels.
+- Editing tag attributes, schema validation, XML tree navigation, table of contents, and entity tools inherited from LEAF-Writer.
+- Using keyboard-driven markup shortcuts for wrapping, inserting, renaming, attribute entry, and bulk propagation.
+- Working with translation companions in split-pane form for paired source/translation editing.
 
-### Window bar
+## Install
 
-- File tabs
+The first public release will ship downloadable installers.
 
+- macOS: `.pkg` installer
+- Windows: NSIS installer
+- Linux: `.deb` packages
 
+For Linux, we also have an APT-based distribution path set up so `.deb` installs can be added to `apt` and kept up to date from the repo.
 
-### Left panel
+Once the release is published, use the installer that matches your platform. If you want the exact packaging and repo setup details, see [apps/desktop/README.md](apps/desktop/README.md).
 
-- Fully functional file explorer to manage a project
-- Find and replace covering file, open tabs, selected resources, and project. Also includes regular expressions.
-- Xpath query, also for file, open tabs, selected resources, and project.
-- Table of contents (inherited)
-- XML tree (inheritend)
-- Entities (inherited)
+## Build From Source
 
-
-
-### Right panel
-
-- File metadata
-- Tag attributes
-- Image viewer (inherited)
-- Schema validation (inherited)
-
-
-
-### Bottom bar
-
-- Markup & linking (inherited)
-- Annotation mode (inherited)
-- XML schema (inherited)
-- Visual (WYSIWYG) or source XML viewer.
-
-
-
-### Keyboard shortcuts
-
-- `enter`, nothing selected: insert tag OR split `<p>` paragraph.
-- `enter`, on selection: wrap in tag
-  - `enter`: commit
-  - `shift+enter`: tag all identical strings the same way
-  - `alt+enter`: walk through all identical strings to decide case-by-case
-- `alt+enter`, on selection: add attribute
-- `shift+enter`, in `<p>`: immediately split paragraph.
-- `F2`: rename element
-  - `enter`: commit
-  - `shift+enter`: rename all `<tag>` elements wrapping the identical string
-  - `alt+enter`: walk
-
-## Running Le Jean-Baptiste
-
-Docker and Docker Compose are required. The easiest path is to install [Docker Desktop](https://www.docker.com/products/docker-desktop).
-
-Clone this repo:
-```bash
-git clone https://github.com/lejeanbaptiste/lejeanbaptiste.git
-```
-The `apps/desktop` package wraps our modified LEAF-Writer Commons in an Electron shell for local project editing (folder tree, tabs, save to disk, XPath search).
-```bash
-npm run dev:desktop
-```
-See [apps/desktop/README.md](apps/desktop/README.md) for build and packaging instructions.
+See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.

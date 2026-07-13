@@ -1,9 +1,17 @@
 {
   "extends": "./electron-builder.base.json",
   "afterPack": "./scripts/sign-mac-extra-resources.mjs",
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "lejeanbaptiste",
+      "repo": "lejeanbaptiste"
+    }
+  ],
   "mac": {
     "target": [
-      "pkg"
+      "pkg",
+      "zip"
     ],
     "hardenedRuntime": true,
     "gatekeeperAssess": false,
