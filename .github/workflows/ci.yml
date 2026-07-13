@@ -224,6 +224,33 @@ jobs:
             sleep $((10 * attempt))
           done
 
+      - name: Install and verify macOS package
+        # Keep this after packaging and before upload: a broken installer must
+        # never become a downloadable release asset.
+        if: success()
+        run: |
+          pkg_paths=(apps/desktop/release/*.pkg)
+          if [ "${#pkg_paths[@]}" -ne 1 ] || [ ! -f "${pkg_paths[0]}" ]; then
+            echo "Expected exactly one macOS pkg, found: ${pkg_paths[*]}"
+            exit 1
+          fi
+
+          app_path="/Applications/Le Jean-Baptiste.app"
+          sudo installer -pkg "${pkg_paths[0]}" -target /
+
+          if [ ! -d "$app_path" ]; then
+            echo "The pkg installer did not place the app at $app_path"
+            echo "Applications directory:"
+            find /Applications -maxdepth 1 -name '*.app' -print 2>/dev/null || true
+            echo "User Applications directory:"
+            find "$HOME/Applications" -maxdepth 1 -name '*.app' -print 2>/dev/null || true
+            exit 1
+          fi
+
+          test -x "$app_path/Contents/MacOS/Le Jean-Baptiste"
+          test -f "$app_path/Contents/Resources/app.asar"
+          echo "Installed and verified $app_path"
+
       - name: Upload macOS package artifact
         uses: actions/upload-artifact@v4
         with:
