@@ -11,6 +11,7 @@ import { pipeline } from 'stream/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
+import { fetchWithRetry } from './retryable-fetch.mjs';
 
 // https://github.com/astral-sh/python-build-standalone — "install_only" builds are relocatable.
 const PBS_TAG = '20260623';
@@ -59,11 +60,7 @@ mkdirSync(RESOURCES_DIR, { recursive: true });
 
 const tarPath = path.join(RESOURCES_DIR, asset);
 console.log(`[python-runtime] Downloading ${url}`);
-const response = await fetch(url);
-if (!response.ok) {
-  console.error(`[python-runtime] Download failed: ${response.status} ${response.statusText}`);
-  process.exit(1);
-}
+const response = await fetchWithRetry(url, undefined, { label: '[python-runtime] download' });
 await pipeline(response.body, createWriteStream(tarPath));
 
 console.log(`[python-runtime] Extracting ${asset}`);
@@ -77,7 +74,18 @@ unlinkSync(tarPath);
 console.log(`[python-runtime] Installing ${SANMIAO_SPEC}`);
 execFileSync(
   pythonBin,
-  ['-m', 'pip', 'install', '--no-warn-script-location', '--disable-pip-version-check', SANMIAO_SPEC],
+  [
+    '-m',
+    'pip',
+    'install',
+    '--no-warn-script-location',
+    '--disable-pip-version-check',
+    '--retries',
+    '5',
+    '--timeout',
+    '60',
+    SANMIAO_SPEC,
+  ],
   { stdio: 'inherit' },
 );
 

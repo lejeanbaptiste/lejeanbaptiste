@@ -32,7 +32,8 @@
         "to": "lemminx",
         "filter": [
           "**/*",
-          "!*.zip"
+          "!*.zip",
+          "!.lemminx-version"
         ]
       }
     ]

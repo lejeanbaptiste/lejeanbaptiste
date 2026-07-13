@@ -6,7 +6,7 @@ export default defineConfig({
   outDir: 'dist',
   clean: true,
   external: ['electron'],
-  noExternal: ['mammoth', 'jszip', '@xmldom/xmldom'],
+  noExternal: ['mammoth', 'jszip', '@xmldom/xmldom', 'electron-updater'],
   splitting: false,
   sourcemap: true,
 });

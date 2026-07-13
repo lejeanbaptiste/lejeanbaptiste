@@ -52,7 +52,21 @@ jobs:
         run: npm ci
 
       - name: Build desktop package
-        run: npm run ${{ matrix.script }}
+        run: |
+          attempts=3
+          for attempt in $(seq 1 "$attempts"); do
+            echo "Running ${{ matrix.script }} attempt $attempt of $attempts"
+            package_exit=0
+            npm run ${{ matrix.script }} || package_exit=$?
+            if [ "$package_exit" -eq 0 ]; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$attempts" ]; then
+              exit "$package_exit"
+            fi
+            echo "${{ matrix.script }} failed with exit code $package_exit. Waiting before retry..."
+            sleep $((10 * attempt))
+          done
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
@@ -87,7 +101,21 @@ jobs:
         run: npm ci
 
       - name: Build Flatpak
-        run: npm run build:desktop:flatpak:ci
+        run: |
+          attempts=3
+          for attempt in $(seq 1 "$attempts"); do
+            echo "Running build:desktop:flatpak:ci attempt $attempt of $attempts"
+            package_exit=0
+            npm run build:desktop:flatpak:ci || package_exit=$?
+            if [ "$package_exit" -eq 0 ]; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$attempts" ]; then
+              exit "$package_exit"
+            fi
+            echo "build:desktop:flatpak:ci failed with exit code $package_exit. Waiting before retry..."
+            sleep $((10 * attempt))
+          done
 
       - name: Upload Flatpak artifact
         uses: actions/upload-artifact@v4

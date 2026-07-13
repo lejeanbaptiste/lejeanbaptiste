@@ -39,6 +39,7 @@ npm run build:desktop
 ```
 
 This builds Commons, compiles the Electron main/preload scripts, and packages a `.pkg` installer into `apps/desktop/release/`.
+For a local-only rebuild without touching GitHub release publishing, run `npm run package:mac -w le-jean-baptiste-desktop -- --publish never`.
 
 ### Bundled Python runtime (all platforms)
 
@@ -47,7 +48,9 @@ CPython (python-build-standalone) with the pinned `sanmiao` release
 pip-installed into it. `scripts/download-python-runtime.mjs` fetches the
 runtime for the host OS/architecture during `npm install` and before
 packaging, staging it at `apps/desktop/resources/python/` — the same
-repo-relative path on every dev machine and VM. The app prefers a sibling
+repo-relative path on every dev machine and VM. That download now retries
+temporary upstream failures before aborting, and the packaging hooks fail
+closed if the runtime cannot be staged completely. The app prefers a sibling
 `../sanmiao` dev checkout (editable venv), then the bundled runtime, then
 system Python; `SANMIAO_PYTHON` overrides everything. End users need no
 Python setup.
@@ -104,6 +107,9 @@ sudo apt install le-jean-baptiste-desktop
 
 Platform-specific electron-builder settings live in `electron-builder.mac.json`, `electron-builder.linux.json`, and `electron-builder.win.json`, all extending `electron-builder.base.json`.
 
+The mac packaging hooks also stage LemMinX from `resources/lemminx/` and
+retry transient download failures before packaging continues.
+
 ### Linux (Flatpak)
 
 Flatpak packaging uses electron-builder’s `flatpak` target. On a machine with `flatpak-builder` installed, run:
@@ -143,7 +149,7 @@ runtime (see above) before electron-builder assembles the installer.
 - **Host platform:** `npm run package` builds the mac `.pkg` installer. Use `npm run package:linux` for the Linux `.deb`, `npm run package:win` for the Windows NSIS installer, or `npm run package:mac` to be explicit.
 - **No code signing:** Unsigned builds may require right-click → Open on first launch.
 - If the build fails with `unable to locate '...leafwriter-validator.worker.js'`, build the validator package first: `npm run build -w @cwrc/leafwriter-validator`.
-- The bundled LemMinX XML language server is currently downloaded for macOS only; Linux builds skip it.
+- The bundled LemMinX XML language server is currently downloaded for macOS only; Linux builds skip it, and the mac packaging hook will refuse to continue if it cannot stage the expected binary.
 - The packaged app starts a local Express server and loads the `/project` route.
 
 ## License notices
