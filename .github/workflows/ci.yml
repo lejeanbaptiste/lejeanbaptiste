@@ -85,8 +85,9 @@ jobs:
         run: npm run build:desktop:flatpak:ci
 
   desktop-macos:
-    name: Build macOS desktop application
-    runs-on: macos-latest
+    name: Build macOS desktop application (Apple silicon)
+    # macos-15 runners are arm64; the build produces an arm64-only pkg.
+    runs-on: macos-15
 
     steps:
       - name: Check out repository
@@ -101,8 +102,60 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build macOS desktop application
-        run: npm run build:desktop
+      - name: Import code-signing certificates
+        env:
+          # Developer ID Application (signs the app) and Developer ID
+          # Installer (signs the pkg), as separate base64-encoded .p12 files.
+          MAC_CERTS_P12: ${{ secrets.MAC_CERTS_P12 }}
+          MAC_INSTALLER_CERTS_P12: ${{ secrets.MAC_INSTALLER_CERTS_P12 }}
+          MAC_CERTS_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+        run: |
+          if [ -z "$MAC_CERTS_P12" ]; then
+            echo "No signing certificates configured; building unsigned."
+            exit 0
+          fi
+          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
+          security create-keychain -p ci "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p ci "$KEYCHAIN"
+          import_p12() {
+            [ -z "$1" ] && return 0
+            printf '%s' "$1" | base64 -d > "$RUNNER_TEMP/certs.p12"
+            security import "$RUNNER_TEMP/certs.p12" -k "$KEYCHAIN" -P "$MAC_CERTS_PASSWORD" \
+              -T /usr/bin/codesign -T /usr/bin/productsign -T /usr/bin/productbuild
+            rm "$RUNNER_TEMP/certs.p12"
+          }
+          import_p12 "$MAC_CERTS_P12"
+          import_p12 "$MAC_INSTALLER_CERTS_P12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ci "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+
+      - name: Build macOS desktop application (arm64)
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$APPLE_API_KEY_CONTENT" ]; then
+            printf '%s' "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/apple_api_key.p8"
+            export APPLE_API_KEY="$RUNNER_TEMP/apple_api_key.p8"
+          fi
+          npm run build:desktop
+
+      - name: Upload macOS package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-pkg-arm64
+          path: apps/desktop/release/*.pkg
+
+      - name: Upload installer to release
+        if: github.event_name == 'release' && github.event.action == 'created'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: apps/desktop/release/*.pkg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   desktop-windows:
     name: Build Windows installer (x64)

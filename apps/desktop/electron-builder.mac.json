@@ -1,9 +1,15 @@
 {
   "extends": "./electron-builder.base.json",
+  "afterPack": "./scripts/sign-mac-extra-resources.mjs",
   "mac": {
     "target": [
       "pkg"
     ],
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "resources/entitlements.mac.plist",
+    "entitlementsInherit": "resources/entitlements.mac.plist",
+    "notarize": true,
     "extraResources": [
       {
         "from": "resources/python",
@@ -11,6 +17,14 @@
         "filter": [
           "**/*",
           "!.deps-installed"
+        ]
+      },
+      {
+        "from": "resources/lemminx",
+        "to": "lemminx",
+        "filter": [
+          "**/*",
+          "!*.zip"
         ]
       }
     ]
