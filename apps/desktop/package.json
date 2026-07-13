@@ -22,6 +22,7 @@
     "prestart": "npm run icon:export",
     "prebuild": "npm run icon:export",
     "prepackage": "npm run icon:export && npm run python:download",
+    "prepackage:mac": "npm run icon:export && npm run python:download",
     "prepackage:win": "C:\\Progra~1\\nodejs\\node.exe ../../design/export-icon.mjs && C:\\Progra~1\\nodejs\\node.exe scripts/download-python-runtime.mjs",
     "prepackage:dir": "npm run icon:export && npm run python:download",
     "dev": "node scripts/brand-electron-dev.mjs && tsup --watch --onSuccess \"node scripts/run-electron-dev.mjs\"",
