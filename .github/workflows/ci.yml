@@ -5,6 +5,15 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Git ref to build
+        required: true
+        default: main
+      release_tag:
+        description: Existing release tag to receive desktop assets
+        required: true
+        default: v0.0.1
   release:
     types: [created]
 
@@ -19,6 +28,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -50,6 +61,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -70,6 +83,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -97,6 +112,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -175,6 +192,18 @@ jobs:
             apps/desktop/release/*.zip
             apps/desktop/release/latest-mac.yml
 
+      - name: Upload macOS package to release
+        if: github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          files: |
+            apps/desktop/release/*.pkg
+            apps/desktop/release/*.zip
+            apps/desktop/release/latest-mac.yml
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
   desktop-windows:
     name: Build Windows installer (x64)
     runs-on: windows-latest
@@ -182,6 +211,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -214,9 +245,10 @@ jobs:
           }
 
       - name: Upload installer to release
-        if: github.event_name == 'release' && github.event.action == 'created'
+        if: github.event_name == 'release' && github.event.action == 'created' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ inputs.release_tag || github.event.release.tag_name }}
           files: |
             apps/desktop/release/*.exe
             apps/desktop/release/*.exe.blockmap
