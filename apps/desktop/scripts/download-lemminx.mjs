@@ -3,12 +3,12 @@
  * Downloads the LemMinX binary matching vscode-xml release (same engine as Red Hat XML extension).
  * macOS is supported today; Windows is intentionally skipped until we wire a Windows binary source.
  */
-import { chmodSync, createWriteStream, existsSync, mkdirSync, unlinkSync } from 'fs';
+import { chmodSync, createWriteStream, existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'fs';
 import { pipeline } from 'stream/promises';
-import { createGunzip } from 'zlib';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { fetchWithRetry } from './retryable-fetch.mjs';
 
 const LEMMINX_VERSION = '0.29.3';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -37,10 +37,11 @@ if (!config) {
   process.exit(1);
 }
 
-mkdirSync(RESOURCES_DIR, { recursive: true });
-
 const binaryPath = path.join(RESOURCES_DIR, config.binary);
-if (existsSync(binaryPath)) {
+const stampPath = path.join(RESOURCES_DIR, '.lemminx-version');
+const stamp = `${LEMMINX_VERSION} ${config.asset}`;
+
+if (existsSync(binaryPath) && existsSync(stampPath) && readFileSync(stampPath, 'utf-8').trim() === stamp) {
   console.log(`[lemminx] Already present: ${binaryPath}`);
   process.exit(0);
 }
@@ -48,13 +49,11 @@ if (existsSync(binaryPath)) {
 const url = `https://github.com/redhat-developer/vscode-xml/releases/download/${LEMMINX_VERSION}/${config.asset}`;
 const zipPath = path.join(RESOURCES_DIR, config.asset);
 
-console.log(`[lemminx] Downloading ${url}`);
+rmSync(RESOURCES_DIR, { recursive: true, force: true });
+mkdirSync(RESOURCES_DIR, { recursive: true });
 
-const response = await fetch(url);
-if (!response.ok) {
-  console.error(`[lemminx] Download failed: ${response.status} ${response.statusText}`);
-  process.exit(1);
-}
+console.log(`[lemminx] Downloading ${url}`);
+const response = await fetchWithRetry(url, undefined, { label: '[lemminx] download' });
 
 await pipeline(response.body, createWriteStream(zipPath));
 
@@ -63,5 +62,6 @@ execSync(`unzip -o -j "${zipPath}" -d "${RESOURCES_DIR}"`, { stdio: 'inherit' })
 
 unlinkSync(zipPath);
 chmodSync(binaryPath, 0o755);
+writeFileSync(stampPath, `${stamp}\n`);
 
 console.log(`[lemminx] Ready: ${binaryPath}`);

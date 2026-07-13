@@ -74,7 +74,21 @@ jobs:
         run: npm ci
 
       - name: Build Linux desktop package
-        run: npm run ${{ matrix.script }}
+        run: |
+          attempts=3
+          for attempt in $(seq 1 "$attempts"); do
+            echo "Running ${{ matrix.script }} attempt $attempt of $attempts"
+            package_exit=0
+            npm run ${{ matrix.script }} || package_exit=$?
+            if [ "$package_exit" -eq 0 ]; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$attempts" ]; then
+              exit "$package_exit"
+            fi
+            echo "${{ matrix.script }} failed with exit code $package_exit. Waiting before retry..."
+            sleep $((10 * attempt))
+          done
 
   desktop-flatpak:
     name: Build Linux desktop Flatpak
@@ -102,7 +116,21 @@ jobs:
         run: npm ci
 
       - name: Build Flatpak
-        run: npm run build:desktop:flatpak:ci
+        run: |
+          attempts=3
+          for attempt in $(seq 1 "$attempts"); do
+            echo "Running build:desktop:flatpak:ci attempt $attempt of $attempts"
+            package_exit=0
+            npm run build:desktop:flatpak:ci || package_exit=$?
+            if [ "$package_exit" -eq 0 ]; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$attempts" ]; then
+              exit "$package_exit"
+            fi
+            echo "build:desktop:flatpak:ci failed with exit code $package_exit. Waiting before retry..."
+            sleep $((10 * attempt))
+          done
 
   desktop-macos:
     name: Build macOS desktop application (Apple silicon)
@@ -175,13 +203,26 @@ jobs:
             export APPLE_API_KEY="$RUNNER_TEMP/apple_api_key.p8"
           fi
           if [ "$GITHUB_EVENT_NAME" = "release" ]; then
-            # On release events electron-builder publishes pkg, zip and
-            # latest-mac.yml (the auto-update feed) to the GitHub release.
             export GH_TOKEN="$GITHUB_TOKEN_FOR_PUBLISH"
-            npm run package:mac
+            package_args=(npm run package:mac)
           else
-            npm run package:mac -- --publish never
+            package_args=(npm run package:mac -- --publish never)
           fi
+
+          attempts=3
+          for attempt in $(seq 1 "$attempts"); do
+            echo "Running mac package attempt $attempt of $attempts"
+            package_exit=0
+            "${package_args[@]}" || package_exit=$?
+            if [ "$package_exit" -eq 0 ]; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$attempts" ]; then
+              exit "$package_exit"
+            fi
+            echo "mac package failed with exit code $package_exit. Waiting before retry..."
+            sleep $((10 * attempt))
+          done
 
       - name: Upload macOS package artifact
         uses: actions/upload-artifact@v4
