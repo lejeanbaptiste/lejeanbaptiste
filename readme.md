@@ -45,15 +45,51 @@ Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current 
 
 ## Install
 
-The first public release will ship downloadable installers.
+Download the installer for your platform from the [v0.0.1 release](https://github.com/lejeanbaptiste/lejeanbaptiste/releases/tag/v0.0.1):
 
-- macOS: `.pkg` installer
-- Windows: NSIS installer
-- Linux: `.deb` packages
+### macOS
 
-For Linux, we also have an APT-based distribution path set up so `.deb` installs can be added to `apt` and kept up to date from the repo.
+1. Download `Le.Jean-Baptiste-0.0.1-arm64.pkg` (Apple silicon).
+2. Open the `.pkg` file and follow the installer.
+3. The application will be installed to `/Applications/Le Jean-Baptiste.app`.
+4. Updates are checked automatically and installed in the background.
 
-Once the release is published, use the installer that matches your platform. If you want the exact packaging and repo setup details, see [apps/desktop/README.md](apps/desktop/README.md).
+### Windows
+
+1. Download `Le.Jean-Baptiste.Setup.0.0.1.exe`.
+2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
+3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway".
+4. The application will check for updates automatically on startup.
+
+### Linux
+
+**Debian/Ubuntu (amd64):**
+
+1. Download `le-jean-baptiste-desktop_0.0.1_amd64.deb`.
+2. Install with your package manager: `sudo apt install ./le-jean-baptiste-desktop_0.0.1_amd64.deb`
+
+**Flatpak (all architectures):**
+
+1. Download `Le.Jean-Baptiste-0.0.1-x86_64.flatpak`.
+2. Install with: `flatpak install ./Le.Jean-Baptiste-0.0.1-x86_64.flatpak`
+
+**APT repository (amd64 only):**
+
+For automatic updates, add the project's APT repository:
+
+```bash
+# Add the repository signing key
+wget -O- https://lejeanbaptiste.github.io/apt/le-jean-baptiste-archive-key.asc | sudo apt-key add -
+
+# Add the repository to your sources
+echo "deb https://lejeanbaptiste.github.io/apt stable main" | sudo tee /etc/apt/sources.list.d/le-jean-baptiste.sources > /dev/null
+
+# Install and keep updated
+sudo apt update
+sudo apt install le-jean-baptiste-desktop
+```
+
+For detailed build and packaging information, see [apps/desktop/README.md](apps/desktop/README.md).
 
 ## Build From Source
 
