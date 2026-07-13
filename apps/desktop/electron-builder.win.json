@@ -1,5 +1,12 @@
 {
   "extends": "./electron-builder.base.json",
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "lejeanbaptiste",
+      "repo": "lejeanbaptiste"
+    }
+  ],
   "extraResources": [
     {
       "from": "../../THIRD_PARTY_NOTICES.md",

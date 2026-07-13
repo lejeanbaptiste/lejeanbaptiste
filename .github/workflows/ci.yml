@@ -252,5 +252,6 @@ jobs:
           files: |
             apps/desktop/release/*.exe
             apps/desktop/release/*.exe.blockmap
+            apps/desktop/release/latest.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
