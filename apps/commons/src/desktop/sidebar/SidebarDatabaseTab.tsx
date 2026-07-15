@@ -1,3 +1,4 @@
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -46,9 +47,15 @@ import {
   mergeEntities,
   renameEntityName,
   setEntityDescription,
+  setNameType,
+  setRomanizedName,
   type DuplicateGroup,
   type EntitySummary,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
+import {
+  ALL_NAME_TYPES,
+  type NameTypeId,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import {
   entityStoreFromDesktop,
   type EntityStore,
@@ -59,6 +66,11 @@ import {
   warningKey,
   type LookupWarning,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/lookupWarnings';
+import {
+  autoRomanize,
+  canAutoRomanize,
+  foldForSearch,
+} from '../../../../../packages/cwrc-leafwriter/src/utilities/romanize';
 import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import { useActions, useAppState } from '@src/overmind';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
@@ -94,6 +106,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const { skipEntityDetachConfirm } = useAppState().ui;
   const { setSkipEntityDetachConfirm } = useActions().ui;
   const [store, setStore] = useState<EntityStore | null>(null);
+  const [projectLang, setProjectLang] = useState<string | null>(null);
   const [entities, setEntities] = useState<EntitySummary[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
   const [warnings, setWarnings] = useState<LookupWarning[]>([]);
@@ -114,6 +127,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [editingName, setEditingName] = useState(false);
   const nameBeforeRename = useRef('');
   const [editDescription, setEditDescription] = useState('');
+  const [editRomanized, setEditRomanized] = useState('');
+  const [editHadRomanized, setEditHadRomanized] = useState(false);
+  const [editNameTypes, setEditNameTypes] = useState<Record<string, string>>({});
   const [editNewName, setEditNewName] = useState('');
   const [splitInfoOpen, setSplitInfoOpen] = useState(false);
   const [lastSummary, setLastSummary] = useState<KeyRemapSummary | null>(null);
@@ -127,6 +143,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const reload = useCallback(async () => {
     const currentStore = entityStoreFromDesktop();
     setStore(currentStore);
+    try {
+      const globals = window as unknown as {
+        __leafWriterProject?: { getProjectSourceLanguage?: () => Promise<string | null> };
+      };
+      setProjectLang((await globals.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null);
+    } catch {
+      setProjectLang(null);
+    }
     if (!currentStore) {
       setEntities([]);
       setDuplicates([]);
@@ -176,14 +200,47 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     }
   }, [search]);
 
+  /**
+   * Romanization shown under the display name: the stored -Latn name, or an
+   * on-the-fly autogeneration for legacy entities (also searchable below).
+   */
+  const romanizedOf = useCallback(
+    (entity: EntitySummary): string | null =>
+      entity.romanized ?? autoRomanize(entity.names[0] ?? '', projectLang),
+    [projectLang],
+  );
+
+  /**
+   * Script-insensitive search blob per entity: "zhangheng" matches "Zhāng
+   * Héng", "Zhang Heng", and (via stored/generated romanization) 張衡.
+   */
+  const foldedIndex = useMemo(() => {
+    const index = new Map<string, string>();
+    for (const entity of entities) {
+      const romanizations = [
+        entity.romanized ?? '',
+        ...entity.names.map((name) => autoRomanize(name, projectLang) ?? ''),
+      ];
+      index.set(
+        entity.id,
+        foldForSearch(
+          [entity.id, ...entity.names, entity.description ?? '', ...romanizations].join('\n'),
+        ),
+      );
+    }
+    return index;
+  }, [entities, projectLang]);
+
   const visible = useMemo(() => {
+    const folded = foldForSearch(search.trim());
     return entities.filter((entity) => {
       if (kindFilter !== 'all' && entity.kind !== kindFilter) return false;
-      if (!regex) return true;
+      if (!regex && !folded) return true;
       const haystacks = [entity.id, ...entity.names, entity.description ?? ''];
-      return haystacks.some((text) => regex.test(text));
+      if (regex && haystacks.some((text) => regex.test(text))) return true;
+      return Boolean(folded) && (foldedIndex.get(entity.id) ?? '').includes(folded);
     });
-  }, [entities, kindFilter, regex]);
+  }, [entities, foldedIndex, kindFilter, regex, search]);
 
   const toggleSelected = (id: string) => {
     setSelected((previous) => {
@@ -284,6 +341,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditCanonicalName(entity.names[0] ?? '');
     setEditingName(false);
     setEditDescription(entity.description ?? '');
+    setEditRomanized(entity.romanized ?? '');
+    setEditHadRomanized(Boolean(entity.romanized));
+    setEditNameTypes(
+      Object.fromEntries(entity.nameEntries.map((entry) => [entry.text, entry.type ?? ''])),
+    );
     setEditNewName('');
   };
 
@@ -308,11 +370,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const id = editEntity.id;
     const canonicalName = editCanonicalName.trim();
     const description = editDescription;
+    const romanized = editRomanized.trim();
+    const romanizedChanged = romanized !== (editEntity.romanized ?? '');
+    const nameTypeChanges = editEntity.nameEntries
+      .filter((entry) => (editNameTypes[entry.text] ?? '') !== (entry.type ?? ''))
+      .map((entry) => ({
+        text: entry.text,
+        type: (editNameTypes[entry.text] || null) as NameTypeId | null,
+      }));
     const newName = editNewName.trim();
     setEditEntity(null);
     void runMutation('Saving entity…', (doc) => {
       if (canonicalName) renameEntityName(doc, id, canonicalName);
       setEntityDescription(doc, id, description);
+      if (romanizedChanged) setRomanizedName(doc, id, romanized, projectLang);
+      for (const change of nameTypeChanges) setNameType(doc, id, change.text, change.type);
       if (newName) addEntityName(doc, id, newName);
     });
   };
@@ -534,7 +606,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               : t('LWC.desktop.sidebar.database.no_matches')}
           </Typography>
         ) : (
-          visible.map((entity) => (
+          visible.map((entity) => {
+            const romanized = romanizedOf(entity);
+            const altNames = entity.names
+              .slice(1)
+              .filter((name) => name !== romanized);
+            return (
             <Box
               key={entity.id}
               sx={{
@@ -559,9 +636,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
                     {entity.names[0] ?? '(unnamed)'}
                   </Typography>
-                  {entity.names.length > 1 && (
+                  {romanized && romanized !== entity.names[0] && (
                     <Typography variant="caption" color="text.secondary" noWrap>
-                      {entity.names.slice(1).join(' · ')}
+                      {romanized}
+                    </Typography>
+                  )}
+                  {altNames.length > 0 && (
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {altNames.join(' · ')}
                     </Typography>
                   )}
                 </Stack>
@@ -597,7 +679,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 <MoreVertIcon fontSize="small" />
               </IconButton>
             </Box>
-          ))
+            );
+          })
         )}
       </Box>
 
@@ -785,17 +868,82 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             onChange={(event) => setEditDescription(event.target.value)}
             sx={{ mt: 1 }}
           />
+          {(canAutoRomanize(projectLang) || editHadRomanized) && (
+            <TextField
+              fullWidth
+              size="small"
+              label={t('LWC.desktop.sidebar.database.romanized_name')}
+              helperText={t('LWC.desktop.sidebar.database.romanized_hint')}
+              value={editRomanized}
+              onChange={(event) => setEditRomanized(event.target.value)}
+              sx={{ mt: 2 }}
+              InputProps={{
+                endAdornment: canAutoRomanize(projectLang) ? (
+                  <InputAdornment position="end">
+                    <Tooltip title={t('LWC.desktop.sidebar.database.generate_romanization')}>
+                      <IconButton
+                        size="small"
+                        aria-label={t('LWC.desktop.sidebar.database.generate_romanization')}
+                        onClick={() =>
+                          setEditRomanized(
+                            autoRomanize(
+                              editCanonicalName || editEntity?.names[0] || '',
+                              projectLang,
+                            ) ?? editRomanized,
+                          )
+                        }
+                      >
+                        <AutorenewIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+            />
+          )}
+          {editEntity && editEntity.nameEntries.length > 1 && (
+            <Stack spacing={0.75} sx={{ mt: 2 }}>
+              <Typography variant="caption" color="text.secondary">
+                {t('LWC.desktop.sidebar.database.name_types_heading')}
+              </Typography>
+              {editEntity.nameEntries
+                .filter((entry) => entry.text !== editEntity.romanized)
+                .map((entry) => (
+                  <Stack key={entry.text} direction="row" spacing={1} alignItems="center">
+                    <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
+                      {entry.text}
+                    </Typography>
+                    <TextField
+                      select
+                      size="small"
+                      value={editNameTypes[entry.text] ?? ''}
+                      onChange={(event) =>
+                        setEditNameTypes((previous) => ({
+                          ...previous,
+                          [entry.text]: event.target.value,
+                        }))
+                      }
+                      sx={{ minWidth: 140, '& .MuiInputBase-input': { py: 0.5, fontSize: 12 } }}
+                    >
+                      <MenuItem value="">
+                        <em>{t('LWC.desktop.sidebar.database.name_types.unclassified')}</em>
+                      </MenuItem>
+                      {ALL_NAME_TYPES.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {t(`LWC.desktop.sidebar.database.name_types.${type}`)}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Stack>
+                ))}
+            </Stack>
+          )}
           <TextField
             fullWidth
             size="small"
             label={t('LWC.desktop.sidebar.database.add_alternative_name')}
             value={editNewName}
             onChange={(event) => setEditNewName(event.target.value)}
-            helperText={
-              editEntity && editEntity.names.length > 0
-                ? t('LWC.desktop.sidebar.database.current_names', { names: editEntity.names.join(' · ') })
-                : undefined
-            }
             sx={{ mt: 2 }}
           />
         </DialogContent>

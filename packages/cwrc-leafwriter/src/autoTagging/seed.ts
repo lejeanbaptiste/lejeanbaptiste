@@ -4,6 +4,8 @@ import { teiTagForCandidate } from './authority';
 import { collapseLinkedCandidates, mergeCandidateIntoLookupList } from './authorityOverlap';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
 import { addEntity, ENTITY_KINDS, findEntity, LJB_AUTOTAG_RESP } from './entities';
+import { isLatinSurface } from './disambiguationMatch';
+import { romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import { rationaleForCandidates } from './packLoader';
 import type { Suggestion, WhitespacePolicy } from './types';
 
@@ -178,6 +180,7 @@ function resolveEntity(
   entitiesDoc: Document,
   candidate: AuthorityCandidate,
   minted: Map<string, string>,
+  projectLang?: string | null,
 ): { id: string; created: boolean } {
   const memo = `${candidate.source}\t${candidate.authorityId}`;
   const already = minted.get(memo);
@@ -195,11 +198,19 @@ function resolveEntity(
     }
   }
 
+  const romanizedName = romanizeFromAuthorityMetadata(
+    candidate.metadata,
+    candidate.primaryName,
+    projectLang,
+  );
   const { id } = addEntity(
     entitiesDoc,
     candidate.kind === 'office' ? 'org' : candidate.kind,
     {
       name: candidate.primaryName,
+      nameLang:
+        projectLang && !isLatinSurface(candidate.primaryName) ? projectLang : undefined,
+      romanizedName: romanizedName ?? undefined,
       authorityIds: [{ type: candidate.source, value: candidate.authorityId }],
       ...(candidate.metadata
         ? { cache: { source: candidate.source, data: candidate.metadata } }
@@ -222,6 +233,7 @@ export async function autoLinkUnique(
   entitiesDoc: Document,
   matches: SeedMatch[],
   options: ApplyOptions,
+  projectLang?: string | null,
 ): Promise<AutoLinkResult> {
   const minted = new Map<string, string>();
   const byId = new Map<string, { entityId: string; candidate: AuthorityCandidate }>();
@@ -230,7 +242,7 @@ export async function autoLinkUnique(
   for (const match of matches) {
     const candidate = match.candidates[0];
     if (!candidate) continue;
-    const { id, created } = resolveEntity(entitiesDoc, candidate, minted);
+    const { id, created } = resolveEntity(entitiesDoc, candidate, minted, projectLang);
     if (created) entitiesCreated += 1;
     byId.set(match.suggestion.id, { entityId: id, candidate });
   }

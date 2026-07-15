@@ -56,6 +56,7 @@ import {
   type CandidateLink,
   type DisambiguationCandidate,
 } from './disambiguationCandidates';
+import { autoRomanize, canAutoRomanize } from '../utilities/romanize';
 import { AUTHORITY_YEAR_MAX, AUTHORITY_YEAR_MIN } from './authoritySettings';
 import {
   dateFilterFromSettings,
@@ -319,7 +320,9 @@ export const DisambiguationPanel = ({
   const [manualLinkError, setManualLinkError] = useState<string | null>(null);
   const [newEntityDialogOpen, setNewEntityDialogOpen] = useState(false);
   const [newEntityDescription, setNewEntityDescription] = useState('');
+  const [newEntityRomanized, setNewEntityRomanized] = useState('');
   const [newEntityBusy, setNewEntityBusy] = useState(false);
+  const [projectLang, setProjectLang] = useState<string | null>(null);
   const [commonsUiRevision, setCommonsUiRevision] = useState(0);
   const cacheDisabled = disambiguationCachingDisabledFromSettings(
     readPersistedDisambiguationSettings(),
@@ -329,6 +332,22 @@ export const DisambiguationPanel = ({
     () => getActiveAiPromptProfile(aiPromptProfiles),
     [aiPromptProfiles],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const lang =
+          (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
+        if (!cancelled) setProjectLang(lang);
+      } catch {
+        // no bridge (web app) — dual-script enrichment simply stays off
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     void readAiPromptProfilesFromDesktop().then(setAiPromptProfiles);
@@ -494,6 +513,7 @@ export const DisambiguationPanel = ({
                 void refreshDilaDates(targetGroup, cache, entitiesDoc, false);
               }
             : undefined,
+          projectLang,
         );
         if (currentKeyRef.current !== groupKey) return;
         setCandidates(rows);
@@ -505,7 +525,7 @@ export const DisambiguationPanel = ({
         // Best-effort silent refresh; leave the existing (undated) candidates as-is.
       }
     },
-    [cacheDisabled, session],
+    [cacheDisabled, projectLang, session],
   );
 
   const loadCandidates = useCallback(
@@ -570,6 +590,7 @@ export const DisambiguationPanel = ({
             if (currentKeyRef.current !== groupKey) return;
             void refreshDilaDates(targetGroup, cache, entitiesDoc);
           },
+          projectLang,
         );
         if (!cacheDisabled) {
           session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);
@@ -585,7 +606,7 @@ export const DisambiguationPanel = ({
         setLoadingCandidates(false);
       }
     },
-    [applyAiRank, cacheDisabled, refreshDilaDates, session],
+    [applyAiRank, cacheDisabled, projectLang, refreshDilaDates, session],
   );
 
   useEffect(() => {
@@ -810,13 +831,13 @@ export const DisambiguationPanel = ({
     }
   };
 
-  const createNewEntity = async (description?: string) => {
+  const createNewEntity = async (description?: string, romanizedName?: string) => {
     if (!instance || !group) return;
     try {
       await session.resolveMention(
         instance,
         { id: 'new', label: instance.surface, sources: ['manual'] },
-        { createNew: true, name: instance.surface, description },
+        { createNew: true, name: instance.surface, description, romanizedName },
       );
       afterChange(group);
       controller.next();
@@ -829,9 +850,13 @@ export const DisambiguationPanel = ({
   const confirmNewEntity = async () => {
     setNewEntityBusy(true);
     try {
-      await createNewEntity(newEntityDescription.trim() || undefined);
+      await createNewEntity(
+        newEntityDescription.trim() || undefined,
+        newEntityRomanized.trim() || undefined,
+      );
       setNewEntityDialogOpen(false);
       setNewEntityDescription('');
+      setNewEntityRomanized('');
     } finally {
       setNewEntityBusy(false);
     }
@@ -961,7 +986,18 @@ export const DisambiguationPanel = ({
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ fontWeight: 500, flex: 1, minWidth: 0 }} noWrap>
-                    {candidate.label}
+                    {candidate.projectLangName ?? candidate.label}
+                    {candidate.romanizedName &&
+                      candidate.romanizedName !== (candidate.projectLangName ?? candidate.label) && (
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ ml: 0.75 }}
+                        >
+                          {candidate.romanizedName}
+                        </Typography>
+                      )}
                   </Typography>
                   {links.map((link) => (
                     <AuthorityLinkIcon key={link.url} link={link} />
@@ -1322,6 +1358,9 @@ export const DisambiguationPanel = ({
                 color={aiSuggestCreateNew ? 'warning' : 'default'}
                 onClick={() => {
                   setNewEntityDescription('');
+                  setNewEntityRomanized(
+                    (instance && autoRomanize(instance.surface, projectLang)) ?? '',
+                  );
                   setNewEntityDialogOpen(true);
                 }}
               >
@@ -1457,6 +1496,18 @@ export const DisambiguationPanel = ({
           }}
           disabled={newEntityBusy}
         />
+        {(canAutoRomanize(projectLang) || newEntityRomanized) && (
+          <TextField
+            fullWidth
+            size="small"
+            label="Romanized name"
+            helperText="Latin-script form, used for search"
+            value={newEntityRomanized}
+            onChange={(event) => setNewEntityRomanized(event.target.value)}
+            disabled={newEntityBusy}
+            sx={{ mt: 2 }}
+          />
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setNewEntityDialogOpen(false)} disabled={newEntityBusy}>

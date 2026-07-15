@@ -36,14 +36,26 @@ const installedPackIds = async (): Promise<AuthorityPackId[]> => {
   }
 };
 
+const projectSourceLanguage = async (): Promise<string | null> => {
+  try {
+    const globals = window as unknown as {
+      __leafWriterProject?: { getProjectSourceLanguage?: () => Promise<string | null> };
+    };
+    return (await globals.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
+  } catch {
+    return null;
+  }
+};
+
 const resolveDeps = async (entityType: NamedEntityType): Promise<LookupResolveDeps | null> => {
   const store = entityStoreFromDesktop();
   if (!store) return null;
-  if (!window.electronAPI?.authorityPackRead) return { store, packIds: [] };
+  const projectLang = await projectSourceLanguage();
+  if (!window.electronAPI?.authorityPackRead) return { store, packIds: [], projectLang };
   // Only scan packs of the right kind, through the session content cache —
   // the concordance scan is the slow part of resolve-on-select.
   const packIds = packIdsForEntityType(await installedPackIds(), entityType);
-  return { store, packIds, readPackFile: readPackCached };
+  return { store, packIds, readPackFile: readPackCached, projectLang };
 };
 
 export const useEntityLookup = () => {

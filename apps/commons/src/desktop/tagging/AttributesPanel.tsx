@@ -31,8 +31,14 @@ import { WikipediaIcon } from '../../../../../packages/cwrc-leafwriter/src/icons
 import {
   EntitySummary,
   listEntities,
+  setNameType,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
+import {
+  ALL_NAME_TYPES,
+  type NameTypeId,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import { entityStoreFromDesktop } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import { foldForSearch } from '../../../../../packages/cwrc-leafwriter/src/utilities/romanize';
 import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import {
   applyAttributeToTag,
@@ -97,6 +103,8 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const [addAttrName, setAddAttrName] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
   const [linkedEntityInfo, setLinkedEntityInfo] = useState<LinkedEntityInfo | null>(null);
+  const [entityInfoRevision, setEntityInfoRevision] = useState(0);
+  const [nameTypeBusy, setNameTypeBusy] = useState(false);
   const [propagatableMatchCount, setPropagatableMatchCount] = useState(0);
   const [walkMatches, setWalkMatches] = useState<Element[]>([]);
   const [walkIndex, setWalkIndex] = useState(0);
@@ -294,7 +302,49 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     return () => {
       cancelled = true;
     };
-  }, [values.key]);
+  }, [values.key, entityInfoRevision]);
+
+  /** Mention surface text, matched against the linked entity's typed names. */
+  const mentionSurface = tagElement?.textContent?.normalize('NFC').trim() ?? '';
+  const matchedNameEntry = linkedEntityInfo
+    ? (linkedEntityInfo.entity.nameEntries.find((entry) => entry.text === mentionSurface) ??
+      linkedEntityInfo.entity.nameEntries.find(
+        (entry) => mentionSurface && foldForSearch(entry.text) === foldForSearch(mentionSurface),
+      ))
+    : undefined;
+
+  const nameTypeLabels: Record<NameTypeId, string> = {
+    primary: 'Primary name',
+    courtesy: 'Courtesy name (字)',
+    art: 'Art name (號)',
+    posthumous: 'Posthumous name (諡號)',
+    temple: 'Temple name (廟號)',
+    dharma: 'Dharma name',
+    pen: 'Pen name',
+    variant: 'Variant',
+  };
+
+  /** Write the chosen name type for this surface onto the entity record (entities.xml only). */
+  const commitNameType = async (raw: string) => {
+    if (!linkedEntityInfo || !mentionSurface) return;
+    const type = raw === '' ? null : (raw as NameTypeId);
+    setNameTypeBusy(true);
+    try {
+      const store = entityStoreFromDesktop();
+      if (!store) return;
+      const doc = await store.loadEntities();
+      setNameType(doc, linkedEntityInfo.entity.id, mentionSurface, type, sourceLanguage ?? undefined);
+      await store.saveEntities(doc);
+      setEntityInfoRevision((revision) => revision + 1);
+    } catch (error) {
+      notifyViaSnackbar({
+        message: error instanceof Error ? error.message : String(error),
+        options: { variant: 'warning' },
+      });
+    } finally {
+      setNameTypeBusy(false);
+    }
+  };
 
   const commitValues = useCallback(
     (nextValues: Record<string, string>) => {
@@ -582,6 +632,30 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
                       This tag is already linked to an entity in the project database.
                     </Typography>
                   )}
+                  {mentionSurface && mentionSurface !== linkedEntityInfo.entity.names[0] ? (
+                    <Stack alignItems="center" direction="row" gap={0.75}>
+                      <Typography color="text.secondary" variant="caption" sx={{ flexShrink: 0 }}>
+                        “{mentionSurface}” is this entity’s
+                      </Typography>
+                      <TextField
+                        select
+                        size="small"
+                        value={matchedNameEntry?.type ?? ''}
+                        disabled={readonly || nameTypeBusy}
+                        onChange={(event) => void commitNameType(event.target.value)}
+                        sx={{ minWidth: 150, '& .MuiInputBase-input': { py: 0.25, fontSize: 12 } }}
+                      >
+                        <MenuItem value="">
+                          <em>unclassified</em>
+                        </MenuItem>
+                        {ALL_NAME_TYPES.map((type) => (
+                          <MenuItem key={type} value={type}>
+                            {nameTypeLabels[type]}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Stack>
+                  ) : null}
                   {propagatableMatchCount > 0 ? (
                     <Stack
                       alignItems="center"

@@ -19,6 +19,12 @@ export interface AuthorityCandidate {
   primaryName: string;
   /** All strings that should match this entity in the corpus (primary + variants). */
   searchStrings: string[];
+  /**
+   * Typed names, when the pack export preserves name categories (字/號/…).
+   * `type` is normalized via nameTypes.normalizeNameType; absent on packs
+   * built before this field existed.
+   */
+  names?: { text: string; type?: string; lang?: string }[];
   metadata?: {
     dynasty?: string;
     startYear?: number;

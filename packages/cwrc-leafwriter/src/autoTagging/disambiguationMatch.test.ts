@@ -1,16 +1,21 @@
 import {
   clearWikidataNamesCacheForTests,
+  clearWikidataTypedNamesCacheForTests,
+  fetchWikidataTypedNames,
   filterReconcileByExactSurface,
   isLatinSurface,
   normalizeMatchString,
+  preferredLabelForLang,
   reconcileMatchMatchesSurface,
   stringsMatchExactly,
+  wikidataLabelsByQid,
   wikidataNamesByQid,
 } from './disambiguationMatch';
 
 describe('disambiguationMatch', () => {
   afterEach(() => {
     clearWikidataNamesCacheForTests();
+    clearWikidataTypedNamesCacheForTests();
   });
 
   it('matches identical CJK strings exactly', () => {
@@ -103,5 +108,76 @@ describe('disambiguationMatch', () => {
     expect(filtered).toHaveLength(1);
     expect(filtered[0]?.label).toBe('Huan Xuan');
     expect(normalizeMatchString(' 桓玄 ')).toBe('桓玄');
+  });
+
+  it('returns per-language labels and picks the project-language one with fallbacks', async () => {
+    const fetchImpl = (async () =>
+      ({
+        ok: true,
+        json: async () => ({
+          entities: {
+            Q11332: {
+              labels: {
+                zh: { value: '张衡' },
+                'zh-hant': { value: '張衡' },
+                en: { value: 'Zhang Heng' },
+              },
+            },
+          },
+        }),
+      }) as Response) as typeof fetch;
+
+    const labels = (await wikidataLabelsByQid(['Q11332'], fetchImpl)).get('Q11332')!;
+    expect(labels['zh-hant']).toBe('張衡');
+    expect(preferredLabelForLang(labels, 'zh-Hant')).toBe('張衡');
+    expect(preferredLabelForLang(labels, 'lzh')).toBe('張衡');
+    expect(preferredLabelForLang({ zh: '张衡' }, 'zh-Hant')).toBe('张衡');
+    expect(preferredLabelForLang(labels, 'bo')).toBeNull();
+    expect(preferredLabelForLang(labels, null)).toBeNull();
+  });
+
+  it('fetches typed names from Wikidata name-property claims', async () => {
+    const claim = (text: string, language = 'zh') => ({
+      mainsnak: { datavalue: { value: { text, language } } },
+    });
+    const fetchImpl = jest.fn(async () =>
+      ({
+        ok: true,
+        json: async () => ({
+          entities: {
+            Q11332: {
+              claims: {
+                P1559: [claim('張衡', 'zh-hant')],
+                P1782: [claim('平子')],
+                P1786: [claim('西鄂侯')],
+                P31: [{ mainsnak: { datavalue: { value: { id: 'Q5' } } } }],
+              },
+            },
+          },
+        }),
+      }) as unknown as Response) as unknown as typeof fetch;
+
+    const names = (await fetchWikidataTypedNames(['Q11332'], fetchImpl)).get('Q11332')!;
+    expect(names).toEqual(
+      expect.arrayContaining([
+        { text: '張衡', type: 'primary', lang: 'zh-hant' },
+        { text: '平子', type: 'courtesy', lang: 'zh' },
+        { text: '西鄂侯', type: 'posthumous', lang: 'zh' },
+      ]),
+    );
+    expect(names).toHaveLength(3);
+
+    // second call is served from the session cache
+    await fetchWikidataTypedNames(['Q11332'], fetchImpl);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('caches empty typed names on fetch failure', async () => {
+    const fetchImpl = jest.fn(async () => {
+      throw new Error('offline');
+    }) as unknown as typeof fetch;
+    expect((await fetchWikidataTypedNames(['Q1'], fetchImpl)).get('Q1')).toEqual([]);
+    await fetchWikidataTypedNames(['Q1'], fetchImpl);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });

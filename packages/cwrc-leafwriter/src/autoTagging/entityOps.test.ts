@@ -1,4 +1,4 @@
-import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
+import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
 import {
   addEntityName,
   attachAuthority,
@@ -10,7 +10,11 @@ import {
   mergeEntities,
   normalizeAuthorityValue,
   removeEntityName,
+  renameEntityName,
   setEntityDescription,
+  setNameType,
+  setRomanizedName,
+  taggableEntityNames,
 } from './entityOps';
 
 const makeDoc = () => parseEntities(createEntitiesScaffold('test-db'));
@@ -78,6 +82,115 @@ describe('descriptions and names', () => {
   });
 });
 
+describe('name attributes', () => {
+  it('summarizes nameEntries with lang/type and picks the -Latn name as romanized', () => {
+    const doc = makeDoc();
+    addEntity(doc, 'person', {
+      name: '張衡',
+      nameLang: 'zh-Hant',
+      romanizedName: 'Zhang Heng',
+      altNames: [{ text: '平子', type: 'courtesy' }],
+    });
+    addEntity(doc, 'person', { name: '王導' }); // legacy shape
+
+    const [modern, legacy] = listEntities(doc);
+    expect(modern!.nameEntries).toEqual([
+      { text: '張衡', lang: 'zh-Hant', type: 'primary' },
+      { text: 'Zhang Heng', lang: 'zh-Latn', type: null },
+      { text: '平子', lang: null, type: 'courtesy' },
+    ]);
+    expect(modern!.romanized).toBe('Zhang Heng');
+    expect(legacy!.nameEntries).toEqual([{ text: '王導', lang: null, type: null }]);
+    expect(legacy!.romanized).toBeNull();
+  });
+
+  it('addEntityName writes lang/type and upgrades attribute-less duplicates in place', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '張衡' });
+
+    expect(addEntityName(doc, id, '平子', { type: 'courtesy', lang: 'zh-Hant' })).toBe(true);
+    expect(listEntities(doc)[0]!.nameEntries[1]).toEqual({
+      text: '平子',
+      lang: 'zh-Hant',
+      type: 'courtesy',
+    });
+
+    // duplicate text: no new element, but the legacy primary gets upgraded
+    expect(addEntityName(doc, id, '張衡', { lang: 'zh-Hant', type: 'primary' })).toBe(false);
+    expect(listEntities(doc)[0]!.nameEntries[0]).toEqual({
+      text: '張衡',
+      lang: 'zh-Hant',
+      type: 'primary',
+    });
+    expect(listEntities(doc)[0]!.names).toEqual(['張衡', '平子']);
+  });
+
+  it('setRomanizedName creates after the first name, updates in place, and clears', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '張衡', nameLang: 'zh-Hant' });
+    addEntityName(doc, id, '平子');
+
+    setRomanizedName(doc, id, 'Zhang Heng', 'zh-Hant');
+    expect(listEntities(doc)[0]!.names).toEqual(['張衡', 'Zhang Heng', '平子']);
+    expect(listEntities(doc)[0]!.romanized).toBe('Zhang Heng');
+
+    setRomanizedName(doc, id, 'Chang Heng', 'zh-Hant');
+    expect(listEntities(doc)[0]!.names).toEqual(['張衡', 'Chang Heng', '平子']);
+
+    setRomanizedName(doc, id, '  ', 'zh-Hant');
+    expect(listEntities(doc)[0]!.names).toEqual(['張衡', '平子']);
+    expect(listEntities(doc)[0]!.romanized).toBeNull();
+  });
+
+  it('setNameType sets, clears, and creates typed names', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '張衡' });
+    addEntityName(doc, id, '平子');
+
+    setNameType(doc, id, '平子', 'courtesy');
+    expect(listEntities(doc)[0]!.nameEntries[1]!.type).toBe('courtesy');
+
+    setNameType(doc, id, '平子', null);
+    expect(listEntities(doc)[0]!.nameEntries[1]!.type).toBeNull();
+
+    // unknown name text + a type creates the name
+    setNameType(doc, id, '西鄂侯', 'posthumous', 'zh-Hant');
+    expect(listEntities(doc)[0]!.nameEntries[2]).toEqual({
+      text: '西鄂侯',
+      lang: 'zh-Hant',
+      type: 'posthumous',
+    });
+  });
+
+  it('taggableEntityNames excludes courtesy names by default but keeps legacy untyped ones', () => {
+    const doc = makeDoc();
+    addEntity(doc, 'person', {
+      name: '張衡',
+      nameLang: 'zh-Hant',
+      romanizedName: 'Zhang Heng',
+      altNames: [{ text: '平子', type: 'courtesy' }, { text: '张衡' }],
+    });
+    const entity = listEntities(doc)[0]!;
+    expect(taggableEntityNames(entity)).toEqual(['張衡', 'Zhang Heng', '张衡']);
+    expect(taggableEntityNames(entity, [])).toEqual(['張衡', 'Zhang Heng', '平子', '张衡']);
+    expect(taggableEntityNames(entity, ['courtesy', 'variant'])).toEqual([
+      '張衡',
+      'Zhang Heng',
+      '张衡',
+    ]);
+  });
+
+  it('renameEntityName keeps the first name element attributes', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '張衡', nameLang: 'zh-Hant' });
+    renameEntityName(doc, id, '张衡');
+    const first = findEntity(doc, id)!.getElementsByTagName('persName')[0]!;
+    expect(first.textContent).toBe('张衡');
+    expect(first.getAttribute('xml:lang')).toBe('zh-Hant');
+    expect(first.getAttribute('type')).toBe('primary');
+  });
+});
+
 describe('authority attach/detach', () => {
   it('attaches and detaches idnos, refusing duplicates', () => {
     const doc = makeDoc();
@@ -124,6 +237,26 @@ describe('mergeEntities', () => {
       { type: 'CBDB', value: '25788' },
       { type: 'Wikidata', value: 'http://www.wikidata.org/entity/Q3274914' },
     ]);
+  });
+
+  it('preserves xml:lang and type on merged names, demoting a dropped primary to variant', () => {
+    const doc = makeDoc();
+    const keep = addEntity(doc, 'person', { name: '張衡', nameLang: 'zh-Hant' }).id;
+    const drop = addEntity(doc, 'person', {
+      name: '张衡',
+      nameLang: 'zh-Hans',
+      romanizedName: 'Zhang Heng',
+      altNames: [{ text: '平子', type: 'courtesy' }],
+    }).id;
+
+    mergeEntities(doc, keep, [drop]);
+    expect(listEntities(doc)[0]!.nameEntries).toEqual([
+      { text: '張衡', lang: 'zh-Hant', type: 'primary' },
+      { text: '张衡', lang: 'zh-Hans', type: 'variant' },
+      { text: 'Zhang Heng', lang: 'zh-Latn', type: null },
+      { text: '平子', lang: null, type: 'courtesy' },
+    ]);
+    expect(listEntities(doc)[0]!.romanized).toBe('Zhang Heng');
   });
 
   it('keeps the keeper description when both have one', () => {

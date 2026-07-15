@@ -123,6 +123,16 @@ export const isKoreanLanguageCode = (code: string | null | undefined): boolean =
 export const isEastAsianCalendarLanguageCode = (code: string | null | undefined): boolean =>
   isChineseLanguageCode(code) || isJapaneseLanguageCode(code) || isKoreanLanguageCode(code);
 
+/** xml:lang for the Latin-script counterpart of a name: "zh-Hant" → "zh-Latn". */
+export const latnLangFor = (lang: string | null | undefined): string => {
+  const primary = lang ? canonicalLanguageCode(lang).split('-')[0] : '';
+  return primary ? `${primary}-Latn` : 'und-Latn';
+};
+
+/** True when an xml:lang tag marks a Latin-script (romanized) form. */
+export const isLatnLang = (lang: string | null | undefined): boolean =>
+  !!lang && /(^|-)Latn($|-)/i.test(canonicalLanguageCode(lang));
+
 /** Tibetan gate for authority packs (Wikidata bo persons/places/orgs). */
 export const isTibetanLanguageCode = (code: string | null | undefined): boolean => {
   if (!code) return false;

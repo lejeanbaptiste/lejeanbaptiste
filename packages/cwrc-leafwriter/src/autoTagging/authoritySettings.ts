@@ -4,6 +4,11 @@ import {
   type AuthorityPackId,
 } from './packPaths';
 import type { DateFilterMode } from './packLoader';
+import {
+  DEFAULT_UNTAGGABLE_TYPES,
+  normalizeNameType,
+  type NameTypeId,
+} from './nameTypes';
 
 /** Per-project authority tag-bomb settings (stored in jean-baptiste.project.json). */
 export interface AutoTaggingAuthoritySettings {
@@ -11,10 +16,26 @@ export interface AutoTaggingAuthoritySettings {
   dateFilter?: DateFilterMode;
   yearStart?: number;
   yearEnd?: number;
+  /**
+   * Name types barred from seeding corpus auto-tagging (default: courtesy
+   * names 字, which are common words and produce nonsense tags). Excluded
+   * types stay searchable and usable for manual disambiguation.
+   */
+  excludedNameTypes?: string[];
   /** @deprecated Use {@link dateFilter}. */
   yearFilterEnabled?: boolean;
   /** @deprecated Folded into {@link dateFilter} (`limit` vs `exclude`). */
   hideUndated?: boolean;
+}
+
+/** Normalized exclusion list for {@link isTaggableNameType}, with the courtesy-name default. */
+export function excludedNameTypesFromSettings(
+  settings?: AutoTaggingAuthoritySettings,
+): NameTypeId[] {
+  if (!settings?.excludedNameTypes) return DEFAULT_UNTAGGABLE_TYPES;
+  return settings.excludedNameTypes
+    .map((raw) => normalizeNameType(raw))
+    .filter((type): type is NameTypeId => type !== null);
 }
 
 export const DEFAULT_AUTHORITY_YEAR_RANGE: [number, number] = [25, 220];
@@ -109,6 +130,7 @@ export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings |
     dateFilter: raw.dateFilter,
     yearStart: raw.yearStart,
     yearEnd: raw.yearEnd,
+    excludedNameTypes: raw.excludedNameTypes,
     yearFilterEnabled: raw.yearFilterEnabled,
     hideUndated: raw.hideUndated,
   };

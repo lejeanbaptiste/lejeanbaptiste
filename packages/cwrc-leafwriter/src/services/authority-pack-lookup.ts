@@ -18,6 +18,8 @@ export interface PackRow {
   authorityId?: string;
   primaryName?: string;
   searchStrings?: string[];
+  /** Typed names, when the pack export preserves name categories (字/號/…). */
+  names?: { text: string; type?: string; lang?: string }[];
   metadata?: {
     dynasty?: string;
     startYear?: number;
