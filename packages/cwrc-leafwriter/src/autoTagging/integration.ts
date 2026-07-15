@@ -12,7 +12,10 @@ import { canContainForAutoTagging } from './schemaContainment';
 import { AuthorityCache } from './authorityCache';
 import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import type { DisambiguationCandidate } from './disambiguationCandidates';
-import { resolveEntityInDocument } from './disambiguationCandidates';
+import {
+  collectTypedNamesForCandidate,
+  resolveEntityInDocument,
+} from './disambiguationCandidates';
 import {
   parsePendingCache,
   serializePendingCache,
@@ -21,6 +24,7 @@ import {
 } from './disambiguationPending';
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
 import { LJB_AUTOTAG_RESP, TAG_TO_KIND, type EntityKind } from './entities';
+import { autoRomanize } from '../utilities/romanize';
 import { entityStoreFromDesktop, type EntityStore } from './entityStore';
 import { DisambiguationAiCache } from './disambiguationAiCache';
 import type { AiPromptProfile } from './aiPromptProfiles';
@@ -130,6 +134,7 @@ export class AutoTaggingSession {
   private disambiguationAiCacheStore: DisambiguationAiCache | null = null;
   private pendingCache: PendingCache = { version: 1, entries: {} };
   private documentPaths = new Map<Document, string>();
+  private projectLangPromise: Promise<string | null> | null = null;
 
   constructor(
     private readonly writer: WriterLike,
@@ -166,6 +171,21 @@ export class AutoTaggingSession {
 
   get entityStore(): EntityStore | null {
     return this.store;
+  }
+
+  /** Project source language (BCP-47) from the desktop bridge; cached for the session. */
+  projectLanguage(): Promise<string | null> {
+    this.projectLangPromise ??= (async () => {
+      try {
+        const globals = window as unknown as {
+          __leafWriterProject?: { getProjectSourceLanguage?: () => Promise<string | null> };
+        };
+        return (await globals.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
+      } catch {
+        return null;
+      }
+    })();
+    return this.projectLangPromise;
   }
 
   get cache(): AuthorityCache | null {
@@ -568,18 +588,42 @@ export class AutoTaggingSession {
   async resolveMention(
     instance: MentionInstance,
     candidate: DisambiguationCandidate,
-    options: { createNew?: boolean; name?: string; kind?: EntityKind; description?: string } = {},
+    options: {
+      createNew?: boolean;
+      name?: string;
+      kind?: EntityKind;
+      description?: string;
+      romanizedName?: string;
+    } = {},
   ): Promise<string> {
     if (!this.store) throw new Error('No entity store available');
     const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
     const kind = options.kind ?? TAG_TO_KIND[instance.tag];
     if (!kind) throw new Error(`Unsupported tag: ${instance.tag}`);
 
+    const projectLang = await this.projectLanguage();
+    const name = options.name ?? instance.surface;
+    const projectLangName = options.createNew ? undefined : candidate.projectLangName;
+    const romanizedName =
+      options.romanizedName ??
+      candidate.romanizedName ??
+      autoRomanize(projectLangName ?? name, projectLang) ??
+      undefined;
+    // Pull every typed name (courtesy 字, posthumous 諡號, …) the chosen
+    // authority knows, so the entity record carries them from day one.
+    const typedNames = options.createNew
+      ? undefined
+      : await collectTypedNamesForCandidate(candidate);
+
     const entityId = resolveEntityInDocument(
       entitiesDoc,
       {
         kind,
-        name: options.name ?? instance.surface,
+        name,
+        projectLangName,
+        romanizedName,
+        nameLang: projectLang ?? undefined,
+        typedNames,
         authorityIds: candidate.authorityIds,
         description: options.description ?? candidate.description,
         startYear: candidate.startYear,

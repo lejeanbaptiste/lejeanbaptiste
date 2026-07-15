@@ -4,6 +4,9 @@
  * ids and authority `<idno>`s. Mentions point in with a bare `@key`.
  */
 
+import { latnLangFor } from '../utilities/languageCodes';
+import type { NameTypeId } from './nameTypes';
+
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 
@@ -54,6 +57,12 @@ export interface AuthorityId {
 export interface NewEntity {
   /** Surface/display name for the entity. */
   name: string;
+  /** xml:lang for the primary name (e.g. "zh-Hant"); omitted = no attribute (legacy behavior). */
+  nameLang?: string;
+  /** Latin-script name, written as a second name element with xml:lang "<primary>-Latn". */
+  romanizedName?: string;
+  /** Extra alternative names (e.g. the document surface form), deduped against name/romanizedName. */
+  altNames?: { text: string; type?: NameTypeId; lang?: string }[];
   authorityIds?: AuthorityId[];
   /** Optional compact authority-cache payload, stored as a JSON note. */
   cache?: { source: string; data: unknown; when?: string };
@@ -203,7 +212,33 @@ export function addEntity(
 
   const name = doc.createElementNS(TEI_NS, config.name);
   name.textContent = entity.name;
+  if (entity.nameLang) {
+    name.setAttributeNS(XML_NS, 'xml:lang', entity.nameLang);
+    name.setAttribute('type', 'primary');
+  }
   item.appendChild(name);
+
+  const writtenNames = new Set<string>([entity.name.normalize('NFC').trim()]);
+
+  const romanized = entity.romanizedName?.normalize('NFC').trim();
+  if (romanized && !writtenNames.has(romanized)) {
+    const el = doc.createElementNS(TEI_NS, config.name);
+    el.textContent = romanized;
+    el.setAttributeNS(XML_NS, 'xml:lang', latnLangFor(entity.nameLang));
+    item.appendChild(el);
+    writtenNames.add(romanized);
+  }
+
+  for (const alt of entity.altNames ?? []) {
+    const text = alt.text.normalize('NFC').trim();
+    if (!text || writtenNames.has(text)) continue;
+    const el = doc.createElementNS(TEI_NS, config.name);
+    el.textContent = text;
+    if (alt.type) el.setAttribute('type', alt.type);
+    if (alt.lang) el.setAttributeNS(XML_NS, 'xml:lang', alt.lang);
+    item.appendChild(el);
+    writtenNames.add(text);
+  }
 
   for (const authority of entity.authorityIds ?? []) {
     const idno = doc.createElementNS(TEI_NS, 'idno');

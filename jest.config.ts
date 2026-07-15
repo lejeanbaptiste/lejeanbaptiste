@@ -73,8 +73,12 @@ const config: Config.InitialOptions = {
       testMatch: ['<rootDir>/packages/cwrc-leafwriter/**/?(*.)+(spec|test).[jt]s?(x)'],
       testPathIgnorePatterns: ['<rootDir>/packages/cwrc-leafwriter/lib*'],
       preset: 'ts-jest',
+      // tibetan-ewts-converter ships ESM-only; let ts-jest compile it to CJS.
+      transformIgnorePatterns: ['/node_modules/(?!tibetan-ewts-converter/)'],
       transform: {
         '\\.txt$': '<rootDir>/packages/cwrc-leafwriter/test/loadTextFile.cjs',
+        '\\.mjs$': ['ts-jest', { tsconfig: { allowJs: true } }],
+        '^.+\\.tsx?$': 'ts-jest',
       },
     },
     {
@@ -104,6 +108,12 @@ const config: Config.InitialOptions = {
         '<rootDir>/packages/cwrc-leafwriter-validator/test/setup/FixJSDOMEnvironment.ts',
       testMatch: ['<rootDir>/apps/commons/**/?(*.)+(spec|test).[jt]s?(x)'],
       preset: 'ts-jest',
+      // tibetan-ewts-converter ships ESM-only; let ts-jest compile it to CJS.
+      transformIgnorePatterns: ['/node_modules/(?!tibetan-ewts-converter/)'],
+      transform: {
+        '\\.mjs$': ['ts-jest', { tsconfig: { allowJs: true } }],
+        '^.+\\.tsx?$': 'ts-jest',
+      },
     },
   ],
 };

@@ -5,9 +5,12 @@
  * functions mutate the passed Document; the caller persists via EntityStore.
  */
 
+import { isLatnLang, latnLangFor } from '../utilities/languageCodes';
 import { ENTITY_KINDS, findEntity, type AuthorityId, type EntityKind } from './entities';
+import { isTaggableNameType, normalizeNameType, type NameTypeId } from './nameTypes';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
+const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 
 /** Entity item element name → kind. */
 const ITEM_TO_KIND: Record<string, EntityKind> = Object.fromEntries(
@@ -18,11 +21,23 @@ const ITEM_TO_KIND: Record<string, EntityKind> = Object.fromEntries(
 
 export const DUPLICATE_OK_NOTE_TYPE = 'duplicate-ok';
 
+export interface NameEntry {
+  text: string;
+  /** xml:lang of the name element; null on legacy attribute-less names. */
+  lang: string | null;
+  /** Canonical name type from @type; null when absent or unrecognized. */
+  type: NameTypeId | null;
+}
+
 export interface EntitySummary {
   id: string;
   kind: EntityKind;
   /** All name strings; the first is the display name. */
   names: string[];
+  /** Same names in the same order, with xml:lang and @type. */
+  nameEntries: NameEntry[];
+  /** First Latin-script (…-Latn) name, e.g. the stored romanization. */
+  romanized: string | null;
   description: string | null;
   authorities: AuthorityId[];
 }
@@ -42,16 +57,25 @@ const descriptionNote = (item: Element): Element | null =>
 const idnoElements = (item: Element): Element[] =>
   Array.from(item.children).filter((child) => child.localName === 'idno');
 
+const nameEntryOf = (el: Element): NameEntry => ({
+  text: el.textContent?.trim() ?? '',
+  lang: el.getAttribute('xml:lang'),
+  type: normalizeNameType(el.getAttribute('type')),
+});
+
 function summarize(item: Element): EntitySummary | null {
   const kind = kindOfElement(item);
   const id = item.getAttribute('xml:id');
   if (!kind || !id) return null;
+  const nameEntries = nameElements(item, kind)
+    .map(nameEntryOf)
+    .filter((entry) => entry.text);
   return {
     id,
     kind,
-    names: nameElements(item, kind)
-      .map((el) => el.textContent?.trim() ?? '')
-      .filter(Boolean),
+    names: nameEntries.map((entry) => entry.text),
+    nameEntries,
+    romanized: nameEntries.find((entry) => isLatnLang(entry.lang))?.text ?? null,
     description: descriptionNote(item)?.textContent?.trim() || null,
     authorities: idnoElements(item)
       .map((el) => ({
@@ -74,6 +98,22 @@ export function listEntities(doc: Document): EntitySummary[] {
     }
   }
   return out;
+}
+
+/**
+ * Names of this entity that may seed corpus auto-tagging: untyped legacy
+ * names and every type not on the exclusion list. Excluded types (courtesy
+ * names by default — a 字 like 平子 is a common word and would produce
+ * nonsense tags) remain searchable and usable for manual disambiguation; any
+ * feature that tags the corpus from entities.xml must draw from this list.
+ */
+export function taggableEntityNames(
+  entity: EntitySummary,
+  excluded?: NameTypeId[],
+): string[] {
+  return entity.nameEntries
+    .filter((entry) => isTaggableNameType(entry.type, excluded))
+    .map((entry) => entry.text);
 }
 
 function requireEntity(doc: Document, id: string): Element {
@@ -101,22 +141,105 @@ export function setEntityDescription(doc: Document, id: string, text: string): v
   item.appendChild(note);
 }
 
-/** Add an alternative name (extra name element) unless it already exists. */
-export function addEntityName(doc: Document, id: string, name: string): boolean {
+export interface NameAttributes {
+  lang?: string;
+  type?: NameTypeId;
+}
+
+/**
+ * Add an alternative name (extra name element) unless it already exists.
+ * When the text is already present on an attribute-less (legacy) element and
+ * attributes are provided, the existing element is upgraded in place.
+ */
+export function addEntityName(
+  doc: Document,
+  id: string,
+  name: string,
+  attributes?: NameAttributes,
+): boolean {
   const item = requireEntity(doc, id);
   const kind = kindOfElement(item);
   if (!kind) throw new Error(`Unknown entity kind for: ${id}`);
   const trimmed = name.trim();
   if (!trimmed) return false;
-  const existing = nameElements(item, kind).map((el) => el.textContent?.trim());
-  if (existing.includes(trimmed)) return false;
+  const names = nameElements(item, kind);
+  const existing = names.find((el) => el.textContent?.trim() === trimmed);
+  if (existing) {
+    if (attributes?.lang && !existing.getAttribute('xml:lang')) {
+      existing.setAttributeNS(XML_NS, 'xml:lang', attributes.lang);
+    }
+    if (attributes?.type && !existing.getAttribute('type')) {
+      existing.setAttribute('type', attributes.type);
+    }
+    return false;
+  }
   const el = doc.createElementNS(TEI_NS, ENTITY_KINDS[kind].name);
   el.textContent = trimmed;
-  const names = nameElements(item, kind);
+  if (attributes?.lang) el.setAttributeNS(XML_NS, 'xml:lang', attributes.lang);
+  if (attributes?.type) el.setAttribute('type', attributes.type);
   const last = names[names.length - 1];
   if (last?.nextSibling) item.insertBefore(el, last.nextSibling);
   else item.appendChild(el);
   return true;
+}
+
+/**
+ * Set, replace, or (with empty text) remove the entity's Latin-script name.
+ * The romanized element always sits right after the first name element so the
+ * display-name invariant (first element wins) is preserved.
+ */
+export function setRomanizedName(
+  doc: Document,
+  id: string,
+  text: string,
+  primaryLang?: string | null,
+): void {
+  const item = requireEntity(doc, id);
+  const kind = kindOfElement(item);
+  if (!kind) throw new Error(`Unknown entity kind for: ${id}`);
+  const names = nameElements(item, kind);
+  const existing = names.find((el) => isLatnLang(el.getAttribute('xml:lang')));
+  const trimmed = text.trim();
+  if (!trimmed) {
+    existing?.remove();
+    return;
+  }
+  if (existing) {
+    existing.textContent = trimmed;
+    return;
+  }
+  const el = doc.createElementNS(TEI_NS, ENTITY_KINDS[kind].name);
+  el.textContent = trimmed;
+  el.setAttributeNS(XML_NS, 'xml:lang', latnLangFor(primaryLang));
+  const first = names[0];
+  if (first?.nextSibling) item.insertBefore(el, first.nextSibling);
+  else if (first) item.appendChild(el);
+  else item.insertBefore(el, item.firstChild);
+}
+
+/**
+ * Set (or clear, with null) the name type of the name element whose text
+ * matches. Creates the name when the entity doesn't carry it yet.
+ */
+export function setNameType(
+  doc: Document,
+  id: string,
+  nameText: string,
+  type: NameTypeId | null,
+  lang?: string,
+): void {
+  const item = requireEntity(doc, id);
+  const kind = kindOfElement(item);
+  if (!kind) throw new Error(`Unknown entity kind for: ${id}`);
+  const trimmed = nameText.trim();
+  if (!trimmed) return;
+  const target = nameElements(item, kind).find((el) => el.textContent?.trim() === trimmed);
+  if (target) {
+    if (type) target.setAttribute('type', type);
+    else target.removeAttribute('type');
+    return;
+  }
+  if (type) addEntityName(doc, id, trimmed, { type, lang });
 }
 
 /**
@@ -212,7 +335,12 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
 
     for (const name of nameElements(dropped, kind)) {
       const text = name.textContent?.trim();
-      if (text) addEntityName(doc, keepId, text);
+      if (!text) continue;
+      const lang = name.getAttribute('xml:lang') ?? undefined;
+      const rawType = normalizeNameType(name.getAttribute('type')) ?? undefined;
+      // The keeper already has its own primary name; a dropped primary joins as a variant.
+      const type = rawType === 'primary' ? 'variant' : rawType;
+      addEntityName(doc, keepId, text, { lang, type });
     }
     for (const idno of idnoElements(dropped)) {
       const type = idno.getAttribute('type');

@@ -5,6 +5,7 @@
     "src/**/*.json",
     "src/types/**/*.d.ts",
     "../../packages/cwrc-leafwriter/src/types/assets.d.ts",
+    "../../packages/cwrc-leafwriter/src/types/tibetan-ewts-converter.d.ts",
     "./package.json",
     "./.env-cmdrc.js"
   ],

@@ -192,6 +192,7 @@ declare global {
             dateFilter?: 'none' | 'limit' | 'exclude';
             yearStart?: number;
             yearEnd?: number;
+            excludedNameTypes?: string[];
             yearFilterEnabled?: boolean;
             hideUndated?: boolean;
           }
@@ -201,6 +202,7 @@ declare global {
         dateFilter?: 'none' | 'limit' | 'exclude';
         yearStart?: number;
         yearEnd?: number;
+        excludedNameTypes?: string[];
         yearFilterEnabled?: boolean;
         hideUndated?: boolean;
       }) => void;

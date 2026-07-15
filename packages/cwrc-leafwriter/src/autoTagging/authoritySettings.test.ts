@@ -2,6 +2,7 @@ import {
   AUTHORITY_YEAR_MAX,
   DEFAULT_AUTHORITY_DATE_FILTER,
   DEFAULT_AUTHORITY_YEAR_RANGE,
+  excludedNameTypesFromSettings,
   migrateDateFilter,
   uiStateFromSettings,
 } from './authoritySettings';
@@ -24,5 +25,13 @@ describe('authoritySettings', () => {
     expect(uiStateFromSettings({ yearStart: 618, yearEnd: 907 }, 400).yearRange).toEqual([
       618, 907,
     ]);
+  });
+
+  it('excludes courtesy names from tagging by default, honoring persisted overrides', () => {
+    expect(excludedNameTypesFromSettings(undefined)).toEqual(['courtesy']);
+    expect(excludedNameTypesFromSettings({ excludedNameTypes: [] })).toEqual([]);
+    expect(
+      excludedNameTypesFromSettings({ excludedNameTypes: ['courtesy', 'art', 'bogus'] }),
+    ).toEqual(['courtesy', 'art']);
   });
 });

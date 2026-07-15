@@ -80,6 +80,65 @@ describe('addEntity', () => {
     expect(doc.getElementsByTagName('listPerson')[0]?.getElementsByTagName('person')).toHaveLength(1);
   });
 
+  it('writes dual-script names: typed/lang primary, -Latn romanization, typed alt names', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', {
+      name: '張衡',
+      nameLang: 'zh-Hant',
+      romanizedName: 'Zhang Heng',
+      altNames: [{ text: '平子', type: 'courtesy' }, { text: '张衡' }],
+    });
+
+    const names = Array.from(findEntity(doc, id)!.getElementsByTagName('persName'));
+    expect(
+      names.map((el) => [el.textContent, el.getAttribute('xml:lang'), el.getAttribute('type')]),
+    ).toEqual([
+      ['張衡', 'zh-Hant', 'primary'],
+      ['Zhang Heng', 'zh-Latn', null],
+      ['平子', null, 'courtesy'],
+      ['张衡', null, null],
+    ]);
+  });
+
+  it('dedupes alt names against the primary and romanized names', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', {
+      name: '張衡',
+      nameLang: 'zh-Hant',
+      romanizedName: 'Zhang Heng',
+      altNames: [{ text: '張衡' }, { text: 'Zhang Heng' }, { text: ' 平子 ' }, { text: '平子' }],
+    });
+    const names = Array.from(findEntity(doc, id)!.getElementsByTagName('persName'));
+    expect(names.map((el) => el.textContent)).toEqual(['張衡', 'Zhang Heng', '平子']);
+  });
+
+  it('keeps legacy calls attribute-free', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', { name: '張衡' });
+    const name = findEntity(doc, id)!.getElementsByTagName('persName')[0]!;
+    expect(name.getAttribute('xml:lang')).toBeNull();
+    expect(name.getAttribute('type')).toBeNull();
+  });
+
+  it('round-trips xml:lang and type attributes through serialization', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    addEntity(doc, 'person', {
+      name: '張衡',
+      nameLang: 'zh-Hant',
+      romanizedName: 'Zhang Heng',
+      altNames: [{ text: '平子', type: 'courtesy' }],
+    });
+    const reparsed = parseEntities(serializeEntities(doc));
+    const names = Array.from(reparsed.getElementsByTagName('persName'));
+    expect(
+      names.map((el) => [el.textContent, el.getAttribute('xml:lang'), el.getAttribute('type')]),
+    ).toEqual([
+      ['張衡', 'zh-Hant', 'primary'],
+      ['Zhang Heng', 'zh-Latn', null],
+      ['平子', null, 'courtesy'],
+    ]);
+  });
+
   it('stores an authority cache note as JSON', () => {
     const doc = parseEntities(createEntitiesScaffold());
     const { id } = addEntity(doc, 'place', {

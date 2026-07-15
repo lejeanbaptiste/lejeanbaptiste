@@ -6,6 +6,8 @@ import {
   candidatePassesYearFilter,
   clearPersonPackIndexForTests,
   collapseCrossAuthorityCandidates,
+  collectTypedNamesForCandidate,
+  enrichCandidateNames,
   extractCbdbId,
   extractViafId,
   extractWikidataId,
@@ -16,7 +18,12 @@ import {
 } from './disambiguationCandidates';
 import { AuthorityCache } from './authorityCache';
 import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
-import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
+import {
+  clearWikidataNamesCacheForTests,
+  clearWikidataTypedNamesCacheForTests,
+} from './disambiguationMatch';
+import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
+import { listEntities } from './entityOps';
 
 jest.mock('../services/lincs-api', () => ({ reconcile: jest.fn() }));
 const mockReconcile = reconcile as jest.MockedFunction<typeof reconcile>;
@@ -94,6 +101,317 @@ describe('disambiguationCandidates', () => {
     const rows = candidatesFromEntityFile(doc, 'persName', '桓玄');
     expect(rows).toHaveLength(1);
     expect(rows[0]?.description).toBe('Jin-dynasty usurper');
+  });
+
+  it('matches local entities on alternative names, keeping the display name as label', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    addEntity(doc, 'person', {
+      name: '張衡',
+      nameLang: 'zh-Hant',
+      romanizedName: 'Zhang Heng',
+      altNames: [{ text: '平子', type: 'courtesy' }],
+    });
+
+    for (const surface of ['張衡', '平子', 'Zhang Heng']) {
+      const rows = candidatesFromEntityFile(doc, 'persName', surface);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.label).toBe('張衡');
+      expect(rows[0]?.projectLangName).toBe('張衡');
+      expect(rows[0]?.romanizedName).toBe('Zhang Heng');
+    }
+  });
+
+  describe('dual-script resolve', () => {
+    it('mints with the authority project-language name as canonical and the surface as variant', () => {
+      const doc = parseEntities(createEntitiesScaffold());
+      const id = resolveEntityInDocument(doc, {
+        kind: 'person',
+        name: '平子',
+        projectLangName: '張衡',
+        romanizedName: 'Zhang Heng',
+        nameLang: 'zh-Hant',
+        authorityIds: [{ type: 'CBDB', value: '1762' }],
+      });
+
+      expect(listEntities(doc).find((e) => e.id === id)?.nameEntries).toEqual([
+        { text: '張衡', lang: 'zh-Hant', type: 'primary' },
+        { text: 'Zhang Heng', lang: 'zh-Latn', type: null },
+        { text: '平子', lang: null, type: 'variant' },
+      ]);
+    });
+
+    it('falls back to legacy shape when no dual-script fields are provided', () => {
+      const doc = parseEntities(createEntitiesScaffold());
+      const id = resolveEntityInDocument(doc, { kind: 'person', name: '禹' });
+      const name = findEntity(doc, id)!.getElementsByTagName('persName')[0]!;
+      expect(name.textContent).toBe('禹');
+      expect(name.getAttribute('xml:lang')).toBeNull();
+      expect(name.getAttribute('type')).toBeNull();
+    });
+
+    it('backfills romanization and records the new surface on entity reuse', () => {
+      const doc = parseEntities(createEntitiesScaffold());
+      addEntity(doc, 'person', {
+        name: '張衡',
+        authorityIds: [{ type: 'CBDB', value: '1762' }],
+      });
+
+      const id = resolveEntityInDocument(doc, {
+        kind: 'person',
+        name: '平子',
+        projectLangName: '張衡',
+        romanizedName: 'Zhang Heng',
+        nameLang: 'zh-Hant',
+        authorityIds: [{ type: 'CBDB', value: '1762' }],
+      });
+
+      const entity = listEntities(doc).find((e) => e.id === id)!;
+      expect(entity.names).toEqual(['張衡', 'Zhang Heng', '平子']);
+      expect(entity.romanized).toBe('Zhang Heng');
+      expect(entity.nameEntries[2]).toEqual({ text: '平子', lang: null, type: 'variant' });
+    });
+  });
+
+  describe('typed names ingestion', () => {
+    afterEach(() => {
+      clearWikidataNamesCacheForTests();
+      clearWikidataTypedNamesCacheForTests();
+    });
+
+    it('excludes the primary-typed pack entry from a candidate\'s typedNames', async () => {
+      mockReconcile.mockResolvedValue([]);
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: false, json: async () => ({}) } as Response);
+      const cbdbPack = [
+        JSON.stringify({
+          source: 'CBDB',
+          authorityId: '1762',
+          kind: 'person',
+          primaryName: '王安石',
+          searchStrings: ['王安石', '王介甫'],
+          names: [
+            { text: '王安石', type: 'primary' },
+            { text: '王介甫', type: 'courtesy' },
+          ],
+          metadata: { pinyin: 'Wang Anshi' },
+        }),
+      ].join('\n');
+      const readPackFile = jest.fn(async (packId: string) => {
+        if (packId === 'cbdb-persons') return cbdbPack;
+        throw new Error(`not installed: ${packId}`);
+      });
+
+      try {
+        const rows = await buildDisambiguationCandidates(
+          parseEntities(createEntitiesScaffold()),
+          'persName',
+          '王安石',
+          new AuthorityCache(null, null),
+          ['Wikidata', 'VIAF'],
+          false,
+          readPackFile,
+        );
+
+        const cbdbRow = rows.find((row) => row.sources.includes('CBDB'));
+        expect(cbdbRow?.typedNames).toEqual([{ text: '王介甫', type: 'courtesy', lang: undefined }]);
+      } finally {
+        global.fetch = originalFetch;
+      }
+    });
+
+    it('writes authority typed names on mint and on reuse', () => {
+      const doc = parseEntities(createEntitiesScaffold());
+      const typedNames = [
+        { text: '平子', type: 'courtesy' as const, lang: 'zh-Hant' },
+        { text: '西鄂侯', type: 'posthumous' as const },
+      ];
+      const id = resolveEntityInDocument(doc, {
+        kind: 'person',
+        name: '張衡',
+        projectLangName: '張衡',
+        romanizedName: 'Zhang Heng',
+        nameLang: 'zh-Hant',
+        typedNames,
+        authorityIds: [{ type: 'CBDB', value: '1762' }],
+      });
+
+      let entity = listEntities(doc).find((e) => e.id === id)!;
+      expect(entity.nameEntries).toEqual([
+        { text: '張衡', lang: 'zh-Hant', type: 'primary' },
+        { text: 'Zhang Heng', lang: 'zh-Latn', type: null },
+        { text: '平子', lang: 'zh-Hant', type: 'courtesy' },
+        { text: '西鄂侯', lang: null, type: 'posthumous' },
+      ]);
+
+      // reuse with a new typed name: appended, existing ones deduped
+      resolveEntityInDocument(doc, {
+        kind: 'person',
+        name: '張衡',
+        typedNames: [...typedNames, { text: '張平子', type: 'variant' as const }],
+        authorityIds: [{ type: 'CBDB', value: '1762' }],
+      });
+      entity = listEntities(doc).find((e) => e.id === id)!;
+      expect(entity.names).toEqual(['張衡', 'Zhang Heng', '平子', '西鄂侯', '張平子']);
+      expect(listEntities(doc)).toHaveLength(1);
+    });
+
+    it('collectTypedNamesForCandidate merges pack names with Wikidata claims', async () => {
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn(async () =>
+        ({
+          ok: true,
+          json: async () => ({
+            entities: {
+              Q11332: {
+                claims: {
+                  P1782: [{ mainsnak: { datavalue: { value: { text: '平子', language: 'zh' } } } }],
+                  P1786: [{ mainsnak: { datavalue: { value: { text: '西鄂侯', language: 'zh' } } } }],
+                },
+              },
+            },
+          }),
+        }) as unknown as Response) as unknown as typeof fetch;
+      try {
+        const names = await collectTypedNamesForCandidate({
+          id: 'wd',
+          label: '張衡',
+          sources: ['Wikidata', 'CBDB'],
+          uri: 'https://www.wikidata.org/wiki/Q11332',
+          typedNames: [{ text: '平子', type: 'courtesy', lang: 'zh-Hant' }],
+        });
+        // pack-provided entry wins for 平子; Wikidata adds the posthumous name
+        expect(names).toEqual([
+          { text: '平子', type: 'courtesy', lang: 'zh-Hant' },
+          { text: '西鄂侯', type: 'posthumous', lang: 'zh' },
+        ]);
+      } finally {
+        global.fetch = originalFetch;
+      }
+    });
+  });
+
+  describe('mergeSelectedCandidates script preference', () => {
+    const rows: DisambiguationCandidate[] = [
+      {
+        id: 'ndl',
+        label: 'チョウ・コウ',
+        sources: ['NDL'],
+        romanizedName: 'Chou Kou',
+      },
+      {
+        id: 'cbdb',
+        label: '張衡',
+        sources: ['CBDB'],
+        projectLangName: '張衡',
+        romanizedName: 'Zhang Heng',
+      },
+    ];
+
+    it('keeps first-row label without the preference flag (legacy behavior)', () => {
+      expect(mergeSelectedCandidates(rows)?.label).toBe('チョウ・コウ');
+    });
+
+    it('prefers a non-Latin label and propagates dual-script fields with the flag', () => {
+      const merged = mergeSelectedCandidates(rows, { preferNonLatinLabel: true })!;
+      expect(merged.label).toBe('チョウ・コウ'); // first non-Latin label wins deterministically
+      expect(merged.projectLangName).toBe('張衡');
+      expect(merged.romanizedName).toBe('Chou Kou');
+    });
+
+    it('prefers a non-Latin label over a Latin first row', () => {
+      const latinFirst: DisambiguationCandidate[] = [
+        { id: 'viaf', label: 'Zhang Heng', sources: ['VIAF'] },
+        { id: 'cbdb', label: '張衡', sources: ['CBDB'], projectLangName: '張衡' },
+      ];
+      expect(mergeSelectedCandidates(latinFirst)?.label).toBe('Zhang Heng');
+      expect(
+        mergeSelectedCandidates(latinFirst, { preferNonLatinLabel: true })?.label,
+      ).toBe('張衡');
+    });
+  });
+
+  describe('enrichCandidateNames', () => {
+    afterEach(() => clearWikidataNamesCacheForTests());
+
+    const labelsResponse = (entities: Record<string, Record<string, string>>) =>
+      ({
+        ok: true,
+        json: async () => ({
+          entities: Object.fromEntries(
+            Object.entries(entities).map(([qid, labels]) => [
+              qid,
+              {
+                labels: Object.fromEntries(
+                  Object.entries(labels).map(([lang, value]) => [lang, { value }]),
+                ),
+              },
+            ]),
+          ),
+        }),
+      }) as Response;
+
+    it('fills project-language and Latin names from Wikidata labels', async () => {
+      const fetchImpl = jest.fn().mockResolvedValue(
+        labelsResponse({ Q11332: { 'zh-hant': '張衡', zh: '张衡', en: 'Zhang Heng' } }),
+      );
+      const candidates: DisambiguationCandidate[] = [
+        {
+          id: 'wd',
+          label: 'Zhang Heng',
+          sources: ['Wikidata'],
+          uri: 'https://www.wikidata.org/wiki/Q11332',
+        },
+      ];
+
+      await enrichCandidateNames(candidates, 'zh-Hant', fetchImpl);
+      expect(candidates[0]?.projectLangName).toBe('張衡');
+      expect(candidates[0]?.romanizedName).toBe('Zhang Heng');
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+    });
+
+    it('autogenerates pinyin when no Latin label exists', async () => {
+      const fetchImpl = jest.fn().mockResolvedValue(
+        labelsResponse({ Q999999: { 'zh-hant': '司馬遷' } }),
+      );
+      const candidates: DisambiguationCandidate[] = [
+        {
+          id: 'wd',
+          label: '司馬遷',
+          sources: ['Wikidata'],
+          uri: 'https://www.wikidata.org/wiki/Q999999',
+        },
+      ];
+
+      await enrichCandidateNames(candidates, 'zh-Hant', fetchImpl);
+      expect(candidates[0]?.projectLangName).toBe('司馬遷');
+      expect(candidates[0]?.romanizedName).toBe('Si Ma Qian');
+    });
+
+    it('survives fetch failure by falling back to autogeneration', async () => {
+      const fetchImpl = jest.fn().mockRejectedValue(new Error('offline'));
+      const candidates: DisambiguationCandidate[] = [
+        {
+          id: 'wd',
+          label: '張衡',
+          sources: ['Wikidata'],
+          uri: 'https://www.wikidata.org/wiki/Q11332',
+        },
+      ];
+
+      await enrichCandidateNames(candidates, 'zh-Hant', fetchImpl);
+      expect(candidates[0]?.projectLangName).toBe('張衡');
+      expect(candidates[0]?.romanizedName).toBe('Zhang Heng');
+    });
+
+    it('does nothing without a project language', async () => {
+      const fetchImpl = jest.fn();
+      const candidates: DisambiguationCandidate[] = [
+        { id: 'wd', label: '張衡', sources: ['Wikidata'], uri: 'https://www.wikidata.org/wiki/Q11332' },
+      ];
+      await enrichCandidateNames(candidates, null, fetchImpl);
+      expect(candidates[0]?.projectLangName).toBeUndefined();
+      expect(fetchImpl).not.toHaveBeenCalled();
+    });
   });
 
   it('extracts Wikidata ids from VIAF source codes', () => {

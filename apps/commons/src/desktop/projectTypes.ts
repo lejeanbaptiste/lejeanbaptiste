@@ -45,6 +45,8 @@ export interface AutoTaggingAuthoritySettings {
   dateFilter?: 'none' | 'limit' | 'exclude';
   yearStart?: number;
   yearEnd?: number;
+  /** Name types barred from seeding corpus auto-tagging (default: courtesy names 字). */
+  excludedNameTypes?: string[];
   /** @deprecated */
   yearFilterEnabled?: boolean;
   /** @deprecated */
