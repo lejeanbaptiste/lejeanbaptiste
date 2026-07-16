@@ -12,6 +12,8 @@ import {
   removeEntityName,
   renameEntityName,
   setEntityDescription,
+  setFamilyName,
+  setGivenName,
   setNameType,
   setRomanizedName,
   taggableEntityNames,
@@ -60,6 +62,24 @@ describe('descriptions and names', () => {
 
     setEntityDescription(doc, id, '  ');
     expect(listEntities(doc)[0]!.description).toBeNull();
+  });
+
+  it('sets, replaces, and clears family/given names independently of the display name', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '桓溫' });
+    expect(listEntities(doc)[0]).toMatchObject({ familyName: null, givenName: null });
+
+    setFamilyName(doc, id, '桓');
+    setGivenName(doc, id, '溫');
+    let entity = listEntities(doc)[0]!;
+    expect(entity.familyName).toBe('桓');
+    expect(entity.givenName).toBe('溫');
+    expect(entity.names).toEqual(['桓溫']);
+
+    setFamilyName(doc, id, '  ');
+    entity = listEntities(doc)[0]!;
+    expect(entity.familyName).toBeNull();
+    expect(entity.givenName).toBe('溫');
   });
 
   it('adds alternative names without duplicating, keeping the first as display', () => {
@@ -266,6 +286,20 @@ describe('mergeEntities', () => {
 
     mergeEntities(doc, keep, [drop]);
     expect(listEntities(doc)[0]!.description).toBe('keeper');
+  });
+
+  it('carries family/given names from the dropped entity only when the keeper lacks them', () => {
+    const doc = makeDoc();
+    const keep = addEntity(doc, 'person', { name: '王導' }).id;
+    const drop = addEntity(doc, 'person', { name: '王茂弘' }).id;
+    setFamilyName(doc, drop, '王');
+    setGivenName(doc, drop, '導');
+    setGivenName(doc, keep, '既有');
+
+    mergeEntities(doc, keep, [drop]);
+    const entity = listEntities(doc)[0]!;
+    expect(entity.familyName).toBe('王');
+    expect(entity.givenName).toBe('既有');
   });
 
   it('refuses to merge entities of different kinds', () => {

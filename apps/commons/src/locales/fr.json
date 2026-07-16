@@ -318,7 +318,7 @@
           "name_types_heading": "Types de noms (les noms de courtoisie sont exclus du balisage automatique)",
           "name_types": {
             "unclassified": "non classé",
-            "primary": "Nom principal",
+            "primary": "Nom complet",
             "courtesy": "Nom de courtoisie (字)",
             "art": "Nom de plume/d’art (號)",
             "posthumous": "Nom posthume (諡號)",
@@ -327,7 +327,11 @@
             "pen": "Pseudonyme",
             "variant": "Variante"
           },
+          "family_name": "Nom de famille",
+          "given_name": "Prénom",
           "add_alternative_name": "Ajouter un nom de correspondance (nom alternatif)",
+          "add_name": "Ajouter",
+          "delete_name": "Supprimer ce nom",
           "rename_name": "Renommer le nom canonique",
           "open_project_hint": "Ouvrez un projet pour parcourir sa base d’entités.",
           "invalid_regex": "Expression régulière invalide : {{detail}}",

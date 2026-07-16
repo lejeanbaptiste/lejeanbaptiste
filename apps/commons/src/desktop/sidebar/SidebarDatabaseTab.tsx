@@ -45,8 +45,11 @@ import {
   listEntities,
   markDuplicateIntentional,
   mergeEntities,
+  removeEntityName,
   renameEntityName,
   setEntityDescription,
+  setFamilyName,
+  setGivenName,
   setNameType,
   setRomanizedName,
   type DuplicateGroup,
@@ -129,8 +132,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [editDescription, setEditDescription] = useState('');
   const [editRomanized, setEditRomanized] = useState('');
   const [editHadRomanized, setEditHadRomanized] = useState(false);
+  const [editFamilyName, setEditFamilyName] = useState('');
+  const [editGivenName, setEditGivenName] = useState('');
   const [editNameTypes, setEditNameTypes] = useState<Record<string, string>>({});
   const [editNewName, setEditNewName] = useState('');
+  const [editNewNameType, setEditNewNameType] = useState<string>('');
   const [splitInfoOpen, setSplitInfoOpen] = useState(false);
   const [lastSummary, setLastSummary] = useState<KeyRemapSummary | null>(null);
 
@@ -281,6 +287,40 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     [reload, store],
   );
 
+  /**
+   * Run a mutation scoped to the entity currently open in the edit dialog:
+   * load fresh, mutate, save, refresh both the background list and the
+   * dialog's own snapshot (so the names list updates immediately without
+   * closing the dialog), then reload in the background.
+   */
+  const runEntityMutation = useCallback(
+    async (message: string, mutate: (doc: Document) => void) => {
+      if (!store || !editEntity) return;
+      const entityId = editEntity.id;
+      setBusyMessage(message);
+      try {
+        const doc = await store.loadEntities();
+        mutate(doc);
+        await store.saveEntities(doc);
+        const refreshed = listEntities(doc).find((entity) => entity.id === entityId) ?? null;
+        setEditEntity(refreshed);
+        if (refreshed) {
+          setEditNameTypes(
+            Object.fromEntries(
+              refreshed.nameEntries.map((entry) => [entry.text, entry.type ?? '']),
+            ),
+          );
+        }
+        await reload();
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setBusyMessage(null);
+      }
+    },
+    [editEntity, reload, store],
+  );
+
   /** Merge button: <2 selected extends the search with an alternation, ≥2 opens the merge dialog. */
   const handleMergeClick = () => {
     if (selected.size >= 2) {
@@ -343,10 +383,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditDescription(entity.description ?? '');
     setEditRomanized(entity.romanized ?? '');
     setEditHadRomanized(Boolean(entity.romanized));
+    setEditFamilyName(entity.familyName ?? '');
+    setEditGivenName(entity.givenName ?? '');
     setEditNameTypes(
       Object.fromEntries(entity.nameEntries.map((entry) => [entry.text, entry.type ?? ''])),
     );
     setEditNewName('');
+    setEditNewNameType('');
   };
 
   const startRename = () => {
@@ -372,20 +415,50 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const description = editDescription;
     const romanized = editRomanized.trim();
     const romanizedChanged = romanized !== (editEntity.romanized ?? '');
-    const nameTypeChanges = editEntity.nameEntries
-      .filter((entry) => (editNameTypes[entry.text] ?? '') !== (entry.type ?? ''))
-      .map((entry) => ({
-        text: entry.text,
-        type: (editNameTypes[entry.text] || null) as NameTypeId | null,
-      }));
-    const newName = editNewName.trim();
+    const familyName = editFamilyName;
+    const familyNameChanged = familyName.trim() !== (editEntity.familyName ?? '');
+    const givenName = editGivenName;
+    const givenNameChanged = givenName.trim() !== (editEntity.givenName ?? '');
     setEditEntity(null);
     void runMutation('Saving entity…', (doc) => {
       if (canonicalName) renameEntityName(doc, id, canonicalName);
       setEntityDescription(doc, id, description);
       if (romanizedChanged) setRomanizedName(doc, id, romanized, projectLang);
-      for (const change of nameTypeChanges) setNameType(doc, id, change.text, change.type);
-      if (newName) addEntityName(doc, id, newName);
+      if (familyNameChanged) setFamilyName(doc, id, familyName);
+      if (givenNameChanged) setGivenName(doc, id, givenName);
+    });
+  };
+
+  /** Name-type dropdown: commits immediately so curation doesn't require Save. */
+  const commitNameType = (text: string, type: string) => {
+    if (!editEntity) return;
+    const id = editEntity.id;
+    setEditNameTypes((previous) => ({ ...previous, [text]: type }));
+    void runEntityMutation('Updating name type…', (doc) => {
+      setNameType(doc, id, text, (type || null) as NameTypeId | null);
+    });
+  };
+
+  /** Add-name row: text + type commit together as one new name element. */
+  const commitNewName = () => {
+    if (!editEntity) return;
+    const id = editEntity.id;
+    const text = editNewName.trim();
+    if (!text) return;
+    const type = (editNewNameType || null) as NameTypeId | null;
+    setEditNewName('');
+    setEditNewNameType('');
+    void runEntityMutation('Adding name…', (doc) => {
+      addEntityName(doc, id, text, type ? { type } : undefined);
+    });
+  };
+
+  /** Delete button on a name row: removes it immediately. */
+  const commitDeleteName = (text: string) => {
+    if (!editEntity) return;
+    const id = editEntity.id;
+    void runEntityMutation('Removing name…', (doc) => {
+      removeEntityName(doc, id, text);
     });
   };
 
@@ -901,6 +974,24 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               }}
             />
           )}
+          {editEntity?.kind === 'person' && (
+            <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+              <TextField
+                fullWidth
+                size="small"
+                label={t('LWC.desktop.sidebar.database.family_name')}
+                value={editFamilyName}
+                onChange={(event) => setEditFamilyName(event.target.value)}
+              />
+              <TextField
+                fullWidth
+                size="small"
+                label={t('LWC.desktop.sidebar.database.given_name')}
+                value={editGivenName}
+                onChange={(event) => setEditGivenName(event.target.value)}
+              />
+            </Stack>
+          )}
           {editEntity && editEntity.nameEntries.length > 1 && (
             <Stack spacing={0.75} sx={{ mt: 2 }}>
               <Typography variant="caption" color="text.secondary">
@@ -917,12 +1008,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       select
                       size="small"
                       value={editNameTypes[entry.text] ?? ''}
-                      onChange={(event) =>
-                        setEditNameTypes((previous) => ({
-                          ...previous,
-                          [entry.text]: event.target.value,
-                        }))
-                      }
+                      onChange={(event) => commitNameType(entry.text, event.target.value)}
                       sx={{ minWidth: 140, '& .MuiInputBase-input': { py: 0.5, fontSize: 12 } }}
                     >
                       <MenuItem value="">
@@ -934,18 +1020,61 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         </MenuItem>
                       ))}
                     </TextField>
+                    {entry.text !== editEntity.names[0] && (
+                      <Tooltip title={t('LWC.desktop.sidebar.database.delete_name')}>
+                        <IconButton
+                          size="small"
+                          aria-label={t('LWC.desktop.sidebar.database.delete_name')}
+                          onClick={() => commitDeleteName(entry.text)}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Stack>
                 ))}
             </Stack>
           )}
-          <TextField
-            fullWidth
-            size="small"
-            label={t('LWC.desktop.sidebar.database.add_alternative_name')}
-            value={editNewName}
-            onChange={(event) => setEditNewName(event.target.value)}
-            sx={{ mt: 2 }}
-          />
+          <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              size="small"
+              label={t('LWC.desktop.sidebar.database.add_alternative_name')}
+              value={editNewName}
+              onChange={(event) => setEditNewName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  commitNewName();
+                }
+              }}
+            />
+            <TextField
+              select
+              size="small"
+              value={editNewNameType}
+              onChange={(event) => setEditNewNameType(event.target.value)}
+              sx={{ minWidth: 140 }}
+            >
+              <MenuItem value="">
+                <em>{t('LWC.desktop.sidebar.database.name_types.unclassified')}</em>
+              </MenuItem>
+              {ALL_NAME_TYPES.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {t(`LWC.desktop.sidebar.database.name_types.${type}`)}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={!editNewName.trim()}
+              onClick={commitNewName}
+              sx={{ mt: 0.25 }}
+            >
+              {t('LWC.desktop.sidebar.database.add_name')}
+            </Button>
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditEntity(null)}>{t('LWC.desktop.sidebar.database.dialogs.cancel')}</Button>
