@@ -9,6 +9,7 @@
 
 export type NameTypeId =
   | 'primary' // canonical name
+  | 'birth' // name given at birth (may differ from courtesy/art/canonical name)
   | 'courtesy' // 字 zi
   | 'art' // 號 hao / art name
   | 'posthumous' // 諡號
@@ -19,6 +20,7 @@ export type NameTypeId =
 
 export const ALL_NAME_TYPES: NameTypeId[] = [
   'primary',
+  'birth',
   'courtesy',
   'art',
   'posthumous',
@@ -47,12 +49,14 @@ export function isTaggableNameType(
 /** Wikidata name-property → canonical name type. */
 export const WIKIDATA_PROP_TO_NAME_TYPE: Record<string, NameTypeId> = {
   P1559: 'primary', // name in native language
+  P1477: 'birth', // birth name
   P1782: 'courtesy', // courtesy name (字)
   P1787: 'art', // art name (號)
   P1786: 'posthumous', // posthumous name (諡號)
   P1785: 'temple', // temple name (廟號)
   P742: 'pen', // pseudonym
   P1449: 'variant', // nickname
+  P1813: 'variant', // short name
 };
 
 /**
@@ -60,6 +64,8 @@ export const WIKIDATA_PROP_TO_NAME_TYPE: Record<string, NameTypeId> = {
  * convention) → canonical name type.
  */
 export const CJK_LABEL_TO_NAME_TYPE: Record<string, NameTypeId> = {
+  本名: 'birth',
+  原名: 'birth',
   字: 'courtesy',
   表字: 'courtesy',
   號: 'art',

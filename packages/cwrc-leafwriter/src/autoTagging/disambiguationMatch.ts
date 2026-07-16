@@ -231,6 +231,83 @@ export async function fetchWikidataTypedNames(
   return new Map(unique.map((qid) => [qid, wikidataTypedNamesCache.get(qid) ?? []]));
 }
 
+const GIVEN_NAME_PROP = 'P735';
+const FAMILY_NAME_PROP = 'P734';
+
+interface WikidataEntityIdClaimsResponse {
+  entities?: Record<
+    string,
+    { claims?: Record<string, { mainsnak?: { datavalue?: { value?: { id?: string } } } }[]> }
+  >;
+}
+
+export interface WikidataGivenFamilyNames {
+  givenName?: string;
+  familyName?: string;
+}
+
+/** Session cache of Q-id → given/family name (resolved from the P735/P734 referenced items). */
+const wikidataGivenFamilyCache = new Map<string, WikidataGivenFamilyNames>();
+
+export function clearWikidataGivenFamilyCacheForTests(): void {
+  wikidataGivenFamilyCache.clear();
+}
+
+/**
+ * Fetch (session-cached) given name (P735) / family name (P734) Wikidata
+ * knows for these Q-ids. Both properties point at a Wikidata item for the
+ * name itself (not a literal string), so this resolves the referenced
+ * item's label — preferring the project language, falling back to any label.
+ */
+export async function fetchWikidataGivenFamilyNames(
+  qids: string[],
+  projectLang: string | null | undefined,
+  fetchImpl: WikidataFetchFn = fetch,
+): Promise<Map<string, WikidataGivenFamilyNames>> {
+  const unique = [...new Set(qids.map((q) => q.toUpperCase()))];
+  const pending = unique.filter((qid) => !wikidataGivenFamilyCache.has(qid));
+  const refIdsByQid = new Map<string, { given?: string; family?: string }>();
+
+  for (let i = 0; i < pending.length; i += WIKIDATA_NAMES_BATCH_SIZE) {
+    const batch = pending.slice(i, i + WIKIDATA_NAMES_BATCH_SIZE);
+    const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${batch.join('|')}&props=claims&format=json&origin=*`;
+    let data: WikidataEntityIdClaimsResponse = {};
+    try {
+      const response = await fetchImpl(url);
+      if (response.ok) data = (await response.json()) as WikidataEntityIdClaimsResponse;
+    } catch {
+      // offline / API failure: leave this batch unresolved
+    }
+    for (const qid of batch) {
+      const claims = data.entities?.[qid]?.claims ?? {};
+      const given = claims[GIVEN_NAME_PROP]?.[0]?.mainsnak?.datavalue?.value?.id;
+      const family = claims[FAMILY_NAME_PROP]?.[0]?.mainsnak?.datavalue?.value?.id;
+      refIdsByQid.set(qid, { given, family });
+    }
+  }
+
+  const allRefIds = [
+    ...new Set(
+      [...refIdsByQid.values()].flatMap((refs) =>
+        [refs.given, refs.family].filter((v): v is string => Boolean(v)),
+      ),
+    ),
+  ];
+  const labelsByRefId =
+    allRefIds.length > 0 ? await wikidataLabelsByQid(allRefIds, fetchImpl) : new Map<string, Record<string, string>>();
+
+  for (const qid of pending) {
+    const refs = refIdsByQid.get(qid) ?? {};
+    const givenLabels = refs.given ? (labelsByRefId.get(refs.given) ?? {}) : {};
+    const familyLabels = refs.family ? (labelsByRefId.get(refs.family) ?? {}) : {};
+    const givenName = preferredLabelForLang(givenLabels, projectLang) ?? Object.values(givenLabels)[0];
+    const familyName = preferredLabelForLang(familyLabels, projectLang) ?? Object.values(familyLabels)[0];
+    wikidataGivenFamilyCache.set(qid, { givenName, familyName });
+  }
+
+  return new Map(unique.map((qid) => [qid, wikidataGivenFamilyCache.get(qid) ?? {}]));
+}
+
 export function extractWikidataIdsFromText(text: string | undefined): string[] {
   if (!text) return [];
   const ids = new Set<string>();

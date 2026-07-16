@@ -15,14 +15,16 @@ import {
 import type { EntityStore } from './entityStore';
 import {
   extractWikidataIdsFromText,
+  fetchWikidataGivenFamilyNames,
   fetchWikidataTypedNames,
   filterReconcileByExactSurface,
   isLatinSurface,
   preferredLabelForLang,
   stringsMatchExactly,
   wikidataLabelsByQid,
+  type WikidataGivenFamilyNames,
 } from './disambiguationMatch';
-import { addEntityName, setRomanizedName } from './entityOps';
+import { addEntityName, getFamilyName, getGivenName, setFamilyName, setGivenName, setRomanizedName } from './entityOps';
 import { normalizeNameType, type NameTypeId } from './nameTypes';
 import { isEastAsianCalendarLanguageCode, isLatnLang, isTibetanLanguageCode } from '../utilities/languageCodes';
 import { autoRomanize, romanizeFromAuthorityMetadata } from '../utilities/romanize';
@@ -868,16 +870,10 @@ export async function collectTypedNamesForCandidate(
     byText.set(name.text.normalize('NFC'), name);
   }
 
-  const qids = new Set<string>([
-    ...extractWikidataIdsFromText(candidate.uri),
-    ...extractWikidataIdsFromText(candidate.description),
-    ...(candidate.authorityIds ?? [])
-      .filter((auth) => /^wikidata$/i.test(auth.type))
-      .flatMap((auth) => extractWikidataIdsFromText(auth.value)),
-  ]);
-  if (qids.size > 0) {
+  const qids = wikidataQidsForCandidate(candidate);
+  if (qids.length > 0) {
     try {
-      const byQid = await fetchWikidataTypedNames([...qids], fetchImpl);
+      const byQid = await fetchWikidataTypedNames(qids, fetchImpl);
       for (const names of byQid.values()) {
         for (const name of names) {
           const key = name.text.normalize('NFC');
@@ -890,6 +886,42 @@ export async function collectTypedNamesForCandidate(
   }
 
   return [...byText.values()];
+}
+
+/** Wikidata Q-ids a candidate is linked to (its URI, description, and Wikidata authority ids). */
+function wikidataQidsForCandidate(candidate: DisambiguationCandidate): string[] {
+  return [
+    ...new Set([
+      ...extractWikidataIdsFromText(candidate.uri),
+      ...extractWikidataIdsFromText(candidate.description),
+      ...(candidate.authorityIds ?? [])
+        .filter((auth) => /^wikidata$/i.test(auth.type))
+        .flatMap((auth) => extractWikidataIdsFromText(auth.value)),
+    ]),
+  ];
+}
+
+/**
+ * Given/family name Wikidata knows for a candidate (P735/P734 — both point at
+ * a Wikidata item for the name, resolved to a label). Best-effort: network
+ * failure returns an empty result rather than throwing.
+ */
+export async function collectGivenFamilyNamesForCandidate(
+  candidate: DisambiguationCandidate,
+  projectLang?: string | null,
+  fetchImpl?: typeof fetch,
+): Promise<WikidataGivenFamilyNames> {
+  const qids = wikidataQidsForCandidate(candidate);
+  if (qids.length === 0) return {};
+  try {
+    const byQid = await fetchWikidataGivenFamilyNames(qids, projectLang, fetchImpl);
+    for (const names of byQid.values()) {
+      if (names.givenName || names.familyName) return names;
+    }
+  } catch {
+    // best-effort
+  }
+  return {};
 }
 
 /** Non-Latin projects get deterministic project-script labels when rows merge. */
@@ -945,6 +977,10 @@ export interface ResolveEntityInput {
   nameLang?: string;
   /** Authority typed names (courtesy/posthumous/…), all stored on the entity. */
   typedNames?: TypedName[];
+  /** Person's family name (P734), backfilled only when the entity has none yet. */
+  familyName?: string;
+  /** Person's given name (P735), backfilled only when the entity has none yet. */
+  givenName?: string;
   authorityIds?: AuthorityId[];
   description?: string;
   startYear?: number;
@@ -976,6 +1012,12 @@ export function resolveEntityInDocument(
         : true;
       if (!hasRomanized && input.romanizedName) {
         setRomanizedName(entitiesDoc, id, input.romanizedName, input.nameLang);
+      }
+      if (input.familyName && !getFamilyName(entitiesDoc, id)) {
+        setFamilyName(entitiesDoc, id, input.familyName);
+      }
+      if (input.givenName && !getGivenName(entitiesDoc, id)) {
+        setGivenName(entitiesDoc, id, input.givenName);
       }
     } catch {
       // best-effort enrichment; reuse must never fail because of it
@@ -1009,6 +1051,8 @@ export function resolveEntityInDocument(
     startYear: input.startYear,
     endYear: input.endYear,
   });
+  if (input.familyName) setFamilyName(entitiesDoc, id, input.familyName);
+  if (input.givenName) setGivenName(entitiesDoc, id, input.givenName);
   return id;
 }
 

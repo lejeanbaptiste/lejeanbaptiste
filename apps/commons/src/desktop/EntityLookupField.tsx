@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { AuthorityCache } from '../../../../packages/cwrc-leafwriter/src/autoTagging/authorityCache';
 import {
   buildDisambiguationCandidates,
+  collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
   extractWikidataId,
   mergeSelectedCandidates,
@@ -242,12 +243,18 @@ export const EntityLookupField = ({
       const session = await getSession();
       if (!session.store) return;
       const typedNames = await collectTypedNamesForCandidate(merged).catch(() => undefined);
+      const givenFamilyNames = await collectGivenFamilyNamesForCandidate(
+        merged,
+        session.projectLang,
+      ).catch(() => undefined);
       resolveEntityInDocument(
         session.entitiesDoc,
         {
           kind,
           name: merged.label,
           typedNames,
+          familyName: givenFamilyNames?.familyName,
+          givenName: givenFamilyNames?.givenName,
           projectLangName: merged.projectLangName,
           romanizedName:
             merged.romanizedName ??

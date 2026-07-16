@@ -147,6 +147,16 @@ export function setGivenName(doc: Document, id: string, text: string): void {
   setNoteOfType(doc, id, 'givenName', text);
 }
 
+/** Current family name, or null when unset. */
+export function getFamilyName(doc: Document, id: string): string | null {
+  return familyNameNote(requireEntity(doc, id))?.textContent?.trim() || null;
+}
+
+/** Current given name, or null when unset. */
+export function getGivenName(doc: Document, id: string): string | null {
+  return givenNameNote(requireEntity(doc, id))?.textContent?.trim() || null;
+}
+
 function setNoteOfType(doc: Document, id: string, type: string, text: string): void {
   const item = requireEntity(doc, id);
   const existing = noteOfType(item, type);
