@@ -535,7 +535,7 @@
           "name_types_heading": "Name types (courtesy names are excluded from auto-tagging)",
           "name_types": {
             "unclassified": "unclassified",
-            "primary": "Primary name",
+            "primary": "Full name",
             "courtesy": "Courtesy name (字)",
             "art": "Art name (號)",
             "posthumous": "Posthumous name (諡號)",
@@ -544,7 +544,11 @@
             "pen": "Pen name",
             "variant": "Variant"
           },
+          "family_name": "Family name",
+          "given_name": "Given name",
           "add_alternative_name": "Add a name for matching (alternative name)",
+          "add_name": "Add",
+          "delete_name": "Delete this name",
           "rename_name": "Rename canonical name",
           "open_project_hint": "Open a project to browse its entity database.",
           "invalid_regex": "Invalid regex: {{detail}}",

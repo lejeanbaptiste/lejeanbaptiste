@@ -40,6 +40,10 @@ export interface EntitySummary {
   romanized: string | null;
   description: string | null;
   authorities: AuthorityId[];
+  /** Person's family name (surname), stored separately from the display name. Persons only. */
+  familyName: string | null;
+  /** Person's given name, stored separately from the display name. Persons only. */
+  givenName: string | null;
 }
 
 const kindOfElement = (el: Element): EntityKind | null => ITEM_TO_KIND[el.localName] ?? null;
@@ -49,10 +53,14 @@ const nameElements = (item: Element, kind: EntityKind): Element[] => {
   return Array.from(item.children).filter((child) => child.localName === tag);
 };
 
-const descriptionNote = (item: Element): Element | null =>
+const noteOfType = (item: Element, type: string): Element | null =>
   Array.from(item.children).find(
-    (child) => child.localName === 'note' && child.getAttribute('type') === 'description',
+    (child) => child.localName === 'note' && child.getAttribute('type') === type,
   ) ?? null;
+
+const descriptionNote = (item: Element): Element | null => noteOfType(item, 'description');
+const familyNameNote = (item: Element): Element | null => noteOfType(item, 'familyName');
+const givenNameNote = (item: Element): Element | null => noteOfType(item, 'givenName');
 
 const idnoElements = (item: Element): Element[] =>
   Array.from(item.children).filter((child) => child.localName === 'idno');
@@ -83,6 +91,8 @@ function summarize(item: Element): EntitySummary | null {
         value: el.textContent?.trim() ?? '',
       }))
       .filter((ref) => ref.type && ref.value),
+    familyName: familyNameNote(item)?.textContent?.trim() || null,
+    givenName: givenNameNote(item)?.textContent?.trim() || null,
   };
 }
 
@@ -124,8 +134,22 @@ function requireEntity(doc: Document, id: string): Element {
 
 /** Set (or clear, with empty text) the one-line description note. */
 export function setEntityDescription(doc: Document, id: string, text: string): void {
+  setNoteOfType(doc, id, 'description', text);
+}
+
+/** Set (or clear, with empty text) a person's family name (surname), stored separately from the display name. */
+export function setFamilyName(doc: Document, id: string, text: string): void {
+  setNoteOfType(doc, id, 'familyName', text);
+}
+
+/** Set (or clear, with empty text) a person's given name, stored separately from the display name. */
+export function setGivenName(doc: Document, id: string, text: string): void {
+  setNoteOfType(doc, id, 'givenName', text);
+}
+
+function setNoteOfType(doc: Document, id: string, type: string, text: string): void {
   const item = requireEntity(doc, id);
-  const existing = descriptionNote(item);
+  const existing = noteOfType(item, type);
   const trimmed = text.trim();
   if (!trimmed) {
     existing?.remove();
@@ -136,7 +160,7 @@ export function setEntityDescription(doc: Document, id: string, text: string): v
     return;
   }
   const note = doc.createElementNS(TEI_NS, 'note');
-  note.setAttribute('type', 'description');
+  note.setAttribute('type', type);
   note.textContent = trimmed;
   item.appendChild(note);
 }
@@ -350,6 +374,14 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
     const droppedDescription = descriptionNote(dropped)?.textContent?.trim();
     if (droppedDescription && !descriptionNote(keeper)) {
       setEntityDescription(doc, keepId, droppedDescription);
+    }
+    const droppedFamilyName = familyNameNote(dropped)?.textContent?.trim();
+    if (droppedFamilyName && !familyNameNote(keeper)) {
+      setFamilyName(doc, keepId, droppedFamilyName);
+    }
+    const droppedGivenName = givenNameNote(dropped)?.textContent?.trim();
+    if (droppedGivenName && !givenNameNote(keeper)) {
+      setGivenName(doc, keepId, droppedGivenName);
     }
     // Carry over authority-cache notes for sources the keeper lacks.
     for (const note of Array.from(dropped.children).filter(
