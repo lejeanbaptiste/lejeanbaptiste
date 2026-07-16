@@ -6,11 +6,11 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { ColorSwatchPicker } from '@src/components/ColorSwatchPicker';
 import { leafwriterAtom } from '@src/jotai';
 import { useAppState } from '@src/overmind';
 import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
 import { HighlighterIcon } from './HighlighterIcon';
 import { getEditorTagContext } from './tagSuggestions';
 import { clearTagStatsCache, loadTagStats } from './tagStats';
@@ -284,100 +284,25 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
                   >
                     {tagName}
                   </Typography>
-                  <Box
-                    component="label"
-                    sx={{
-                      border: '1.5px solid',
-                      borderColor: 'divider',
-                      borderRadius: 0.75,
-                      cursor: readonly || !rootPath ? 'default' : 'pointer',
-                      display: 'block',
-                      flexShrink: 0,
-                      height: 18,
-                      overflow: 'hidden',
-                      position: 'relative',
-                      width: 18,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        bgcolor:
-                          colors.highlight && highlightOn ? colors.highlight : 'background.paper',
-                        height: '100%',
-                        inset: 0,
-                        position: 'absolute',
-                        width: '100%',
-                      }}
-                    />
-                    <Box
-                      component="input"
-                      aria-label={`${tagName} highlight color`}
-                      disabled={readonly || !rootPath}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                        updateEntry(tagName, (current) => ({
-                          ...current,
-                          highlight: event.target.value,
-                        }))
-                      }
-                      sx={{
-                        cursor: 'inherit',
-                        height: '100%',
-                        inset: 0,
-                        opacity: 0,
-                        position: 'absolute',
-                        width: '100%',
-                      }}
-                      type="color"
-                      value={colors.highlight ?? '#ffffff'}
-                    />
-                  </Box>
-                  <Box
-                    component="label"
-                    sx={{
-                      border: '1.5px solid',
-                      borderColor: 'divider',
-                      borderRadius: 0.75,
-                      cursor: readonly || !rootPath ? 'default' : 'pointer',
-                      display: 'block',
-                      flexShrink: 0,
-                      height: 18,
-                      opacity: textOn ? 1 : 0.5,
-                      overflow: 'hidden',
-                      position: 'relative',
-                      width: 18,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        bgcolor: colors.text ?? '#000000',
-                        height: '100%',
-                        inset: 0,
-                        position: 'absolute',
-                        width: '100%',
-                      }}
-                    />
-                    <Box
-                      component="input"
-                      aria-label={`${tagName} text color`}
-                      disabled={readonly || !rootPath}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                        updateEntry(tagName, (current) => ({
-                          ...current,
-                          text: event.target.value,
-                        }))
-                      }
-                      sx={{
-                        cursor: 'inherit',
-                        height: '100%',
-                        inset: 0,
-                        opacity: 0,
-                        position: 'absolute',
-                        width: '100%',
-                      }}
-                      type="color"
-                      value={colors.text ?? '#000000'}
-                    />
-                  </Box>
+                  <ColorSwatchPicker
+                    ariaLabel={`${tagName} highlight color`}
+                    disabled={readonly || !rootPath}
+                    onChange={(hex) =>
+                      updateEntry(tagName, (current) => ({ ...current, highlight: hex }))
+                    }
+                    swatchColor={colors.highlight && highlightOn ? colors.highlight : undefined}
+                    value={colors.highlight ?? '#ffffff'}
+                  />
+                  <ColorSwatchPicker
+                    ariaLabel={`${tagName} text color`}
+                    disabled={readonly || !rootPath}
+                    onChange={(hex) =>
+                      updateEntry(tagName, (current) => ({ ...current, text: hex }))
+                    }
+                    swatchColor={colors.text ?? '#000000'}
+                    sx={{ opacity: textOn ? 1 : 0.5 }}
+                    value={colors.text ?? '#000000'}
+                  />
                   <Checkbox
                     checked={highlightOn}
                     disabled={readonly || !rootPath}

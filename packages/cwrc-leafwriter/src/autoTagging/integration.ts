@@ -13,6 +13,7 @@ import { AuthorityCache } from './authorityCache';
 import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import type { DisambiguationCandidate } from './disambiguationCandidates';
 import {
+  collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
   resolveEntityInDocument,
 } from './disambiguationCandidates';
@@ -609,11 +610,15 @@ export class AutoTaggingSession {
       candidate.romanizedName ??
       autoRomanize(projectLangName ?? name, projectLang) ??
       undefined;
-    // Pull every typed name (courtesy 字, posthumous 諡號, …) the chosen
-    // authority knows, so the entity record carries them from day one.
-    const typedNames = options.createNew
-      ? undefined
-      : await collectTypedNamesForCandidate(candidate);
+    // Pull every typed name (courtesy 字, posthumous 諡號, birth name, …) plus
+    // given/family name the chosen authority knows, so the entity record
+    // carries them from day one — this runs even for createNew (e.g. a
+    // manually-pasted Wikidata link with no reconcile candidate) since the
+    // candidate still carries the authority id to look up.
+    const [typedNames, givenFamilyNames] = await Promise.all([
+      collectTypedNamesForCandidate(candidate),
+      collectGivenFamilyNamesForCandidate(candidate, projectLang),
+    ]);
 
     const entityId = resolveEntityInDocument(
       entitiesDoc,
@@ -624,6 +629,8 @@ export class AutoTaggingSession {
         romanizedName,
         nameLang: projectLang ?? undefined,
         typedNames,
+        familyName: givenFamilyNames.familyName,
+        givenName: givenFamilyNames.givenName,
         authorityIds: candidate.authorityIds,
         description: options.description ?? candidate.description,
         startYear: candidate.startYear,

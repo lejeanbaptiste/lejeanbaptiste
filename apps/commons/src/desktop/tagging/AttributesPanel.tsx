@@ -315,6 +315,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
 
   const nameTypeLabels: Record<NameTypeId, string> = {
     primary: 'Primary name',
+    birth: 'Birth name',
     courtesy: 'Courtesy name (字)',
     art: 'Art name (號)',
     posthumous: 'Posthumous name (諡號)',

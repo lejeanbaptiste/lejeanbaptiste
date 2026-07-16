@@ -319,6 +319,7 @@
           "name_types": {
             "unclassified": "non classé",
             "primary": "Nom complet",
+            "birth": "Nom de naissance",
             "courtesy": "Nom de courtoisie (字)",
             "art": "Nom de plume/d’art (號)",
             "posthumous": "Nom posthume (諡號)",

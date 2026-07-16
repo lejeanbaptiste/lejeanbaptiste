@@ -536,6 +536,7 @@
           "name_types": {
             "unclassified": "unclassified",
             "primary": "Full name",
+            "birth": "Birth name",
             "courtesy": "Courtesy name (字)",
             "art": "Art name (號)",
             "posthumous": "Posthumous name (諡號)",
