@@ -125,9 +125,9 @@ jobs:
   macos-pkg:
     name: Build macOS .pkg (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
-    # Signing and notarization secrets live in the protected "release"
+    # Signing and notarization secrets live in the protected "releases"
     # environment (restricted to v* tags).
-    environment: release
+    environment: releases
     strategy:
       fail-fast: false
       matrix:
