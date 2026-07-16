@@ -1,0 +1,103 @@
+name: Publish apt repository
+
+# Builds and deploys the signed apt repository from the .deb assets of a
+# published release. Normally called from release.yml after it publishes a
+# release; the release/dispatch triggers cover releases published from the
+# GitHub UI and manual re-runs.
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Published release tag to build the apt repo from
+        type: string
+        required: true
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to build the apt repo from
+        required: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  apt-repo:
+    name: Build and deploy apt repo
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install repo tooling
+        run: sudo apt-get update && sudo apt-get install -y apt-utils dpkg-dev gnupg
+
+      - name: Download .deb release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG_NAME="${{ inputs.release_tag || github.event.release.tag_name }}"
+          echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_ENV"
+          mkdir -p release-assets/debs
+          gh release download "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
+            --pattern '*.deb' --dir release-assets/debs
+
+      - name: Import APT signing key
+        env:
+          APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/gnupg"
+          chmod 700 "$RUNNER_TEMP/gnupg"
+          printf '%s' "$APT_GPG_PRIVATE_KEY" | gpg --batch --yes --homedir "$RUNNER_TEMP/gnupg" --import
+
+      - name: Build signed APT repository
+        env:
+          APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
+        run: |
+          GPG_KEY_ID="$(gpg --homedir "$RUNNER_TEMP/gnupg" --list-secret-keys --with-colons | awk -F: '/^sec:/ { print $5; exit }')"
+          node scripts/build-apt-repo.mjs \
+            --input release-assets/debs \
+            --output release-publish/apt \
+            --suite stable \
+            --component main \
+            --origin "Le Jean-Baptiste" \
+            --label "Le Jean-Baptiste" \
+            --codename stable \
+            --description "Le Jean-Baptiste desktop packages" \
+            --gpg-key "$GPG_KEY_ID" \
+            --gpg-home "$RUNNER_TEMP/gnupg" \
+            --export-public-key release-publish/apt/le-jean-baptiste-archive-key.asc
+
+      - name: Attach archive key to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
+            release-publish/apt/le-jean-baptiste-archive-key.asc \
+            --clobber
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload apt repo to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: release-publish
+
+      - name: Deploy apt repo to GitHub Pages
+        id: deploy-pages
+        uses: actions/deploy-pages@v4

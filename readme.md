@@ -45,49 +45,52 @@ Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current 
 
 ## Install
 
-Download the installer for your platform from the [v0.0.1 release](https://github.com/lejeanbaptiste/lejeanbaptiste/releases/tag/v0.0.1):
+Download the installer for your platform from the
+[latest release](https://github.com/lejeanbaptiste/lejeanbaptiste/releases/latest).
+All release assets can be verified as described in [SECURITY.md](SECURITY.md).
 
 ### macOS
 
-1. Download `Le.Jean-Baptiste-0.0.1-arm64.pkg` (Apple silicon).
-2. Open the `.pkg` file and follow the installer.
+1. Download the `.pkg` for your machine: `arm64` (Apple silicon) or `x64` (Intel).
+2. Open the `.pkg` file and follow the installer. The packages are signed
+   and notarized, so Gatekeeper accepts them without warnings.
 3. The application will be installed to `/Applications/Le Jean-Baptiste.app`.
-4. Updates are checked automatically and installed in the background.
+4. Update by installing a newer release; automatic in-app updates are planned.
 
 ### Windows
 
-1. Download `Le.Jean-Baptiste.Setup.0.0.1.exe`.
+1. Download `Le.Jean-Baptiste.Setup.<version>.exe`.
 2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
-3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway".
-4. The application will check for updates automatically on startup.
+3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway". A signed package through the Microsoft Store is planned.
+4. Update by installing a newer release.
 
 ### Linux
 
-**Debian/Ubuntu (amd64):**
-
-1. Download `le-jean-baptiste-desktop_0.0.1_amd64.deb`.
-2. Install with your package manager: `sudo apt install ./le-jean-baptiste-desktop_0.0.1_amd64.deb`
-
-**Flatpak (all architectures):**
-
-1. Download `Le.Jean-Baptiste-0.0.1-x86_64.flatpak`.
-2. Install with: `flatpak install ./Le.Jean-Baptiste-0.0.1-x86_64.flatpak`
-
-**APT repository (amd64 only):**
-
-For automatic updates, add the project's APT repository:
+**APT repository (Debian/Ubuntu, amd64 and arm64) — recommended, updates automatically:**
 
 ```bash
 # Add the repository signing key
-wget -O- https://lejeanbaptiste.github.io/apt/le-jean-baptiste-archive-key.asc | sudo apt-key add -
+wget -qO- https://lejeanbaptiste.github.io/lejeanbaptiste/apt/le-jean-baptiste-archive-key.asc \
+  | sudo tee /usr/share/keyrings/le-jean-baptiste.asc > /dev/null
 
 # Add the repository to your sources
-echo "deb https://lejeanbaptiste.github.io/apt stable main" | sudo tee /etc/apt/sources.list.d/le-jean-baptiste.sources > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/le-jean-baptiste.asc] https://lejeanbaptiste.github.io/lejeanbaptiste/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/le-jean-baptiste.list > /dev/null
 
 # Install and keep updated
 sudo apt update
 sudo apt install le-jean-baptiste-desktop
 ```
+
+**Standalone .deb (Debian/Ubuntu):**
+
+1. Download `le-jean-baptiste-desktop_<version>_amd64.deb` (or `_arm64.deb`).
+2. Install with your package manager: `sudo apt install ./le-jean-baptiste-desktop_<version>_amd64.deb`
+
+**Flatpak (x86_64):**
+
+1. Download `Le.Jean-Baptiste-<version>-x86_64.flatpak`.
+2. Install with: `flatpak install ./Le.Jean-Baptiste-<version>-x86_64.flatpak`
 
 For detailed build and packaging information, see [apps/desktop/README.md](apps/desktop/README.md).
 
