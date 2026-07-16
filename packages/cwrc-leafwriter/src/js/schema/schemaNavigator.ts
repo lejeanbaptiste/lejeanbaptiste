@@ -8,7 +8,70 @@ import { log } from '../../utilities';
 let schemaJSON: any;
 let schemaElements: any;
 
+/**
+ * RelaxNG structural keywords this module matches on (via $key or direct
+ * property access, e.g. item.ref, item.choice). Some published TEI RNG files
+ * mix an `rng:`-prefixed form of these elements (e.g. `<rng:ref>`) with the
+ * unprefixed form used everywhere else, even though both resolve to the same
+ * RelaxNG namespace. ObjTree keys nodes by the literal (prefixed) nodeName,
+ * so without normalization those particles are silently invisible to every
+ * lookup here — e.g. TEI's own `<div>` definition references paragraph
+ * content through a `<rng:ref name="model.common"/>`, which would otherwise
+ * never register `p` as a valid child of `div`.
+ */
+const RELAXNG_KEYWORDS = new Set([
+  'element', 'define', 'ref', 'choice', 'group', 'interleave', 'optional',
+  'zeroOrMore', 'oneOrMore', 'list', 'value', 'empty', 'text', 'notAllowed',
+  'mixed', 'grammar', 'start', 'include', 'param', 'data', 'anyName', 'nsName',
+  'name', 'attribute',
+]);
+
+/**
+ * Recursively rewrites any namespace-prefixed RelaxNG keyword key (e.g.
+ * `rng:ref`) to its local name (`ref`), including the corresponding child
+ * node's `$key`, so the rest of this module can match on bare keywords
+ * regardless of how the source schema prefixed them.
+ */
+const normalizeRelaxNgPrefixes = (node: any) => {
+  if (!node || typeof node !== 'object') return;
+
+  for (const key of Object.keys(node)) {
+    if (key === '$parent') continue;
+
+    const colonIndex = key.indexOf(':');
+    if (colonIndex > -1) {
+      const localName = key.slice(colonIndex + 1);
+      if (RELAXNG_KEYWORDS.has(localName)) {
+        const value = node[key];
+        delete node[key];
+        if (node[localName] === undefined) {
+          node[localName] = value;
+        } else {
+          // merge into an array rather than dropping either side
+          const existing = Array.isArray(node[localName]) ? node[localName] : [node[localName]];
+          const incoming = Array.isArray(value) ? value : [value];
+          node[localName] = [...existing, ...incoming];
+        }
+        for (const entry of Array.isArray(node[localName]) ? node[localName] : [node[localName]]) {
+          if (entry && typeof entry === 'object' && entry.$key === key) entry.$key = localName;
+        }
+      }
+    }
+  }
+
+  for (const key of Object.keys(node)) {
+    if (key === '$parent') continue;
+    const value = node[key];
+    if (Array.isArray(value)) {
+      for (const entry of value) normalizeRelaxNgPrefixes(entry);
+    } else if (value && typeof value === 'object') {
+      normalizeRelaxNgPrefixes(value);
+    }
+  }
+};
+
 export const setSchemaJSON = (json: any) => {
+  if (json?.grammar) normalizeRelaxNgPrefixes(json.grammar);
   schemaJSON = json;
 };
 
