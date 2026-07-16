@@ -89,8 +89,10 @@ export const UnifiedLeftPanel = () => {
   useEffect(() => {
     const onOpen = () => {
       if (dockedReviewSuppressCountRef.current === 0) {
-        restoreExpandedAfterDockedReviewRef.current = !collapsedRef.current;
-        if (!collapsedRef.current) setCollapsed(true);
+        setCollapsed((prev) => {
+          restoreExpandedAfterDockedReviewRef.current = !prev;
+          return true;
+        });
       }
       dockedReviewSuppressCountRef.current += 1;
       suppressedByDockedReviewRef.current = true;

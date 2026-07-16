@@ -891,7 +891,11 @@ const buildApplicationMenu = () => {
               { role: 'hideOthers' },
               { role: 'unhide' },
               menuSeparator(),
-              { role: 'quit' },
+              {
+                label: `Quit ${APP_NAME}`,
+                accelerator: 'CommandOrControl+Q',
+                click: () => app.quit(),
+              },
             ],
           } satisfies Electron.MenuItemConstructorOptions,
         ]

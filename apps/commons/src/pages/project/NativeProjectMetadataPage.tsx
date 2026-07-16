@@ -4,6 +4,7 @@ import {
   Button,
   FormControlLabel,
   IconButton,
+  MenuItem,
   Radio,
   RadioGroup,
   Stack,
@@ -250,22 +251,21 @@ export const NativeProjectMetadataPage = () => {
                   required
                   select
                   size="small"
-                  SelectProps={{ native: true }}
                   value={state.values[field.path] ?? ''}
                 >
-                  <option value="">{t('LWC.desktop.project.select_language')}</option>
+                  <MenuItem value="">{t('LWC.desktop.project.select_language')}</MenuItem>
                   {/* Legacy free-text value from an older project: keep it selectable so
                       opening the dialog doesn't silently drop it. */}
                   {(state.values[field.path] ?? '') !== '' &&
                     !isKnownLanguageCode(state.values[field.path] ?? '') && (
-                      <option value={state.values[field.path]}>
+                      <MenuItem value={state.values[field.path]}>
                         {state.values[field.path]} (legacy)
-                      </option>
+                      </MenuItem>
                     )}
                   {FIXED_LANGUAGE_OPTIONS.map((option) => (
-                    <option key={option.code} value={option.code}>
+                    <MenuItem key={option.code} value={option.code}>
                       {option.label} ({option.code})
-                    </option>
+                    </MenuItem>
                   ))}
                 </TextField>
               ) : (
@@ -394,17 +394,16 @@ export const NativeProjectMetadataPage = () => {
                 onChange={(event) => setNewLangCode(event.target.value)}
                 select
                 size="small"
-                SelectProps={{ native: true }}
                 sx={{ flex: 2 }}
                 value={newLangCode}
               >
-                <option value="" />
+                <MenuItem value="" />
                 {FIXED_LANGUAGE_OPTIONS.filter(
                   (option) => !languages.some((lang) => lang.code === option.code),
                 ).map((option) => (
-                  <option key={option.code} value={option.code}>
+                  <MenuItem key={option.code} value={option.code}>
                     {option.label} ({option.code})
-                  </option>
+                  </MenuItem>
                 ))}
               </TextField>
               <Button disabled={!newLangCode} onClick={addLanguage} size="small" variant="text">

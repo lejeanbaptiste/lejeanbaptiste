@@ -4,7 +4,10 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import * as tar from 'tar';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 function parseArgs(argv) {
   const options = new Map();
@@ -136,16 +139,25 @@ function formatDescription(value) {
 }
 
 async function makeTarGz(sourceDir, outFile) {
-  await tar.c(
-    {
-      gzip: true,
-      cwd: sourceDir,
-      portable: true,
-      noMtime: true,
-      file: outFile,
-    },
-    ['.'],
-  );
+  // dpkg's own tar reader has no support for POSIX pax extended headers (only
+  // classic ustar + GNU longname/longlink), so this must not go through the
+  // `tar` npm package — it emits pax headers for any path over the ustar
+  // 100/155-char limit (common here: bundled Python site-packages paths),
+  // which makes dpkg fail with "corrupted filesystem tarfile ... unsupported
+  // PAX tar header type 'x'". System GNU tar's --format=gnu handles long
+  // paths as GNU longname/longlink, which dpkg does understand.
+  await execFileAsync('tar', [
+    '--format=gnu',
+    '--owner=0',
+    '--group=0',
+    '--numeric-owner',
+    '--mtime=@0',
+    '-czf',
+    outFile,
+    '-C',
+    sourceDir,
+    '.',
+  ]);
 }
 
 function arHeader(name, size, mode = 0o100644, mtime = Math.floor(Date.now() / 1000), uid = 0, gid = 0) {
