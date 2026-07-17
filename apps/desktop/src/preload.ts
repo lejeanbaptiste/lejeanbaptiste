@@ -181,6 +181,8 @@ export interface ElectronAPI {
   createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
+  readAchievementsFile: () => Promise<string | null>;
+  writeAchievementsFile: (content: string) => Promise<void>;
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
@@ -390,6 +392,8 @@ const electronAPI: ElectronAPI = {
   createTempDocument: (content: string) => ipcRenderer.invoke('createTempDocument', content),
   getEncoderName: () => ipcRenderer.invoke('getEncoderName'),
   setEncoderName: (name: string) => ipcRenderer.invoke('setEncoderName', name),
+  readAchievementsFile: () => ipcRenderer.invoke('readAchievementsFile'),
+  writeAchievementsFile: (content: string) => ipcRenderer.invoke('writeAchievementsFile', content),
   getEntityDbFolder: () => ipcRenderer.invoke('getEntityDbFolder'),
   setEntityDbFolder: (folder: string | null) => ipcRenderer.invoke('setEntityDbFolder', folder),
   pickEntityDbFolder: () => ipcRenderer.invoke('pickEntityDbFolder'),

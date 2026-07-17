@@ -240,6 +240,8 @@ export interface ElectronAPI {
   createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
+  readAchievementsFile?: () => Promise<string | null>;
+  writeAchievementsFile?: (content: string) => Promise<void>;
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;

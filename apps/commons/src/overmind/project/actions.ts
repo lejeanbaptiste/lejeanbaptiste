@@ -43,6 +43,7 @@ import { registerDesktopSchemas } from '@src/desktop/registerDesktopSchemas';
 import { getEnabledCatalogSchemas } from '@src/desktop/schemaCatalog';
 import { warmMetadataDialogStateCache } from '@src/desktop/projectMetadataDialogState';
 import { maybeCheckSchemaUpdateOnOpen } from '@src/desktop/schemaUpdateCheck';
+import { processSaveForAchievements } from '@src/desktop/achievements/engine';
 import { stampContentBeforeSave } from '@src/desktop/revisionDescXml';
 import { separateBlockElements } from '@src/desktop/xmlBlockSpacing';
 import {
@@ -1073,7 +1074,20 @@ export const saveActiveTab = async (
     await armSavedFileWrite(filePath);
     await window.electronAPI.writeFile(filePath, stamped);
     if (state.project.rootPath) {
-      void updateTagStatsForFile(state.project.rootPath, filePath, stamped);
+      const rootPath = state.project.rootPath;
+      void updateTagStatsForFile(rootPath, filePath, stamped).then((merged) =>
+        processSaveForAchievements({
+          rootPath,
+          filePath,
+          xml: stamped,
+          stats: merged,
+          notify: (message) =>
+            context.actions.ui.notifyViaSnackbar({
+              message,
+              options: { variant: 'success', autoHideDuration: 7000 },
+            }),
+        }),
+      );
     }
     state.project.openTabs = state.project.openTabs.map((tab) =>
       tab.filePath === filePath ? { ...tab, content: stamped, dirty: false } : tab,
@@ -1265,6 +1279,20 @@ export const saveActiveTabAs = async (
     await ignoreSavedFileChange(filePath);
     if (state.project.rootPath) {
       await reloadDirectoryInTree({ state } as Context, getParentPath(filePath));
+      const rootPath = state.project.rootPath;
+      void updateTagStatsForFile(rootPath, filePath, stamped).then((merged) =>
+        processSaveForAchievements({
+          rootPath,
+          filePath,
+          xml: stamped,
+          stats: merged,
+          notify: (message) =>
+            actions.ui.notifyViaSnackbar({
+              message,
+              options: { variant: 'success', autoHideDuration: 7000 },
+            }),
+        }),
+      );
     }
 
     const reindexed = await reindexTranslationOnSave(filePath, stamped);

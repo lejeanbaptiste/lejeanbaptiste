@@ -1,5 +1,7 @@
-import { Box, IconButton, Typography } from '@mui/material';
+import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { AchievementsDialog } from './achievements/AchievementsDialog';
 import { DocumentTabBar } from './DocumentTabBar';
 
 export const TITLEBAR_HEIGHT = 36;
@@ -22,6 +24,7 @@ const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties;
 export const TitleBar = () => {
   const mac = isMacOS();
   const [isMaximized, setIsMaximized] = useState(false);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
 
   useEffect(() => {
     if (mac) return;
@@ -73,6 +76,24 @@ export const TitleBar = () => {
       >
         <DocumentTabBar />
       </Box>
+
+      {/* Service record (achievements) */}
+      <Box sx={{ flexShrink: 0 }} style={noDragStyle}>
+        <Tooltip title="Service Record">
+          <IconButton
+            aria-label="Service Record"
+            onClick={() => setAchievementsOpen(true)}
+            size="small"
+            sx={{ borderRadius: 0, width: 40, height: TITLEBAR_HEIGHT }}
+          >
+            <MilitaryTechIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+      <AchievementsDialog
+        onClose={() => setAchievementsOpen(false)}
+        open={achievementsOpen}
+      />
 
       {/* Custom window controls for Windows / Linux */}
       {!mac && (
