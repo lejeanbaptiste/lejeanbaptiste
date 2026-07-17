@@ -64,5 +64,5 @@ package() {
   ln -s "/opt/$pkgname/le-jean-baptiste-desktop" "$pkgdir/usr/bin/le-jean-baptiste"
 
   install -Dm644 packaging/arch/le-jean-baptiste.desktop "$pkgdir/usr/share/applications/$pkgname.desktop"
-  install -Dm644 design/icon.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/$pkgname.png"
+  install -Dm644 apps/desktop/resources/branding/icon.png "$pkgdir/usr/share/icons/hicolor/512x512/apps/$pkgname.png"
 }

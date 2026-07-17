@@ -35,9 +35,9 @@ const devBundleIconPath = path.join(devAppRoot, 'Contents/Resources/electron.icn
 const versionMarkerPath = path.join(devDir, 'electron-version.txt');
 
 const repoRoot = path.resolve(desktopRoot, '../..');
-const designDir = path.join(repoRoot, 'design');
-const pngPath = path.join(designDir, 'icon.png');
-const exportScript = path.join(designDir, 'export-icon.mjs');
+const brandingDir = path.join(repoRoot, 'apps/desktop/resources/branding');
+const pngPath = path.join(brandingDir, 'icon.png');
+const exportScript = path.join(repoRoot, 'scripts/export-icon.mjs');
 
 const require = createRequire(import.meta.url);
 const electronRoot = path.dirname(require.resolve('electron/package.json'));

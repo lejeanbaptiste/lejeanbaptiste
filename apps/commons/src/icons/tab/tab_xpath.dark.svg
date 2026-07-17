@@ -4,7 +4,7 @@
 <svg
    width="47.848721mm"
    height="47.848717mm"
-   viewBox="-5.742 -5.742 59.332 59.332"
+   viewBox="0 0 47.848721 47.848717"
    version="1.1"
    id="svg1"
    inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
@@ -43,12 +43,12 @@
     <path
        d="m 107.1412,133.22513 -12.15642,32.41711 h -5.165364 l 12.156414,-32.41711 z m 13.40327,-1.82569 -0.80152,6.32312 5.78877,-2.1374 1.20228,5.16537 -5.78877,0.66793 4.27478,4.89819 -4.40837,3.0725 -3.02797,-5.74424 -3.02797,5.74424 -4.36384,-3.0725 4.23025,-4.89819 -5.78877,-0.6234 1.24681,-5.16537 5.74424,2.09287 -0.75699,-6.32312 z"
        id="text1"
-       style="font-size:44.529px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans, @wght=700';font-variation-settings:'wght' 700;fill:#ffffff;stroke-width:1.10713;stroke-linecap:square;paint-order:stroke fill markers"
+       style="font-size:44.529px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans, @wght=700';font-variation-settings:'wght' 700;fill:#bfd5d5;stroke-width:1.10713;stroke-linecap:square;paint-order:stroke fill markers"
        aria-label="/*" />
     <path
        d="M 96.568375,133.22513 84.411958,165.64224 H 79.246594 L 91.403011,133.22513 Z"
        id="text2"
-       style="font-size:44.529px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans, @wght=700';font-variation-settings:'wght' 700;fill:#ffffff;stroke-width:1.10713;stroke-linecap:square;paint-order:stroke fill markers"
+       style="font-size:44.529px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans, @wght=700';font-variation-settings:'wght' 700;fill:#bfd5d5;stroke-width:1.10713;stroke-linecap:square;paint-order:stroke fill markers"
        aria-label="/" />
   </g>
 </svg>

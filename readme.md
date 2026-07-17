@@ -1,6 +1,6 @@
 # Le Jean-Baptiste
 
-<img src="design/splash_new.png" alt="splash" height="300">
+<img src="apps/desktop/resources/branding/splash_new.png" alt="splash" height="300">
 
 Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). The project website is [github.com/lejeanbaptiste/lejeanbaptiste](https://github.com/lejeanbaptiste/lejeanbaptiste). Le Jean-Baptiste wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
 
@@ -27,6 +27,29 @@ LEAF-Writer is a WYSIWYG text editor for in-browser XML editing and stand-off RD
 A LEAF-Writer installation is a bundling of the main LEAF-WriterBase (the code in this repository) with a few other NPM packages that handle interaction with server-side services for document storage and named entity lookup.
 
 This README now focuses on the desktop fork and its shared packages. Some of the older LEAF-Writer notes are still useful background, but the fork-specific workflow is the priority here.
+
+## Asset Sources
+
+Artwork and spoiler-protected game assets now come from the private
+[`visual_design`](https://github.com/lejeanbaptiste/visual_design) repo.
+To refresh the public checkout, run `npm run visual-design:sync`.
+
+Tracked here as mirrored or generated assets:
+
+- `apps/desktop/resources/branding/icon.svg` and `apps/desktop/resources/branding/icon.png`
+- `apps/desktop/resources/branding/splash.svg` and `apps/desktop/resources/branding/splash_new.png`
+- `apps/commons/src/icons/tab/tab_explorer.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/icons/tab/tab_find.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/icons/tab/tab_xpath.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/icons/tab/tab_toc.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/icons/tab/tab_tree.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/desktop/achievements/definitions.ts`
+- `apps/desktop/resources/game-assets/assets.bin`
+- `apps/desktop/src/generated/gameAssetKey.ts`
+
+Not tracked in the public repo anymore:
+
+- legacy artwork export scripts and source assets
 
 ## What is built
 

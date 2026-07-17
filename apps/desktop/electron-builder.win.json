@@ -13,14 +13,6 @@
       "to": "THIRD_PARTY_NOTICES.md"
     },
     {
-      "from": "../../design/icon.svg",
-      "to": "icon.svg"
-    },
-    {
-      "from": "../../design/icon.png",
-      "to": "icon.png"
-    },
-    {
       "from": "../commons/public",
       "to": "commons/public"
     },
