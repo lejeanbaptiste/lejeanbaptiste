@@ -256,7 +256,10 @@ jobs:
           mkdir -p release-flat
           find release-assets -type f -exec sh -c '
             for f; do
-              base="$(basename "$f")"
+              # GitHub replaces spaces in release asset names with dots;
+              # rename to match so SHA256SUMS entries equal the filenames
+              # users actually download.
+              base="$(basename "$f" | tr " " ".")"
               if [ -e "release-flat/$base" ]; then
                 echo "::error::duplicate asset name: $base"
                 exit 1
