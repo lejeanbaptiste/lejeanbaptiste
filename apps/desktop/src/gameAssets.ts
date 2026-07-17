@@ -18,13 +18,20 @@ import { getGameAssetKey } from './generated/gameAssetKey';
 
 export const GAME_ASSET_SCHEME = 'ljb-asset';
 
+export interface AssetColorStats {
+  lightness: number;
+  saturation: number;
+}
+
 interface AssetEntry {
   offset: number;
   length: number;
   type: string;
+  colorStats?: AssetColorStats;
 }
 
-let assetMap: Map<string, { buffer: Buffer; type: string }> | null = null;
+let assetMap: Map<string, { buffer: Buffer; type: string; colorStats?: AssetColorStats }> | null =
+  null;
 
 function getBundlePath(): string {
   return app.isPackaged
@@ -32,7 +39,7 @@ function getBundlePath(): string {
     : path.join(__dirname, '../resources/game-assets/assets.bin');
 }
 
-function loadAssetMap(): Map<string, { buffer: Buffer; type: string }> {
+function loadAssetMap(): Map<string, { buffer: Buffer; type: string; colorStats?: AssetColorStats }> {
   if (assetMap) return assetMap;
 
   const bundlePath = getBundlePath();
@@ -51,11 +58,12 @@ function loadAssetMap(): Map<string, { buffer: Buffer; type: string }> {
   );
   const dataStart = 4 + indexLength;
 
-  const map = new Map<string, { buffer: Buffer; type: string }>();
+  const map = new Map<string, { buffer: Buffer; type: string; colorStats?: AssetColorStats }>();
   for (const [key, entry] of Object.entries(index)) {
     map.set(key, {
       buffer: payload.subarray(dataStart + entry.offset, dataStart + entry.offset + entry.length),
       type: entry.type,
+      colorStats: entry.colorStats,
     });
   }
   assetMap = map;
@@ -74,4 +82,14 @@ export function registerGameAssetProtocol(): void {
       return new Response(null, { status: 500 });
     }
   });
+}
+
+/** Precomputed at pack time (see visual_design/scripts/pack-assets.mjs) -
+ * never sampled at runtime, so there's no canvas/image-load involved. */
+export function getGameAssetColorStats(key: string): AssetColorStats | null {
+  try {
+    return loadAssetMap().get(key)?.colorStats ?? null;
+  } catch {
+    return null;
+  }
 }

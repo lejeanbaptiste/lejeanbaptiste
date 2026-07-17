@@ -1,18 +1,15 @@
-import { useTheme } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useColorScheme } from '@mui/material/styles';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { colorMatchFilter, type ColorStats } from './colorMatch';
+import { getHeadColorStats } from './headColorStats';
 import { MedalIcon, type MedalTier } from './MedalIcon';
 
 // Served at runtime by the desktop app's ljb-asset:// protocol handler
 // (see apps/desktop/src/gameAssets.ts), which decrypts them from the
 // bundled, encrypted resources/game-assets/assets.bin. The source artwork
 // lives in the private visual_design repo, not this one.
-const uniform1Png = 'ljb-asset://uniforms/1';
-const uniform2Png = 'ljb-asset://uniforms/2';
-const uniform3Png = 'ljb-asset://uniforms/3';
-const uniform4Png = 'ljb-asset://uniforms/4';
-const uniform5Png = 'ljb-asset://uniforms/5';
-const uniform6Png = 'ljb-asset://uniforms/6';
-const uniform7Png = 'ljb-asset://uniforms/7';
+export const GAME_ASSET_PREFIX = 'ljb-asset://';
+export const UNIFORM_KEYS = ['uniforms/1', 'uniforms/2', 'uniforms/3', 'uniforms/4', 'uniforms/5', 'uniforms/6', 'uniforms/7'];
 
 type Ribbon = [string, string] | [string, string, string];
 
@@ -34,28 +31,14 @@ interface UniformAvatarProps {
   backgroundImageKey: string;
   /** Development-only alignment overlay for tuning portrait placement. */
   showAlignmentGrid?: boolean;
-  headPlacement?: {
-    height: string;
-    left: string;
-    top: string;
-    width: string;
-  };
   size?: number;
 }
 
 // One image per rank (I-VII): a 340x319 canvas, coat flush to the bottom
 // edge and collar tip flush to the top edge, identical across all seven so
 // a single head placement lines up against every rank.
-const UNIFORM_SRCS = [
-  uniform1Png,
-  uniform2Png,
-  uniform3Png,
-  uniform4Png,
-  uniform5Png,
-  uniform6Png,
-  uniform7Png,
-];
-const UNIFORM_ASPECT = 340 / 319;
+const UNIFORM_SRCS = UNIFORM_KEYS.map((key) => `${GAME_ASSET_PREFIX}${key}`);
+export const UNIFORM_ASPECT = 340 / 319;
 
 // Rank-gated portrait backdrops, one letter-suffixed pool per rank
 // (RANK_NAMES[0..6]). The pool available at a given rank is cumulative -
@@ -86,7 +69,26 @@ export const pickBackgroundKey = (rankIndex: number, previousKey: string | null)
 };
 
 // bg_* artwork is 758x331.
-const BG_ASPECT = 758 / 331;
+export const BG_ASPECT = 758 / 331;
+
+export const NEUTRAL_STATS: ColorStats = { lightness: 0.5, saturation: 0 };
+
+// The 7 uniforms and 22 backdrops are a fixed set of static assets with
+// stats precomputed at pack time (see pack-assets.mjs) - fetched once per
+// key over IPC and reused for the life of the renderer. No canvas or image
+// load is involved, unlike sampling these at runtime would require.
+const colorStatsCache = new Map<string, Promise<ColorStats>>();
+export const getCachedColorStats = (key: string): Promise<ColorStats> => {
+  let cached = colorStatsCache.get(key);
+  if (!cached) {
+    cached = (window.electronAPI?.getGameAssetColorStats?.(key) ?? Promise.resolve(null)).then(
+      (stats) => stats ?? NEUTRAL_STATS,
+      () => NEUTRAL_STATS,
+    );
+    colorStatsCache.set(key, cached);
+  }
+  return cached;
+};
 
 // Fraction of the portrait frame height the coat occupies, anchored to the
 // bottom. The rest is sky reserved above the collar tip (which sits right at
@@ -95,7 +97,7 @@ const BG_ASPECT = 758 / 331;
 // smaller share of the frame than before or the head reads as too small
 // against them - 0.63 keeps the whole figure (coat + head) comfortably
 // inside the frame with margin to spare, rather than filling it edge to edge.
-const COAT_FRACTION = 0.63;
+export const COAT_FRACTION = 0.63;
 
 // The DiceBear Adventurer SVG has a 762x762 viewBox. Some hair variants
 // (e.g. long18) draw strands outside it - the browser clips anything past
@@ -103,9 +105,9 @@ const COAT_FRACTION = 0.63;
 // SVG_PAD widens the viewBox by this many units on every side (see
 // padSvgViewBox below) before the image is ever painted, so that overflow
 // has room to render instead of being cut off at the source.
-const SVG_PAD = 40;
-const SVG_VIEWBOX_SIZE = 762;
-const PADDED_VIEWBOX_SIZE = SVG_VIEWBOX_SIZE + SVG_PAD * 2;
+export const SVG_PAD = 40;
+export const SVG_VIEWBOX_SIZE = 762;
+export const PADDED_VIEWBOX_SIZE = SVG_VIEWBOX_SIZE + SVG_PAD * 2;
 
 // Fraction of the (padded) canvas the DiceBear face actually occupies,
 // measured from the unpadded SVG's rendered bounding box and shifted by
@@ -130,8 +132,8 @@ const HEAD_CONTENT = {
 // one this was measured against. The resulting chin position lands where it
 // should: covering most of the collar's black interior with the outline
 // just touching the red trim.
-const HEAD_BOX_SIZE = 0.52 * (PADDED_VIEWBOX_SIZE / SVG_VIEWBOX_SIZE);
-const HEAD_BOX_TOP = 0.0;
+export const HEAD_BOX_SIZE = 0.52 * (PADDED_VIEWBOX_SIZE / SVG_VIEWBOX_SIZE);
+export const HEAD_BOX_TOP = -0.01;
 
 /** Widen an SVG's viewBox by `pad` units on every side so content drawn
  * outside the original canvas (e.g. flowing hair) isn't clipped at render
@@ -140,7 +142,7 @@ const HEAD_BOX_TOP = 0.0;
  * nothing, since that inner clip still masks anything outside the old
  * bounds, so the matching rect is widened the same way. Falls back to the
  * original text if no viewBox attribute is found. */
-const padSvgViewBox = (svgText: string, pad: number): string => {
+export const padSvgViewBox = (svgText: string, pad: number): string => {
   const viewBoxMatch = svgText.match(/viewBox="([\d.-]+) ([\d.-]+) ([\d.-]+) ([\d.-]+)"/);
   if (!viewBoxMatch) return svgText;
   const [, xStr, yStr, wStr, hStr] = viewBoxMatch;
@@ -166,13 +168,13 @@ const padSvgViewBox = (svgText: string, pad: number): string => {
 // sits clear of the collar/epaulettes above, the sash intruding on the
 // highest rank below, the button line on the left, and the sleeve seam on
 // the right - across all seven ranks at once.
-const DECORATION_PANEL = { height: 0.3597, left: 0.4276, top: 0.25, width: 0.2813 };
+export const DECORATION_PANEL = { height: 0.3597, left: 0.4276, top: 0.25, width: 0.2813 };
 
 /** Choose a rows x columns grid that packs `count` items of the given
  * width:height aspect ratio into a box as large as possible, trying every
  * row count and keeping whichever is limited least by the box's width or
  * height (i.e. the one with the biggest resulting item size). */
-const packGrid = (count: number, boxWidth: number, boxHeight: number, aspect: number) => {
+export const packGrid = (count: number, boxWidth: number, boxHeight: number, aspect: number) => {
   let best = { cols: count, itemHeight: 0, rows: 1 };
   for (let rows = 1; rows <= count; rows += 1) {
     const cols = Math.ceil(count / rows);
@@ -183,12 +185,20 @@ const packGrid = (count: number, boxWidth: number, boxHeight: number, aspect: nu
 };
 
 // MedalIcon's viewBox is 26x46 (see MedalIcon.tsx): width:height aspect.
-const MEDAL_ASPECT = 26 / 46;
-const RIBBON_ASPECT = 18 / 7;
+export const MEDAL_ASPECT = 26 / 46;
+export const RIBBON_ASPECT = 18 / 7;
 // Fraction of the panel's height reserved for the ribbon rack before medals
 // get the rest; ribbons are relatively few (max 9) and wide, so they don't
 // need much vertical room.
-const RIBBON_BAND_FRACTION = 0.22;
+export const RIBBON_BAND_FRACTION = 0.22;
+
+// packGrid always maximizes item size to fill the box, which looks right at
+// a realistic rack density but blows a single early medal or ribbon up to
+// fill the whole panel. Flooring the count it packs against to a plausible
+// early-service size (one ribbon per metric; a handful of medals) keeps
+// icons a sane size until there are actually enough to fill the rack.
+export const RIBBON_COUNT_FLOOR = 5;
+export const MEDAL_COUNT_FLOOR = 6;
 
 const RibbonRack = ({
   itemHeight,
@@ -271,8 +281,18 @@ const DecorationRack = ({
   const panelHeight = coatHeight * DECORATION_PANEL.height;
   const ribbonBoxHeight = ribbons.length > 0 ? panelHeight * RIBBON_BAND_FRACTION : 0;
   const medalBoxHeight = panelHeight - ribbonBoxHeight;
-  const ribbonGrid = packGrid(Math.max(ribbons.length, 1), panelWidth, ribbonBoxHeight, RIBBON_ASPECT);
-  const medalGrid = packGrid(Math.max(medals.length, 1), panelWidth, medalBoxHeight, MEDAL_ASPECT);
+  const ribbonGrid = packGrid(
+    ribbons.length > 0 ? Math.max(ribbons.length, RIBBON_COUNT_FLOOR) : 1,
+    panelWidth,
+    ribbonBoxHeight,
+    RIBBON_ASPECT,
+  );
+  const medalGrid = packGrid(
+    Math.max(medals.length, MEDAL_COUNT_FLOOR),
+    panelWidth,
+    medalBoxHeight,
+    MEDAL_ASPECT,
+  );
   return (
     <div
       style={{
@@ -303,16 +323,20 @@ export const UniformAvatar = ({
   medals,
   headImageUrl,
   backgroundImageKey,
-  headPlacement,
   showAlignmentGrid = false,
   size = 96,
 }: UniformAvatarProps) => {
-  const theme = useTheme();
+  // This app uses MUI's CSS-variables theming, where theme.palette.mode is
+  // a static seed rather than the live mode - useColorScheme() is what
+  // every other mode-aware component here reads instead (see
+  // HighlighterIcon.tsx, icons/tab/index.tsx).
+  const { mode, systemMode } = useColorScheme();
+  const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
   // Trims the soft/anti-aliased edge left by the composited artwork. An
   // inset box-shadow (not a border) so it paints over the existing frame
   // without shifting the box model - every child below is positioned in
   // pixel/percentage terms that assume the frame is exactly `size` tall.
-  const frameBorderColor = theme.palette.mode === 'dark' ? '#fff' : '#000';
+  const frameBorderColor = isDarkMode ? '#fff' : '#000';
   const [headFailed, setHeadFailed] = useState(false);
   const [paddedHeadSrc, setPaddedHeadSrc] = useState<string | null>(null);
   const objectUrlRef = useRef<string | null>(null);
@@ -341,8 +365,51 @@ export const UniformAvatar = ({
     },
     [],
   );
-  const uniformSrc = UNIFORM_SRCS[Math.max(0, Math.min(UNIFORM_SRCS.length - 1, rankIndex))]!;
-  const backgroundSrc = `ljb-asset://${backgroundImageKey}`;
+  const uniformIndex = Math.max(0, Math.min(UNIFORM_KEYS.length - 1, rankIndex));
+  const uniformKey = UNIFORM_KEYS[uniformIndex]!;
+  const uniformSrc = UNIFORM_SRCS[uniformIndex]!;
+
+  // Color-matches the fixed-palette uniform and head sprites to whichever
+  // backdrop they're currently sitting on, so a random pick doesn't leave
+  // the figure looking pasted onto a mismatched scene. Every stat involved
+  // is precomputed (see colorMatch.ts) rather than sampled from the
+  // rendered image, so this never needs to wait on an image load.
+  const [uniformFilter, setUniformFilter] = useState('none');
+  const [headFilter, setHeadFilter] = useState('none');
+  const headStats = useMemo(() => {
+    try {
+      const params = new URL(headImageUrl).searchParams;
+      return getHeadColorStats(
+        params.get('hairVariant') ?? '',
+        params.get('skinColor') ?? '',
+        params.get('hairColor') ?? '',
+      );
+    } catch {
+      return NEUTRAL_STATS;
+    }
+  }, [headImageUrl]);
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all([getCachedColorStats(backgroundImageKey), getCachedColorStats(uniformKey)]).then(
+      ([backgroundStats, uniformStats]) => {
+        if (!cancelled) setUniformFilter(colorMatchFilter(uniformStats, backgroundStats));
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [backgroundImageKey, uniformKey]);
+  useEffect(() => {
+    let cancelled = false;
+    void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {
+      if (!cancelled) setHeadFilter(colorMatchFilter(headStats, backgroundStats));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [backgroundImageKey, headStats]);
+
+  const backgroundSrc = `${GAME_ASSET_PREFIX}${backgroundImageKey}`;
   const sceneWidth = size * BG_ASPECT;
   // The coat is anchored to the bottom of the frame; the remaining fraction
   // above it is sky, reserved for the head to sit in (see COAT_FRACTION).
@@ -351,10 +418,10 @@ export const UniformAvatar = ({
   const coatTop = size - coatHeight;
   const portraitLeft = (sceneWidth - coatWidth) / 2;
   const ribbons: Ribbon[] = serviceRibbons.slice(0, 9);
-  const resolvedHeadPlacement = headPlacement ?? {
-    // Box width is the full coat width - wider than HEAD_BOX_SIZE - so
-    // object-fit:contain is always height-limited and the square renders at
-    // exactly HEAD_BOX_SIZE regardless of the coat's own proportions.
+  // Box width is the full coat width - wider than HEAD_BOX_SIZE - so
+  // object-fit:contain is always height-limited and the square renders at
+  // exactly HEAD_BOX_SIZE regardless of the coat's own proportions.
+  const resolvedHeadPlacement = {
     height: `${HEAD_BOX_SIZE * 100}%`,
     left: '0%',
     top: `${HEAD_BOX_TOP * 100}%`,
@@ -370,7 +437,6 @@ export const UniformAvatar = ({
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
-        boxShadow: `inset 0 0 0 1px ${frameBorderColor}`,
         height: size,
         overflow: 'hidden',
         position: 'relative',
@@ -391,6 +457,7 @@ export const UniformAvatar = ({
           draggable={false}
           src={uniformSrc}
           style={{
+            filter: uniformFilter,
             height: coatHeight,
             left: 0,
             position: 'absolute',
@@ -405,6 +472,7 @@ export const UniformAvatar = ({
             onError={() => setHeadFailed(true)}
             src={paddedHeadSrc}
             style={{
+              filter: headFilter,
               height: resolvedHeadPlacement.height,
               left: resolvedHeadPlacement.left,
               objectFit: 'contain',
@@ -524,6 +592,18 @@ export const UniformAvatar = ({
           />
         </div>
       )}
+      {/* Last child so it paints over every asset layer, including the coat
+          (flush to the bottom edge) and head, which otherwise cover an
+          inset box-shadow set on this container itself. */}
+      <div
+        aria-hidden="true"
+        style={{
+          boxShadow: `inset 0 0 0 1px ${frameBorderColor}`,
+          inset: 0,
+          pointerEvents: 'none',
+          position: 'absolute',
+        }}
+      />
     </div>
   );
 };
