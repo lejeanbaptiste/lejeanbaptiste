@@ -4,7 +4,7 @@
   "electronVersion": "43.1.0",
   "directories": {
     "output": "release",
-    "buildResources": "../../design"
+    "buildResources": "resources/branding"
   },
   "beforeBuild": "./scripts/skip-electron-builder-deps.mjs",
   "icon": "icon",
@@ -18,12 +18,8 @@
       "to": "THIRD_PARTY_NOTICES.md"
     },
     {
-      "from": "../../design/icon.svg",
-      "to": "icon.svg"
-    },
-    {
-      "from": "../../design/icon.png",
-      "to": "icon.png"
+      "from": "resources/branding",
+      "to": "branding"
     },
     {
       "from": "../commons/public",
@@ -32,6 +28,10 @@
     {
       "from": "../commons/server",
       "to": "commons/server"
+    },
+    {
+      "from": "resources/game-assets",
+      "to": "game-assets"
     }
   ]
 }

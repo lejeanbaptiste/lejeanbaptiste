@@ -1,7 +1,7 @@
 import SvgIcon, { type SvgIconProps } from '@mui/material/SvgIcon';
 import { forwardRef } from 'react';
 
-/** Toolbar icon from design/disambiguate.svg — two tags with “=”. */
+/** Toolbar icon: two tags with “=”. */
 export const DisambiguateIcon = forwardRef<SVGSVGElement, SvgIconProps>(function DisambiguateIcon(
   props,
   ref,
