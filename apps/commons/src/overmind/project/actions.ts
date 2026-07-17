@@ -1075,19 +1075,25 @@ export const saveActiveTab = async (
     await window.electronAPI.writeFile(filePath, stamped);
     if (state.project.rootPath) {
       const rootPath = state.project.rootPath;
-      void updateTagStatsForFile(rootPath, filePath, stamped).then((merged) =>
-        processSaveForAchievements({
-          rootPath,
-          filePath,
-          xml: stamped,
-          stats: merged,
-          notify: (message) =>
-            context.actions.ui.notifyViaSnackbar({
-              message,
-              options: { variant: 'success', autoHideDuration: 7000 },
-            }),
-        }),
-      );
+      void updateTagStatsForFile(rootPath, filePath, stamped)
+        .then((merged) =>
+          processSaveForAchievements({
+            rootPath,
+            filePath,
+            xml: stamped,
+            stats: merged,
+            notify: (message) =>
+              context.actions.ui.notifyViaSnackbar({
+                message,
+                options: { variant: 'success', autoHideDuration: 7000 },
+              }),
+          }),
+        )
+        .catch(() => {
+          // Achievements are decorative; a failure here (e.g. tag-stats
+          // read/write) must never surface as an unhandled rejection or
+          // silently skip evaluation on the next successful save.
+        });
     }
     state.project.openTabs = state.project.openTabs.map((tab) =>
       tab.filePath === filePath ? { ...tab, content: stamped, dirty: false } : tab,
@@ -1280,19 +1286,25 @@ export const saveActiveTabAs = async (
     if (state.project.rootPath) {
       await reloadDirectoryInTree({ state } as Context, getParentPath(filePath));
       const rootPath = state.project.rootPath;
-      void updateTagStatsForFile(rootPath, filePath, stamped).then((merged) =>
-        processSaveForAchievements({
-          rootPath,
-          filePath,
-          xml: stamped,
-          stats: merged,
-          notify: (message) =>
-            actions.ui.notifyViaSnackbar({
-              message,
-              options: { variant: 'success', autoHideDuration: 7000 },
-            }),
-        }),
-      );
+      void updateTagStatsForFile(rootPath, filePath, stamped)
+        .then((merged) =>
+          processSaveForAchievements({
+            rootPath,
+            filePath,
+            xml: stamped,
+            stats: merged,
+            notify: (message) =>
+              actions.ui.notifyViaSnackbar({
+                message,
+                options: { variant: 'success', autoHideDuration: 7000 },
+              }),
+          }),
+        )
+        .catch(() => {
+          // Achievements are decorative; a failure here (e.g. tag-stats
+          // read/write) must never surface as an unhandled rejection or
+          // silently skip evaluation on the next successful save.
+        });
     }
 
     const reindexed = await reindexTranslationOnSave(filePath, stamped);
