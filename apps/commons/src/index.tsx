@@ -25,23 +25,29 @@ import './utilities/log';
 const isNativeDialogRoute =
   typeof window !== 'undefined' && window.location.pathname.startsWith('/project/native/');
 
+// Overmind attempts to connect to localhost:3031 as soon as this option is
+// enabled. Keep the production and desktop console clean unless the developer
+// explicitly asks for the inspector with `?overmindDevtools=1`.
+const enableOvermindDevtools =
+  !isNativeDialogRoute &&
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('overmindDevtools') === '1';
+
 const ErrorFallback = ({ error }: { error: unknown }) => {
   const { t } = useTranslation();
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem' }}>
       <h1>{t('LWC.error.something_went_wrong')}</h1>
       <p>{error instanceof Error ? error.message : t('LWC.error.unknown_error')}</p>
-      <p style={{ color: '#666', fontSize: '0.9rem' }}>
-        {t('LWC.error.webpack_wait')}
-      </p>
+      <p style={{ color: '#666', fontSize: '0.9rem' }}>{t('LWC.error.webpack_wait')}</p>
     </div>
   );
 };
 
 const overmind = createOvermind(config, {
   name: isNativeDialogRoute ? 'Commons-NativeDialog' : 'Commons',
-  devtools: !isNativeDialogRoute,
-  logProxies: !isNativeDialogRoute,
+  devtools: enableOvermindDevtools,
+  logProxies: enableOvermindDevtools,
 });
 
 const container = document.getElementById('app');
