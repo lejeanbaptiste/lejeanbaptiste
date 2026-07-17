@@ -24,6 +24,7 @@ import {
   prewarmNativeDialog,
   registerNativeDialogIpc,
 } from './nativeDialogs';
+import { GAME_ASSET_SCHEME, registerGameAssetProtocol } from './gameAssets';
 import {
   buildTranslationRequestBody,
   isStructuredOutputRetryable,
@@ -71,6 +72,7 @@ import { getChgisStatus, installChgisFromArchive, removeChgisData } from './auth
 import { loadOrCreateProject, loadProjectFile, writeProjectConfig } from './projectFile';
 import mammoth from 'mammoth';
 import { extractOdtText } from './odtText';
+import { readAchievementsFile, writeAchievementsFile } from './achievementsFile';
 import { decodeTextBuffer } from './textEncoding';
 import {
   createDirectory,
@@ -456,7 +458,9 @@ if (process.platform === 'darwin') {
 app.setName(APP_NAME);
 
 const getIconPath = () => {
-  const base = app.isPackaged ? process.resourcesPath : path.join(__dirname, '../../../design');
+  const base = app.isPackaged
+    ? path.join(process.resourcesPath, 'branding')
+    : path.join(__dirname, '../resources/branding');
   const pngPath = path.join(base, 'icon.png');
   const svgPath = path.join(base, 'icon.svg');
 
@@ -474,6 +478,15 @@ const getAppIcon = () => {
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'ljb',
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
+  {
+    scheme: GAME_ASSET_SCHEME,
     privileges: {
       secure: true,
       standard: true,
@@ -499,6 +512,16 @@ const DEV_COMMONS_URL = process.env.COMMONS_URL ?? 'http://localhost:3000';
 const PROD_SERVER_PORT = process.env.LJB_SERVER_PORT ?? '3847';
 const DEV_READY_TIMEOUT_MS = 120_000;
 const DEV_READY_POLL_MS = 1_000;
+
+const devCommonsUrl = (routePath: string): string => {
+  const base = new URL(DEV_COMMONS_URL);
+  const route = new URL(routePath, base);
+  // Preserve opt-in flags such as ?overmindDevtools=1 when the desktop shell
+  // adds its route to COMMONS_URL.
+  route.search = base.search;
+  route.hash = base.hash;
+  return route.toString();
+};
 
 if (isDev) {
   app.setPath('userData', path.join(app.getPath('appData'), APP_NAME));
@@ -590,7 +613,7 @@ const waitForUrl = (url: string, timeoutMs = DEV_READY_TIMEOUT_MS): Promise<void
 };
 
 const waitForDevCommons = async () => {
-  await waitForUrl(`${DEV_COMMONS_URL}/project`);
+  await waitForUrl(devCommonsUrl('/project'));
   // Webpack dev build can take ~30s on first run; wait for the app bundle too.
   await waitForUrl(`${DEV_COMMONS_URL}/js/app.js`);
 };
@@ -598,7 +621,7 @@ const waitForDevCommons = async () => {
 const getAppUrl = async (routePath = '/project'): Promise<string> => {
   if (isDev) {
     await waitForDevCommons();
-    return `${DEV_COMMONS_URL}${routePath}`;
+    return devCommonsUrl(routePath);
   }
   await startCommonsServer();
   return `http://127.0.0.1:${PROD_SERVER_PORT}${routePath}`;
@@ -753,14 +776,10 @@ const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
 const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
   label: 'View',
   submenu: [
-    ...(isDev
-      ? ([
-          { role: 'reload' },
-          { role: 'forceReload' },
-          { role: 'toggleDevTools' },
-          menuSeparator(),
-        ] as Electron.MenuItemConstructorOptions[])
-      : []),
+    { role: 'reload' },
+    { role: 'forceReload' },
+    ...(isDev ? ([{ role: 'toggleDevTools' }] as Electron.MenuItemConstructorOptions[]) : []),
+    menuSeparator(),
     {
       label: 'Actual Size',
       accelerator: 'CommandOrControl+0',
@@ -1139,6 +1158,14 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('pathExists', async (_event, filePath: string) => {
     return pathExists(filePath);
+  });
+
+  ipcMain.handle('readAchievementsFile', async () => {
+    return readAchievementsFile();
+  });
+
+  ipcMain.handle('writeAchievementsFile', async (_event, content: string) => {
+    await writeAchievementsFile(content);
   });
 
   ipcMain.handle('statFile', async (_event, filePath: string) => {
@@ -1866,8 +1893,7 @@ const createWindow = async () => {
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (process.platform !== 'darwin') {
       if (input.type === 'keyDown') {
-        altMenuPending =
-          input.key === 'Alt' && !input.control && !input.meta && !input.shift;
+        altMenuPending = input.key === 'Alt' && !input.control && !input.meta && !input.shift;
       } else if (input.type === 'keyUp' && input.key === 'Alt') {
         if (altMenuPending && mainWindow) {
           altMenuPending = false;
@@ -1961,6 +1987,7 @@ app.whenReady().then(() => {
 
   buildApplicationMenu();
   registerLjbProtocol();
+  registerGameAssetProtocol();
   registerIpcHandlers();
   registerNativeDialogIpc();
   registerLemminxIpc(() => mainWindow);
