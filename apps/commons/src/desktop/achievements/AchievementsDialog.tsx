@@ -241,9 +241,22 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       if (!token) {
         const flow = await window.electronAPI?.startLeaderboardDeviceFlow?.();
         if (!flow) throw new Error('Could not start GitHub login.');
+        const copyCode = () => void window.electronAPI?.writeClipboardRich?.({ text: flow.userCode });
+        // Copied immediately so pasting on the GitHub page that just opened
+        // is the only step - the button below is just a fallback in case
+        // something else overwrote the clipboard in the meantime.
+        copyCode();
         notifyViaSnackbar({
-          message: `Enter code ${flow.userCode} on the GitHub page that just opened to link your account (one-time).`,
-          options: { variant: 'info', autoHideDuration: 15000 },
+          message: `Code ${flow.userCode} copied — paste it on the GitHub page that just opened to link your account (one-time).`,
+          options: {
+            variant: 'info',
+            autoHideDuration: 15000,
+            action: () => (
+              <Button color="inherit" onPointerDown={copyCode}>
+                Copy code
+              </Button>
+            ),
+          },
         });
         const result = await window.electronAPI?.pollLeaderboardDeviceFlow?.(
           flow.deviceCode,
