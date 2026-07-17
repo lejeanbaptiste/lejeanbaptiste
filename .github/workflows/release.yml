@@ -247,19 +247,35 @@ jobs:
           path: release-assets/mac
           merge-multiple: true
 
+      # Flatten into one directory so SHA256SUMS contains bare filenames
+      # (verifiable with `sha256sum --check` next to the downloads), and
+      # fail loudly if two build jobs ever produce the same filename —
+      # otherwise one silently overwrites the other in the release.
+      - name: Flatten release assets
+        run: |
+          mkdir -p release-flat
+          find release-assets -type f -exec sh -c '
+            for f; do
+              base="$(basename "$f")"
+              if [ -e "release-flat/$base" ]; then
+                echo "::error::duplicate asset name: $base"
+                exit 1
+              fi
+              mv "$f" "release-flat/$base"
+            done' _ {} +
+
       - name: Generate checksums
-        run: sha256sum release-assets/debs/*.deb release-assets/flatpak/*.flatpak release-assets/mac/* > release-assets/SHA256SUMS
+        working-directory: release-flat
+        run: |
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
 
       # Provenance for every asset; verify with:
       #   gh attestation verify <file> --repo <owner>/<repo>
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v3
         with:
-          subject-path: |
-            release-assets/debs/*.deb
-            release-assets/flatpak/*.flatpak
-            release-assets/mac/*
-            release-assets/SHA256SUMS
+          subject-path: release-flat/*
 
       - name: Create or update GitHub release
         env:
@@ -271,10 +287,7 @@ jobs:
               --title "$TAG_NAME" --generate-notes
           fi
           gh release upload "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
-            release-assets/SHA256SUMS \
-            release-assets/debs/*.deb \
-            release-assets/flatpak/*.flatpak \
-            release-assets/mac/* \
+            release-flat/* \
             --clobber
 
   # Releases created with GITHUB_TOKEN do not fire the "release: published"
