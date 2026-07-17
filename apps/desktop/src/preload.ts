@@ -183,6 +183,21 @@ export interface ElectronAPI {
   setEncoderName: (name: string) => Promise<void>;
   readAchievementsFile: () => Promise<string | null>;
   writeAchievementsFile: (content: string) => Promise<void>;
+  getGameAssetColorStats: (key: string) => Promise<{ lightness: number; saturation: number } | null>;
+  saveCertificatePng: (bytes: Uint8Array, suggestedName: string) => Promise<boolean>;
+  getCachedLeaderboardToken: () => Promise<string | null>;
+  startLeaderboardDeviceFlow: () => Promise<{
+    userCode: string;
+    verificationUri: string;
+    deviceCode: string;
+    interval: number;
+    expiresIn: number;
+  }>;
+  pollLeaderboardDeviceFlow: (
+    deviceCode: string,
+    intervalSeconds: number,
+    expiresInSeconds: number,
+  ) => Promise<{ token: string } | { error: string }>;
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
@@ -394,6 +409,13 @@ const electronAPI: ElectronAPI = {
   setEncoderName: (name: string) => ipcRenderer.invoke('setEncoderName', name),
   readAchievementsFile: () => ipcRenderer.invoke('readAchievementsFile'),
   writeAchievementsFile: (content: string) => ipcRenderer.invoke('writeAchievementsFile', content),
+  getGameAssetColorStats: (key: string) => ipcRenderer.invoke('getGameAssetColorStats', key),
+  saveCertificatePng: (bytes: Uint8Array, suggestedName: string) =>
+    ipcRenderer.invoke('saveCertificatePng', bytes, suggestedName),
+  getCachedLeaderboardToken: () => ipcRenderer.invoke('getCachedLeaderboardToken'),
+  startLeaderboardDeviceFlow: () => ipcRenderer.invoke('startLeaderboardDeviceFlow'),
+  pollLeaderboardDeviceFlow: (deviceCode: string, intervalSeconds: number, expiresInSeconds: number) =>
+    ipcRenderer.invoke('pollLeaderboardDeviceFlow', deviceCode, intervalSeconds, expiresInSeconds),
   getEntityDbFolder: () => ipcRenderer.invoke('getEntityDbFolder'),
   setEntityDbFolder: (folder: string | null) => ipcRenderer.invoke('setEntityDbFolder', folder),
   pickEntityDbFolder: () => ipcRenderer.invoke('pickEntityDbFolder'),

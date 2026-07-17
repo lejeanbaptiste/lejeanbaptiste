@@ -17,9 +17,17 @@ import {
   Typography,
 } from '@mui/material';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
-import EditIcon from '@mui/icons-material/Edit';
+import PrintIcon from '@mui/icons-material/Print';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useEffect, useState } from 'react';
 import { useActions } from '@src/overmind';
+import {
+  buildCertificateSvg,
+  buildPortraitFragment,
+  CERTIFICATE_HEIGHT,
+  CERTIFICATE_WIDTH,
+  svgToPngBytes,
+} from './certificate';
 import {
   RANK_MEDALS,
   RANK_NAMES,
@@ -50,6 +58,11 @@ interface AchievementsDialogProps {
   open: boolean;
 }
 
+// Verifies the player's GitHub identity, rate-limits, and publishes
+// scores.json to lejeanbaptiste/scoreboard - see that repo's worker/
+// directory. Superseded the Phase 1 copy-paste-into-a-GitHub-issue flow.
+const LEADERBOARD_WORKER_URL = 'https://ljb-leaderboard.lejeanbaptiste.workers.dev';
+
 const METRIC_LABELS: Record<string, string> = {
   texts: 'Documents saved',
   tags: 'Tags added',
@@ -57,15 +70,6 @@ const METRIC_LABELS: Record<string, string> = {
   places: 'Places disambiguated',
   entities: 'Entities on file',
 };
-
-const HEAD_POSITION_STUDIES = [
-  { label: 'A — current (covers black, touches red)', height: '65%', left: '0%', top: '-7.1%', width: '100%' },
-  { label: 'B — deeper overlap', height: '65%', left: '0%', top: '-4.1%', width: '100%' },
-  { label: 'C — shallower overlap', height: '65%', left: '0%', top: '-10.1%', width: '100%' },
-  { label: 'D — even bigger head', height: '75%', left: '0%', top: '-13.6%', width: '100%' },
-  { label: 'E — smaller head', height: '55%', left: '0%', top: '-1%', width: '100%' },
-  { label: 'F — head shifted down slightly', height: '65%', left: '0%', top: '-4.6%', width: '100%' },
-];
 
 const metricValue = (global: GlobalMetrics, metric: string): number => {
   switch (metric) {
@@ -119,7 +123,6 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   const [seedDraft, setSeedDraft] = useState('');
   const [backgroundKey, setBackgroundKey] = useState<string | null>(null);
   const [portraitEditorOpen, setPortraitEditorOpen] = useState(false);
-  const [positionStudyOpen, setPositionStudyOpen] = useState(false);
   const showAlignmentGrid =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('portraitGrid') === '1';
@@ -182,6 +185,109 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     })),
   ];
 
+  const certificateMetrics = Object.entries(METRIC_LABELS).map(([metric, label]) => ({
+    label,
+    value: metricValue(global, metric),
+  }));
+
+  const printCertificate = async () => {
+    try {
+      const headSvgMarkup = await fetch(avatarUrl).then((response) => response.text());
+      // Same medals/ribbons the live avatar shows on the uniform - the
+      // certificate's portrait is the exact same composite, not a redrawn
+      // approximation, so there's no separate condensed medal list here.
+      const portraitFragment = await buildPortraitFragment({
+        backgroundImageKey: backgroundKey,
+        hairColor: avatarOptions.hairColor,
+        hairVariant: avatarOptions.hairVariant,
+        headSvgMarkup,
+        medals: uniformMedals,
+        rankIndex: highestRankIndex,
+        serviceRibbons,
+        skinColor: avatarOptions.skinColor,
+      });
+      const svg = buildCertificateSvg({
+        commission,
+        encoderName: encoderName.trim() || 'Unknown Encoder',
+        metrics: certificateMetrics,
+        portraitFragment,
+        serviceSince,
+        totalAchievements: TOTAL_ACHIEVEMENTS,
+        unlockedCount,
+      });
+      const bytes = await svgToPngBytes(svg, CERTIFICATE_WIDTH, CERTIFICATE_HEIGHT);
+      const suggestedName = `${(encoderName.trim() || 'service-record')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')}-service-record.png`;
+      const saved = await window.electronAPI?.saveCertificatePng?.(bytes, suggestedName);
+      if (saved) {
+        notifyViaSnackbar({
+          message: 'Certificate saved.',
+          options: { variant: 'success', autoHideDuration: 4000 },
+        });
+      }
+    } catch {
+      notifyViaSnackbar({
+        message: 'Could not generate the certificate.',
+        options: { variant: 'error', autoHideDuration: 5000 },
+      });
+    }
+  };
+
+  const submitToLeaderboard = async () => {
+    try {
+      let token = await window.electronAPI?.getCachedLeaderboardToken?.();
+      if (!token) {
+        const flow = await window.electronAPI?.startLeaderboardDeviceFlow?.();
+        if (!flow) throw new Error('Could not start GitHub login.');
+        notifyViaSnackbar({
+          message: `Enter code ${flow.userCode} on the GitHub page that just opened to link your account (one-time).`,
+          options: { variant: 'info', autoHideDuration: 15000 },
+        });
+        const result = await window.electronAPI?.pollLeaderboardDeviceFlow?.(
+          flow.deviceCode,
+          flow.interval,
+          flow.expiresIn,
+        );
+        if (!result || 'error' in result) {
+          throw new Error(result && 'error' in result ? result.error : 'GitHub login failed.');
+        }
+        token = result.token;
+      }
+
+      const response = await fetch(`${LEADERBOARD_WORKER_URL}/submit`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          commission,
+          metrics: {
+            texts: global.texts,
+            tags: global.tags,
+            disambiguated: global.disambiguated,
+            places: global.places,
+            entities: global.entities,
+          },
+          unlockedCount,
+          totalAchievements: TOTAL_ACHIEVEMENTS,
+        }),
+      });
+      const body = (await response.json()) as { ok?: boolean; message?: string; error?: string };
+      if (!response.ok || !body.ok) throw new Error(body.error ?? 'Submission failed.');
+
+      notifyViaSnackbar({
+        message: body.message ?? 'Added to the leaderboard.',
+        options: { variant: 'success', autoHideDuration: 5000 },
+      });
+    } catch (err) {
+      notifyViaSnackbar({
+        message: err instanceof Error ? err.message : 'Could not submit to the leaderboard.',
+        options: { variant: 'error', autoHideDuration: 6000 },
+      });
+    }
+  };
+
   const updateAvatar = async (changes: Partial<typeof avatarOptions>) => {
     const current = await loadAchievementsState();
     const options = { ...avatarOptions, ...changes };
@@ -208,12 +314,16 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
 
   return (
     <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
-      <DialogTitle>Service Record</DialogTitle>
+      <DialogTitle>LJB Service Record</DialogTitle>
       <DialogContent>
         <Stack spacing={3}>
           {/* Officer header */}
           <Stack alignItems="center" direction="row" spacing={2}>
-            <Box sx={{ flexShrink: 0, textAlign: 'center' }}>
+            <Box
+              onClick={() => setPortraitEditorOpen((openEditor) => !openEditor)}
+              sx={{ cursor: 'pointer', flexShrink: 0, textAlign: 'center' }}
+              title={portraitEditorOpen ? 'Close portrait editor' : 'Edit portrait'}
+            >
               <UniformAvatar
                 headImageUrl={avatarUrl}
                 backgroundImageKey={backgroundKey}
@@ -234,21 +344,28 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
               <Typography color="text.secondary" variant="caption">
                 In service since {serviceSince}
               </Typography>
-              <Button
-                onClick={() => setPortraitEditorOpen((openEditor) => !openEditor)}
-                size="small"
-                startIcon={<EditIcon fontSize="small" />}
-                sx={{ alignSelf: 'flex-start', mt: 0.25, px: 0.5, minWidth: 0 }}
-              >
-                {portraitEditorOpen ? 'Close portrait editor' : 'Edit portrait'}
-              </Button>
+              <Stack direction="row" spacing={0.5} sx={{ mt: 0.25 }}>
+                <Button
+                  onClick={() => void printCertificate()}
+                  size="small"
+                  startIcon={<PrintIcon fontSize="small" />}
+                  sx={{ px: 0.5, minWidth: 0 }}
+                >
+                  Print certificate
+                </Button>
+                <Button
+                  onClick={() => void submitToLeaderboard()}
+                  size="small"
+                  startIcon={<EmojiEventsIcon fontSize="small" />}
+                  sx={{ px: 0.5, minWidth: 0 }}
+                >
+                  Submit to leaderboard
+                </Button>
+              </Stack>
             </Stack>
           </Stack>
           {portraitEditorOpen && (
             <Box>
-              <Typography color="text.secondary" sx={{ mb: 1 }} variant="caption">
-                Compose your Adventurer portrait
-              </Typography>
               <Stack direction="row" flexWrap="wrap" gap={1}>
                 <TextField
                   label="Seed"
@@ -280,15 +397,6 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                     },
                   }}
                 />
-                <Button
-                  onClick={randomizeAvatar}
-                  size="small"
-                  startIcon={<ShuffleIcon fontSize="small" />}
-                  sx={{ minHeight: 40 }}
-                  variant="outlined"
-                >
-                  Random head
-                </Button>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
                     aria-label="Eyebrows"
@@ -393,41 +501,6 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                   </Select>
                 </FormControl>
               </Stack>
-              <Button
-                onClick={() => setPositionStudyOpen((openStudy) => !openStudy)}
-                size="small"
-                sx={{ mt: 1 }}
-                variant="outlined"
-              >
-                {positionStudyOpen ? 'Hide head position study' : 'Show head position study'}
-              </Button>
-              {positionStudyOpen && (
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gap: 1,
-                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                    mt: 1.5,
-                  }}
-                >
-                  {HEAD_POSITION_STUDIES.map((placement) => (
-                    <Box key={placement.label}>
-                      <UniformAvatar
-                        headImageUrl={avatarUrl}
-                        backgroundImageKey={backgroundKey}
-                        headPlacement={placement}
-                        medals={uniformMedals}
-                        rankIndex={highestRankIndex}
-                        serviceRibbons={serviceRibbons}
-                        size={96}
-                      />
-                      <Typography color="text.secondary" variant="caption">
-                        {placement.label}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              )}
             </Box>
           )}
 
