@@ -242,6 +242,21 @@ export interface ElectronAPI {
   setEncoderName: (name: string) => Promise<void>;
   readAchievementsFile?: () => Promise<string | null>;
   writeAchievementsFile?: (content: string) => Promise<void>;
+  getGameAssetColorStats?: (key: string) => Promise<{ lightness: number; saturation: number } | null>;
+  saveCertificatePng?: (bytes: Uint8Array, suggestedName: string) => Promise<boolean>;
+  getCachedLeaderboardToken?: () => Promise<string | null>;
+  startLeaderboardDeviceFlow?: () => Promise<{
+    userCode: string;
+    verificationUri: string;
+    deviceCode: string;
+    interval: number;
+    expiresIn: number;
+  }>;
+  pollLeaderboardDeviceFlow?: (
+    deviceCode: string,
+    intervalSeconds: number,
+    expiresInSeconds: number,
+  ) => Promise<{ token: string } | { error: string }>;
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;

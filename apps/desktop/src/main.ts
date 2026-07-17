@@ -24,7 +24,12 @@ import {
   prewarmNativeDialog,
   registerNativeDialogIpc,
 } from './nativeDialogs';
-import { GAME_ASSET_SCHEME, registerGameAssetProtocol } from './gameAssets';
+import { GAME_ASSET_SCHEME, getGameAssetColorStats, registerGameAssetProtocol } from './gameAssets';
+import {
+  getCachedLeaderboardToken,
+  pollLeaderboardDeviceFlow,
+  startLeaderboardDeviceFlow,
+} from './leaderboardAuth';
 import {
   buildTranslationRequestBody,
   isStructuredOutputRetryable,
@@ -1167,6 +1172,34 @@ const registerIpcHandlers = () => {
   ipcMain.handle('writeAchievementsFile', async (_event, content: string) => {
     await writeAchievementsFile(content);
   });
+
+  ipcMain.handle('getGameAssetColorStats', (_event, key: string) => {
+    return getGameAssetColorStats(key);
+  });
+
+  ipcMain.handle(
+    'saveCertificatePng',
+    async (_event, bytes: Uint8Array, suggestedName: string) => {
+      if (!mainWindow) return false;
+      mainWindow.focus();
+      const result = await dialog.showSaveDialog(mainWindow, {
+        defaultPath: path.join(await getDialogDefaultPath(), suggestedName),
+        filters: [{ name: 'PNG Image', extensions: ['png'] }],
+      });
+      if (result.canceled || !result.filePath) return false;
+      await fs.writeFile(result.filePath, Buffer.from(bytes));
+      rememberDialogDir(result.filePath, 'file');
+      return true;
+    },
+  );
+
+  ipcMain.handle('getCachedLeaderboardToken', () => getCachedLeaderboardToken());
+  ipcMain.handle('startLeaderboardDeviceFlow', () => startLeaderboardDeviceFlow());
+  ipcMain.handle(
+    'pollLeaderboardDeviceFlow',
+    (_event, deviceCode: string, intervalSeconds: number, expiresInSeconds: number) =>
+      pollLeaderboardDeviceFlow(deviceCode, intervalSeconds, expiresInSeconds),
+  );
 
   ipcMain.handle('statFile', async (_event, filePath: string) => {
     const stat = await fs.stat(filePath);
