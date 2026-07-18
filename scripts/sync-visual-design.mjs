@@ -15,6 +15,11 @@
  * assets.bin" drifting apart is exactly what caused the bg/* backdrops to
  * silently go missing from a shipped build once already; there must only
  * ever be one implementation of that, living in visual_design/scripts/.
+ *
+ * That same incident is also why backdrops (rewards/bg_<rank><variant>.png)
+ * are auto-discovered by pack-assets.mjs rather than hand-listed in a
+ * manifest: a hand-listed manifest is exactly the thing a human forgets to
+ * update, twice.
  */
 
 import { execFileSync } from 'node:child_process';
