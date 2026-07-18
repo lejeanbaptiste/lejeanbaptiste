@@ -22,6 +22,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useEffect, useState } from 'react';
 import { useActions } from '@src/overmind';
 import {
+  arrayBufferToBase64,
   buildCertificateSvg,
   buildPortraitFragment,
   CERTIFICATE_HEIGHT,
@@ -62,6 +63,10 @@ interface AchievementsDialogProps {
 // scores.json to lejeanbaptiste/scoreboard - see that repo's worker/
 // directory. Superseded the Phase 1 copy-paste-into-a-GitHub-issue flow.
 const LEADERBOARD_WORKER_URL = 'https://ljb-leaderboard.lejeanbaptiste.workers.dev';
+// A hover-preview thumbnail on the leaderboard page, not the certificate's
+// full size - keeps the upload quick and comfortably under the Worker's
+// avatar size cap.
+const LEADERBOARD_AVATAR_SIZE = 140;
 
 const METRIC_LABELS: Record<string, string> = {
   texts: 'Documents saved',
@@ -269,6 +274,36 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         token = result.token;
       }
 
+      // Best-effort: a small hover-preview thumbnail, not the full
+      // certificate size, so the upload stays quick and the Worker's
+      // avatar size cap is comfortable to stay under. A failure here
+      // shouldn't block the actual score submission.
+      let avatarPngBase64: string | undefined;
+      try {
+        const headSvgMarkup = await fetch(avatarUrl).then((response) => response.text());
+        const portraitFragment = await buildPortraitFragment(
+          {
+            backgroundImageKey: backgroundKey,
+            hairColor: avatarOptions.hairColor,
+            hairVariant: avatarOptions.hairVariant,
+            headSvgMarkup,
+            medals: uniformMedals,
+            rankIndex: highestRankIndex,
+            serviceRibbons,
+            skinColor: avatarOptions.skinColor,
+          },
+          LEADERBOARD_AVATAR_SIZE,
+        );
+        const avatarBytes = await svgToPngBytes(
+          portraitFragment.svg,
+          portraitFragment.width,
+          portraitFragment.height,
+        );
+        avatarPngBase64 = arrayBufferToBase64(avatarBytes.buffer as ArrayBuffer);
+      } catch {
+        avatarPngBase64 = undefined;
+      }
+
       const response = await fetch(`${LEADERBOARD_WORKER_URL}/submit`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -284,6 +319,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
           },
           unlockedCount,
           totalAchievements: TOTAL_ACHIEVEMENTS,
+          avatarPngBase64,
         }),
       });
       const body = (await response.json()) as { ok?: boolean; message?: string; error?: string };

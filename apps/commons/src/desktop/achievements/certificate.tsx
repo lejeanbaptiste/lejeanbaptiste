@@ -82,7 +82,7 @@ const escapeXml = (value: string): string =>
     }
   });
 
-const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   const bytes = new Uint8Array(buffer);
   let binary = '';
   const chunkSize = 0x8000;
@@ -128,15 +128,16 @@ const ribbonRectSvg = (ribbon: Ribbon, x: number, y: number, width: number, heig
 
 /** Faithfully reproduces UniformAvatar's composite - background, uniform
  * (color-matched), head (color-matched, padded the same way), and the
- * ribbon/medal rack - as a self-contained SVG fragment sized
- * PORTRAIT_RENDER_SIZE tall. Every image is inlined as a base64 data: URI
- * (fetched via the renderer's own fetch, not an <img> load), so the result
- * has no external references and can't taint the canvas it's later drawn
- * into. */
+ * ribbon/medal rack - as a self-contained SVG fragment sized `size` tall
+ * (defaults to PORTRAIT_RENDER_SIZE, the certificate's size - pass a
+ * smaller value for e.g. a leaderboard hover-preview thumbnail). Every
+ * image is inlined as a base64 data: URI (fetched via the renderer's own
+ * fetch, not an <img> load), so the result has no external references and
+ * can't taint the canvas it's later drawn into. */
 export const buildPortraitFragment = async (
   input: CertificatePortraitInput,
+  size: number = PORTRAIT_RENDER_SIZE,
 ): Promise<{ svg: string; width: number; height: number }> => {
-  const size = PORTRAIT_RENDER_SIZE;
   const uniformIndex = Math.max(0, Math.min(UNIFORM_KEYS.length - 1, input.rankIndex));
   const uniformKey = UNIFORM_KEYS[uniformIndex]!;
 
