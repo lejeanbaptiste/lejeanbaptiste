@@ -1,6 +1,7 @@
 import { useColorScheme } from '@mui/material/styles';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { colorMatchFilter, type ColorStats } from './colorMatch';
+import { BG_POOL_BY_RANK } from './generatedBackgroundPools';
 import { getHeadColorStats } from './headColorStats';
 import { MedalIcon, type MedalTier } from './MedalIcon';
 
@@ -43,16 +44,10 @@ export const UNIFORM_ASPECT = 340 / 319;
 // Rank-gated portrait backdrops, one letter-suffixed pool per rank
 // (RANK_NAMES[0..6]). The pool available at a given rank is cumulative -
 // everything from rank 1 up through the player's current rank - so ranking
-// up adds backdrops rather than swapping them out.
-const BG_POOL_BY_RANK: readonly string[][] = [
-  ['bg/1a', 'bg/1b'],
-  ['bg/2a', 'bg/2b', 'bg/2c', 'bg/2d', 'bg/2e'],
-  ['bg/3a', 'bg/3b', 'bg/3c'],
-  ['bg/4a', 'bg/4b', 'bg/4c'],
-  ['bg/5a', 'bg/5b', 'bg/5c'],
-  ['bg/6a', 'bg/6b', 'bg/6c', 'bg/6d'],
-  ['bg/7a', 'bg/7b'],
-];
+// up adds backdrops rather than swapping them out. Pools themselves come
+// from generatedBackgroundPools.ts (derived from rewards/bg_*.png filenames
+// at pack time - see visual_design/scripts/pack-assets.mjs), not hand-listed
+// here, so a new backdrop file doesn't need a code change to show up.
 
 /** Every backdrop unlocked at or below `rankIndex` (-1/unranked still gets
  * the rank-1 pool, so there's always something to show). */
