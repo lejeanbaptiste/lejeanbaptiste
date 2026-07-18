@@ -156,9 +156,14 @@ runtime (see above) before electron-builder assembles the installer.
 
 The desktop build bundles third-party runtime components such as Electron, TinyMCE, `monaco-editor`, `jszip`, `mammoth`, and `@xmldom/xmldom`. Their license pointers are tracked in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md).
 
-## Features (Phase 1)
+## Current features
 
-- Open a project folder and browse `.xml` files in a sidebar tree
-- Multiple document tabs in one window
-- Save to disk (Cmd+S)
-- XPath search on the current file (toolbar button)
+- Open a project folder and bootstrap its schema and project metadata
+- Browse XML files in a sidebar tree with multiple document tabs
+- Save edits back to disk, including Save As and untitled-file flows
+- Edit in both visual and source modes
+- Find and replace across the current file, open tabs, selected resources, or the whole project
+- Run XPath queries on the current project scopes
+- Inspect project and file metadata in the side panels
+- Use schema validation, XML tree navigation, table of contents, and entity tools
+- Work with translation companions in split-pane form for paired source/translation editing

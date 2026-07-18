@@ -30,14 +30,17 @@ This README now focuses on the desktop fork and its shared packages. Some of the
 
 ## Asset Sources
 
-Artwork and spoiler-protected game assets now come from the private
+Artwork and spoiler-protected game assets come from the private
 [`visual_design`](https://github.com/lejeanbaptiste/visual_design) repo.
-To refresh the public checkout, run `npm run visual-design:sync`.
+Run `npm run visual-design:sync` to refresh the mirrored files in this repo.
 
 Tracked here as mirrored or generated assets:
 
-- `apps/desktop/resources/branding/icon.svg` and `apps/desktop/resources/branding/icon.png`
-- `apps/desktop/resources/branding/splash.svg` and `apps/desktop/resources/branding/splash_new.png`
+- `apps/desktop/resources/branding/icon.svg`
+- `apps/desktop/resources/branding/icon.png`
+- `apps/desktop/resources/branding/icons/*.png`
+- `apps/desktop/resources/branding/splash.svg`
+- `apps/desktop/resources/branding/splash_new.png`
 - `apps/commons/src/icons/tab/tab_explorer.{svg,png,dark.svg,dark.png}`
 - `apps/commons/src/icons/tab/tab_find.{svg,png,dark.svg,dark.png}`
 - `apps/commons/src/icons/tab/tab_xpath.{svg,png,dark.svg,dark.png}`
@@ -46,10 +49,6 @@ Tracked here as mirrored or generated assets:
 - `apps/commons/src/desktop/achievements/definitions.ts`
 - `apps/desktop/resources/game-assets/assets.bin`
 - `apps/desktop/src/generated/gameAssetKey.ts`
-
-Not tracked in the public repo anymore:
-
-- legacy artwork export scripts and source assets
 
 ## What is built
 

@@ -163,7 +163,7 @@ For **Chinese** (`zh*`, `lzh`) and **Japanese** (`ja`) source documents, LJB enf
 
 Language is read from **Project settings** metadata first (`profileDesc/langUsage/language`), then the stored TEI header, then the editor document. See `autoTagging/dateWorkflow.ts` and `window.__leafWriterProject.getProjectSourceLanguage()`.
 
-**Planned (Phase 2b):** replace the generic yes/no review for dates with a **date curator** — combined keep/reject, one-to-many picker, and sequential context repair, optionally AI-pre-filled (Phase 2c). See `docs/Auto-tagging-phases.md` § Phase 2b–2d.
+**Date curator:** the dedicated date curation UI is built as `DateCuratorPanel.tsx`, replacing the old generic yes/no review for dates with combined keep/reject, one-to-many picking, and sequential context repair. See `docs/Auto-tagging-phases.md` § Phase 2b–2d for the surrounding rollout history.
 
 ### Schema
 
