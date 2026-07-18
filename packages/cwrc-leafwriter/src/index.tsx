@@ -56,6 +56,21 @@ export type { EastAsianDateValues, DateAuthorityIndex } from './dateAuthority';
 export { entityLookupDialogAtom } from './jotai/entity-lookup';
 export { SETTINGS_BOOTSTRAP_URL } from './constants/settingsBootstrap';
 export * as Types from './types';
+export {
+  buildDocxDocument,
+  buildMarkdownDocument,
+  buildOdtDocument,
+  buildPlainTextDocument,
+  buildRtfDocument,
+  collectAllUnitIds,
+  findUnitByCorresp,
+  findUnitById,
+} from './js/conversion/documentExport';
+export type {
+  ExportBiblEntry,
+  ExportUnitPair,
+  RenderedBiblEntry,
+} from './js/conversion/documentExport';
 
 const overmind = createOvermind(config, {
   name: 'LEAF-Writer',

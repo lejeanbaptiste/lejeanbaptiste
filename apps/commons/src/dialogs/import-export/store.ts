@@ -8,6 +8,16 @@ export const dialogActionAtom = atom<DialogTye>('import');
 export const conversionTypesAtom = atom<string[]>([]);
 export const selectedTypeAtom = atom<string | undefined>(undefined);
 
+/** Formats exported locally (Zotero citations reconstituted as live fields, translations
+ * interleavable) rather than through the generic remote conversion service. */
+export const LOCAL_EXPORT_FORMATS = ['docx', 'odt', 'rtf', 'markdown', 'text'] as const;
+export type LocalExportFormat = (typeof LOCAL_EXPORT_FORMATS)[number];
+
+export const localExportFormatAtom = atom<LocalExportFormat>('docx');
+export const exportIncludeTranslationsAtom = atom(true);
+export const exportTranslationLangAtom = atom<string | undefined>(undefined);
+export const exportIncludeBibliographyAtom = atom(true);
+
 export const fileDetailAtom = atom<FileDetail | undefined>(undefined);
 export const isProcessingAtom = atom(false);
 export const resourceAtom = atom<Resource | undefined>(undefined);

@@ -125,6 +125,15 @@
       "Learn more about importing files": "",
       "convert and open": "convertir et ouvrir",
       "convert document": "convertir un document",
+      "format": "format",
+      "docx document": "Document Word (.docx)",
+      "odt document": "Texte OpenDocument (.odt)",
+      "rtf document": "Document RTF (.rtf)",
+      "markdown document": "Document Markdown (.md)",
+      "text document": "Document texte (.txt)",
+      "include translations": "Inclure les traductions insérées après les paragraphes",
+      "translation language": "Langue de traduction",
+      "include bibliography": "Inclure la bibliographie (Références)",
       "message": {
         "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer doit le convertir pour pouvoir l'utiliser.",
         "intercept_load_file_format": "<0>Ceci ressemble à un </0> <1>{{format}}</1> <2>document.</2>"

@@ -11,6 +11,7 @@ import {
 } from './schemaSetupHelpers';
 import {
   loadProjectFile,
+  resolveProjectPath,
   type ProjectBundle,
   type ProjectFileConfig,
   type ProjectSchemaConfig,
@@ -21,6 +22,14 @@ import {
 } from './sanmiaoSchemaMerge';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
+
+const restoreFile = async (filePath: string, prior: Buffer | null): Promise<void> => {
+  if (prior) {
+    await fs.writeFile(filePath, prior);
+  } else {
+    await fs.unlink(filePath).catch(() => undefined);
+  }
+};
 
 export { parseInstalledVersion } from './schemaSetupHelpers';
 
@@ -40,6 +49,7 @@ export const installCatalogSchema = async (
   const priorConfigRaw = await fs.readFile(projectFilePath, 'utf-8');
   const schemaDir = await ensureSchemaDir(rootPath);
   const writtenFiles: string[] = [];
+  const priorFiles = new Map<string, Buffer | null>();
 
   try {
     const { text: rngContent, url: sourceUrl } = await fetchText(entry.rngUrls);
@@ -47,6 +57,9 @@ export const installCatalogSchema = async (
 
     const rngPath = path.join(schemaDir, entry.localRngName);
     const cssPath = path.join(schemaDir, entry.localCssName);
+    for (const filePath of [rngPath, cssPath]) {
+      priorFiles.set(filePath, await fs.readFile(filePath).catch(() => null));
+    }
 
     if (shouldMergeSanmiaoDates(entry.id, rngContent)) {
       await writeSanmiaoMergedTeiSchema(schemaDir, entry.localRngName, rngContent);
@@ -81,13 +94,7 @@ export const installCatalogSchema = async (
     return updated;
   } catch (error) {
     await fs.writeFile(projectFilePath, priorConfigRaw, 'utf-8');
-    for (const filePath of writtenFiles) {
-      try {
-        await fs.unlink(filePath);
-      } catch {
-        // ignore cleanup errors
-      }
-    }
+    for (const filePath of writtenFiles) await restoreFile(filePath, priorFiles.get(filePath) ?? null);
     throw error;
   }
 };
@@ -103,10 +110,12 @@ export const installLocalSchema = async (
   const priorConfigRaw = await fs.readFile(projectFilePath, 'utf-8');
   const schemaDir = await ensureSchemaDir(bundle.rootPath);
   const writtenFiles: string[] = [];
+  const priorFiles = new Map<string, Buffer | null>();
 
   try {
     const rngName = path.basename(rngPath);
     const destRng = path.join(schemaDir, rngName);
+    priorFiles.set(destRng, await fs.readFile(destRng).catch(() => null));
     await fs.copyFile(rngPath, destRng);
     writtenFiles.push(destRng);
 
@@ -114,6 +123,7 @@ export const installLocalSchema = async (
     if (cssPath) {
       const cssName = path.basename(cssPath);
       const destCss = path.join(schemaDir, cssName);
+      priorFiles.set(destCss, await fs.readFile(destCss).catch(() => null));
       await fs.copyFile(cssPath, destCss);
       writtenFiles.push(destCss);
       relativeCss = `schema/${cssName}`;
@@ -145,13 +155,7 @@ export const installLocalSchema = async (
     return updated;
   } catch (error) {
     await fs.writeFile(projectFilePath, priorConfigRaw, 'utf-8');
-    for (const filePath of writtenFiles) {
-      try {
-        await fs.unlink(filePath);
-      } catch {
-        // ignore
-      }
-    }
+    for (const filePath of writtenFiles) await restoreFile(filePath, priorFiles.get(filePath) ?? null);
     throw error;
   }
 };
@@ -159,7 +163,7 @@ export const installLocalSchema = async (
 export const projectHasSchema = async (bundle: ProjectBundle): Promise<boolean> => {
   if (!bundle.config.schema?.rng) return false;
   try {
-    await fs.stat(path.join(bundle.rootPath, bundle.config.schema.rng));
+    await fs.stat(resolveProjectPath(bundle.rootPath, bundle.config.schema.rng));
     return true;
   } catch {
     return false;
@@ -169,7 +173,7 @@ export const projectHasSchema = async (bundle: ProjectBundle): Promise<boolean> 
 export const metadataFileExists = async (bundle: ProjectBundle): Promise<boolean> => {
   const relative = bundle.config.metadata ?? 'schema/project-metadata.json';
   try {
-    const stat = await fs.stat(path.join(bundle.rootPath, relative));
+    const stat = await fs.stat(resolveProjectPath(bundle.rootPath, relative));
     return stat.isFile();
   } catch {
     return false;

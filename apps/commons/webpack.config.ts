@@ -205,6 +205,16 @@ const webpackConfig: webpack.Configuration = {
         'utilities',
         'languageCodes.ts',
       ),
+      // Exact-match alias so document export (menu action, no editor UI) can use the
+      // pure conversion builders without pulling in the whole editor bundle.
+      '@cwrc/leafwriter/documentExport$': path.resolve(
+        relPathToPackages,
+        'cwrc-leafwriter',
+        'src',
+        'js',
+        'conversion',
+        'documentExport.ts',
+      ),
       '@cwrc/leafwriter': path.resolve(relPathToPackages, 'cwrc-leafwriter', 'src', 'index.tsx'),
       '@cwrc/leafwriter-storage-service$': path.join(storageServiceSrc, 'index.tsx'),
       '@cwrc/leafwriter-storage-service/components$': path.join(

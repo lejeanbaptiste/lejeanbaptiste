@@ -1,70 +1,53 @@
 export type MedalTier = 'bronze' | 'silver' | 'gold';
 
+/** The 5 rank metrics, plus 'special' for special/rare decorations. */
+export type MedalMetric = 'texts' | 'tags' | 'disambiguated' | 'places' | 'entities' | 'special';
+
+// Served at runtime by the desktop app's ljb-asset:// protocol handler,
+// same as the uniform/backdrop art - see gameAssets.ts. Duplicated here
+// rather than imported (main-process-only module, can't be imported from
+// renderer code) - same convention UniformAvatar.tsx already follows for
+// GAME_ASSET_PREFIX.
+const GAME_ASSET_PREFIX = 'ljb-asset://';
+
+/** Opaque key for the pre-rendered medal-disc art - see
+ * visual_design/scripts/pack-assets.mjs's MANIFEST for the source list. */
+export const medalAssetKey = (metric: MedalMetric, tier: MedalTier): string =>
+  `medal/${metric}-${tier}`;
+
 interface MedalIconProps {
-  /** Ribbon stripe colors, outer-to-center; mirrored symmetrically. */
-  ribbon: [string, string] | [string, string, string];
+  metric: MedalMetric;
   tier?: MedalTier;
   size?: number;
   /** Greyed-out rendering for medals not yet earned. */
   dimmed?: boolean;
 }
 
-const TIER_COLORS: Record<MedalTier, { face: string; rim: string; emboss: string }> = {
-  bronze: { face: '#b08d57', rim: '#7a5c33', emboss: '#8f7040' },
-  silver: { face: '#c9ced4', rim: '#8d949c', emboss: '#a7adb5' },
-  gold: { face: '#d4af37', rim: '#9c7c1c', emboss: '#b6932a' },
-};
+// Matches the source art's own viewBox aspect (3 1 26 46) - see
+// visual_design/rewards/medals/*.svg.
+export const MEDAL_ART_ASPECT = 26 / 46;
 
-/** A military-style decoration: striped ribbon drape over a metal disc. */
-export const MedalIcon = ({ ribbon, tier = 'bronze', size = 48, dimmed }: MedalIconProps) => {
-  const metal = TIER_COLORS[tier];
-  const stripes = ribbon.length === 3 ? ribbon : [ribbon[0], ribbon[1], ribbon[0]];
-  const stripeWidth = 24 / 5;
+/** A military-style decoration: striped ribbon drape over a metal disc.
+ * The art itself is pre-rendered (see visual_design/rewards/medals/) and
+ * shipped in the encrypted game-assets bundle - this component just picks
+ * the right key and applies the earned/unearned dimming. */
+export const MedalIcon = ({ metric, tier = 'bronze', size = 48, dimmed }: MedalIconProps) => (
+  <img
+    alt=""
+    draggable={false}
+    height={size}
+    src={`${GAME_ASSET_PREFIX}${medalAssetKey(metric, tier)}`}
+    style={{
+      display: 'block',
+      ...(dimmed ? { filter: 'grayscale(1)', opacity: 0.35 } : undefined),
+    }}
+    width={size * MEDAL_ART_ASPECT}
+  />
+);
 
-  return (
-    <svg
-      height={size}
-      style={{
-        display: 'block',
-        ...(dimmed ? { filter: 'grayscale(1)', opacity: 0.35 } : undefined),
-      }}
-      viewBox="3 1 26 46"
-      width={(size * 26) / 46}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Ribbon: five vertical stripes mirrored around the center. */}
-      <g>
-        {[stripes[0], stripes[1], stripes[2], stripes[1], stripes[0]].map((color, index) => (
-          <rect
-            fill={color}
-            height={20}
-            key={index}
-            width={stripeWidth}
-            x={4 + index * stripeWidth}
-            y={2}
-          />
-        ))}
-        {/* V-notch cut into the ribbon tail. */}
-        <polygon fill="var(--medal-bg, #fff)" points="4,22 16,16 28,22 28,23 4,23" opacity={0} />
-        <polygon fill={metal.rim} points="13,21 16,25 19,21 19,23.5 16,27 13,23.5" />
-      </g>
-      {/* Suspension ring. */}
-      <circle cx={16} cy={27} fill="none" r={1.8} stroke={metal.rim} strokeWidth={1.1} />
-      {/* Disc. */}
-      <circle cx={16} cy={37} fill={metal.face} r={9} stroke={metal.rim} strokeWidth={1.4} />
-      <circle cx={16} cy={37} fill="none" r={6.8} stroke={metal.emboss} strokeWidth={0.8} />
-      {/* Embossed star. */}
-      <path
-        d="M16 31.6 L17.5 35.2 L21.4 35.5 L18.4 38 L19.3 41.8 L16 39.7 L12.7 41.8 L13.6 38 L10.6 35.5 L14.5 35.2 Z"
-        fill={metal.emboss}
-        stroke={metal.rim}
-        strokeWidth={0.5}
-      />
-    </svg>
-  );
-};
-
-/** Stable ribbon colorways per metric medal. */
+/** Stable ribbon colorways per metric medal - used for the separate
+ * service-ribbon stripe bars (RibbonRack in UniformAvatar.tsx), not the
+ * medal-disc art itself. */
 export const METRIC_RIBBONS: Record<string, [string, string] | [string, string, string]> = {
   texts: ['#4a5d23', '#c8b560'],
   tags: ['#1f3a93', '#e8e8e8'],

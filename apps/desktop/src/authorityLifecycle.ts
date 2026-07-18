@@ -396,8 +396,17 @@ const installPacksFromGitHub = async (
 
 const installPacksViaCompileFallback = async ({
   entityDbFolder,
+  profiles,
   onProgress,
-}: RunAuthorityLifecyclePipelineOptions): Promise<void> => {
+}: RunAuthorityLifecyclePipelineOptions & {
+  profiles: AuthorityLifecycleProfile[];
+}): Promise<void> => {
+  const unsupportedProfiles = profiles.filter((profile) => profile !== 'chinese');
+  if (unsupportedProfiles.length > 0) {
+    throw new Error(
+      `Local authority compilation does not support ${unsupportedProfiles.join(', ')}. Disable compile fallback or use the downloaded pack bundles.`,
+    );
+  }
   const newPacksDir = path.join(entityDbFolder, `${AUTHORITY_PACKS_DIRNAME}.new`);
   await fsp.rm(newPacksDir, { recursive: true, force: true });
 
@@ -458,7 +467,7 @@ export const runAuthorityLifecyclePipeline = async (
     let packIndex: AuthorityPacksIndex | null = null;
 
     if (useCompileFallback()) {
-      await installPacksViaCompileFallback(options);
+      await installPacksViaCompileFallback({ ...options, profiles: targetProfiles });
     } else {
       packIndex = await installPacksFromGitHub(options, targetProfiles);
     }

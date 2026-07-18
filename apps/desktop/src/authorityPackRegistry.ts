@@ -26,6 +26,8 @@ import {
 } from '../../commons/src/desktop/authorityPackRegistryTypes';
 
 const execFileAsync = promisify(execFile);
+const MAX_PACK_DOWNLOAD_BYTES = 8 * 1024 * 1024 * 1024;
+const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
 
 export {
   AUTHORITY_PACK_REGISTRY,
@@ -78,13 +80,15 @@ const downloadToFile = async (
   url: string,
   destPath: string,
   onChunk?: (receivedBytes: number, totalBytes: number | null) => void,
+  maxBytes = MAX_PACK_DOWNLOAD_BYTES,
 ): Promise<void> => {
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
   if (!response.ok || !response.body) {
     throw new Error(`HTTP ${response.status} downloading ${url}`);
   }
   const contentLength = Number(response.headers.get('content-length'));
   const totalBytes = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : null;
+  if (totalBytes !== null && totalBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
 
   let receivedBytes = 0;
   const body = Readable.fromWeb(response.body as import('node:stream/web').ReadableStream);
@@ -93,6 +97,7 @@ const downloadToFile = async (
     async function* (chunks) {
       for await (const chunk of chunks) {
         receivedBytes += (chunk as Buffer).length;
+        if (receivedBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
         onChunk?.(receivedBytes, totalBytes);
         yield chunk;
       }
@@ -179,7 +184,7 @@ export const installPackBundle = async ({
   onProgress?.(`Downloading ${bundle.fileName}…`, 0, bundle.bytes);
   await downloadToFile(tarballUrl, tarballPath, (received, total) => {
     onProgress?.(`Downloading authority packs…`, received, total ?? bundle.bytes);
-  });
+  }, Math.min(MAX_PACK_DOWNLOAD_BYTES, bundle.bytes + 64 * 1024 * 1024));
 
   const tarballDigest = await sha256File(tarballPath);
   if (tarballDigest !== bundle.sha256) {
@@ -214,6 +219,10 @@ export const installPackBundle = async ({
     const src = path.join(extractedRoot, entry);
     const dest = path.join(liveDir, entry);
     const bak = path.join(liveDir, `${entry}.bak`);
+    const liveRoot = `${path.resolve(liveDir)}${path.sep}`;
+    if (!path.resolve(dest).startsWith(liveRoot)) {
+      throw new Error(`Pack bundle contains an unsafe top-level entry: ${entry}`);
+    }
     await fsp.rm(bak, { recursive: true, force: true });
     if (fs.existsSync(dest)) {
       await fsp.rename(dest, bak);

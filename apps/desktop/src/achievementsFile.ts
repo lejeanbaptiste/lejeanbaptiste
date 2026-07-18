@@ -66,10 +66,16 @@ const verify = (content: string, hmacHex: string): boolean => {
  */
 export const readAchievementsFile = async (): Promise<string | null> => {
   const primary = await getPrimaryPath();
-  for (const candidate of [primary, getUserDataPath()]) {
+  const candidates = [
+    { content: primary, signature: `${primary}${HMAC_SUFFIX}` },
+    { content: `${primary}.bak`, signature: `${primary}${HMAC_SUFFIX}.bak` },
+    { content: getUserDataPath(), signature: `${getUserDataPath()}${HMAC_SUFFIX}` },
+    { content: `${getUserDataPath()}.bak`, signature: `${getUserDataPath()}${HMAC_SUFFIX}.bak` },
+  ];
+  for (const candidate of candidates) {
     try {
-      const content = await fs.readFile(candidate, 'utf-8');
-      const hmacHex = await fs.readFile(`${candidate}${HMAC_SUFFIX}`, 'utf-8').catch(() => null);
+      const content = await fs.readFile(candidate.content, 'utf-8');
+      const hmacHex = await fs.readFile(candidate.signature, 'utf-8').catch(() => null);
       if (hmacHex !== null && !verify(content, hmacHex)) continue;
       return content;
     } catch {
@@ -85,8 +91,19 @@ let writeChain: Promise<void> = Promise.resolve();
 export const writeAchievementsFile = async (content: string): Promise<void> => {
   writeChain = writeChain.then(async () => {
     const primary = await getPrimaryPath();
-    await fs.writeFile(primary, content, 'utf-8');
-    await fs.writeFile(`${primary}${HMAC_SUFFIX}`, sign(content), 'utf-8');
+    const signature = `${primary}${HMAC_SUFFIX}`;
+    const primaryBak = `${primary}.bak`;
+    const signatureBak = `${signature}.bak`;
+    const primaryTmp = `${primary}.tmp`;
+    const signatureTmp = `${signature}.tmp`;
+    await fs.writeFile(primaryTmp, content, 'utf-8');
+    await fs.writeFile(signatureTmp, sign(content), 'utf-8');
+    await fs.rename(primary, primaryBak).catch(() => undefined);
+    await fs.rename(signature, signatureBak).catch(() => undefined);
+    await fs.rename(primaryTmp, primary);
+    await fs.rename(signatureTmp, signature);
+    await fs.rm(primaryBak, { force: true });
+    await fs.rm(signatureBak, { force: true });
   });
   await writeChain;
 };

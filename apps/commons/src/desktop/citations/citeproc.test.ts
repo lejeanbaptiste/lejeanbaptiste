@@ -37,6 +37,14 @@ describe('createCitationRenderer (Chicago notes)', () => {
     expect(rendered).toMatch(/see\s/);
     expect(rendered).toMatch(/45/);
   });
+
+  test('renderBibliography renders a full reference list as TEI markup', () => {
+    const entries = renderer.renderBibliography([BOOK]);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].id).toBe('ABCD1234');
+    expect(entries[0].tei).toContain('Brown');
+    expect(entries[0].tei).toContain('<hi rend="italic">Empire under the Night Sky</hi>');
+  });
 });
 
 describe('citeprocHtmlToTei', () => {

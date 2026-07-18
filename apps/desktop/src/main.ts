@@ -25,6 +25,7 @@ import {
   registerNativeDialogIpc,
 } from './nativeDialogs';
 import { GAME_ASSET_SCHEME, getGameAssetColorStats, registerGameAssetProtocol } from './gameAssets';
+import { AVATAR_SCHEME, registerAvatarProtocol } from './avatarAssets';
 import {
   getCachedLeaderboardToken,
   pollLeaderboardDeviceFlow,
@@ -499,6 +500,15 @@ protocol.registerSchemesAsPrivileged([
       corsEnabled: true,
     },
   },
+  {
+    scheme: AVATAR_SCHEME,
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
 ]);
 
 const registerLjbProtocol = () => {
@@ -535,6 +545,37 @@ if (isDev) {
 let mainWindow: BrowserWindow | null = null;
 let serverProcess: ChildProcess | null = null;
 let openFileWatcher: OpenFileWatcher | null = null;
+let activeProjectRoot: string | null = null;
+const approvedRendererReadRoots = new Set<string>();
+
+const isPathWithin = (root: string, candidate: string): boolean => {
+  const relative = path.relative(path.resolve(root), path.resolve(candidate));
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+};
+
+const assertRendererWritePath = async (candidate: string): Promise<void> => {
+  const roots = [app.getPath('temp'), app.getPath('userData')];
+  if (activeProjectRoot) roots.push(activeProjectRoot);
+  const entityDbFolder = await getEntityDbFolder();
+  if (entityDbFolder) roots.push(entityDbFolder);
+  if (!roots.some((root) => isPathWithin(root, candidate))) {
+    throw new Error('Renderer file writes are restricted to the active project and app data folders.');
+  }
+};
+
+const approveRendererReadRoot = (root: string): void => {
+  approvedRendererReadRoots.add(path.resolve(root));
+};
+
+const assertRendererReadPath = async (candidate: string): Promise<void> => {
+  const roots = [app.getPath('temp'), app.getPath('userData')];
+  if (activeProjectRoot) roots.push(activeProjectRoot);
+  const entityDbFolder = await getEntityDbFolder();
+  if (entityDbFolder) roots.push(entityDbFolder);
+  if (roots.some((root) => isPathWithin(root, candidate))) return;
+  if ([...approvedRendererReadRoots].some((root) => isPathWithin(root, candidate))) return;
+  throw new Error('Renderer file reads are restricted to approved application paths.');
+};
 
 const getCommonsPaths = () => {
   if (isDev) {
@@ -896,6 +937,11 @@ const buildApplicationMenu = () => {
     click: () => sendMenuAction('import-documents'),
   };
 
+  const exportDocumentItem: Electron.MenuItemConstructorOptions = {
+    label: 'Export Document…',
+    click: () => sendMenuAction('export-document'),
+  };
+
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin'
       ? [
@@ -931,6 +977,7 @@ const buildApplicationMenu = () => {
         importDocumentsItem,
         saveItem,
         saveAsItem,
+        exportDocumentItem,
         closeTabItem,
         menuSeparator(),
         openProjectItem,
@@ -1018,6 +1065,7 @@ const openProjectFromDialog = async () => {
 
   try {
     const bundle = await loadOrCreateProject(result.filePaths[0]);
+    activeProjectRoot = bundle.rootPath;
     await writeLastProjectFile(bundle.projectFilePath);
     return bundle;
   } catch (error) {
@@ -1110,6 +1158,7 @@ const registerIpcHandlers = () => {
   ipcMain.handle(
     'readDirectory',
     async (_event, dirPath: string, options?: { allFiles?: boolean }) => {
+      await assertRendererReadPath(dirPath);
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
       return entries
         .filter((entry) => {
@@ -1127,10 +1176,12 @@ const registerIpcHandlers = () => {
   );
 
   ipcMain.handle('readFile', async (_event, filePath: string) => {
+    await assertRendererReadPath(filePath);
     return fs.readFile(filePath, 'utf-8');
   });
 
   ipcMain.handle('readFileAutoEncoding', async (_event, filePath: string) => {
+    await assertRendererReadPath(filePath);
     return decodeTextBuffer(await fs.readFile(filePath));
   });
 
@@ -1146,10 +1197,12 @@ const registerIpcHandlers = () => {
   );
 
   ipcMain.handle('extractOdtText', async (_event, filePath: string) => {
+    await assertRendererReadPath(filePath);
     return extractOdtText(filePath);
   });
 
   ipcMain.handle('extractDocxText', async (_event, filePath: string) => {
+    await assertRendererReadPath(filePath);
     const result = await mammoth.extractRawText({ path: filePath });
     return {
       text: result.value,
@@ -1158,6 +1211,7 @@ const registerIpcHandlers = () => {
   });
 
   ipcMain.handle('writeFile', async (_event, filePath: string, content: string) => {
+    await assertRendererWritePath(filePath);
     await fs.writeFile(filePath, content, 'utf-8');
   });
 
@@ -1315,6 +1369,7 @@ const registerIpcHandlers = () => {
       defaultPath: await getDialogDefaultPath(),
     });
     if (rngResult.canceled || !rngResult.filePaths[0]) return null;
+    approveRendererReadRoot(rngResult.filePaths[0]);
     rememberDialogDir(rngResult.filePaths[0], 'file');
 
     const cssResult = await dialog.showOpenDialog(dialogParent, {
@@ -1323,6 +1378,7 @@ const registerIpcHandlers = () => {
       title: 'Choose CSS file (optional)',
       message: 'Optional: choose a CSS file for this schema, or Cancel to skip.',
     });
+    if (!cssResult.canceled && cssResult.filePaths[0]) approveRendererReadRoot(cssResult.filePaths[0]);
     return {
       rngPath: rngResult.filePaths[0],
       cssPath: cssResult.canceled || !cssResult.filePaths[0] ? null : cssResult.filePaths[0],
@@ -1349,6 +1405,7 @@ const registerIpcHandlers = () => {
 
     if (result.canceled || result.filePaths.length === 0) return null;
     rememberDialogDir(path.dirname(result.filePaths[0]), 'directory');
+    for (const filePath of result.filePaths) approveRendererReadRoot(filePath);
 
     const collected = await Promise.all(
       result.filePaths.map((filePath) => collectImportSourcesFromPath(filePath)),
@@ -1804,14 +1861,19 @@ const registerIpcHandlers = () => {
   });
 
   ipcMain.handle('renamePath', async (_event, oldPath: string, newPath: string) => {
+    await assertRendererWritePath(oldPath);
+    await assertRendererWritePath(newPath);
     return renamePath(oldPath, newPath);
   });
 
   ipcMain.handle('movePath', async (_event, sourcePath: string, destDir: string) => {
+    await assertRendererWritePath(sourcePath);
+    await assertRendererWritePath(destDir);
     return movePath(sourcePath, destDir);
   });
 
   ipcMain.handle('deletePath', async (_event, targetPath: string) => {
+    await assertRendererWritePath(targetPath);
     await deletePath(targetPath);
   });
 
@@ -2021,6 +2083,7 @@ app.whenReady().then(() => {
   buildApplicationMenu();
   registerLjbProtocol();
   registerGameAssetProtocol();
+  registerAvatarProtocol();
   registerIpcHandlers();
   registerNativeDialogIpc();
   registerLemminxIpc(() => mainWindow);

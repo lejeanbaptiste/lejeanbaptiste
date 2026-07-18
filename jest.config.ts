@@ -20,6 +20,7 @@ const config: Config.InitialOptions = {
       displayName: { name: 'Validator', color: 'magenta' },
       automock: false,
       clearMocks: true,
+      modulePathIgnorePatterns: ['<rootDir>/.claude/'],
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/docs', '/lib', '/lib-esm', '/test'],
       moduleNameMapper: { '^dexie$': dexieModulePath },
       resetMocks: false,
@@ -35,6 +36,7 @@ const config: Config.InitialOptions = {
     {
       displayName: { name: 'Storage Dialog', color: 'cyanBright' },
       clearMocks: true,
+      modulePathIgnorePatterns: ['<rootDir>/.claude/'],
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       moduleNameMapper: {
         '^@cwrc/leafwriter-storage-service$':
@@ -61,11 +63,13 @@ const config: Config.InitialOptions = {
     {
       displayName: { name: 'Core', color: 'blue' },
       clearMocks: true,
+      modulePathIgnorePatterns: ['<rootDir>/.claude/'],
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       moduleNameMapper: { '^dexie$': dexieModulePath },
       resetMocks: false,
       setupFiles: [
         '<rootDir>/packages/cwrc-leafwriter/test/setup/structuredClone.ts',
+        '<rootDir>/packages/cwrc-leafwriter/test/setup/textEncoder.ts',
         'fake-indexeddb/auto',
       ],
       setupFilesAfterEnv: ['<rootDir>/packages/cwrc-leafwriter/test/setup/jestAfterEnv.ts'],
@@ -84,6 +88,7 @@ const config: Config.InitialOptions = {
     {
       displayName: { name: 'desktop', color: 'green' },
       clearMocks: true,
+      modulePathIgnorePatterns: ['<rootDir>/.claude/'],
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm'],
       resetMocks: false,
       testEnvironment: 'node',
@@ -93,15 +98,19 @@ const config: Config.InitialOptions = {
     {
       displayName: { name: 'commons', color: 'red' },
       clearMocks: true,
+      modulePathIgnorePatterns: ['<rootDir>/.claude/'],
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       moduleNameMapper: {
         '^@src/(.*)$': '<rootDir>/apps/commons/src/$1',
+        '^@cwrc/leafwriter/documentExport$':
+          '<rootDir>/packages/cwrc-leafwriter/src/js/conversion/documentExport.ts',
         '^dexie$': dexieModulePath,
       },
       resetMocks: false,
       setupFiles: [
         'fake-indexeddb/auto',
         '<rootDir>/apps/commons/test/setup/index.ts',
+        '<rootDir>/packages/cwrc-leafwriter/test/setup/textEncoder.ts',
       ],
       setupFilesAfterEnv: ['<rootDir>/packages/cwrc-leafwriter/test/setup/jestAfterEnv.ts'],
       testEnvironment:
@@ -112,6 +121,8 @@ const config: Config.InitialOptions = {
       transformIgnorePatterns: ['/node_modules/(?!tibetan-ewts-converter/)'],
       transform: {
         '\\.mjs$': ['ts-jest', { tsconfig: { allowJs: true } }],
+        // Bundled CSL citation styles and locales (webpack asset/source in the real build).
+        '\\.(csl|xml)$': '<rootDir>/packages/cwrc-leafwriter/test/loadTextFile.cjs',
         '^.+\\.tsx?$': 'ts-jest',
       },
     },

@@ -123,6 +123,12 @@ export const useMenu = () => {
 
     options.push(...conversionOptions);
 
+    options.push({
+      label: `${t('LWC.storage.export document')}… (docx, odt, rtf, md, txt)`,
+      onTrigger: () => openDialog({ type: 'export', props: { maxWidth: 'sm' } }),
+      sx: { textTransform: 'initial' },
+    });
+
     return options;
   };
 
