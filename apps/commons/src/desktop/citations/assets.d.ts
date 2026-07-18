@@ -28,6 +28,9 @@ declare module 'citeproc' {
     }[];
     properties: { noteIndex: number };
   }
+  interface BibliographyMeta {
+    entry_ids: string[][];
+  }
   class Engine {
     constructor(sys: CiteprocSys, style: string, lang?: string, forceLang?: boolean);
     opt: { development_extensions: Record<string, boolean> };
@@ -38,6 +41,7 @@ declare module 'citeproc' {
       citationsPost: [string, number][],
       format: 'html' | 'text' | 'rtf',
     ): string;
+    makeBibliography(): [BibliographyMeta, string[]];
   }
   const CSL: { Engine: typeof Engine };
   export default CSL;

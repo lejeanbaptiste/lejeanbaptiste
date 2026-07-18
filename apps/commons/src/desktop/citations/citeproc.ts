@@ -7,6 +7,14 @@ import type { CslJsonItem } from './types';
  * jest-testable without webpack loaders.
  */
 
+export interface RenderedBiblEntry {
+  id: string;
+  /** Inline TEI markup fragment — same vocabulary citeprocHtmlToTei emits elsewhere
+   * (<hi rend="italic|bold|...">, <sup>, <sub>, plain text), so export serializers can
+   * walk it with the same rendStylesOf/teiTagOf machinery used for document content. */
+  tei: string;
+}
+
 export interface CitationRenderer {
   render: (options: {
     item: CslJsonItem;
@@ -15,6 +23,8 @@ export interface CitationRenderer {
     prefix?: string;
     suffix?: string;
   }) => string;
+  /** Renders a full CSL bibliography for the given items, in the style's sort order. */
+  renderBibliography: (items: CslJsonItem[]) => RenderedBiblEntry[];
 }
 
 export const createCitationRenderer = (styleXml: string, localeXml: string): CitationRenderer => {
@@ -54,6 +64,21 @@ export const createCitationRenderer = (styleXml: string, localeXml: string): Cit
         'html',
       );
       return citeprocHtmlToTei(html);
+    },
+
+    renderBibliography: (biblItems) => {
+      const ids = biblItems.map((item) => {
+        const id = String(item.id);
+        items.set(id, item);
+        return id;
+      });
+      engine.updateItems(ids);
+
+      const [meta, entriesHtml] = engine.makeBibliography();
+      return meta.entry_ids.map((entryIds, index) => ({
+        id: entryIds[0],
+        tei: citeprocHtmlToTei(entriesHtml[index]),
+      }));
     },
   };
 };

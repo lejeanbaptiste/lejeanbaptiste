@@ -104,19 +104,16 @@ const copyTree = async (
       const destinationPath = path.join(destinationDir, entry.name);
       const relativePath = path.relative(sourceRoot, sourcePath);
 
+      if (entry.isSymbolicLink()) {
+        throw new Error(`Time-machine snapshots do not support symbolic links: ${relativePath}`);
+      }
+
       if (entry.isDirectory()) {
         await walk(sourcePath, destinationPath);
         continue;
       }
 
       if (!entry.isFile() && !entry.isSymbolicLink()) continue;
-
-      if (entry.isSymbolicLink()) {
-        const link = await fs.readlink(sourcePath);
-        await fs.symlink(link, destinationPath);
-        fileCount += 1;
-        continue;
-      }
 
       const sourceStat = await fs.stat(sourcePath);
       const previousPath = previousFilesRoot
@@ -244,6 +241,14 @@ const clearProjectForRestore = async (projectRootPath: string) => {
   }
 };
 
+const moveProjectEntries = async (sourceRoot: string, destinationRoot: string) => {
+  const entries = await fs.readdir(sourceRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.name === BACKUP_DIR_NAME) continue;
+    await fs.rename(path.join(sourceRoot, entry.name), path.join(destinationRoot, entry.name));
+  }
+};
+
 export const restoreTimeMachineSnapshotToProject = async (
   projectRootPath: string,
   projectName: string,
@@ -264,8 +269,21 @@ export const restoreTimeMachineSnapshotToProject = async (
   try {
     await fs.mkdir(stagingRoot, { recursive: true });
     await copyTree(filesPath, stagingRoot, null);
-    await clearProjectForRestore(projectRootPath);
-    await copyTree(stagingRoot, projectRootPath, null);
+    const rollbackRoot = path.join(
+      getBackupRoot(projectRootPath),
+      RESTORE_STAGING_DIR_NAME,
+      `${beforeRestoreSnapshot.id}-rollback`,
+    );
+    await fs.mkdir(rollbackRoot, { recursive: true });
+    try {
+      await moveProjectEntries(projectRootPath, rollbackRoot);
+      await copyTree(stagingRoot, projectRootPath, null);
+      await fs.rm(rollbackRoot, { force: true, recursive: true });
+    } catch (error) {
+      await clearProjectForRestore(projectRootPath);
+      await moveProjectEntries(rollbackRoot, projectRootPath);
+      throw error;
+    }
   } finally {
     await fs.rm(stagingRoot, { force: true, recursive: true });
   }

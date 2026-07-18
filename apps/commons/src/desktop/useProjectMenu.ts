@@ -60,7 +60,11 @@ export const useProjectMenu = () => {
     saveActiveTabAs,
   } = useActions().project;
   const { setContentHasChanged } = useActions().editor;
-  const { closeForegroundPopup: closeCommonsPopup, notifyViaSnackbar } = useActions().ui;
+  const {
+    closeForegroundPopup: closeCommonsPopup,
+    notifyViaSnackbar,
+    openDialog,
+  } = useActions().ui;
   const { activeTabPath, isProjectReady, openTabs, projectFilePath } = useAppState().project;
   const { contentHasChanged } = useAppState().editor;
   const [leafWriter] = useAtom(leafwriterAtom);
@@ -197,6 +201,16 @@ export const useProjectMenu = () => {
         return;
       }
 
+      if (action === 'export-document') {
+        if (!activeTabPath) {
+          notifyViaSnackbar(t('LWC.desktop.project.messages.open_xml_before_saving'));
+          return;
+        }
+
+        openDialog({ type: 'export', props: { maxWidth: 'sm' } });
+        return;
+      }
+
       if (action === 'open-about') {
         setAboutOpen(true);
         return;
@@ -261,11 +275,13 @@ export const useProjectMenu = () => {
       }
     });
   }, [
+    activeTabPath,
     isProjectReady,
     importDocuments,
     leafWriter,
     newFile,
     notifyViaSnackbar,
+    openDialog,
     projectFilePath,
     closeCurrentTab,
     refreshProjectSchemaConfig,

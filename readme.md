@@ -13,6 +13,26 @@ This repository is licensed under `GPL-2.0`. Third-party runtime components keep
 
 For a concise list of the major bundled components and where to verify their license terms, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
+## Credits
+
+- **[LEAF](https://www.leaf-vre.org/)** (The Linked Editing Academic
+  Framework) — Le Jean-Baptiste is a desktop fork of
+  [LEAF-Writer](https://leaf-writer.leaf-vre.org/), itself an enhancement of
+  CWRC-Writer from the [Canadian Writing Research Collaboratory
+  (CWRC)](https://cwrc.ca).
+- **[Sanmiao](https://github.com/PotatoSinology/sanmiao)** — Chinese,
+  Japanese, and Korean historical calendar conversion by Daniel Patrick
+  Morgan (CNRS-CRCAO), bundled as the desktop app's date-conversion back
+  end. MIT licensed.
+- **[Adventurer](https://www.figma.com/community/file/1184595184137881796)**
+  by Lisa Wischofsky ([@lischi_art](https://www.instagram.com/lischi_art/))
+  — the player-avatar art in the achievement system, distributed via
+  [DiceBear](https://www.dicebear.com/styles/adventurer) and licensed under
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the rest of the
+bundled runtime components (TinyMCE, Font Awesome, Lato, etc.) and their
+license terms.
 
 ## Desktop paradigm
 
@@ -49,6 +69,8 @@ Tracked here as mirrored or generated assets:
 - `apps/commons/src/desktop/achievements/definitions.ts`
 - `apps/desktop/resources/game-assets/assets.bin`
 - `apps/desktop/src/generated/gameAssetKey.ts`
+- `apps/desktop/resources/avatar-parts/**` (Adventurer avatar-part layers -
+  not spoiler-protected, mirrored as plain SVG files)
 
 ## What is built
 

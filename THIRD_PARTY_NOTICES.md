@@ -12,6 +12,27 @@ When shipping releases, keep this document in sync with the actual dependency se
 - `jszip` - archive handling used by import/export workflows.
 - `mammoth` - Word document conversion support in the desktop app.
 - `@xmldom/xmldom` - XML DOM implementation used by the desktop app.
+- `Font Awesome Free` - icon font used in the editing UI. Icons are CC BY
+  4.0, fonts are SIL OFL 1.1, code is MIT — see the Font Awesome license
+  page for which applies to a given file.
+- `Lato` - UI typeface, bundled as static `.woff`/`.woff2` files under
+  `apps/commons/public/fonts/`. SIL Open Font License 1.1.
+
+## Creative assets
+
+- **Adventurer character art** — the player-avatar layers used in the
+  achievement/game system are based on
+  [Adventurer](https://www.figma.com/community/file/1184595184137881796) by
+  **Lisa Wischofsky** ([@lischi_art](https://www.instagram.com/lischi_art/)),
+  distributed via [DiceBear](https://www.dicebear.com/styles/adventurer) and
+  licensed under
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Assets have
+  been split into individual layers and, in some cases, recolored — see
+  the private `visual_design/visual_style` source repo for the full
+  attribution notice and list of modifications.
+- **Sanmiao** — Chinese, Japanese, and Korean historical calendar
+  conversion, by Daniel Patrick Morgan (CNRS-CRCAO), bundled as the desktop
+  app's date-conversion back end. MIT licensed.
 
 ## Repository licenses
 

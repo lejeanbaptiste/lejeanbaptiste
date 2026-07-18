@@ -1,3 +1,7 @@
+/** Registered in apps/desktop/src/main.ts alongside `ljb` and `ljb-asset`;
+ * served by apps/desktop/src/avatarAssets.ts. */
+export const AVATAR_SCHEME = 'ljb-avatar';
+
 export interface DiceBearAvatarOptions {
   seed: string;
   eyebrowsVariant: string;
@@ -22,10 +26,14 @@ export const createDefaultDiceBearAvatar = (seed: string): DiceBearAvatarOptions
   hairColor: '3eac2c',
 });
 
-/** Build a deterministic Adventurer SVG URL. No uploaded image is involved. */
+/** Build a deterministic Adventurer SVG URL, composited locally from the
+ * bundled Adventurer layer artwork (see apps/desktop/src/avatarAssets.ts) -
+ * no network access, no dependency on api.dicebear.com. `seed` isn't used
+ * by the composite (there's nothing left to randomize once every layer is
+ * explicit) but stays part of the interface so avatar options remain a
+ * stable, cacheable identity for callers. */
 export const diceBearAvatarUrl = (options: DiceBearAvatarOptions): string => {
   const params = new URLSearchParams({
-    seed: options.seed,
     eyebrowsVariant: options.eyebrowsVariant,
     eyesVariant: options.eyesVariant,
     mouthVariant: options.mouthVariant,
@@ -35,7 +43,7 @@ export const diceBearAvatarUrl = (options: DiceBearAvatarOptions): string => {
     skinColor: options.skinColor,
     hairColor: options.hairColor,
   });
-  return `https://api.dicebear.com/10.x/adventurer/svg?${params.toString()}`;
+  return `${AVATAR_SCHEME}://compose?${params.toString()}`;
 };
 
 export const MOUTH_VARIANTS = Array.from(

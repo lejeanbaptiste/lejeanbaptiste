@@ -1,0 +1,35 @@
+CC BY 4.0 — Adventurer avatar assets
+=====================================
+
+Source: Adventurer by Lisa Wischofsky
+        https://www.figma.com/community/file/1184595184137881796
+Designer: Lisa Wischofsky — https://www.instagram.com/lischi_art/
+Distributed via: DiceBear (https://www.dicebear.com/styles/adventurer),
+        @dicebear/adventurer npm package v9.4.3
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+        https://creativecommons.org/licenses/by/4.0/
+
+These SVG layers are extracted from the `@dicebear/adventurer` package's
+component source (`lib/components/*.js`), which itself packages Lisa
+Wischofsky's original Figma artwork for programmatic use. The files in this
+directory are a derivative work: split back out into standalone per-layer
+SVGs and, where the source parameterized a fill color (base skin tone, hair
+color), recolored to `fill="currentColor"` so each layer can be recolored by
+whatever consumes it.
+
+CC BY 4.0 permits this — sharing and adapting for any purpose, including
+commercially — provided that:
+
+  1. Attribution is given to Lisa Wischofsky as the original artist, with a
+     link to this license. See the credit line in this repo's main README
+     and in the `leaf-writer` repo's THIRD_PARTY_NOTICES.md.
+  2. Changes are indicated. This notice does that: assets here are modified
+     (split into layers, recolored to currentColor) from the original
+     Adventurer artwork.
+  3. No additional restrictions are placed on downstream use beyond what
+     CC BY 4.0 itself permits.
+
+The `@dicebear/adventurer` package's own code (the JS that composes these
+layers, not the artwork) is separately MIT licensed, copyright Florian
+Körner. That MIT code is not vendored here — this directory contains only
+the extracted artwork.

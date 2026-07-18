@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { colorMatchFilter, type ColorStats } from './colorMatch';
 import { BG_POOL_BY_RANK } from './generatedBackgroundPools';
 import { getHeadColorStats } from './headColorStats';
-import { MedalIcon, type MedalTier } from './MedalIcon';
+import { MedalIcon, type MedalMetric, type MedalTier } from './MedalIcon';
 
 // Served at runtime by the desktop app's ljb-asset:// protocol handler
 // (see apps/desktop/src/gameAssets.ts), which decrypts them from the
@@ -21,7 +21,7 @@ interface UniformAvatarProps {
   serviceRibbons: Ribbon[];
   /** Earned medals displayed as miniatures on the uniform. */
   medals: Array<{
-    ribbon: Ribbon;
+    metric: MedalMetric;
     tier: MedalTier;
     label: string;
   }>;
@@ -94,13 +94,12 @@ export const getCachedColorStats = (key: string): Promise<ColorStats> => {
 // inside the frame with margin to spare, rather than filling it edge to edge.
 export const COAT_FRACTION = 0.63;
 
-// The DiceBear Adventurer SVG has a 762x762 viewBox. Some hair variants
-// (e.g. long18) draw strands outside it - the browser clips anything past
-// the viewBox edge when rasterizing, with a hard flat edge as the result.
-// SVG_PAD widens the viewBox by this many units on every side (see
-// padSvgViewBox below) before the image is ever painted, so that overflow
-// has room to render instead of being cut off at the source.
-export const SVG_PAD = 40;
+// The DiceBear Adventurer SVG has a 762x762 content canvas. Some hair
+// variants (e.g. long18) draw strands outside it, so the local compositor
+// (apps/desktop/src/avatarAssets.ts) bakes a content-sized pad on every
+// side directly into the fetched SVG - it always arrives pre-padded, wide
+// enough that nothing can clip regardless of how far a layer overflows.
+export const SVG_PAD = 762;
 export const SVG_VIEWBOX_SIZE = 762;
 export const PADDED_VIEWBOX_SIZE = SVG_VIEWBOX_SIZE + SVG_PAD * 2;
 
@@ -129,33 +128,6 @@ const HEAD_CONTENT = {
 // just touching the red trim.
 export const HEAD_BOX_SIZE = 0.52 * (PADDED_VIEWBOX_SIZE / SVG_VIEWBOX_SIZE);
 export const HEAD_BOX_TOP = -0.01;
-
-/** Widen an SVG's viewBox by `pad` units on every side so content drawn
- * outside the original canvas (e.g. flowing hair) isn't clipped at render
- * time. DiceBear also wraps its artwork in a <clipPath> whose <rect> matches
- * the original canvas exactly - widening the outer viewBox alone does
- * nothing, since that inner clip still masks anything outside the old
- * bounds, so the matching rect is widened the same way. Falls back to the
- * original text if no viewBox attribute is found. */
-export const padSvgViewBox = (svgText: string, pad: number): string => {
-  const viewBoxMatch = svgText.match(/viewBox="([\d.-]+) ([\d.-]+) ([\d.-]+) ([\d.-]+)"/);
-  if (!viewBoxMatch) return svgText;
-  const [, xStr, yStr, wStr, hStr] = viewBoxMatch;
-  const x = Number(xStr);
-  const y = Number(yStr);
-  const w = Number(wStr);
-  const h = Number(hStr);
-  let patched = svgText.replace(
-    viewBoxMatch[0],
-    `viewBox="${x - pad} ${y - pad} ${w + pad * 2} ${h + pad * 2}"`,
-  );
-  const clipRectPattern = new RegExp(`<rect\\s+width="${w}"\\s+height="${h}"([^/]*)/>`);
-  patched = patched.replace(
-    clipRectPattern,
-    `<rect x="${x - pad}" y="${y - pad}" width="${w + pad * 2}" height="${h + pad * 2}"$1/>`,
-  );
-  return patched;
-};
 
 // The empty chest panel to the right of the button line, as a fraction of
 // the coat image's own 340x319 canvas. Measured by masking every uniform
@@ -250,7 +222,7 @@ const MedalRack = ({
   >
     {medals.map((medal) => (
       <div key={medal.label} title={medal.label}>
-        <MedalIcon ribbon={medal.ribbon} size={itemHeight} tier={medal.tier} />
+        <MedalIcon metric={medal.metric} size={itemHeight} tier={medal.tier} />
       </div>
     ))}
   </div>
@@ -343,7 +315,8 @@ export const UniformAvatar = ({
       .then((response) => response.text())
       .then((svgText) => {
         if (cancelled) return;
-        const blob = new Blob([padSvgViewBox(svgText, SVG_PAD)], { type: 'image/svg+xml' });
+        // Already pre-padded by the local compositor - see SVG_PAD above.
+        const blob = new Blob([svgText], { type: 'image/svg+xml' });
         const objectUrl = URL.createObjectURL(blob);
         if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = objectUrl;

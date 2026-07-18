@@ -1,7 +1,6 @@
-import { renderToStaticMarkup } from 'react-dom/server';
 import { colorMatchFilter } from './colorMatch';
 import { getHeadColorStats } from './headColorStats';
-import { MedalIcon, type MedalTier } from './MedalIcon';
+import { medalAssetKey, type MedalMetric, type MedalTier } from './MedalIcon';
 import {
   BG_ASPECT,
   COAT_FRACTION,
@@ -12,13 +11,11 @@ import {
   HEAD_BOX_TOP,
   MEDAL_ASPECT,
   MEDAL_COUNT_FLOOR,
-  padSvgViewBox,
   packGrid,
   PADDED_VIEWBOX_SIZE,
   RIBBON_ASPECT,
   RIBBON_BAND_FRACTION,
   RIBBON_COUNT_FLOOR,
-  SVG_PAD,
   UNIFORM_ASPECT,
   UNIFORM_KEYS,
 } from './UniformAvatar';
@@ -31,7 +28,7 @@ export interface CertificateMetric {
 }
 
 export interface CertificateMedal {
-  ribbon: Ribbon;
+  metric: MedalMetric;
   tier: MedalTier;
   label: string;
 }
@@ -39,8 +36,8 @@ export interface CertificateMedal {
 export interface CertificatePortraitInput {
   rankIndex: number;
   backgroundImageKey: string;
-  /** Raw DiceBear Adventurer SVG markup, exactly as fetched - not yet
-   * padded (buildPortraitFragment does that itself, matching UniformAvatar). */
+  /** Raw DiceBear Adventurer SVG markup, exactly as fetched from the local
+   * compositor - already pre-padded, same as UniformAvatar. */
   headSvgMarkup: string;
   hairVariant: string;
   skinColor: string;
@@ -92,9 +89,14 @@ export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   return btoa(binary);
 };
 
-const fetchAsPngDataUri = async (key: string): Promise<string> => {
-  const buffer = await fetch(`${GAME_ASSET_PREFIX}${key}`).then((response) => response.arrayBuffer());
-  return `data:image/png;base64,${arrayBufferToBase64(buffer)}`;
+/** Fetches a game asset (uniform/backdrop PNG, medal-disc SVG) and inlines
+ * it as a data: URI, using whichever content-type gameAssets.ts served it
+ * with - so the same helper works for both PNGs and the SVG medal art. */
+const fetchAsDataUri = async (key: string): Promise<string> => {
+  const response = await fetch(`${GAME_ASSET_PREFIX}${key}`);
+  const contentType = response.headers.get('content-type') ?? 'application/octet-stream';
+  const buffer = await response.arrayBuffer();
+  return `data:${contentType};base64,${arrayBufferToBase64(buffer)}`;
 };
 
 /** One ribbon or medal's placement within the decoration panel, mirroring
@@ -141,16 +143,25 @@ export const buildPortraitFragment = async (
   const uniformIndex = Math.max(0, Math.min(UNIFORM_KEYS.length - 1, input.rankIndex));
   const uniformKey = UNIFORM_KEYS[uniformIndex]!;
 
-  const [backgroundStats, uniformStats, backgroundDataUri, uniformDataUri] = await Promise.all([
-    getCachedColorStats(input.backgroundImageKey),
-    getCachedColorStats(uniformKey),
-    fetchAsPngDataUri(input.backgroundImageKey),
-    fetchAsPngDataUri(uniformKey),
-  ]);
+  // Fetch each distinct medal key once even if the same medal appears
+  // several times in input.medals (e.g. multiple ranks of the same metric).
+  const medalKeys = Array.from(new Set(input.medals.map((medal) => medalAssetKey(medal.metric, medal.tier))));
+
+  const [backgroundStats, uniformStats, backgroundDataUri, uniformDataUri, medalDataUriEntries] =
+    await Promise.all([
+      getCachedColorStats(input.backgroundImageKey),
+      getCachedColorStats(uniformKey),
+      fetchAsDataUri(input.backgroundImageKey),
+      fetchAsDataUri(uniformKey),
+      Promise.all(medalKeys.map(async (key) => [key, await fetchAsDataUri(key)] as const)),
+    ]);
+  const medalDataUris = new Map(medalDataUriEntries);
   const headStats = getHeadColorStats(input.hairVariant, input.skinColor, input.hairColor);
   const uniformFilter = colorMatchFilter(uniformStats, backgroundStats);
   const headFilter = colorMatchFilter(headStats, backgroundStats);
-  const paddedHeadMarkup = padSvgViewBox(input.headSvgMarkup, SVG_PAD);
+  // Already pre-padded by the local compositor (see SVG_PAD in
+  // UniformAvatar.tsx) - no further viewBox surgery needed here.
+  const paddedHeadMarkup = input.headSvgMarkup;
 
   const sceneWidth = size * BG_ASPECT;
   const coatHeight = size * COAT_FRACTION;
@@ -208,9 +219,10 @@ export const buildPortraitFragment = async (
     .map(({ item, x, y, width, height }) => ribbonRectSvg(item, x, y, width, height))
     .join('\n');
   const medalMarkup = medalPlacements
-    .map(({ item, x, y, height }) => {
-      const markup = renderToStaticMarkup(<MedalIcon ribbon={item.ribbon} size={height} tier={item.tier} />);
-      return `<g transform="translate(${x}, ${y})"><title>${escapeXml(item.label)}</title>${markup}</g>`;
+    .map(({ item, x, y, width, height }) => {
+      const dataUri = medalDataUris.get(medalAssetKey(item.metric, item.tier));
+      if (!dataUri) return '';
+      return `<g transform="translate(${x}, ${y})"><title>${escapeXml(item.label)}</title><image width="${width}" height="${height}" href="${dataUri}" /></g>`;
     })
     .join('\n');
 

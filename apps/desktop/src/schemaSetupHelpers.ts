@@ -6,6 +6,9 @@ import { buildArchiveDestName } from '../../commons/src/desktop/schemaUpdateLogi
 
 import type { ProjectFileConfig } from './projectFile';
 
+const FETCH_TIMEOUT_MS = 30_000;
+const MAX_SCHEMA_RESPONSE_BYTES = 50 * 1024 * 1024;
+
 export const sha256Hex = (content: string): string =>
   crypto.createHash('sha256').update(content, 'utf8').digest('hex');
 
@@ -19,12 +22,31 @@ export const fetchText = async (urls: string[]): Promise<{ text: string; url: st
 
   for (const url of urls) {
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
       if (!response.ok) {
         lastError = new Error(`HTTP ${response.status} for ${url}`);
         continue;
       }
-      const text = await response.text();
+      const length = Number(response.headers.get('content-length'));
+      if (Number.isFinite(length) && length > MAX_SCHEMA_RESPONSE_BYTES) {
+        throw new Error('Schema response is too large.');
+      }
+      if (!response.body) throw new Error('Schema response has no body.');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let text = '';
+      let total = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.byteLength;
+        if (total > MAX_SCHEMA_RESPONSE_BYTES) {
+          await reader.cancel();
+          throw new Error('Schema response is too large.');
+        }
+        text += decoder.decode(value, { stream: true });
+      }
+      text += decoder.decode();
       if (text.trim()) return { text, url };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));

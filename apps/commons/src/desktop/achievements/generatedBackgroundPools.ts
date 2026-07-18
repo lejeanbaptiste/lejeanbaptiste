@@ -20,26 +20,36 @@ export const BG_POOL_BY_RANK: readonly string[][] = [
   [
     "bg/3a",
     "bg/3b",
-    "bg/3c"
+    "bg/3c",
+    "bg/3d",
+    "bg/3e"
   ],
   [
     "bg/4a",
     "bg/4b",
-    "bg/4c"
+    "bg/4c",
+    "bg/4d"
   ],
   [
     "bg/5a",
     "bg/5b",
-    "bg/5c"
+    "bg/5c",
+    "bg/5d"
   ],
   [
     "bg/6a",
     "bg/6b",
     "bg/6c",
-    "bg/6d"
+    "bg/6d",
+    "bg/6e",
+    "bg/6f"
   ],
   [
     "bg/7a",
-    "bg/7b"
+    "bg/7b",
+    "bg/7c",
+    "bg/7d",
+    "bg/7e",
+    "bg/7f"
   ]
 ];

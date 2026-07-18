@@ -158,13 +158,19 @@ const readAppPrefs = async (): Promise<AppPrefs> => {
     const raw = await fs.readFile(getPrefsPath(), 'utf-8');
     const parsed = JSON.parse(raw) as Partial<AppPrefs> & { lastRootPath?: string | null };
     return parseAppPrefs(parsed);
-  } catch {
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return defaultAppPrefs();
+    const corruptPath = `${getPrefsPath()}.corrupt-${Date.now()}`;
+    await fs.rename(getPrefsPath(), corruptPath).catch(() => undefined);
     return defaultAppPrefs();
   }
 };
 
 const writeAppPrefs = async (prefs: AppPrefs) => {
-  await fs.writeFile(getPrefsPath(), JSON.stringify(prefs, null, 2), 'utf-8');
+  const prefsPath = getPrefsPath();
+  const tempPath = `${prefsPath}.tmp`;
+  await fs.writeFile(tempPath, JSON.stringify(prefs, null, 2), 'utf-8');
+  await fs.rename(tempPath, prefsPath);
 };
 
 /** Serialize read-modify-write so concurrent saves cannot clobber fields like entityDbFolder. */

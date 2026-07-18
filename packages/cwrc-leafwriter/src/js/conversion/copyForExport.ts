@@ -51,6 +51,20 @@ const getElementsByLocalName = (root: Document | Element, localName: string): El
     (element) => element.localName === localName,
   );
 
+/** Header content (teiHeader, Orlando ORLANDOHEADER) is metadata, not translatable text —
+ * its <p>/<div> elements must never be treated as alignment units. Mirrors
+ * apps/commons/src/desktop/translationBootstrap.ts's isInsideHeader (duplicated rather than
+ * imported: this package cannot depend on apps/commons). */
+const isInsideHeader = (element: Element): boolean => {
+  let current: Element | null = element;
+  while (current) {
+    const name = current.localName.toLowerCase();
+    if (name === 'teiheader' || name === 'orlandoheader') return true;
+    current = current.parentElement;
+  }
+  return false;
+};
+
 const fileNameOf = (filePath: string): string => {
   const idx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   return idx === -1 ? filePath : filePath.slice(idx + 1);
@@ -61,13 +75,17 @@ const parseXml = (xml: string): Document | null => {
   return doc.getElementsByTagName('parsererror').length > 0 ? null : doc;
 };
 
-const findUnitById = (doc: Document, alignmentUnit: string, unitId: string): Element | null =>
+export const findUnitById = (
+  doc: Document,
+  alignmentUnit: string,
+  unitId: string,
+): Element | null =>
   getElementsByLocalName(doc, alignmentUnit).find(
     (element) =>
       element.getAttribute('xml:id') === unitId || element.getAttribute('id') === unitId,
   ) ?? null;
 
-const findUnitByCorresp = (
+export const findUnitByCorresp = (
   doc: Document,
   alignmentUnit: string,
   sourceFileName: string,
@@ -79,6 +97,22 @@ const findUnitByCorresp = (
       (element) => element.getAttribute('corresp') === expected,
     ) ?? null
   );
+};
+
+/** All alignment-unit ids in the given document, in document order — the whole-document
+ * counterpart to collectSelectedUnitIds's selection-scoped walk. Used by full-document
+ * export, which operates on a parsed file Document rather than the live editor body. */
+export const collectAllUnitIds = (doc: Document, alignmentUnit: string): string[] => {
+  const idOf = (element: Element): string | null => {
+    const id = element.getAttribute('xml:id') ?? element.getAttribute('id');
+    return id ?? null;
+  };
+
+  return getElementsByLocalName(doc, alignmentUnit)
+    .filter((element) => !isInsideHeader(element))
+    .map(idOf)
+    .filter((id): id is string => id !== null)
+    .filter((id, index, all) => all.indexOf(id) === index);
 };
 
 const writeClipboard = async (flavors: {

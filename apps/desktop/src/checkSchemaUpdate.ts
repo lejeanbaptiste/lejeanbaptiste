@@ -10,7 +10,13 @@ import {
   sha256Hex,
   writeProjectConfig,
 } from './schemaSetupHelpers';
-import { loadProjectFile, type ProjectBundle, type ProjectFileConfig, type ProjectSchemaConfig } from './projectFile';
+import {
+  loadProjectFile,
+  resolveProjectPath,
+  type ProjectBundle,
+  type ProjectFileConfig,
+  type ProjectSchemaConfig,
+} from './projectFile';
 import {
   shouldMergeSanmiaoDates,
   writeSanmiaoMergedTeiSchema,
@@ -43,7 +49,7 @@ const readMetadataFile = async (
 ): Promise<ProjectMetadataFile | null> => {
   const relative = bundle.config.metadata ?? 'schema/project-metadata.json';
   try {
-    const raw = await fs.readFile(path.join(bundle.rootPath, relative), 'utf-8');
+    const raw = await fs.readFile(resolveProjectPath(bundle.rootPath, relative), 'utf-8');
     return JSON.parse(raw) as ProjectMetadataFile;
   } catch {
     return null;
@@ -67,11 +73,11 @@ export const checkCatalogSchemaUpdate = async (
   let onDiskRngHash: string | undefined;
   let onDiskCssHash: string | undefined;
   try {
-    const rngContent = await fs.readFile(path.join(bundle.rootPath, schema.rng), 'utf-8');
+    const rngContent = await fs.readFile(resolveProjectPath(bundle.rootPath, schema.rng), 'utf-8');
     onDiskRngHash = sha256Hex(rngContent);
     if (schema.css) {
       try {
-        const cssContent = await fs.readFile(path.join(bundle.rootPath, schema.css), 'utf-8');
+        const cssContent = await fs.readFile(resolveProjectPath(bundle.rootPath, schema.css), 'utf-8');
         onDiskCssHash = sha256Hex(cssContent);
       } catch {
         onDiskCssHash = undefined;

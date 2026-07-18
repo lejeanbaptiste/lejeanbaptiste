@@ -22,6 +22,9 @@ import { resolveAuthorityExtractionRoot } from './authorityCompile';
 
 const execFileAsync = promisify(execFile);
 const COMPILE_TIMEOUT_MS = 30 * 60 * 1000;
+const MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024;
+const MAX_ENTRY_BYTES = 4 * 1024 * 1024 * 1024;
+const MAX_ARCHIVE_ENTRIES = 20_000;
 
 let chgisBusy = false;
 
@@ -123,13 +126,27 @@ const runNodeScript = async (scriptPath: string, args: string[], cwd: string): P
 };
 
 const extractZipTo = async (zipPath: string, destDir: string): Promise<void> => {
+  const archiveStat = await fsp.stat(zipPath);
+  if (archiveStat.size > MAX_ARCHIVE_BYTES) throw new Error('CHGIS archive is too large.');
   const zip = await JSZip.loadAsync(await fsp.readFile(zipPath));
+  const entries = Object.entries(zip.files);
+  if (entries.length > MAX_ARCHIVE_ENTRIES) throw new Error('CHGIS archive has too many entries.');
   await fsp.mkdir(destDir, { recursive: true });
-  for (const [name, entry] of Object.entries(zip.files)) {
+  const root = `${path.resolve(destDir)}${path.sep}`;
+  let extractedBytes = 0;
+  for (const [name, entry] of entries) {
     if (entry.dir) continue;
     const outPath = path.join(destDir, name);
+    if (!path.resolve(outPath).startsWith(root)) {
+      throw new Error(`CHGIS archive contains an unsafe path: ${name}`);
+    }
+    const data = await entry.async('nodebuffer');
+    extractedBytes += data.byteLength;
+    if (data.byteLength > MAX_ENTRY_BYTES || extractedBytes > MAX_ENTRY_BYTES) {
+      throw new Error('CHGIS archive expands beyond the supported size limit.');
+    }
     await fsp.mkdir(path.dirname(outPath), { recursive: true });
-    await fsp.writeFile(outPath, await entry.async('nodebuffer'));
+    await fsp.writeFile(outPath, data);
   }
 };
 
@@ -138,7 +155,7 @@ const stageInput = async (
   entityDbFolder: string,
   onProgress?: (progress: ChgisInstallProgress) => void,
 ): Promise<string> => {
-  const rawRoot = chgisRawRoot(entityDbFolder);
+  const rawRoot = `${chgisRawRoot(entityDbFolder)}.new`;
   await fsp.rm(rawRoot, { recursive: true, force: true });
   await fsp.mkdir(rawRoot, { recursive: true });
 
@@ -193,6 +210,7 @@ export const installChgisFromArchive = async ({
   }
 
   chgisBusy = true;
+  const stagedRawRoot = `${chgisRawRoot(entityDbFolder)}.new`;
   try {
     const inputDir = await stageInput(archivePath, entityDbFolder, onProgress);
     const packOut = path.join(entityDbFolder, `${AUTHORITY_PACKS_DIRNAME}.chgis-new`);
@@ -205,6 +223,20 @@ export const installChgisFromArchive = async ({
 
     onProgress?.({ phase: 'compiling', message: 'Compiling CHGIS places…' });
     await runNodeScript(path.join(extractionRoot, 'chgis/compile.mjs'), args, extractionRoot);
+
+    const liveRawRoot = chgisRawRoot(entityDbFolder);
+    const bakRawRoot = `${liveRawRoot}.bak`;
+    await fsp.rm(bakRawRoot, { recursive: true, force: true });
+    if (fs.existsSync(liveRawRoot)) await fsp.rename(liveRawRoot, bakRawRoot);
+    try {
+      await fsp.rename(stagedRawRoot, liveRawRoot);
+    } catch (error) {
+      if (fs.existsSync(bakRawRoot) && !fs.existsSync(liveRawRoot)) {
+        await fsp.rename(bakRawRoot, liveRawRoot);
+      }
+      throw error;
+    }
+    await fsp.rm(bakRawRoot, { recursive: true, force: true });
 
     const livePackDir = chgisPackDir(entityDbFolder);
     const bakPackDir = `${livePackDir}.bak`;
@@ -257,6 +289,7 @@ export const installChgisFromArchive = async ({
     }
     return { ok: false, error: message };
   } finally {
+    await fsp.rm(stagedRawRoot, { recursive: true, force: true }).catch(() => undefined);
     chgisBusy = false;
   }
 };

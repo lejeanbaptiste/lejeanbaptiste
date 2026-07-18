@@ -7,6 +7,8 @@
  * - spoiler-protected reward artwork
  * - achievement definitions
  * - DiceBear head color-match stats
+ * - Adventurer avatar-part layers (not a spoiler - mirrored as plain files,
+ *   not run through the encrypted assets.bin pipeline)
  *
  * This script clones or updates a cached checkout of visual_design, mirrors
  * the branding artwork used directly by this repo, and then runs
@@ -166,8 +168,9 @@ function main() {
   runVisualDesignScript('scripts/pack-assets.mjs');
   runVisualDesignScript('scripts/pack-definitions.mjs');
   runVisualDesignScript('scripts/generate-head-color-stats.mjs');
+  runVisualDesignScript('scripts/sync-avatar-parts.mjs');
   console.log(
-    'Synced artwork, game assets, achievement definitions, and head color stats from visual_design.',
+    'Synced artwork, game assets, achievement definitions, head color stats, and avatar parts from visual_design.',
   );
 }
 

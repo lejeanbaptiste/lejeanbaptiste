@@ -67,9 +67,9 @@ export const escapeRtfText = (value: string): string => {
 
 /* ------------------------------------------------------------ inline walking */
 
-type RendStyle = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'sup' | 'sub';
+export type RendStyle = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'sup' | 'sub';
 
-const rendStylesOf = (element: Element): RendStyle[] => {
+export const rendStylesOf = (element: Element): RendStyle[] => {
   const local = teiTagOf(element).toLowerCase();
   if (local === 'b' || local === 'strong') return ['bold'];
   if (local === 'i' || local === 'em') return ['italic'];
@@ -86,7 +86,7 @@ const rendStylesOf = (element: Element): RendStyle[] => {
   return [];
 };
 
-const RTF_STYLE_CONTROL: Record<RendStyle, string> = {
+export const RTF_STYLE_CONTROL: Record<RendStyle, string> = {
   bold: '\\b',
   italic: '\\i',
   underline: '\\ul',
@@ -104,7 +104,7 @@ const HTML_STYLE_TAG: Record<RendStyle, string> = {
   sub: 'sub',
 };
 
-interface WalkContext {
+export interface WalkContext {
   biblEntries: Map<string, ExportBiblEntry>;
 }
 
@@ -112,10 +112,10 @@ const isElement = (node: Node): node is Element => node.nodeType === 1;
 
 /** The TEI tag of an element, whether it's a real TEI element or an editor element
  * carrying its TEI tag in the `_tag` attribute. */
-const teiTagOf = (element: Element): string =>
+export const teiTagOf = (element: Element): string =>
   element.getAttribute('_tag') ?? element.localName;
 
-const zoteroBiblEntryFor = (
+export const zoteroBiblEntryFor = (
   element: Element,
   ctx: WalkContext,
 ): ExportBiblEntry | undefined => {
@@ -126,8 +126,10 @@ const zoteroBiblEntryFor = (
   return ctx.biblEntries.get(corresp.replace(/^#/, ''));
 };
 
-/** Builds the Word field instruction for a live Zotero citation. */
-export const buildZoteroFieldInstruction = (
+/** Builds the CSL-JSON citation payload shared by every live-field format (Word's
+ * `ADDIN ZOTERO_ITEM CSL_CITATION {json}`, LibreOffice's `ZOTERO_ITEM CSL_CITATION {json}`
+ * reference-mark name) — only the surrounding field-code syntax differs by host app. */
+export const buildZoteroCitationJson = (
   entry: ExportBiblEntry,
   renderedText: string,
   options: { locator?: string; locatorType?: string } = {},
@@ -146,8 +148,15 @@ export const buildZoteroFieldInstruction = (
     ],
     schema: 'https://github.com/citation-style-language/schema/raw/master/csl-citation.json',
   };
-  return `ADDIN ZOTERO_ITEM CSL_CITATION ${JSON.stringify(citation)}`;
+  return JSON.stringify(citation);
 };
+
+/** Builds the Word field instruction for a live Zotero citation. */
+export const buildZoteroFieldInstruction = (
+  entry: ExportBiblEntry,
+  renderedText: string,
+  options: { locator?: string; locatorType?: string } = {},
+): string => `ADDIN ZOTERO_ITEM CSL_CITATION ${buildZoteroCitationJson(entry, renderedText, options)}`;
 
 /* ---------------------------------------------------------------- rtf flavor */
 
@@ -213,7 +222,7 @@ const htmlInline = (node: Node, ctx: WalkContext): string => {
 
 /** Running text only — footnote bodies are dropped (they have no plain-text home);
  * the RTF/HTML flavors carry them. */
-const plainInline = (node: Node): string => {
+export const plainInline = (node: Node): string => {
   if (node.nodeType === 3) return node.nodeValue ?? '';
   if (!isElement(node)) return '';
   if (teiTagOf(node) === 'note') return '';
@@ -224,7 +233,7 @@ const plainInline = (node: Node): string => {
 
 /** An alignment unit is either a <p> itself, or a <div> containing block children:
  * returns the paragraph-level elements to render, in order. */
-const blockElementsOf = (unit: Element): Element[] => {
+export const blockElementsOf = (unit: Element): Element[] => {
   const tag = teiTagOf(unit);
   if (tag !== 'div') return [unit];
   const blocks = Array.from(unit.children).filter((child) =>
@@ -233,7 +242,7 @@ const blockElementsOf = (unit: Element): Element[] => {
   return blocks.length > 0 ? blocks.flatMap(blockElementsOf) : [unit];
 };
 
-const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
+export const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
 /* -------------------------------------------------------------------- main */
 

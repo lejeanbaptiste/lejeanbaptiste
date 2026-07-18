@@ -229,9 +229,13 @@ const runSanmiaoCli = (
     let stderr = '';
     let lineBuffer = '';
     let resultLine: string | null = null;
+    let settled = false;
+    let forceKillTimer: ReturnType<typeof setTimeout> | undefined;
 
     const timeout = setTimeout(() => {
       child.kill('SIGTERM');
+      forceKillTimer = setTimeout(() => child.kill('SIGKILL'), 2_000);
+      settled = true;
       reject(new Error(`Sanmiao timed out after ${SANMIAO_TIMEOUT_MS / 1000}s`));
     }, SANMIAO_TIMEOUT_MS);
 
@@ -269,11 +273,18 @@ const runSanmiaoCli = (
 
     child.on('error', (error) => {
       clearTimeout(timeout);
-      reject(error);
+      if (forceKillTimer) clearTimeout(forceKillTimer);
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
     });
 
     child.on('close', (code) => {
       clearTimeout(timeout);
+      if (forceKillTimer) clearTimeout(forceKillTimer);
+      if (settled) return;
+      settled = true;
       logSanmiao('done', { code, ms: Date.now() - t0 });
       if (code !== 0) {
         const lines = stderr.trim().split('\n').filter((line) => line.trim());

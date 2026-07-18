@@ -15,10 +15,16 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { Readable } from 'node:stream';
+import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
 import JSZip from 'jszip';
+
+const MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024;
+const MAX_ENTRY_BYTES = 4 * 1024 * 1024 * 1024;
+const MAX_ARCHIVE_ENTRIES = 20_000;
+const MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024 * 1024;
+const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
 
 import type {
   AuthorityDownloadProgress,
@@ -190,13 +196,15 @@ const downloadToFile = async (
   url: string,
   destPath: string,
   onChunk: (receivedBytes: number, totalBytes: number | null) => void,
+  maxBytes = MAX_DOWNLOAD_BYTES,
 ): Promise<void> => {
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
   if (!response.ok || !response.body) {
     throw new Error(`HTTP ${response.status} for ${url}`);
   }
   const contentLength = Number(response.headers.get('content-length'));
   const totalBytes = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : null;
+  if (totalBytes !== null && totalBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
 
   let receivedBytes = 0;
   const body = Readable.fromWeb(response.body as import('node:stream/web').ReadableStream);
@@ -205,6 +213,7 @@ const downloadToFile = async (
     async function* (chunks) {
       for await (const chunk of chunks) {
         receivedBytes += (chunk as Buffer).length;
+        if (receivedBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
         onChunk(receivedBytes, totalBytes);
         yield chunk;
       }
@@ -219,22 +228,36 @@ const extractZipEntry = async (
   destPath: string,
   onProgress: (receivedBytes: number) => void,
 ): Promise<void> => {
+  const archiveStat = await fsp.stat(zipPath);
+  if (archiveStat.size > MAX_ARCHIVE_BYTES) throw new Error('Authority archive is too large.');
   const zip = await JSZip.loadAsync(await fsp.readFile(zipPath));
-  const entry = Object.values(zip.files).find(
+  const entries = Object.values(zip.files);
+  if (entries.length > MAX_ARCHIVE_ENTRIES) throw new Error('Authority archive has too many entries.');
+  const entry = entries.find(
     (file) => !file.dir && file.name.endsWith(entrySuffix),
   );
   if (!entry) throw new Error(`No ${entrySuffix} entry in ${path.basename(zipPath)}`);
+  const declaredSize = (entry as unknown as { _data?: { uncompressedSize?: number } })._data
+    ?.uncompressedSize;
+  if (declaredSize !== undefined && declaredSize > MAX_ENTRY_BYTES) {
+    throw new Error('Authority archive entry is too large.');
+  }
 
   let receivedBytes = 0;
+  const sizeGuard = new Transform({
+    transform(chunk, _encoding, callback) {
+      receivedBytes += (chunk as Buffer).length;
+      if (receivedBytes > MAX_ENTRY_BYTES) {
+        callback(new Error('Authority archive entry expands beyond the supported size limit.'));
+        return;
+      }
+      onProgress(receivedBytes);
+      callback(null, chunk);
+    },
+  });
   await pipeline(
     entry.nodeStream(),
-    async function* (chunks) {
-      for await (const chunk of chunks) {
-        receivedBytes += (chunk as Buffer).length;
-        onProgress(receivedBytes);
-        yield chunk;
-      }
-    },
+    sizeGuard,
     fs.createWriteStream(destPath),
   );
 };
@@ -273,6 +296,7 @@ export const downloadAuthoritySource = async (
             receivedBytes,
             totalBytes,
           }),
+          MAX_DOWNLOAD_BYTES,
         );
         await extractZipEntry(zipTempPath, file.unzipEntrySuffix, tempPath, (receivedBytes) =>
           onProgress?.({
@@ -293,6 +317,7 @@ export const downloadAuthoritySource = async (
             receivedBytes,
             totalBytes,
           }),
+          MAX_DOWNLOAD_BYTES,
         );
       }
 

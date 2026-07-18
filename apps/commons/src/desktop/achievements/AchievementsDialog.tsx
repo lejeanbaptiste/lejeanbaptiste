@@ -38,7 +38,13 @@ import {
   findAchievementDef,
 } from './definitions';
 import { aggregateGlobalMetrics, countUnlocked, currentRankIndex } from './evaluate';
-import { MedalIcon, METRIC_RIBBONS, SPECIAL_RIBBON, tierForRankIndex } from './MedalIcon';
+import {
+  MedalIcon,
+  METRIC_RIBBONS,
+  SPECIAL_RIBBON,
+  tierForRankIndex,
+  type MedalMetric,
+} from './MedalIcon';
 import {
   createDefaultDiceBearAvatar,
   diceBearAvatarUrl,
@@ -179,13 +185,13 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       const rankIndex = currentRankIndex(state, medal.metric);
       return Array.from({ length: rankIndex + 1 }, (_, earnedRankIndex) => ({
         label: `${RANK_NAMES[earnedRankIndex]} — ${medal.medalName}`,
-        ribbon: METRIC_RIBBONS[medal.metric] ?? SPECIAL_RIBBON,
+        metric: medal.metric as MedalMetric,
         tier: tierForRankIndex(earnedRankIndex),
       }));
     }),
     ...decorations.map((decoration) => ({
       label: decoration.name,
-      ribbon: SPECIAL_RIBBON,
+      metric: 'special' as const,
       tier: 'gold' as const,
     })),
   ];
@@ -586,7 +592,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                   <Stack alignItems="center" direction="row" spacing={2}>
                     <MedalIcon
                       dimmed={rankIndex < 0}
-                      ribbon={METRIC_RIBBONS[medal.metric] ?? SPECIAL_RIBBON}
+                      metric={medal.metric as MedalMetric}
                       size={44}
                       tier={tierForRankIndex(Math.max(0, rankIndex))}
                     />
@@ -642,7 +648,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                       spacing={0.5}
                       sx={{ minWidth: 88, scrollSnapAlign: 'start', textAlign: 'center' }}
                     >
-                      <MedalIcon ribbon={SPECIAL_RIBBON} size={44} tier="gold" />
+                      <MedalIcon metric="special" size={44} tier="gold" />
                       <Typography sx={{ maxWidth: 96 }} variant="caption">
                         {decoration.name}
                       </Typography>

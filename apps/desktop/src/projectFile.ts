@@ -20,6 +20,17 @@ export {
   type ProjectSchemaConfig,
 } from './projectTypes';
 
+export const resolveProjectPath = (rootPath: string, relativePath: string): string => {
+  if (path.isAbsolute(relativePath)) throw new Error('Project paths must be relative.');
+  const resolvedRoot = path.resolve(rootPath);
+  const resolved = path.resolve(resolvedRoot, relativePath);
+  const relative = path.relative(resolvedRoot, resolved);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    throw new Error('Project path escapes the project directory.');
+  }
+  return resolved;
+};
+
 const normalizeAutoTaggingAuthority = (
   raw: unknown,
 ): AutoTaggingAuthoritySettings | undefined => {
@@ -78,6 +89,12 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
   disambiguation: normalizeDisambiguationSettings(raw.disambiguation),
 });
 
+const writeConfigFile = async (projectFilePath: string, config: ProjectFileConfig): Promise<void> => {
+  const tempPath = `${projectFilePath}.tmp`;
+  await fs.writeFile(tempPath, JSON.stringify(config, null, 2), 'utf-8');
+  await fs.rename(tempPath, projectFilePath);
+};
+
 export const writeProjectConfig = async (
   projectFilePath: string,
   patch: Partial<ProjectFileConfig>,
@@ -85,7 +102,7 @@ export const writeProjectConfig = async (
   const rootPath = path.dirname(projectFilePath);
   const raw = JSON.parse(await fs.readFile(projectFilePath, 'utf-8')) as Partial<ProjectFileConfig>;
   const config = normalizeConfig({ ...raw, ...patch }, rootPath);
-  await fs.writeFile(projectFilePath, JSON.stringify(config, null, 2), 'utf-8');
+  await writeConfigFile(projectFilePath, config);
   return { rootPath, projectFilePath, config };
 };
 
@@ -127,27 +144,28 @@ const detectSchema = async (rootPath: string): Promise<ProjectSchemaConfig | und
 export const loadOrCreateProject = async (rootPath: string): Promise<ProjectBundle> => {
   const projectFilePath = path.join(rootPath, PROJECT_FILE_NAME);
 
+  let raw: string;
   try {
-    const raw = await fs.readFile(projectFilePath, 'utf-8');
-    const parsed = JSON.parse(raw) as Partial<ProjectFileConfig>;
-    const config = normalizeConfig(parsed, rootPath);
-
-    if (!config.schema) {
-      config.schema = await detectSchema(rootPath);
-      await fs.writeFile(projectFilePath, JSON.stringify(config, null, 2), 'utf-8');
-    }
-
-    return { rootPath, projectFilePath, config };
-  } catch {
+    raw = await fs.readFile(projectFilePath, 'utf-8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     const config: ProjectFileConfig = {
       version: 1,
       name: path.basename(rootPath),
       schema: await detectSchema(rootPath),
       metadata: DEFAULT_METADATA_PATH,
     };
-    await fs.writeFile(projectFilePath, JSON.stringify(config, null, 2), 'utf-8');
+    await writeConfigFile(projectFilePath, config);
     return { rootPath, projectFilePath, config };
   }
+
+  const parsed = JSON.parse(raw) as Partial<ProjectFileConfig>;
+  const config = normalizeConfig(parsed, rootPath);
+  if (!config.schema) {
+    config.schema = await detectSchema(rootPath);
+    await writeConfigFile(projectFilePath, config);
+  }
+  return { rootPath, projectFilePath, config };
 };
 
 export const loadProjectFile = async (projectFilePath: string): Promise<ProjectBundle | null> => {
@@ -162,14 +180,14 @@ export const loadProjectFile = async (projectFilePath: string): Promise<ProjectB
 
     if (config.schema?.rng) {
       try {
-        await fs.stat(path.join(rootPath, config.schema.rng));
+        await fs.stat(resolveProjectPath(rootPath, config.schema.rng));
       } catch {
         config.schema = await detectSchema(rootPath);
-        await fs.writeFile(projectFilePath, JSON.stringify(config, null, 2), 'utf-8');
+        await writeConfigFile(projectFilePath, config);
       }
     } else {
       config.schema = await detectSchema(rootPath);
-      await fs.writeFile(projectFilePath, JSON.stringify(config, null, 2), 'utf-8');
+      await writeConfigFile(projectFilePath, config);
     }
 
     return { rootPath, projectFilePath, config };
