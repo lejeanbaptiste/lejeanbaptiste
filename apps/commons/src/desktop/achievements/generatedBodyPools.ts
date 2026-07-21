@@ -48,6 +48,9 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
   ],
   "6": [
     {
+      "1": [
+        "image1-8"
+      ],
       "2": [
         "image1-5"
       ],
@@ -57,8 +60,7 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
     },
     {
       "1": [
-        "image1-2",
-        "image1-8"
+        "image1-2"
       ],
       "2": [
         "image1-80"
@@ -136,12 +138,12 @@ export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
     "saturation": 0.7046588868426846
   },
   "6:m": {
-    "lightness": 0.33217125512998574,
-    "saturation": 0.701998120598835
+    "lightness": 0.3387009737661219,
+    "saturation": 0.7030278554344159
   },
   "6:f": {
-    "lightness": 0.33304142599840986,
-    "saturation": 0.7531396583579528
+    "lightness": 0.3342883626557145,
+    "saturation": 0.7528136020422758
   },
   "7:m": {
     "lightness": 0.38249594840953466,
